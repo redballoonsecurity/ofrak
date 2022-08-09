@@ -36,7 +36,7 @@ OFRAK equips users with:
 
 See [ofrak.com](https://ofrak.com) for more details.
 
-## GUI Frontend
+### Frontend
 The view provides a navigate-able resource tree, and for the selected resource: metadata, hex navigation, and an
 entropy/byteclass/magnitude map sidebar. The GUI also allows for commenting, unpacking, analysis, modification and
 packing of resources.
