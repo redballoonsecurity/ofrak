@@ -22,7 +22,7 @@ docker exec -it ofrak-tutorial \
 
 Once running, access [localhost:80](http://localhost:80) and start by dropping anything you'd like into it!
 
-Note that for now, the frontend only supports the `ofrak-tutorial.yml` and `ofrak-ghidra.yml` image build targets.
+Note that for now, the frontend only supports the `ofrak_ghidra` and `ofrak_binary_ninja` analyzer backends.
 
 ## Docs
 The official documentation for the most up-to-date OFRAK lives at https://ofrak.com/docs/
