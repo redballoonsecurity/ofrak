@@ -3,6 +3,8 @@ from typing import Optional
 
 import pytest
 
+from ofrak import OFRAKContext
+from ofrak.core import InstructionModifier, InstructionModifierConfig
 from ofrak.core.addressable import Addressable
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.basic_block import BasicBlock
@@ -14,13 +16,6 @@ from ofrak.service.resource_service_i import ResourceFilter, ResourceAttributeVa
 from ofrak.core.free_space import (
     FreeSpaceModifier,
     FreeSpaceModifierConfig,
-)
-from ofrak_components.uimage import (
-    UImageHeader,
-    UImageHeaderModifier,
-    UImageHeaderModifierConfig,
-    UIMAGE_MAGIC,
-    UIMAGE_HEADER_LEN,
 )
 from ofrak_type.architecture import (
     InstructionSet,
@@ -209,41 +204,69 @@ async def test_view_indexes(mock_basic_block, mock_instruction_view, ofrak_conte
     assert len(bb_children) == 0
 
 
-async def test_resource_property_does_not_modify(ofrak_context):
-    header_r = await ofrak_context.create_root_resource(
-        "test_uimage_header",
-        UIMAGE_MAGIC.to_bytes(4, "big") + b"\x00" * (UIMAGE_HEADER_LEN - 4),
-        (UImageHeader,),
+async def test_resource_property_does_not_modify(ofrak_context: OFRAKContext):
+    instr_r = await ofrak_context.create_root_resource(
+        "test_instruction",
+        b"\x00" * 4,
+        (Instruction,),
     )
-    header_view = await header_r.view_as(UImageHeader)
-
-    await header_view.resource.run(UImageHeaderModifier, UImageHeaderModifierConfig(ih_size=0x200))
-
-    await header_view.resource.run(UImageHeaderModifier, UImageHeaderModifierConfig(ih_load=0x300))
-
-    new_header_view = await header_r.view_as(UImageHeader)
-
-    assert new_header_view.ih_size == 0x200
-    assert new_header_view.ih_load == 0x300
-
-
-async def test_resource_view_updates(ofrak_context):
-    header_r = await ofrak_context.create_root_resource(
-        "mock_uimage_header",
-        UIMAGE_MAGIC.to_bytes(4, "big") + b"\x00" * (UIMAGE_HEADER_LEN - 4),
-        (UImageHeader,),
+    instr_r.add_view(Instruction(0x100, 0x4, "", "", "", InstructionSetMode.NONE))
+    instr_r.add_attributes(
+        ProgramAttributes(
+            InstructionSet.ARM,
+            None,
+            BitWidth.BIT_32,
+            Endianness.LITTLE_ENDIAN,
+            None,
+        ),
     )
-    header_view = await header_r.view_as(UImageHeader)
+    await instr_r.save()
 
-    await header_view.resource.run(
-        UImageHeaderModifier, UImageHeaderModifierConfig(ih_size=0x200, ih_load=0x300)
+    instr_view = await instr_r.view_as(Instruction)
+
+    await instr_view.resource.run(
+        InstructionModifier, InstructionModifierConfig("add", "r4, r5", InstructionSetMode.NONE)
     )
 
-    assert header_view.ih_size == 0x200
-    assert header_view.ih_load == 0x300
+    new_instr_view = await instr_r.view_as(Instruction)
+
+    assert new_instr_view.mnemonic == "add"
+    assert new_instr_view.operands == "r4, r5"
 
 
-async def test_resource_view_updates(ofrak_context):
+async def test_resource_view_updates(ofrak_context: OFRAKContext):
+    instr_r = await ofrak_context.create_root_resource(
+        "test_instruction",
+        b"\x00" * 4,
+        (Instruction,),
+    )
+    instr_r.add_view(Instruction(0x100, 0x4, "", "", "", InstructionSetMode.NONE))
+    instr_r.add_attributes(
+        ProgramAttributes(
+            InstructionSet.ARM,
+            None,
+            BitWidth.BIT_32,
+            Endianness.LITTLE_ENDIAN,
+            None,
+        ),
+    )
+    await instr_r.save()
+
+    instr_view = await instr_r.view_as(Instruction)
+
+    await instr_view.resource.run(
+        InstructionModifier, InstructionModifierConfig("add", "r4, r5", InstructionSetMode.NONE)
+    )
+    instr_r.add_view(
+        Instruction(0x100, 0x4, "add r4, r5", "add", "r4, r5", InstructionSetMode.NONE)
+    )
+    await instr_r.save()
+
+    assert instr_view.mnemonic == "add"
+    assert instr_view.operands == "r4, r5"
+
+
+async def test_resource_view_delete_resource(ofrak_context: OFRAKContext):
     root_r = await ofrak_context.create_root_resource(
         "mock_memory_region",
         b"\xff" * 0x10,
