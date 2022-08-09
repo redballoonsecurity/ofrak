@@ -614,6 +614,7 @@ class GNU_AARCH64_LINUX_10_Toolchain(GNU_10_Toolchain):
             return processor.sub_isa.value.lower()
         return SubInstructionSet.ARMv8A.value.lower()
 
+
 class GNU_AVR_5_Toolchain(Abstract_GNU_Toolchain):
     binary_file_parsers = [GNU_ELF_Parser()]
 

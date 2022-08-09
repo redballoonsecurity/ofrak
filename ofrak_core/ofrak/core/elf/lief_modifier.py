@@ -23,6 +23,7 @@ class LiefAddSegmentConfig(ComponentConfig):
     :ivar replace_note: replace the unused NOTE segment with the new segment, rather than adding a
     new segment. defaults to `True`, as adding a new segment may corrupt the ELF due to a LIEF bug.
     """
+
     virtual_address: int
     alignment: int
     content: List[int]
