@@ -1,0 +1,75 @@
+# - u-boot-tools: for mkimage, to test the UImage packer/unpacker
+RUN apt-get -y update && \
+    apt-get -y install --no-install-recommends \
+      build-essential \
+      cpio \
+      git \
+      gzip \
+      liblz4-dev \
+      liblzo2-dev \
+      libzstd-dev \
+      lzop \
+      p7zip-full \
+      zip \
+      qemu \
+      qemu-user-static \
+      u-boot-tools \
+      unar
+
+# Install CMake
+ENV CMAKE_VERSION 3.19.2
+ENV CMAKE_SHA256 4d8a6d852c530f263b22479aad196416bb4406447e918bd9759c6593b7f5f3f9
+RUN cd /tmp && \
+    curl -sSL -O https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz && \
+    echo "${CMAKE_SHA256}\tcmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz" | sha256sum -c && \
+    tar -zxvf cmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz && \
+    cd cmake-${CMAKE_VERSION}-Linux-x86_64 && \
+    cp -r bin/ share/ /usr/local/ && \
+    cp -r doc/ man/ /usr/local/share/ && \
+	cd /tmp && \
+    rm -rf cmake-${CMAKE_VERSION}-Linux-x86_64*
+
+# Install Keystone
+RUN cd /tmp && \
+    git clone https://github.com/rbs-forks/keystone.git && \
+    cd keystone && \
+    git checkout 2021.09.01 && \
+    ./install_keystone.sh && \
+    cd /tmp/keystone/bindings/python && python setup.py install && \
+    cd /tmp && \
+    rm -r keystone
+
+# Install Capstone
+RUN cd /tmp && \
+    git clone https://github.com/rbs-forks/capstone.git && \
+    cd capstone && \
+    git checkout 2021.09.01 && \
+    cd /tmp/capstone && \
+    ./install_capstone.sh && \
+    cd /tmp && \
+    rm -r capstone
+
+# Install apktool and uber-apk-signer
+RUN apt-get -y update && apt-get -y install openjdk-11-jdk
+RUN wget https://raw.githubusercontent.com/iBotPeaches/Apktool/v2.3.3/scripts/linux/apktool -O /usr/local/bin/apktool && \
+  wget https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.3.3.jar -O /usr/local/bin/apktool.jar && \
+  wget https://github.com/patrickfav/uber-apk-signer/releases/download/v1.0.0/uber-apk-signer-1.0.0.jar -O /usr/local/bin/uber-apk-signer.jar && \
+  chmod +x /usr/local/bin/apktool*
+
+# Install the correct version of squashfs-tools. We specifically need the
+# "-no-exit" argument, which is only available in version 4.5+
+RUN cd /tmp && \
+    git clone https://github.com/plougher/squashfs-tools.git && \
+    cd squashfs-tools/squashfs-tools && \
+    git checkout 4.5 && \
+    sed -i 's/^#\(XZ\|LZO\|LZ4\|ZSTD\)_SUPPORT/\1_SUPPORT/g' Makefile && \
+    make -j && \
+    make install && \
+    cd /tmp && \
+    rm -r squashfs-tools
+
+# Install binwalk
+RUN cd /tmp && \
+    git clone https://github.com/ReFirmLabs/binwalk && \
+    cd binwalk && \
+    python3 setup.py install

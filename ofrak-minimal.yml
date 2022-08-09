@@ -1,0 +1,10 @@
+registry: "redballoonsecurity/ofrak"
+base_image_name: "min-base"
+image_name: "min"
+packages_paths:
+  [
+    "ofrak_type",
+    "ofrak_io",
+    "ofrak_core",
+    "ofrak_patch_maker",
+  ]

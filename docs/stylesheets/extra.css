@@ -1,0 +1,45 @@
+:root {
+  --md-primary-fg-color:               #CF4419;
+  --md-primary-fg-color--light:        #FF855F;
+  --md-primary-fg-color--dark:         #A63614;
+  --md-accent-fg-color:                #F17B21;
+  --md-code-bg-color:                  #F2EDE7;
+
+  /*
+   * TODO: Change scrollbar un-hover color
+   */
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color:               #52B748;
+  --md-primary-fg-color--light:        #BDEA5C;
+  --md-primary-fg-color--dark:         #568F3A;
+  --md-default-bg-color:               #303032;
+  --md-typeset-a-color:                #9BE088;
+  --md-accent-fg-color:                #FDD517;
+
+  /*
+   * TODO: Change search background color to yellow
+   */
+}
+
+[data-md-color-scheme="slate"] blockquote, [data-md-color-scheme="slate"] .md-typeset blockquote {
+  color: white;
+}
+
+blockquote, .md-typeset blockquote {
+  font-size: 1.0rem;
+  border: none;
+  font-style: italic;
+  color: black;
+  padding-left: 1rem;
+}
+
+[data-md-component="header-title"] {
+  font-weight: bold;
+  font-size: 23px;
+}
+
+.md-content {
+  max-width: 150ch;
+}

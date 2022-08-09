@@ -1,0 +1,13 @@
+registry: "redballoonsecurity/ofrak"
+base_image_name: "angr-base"
+image_name: "angr"
+packages_paths:
+  [
+    "ofrak_type",
+    "ofrak_io",
+    "ofrak_patch_maker",
+    "ofrak_core",
+    "ofrak_components",
+    "disassemblers/ofrak_angr",
+    "disassemblers/ofrak_capstone",
+  ]

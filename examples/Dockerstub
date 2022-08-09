@@ -1,0 +1,2 @@
+ARG OFRAK_DIR=.
+ADD $OFRAK_DIR/examples /examples

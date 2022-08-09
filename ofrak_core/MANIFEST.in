@@ -1,0 +1,2 @@
+recursive-include ofrak_components_test/assets/ *
+recursive-include ofrak_components/entropy/ *

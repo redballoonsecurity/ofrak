@@ -1,0 +1,4 @@
+ARG OFRAK_DIR=.
+ARG COMPONENT_DIR=ofrak_angr
+
+RUN apt install -y python3-dev libffi-dev build-essential virtualenvwrapper

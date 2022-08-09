@@ -1,0 +1,81 @@
+site_name: OFRAK
+site_url: ""  # Required to have file:// paths work
+site_description: "Documentation for OFRAK(Open Firmware Reverse Analysis Konsole), a binary analysis and modification platform that combines the ability to unpack, analyze, modify, and repack binaries. "
+copyright: Copyright &copy; 2021 - 2022 Red Balloon Security, Inc.
+repo_url: https://github.com/redballoonsecurity/ofrak
+use_directory_urls: false  # Required to have file:// paths work
+theme:
+  name: material
+  font:
+    text: Helvetica
+  logo: assets/icon_2.png
+  favicon: assets/favishroom_smol.png
+  palette:
+    - scheme: slate
+extra_css:
+  - stylesheets/extra.css
+
+plugins:
+  - search
+  - mkdocstrings:
+      watch:
+        - ofrak_core
+      handlers:
+        python:
+          rendering:
+            show_root_heading: yes
+            show_root_toc_entry: no
+            members_order: source
+          selection:
+            docstring_style: "restructured-text"
+            # mkdocstrings tries to display this for some reason, and it breaks the docs
+            filters:
+              - "!^__view_attributes_type__"
+
+  - gen-files:
+      scripts:
+        - docs/gen_ref_nav.py
+        - docs/gen_example_nav.py
+  - literate-nav:
+      nav_file: SUMMARY.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.snippets
+  - admonition
+
+nav:
+  - Home: "index.md"
+  - Environment Setup: "environment-setup.md"
+  - Getting Started: "getting-started.md"
+  - Examples: examples/
+  - User Guide:
+      - Resource: "user-guide/resource.md"
+      - ResourceView: "user-guide/resource_view.md"
+      - Components:
+        - ComponentInterface: "user-guide/component/component.md"
+        - Identifier: "user-guide/component/identifier.md"
+        - Unpacker: "user-guide/component/unpacker.md"
+        - Analyzer: "user-guide/component/analyzer.md"
+        - Modifier: "user-guide/component/modifier.md"
+        - Packer: "user-guide/component/packer.md"
+      - Ghidra Backend: "user-guide/ghidra.md"
+      - Binary Ninja Backend: "user-guide/binary_ninja.md"
+      - PatchMaker:
+        - User Guide: "user-guide/patch-maker/user-guide.md"
+        - Troubleshooting: "user-guide/patch-maker/troubleshooting.md"
+  - Contributor Guide:
+      - Getting Started: "contributor-guide/getting-started.md"
+      - Writing Components:
+        - Identifier: "contributor-guide/component/identifier.md"
+        - Unpacker: "contributor-guide/component/unpacker.md"
+        - Analyzer: "contributor-guide/component/analyzer.md"
+        - Modifier: "contributor-guide/component/modifier.md"
+        - Packer: "contributor-guide/component/packer.md"
+        - Ghidra Components: "contributor-guide/component/ghidra_components.md"
+      - ResourceView: "contributor-guide/resource_view.md"
+  # Built by gen-files and literate-nav
+  - Code Reference: reference/

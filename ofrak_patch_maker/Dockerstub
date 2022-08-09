@@ -1,0 +1,50 @@
+# LLVM
+RUN mkdir -p /opt/rbs/toolchain && \
+    cd /tmp && \
+    wget https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz --show-progress --progress=bar:force:noscroll && \
+    tar xf clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -C /opt/rbs/toolchain && \
+    rm -rf clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz && \
+    mv /opt/rbs/toolchain/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu- /opt/rbs/toolchain/llvm_12.0.1
+
+# ARM GNU NONE EABI
+RUN cd /tmp && \
+    wget https://developer.arm.com/-/media/Files/downloads/gnu-rm/10-2020q4/gcc-arm-none-eabi-10-2020-q4-major-x86_64-linux.tar.bz2 --show-progress --progress=bar:force:noscroll && \
+    tar xf gcc-arm-none-eabi-10-2020-q4-major-x86_64-linux.tar.bz2 -C /opt/rbs/toolchain && \
+    rm -rf gcc-arm-none-eabi-10-2020-q4-major-x86_64-linux.tar.bz2
+
+# LINUX GNU + BINUTILS
+RUN cd /tmp && \
+    apt-get -y update  && apt-get -y install software-properties-common gcc-10
+
+RUN cd /tmp && \
+    apt-get update && apt-get install -y texinfo && \
+    wget http://archive.ubuntu.com/ubuntu/pool/main/b/binutils/binutils_2.34.orig.tar.xz --show-progress --progress=bar:force:noscroll && \
+    tar xvf binutils_2.34.orig.tar.xz -C /opt/rbs/toolchain && \
+    rm -rf binutils_2.34.orig.tar.xz && \
+    cd /opt/rbs/toolchain/binutils-2.34 && \
+    ./configure CC=/usr/bin/x86_64-linux-gnu-gcc-10 && \
+    make -j32
+
+#M68k GNU 10 Linux
+RUN apt-get update && apt-get install -y gcc-10-m68k-linux-gnu
+
+#M68k VBCC
+RUN cd /tmp && \
+    wget http://phoenix.owl.de/tags/vbcc0_9h.tar.gz && \
+    wget http://phoenix.owl.de/tags/vasm1_9.tar.gz && \
+    mkdir -p /opt/rbs/toolchain/vbcc_0_9/bin/ && \
+    mkdir -p /opt/rbs/toolchain/vbcc_0_9/config/ && \
+    tar -xvf vbcc0_9h.tar.gz
+
+RUN cd /tmp/vbcc && printf "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" | TARGET=m68k make all
+
+RUN cd /tmp/vbcc && cp ./bin/* /opt/rbs/toolchain/vbcc_0_9/bin/ && \
+    cd .. && \
+    tar -xvf vasm1_9.tar.gz && \
+    cd ./vasm && \
+    CPU=m68k SYNTAX=mot make && \
+    cp ./vasmm68k_mot /opt/rbs/toolchain/vbcc_0_9/bin/ && \
+    cp ./vobjdump /opt/rbs/toolchain/vbcc_0_9/bin/
+
+#AARCH64 GNU 10 Linux
+RUN apt-get update && apt-get install -y gcc-10-aarch64-linux-gnu

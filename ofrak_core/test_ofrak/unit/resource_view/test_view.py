@@ -1,0 +1,266 @@
+from dataclasses import dataclass
+from typing import Optional
+
+import pytest
+
+from ofrak.core.addressable import Addressable
+from ofrak.core.architecture import ProgramAttributes
+from ofrak.core.basic_block import BasicBlock
+from ofrak.core.instruction import Instruction
+from ofrak.core.memory_region import MemoryRegion
+from ofrak.core.program import Program
+from ofrak.resource_view import ResourceView
+from ofrak.service.resource_service_i import ResourceFilter, ResourceAttributeValueFilter
+from ofrak.core.free_space import (
+    FreeSpaceModifier,
+    FreeSpaceModifierConfig,
+)
+from ofrak_components.uimage import (
+    UImageHeader,
+    UImageHeaderModifier,
+    UImageHeaderModifierConfig,
+    UIMAGE_MAGIC,
+    UIMAGE_HEADER_LEN,
+)
+from ofrak_type.architecture import (
+    InstructionSet,
+    SubInstructionSet,
+    InstructionSetMode,
+    ProcessorType,
+)
+from ofrak_type.bit_width import BitWidth
+from ofrak_type.endianness import Endianness
+from ofrak_type.memory_permissions import MemoryPermissions
+from ofrak_type.range import Range
+from test_ofrak.unit.model import FlattenedResource
+
+MOCK_INSTRUCTION_MACHINE_CODE = b"\x03\x10\x82\xe0"
+
+
+@dataclass
+class MockProgram(ResourceView):
+    isa: InstructionSet
+    sub_isa: Optional[SubInstructionSet]
+    bit_width: BitWidth
+    endianness: Endianness
+    processor: Optional[ProcessorType]
+
+
+@pytest.fixture
+def mock_instruction():
+    return FlattenedResource(
+        (Instruction,),
+        (
+            Addressable.attributes_type(0x100),
+            MemoryRegion.attributes_type(
+                0x4,
+            ),
+            Instruction.attributes_type(
+                "add r1, r2, r3",
+                "add",
+                "r1, r2, r3",
+                InstructionSetMode.NONE,
+            ),
+        ),
+        data=MOCK_INSTRUCTION_MACHINE_CODE,
+    )
+
+
+@pytest.fixture
+def mock_instruction_view():
+    return Instruction(
+        0x100,
+        0x4,
+        "add r1, r2, r3",
+        "add",
+        "r1, r2, r3",
+        InstructionSetMode.NONE,
+    )
+
+
+@pytest.fixture
+def mock_basic_block():
+    return FlattenedResource(
+        (BasicBlock, MemoryRegion, MockProgram),
+        (
+            Addressable.attributes_type(0x100),
+            MemoryRegion.attributes_type(
+                0x10,
+            ),
+            BasicBlock.attributes_type(
+                InstructionSetMode.NONE,
+                False,
+                None,
+            ),
+            MockProgram.attributes_type(
+                InstructionSet.ARM,
+                None,
+                BitWidth.BIT_32,
+                Endianness.LITTLE_ENDIAN,
+                None,
+            ),
+        ),
+        data=bytes(0x10),
+    )
+
+
+async def test_create_from_resource(mock_instruction, ofrak_context):
+    instr_r, _ = await mock_instruction.inflate(ofrak_context)
+    instr_view = await instr_r.view_as(Instruction)
+
+
+async def test_create_resource_from_view(mock_basic_block, mock_instruction_view, ofrak_context):
+    bb_r, _ = await mock_basic_block.inflate(ofrak_context)
+    instr_view = mock_instruction_view
+    instr_view.data = MOCK_INSTRUCTION_MACHINE_CODE
+
+    assert instr_view.data == MOCK_INSTRUCTION_MACHINE_CODE
+
+    instr_r = await bb_r.create_child_from_view(instr_view, data_range=Range(0x0, 0x4))
+
+    assert instr_r.get_attributes(Instruction.attributes_type) is not None
+    assert instr_r.get_attributes(MemoryRegion.attributes_type) is not None
+    assert instr_r.get_attributes(Addressable.attributes_type) is not None
+    bb_children = list(await bb_r.get_children())
+    assert len(bb_children) == 1
+
+
+async def test_create_view_from_resource(mock_instruction, mock_instruction_view, ofrak_context):
+    instr_r, _ = await mock_instruction.inflate(ofrak_context)
+    new_instr_view = await instr_r.view_as(Instruction)
+
+    assert new_instr_view.virtual_address == mock_instruction_view.virtual_address
+    assert new_instr_view.size == mock_instruction_view.size
+    assert new_instr_view.mnemonic == mock_instruction_view.mnemonic
+    assert new_instr_view.operands == mock_instruction_view.operands
+    assert new_instr_view.mode == mock_instruction_view.mode
+
+
+async def test_view_indexes_types():
+    assert Instruction.VirtualAddress.attributes_owner is Addressable.attributes_type
+    assert Instruction.Size.attributes_owner is MemoryRegion.attributes_type
+    assert Instruction.Mnemonic.attributes_owner is Instruction.attributes_type
+
+
+async def test_view_indexes(mock_basic_block, mock_instruction_view, ofrak_context):
+    bb_r, _ = await mock_basic_block.inflate(ofrak_context)
+    instr_view = mock_instruction_view
+
+    instr_r = await bb_r.create_child_from_view(instr_view)
+
+    # Attribute filter by index in ResourceView
+    bb_children = list(
+        await bb_r.get_children(
+            r_filter=ResourceFilter(
+                attribute_filters=(ResourceAttributeValueFilter(Instruction.VirtualAddress, 0x100),)
+            )
+        )
+    )
+    assert len(bb_children) == 1
+
+    # Attribute filter by index in ResourceView superclass
+    bb_children = list(
+        await bb_r.get_children(
+            r_filter=ResourceFilter(
+                attribute_filters=(ResourceAttributeValueFilter(Addressable.VirtualAddress, 0x100),)
+            )
+        )
+    )
+    assert len(bb_children) == 1
+
+    # Attribute filter by index in ResourceView's attribute type
+    bb_children = list(
+        await bb_r.get_children(
+            r_filter=ResourceFilter(
+                attribute_filters=(ResourceAttributeValueFilter(Addressable.VirtualAddress, 0x100),)
+            )
+        )
+    )
+    assert len(bb_children) == 1
+
+    # Check for false positive (filter should not match any)
+    bb_children = list(
+        await bb_r.get_children(
+            r_filter=ResourceFilter(
+                attribute_filters=(ResourceAttributeValueFilter(Addressable.VirtualAddress, 0x102),)
+            )
+        )
+    )
+    assert len(bb_children) == 0
+
+    # Filter by some other attribute
+    bb_children = list(
+        await bb_r.get_children(
+            r_filter=ResourceFilter(
+                attribute_filters=(ResourceAttributeValueFilter(Instruction.Mnemonic, "add"),)
+            )
+        )
+    )
+    assert len(bb_children) == 1
+
+    # Another false positive check
+    bb_children = list(
+        await bb_r.get_children(
+            r_filter=ResourceFilter(
+                attribute_filters=(ResourceAttributeValueFilter(Instruction.Mnemonic, "deadd"),)
+            )
+        )
+    )
+    assert len(bb_children) == 0
+
+
+async def test_resource_property_does_not_modify(ofrak_context):
+    header_r = await ofrak_context.create_root_resource(
+        "test_uimage_header",
+        UIMAGE_MAGIC.to_bytes(4, "big") + b"\x00" * (UIMAGE_HEADER_LEN - 4),
+        (UImageHeader,),
+    )
+    header_view = await header_r.view_as(UImageHeader)
+
+    await header_view.resource.run(UImageHeaderModifier, UImageHeaderModifierConfig(ih_size=0x200))
+
+    await header_view.resource.run(UImageHeaderModifier, UImageHeaderModifierConfig(ih_load=0x300))
+
+    new_header_view = await header_r.view_as(UImageHeader)
+
+    assert new_header_view.ih_size == 0x200
+    assert new_header_view.ih_load == 0x300
+
+
+async def test_resource_view_updates(ofrak_context):
+    header_r = await ofrak_context.create_root_resource(
+        "mock_uimage_header",
+        UIMAGE_MAGIC.to_bytes(4, "big") + b"\x00" * (UIMAGE_HEADER_LEN - 4),
+        (UImageHeader,),
+    )
+    header_view = await header_r.view_as(UImageHeader)
+
+    await header_view.resource.run(
+        UImageHeaderModifier, UImageHeaderModifierConfig(ih_size=0x200, ih_load=0x300)
+    )
+
+    assert header_view.ih_size == 0x200
+    assert header_view.ih_load == 0x300
+
+
+async def test_resource_view_updates(ofrak_context):
+    root_r = await ofrak_context.create_root_resource(
+        "mock_memory_region",
+        b"\xff" * 0x10,
+        (Program, MemoryRegion),
+    )
+    root_r.add_attributes(
+        ProgramAttributes(InstructionSet.ARM, None, BitWidth.BIT_32, Endianness.LITTLE_ENDIAN, None)
+    )
+    root_r.add_view(MemoryRegion(0x10, 0x10))
+    await root_r.save()
+    region_r = await root_r.create_child_from_view(
+        MemoryRegion(0x10, 0x10),
+        data_range=Range(0, 0x10),
+    )
+    region_view = await region_r.view_as(MemoryRegion)
+
+    await region_view.resource.run(FreeSpaceModifier, FreeSpaceModifierConfig(MemoryPermissions.RX))
+
+    with pytest.raises(ValueError):
+        _ = region_view.resource

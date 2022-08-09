@@ -1,0 +1,11 @@
+# Vim swap files
+*.swp
+*.swo
+
+# VS Code metadata
+.vscode
+
+node_modules
+package-lock.json
+**/.DS_Store
+src/resource.js

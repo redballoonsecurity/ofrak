@@ -1,0 +1,14 @@
+registry: "redballoonsecurity/ofrak"
+base_image_name: "tutorial-base"
+image_name: "tutorial"
+packages_paths:
+  [
+    "ofrak_type",
+    "ofrak_io",
+    "ofrak_patch_maker",
+    "ofrak_core",
+    "ofrak_components",
+    "disassemblers/ofrak_ghidra",
+    "frontend",
+    "ofrak_tutorial",
+  ]

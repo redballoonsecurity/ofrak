@@ -1,0 +1,3 @@
+# The notebooks stripped of their outputs are generated automatically before
+# starting the Jupyter server
+/notebooks

@@ -1,0 +1,29 @@
+{
+  "name": "ofrak-app",
+  "version": "0.6.0",
+  "description": "The graphical front-end for OFRAK.",
+  "homepage": "https://ofrak.com",
+  "private": true,
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -c -w",
+    "serve": "sirv public --no-clear --host",
+    "lint": "prettier --write --plugin-search-dir=. ./**/*.html ./**/*.svelte ./**/*.js **/*.css"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^17.0.0",
+    "@rollup/plugin-node-resolve": "^11.0.0",
+    "prettier-plugin-svelte": "^2.6.0",
+    "rollup": "^2.3.4",
+    "rollup-plugin-css-only": "^3.1.0",
+    "rollup-plugin-livereload": "^2.0.0",
+    "rollup-plugin-svelte": "^7.0.0",
+    "rollup-plugin-terser": "^7.0.0",
+    "svelte": "^3.0.0",
+    "split.js": "^1.6.0",
+    "@splinetool/runtime": "^0.9.30"
+  },
+  "dependencies": {
+    "sirv-cli": "^2.0.0"
+  }
+}

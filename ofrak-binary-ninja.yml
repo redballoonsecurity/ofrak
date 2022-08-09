@@ -1,0 +1,17 @@
+registry: "redballoonsecurity/ofrak"
+base_image_name: "binary-ninja-base"
+image_name: "binary-ninja"
+packages_paths:
+  [
+    "ofrak_type",
+    "ofrak_io",
+    "ofrak_patch_maker",
+    "ofrak_core",
+    "ofrak_components",
+    "disassemblers/ofrak_binary_ninja",
+    "disassemblers/ofrak_capstone",
+  ]
+extra_build_args:
+  ["--secret",
+   "id=serial,src=serial.txt"
+  ]

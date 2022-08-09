@@ -1,0 +1,8 @@
+**/Dockerstub
+examples/Makefile
+**/.git*
+**/.mypy_cache
+**/*.egg-info
+*Dockerfile*
+license.dat
+serial.txt

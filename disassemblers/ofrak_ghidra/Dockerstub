@@ -1,0 +1,15 @@
+# Download & install java
+RUN apt update
+RUN apt install openjdk-11-jdk -y
+
+# Download & install ghidra
+RUN mkdir -p /opt/rbs
+RUN wget -c https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_10.1.2_build/ghidra_10.1.2_PUBLIC_20220125.zip --show-progress --progress=bar:force:noscroll && \
+    unzip ghidra_10.1.2_PUBLIC_20220125.zip > /dev/null && \
+    rm ghidra_10.1.2_PUBLIC_20220125.zip && \
+    mv ghidra_10.1.2_PUBLIC/ /opt/rbs/ghidra_10.1.2_PUBLIC
+
+RUN apt-get -y install supervisor
+ARG OFRAK_DIR=.
+WORKDIR /
+COPY $OFRAK_DIR/disassemblers/ofrak_ghidra/server.conf /opt/rbs/ghidra_10.1.2_PUBLIC/server/

@@ -1,0 +1,33 @@
+version: "3.5"
+
+networks:
+  ofrak_swarm:
+    name: ofrak_swarm
+    driver: overlay
+    attachable: true
+
+services:
+  proxy:
+    image: rbs/ofrak-gui-proxy
+    ports:
+      - target: 80
+        published: ${PORT}
+        protocol: "tcp"
+    networks:
+      - ofrak_swarm
+  ofrak_server:
+    image: rbs/ofrak-server
+    restart: "always"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+    networks:
+      - ofrak_swarm
+  app:
+    image: rbs/ofrak-gui-app
+    hostname: ofrak_app
+    volumes:
+      - .:/home/node/app
+    networks:
+      - ofrak_swarm

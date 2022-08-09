@@ -1,0 +1,4 @@
+RUN apt-get install -y libdbus-1-3
+ARG OFRAK_DIR=.
+COPY $OFRAK_DIR/disassemblers/ofrak_binary_ninja/install_binary_ninja_headless_linux.sh /tmp/
+RUN --mount=type=secret,id=serial /tmp/install_binary_ninja_headless_linux.sh && rm /tmp/install_binary_ninja_headless_linux.sh

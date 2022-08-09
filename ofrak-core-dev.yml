@@ -1,0 +1,11 @@
+registry: "redballoonsecurity/ofrak"
+base_image_name: "core-dev-base"
+image_name: "core-dev"
+packages_paths:
+  [
+    "ofrak_type",
+    "ofrak_io",
+    "ofrak_patch_maker",
+    "ofrak_core",
+    "ofrak_components",
+  ]

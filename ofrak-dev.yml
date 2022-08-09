@@ -1,0 +1,20 @@
+registry: "redballoonsecurity/ofrak"
+base_image_name: "dev-base"
+image_name: "dev"
+packages_paths:
+  [
+    "ofrak_type",
+    "ofrak_io",
+    "ofrak_patch_maker",
+    "ofrak_core",
+    "ofrak_components",
+    "disassemblers/ofrak_ghidra",
+    "disassemblers/ofrak_binary_ninja",
+    "disassemblers/ofrak_capstone",
+    "disassemblers/ofrak_angr",
+    "frontend",
+  ]
+extra_build_args:
+  ["--secret",
+   "id=serial,src=serial.txt"
+  ]

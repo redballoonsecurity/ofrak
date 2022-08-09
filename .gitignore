@@ -1,0 +1,15 @@
+__pycache__/
+venv/
+.idea/
+test/
+.DS_Store
+*.iml
+*.egg-info/
+QUESTIONS
+.hypothesis/
+*.swp
+*.pyre*
+base.Dockerfile
+finish.Dockerfile
+license.dat
+serial.txt
