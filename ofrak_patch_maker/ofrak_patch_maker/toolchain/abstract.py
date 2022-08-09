@@ -143,23 +143,15 @@ class Toolchain(ABC):
         :raises NotImplementedError: if an assembler for that ISA does not exist
         :returns: filepath to the assembler program
         """
-        if self._processor.isa == InstructionSet.ARM:
-            assembler_path = "ARM_ASM_PATH"
-        elif self._processor.isa == InstructionSet.MIPS:
-            assembler_path = "MIPS_ASM_PATH"
-        elif self._processor.isa == InstructionSet.PPC:
-            assembler_path = "PPC_ASM_PATH"
-        elif self._processor.isa == InstructionSet.M68K:
+        if self._processor.isa == InstructionSet.M68K:
             assembler_path = "M68K_ASM_PATH"
         elif (
             self._processor.isa == InstructionSet.X86
             and self._processor.bit_width == BitWidth.BIT_64
         ):
             assembler_path = "X86_64_ASM_PATH"
-        elif self._processor.isa == InstructionSet.AARCH64:
-            assembler_path = "AARCH64_ASM_PATH"
         else:
-            raise NotImplementedError()
+            assembler_path = f"{self._processor.isa.value.upper()}_ASM_PATH"
         return get_repository_config("ASM", assembler_path)
 
     @property
