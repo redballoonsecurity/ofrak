@@ -163,6 +163,7 @@ class ElfMachine(Enum):
             ElfMachine.EM_AARCH64.value: InstructionSet.AARCH64,
             ElfMachine.EM_68K.value: InstructionSet.M68K,
             ElfMachine.EM_COLDFIRE.value: InstructionSet.M68K,
+            ElfMachine.EM_AVR.value: InstructionSet.AVR,
             # While there is an assembler for MaxQ (
             # https://www.maximintegrated.com/content/dam/files/design/tools/tech-docs/4465
             # /AN4465-dev-tools-guide.pdf), in practice PPC is quite similar.
