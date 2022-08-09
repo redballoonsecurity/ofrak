@@ -24,7 +24,7 @@ OFRAK equips users with:
 See [ofrak.com](https://ofrak.com) for more details.
 
 ### GUI Frontend
-The GUI view provides a navigate-able resource tree, and for the selected resource: metadata, hex navigation, and an
+The GUI view provides a navigable resource tree, and for the selected resource: metadata, hex navigation, and an
 entropy / byteclass / magnitude map sidebar. The GUI also allows for actions normally available through the python API
 like commenting, unpacking, analysis, modification and packing of resources.
 
