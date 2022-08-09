@@ -20,11 +20,10 @@ def get_file_format(path):
         ValueError("Invalid BinFileType!!!")
 
 
-def get_repository_config(config_name: str, section: str, key: Optional[str] = None):
+def get_repository_config(section: str, key: Optional[str] = None):
     """
     Find config file and values. Look in user's `~/etc` directory followed by `/etc`.
 
-    :param config_name: config filename
     :param section: section name in config file
     :param key: key in `config[section]`
 
@@ -36,6 +35,7 @@ def get_repository_config(config_name: str, section: str, key: Optional[str] = N
 
     config = configparser.RawConfigParser()
     config_root = "/etc"
+    config_name = "toolchain.conf"
     try:
         local_etc = os.path.join(os.environ["HOME"], "etc")
         paths = [local_etc, config_root]

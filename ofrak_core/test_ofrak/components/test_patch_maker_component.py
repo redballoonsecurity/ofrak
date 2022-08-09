@@ -217,7 +217,7 @@ async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config
     await target_program.resource.flush_to_disk(new_program_path)
 
     # Check that the modified program looks as expected.
-    readobj_path = get_repository_config("toolchain.conf", config.toolchain_name, "BIN_PARSER")
+    readobj_path = get_repository_config(config.toolchain_name, "BIN_PARSER")
 
     # LLVM-specific fix: use llvm-objdump, not llvm-readobj
     if "readobj" in readobj_path:
