@@ -36,6 +36,33 @@ OFRAK equips users with:
 
 See [ofrak.com](https://ofrak.com) for more details.
 
+## GUI Frontend
+The OFRAK GUI frontend is an interface to visualize and manipulate binaries from your web browser.
+
+The view provides a navigate-able resource tree, and for the selected resource: metadata, hex navigation, and an
+entropy/byteclass/magnitude map sidebar. 
+```
+  ,_________.___________._____________________.___________.
+  | Actions | Resource  |       HEX view      | Visualizer |
+  |         | tree      |                     |            |
+  |         |           |                     | Any of:    |
+  |         |           |                     |  Entropy   |
+  |         |           |                     |  Byteclass |
+  |_________|___________|                     |  Magnitude |
+  |                     |                     |  ...       |
+  |  Tags & Attributes  |                     |            |
+  |   (of selection)    |                     |            |
+  |                     |                     |            |
+  L_____________________._____________________.____________,
+
+```
+Built on top of the OFRAK python API, the GUI also allows for commenting, unpacking, analysis, modification and packing
+of resources.
+
+<div align="center">
+<img id="ofrak-animation" src="assets/ofrak_gui_1.png">
+</div>
+
 ## Getting Started
 See the [Getting Started guide](./getting-started.md) for examples on how to use OFRAK.
 
