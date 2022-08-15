@@ -5,10 +5,11 @@ OFRAK is best run in a Docker image. Some OFRAK features can also be run nativel
 **OFRAK uses Git LFS. This means that you must have Git LFS installed before you clone the repository!** Install Git LFS by following [the instructions here](https://git-lfs.github.com/). If you accidentally cloned the repository before installing Git LFS, `cd` into the repository and run `git lfs pull`.
 
 ## Docker Images
-To build the docker image, use the `build_image.py` utility.
+To build the docker image, use the `build_image.py` utility, which requires the PyYAML package.
 
 For example:
 ```bash
+python3 -m pip install PyYAML
 python3 build_image.py --config ofrak-core-dev.yml --base --finish
 ```
 

@@ -30,6 +30,9 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
+    install_requires=[
+        "PyYAML",
+    ],
     extras_require={
         "test": [
             "fun-coverage~=0.1.0",
