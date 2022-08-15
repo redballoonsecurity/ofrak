@@ -71,11 +71,20 @@ It is recommended that you create a virtual environment in which to install the 
     % source ofrak-venv/bin/activate
 ```
 
-1. The `libmagic` library is needed for `python-magic`, which automatically determines which packers/unpackers to use with binaries:
+1. Use homebrew to install required libraries and executables:
     ```bash
-    brew install libmagic
+    brew install apktool binwalk cmake java libmagic lzop p7zip qemu squashfs rar unar wget
     ```
-2. OFRAK uses a custom branch of `keystone-engine`. Installing it requires `cmake`. Run `brew install cmake`. The following script can then be used to install keystone engine:
+    * OFRAK uses `apktool`, `java`, and `wget` to install `uber-apk-signer` for unpacking and packing APK files.
+    * OFRAK uses `binwalk` for analyzing packed binary files.
+    * OFRAK uses `cmake` to install a custom branch of `keystone-engine`.
+    * OFRAK uses the `libmagic` library is needed for `python-magic`, which automatically determines which packers/unpackers to use with binaries.
+    * OFRAK uses the `lzop` command line utility for packing/unpacking LZO archives
+    * OFRAK uses the 7-zip command line utility for packing/unpacking 7z archives
+    * OFRAK uses the `qemu-system-i386` command line utility (and other `qemu` commands) for testing the `BzImage` packer and unpacker
+    * OFRAK uses the `mksquashfs` command line utility for packing/unpacking SquashFS filesystems.
+    * OFRAK uses the `rar` and `unar` command line utilities for packing/unpacking RAR archives
+2.  The following script can then be used to install keystone engine:
     ```bash
     #!/usr/bin/env bash
     set -e
@@ -93,7 +102,7 @@ It is recommended that you create a virtual environment in which to install the 
     make install3
     pip3 install .
     ```
-3. OFRAK also uses a custom branch of `capstone-engine`, which can be installed using the following script:
+3. The custom branch of `capstone-engine` can be installed using the following script:
     ```bash
     #!/usr/bin/env bash
     set -e
@@ -106,46 +115,18 @@ It is recommended that you create a virtual environment in which to install the 
     cd bindings/python
     make install3
     ```
-4. OFRAK uses the `mksquashfs` command line utility for packing/unpacking SquashFS filesystems:
-    ```bash
-    brew install squashfs
-    ```
-5. OFRAK uses the 7-zip command line utility for packing/unpacking 7z archives:
-    ```bash
-    brew install p7zip
-    ```
-6. OFRAK uses the `lzop` command line utility for packing/unpacking LZO archives:
-    ```bash
-    brew install lzop
-    ```
-7. OFRAK uses the `qemu-system-i386` command line utility (and other `qemu` commands) for testing the `BzImage` packer and unpacker:
-    ```bash
-    brew install qemu
-    ```
-8. OFRAK uses the `rar` and `unar` command line utilities for packing/unpacking RAR archives:
-   ```bash
-   brew install rar unar
-   ```
-9. OFRAK uses `apktool` and `uber-apk-signer` for unpacking and packing APK files, and these depend on `java`:
+4. The `uber-apk-signer` for unpacking and packing APK filescan be installed using the following script:
     ```bash
     brew install wget apktool java
     echo 'export PATH="/usr/local/opt/openjdk/bin:$PATH"' >> ~/.zshrc
     wget https://github.com/patrickfav/uber-apk-signer/releases/download/v1.0.0/uber-apk-signer-1.0.0.jar -O /usr/local/bin/uber-apk-signer.jar
     ```
-10. OFRAK uses `binwalk` for analyzing packed binary files.
-    ```bash
-    pushd /tmp
-    git clone https://github.com/ReFirmLabs/binwalk 
-    cd binwalk
-    python3 setup.py install
-    popd
-    ```
-11. Install core OFRAK and its dependencies:
+5. Install core OFRAK and its dependencies:
     ```
     INSTALL_TARGET=develop
     make -C ofrak_core $INSTALL_TARGET
     ```
-12. If you are planning to contribute to OFRAK, install the pre-commit hooks. For more information, see the [contributor guide](docs/contributor-guide/getting-started.md).
+6. If you are planning to contribute to OFRAK, install the pre-commit hooks. For more information, see the [contributor guide](docs/contributor-guide/getting-started.md).
     ```
     python3 -m pip install --user pre-commit
     pre-commit install
