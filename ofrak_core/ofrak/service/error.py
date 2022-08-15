@@ -1,9 +1,12 @@
-from typing import Dict, Any
+from __future__ import annotations
+
+from typing import Any
 
 import json
 import sys
 
 import ofrak_type.error
+from ofrak.service.data_service import DataNode
 
 
 class SerializedError(RuntimeError):
@@ -15,7 +18,7 @@ class SerializedError(RuntimeError):
         return {"type": type(error).__name__, "message": str(error)}
 
     @classmethod
-    def from_json(cls, serialized: str) -> "SerializedError":
+    def from_json(cls, serialized: str) -> SerializedError:
         error_dict = json.loads(serialized)
         error_type = error_dict["type"]
         try:
@@ -31,7 +34,7 @@ class SerializedError(RuntimeError):
             return error(error_dict["message"])
 
     @classmethod
-    def from_dict(cls, error_dict: Dict[str, Any]) -> "SerializedError":
+    def from_dict(cls, error_dict: dict[str, Any]) -> SerializedError:
         return cls(error_dict["message"])
 
 
@@ -52,7 +55,7 @@ class OutOfBoundError(DataServiceError):
 
 
 class OverlapError(DataServiceError):
-    def __init__(self, message, new_child_node: "DataNode", existing_child_node: "DataNode"):  # type: ignore
+    def __init__(self, message, new_child_node: DataNode, existing_child_node: DataNode):  # type: ignore
         super().__init__(message)
         self.new_child_node = new_child_node
         self.existing_child_node = existing_child_node

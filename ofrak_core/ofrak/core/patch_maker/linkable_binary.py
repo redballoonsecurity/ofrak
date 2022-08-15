@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import dataclasses
 import logging
 import os
 from dataclasses import dataclass
-from typing import Dict, Iterable, Optional, Tuple
+from typing import Iterable
 
 from ofrak.component.modifier import Modifier
 from ofrak.core.addressable import Addressable
@@ -19,6 +21,7 @@ from ofrak.service.resource_service_i import (
 )
 from ofrak.core.patch_maker.linkable_symbol import LinkableSymbol, LinkableSymbolType
 from ofrak_patch_maker.model import BOM, PatchRegionConfig
+from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.model import Segment
 from ofrak_type.error import NotFoundError
 
@@ -37,7 +40,7 @@ class LinkableBinary(GenericBinary):
     """
 
     async def get_only_symbol(
-        self, *, name: Optional[str] = None, vaddr: Optional[int] = None
+        self, *, name: str | None = None, vaddr: int | None = None
     ) -> LinkableSymbol:
         """
         Get exactly one LinkableSymbol from this LinkableBinary matching a given name,
@@ -71,7 +74,7 @@ class LinkableBinary(GenericBinary):
         )
 
     async def get_symbols(
-        self, *, name: Optional[str] = None, vaddr: Optional[int] = None
+        self, *, name: str | None = None, vaddr: int | None = None
     ) -> Iterable[LinkableSymbol]:
         """
         Get exactly all LinkableSymbols from this LinkableBinary matching a given name,
@@ -102,7 +105,7 @@ class LinkableBinary(GenericBinary):
         )
 
     async def define_linkable_symbols(
-        self, proto_symbols: Dict[str, Tuple[int, LinkableSymbolType]]
+        self, proto_symbols: dict[str, tuple[int, LinkableSymbolType]]
     ):
         """
         From some basic info about symbols in this program, create a LinkableSymbol resource for
@@ -149,7 +152,7 @@ class LinkableBinary(GenericBinary):
         self,
         patch_maker: "PatchMaker",  # type: ignore
         build_tmp_dir: str,
-    ) -> Tuple[BOM, PatchRegionConfig]:
+    ) -> tuple[BOM, PatchRegionConfig]:
         """
         Build a BOM with all the symbols known to SymbolizedBinary. This BOM can be used to build
         the FEM so that it has access to all those symbols as weak symbols. This BOM in practice
@@ -171,7 +174,7 @@ class LinkableBinary(GenericBinary):
         definitions for all LinkableSymbols in the binary, ready to be passed in the `boms`
         argument to PatchMaker.make_fem(...).
         """
-        stubs: Dict[str, Tuple[Segment, ...]] = dict()
+        stubs: dict[str, tuple[Segment, ...]] = dict()
         for symbol in await self.get_symbols():
             # if symbol.name in excluded_symbols:
             #     continue
@@ -201,7 +204,7 @@ class LinkableBinary(GenericBinary):
 
 @dataclass
 class UpdateLinkableSymbolsModifierConfig(ComponentConfig):
-    updated_symbols: Tuple[LinkableSymbol, ...]
+    updated_symbols: tuple[LinkableSymbol, ...]
 
     def __post_init__(self):
         stripped_symbols = []
@@ -223,7 +226,7 @@ class UpdateLinkableSymbolsModifier(Modifier[UpdateLinkableSymbolsModifierConfig
 
     async def modify(self, resource: Resource, config: UpdateLinkableSymbolsModifierConfig) -> None:
         unhandled_symbols = {symbol.name: symbol for symbol in config.updated_symbols}
-        unhandled_vaddrs: Dict[int, LinkableSymbol] = {}
+        unhandled_vaddrs: dict[int, LinkableSymbol] = {}
         for symbol in config.updated_symbols:
             if symbol.virtual_address not in unhandled_vaddrs:
                 unhandled_vaddrs[symbol.virtual_address] = symbol
