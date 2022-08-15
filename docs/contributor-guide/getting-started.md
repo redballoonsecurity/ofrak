@@ -27,8 +27,8 @@ See the file `.pre-commit-config.yaml` for more details.
 OFRAK uses [mkdocstrings](https://github.com/mkdocstrings/mkdocstrings) to generate code documentation. The following conventions are followed to keep this generated code documentation readable:
 
 1. Docstrings use restructed text syntax.
-2. Cross refernces to code can be added using [Markdown reference-style links](https://mkdocstrings.github.io/usage/#cross-references).
-3. OFRAK [components][ofrak.component.interface] should have a class-level docstring that describes what the component does, including cross references to referenced objects. The main method of the component should also contain a docstring, but does not need to contian duplicated cross references (see [CodeRegionUnpacker][ofrak.core.code_region.CodeRegionUnpacker] for an example of this).
+2. Cross references to code can be added using [Markdown reference-style links](https://mkdocstrings.github.io/usage/#cross-references).
+3. OFRAK [components][ofrak.component.interface] should have a class-level docstring that describes what the component does, including cross references to referenced objects. The main method of the component should also contain a docstring, but does not need to contain duplicated cross references (see [CodeRegionUnpacker][ofrak.core.code_region.CodeRegionUnpacker] for an example of this).
 4. Dataclasses should include a docstring that lists its attributes using the `ivar` info field:
 ```python
 @dataclass
