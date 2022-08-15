@@ -32,6 +32,8 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires=[
+        "ofrak",
+        "ofrak_type",
         "immutabledict==2.2.0",
         "python-magic",
     ],

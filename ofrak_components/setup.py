@@ -34,7 +34,10 @@ setuptools.setup(
     },
     classifiers=[
         "Programming Language :: Python :: 3",
-        "Operating System :: OS Independent",
+        "Operating System :: POSIX :: Linux",
+        "License :: Other/Proprietary License",
+        "Topic :: Security",
+        "Typing :: Typed",
     ],
     install_requires=[
         "ofrak",
