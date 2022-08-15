@@ -55,7 +55,7 @@ class OutOfBoundError(DataServiceError):
 
 
 class OverlapError(DataServiceError):
-    def __init__(self, message, new_child_node: DataNode, existing_child_node: DataNode):  # type: ignore
+    def __init__(self, message, new_child_node: DataNode, existing_child_node: DataNode):
         super().__init__(message)
         self.new_child_node = new_child_node
         self.existing_child_node = existing_child_node

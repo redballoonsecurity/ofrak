@@ -150,7 +150,7 @@ class LinkableBinary(GenericBinary):
     # TODO: Un-stringify PatchMaker; OFRAK imports in PatchMaker results in circular Program imports
     async def make_linkable_bom(
         self,
-        patch_maker: "PatchMaker",  # type: ignore
+        patch_maker: PatchMaker,
         build_tmp_dir: str,
     ) -> tuple[BOM, PatchRegionConfig]:
         """
