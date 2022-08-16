@@ -31,7 +31,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires=[
-        "PyYAML",
+        "PyYAML~=6.0,>=5.4",
     ],
     extras_require={
         "test": [
