@@ -5,7 +5,8 @@ from abc import ABC
 from typing import Iterable, List, Mapping, Optional, Tuple, Dict
 from warnings import warn
 
-from ofrak.core.architecture import ProgramAttributes, InstructionSet, SubInstructionSet
+from ofrak.core.architecture import ProgramAttributes
+from ofrak_type.architecture import InstructionSet, SubInstructionSet
 from ofrak_patch_maker.binary_parser.gnu import GNU_ELF_Parser, GNU_V10_ELF_Parser
 from ofrak_patch_maker.toolchain.abstract import Toolchain, RBS_AUTOGEN_WARNING
 from ofrak_patch_maker.toolchain.model import (
