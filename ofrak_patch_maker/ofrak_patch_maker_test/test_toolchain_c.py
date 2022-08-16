@@ -4,7 +4,8 @@ import tempfile
 
 import pytest
 
-from ofrak.core.architecture import ProgramAttributes, InstructionSet
+from ofrak.core.architecture import ProgramAttributes
+from ofrak_type.architecture import InstructionSet
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.model import (
@@ -49,6 +50,7 @@ def test_bounds_check(toolchain: ToolchainVersion, proc: ProgramAttributes, exte
     build_dir = tempfile.mkdtemp()
 
     if proc.isa == InstructionSet.AVR:
+        # avr-gcc does not support relocatable
         relocatable = False
     else:
         relocatable = True
