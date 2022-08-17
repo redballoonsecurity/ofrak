@@ -1,8 +1,8 @@
 class AssemblerFileArguments:
     def __init__(
         self,
-        source_file,  # type: str
-        vm_address,  # type: int
+        source_file: str,
+        vm_address: int,
     ):
         self.source_file = source_file
         self.vm_address = vm_address

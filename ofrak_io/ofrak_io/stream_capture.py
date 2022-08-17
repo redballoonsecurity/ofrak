@@ -27,7 +27,7 @@ class StreamCapture:
         self.stream_file_descriptor = self.stream.fileno()
         self.pipe_out, self.pipe_in = os.pipe()
         self.stream_captured = ""
-        self.stream_file_descriptor_copy = None  # type: Optional[int]
+        self.stream_file_descriptor_copy: Optional[int] = None
 
     def __enter__(self):
         self.start()

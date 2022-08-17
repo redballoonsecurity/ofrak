@@ -11,5 +11,5 @@ class BitWidth(Enum):
     BIT_32 = 32
     BIT_64 = 64
 
-    def get_word_size(self):  # type: () -> int
+    def get_word_size(self) -> int:
         return int(self.value / 8)

@@ -4,6 +4,7 @@ import json
 import sys
 
 import ofrak_type.error
+from ofrak.service.data_service import DataNode
 
 
 class SerializedError(RuntimeError):
@@ -23,7 +24,7 @@ class SerializedError(RuntimeError):
         except AttributeError:
             try:
                 error = getattr(ofrak_type.error, error_type)
-            except:
+            except Exception:
                 raise ValueError(error_dict)
         if issubclass(error, cls):
             return error.from_dict({"message": error_dict["message"]})
@@ -52,7 +53,7 @@ class OutOfBoundError(DataServiceError):
 
 
 class OverlapError(DataServiceError):
-    def __init__(self, message, new_child_node: "DataNode", existing_child_node: "DataNode"):  # type: ignore
+    def __init__(self, message, new_child_node: DataNode, existing_child_node: DataNode):
         super().__init__(message)
         self.new_child_node = new_child_node
         self.existing_child_node = existing_child_node

@@ -19,6 +19,7 @@ from ofrak.service.resource_service_i import (
 )
 from ofrak.core.patch_maker.linkable_symbol import LinkableSymbol, LinkableSymbolType
 from ofrak_patch_maker.model import BOM, PatchRegionConfig
+from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.model import Segment
 from ofrak_type.error import NotFoundError
 
@@ -147,7 +148,7 @@ class LinkableBinary(GenericBinary):
     # TODO: Un-stringify PatchMaker; OFRAK imports in PatchMaker results in circular Program imports
     async def make_linkable_bom(
         self,
-        patch_maker: "PatchMaker",  # type: ignore
+        patch_maker: PatchMaker,
         build_tmp_dir: str,
     ) -> Tuple[BOM, PatchRegionConfig]:
         """

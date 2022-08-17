@@ -243,7 +243,7 @@ class KeystoneAssemblerService(AssemblerServiceInterface):
         assembly_list: Iterable[str],
         vm_addrs: Iterable[int],
         program_attributes: ProgramAttributes,
-        mode=InstructionSetMode.NONE,  # type: InstructionSetMode
+        mode: InstructionSetMode = InstructionSetMode.NONE,
     ) -> AsyncIterator[bytes]:
         for assembly, vm_addr in zip(assembly_list, vm_addrs):
             result = await self.assemble(assembly, vm_addr, program_attributes, mode)
