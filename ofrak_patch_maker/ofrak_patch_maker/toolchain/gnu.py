@@ -360,8 +360,6 @@ class GNU_10_Toolchain(Abstract_GNU_Toolchain):
     ):
         super().__init__(processor, toolchain_config, logger=logger)
 
-        self._compiler_flags.append("-fno-plt")
-
         if self._compiler_target is not None:
             self._compiler_flags.append(f"-march={self._compiler_target}")
         if self._config.compiler_cpu:
