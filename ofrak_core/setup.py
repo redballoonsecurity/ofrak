@@ -46,7 +46,6 @@ setuptools.setup(
         "synthol~=0.1.1",
         "typeguard~=2.13.3",
         "xattr==0.9.7",
-        "six==1.16.0",
     ],
     extras_require={
         "docs": [
