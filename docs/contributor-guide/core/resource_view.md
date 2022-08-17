@@ -85,5 +85,5 @@ instances of `Wrench`, our tag list contains instances of `ResourceTag` - each o
 to be a class object. It's similar to typing `List[Type[SomeClassWithMetaclassResourceTag]]`.
 
 <div align="right">
-<img src="../assets/square_01.png" width="125" height="125">
+<img src="../../assets/square_01.png" width="125" height="125">
 </div>
