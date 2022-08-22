@@ -21,7 +21,7 @@ python3 build_image.py --config --finish
 
 `ofrak-binary-ninja.yml` is a configuration to build an image with core OFRAK, a Binary Ninja install, and Binary Ninja OFRAK components. **You need to have a valid BinaryNinja license to build and run the image.** To build the image, the license should be placed in the project's root directory and named `license.dat`. The serial number needs to be extracted from that file into a file named `serial.txt`. This can be done with the following command:
 ```bash
-echo $(grep "serial" license.dat | sed 's/"serial": "//g' | sed 's/",//g') > serial.txt
+echo $(grep "serial" license.dat | sed -E 's/"serial" ?: "//g' | sed 's/",//g') > serial.txt
 ```
 
 The command `python3 build_image.py --config ofrak-binary-ninja.yml --base --finish` will build an image using Docker BuildKit secrets so that neither the license nor serial number are exposed in the built Docker image.
