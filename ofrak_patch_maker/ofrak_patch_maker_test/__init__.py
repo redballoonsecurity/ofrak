@@ -14,6 +14,7 @@ ARM_EXTENSION = ".arm"
 AARCH64_EXTENSION = ".aarch64"
 X86_EXTENSION = ".x86"
 M68K_EXTENSION = ".m68k"
+AVR_EXTENSION = ".avr"
 
 ARM_TOOLCHAINS_UNDER_TEST = [
     (
@@ -91,4 +92,18 @@ M68K_TOOLCHAINS_UNDER_TEST = [
         ),
         M68K_EXTENSION,
     ),
+]
+
+AVR_TOOLCHAINS_UNDER_TEST = [
+    (
+        ToolchainVersion.GNU_AVR_5,
+        ProgramAttributes(
+            InstructionSet.AVR,
+            SubInstructionSet.AVR2,
+            BitWidth.BIT_32,
+            Endianness.LITTLE_ENDIAN,
+            ProcessorType.AVR,
+        ),
+        AVR_EXTENSION,
+    )
 ]

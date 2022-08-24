@@ -80,7 +80,7 @@ class TestGzipUnpackWithTrailingBytes(UnpackModifyPackPattern):
 
             gunzip_command = ["gzip", "-d", "-c", gzip_path]
             try:
-                subprocess.run(gunzip_command, check=True, capture_output=True)
+                result = subprocess.run(gunzip_command, check=True, capture_output=True)
                 data = result.stdout
             except subprocess.CalledProcessError as e:
                 if e.returncode == 2 or e.returncode == -2:

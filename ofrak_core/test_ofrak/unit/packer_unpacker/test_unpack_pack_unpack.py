@@ -1,7 +1,7 @@
 from gzip import GzipFile as _GzipFile
 
 import pytest
-from six import BytesIO
+from io import BytesIO
 
 
 @pytest.fixture
