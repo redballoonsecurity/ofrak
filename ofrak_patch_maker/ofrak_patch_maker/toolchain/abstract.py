@@ -143,60 +143,51 @@ class Toolchain(ABC):
         :raises NotImplementedError: if an assembler for that ISA does not exist
         :returns: filepath to the assembler program
         """
-        conf_filename = "toolchain.conf"
-        if self._processor.isa == InstructionSet.ARM:
-            assembler_path = "ARM_ASM_PATH"
-        elif self._processor.isa == InstructionSet.MIPS:
-            assembler_path = "MIPS_ASM_PATH"
-        elif self._processor.isa == InstructionSet.PPC:
-            assembler_path = "PPC_ASM_PATH"
-        elif self._processor.isa == InstructionSet.M68K:
+        if self._processor.isa == InstructionSet.M68K:
             assembler_path = "M68K_ASM_PATH"
         elif (
             self._processor.isa == InstructionSet.X86
             and self._processor.bit_width == BitWidth.BIT_64
         ):
             assembler_path = "X86_64_ASM_PATH"
-        elif self._processor.isa == InstructionSet.AARCH64:
-            assembler_path = "AARCH64_ASM_PATH"
         else:
-            raise NotImplementedError()
-        return get_repository_config(conf_filename, "ASM", assembler_path)
+            assembler_path = f"{self._processor.isa.value.upper()}_ASM_PATH"
+        return get_repository_config("ASM", assembler_path)
 
     @property
     def _preprocessor_path(self) -> str:
         """
         :return str: path to the toolchain preprocessor - this is usually the compiler.
         """
-        return get_repository_config("toolchain.conf", self.name, "PREPROCESSOR")
+        return get_repository_config(self.name, "PREPROCESSOR")
 
     @property
     def _compiler_path(self) -> str:
         """
         :return str: path to the toolchain compiler
         """
-        return get_repository_config("toolchain.conf", self.name, "COMPILER")
+        return get_repository_config(self.name, "COMPILER")
 
     @property
     def _linker_path(self) -> str:
         """
         :return str: path to the toolchain linker
         """
-        return get_repository_config("toolchain.conf", self.name, "LINKER")
+        return get_repository_config(self.name, "LINKER")
 
     @property
     def _readobj_path(self) -> str:
         """
         :return str: path to the toolchain binary analysis utility
         """
-        return get_repository_config("toolchain.conf", self.name, "BIN_PARSER")
+        return get_repository_config(self.name, "BIN_PARSER")
 
     @property
     def _lib_path(self) -> str:
         """
         :return str: path to the toolchain libraries
         """
-        return get_repository_config("toolchain.conf", self.name, "LIB")
+        return get_repository_config(self.name, "LIB")
 
     @property
     @abstractmethod

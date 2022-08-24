@@ -6,6 +6,7 @@ from typing import Iterable, List, Mapping, Optional, Tuple, Dict
 from warnings import warn
 
 from ofrak.core.architecture import ProgramAttributes
+from ofrak_type.architecture import InstructionSet, SubInstructionSet
 from ofrak_patch_maker.binary_parser.gnu import GNU_ELF_Parser, GNU_V10_ELF_Parser
 from ofrak_patch_maker.toolchain.abstract import Toolchain, RBS_AUTOGEN_WARNING
 from ofrak_patch_maker.toolchain.model import (
@@ -16,7 +17,6 @@ from ofrak_patch_maker.toolchain.model import (
     ToolchainException,
 )
 from ofrak_patch_maker.toolchain.utils import get_file_format
-from ofrak_type.architecture import InstructionSet, SubInstructionSet
 from ofrak_type.memory_permissions import MemoryPermissions
 
 
@@ -52,11 +52,6 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
         if self._config.separate_data_sections:
             self._compiler_flags.append("-fdata-sections")
 
-        if self._compiler_target is not None:
-            self._compiler_flags.append(f"-march={self._compiler_target}")
-
-        if self._config.compiler_cpu:
-            self._compiler_flags.append(f"-mcpu={self._config.compiler_cpu}")
         if not self._config.userspace_dynamic_linker:
             self._linker_flags.append(
                 "--no-dynamic-linker",
@@ -76,12 +71,6 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
             # Does not actually force functions with "inline" keyword to be inlined
             warn("Inlining is enabled, but use __attribute__((always_inline)) to be sure.")
             self._compiler_flags.append("-finline-functions")
-
-        if self._config.relocatable:
-            self._compiler_flags.append("-pie")
-            self._linker_flags.append("--pic-executable")
-        else:
-            self._compiler_flags.append("-fno-plt")
 
         # TODO: If we start using this we will need an RBS-provided "--sysroot" somewhere in here
         #  with our own implemented (not copied) versions of stdint.h, stddef.h, and so on...
@@ -103,17 +92,12 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
                 "--error-unresolved-symbols",
                 "--warn-section-align",
                 "--nmagic",  # Do not page align data
-                "--no-eh-frame-hdr",
             ]
         )
 
         # Same as LLVM
         if not self._config.check_overlap:
             self._linker_flags.append("--no-check-sections")
-
-        self._assembler_flags.append(f"-march={self._get_assembler_target(processor)}")
-        if self._config.assembler_cpu:
-            self._assembler_flags.append(f"-mcpu={self._config.assembler_cpu}")
 
         if toolchain_config.isysroot is not None:
             self._compiler_flags.append(f"-isysroot {toolchain_config.isysroot}")
@@ -367,7 +351,36 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
         return self._parser.parse_sections(readobj_output)
 
 
-class GNU_ARM_NONE_EABI_10_2_1_Toolchain(Abstract_GNU_Toolchain):
+class GNU_10_Toolchain(Abstract_GNU_Toolchain):
+    def __init__(
+        self,
+        processor: ProgramAttributes,
+        toolchain_config: ToolchainConfig,
+        logger: logging.Logger = logging.getLogger(__name__),
+    ):
+        super().__init__(processor, toolchain_config, logger=logger)
+
+        if self._compiler_target is not None:
+            self._compiler_flags.append(f"-march={self._compiler_target}")
+        if self._config.compiler_cpu:
+            self._compiler_flags.append(f"-mcpu={self._config.compiler_cpu}")
+
+        self._assembler_flags.append(f"-march={self._get_assembler_target(processor)}")
+        if self._config.assembler_cpu:
+            self._assembler_flags.append(f"-mcpu={self._config.assembler_cpu}")
+
+        self._linker_flags.append(
+            "--no-eh-frame-hdr",
+        )
+
+        if self._config.relocatable:
+            self._compiler_flags.append("-pie")
+            self._linker_flags.append("--pic-executable")
+        else:
+            self._compiler_flags.append("-fno-plt")
+
+
+class GNU_ARM_NONE_EABI_10_2_1_Toolchain(GNU_10_Toolchain):
     binary_file_parsers = [GNU_ELF_Parser()]
 
     def __init__(
@@ -409,7 +422,7 @@ class GNU_ARM_NONE_EABI_10_2_1_Toolchain(Abstract_GNU_Toolchain):
             raise ToolchainException("Assembler Target not provided and no valid default found!")
 
 
-class GNU_X86_64_LINUX_EABI_10_3_0_Toolchain(Abstract_GNU_Toolchain):
+class GNU_X86_64_LINUX_EABI_10_3_0_Toolchain(GNU_10_Toolchain):
     binary_file_parsers = [GNU_V10_ELF_Parser()]
 
     def __init__(
@@ -467,7 +480,7 @@ class GNU_X86_64_LINUX_EABI_10_3_0_Toolchain(Abstract_GNU_Toolchain):
         )
 
 
-class GNU_M68K_LINUX_10_Toolchain(Abstract_GNU_Toolchain):
+class GNU_M68K_LINUX_10_Toolchain(GNU_10_Toolchain):
     binary_file_parsers = [GNU_ELF_Parser()]
 
     def __init__(
@@ -527,8 +540,7 @@ class GNU_M68K_LINUX_10_Toolchain(Abstract_GNU_Toolchain):
         )
 
 
-class GNU_AARCH64_LINUX_10_Toolchain(Abstract_GNU_Toolchain):
-
+class GNU_AARCH64_LINUX_10_Toolchain(GNU_10_Toolchain):
     binary_file_parsers = [GNU_V10_ELF_Parser()]
 
     def __init__(
@@ -600,3 +612,54 @@ class GNU_AARCH64_LINUX_10_Toolchain(Abstract_GNU_Toolchain):
         if processor.sub_isa is not None:
             return processor.sub_isa.value.lower()
         return SubInstructionSet.ARMv8A.value.lower()
+
+
+class GNU_AVR_5_Toolchain(Abstract_GNU_Toolchain):
+    binary_file_parsers = [GNU_ELF_Parser()]
+
+    def __init__(
+        self,
+        processor: ProgramAttributes,
+        toolchain_config: ToolchainConfig,
+        logger: logging.Logger = logging.getLogger(__name__),
+    ):
+        super().__init__(processor, toolchain_config, logger=logger)
+
+        if self._config.relocatable:
+            raise ValueError("-pie not supported for AVR")
+
+        if toolchain_config.hard_float:
+            raise ValueError("hard float not supported for AVR")
+
+        # avr-gcc's -mmcu flag allows you to specify either the exact target chip, or a chip
+        #      architecture. Specifying an exact chip will choose the correct avr/io.h and startup
+        #      code for the chip. Here, we will first look for an exact chip supplied in the
+        #      ToolchainConfig, and fall back on sub-ISA.
+        #      See https://gcc.gnu.org/wiki/avr-gcc#Supporting_.22unsupported.22_Devices
+        if processor.sub_isa is not None:
+            self._linker_flags.append(f"-m{processor.sub_isa.value}")
+            self._compiler_flags.append(
+                f"-mmcu={self._config.compiler_cpu or processor.sub_isa.value}"
+            )
+            self._assembler_flags.append(
+                f"-mmcu={self._config.assembler_cpu or processor.sub_isa.value}"
+            )
+        else:
+            raise ValueError("sub_isa is required for AVR linking")
+
+    @property
+    def name(self) -> str:
+        return "GNU_AVR_5"
+
+    def _get_assembler_target(self, processor: ProgramAttributes) -> str:
+        if processor.isa is not InstructionSet.AVR:
+            raise ValueError(
+                f"The GNU AVR toolchain does not support ISAs which are not AVR; "
+                f"given ISA {processor.isa.name}"
+            )
+        if self._config.assembler_target:
+            return self._config.assembler_target
+        return InstructionSet.AVR.value.lower()
+
+    def get_required_alignment(self, segment: Segment) -> int:
+        return 2

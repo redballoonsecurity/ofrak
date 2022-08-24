@@ -5,6 +5,7 @@ import tempfile
 import pytest
 
 from ofrak.core.architecture import ProgramAttributes
+from ofrak_type.architecture import InstructionSet
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.model import (
@@ -20,6 +21,7 @@ from ofrak_patch_maker_test import (
     X86_TOOLCHAINS_UNDER_TEST,
     M68K_TOOLCHAINS_UNDER_TEST,
     AARCH64_TOOLCHAINS_UNDER_TEST,
+    AVR_TOOLCHAINS_UNDER_TEST,
 )
 from ofrak_type.memory_permissions import MemoryPermissions
 
@@ -29,7 +31,8 @@ from ofrak_type.memory_permissions import MemoryPermissions
     ARM_TOOLCHAINS_UNDER_TEST
     + X86_TOOLCHAINS_UNDER_TEST
     + M68K_TOOLCHAINS_UNDER_TEST
-    + AARCH64_TOOLCHAINS_UNDER_TEST,
+    + AARCH64_TOOLCHAINS_UNDER_TEST
+    + AVR_TOOLCHAINS_UNDER_TEST,
 )
 @pytest.mark.params_format(
     "toolchain={toolchain} proc={proc} extension={extension}",
@@ -46,10 +49,15 @@ def test_bounds_check(toolchain: ToolchainVersion, proc: ProgramAttributes, exte
     source_path = os.path.join(source_dir, "bounds_check.c")
     build_dir = tempfile.mkdtemp()
 
+    if proc.isa == InstructionSet.AVR:
+        # avr-gcc does not support relocatable
+        relocatable = False
+    else:
+        relocatable = True
     tc_config = ToolchainConfig(
         file_format=BinFileType.ELF,
         force_inlines=True,
-        relocatable=True,
+        relocatable=relocatable,
         no_std_lib=True,
         no_jump_tables=True,
         no_bss_section=True,
@@ -104,7 +112,10 @@ def test_bounds_check(toolchain: ToolchainVersion, proc: ProgramAttributes, exte
 
 @pytest.mark.parametrize(
     "toolchain, proc, extension",
-    ARM_TOOLCHAINS_UNDER_TEST + X86_TOOLCHAINS_UNDER_TEST + M68K_TOOLCHAINS_UNDER_TEST,
+    ARM_TOOLCHAINS_UNDER_TEST
+    + X86_TOOLCHAINS_UNDER_TEST
+    + M68K_TOOLCHAINS_UNDER_TEST
+    + AVR_TOOLCHAINS_UNDER_TEST,
 )
 @pytest.mark.params_format(
     "toolchain={toolchain} proc={proc}, extension={extension}",
@@ -121,10 +132,16 @@ def test_hello_world(toolchain: ToolchainVersion, proc: ProgramAttributes, exten
     source_path = os.path.join(source_dir, "hello_world.c")
     build_dir = tempfile.mkdtemp()
 
+    if toolchain in [ToolchainVersion.GNU_AVR_5]:
+        relocatable = False
+        base_symbols = {"__mulhi3": 0x1234}  # Dummy address to fix missing symbol
+    else:
+        relocatable = True
+        base_symbols = None
     tc_config = ToolchainConfig(
         file_format=BinFileType.ELF,
         force_inlines=True,
-        relocatable=True,
+        relocatable=relocatable,
         no_std_lib=True,
         no_jump_tables=True,
         no_bss_section=False,
@@ -142,6 +159,7 @@ def test_hello_world(toolchain: ToolchainVersion, proc: ProgramAttributes, exten
         toolchain_version=toolchain,
         logger=logger,
         build_dir=build_dir,
+        base_symbols=base_symbols,
     )
 
     bom = patch_maker.make_bom(

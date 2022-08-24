@@ -90,7 +90,7 @@ def sample_entropy(data: bytes, resource_id: bytes, window_size=256, max_samples
     """
 
     if len(data) < 256:
-        return bytes()
+        return b""
 
     def log_percent(percent):
         LOGGER.info(f"Entropy calculation {percent}% complete for {resource_id.hex()}")

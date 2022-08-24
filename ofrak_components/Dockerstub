@@ -61,7 +61,7 @@ RUN wget https://raw.githubusercontent.com/iBotPeaches/Apktool/v2.3.3/scripts/li
 RUN cd /tmp && \
     git clone https://github.com/plougher/squashfs-tools.git && \
     cd squashfs-tools/squashfs-tools && \
-    git checkout 4.5 && \
+    git checkout 4.5.1 && \
     sed -i 's/^#\(XZ\|LZO\|LZ4\|ZSTD\)_SUPPORT/\1_SUPPORT/g' Makefile && \
     make -j && \
     make install && \
