@@ -12,7 +12,6 @@ from ofrak.core.program import Program
 from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import ResourceFilter
-from ofrak_components.zip import ZipArchive
 from ofrak_type.range import Range
 
 # Ignore the type below until MyPy supports recursive type definitions :(
@@ -167,9 +166,7 @@ async def test_save_applies_patches(resource: Resource):
 
 
 async def test_get_most_specific_tags(resource: Resource):
-    resource.add_tag(
-        GenericBinary, GenericText, ZipArchive, FilesystemRoot, LinkableBinary, Program, Elf
-    )
+    resource.add_tag(GenericBinary, GenericText, FilesystemRoot, LinkableBinary, Program, Elf)
 
-    expected_most_specific_tags = {GenericText, Elf, ZipArchive}
+    expected_most_specific_tags = {GenericText, FilesystemRoot, Elf}
     assert set(resource.get_most_specific_tags()) == expected_most_specific_tags

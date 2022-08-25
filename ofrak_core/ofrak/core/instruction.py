@@ -2,6 +2,7 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
+
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
 from ofrak.core.architecture import ProgramAttributes
@@ -175,4 +176,11 @@ class InstructionModifier(Modifier[InstructionModifierConfig]):
             len(asm) == resource_memory_region.size
         ), "The modified instruction length does not match the original instruction length"
 
+        new_attributes = Instruction.attributes_type(
+            disassembly=modified_assembly,
+            mnemonic=config.mnemonic,
+            operands=config.operands,
+            mode=config.mode,
+        )
         resource.queue_patch(Range.from_size(0, len(asm)), asm)
+        resource.add_attributes(new_attributes)
