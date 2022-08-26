@@ -176,7 +176,7 @@ class InstructionModifier(Modifier[InstructionModifierConfig]):
             len(asm) == resource_memory_region.size
         ), "The modified instruction length does not match the original instruction length"
 
-        new_attributes = Instruction.attributes_type(
+        new_attributes = Instruction.attributes_type(  # type: ignore
             disassembly=modified_assembly,
             mnemonic=config.mnemonic,
             operands=config.operands,
