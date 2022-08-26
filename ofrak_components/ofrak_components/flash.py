@@ -197,15 +197,13 @@ class FlashEccIdentifier(Identifier[None]):
 #     ANALYZERS     #
 #####################
 class FlashResourceAnalyzer(Analyzer[None, FlashResource]):
-    targets = (GenericBinary,)
+    targets = (FlashResource,)
     outputs = (FlashResource,)
 
-    async def anaylze(self, resource: Resource, config=None) -> FlashResource:
-        data = await resource.get_data()
-        size = len(data)
-
+    async def analyze(self, resource: Resource, config=None) -> FlashResource:
+        data_len = await resource.get_data_length()
         return FlashResource(
-            size,
+            data_len,
         )
 
 
@@ -213,7 +211,7 @@ class FlashEccHeaderBlockAnalyzer(Analyzer[None, FlashConfig]):
     targets = (FlashEccHeaderBlock,)
     outputs = (FlashEccHeaderBlock,)
 
-    async def anaylze(self, resource: Resource, config=None) -> FlashEccHeaderBlock:
+    async def analyze(self, resource: Resource, config=None) -> FlashEccHeaderBlock:
         resource_data = await resource.get_data()
         deserializer = BinaryDeserializer(
             io.BytesIO(resource_data),
@@ -245,7 +243,7 @@ class FlashEccTailBlockAnalyzer(Analyzer[None, FlashConfig]):
     targets = (FlashEccTailBlock,)
     outputs = (FlashEccTailBlock,)
 
-    async def anaylze(self, resource: Resource, config=None) -> FlashEccTailBlock:
+    async def analyze(self, resource: Resource, config=None) -> FlashEccTailBlock:
         resource_data = await resource.get_data()
         deserializer = BinaryDeserializer(
             io.BytesIO(resource_data),
@@ -272,15 +270,7 @@ class FlashEccTailBlockAnalyzer(Analyzer[None, FlashConfig]):
 #####################
 #     UNPACKERS     #
 #####################
-class FlashDataUnpacker(Unpacker[FlashConfig]):
-    targets = (FlashResource,)
-    children = (FlashResource,)
-
-    async def unpack(self, resource: Resource, config: FlashConfig):
-        print("Unpacking FlashResource")
-
-
-class EccFlashDataUnpacker(Unpacker[None]):
+class FlashEccResourceUnpacker(Unpacker[None]):
     """
     Unpack regions of flash protected by ECC
     """
@@ -299,12 +289,13 @@ class EccFlashDataUnpacker(Unpacker[None]):
         data = await resource.get_data()
         ecc_magic_offset = data.find(SX_ECC_MAGIC)
         last_block_flag = False
-        for block_count in range(0, 3):  # TODO: Change to max blocks in the flash
+        num_possible_ecc_blocks = len(data[ecc_magic_offset:]) // FLASH_BLOCK_SIZE
+        for block_count in range(0, num_possible_ecc_blocks):
             cur_block_offset = ecc_magic_offset + (FLASH_BLOCK_SIZE * block_count)
+            print(hex(cur_block_offset))
             cur_block_end_offset = cur_block_offset + FLASH_BLOCK_SIZE
             cur_block_data = data[cur_block_offset:cur_block_end_offset]
             cur_block_delimiter = cur_block_data[ECC_BLOCK_DATA_SIZE : ECC_BLOCK_DATA_SIZE + 1]
-
             if cur_block_delimiter == ECC_DATA_DELIMITER:
                 if block_count == 0:
                     # Verify ECC header block to confirm there is a protected region
@@ -337,19 +328,7 @@ class EccFlashDataUnpacker(Unpacker[None]):
                         tags=(FlashEcc,),
                         data_range=Range(ECC_BLOCK_DATA_SIZE + 1, FLASH_BLOCK_SIZE),
                     )
-
-            if last_block_flag:
-                tail_block = await resource.create_child(
-                    tags=(FlashEccTailBlock,),
-                    data_range=Range(cur_block_offset, cur_block_offset + ECC_TAIL_BLOCK_SIZE),
-                )
-
-                await tail_block.create_child(
-                    tags=(FlashEcc,),
-                    data_range=Range(ECC_TAIL_BLOCK_SIZE - ECC_SIZE, ECC_TAIL_BLOCK_SIZE),
-                )
-
-            if cur_block_delimiter == ECC_LAST_DATA_BLOCK_DELIMITER:
+            elif cur_block_delimiter == ECC_LAST_DATA_BLOCK_DELIMITER:
                 # This is the last data block, prepare for tail block
                 last_block_flag = True
 
@@ -365,6 +344,23 @@ class EccFlashDataUnpacker(Unpacker[None]):
                     tags=(FlashEcc,),
                     data_range=Range(ECC_BLOCK_DATA_SIZE + 1, FLASH_BLOCK_SIZE),
                 )
+            elif last_block_flag:
+                print("Last block")
+                if cur_block_data[0:1] == ECC_TAIL_BLOCK_DELIMITER:
+                    tail_block = await resource.create_child(
+                        tags=(FlashEccTailBlock,),
+                        data_range=Range(cur_block_offset, cur_block_offset + ECC_TAIL_BLOCK_SIZE),
+                    )
+                    await tail_block.create_child(
+                        tags=(FlashEcc,),
+                        data_range=Range(ECC_TAIL_BLOCK_SIZE - ECC_SIZE, ECC_TAIL_BLOCK_SIZE),
+                    )
+                    break
+            else:
+                UnpackerError("Bad Flash ECC Delimiter")
+                break
+
+        print("Exited unpacker for loop")
 
 
 #####################
