@@ -333,7 +333,7 @@ class FlashEccResourceUnpacker(Unpacker[None]):
                 last_block_flag = True
 
                 data_block = await resource.create_child(
-                    tags=(FlashEccBlock,),
+                    tags=(FlashEccLastBlock,),
                     data_range=Range(cur_block_offset, cur_block_end_offset),
                 )
                 await data_block.create_child(
@@ -355,7 +355,7 @@ class FlashEccResourceUnpacker(Unpacker[None]):
                         tags=(FlashEcc,),
                         data_range=Range(ECC_TAIL_BLOCK_SIZE - ECC_SIZE, ECC_TAIL_BLOCK_SIZE),
                     )
-                    break
+                break
             else:
                 UnpackerError("Bad Flash ECC Delimiter")
                 break
