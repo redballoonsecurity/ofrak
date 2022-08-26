@@ -45,11 +45,6 @@ This is the package containing the core of the OFRAK framework. Install this fir
 What is included:
 
 - Definitions for core OFRAK data structures and services, such as `Resource`, `OFRAKContext`, and `DataService`.
-- Components which integrate the following disassembler backends:
-  - Ghidra
-  - BinaryNinja
-  - Angr
-  - Capstone
 - Components to handle unpacking, modifying, and repacking common executable file formats:
   - ELF
   - PE Files
@@ -64,7 +59,7 @@ This is only a representative sampling of the features in the core OFRAK. Consul
 What is *not* included:
 - The OFRAK PatchMaker
 - Components (e.g. unpackers) for other filesystems and file formats like tar, ZIP, SquashFS, RAR, UImage, and more. These are in the `ofrak_components` package and have heavier dependencies
-
+- Components which integrate the disassembler backends (Ghidra, BinaryNinja, Angr, Capstone)
 
 ## License
 The code in this repository comes with an [OFRAK Community License](https://github.com/redballoonsecurity/ofrak/blob/master/LICENSE), which is intended for educational uses, personal development, or just having fun.

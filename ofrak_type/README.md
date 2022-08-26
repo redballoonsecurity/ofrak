@@ -9,12 +9,12 @@ OFRAK
 └───ofrak
 └───ofrak_components
 └───ofrak_type  <-- //YOU ARE HERE//
-│   └───architecture         // Definitions for ISA and Processor
-│   └───bit_width            // Definitions for BitWidth class
-│   └───endianness           // Definitions for Endianness class
-│   └───error                // Definitions for a few generic error types
-│   └───memory_permissions   // Definitions for permissions like RW, RX, etc.
-│   └───range                // Definitions for custom Range class and functionality
+│   └───architecture
+│   └───bit_width
+│   └───endianness
+│   └───error
+│   └───memory_permissions
+│   └───range
 └───ofrak_io
 └───ofrak_patch_maker
 └───ofrak_tutorial
