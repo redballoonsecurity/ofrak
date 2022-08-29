@@ -1,4 +1,5 @@
 import io
+import logging
 from dataclasses import dataclass
 from typing import Iterable
 
@@ -11,6 +12,8 @@ from ofrak_type.endianness import Endianness
 from ofrak.core import (
     GenericBinary,
 )
+
+LOGGER = logging.getLogger(__name__)
 
 SX_ECC_MAGIC: int = b"SXECCv1"
 SX_ECC_MAGIC_LEN: int = len(SX_ECC_MAGIC)
@@ -123,22 +126,40 @@ class FlashEccResource(GenericBinary):
         )
 
     async def get_flash_data(self) -> bytes:
-        # TODO: Include header, last, and tail block data too
         data = b""
+
+        # Header includes data
         header_block_view = await self.get_ecc_header_block()
         data += header_block_view.get_block_data()
+
+        # Get the regular data blocks but sort by their index within parent
         ecc_blocks = await self.get_ecc_blocks()
-        for block in ecc_blocks:
-            data += block.get_block_data()
+        ecc_blocks_sorted = [
+            (await b.resource.get_data_index_within_parent(), b) for b in ecc_blocks
+        ]
+        ecc_blocks_sorted.sort()
+        sorted_blocks = [x for key, x in ecc_blocks_sorted]
+
+        for block in sorted_blocks:
+            data += block.data
+
         return data
 
     async def get_flash_ecc(self) -> bytes:
         ecc = b""
         header_block_view = await self.get_ecc_header_block()
         ecc += header_block_view.get_ecc()
+
         ecc_blocks = await self.get_ecc_blocks()
-        for block in ecc_blocks:
+        ecc_blocks_sorted = [
+            (await b.resource.get_data_index_within_parent(), b) for b in ecc_blocks
+        ]
+        ecc_blocks_sorted.sort()
+        sorted_blocks = [x for key, x in ecc_blocks_sorted]
+
+        for block in sorted_blocks:
             ecc += block.get_ecc()
+
         return ecc
 
 
@@ -292,6 +313,7 @@ class FlashEccResourceUnpacker(Unpacker[None]):
     async def unpack(self, resource: Resource, config=None):
         data = await resource.get_data()
         ecc_magic_offset = data.find(SX_ECC_MAGIC)
+        ecc_data_len = 0
         last_block_flag = False
         num_possible_ecc_blocks = len(data[ecc_magic_offset:]) // FLASH_BLOCK_SIZE
         for block_count in range(0, num_possible_ecc_blocks):
@@ -310,12 +332,14 @@ class FlashEccResourceUnpacker(Unpacker[None]):
                         tags=(FlashEccHeaderBlock,),
                         data_range=Range(cur_block_offset, cur_block_end_offset),
                     )
+                    ecc_data_len += ECC_HEADER_BLOCK_DATA_SIZE
                 else:
                     # Regular data block
                     await resource.create_child(
                         tags=(FlashEccBlock,),
                         data_range=Range(cur_block_offset, cur_block_end_offset),
                     )
+                    ecc_data_len += ECC_BLOCK_DATA_SIZE
             elif cur_block_delimiter == ECC_LAST_DATA_BLOCK_DELIMITER:
                 # This is the last data block, prepare for tail block
                 last_block_flag = True
@@ -323,12 +347,22 @@ class FlashEccResourceUnpacker(Unpacker[None]):
                     tags=(FlashEccBlock,),
                     data_range=Range(cur_block_offset, cur_block_end_offset),
                 )
+                ecc_data_len += ECC_BLOCK_DATA_SIZE
             elif last_block_flag:
                 if cur_block_data[0:1] == ECC_TAIL_BLOCK_DELIMITER:
-                    await resource.create_child(
+                    tail_block = await resource.create_child(
                         tags=(FlashEccTailBlock,),
                         data_range=Range(cur_block_offset, cur_block_offset + ECC_TAIL_BLOCK_SIZE),
                     )
+
+                    # Verify that the data is less than a single block of data
+                    # Unknown if null bytes at the end are intentional or padding
+                    tail_view = await tail_block.view_as(FlashEccTailBlock)
+                    expected_size = tail_view.get_ecc_size()
+                    if expected_size - ecc_data_len >= ECC_BLOCK_DATA_SIZE:
+                        LOGGER.warning(
+                            f"Expected {expected_size} data bytes, but read {ecc_data_len}. Input may be malformed."
+                        )
                 break
             else:
                 UnpackerError("Bad Flash ECC Delimiter")
