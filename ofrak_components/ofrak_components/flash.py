@@ -1,7 +1,8 @@
 import io
 from dataclasses import dataclass
+from typing import Iterable
 
-from ofrak import Analyzer, Unpacker, Packer, Identifier, Resource, ResourceFilter
+from ofrak import Analyzer, Identifier, Packer, Resource, ResourceFilter, Unpacker
 from ofrak.model.component_model import ComponentConfig
 from ofrak_type.range import Range
 from ofrak.component.unpacker import UnpackerError
@@ -27,21 +28,6 @@ ECC_TAIL_BLOCK_SIZE = 1 + 4 + ECC_MD5_LEN + ECC_SIZE
 #####################
 #     RESOURCES     #
 #####################
-
-
-@dataclass
-class FlashData(GenericBinary):
-    """
-    This is the valuable data held in flash storage.
-    """
-
-
-@dataclass
-class FlashEcc(GenericBinary):
-    """
-    ECC is some out of bounds data stored in flash.
-    It should be stripped away from the data to make it usable.
-    """
 
 
 @dataclass
@@ -91,22 +77,6 @@ class FlashEccBlock(GenericBinary):
 
 
 @dataclass
-class FlashEccLastBlock(GenericBinary):
-    data: bytes
-    delimiter: bytes
-    ecc: bytes
-
-    def get_block_data(self) -> bytes:
-        return self.data
-
-    def get_delimiter(self) -> bytes:
-        return self.delimiter
-
-    def get_ecc(self) -> bytes:
-        return self.ecc
-
-
-@dataclass
 class FlashEccTailBlock(GenericBinary):
     delimiter: bytes
     ecc_size: int  # The size of the ECC protected region
@@ -130,37 +100,29 @@ class FlashEccTailBlock(GenericBinary):
 class FlashEccResource(GenericBinary):
     async def get_ecc_header_block(self) -> FlashEccHeaderBlock:
         return await self.resource.get_only_child_as_view(
-            FlashEccHeaderBlock,
-            ResourceFilter.with_tags(
+            v_type=FlashEccHeaderBlock,
+            r_filter=ResourceFilter.with_tags(
                 FlashEccHeaderBlock,
             ),
         )
 
-    async def get_ecc_blocks(self) -> FlashEccBlock:
+    async def get_ecc_blocks(self) -> Iterable[FlashEccBlock]:
         return await self.resource.get_children_as_view(
-            FlashEccBlock,
-            ResourceFilter.with_tags(
+            v_type=FlashEccBlock,
+            r_filter=ResourceFilter.with_tags(
                 FlashEccBlock,
-            ),
-        )
-
-    async def get_ecc_last_block(self) -> FlashEccLastBlock:
-        return await self.resource.get_only_child_as_view(
-            FlashEccLastBlock,
-            ResourceFilter.with_tags(
-                FlashEccLastBlock,
             ),
         )
 
     async def get_ecc_tail_block(self) -> FlashEccTailBlock:
         return await self.resource.get_only_child_as_view(
-            FlashEccTailBlock,
-            ResourceFilter.with_tags(
+            v_type=FlashEccTailBlock,
+            r_filter=ResourceFilter.with_tags(
                 FlashEccTailBlock,
             ),
         )
 
-    async def get_flash_data(self) -> FlashData:
+    async def get_flash_data(self) -> bytes:
         # TODO: Include header, last, and tail block data too
         data = b""
         header_block_view = await self.get_ecc_header_block()
@@ -168,17 +130,16 @@ class FlashEccResource(GenericBinary):
         ecc_blocks = await self.get_ecc_blocks()
         for block in ecc_blocks:
             data += block.get_block_data()
-        last_block_view = await self.get_ecc_last_block()
-        data += last_block_view.get_block_data()
         return data
 
-    async def get_flash_ecc(self) -> FlashEcc:
-        return await self.resource.get_children_as_view(
-            FlashEcc,
-            ResourceFilter.with_tags(
-                FlashEcc,
-            ),
-        )
+    async def get_flash_ecc(self) -> bytes:
+        ecc = b""
+        header_block_view = await self.get_ecc_header_block()
+        ecc += header_block_view.get_ecc()
+        ecc_blocks = await self.get_ecc_blocks()
+        for block in ecc_blocks:
+            ecc += block.get_ecc()
+        return ecc
 
 
 class FlashResource(GenericBinary):
@@ -191,22 +152,6 @@ class FlashResource(GenericBinary):
 
     def get_size(self) -> int:
         return self.size
-
-    async def get_data(self) -> FlashData:
-        return await self.resource.get_children_as_view(
-            FlashData,
-            ResourceFilter.with_tags(
-                FlashData,
-            ),
-        )
-
-    async def get_ecc(self) -> FlashEcc:
-        return await self.resource.get_children_as_view(
-            FlashEcc,
-            ResourceFilter.with_tags(
-                FlashEcc,
-            ),
-        )
 
 
 #####################
@@ -224,7 +169,6 @@ class FlashEccIdentifier(Identifier[None]):
     targets = (FlashResource,)
 
     async def identify(self, resource: Resource, config=None):
-        print("Identified FlashECC")
         data = await resource.get_data()
         if SX_ECC_MAGIC in data:
             resource.add_tag(FlashEccResource)
@@ -302,32 +246,6 @@ class FlashEccBlockAnalyzer(Analyzer[None, FlashConfig]):
         )
 
 
-class FlashEccLastBlockAnalyzer(Analyzer[None, FlashConfig]):
-    targets = (FlashEccLastBlock,)
-    outputs = (FlashEccLastBlock,)
-
-    async def analyze(self, resource: Resource, config=None) -> FlashEccLastBlock:
-        resource_data = await resource.get_data()
-        deserializer = BinaryDeserializer(
-            io.BytesIO(resource_data),
-            endianness=Endianness.BIG_ENDIAN,
-            word_size=2,
-        )
-
-        deserialized = deserializer.unpack_multiple(f"{ECC_BLOCK_DATA_SIZE}sB{ECC_SIZE}s")
-        (
-            block_data,
-            block_delimiter,
-            block_ecc,
-        ) = deserialized
-
-        return FlashEccLastBlock(
-            block_data,
-            block_delimiter,
-            block_ecc,
-        )
-
-
 class FlashEccTailBlockAnalyzer(Analyzer[None, FlashConfig]):
     targets = (FlashEccTailBlock,)
     outputs = (FlashEccTailBlock,)
@@ -368,10 +286,7 @@ class FlashEccResourceUnpacker(Unpacker[None]):
     children = (
         FlashEccHeaderBlock,
         FlashEccBlock,
-        FlashEccLastBlock,
         FlashEccTailBlock,
-        FlashData,
-        FlashEcc,
     )
 
     async def unpack(self, resource: Resource, config=None):
@@ -405,7 +320,7 @@ class FlashEccResourceUnpacker(Unpacker[None]):
                 # This is the last data block, prepare for tail block
                 last_block_flag = True
                 await resource.create_child(
-                    tags=(FlashEccLastBlock,),
+                    tags=(FlashEccBlock,),
                     data_range=Range(cur_block_offset, cur_block_end_offset),
                 )
             elif last_block_flag:
