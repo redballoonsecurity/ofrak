@@ -59,7 +59,7 @@ class FlashEccHeaderBlock(GenericBinary):
     def get_magic(self) -> bytes:
         return self.magic
 
-    def get_data(self) -> bytes:
+    def get_block_data(self) -> bytes:
         return self.data
 
     def get_delimiter(self) -> bytes:
@@ -80,7 +80,7 @@ class FlashEccBlock(GenericBinary):
     delimiter: bytes
     ecc: bytes
 
-    def get_data(self) -> bytes:
+    def get_block_data(self) -> bytes:
         return self.data
 
     def get_delimiter(self) -> bytes:
@@ -96,7 +96,7 @@ class FlashEccLastBlock(GenericBinary):
     delimiter: bytes
     ecc: bytes
 
-    def get_data(self) -> bytes:
+    def get_block_data(self) -> bytes:
         return self.data
 
     def get_delimiter(self) -> bytes:
@@ -136,7 +136,7 @@ class FlashEccResource(GenericBinary):
             ),
         )
 
-    async def get_ecc_block(self) -> FlashEccBlock:
+    async def get_ecc_blocks(self) -> FlashEccBlock:
         return await self.resource.get_children_as_view(
             FlashEccBlock,
             ResourceFilter.with_tags(
@@ -163,19 +163,13 @@ class FlashEccResource(GenericBinary):
     async def get_flash_data(self) -> FlashData:
         # TODO: Include header, last, and tail block data too
         data = b""
-        ecc_blocks = await self.resource.get_children_as_view(
-            FlashEccBlock,
-            ResourceFilter.with_tags(
-                FlashEccBlock,
-            ),
-        )
+        header_block_view = await self.get_ecc_header_block()
+        data += header_block_view.get_block_data()
+        ecc_blocks = await self.get_ecc_blocks()
         for block in ecc_blocks:
-            block_data = await block.resource.get_only_child(
-                ResourceFilter.with_tags(
-                    FlashData,
-                ),
-            )
-            data += await block_data.get_data()
+            data += block.get_block_data()
+        last_block_view = await self.get_ecc_last_block()
+        data += last_block_view.get_block_data()
         return data
 
     async def get_flash_ecc(self) -> FlashEcc:
@@ -286,7 +280,7 @@ class FlashEccBlockAnalyzer(Analyzer[None, FlashConfig]):
     targets = (FlashEccBlock,)
     outputs = (FlashEccBlock,)
 
-    async def analyze(self, resource: Resource, config=None) -> FlashEccHeaderBlock:
+    async def analyze(self, resource: Resource, config=None) -> FlashEccBlock:
         resource_data = await resource.get_data()
         deserializer = BinaryDeserializer(
             io.BytesIO(resource_data),
@@ -302,6 +296,32 @@ class FlashEccBlockAnalyzer(Analyzer[None, FlashConfig]):
         ) = deserialized
 
         return FlashEccBlock(
+            block_data,
+            block_delimiter,
+            block_ecc,
+        )
+
+
+class FlashEccLastBlockAnalyzer(Analyzer[None, FlashConfig]):
+    targets = (FlashEccLastBlock,)
+    outputs = (FlashEccLastBlock,)
+
+    async def analyze(self, resource: Resource, config=None) -> FlashEccLastBlock:
+        resource_data = await resource.get_data()
+        deserializer = BinaryDeserializer(
+            io.BytesIO(resource_data),
+            endianness=Endianness.BIG_ENDIAN,
+            word_size=2,
+        )
+
+        deserialized = deserializer.unpack_multiple(f"{ECC_BLOCK_DATA_SIZE}sB{ECC_SIZE}s")
+        (
+            block_data,
+            block_delimiter,
+            block_ecc,
+        ) = deserialized
+
+        return FlashEccLastBlock(
             block_data,
             block_delimiter,
             block_ecc,
@@ -364,63 +384,35 @@ class FlashEccResourceUnpacker(Unpacker[None]):
             cur_block_end_offset = cur_block_offset + FLASH_BLOCK_SIZE
             cur_block_data = data[cur_block_offset:cur_block_end_offset]
             cur_block_delimiter = cur_block_data[ECC_BLOCK_DATA_SIZE : ECC_BLOCK_DATA_SIZE + 1]
+
             if cur_block_delimiter == ECC_DATA_DELIMITER:
                 if block_count == 0:
                     # Verify ECC header block to confirm there is a protected region
                     if data[cur_block_offset : cur_block_offset + SX_ECC_MAGIC_LEN] != SX_ECC_MAGIC:
                         raise UnpackerError("Bad ECC Magic")
 
-                    header_block = await resource.create_child(
+                    await resource.create_child(
                         tags=(FlashEccHeaderBlock,),
                         data_range=Range(cur_block_offset, cur_block_end_offset),
                     )
-                    await header_block.create_child(
-                        tags=(FlashData,),
-                        data_range=Range(SX_ECC_MAGIC_LEN, ECC_HEADER_DELIMITER_OFFSET),
-                    )
-                    await header_block.create_child(
-                        tags=(FlashEcc,),
-                        data_range=Range(ECC_HEADER_DELIMITER_OFFSET + 1, FLASH_BLOCK_SIZE),
-                    )
                 else:
                     # Regular data block
-                    data_block = await resource.create_child(
+                    await resource.create_child(
                         tags=(FlashEccBlock,),
                         data_range=Range(cur_block_offset, cur_block_end_offset),
-                    )
-                    await data_block.create_child(
-                        tags=(FlashData,),
-                        data_range=Range(0, ECC_BLOCK_DATA_SIZE),
-                    )
-                    await data_block.create_child(
-                        tags=(FlashEcc,),
-                        data_range=Range(ECC_BLOCK_DATA_SIZE + 1, FLASH_BLOCK_SIZE),
                     )
             elif cur_block_delimiter == ECC_LAST_DATA_BLOCK_DELIMITER:
                 # This is the last data block, prepare for tail block
                 last_block_flag = True
-
-                data_block = await resource.create_child(
+                await resource.create_child(
                     tags=(FlashEccLastBlock,),
                     data_range=Range(cur_block_offset, cur_block_end_offset),
                 )
-                await data_block.create_child(
-                    tags=(FlashData,),
-                    data_range=Range(0, ECC_BLOCK_DATA_SIZE),
-                )
-                await data_block.create_child(
-                    tags=(FlashEcc,),
-                    data_range=Range(ECC_BLOCK_DATA_SIZE + 1, FLASH_BLOCK_SIZE),
-                )
             elif last_block_flag:
                 if cur_block_data[0:1] == ECC_TAIL_BLOCK_DELIMITER:
-                    tail_block = await resource.create_child(
+                    await resource.create_child(
                         tags=(FlashEccTailBlock,),
                         data_range=Range(cur_block_offset, cur_block_offset + ECC_TAIL_BLOCK_SIZE),
-                    )
-                    await tail_block.create_child(
-                        tags=(FlashEcc,),
-                        data_range=Range(ECC_TAIL_BLOCK_SIZE - ECC_SIZE, ECC_TAIL_BLOCK_SIZE),
                     )
                 break
             else:
