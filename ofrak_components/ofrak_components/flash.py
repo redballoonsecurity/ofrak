@@ -320,7 +320,7 @@ class FlashEccResourceUnpacker(Unpacker[None]):
         # Find the tail delimiter followed by the number of data bytes up to that point
         search_index = ecc_magic_offset
         while search_index < data_len:
-            delimiter_index = data.find(b"!", search_index, data_len)
+            delimiter_index = data.find(ECC_TAIL_BLOCK_DELIMITER, search_index, data_len)
             current_size = int.from_bytes(data[delimiter_index + 1 : delimiter_index + 5], "big")
             expected_data_bytes = (
                 delimiter_index * ECC_BLOCK_DATA_SIZE // FLASH_BLOCK_SIZE
@@ -335,44 +335,47 @@ class FlashEccResourceUnpacker(Unpacker[None]):
 
             search_index = delimiter_index + 1
 
-        ecc_data_len = 0
+        ecc_data = await ecc_region.get_data()
+        ecc_data_len = len(ecc_data)
+        ecc_data_size = 0
         last_block_flag = False
-        num_possible_ecc_blocks = len(data[ecc_magic_offset:]) // FLASH_BLOCK_SIZE
+        num_possible_ecc_blocks = (ecc_data_len // FLASH_BLOCK_SIZE) + 1
 
         for block_count in range(0, num_possible_ecc_blocks):
             cur_block_offset = FLASH_BLOCK_SIZE * block_count
             cur_block_end_offset = cur_block_offset + FLASH_BLOCK_SIZE
-            cur_block_data = data[cur_block_offset:cur_block_end_offset]
+            cur_block_data = ecc_data[cur_block_offset:cur_block_end_offset]
             cur_block_delimiter = cur_block_data[ECC_BLOCK_DATA_SIZE : ECC_BLOCK_DATA_SIZE + 1]
 
             if cur_block_delimiter == ECC_DATA_DELIMITER:
                 if block_count == 0:
                     # Verify ECC header block to confirm there is a protected region
-                    if data[cur_block_offset : cur_block_offset + SX_ECC_MAGIC_LEN] != SX_ECC_MAGIC:
+                    if (
+                        ecc_data[cur_block_offset : cur_block_offset + SX_ECC_MAGIC_LEN]
+                        != SX_ECC_MAGIC
+                    ):
                         raise UnpackerError("Bad ECC Magic")
 
                     header = await ecc_region.create_child(
                         tags=(FlashEccHeaderBlock,),
                         data_range=Range(cur_block_offset, cur_block_end_offset),
                     )
-                    ecc_data_len += ECC_HEADER_BLOCK_DATA_SIZE
+                    ecc_data_size += ECC_HEADER_BLOCK_DATA_SIZE
                 else:
                     # Regular data block
                     await ecc_region.create_child(
                         tags=(FlashEccBlock,),
                         data_range=Range(cur_block_offset, cur_block_end_offset),
                     )
-                    ecc_data_len += ECC_BLOCK_DATA_SIZE
+                    ecc_data_size += ECC_BLOCK_DATA_SIZE
             elif cur_block_delimiter == ECC_LAST_DATA_BLOCK_DELIMITER:
                 # This is the last data block, prepare for tail block
                 last_block_flag = True
-                last_block = await ecc_region.create_child(
+                await ecc_region.create_child(
                     tags=(FlashEccBlock,),
                     data_range=Range(cur_block_offset, cur_block_end_offset),
                 )
-                last_range = await last_block.get_data_range_within_parent()
-                print(last_range.end - ecc_magic_offset)
-                ecc_data_len += ECC_BLOCK_DATA_SIZE
+                ecc_data_size += ECC_BLOCK_DATA_SIZE
             elif last_block_flag:
                 if cur_block_data[0:1] == ECC_TAIL_BLOCK_DELIMITER:
                     tail_block = await ecc_region.create_child(
@@ -384,9 +387,9 @@ class FlashEccResourceUnpacker(Unpacker[None]):
                     # Unknown if null bytes at the end are intentional or padding
                     tail_view = await tail_block.view_as(FlashEccTailBlock)
                     expected_size = tail_view.get_ecc_size()
-                    if expected_size - ecc_data_len >= ECC_BLOCK_DATA_SIZE:
+                    if expected_size - ecc_data_size >= ECC_BLOCK_DATA_SIZE:
                         LOGGER.warning(
-                            f"Expected {expected_size} data bytes, but read {ecc_data_len}. Input may be malformed."
+                            f"Expected {expected_size} data bytes, but read {ecc_data_size}. Input may be malformed."
                         )
                 break
             else:
