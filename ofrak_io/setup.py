@@ -21,7 +21,7 @@ with open("README.md") as f:
 
 setuptools.setup(
     name="ofrak_io",
-    version="0.1.3",
+    version="1.0.0",
     description="Classes useful for general I/O in OFRAK",
     packages=setuptools.find_packages(),
     package_data={
