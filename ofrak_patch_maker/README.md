@@ -36,6 +36,14 @@ symbols correctly linked to the host's internal symbols, without involving a loa
 For more information, check the [user guide in the OFRAK docs](https://ofrak.com/docs/user-guide/patch-maker/user-guide.html)
 as well as the [code references for PatchMaker](https://ofrak.com/docs/reference/ofrak_patch_maker/patch_maker.html) and related classes.
 
+## Dependencies
+This Python package only includes the Python code for the PatchMaker and does not include any of the 
+toolchains which the PatchMaker utilizes! These would have to be
+installed individually and added to a `toolchain.conf`, which by default is placed in `/etc`.
+An example of the `toolchain.conf` can be found [here](https://github.com/redballoonsecurity/ofrak/blob/master/ofrak_patch_maker/toolchain.conf),
+and examples of how to install the toolchains can be found [here](https://github.com/redballoonsecurity/ofrak/blob/master/ofrak_patch_maker/Dockerstub).
+
+
 ## Testing
 The tests for `ofrak_patch_maker` are not distributed with this package.
 If you wish to run the tests, download the [OFRAK source code](https://github.com/redballoonsecurity/ofrak) and install/run the tests from there.
