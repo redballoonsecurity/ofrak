@@ -39,6 +39,16 @@ Besides this suite of unpackers, a few other components are also included:
 - Analyzers wrapping `strings` and `binwalk`
 - An analyzer to calculate Shannon entropy of binary data
 
+After installing the package, it can be used in an OFRAK script by adding the following to the setup step:
+
+```python
+import ofrak_components
+...
+ofrak = OFRAK()
+... # Other setup steps
+ofrak.discover(ofrak_components)
+```
+
 ## Dependencies
 
 Many of these packages rely on 3rd party tools; as these are not Python packages, they must be installed on the host system separately.
