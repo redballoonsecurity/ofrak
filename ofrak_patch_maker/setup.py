@@ -15,22 +15,16 @@ class egg_info_ex(egg_info):
         egg_info.run(self)
 
 
-with open("LICENSE") as f:
-    license = "".join(["\n", f.read()])
+with open("README.md") as f:
+    long_description = f.read()
+
 
 setuptools.setup(
     name="ofrak_patch_maker",
-    version="0.1.0",
-    author="Red Balloon Security",
-    author_email="ofrak@redballoonsecurity.com",
-    description="OFRAK PatchMaker",
-    url="",  # TODO
-    packages=setuptools.find_packages(exclude=("ofrak_path_maker_test",)),
+    version="0.3.1",
+    description="PatchMaker tool for applying source-code patches to binaries",
+    packages=setuptools.find_packages(exclude=("ofrak_patch_maker_test",)),
     package_data={"ofrak_patch_maker": ["py.typed"]},
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "Operating System :: OS Independent",
-    ],
     install_requires=[
         "ofrak",
         "ofrak_type",
@@ -44,7 +38,28 @@ setuptools.setup(
             "pytest-cov",
         ]
     },
+    author="Red Balloon Security",
+    author_email="ofrak@redballoonsecurity.com",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url="https://ofrak.com/",
+    download_url="https://github.com/redballoonsecurity/ofrak",
+    project_urls={
+        "Documentation": "https://ofrak.com/docs/",
+        "Community License": "https://github.com/redballoonsecurity/ofrak/blob/master/LICENSE",
+        "Commercial Licensing Information": "https://ofrak.com/license/",
+    },
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "Operating System :: OS Independent",
+        "License :: Other/Proprietary License",
+        "License :: Free To Use But Restricted",
+        "License :: Free For Home Use",
+        "Topic :: Security",
+        "Typing :: Typed",
+    ],
     python_requires=">=3.7",
-    license=license,
+    license="Proprietary",
+    license_files=["LICENSE"],
     cmdclass={"egg_info": egg_info_ex},
 )
