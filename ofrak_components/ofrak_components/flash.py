@@ -31,7 +31,21 @@ ECC_TAIL_BLOCK_SIZE = 1 + 4 + ECC_MD5_LEN + ECC_SIZE
 #####################
 #      HELPERS      #
 #####################
+def get_physical_block_index(l_offset: int) -> int:
+    """
+    Returns the index of the physical block corresponding to a logical address
+    """
+    if l_offset <= ECC_HEADER_BLOCK_DATA_SIZE:
+        return 0
+    return ((l_offset - ECC_HEADER_BLOCK_DATA_SIZE) // ECC_BLOCK_DATA_SIZE) + 1
+
+
 def flash_l2p(l_offset: int) -> int:
+    """
+    Returns the physical address given a logical address of contiguous memory
+    """
+    if l_offset <= ECC_HEADER_BLOCK_DATA_SIZE:
+        return l_offset
     return (
         ((l_offset // ECC_BLOCK_DATA_SIZE) * FLASH_BLOCK_SIZE)
         + (l_offset % ECC_BLOCK_DATA_SIZE)
@@ -40,6 +54,13 @@ def flash_l2p(l_offset: int) -> int:
 
 
 def flash_p2l(p_offset: int) -> int:
+    """
+    Returns the logical address given a valid physical data address
+    If a physical memory address does not have data then it will return an unexpected value
+    """
+    # TODO: Handle input that is not in a data section
+    if p_offset <= ECC_HEADER_BLOCK_DATA_SIZE:
+        return p_offset
     return (
         ((p_offset // FLASH_BLOCK_SIZE) * ECC_BLOCK_DATA_SIZE) + (p_offset % FLASH_BLOCK_SIZE) - 7
     )
@@ -262,6 +283,7 @@ class FlashEccBlockAnalyzer(Analyzer[None, FlashConfig]):
 
     async def analyze(self, resource: Resource, config=None) -> FlashEccBlock:
         resource_data = await resource.get_data()
+        block_view = await resource.view_as(FlashEccBlock)
         deserializer = BinaryDeserializer(
             io.BytesIO(resource_data),
             endianness=Endianness.BIG_ENDIAN,
@@ -370,7 +392,6 @@ class FlashEccResourceUnpacker(Unpacker[None]):
             cur_block_end_offset = cur_block_offset + FLASH_BLOCK_SIZE
             cur_block_data = ecc_data[cur_block_offset:cur_block_end_offset]
             cur_block_delimiter = cur_block_data[ECC_BLOCK_DATA_SIZE : ECC_BLOCK_DATA_SIZE + 1]
-
             if (
                 cur_block_delimiter == ECC_DATA_DELIMITER
                 or cur_block_delimiter == ECC_LAST_DATA_BLOCK_DELIMITER
@@ -390,13 +411,21 @@ class FlashEccResourceUnpacker(Unpacker[None]):
                     ecc_data_size += ECC_HEADER_BLOCK_DATA_SIZE
                 else:
                     # Regular data block
-                    await ecc_region.create_child(
+                    data_block = await ecc_region.create_child(
                         tags=(FlashEccBlock,),
                         data_range=Range(cur_block_offset, cur_block_end_offset),
                     )
+                    block_view = await data_block.view_as(FlashEccBlock)
                     ecc_data_size += ECC_BLOCK_DATA_SIZE
             else:
                 raise UnpackerError("Bad Flash ECC Delimiter")
+
+        # Add all block data to logical resource for recursive unpacking
+        ecc_view = await ecc_region.view_as(FlashEccResource)
+        await resource.create_child(
+            tags=(FlashEccResource,),
+            data=await ecc_view.get_flash_data(),
+        )
 
 
 #####################
