@@ -205,11 +205,6 @@ class FlashResource(GenericBinary):
     This is made up of several blocks.
     """
 
-    size: int
-
-    def get_size(self) -> int:
-        return self.size
-
 
 #####################
 #      CONFIGS      #
@@ -234,17 +229,6 @@ class FlashEccIdentifier(Identifier[None]):
 #####################
 #     ANALYZERS     #
 #####################
-class FlashResourceAnalyzer(Analyzer[None, FlashResource]):
-    targets = (FlashResource,)
-    outputs = (FlashResource,)
-
-    async def analyze(self, resource: Resource, config=None) -> FlashResource:
-        data_len = await resource.get_data_length()
-        return FlashResource(
-            data_len,
-        )
-
-
 class FlashEccHeaderBlockAnalyzer(Analyzer[None, FlashConfig]):
     targets = (FlashEccHeaderBlock,)
     outputs = (FlashEccHeaderBlock,)
@@ -283,7 +267,6 @@ class FlashEccBlockAnalyzer(Analyzer[None, FlashConfig]):
 
     async def analyze(self, resource: Resource, config=None) -> FlashEccBlock:
         resource_data = await resource.get_data()
-        block_view = await resource.view_as(FlashEccBlock)
         deserializer = BinaryDeserializer(
             io.BytesIO(resource_data),
             endianness=Endianness.BIG_ENDIAN,
@@ -411,11 +394,10 @@ class FlashEccResourceUnpacker(Unpacker[None]):
                     ecc_data_size += ECC_HEADER_BLOCK_DATA_SIZE
                 else:
                     # Regular data block
-                    data_block = await ecc_region.create_child(
+                    await ecc_region.create_child(
                         tags=(FlashEccBlock,),
                         data_range=Range(cur_block_offset, cur_block_end_offset),
                     )
-                    block_view = await data_block.view_as(FlashEccBlock)
                     ecc_data_size += ECC_BLOCK_DATA_SIZE
             else:
                 raise UnpackerError("Bad Flash ECC Delimiter")
