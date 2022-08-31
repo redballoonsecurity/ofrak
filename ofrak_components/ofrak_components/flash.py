@@ -31,7 +31,7 @@ ECC_TAIL_BLOCK_SIZE = 1 + 4 + ECC_MD5_LEN + ECC_SIZE
 #####################
 #      HELPERS      #
 #####################
-def get_physical_block_index(l_offset: int) -> int:
+def _get_physical_block_index(l_offset: int) -> int:
     """
     Returns the index of the physical block corresponding to a logical address
     """
@@ -40,7 +40,7 @@ def get_physical_block_index(l_offset: int) -> int:
     return ((l_offset - ECC_HEADER_BLOCK_DATA_SIZE) // ECC_BLOCK_DATA_SIZE) + 1
 
 
-def flash_l2p(l_offset: int) -> int:
+def _flash_l2p(l_offset: int) -> int:
     """
     Returns the physical address given a logical address of contiguous memory
     """
@@ -53,7 +53,7 @@ def flash_l2p(l_offset: int) -> int:
     )
 
 
-def flash_p2l(p_offset: int) -> int:
+def _flash_p2l(p_offset: int) -> int:
     """
     Returns the logical address given a valid physical data address
     If a physical memory address does not have data then it will return an unexpected value
@@ -345,7 +345,7 @@ class FlashEccResourceUnpacker(Unpacker[None]):
             if delimiter_index == -1:
                 raise UnpackerError("Unable to find end of ECC protected region")
             read_size = int.from_bytes(data[delimiter_index + 1 : delimiter_index + 5], "big")
-            expected_data_bytes = flash_p2l(relative_offset)
+            expected_data_bytes = _flash_p2l(relative_offset)
 
             # Check that the size read is within a block size of expected, in case of padding
             if 0 <= (expected_data_bytes - read_size) <= ECC_BLOCK_DATA_SIZE:
