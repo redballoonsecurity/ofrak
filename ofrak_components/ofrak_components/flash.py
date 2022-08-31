@@ -15,8 +15,8 @@ from ofrak.core import (
 
 LOGGER = logging.getLogger(__name__)
 
-SX_ECC_MAGIC: int = b"SXECCv1"
-SX_ECC_MAGIC_LEN: int = len(SX_ECC_MAGIC)
+SX_ECC_MAGIC = b"SXECCv1"
+SX_ECC_MAGIC_LEN = len(SX_ECC_MAGIC)
 FLASH_BLOCK_SIZE = 255
 ECC_SIZE = 32
 ECC_MD5_LEN = 16
@@ -321,14 +321,14 @@ class FlashEccResourceUnpacker(Unpacker[None]):
         search_index = ecc_magic_offset
         while search_index < data_len:
             delimiter_index = data.find(ECC_TAIL_BLOCK_DELIMITER, search_index, data_len)
+            if delimiter_index == -1:
+                raise UnpackerError("Unable to find end of ECC protected region")
             current_size = int.from_bytes(data[delimiter_index + 1 : delimiter_index + 5], "big")
             expected_data_bytes = (
                 (delimiter_index - ecc_magic_offset) * ECC_BLOCK_DATA_SIZE // FLASH_BLOCK_SIZE
             ) - SX_ECC_MAGIC_LEN
 
-            # print(f"Expected {expected_data_bytes:x} and got {current_size:x} @ {delimiter_index:x}")
-            # print(f"== {expected_data_bytes - current_size:x}")
-
+            # Check that the size read is within a block size of expected, in case of padding
             if abs(expected_data_bytes - current_size) <= ECC_BLOCK_DATA_SIZE:
                 # Add overarching flash region resource
                 ecc_region = await resource.create_child(
@@ -350,7 +350,7 @@ class FlashEccResourceUnpacker(Unpacker[None]):
         ecc_data = await ecc_region.get_data()
         ecc_data_len = len(ecc_data)
         ecc_data_size = 0
-        num_possible_ecc_blocks = (ecc_data_len // FLASH_BLOCK_SIZE) + 1
+        num_possible_ecc_blocks = ecc_data_len // FLASH_BLOCK_SIZE
 
         for block_count in range(0, num_possible_ecc_blocks):
             cur_block_offset = FLASH_BLOCK_SIZE * block_count
@@ -370,7 +370,7 @@ class FlashEccResourceUnpacker(Unpacker[None]):
                     ):
                         raise UnpackerError("Bad ECC Magic")
 
-                    header = await ecc_region.create_child(
+                    await ecc_region.create_child(
                         tags=(FlashEccHeaderBlock,),
                         data_range=Range(cur_block_offset, cur_block_end_offset),
                     )
@@ -383,8 +383,7 @@ class FlashEccResourceUnpacker(Unpacker[None]):
                     )
                     ecc_data_size += ECC_BLOCK_DATA_SIZE
             else:
-                UnpackerError("Bad Flash ECC Delimiter")
-                break
+                raise UnpackerError("Bad Flash ECC Delimiter")
 
 
 #####################
