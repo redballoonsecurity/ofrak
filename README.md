@@ -41,21 +41,7 @@ See [`INSTALL.md`](INSTALL.md) for detailed instructions on how to install OFRAK
 
 OFRAK has general documentation and API documentation. Both can be viewed at [ofrak.com/docs](https://ofrak.com/docs).
 
-If you wish to make changes to the documentation or serve it yourself, once OFRAK has been installed, run `make develop` in each of `ofrak_type`, `ofrak_io`, `ofrak_core`, and `ofrak_patch_maker` to install the dependencies needed to work with this documentation source.
-
-The source for OFRAK's documentation resides in [`docs`](docs), and is built using [MkDocs](https://www.mkdocs.org/). [`mkdocs.yml`](mkdocs.yml) contains the configuration for building the docs.
-
-To host and view documents locally, run the following command from the root directory of this repository:
-
-``` bash
-% mkdocs serve
-INFO     -  Building documentation...
-INFO     -  Cleaning site directory
-INFO     -  Documentation built in 0.14 seconds
-INFO     -  [23:59:36] Serving on http://127.0.0.1:8000/
-```
-
-Note that the docs must be built (or served using `mkdocs serve`) in an environment with all Python dependencies installed.
+If you wish to make changes to the documentation or serve it yourself, follow the directions in [`docs/README.md`](docs/README.md).
 
 ## License
 
