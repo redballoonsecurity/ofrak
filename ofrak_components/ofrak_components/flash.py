@@ -28,43 +28,6 @@ ECC_HEADER_DELIMITER_OFFSET = SX_ECC_MAGIC_LEN + ECC_HEADER_BLOCK_DATA_SIZE
 ECC_BLOCK_DATA_SIZE = 222
 ECC_TAIL_BLOCK_SIZE = 1 + 4 + ECC_MD5_LEN + ECC_SIZE
 
-#####################
-#      HELPERS      #
-#####################
-def _get_physical_block_index(l_offset: int) -> int:
-    """
-    Returns the index of the physical block corresponding to a logical address
-    """
-    if l_offset <= ECC_HEADER_BLOCK_DATA_SIZE:
-        return 0
-    return ((l_offset - ECC_HEADER_BLOCK_DATA_SIZE) // ECC_BLOCK_DATA_SIZE) + 1
-
-
-def _flash_l2p(l_offset: int) -> int:
-    """
-    Returns the physical address given a logical address of contiguous memory
-    """
-    if l_offset <= ECC_HEADER_BLOCK_DATA_SIZE:
-        return l_offset
-    return (
-        ((l_offset // ECC_BLOCK_DATA_SIZE) * FLASH_BLOCK_SIZE)
-        + (l_offset % ECC_BLOCK_DATA_SIZE)
-        + SX_ECC_MAGIC_LEN
-    )
-
-
-def _flash_p2l(p_offset: int) -> int:
-    """
-    Returns the logical address given a valid physical data address
-    If a physical memory address does not have data then it will return an unexpected value
-    """
-    # TODO: Handle input that is not in a data section
-    if p_offset <= ECC_HEADER_BLOCK_DATA_SIZE:
-        return p_offset
-    return (
-        ((p_offset // FLASH_BLOCK_SIZE) * ECC_BLOCK_DATA_SIZE) + (p_offset % FLASH_BLOCK_SIZE) - 7
-    )
-
 
 #####################
 #     RESOURCES     #
@@ -137,7 +100,7 @@ class FlashEccTailBlock(GenericBinary):
 
 @dataclass
 class FlashEccResource(GenericBinary):
-    async def get_ecc_header_block(self) -> FlashEccHeaderBlock:
+    async def get_header_block_as_view(self) -> FlashEccHeaderBlock:
         return await self.resource.get_only_child_as_view(
             v_type=FlashEccHeaderBlock,
             r_filter=ResourceFilter.with_tags(
@@ -145,7 +108,7 @@ class FlashEccResource(GenericBinary):
             ),
         )
 
-    async def get_ecc_blocks(self) -> Iterable[FlashEccBlock]:
+    async def get_blocks_as_view(self) -> Iterable[FlashEccBlock]:
         return await self.resource.get_children_as_view(
             v_type=FlashEccBlock,
             r_filter=ResourceFilter.with_tags(
@@ -153,7 +116,7 @@ class FlashEccResource(GenericBinary):
             ),
         )
 
-    async def get_ecc_tail_block(self) -> FlashEccTailBlock:
+    async def get_tail_block_as_view(self) -> FlashEccTailBlock:
         return await self.resource.get_only_child_as_view(
             v_type=FlashEccTailBlock,
             r_filter=ResourceFilter.with_tags(
@@ -165,11 +128,11 @@ class FlashEccResource(GenericBinary):
         data = b""
 
         # Header includes data
-        header_block_view = await self.get_ecc_header_block()
+        header_block_view = await self.get_header_block_as_view()
         data += header_block_view.get_block_data()
 
         # Get the regular data blocks but sort by their index within parent
-        ecc_blocks = await self.get_ecc_blocks()
+        ecc_blocks = await self.get_blocks_as_view()
         ecc_blocks_sorted = [
             (await b.resource.get_data_index_within_parent(), b) for b in ecc_blocks
         ]
@@ -183,10 +146,10 @@ class FlashEccResource(GenericBinary):
 
     async def get_flash_ecc(self) -> bytes:
         ecc = b""
-        header_block_view = await self.get_ecc_header_block()
+        header_block_view = await self.get_header_block_as_view()
         ecc += header_block_view.get_ecc()
 
-        ecc_blocks = await self.get_ecc_blocks()
+        ecc_blocks = await self.get_blocks_as_view()
         ecc_blocks_sorted = [
             (await b.resource.get_data_index_within_parent(), b) for b in ecc_blocks
         ]
@@ -199,10 +162,27 @@ class FlashEccResource(GenericBinary):
         return ecc
 
 
+@dataclass
+class FlashEccProtectedResource(GenericBinary):
+    """
+    Region of memory protected by ECC
+    """
+
+
+@dataclass
 class FlashResource(GenericBinary):
     """
     The overarching resource that encapsulates flash storage.
     This is made up of several blocks.
+    """
+
+
+@dataclass
+class FlashLogicalDataResource(GenericBinary):
+    """
+    This is the final product of unpacking a FlashResource.
+    It contains the data without any ECC or OOB data included.
+    This allows for recursive packing and unpacking.
     """
 
 
@@ -223,7 +203,7 @@ class FlashEccIdentifier(Identifier[None]):
     async def identify(self, resource: Resource, config=None):
         data = await resource.get_data()
         if SX_ECC_MAGIC in data:
-            resource.add_tag(FlashEccResource)
+            resource.add_tag(FlashEccProtectedResource)
 
 
 #####################
@@ -318,17 +298,18 @@ class FlashEccTailBlockAnalyzer(Analyzer[None, FlashConfig]):
 #####################
 #     UNPACKERS     #
 #####################
-class FlashEccResourceUnpacker(Unpacker[None]):
+class FlashEccProtectedResourceUnpacker(Unpacker[None]):
     """
     Unpack regions of flash protected by ECC
     """
 
-    targets = (FlashEccResource,)
+    targets = (FlashEccProtectedResource,)
     children = (
         FlashEccResource,
         FlashEccHeaderBlock,
         FlashEccBlock,
         FlashEccTailBlock,
+        FlashLogicalDataResource,
     )
 
     async def unpack(self, resource: Resource, config=None):
@@ -368,6 +349,7 @@ class FlashEccResourceUnpacker(Unpacker[None]):
         ecc_data = await ecc_region.get_data()
         ecc_data_len = len(ecc_data)
         ecc_data_size = 0
+        only_data = b""
         num_possible_ecc_blocks = ecc_data_len // FLASH_BLOCK_SIZE
 
         for block_count in range(0, num_possible_ecc_blocks):
@@ -391,6 +373,7 @@ class FlashEccResourceUnpacker(Unpacker[None]):
                         tags=(FlashEccHeaderBlock,),
                         data_range=Range(cur_block_offset, cur_block_end_offset),
                     )
+                    only_data += cur_block_data[: ECC_HEADER_BLOCK_DATA_SIZE + 1]
                     ecc_data_size += ECC_HEADER_BLOCK_DATA_SIZE
                 else:
                     # Regular data block
@@ -398,15 +381,15 @@ class FlashEccResourceUnpacker(Unpacker[None]):
                         tags=(FlashEccBlock,),
                         data_range=Range(cur_block_offset, cur_block_end_offset),
                     )
+                    only_data += cur_block_data[: ECC_BLOCK_DATA_SIZE + 1]
                     ecc_data_size += ECC_BLOCK_DATA_SIZE
             else:
                 raise UnpackerError("Bad Flash ECC Delimiter")
 
         # Add all block data to logical resource for recursive unpacking
-        ecc_view = await ecc_region.view_as(FlashEccResource)
-        await resource.create_child(
-            tags=(FlashEccResource,),
-            data=await ecc_view.get_flash_data(),
+        await ecc_region.create_child(
+            tags=(FlashLogicalDataResource, GenericBinary),
+            data=only_data,
         )
 
 
@@ -414,7 +397,86 @@ class FlashEccResourceUnpacker(Unpacker[None]):
 #      PACKERS      #
 #####################
 class FlashResourcePacker(Packer[FlashConfig]):
+    """
+    Packs the FlashResource into binary and cleans up logical data representations
+    """
+
+    id = b"FlashResourcePacker"
     targets = (FlashResource,)
 
     async def pack(self, resource: Resource, config: FlashConfig):
-        pass
+        # Cleanup logical resource
+        logical_resources = await resource.get_descendants(
+            r_filter=ResourceFilter.with_tags(
+                FlashLogicalDataResource,
+            ),
+        )
+        for res in logical_resources:
+            await res.delete()
+
+        # We treat the data as raw bytes without any further processing
+        original_data = await resource.get_data()
+        original_size = await resource.get_data_length()
+        resource.queue_patch(Range(0, original_size), original_data)
+
+
+class FlashEccResourcePacker(Packer[FlashConfig]):
+    """
+    Packs the ECC protected region back into a binary blob
+    """
+
+    id = b"FlashEccResourcePacker"
+    targets = (FlashEccResource,)
+
+    async def pack(self, resource: Resource, config: FlashConfig):
+        data = b""
+        ecc_view = await resource.view_as(FlashEccResource)
+        header_view = await ecc_view.get_header_block_as_view()
+        data += header_view.resource.get_data()
+        blocks = await ecc_view.get_blocks_as_view()
+        for block in blocks:
+            data += block.resource.get_data()
+        tail_view = await ecc_view.get_tail_block_as_view()
+        data += tail_view.resource.get_data()
+
+        # Patch original data
+        original_size = await resource.get_data_length()
+        resource.queue_patch(Range(0, original_size), data)
+
+
+#####################
+#      HELPERS      #
+#####################
+def _get_physical_block_index(l_offset: int) -> int:
+    """
+    Returns the index of the physical block corresponding to a logical address
+    """
+    if l_offset <= ECC_HEADER_BLOCK_DATA_SIZE:
+        return 0
+    return ((l_offset - ECC_HEADER_BLOCK_DATA_SIZE) // ECC_BLOCK_DATA_SIZE) + 1
+
+
+def _flash_l2p(l_offset: int) -> int:
+    """
+    Returns the physical address given a logical address of contiguous memory
+    """
+    if l_offset <= ECC_HEADER_BLOCK_DATA_SIZE:
+        return l_offset
+    return (
+        ((l_offset // ECC_BLOCK_DATA_SIZE) * FLASH_BLOCK_SIZE)
+        + (l_offset % ECC_BLOCK_DATA_SIZE)
+        + SX_ECC_MAGIC_LEN
+    )
+
+
+def _flash_p2l(p_offset: int) -> int:
+    """
+    Returns the logical address given a valid physical data address
+    If a physical memory address does not have data then it will return an unexpected value
+    """
+    # TODO: Handle input that is not in a data section
+    if p_offset <= ECC_HEADER_BLOCK_DATA_SIZE:
+        return p_offset
+    return (
+        ((p_offset // FLASH_BLOCK_SIZE) * ECC_BLOCK_DATA_SIZE) + (p_offset % FLASH_BLOCK_SIZE) - 7
+    )
