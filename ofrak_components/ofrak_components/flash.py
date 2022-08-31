@@ -29,10 +29,25 @@ ECC_BLOCK_DATA_SIZE = 222
 ECC_TAIL_BLOCK_SIZE = 1 + 4 + ECC_MD5_LEN + ECC_SIZE
 
 #####################
+#      HELPERS      #
+#####################
+def flash_l2p(l_offset: int) -> int:
+    return (
+        ((l_offset // ECC_BLOCK_DATA_SIZE) * FLASH_BLOCK_SIZE)
+        + (l_offset % ECC_BLOCK_DATA_SIZE)
+        + SX_ECC_MAGIC_LEN
+    )
+
+
+def flash_p2l(p_offset: int) -> int:
+    return (
+        ((p_offset // FLASH_BLOCK_SIZE) * ECC_BLOCK_DATA_SIZE) + (p_offset % FLASH_BLOCK_SIZE) - 7
+    )
+
+
+#####################
 #     RESOURCES     #
 #####################
-
-
 @dataclass
 class FlashEccHeaderBlock(GenericBinary):
     """
@@ -323,13 +338,11 @@ class FlashEccResourceUnpacker(Unpacker[None]):
             delimiter_index = data.find(ECC_TAIL_BLOCK_DELIMITER, search_index, data_len)
             if delimiter_index == -1:
                 raise UnpackerError("Unable to find end of ECC protected region")
-            current_size = int.from_bytes(data[delimiter_index + 1 : delimiter_index + 5], "big")
-            expected_data_bytes = (
-                (delimiter_index - ecc_magic_offset) * ECC_BLOCK_DATA_SIZE // FLASH_BLOCK_SIZE
-            ) - SX_ECC_MAGIC_LEN
+            read_size = int.from_bytes(data[delimiter_index + 1 : delimiter_index + 5], "big")
+            expected_data_bytes = flash_p2l(delimiter_index - ecc_magic_offset)
 
             # Check that the size read is within a block size of expected, in case of padding
-            if abs(expected_data_bytes - current_size) <= ECC_BLOCK_DATA_SIZE:
+            if 0 <= (expected_data_bytes - read_size) <= ECC_BLOCK_DATA_SIZE:
                 # Add overarching flash region resource
                 ecc_region = await resource.create_child(
                     tags=(FlashEccResource,),
@@ -347,6 +360,8 @@ class FlashEccResourceUnpacker(Unpacker[None]):
                 break
             search_index = delimiter_index + 1
 
+        if ecc_region == None:
+            raise UnpackerError("Error creating ECC resource")
         ecc_data = await ecc_region.get_data()
         ecc_data_len = len(ecc_data)
         ecc_data_size = 0
