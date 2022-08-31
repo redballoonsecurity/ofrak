@@ -336,10 +336,11 @@ class FlashEccResourceUnpacker(Unpacker[None]):
         search_index = ecc_magic_offset
         while search_index < data_len:
             delimiter_index = data.find(ECC_TAIL_BLOCK_DELIMITER, search_index, data_len)
+            relative_offset = delimiter_index - ecc_magic_offset
             if delimiter_index == -1:
                 raise UnpackerError("Unable to find end of ECC protected region")
             read_size = int.from_bytes(data[delimiter_index + 1 : delimiter_index + 5], "big")
-            expected_data_bytes = flash_p2l(delimiter_index - ecc_magic_offset)
+            expected_data_bytes = flash_p2l(relative_offset)
 
             # Check that the size read is within a block size of expected, in case of padding
             if 0 <= (expected_data_bytes - read_size) <= ECC_BLOCK_DATA_SIZE:
@@ -350,12 +351,9 @@ class FlashEccResourceUnpacker(Unpacker[None]):
                 )
 
                 # Add tail block while we're here
-                relative_tail_offset = delimiter_index - ecc_magic_offset
                 await ecc_region.create_child(
                     tags=(FlashEccTailBlock,),
-                    data_range=Range(
-                        relative_tail_offset, relative_tail_offset + ECC_TAIL_BLOCK_SIZE
-                    ),
+                    data_range=Range(relative_offset, relative_offset + ECC_TAIL_BLOCK_SIZE),
                 )
                 break
             search_index = delimiter_index + 1
