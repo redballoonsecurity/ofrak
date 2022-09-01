@@ -69,6 +69,7 @@ nav:
         - Troubleshooting: "user-guide/patch-maker/troubleshooting.md"
   - Contributor Guide:
       - Getting Started: "contributor-guide/getting-started.md"
+      - Python Conventions: "contributor-guide/python.md"
       - Writing Components:
         - Identifier: "contributor-guide/component/identifier.md"
         - Unpacker: "contributor-guide/component/unpacker.md"
@@ -76,6 +77,6 @@ nav:
         - Modifier: "contributor-guide/component/modifier.md"
         - Packer: "contributor-guide/component/packer.md"
         - Ghidra Components: "contributor-guide/component/ghidra_components.md"
-      - ResourceView: "contributor-guide/resource_view.md"
+      - ResourceView: "contributor-guide/core/resource_view.md"
   # Built by gen-files and literate-nav
   - Code Reference: reference/
