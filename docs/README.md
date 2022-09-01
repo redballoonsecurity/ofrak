@@ -14,6 +14,9 @@ The documentation files (`docs/` and `mkdocs.yml`) likely need to be manually co
 # Run from the root of the OFRAK repo
 docker cp docs/ rbs-ofrak-interactive:/
 docker cp mkdocs.yml rbs-ofrak-interactive:/
+
+# For Ghidra docs, copy them to the place MkDocs expects
+docker exec -it rbs-ofrak-interactive bash -c "mkdir -p /disassemblers; ln -s /ofrak_ghidra /disassemblers/ofrak_ghidra"
 ```
 
 To build the documentation locally, run one of the following commands from the root directory of the Docker (or from the root of the repo on macOS):
