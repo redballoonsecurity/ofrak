@@ -111,6 +111,31 @@ class MyClass:
         ...
 ```
 
+## Adding new packages to OFRAK build
+
+The build script `build_image.py` expects a config file similar to `ofrak-core-dev.yml`. Each of the packages listed under `packages_paths` in the YAML files should correspond to a directory containing two files: `Makefile` and `Dockerstub`. They may also contain a `Dockerstage` file for multi-stage builds. 
+
+Imagine we are adding a new package with the following structure:
+
+```
+ofrak_package_x
+ |--Dockerstub
+ |--Makefile
+ |--setup.py
+ |--ofrak_package_x_python_module
+     |...
+```
+
+`Makefile` must contain a rule `dependencies`. This rule should take care of any setup that needs to be done for that package before the Docker build.
+
+`Dockerstub` should read as a normal Dockerfile, only without a base image specified at the top. This file should contain all of the steps necessary to install this package in a Docker image. During build, all packages' `Dockerstub`s will be concatenated, so specifying a base image is unnecessary. Also, any specified entrypoint may be overridden. 
+
+The build relies on the following assumptions:
+
+- `Dockerstub`, `Dockerstage`, and `Makefile` should not use any relative paths which go into the parent directory of `ofrak_package_x` because at build time that parent directory will not be the same.
+- All rules in `Makefile` should assume the working directory is `ofrak_package_x` (but at a different path as explained above)
+- `Dockerstub` and `Dockerstage` should be written assuming the build context is the parent directory of `ofrak_package_x`. Do not assume anything is present in the build context besides the contents of `ofrak_package_x` and what `Makefile` adds to `ofrak_package_x` in the `dependencies` rule.
+
 <div align="right">
 <img src="../assets/square_05.png" width="125" height="125">
 </div>

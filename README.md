@@ -35,7 +35,7 @@ The web-based GUI view provides a navigable resource tree. For the selected reso
 
 **OFRAK uses Git LFS. This means that you must have Git LFS installed before you clone the repository!** Install Git LFS by following [the instructions here](https://git-lfs.github.com/). If you accidentally cloned the repository before installing Git LFS, `cd` into the repository and run `git lfs pull`.
 
-See [`INSTALL.md`](INSTALL.md) for detailed instructions on how to install OFRAK.
+See [`docs/environment-setup`](https://ofrak.com/docs/environment-setup.html) for detailed instructions on how to install OFRAK.
 
 ## Documentation
 
