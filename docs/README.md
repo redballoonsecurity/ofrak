@@ -1,6 +1,6 @@
 # OFRAK Docs
 
-The latest build of the OFRAK docs can be found at (ofrak.com/docs)[https://ofrak.com/docs].
+The latest build of the OFRAK docs can be found at [ofrak.com/docs](https://ofrak.com/docs).
 
 ## Build the Docs Locally
 
