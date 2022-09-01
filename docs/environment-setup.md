@@ -21,7 +21,9 @@ This environment setup guide uses the `redballoonsecurity/ofrak/ghidra` image as
   - Binary Ninja will fail to install without a valid license. Follow the instructions below for adding a valid Binary Ninja license.
 - `ofrak-ghidra.yml` builds an image that includes core OFRAK, a Ghidra install, and Ghidra OFRAK components. 
 - `ofrak-binary-ninja.yml` is a configuration to build an image with core OFRAK, a Binary Ninja install, and Binary Ninja OFRAK components. **You need to have a valid BinaryNinja license to build and run the image.** 
-- `ofrak-tutorial.yml` builds an image 
+- `ofrak-tutorial.yml` builds an image including core OFRAK, Ghidra, the Ghidra components, and the tutorial Jupyter Notebooks that use Ghidra.
+- `ofrak-angr.yml` builds an image that contains core OFRAK, angr, and the angr OFRAK components.
+- `ofrak-core-dev.yml` builds an image that only bundles core OFRAK, its main components, and their dependencies.
 
 If you have already built a base Docker image, and only want to reinstall OFRAK (and not all of its dependencies), you can build the finish image without the `--base` argument:
 
