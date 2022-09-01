@@ -1,6 +1,7 @@
-# Python
+# Contributing
 
-This page contains information about how Python is used in the OFRAK repository.
+## GitHub Merge Requests
+Contributions to OFRAK should be made as a Pull Request on Github.
 
 ## Pre-commit
 OFRAK uses [pre-commit](https://pre-commit.com/) to run automated tools on the code base before every commit.
@@ -109,3 +110,7 @@ class MyClass:
     def __init__(self, arg1: str, arg2: str = "Hello"):
         ...
 ```
+
+<div align="right">
+<img src="../assets/square_05.png" width="125" height="125">
+</div>
