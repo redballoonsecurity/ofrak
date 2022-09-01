@@ -1,6 +1,6 @@
 # Contributing
 
-## GitLab Merge Requests
+## GitHub Merge Requests
 Contributions to OFRAK should be made as a Pull Request on Github.
 
 ## Pre-commit
