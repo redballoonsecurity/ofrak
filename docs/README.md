@@ -35,6 +35,6 @@ mkdocs serve --dev-addr 0.0.0.0:8000
 
 OFRAK documentation comes from two sources: manually-written markdown files in `docs/`, and automatically-extracted from docstrings in the code. 
 
-For writing docstrings that will display well, see the contributor guidelines [here](https://ofrak.com/docs/contributor-guide/python.html#docstrings) and [here](https://ofrak.com/docs/contributor-guide/getting-started.html#docstring-conventions). The list of packages whose docstrings are extracted can be found [here](https://github.com/redballoonsecurity/ofrak/blob/master/docs/gen_ref_nav.py#L69-L74).
+For writing docstrings that will display well, see the [contributor guidelines](https://ofrak.com/docs/contributor-guide/python.html#docstrings). The list of packages whose docstrings are extracted can be found [in the script that does the extraction](https://github.com/redballoonsecurity/ofrak/blob/master/docs/gen_ref_nav.py#L69-L74).
 
 To add a markdown file to the docs, first write the documentation as a markdown file in the `docs/` directory of the repo. Then, add it to the documentation nav bar by [editing the `nav` property of `mkdocs.yml`](https://github.com/redballoonsecurity/ofrak/blob/master/mkdocs.yml#L50).

@@ -37,7 +37,7 @@ python3 build_image.py --config ofrak-ghidra.yml --finish
 - To stop it, run `python -m ofrak_ghidra.server stop`. 
 - Ghidra logs can be found here: `/root/.ghidra/.ghidra_10.1.2_PUBLIC/application.log`.
 
-See [here](https://ofrak.com/docs/user-guide/ghidra.html) for more information about using Ghidra with OFRAK.
+See [the Ghidra user guide](https://ofrak.com/docs/user-guide/ghidra.html) for more information about using Ghidra with OFRAK.
 
 ### Binary Ninja
 
