@@ -8,7 +8,7 @@ This package requires:
 - the BinaryNinja python APIs
 
 ## Docker
-Follow the instructions in [INSTALL.md](../INSTALL.MD) to install the headless version of BinaryNinja.
+Follow the instructions in the [OFRAK environment setup guide](https://ofrak.com/docs/environment-setup.html) to install the headless version of BinaryNinja.
 
 ## MacOS
 1. Ensure that you have a valid installation of BinaryNinja.
