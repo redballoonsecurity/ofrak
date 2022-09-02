@@ -34,12 +34,12 @@ like commenting, unpacking, analysis, modification and packing of resources.
 
 
 ## Getting Started
-See [INSTALL.md](INSTALL.md) for instructions on how to install OFRAK.
+See [INSTALL.md](https://github.com/redballoonsecurity/ofrak/blob/master/INSTALL.md) for instructions on how to install OFRAK.
 
 **OFRAK uses Git LFS. This means that you must have Git LFS installed before you clone the repository!** Install Git LFS by following [the instructions here](https://git-lfs.github.com/). If you accidentally cloned the repository before installing Git LFS, `cd` into the repository and run `git lfs pull`.
 
 ## License
-The code in this repository comes with an [OFRAK Community License](./LICENSE), which is intended for educational uses, personal development, or just having fun.
+The code in this repository comes with an [OFRAK Community License](https://github.com/redballoonsecurity/ofrak/blob/master/LICENSE), which is intended for educational uses, personal development, or just having fun.
 
 Users interested in using OFRAK for commercial purposes can request the Pro License, which for a limited period is available for a free 6-month trial. See [OFRAK Licensing](https://ofrak.com/license/) for more information.
 
