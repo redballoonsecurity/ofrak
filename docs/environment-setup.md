@@ -18,7 +18,7 @@ Each image consists of a "base" image and a "finish" image. The base image inclu
 This environment setup guide uses the `redballoonsecurity/ofrak/ghidra` image as an example image throughout, but there are several possible base image configurations:
 
 - `ofrak-dev.yml` builds the most complete OFRAK Docker image, including the core OFRAK, a Ghidra install, Ghidra OFRAK components, a Binary Ninja install, and Binary Ninja OFRAK components. 
-  - Binary Ninja will fail to install without a valid license. Follow the instructions below for adding a valid Binary Ninja license.
+    - Binary Ninja will fail to install without a valid license. Follow the instructions below for adding a valid Binary Ninja license.
 - `ofrak-ghidra.yml` builds an image that includes core OFRAK, a Ghidra install, and Ghidra OFRAK components. 
 - `ofrak-binary-ninja.yml` is a configuration to build an image with core OFRAK, a Binary Ninja install, and Binary Ninja OFRAK components. **You need to have a valid BinaryNinja license to build and run the image.** 
 - `ofrak-tutorial.yml` builds an image including core OFRAK, Ghidra, the Ghidra components, and the tutorial Jupyter Notebooks that use Ghidra.
@@ -55,7 +55,7 @@ The options to the `docker run` command ensure the container is created with the
 - `--name` identifies the container by the name `rbs-ofrak-interactive` for other Docker commands, like `docker exec`
 - `--interactive --tty` ensures the command knows it is being run inside an interactive terminal and not a script (`-it` can be used for short)
 - `--publish 80:80` allows you to access the OFRAK GUI that the new container will serve on port 80 
-  - If you would rather access it locally on a different port, change the number on the left, for example: `9090:80`
+    - If you would rather access it locally on a different port, change the number on the left, for example: `9090:80`
 - `redballoonsecurity/ofrak/ghidra:latest` is the image to run
 
 The `redballoonsecurity/ofrak/ghidra:latest` image by default sets up a Ghidra environment and starts serving the OFRAK GUI as soon as it is launched. After running the above, the GUI can be accessed at http://localhost:80/.
