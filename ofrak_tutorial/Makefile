@@ -4,22 +4,28 @@ BASE_IMAGE_NAME=redballoonsecurity/ofrak/tutorial
 commit_short_hash=$(shell git rev-parse --short=8 HEAD)
 FULL_IMAGE_NAME=${BASE_IMAGE_NAME}:${commit_short_hash}
 
+# Only target in this Makefile to be executed from the host, not a container.
+# 
+# Note that the arguments at the end are passed to the bash entrypoint, but that
+# the --entrypoint argument must come before the image name.
 .PHONY: run
-# Only target in this Makefile to be executed from the host, not a container
 run:
 	docker run \
 		--rm \
+		--detach \
 		--interactive \
 		--tty \
 		--publish 8888:8888 \
-		--publish 80:80 \
+		--publish 8081:80 \
 		--name ofrak-tutorial \
-		--entrypoint "nginx \
-			& python3 -m ofrak_ghidra.server start \
+		--entrypoint bash \
+		${FULL_IMAGE_NAME} \
+		-c 'nginx \
 			& python3 /ofrak_server.py 0.0.0.0 8877 \
-			& jupyter notebook --no-browser --allow-root --ip 0.0.0.0 --notebook-dir '/ofrak_tutorial/notebooks' \
-			& mkdocs serve --dev-addr 0.0.0.0:8000" \
-		${FULL_IMAGE_NAME}
+			& jupyter notebook --no-browser --allow-root --ip 0.0.0.0 --notebook-dir "/ofrak_tutorial/notebooks" --NotebookApp.port 8888 --NotebookApp.token "" --NotebookApp.password "" \
+			& mkdocs serve --dev-addr 0.0.0.0:8000 \
+			& python3 -m ofrak_ghidra.server start \
+			& sleep infinity'
 
 .PHONY: develop
 develop:
