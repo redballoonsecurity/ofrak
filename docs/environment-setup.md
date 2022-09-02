@@ -192,7 +192,19 @@ source ofrak-venv/bin/activate
 1. Use homebrew to install required libraries and executables:
 
     ```bash
-    brew install apktool binwalk cmake java libmagic lzop p7zip qemu squashfs rar unar wget
+    brew install \
+      apktool \
+      binwalk \
+      cmake \
+      java \
+      libmagic \
+      lzop \
+      p7zip \
+      qemu \
+      squashfs \
+      rar \
+      unar \
+      wget
     ```
 
     - OFRAK uses `apktool`, `java`, and `wget` to install `uber-apk-signer` for unpacking and packing APK files.
@@ -252,8 +264,7 @@ source ofrak-venv/bin/activate
 5. Install core OFRAK and its dependencies:
 
     ```bash
-    INSTALL_TARGET=develop
-    make -C ofrak_core $INSTALL_TARGET
+    for d in ofrak_io ofrak_type ofrak_patch_maker ofrak_components ofrak; do make -C "${d}" develop; done 
     ```
 6. If you are planning to contribute to OFRAK, install the pre-commit hooks. For more information, see the [contributor guide](docs/contributor-guide/python.md).
 

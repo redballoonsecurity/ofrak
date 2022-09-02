@@ -53,13 +53,7 @@ Users interested in OFRAK for commercial purposes can request the Pro License, w
 
 Red Balloon Security is excited for security researchers and developers to contribute to this repository.
 
-As provided by Clause #3 in [our license](./LICENSE), by submitting a Pull Request you are providing Red Balloon Security, Inc with certain rights to your contribution, and you attest that you are authorized to do so by anyone who has claims to the content.
-
-Red Balloon Security will not accept Pull Requests nor add software to this repository that reveals information about a third party's intellectual property, proprietary formats, or protocols, _unless_ they are approved by the (verified) owner before being created.
-
-Such ownership verification, non-technical questions, concerns, or comments about anything other than the committed source code should be directed to [ofrak@redballoonsecurity.com](mailto:ofrak@redballoonsecurity.com).
-
-For more details, please see our [contributor guide](CONTRIBUTING.md) and the [Python development guide](docs/contributor-guide/python.md).
+For details, please see our [contributor guide](CONTRIBUTING.md) and the [Python development guide](docs/contributor-guide/python.md).
 
 ## Support
 

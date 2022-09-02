@@ -131,7 +131,7 @@ For now, every Pull Request will require at least one review by one of the curre
 7. Please keep your contributions to a reasonable review size. When reviewing, it can take developers a little over an hour to get through a few hundred lines of code and find most defects.
 
 ### Python Coding Standard
-Please see our [coding standard document](docs/contributor-guide/python.md) for functional and stylistic expectations. It is still evolving, but has a lower probability of changing.
+Please see our [coding standard document](https://ofrak.com/docs/contributor-guide/python.html) for functional and stylistic expectations. It is still evolving, but has a lower probability of changing.
 
 There may be rule-breaking content in the repository now, but that does not mean that the standard should not be followed.
 
