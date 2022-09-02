@@ -7,7 +7,19 @@ FULL_IMAGE_NAME=${BASE_IMAGE_NAME}:${commit_short_hash}
 .PHONY: run
 # Only target in this Makefile to be executed from the host, not a container
 run:
-	docker run --rm -it -p 8888:8888 -p 80:80 -p 8000:8000 --name ofrak-tutorial ${FULL_IMAGE_NAME}
+	docker run \
+		--rm \
+		--interactive \
+		--tty \
+		--publish 8888:8888 \
+		--publish 80:80 \
+		--name ofrak-tutorial \
+		--entrypoint "nginx \
+			& python3 -m ofrak_ghidra.server start \
+			& python3 /ofrak_server.py 0.0.0.0 8877 \
+			& jupyter notebook --no-browser --allow-root --ip 0.0.0.0 --notebook-dir '/ofrak_tutorial/notebooks' \
+			& mkdocs serve --dev-addr 0.0.0.0:8000" \
+		${FULL_IMAGE_NAME}
 
 .PHONY: develop
 develop:
