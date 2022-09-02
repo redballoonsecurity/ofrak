@@ -16,7 +16,7 @@ run:
 		--interactive \
 		--tty \
 		--publish 8888:8888 \
-		--publish 8081:80 \
+		--publish 80:80 \
 		--name ofrak-tutorial \
 		--entrypoint bash \
 		${FULL_IMAGE_NAME} \
