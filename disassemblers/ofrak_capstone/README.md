@@ -27,9 +27,9 @@ This package contains OFRAK components utilizing the [Capstone](https://www.caps
 * `CapstoneInstructionRegisterUsageAnalyzer` for determining which register an `Instruction` reads/writes
 
 Unlike the other "disassembler" packages, this does not include a `CodeRegionUnpacker` or `ComplexBlockUnpacker`
-to deconstruct a section of code into functions and basic blocks. It is useful only for lightweight applications
-working with individual instructions or basic blocks, or in combination with another package under `disassemblers` 
-which can handle the higher-level structures and leave the basic blocks to be handled by `ofrak_capstone`.
+to deconstruct a section of code into functions and basic blocks. It is useful for applications which:
+* Work only with individual instructions or basic blocks.
+* Also use one of the other packages under `disassemblers`, which can handle the higher-level structures and leave the basic blocks to be handled by `ofrak_capstone`.
 
 After installing the package, it can be used in an OFRAK script by adding the following to the setup step:
 
