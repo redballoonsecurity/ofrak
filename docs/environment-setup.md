@@ -31,49 +31,6 @@ If you have already built a base Docker image, and only want to reinstall OFRAK 
 python3 build_image.py --config ofrak-ghidra.yml --finish
 ```
 
-### Ghidra
-
-- To start the Ghidra server in a container started from this image, users should run `python -m ofrak_ghidra.server start`. 
-- To stop it, run `python -m ofrak_ghidra.server stop`. 
-- Ghidra logs can be found here: `/root/.ghidra/.ghidra_10.1.2_PUBLIC/application.log`.
-
-See [the Ghidra user guide](https://ofrak.com/docs/user-guide/ghidra.html) for more information about using Ghidra with OFRAK.
-
-### Binary Ninja
-
-Note that Binary Ninja is not distributed with OFRAK. Instead, if a license is present, the Docker build step will run the official headless installer using the provided license. **You need to have a valid BinaryNinja license to build and run the image.** For more details, [read the script that is run](disassemblers/ofrak_binary_ninja/install_binary_ninja_headless_linux.sh).
-
-To build the image, the license should be placed in the project's root directory and named `license.dat`. The serial number needs to be extracted from that file into a file named `serial.txt`. This can be done with the following command:
-
-```bash
-python3 \
-  -c 'import json, sys; print(json.load(sys.stdin)[0]["serial"])' \
-  < license.dat \
-  > serial.txt
-```
-
-The command `python3 build_image.py --config ofrak-binary-ninja.yml --base --finish` will build an image using Docker BuildKit secrets so that neither the license nor serial number are exposed in the built Docker image. (If [Docker BuildKit](https://docs.docker.com/develop/develop-images/build_enhancements/) is not enabled in your environment, precede the `python3 build_image.py` command with `DOCKER_BUILDKIT=1`.)
-
-The license can then be mounted into the Docker container at location `/root/.binaryninja/license.dat` by adding the following arguments to the `docker run` command:
-
-```
---mount type=bind,source="$(pwd)"/license.dat,target=/root/.binaryninja/license.dat 
-```
-
-For example:
-
-```bash
-# This simple command...
-docker run -it redballoonsecurity/ofrak/binary-ninja bash
-
-# ...becomes the following. Notice the --mount
-docker run \
-  -it \
-  --mount type=bind,source="$(pwd)"/license.dat,target=/root/.binaryninja/license.dat \
-  redballoonsecurity/ofrak/binary-ninja \
-  bash
-```
-
 ### Use OFRAK Interactively From Docker
 
 The `docker run` command creates a running container from the provided Docker image.
@@ -162,6 +119,49 @@ docker exec \
 
 # On Linux, this will print "Meow!"
 ./examples/assets/example_program
+```
+
+### Ghidra
+
+- To start the Ghidra server in a container started from this image, users should run `python -m ofrak_ghidra.server start`. 
+- To stop it, run `python -m ofrak_ghidra.server stop`. 
+- Ghidra logs can be found here: `/root/.ghidra/.ghidra_10.1.2_PUBLIC/application.log`.
+
+See [the Ghidra user guide](https://ofrak.com/docs/user-guide/ghidra.html) for more information about using Ghidra with OFRAK.
+
+### Binary Ninja
+
+Note that Binary Ninja is not distributed with OFRAK. Instead, if a license is present, the Docker build step will run the official headless installer using the provided license. **You need to have a valid BinaryNinja license to build and run the image.** For more details, [read the script that is run](disassemblers/ofrak_binary_ninja/install_binary_ninja_headless_linux.sh).
+
+To build the image, the license should be placed in the project's root directory and named `license.dat`. The serial number needs to be extracted from that file into a file named `serial.txt`. This can be done with the following command:
+
+```bash
+python3 \
+  -c 'import json, sys; print(json.load(sys.stdin)[0]["serial"])' \
+  < license.dat \
+  > serial.txt
+```
+
+The command `python3 build_image.py --config ofrak-binary-ninja.yml --base --finish` will build an image using Docker BuildKit secrets so that neither the license nor serial number are exposed in the built Docker image. (If [Docker BuildKit](https://docs.docker.com/develop/develop-images/build_enhancements/) is not enabled in your environment, precede the `python3 build_image.py` command with `DOCKER_BUILDKIT=1`.)
+
+The license can then be mounted into the Docker container at location `/root/.binaryninja/license.dat` by adding the following arguments to the `docker run` command:
+
+```
+--mount type=bind,source="$(pwd)"/license.dat,target=/root/.binaryninja/license.dat 
+```
+
+For example:
+
+```bash
+# This simple command...
+docker run -it redballoonsecurity/ofrak/binary-ninja bash
+
+# ...becomes the following. Notice the --mount
+docker run \
+  -it \
+  --mount type=bind,source="$(pwd)"/license.dat,target=/root/.binaryninja/license.dat \
+  redballoonsecurity/ofrak/binary-ninja \
+  bash
 ```
 
 ### Useful Docker Commands
