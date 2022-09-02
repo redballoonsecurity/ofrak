@@ -1,7 +1,8 @@
 # Contributing
 
 ## GitHub Merge Requests
-Contributions to OFRAK should be made as a Pull Request on Github.
+
+[Contributions to OFRAK should be made as a Pull Request on Github.](https://github.com/redballoonsecurity/ofrak/blob/master/CONTRIBUTING.md)
 
 ## Pre-commit
 OFRAK uses [pre-commit](https://pre-commit.com/) to run automated tools on the code base before every commit.

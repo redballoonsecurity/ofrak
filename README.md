@@ -59,7 +59,7 @@ Red Balloon Security will not accept Pull Requests nor add software to this repo
 
 Such ownership verification, non-technical questions, concerns, or comments about anything other than the committed source code should be directed to [ofrak@redballoonsecurity.com](mailto:ofrak@redballoonsecurity.com).
 
-For more details, please see our [contributor guide](https://github.com/redballoonsecurity/ofrak/blob/master/docs/contributing.md).
+For more details, please see our [contributor guide](CONTRIBUTING.md) and the [Python development guide](docs/contributor-guide/python.md).
 
 ## Support
 
