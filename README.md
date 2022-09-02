@@ -53,7 +53,7 @@ Users interested in OFRAK for commercial purposes can request the Pro License, w
 
 Red Balloon Security is excited for security researchers and developers to contribute to this repository.
 
-For details, please see our [contributor guide](CONTRIBUTING.md) and the [Python development guide](docs/contributor-guide/python.md).
+For details, please see our [contributor guide](CONTRIBUTING.md) and the [Python development guide](docs/contributor-guide/getting-started.md).
 
 ## Support
 

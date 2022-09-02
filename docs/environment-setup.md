@@ -266,7 +266,7 @@ source ofrak-venv/bin/activate
     ```bash
     for d in ofrak_io ofrak_type ofrak_patch_maker ofrak_components ofrak; do make -C "${d}" develop; done 
     ```
-6. If you are planning to contribute to OFRAK, install the pre-commit hooks. For more information, see the [contributor guide](docs/contributor-guide/python.md).
+6. If you are planning to contribute to OFRAK, install the pre-commit hooks. For more information, see the [contributor guide](docs/contributor-guide/getting-started.md).
 
     ```bash
     python3 -m pip install --user pre-commit
