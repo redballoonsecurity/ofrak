@@ -108,14 +108,14 @@ docker run \
   redballoonsecurity/ofrak/ghidra:latest
 ```
 
-Now, the scripts can be run inside the Docker container, and any files in `/examples` that they create or modify will also be created or modified in `examples/` outside of the container. To see this, run the example script using `docker exec`, and read the new file from outside of the container.
+Now, the scripts can be run inside the Docker container, and any files in `/my_examples` that they create or modify will also be created or modified in `examples/` outside of the container. To see this, run the example script using `docker exec`, and read the new file from outside of the container.
 
 ```bash
 docker exec \
   --interactive \
   --tty \
   rbs-ofrak \
-  python3 /examples/ex1_simple_string_modification.py
+  python3 /my_examples/ex1_simple_string_modification.py
 
 # On Linux, this will print "Meow!"
 ./examples/assets/example_program
@@ -123,15 +123,16 @@ docker exec \
 
 ### Ghidra
 
-- To start the Ghidra server in a container started from this image, users should run `python -m ofrak_ghidra.server start`. 
-- To stop it, run `python -m ofrak_ghidra.server stop`. 
+- By default, in containers with Ghidra, the Ghidra server should start automatically when the container starts up.
+- To manually start the Ghidra server in a container started from this image, users should run `python -m ofrak_ghidra.server start`. 
+- To manually stop it, run `python -m ofrak_ghidra.server stop`. 
 - Ghidra logs can be found here: `/root/.ghidra/.ghidra_10.1.2_PUBLIC/application.log`.
 
 See [the Ghidra user guide](https://ofrak.com/docs/user-guide/ghidra.html) for more information about using Ghidra with OFRAK.
 
 ### Binary Ninja
 
-Note that Binary Ninja is not distributed with OFRAK. Instead, if a license is present, the Docker build step will run the official headless installer using the provided license. **You need to have a valid BinaryNinja license to build and run the image.** For more details, [read the script that is run](disassemblers/ofrak_binary_ninja/install_binary_ninja_headless_linux.sh).
+Note that Binary Ninja is not distributed with OFRAK. Instead, if a license is present, the Docker build step will run the official headless installer using the provided license. **You need to have a valid BinaryNinja license to build and run the image.** For more details, [read the script that is run](https://github.com/redballoonsecurity/ofrak/blob/master/disassemblers/ofrak_binary_ninja/install_binary_ninja_headless_linux.sh).
 
 To build the image, the license should be placed in the project's root directory and named `license.dat`. The serial number needs to be extracted from that file into a file named `serial.txt`. This can be done with the following command:
 
@@ -190,20 +191,23 @@ source ofrak-venv/bin/activate
 
 1. Use homebrew to install required libraries and executables:
 
-   ```bash
-   brew install apktool binwalk cmake java libmagic lzop p7zip qemu squashfs rar unar wget
-   ```
+    ```bash
+    brew install apktool binwalk cmake java libmagic lzop p7zip qemu squashfs rar unar wget
+    ```
 
-   - OFRAK uses `apktool`, `java`, and `wget` to install `uber-apk-signer` for unpacking and packing APK files.
-   - OFRAK uses `binwalk` for analyzing packed binary files.
-   - OFRAK uses `cmake` to install a custom branch of `keystone-engine`.
-   - OFRAK uses the `libmagic` library for `python-magic`, which automatically determines which packers/unpackers to use with binaries.
-   - OFRAK uses the `lzop` command line utility for packing/unpacking LZO archives
-   - OFRAK uses the 7-zip command line utility for packing/unpacking 7z archives
-   - OFRAK uses the `qemu-system-i386` command line utility (and other `qemu` commands) for testing the `BzImage` packer and unpacker
-   - OFRAK uses the `mksquashfs` command line utility for packing/unpacking SquashFS filesystems.
-   - OFRAK uses the `rar` and `unar` command line utilities for packing/unpacking RAR archives
-1.  The following script can then be used to install keystone engine:
+    - OFRAK uses `apktool`, `java`, and `wget` to install `uber-apk-signer` for unpacking and packing APK files.
+    - OFRAK uses `binwalk` for analyzing packed binary files.
+    - OFRAK uses `cmake` to install a custom branch of `keystone-engine`.
+    - OFRAK uses the `libmagic` library for `python-magic`, which automatically determines which packers/unpackers to use with binaries.
+    - OFRAK uses the `lzop` command line utility for packing/unpacking LZO archives
+    - OFRAK uses the 7-zip command line utility for packing/unpacking 7z archives
+    - OFRAK uses the `qemu-system-i386` command line utility (and other `qemu` commands) for testing the `BzImage` packer and unpacker
+    - OFRAK uses the `mksquashfs` command line utility for packing/unpacking SquashFS filesystems.
+    - OFRAK uses the `rar` and `unar` command line utilities for packing/unpacking RAR archives
+
+    If not all of the dependencies are installed, core OFRAK will still work, but most of the components will not.
+
+2. The following script can then be used to install `keystone`:
 
     ```bash
     #!/usr/bin/env bash
@@ -223,7 +227,7 @@ source ofrak-venv/bin/activate
     pip3 install .
     popd
     ```
-1. The custom branch of `capstone-engine` can be installed using the following script:
+3. The custom branch of `capstone` can be installed using the following script:
 
     ```bash
     #!/usr/bin/env bash
