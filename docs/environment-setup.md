@@ -145,25 +145,7 @@ python3 \
 
 The command `python3 build_image.py --config ofrak-binary-ninja.yml --base --finish` will build an image using Docker BuildKit secrets so that neither the license nor serial number are exposed in the built Docker image. (If [Docker BuildKit](https://docs.docker.com/develop/develop-images/build_enhancements/) is not enabled in your environment, precede the `python3 build_image.py` command with `DOCKER_BUILDKIT=1`.)
 
-The license can then be mounted into the Docker container at location `/root/.binaryninja/license.dat` by adding the following arguments to the `docker run` command:
-
-```
---mount type=bind,source="$(pwd)"/license.dat,target=/root/.binaryninja/license.dat 
-```
-
-For example:
-
-```bash
-# This simple command...
-docker run -it redballoonsecurity/ofrak/binary-ninja bash
-
-# ...becomes the following. Notice the --mount
-docker run \
-  -it \
-  --mount type=bind,source="$(pwd)"/license.dat,target=/root/.binaryninja/license.dat \
-  redballoonsecurity/ofrak/binary-ninja \
-  bash
-```
+See [the Binary Ninja user guide](https://ofrak.com/docs/user-guide/binary_ninja.html) for more information about using Binary Ninja wiht OFRAK.
 
 ### Useful Docker Commands
 
