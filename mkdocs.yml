@@ -68,7 +68,7 @@ nav:
         - User Guide: "user-guide/patch-maker/user-guide.md"
         - Troubleshooting: "user-guide/patch-maker/troubleshooting.md"
   - Contributor Guide:
-      - "Getting Started & Python Conventions": "contributor-guide/python.md"
+      - Getting Started: "contributor-guide/python.md"
       - Writing Components:
         - Identifier: "contributor-guide/component/identifier.md"
         - Unpacker: "contributor-guide/component/unpacker.md"
