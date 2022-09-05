@@ -1,5 +1,4 @@
 import io
-import logging
 from dataclasses import dataclass
 from typing import Iterable
 
@@ -13,7 +12,7 @@ from ofrak.core import (
     GenericBinary,
 )
 
-LOGGER = logging.getLogger(__name__)
+from ofrak_components.ecc import initialize_ecc, encode_ecc
 
 SX_ECC_MAGIC = b"SXECCv1"
 SX_ECC_MAGIC_LEN = len(SX_ECC_MAGIC)
@@ -80,6 +79,10 @@ class FlashEccBlock(GenericBinary):
 
 @dataclass
 class FlashEccTailBlock(GenericBinary):
+    """
+    The final block in the ECC marked region
+    """
+
     delimiter: bytes
     ecc_size: int  # The size of the ECC protected region
     md5: bytes
@@ -100,6 +103,10 @@ class FlashEccTailBlock(GenericBinary):
 
 @dataclass
 class FlashEccResource(GenericBinary):
+    """
+    Overarching resource for physical representation containing FlashEccBlock
+    """
+
     async def get_header_block_as_view(self) -> FlashEccHeaderBlock:
         return await self.resource.get_only_child_as_view(
             v_type=FlashEccHeaderBlock,
@@ -142,7 +149,9 @@ class FlashEccResource(GenericBinary):
         for block in sorted_blocks:
             data += block.data
 
-        return data
+        tail_block_view = await self.get_tail_block_as_view()
+        expected_size = tail_block_view.get_ecc_size()
+        return data[:expected_size]
 
     async def get_flash_ecc(self) -> bytes:
         ecc = b""
@@ -163,6 +172,15 @@ class FlashEccResource(GenericBinary):
 
 
 @dataclass
+class FlashLogicalDataResource(GenericBinary):
+    """
+    This is the final product of unpacking a FlashResource.
+    It contains the data without any ECC or OOB data included.
+    This allows for recursive packing and unpacking.
+    """
+
+
+@dataclass
 class FlashEccProtectedResource(GenericBinary):
     """
     Region of memory protected by ECC
@@ -174,15 +192,6 @@ class FlashResource(GenericBinary):
     """
     The overarching resource that encapsulates flash storage.
     This is made up of several blocks.
-    """
-
-
-@dataclass
-class FlashLogicalDataResource(GenericBinary):
-    """
-    This is the final product of unpacking a FlashResource.
-    It contains the data without any ECC or OOB data included.
-    This allows for recursive packing and unpacking.
     """
 
 
@@ -198,6 +207,10 @@ class FlashConfig(ComponentConfig):
 #    IDENTIFIER     #
 #####################
 class FlashEccIdentifier(Identifier[None]):
+    """
+    Identify an ECC protected region by searching for the magic bytes
+    """
+
     targets = (FlashResource,)
 
     async def identify(self, resource: Resource, config=None):
@@ -317,14 +330,18 @@ class FlashEccProtectedResourceUnpacker(Unpacker[None]):
         data_len = len(data)
         ecc_magic_offset = data.find(SX_ECC_MAGIC)
 
+        initialize_ecc()
+
         # Get the end of the ecc_region
         # Find the tail delimiter followed by the number of data bytes up to that point
         search_index = ecc_magic_offset
         while search_index < data_len:
             delimiter_index = data.find(ECC_TAIL_BLOCK_DELIMITER, search_index, data_len)
-            relative_offset = delimiter_index - ecc_magic_offset
+            # Catch delimiter before it tries to loop back to first search hit
             if delimiter_index == -1:
                 raise UnpackerError("Unable to find end of ECC protected region")
+            search_index = delimiter_index + 1
+            relative_offset = delimiter_index - ecc_magic_offset
             read_size = int.from_bytes(data[delimiter_index + 1 : delimiter_index + 5], "big")
             expected_data_bytes = _flash_p2l(relative_offset)
 
@@ -342,7 +359,6 @@ class FlashEccProtectedResourceUnpacker(Unpacker[None]):
                     data_range=Range(relative_offset, relative_offset + ECC_TAIL_BLOCK_SIZE),
                 )
                 break
-            search_index = delimiter_index + 1
 
         if ecc_region == None:
             raise UnpackerError("Error creating ECC resource")
@@ -352,6 +368,7 @@ class FlashEccProtectedResourceUnpacker(Unpacker[None]):
         only_data = b""
         num_possible_ecc_blocks = ecc_data_len // FLASH_BLOCK_SIZE
 
+        # Loop through all blocks, adding child resource for each
         for block_count in range(0, num_possible_ecc_blocks):
             cur_block_offset = FLASH_BLOCK_SIZE * block_count
             cur_block_end_offset = cur_block_offset + FLASH_BLOCK_SIZE
@@ -381,6 +398,10 @@ class FlashEccProtectedResourceUnpacker(Unpacker[None]):
                         tags=(FlashEccBlock,),
                         data_range=Range(cur_block_offset, cur_block_end_offset),
                     )
+                    ecc = encode_ecc(
+                        cur_block_data[: ECC_BLOCK_DATA_SIZE + 1], ECC_BLOCK_DATA_SIZE + 1
+                    )
+                    print(ecc.hex())
                     only_data += cur_block_data[: ECC_BLOCK_DATA_SIZE + 1]
                     ecc_data_size += ECC_BLOCK_DATA_SIZE
             else:
@@ -389,7 +410,7 @@ class FlashEccProtectedResourceUnpacker(Unpacker[None]):
         # Add all block data to logical resource for recursive unpacking
         await ecc_region.create_child(
             tags=(FlashLogicalDataResource, GenericBinary),
-            data=only_data,
+            data=only_data[:read_size],
         )
 
 
@@ -405,7 +426,7 @@ class FlashResourcePacker(Packer[FlashConfig]):
     targets = (FlashResource,)
 
     async def pack(self, resource: Resource, config: FlashConfig):
-        # Cleanup logical resource
+        # Cleanup logical resources
         logical_resources = await resource.get_descendants(
             r_filter=ResourceFilter.with_tags(
                 FlashLogicalDataResource,
