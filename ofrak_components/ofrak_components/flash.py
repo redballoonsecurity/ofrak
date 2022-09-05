@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Iterable
 
 from ofrak import Analyzer, Identifier, Packer, Resource, ResourceFilter, Unpacker
+from ofrak.component.component_modifier.Modifier import Modifier
 from ofrak.model.component_model import ComponentConfig
 from ofrak_type.range import Range
 from ofrak.component.unpacker import UnpackerError
@@ -12,7 +13,7 @@ from ofrak.core import (
     GenericBinary,
 )
 
-from ofrak_components.ecc import initialize_ecc, encode_ecc
+from ofrak_components.ecc import initialize_ecc
 
 SX_ECC_MAGIC = b"SXECCv1"
 SX_ECC_MAGIC_LEN = len(SX_ECC_MAGIC)
@@ -201,6 +202,16 @@ class FlashResource(GenericBinary):
 @dataclass
 class FlashConfig(ComponentConfig):
     pass
+
+
+@dataclass
+class FlashLogicalDataResourceConfig(ComponentConfig):
+    offset: int
+    bytes: bytes
+    is_insert: bool
+
+    async def __init__(self, is_insert=False):
+        self.is_insert = is_insert
 
 
 #####################
@@ -398,10 +409,6 @@ class FlashEccProtectedResourceUnpacker(Unpacker[None]):
                         tags=(FlashEccBlock,),
                         data_range=Range(cur_block_offset, cur_block_end_offset),
                     )
-                    ecc = encode_ecc(
-                        cur_block_data[: ECC_BLOCK_DATA_SIZE + 1], ECC_BLOCK_DATA_SIZE + 1
-                    )
-                    print(ecc.hex())
                     only_data += cur_block_data[: ECC_BLOCK_DATA_SIZE + 1]
                     ecc_data_size += ECC_BLOCK_DATA_SIZE
             else:
@@ -412,6 +419,19 @@ class FlashEccProtectedResourceUnpacker(Unpacker[None]):
             tags=(FlashLogicalDataResource, GenericBinary),
             data=only_data[:read_size],
         )
+
+
+#####################
+#     MODIFIERS     #
+#####################
+class FlashLogicalDataResourceModifier(Modifier[FlashLogicalDataResourceConfig]):
+    targets = FlashLogicalDataResource
+
+    async def modify(self, resource: Resource, config: FlashLogicalDataResourceConfig) -> None:
+        resource_size = await resource.get_data_length()
+        if len(config.bytes) > (resource_size - config.offset):
+            # Patch is larger than original data size, append
+            pass
 
 
 #####################

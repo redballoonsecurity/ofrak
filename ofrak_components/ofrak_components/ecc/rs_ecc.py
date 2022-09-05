@@ -139,11 +139,7 @@ def initialize_ecc() -> None:
 
 
 def encode_ecc(msg: bytearray, count: int) -> bytearray:
-    payload = bytearray(count)
-    z = 0
-    while z < count:
-        payload[z] = msg[z]
-        z += 1
+    payload = bytearray(msg[:count])
     lfsr = bytearray(NPAR + 1)
     i = 0
     while i < count:
