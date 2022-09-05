@@ -115,14 +115,6 @@ def mult_polys(p1: bytearray, p2: bytearray) -> None:
         i += 1
 
 
-def build_payload(payload: bytearray, count: int) -> bytearray:
-    i = 0
-    while i < NPAR:
-        payload[i + count] = pBytes[NPAR - 1 - i]
-        i += 1
-    return payload
-
-
 def compute_genpoly(count: int) -> None:
     tp = bytearray(256)
     tp1 = bytearray(256)
@@ -147,7 +139,7 @@ def initialize_ecc() -> None:
 
 
 def encode_ecc(msg: bytearray, count: int) -> bytearray:
-    payload = bytearray(255)
+    payload = bytearray(count)
     z = 0
     while z < count:
         payload[z] = msg[z]
@@ -169,4 +161,6 @@ def encode_ecc(msg: bytearray, count: int) -> bytearray:
         pBytes[k] = lfsr[k]
         k += 1
 
-    return build_payload(payload, count)
+    ecc = pBytes[:NPAR]
+    ecc.reverse()
+    return ecc
