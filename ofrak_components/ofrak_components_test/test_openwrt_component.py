@@ -14,11 +14,10 @@ class TestOpenWrtTrxUnpackModifyPack(UnpackModifyPackPattern):
         """
         Create a root resource from the test image stored in Git LFS.
         """
-        testfile_path = ""
-
-        # TODO
-        raise NotImplemented("Waiting on a suitable (public) test file...")
-
+        assets_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
+        testfile_path = os.path.join(
+            assets_dir, "openwrt-21.02.1-bcm47xx-mips74k-asus_rt-n14uhp-squashfs.trx"
+        )
         image_path = os.path.abspath(os.path.join(os.path.dirname(__file__), testfile_path))
         resource = await ofrak_context.create_root_resource_from_file(image_path)
         resource.add_tag(OpenWrtTrx)
