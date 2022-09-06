@@ -489,11 +489,19 @@ class FlashEccResourcePacker(Packer[FlashConfig]):
         data += tail_view.resource.get_data()
 
         # Check if anything has been modified and update ECC if so
-        if md5(data).hexdigest() != tail_view.md5:
+        new_md5 = md5(data).digest()
+        if new_md5 != tail_view.md5:
             # MD5 checksums do not match, check each block for updates
-            print("No match")
+            print("Detected modification")
+            for block in blocks:
+                block_data = block.get_block_data()
+                ecc = encode_ecc(block_data, ECC_SIZE)
+                # TODO: Keep hash of data in memory to see if modified
+                # Not every ECC needs to be updated
+                block.ecc = ecc
+            tail_view.md5 = new_md5
 
-        print("Match")
+        print("No mod")
         # Patch original data
         original_size = await resource.get_data_length()
         resource.queue_patch(Range(0, original_size), data)
@@ -537,6 +545,7 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
         packed_data += (
             ECC_TAIL_BLOCK_DELIMITER + original_size.to_bytes(4, "big") + md5(data).digest()
         )
+
         parent = await resource.get_parent()
         await parent.create_child(tags=(FlashLogicalDataResource,), data=packed_data)
 
