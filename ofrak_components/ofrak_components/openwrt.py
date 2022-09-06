@@ -3,7 +3,7 @@ import struct
 import zlib
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Union
+from typing import Optional
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
@@ -30,12 +30,6 @@ OPENWRT_TRXV2_HEADER_LEN = 32
 class OpenWrtTrxVersion(Enum):
     VERSION1 = 1
     VERSION2 = 2
-
-
-class NoBinHeader:
-    """
-    Helper class for TRX Version 1 files which do not include a bin_header partition
-    """
 
 
 #####################
@@ -104,7 +98,7 @@ class OpenWrtTrxHeader(ResourceView):
     trx_loader_offset: int
     trx_kernel_offset: int
     trx_rootfs_offset: int
-    trx_binheader_offset: Union[int, NoBinHeader]
+    trx_binheader_offset: Optional[int]
 
     def get_version(self) -> OpenWrtTrxVersion:
         return OpenWrtTrxVersion(self.trx_version)
@@ -271,7 +265,7 @@ class OpenWrtTrxHeaderAttributesAnalyzer(Analyzer[None, OpenWrtTrxHeader]):
                 trx_loader_offset,
                 trx_kernel_offset,
                 trx_rootfs_offset,
-                NoBinHeader(),
+                None,
             )
         elif trx_version == OpenWrtTrxVersion.VERSION2.value:
             deserialized = deserializer.unpack_multiple("IIII")
@@ -325,7 +319,7 @@ class OpenWrtTrxHeaderModifierConfig(ComponentConfig):
     trx_loader_offset: Optional[int] = None
     trx_kernel_offset: Optional[int] = None
     trx_rootfs_offset: Optional[int] = None
-    trx_binheader_offset: Optional[Union[int, NoBinHeader]] = None
+    trx_binheader_offset: Optional[int] = None
 
 
 class OpenWrtTrxHeaderModifier(Modifier[OpenWrtTrxHeaderModifierConfig]):
