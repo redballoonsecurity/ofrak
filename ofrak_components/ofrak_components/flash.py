@@ -386,6 +386,7 @@ class FlashEccProtectedResourceUnpacker(Unpacker[None]):
             cur_block_offset = FLASH_BLOCK_SIZE * block_count
             cur_block_end_offset = cur_block_offset + FLASH_BLOCK_SIZE
             cur_block_data = ecc_data[cur_block_offset:cur_block_end_offset]
+            cur_block_ecc = cur_block_data[cur_block_end_offset - ECC_SIZE :]
             cur_block_delimiter = cur_block_data[ECC_BLOCK_DATA_SIZE : ECC_BLOCK_DATA_SIZE + 1]
             if (
                 cur_block_delimiter == ECC_DATA_DELIMITER
@@ -420,7 +421,7 @@ class FlashEccProtectedResourceUnpacker(Unpacker[None]):
                 # Include delimiter in the ECC and MD5 calculation
                 data_delim = block_data_only + cur_block_delimiter
                 # Add to Dict to avoid recalculating in the future
-                DATA_HASHES[md5(data_delim).digest()] = data_delim
+                DATA_HASHES[md5(data_delim).digest()] = cur_block_ecc
             else:
                 raise UnpackerError("Bad Flash ECC Delimiter")
 
@@ -559,8 +560,6 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
         packed_data += tail_block + ecc
         parent = await resource.get_parent()
         await parent.create_child(tags=(FlashEccResource,), data=packed_data)
-
-        print(packed_data.hex())
 
 
 #####################
