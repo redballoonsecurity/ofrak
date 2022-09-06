@@ -9,7 +9,6 @@ from ofrak.core.binary import GenericBinary
 from ofrak.model.component_model import ComponentConfig
 from ofrak_type.range import Range
 from ofrak.component.unpacker import UnpackerError
-from ofrak_type.error import NotFoundError
 from ofrak_io.deserializer import BinaryDeserializer
 from ofrak_type.endianness import Endianness
 from ofrak.core import (
@@ -458,19 +457,7 @@ class FlashResourcePacker(Packer[FlashConfig]):
     targets = (FlashResource,)
 
     async def pack(self, resource: Resource, config: FlashConfig):
-        # Cleanup logical resources
-        logical_resources = await resource.get_descendants(
-            r_filter=ResourceFilter.with_tags(
-                FlashLogicalDataResource,
-            ),
-        )
-        for res in logical_resources:
-            await res.delete()
-
-        # We treat the data as raw bytes without any further processing
-        original_data = await resource.get_data()
-        original_size = await resource.get_data_length()
-        resource.queue_patch(Range(0, original_size), original_data)
+        pass
 
 
 class FlashEccResourcePacker(Packer[FlashConfig]):
@@ -482,22 +469,7 @@ class FlashEccResourcePacker(Packer[FlashConfig]):
     targets = (FlashEccResource,)
 
     async def pack(self, resource: Resource, config: FlashConfig):
-        # We actually want to delete ourselves and overwrite with just the repacked version
-        try:
-            packed_child = await resource.get_only_child(
-                r_filter=ResourceFilter.with_tags(
-                    FlashEccResource,
-                ),
-            )
-            patch_data = await packed_child.get_data()
-            patch_size = await packed_child.get_data_length()
-        except NotFoundError:
-            # Child has not been packed, return itself
-            # TODO: Verify that no modifications took place without repacking child
-            patch_data = await resource.get_data()
-            patch_size = await resource.get_data_length()
-
-        resource.queue_patch(Range(0, patch_size), patch_data)
+        pass
 
 
 class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
@@ -553,6 +525,8 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
         )
         ecc = encode_ecc(tail_block, ECC_TAIL_BLOCK_SIZE - ECC_SIZE)
         packed_data += tail_block + ecc
+
+        # Create child under the FlashEccResource to show that it packed itself
         parent = await resource.get_parent()
         await parent.create_child(tags=(FlashEccResource,), data=packed_data)
 
