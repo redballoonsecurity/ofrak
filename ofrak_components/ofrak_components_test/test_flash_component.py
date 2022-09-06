@@ -3,6 +3,7 @@ import os
 import test_ofrak.components
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
+from ofrak_components.flash import FlashResource
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackPackPattern
 
 TEST_FILE_PATH = os.path.join(test_ofrak.components.ASSETS_DIR, "flash_test.bin")
@@ -13,6 +14,8 @@ class TestFlashUnpackModifyPack(UnpackPackPattern):
         return await ofrak_context.create_root_resource_from_file(TEST_FILE_PATH)
 
     async def unpack(self, resource: Resource) -> None:
+        resource.add_tag(FlashResource)
+        await resource.save()
         await resource.unpack()
 
     async def repack(self, resource: Resource) -> None:
