@@ -5,7 +5,6 @@ from hashlib import md5
 
 from ofrak import Analyzer, Identifier, Packer, Resource, ResourceFilter, Unpacker
 from ofrak.core.binary import GenericBinary
-from ofrak.component.modifier import Modifier
 from ofrak.model.component_model import ComponentConfig
 from ofrak_type.range import Range
 from ofrak.component.unpacker import UnpackerError
@@ -436,19 +435,6 @@ class FlashEccProtectedResourceUnpacker(Unpacker[None]):
             tags=(FlashLogicalDataResource,),
             data=only_data[:vaddr_offset],
         )
-
-
-#####################
-#     MODIFIERS     #
-#####################
-class FlashLogicalDataResourceModifier(Modifier[FlashLogicalDataResourceConfig]):
-    targets = FlashLogicalDataResource
-
-    async def modify(self, resource: Resource, config: FlashLogicalDataResourceConfig) -> None:
-        resource_size = await resource.get_data_length()
-        if len(config.bytes) > (resource_size - config.offset):
-            # Patch is larger than original data size, append
-            pass
 
 
 #####################
