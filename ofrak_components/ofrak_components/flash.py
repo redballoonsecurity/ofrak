@@ -1,6 +1,6 @@
 import io
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Iterable, Dict
 from hashlib import md5
 
 from ofrak import Analyzer, Identifier, Packer, Resource, ResourceFilter, Unpacker
@@ -30,6 +30,9 @@ ECC_HEADER_BLOCK_DATA_SIZE = 215
 ECC_HEADER_DELIMITER_OFFSET = SX_ECC_MAGIC_LEN + ECC_HEADER_BLOCK_DATA_SIZE
 ECC_BLOCK_DATA_SIZE = 222
 ECC_TAIL_BLOCK_SIZE = 1 + 4 + ECC_MD5_LEN + ECC_SIZE
+
+# Dict of data MD5 checksum to ECC bytes, used to check for updates
+DATA_HASHES: Dict[bytes, bytes] = dict()
 
 
 #####################
@@ -400,7 +403,7 @@ class FlashEccProtectedResourceUnpacker(Unpacker[None]):
                         tags=(FlashEccHeaderBlock,),
                         data_range=Range(cur_block_offset, cur_block_end_offset),
                     )
-                    only_data += cur_block_data[
+                    block_data_only = cur_block_data[
                         SX_ECC_MAGIC_LEN : ECC_HEADER_BLOCK_DATA_SIZE + SX_ECC_MAGIC_LEN
                     ]
                     vaddr_offset += ECC_HEADER_BLOCK_DATA_SIZE
@@ -410,9 +413,14 @@ class FlashEccProtectedResourceUnpacker(Unpacker[None]):
                         tags=(FlashEccBlock,),
                         data_range=Range(cur_block_offset, cur_block_end_offset),
                     )
-
-                    only_data += cur_block_data[:ECC_BLOCK_DATA_SIZE]
+                    block_data_only = cur_block_data[:ECC_BLOCK_DATA_SIZE]
                     vaddr_offset += ECC_BLOCK_DATA_SIZE
+
+                only_data += block_data_only
+                # Include delimiter in the ECC and MD5 calculation
+                data_delim = block_data_only + cur_block_delimiter
+                # Add to Dict to avoid recalculating in the future
+                DATA_HASHES[md5(data_delim).digest()] = data_delim
             else:
                 raise UnpackerError("Bad Flash ECC Delimiter")
 
@@ -512,7 +520,13 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
             # Create header block
             if bytes_left == original_size:
                 block_data = data[:ECC_HEADER_BLOCK_DATA_SIZE] + ECC_DATA_DELIMITER
-                block = SX_ECC_MAGIC + block_data + encode_ecc(block_data, ECC_SIZE)
+                data_hash = md5(block_data).digest()
+                if data_hash in DATA_HASHES:
+                    # Data was not changed, no need to compute new ECC
+                    ecc = DATA_HASHES[data_hash]
+                else:
+                    ecc = encode_ecc(block_data, ECC_SIZE)
+                block = SX_ECC_MAGIC + block_data + ecc
                 data_offset += ECC_HEADER_BLOCK_DATA_SIZE
                 bytes_left -= ECC_HEADER_BLOCK_DATA_SIZE
             else:
@@ -520,23 +534,33 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
                 if bytes_left <= ECC_BLOCK_DATA_SIZE:
                     # Add padding to last block
                     block_data = bytearray(ECC_BLOCK_DATA_SIZE)
-                    block_data[: bytes_left - 1] = data[data_offset:]
-                    block_data[bytes_left - 1 : bytes_left] = ECC_LAST_DATA_BLOCK_DELIMITER
+                    block_data[:bytes_left] = data[data_offset:]
+                    block_data[bytes_left : bytes_left + 1] = ECC_LAST_DATA_BLOCK_DELIMITER
                 else:
                     block_data = data[data_offset : data_offset + ECC_BLOCK_DATA_SIZE]
                     block_data += ECC_DATA_DELIMITER
-                block = block_data + encode_ecc(block_data, ECC_SIZE)
+
+                # Check if this block was modified by checking MD5 checksum from unpacking
+                data_hash = md5(block_data).digest()
+                if data_hash in DATA_HASHES:
+                    ecc = DATA_HASHES[data_hash]
+                else:
+                    ecc = encode_ecc(block_data, ECC_SIZE)
+                block = block_data + ecc
                 data_offset += ECC_BLOCK_DATA_SIZE
                 bytes_left -= ECC_BLOCK_DATA_SIZE
             packed_data += block
 
         # Add tail
-        packed_data += (
+        tail_block = (
             ECC_TAIL_BLOCK_DELIMITER + original_size.to_bytes(4, "big") + md5(data).digest()
         )
-
+        ecc = encode_ecc(tail_block, ECC_TAIL_BLOCK_SIZE - ECC_SIZE)
+        packed_data += tail_block + ecc
         parent = await resource.get_parent()
         await parent.create_child(tags=(FlashEccResource,), data=packed_data)
+
+        print(packed_data.hex())
 
 
 #####################
