@@ -1,9 +1,11 @@
 import io
 from dataclasses import dataclass
 from typing import Iterable
+from hashlib import md5
 
 from ofrak import Analyzer, Identifier, Packer, Resource, ResourceFilter, Unpacker
-from ofrak.component.component_modifier.Modifier import Modifier
+from ofrak.core.binary import GenericBinary
+from ofrak.component.modifier import Modifier
 from ofrak.model.component_model import ComponentConfig
 from ofrak_type.range import Range
 from ofrak.component.unpacker import UnpackerError
@@ -13,7 +15,7 @@ from ofrak.core import (
     GenericBinary,
 )
 
-from ofrak_components.ecc import initialize_ecc
+from ofrak_components.ecc import initialize_ecc, encode_ecc
 
 SX_ECC_MAGIC = b"SXECCv1"
 SX_ECC_MAGIC_LEN = len(SX_ECC_MAGIC)
@@ -334,6 +336,7 @@ class FlashEccProtectedResourceUnpacker(Unpacker[None]):
         FlashEccBlock,
         FlashEccTailBlock,
         FlashLogicalDataResource,
+        GenericBinary,
     )
 
     async def unpack(self, resource: Resource, config=None):
@@ -363,19 +366,14 @@ class FlashEccProtectedResourceUnpacker(Unpacker[None]):
                     tags=(FlashEccResource,),
                     data_range=Range(ecc_magic_offset, delimiter_index + ECC_TAIL_BLOCK_SIZE),
                 )
-
-                # Add tail block while we're here
-                await ecc_region.create_child(
-                    tags=(FlashEccTailBlock,),
-                    data_range=Range(relative_offset, relative_offset + ECC_TAIL_BLOCK_SIZE),
-                )
                 break
 
         if ecc_region == None:
             raise UnpackerError("Error creating ECC resource")
         ecc_data = await ecc_region.get_data()
         ecc_data_len = len(ecc_data)
-        ecc_data_size = 0
+
+        vaddr_offset = 0
         only_data = b""
         num_possible_ecc_blocks = ecc_data_len // FLASH_BLOCK_SIZE
 
@@ -401,23 +399,32 @@ class FlashEccProtectedResourceUnpacker(Unpacker[None]):
                         tags=(FlashEccHeaderBlock,),
                         data_range=Range(cur_block_offset, cur_block_end_offset),
                     )
-                    only_data += cur_block_data[: ECC_HEADER_BLOCK_DATA_SIZE + 1]
-                    ecc_data_size += ECC_HEADER_BLOCK_DATA_SIZE
+                    only_data += cur_block_data[
+                        SX_ECC_MAGIC_LEN : ECC_HEADER_BLOCK_DATA_SIZE + SX_ECC_MAGIC_LEN
+                    ]
+                    vaddr_offset += ECC_HEADER_BLOCK_DATA_SIZE
                 else:
                     # Regular data block
                     await ecc_region.create_child(
                         tags=(FlashEccBlock,),
                         data_range=Range(cur_block_offset, cur_block_end_offset),
                     )
-                    only_data += cur_block_data[: ECC_BLOCK_DATA_SIZE + 1]
-                    ecc_data_size += ECC_BLOCK_DATA_SIZE
+
+                    only_data += cur_block_data[:ECC_BLOCK_DATA_SIZE]
+                    vaddr_offset += ECC_BLOCK_DATA_SIZE
             else:
                 raise UnpackerError("Bad Flash ECC Delimiter")
 
+        # Add tail block
+        await ecc_region.create_child(
+            tags=(FlashEccTailBlock,),
+            data_range=Range(ecc_data_len - ECC_TAIL_BLOCK_SIZE, ecc_data_len),
+        )
+
         # Add all block data to logical resource for recursive unpacking
         await ecc_region.create_child(
-            tags=(FlashLogicalDataResource, GenericBinary),
-            data=only_data[:read_size],
+            tags=(FlashLogicalDataResource,),
+            data=only_data[:vaddr_offset],
         )
 
 
@@ -471,6 +478,7 @@ class FlashEccResourcePacker(Packer[FlashConfig]):
 
     async def pack(self, resource: Resource, config: FlashConfig):
         data = b""
+
         ecc_view = await resource.view_as(FlashEccResource)
         header_view = await ecc_view.get_header_block_as_view()
         data += header_view.resource.get_data()
@@ -480,9 +488,57 @@ class FlashEccResourcePacker(Packer[FlashConfig]):
         tail_view = await ecc_view.get_tail_block_as_view()
         data += tail_view.resource.get_data()
 
+        # Check if anything has been modified and update ECC if so
+        if md5(data).hexdigest() != tail_view.md5:
+            # MD5 checksums do not match, check each block for updates
+            print("No match")
+
+        print("Match")
         # Patch original data
         original_size = await resource.get_data_length()
         resource.queue_patch(Range(0, original_size), data)
+
+
+class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
+    id = b"FlashLogicalDataResourcePacker"
+    targets = (FlashLogicalDataResource,)
+
+    async def pack(self, resource: Resource, config: FlashConfig):
+        data = await resource.get_data()
+        initialize_ecc()
+
+        bytes_left = len(data)
+        original_size = bytes_left
+        packed_data = bytearray()
+        data_offset = 0
+        while bytes_left > 0:
+            # Create header block
+            if bytes_left == original_size:
+                block_data = data[:ECC_HEADER_BLOCK_DATA_SIZE] + ECC_DATA_DELIMITER
+                block = SX_ECC_MAGIC + block_data + encode_ecc(block_data, ECC_SIZE)
+                data_offset += ECC_HEADER_BLOCK_DATA_SIZE
+                bytes_left -= ECC_HEADER_BLOCK_DATA_SIZE
+            else:
+                # Check if last block
+                if bytes_left <= ECC_BLOCK_DATA_SIZE:
+                    # Add padding to last block
+                    block_data = bytearray(ECC_BLOCK_DATA_SIZE)
+                    block_data[: bytes_left - 1] = data[data_offset:]
+                    block_data[bytes_left - 1 : bytes_left] = ECC_LAST_DATA_BLOCK_DELIMITER
+                else:
+                    block_data = data[data_offset : data_offset + ECC_BLOCK_DATA_SIZE]
+                    block_data += ECC_DATA_DELIMITER
+                block = block_data + encode_ecc(block_data, ECC_SIZE)
+                data_offset += ECC_BLOCK_DATA_SIZE
+                bytes_left -= ECC_BLOCK_DATA_SIZE
+            packed_data += block
+
+        # Add tail
+        packed_data += (
+            ECC_TAIL_BLOCK_DELIMITER + original_size.to_bytes(4, "big") + md5(data).digest()
+        )
+        parent = await resource.get_parent()
+        await parent.create_child(tags=(FlashLogicalDataResource,), data=packed_data)
 
 
 #####################
