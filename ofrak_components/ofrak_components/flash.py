@@ -1,4 +1,5 @@
 import io
+from enum import Enum
 from dataclasses import dataclass
 from typing import Iterable, Dict
 from hashlib import md5
@@ -204,19 +205,28 @@ class FlashResource(GenericBinary):
 #####################
 #      CONFIGS      #
 #####################
+class FlashEccPositionType(Enum):
+    """
+    Describes the position of the ECC in relation to the data
+    - Sequential is where all data comes before all of the ECC
+    - Staggered interweaves ECC at the end of pages
+    """
+
+    sequential_ecc = 0
+    staggered_ecc = 1
+
+
 @dataclass
 class FlashConfig(ComponentConfig):
-    pass
+    """
+    FlashConfig is unused.
+    The intent is to expand to all common flash configurations.
+    """
 
-
-@dataclass
-class FlashLogicalDataResourceConfig(ComponentConfig):
-    offset: int
-    bytes: bytes
-    is_insert: bool
-
-    async def __init__(self, is_insert=False):
-        self.is_insert = is_insert
+    block_size: int
+    ecc_magic_bytes: bytes
+    ecc_size: int
+    ecc_position: FlashEccPositionType
 
 
 #####################
@@ -339,7 +349,6 @@ class FlashEccProtectedResourceUnpacker(Unpacker[None]):
         FlashEccBlock,
         FlashEccTailBlock,
         FlashLogicalDataResource,
-        GenericBinary,
     )
 
     async def unpack(self, resource: Resource, config=None):
