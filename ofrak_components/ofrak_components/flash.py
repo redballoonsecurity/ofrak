@@ -9,6 +9,7 @@ from ofrak.component.modifier import Modifier
 from ofrak.model.component_model import ComponentConfig
 from ofrak_type.range import Range
 from ofrak.component.unpacker import UnpackerError
+from ofrak_type.error import NotFoundError
 from ofrak_io.deserializer import BinaryDeserializer
 from ofrak_type.endianness import Endianness
 from ofrak.core import (
@@ -477,34 +478,22 @@ class FlashEccResourcePacker(Packer[FlashConfig]):
     targets = (FlashEccResource,)
 
     async def pack(self, resource: Resource, config: FlashConfig):
-        data = b""
+        # We actually want to delete ourselves and overwrite with just the repacked version
+        try:
+            packed_child = await resource.get_only_child(
+                r_filter=ResourceFilter.with_tags(
+                    FlashEccResource,
+                ),
+            )
+            patch_data = await packed_child.get_data()
+            patch_size = await packed_child.get_data_length()
+        except NotFoundError:
+            # Child has not been packed, return itself
+            # TODO: Verify that no modifications took place without repacking child
+            patch_data = await resource.get_data()
+            patch_size = await resource.get_data_length()
 
-        ecc_view = await resource.view_as(FlashEccResource)
-        header_view = await ecc_view.get_header_block_as_view()
-        data += header_view.resource.get_data()
-        blocks = await ecc_view.get_blocks_as_view()
-        for block in blocks:
-            data += block.resource.get_data()
-        tail_view = await ecc_view.get_tail_block_as_view()
-        data += tail_view.resource.get_data()
-
-        # Check if anything has been modified and update ECC if so
-        new_md5 = md5(data).digest()
-        if new_md5 != tail_view.md5:
-            # MD5 checksums do not match, check each block for updates
-            print("Detected modification")
-            for block in blocks:
-                block_data = block.get_block_data()
-                ecc = encode_ecc(block_data, ECC_SIZE)
-                # TODO: Keep hash of data in memory to see if modified
-                # Not every ECC needs to be updated
-                block.ecc = ecc
-            tail_view.md5 = new_md5
-
-        print("No mod")
-        # Patch original data
-        original_size = await resource.get_data_length()
-        resource.queue_patch(Range(0, original_size), data)
+        resource.queue_patch(Range(0, patch_size), patch_data)
 
 
 class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
@@ -547,7 +536,7 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
         )
 
         parent = await resource.get_parent()
-        await parent.create_child(tags=(FlashLogicalDataResource,), data=packed_data)
+        await parent.create_child(tags=(FlashEccResource,), data=packed_data)
 
 
 #####################
