@@ -6,14 +6,12 @@ from hashlib import md5
 
 from ofrak import Analyzer, Identifier, Packer, Resource, ResourceFilter, Unpacker
 from ofrak.core.binary import GenericBinary
-from ofrak.model.component_model import ComponentConfig
-from ofrak_type.range import Range
 from ofrak.component.unpacker import UnpackerError
 from ofrak_io.deserializer import BinaryDeserializer
+from ofrak.model.component_model import ComponentConfig
 from ofrak_type.endianness import Endianness
-from ofrak.core import (
-    GenericBinary,
-)
+from ofrak_type.range import Range
+from ofrak_type.error import NotFoundError
 
 from ofrak_components.ecc import initialize_ecc, encode_ecc
 
@@ -393,7 +391,7 @@ class FlashEccProtectedResourceUnpacker(Unpacker[None]):
             cur_block_offset = FLASH_BLOCK_SIZE * block_count
             cur_block_end_offset = cur_block_offset + FLASH_BLOCK_SIZE
             cur_block_data = ecc_data[cur_block_offset:cur_block_end_offset]
-            cur_block_ecc = cur_block_data[cur_block_end_offset - ECC_SIZE :]
+            cur_block_ecc = cur_block_data[FLASH_BLOCK_SIZE - ECC_SIZE :]
             cur_block_delimiter = cur_block_data[ECC_BLOCK_DATA_SIZE : ECC_BLOCK_DATA_SIZE + 1]
             if (
                 cur_block_delimiter == ECC_DATA_DELIMITER
@@ -469,7 +467,22 @@ class FlashEccResourcePacker(Packer[FlashConfig]):
     targets = (FlashEccResource,)
 
     async def pack(self, resource: Resource, config: FlashConfig):
-        pass
+        # We actually want to delete ourselves and overwrite with just the repacked version
+        try:
+            packed_child = await resource.get_only_child(
+                r_filter=ResourceFilter.with_tags(
+                    FlashEccResource,
+                ),
+            )
+            patch_data = await packed_child.get_data()
+            patch_size = await packed_child.get_data_length()
+        except NotFoundError:
+            # Child has not been packed, return itself
+            # TODO: Verify that no modifications took place without repacking child
+            patch_data = await resource.get_data()
+            patch_size = await resource.get_data_length()
+
+        resource.queue_patch(Range(0, patch_size), patch_data)
 
 
 class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
