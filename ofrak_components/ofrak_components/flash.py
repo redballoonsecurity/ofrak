@@ -478,7 +478,6 @@ class FlashEccResourcePacker(Packer[FlashConfig]):
             patch_size = await packed_child.get_data_length()
         except NotFoundError:
             # Child has not been packed, return itself
-            # TODO: Verify that no modifications took place without repacking child
             patch_data = await resource.get_data()
             patch_size = await resource.get_data_length()
 
@@ -532,7 +531,7 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
                 bytes_left -= ECC_BLOCK_DATA_SIZE
             packed_data += block
 
-        # Add tail
+        # Add tail block
         tail_block = (
             ECC_TAIL_BLOCK_DELIMITER + original_size.to_bytes(4, "big") + md5(data).digest()
         )
