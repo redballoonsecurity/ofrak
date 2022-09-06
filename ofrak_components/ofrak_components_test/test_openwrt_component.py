@@ -4,7 +4,7 @@ import struct
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter
-from ofrak_components_test.patterns.unpack_modify_pack import UnpackModifyPackPattern
+from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 from ofrak_type.range import Range
 from ofrak_components.openwrt import OpenWrtTrx, openwrt_crc32, OpenWrtTrxKernel
 
