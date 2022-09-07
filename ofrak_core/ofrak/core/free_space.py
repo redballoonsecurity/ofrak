@@ -8,9 +8,7 @@ from ofrak.service.id_service_i import IDServiceInterface
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
 from ofrak.core.architecture import ProgramAttributes
-from ofrak.core.basic_block import BasicBlock
 from ofrak.core.complex_block import ComplexBlock
-from ofrak.core.instruction import Instruction
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.core.program import Program
 from ofrak.model.component_model import ComponentConfig
@@ -26,7 +24,7 @@ from ofrak.service.resource_service_i import (
     ResourceAttributeValueFilter,
     ResourceSort,
 )
-from ofrak_type.architecture import InstructionSet, InstructionSetMode
+from ofrak_type.architecture import InstructionSetMode
 from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.range import Range, remove_subranges
 
@@ -376,9 +374,11 @@ class FreeSpaceModifierConfig(ComponentConfig):
     Configuration for modifier which marks some free space.
 
     :var permissions: memory permissions to give the created free space.
+    :var stub: bytes to place in the first N bytes of the resource being freed
     """
 
     permissions: MemoryPermissions
+    stub: bytes
 
 
 class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
@@ -387,80 +387,49 @@ class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
     space by replacing its data with NOP instructions and tagging it as
     [FreeSpace][ofrak.core.free_space.FreeSpace].
     """
-
     targets = (MemoryRegion,)
-
-    def __init__(
-        self,
-        resource_factory: ResourceFactory,
-        data_service: DataServiceInterface,
-        resource_service: ResourceServiceInterface,
-        assembler_service: AssemblerServiceInterface,
-    ):
-        self._assembler_service = assembler_service
-        super().__init__(resource_factory, data_service, resource_service)
 
     async def modify(self, resource: Resource, config: FreeSpaceModifierConfig):
         mem_region_view = await resource.view_as(MemoryRegion)
+        if len(config.stub) > mem_region_view.size:
+            raise ValueError(
+                f"The provided stub ({len(config.stub)} bytes) cannot be larger than the "
+                f"Resource @ {hex(mem_region_view.virtual_address)} being freed "
+                f"({mem_region_view.size} bytes)."
+            )
+        parent_mr_view = await resource.get_parent_as_view(MemoryRegion)
+
+        stub_range = Range.from_size(mem_region_view.virtual_address, len(config.stub))
+        stub_offset = parent_mr_view.get_offset_in_self(stub_range.start)
+        stub_offset_range = stub_range.translate(stub_offset - stub_range.start)
 
         freed_range = Range(
-            mem_region_view.virtual_address,
+            mem_region_view.virtual_address + stub_range.length(),
             mem_region_view.virtual_address + mem_region_view.size,
         )
+        freed_offset = parent_mr_view.get_offset_in_self(freed_range.start)
+        freed_offset_range = freed_range.translate(freed_offset - freed_range.start)
 
-        parent_mr_view = await resource.get_parent_as_view(MemoryRegion)
-        patch_offset = parent_mr_view.get_offset_in_self(freed_range.start)
-        patch_range = freed_range.translate(patch_offset - freed_range.start)
-        program_ancestor_r = await resource.get_only_ancestor(
-            r_filter=ResourceFilter.with_tags(Program)
-        )
-        program_attrs = await program_ancestor_r.analyze(ProgramAttributes)
-
-        if resource.has_tag(BasicBlock):
-            block = await resource.view_as(BasicBlock)
-            mode = block.mode
-        elif resource.has_tag(ComplexBlock):
-            complex_block = await resource.view_as(ComplexBlock)
-            mode = await complex_block.get_mode()
-        elif resource.has_tag(Instruction):
-            instruction = await resource.view_as(Instruction)
-            mode = instruction.mode
-        else:
-            if program_attrs.isa is InstructionSet.ARM:
-                # default to thumb mode on ARM
-                mode = InstructionSetMode.THUMB
-            else:
-                mode = InstructionSetMode.NONE
-        if (program_attrs, mode) not in NOPS:
-            assembled_nop = await self._assembler_service.assemble(
-                "nop",
-                freed_range.start,
-                program_attrs,
-                mode,
-            )
-            NOPS[(program_attrs, mode)] = assembled_nop
-        single_nop_bytes = NOPS[(program_attrs, mode)]
-        nop_instr_size = len(single_nop_bytes)
-        if freed_range.length() % nop_instr_size:
-            raise ValueError(
-                "Right now, we expect the length of the range to be freed to be a "
-                "multiple of sizeof(NOP instruction)."
-            )
-
-        n_nop_instructions = int(freed_range.length() / nop_instr_size)
-        patch_bytes = single_nop_bytes * n_nop_instructions
+        # Right now, if a stub is provided, we assume this must be is a real function.
+        name = None
+        if stub_range.length() > 0:
+            cb_view = await resource.view_as(ComplexBlock)
+            name = str(cb_view.Symbol)
 
         await resource.delete()
         await resource.save()
 
+        if stub_range.length() > 0 and name is not None:
+            await parent_mr_view.resource.create_child_from_view(
+                ComplexBlock(stub_range.start, stub_range.end, name),
+                data_range=stub_offset_range,
+                data=config.stub,
+            )
+
         await parent_mr_view.resource.create_child_from_view(
-            FreeSpace(
-                mem_region_view.virtual_address,
-                mem_region_view.size,
-                config.permissions,
-            ),
-            data_range=patch_range,
-            data=patch_bytes,
+            FreeSpace(freed_range.start, freed_range.end, config.permissions),
+            data_range=freed_offset_range,
+            data=b"\x00"*freed_offset_range.length(),
         )
 
 
