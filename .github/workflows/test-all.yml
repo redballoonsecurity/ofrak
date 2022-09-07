@@ -9,7 +9,7 @@ on:
   schedule: 
     - cron: '0 0 * * *'
   workflow_dispatch: 
-    inputs: {}
+    inputs:
 
 permissions:
   contents: read
@@ -44,8 +44,8 @@ jobs:
         if: steps.cache-image.outputs.cache-hit != 'true'
         run: |
           sudo apt install pigz
-          docker save redballoonsecurity/ofrak/core-dev-base:latest  \
-            | pigz -9  \
+          docker save redballoonsecurity/ofrak/core-dev-base:latest \
+            | pigz -9 \
             > ofrak-base.tar.gz
 
   ofrak-ghidra:
@@ -67,7 +67,13 @@ jobs:
           path: ofrak-base.tar.gz
       - name: Load base image
         run: |
+          docker ps -a
+          docker images
+
           docker load --input ofrak-base.tar.gz
+
+          docker ps -a
+          docker images
       - name: Build Ghidra image
         run: |
           python3 -m pip install PyYAML
@@ -76,7 +82,6 @@ jobs:
         run: |
           docker run \
             --interactive \
-            --tty \
             --rm \
             --entrypoint bash \
             --volume "$(pwd)":/ofrak \
@@ -87,7 +92,6 @@ jobs:
         run: |
           docker run \
             --interactive \
-            --tty \
             --rm \
             --entrypoint bash \
             redballoonsecurity/ofrak/ghidra:latest \
