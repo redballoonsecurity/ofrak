@@ -58,12 +58,12 @@ jobs:
           key: ofrak-core-dev
           path: ofrak-base.tar.gz
       - name: Build base image
-        if: steps.cache-image.outputs.cache-hit != 'true'
+        if: steps.cache-image.outputs.cache-hit != 'true' || github.event_name == 'schedule'
         run: |
           python3 -m pip install PyYAML
           DOCKER_BUILDKIT=1 python3 build_image.py --config ofrak-core-dev.yml --base 
       - name: Export base image
-        if: steps.cache-image.outputs.cache-hit != 'true'
+        if: steps.cache-image.outputs.cache-hit != 'true' || github.event_name == 'schedule'
         run: |
           sudo apt install pigz
           docker save redballoonsecurity/ofrak/core-dev-base:latest \
