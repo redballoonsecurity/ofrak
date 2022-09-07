@@ -28,6 +28,7 @@ jobs:
         with:
           python-version: '3.9'
           cache: pip
+          cache-dependency-path: '**/setup.py'
       - name: Cache base image
         id: cache-image
         uses: actions/cache@v3
@@ -57,6 +58,7 @@ jobs:
         with:
           python-version: '3.9'
           cache: pip
+          cache-dependency-path: '**/setup.py'
       - name: Cache base image
         id: cache-image
         uses: actions/cache@v3
