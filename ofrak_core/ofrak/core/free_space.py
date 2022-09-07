@@ -28,8 +28,6 @@ from ofrak_type.architecture import InstructionSetMode
 from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.range import Range, remove_subranges
 
-NOPS: Dict[Tuple[ProgramAttributes, InstructionSetMode], bytes] = dict()
-
 
 class FreeSpaceAllocationError(RuntimeError):
     pass
