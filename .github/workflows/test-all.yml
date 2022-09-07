@@ -19,6 +19,26 @@ defaults:
     shell: bash
 
 jobs:
+  lint:
+    name: Lint and typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          lfs: true
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          cache: pip
+          cache-dependency-path: '**/setup.py'
+      - name: Install pre-commit
+        run: |
+          python3 -m pip install pre-commit
+          pre-commit install
+      - name: Run pre-commit
+        run: |
+          pre-commit run --all-files
+
   build-base-image:
     name: Build the common base OFRAK Docker image
     runs-on: ubuntu-latest
