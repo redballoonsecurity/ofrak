@@ -475,13 +475,11 @@ class FlashEccResourcePacker(Packer[FlashConfig]):
                 ),
             )
             patch_data = await packed_child.get_data()
-            patch_size = await packed_child.get_data_length()
         except NotFoundError:
             # Child has not been packed, return itself
             patch_data = await resource.get_data()
-            patch_size = await resource.get_data_length()
-
-        resource.queue_patch(Range(0, patch_size), patch_data)
+        original_size = await resource.get_data_length()
+        resource.queue_patch(Range(0, original_size), patch_data)
 
 
 class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
@@ -497,8 +495,8 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
         packed_data = bytearray()
         data_offset = 0
         while bytes_left > 0:
-            # Create header block
             if bytes_left == original_size:
+                # Create header block
                 block_data = data[:ECC_HEADER_BLOCK_DATA_SIZE] + ECC_DATA_DELIMITER
                 data_hash = md5(block_data).digest()
                 if data_hash in DATA_HASHES:
