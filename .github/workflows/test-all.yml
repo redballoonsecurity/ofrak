@@ -1,0 +1,94 @@
+# TODO: improve caching keys – flush if dependencies change
+
+
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - master
+  schedule: 
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build-base-image:
+    name: Build the common base OFRAK Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          cache: pip
+      - name: Cache base image
+        id: cache-image
+        uses: actions/cache@v3
+        with:
+          key: ofrak-core-dev
+          path: ofrak-base.tar.gz
+      - name: Build base image
+        if: steps.cache-image.outputs.cache-hit != 'true'
+        run: |
+          python3 -m pip install PyYAML
+          DOCKER_BUILDKIT=1 python3 build_image.py --config ofrak-core-dev.yml --base 
+      - name: Export base image
+        if: steps.cache-image.outputs.cache-hit != 'true'
+        run: |
+          sudo apt install pigz
+          docker save redballoonsecurity/ofrak/core-dev-base:latest  \
+            | pigz -9  \
+            > ofrak-base.tar.gz
+
+  ofrak-ghidra:
+    name: Test OFRAK Ghidra components
+    runs-on: ubuntu-latest
+    needs: build-base-image
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          cache: pip
+      - name: Cache base image
+        id: cache-image
+        uses: actions/cache@v3
+        with:
+          key: ofrak-core-dev
+          path: ofrak-base.tar.gz
+      - name: Load base image
+        run: |
+          docker load --input ofrak-base.tar.gz
+      - name: Build Ghidra image
+        run: |
+          python3 -m pip install PyYAML
+          DOCKER_BUILDKIT=1 python3 build_image.py --config ofrak-ghidra.yml --base --finish
+      - name: Test documentation
+        run: |
+          docker run \
+            --interactive \
+            --tty \
+            --rm \
+            --entrypoint bash \
+            --volume "$(pwd)":/ofrak \
+            redballoonsecurity/ofrak/ghidra:latest \
+            -c "cd /ofrak \
+                && mkdocs build --site-dir /tmp/docs"
+      - name: Test components
+        run: |
+          docker run \
+            --interactive \
+            --tty \
+            --rm \
+            --entrypoint bash \
+            --volume "$(pwd)":/ofrak \
+            redballoonsecurity/ofrak/ghidra:latest \
+            -c "python -m ofrak_ghidra.server start \
+                && make test"
