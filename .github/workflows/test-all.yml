@@ -1,7 +1,6 @@
 # TODO: improve caching keys – flush if dependencies change
 
-
-name: CI
+name: OFRAK CI
 
 on:
   pull_request:
@@ -9,7 +8,7 @@ on:
       - master
   schedule: 
     - cron: '0 0 * * *'
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 permissions:
   contents: read
@@ -90,7 +89,6 @@ jobs:
             --tty \
             --rm \
             --entrypoint bash \
-            --volume "$(pwd)":/ofrak \
             redballoonsecurity/ofrak/ghidra:latest \
             -c "python -m ofrak_ghidra.server start \
                 && make test"
