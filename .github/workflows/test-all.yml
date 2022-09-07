@@ -1,5 +1,3 @@
-# TODO: improve caching keys – flush if dependencies change
-
 name: OFRAK CI
 
 on:
@@ -20,7 +18,7 @@ defaults:
 
 jobs:
   lint:
-    name: Lint and typecheck
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -58,6 +56,7 @@ jobs:
           key: ofrak-core-dev
           path: ofrak-base.tar.gz
       - name: Build base image
+        # Always rebuild the base image when the scheduled workflow runs
         if: steps.cache-image.outputs.cache-hit != 'true' || github.event_name == 'schedule'
         run: |
           python3 -m pip install PyYAML
@@ -71,7 +70,7 @@ jobs:
             > ofrak-base.tar.gz
 
   ofrak-ghidra:
-    name: Test OFRAK Ghidra components
+    name: Test main OFRAK components
     runs-on: ubuntu-latest
     needs: build-base-image
     steps:
