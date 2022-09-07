@@ -67,17 +67,18 @@ jobs:
           path: ofrak-base.tar.gz
       - name: Load base image
         run: |
-          docker ps -a
           docker images
-
           docker load --input ofrak-base.tar.gz
-
-          docker ps -a
           docker images
       - name: Build Ghidra image
         run: |
           python3 -m pip install PyYAML
-          DOCKER_BUILDKIT=1 python3 build_image.py --config ofrak-ghidra.yml --base --finish
+          DOCKER_BUILDKIT=1 \
+          python3 build_image.py \
+            --config ofrak-ghidra.yml \
+            --base \
+            --finish \
+            --cache-from redballoonsecurity/ofrak/core-dev-base:latest
       - name: Test documentation
         run: |
           docker run \
