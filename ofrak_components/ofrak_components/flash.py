@@ -1,19 +1,27 @@
 import io
-from enum import Enum
 from dataclasses import dataclass
-from typing import Iterable, Dict
+from enum import Enum
 from hashlib import md5
+from typing import Any, Callable, Dict, Iterable, Optional
 
-from ofrak import Analyzer, Identifier, Packer, Resource, ResourceFilter, Unpacker
-from ofrak.core.binary import GenericBinary
+from ofrak import (
+    Analyzer,
+    Identifier,
+    Packer,
+    Resource,
+    ResourceFilter,
+    Unpacker,
+)
+from ofrak.component.identifier import IdentifierError
 from ofrak.component.unpacker import UnpackerError
-from ofrak_io.deserializer import BinaryDeserializer
+from ofrak.core.binary import GenericBinary
 from ofrak.model.component_model import ComponentConfig
+from ofrak_io.deserializer import BinaryDeserializer
 from ofrak_type.endianness import Endianness
-from ofrak_type.range import Range
 from ofrak_type.error import NotFoundError
+from ofrak_type.range import Range
 
-from ofrak_components.ecc import initialize_ecc, encode_ecc
+from ofrak_components.ecc import encode_ecc, initialize_ecc
 
 SX_ECC_MAGIC = b"SXECCv1"
 SX_ECC_MAGIC_LEN = len(SX_ECC_MAGIC)
@@ -42,22 +50,22 @@ class FlashEccHeaderBlock(GenericBinary):
     Inside of a flash block is either just data or data + ECC.
     """
 
-    magic: bytes
     data: bytes
-    delimiter: bytes
     ecc: bytes
-
-    def get_magic(self) -> bytes:
-        return self.magic
+    magic: Optional[bytes] = None
+    delimiter: Optional[bytes] = None
 
     def get_block_data(self) -> bytes:
         return self.data
 
-    def get_delimiter(self) -> bytes:
-        return self.delimiter
-
     def get_ecc(self) -> bytes:
         return self.ecc
+
+    def get_magic(self) -> bytes:
+        return self.magic
+
+    def get_delimiter(self) -> bytes:
+        return self.delimiter
 
 
 @dataclass
@@ -68,8 +76,8 @@ class FlashEccBlock(GenericBinary):
     """
 
     data: bytes
-    delimiter: bytes
     ecc: bytes
+    delimiter: Optional[bytes] = None
 
     def get_block_data(self) -> bytes:
         return self.data
@@ -87,10 +95,10 @@ class FlashEccTailBlock(GenericBinary):
     The final block in the ECC marked region
     """
 
-    delimiter: bytes
     ecc_size: int  # The size of the ECC protected region
-    md5: bytes
     ecc: bytes
+    delimiter: Optional[bytes] = None
+    md5: Optional[bytes] = None
 
     def get_delimiter(self) -> bytes:
         return self.delimiter
@@ -209,8 +217,26 @@ class FlashEccPositionType(Enum):
     - Staggered interweaves ECC at the end of pages
     """
 
-    sequential_ecc = 0
-    staggered_ecc = 1
+    SEQUENTIAL_ECC_PRE = 0
+    SEQUENTIAL_ECC_POST = 1
+    STAGGERED_ECC_PRE = 2
+    STAGGERED_ECC_POST = 3
+
+
+@dataclass
+class FlashEccConfig(ComponentConfig):
+    """
+    Must be configured if the Flash has ECC protection
+    """
+
+    ecc_size: int
+    ecc_position: FlashEccPositionType
+    ecc_func: Optional[Callable[[Any], Any]] = None
+    ecc_magic: Optional[bytes] = None
+    head_delimiter: Optional[bytes] = None
+    data_delimiter: Optional[bytes] = None
+    last_data_delimiter: Optional[bytes] = None
+    tail_delimiter: Optional[bytes] = None
 
 
 @dataclass
@@ -221,24 +247,25 @@ class FlashConfig(ComponentConfig):
     """
 
     block_size: int
-    ecc_magic_bytes: bytes
-    ecc_size: int
-    ecc_position: FlashEccPositionType
+    ecc_config: Optional[FlashEccConfig] = None
+    checksum_func: Optional[Callable[[Any], Any]] = None
 
 
 #####################
 #    IDENTIFIER     #
 #####################
-class FlashEccIdentifier(Identifier[None]):
+class FlashEccIdentifier(Identifier[FlashConfig]):
     """
     Identify an ECC protected region by searching for the magic bytes
     """
 
     targets = (FlashResource,)
 
-    async def identify(self, resource: Resource, config=None):
-        data = await resource.get_data()
-        if SX_ECC_MAGIC in data:
+    async def identify(self, resource: Resource, config=FlashConfig):
+        if config.ecc_config.ecc_magic is not None:
+            data = await resource.get_data()
+            if config.ecc_config.ecc_magic not in data:
+                raise IdentifierError("Flash magic bytes present but not found in resource")
             resource.add_tag(FlashEccProtectedResource)
 
 
@@ -266,8 +293,6 @@ class FlashEccHeaderBlockAnalyzer(Analyzer[None, FlashConfig]):
             f_delimiter,
             f_ecc,
         ) = deserialized
-
-        assert f_magic == SX_ECC_MAGIC
 
         return FlashEccHeaderBlock(
             f_magic,
@@ -334,7 +359,7 @@ class FlashEccTailBlockAnalyzer(Analyzer[None, FlashConfig]):
 #####################
 #     UNPACKERS     #
 #####################
-class FlashEccProtectedResourceUnpacker(Unpacker[None]):
+class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
     """
     Unpack regions of flash protected by ECC
     """
@@ -348,10 +373,13 @@ class FlashEccProtectedResourceUnpacker(Unpacker[None]):
         FlashLogicalDataResource,
     )
 
-    async def unpack(self, resource: Resource, config=None):
+    async def unpack(self, resource: Resource, config=FlashConfig):
         data = await resource.get_data()
         data_len = len(data)
-        ecc_magic_offset = data.find(SX_ECC_MAGIC)
+
+        ecc_magic = config.ecc_config.ecc_magic
+        if ecc_magic is not None:
+            ecc_magic_offset = data.find(ecc_magic)
 
         initialize_ecc()
 
