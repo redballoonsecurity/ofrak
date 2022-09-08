@@ -151,7 +151,11 @@ class OFRAK:
     def _setup(self):
         """Discover common OFRAK services and components."""
         import ofrak
-        import ofrak_components
 
         self.discover(ofrak)
-        self.discover(ofrak_components)
+        try:
+            import ofrak_components
+
+            self.discover(ofrak_components)
+        except ModuleNotFoundError:
+            pass

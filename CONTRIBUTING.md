@@ -2,7 +2,7 @@
 
 Red Balloon Security is excited for developers and security researchers to contribute to this repository.
 
-As provided by Clause #3 in [our license](../LICENSE), by submitting a Pull Request you are providing
+As provided by Clause #3 in [our license](LICENSE), by submitting a Pull Request you are providing
 Red Balloon Security, Inc with certain rights to your contribution, and you attest that you are
 authorized to do so by anyone who has claims to the content.
 
@@ -131,7 +131,7 @@ For now, every Pull Request will require at least one review by one of the curre
 7. Please keep your contributions to a reasonable review size. When reviewing, it can take developers a little over an hour to get through a few hundred lines of code and find most defects.
 
 ### Python Coding Standard
-Please see our [coding standard document](./contributor-guide/python.md) for functional and stylistic expectations. It is still evolving, but has a lower probability of changing.
+Please see our [coding standard document](https://ofrak.com/docs/contributor-guide/getting-started.html) for functional and stylistic expectations. It is still evolving, but has a lower probability of changing.
 
 There may be rule-breaking content in the repository now, but that does not mean that the standard should not be followed.
 

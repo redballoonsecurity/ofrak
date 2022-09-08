@@ -1,6 +1,6 @@
 site_name: OFRAK
 site_url: ""  # Required to have file:// paths work
-site_description: "Documentation for OFRAK(Open Firmware Reverse Analysis Konsole), a binary analysis and modification platform that combines the ability to unpack, analyze, modify, and repack binaries. "
+site_description: "Documentation for OFRAK (Open Firmware Reverse Analysis Konsole), a binary analysis and modification platform that combines the ability to unpack, analyze, modify, and repack binaries. "
 copyright: Copyright &copy; 2021 - 2022 Red Balloon Security, Inc.
 repo_url: https://github.com/redballoonsecurity/ofrak
 use_directory_urls: false  # Required to have file:// paths work
@@ -76,6 +76,6 @@ nav:
         - Modifier: "contributor-guide/component/modifier.md"
         - Packer: "contributor-guide/component/packer.md"
         - Ghidra Components: "contributor-guide/component/ghidra_components.md"
-      - ResourceView: "contributor-guide/resource_view.md"
+      - ResourceView: "contributor-guide/core/resource_view.md"
   # Built by gen-files and literate-nav
   - Code Reference: reference/
