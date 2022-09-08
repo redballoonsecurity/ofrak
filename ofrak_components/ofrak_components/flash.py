@@ -541,7 +541,7 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
                     # Add padding to last block
                     block_data = bytearray(ECC_BLOCK_DATA_SIZE)
                     block_data[:bytes_left] = data[data_offset:]
-                    block_data[bytes_left : bytes_left + 1] = ECC_LAST_DATA_BLOCK_DELIMITER
+                    block_data[ECC_BLOCK_DATA_SIZE:] = ECC_LAST_DATA_BLOCK_DELIMITER
                 else:
                     block_data = data[data_offset : data_offset + ECC_BLOCK_DATA_SIZE]
                     block_data += ECC_DATA_DELIMITER
