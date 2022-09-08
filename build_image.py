@@ -75,9 +75,10 @@ def main():
     if config.build_base:
         full_base_image_name = "/".join((config.registry, config.base_image_name))
         cache_args = []
-        for cache in config.cache_from:
-            cache_args.append("--cache-from")
-            cache_args.append(cache)
+        if config.cache_from is not None:
+            for cache in config.cache_from:
+                cache_args.append("--cache-from")
+                cache_args.append(cache)
         base_command = [
             "docker",
             "build",

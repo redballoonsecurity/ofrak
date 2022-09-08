@@ -4,10 +4,17 @@ on:
   pull_request:
     branches:
       - master
+  push:
+    branches:
+      - master
   schedule: 
     - cron: '0 0 * * *'
   workflow_dispatch: 
     inputs:
+      flush_cache:
+        description: Flush the Docker image cache
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -57,16 +64,17 @@ jobs:
           path: ofrak-base.tar.gz
       - name: Build base image
         # Always rebuild the base image when the scheduled workflow runs
-        if: steps.cache-image.outputs.cache-hit != 'true' || github.event_name == 'schedule'
+        if: inputs.flush_cache || steps.cache-image.outputs.cache-hit != 'true' || github.event_name == 'schedule'
         run: |
           python3 -m pip install PyYAML
           DOCKER_BUILDKIT=1 python3 build_image.py --config ofrak-core-dev.yml --base 
       - name: Export base image
-        if: steps.cache-image.outputs.cache-hit != 'true' || github.event_name == 'schedule'
+        if: inputs.flush_cache || steps.cache-image.outputs.cache-hit != 'true' || github.event_name == 'schedule'
         run: |
-          sudo apt install pigz
+          sudo apt install pigz pv
           docker save redballoonsecurity/ofrak/core-dev-base:latest \
             | pigz -9 \
+            | pv --size 2400m --interval 5 --force \
             > ofrak-base.tar.gz
 
   ofrak-ghidra:
@@ -90,7 +98,9 @@ jobs:
           path: ofrak-base.tar.gz
       - name: Load base image
         run: |
-          docker load --input ofrak-base.tar.gz
+          sudo apt install pv
+          pv --interval 5 --force ofrak-base.tar.gz \
+            | docker load 
           docker images
       - name: Build Ghidra image
         run: |
@@ -142,7 +152,9 @@ jobs:
           path: ofrak-base.tar.gz
       - name: Load base image
         run: |
-          docker load --input ofrak-base.tar.gz
+          sudo apt install pv
+          pv --interval 5 --force ofrak-base.tar.gz \
+            | docker load 
           docker images
       - name: Build angr image
         run: |
@@ -184,7 +196,9 @@ jobs:
           path: ofrak-base.tar.gz
       - name: Load base image
         run: |
-          docker load --input ofrak-base.tar.gz
+          sudo apt install pv
+          pv --interval 5 --force ofrak-base.tar.gz \
+            | docker load 
           docker images
       - name: Build tutorial image
         run: |
