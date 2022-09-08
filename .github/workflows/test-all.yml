@@ -74,6 +74,7 @@ jobs:
           sudo apt install pigz
           docker save redballoonsecurity/ofrak/core-dev-base:latest \
             | pigz -9 \
+            | pv --size 2400m --interval 5 --force \
             > ofrak-base.tar.gz
 
   ofrak-ghidra:
@@ -97,7 +98,9 @@ jobs:
           path: ofrak-base.tar.gz
       - name: Load base image
         run: |
-          docker load --input ofrak-base.tar.gz
+          sudo apt install pv
+          pv --size 2400m --interval 5 --force ofrak-base.tar.gz \
+            | docker load 
           docker images
       - name: Build Ghidra image
         run: |
@@ -149,7 +152,9 @@ jobs:
           path: ofrak-base.tar.gz
       - name: Load base image
         run: |
-          docker load --input ofrak-base.tar.gz
+          sudo apt install pv
+          pv --size 2400m --interval 5 --force ofrak-base.tar.gz \
+            | docker load 
           docker images
       - name: Build angr image
         run: |
@@ -191,7 +196,9 @@ jobs:
           path: ofrak-base.tar.gz
       - name: Load base image
         run: |
-          docker load --input ofrak-base.tar.gz
+          sudo apt install pv
+          pv --size 2400m --interval 5 --force ofrak-base.tar.gz \
+            | docker load 
           docker images
       - name: Build tutorial image
         run: |
