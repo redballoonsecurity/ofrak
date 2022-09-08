@@ -71,7 +71,7 @@ jobs:
       - name: Export base image
         if: inputs.flush_cache || steps.cache-image.outputs.cache-hit != 'true' || github.event_name == 'schedule'
         run: |
-          sudo apt install pigz
+          sudo apt install pigz pv
           docker save redballoonsecurity/ofrak/core-dev-base:latest \
             | pigz -9 \
             | pv --size 2400m --interval 5 --force \
