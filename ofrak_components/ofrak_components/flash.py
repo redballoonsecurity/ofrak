@@ -21,7 +21,6 @@ from ofrak_type.endianness import Endianness
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 
-from ofrak_components.ecc import encode_ecc, initialize_ecc
 
 SX_ECC_MAGIC = b"SXECCv1"
 SX_ECC_MAGIC_LEN = len(SX_ECC_MAGIC)
@@ -193,6 +192,14 @@ class FlashLogicalDataResource(GenericBinary):
 
 
 @dataclass
+class FlashLogicalEccResource(GenericBinary):
+    """
+    The alternate to FlashLogicalDataResource.
+    Generally less useful on its own but provided anyway.
+    """
+
+
+@dataclass
 class FlashEccProtectedResource(GenericBinary):
     """
     Region of memory protected by ECC
@@ -213,8 +220,8 @@ class FlashResource(GenericBinary):
 class FlashEccPositionType(Enum):
     """
     Describes the position of the ECC in relation to the data
-    - Sequential is where all data comes before all of the ECC
-    - Staggered interweaves ECC at the end of pages
+    - Sequential is where all data comes before/after all of the ECC
+    - Staggered interweaves ECC at the start/end of pages
     """
 
     SEQUENTIAL_ECC_PRE = 0
@@ -231,7 +238,7 @@ class FlashEccConfig(ComponentConfig):
 
     ecc_size: int
     ecc_position: FlashEccPositionType
-    ecc_func: Optional[Callable[[Any], Any]] = None
+    ecc_class: Optional[Callable[[Any], Any]] = None
     ecc_magic: Optional[bytes] = None
     head_delimiter: Optional[bytes] = None
     data_delimiter: Optional[bytes] = None
@@ -371,6 +378,7 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
         FlashEccBlock,
         FlashEccTailBlock,
         FlashLogicalDataResource,
+        FlashLogicalEccResource,
     )
 
     async def unpack(self, resource: Resource, config=FlashConfig):
@@ -380,8 +388,6 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
         ecc_magic = config.ecc_config.ecc_magic
         if ecc_magic is not None:
             ecc_magic_offset = data.find(ecc_magic)
-
-        initialize_ecc()
 
         # Get the end of the ecc_region
         # Find the tail delimiter followed by the number of data bytes up to that point
@@ -412,6 +418,7 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
 
         vaddr_offset = 0
         only_data = b""
+        only_ecc = b""
         num_possible_ecc_blocks = ecc_data_len // FLASH_BLOCK_SIZE
 
         # Loop through all blocks, adding child resource for each
@@ -451,6 +458,7 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
                     vaddr_offset += ECC_BLOCK_DATA_SIZE
 
                 only_data += block_data_only
+                only_ecc += cur_block_ecc
                 # Include delimiter in the ECC and MD5 calculation
                 data_delim = block_data_only + cur_block_delimiter
                 # Add to Dict to avoid recalculating in the future
@@ -468,6 +476,10 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
         await ecc_region.create_child(
             tags=(FlashLogicalDataResource,),
             data=only_data[:vaddr_offset],
+        )
+        await ecc_region.create_child(
+            tags=(FlashLogicalEccResource,),
+            data=only_ecc,
         )
 
 
@@ -495,7 +507,7 @@ class FlashEccResourcePacker(Packer[FlashConfig]):
     targets = (FlashEccResource,)
 
     async def pack(self, resource: Resource, config: FlashConfig):
-        # We actually want to delete ourselves and overwrite with just the repacked version
+        # We actually want to overwrite ourselves with just the repacked version
         try:
             packed_child = await resource.get_only_child(
                 r_filter=ResourceFilter.with_tags(
@@ -516,7 +528,7 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
 
     async def pack(self, resource: Resource, config: FlashConfig):
         data = await resource.get_data()
-        initialize_ecc()
+        ecc_class = config.ecc_config.ecc_class
 
         bytes_left = len(data)
         original_size = bytes_left
@@ -531,7 +543,8 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
                     # Data was not changed, no need to compute new ECC
                     ecc = DATA_HASHES[data_hash]
                 else:
-                    ecc = encode_ecc(block_data, ECC_SIZE)
+                    # Include magic in the ECC
+                    ecc = ecc_class.encode(SX_ECC_MAGIC + block_data)[-ECC_SIZE:]
                 block = SX_ECC_MAGIC + block_data + ecc
                 data_offset += ECC_HEADER_BLOCK_DATA_SIZE
                 bytes_left -= ECC_HEADER_BLOCK_DATA_SIZE
@@ -551,7 +564,7 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
                 if data_hash in DATA_HASHES:
                     ecc = DATA_HASHES[data_hash]
                 else:
-                    ecc = encode_ecc(block_data, ECC_SIZE)
+                    ecc = ecc_class.encode(block_data)[-ECC_SIZE:]
                 block = block_data + ecc
                 data_offset += ECC_BLOCK_DATA_SIZE
                 bytes_left -= ECC_BLOCK_DATA_SIZE
@@ -561,9 +574,9 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
         tail_block = (
             ECC_TAIL_BLOCK_DELIMITER + original_size.to_bytes(4, "big") + md5(data).digest()
         )
-        ecc = encode_ecc(tail_block, ECC_TAIL_BLOCK_SIZE - ECC_SIZE)
+        ecc = ecc_class.encode(tail_block)[-ECC_SIZE:]
         packed_data += tail_block + ecc
-
+        print("ECC: ", ecc.hex())
         # Create child under the FlashEccResource to show that it packed itself
         parent = await resource.get_parent()
         await parent.create_child(tags=(FlashEccResource,), data=packed_data)

@@ -42,6 +42,7 @@ setuptools.setup(
         "pycdlib==1.12.0",
         "python-magic",
         "synthol~=0.1.1",
+        "reedsolo",
     ],
     extras_require={
         "docs": [

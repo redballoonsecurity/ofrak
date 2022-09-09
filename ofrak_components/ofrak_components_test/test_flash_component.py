@@ -1,9 +1,24 @@
 import os
+from hashlib import md5
+from ofrak_components.ecc.rs2 import ReedSolomon
 
 import test_ofrak.components
 from ofrak import OFRAKContext, ResourceFilter
 from ofrak.resource import Resource
-from ofrak_components.flash import FlashResource, FlashLogicalDataResource
+from ofrak_components.flash import (
+    FlashResource,
+    FlashEccResource,
+    FlashLogicalDataResource,
+    FlashConfig,
+    FlashEccConfig,
+    FlashEccPositionType,
+    FlashEccIdentifier,
+    FlashEccProtectedResourceUnpacker,
+    FlashLogicalDataResourcePacker,
+    FlashEccResourcePacker,
+    FlashResourcePacker,
+)
+from ofrak_components.ecc.rs2 import ReedSolomon
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 from ofrak.core.binary import BinaryPatchConfig, BinaryPatchModifier
 
@@ -12,13 +27,30 @@ TEST_VERIFY_FILE_PATH = os.path.join(test_ofrak.components.ASSETS_DIR, "flash_te
 
 
 class TestFlashUnpackModifyPack(UnpackModifyPackPattern):
+    ECC_CONFIG = FlashEccConfig(
+        ecc_size=32,
+        ecc_position=FlashEccPositionType.STAGGERED_ECC_POST,
+        ecc_class=ReedSolomon(nsym=32, fcr=1),
+        ecc_magic=b"SXECCv1",
+        # Skips head_delimiter
+        data_delimiter=b"*",
+        last_data_delimiter=b"$",
+        tail_delimiter=b"!",
+    )
+    FLASH_CONFIG = FlashConfig(
+        block_size=255,
+        ecc_config=ECC_CONFIG,
+        checksum_func=md5,
+    )
+
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         return await ofrak_context.create_root_resource_from_file(TEST_FILE_PATH)
 
     async def unpack(self, resource: Resource) -> None:
         resource.add_tag(FlashResource)
         await resource.save()
-        await resource.unpack()
+        await resource.run(FlashEccIdentifier, self.FLASH_CONFIG)
+        await resource.run(FlashEccProtectedResourceUnpacker, self.FLASH_CONFIG)
 
     async def modify(self, unpacked_root_resource: Resource) -> None:
         logical_data_resource = await unpacked_root_resource.get_only_descendant(
@@ -31,7 +63,17 @@ class TestFlashUnpackModifyPack(UnpackModifyPackPattern):
         await logical_data_resource.run(BinaryPatchModifier, patch_config)
 
     async def repack(self, resource: Resource) -> None:
-        await resource.pack_recursively()
+        logical_data_resource = await resource.get_only_descendant(
+            r_filter=ResourceFilter.with_tags(
+                FlashLogicalDataResource,
+            ),
+        )
+        await logical_data_resource.run(FlashLogicalDataResourcePacker, self.FLASH_CONFIG)
+        ecc_resource = await resource.get_only_child(
+            r_filter=ResourceFilter.with_tags(FlashEccResource)
+        )
+        await ecc_resource.run(FlashEccResourcePacker, self.FLASH_CONFIG)
+        await resource.run(FlashResourcePacker, self.FLASH_CONFIG)
 
     async def verify(self, repacked_resource: Resource) -> None:
         # Check that the new file matches the manually verified file
