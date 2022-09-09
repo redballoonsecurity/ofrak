@@ -1,6 +1,6 @@
 import os
 from hashlib import md5
-from ofrak_components.ecc.rs2 import ReedSolomon
+from ofrak_components.ecc.reedsolomon import ReedSolomon
 
 import test_ofrak.components
 from ofrak import OFRAKContext, ResourceFilter
@@ -18,7 +18,7 @@ from ofrak_components.flash import (
     FlashEccResourcePacker,
     FlashResourcePacker,
 )
-from ofrak_components.ecc.rs2 import ReedSolomon
+from ofrak_components.ecc.reedsolomon import ReedSolomon
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 from ofrak.core.binary import BinaryPatchConfig, BinaryPatchModifier
 
