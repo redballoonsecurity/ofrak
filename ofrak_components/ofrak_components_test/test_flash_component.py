@@ -33,6 +33,7 @@ class TestFlashUnpackModifyPack(UnpackModifyPackPattern):
         ecc_class=ReedSolomon(nsym=32, fcr=1),
         ecc_magic=b"SXECCv1",
         # Skips head_delimiter
+        head_delimiter=b"*",
         data_delimiter=b"*",
         last_data_delimiter=b"$",
         tail_delimiter=b"!",
@@ -41,6 +42,8 @@ class TestFlashUnpackModifyPack(UnpackModifyPackPattern):
         block_size=255,
         ecc_config=ECC_CONFIG,
         checksum_func=md5,
+        checksum_len=16,
+        data_count_size=4,
     )
 
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
