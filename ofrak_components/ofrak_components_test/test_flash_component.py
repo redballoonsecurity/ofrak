@@ -29,11 +29,12 @@ TEST_VERIFY_FILE_PATH = os.path.join(test_ofrak.components.ASSETS_DIR, "flash_te
 class TestFlashUnpackModifyPack(UnpackModifyPackPattern):
     ECC_CONFIG = FlashEccConfig(
         ecc_size=32,
-        ecc_position=FlashEccPositionType.STAGGERED_ECC_POST,
+        ecc_position=FlashEccPositionType.ADJACENT_ECC_POST,
         ecc_class=ReedSolomon(nsym=32, fcr=1),
         ecc_magic=b"SXECCv1",
         # Skips head_delimiter
         head_delimiter=b"*",
+        first_data_delimiter=b"*",
         data_delimiter=b"*",
         last_data_delimiter=b"$",
         tail_delimiter=b"!",

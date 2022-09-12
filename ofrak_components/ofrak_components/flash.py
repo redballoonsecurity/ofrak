@@ -205,14 +205,30 @@ class FlashResource(GenericBinary):
 class FlashEccPositionType(Enum):
     """
     Describes the position of the ECC in relation to the data
-    - Sequential is where all data comes before/after all of the ECC
-    - Staggered interweaves ECC at the start/end of pages
+    - Separate is where all data comes before/after all of the ECC
+        .------.------.------.------.
+        | Data | Data |  ECC |  ECC |
+        `------`------`------`------`
+    - Adjacent interweaves ECC at the start/end of pages
+        .------.------.------.------.
+        | Data |  ECC | Data |  ECC |
+        `------`------`------`------`
     """
 
-    SEQUENTIAL_ECC_PRE = 0
-    SEQUENTIAL_ECC_POST = 1
-    STAGGERED_ECC_PRE = 2
-    STAGGERED_ECC_POST = 3
+    SEPARATE_ECC_PRE = 0
+    SEPARATE_ECC_POST = 1
+    ADJACENT_ECC_PRE = 2
+    ADJACENT_ECC_POST = 3
+
+
+class FlashBlockFieldPositionType(Enum):
+    """
+    Specifies where a field is relative to the start of the block
+    """
+
+    START_OF_BLOCK = 0
+    AFTER_DATA = 1
+    END_OF_BLOCK = 2
 
 
 @dataclass
@@ -223,17 +239,39 @@ class FlashEccConfig(ComponentConfig):
 
     ecc_size: int
     ecc_position: FlashEccPositionType
-    ecc_class: Optional[Callable[[Any], Any]] = None
+    ecc_class: Callable[[Any], Any]
     ecc_magic: Optional[bytes] = None
     head_delimiter: Optional[bytes] = None
+    first_data_delimiter: Optional[bytes] = None
     data_delimiter: Optional[bytes] = None
     last_data_delimiter: Optional[bytes] = None
     tail_delimiter: Optional[bytes] = None
+    delimiter_position: Optional[FlashBlockFieldPositionType] = None
 
     def get_magic_len(self) -> int:
         if self.ecc_magic is not None:
             return len(self.ecc_magic)
         return None
+
+
+class FlashFieldType(Enum):
+    DATA = 0
+    ECC = 1
+    MAGIC = 2
+    DATA_SIZE = 3
+    ECC_SIZE = 4
+    CHECKSUM = 5
+    DELIMITER = 6
+
+
+class FlashFieldPositionType(Enum):
+    """
+    Describes the position of a field relative to entire ECC region
+    """
+
+    HEAD_POSITION = 0
+    TAIL_POSITION = 1
+    HEAD_TAIL_POSITION = 2
 
 
 @dataclass
@@ -246,8 +284,10 @@ class FlashConfig(ComponentConfig):
     block_size: int
     ecc_config: Optional[FlashEccConfig] = None
     checksum_func: Optional[Callable[[Any], Any]] = None
+    checksum_position: Optional[FlashFieldPositionType] = None
     checksum_len: Optional[int] = None
     data_count_size: Optional[int] = None
+    data_count_position: Optional[FlashFieldPositionType] = None
 
     def get_block_data_size(self, magic_len=None, delim_len=None, ecc_size=None):
         return -sum(
@@ -427,13 +467,23 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
         data_len = len(data)
 
         ecc_config: FlashEccConfig = config.ecc_config
+        if ecc_config is None:
+            UnpackerError("Tried unpacking FlashEccProtectedResource without FlashEccConfig")
         magic = ecc_config.ecc_magic
         if magic is not None:
             ecc_magic_offset = data.find(magic)
+            search_index = ecc_magic_offset
+        else:
+            search_index = 0
 
+        if (
+            config.data_count_position is FlashFieldPositionType.HEAD_POSITION
+            or config.data_count_position is FlashFieldPositionType.HEAD_TAIL_POSITION
+        ):
+            # We already know the expected data length so add OOB data to get real offset
+            pass
         # Get the end of the ecc_region
         # Find the tail delimiter followed by the number of data bytes up to that point
-        search_index = ecc_magic_offset
         while search_index < data_len:
             delimiter_index = data.find(ecc_config.tail_delimiter, search_index, data_len)
             # Catch delimiter before it tries to loop back to first search hit
@@ -577,10 +627,15 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
     targets = (FlashLogicalDataResource,)
 
     async def pack(self, resource: Resource, config: FlashConfig):
-        data = await resource.get_data()
+        # Need to check for the proper configs before continuing
         ecc_config = config.ecc_config
+        if ecc_config is None:
+            UnpackerError("Tried packing FlashLogicalDataResource without FlashEccConfig")
         ecc_class = ecc_config.ecc_class
+        if ecc_class is None:
+            UnpackerError("Cannot pack FlashLogicalDataResource without providing ECC class")
 
+        data = await resource.get_data()
         bytes_left = len(data)
         original_size = bytes_left
         packed_data = bytearray()
@@ -589,7 +644,8 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
             if bytes_left == original_size:
                 # Create header block
                 block_data = data[: config.get_header_block_data_size()] + ecc_config.data_delimiter
-                data_hash = config.checksum_func(block_data).digest()
+                if config.checksum_func is not None:
+                    data_hash = config.checksum_func(block_data).digest()
                 if data_hash in DATA_HASHES:
                     # Data was not changed, no need to compute new ECC
                     ecc = DATA_HASHES[data_hash]
