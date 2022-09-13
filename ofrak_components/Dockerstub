@@ -16,39 +16,6 @@ RUN apt-get -y update && \
       u-boot-tools \
       unar
 
-# Install CMake
-ENV CMAKE_VERSION 3.19.2
-ENV CMAKE_SHA256 4d8a6d852c530f263b22479aad196416bb4406447e918bd9759c6593b7f5f3f9
-RUN cd /tmp && \
-    curl -sSL -O https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz && \
-    echo "${CMAKE_SHA256}\tcmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz" | sha256sum -c && \
-    tar -zxvf cmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz && \
-    cd cmake-${CMAKE_VERSION}-Linux-x86_64 && \
-    cp -r bin/ share/ /usr/local/ && \
-    cp -r doc/ man/ /usr/local/share/ && \
-	cd /tmp && \
-    rm -rf cmake-${CMAKE_VERSION}-Linux-x86_64*
-
-# Install Keystone
-RUN cd /tmp && \
-    git clone https://github.com/rbs-forks/keystone.git && \
-    cd keystone && \
-    git checkout 2021.09.01 && \
-    ./install_keystone.sh && \
-    cd /tmp/keystone/bindings/python && python setup.py install && \
-    cd /tmp && \
-    rm -r keystone
-
-# Install Capstone
-RUN cd /tmp && \
-    git clone https://github.com/rbs-forks/capstone.git && \
-    cd capstone && \
-    git checkout 2021.09.01 && \
-    cd /tmp/capstone && \
-    ./install_capstone.sh && \
-    cd /tmp && \
-    rm -r capstone
-
 # Install apktool and uber-apk-signer
 RUN apt-get -y update && apt-get -y install openjdk-11-jdk
 RUN wget https://raw.githubusercontent.com/iBotPeaches/Apktool/v2.3.3/scripts/linux/apktool -O /usr/local/bin/apktool && \

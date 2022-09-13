@@ -12,8 +12,6 @@ from capstone import (
     CS_MODE_BIG_ENDIAN,
     CS_MODE_LITTLE_ENDIAN,
     CS_MODE_THUMB,
-    CS_MODE_XSCALE,
-    CS_MODE_V5E,
     CS_MODE_ARM,
     CS_MODE_32,
     CS_MODE_64,
@@ -157,10 +155,10 @@ class CapstoneDisassemblerService(DisassemblerServiceInterface):
                 return mode_flag | cs_endian_flag
             if processor is ProcessorType.XSCALE:
                 # XSCALE
-                return mode_flag | CS_MODE_XSCALE | cs_endian_flag
+                raise NotImplementedError("XSCALE not implemented")
             elif processor is ProcessorType.ARM926EJ_S:
                 # ARMv5
-                return mode_flag | CS_MODE_V5E | cs_endian_flag
+                raise NotImplementedError("ARMv5E not implemented")
             else:
                 # Default 32-bit ARM for other Processor types
                 return mode_flag | cs_endian_flag

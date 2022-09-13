@@ -32,6 +32,7 @@ class OfrakImageConfig:
     no_cache: bool
     extra_build_args: Optional[List[str]]
     install_target: InstallTarget
+    cache_from: List[str]
 
     def validate_serial_txt_existence(self):
         """
@@ -73,6 +74,11 @@ def main():
 
     if config.build_base:
         full_base_image_name = "/".join((config.registry, config.base_image_name))
+        cache_args = []
+        if config.cache_from is not None:
+            for cache in config.cache_from:
+                cache_args.append("--cache-from")
+                cache_args.append(cache)
         base_command = [
             "docker",
             "build",
@@ -80,6 +86,7 @@ def main():
             "BUILDKIT_INLINE_CACHE=1",
             "--cache-from",
             f"{full_base_image_name}:master",
+            *cache_args,
             "-t",
             f"{full_base_image_name}:{GIT_COMMIT_HASH}",
             "-t",
@@ -136,6 +143,7 @@ def parse_args() -> OfrakImageConfig:
         choices=[InstallTarget.DEVELOP.value, InstallTarget.INSTALL.value],
         default=InstallTarget.DEVELOP.value,
     )
+    parser.add_argument("--cache-from", action="append")
     args = parser.parse_args()
     with open(args.config) as file_handle:
         config_dict = yaml.safe_load(file_handle)
@@ -149,6 +157,7 @@ def parse_args() -> OfrakImageConfig:
         args.no_cache,
         config_dict.get("extra_build_args"),
         InstallTarget(args.target),
+        args.cache_from,
     )
     image_config.validate_serial_txt_existence()
     return image_config

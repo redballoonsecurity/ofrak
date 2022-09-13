@@ -40,7 +40,7 @@ import os
 import tempfile
 
 import ofrak_binary_ninja
-import ofrak_components_capstone
+import ofrak_capstone
 from ofrak import OFRAK, OFRAKContext, Resource, ResourceFilter, ResourceAttributeValueFilter
 from ofrak.core import (
     ProgramAttributes,
@@ -245,6 +245,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     ofrak = OFRAK()
-    ofrak.discover(ofrak_components_capstone)
+    ofrak.discover(ofrak_capstone)
     ofrak.discover(ofrak_binary_ninja)
     ofrak.run(main, args.hello_world_file, args.output_file_name)

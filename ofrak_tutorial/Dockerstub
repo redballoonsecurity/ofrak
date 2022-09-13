@@ -1,5 +1,6 @@
 COPY mkdocs.yml /mkdocs.yml
 COPY docs /docs
+COPY examples /examples
 ENTRYPOINT python -m ofrak_ghidra.server start \
     && jupyter notebook \
         --no-browser \
