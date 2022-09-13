@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from typing import List, Tuple
 
 import pytest
+import tempfile
+from pathlib import Path
 
 from ofrak import OFRAKContext
 from ofrak.core.binary import GenericBinary, GenericText
@@ -170,3 +172,61 @@ async def test_get_most_specific_tags(resource: Resource):
 
     expected_most_specific_tags = {GenericText, FilesystemRoot, Elf}
     assert set(resource.get_most_specific_tags()) == expected_most_specific_tags
+
+
+@pytest.mark.asyncio
+async def test_flush_to_disk_pack(ofrak_context: OFRAKContext):
+    # This test works as long as LZMA fails to pack() and the default is to
+    # pack recursively. The root resource is a LZMA archive in a LZMA archive,
+    # which as of 2022-09-13 will fail to pack and therefore pack_recursively
+    # won't work.
+
+    root_resource = await ofrak_context.create_root_resource(
+        "lzma",
+        b"\x5d\x00\x00\x80\x00\xff\xff\xff\xff\xff\xff\xff\xff\x00\x2e\x80\x2d\x00\x00\x7f\xeb\x0b\xed\x6e\xd4\x23\x99\xb4\xf3\x0e\x8d\x71\xaf\xff\xff\xf9\xbe\x40\x00",
+    )
+
+    await root_resource.unpack()
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        want = set()
+
+        flush_dir = Path(tempdir, "flush_to_disk")
+        write_dir = Path(tempdir, "write_to")
+
+        Path.mkdir(flush_dir, exist_ok=True)
+        Path.mkdir(write_dir, exist_ok=True)
+
+        for child_resource in await root_resource.get_children():
+            try:
+                out_file_name = f"{child_resource.get_id().hex()}-unidentified"
+
+                want.add(out_file_name)
+
+                await child_resource.flush_to_disk(f"{flush_dir}/{out_file_name}")
+                with open(Path(write_dir, out_file_name), "wb") as f:
+                    await child_resource.write_to(f, pack=True)
+            except Exception as e:
+                print(f"Could not flush: {e}")
+
+            try:
+                out_file_name = f"{child_resource.get_id().hex()}-identified"
+
+                want.add(out_file_name)
+
+                await child_resource.identify()
+                await child_resource.flush_to_disk(f"{flush_dir}/{out_file_name}", pack=False)
+
+                with open(Path(write_dir, out_file_name), "wb") as f:
+                    await child_resource.write_to(f, pack=False)
+
+            except Exception as e:
+                print(f"Could not flush: {e}")
+
+        got_flush = set()
+        got_write = set()
+        [got_flush.add(str(f.name)) for f in Path(flush_dir).iterdir()]
+        [got_write.add(str(f.name)) for f in Path(write_dir).iterdir()]
+
+        assert got_flush == want, "Not all files were written to disk by `flush_to_disk`"
+        assert got_write == want, "Not all files were written to disk by `write_to`"
