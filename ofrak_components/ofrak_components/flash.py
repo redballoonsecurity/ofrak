@@ -252,7 +252,7 @@ class FlashEccConfig(ComponentConfig):
     def get_magic_len(self) -> int:
         if self.ecc_magic is not None:
             return len(self.ecc_magic)
-        return None
+        return 0
 
 
 class FlashFieldType(Enum):
@@ -315,9 +315,11 @@ class FlashConfig(ComponentConfig):
         return None
 
     def get_oob_size_in_block(self, block_format: Iterable[FlashField]) -> int:
-        return self.get_block_size(block_format=block_format) - self.get_data_range_in_block(
-            block_format=block_format
-        )
+        data_range = self.get_data_range_in_block(block_format=block_format)
+        if data_range is not None:
+            data_length = data_range.length()
+            return self.get_block_size(block_format=block_format) - data_length
+        return None
 
     def get_field_in_block(
         self, block_format: Iterable[FlashField], field_type: FlashFieldType
@@ -339,6 +341,18 @@ class FlashConfig(ComponentConfig):
             offset += field.size
         return None
 
+    def get_field_data_in_block(
+        self,
+        block_format: Iterable[FlashField],
+        field_type: FlashFieldType,
+        data: bytes,
+        block_start_offset: int,
+    ) -> bytes:
+        field_range = self.get_field_range_in_block(
+            block_format=block_format, field_type=field_type
+        )
+        return data[block_start_offset + field_range.start : block_start_offset + field_range.end]
+
     def get_data_range_in_block(self, block_format: Iterable[FlashField]) -> Range:
         return self.get_field_range_in_block(
             block_format=block_format, field_type=FlashFieldType.DATA
@@ -347,6 +361,42 @@ class FlashConfig(ComponentConfig):
     def get_ecc_range_in_block(self, block_format: Iterable[FlashField]) -> Range:
         return self.get_field_range_in_block(
             block_format=block_format, field_type=FlashFieldType.ECC
+        )
+
+    def flash_p2l(self, p_offset: int) -> int:
+        """
+        Returns the logical address given a valid physical data address
+        If a physical memory address does not have data then it will return an unexpected value
+        """
+        # TODO: Handle input that is not in a data section
+        # TODO: More testing of edge cases
+        header_block_size = self.get_block_size(self.header_block_format)
+        if header_block_size is not None:
+            if p_offset <= header_block_size:
+                return p_offset
+        return (
+            ((p_offset // self.block_size) * self.get_block_size(self.data_block_format))
+            + (p_offset % self.block_size)
+            - self.ecc_config.get_magic_len()  # TODO: Fix extra OOB adjustment
+        )
+
+    def flash_l2p(
+        self,
+        l_offset: int,
+    ) -> int:
+        """
+        Returns the physical address given a logical address of contiguous memory
+        """
+        header_block_size = self.get_block_size(self.header_block_format)
+        if header_block_size is not None:
+            if l_offset <= header_block_size:
+                return l_offset
+        data_block_size = self.get_block_size(self.data_block_format)
+
+        return (
+            ((l_offset // data_block_size) * self.block_size)
+            + (l_offset % data_block_size)
+            + 7  # TODO: Fix extra OOB adjustment
         )
 
 
@@ -487,15 +537,24 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
         magic = ecc_config.ecc_magic
         if magic is not None:
             ecc_magic_offset = data.find(magic)
-            search_index = ecc_magic_offset
+            start_index = ecc_magic_offset
         else:
-            search_index = 0
+            start_index = 0
 
         data_size_in_header = config.get_field_in_block(
             config.header_block_format, FlashFieldType.DATA_SIZE
         )
         if config.header_block_format is not None and data_size_in_header is not None:
-            # Found data_size field in the header block, just need to calculate OOB size
+            # Found data_size field in the header block, just need to calculate expected total size (including OOB)
+            # TODO: Craft test flash dump and verify
+            expected_data_size = data_size_in_header
+            read_data_size = config.get_field_data_in_block(
+                block_format=config.header_block_format,
+                field_type=FlashFieldType.DATA_SIZE,
+                data=data,
+                block_start_offset=0,
+            )
+
             oob_size = 0
             for c in [
                 config.header_block_format,
@@ -505,58 +564,87 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
                 config.tail_block_format,
             ]:
                 if c is not None:
-                    oob_size += config.get_oob_size_in_block(c)
+                    block_oob_size = config.get_oob_size_in_block(c)
+                    if block_oob_size is not None:
+                        oob_size += block_oob_size
 
-            total_ecc_protected_size = oob_size + data_size_in_header
+            total_ecc_protected_size = oob_size + int.from_bytes(read_data_size, "big")
             if total_ecc_protected_size > data_len:
                 UnpackerError("Expected larger resource than supplied")
 
             ecc_resource = await resource.create_child(
                 tags=(FlashEccResource,),
-                data_range=Range(search_index, search_index + total_ecc_protected_size),
+                data_range=Range(start_index, start_index + total_ecc_protected_size),
             )
 
         elif (
             config.tail_block_format is not None
-            and config.get_field_in_block(config.tail_block_format, FlashFieldType.DATA_SIZE)
+            and config.get_field_in_block(config.tail_block_format, FlashFieldType.DELIMITER)
             is not None
         ):
-            # Data size is in the tail, so we need to find those bytes and check that it lines up with an expected offset
+            # Delimiter in the tail, also need another field to validate this is not a false positive
+            magic = config.get_field_in_block(config.tail_block_format, FlashFieldType.MAGIC)
+            expected_size = config.get_field_in_block(
+                config.tail_block_format, FlashFieldType.DATA_SIZE
+            )
+            checksum = config.get_field_in_block(config.tail_block_format, FlashFieldType.CHECKSUM)
+            if magic is not None:
+                verifier = FlashFieldType.MAGIC
+            elif expected_size is not None:
+                verifier = FlashFieldType.DATA_SIZE
+            elif checksum is not None:
+                verifier = FlashFieldType.CHECKSUM
+            else:
+                # Looking for the delimiter alone would be useless since we have nothing else to confirm it is really the end
+                # TODO: Add case for long delimiter, calculate the confidence level based on data_len and length of delimiter
+                resource.add_tag(FlashEccResource)
+                ecc_resource = resource
 
-            # Find the tail delimiter followed by the number of data bytes up to that point
-            # while search_index < data_len:
-            #     delimiter_index = data.find(ecc_config.tail_delimiter, search_index, data_len)
-            #     # Catch delimiter before it tries to loop back to first search hit
-            #     if delimiter_index == -1:
-            #         raise UnpackerError("Unable to find end of ECC protected region")
-            #     search_index = delimiter_index + 1
-            #     relative_offset = delimiter_index - ecc_magic_offset
-            #     read_size = int.from_bytes(data[delimiter_index + 1 : delimiter_index + 5], "big")
-            #     expected_data_bytes = _flash_p2l(
-            #         block_size=config.block_size,
-            #         header_block_data_size=config.get_header_block_data_size(),
-            #         ecc_block_data_size=config.get_data_block_data_size(),
-            #         p_offset=relative_offset,
-            #     )
+            if verifier is not None:
+                search_index = start_index
+                while search_index < data_len:
+                    if ecc_config.tail_delimiter is None:
+                        raise UnpackerError(
+                            "Specified DELIMITER field in tail block, but supplied no tail_delimiter in FlashEccConfig"
+                        )
+                    delim_offset = data.find(ecc_config.tail_delimiter, search_index, data_len)
+                    if delim_offset == -1:
+                        # Catch delimiter before it tries to loop back to first search hit
+                        raise UnpackerError("Unable to find end of ECC protected region")
+                    search_index = delim_offset + 1
 
-            #     # Check that the size read is within a block size of expected, in case of padding
-            #     if 0 <= (expected_data_bytes - read_size) <= config.get_data_block_data_size():
-            #         # Add overarching flash region resource
+                    # Need to know where delimiter is within the current block
+                    delim_offset_in_block = config.get_field_range_in_block(
+                        config.tail_block_format, FlashFieldType.DELIMITER
+                    )
+                    block_start_offset = delim_offset - delim_offset_in_block.start
+                    tail_block_size = config.get_block_size(config.tail_block_format)
+                    block_end_offset = block_start_offset + tail_block_size
 
-            #         ecc_region = await resource.create_child(
-            #             tags=(FlashEccResource,),
-            #             data_range=Range(ecc_magic_offset, delimiter_index + config.get_tail_size()),
-            #         )
-            #         break
-            resource.add_tag(FlashEccResource)
-            ecc_resource = resource
+                    read_size_bytes = config.get_field_data_in_block(
+                        block_format=config.tail_block_format,
+                        field_type=verifier,
+                        data=data,
+                        block_start_offset=block_start_offset,
+                    )
+                    read_size = int.from_bytes(read_size_bytes, "big")
+                    relative_offset = delim_offset - start_index
+                    # Subtract OOB data from relative offset to get just data size
+                    expected_data_size = config.flash_p2l(p_offset=relative_offset)
+                    if 0 <= (expected_data_size - read_size) <= config.block_size:
+                        ecc_resource = await resource.create_child(
+                            tags=(FlashEccResource,),
+                            data_range=Range(start_index, block_end_offset),
+                        )
+                        break
         else:
             # With no indicators of the last data block or tail, we fallback to declaring the whole resource ECC protected
+            # TODO: Add case for DATA_SIZE appearing in expected offset (block aligned), less chance of false positive
             resource.add_tag(FlashEccResource)
             ecc_resource = resource
 
-        # TODO: Add ECC data
-        offset = search_index
+        # Parent FlashEccResource is created, add children blocks
+        offset = 0
         data = b""
         ecc = b""
         possible_data_len = -sum(
@@ -571,9 +659,8 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
                 ],
             )
         )
-        possible_data_blocks = possible_data_len // config.block_size
+        possible_data_blocks = possible_data_len // config.get_block_size(config.data_block_format)
 
-        # First go through once to find the end of the ECC protected region
         for c in [
             config.header_block_format,
             config.first_data_block_format,
@@ -587,12 +674,13 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
                     num_blocks_of_type = possible_data_blocks
                 for x in range(0, num_blocks_of_type):
                     block_size = config.get_block_size(c)
-                    if offset + block_size > data_len:
+                    block_end_offset = offset + block_size
+                    if block_end_offset > data_len:
                         UnpackerError(
                             "Expected complete last block and received less than expected. Input likely malformed"
                         )
-                    block_range = Range(offset, offset + block_size)
-                    block_data = await resource.get_data(range=block_range)
+                    block_range = Range(offset, block_end_offset)
+                    block_data = await ecc_resource.get_data(range=block_range)
 
                     # Create block as child resource
                     if c is config.header_block_format:
