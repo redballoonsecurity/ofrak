@@ -11,6 +11,8 @@ from ofrak_components.flash import (
     FlashLogicalDataResource,
     FlashConfig,
     FlashEccConfig,
+    FlashField,
+    FlashFieldType,
     FlashEccPositionType,
     FlashEccIdentifier,
     FlashEccProtectedResourceUnpacker,
@@ -27,6 +29,11 @@ TEST_VERIFY_FILE_PATH = os.path.join(test_ofrak.components.ASSETS_DIR, "flash_te
 
 
 class TestFlashUnpackModifyPack(UnpackModifyPackPattern):
+    data_block_format = [
+        FlashField(FlashFieldType.DATA, 222),
+        FlashField(FlashFieldType.DELIMITER, 1),
+        FlashField(FlashFieldType.ECC, 32),
+    ]
     ECC_CONFIG = FlashEccConfig(
         ecc_size=32,
         ecc_position=FlashEccPositionType.ADJACENT_ECC_POST,
@@ -41,10 +48,23 @@ class TestFlashUnpackModifyPack(UnpackModifyPackPattern):
     )
     FLASH_CONFIG = FlashConfig(
         block_size=255,
+        header_block_format=[
+            FlashField(FlashFieldType.MAGIC, 4),
+            FlashField(FlashFieldType.DATA, 215),
+            FlashField(FlashFieldType.DELIMITER, 1),
+            FlashField(FlashFieldType.ECC, 32),
+        ],
+        data_block_format=data_block_format,
+        # first_data_block_format=data_block_format,
+        last_data_block_format=data_block_format,
+        tail_block_format=[
+            FlashField(FlashFieldType.DELIMITER, 1),
+            FlashField(FlashFieldType.DATA_SIZE, 4),
+            FlashField(FlashFieldType.CHECKSUM, 16),
+            FlashField(FlashFieldType.ECC, 32),
+        ],
         ecc_config=ECC_CONFIG,
         checksum_func=md5,
-        checksum_len=16,
-        data_count_size=4,
     )
 
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
