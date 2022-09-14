@@ -1,5 +1,6 @@
 import io
 from dataclasses import dataclass
+from hashlib import md5
 from enum import Enum
 from typing import Any, Callable, Dict, Iterable, Optional
 
@@ -256,6 +257,11 @@ class FlashEccConfig(ComponentConfig):
 
 
 class FlashFieldType(Enum):
+    """
+    DATA_SIZE is the packed size of the DATA only (excluding MAGIC, CHECKSUM, DELIMITER, ECC, etc)
+    TOTAL_SIZE is the size of the entire region (including all DATA, MAGIC, CHECKSUM, DELIMITER, ECC, etc)
+    """
+
     DATA = 0
     ECC = 1
     MAGIC = 2
@@ -263,16 +269,7 @@ class FlashFieldType(Enum):
     ECC_SIZE = 4
     CHECKSUM = 5
     DELIMITER = 6
-
-
-# class FlashFieldPositionType(Enum):
-#     """
-#     Describes the position of a field relative to entire ECC region
-#     """
-
-#     HEAD_POSITION = 0
-#     TAIL_POSITION = 1
-#     HEAD_TAIL_POSITION = 2
+    TOTAL_SIZE = 7
 
 
 @dataclass
@@ -290,8 +287,10 @@ class FlashConfig(ComponentConfig):
     If there is no ECC, data_block_format may take this form:
         data_block_format = [FlashField(field_type=FlashFieldType.DATA,size=block_size),],
 
-    Note:
+    Important Notes:
+    Assumes that the provided list for each block format is ordered
     Only define first_data_block_format and last_data_block_format if they are different from data_block_format
+    Assumes that there are only one of block format except the data_block_format
     """
 
     block_size: int
@@ -301,10 +300,7 @@ class FlashConfig(ComponentConfig):
     last_data_block_format: Optional[Iterable[FlashField]] = None
     tail_block_format: Optional[Iterable[FlashField]] = None
     ecc_config: Optional[FlashEccConfig] = None
-    checksum_func: Optional[Callable[[Any], Any]] = None
-    # checksum_position: Optional[FlashFieldPositionType] = None
-    # data_count_size: Optional[int] = None
-    # data_count_position: Optional[FlashFieldPositionType] = None
+    checksum_func: Optional[Callable[[Any], Any]] = md5
 
     def get_block_size(self, block_format: Iterable[FlashField]) -> int:
         if block_format is not None:
@@ -544,6 +540,11 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
         data_size_in_header = config.get_field_in_block(
             config.header_block_format, FlashFieldType.DATA_SIZE
         )
+        magic_in_tail = config.get_field_in_block(config.tail_block_format, FlashFieldType.MAGIC)
+        data_size_in_tail = config.get_field_in_block(
+            config.tail_block_format, FlashFieldType.DATA_SIZE
+        )
+
         if config.header_block_format is not None and data_size_in_header is not None:
             # Found data_size field in the header block, just need to calculate expected total size (including OOB)
             # TODO: Craft test flash dump and verify
@@ -576,7 +577,6 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
                 tags=(FlashEccResource,),
                 data_range=Range(start_index, start_index + total_ecc_protected_size),
             )
-
         elif (
             config.tail_block_format is not None
             and config.get_field_in_block(config.tail_block_format, FlashFieldType.DELIMITER)
@@ -621,25 +621,70 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
                     tail_block_size = config.get_block_size(config.tail_block_format)
                     block_end_offset = block_start_offset + tail_block_size
 
-                    read_size_bytes = config.get_field_data_in_block(
+                    # Verify that the verifier matches what is expected
+                    verifier_bytes = config.get_field_data_in_block(
                         block_format=config.tail_block_format,
                         field_type=verifier,
                         data=data,
                         block_start_offset=block_start_offset,
                     )
-                    read_size = int.from_bytes(read_size_bytes, "big")
-                    relative_offset = delim_offset - start_index
-                    # Subtract OOB data from relative offset to get just data size
-                    expected_data_size = config.flash_p2l(p_offset=relative_offset)
-                    if 0 <= (expected_data_size - read_size) <= config.block_size:
-                        ecc_resource = await resource.create_child(
-                            tags=(FlashEccResource,),
-                            data_range=Range(start_index, block_end_offset),
-                        )
-                        break
+                    if verifier is FlashFieldType.DATA_SIZE:
+                        read_size = int.from_bytes(verifier_bytes, "big")
+                        relative_offset = delim_offset - start_index
+                        # Subtract OOB data from relative offset to get just data size
+                        expected_data_size = config.flash_p2l(p_offset=relative_offset)
+                        if 0 <= (expected_data_size - read_size) <= config.block_size:
+                            ecc_resource = await resource.create_child(
+                                tags=(FlashEccResource,),
+                                data_range=Range(start_index, block_end_offset),
+                            )
+                            break
+        elif config.tail_block_format is not None and magic_in_tail is not None:
+            search_index = start_index
+            while search_index < data_len:
+                magic_offset = data.find(ecc_config.ecc_magic, search_index, data_len)
+                if magic_offset == -1:
+                    raise UnpackerError("Unable to find end of ECC protected region")
+                search_index = magic_offset + 1
+
+                magic_offset_in_block = config.get_field_range_in_block(
+                    config.tail_block_format, FlashFieldType.MAGIC
+                )
+                block_start_offset = magic_offset - magic_offset_in_block.start
+                tail_block_size = config.get_block_size(config.tail_block_format)
+                block_end_offset = block_start_offset + tail_block_size
+
+                if (
+                    config.get_field_data_in_block(
+                        config.tail_block_format, FlashFieldType.MAGIC, data, block_start_offset
+                    )
+                    == ecc_config.ecc_magic
+                ):
+                    ecc_resource = await resource.create_child(
+                        tags=(FlashEccResource,), data_range=Range(start_index, block_end_offset)
+                    )
+                    break
+        elif config.tail_block_format is not None and data_size_in_tail is not None:
+            search_index = start_index
+            while search_index < data_len:
+                tail_block_size = config.get_block_size(tail_block_size)
+                tail_start_offset = data_len - tail_block_size
+                data_size_bytes = config.get_field_data_in_block(
+                    config.tail_block_format, FlashFieldType.DATA_SIZE, data, tail_start_offset
+                )
+
+                data_size_offset_in_block = config.get_field_in_block(
+                    config.tail_block_format, FlashFieldType.DATA_SIZE
+                )
+
+                if tail_start_offset + data_size_offset_in_block == data_size_bytes:
+                    tail_end_offset = tail_start_offset + tail_block_size
+                    ecc_resource = await resource.create_child(
+                        tags=(FlashEccResource,), data_range=Range(start_index, tail_end_offset)
+                    )
+                    break
         else:
             # With no indicators of the last data block or tail, we fallback to declaring the whole resource ECC protected
-            # TODO: Add case for DATA_SIZE appearing in expected offset (block aligned), less chance of false positive
             resource.add_tag(FlashEccResource)
             ecc_resource = resource
 
@@ -772,31 +817,43 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
         original_size = bytes_left
         packed_data = bytearray()
         data_offset = 0
+        count = 0
         while bytes_left > 0:
+            ecc = b""
             if bytes_left == original_size:
+                cur_block_type = config.header_block_format
                 # Create header block
-                block_data = data[: config.get_header_block_data_size()] + ecc_config.data_delimiter
+                block_data = data[: config.get_block_size(config.header_block_format)]
                 if config.checksum_func is not None:
                     data_hash = config.checksum_func(block_data).digest()
                 if data_hash in DATA_HASHES:
                     # Data was not changed, no need to compute new ECC
                     ecc = DATA_HASHES[data_hash]
-                else:
+                elif ecc_config.ecc_magic is not None:
                     # Include magic in the ECC
                     ecc = ecc_class.encode(ecc_config.ecc_magic + block_data)[
                         -ecc_config.ecc_size :
                     ]
+                else:
+                    ecc = ecc_class.encode(block_data)[-ecc_config.ecc_size]
                 block = ecc_config.ecc_magic + block_data + ecc
                 data_offset += config.get_header_block_data_size()
                 bytes_left -= config.get_header_block_data_size()
+            elif count == 1 and config.first_data_block_format is not None:
+                cur_block_type = config.first_data_block_format
             else:
                 # Check if last block
-                if bytes_left <= config.get_data_block_data_size():
+                if (
+                    config.last_data_block_format is not None
+                    and bytes_left <= config.get_data_block_data_size()
+                ):
+                    cur_block_type = config.last_data_block_format
                     # Add padding to last block
                     block_data = bytearray(config.get_data_block_data_size())
                     block_data[:bytes_left] = data[data_offset:]
                     block_data[config.get_data_block_data_size() :] = ecc_config.last_data_delimiter
                 else:
+                    cur_block_type = config.data_block_format
                     block_data = data[data_offset : data_offset + config.get_data_block_data_size()]
                     block_data += ecc_config.data_delimiter
 
@@ -810,6 +867,35 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
                 data_offset += config.get_data_block_data_size()
                 bytes_left -= config.get_data_block_data_size()
             packed_data += block
+
+            # Update the checksum, even if its not used we use it for tracking if we need to update ECC
+            data_hash = config.checksum_func(block_data)
+
+            block_ecc_field = config.get_field_in_block(cur_block_type, FlashFieldType.ECC)
+            if block_ecc_field is not None:
+                # Check if ECC was saved, otherwise encode new ECC
+                if data_hash in DATA_HASHES:
+                    ecc = DATA_HASHES[data_hash]
+                else:
+                    ecc = ecc_class.encode(block_data)[-block_ecc_field.size]
+
+            # Build block
+            for f in cur_block_type:
+                if f is FlashFieldType.MAGIC:
+                    block += ecc_config.ecc_magic
+                elif f is FlashFieldType.CHECKSUM:
+                    block += config.checksum_func(data)
+                elif f is FlashFieldType.DATA_SIZE:
+                    block += original_size
+                elif f is FlashFieldType.DELIMITER:
+                    if cur_block_type is config.header_block_format:
+                        data += ecc_config.head_delimiter
+                    elif cur_block_type is config.first_data_block_format:
+                        data += ecc_config.first_data_delimiter
+                    # TODO: Continue this waterfall for all 5 types
+                # TODO: Continue checking for all types of fields
+
+            count += 1
 
         # Add tail block
         tail_block = (
