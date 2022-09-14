@@ -847,59 +847,55 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
             UnpackerError("Cannot pack FlashLogicalDataResource without providing ECC class")
 
         data = await resource.get_data()
+        block = b""
         bytes_left = len(data)
         original_size = bytes_left
         packed_data = bytearray()
         data_offset = 0
         count = 0
+
+        header_block_size = config.get_block_size(config.header_block_format)
+        first_data_block_size = config.get_block_size(config.first_data_block_format)
+        data_block_size = config.get_block_size(config.data_block_format)
+        last_data_block_size = config.get_block_size(config.last_data_block_format)
+        tail_block_size = config.get_block_size(config.tail_block_format)
         while bytes_left > 0:
             ecc = b""
             if bytes_left == original_size:
                 cur_block_type = config.header_block_format
                 # Create header block
-                block_data = data[: config.get_block_size(config.header_block_format)]
-                if config.checksum_func is not None:
-                    data_hash = config.checksum_func(block_data).digest()
-                if data_hash in DATA_HASHES:
-                    # Data was not changed, no need to compute new ECC
-                    ecc = DATA_HASHES[data_hash]
-                elif ecc_config.ecc_magic is not None:
-                    # Include magic in the ECC
-                    ecc = ecc_class.encode(ecc_config.ecc_magic + block_data)[
-                        -ecc_config.ecc_size :
-                    ]
-                else:
-                    ecc = ecc_class.encode(block_data)[-ecc_config.ecc_size]
-                block = ecc_config.ecc_magic + block_data + ecc
-                header_block_data_size = config.get_block_size(config.header_block_format)
-                data_offset += header_block_data_size
-                bytes_left -= header_block_data_size
-            elif count == 1 and config.first_data_block_format is not None:
+                block_data = data[:header_block_size]
+
+                cur_block_size = header_block_size
+                data_offset += cur_block_size
+                bytes_left -= cur_block_size
+            elif bytes_left >= original_size - first_data_block_size:
+                cur_block_size = first_data_block_size
                 cur_block_type = config.first_data_block_format
+                data_offset += cur_block_size
+                bytes_left -= cur_block_size
             else:
-                # Check if last block
-                data_block_size = config.get_block_size(config.data_block_format)
-                if config.last_data_block_format is not None and bytes_left <= data_block_size:
+                # Check if tail
+                # TODO: Check for case where either or both (last data and tail) is 0
+                if bytes_left <= tail_block_size:
+                    cur_block_size = tail_block_size
+                    cur_block_type = config.tail_block_format
+                # Check if last data block
+                elif bytes_left <= last_data_block_size + tail_block_size:
+                    cur_block_size = last_data_block_size
                     cur_block_type = config.last_data_block_format
                     # Add padding to last block
                     block_data = bytearray(data_block_size)
                     block_data[:bytes_left] = data[data_offset:]
-                    block_data[data_block_size:] = ecc_config.last_data_delimiter
+                # Otherwise it is just a regular data block
                 else:
+                    cur_block_size = data_block_size
                     cur_block_type = config.data_block_format
                     block_data = data[data_offset : data_offset + data_block_size]
-                    block_data += ecc_config.data_delimiter
 
                 # Check if this block was modified by checking MD5 checksum from unpacking
-                data_hash = config.checksum_func(block_data).digest()
-                if data_hash in DATA_HASHES:
-                    ecc = DATA_HASHES[data_hash]
-                else:
-                    ecc = ecc_class.encode(block_data)[-ecc_config.ecc_size :]
-                block = block_data + ecc
                 data_offset += data_block_size
                 bytes_left -= data_block_size
-            packed_data += block
 
             # Update the checksum, even if its not used we use it for tracking if we need to update ECC
             data_hash = config.checksum_func(block_data)
@@ -938,6 +934,8 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
                 elif f is FlashFieldType.MAGIC:
                     block += ecc_config.ecc_magic
             count += 1
+
+            packed_data += block
 
         # Create child under the FlashEccResource to show that it packed itself
         parent = await resource.get_parent()
