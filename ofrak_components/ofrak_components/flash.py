@@ -178,7 +178,6 @@ class FlashEccConfig(ComponentConfig):
     ecc_magic is assumed to be contained at the start of the file, but may also occur multiple times
     """
 
-    ecc_size: int
     ecc_class: Callable[[Any], Any]
     ecc_magic: Optional[bytes] = None
     head_delimiter: Optional[bytes] = None
@@ -228,7 +227,7 @@ class FlashConfig(ComponentConfig):
     Important Notes:
     Assumes that the provided list for each block format is ordered
     Only define first_data_block_format and last_data_block_format if they are different from data_block_format
-    Assumes that there are only one of block format except the data_block_format
+    Assumes that there are only one of each block format except the data_block_format
     The checksum function will be used repeatedly internally for saving on encoding saved ECC values for each block
     """
 
@@ -258,9 +257,10 @@ class FlashConfig(ComponentConfig):
     def get_field_in_block(
         self, block_format: Iterable[FlashField], field_type: FlashFieldType
     ) -> FlashField:
-        for field in block_format:
-            if field.field_type is field_type:
-                return field
+        if block_format is not None:
+            for field in block_format:
+                if field.field_type is field_type:
+                    return field
         return None
 
     def get_field_range_in_block(
@@ -326,42 +326,6 @@ class FlashConfig(ComponentConfig):
                 -self.get_block_size(self.last_data_block_format),
                 -self.get_block_size(self.tail_block_format),
             ]
-        )
-
-    def flash_p2l(self, p_offset: int) -> int:
-        """
-        Returns the logical address given a valid physical data address
-        If a physical memory address does not have data then it will return an unexpected value
-        """
-        # TODO: Handle input that is not in a data section
-        # TODO: More testing of edge cases
-        header_block_size = self.get_block_size(self.header_block_format)
-        if header_block_size is not None:
-            if p_offset <= header_block_size:
-                return p_offset
-        return (
-            ((p_offset // self.block_size) * self.get_block_size(self.data_block_format))
-            + (p_offset % self.block_size)
-            - self.ecc_config.get_magic_len()  # TODO: Fix extra OOB adjustment
-        )
-
-    def flash_l2p(
-        self,
-        l_offset: int,
-    ) -> int:
-        """
-        Returns the physical address given a logical address of contiguous memory
-        """
-        header_block_size = self.get_block_size(self.header_block_format)
-        if header_block_size is not None:
-            if l_offset <= header_block_size:
-                return l_offset
-        data_block_size = self.get_block_size(self.data_block_format)
-
-        return (
-            ((l_offset // data_block_size) * self.block_size)
-            + (l_offset % data_block_size)
-            + 7  # TODO: Fix extra OOB adjustment
         )
 
 
@@ -599,7 +563,6 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
                 if c is config.data_block_format:
                     # TODO: Fix assumption that any matching format is the same
                     num_blocks_of_type = possible_data_blocks
-                print(num_blocks_of_type)
                 for x in range(0, num_blocks_of_type):
                     block_size = config.get_block_size(c)
                     block_end_offset = offset + block_size
@@ -659,7 +622,19 @@ class FlashResourcePacker(Packer[FlashConfig]):
     targets = (FlashResource,)
 
     async def pack(self, resource: Resource, config: FlashConfig):
-        pass
+        # We actually want to overwrite ourselves with just the repacked version
+        try:
+            packed_child = await resource.get_only_child(
+                r_filter=ResourceFilter.with_tags(
+                    FlashEccResource,
+                ),
+            )
+            patch_data = await packed_child.get_data()
+        except NotFoundError:
+            # Child has not been packed, return itself
+            patch_data = await resource.get_data()
+        original_size = await resource.get_data_length()
+        resource.queue_patch(Range(0, original_size), patch_data)
 
 
 class FlashEccResourcePacker(Packer[FlashConfig]):
@@ -719,22 +694,16 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
             config.tail_block_format, FlashFieldType.DATA
         )
         while bytes_left >= 0:
-            if config.header_block_format is not None and bytes_left == original_size:
+            if header_data_size != 0 and bytes_left == original_size:
                 cur_block_type = config.header_block_format
                 cur_block_size = header_data_size
-            elif (
-                config.first_data_block_format is not None
-                and bytes_left >= original_size - first_data_size
-            ):
+            elif first_data_size != 0 and bytes_left >= original_size - first_data_size:
                 cur_block_type = config.first_data_block_format
                 cur_block_size = first_data_size
-            elif config.tail_block_format is not None and bytes_left <= tail_data_size:
+            elif tail_data_size != 0 and bytes_left <= tail_data_size:
                 cur_block_type = config.tail_block_format
                 cur_block_size = tail_data_size
-            elif (
-                config.last_data_block_format is not None
-                and bytes_left <= last_data_size + tail_data_size
-            ):
+            elif last_data_size != 0 and bytes_left <= last_data_size + tail_data_size:
                 cur_block_type = config.last_data_block_format
                 cur_block_size = last_data_size
             else:
@@ -757,7 +726,7 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
             )
 
         # Add a tail if there is no data expected within the block
-        if tail_data_size == 0:
+        if config.tail_block_format is not None and tail_data_size == 0:
             packed_data += _build_block(
                 cur_block_type=config.tail_block_format,
                 config=config,
