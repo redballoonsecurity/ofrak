@@ -46,6 +46,7 @@ setuptools.setup(
         "synthol~=0.1.1",
         "typeguard~=2.13.3",
         "xattr==0.9.7",
+        "uf2@git+https://github.com/sjossi/uf2@pythonpackaging#subdirectory=utils/pypi",
     ],
     extras_require={
         "docs": [
