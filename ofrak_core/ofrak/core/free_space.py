@@ -372,7 +372,7 @@ class FreeSpaceModifierConfig(ComponentConfig):
     """
 
     permissions: MemoryPermissions
-    stub: bytes
+    stub: bytes = b""
     subrange: Optional[Range] = None
 
 
