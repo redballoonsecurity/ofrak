@@ -593,8 +593,8 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
                     if block_ecc_range is not None:
                         block_ecc = block_data[block_ecc_range.start : block_ecc_range.end]
                         only_ecc += block_ecc
-                        # Add the ECC to our Dict for faster packing
-                        block_data_hash = config.checksum_func(block_data)
+                        # Add hash of everything up to the ECC to our dict for faster packing
+                        block_data_hash = config.checksum_func(block_data[: block_ecc_range.start])
                         DATA_HASHES[block_data_hash] = block_ecc
 
                     offset += block_size
