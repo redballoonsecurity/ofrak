@@ -236,7 +236,6 @@ class FlashConfig(ComponentConfig):
     first_data_block_format: Optional[Iterable[FlashField]] = None
     last_data_block_format: Optional[Iterable[FlashField]] = None
     tail_block_format: Optional[Iterable[FlashField]] = None
-    alignment: Optional[int] = None
     ecc_config: Optional[FlashEccConfig] = None
     checksum_func: Optional[Callable[[Any], Any]] = md5
 
@@ -678,6 +677,8 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
         bytes_left = len(data)
         original_size = bytes_left
         packed_data = bytearray()
+        if ecc_config.ecc_magic is not None:
+            packed_data += ecc_config.ecc_magic
         data_offset = 0
 
         header_data_size = config.get_field_length_in_block(
@@ -723,6 +724,7 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
                 block_data=block_data,
                 original_data=data,
                 original_size=original_size,
+                packed_data_len=len(packed_data),
             )
 
         # Add a tail if there is no data expected within the block
@@ -733,6 +735,7 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
                 block_data=b"",
                 original_data=data,
                 original_size=original_size,
+                packed_data_len=len(packed_data),
             )
 
         # Create child under the FlashEccResource to show that it packed itself
@@ -749,8 +752,9 @@ def _build_block(
     block_data: bytes,
     original_data: bytes,
     original_size: int,
+    packed_data_len: int,
 ) -> bytes:
-    # Update the checksum, even if its not used we use it for tracking if we need to update ECC
+    # Update the checksum, even if its not used we use it for tracking if we need it to update ECC
     data_hash = config.checksum_func(block_data)
     block = b""
     # TODO: Try changing this to a map
@@ -795,8 +799,8 @@ def _build_block(
             block_ecc_field = config.get_field_in_block(cur_block_type, FlashFieldType.ECC)
             block += block_ecc_field.size.to_bytes(field.size, "big")
         elif f is FlashFieldType.TOTAL_SIZE:
-            # TODO: Add field for TOTAL_SIZE, we just need to know OOB size
-            pass
+            # TODO: Support preemptive total size
+            block += (packed_data_len + len(block) + field.size).to_bytes(field.size, "big")
         elif f is FlashFieldType.MAGIC:
             block += config.ecc_config.ecc_magic
     return block
