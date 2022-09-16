@@ -223,10 +223,8 @@ async def test_flush_to_disk_pack(ofrak_context: OFRAKContext):
             except Exception as e:
                 print(f"Could not flush: {e}")
 
-        got_flush = set()
-        got_write = set()
-        [got_flush.add(str(f.name)) for f in Path(flush_dir).iterdir()]
-        [got_write.add(str(f.name)) for f in Path(write_dir).iterdir()]
+        got_flush = {str(f.name) for f in Path(flush_dir).iterdir()}
+        got_write = {str(f.name) for f in Path(write_dir).iterdir()}
 
         assert got_flush == want, "Not all files were written to disk by `flush_to_disk`"
         assert got_write == want, "Not all files were written to disk by `write_to`"
