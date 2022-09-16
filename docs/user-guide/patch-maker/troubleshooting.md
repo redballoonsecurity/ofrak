@@ -114,9 +114,9 @@ section. There are two approaches for addressing this:
 In the case of linker errors, helpful troubleshooting approaches are:
 
 - find the linker command line in the OFRAK log, then:
-  - inspect the generated linker script (`-T/path/to/linker_script.ld` in the command line). Check if the addresses, sizes, alignments match the expected values.
-  - inspect the map file (`-Map /path/to/map_file.map` in the command line). Check if things land where they're expected to, compared to the linker script.
-  - inspect the linker options to check if they are the expected ones
+    - inspect the generated linker script (`-T/path/to/linker_script.ld` in the command line). Check if the addresses, sizes, alignments match the expected values.
+    - inspect the map file (`-Map /path/to/map_file.map` in the command line). Check if things land where they're expected to, compared to the linker script.
+    - inspect the linker options to check if they are the expected ones
 
 If anything strange stands up during the above inspection, use the toolchains directly to diagnose
 what the PatchMaker needs (fixups in the linker script generation, change in the command line

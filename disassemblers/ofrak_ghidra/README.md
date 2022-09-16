@@ -7,7 +7,7 @@ This package requires:
 - a valid installation of Ghidra
 
 # Docker
-Follow the instructions in [INSTALL.md](../INSTALL.md) to build a Docker container with Ghidra.
+Follow the instructions in the [OFRAK environment setup guide](https://ofrak.com/docs/environment-setup.html) to build a Docker container with Ghidra.
 
 # MacOS
 1. Ensure that you have a valid installation of Ghidra

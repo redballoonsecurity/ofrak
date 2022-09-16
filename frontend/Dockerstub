@@ -3,6 +3,10 @@ COPY --from=svelte --chown=root:root /home/node/frontend/public /ofrak_gui
 COPY frontend/nginx.conf /etc/nginx/sites-enabled/default
 COPY frontend/backend/ofrak_server.py /ofrak_server.py
 
+COPY mkdocs.yml /mkdocs.yml
+COPY docs /docs
+COPY examples /examples
+
 RUN apt-get update && apt-get install --yes nginx
 RUN python3 -m pip install --upgrade aiohttp
 
