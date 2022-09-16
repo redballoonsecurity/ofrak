@@ -3,28 +3,23 @@ from dataclasses import dataclass
 from itertools import chain
 from typing import List, Tuple, Dict, Optional, Iterable
 
-from ofrak.service.id_service_i import IDServiceInterface
+from ofrak_type.architecture import InstructionSetMode
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
-from ofrak.core.architecture import ProgramAttributes
+from ofrak.core.basic_block import BasicBlock
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.core.memory_region import MemoryRegion
-from ofrak.core.program import Program
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import index
-from ofrak.resource import Resource, ResourceFactory
+from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
-from ofrak.service.assembler.assembler_service_i import AssemblerServiceInterface
-from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import (
-    ResourceServiceInterface,
     ResourceFilter,
     ResourceAttributeRangeFilter,
     ResourceAttributeValueFilter,
     ResourceSort,
 )
-from ofrak_type.architecture import InstructionSetMode
 from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.range import Range, remove_subranges
 
@@ -373,10 +368,12 @@ class FreeSpaceModifierConfig(ComponentConfig):
 
     :var permissions: memory permissions to give the created free space.
     :var stub: bytes to place in the first N bytes of the resource being freed
+    :var subrange: subrange of bytes to free within a resource
     """
 
     permissions: MemoryPermissions
-    stub: bytes
+    stub: bytes = b""
+    subrange: Optional[Range] = None
 
 
 class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
@@ -387,6 +384,27 @@ class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
     """
     targets = (MemoryRegion,)
 
+    @staticmethod
+    async def _find_and_delete_overlapping_children(resource: Resource, freed_range: Range):
+        # Pulled from the Partial modifier. Note this filter calculation has the potential
+        # to be very expensive if, for instance, the resource is an entire program segment...
+        overlap_resources = list(await resource.get_children_as_view(
+            MemoryRegion,
+            r_filter=ResourceFilter(
+                tags=(MemoryRegion,),
+                attribute_filters=(
+                    ResourceAttributeRangeFilter(MemoryRegion.VirtualAddress, max=freed_range.end),
+                ),
+            ),
+        ))
+        for possible_overlapping_child in overlap_resources:
+            if (
+                possible_overlapping_child.virtual_address > freed_range.start
+                or possible_overlapping_child.end_vaddr() > freed_range.start
+            ):
+                await possible_overlapping_child.resource.delete()
+                await possible_overlapping_child.resource.save()
+
     async def modify(self, resource: Resource, config: FreeSpaceModifierConfig):
         mem_region_view = await resource.view_as(MemoryRegion)
         if len(config.stub) > mem_region_view.size:
@@ -395,38 +413,66 @@ class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
                 f"Resource @ {hex(mem_region_view.virtual_address)} being freed "
                 f"({mem_region_view.size} bytes)."
             )
-        parent_mr_view = await resource.get_parent_as_view(MemoryRegion)
+        start = mem_region_view.virtual_address
+        size = mem_region_view.size
+        if config.subrange:
+            if len(config.stub) > config.subrange.length():
+                raise ValueError(
+                    f"The provided stub ({len(config.stub)} bytes) cannot be larger than the "
+                    f"Resource subrange @ {hex(mem_region_view.virtual_address)} being freed "
+                    f"({config.subrange.length()} bytes)."
+                )
+            else:
+                start = config.subrange.start
+                size = config.subrange.length()
 
-        stub_range = Range.from_size(mem_region_view.virtual_address, len(config.stub))
+        parent_mr_view = await resource.get_parent_as_view(MemoryRegion)
+        stub_range = Range.from_size(start, len(config.stub))
         stub_offset = parent_mr_view.get_offset_in_self(stub_range.start)
         stub_offset_range = stub_range.translate(stub_offset - stub_range.start)
 
-        freed_range = Range(
-            mem_region_view.virtual_address + stub_range.length(),
-            mem_region_view.virtual_address + mem_region_view.size,
-        )
+        freed_range = Range(start + stub_range.length(), start + size)
         freed_offset = parent_mr_view.get_offset_in_self(freed_range.start)
         freed_offset_range = freed_range.translate(freed_offset - freed_range.start)
 
-        # Right now, if a stub is provided, we assume this must be is a real function.
+        if config.subrange:
+            await self._find_and_delete_overlapping_children(resource, freed_range)
+
+        # If a stub is provided we only assume this is a function if the virtual
+        # address of `resource` is the same value as config.subrange.start.
         name = None
-        if stub_range.length() > 0:
+        is_bb = False
+        if resource.has_tag(ComplexBlock) and start == mem_region_view.virtual_address:
             cb_view = await resource.view_as(ComplexBlock)
             name = str(cb_view.Symbol)
+        elif start > mem_region_view.virtual_address:
+            # our subrange begins within an existing resource... so let's try making it a basic block
+            is_bb = True
 
+        # We need to delete the containing resource before we can begin creating new Memory Region
+        # resources within
         await resource.delete()
         await resource.save()
 
-        if stub_range.length() > 0 and name is not None:
-            await parent_mr_view.resource.create_child_from_view(
-                ComplexBlock(stub_range.start, stub_range.end, name),
-                data_range=stub_offset_range,
-                data=config.stub,
-            )
+        # indicating we know this is a CB and we want to preserve our knowledge of linkage
+        if stub_range.length() > 0:
+            if name:
+                await parent_mr_view.resource.create_child_from_view(
+                    ComplexBlock(stub_range.start, stub_range.end, name),
+                    data_range=stub_offset_range,
+                    data=config.stub,
+                )
+            elif is_bb:
+                await parent_mr_view.resource.create_child_from_view(
+                    BasicBlock(
+                        stub_range.start, stub_range.length(), InstructionSetMode.NONE, True, None
+                    ),
+                    data_range=stub_offset_range,
+                    data=config.stub,
+                )
 
         await parent_mr_view.resource.create_child_from_view(
             FreeSpace(freed_range.start, freed_range.end, config.permissions),
             data_range=freed_offset_range,
             data=b"\x00"*freed_offset_range.length(),
         )
-
