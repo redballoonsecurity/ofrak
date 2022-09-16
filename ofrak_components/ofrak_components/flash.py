@@ -264,12 +264,13 @@ class FlashFieldType(Enum):
 
     DATA = 0
     ECC = 1
-    MAGIC = 2
-    DATA_SIZE = 3
-    ECC_SIZE = 4
-    CHECKSUM = 5
-    DELIMITER = 6
-    TOTAL_SIZE = 7
+    ALIGNMENT = 2
+    MAGIC = 3
+    DATA_SIZE = 4
+    ECC_SIZE = 5
+    CHECKSUM = 6
+    DELIMITER = 7
+    TOTAL_SIZE = 8
 
 
 @dataclass
@@ -294,12 +295,12 @@ class FlashConfig(ComponentConfig):
     The checksum function will be used repeatedly internally for saving on encoding saved ECC values for each block
     """
 
-    block_size: int
     data_block_format: Iterable[FlashField]
     header_block_format: Optional[Iterable[FlashField]] = None
     first_data_block_format: Optional[Iterable[FlashField]] = None
     last_data_block_format: Optional[Iterable[FlashField]] = None
     tail_block_format: Optional[Iterable[FlashField]] = None
+    alignment: Optional[int] = None
     ecc_config: Optional[FlashEccConfig] = None
     checksum_func: Optional[Callable[[Any], Any]] = md5
 
@@ -750,7 +751,9 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
             if c is not None:
                 num_blocks_of_type = 1
                 if c is config.data_block_format:
+                    # TODO: Fix assumption that any matching format is the same
                     num_blocks_of_type = possible_data_blocks
+                print(num_blocks_of_type)
                 for x in range(0, num_blocks_of_type):
                     block_size = config.get_block_size(c)
                     block_end_offset = offset + block_size
@@ -779,7 +782,11 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
                         only_data += block_data[block_data_range.start : block_data_range.end]
                     block_ecc_range = config.get_ecc_range_in_block(c)
                     if block_ecc_range is not None:
-                        only_ecc += block_data[block_ecc_range.start : block_ecc_range.end]
+                        block_ecc = block_data[block_ecc_range.start : block_ecc_range.end]
+                        only_ecc += block_ecc
+                        # Add the ECC to our Dict for faster packing
+                        block_data_hash = config.checksum_func(block_data)
+                        DATA_HASHES[block_data_hash] = block_ecc
 
                     offset += block_size
 
@@ -847,95 +854,71 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
             UnpackerError("Cannot pack FlashLogicalDataResource without providing ECC class")
 
         data = await resource.get_data()
-        block = b""
         bytes_left = len(data)
         original_size = bytes_left
         packed_data = bytearray()
         data_offset = 0
-        count = 0
 
-        header_block_size = config.get_block_size(config.header_block_format)
-        first_data_block_size = config.get_block_size(config.first_data_block_format)
-        data_block_size = config.get_block_size(config.data_block_format)
-        last_data_block_size = config.get_block_size(config.last_data_block_format)
-        tail_block_size = config.get_block_size(config.tail_block_format)
-        while bytes_left > 0:
-            ecc = b""
-            if bytes_left == original_size:
+        header_data_size = config.get_field_length_in_block(
+            config.header_block_format, FlashFieldType.DATA
+        )
+        first_data_size = config.get_field_length_in_block(
+            config.first_data_block_format, FlashFieldType.DATA
+        )
+        data_size = config.get_field_length_in_block(config.data_block_format, FlashFieldType.DATA)
+        last_data_size = config.get_field_length_in_block(
+            config.last_data_block_format, FlashFieldType.DATA
+        )
+        tail_data_size = config.get_field_length_in_block(
+            config.tail_block_format, FlashFieldType.DATA
+        )
+        while bytes_left >= 0:
+            if config.header_block_format is not None and bytes_left == original_size:
                 cur_block_type = config.header_block_format
-                # Create header block
-                block_data = data[:header_block_size]
-
-                cur_block_size = header_block_size
-                data_offset += cur_block_size
-                bytes_left -= cur_block_size
-            elif bytes_left >= original_size - first_data_block_size:
-                cur_block_size = first_data_block_size
+                cur_block_size = header_data_size
+            elif (
+                config.first_data_block_format is not None
+                and bytes_left >= original_size - first_data_size
+            ):
                 cur_block_type = config.first_data_block_format
-                data_offset += cur_block_size
-                bytes_left -= cur_block_size
+                cur_block_size = first_data_size
+            elif config.tail_block_format is not None and bytes_left <= tail_data_size:
+                cur_block_type = config.tail_block_format
+                cur_block_size = tail_data_size
+            elif (
+                config.last_data_block_format is not None
+                and bytes_left <= last_data_size + tail_data_size
+            ):
+                cur_block_type = config.last_data_block_format
+                cur_block_size = last_data_size
             else:
-                # Check if tail
-                # TODO: Check for case where either or both (last data and tail) is 0
-                if bytes_left <= tail_block_size:
-                    cur_block_size = tail_block_size
-                    cur_block_type = config.tail_block_format
-                # Check if last data block
-                elif bytes_left <= last_data_block_size + tail_block_size:
-                    cur_block_size = last_data_block_size
-                    cur_block_type = config.last_data_block_format
-                    # Add padding to last block
-                    block_data = bytearray(data_block_size)
-                    block_data[:bytes_left] = data[data_offset:]
-                # Otherwise it is just a regular data block
-                else:
-                    cur_block_size = data_block_size
-                    cur_block_type = config.data_block_format
-                    block_data = data[data_offset : data_offset + data_block_size]
+                # Just a regular data block
+                cur_block_size = data_size
+                cur_block_type = config.data_block_format
 
-                # Check if this block was modified by checking MD5 checksum from unpacking
-                data_offset += data_block_size
-                bytes_left -= data_block_size
+            # Get the data for the current block
+            block_data = data[data_offset : data_offset + cur_block_size]
 
-            # Update the checksum, even if its not used we use it for tracking if we need to update ECC
-            data_hash = config.checksum_func(block_data)
+            data_offset += cur_block_size
+            bytes_left -= cur_block_size
 
-            # Build block
-            for f in cur_block_type:
-                if f is FlashFieldType.CHECKSUM:
-                    block += config.checksum_func(data)
-                elif f is FlashFieldType.DATA:
-                    block += block_data
-                elif f is FlashFieldType.DATA_SIZE:
-                    block += original_size.to_bytes(f.size, "big")
-                elif f is FlashFieldType.DELIMITER:
-                    if cur_block_type is config.header_block_format:
-                        block += ecc_config.head_delimiter
-                    elif cur_block_type is config.first_data_block_format:
-                        block += ecc_config.first_data_delimiter
-                    elif cur_block_type is config.data_block_format:
-                        block += ecc_config.data_delimiter
-                    elif cur_block_type is config.last_data_block_format:
-                        block += ecc_config.last_data_delimiter
-                    elif cur_block_type is config.tail_block_format:
-                        block += ecc_config.tail_delimiter
-                elif f is FlashFieldType.ECC:
-                    if data_hash in DATA_HASHES:
-                        ecc = DATA_HASHES[data_hash]
-                    else:
-                        ecc = ecc_class.encode(block_data)[-f.size]
-                    block += ecc
-                elif f is FlashFieldType.ECC_SIZE:
-                    block_ecc_field = config.get_field_in_block(cur_block_type, FlashFieldType.ECC)
-                    block += block_ecc_field.size.to_bytes(f.size, "big")
-                elif f is FlashFieldType.TOTAL_SIZE:
-                    # TODO: Add field for TOTAL_SIZE, we just need to know OOB size
-                    pass
-                elif f is FlashFieldType.MAGIC:
-                    block += ecc_config.ecc_magic
-            count += 1
+            packed_data += _build_block(
+                cur_block_type=cur_block_type,
+                config=config,
+                block_data=block_data,
+                original_data=data,
+                original_size=original_size,
+            )
 
-            packed_data += block
+        # Add a tail if there is no data expected within the block
+        if tail_data_size == 0:
+            packed_data += _build_block(
+                cur_block_type=config.tail_block_format,
+                config=config,
+                block_data=b"",
+                original_data=data,
+                original_size=original_size,
+            )
 
         # Create child under the FlashEccResource to show that it packed itself
         parent = await resource.get_parent()
@@ -945,44 +928,60 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
 #####################
 #      HELPERS      #
 #####################
-def _get_physical_block_index(
-    header_block_data_size: int, ecc_block_data_size: int, l_offset: int
-) -> int:
-    """
-    Returns the index of the physical block corresponding to a logical address
-    """
-    if l_offset <= header_block_data_size:
-        return 0
-    return ((l_offset - header_block_data_size) // ecc_block_data_size) + 1
-
-
-def _flash_l2p(
-    block_size: int,
-    header_block_data_size: int,
-    ecc_block_data_size: int,
-    magic_len: int,
-    l_offset: int,
-) -> int:
-    """
-    Returns the physical address given a logical address of contiguous memory
-    """
-    if l_offset <= header_block_data_size:
-        return l_offset
-    return (
-        ((l_offset // ecc_block_data_size) * block_size)
-        + (l_offset % ecc_block_data_size)
-        + magic_len
-    )
-
-
-def _flash_p2l(
-    block_size: int, header_block_data_size: int, ecc_block_data_size: int, p_offset: int
-) -> int:
-    """
-    Returns the logical address given a valid physical data address
-    If a physical memory address does not have data then it will return an unexpected value
-    """
-    # TODO: Handle input that is not in a data section
-    if p_offset <= header_block_data_size:
-        return p_offset
-    return ((p_offset // block_size) * ecc_block_data_size) + (p_offset % block_size) - 7
+def _build_block(
+    cur_block_type: Iterable[FlashField],
+    config: FlashConfig,
+    block_data: bytes,
+    original_data: bytes,
+    original_size: int,
+) -> bytes:
+    # Update the checksum, even if its not used we use it for tracking if we need to update ECC
+    data_hash = config.checksum_func(block_data)
+    block = b""
+    # TODO: Try changing this to a map
+    for field in cur_block_type:
+        f = field.field_type
+        if f is FlashFieldType.ALIGNMENT:
+            block += b"\x00" * field.size
+        elif f is FlashFieldType.CHECKSUM:
+            block += config.checksum_func(original_data)
+        elif f is FlashFieldType.DATA:
+            expected_data_size = config.get_field_length_in_block(
+                cur_block_type, FlashFieldType.DATA
+            )
+            real_data_len = len(block_data)
+            if real_data_len < expected_data_size:
+                cur_block_data = bytearray(expected_data_size)
+                cur_block_data[:real_data_len] = block_data
+                block_data = cur_block_data
+            block += block_data
+        elif f is FlashFieldType.DATA_SIZE:
+            block += original_size.to_bytes(field.size, "big")
+        elif f is FlashFieldType.DELIMITER:
+            if cur_block_type is config.header_block_format:
+                block += config.ecc_config.head_delimiter
+            elif cur_block_type is config.first_data_block_format:
+                block += config.ecc_config.first_data_delimiter
+            elif cur_block_type is config.data_block_format:
+                block += config.ecc_config.data_delimiter
+            elif cur_block_type is config.last_data_block_format:
+                block += config.ecc_config.last_data_delimiter
+            elif cur_block_type is config.tail_block_format:
+                block += config.ecc_config.tail_delimiter
+        elif f is FlashFieldType.ECC:
+            if data_hash in DATA_HASHES:
+                ecc = DATA_HASHES[data_hash]
+            else:
+                # Assumes that all previously added data in the block should be included in the ECC
+                # TODO: Support ECC that comes before data
+                ecc = config.ecc_config.ecc_class.encode(block)[-field.size :]
+            block += ecc
+        elif f is FlashFieldType.ECC_SIZE:
+            block_ecc_field = config.get_field_in_block(cur_block_type, FlashFieldType.ECC)
+            block += block_ecc_field.size.to_bytes(field.size, "big")
+        elif f is FlashFieldType.TOTAL_SIZE:
+            # TODO: Add field for TOTAL_SIZE, we just need to know OOB size
+            pass
+        elif f is FlashFieldType.MAGIC:
+            block += config.ecc_config.ecc_magic
+    return block
