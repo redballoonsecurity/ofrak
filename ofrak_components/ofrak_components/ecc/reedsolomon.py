@@ -28,7 +28,7 @@ class ReedSolomon(EccAlgorithm):
     def encode(self, payload: bytes) -> bytes:
         return self.RSC.encode(
             data=payload,
-        )
+        )[len(payload) :]
 
     def decode(self, payload: bytes) -> bytes:
         return self.RSC.decode(data=payload)[0]
