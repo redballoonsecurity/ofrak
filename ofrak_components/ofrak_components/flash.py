@@ -247,10 +247,12 @@ class FlashConfig(ComponentConfig):
         return size
 
     def get_oob_size_in_block(self, block_format: Iterable[FlashField]) -> int:
-        data_range = self.get_data_range_in_block(block_format=block_format)
-        if data_range is not None:
-            data_length = data_range.length()
-            return self.get_block_size(block_format=block_format) - data_length
+        if block_format is not None:
+            data_range = self.get_data_range_in_block(block_format=block_format)
+            if data_range is not None:
+                data_length = data_range.length()
+                return self.get_block_size(block_format=block_format) - data_length
+            return self.get_block_size(block_format=block_format)
         return None
 
     def get_field_in_block(
@@ -308,13 +310,30 @@ class FlashConfig(ComponentConfig):
         )
 
     def get_block_formats(self) -> Iterable:
-        return [
-            self.header_block_format,
-            self.first_data_block_format,
-            self.data_block_format,
-            self.last_data_block_format,
-            self.tail_block_format,
-        ]
+        return filter(
+            None,
+            [
+                self.header_block_format,
+                self.first_data_block_format,
+                self.data_block_format,
+                self.last_data_block_format,
+                self.tail_block_format,
+            ],
+        )
+
+    def get_total_oob_size(self, data_len: int) -> int:
+        total_oob_size = 0
+        for c in self.get_block_formats():
+            block_oob_size = self.get_oob_size_in_block(c)
+            if block_oob_size is not None:
+                num_blocks = 1
+                if c is self.data_block_format:
+                    num_blocks = data_len // self.get_field_length_in_block(
+                        self.data_block_format, FlashFieldType.DATA
+                    )
+                for _ in range(0, num_blocks):
+                    total_oob_size += block_oob_size
+        return total_oob_size
 
     def get_possible_data_region_size(self, data_len: int) -> int:
         return sum(
@@ -587,6 +606,7 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
                     # Check if there is data in the block
                     block_data_range = config.get_data_range_in_block(c)
                     if block_data_range is not None:
+                        # TODO: Support decoding/correcting using ECC
                         only_data += block_data[block_data_range.start : block_data_range.end]
                     block_ecc_range = config.get_ecc_range_in_block(c)
                     if block_ecc_range is not None:
@@ -723,8 +743,6 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
                 config=config,
                 block_data=block_data,
                 original_data=data,
-                original_size=original_size,
-                packed_data_len=len(packed_data),
             )
 
         # Add a tail if there is no data expected within the block
@@ -734,8 +752,6 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
                 config=config,
                 block_data=b"",
                 original_data=data,
-                original_size=original_size,
-                packed_data_len=len(packed_data),
             )
 
         # Create child under the FlashEccResource to show that it packed itself
@@ -751,8 +767,6 @@ def _build_block(
     config: FlashConfig,
     block_data: bytes,
     original_data: bytes,
-    original_size: int,
-    packed_data_len: int,
 ) -> bytes:
     # Update the checksum, even if its not used we use it for tracking if we need it to update ECC
     data_hash = config.checksum_func(block_data)
@@ -775,7 +789,7 @@ def _build_block(
                 block_data = cur_block_data
             block += block_data
         elif f is FlashFieldType.DATA_SIZE:
-            block += original_size.to_bytes(field.size, "big")
+            block += len(original_data).to_bytes(field.size, "big")
         elif f is FlashFieldType.DELIMITER:
             if cur_block_type is config.header_block_format:
                 block += config.ecc_config.head_delimiter
@@ -793,14 +807,18 @@ def _build_block(
             else:
                 # Assumes that all previously added data in the block should be included in the ECC
                 # TODO: Support ECC that comes before data
-                ecc = config.ecc_config.ecc_class.encode(block)[-field.size :]
+                ecc = config.ecc_config.ecc_class.encode(block)
             block += ecc
         elif f is FlashFieldType.ECC_SIZE:
             block_ecc_field = config.get_field_in_block(cur_block_type, FlashFieldType.ECC)
             block += block_ecc_field.size.to_bytes(field.size, "big")
         elif f is FlashFieldType.TOTAL_SIZE:
-            # TODO: Support preemptive total size
-            block += (packed_data_len + len(block) + field.size).to_bytes(field.size, "big")
+            data_size = len(original_data)
+            oob_size = config.get_total_oob_size(data_len=data_size)
+            total_size = data_size + oob_size
+            # TODO: Account for padding to support preemptive total size (e.g. header field)
+            print(total_size)
+            block += (data_size + oob_size).to_bytes(field.size, "big")
         elif f is FlashFieldType.MAGIC:
             block += config.ecc_config.ecc_magic
     return block
