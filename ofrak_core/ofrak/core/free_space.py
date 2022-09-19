@@ -431,7 +431,7 @@ class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
         stub_offset = parent_mr_view.get_offset_in_self(stub_range.start)
         stub_offset_range = stub_range.translate(stub_offset - stub_range.start)
 
-        freed_range = Range(start + stub_range.length(), start + size)
+        freed_range = Range(start + stub_range.length(), start + stub_range.length() + size)
         freed_offset = parent_mr_view.get_offset_in_self(freed_range.start)
         freed_offset_range = freed_range.translate(freed_offset - freed_range.start)
 
