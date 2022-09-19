@@ -586,7 +586,7 @@ class ResourceModel:
             id,
             data_id,
             parent_id,
-            SortedSet(final_tags, key=lambda t: t.tag_specificity()),
+            SortedSet(final_tags, key=lambda t: t.tag_specificity()),  # type: ignore
             attributes_dict,
             components_by_attributes=components_by_attributes,
             component_versions=components_by_version,
@@ -764,7 +764,7 @@ class MutableResourceModel(ResourceModel):
             model.id,
             model.data_id,
             model.parent_id,
-            model.tags,
+            model.tags,  # type: ignore
             dict(model.attributes),
             ResourceModel._clone_data_dependencies(model.data_dependencies),
             ResourceModel._clone_dependencies(model.attribute_dependencies),

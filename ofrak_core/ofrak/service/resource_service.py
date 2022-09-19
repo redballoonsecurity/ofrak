@@ -153,7 +153,7 @@ from sortedcontainers import SortedList
 
 class ResourceAttributeIndex(Generic[T]):
     _attribute: ResourceIndexedAttribute[T]
-    index: List[Tuple[Any, ResourceNode]]
+    index: SortedList
     values_by_node_id: Dict[bytes, Any]
 
     def __init__(self, attribute: ResourceIndexedAttribute[T]):

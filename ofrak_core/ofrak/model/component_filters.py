@@ -81,7 +81,7 @@ class AnalyzerOutputFilter(ComponentFilter):
     def filter(self, components: Set[ComponentInterface]) -> Set[ComponentInterface]:
         def component_is_analyzer_with_outputs(c: ComponentInterface):
             if _isinstance(c, Analyzer):
-                analyzer_outputs = set(c.get_outputs_as_attribute_types())
+                analyzer_outputs = set(c.get_outputs_as_attribute_types())  # type: ignore
                 return not analyzer_outputs.isdisjoint(self.outputs)
             return False
 
