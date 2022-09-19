@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from hashlib import md5
 from enum import Enum
-from typing import Any, Callable, Dict, Iterable, Optional
+from typing import Any, Callable, Dict, Iterable, Optional, Iterator
 
 from ofrak import (
     Identifier,
@@ -321,19 +321,56 @@ class FlashConfig(ComponentConfig):
             ],
         )
 
+    def data_block_counter(self, data_len: int) -> Iterator[int]:
+        data_block_count = 0
+        data_count = 0
+        for c in self.get_block_formats():
+            if c is self.data_block_format:
+                # Skip data block for now
+                break
+            block_data_len = self.get_field_length_in_block(c, FlashFieldType.DATA)
+            if block_data_len is not None:
+                data_count += block_data_len
+
+        block_data_len = self.get_field_length_in_block(self.data_block_format, FlashFieldType.DATA)
+        while data_count < data_len:
+            # The rest of the blocks are data blocks
+            data_count += block_data_len
+            data_block_count += 1
+        return data_block_count
+
+    def get_field_in_all_blocks(self, field_type: FlashFieldType, data_len: int) -> FlashField:
+        data_count = 0
+        for c in self.get_block_formats():
+            if c is self.data_block_format:
+                # Skip data block for now
+                break
+            block_data_len = self.get_field_length_in_block(c, FlashFieldType.DATA)
+            if block_data_len is not None:
+                data_count += block_data_len
+
+        block_data_len = self.get_field_length_in_block(self.data_block_format, FlashFieldType.DATA)
+        while data_count < data_len:
+            # The rest of the blocks are data blocks
+            data_count += block_data_len
+
     def get_total_oob_size(self, data_len: int) -> int:
         total_oob_size = 0
         for c in self.get_block_formats():
             block_oob_size = self.get_oob_size_in_block(c)
             if block_oob_size is not None:
-                num_blocks = 1
-                if c is self.data_block_format:
-                    num_blocks = data_len // self.get_field_length_in_block(
-                        self.data_block_format, FlashFieldType.DATA
-                    )
-                for _ in range(0, num_blocks):
+                for x in range(0, self.data_block_counter(data_len)):
                     total_oob_size += block_oob_size
         return total_oob_size
+
+    def get_total_field_size(self, data_len: int, field_type: FlashFieldType) -> int:
+        total_field_size = 0
+        for c in self.get_block_formats():
+            block_field_size = self.get_field_length_in_block(c, field_type)
+            if block_field_size is not None:
+                for _ in range(0, self.data_block_counter(data_len)):
+                    total_field_size += block_field_size
+        return total_field_size
 
     def get_possible_data_region_size(self, data_len: int) -> int:
         return sum(
@@ -815,10 +852,12 @@ def _build_block(
         elif f is FlashFieldType.TOTAL_SIZE:
             data_size = len(original_data)
             oob_size = config.get_total_oob_size(data_len=data_size)
-            total_size = data_size + oob_size
-            # TODO: Account for padding to support preemptive total size (e.g. header field)
+            # TODO: Account for padding to support preemptive total size in header block
+            expected_data_size = config.get_total_field_size(data_size, FlashFieldType.DATA)
+            total_size = expected_data_size + oob_size
+            print(f"data = {data_size}, expected = {expected_data_size}, oob_size = {oob_size}")
             print(total_size)
-            block += (data_size + oob_size).to_bytes(field.size, "big")
+            block += (total_size).to_bytes(field.size, "big")
         elif f is FlashFieldType.MAGIC:
             block += config.ecc_config.ecc_magic
     return block
