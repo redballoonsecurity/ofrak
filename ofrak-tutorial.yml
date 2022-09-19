@@ -10,5 +10,6 @@ packages_paths:
     "ofrak_components",
     "disassemblers/ofrak_ghidra",
     "frontend",
+    "examples",
     "ofrak_tutorial",
   ]
