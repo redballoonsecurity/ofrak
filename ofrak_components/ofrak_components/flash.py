@@ -359,7 +359,10 @@ class FlashConfig(ComponentConfig):
         for c in self.get_block_formats():
             block_oob_size = self.get_oob_size_in_block(c)
             if block_oob_size is not None:
-                for x in range(0, self.data_block_counter(data_len)):
+                num_blocks = 1
+                if c is self.data_block_format:
+                    num_blocks = self.data_block_counter(data_len)
+                for _ in range(0, num_blocks):
                     total_oob_size += block_oob_size
         return total_oob_size
 
@@ -368,7 +371,10 @@ class FlashConfig(ComponentConfig):
         for c in self.get_block_formats():
             block_field_size = self.get_field_length_in_block(c, field_type)
             if block_field_size is not None:
-                for _ in range(0, self.data_block_counter(data_len)):
+                num_blocks = 1
+                if c is self.data_block_format:
+                    num_blocks = self.data_block_counter(data_len)
+                for _ in range(0, num_blocks):
                     total_field_size += block_field_size
         return total_field_size
 
@@ -615,7 +621,7 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
         for c in config.get_block_formats():
             if c is not None:
                 num_blocks_of_type = 1
-                if c is config.data_block_format:
+                if c == config.data_block_format:
                     # TODO: Fix assumption that any matching format is the same
                     num_blocks_of_type = possible_data_blocks
                 for x in range(0, num_blocks_of_type):
