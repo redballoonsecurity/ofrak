@@ -310,7 +310,7 @@ class ResourceAttributeDependency:
         )
 
 
-class SortedSet(_SortedSet, MutableSet[T], Sequence[T]):
+class SortedSet(set):
     """
     Typing shim for `sortedcollections.SortedSet` since it still has no type annotations.
 
@@ -323,13 +323,23 @@ class SortedSet(_SortedSet, MutableSet[T], Sequence[T]):
     def __init__(
         self, iterable: Optional[Iterable[T]] = None, key: Optional[Callable[[T], Any]] = None
     ):
+        if iterable is not None:
+            super().__init__(iterable)
+        else:
+            super().__init__([])
+
+
+class _SortedSet_(_SortedSet, MutableSet[T], Sequence[T]):
+    def __init__(
+        self, iterable: Optional[Iterable[T]] = None, key: Optional[Callable[[T], Any]] = None
+    ):
         super().__init__(iterable, key)
 
 
 ModelIdType = bytes
 ModelDataIdType = Optional[bytes]
 ModelParentIdType = Optional[bytes]
-ModelTagsType = SortedSet[ResourceTag]
+ModelTagsType = SortedSet
 ModelAttributesType = Dict[Type[RA], RA]
 ModelDataDependenciesType = Dict[ResourceAttributeDependency, Set[Range]]
 ModelAttributeDependenciesType = Dict[Type[ResourceAttributes], Set[ResourceAttributeDependency]]
@@ -428,7 +438,7 @@ class ResourceModel:
             new_dependencies[dependency] = set(ranges)
         return new_dependencies
 
-    def get_tags(self, inherit: bool = True) -> Sequence[ResourceTag]:
+    def get_tags(self, inherit: bool = True):
         if inherit is False:
             return self.tags
         tags = set()

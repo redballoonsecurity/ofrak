@@ -374,7 +374,7 @@ class JobService(JobServiceInterface):
                 LOGGER.debug(
                     f"JOB {job_id.hex()} - Found no components to run on "
                     f"{request.target_resource_id.hex()} matching filters "
-                    f"{request.component_filter}"
+                    # f"{request.component_filter}"
                 )
 
         concurrent_run_tasks: Set[Future] = set()

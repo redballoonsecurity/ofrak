@@ -148,6 +148,9 @@ class ResourceNode:
         return hash(self.model.id)
 
 
+from sortedcontainers import SortedList
+
+
 class ResourceAttributeIndex(Generic[T]):
     _attribute: ResourceIndexedAttribute[T]
     index: List[Tuple[Any, ResourceNode]]
@@ -155,7 +158,7 @@ class ResourceAttributeIndex(Generic[T]):
 
     def __init__(self, attribute: ResourceIndexedAttribute[T]):
         self._attribute = attribute  # type: ignore
-        self.index = []
+        self.index = SortedList()
         self.values_by_node_id = dict()
 
     def add_resource_attribute(
@@ -168,6 +171,7 @@ class ResourceAttributeIndex(Generic[T]):
                 f"The provided resource {resource.model.id.hex()} is already in the "  # type: ignore
                 f"index for {self._attribute.__name__}"
             )
+        """
         value_index = bisect.bisect_left(self.index, (value, resource))
         if value_index < len(self.index) and self.index[value_index][1] == resource:
             raise RuntimeError(
@@ -175,6 +179,8 @@ class ResourceAttributeIndex(Generic[T]):
                 "itself. An error should have been raised a few lines earlier."
             )
         self.index.insert(value_index, (value, resource))
+        """
+        self.index.add((value, resource))
         self.values_by_node_id[resource.model.id] = value
 
     def remove_resource_attribute(
