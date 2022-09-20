@@ -32,7 +32,7 @@ class FlashBlock(GenericBinary):
     Inside of a flash block is either just data or data + ECC.
     """
 
-    data: bytes
+    data: Optional[bytes] = None
     ecc: Optional[bytes] = None
     alignment: Optional[bytes] = None
     magic: Optional[bytes] = None
@@ -41,9 +41,6 @@ class FlashBlock(GenericBinary):
     checksum: Optional[bytes] = None
     delimiter: Optional[bytes] = None
     total_size: Optional[int] = None
-
-    def get_block_data(self) -> bytes:
-        return self.data
 
 
 @dataclass
