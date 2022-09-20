@@ -11,6 +11,7 @@ from ofrak import (
     Unpacker,
 )
 from ofrak.component.identifier import IdentifierError
+from ofrak.component.packer import PackerError
 from ofrak.component.unpacker import UnpackerError
 from ofrak.core.binary import GenericBinary
 from ofrak.model.component_model import ComponentConfig
@@ -325,12 +326,11 @@ class FlashConfig(ComponentConfig):
         data_block_count = 0
         data_count = 0
         for c in self.get_block_formats():
-            if c is self.data_block_format:
+            if c != self.data_block_format:
                 # Skip data block for now
-                break
-            block_data_len = self.get_field_length_in_block(c, FlashFieldType.DATA)
-            if block_data_len is not None:
-                data_count += block_data_len
+                block_data_len = self.get_field_length_in_block(c, FlashFieldType.DATA)
+                if block_data_len is not None:
+                    data_count += block_data_len
 
         block_data_len = self.get_field_length_in_block(self.data_block_format, FlashFieldType.DATA)
         while data_count < data_len:
@@ -372,7 +372,7 @@ class FlashConfig(ComponentConfig):
             block_field_size = self.get_field_length_in_block(c, field_type)
             if block_field_size is not None:
                 num_blocks = 1
-                if c is self.data_block_format:
+                if c == self.data_block_format:
                     num_blocks = self.data_block_counter(data_len)
                 for _ in range(0, num_blocks):
                     total_field_size += block_field_size
@@ -635,9 +635,9 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
                     block_data = await ecc_resource.get_data(range=block_range)
 
                     # Create block as child resource
-                    if c is config.header_block_format:
+                    if c == config.header_block_format:
                         tag = FlashEccHeaderBlock
-                    elif c is config.tail_block_format:
+                    elif c == config.tail_block_format:
                         tag = FlashEccTailBlock
                     else:
                         tag = FlashEccBlock
@@ -814,7 +814,6 @@ def _build_block(
     # Update the checksum, even if its not used we use it for tracking if we need it to update ECC
     data_hash = config.checksum_func(block_data)
     block = b""
-    # TODO: Try changing this to a map
     for field in cur_block_type:
         f = field.field_type
         if f is FlashFieldType.ALIGNMENT:
@@ -834,16 +833,19 @@ def _build_block(
         elif f is FlashFieldType.DATA_SIZE:
             block += len(original_data).to_bytes(field.size, "big")
         elif f is FlashFieldType.DELIMITER:
-            if cur_block_type is config.header_block_format:
-                block += config.ecc_config.head_delimiter
-            elif cur_block_type is config.first_data_block_format:
-                block += config.ecc_config.first_data_delimiter
-            elif cur_block_type is config.data_block_format:
-                block += config.ecc_config.data_delimiter
-            elif cur_block_type is config.last_data_block_format:
-                block += config.ecc_config.last_data_delimiter
-            elif cur_block_type is config.tail_block_format:
-                block += config.ecc_config.tail_delimiter
+            try:
+                if cur_block_type == config.header_block_format:
+                    block += config.ecc_config.head_delimiter
+                elif cur_block_type == config.first_data_block_format:
+                    block += config.ecc_config.first_data_delimiter
+                elif cur_block_type == config.data_block_format:
+                    block += config.ecc_config.data_delimiter
+                elif cur_block_type == config.last_data_block_format:
+                    block += config.ecc_config.last_data_delimiter
+                elif cur_block_type == config.tail_block_format:
+                    block += config.ecc_config.tail_delimiter
+            except TypeError:
+                PackerError("Tried to add delimiter without specifying in FlashEccConfig")
         elif f is FlashFieldType.ECC:
             if data_hash in DATA_HASHES:
                 ecc = DATA_HASHES[data_hash]
@@ -858,7 +860,6 @@ def _build_block(
         elif f is FlashFieldType.TOTAL_SIZE:
             data_size = len(original_data)
             oob_size = config.get_total_oob_size(data_len=data_size)
-            # TODO: Account for padding to support preemptive total size in header block
             expected_data_size = config.get_total_field_size(data_size, FlashFieldType.DATA)
             total_size = expected_data_size + oob_size
             print(f"data = {data_size}, expected = {expected_data_size}, oob_size = {oob_size}")
