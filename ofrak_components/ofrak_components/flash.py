@@ -454,8 +454,10 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
 
                     if tail_total_size is not None:
                         field_type = FlashFieldType.TOTAL_SIZE
+                        comparison = read_offset - cur_offset
                     elif tail_data_size is not None:
                         field_type = FlashFieldType.DATA_SIZE
+                        # comparison =
 
                     # Treat every block as the tail, checking if it has the right field
                     cur_block_size_field = config.get_field_data_in_block(
@@ -466,13 +468,10 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
                         read_offset = int.from_bytes(cur_block_size_field, "big")
                         # TODO: Check comparison, this is not accurate for data size
                         if read_offset - cur_offset <= cur_block_size:
-                            print(f"cur_offset {cur_offset:x} read {read_offset:x}")
                             size_field_offset_in_block = config.get_field_range_in_block(
                                 config.tail_block_format, field_type
                             )
                             tail_start_offset = cur_offset - size_field_offset_in_block.start
-                            print(hex(tail_start_offset))
-                            print(f"{start_index}:{tail_start_offset+tail_block_size}")
                             ecc_resource = await resource.create_child(
                                 tags=(FlashEccResource,),
                                 data_range=Range(
