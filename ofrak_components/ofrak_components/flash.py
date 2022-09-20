@@ -462,7 +462,6 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
             total_ecc_protected_size = 0
             if header_data_size is not None:
                 # Found data_size field in the header block, just need to calculate expected total size (including OOB)
-                # TODO: Craft test flash dump and verify
                 field_type = FlashFieldType.DATA_SIZE
                 oob_size = 0
                 for c in [
@@ -489,18 +488,17 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
                     UnpackerError("Expected larger resource than supplied")
 
             elif header_total_size is not None:
-                field_type = FlashFieldType.TOTAL_SIZE
                 total_size_bytes = config.get_field_data_in_block(
                     block_format=config.header_block_format,
-                    field_type=field_type,
+                    field_type=FlashFieldType.TOTAL_SIZE,
                     data=data,
                     block_start_offset=0,
                 )
-                if total_size_bytes > data_len:
+                total_ecc_protected_size = int.from_bytes(total_size_bytes, "big")
+                if total_ecc_protected_size > data_len:
                     raise UnpackerError(
                         "Expected total size greater than length of resource provided"
                     )
-                total_ecc_protected_size = int.from_bytes(total_size_bytes, "big")
 
             if total_ecc_protected_size > start_index:
                 ecc_resource = await resource.create_child(
@@ -619,47 +617,46 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
         possible_data_blocks = possible_data_len // config.get_block_size(config.data_block_format)
 
         for c in config.get_block_formats():
-            if c is not None:
-                num_blocks_of_type = 1
-                if c == config.data_block_format:
-                    # TODO: Fix assumption that any matching format is the same
-                    num_blocks_of_type = possible_data_blocks
-                for x in range(0, num_blocks_of_type):
-                    block_size = config.get_block_size(c)
-                    block_end_offset = offset + block_size
-                    if block_end_offset > data_len:
-                        UnpackerError(
-                            "Expected complete last block and received less than expected. Input likely malformed"
-                        )
-                    block_range = Range(offset, block_end_offset)
-                    block_data = await ecc_resource.get_data(range=block_range)
-
-                    # Create block as child resource
-                    if c == config.header_block_format:
-                        tag = FlashEccHeaderBlock
-                    elif c == config.tail_block_format:
-                        tag = FlashEccTailBlock
-                    else:
-                        tag = FlashEccBlock
-                    await ecc_resource.create_child(
-                        tags=(tag,),
-                        data_range=block_range,
+            num_blocks_of_type = 1
+            if c == config.data_block_format:
+                # TODO: Fix assumption that any matching format is the same
+                num_blocks_of_type = possible_data_blocks
+            for _ in range(0, num_blocks_of_type):
+                block_size = config.get_block_size(c)
+                block_end_offset = offset + block_size
+                if block_end_offset > data_len:
+                    UnpackerError(
+                        "Expected complete last block and received less than expected. Input likely malformed"
                     )
+                block_range = Range(offset, block_end_offset)
+                block_data = await ecc_resource.get_data(range=block_range)
 
-                    # Check if there is data in the block
-                    block_data_range = config.get_data_range_in_block(c)
-                    if block_data_range is not None:
-                        # TODO: Support decoding/correcting using ECC
-                        only_data += block_data[block_data_range.start : block_data_range.end]
-                    block_ecc_range = config.get_ecc_range_in_block(c)
-                    if block_ecc_range is not None:
-                        block_ecc = block_data[block_ecc_range.start : block_ecc_range.end]
-                        only_ecc += block_ecc
-                        # Add hash of everything up to the ECC to our dict for faster packing
-                        block_data_hash = config.checksum_func(block_data[: block_ecc_range.start])
-                        DATA_HASHES[block_data_hash] = block_ecc
+                # Create block as child resource
+                if c == config.header_block_format:
+                    tag = FlashEccHeaderBlock
+                elif c == config.tail_block_format:
+                    tag = FlashEccTailBlock
+                else:
+                    tag = FlashEccBlock
+                await ecc_resource.create_child(
+                    tags=(tag,),
+                    data_range=block_range,
+                )
 
-                    offset += block_size
+                # Check if there is data in the block
+                block_data_range = config.get_data_range_in_block(c)
+                if block_data_range is not None:
+                    # TODO: Support decoding/correcting using ECC
+                    only_data += block_data[block_data_range.start : block_data_range.end]
+                block_ecc_range = config.get_ecc_range_in_block(c)
+                if block_ecc_range is not None:
+                    block_ecc = block_data[block_ecc_range.start : block_ecc_range.end]
+                    only_ecc += block_ecc
+                    # Add hash of everything up to the ECC to our dict for faster packing
+                    block_data_hash = config.checksum_func(block_data[: block_ecc_range.start])
+                    DATA_HASHES[block_data_hash] = block_ecc
+
+                offset += block_size
 
         # Add all block data to logical resource for recursive unpacking
         await ecc_resource.create_child(
@@ -744,58 +741,26 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
             packed_data += ecc_config.ecc_magic
         data_offset = 0
 
-        header_data_size = config.get_field_length_in_block(
-            config.header_block_format, FlashFieldType.DATA
-        )
-        first_data_size = config.get_field_length_in_block(
-            config.first_data_block_format, FlashFieldType.DATA
-        )
-        data_size = config.get_field_length_in_block(config.data_block_format, FlashFieldType.DATA)
-        last_data_size = config.get_field_length_in_block(
-            config.last_data_block_format, FlashFieldType.DATA
-        )
-        tail_data_size = config.get_field_length_in_block(
-            config.tail_block_format, FlashFieldType.DATA
-        )
-        while bytes_left >= 0:
-            if header_data_size != 0 and bytes_left == original_size:
-                cur_block_type = config.header_block_format
-                cur_block_size = header_data_size
-            elif first_data_size != 0 and bytes_left >= original_size - first_data_size:
-                cur_block_type = config.first_data_block_format
-                cur_block_size = first_data_size
-            elif tail_data_size != 0 and bytes_left <= tail_data_size:
-                cur_block_type = config.tail_block_format
-                cur_block_size = tail_data_size
-            elif last_data_size != 0 and bytes_left <= last_data_size + tail_data_size:
-                cur_block_type = config.last_data_block_format
-                cur_block_size = last_data_size
-            else:
-                # Just a regular data block
-                cur_block_size = data_size
-                cur_block_type = config.data_block_format
+        num_data_blocks = config.data_block_counter(original_size)
+        for c in config.get_block_formats():
+            block_data = b""
+            num_blocks_of_type = 1
+            if c == config.data_block_format:
+                num_blocks_of_type = num_data_blocks
+            for _ in range(0, num_blocks_of_type):
+                block_data_size = config.get_field_length_in_block(c, FlashFieldType.DATA)
+                if block_data_size != 0:
+                    # Get the data for the current block
+                    block_data = data[data_offset : data_offset + block_data_size]
+                    data_offset += block_data_size
+                    bytes_left -= block_data_size
 
-            # Get the data for the current block
-            block_data = data[data_offset : data_offset + cur_block_size]
-
-            data_offset += cur_block_size
-            bytes_left -= cur_block_size
-
-            packed_data += _build_block(
-                cur_block_type=cur_block_type,
-                config=config,
-                block_data=block_data,
-                original_data=data,
-            )
-
-        # Add a tail if there is no data expected within the block
-        if config.tail_block_format is not None and tail_data_size == 0:
-            packed_data += _build_block(
-                cur_block_type=config.tail_block_format,
-                config=config,
-                block_data=b"",
-                original_data=data,
-            )
+                packed_data += _build_block(
+                    cur_block_type=c,
+                    config=config,
+                    block_data=block_data,
+                    original_data=data,
+                )
 
         # Create child under the FlashEccResource to show that it packed itself
         parent = await resource.get_parent()
@@ -862,8 +827,6 @@ def _build_block(
             oob_size = config.get_total_oob_size(data_len=data_size)
             expected_data_size = config.get_total_field_size(data_size, FlashFieldType.DATA)
             total_size = expected_data_size + oob_size
-            print(f"data = {data_size}, expected = {expected_data_size}, oob_size = {oob_size}")
-            print(total_size)
             block += (total_size).to_bytes(field.size, "big")
         elif f is FlashFieldType.MAGIC:
             block += config.ecc_config.ecc_magic
