@@ -178,7 +178,9 @@ def check_package_contents(package_path: str):
 
 
 def create_dockerfile_base(config: OfrakImageConfig) -> str:
-    dockerfile_base_parts = []
+    dockerfile_base_parts = [
+        "# syntax = docker/dockerfile:1.3",
+    ]
 
     # Support multi-stage builds
     for package_path in config.packages_paths:
@@ -189,7 +191,6 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
         dockerfile_base_parts.append(dockerstub)
 
     dockerfile_base_parts += [
-        "# syntax = docker/dockerfile:1.3",
         "FROM python:3.7-bullseye@sha256:338ead05c1a0aa8bd8fcba8e4dbbe2afd0283b4732fd30cf9b3bfcfcbc4affab",
     ]
     for package_path in config.packages_paths:
