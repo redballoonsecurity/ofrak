@@ -45,15 +45,9 @@ class FlashEccBlock(GenericBinary):
     def get_block_data(self) -> bytes:
         return self.data
 
-    def get_delimiter(self) -> bytes:
-        return self.delimiter
-
-    def get_ecc(self) -> bytes:
-        return self.ecc
-
 
 @dataclass
-class FlashEccHeaderBlock(FlashEccBlock):
+class FlashHeaderBlock(FlashEccBlock):
     """
     FlashBlock makes up a small portion of the flash.
     Inside of a flash block is either just data or data + ECC.
@@ -61,103 +55,9 @@ class FlashEccHeaderBlock(FlashEccBlock):
 
 
 @dataclass
-class FlashEccTailBlock(FlashEccBlock):
+class FlashTailBlock(FlashEccBlock):
     """
     The final block in the ECC marked region
-    """
-
-
-@dataclass
-class FlashEccResource(GenericBinary):
-    """
-    Overarching resource for physical representation containing FlashEccBlock
-    """
-
-    async def get_header_block_as_view(self) -> FlashEccHeaderBlock:
-        return await self.resource.get_only_child_as_view(
-            v_type=FlashEccHeaderBlock,
-            r_filter=ResourceFilter.with_tags(
-                FlashEccHeaderBlock,
-            ),
-        )
-
-    async def get_blocks_as_view(self) -> Iterable[FlashEccBlock]:
-        return await self.resource.get_children_as_view(
-            v_type=FlashEccBlock,
-            r_filter=ResourceFilter.with_tags(
-                FlashEccBlock,
-            ),
-        )
-
-    async def get_tail_block_as_view(self) -> FlashEccTailBlock:
-        return await self.resource.get_only_child_as_view(
-            v_type=FlashEccTailBlock,
-            r_filter=ResourceFilter.with_tags(
-                FlashEccTailBlock,
-            ),
-        )
-
-    async def get_flash_data(self) -> bytes:
-        data = b""
-
-        # Header includes data
-        header_block_view = await self.get_header_block_as_view()
-        data += header_block_view.get_block_data()
-
-        # Get the regular data blocks but sort by their index within parent
-        ecc_blocks = await self.get_blocks_as_view()
-        ecc_blocks_sorted = [
-            (await b.resource.get_data_index_within_parent(), b) for b in ecc_blocks
-        ]
-        ecc_blocks_sorted.sort()
-        sorted_blocks = [x for key, x in ecc_blocks_sorted]
-
-        for block in sorted_blocks:
-            data += block.data
-
-        tail_block_view = await self.get_tail_block_as_view()
-        expected_size = tail_block_view.get_ecc_size()
-        return data[:expected_size]
-
-    async def get_flash_ecc(self) -> bytes:
-        ecc = b""
-        header_block_view = await self.get_header_block_as_view()
-        ecc += header_block_view.get_ecc()
-
-        ecc_blocks = await self.get_blocks_as_view()
-        ecc_blocks_sorted = [
-            (await b.resource.get_data_index_within_parent(), b) for b in ecc_blocks
-        ]
-        ecc_blocks_sorted.sort()
-        sorted_blocks = [x for key, x in ecc_blocks_sorted]
-
-        for block in sorted_blocks:
-            ecc += block.get_ecc()
-
-        return ecc
-
-
-@dataclass
-class FlashLogicalDataResource(GenericBinary):
-    """
-    This is the final product of unpacking a FlashResource.
-    It contains the data without any ECC or OOB data included.
-    This allows for recursive packing and unpacking.
-    """
-
-
-@dataclass
-class FlashLogicalEccResource(GenericBinary):
-    """
-    The alternate to FlashLogicalDataResource.
-    Generally less useful on its own but provided anyway.
-    """
-
-
-@dataclass
-class FlashEccProtectedResource(GenericBinary):
-    """
-    Region of memory protected by ECC
     """
 
 
@@ -166,6 +66,37 @@ class FlashResource(GenericBinary):
     """
     The overarching resource that encapsulates flash storage.
     This is made up of several blocks.
+    """
+
+
+@dataclass
+class FlashEccProtectedResource(FlashResource):
+    """
+    Region of memory protected by ECC
+    """
+
+
+@dataclass
+class FlashEccResource(FlashEccProtectedResource):
+    """
+    Overarching resource for physical representation containing FlashEccBlocks
+    """
+
+
+@dataclass
+class FlashLogicalDataResource(FlashResource):
+    """
+    This is the final product of unpacking a FlashResource.
+    It contains the data without any ECC or OOB data included.
+    This allows for recursive packing and unpacking.
+    """
+
+
+@dataclass
+class FlashLogicalEccResource(FlashResource):
+    """
+    The alternate to FlashLogicalDataResource.
+    Generally less useful on its own but provided anyway.
     """
 
 
@@ -419,9 +350,9 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
     targets = (FlashEccProtectedResource,)
     children = (
         FlashEccResource,
-        FlashEccHeaderBlock,
+        FlashHeaderBlock,
         FlashEccBlock,
-        FlashEccTailBlock,
+        FlashTailBlock,
         FlashLogicalDataResource,
         FlashLogicalEccResource,
     )
@@ -633,9 +564,9 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
 
                 # Create block as child resource
                 if c == config.header_block_format:
-                    tag = FlashEccHeaderBlock
+                    tag = FlashHeaderBlock
                 elif c == config.tail_block_format:
-                    tag = FlashEccTailBlock
+                    tag = FlashTailBlock
                 else:
                     tag = FlashEccBlock
                 await ecc_resource.create_child(
