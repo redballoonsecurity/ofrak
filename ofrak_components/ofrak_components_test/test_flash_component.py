@@ -13,7 +13,6 @@ from ofrak_components.flash import (
     FlashEccConfig,
     FlashField,
     FlashFieldType,
-    FlashEccPositionType,
     FlashEccIdentifier,
     FlashEccProtectedResourceUnpacker,
     FlashLogicalDataResourcePacker,
@@ -29,17 +28,9 @@ TEST_VERIFY_FILE_PATH = os.path.join(test_ofrak.components.ASSETS_DIR, "flash_te
 
 
 class TestFlashUnpackModifyPack(UnpackModifyPackPattern):
-    data_block_format = [
-        FlashField(FlashFieldType.DATA, 222),
-        FlashField(FlashFieldType.DELIMITER, 1),
-        FlashField(FlashFieldType.ECC, 32),
-    ]
     ECC_CONFIG = FlashEccConfig(
-        ecc_size=32,
-        ecc_position=FlashEccPositionType.ADJACENT_ECC_POST,
         ecc_class=ReedSolomon(nsym=32, fcr=1),
-        ecc_magic=b"SXECCv1",
-        # Skips head_delimiter
+        ecc_magic=b"ECC_ME!",
         head_delimiter=b"*",
         first_data_delimiter=b"*",
         data_delimiter=b"*",
@@ -47,16 +38,23 @@ class TestFlashUnpackModifyPack(UnpackModifyPackPattern):
         tail_delimiter=b"!",
     )
     FLASH_CONFIG = FlashConfig(
-        block_size=255,
         header_block_format=[
-            FlashField(FlashFieldType.MAGIC, 4),
+            FlashField(FlashFieldType.MAGIC, 7),
             FlashField(FlashFieldType.DATA, 215),
             FlashField(FlashFieldType.DELIMITER, 1),
             FlashField(FlashFieldType.ECC, 32),
         ],
-        data_block_format=data_block_format,
-        # first_data_block_format=data_block_format,
-        last_data_block_format=data_block_format,
+        data_block_format=[
+            FlashField(FlashFieldType.DATA, 222),
+            FlashField(FlashFieldType.DELIMITER, 1),
+            FlashField(FlashFieldType.ECC, 32),
+        ],
+        last_data_block_format=[
+            FlashField(FlashFieldType.DATA, 222),
+            FlashField(FlashFieldType.DELIMITER, 1),
+            FlashField(FlashFieldType.ECC, 32),
+            FlashField(FlashFieldType.ALIGNMENT, 0),
+        ],
         tail_block_format=[
             FlashField(FlashFieldType.DELIMITER, 1),
             FlashField(FlashFieldType.DATA_SIZE, 4),
@@ -64,7 +62,7 @@ class TestFlashUnpackModifyPack(UnpackModifyPackPattern):
             FlashField(FlashFieldType.ECC, 32),
         ],
         ecc_config=ECC_CONFIG,
-        checksum_func=md5,
+        checksum_func=(lambda x: md5(x).digest()),
     )
 
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:

@@ -737,8 +737,6 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
         bytes_left = len(data)
         original_size = bytes_left
         packed_data = bytearray()
-        if ecc_config.ecc_magic is not None:
-            packed_data += ecc_config.ecc_magic
         data_offset = 0
 
         num_data_blocks = config.data_block_counter(original_size)
