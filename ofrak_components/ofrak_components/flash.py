@@ -26,14 +26,14 @@ DATA_HASHES: Dict[bytes, bytes] = dict()
 #     RESOURCES     #
 #####################
 @dataclass
-class FlashEccBlock(GenericBinary):
+class FlashBlock(GenericBinary):
     """
     FlashBlock makes up a small portion of the flash.
     Inside of a flash block is either just data or data + ECC.
     """
 
     data: bytes
-    ecc: bytes
+    ecc: Optional[bytes] = None
     alignment: Optional[bytes] = None
     magic: Optional[bytes] = None
     data_size: Optional[int] = None
@@ -47,7 +47,7 @@ class FlashEccBlock(GenericBinary):
 
 
 @dataclass
-class FlashHeaderBlock(FlashEccBlock):
+class FlashHeaderBlock(FlashBlock):
     """
     FlashBlock makes up a small portion of the flash.
     Inside of a flash block is either just data or data + ECC.
@@ -55,7 +55,7 @@ class FlashHeaderBlock(FlashEccBlock):
 
 
 @dataclass
-class FlashTailBlock(FlashEccBlock):
+class FlashTailBlock(FlashBlock):
     """
     The final block in the ECC marked region
     """
@@ -324,7 +324,7 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
     children = (
         FlashEccResource,
         FlashHeaderBlock,
-        FlashEccBlock,
+        FlashBlock,
         FlashTailBlock,
         FlashLogicalDataResource,
         FlashLogicalEccResource,
@@ -541,7 +541,7 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
                 elif c == config.tail_block_format:
                     tag = FlashTailBlock
                 else:
-                    tag = FlashEccBlock
+                    tag = FlashBlock
                 await ecc_resource.create_child(
                     tags=(tag,),
                     data_range=block_range,
