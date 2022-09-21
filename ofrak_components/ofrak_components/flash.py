@@ -151,6 +151,7 @@ class FlashConfig(ComponentConfig):
     Important Notes:
     Assumes that the provided list for each block format is ordered
     Only define first_data_block_format and last_data_block_format if they are different from data_block_format
+        - A current workaround is adding FlashField(FlashFieldType.ALIGNMENT, 0)
     Assumes that there are only one of each block format except the data_block_format
     The checksum function will be used repeatedly internally for saving on encoding saved ECC values for each block
     """
@@ -303,17 +304,6 @@ class FlashConfig(ComponentConfig):
                 for _ in range(0, num_blocks):
                     total_field_size += block_field_size
         return total_field_size
-
-    def get_possible_data_region_size(self, data_len: int) -> int:
-        return sum(
-            [
-                data_len,
-                -self.get_block_size(self.header_block_format),
-                -self.get_block_size(self.first_data_block_format),
-                -self.get_block_size(self.last_data_block_format),
-                -self.get_block_size(self.tail_block_format),
-            ]
-        )
 
 
 #####################
