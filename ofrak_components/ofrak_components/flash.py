@@ -184,7 +184,7 @@ class FlashConfig(ComponentConfig):
 
     def get_oob_size_in_block(self, block_format: Iterable[FlashField]) -> int:
         if block_format is not None:
-            data_length = self.get_field_range_in_block(
+            data_length = self.get_field_length_in_block(
                 block_format=block_format, field_type=FlashFieldType.DATA
             )
             return self.get_block_size(block_format=block_format) - data_length
@@ -449,15 +449,16 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
                 tail_block_size = config.get_block_size(config.tail_block_format)
 
                 cur_offset = start_index
+                total_oob_size = 0
+                read_offset = 0
                 for c in config.iterate_through_all_blocks(data_len - start_index, True):
                     cur_block_size = config.get_block_size(c)
+                    total_oob_size += config.get_oob_size_in_block(c)
 
                     if tail_total_size is not None:
                         field_type = FlashFieldType.TOTAL_SIZE
-                        comparison = read_offset - cur_offset
                     elif tail_data_size is not None:
                         field_type = FlashFieldType.DATA_SIZE
-                        # comparison =
 
                     # Treat every block as the tail, checking if it has the right field
                     cur_block_size_field = config.get_field_data_in_block(
@@ -466,8 +467,11 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
 
                     if cur_block_size_field is not None:
                         read_offset = int.from_bytes(cur_block_size_field, "big")
-                        # TODO: Check comparison, this is not accurate for data size
-                        if read_offset - cur_offset <= cur_block_size:
+                        total_size_diff = read_offset - cur_offset
+                        if (tail_total_size is not None and total_size_diff <= tail_block_size) or (
+                            tail_data_size is not None
+                            and total_size_diff - total_oob_size <= tail_block_size
+                        ):
                             size_field_offset_in_block = config.get_field_range_in_block(
                                 config.tail_block_format, field_type
                             )
@@ -522,7 +526,7 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
             block_data_range = config.get_field_range_in_block(c, FlashFieldType.DATA)
             if block_data_range is not None:
                 # TODO: Support decoding/correcting using ECC
-                only_data += block_data[block_data_range.start : block_data_range.end]
+                only_data = block_data[block_data_range.start : block_data_range.end]
             block_ecc_range = config.get_field_range_in_block(c, FlashFieldType.ECC)
             if block_ecc_range is not None:
                 block_ecc = block_data[block_ecc_range.start : block_ecc_range.end]
