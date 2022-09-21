@@ -526,14 +526,16 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
             block_data_range = config.get_field_range_in_block(c, FlashFieldType.DATA)
             if block_data_range is not None:
                 # TODO: Support decoding/correcting using ECC
-                only_data = block_data[block_data_range.start : block_data_range.end]
+                cur_block_data = block_data[block_data_range.start : block_data_range.end]
+                only_data += cur_block_data
+
             block_ecc_range = config.get_field_range_in_block(c, FlashFieldType.ECC)
             if block_ecc_range is not None:
-                block_ecc = block_data[block_ecc_range.start : block_ecc_range.end]
-                only_ecc += block_ecc
+                cur_block_ecc = block_data[block_ecc_range.start : block_ecc_range.end]
+                only_ecc += cur_block_ecc
                 # Add hash of everything up to the ECC to our dict for faster packing
                 block_data_hash = config.checksum_func(block_data[: block_ecc_range.start])
-                DATA_HASHES[block_data_hash] = block_ecc
+                DATA_HASHES[block_data_hash] = cur_block_ecc
 
             offset += block_size
 
