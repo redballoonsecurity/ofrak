@@ -444,11 +444,10 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
                 tail_block_size = config.get_block_size(config.tail_block_format)
 
                 cur_offset = start_index
-                total_oob_size = 0
+                total_data_size = 0
                 read_offset = 0
                 for c in config.iterate_through_all_blocks(data_len - start_index, True):
                     cur_block_size = config.get_block_size(c)
-                    total_oob_size += config.get_oob_size_in_block(c)
 
                     if tail_total_size is not None:
                         field_type = FlashFieldType.TOTAL_SIZE
@@ -462,22 +461,18 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
 
                     if cur_block_size_field is not None:
                         read_offset = int.from_bytes(cur_block_size_field, "big")
-                        total_size_diff = read_offset - cur_offset
-                        if (tail_total_size is not None and total_size_diff <= tail_block_size) or (
-                            tail_data_size is not None
-                            and total_size_diff - total_oob_size <= tail_block_size
+                        end_rel_offset = (cur_offset - start_index) + tail_block_size
+
+                        if (tail_total_size is not None and read_offset == end_rel_offset) or (
+                            tail_data_size is not None and read_offset == total_data_size
                         ):
-                            size_field_offset_in_block = config.get_field_range_in_block(
-                                config.tail_block_format, field_type
-                            )
-                            tail_start_offset = cur_offset - size_field_offset_in_block.start
+
                             ecc_resource = await resource.create_child(
                                 tags=(FlashEccResource,),
-                                data_range=Range(
-                                    start_index, tail_start_offset + tail_block_size + 1
-                                ),
+                                data_range=Range(start_index, cur_offset + tail_block_size),
                             )
                             break
+                    total_data_size += config.get_field_length_in_block(c, FlashFieldType.DATA)
                     cur_offset += cur_block_size
 
         if ecc_resource == resource and start_index != 0:
