@@ -1,5 +1,5 @@
 import reedsolo as rs
-from ofrak_components.ecc.abstract import EccAlgorithm
+from ofrak_components.ecc.abstract import EccAlgorithm, EccError
 
 
 class ReedSolomon(EccAlgorithm):
@@ -31,7 +31,10 @@ class ReedSolomon(EccAlgorithm):
         )[len(payload) :]
 
     def decode(self, payload: bytes) -> bytes:
-        return self.RSC.decode(data=payload)[0]
+        try:
+            return self.RSC.decode(data=payload)[0]
+        except rs.ReedSolomonError:
+            raise EccError
 
     def check(self, payload: bytes) -> bool:
         self.RSC.check(data=payload)

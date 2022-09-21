@@ -17,6 +17,7 @@ from ofrak.core.binary import GenericBinary
 from ofrak.model.component_model import ComponentConfig
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
+from ofrak_components.ecc.abstract import EccError
 
 # Dict of data MD5 checksum to ECC bytes, used to check for updates
 DATA_HASHES: Dict[bytes, bytes] = dict()
@@ -511,13 +512,6 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
                 data_range=block_range,
             )
 
-            # Check if there is data in the block
-            block_data_range = config.get_field_range_in_block(c, FlashFieldType.DATA)
-            if block_data_range is not None:
-                # TODO: Support decoding/correcting using ECC
-                cur_block_data = block_data[block_data_range.start : block_data_range.end]
-                only_data += cur_block_data
-
             block_ecc_range = config.get_field_range_in_block(c, FlashFieldType.ECC)
             if block_ecc_range is not None:
                 cur_block_ecc = block_data[block_ecc_range.start : block_ecc_range.end]
@@ -526,6 +520,18 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
                 block_data_hash = config.checksum_func(block_data[: block_ecc_range.start])
                 DATA_HASHES[block_data_hash] = cur_block_ecc
 
+            # Check if there is data in the block
+            block_data_range = config.get_field_range_in_block(c, FlashFieldType.DATA)
+            if block_data_range is not None:
+                if ecc_config.ecc_class is not None and block_ecc_range is not None:
+                    # Try decoding/correcting with ECC, otherwise just add the data anyway
+                    try:
+                        # Assumes that data comes before ECC
+                        only_data += ecc_config.ecc_class.decode(block_data[: block_ecc_range.end])[
+                            block_data_range.start : block_data_range.end
+                        ]
+                    except EccError:
+                        only_data += block_data[block_data_range.start : block_data_range.end]
             offset += block_size
 
         # Add all block data to logical resource for recursive unpacking
