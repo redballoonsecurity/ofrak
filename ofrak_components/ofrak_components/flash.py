@@ -270,7 +270,6 @@ class FlashConfig(ComponentConfig):
         self, data_len: int, includes_oob: bool
     ) -> Generator[Iterable[FlashField], None, int]:
         count = 0
-        # TODO: Account for if there is OOB or just logical data
         for c in self.get_block_formats():
             num_blocks_of_type = 1
             if c == self.data_block_format:
