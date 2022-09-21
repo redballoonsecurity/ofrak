@@ -29,8 +29,8 @@ DATA_HASHES: Dict[bytes, bytes] = dict()
 @dataclass
 class FlashBlock(GenericBinary):
     """
-    FlashBlock makes up a small portion of the flash.
-    Inside of a flash block is either just data or data + ECC.
+    FlashBlock represents the smallest part of a memory dump.
+    Commonly, this is actually a page of memory or a series of pages with OOB data added to the end
     """
 
     data: Optional[bytes] = None
@@ -47,15 +47,16 @@ class FlashBlock(GenericBinary):
 @dataclass
 class FlashHeaderBlock(FlashBlock):
     """
-    FlashBlock makes up a small portion of the flash.
-    Inside of a flash block is either just data or data + ECC.
+    FlashHeaderBlock is the first block of a dump.
+    It is assumed that there is only a single header block.
     """
 
 
 @dataclass
 class FlashTailBlock(FlashBlock):
     """
-    The final block in the ECC marked region
+    The final block in the dump.
+    It is assumed that there is only a single tail block.
     """
 
 
@@ -70,14 +71,15 @@ class FlashResource(GenericBinary):
 @dataclass
 class FlashEccProtectedResource(FlashResource):
     """
-    Region of memory protected by ECC
+    Region of memory protected by ECC.
+    Allows us to distinguish a dump from one that contains ECC data
     """
 
 
 @dataclass
 class FlashEccResource(FlashEccProtectedResource):
     """
-    Overarching resource for physical representation containing FlashEccBlocks
+    Distinguishes the range of the ECC protected region.
     """
 
 
@@ -93,7 +95,8 @@ class FlashLogicalDataResource(FlashResource):
 @dataclass
 class FlashLogicalEccResource(FlashResource):
     """
-    The alternate to FlashLogicalDataResource.
+    The alternate to FlashLogicalDataResource but just includes ECC.
+    Does not include any other OOB data.
     Generally less useful on its own but provided anyway.
     """
 
@@ -121,6 +124,7 @@ class FlashFieldType(Enum):
     """
     DATA_SIZE is the packed size of the DATA only (excluding MAGIC, CHECKSUM, DELIMITER, ECC, etc)
     TOTAL_SIZE is the size of the entire region (including all DATA, MAGIC, CHECKSUM, DELIMITER, ECC, etc)
+    ALIGNMENT will pad with \x00 bytes by default
     """
 
     DATA = 0
@@ -151,7 +155,7 @@ class FlashConfig(ComponentConfig):
 
     Important Notes:
     Assumes that the provided list for each block format is ordered
-    Only define first_data_block_format and last_data_block_format if they are different from data_block_format
+    Only define a block_format if they are different from other block formats
         - A current workaround is adding FlashField(FlashFieldType.ALIGNMENT, 0)
     Assumes that there are only one of each block format except the data_block_format
     The checksum function will be used repeatedly internally for saving on encoding saved ECC values for each block
@@ -352,7 +356,8 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
         magic = ecc_config.ecc_magic
         if magic is not None:
             ecc_magic_offset = data.find(magic)
-            start_index = ecc_magic_offset
+            if ecc_magic_offset != -1:
+                start_index = ecc_magic_offset
         else:
             start_index = 0
 
