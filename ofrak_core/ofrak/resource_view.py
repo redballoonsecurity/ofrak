@@ -96,7 +96,7 @@ class ResourceView(ResourceViewInterface):
         attrs_instances = dict()
         for attrs_t in cast(Iterable[Type[RA]], type(self).composed_attributes_types):
             attrs_fields_dict = {
-                field.name: getattr(self, field.name) for field in _fields(attrs_t)
+                field.name: getattr(self, field.name) for field in _fields(attrs_t)  # type: ignore
             }
             attributes_instance = attrs_t(**attrs_fields_dict)  # type: ignore
             attrs_instances[attrs_t] = attributes_instance
@@ -132,7 +132,7 @@ class ResourceView(ResourceViewInterface):
                 )
             attributes_instance = resource_model.attributes[required_attrs_type]
             try:
-                dataclass_fields = _fields(required_attrs_type)
+                dataclass_fields = _fields(required_attrs_type)  # type: ignore
             except TypeError as e:
                 raise TypeError(
                     f"Could not get dataclass fields from {required_attrs_type.__name__} - is it a "
