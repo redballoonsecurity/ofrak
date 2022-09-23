@@ -32,7 +32,6 @@ class TestFlashUnpackModifyPack(UnpackModifyPackPattern):
         ecc_class=ReedSolomon(nsym=32, fcr=1),
         ecc_magic=b"ECC_ME!",
         head_delimiter=b"*",
-        first_data_delimiter=b"*",
         data_delimiter=b"*",
         last_data_delimiter=b"$",
         tail_delimiter=b"!",
