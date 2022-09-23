@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 
-class EccError(BaseException):
+class EccError(Exception):
     pass
 
 

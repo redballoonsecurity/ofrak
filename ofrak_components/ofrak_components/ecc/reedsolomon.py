@@ -3,8 +3,6 @@ from ofrak_components.ecc.abstract import EccAlgorithm, EccError
 
 
 class ReedSolomon(EccAlgorithm):
-    RSC = rs.RSCodec
-
     def __init__(
         self,
         nsym: int = 10,
@@ -34,7 +32,7 @@ class ReedSolomon(EccAlgorithm):
         try:
             return self.RSC.decode(data=payload)[0]
         except rs.ReedSolomonError:
-            raise EccError
+            raise EccError()
 
     def check(self, payload: bytes) -> bool:
         self.RSC.check(data=payload)

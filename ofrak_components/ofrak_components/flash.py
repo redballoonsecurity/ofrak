@@ -10,7 +10,6 @@ from ofrak import (
     ResourceFilter,
     Unpacker,
 )
-from ofrak.component.identifier import IdentifierError
 from ofrak.component.packer import PackerError
 from ofrak.component.unpacker import UnpackerError
 from ofrak.core.binary import GenericBinary
@@ -19,7 +18,7 @@ from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 from ofrak_components.ecc.abstract import EccError
 
-# Dict of data MD5 checksum to ECC bytes, used to check for updates
+# Dict of data mapping MD5 checksum to ECC bytes, used to check for updates
 DATA_HASHES: Dict[bytes, bytes] = dict()
 
 
@@ -147,16 +146,18 @@ class FlashField:
 @dataclass
 class FlashConfig(ComponentConfig):
     """
-    FlashConfig is for specifying everything about the specific model of flash
+    FlashConfig is for specifying everything about the specific model of flash.
     The intent is to expand to all common flash configurations.
-    Every block has a format specifier to show where each field is in the block as well as the length
+    Every block has a format specifier to show where each field is in the block as well as the length.
     If there is no ECC, data_block_format may take this form:
-        data_block_format = [FlashField(field_type=FlashFieldType.DATA,size=block_size),],
+        `data_block_format = [FlashField(field_type=FlashFieldType.DATA,size=block_size),]`
+    """
 
+    """
     Important Notes:
-    Assumes that the provided list for each block format is ordered
-    Only define a block_format if they are different from other block formats
-        - A current workaround is adding FlashField(FlashFieldType.ALIGNMENT, 0)
+    Assumes that the provided list for each block format is ordered.
+    Only define a block_format if they are different from other block formats.
+        - A current workaround is adding `FlashField(FlashFieldType.ALIGNMENT, 0)`
     Assumes that there are only one of each block format except the data_block_format
     The checksum function will be used repeatedly internally for saving on encoding saved ECC values for each block
     """
@@ -244,7 +245,7 @@ class FlashConfig(ComponentConfig):
             ]
         return None
 
-    def get_num_data_blocks(self, data_len: int, includes_oob: bool) -> Iterator[int]:
+    def get_num_data_blocks(self, data_len: int, includes_oob: bool = False) -> Iterator[int]:
         data_block_count = 0
         data_count = 0
         for c in self.get_block_formats():
@@ -276,37 +277,42 @@ class FlashConfig(ComponentConfig):
     ) -> Generator[Iterable[FlashField], None, int]:
         count = 0
         for c in self.get_block_formats():
-            num_blocks_of_type = 1
-            if c == self.data_block_format:
-                num_blocks_of_type = self.get_num_data_blocks(data_len, includes_oob)
-
-            for _ in range(0, num_blocks_of_type):
+            num_blocks = (
+                self.get_num_data_blocks(data_len, includes_oob)
+                if c is self.data_block_format
+                else 1
+            )
+            for _ in range(0, num_blocks):
                 yield c
                 count += 1
         return count
 
-    def get_total_oob_size(self, data_len: int) -> int:
+    def get_total_oob_size(self, data_len: int, includes_oob: bool) -> int:
         total_oob_size = 0
         for c in self.get_block_formats():
             block_oob_size = self.get_oob_size_in_block(c)
             if block_oob_size is not None:
-                num_blocks = 1
-                if c is self.data_block_format:
-                    num_blocks = self.get_num_data_blocks(data_len)
-                for _ in range(0, num_blocks):
-                    total_oob_size += block_oob_size
+                num_blocks = (
+                    self.get_num_data_blocks(data_len, includes_oob)
+                    if c is self.data_block_format
+                    else 1
+                )
+                total_oob_size += block_oob_size * num_blocks
         return total_oob_size
 
-    def get_total_field_size(self, data_len: int, field_type: FlashFieldType) -> int:
+    def get_total_field_size(
+        self, data_len: int, includes_oob: bool, field_type: FlashFieldType
+    ) -> int:
         total_field_size = 0
         for c in self.get_block_formats():
             block_field_size = self.get_field_length_in_block(c, field_type)
             if block_field_size is not None:
-                num_blocks = 1
-                if c == self.data_block_format:
-                    num_blocks = self.get_num_data_blocks(data_len)
-                for _ in range(0, num_blocks):
-                    total_field_size += block_field_size
+                num_blocks = (
+                    self.get_num_data_blocks(data_len, includes_oob)
+                    if c is self.data_block_format
+                    else 1
+                )
+                total_field_size += block_field_size * num_blocks
         return total_field_size
 
 
@@ -323,9 +329,8 @@ class FlashEccIdentifier(Identifier[FlashConfig]):
     async def identify(self, resource: Resource, config=FlashConfig):
         if config.ecc_config.ecc_magic is not None:
             data = await resource.get_data()
-            if config.ecc_config.ecc_magic not in data:
-                raise IdentifierError("Flash magic bytes present but not found in resource")
-            resource.add_tag(FlashEccProtectedResource)
+            if config.ecc_config.ecc_magic in data:
+                resource.add_tag(FlashEccProtectedResource)
 
 
 #####################
@@ -693,7 +698,9 @@ def _build_block(
         elif f is FlashFieldType.TOTAL_SIZE:
             data_size = len(original_data)
             oob_size = config.get_total_oob_size(data_len=data_size)
-            expected_data_size = config.get_total_field_size(data_size, FlashFieldType.DATA)
+            expected_data_size = config.get_total_field_size(
+                data_len=data_size, field_type=FlashFieldType.DATA
+            )
             total_size = expected_data_size + oob_size
             block += (total_size).to_bytes(field.size, "big")
         elif f is FlashFieldType.MAGIC:
