@@ -367,20 +367,13 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
             start_index = 0
 
         # Set fallback, in case the current check for the end of the resource fails
-        ecc_resource = resource
+        end_offset = data_len
 
         header_data_size = config.get_field_in_block(
             config.header_block_format, FlashFieldType.DATA_SIZE
         )
         header_total_size = config.get_field_in_block(
             config.header_block_format, FlashFieldType.TOTAL_SIZE
-        )
-        tail_magic = config.get_field_in_block(config.tail_block_format, FlashFieldType.MAGIC)
-        tail_data_size = config.get_field_in_block(
-            config.tail_block_format, FlashFieldType.DATA_SIZE
-        )
-        tail_total_size = config.get_field_in_block(
-            config.tail_block_format, FlashFieldType.TOTAL_SIZE
         )
         if config.header_block_format is not None and (
             header_data_size is not None or header_total_size is not None
@@ -411,97 +404,47 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
                 UnpackerError("Expected larger resource than supplied")
 
             if total_ecc_protected_size > start_index:
-                ecc_resource = await resource.create_child(
-                    tags=(FlashEccResource,),
-                    data_range=Range(start_index, start_index + total_ecc_protected_size),
-                )
+                end_offset = start_index + total_ecc_protected_size
 
         elif config.tail_block_format is not None:
-            # Not assuming that the end of the data is the end of the ECC protected region
-            if tail_magic is not None:
-                # Found magic bytes
-                search_offset = start_index
-                search_field = FlashFieldType.MAGIC
-                search_key = ecc_config.ecc_magic
-
-                while 0 <= search_offset <= data_len:
-                    search_offset = data.find(search_key, search_offset, data_len)
-                    search_offset += 1
-
-                    search_offset_in_block = config.get_field_range_in_block(
-                        config.tail_block_format, search_field
-                    )
-                    tail_start_offset = search_offset - search_offset_in_block.start
-                    tail_read_magic = config.get_field_data_in_block(
-                        config.tail_block_format, search_field, data, tail_start_offset
-                    )
-
-                    if tail_read_magic == search_key:
-                        tail_block_size = config.get_block_size(config.tail_block_format)
-                        tail_end_offset = tail_start_offset + tail_block_size
-                        ecc_resource = await resource.create_child(
-                            tags=(FlashEccResource,), data_range=Range(start_index, tail_end_offset)
-                        )
-                        break
-
-            elif tail_total_size is not None or tail_data_size is not None:
-                # Size is in the tail, we just need to go to that location and confirm its offset
-                tail_block_size = config.get_block_size(config.tail_block_format)
-
-                cur_offset = start_index
-                total_data_size = 0
-                read_offset = 0
-                for c in config.iterate_through_all_blocks(data_len - start_index, True):
-                    cur_block_size = config.get_block_size(c)
-
-                    if tail_total_size is not None:
-                        field_type = FlashFieldType.TOTAL_SIZE
-                    elif tail_data_size is not None:
-                        field_type = FlashFieldType.DATA_SIZE
-
-                    # Treat every block as the tail, checking if it has the right field
-                    cur_block_size_field = config.get_field_data_in_block(
-                        config.tail_block_format, field_type, data, cur_offset
-                    )
-
-                    if cur_block_size_field is not None:
-                        read_offset = int.from_bytes(cur_block_size_field, "big")
-                        end_rel_offset = (cur_offset - start_index) + tail_block_size
-
-                        if (tail_total_size is not None and read_offset == end_rel_offset) or (
-                            tail_data_size is not None and read_offset == total_data_size
-                        ):
-
-                            ecc_resource = await resource.create_child(
-                                tags=(FlashEccResource,),
-                                data_range=Range(start_index, cur_offset + tail_block_size),
-                            )
-                            break
-                    total_data_size += config.get_field_length_in_block(c, FlashFieldType.DATA)
-                    cur_offset += cur_block_size
-
-        if ecc_resource == resource and start_index != 0:
-            # With no indicators of the last data block or tail, we fallback to declaring the whole resource ECC protected
-            ecc_resource = await resource.create_child(
-                tags=(FlashEccResource,), data_range=Range(start_index, data_len)
+            # Tail has either magic, total_size, or data_size to indicate the end
+            tail_magic = config.get_field_in_block(config.tail_block_format, FlashFieldType.MAGIC)
+            tail_total_size = config.get_field_in_block(
+                config.tail_block_format, FlashFieldType.TOTAL_SIZE
             )
+            tail_data_size = config.get_field_in_block(
+                config.tail_block_format, FlashFieldType.DATA_SIZE
+            )
+
+            if tail_magic is not None:
+                end_offset = _get_end_from_magic(config, start_index, data, data_len)
+            elif tail_total_size is not None:
+                end_offset = _get_end_from_size(
+                    config, start_index, data, data_len, FlashFieldType.TOTAL_SIZE
+                )
+            elif tail_data_size is not None:
+                end_offset = _get_end_from_size(
+                    config, start_index, data, data_len, FlashFieldType.DATA_SIZE
+                )
+
+        # Create the overarching resource
+        ecc_resource = await resource.create_child(
+            tags=(FlashEccResource,), data_range=Range(start_index, end_offset)
+        )
 
         # Parent FlashEccResource is created, redefine data to limited scope
         data = await ecc_resource.get_data()
         data_len = len(data)
 
-        # Now add children blocks
+        # Now add children blocks until we reach the tail block
         offset = 0
         only_data = b""
         only_ecc = b""
-
         for c in config.iterate_through_all_blocks(data_len, True):
             block_size = config.get_block_size(c)
             block_end_offset = offset + block_size
             if block_end_offset > data_len:
-                UnpackerError(
-                    "Expected complete last block and received less than expected. Input likely malformed"
-                )
+                UnpackerError("Expected complete block and received less than expected")
             block_range = Range(offset, block_end_offset)
             block_data = await ecc_resource.get_data(range=block_range)
 
@@ -643,6 +586,71 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
 #####################
 #      HELPERS      #
 #####################
+def _get_end_from_magic(config: FlashConfig, start_index: int, data: bytes, data_len: int):
+    search_offset = start_index
+    search_field = FlashFieldType.MAGIC
+    search_key = config.ecc_config.ecc_magic
+
+    while 0 <= search_offset <= data_len:
+        search_offset = data.find(search_key, search_offset, data_len)
+        search_offset += 1
+
+        search_offset_in_block = config.get_field_range_in_block(
+            config.tail_block_format, search_field
+        )
+        tail_start_offset = search_offset - search_offset_in_block.start
+        tail_read_magic = config.get_field_data_in_block(
+            config.tail_block_format, search_field, data, tail_start_offset
+        )
+
+        if tail_read_magic == search_key:
+            tail_block_size = config.get_block_size(config.tail_block_format)
+            tail_end_offset = tail_start_offset + tail_block_size
+            return tail_end_offset
+    return data_len
+
+
+def _get_end_from_size(
+    config: FlashConfig, start_index: int, data: bytes, data_len: int, field_type: FlashFieldType
+):
+    # Only calculates the size if it knows the total size, or data size
+    if (field_type is not FlashFieldType.TOTAL_SIZE) and (
+        field_type is not FlashFieldType.DATA_SIZE
+    ):
+        return data_len
+
+    tail_block_size = config.get_block_size(config.tail_block_format)
+
+    cur_offset = start_index
+    total_data_size = 0
+    read_offset = 0
+    for c in config.iterate_through_all_blocks(data_len - start_index, True):
+        cur_block_size = config.get_block_size(c)
+
+        # Treat every block as the tail, checking if it has the right field
+        cur_block_size_field = config.get_field_data_in_block(
+            config.tail_block_format, field_type, data, cur_offset
+        )
+
+        if cur_block_size_field is not None:
+            read_offset = int.from_bytes(cur_block_size_field, "big")
+            end_rel_offset = (cur_offset - start_index) + tail_block_size
+
+            if (
+                config.get_field_in_block(config.tail_block_format, FlashFieldType.TOTAL_SIZE)
+                is not None
+                and read_offset == end_rel_offset
+            ) or (
+                config.get_field_in_block(config.tail_block_format, FlashFieldType.DATA_SIZE)
+                is not None
+                and read_offset == total_data_size
+            ):
+                return cur_offset + tail_block_size
+        total_data_size += config.get_field_length_in_block(c, FlashFieldType.DATA)
+        cur_offset += cur_block_size
+    return data_len
+
+
 def _build_block(
     cur_block_type: Iterable[FlashField],
     config: FlashConfig,
