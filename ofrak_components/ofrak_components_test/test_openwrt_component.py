@@ -6,7 +6,7 @@ from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 from ofrak_type.range import Range
-from ofrak_components.openwrt import OpenWrtTrx, openwrt_crc32, OpenWrtTrxKernel
+from ofrak_components.openwrt import OpenWrtTrxKernel, openwrt_crc32
 
 
 class TestOpenWrtTrxUnpackModifyPack(UnpackModifyPackPattern):
@@ -20,8 +20,6 @@ class TestOpenWrtTrxUnpackModifyPack(UnpackModifyPackPattern):
         )
         image_path = os.path.abspath(os.path.join(os.path.dirname(__file__), testfile_path))
         resource = await ofrak_context.create_root_resource_from_file(image_path)
-        resource.add_tag(OpenWrtTrx)
-        await resource.save()
         return resource
 
     async def unpack(self, resource: Resource) -> None:

@@ -5,11 +5,12 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
+from ofrak import Identifier
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker, UnpackerError
-from ofrak.core import GenericBinary, FilesystemRoot
+from ofrak.core import GenericBinary, FilesystemRoot, File
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.resource import Resource
@@ -19,7 +20,8 @@ from ofrak_io.deserializer import BinaryDeserializer
 from ofrak_type.endianness import Endianness
 from ofrak_type.range import Range
 
-OPENWRT_TRX_MAGIC_START = 0x30524448  # b"HDR0"
+OPENWRT_TRX_MAGIC_BYTES = b"HDR0"
+(OPENWRT_TRX_MAGIC_START,) = struct.unpack("<I", OPENWRT_TRX_MAGIC_BYTES)
 OPENWRT_TRXV1_HEADER_LEN = 28
 OPENWRT_TRXV2_HEADER_LEN = 32
 
@@ -149,6 +151,23 @@ class OpenWrtTrx(GenericBinary):
         return await self.resource.get_only_child_as_view(
             OpenWrtTrxHeader, ResourceFilter.with_tags(OpenWrtTrxHeader)
         )
+
+
+####################
+#    IDENTIFIER    #
+####################
+
+
+class OpenWrtIdentifier(Identifier[None]):
+    targets = (
+        File,
+        GenericBinary,
+    )
+
+    async def identify(self, resource: Resource, config=None) -> None:
+        trx_magic = await resource.get_data(range=Range(0, 4))
+        if trx_magic == OPENWRT_TRX_MAGIC_BYTES:
+            resource.add_tag(OpenWrtTrx)
 
 
 ####################
