@@ -387,7 +387,7 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
                     data=data,
                     block_start_offset=0,
                 )
-                oob_size = (config.get_oob_size_in_block(c) for c in config.get_block_formats())
+                oob_size = config.get_total_oob_size(data_len=data_len, includes_oob=True)
                 total_ecc_protected_size = oob_size + int.from_bytes(data_size_bytes, "big")
             elif header_total_size is not None:
                 # Found total size in header
