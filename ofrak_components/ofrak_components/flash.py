@@ -287,7 +287,7 @@ class FlashConfig(ComponentConfig):
                 count += 1
         return count
 
-    def get_total_oob_size(self, data_len: int, includes_oob: bool) -> int:
+    def get_total_oob_size(self, data_len: int, includes_oob: bool = False) -> int:
         total_oob_size = 0
         for c in self.get_block_formats():
             block_oob_size = self.get_oob_size_in_block(c)
@@ -301,7 +301,7 @@ class FlashConfig(ComponentConfig):
         return total_oob_size
 
     def get_total_field_size(
-        self, data_len: int, includes_oob: bool, field_type: FlashFieldType
+        self, data_len: int, field_type: FlashFieldType, includes_oob: bool = False
     ) -> int:
         total_field_size = 0
         for c in self.get_block_formats():
@@ -359,12 +359,11 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
         data = await resource.get_data()
         data_len = len(data)
         magic = ecc_config.ecc_magic
+        start_index = 0
         if magic is not None:
             ecc_magic_offset = data.find(magic)
             if ecc_magic_offset != -1:
                 start_index = ecc_magic_offset
-        else:
-            start_index = 0
 
         # Set fallback, in case the current check for the end of the resource fails
         end_offset = data_len
@@ -564,6 +563,7 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
         data_offset = 0
 
         for c in config.iterate_through_all_blocks(original_size, False):
+            block_data = b""
             block_data_size = config.get_field_length_in_block(c, FlashFieldType.DATA)
             if block_data_size != 0:
                 # Get the data for the current block
