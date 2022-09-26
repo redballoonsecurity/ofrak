@@ -353,17 +353,17 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
 
     async def unpack(self, resource: Resource, config: FlashConfig):
         ecc_config: FlashEccConfig = config.ecc_config
-        if ecc_config is None:
-            raise UnpackerError("Tried unpacking FlashEccProtectedResource without FlashEccConfig")
 
+        start_index = 0
         data = await resource.get_data()
         data_len = len(data)
-        magic = ecc_config.ecc_magic
-        start_index = 0
-        if magic is not None:
-            ecc_magic_offset = data.find(magic)
-            if ecc_magic_offset != -1:
-                start_index = ecc_magic_offset
+
+        if ecc_config is not None:
+            magic = ecc_config.ecc_magic
+            if magic is not None:
+                ecc_magic_offset = data.find(magic)
+                if ecc_magic_offset != -1:
+                    start_index = ecc_magic_offset
 
         # Set fallback, in case the current check for the end of the resource fails
         end_offset = data_len
@@ -469,7 +469,7 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
 
             # Check if there is data in the block
             block_data_range = config.get_field_range_in_block(c, FlashFieldType.DATA)
-            if block_data_range is not None:
+            if block_data_range is not None and ecc_config is not None:
                 if ecc_config.ecc_class is not None and block_ecc_range is not None:
                     # Try decoding/correcting with ECC, otherwise just add the data anyway
                     try:
@@ -486,10 +486,11 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
             tags=(FlashLogicalDataResource,),
             data=only_data,
         )
-        await ecc_resource.create_child(
-            tags=(FlashLogicalEccResource,),
-            data=only_ecc,
-        )
+        if ecc_config is not None:
+            await ecc_resource.create_child(
+                tags=(FlashLogicalEccResource,),
+                data=only_ecc,
+            )
 
 
 #####################
