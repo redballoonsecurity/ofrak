@@ -21,7 +21,7 @@ EXPECTED_DATA = b"Raspberry Pi Pico with RP1337"
 class TestUf2UnpackModifyPack(UnpackModifyPackPattern):
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         asset_path = Path(ofrak_components_test.ASSETS_DIR, FILENAME)
-        root_resource = await ofrak_context.create_root_resource_from_file(asset_path)
+        root_resource = await ofrak_context.create_root_resource_from_file(str(asset_path))
         root_resource.add_tag(Uf2File)
         await root_resource.save()
         return root_resource
