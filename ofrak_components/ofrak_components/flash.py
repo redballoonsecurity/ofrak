@@ -351,10 +351,10 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
         FlashLogicalEccResource,
     )
 
-    async def unpack(self, resource: Resource, config: FlashConfig = FlashConfig):
+    async def unpack(self, resource: Resource, config: FlashConfig):
         ecc_config: FlashEccConfig = config.ecc_config
         if ecc_config is None:
-            UnpackerError("Tried unpacking FlashEccProtectedResource without FlashEccConfig")
+            raise UnpackerError("Tried unpacking FlashEccProtectedResource without FlashEccConfig")
 
         data = await resource.get_data()
         data_len = len(data)
@@ -400,7 +400,7 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
                 total_ecc_protected_size = int.from_bytes(total_size_bytes, "big")
 
             if total_ecc_protected_size > data_len:
-                UnpackerError("Expected larger resource than supplied")
+                raise UnpackerError("Expected larger resource than supplied")
 
             if total_ecc_protected_size > start_index:
                 end_offset = start_index + total_ecc_protected_size
@@ -443,7 +443,7 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
             block_size = config.get_block_size(c)
             block_end_offset = offset + block_size
             if block_end_offset > data_len:
-                UnpackerError("Expected complete block and received less than expected")
+                raise UnpackerError("Expected complete block and received less than expected")
             block_range = Range(offset, block_end_offset)
             block_data = await ecc_resource.get_data(range=block_range)
 
@@ -551,10 +551,10 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
         # Need to check for the proper configs before continuing
         ecc_config = config.ecc_config
         if ecc_config is None:
-            UnpackerError("Tried packing FlashLogicalDataResource without FlashEccConfig")
+            raise UnpackerError("Tried packing FlashLogicalDataResource without FlashEccConfig")
         ecc_class = ecc_config.ecc_class
         if ecc_class is None:
-            UnpackerError("Cannot pack FlashLogicalDataResource without providing ECC class")
+            raise UnpackerError("Cannot pack FlashLogicalDataResource without providing ECC class")
 
         data = await resource.get_data()
         bytes_left = len(data)
@@ -691,7 +691,7 @@ def _build_block(
                 elif cur_block_type == config.tail_block_format:
                     block += config.ecc_config.tail_delimiter
             except TypeError:
-                PackerError("Tried to add delimiter without specifying in FlashEccConfig")
+                raise PackerError("Tried to add delimiter without specifying in FlashEccConfig")
         elif f is FlashFieldType.ECC:
             if data_hash in DATA_HASHES:
                 ecc = DATA_HASHES[data_hash]
