@@ -24,7 +24,50 @@ from ofrak_components.ecc.reedsolomon import ReedSolomon
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 from ofrak.core.binary import BinaryPatchConfig, BinaryPatchModifier
 
+DEFAULT_TEST_FILE = os.path.join(test_ofrak.components.ASSETS_DIR, "flash_test_default.bin")
+DEFAULT_VERIFY_FILE = os.path.join(
+    test_ofrak.components.ASSETS_DIR, "flash_test_default_verify.bin"
+)
+DEFAULT_UNPACKED_VERIFY_FILE = os.path.join(
+    test_ofrak.components.ASSETS_DIR, "flash_test_default_unpacked_verify.bin"
+)
+DEFAULT_TEST_CONFIG = FlashConfig(
+    header_block_format=[
+        FlashField(FlashFieldType.MAGIC, 7),
+        FlashField(FlashFieldType.DATA, 215),
+        FlashField(FlashFieldType.DELIMITER, 1),
+        FlashField(FlashFieldType.ECC, 32),
+    ],
+    data_block_format=[
+        FlashField(FlashFieldType.DATA, 222),
+        FlashField(FlashFieldType.DELIMITER, 1),
+        FlashField(FlashFieldType.ECC, 32),
+    ],
+    last_data_block_format=[
+        FlashField(FlashFieldType.DATA, 222),
+        FlashField(FlashFieldType.DELIMITER, 1),
+        FlashField(FlashFieldType.ECC, 32),
+        FlashField(FlashFieldType.ALIGNMENT, 0),
+    ],
+    tail_block_format=[
+        FlashField(FlashFieldType.DELIMITER, 1),
+        FlashField(FlashFieldType.DATA_SIZE, 4),
+        FlashField(FlashFieldType.CHECKSUM, 16),
+        FlashField(FlashFieldType.ECC, 32),
+    ],
+    ecc_config=FlashEccConfig(
+        ecc_class=ReedSolomon(nsym=32, fcr=1),
+        ecc_magic=b"ECC_ME!",
+        head_delimiter=b"*",
+        data_delimiter=b"*",
+        last_data_delimiter=b"$",
+        tail_delimiter=b"!",
+    ),
+    checksum_func=(lambda x: md5(x).digest()),
+)
+
 FLASH_TEST_CASES = [
+    (DEFAULT_TEST_FILE, DEFAULT_VERIFY_FILE, DEFAULT_TEST_CONFIG),
     (
         os.path.join(test_ofrak.components.ASSETS_DIR, "flash_test_plain.bin"),
         os.path.join(test_ofrak.components.ASSETS_DIR, "flash_test_plain_verify.bin"),
@@ -70,44 +113,6 @@ FLASH_TEST_CASES = [
             ],
             ecc_config=FlashEccConfig(
                 ecc_class=ReedSolomon(nsym=32, fcr=1),
-            ),
-            checksum_func=(lambda x: md5(x).digest()),
-        ),
-    ),
-    (
-        os.path.join(test_ofrak.components.ASSETS_DIR, "flash_test_default.bin"),
-        os.path.join(test_ofrak.components.ASSETS_DIR, "flash_test_default_verify.bin"),
-        FlashConfig(
-            header_block_format=[
-                FlashField(FlashFieldType.MAGIC, 7),
-                FlashField(FlashFieldType.DATA, 215),
-                FlashField(FlashFieldType.DELIMITER, 1),
-                FlashField(FlashFieldType.ECC, 32),
-            ],
-            data_block_format=[
-                FlashField(FlashFieldType.DATA, 222),
-                FlashField(FlashFieldType.DELIMITER, 1),
-                FlashField(FlashFieldType.ECC, 32),
-            ],
-            last_data_block_format=[
-                FlashField(FlashFieldType.DATA, 222),
-                FlashField(FlashFieldType.DELIMITER, 1),
-                FlashField(FlashFieldType.ECC, 32),
-                FlashField(FlashFieldType.ALIGNMENT, 0),
-            ],
-            tail_block_format=[
-                FlashField(FlashFieldType.DELIMITER, 1),
-                FlashField(FlashFieldType.DATA_SIZE, 4),
-                FlashField(FlashFieldType.CHECKSUM, 16),
-                FlashField(FlashFieldType.ECC, 32),
-            ],
-            ecc_config=FlashEccConfig(
-                ecc_class=ReedSolomon(nsym=32, fcr=1),
-                ecc_magic=b"ECC_ME!",
-                head_delimiter=b"*",
-                data_delimiter=b"*",
-                last_data_delimiter=b"$",
-                tail_delimiter=b"!",
             ),
             checksum_func=(lambda x: md5(x).digest()),
         ),
@@ -163,3 +168,18 @@ class TestFlashUnpackModifyPack(UnpackModifyPackPattern):
         repacked_data = await repacked_resource.get_data()
 
         assert verified_data == repacked_data
+
+
+class TestFlashUnpackModifyPackUnpackVerify(TestFlashUnpackModifyPack):
+    async def test_unpack_modify_pack(self, ofrak_context):
+        root_resource = await self.create_root_resource(ofrak_context, DEFAULT_TEST_FILE)
+        await self.unpack(root_resource, DEFAULT_TEST_CONFIG)
+        await self.modify(root_resource)
+        await self.repack(root_resource, DEFAULT_TEST_CONFIG)
+        await self.unpack(root_resource, DEFAULT_TEST_CONFIG)
+        logical_data_resource = await root_resource.get_only_descendant(
+            r_filter=ResourceFilter.with_tags(
+                FlashLogicalDataResource,
+            ),
+        )
+        await self.verify(logical_data_resource, DEFAULT_UNPACKED_VERIFY_FILE)
