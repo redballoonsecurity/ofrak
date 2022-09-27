@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from typing import List, Tuple
+import tempfile
+from io import BytesIO
 
 import pytest
-import tempfile
-from pathlib import Path
 
 from ofrak import OFRAKContext
 from ofrak.core.binary import GenericBinary, GenericText
@@ -14,7 +14,14 @@ from ofrak.core.program import Program
 from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import ResourceFilter
+from ofrak.service.job_service_i import ComponentAutoRunFailure
 from ofrak_type.range import Range
+
+from test_ofrak.unit.component import mock_component
+from test_ofrak.unit.component.mock_component import (
+    MockFile,
+    MockFailFile,
+)
 
 # Ignore the type below until MyPy supports recursive type definitions :(
 # https://github.com/python/mypy/issues/731
@@ -174,6 +181,11 @@ async def test_get_most_specific_tags(resource: Resource):
     assert set(resource.get_most_specific_tags()) == expected_most_specific_tags
 
 
+@pytest.fixture(autouse=True)
+def mock_ofrak_component(ofrak):
+    ofrak.injector.discover(mock_component)
+
+
 @pytest.mark.asyncio
 async def test_flush_to_disk_pack(ofrak_context: OFRAKContext):
     # This test works as long as LZMA fails to pack() and the default is to
@@ -181,50 +193,23 @@ async def test_flush_to_disk_pack(ofrak_context: OFRAKContext):
     # which as of 2022-09-13 will fail to pack and therefore pack_recursively
     # won't work.
 
-    root_resource = await ofrak_context.create_root_resource(
-        "lzma",
-        b"\x5d\x00\x00\x80\x00\xff\xff\xff\xff\xff\xff\xff\xff\x00\x2e\x80\x2d\x00\x00\x7f\xeb\x0b\xed\x6e\xd4\x23\x99\xb4\xf3\x0e\x8d\x71\xaf\xff\xff\xf9\xbe\x40\x00",
-    )
+    root_resource = await ofrak_context.create_root_resource("mock", b"\x00" * 0x100)
+    root_resource.add_tag(MockFile)
 
-    await root_resource.unpack()
+    child = await root_resource.create_child((MockFailFile,), data_range=Range(0x10, 0x20))
+    child.add_tag(MockFailFile)
 
-    with tempfile.TemporaryDirectory() as tempdir:
-        want = set()
+    with BytesIO() as buffer:
+        # should fail because write_to runs pack_recursively and MockFailFile will fail on packing
+        with pytest.raises(ComponentAutoRunFailure):
+            await root_resource.write_to(buffer)
 
-        flush_dir = Path(tempdir, "flush_to_disk")
-        write_dir = Path(tempdir, "write_to")
+        # this should not fail because pack_recursively was suppressed
+        await root_resource.write_to(buffer, pack=False)
 
-        Path.mkdir(flush_dir, exist_ok=True)
-        Path.mkdir(write_dir, exist_ok=True)
+    with tempfile.NamedTemporaryFile() as t:
+        # again, should fail because the packer is run automatically
+        with pytest.raises(ComponentAutoRunFailure):
+            await root_resource.flush_to_disk(t.name)
 
-        for child_resource in await root_resource.get_children():
-            try:
-                out_file_name = f"{child_resource.get_id().hex()}-unidentified"
-
-                want.add(out_file_name)
-
-                await child_resource.flush_to_disk(f"{flush_dir}/{out_file_name}")
-                with open(Path(write_dir, out_file_name), "wb") as f:
-                    await child_resource.write_to(f, pack=True)
-            except Exception as e:
-                print(f"Could not flush: {e}")
-
-            try:
-                out_file_name = f"{child_resource.get_id().hex()}-identified"
-
-                want.add(out_file_name)
-
-                await child_resource.identify()
-                await child_resource.flush_to_disk(f"{flush_dir}/{out_file_name}", pack=False)
-
-                with open(Path(write_dir, out_file_name), "wb") as f:
-                    await child_resource.write_to(f, pack=False)
-
-            except Exception as e:
-                print(f"Could not flush: {e}")
-
-        got_flush = {str(f.name) for f in Path(flush_dir).iterdir()}
-        got_write = {str(f.name) for f in Path(write_dir).iterdir()}
-
-        assert got_flush == want, "Not all files were written to disk by `flush_to_disk`"
-        assert got_write == want, "Not all files were written to disk by `write_to`"
+        await root_resource.flush_to_disk(t.name, pack=False)
