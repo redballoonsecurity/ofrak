@@ -8,14 +8,14 @@ from ofrak import OFRAKContext, ResourceFilter
 from ofrak.resource import Resource
 from ofrak_components.flash import (
     FlashResource,
-    FlashEccResource,
+    FlashOobResource,
     FlashLogicalDataResource,
     FlashConfig,
     FlashEccConfig,
     FlashField,
     FlashFieldType,
     FlashLogicalDataResourcePacker,
-    FlashEccResourcePacker,
+    FlashOobResourcePacker,
     FlashResourcePacker,
     FlashResourceUnpacker,
 )
@@ -154,9 +154,9 @@ class TestFlashUnpackModifyPack(UnpackModifyPackPattern):
         )
         await logical_data_resource.run(FlashLogicalDataResourcePacker, TEST_CONFIG)
         ecc_resource = await resource.get_only_child(
-            r_filter=ResourceFilter.with_tags(FlashEccResource)
+            r_filter=ResourceFilter.with_tags(FlashOobResource)
         )
-        await ecc_resource.run(FlashEccResourcePacker, TEST_CONFIG)
+        await ecc_resource.run(FlashOobResourcePacker, TEST_CONFIG)
         await resource.run(FlashResourcePacker, TEST_CONFIG)
 
     async def verify(self, repacked_resource: Resource, VERIFY_FILE: str) -> None:

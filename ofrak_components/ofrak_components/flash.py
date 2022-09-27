@@ -6,11 +6,11 @@ The OOB data often includes some Error Correcting Codes (ECC) or checksums.
 There are several dataclasses that categorize the sections of the dump:
 
 - `FlashResource` is the overarching resource. The component expects the user to add this tag in order for this component to be run.
-    - `FlashEccResource` is an ECC protected region of `FlashResource`. In the future, there may be multiple of these resources.
-        - `FlashHeaderBlock` is a the first block of a `FlashEccResource`.
+    - `FlashOobResource` is the region of `FlashResource` that has OOB data. In the future, there may be multiple of these children resources.
+        - `FlashHeaderBlock` is a the first block of a `FlashOobResource`.
         - `FlashBlock` is every block between the header and tail block.
-        - `FlashTailBlock` is the final block of a `FlashEccResource`.
-        - `FlashLogicalDataResource` is the extracted data only with all of the OOB data removed. This will become `FlashEccResource` when packed.
+        - `FlashTailBlock` is the final block of a `FlashOobResource`.
+        - `FlashLogicalDataResource` is the extracted data only with all of the OOB data removed. This will become a `FlashOobResource` when packed.
         - `FlashLogicalEccResource` is the extracted ECC only. No other OOB data is included.
 """
 
@@ -78,14 +78,15 @@ class FlashTailBlock(FlashBlock):
 class FlashResource(GenericBinary):
     """
     The overarching resource that encapsulates flash storage.
-    This is made up of several blocks.
+    This will contain a `FlashOobResource` in most cases.
+    In the future, support for multiple `FlashOobResource` children should be added.
     """
 
 
 @dataclass
-class FlashEccResource(GenericBinary):
+class FlashOobResource(GenericBinary):
     """
-    Distinguishes the range of the ECC protected region.
+    Represents the region containing Oob data.
     """
 
 
@@ -113,7 +114,7 @@ class FlashLogicalEccResource(GenericBinary):
 @dataclass
 class FlashEccConfig(ComponentConfig):
     """
-    Must be configured if the Flash has ECC protection
+    Must be configured if the resource includes ECC
     ecc_magic is assumed to be contained at the start of the file, but may also occur multiple times
     """
 
@@ -156,7 +157,7 @@ class FlashConfig(ComponentConfig):
     FlashConfig is for specifying everything about the specific model of flash.
     The intent is to expand to all common flash configurations.
     Every block has a format specifier to show where each field is in the block as well as the length.
-    If there is no ECC, data_block_format may take this form:
+    If there is no OOB data, data_block_format may take this form:
         `data_block_format = [FlashField(field_type=FlashFieldType.DATA,size=block_size),]`
     """
 
@@ -330,7 +331,7 @@ class FlashResourceUnpacker(Unpacker[FlashConfig]):
 
     targets = (FlashResource,)
     children = (
-        FlashEccResource,
+        FlashOobResource,
         FlashHeaderBlock,
         FlashBlock,
         FlashTailBlock,
@@ -364,7 +365,7 @@ class FlashResourceUnpacker(Unpacker[FlashConfig]):
         if config.header_block_format is not None and (
             header_data_size is not None or header_total_size is not None
         ):
-            # The header has the size of the ECC protected region
+            # The header has the size of the entire region including OOB data
             total_ecc_protected_size = 0
             if header_data_size is not None:
                 # Found data size in the header, need to calculate expected total size (including OOB)
@@ -415,7 +416,7 @@ class FlashResourceUnpacker(Unpacker[FlashConfig]):
 
         # Create the overarching resource
         ecc_resource = await resource.create_child(
-            tags=(FlashEccResource,), data_range=Range(start_index, end_offset)
+            tags=(FlashOobResource,), data_range=Range(start_index, end_offset)
         )
 
         # Parent FlashEccResource is created, redefine data to limited scope
@@ -502,7 +503,7 @@ class FlashResourcePacker(Packer[FlashConfig]):
         try:
             packed_child = await resource.get_only_child(
                 r_filter=ResourceFilter.with_tags(
-                    FlashEccResource,
+                    FlashOobResource,
                 ),
             )
             patch_data = await packed_child.get_data()
@@ -513,20 +514,20 @@ class FlashResourcePacker(Packer[FlashConfig]):
             pass
 
 
-class FlashEccResourcePacker(Packer[FlashConfig]):
+class FlashOobResourcePacker(Packer[FlashConfig]):
     """
-    Packs the ECC protected region back into a binary blob
+    Packs the entire region including Oob data back into a binary blob
     """
 
-    id = b"FlashEccResourcePacker"
-    targets = (FlashEccResource,)
+    id = b"FlashOobResourcePacker"
+    targets = (FlashOobResource,)
 
     async def pack(self, resource: Resource, config: FlashConfig):
         # We actually want to overwrite ourselves with just the repacked version
         try:
             packed_child = await resource.get_only_child(
                 r_filter=ResourceFilter.with_tags(
-                    FlashEccResource,
+                    FlashOobResource,
                 ),
             )
             patch_data = await packed_child.get_data()
@@ -564,9 +565,9 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
                 original_data=data,
             )
 
-        # Create child under the FlashEccResource to show that it packed itself
+        # Create child under the original FlashOobResource to show that it packed itself
         parent = await resource.get_parent()
-        await parent.create_child(tags=(FlashEccResource,), data=packed_data)
+        await parent.create_child(tags=(FlashOobResource,), data=packed_data)
 
 
 #####################
