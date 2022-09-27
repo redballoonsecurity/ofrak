@@ -209,7 +209,7 @@ jobs:
             --base \
             --finish \
             --cache-from redballoonsecurity/ofrak/core-dev-base:latest
-      - name: Test components
+      - name: Test tutorials
         run: |
           docker run \
             --interactive \
