@@ -1,10 +1,25 @@
+"""
+This component is intended to make it easier to analyze raw flash dumps using OFRAK alone.
+Most flash dumps have "useful" data mixed in with out-of-band (OOB) data.
+The OOB data often includes some Error Correcting Codes (ECC) or checksums.
+
+There are several dataclasses that categorize the sections of the dump:
+
+- `FlashResource` is the overarching resource. The component expects the user to add this tag in order for this component to be run.
+    - `FlashEccResource` is an ECC protected region of `FlashResource`. In the future, there may be multiple of these resources.
+        - `FlashHeaderBlock` is a the first block of a `FlashEccResource`.
+        - `FlashBlock` is every block between the header and tail block.
+        - `FlashTailBlock` is the final block of a `FlashEccResource`.
+        - `FlashLogicalDataResource` is the extracted data only with all of the OOB data removed. This will become `FlashEccResource` when packed.
+        - `FlashLogicalEccResource` is the extracted ECC only. No other OOB data is included.
+"""
+
 from dataclasses import dataclass
 from hashlib import md5
 from enum import Enum
-from typing import Any, Callable, Dict, Iterable, Optional, Iterator, Generator
+from typing import Any, Callable, Dict, Generator, Iterable, Iterator, Optional
 
 from ofrak import (
-    Identifier,
     Packer,
     Resource,
     ResourceFilter,
@@ -68,22 +83,14 @@ class FlashResource(GenericBinary):
 
 
 @dataclass
-class FlashEccProtectedResource(FlashResource):
-    """
-    Region of memory protected by ECC.
-    Allows us to distinguish a dump from one that contains ECC data
-    """
-
-
-@dataclass
-class FlashEccResource(FlashEccProtectedResource):
+class FlashEccResource(GenericBinary):
     """
     Distinguishes the range of the ECC protected region.
     """
 
 
 @dataclass
-class FlashLogicalDataResource(FlashResource):
+class FlashLogicalDataResource(GenericBinary):
     """
     This is the final product of unpacking a FlashResource.
     It contains the data without any ECC or OOB data included.
@@ -92,7 +99,7 @@ class FlashLogicalDataResource(FlashResource):
 
 
 @dataclass
-class FlashLogicalEccResource(FlashResource):
+class FlashLogicalEccResource(GenericBinary):
     """
     The alternate to FlashLogicalDataResource but just includes ECC.
     Does not include any other OOB data.
@@ -317,31 +324,11 @@ class FlashConfig(ComponentConfig):
 
 
 #####################
-#    IDENTIFIER     #
-#####################
-class FlashEccIdentifier(Identifier[FlashConfig]):
-    """
-    Identify an ECC protected region by searching for the magic bytes
-    """
-
-    targets = (FlashResource,)
-
-    async def identify(self, resource: Resource, config=FlashConfig):
-        if config.ecc_config.ecc_magic is not None:
-            data = await resource.get_data()
-            if config.ecc_config.ecc_magic in data:
-                resource.add_tag(FlashEccProtectedResource)
-
-
-#####################
 #     UNPACKERS     #
 #####################
-class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
-    """
-    Unpack regions of flash protected by ECC
-    """
+class FlashResourceUnpacker(Unpacker[FlashConfig]):
 
-    targets = (FlashEccProtectedResource,)
+    targets = (FlashResource,)
     children = (
         FlashEccResource,
         FlashHeaderBlock,
@@ -469,8 +456,8 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
 
             # Check if there is data in the block
             block_data_range = config.get_field_range_in_block(c, FlashFieldType.DATA)
-            if block_data_range is not None and ecc_config is not None:
-                if ecc_config.ecc_class is not None and block_ecc_range is not None:
+            if block_data_range is not None:
+                if block_ecc_range is not None:
                     # Try decoding/correcting with ECC, otherwise just add the data anyway
                     try:
                         # Assumes that data comes before ECC
@@ -479,6 +466,12 @@ class FlashEccProtectedResourceUnpacker(Unpacker[FlashConfig]):
                         ]
                     except EccError:
                         only_data += block_data[block_data_range.start : block_data_range.end]
+                    except TypeError:
+                        raise UnpackerError(
+                            "Tried to correct with ECC without providing an ecc_class in FlashEccConfig"
+                        )
+                else:
+                    only_data += block_data[block_data_range.start : block_data_range.end]
             offset += block_size
 
         # Add all block data to logical resource for recursive unpacking
@@ -513,11 +506,11 @@ class FlashResourcePacker(Packer[FlashConfig]):
                 ),
             )
             patch_data = await packed_child.get_data()
+            original_size = await resource.get_data_length()
+            resource.queue_patch(Range(0, original_size), patch_data)
         except NotFoundError:
             # Child has not been packed, return itself
-            patch_data = await resource.get_data()
-        original_size = await resource.get_data_length()
-        resource.queue_patch(Range(0, original_size), patch_data)
+            pass
 
 
 class FlashEccResourcePacker(Packer[FlashConfig]):
@@ -537,11 +530,11 @@ class FlashEccResourcePacker(Packer[FlashConfig]):
                 ),
             )
             patch_data = await packed_child.get_data()
+            original_size = await resource.get_data_length()
+            resource.queue_patch(Range(0, original_size), patch_data)
         except NotFoundError:
             # Child has not been packed, return itself
-            patch_data = await resource.get_data()
-        original_size = await resource.get_data_length()
-        resource.queue_patch(Range(0, original_size), patch_data)
+            pass
 
 
 class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
@@ -549,14 +542,6 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
     targets = (FlashLogicalDataResource,)
 
     async def pack(self, resource: Resource, config: FlashConfig):
-        # Need to check for the proper configs before continuing
-        ecc_config = config.ecc_config
-        if ecc_config is None:
-            raise UnpackerError("Tried packing FlashLogicalDataResource without FlashEccConfig")
-        ecc_class = ecc_config.ecc_class
-        if ecc_class is None:
-            raise UnpackerError("Cannot pack FlashLogicalDataResource without providing ECC class")
-
         data = await resource.get_data()
         bytes_left = len(data)
         original_size = bytes_left
@@ -660,6 +645,11 @@ def _build_block(
 ) -> bytes:
     # Update the checksum, even if its not used we use it for tracking if we need it to update ECC
     data_hash = config.checksum_func(block_data)
+    ecc_config = config.ecc_config
+    if ecc_config is not None:
+        ecc_class = ecc_config.ecc_class
+        if ecc_class is None:
+            raise UnpackerError("Cannot pack FlashLogicalDataResource without providing ECC class")
     block = b""
     for field in cur_block_type:
         f = field.field_type
@@ -699,7 +689,12 @@ def _build_block(
             else:
                 # Assumes that all previously added data in the block should be included in the ECC
                 # TODO: Support ECC that comes before data
-                ecc = config.ecc_config.ecc_class.encode(block)
+                try:
+                    ecc = config.ecc_config.ecc_class.encode(block)
+                except TypeError:
+                    raise PackerError(
+                        "Tried to encode ECC without specifying ecc_class in FlashEccConfig"
+                    )
             block += ecc
         elif f is FlashFieldType.ECC_SIZE:
             block_ecc_field = config.get_field_in_block(cur_block_type, FlashFieldType.ECC)
@@ -713,5 +708,8 @@ def _build_block(
             total_size = expected_data_size + oob_size
             block += (total_size).to_bytes(field.size, "big")
         elif f is FlashFieldType.MAGIC:
-            block += config.ecc_config.ecc_magic
+            try:
+                block += config.ecc_config.ecc_magic
+            except TypeError:
+                raise PackerError("Tried to add Magic without specifying in FlashEccConfig")
     return block

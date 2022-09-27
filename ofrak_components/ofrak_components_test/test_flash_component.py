@@ -14,11 +14,10 @@ from ofrak_components.flash import (
     FlashEccConfig,
     FlashField,
     FlashFieldType,
-    FlashEccIdentifier,
-    FlashEccProtectedResourceUnpacker,
     FlashLogicalDataResourcePacker,
     FlashEccResourcePacker,
     FlashResourcePacker,
+    FlashResourceUnpacker,
 )
 from ofrak_components.ecc.reedsolomon import ReedSolomon
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
@@ -135,8 +134,7 @@ class TestFlashUnpackModifyPack(UnpackModifyPackPattern):
     async def unpack(self, resource: Resource, TEST_CONFIG: FlashConfig) -> None:
         resource.add_tag(FlashResource)
         await resource.save()
-        await resource.run(FlashEccIdentifier, TEST_CONFIG)
-        await resource.run(FlashEccProtectedResourceUnpacker, TEST_CONFIG)
+        await resource.run(FlashResourceUnpacker, TEST_CONFIG)
 
     async def modify(self, unpacked_root_resource: Resource) -> None:
         logical_data_resource = await unpacked_root_resource.get_only_descendant(
