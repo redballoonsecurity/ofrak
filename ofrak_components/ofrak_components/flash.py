@@ -482,7 +482,7 @@ class FlashResourceUnpacker(Unpacker[None]):
                         only_data += block_data[block_data_range.start : block_data_range.end]
                     except TypeError:
                         raise UnpackerError(
-                            "Tried to correct with ECC without providing an ecc_class in FlashEccConfig"
+                            "Tried to correct with ECC without providing an ecc_class in FlashEccAttributes"
                         )
                 else:
                     only_data += block_data[block_data_range.start : block_data_range.end]
@@ -520,8 +520,6 @@ class FlashResourcePacker(Packer[None]):
     async def pack(self, resource: Resource, config=None):
         """
         :param resource:
-        :param config:
-        :type config: FlashConfig
         """
         # We want to overwrite ourselves with just the repacked version
         # TODO: Add supoort for multiple FlashOobResource in a dump.
@@ -563,7 +561,7 @@ class FlashOobResourcePacker(Packer[None]):
 class FlashLogicalDataResourcePacker(Packer[None]):
     """
     Packs the `FlashLogicalDataResource` into a `FlashOobResource` of the format
-    specified by `config`
+    specified by the `FlashAttributes`
     """
 
     id = b"FlashLogicalDataResourcePacker"
