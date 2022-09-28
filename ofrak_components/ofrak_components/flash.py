@@ -344,7 +344,7 @@ class FlashResourceUnpacker(Unpacker[FlashConfig]):
         Unpack a raw flash dump using a FlashConfig.
 
         :param resource:
-        :param config: An ordered iterable of `FlashField` to specify field types and sizes.
+        :param config: Describes the layout and features found in the flash dump
         :type config: FlashConfig
         """
         ecc_config: FlashEccConfig = config.ecc_config
@@ -508,7 +508,7 @@ class FlashResourcePacker(Packer[FlashConfig]):
     async def pack(self, resource: Resource, config: FlashConfig):
         """
         :param resource:
-        :param config: An ordered iterable of `FlashField` to specify field types and sizes.
+        :param config: Describes the layout and features found in the flash dump
         :type config: FlashConfig
         """
         # We want to overwrite ourselves with just the repacked version
@@ -535,7 +535,7 @@ class FlashOobResourcePacker(Packer[FlashConfig]):
     async def pack(self, resource: Resource, config: FlashConfig):
         """
         :param resource:
-        :param config: An ordered iterable of `FlashField` to specify field types and sizes.
+        :param config: Describes the layout and features found in the flash dump
         :type config: FlashConfig
         """
         # We want to overwrite ourselves with just the repacked version
@@ -562,7 +562,7 @@ class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
     async def pack(self, resource: Resource, config: FlashConfig):
         """
         :param resource:
-        :param config: An ordered iterable of `FlashField` to specify field types and sizes.
+        :param config: Describes the layout and features found in the flash dump
         :type config: FlashConfig
         """
         data = await resource.get_data()
