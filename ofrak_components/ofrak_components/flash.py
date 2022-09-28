@@ -158,7 +158,8 @@ class FlashConfig(ComponentConfig):
     The intent is to expand to all common flash configurations.
     Every block has a format specifier to show where each field is in the block as well as the length.
     If there is no OOB data, data_block_format may take this form:
-        `data_block_format = [FlashField(field_type=FlashFieldType.DATA,size=block_size),]`
+
+        data_block_format = [FlashField(field_type=FlashFieldType.DATA,size=block_size),]
     """
 
     """
@@ -340,6 +341,13 @@ class FlashResourceUnpacker(Unpacker[FlashConfig]):
     )
 
     async def unpack(self, resource: Resource, config: FlashConfig):
+        """
+        Unpack a raw flash dump using a FlashConfig.
+
+        :param resource:
+        :param config: An ordered iterable of `FlashField` to specify field types and sizes.
+        :type config: FlashConfig
+        """
         ecc_config: FlashEccConfig = config.ecc_config
 
         start_index = 0
@@ -499,6 +507,11 @@ class FlashResourcePacker(Packer[FlashConfig]):
     targets = (FlashResource,)
 
     async def pack(self, resource: Resource, config: FlashConfig):
+        """
+        :param resource:
+        :param config: An ordered iterable of `FlashField` to specify field types and sizes.
+        :type config: FlashConfig
+        """
         # We actually want to overwrite ourselves with just the repacked version
         try:
             packed_child = await resource.get_only_child(
@@ -523,6 +536,11 @@ class FlashOobResourcePacker(Packer[FlashConfig]):
     targets = (FlashOobResource,)
 
     async def pack(self, resource: Resource, config: FlashConfig):
+        """
+        :param resource:
+        :param config: An ordered iterable of `FlashField` to specify field types and sizes.
+        :type config: FlashConfig
+        """
         # We actually want to overwrite ourselves with just the repacked version
         try:
             packed_child = await resource.get_only_child(
@@ -539,10 +557,20 @@ class FlashOobResourcePacker(Packer[FlashConfig]):
 
 
 class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
+    """
+    Packs the `FlashLogicalDataResource` into a `FlashOobResource` of the format
+    specified by `config`
+    """
+
     id = b"FlashLogicalDataResourcePacker"
     targets = (FlashLogicalDataResource,)
 
     async def pack(self, resource: Resource, config: FlashConfig):
+        """
+        :param resource:
+        :param config: An ordered iterable of `FlashField` to specify field types and sizes.
+        :type config: FlashConfig
+        """
         data = await resource.get_data()
         bytes_left = len(data)
         original_size = bytes_left

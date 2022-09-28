@@ -56,7 +56,7 @@ class FlashConfig(ComponentConfig):
     ecc_config: Optional[FlashEccConfig] = None
     checksum_func: Optional[Callable[[Any], Any]] = lambda x: md5(x).digest()
 ```
-The only required field is the `data_block_format`. These block formats are specified using an *ordered* `Iterable` of `FlashField`s:
+The only required field is the `data_block_format`. These block formats are specified using an *ordered* `Iterable[FlashField]` to describe the block:
 
 ```python
 @dataclass
