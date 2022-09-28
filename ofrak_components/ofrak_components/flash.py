@@ -169,7 +169,6 @@ class FlashAttributes(ResourceAttributes):
     Only define a block_format if they are different from other block formats.
         - A current workaround is adding `FlashField(FlashFieldType.ALIGNMENT, 0)`
     Assumes that there are only one of each block format except the data_block_format
-    The checksum function will be used repeatedly internally for saving on encoding saved ECC values for each block
     """
 
     data_block_format: Iterable[FlashField]
@@ -178,7 +177,7 @@ class FlashAttributes(ResourceAttributes):
     last_data_block_format: Optional[Iterable[FlashField]] = None
     tail_block_format: Optional[Iterable[FlashField]] = None
     ecc_attributes: Optional[FlashEccAttributes] = None
-    checksum_func: Optional[Callable[[Any], Any]] = lambda x: md5(x).digest()
+    checksum_func: Optional[Callable[[Any], Any]] = None
 
     def get_block_formats(self) -> Iterable:
         return filter(
@@ -465,7 +464,7 @@ class FlashResourceUnpacker(Unpacker[None]):
                 cur_block_ecc = block_data[block_ecc_range.start : block_ecc_range.end]
                 only_ecc += cur_block_ecc
                 # Add hash of everything up to the ECC to our dict for faster packing
-                block_data_hash = flash_attr.checksum_func(block_data[: block_ecc_range.start])
+                block_data_hash = md5(block_data[: block_ecc_range.start]).digest()
                 DATA_HASHES[block_data_hash] = cur_block_ecc
 
             # Check if there is data in the block
@@ -482,7 +481,7 @@ class FlashResourceUnpacker(Unpacker[None]):
                         only_data += block_data[block_data_range.start : block_data_range.end]
                     except TypeError:
                         raise UnpackerError(
-                            "Tried to correct with ECC without providing an ecc_class in FlashEccAttributes"
+                            "Tried to correct with ECC without providing an ecc_class in F"
                         )
                 else:
                     only_data += block_data[block_data_range.start : block_data_range.end]
@@ -687,7 +686,7 @@ def _build_block(
     # Update the checksum, even if its not used we use it for tracking if we need it to update ECC
     if attributes is None:
         raise UnpackerError("Cannot pack without providing FlashAttributes")
-    data_hash = attributes.checksum_func(block_data)
+    data_hash = md5(block_data).digest()
     ecc_attr = attributes.ecc_attributes
     if ecc_attr is not None:
         ecc_class = ecc_attr.ecc_class
@@ -699,7 +698,8 @@ def _build_block(
         if f is FlashFieldType.ALIGNMENT:
             block += b"\x00" * field.size
         elif f is FlashFieldType.CHECKSUM:
-            block += attributes.checksum_func(original_data)
+            if attributes.checksum_func is not None:
+                block += attributes.checksum_func(original_data)
         elif f is FlashFieldType.DATA:
             expected_data_size = attributes.get_field_length_in_block(
                 cur_block_type, FlashFieldType.DATA
