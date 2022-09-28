@@ -11,6 +11,34 @@ In this page, we will cover why we have this component, what a typical dump may 
 
 This pattern may continue for the entire flash chip or could have fields in the header or tail block that show the size of the region that includes OOB data.
 
+Other examples are more complex. Sometimes this is because not all of the dump is ECC protected or needs OOB data so delimiters or magic bytes are necessary to show the area. An example format:
+
+Header Block
+
+| MAGIC | DATA | DELIMITER | ECC |
+| ----- | ---- | --------- | --- |
+| 7 bytes | 215 bytes | 1 byte | 32 bytes |
+
+Data Block
+
+| DATA | DELIMITER | ECC |
+| ---- | --------- | --- |
+| 222 bytes | 1 byte | 32 bytes |
+
+Last Data Block
+
+| DATA | DELIMITER | ECC |
+| ---- | --------- | --- |
+| 222 bytes | 1 byte | 32 bytes |
+
+Tail Block
+
+| DELIMITER | DATA SIZE | CHECKSUM | ECC |
+| --------- | --------- | -------- | --- |
+| 1 byte | 4 bytes | 16 bytes | 32 bytes |
+
+This format is interesting because it has a different sized tail block as well as different delimiters to represent the type of block. The component is able to handle these different types of fields by providing a `FlashConfig` that also includes a `FlashEccConfig`. We will describe the other parts of these configs and how to use them later in this page.
+
 ### Types of Fields
 In our experience, we have run into flash dumps that have included the following fields:
 ```python
