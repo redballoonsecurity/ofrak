@@ -382,21 +382,26 @@ class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
     space by replacing its data with NOP instructions and tagging it as
     [FreeSpace][ofrak.core.free_space.FreeSpace].
     """
+
     targets = (MemoryRegion,)
 
     @staticmethod
     async def _find_and_delete_overlapping_children(resource: Resource, freed_range: Range):
         # Pulled from the Partial modifier. Note this filter calculation has the potential
         # to be very expensive if, for instance, the resource is an entire program segment...
-        overlap_resources = list(await resource.get_children_as_view(
-            MemoryRegion,
-            r_filter=ResourceFilter(
-                tags=(MemoryRegion,),
-                attribute_filters=(
-                    ResourceAttributeRangeFilter(MemoryRegion.VirtualAddress, max=freed_range.end),
+        overlap_resources = list(
+            await resource.get_children_as_view(
+                MemoryRegion,
+                r_filter=ResourceFilter(
+                    tags=(MemoryRegion,),
+                    attribute_filters=(
+                        ResourceAttributeRangeFilter(
+                            MemoryRegion.VirtualAddress, max=freed_range.end
+                        ),
+                    ),
                 ),
-            ),
-        ))
+            )
+        )
         for possible_overlapping_child in overlap_resources:
             if (
                 possible_overlapping_child.virtual_address > freed_range.start
@@ -474,5 +479,5 @@ class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
         await parent_mr_view.resource.create_child_from_view(
             FreeSpace(freed_range.start, freed_range.end, config.permissions),
             data_range=freed_offset_range,
-            data=b"\x00"*freed_offset_range.length(),
+            data=b"\x00" * freed_offset_range.length(),
         )

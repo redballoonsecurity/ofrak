@@ -283,7 +283,9 @@ async def test_resource_view_delete_resource(ofrak_context: OFRAKContext):
     )
     region_view = await region_r.view_as(MemoryRegion)
 
-    await region_view.resource.run(FreeSpaceModifier, FreeSpaceModifierConfig(MemoryPermissions.RX, stub=b""))
+    await region_view.resource.run(
+        FreeSpaceModifier, FreeSpaceModifierConfig(MemoryPermissions.RX, stub=b"")
+    )
 
     with pytest.raises(ValueError):
         _ = region_view.resource
