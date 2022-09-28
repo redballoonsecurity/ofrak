@@ -1,7 +1,4 @@
 FROM node:latest AS svelte
-
-ARG OFRAK_DIR=.
-COPY --chown=node:node $OFRAK_DIR/frontend /home/node/frontend
-
+COPY --chown=node:node frontend /home/node/frontend
 WORKDIR /home/node/frontend
 RUN su node -c "npm install && npm run build"
