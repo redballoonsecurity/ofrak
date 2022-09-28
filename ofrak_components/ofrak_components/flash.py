@@ -29,7 +29,6 @@ from ofrak.component.packer import PackerError
 from ofrak.component.unpacker import UnpackerError
 from ofrak.core.binary import GenericBinary
 from ofrak.model.component_model import ComponentConfig
-from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 from ofrak_components.ecc.abstract import EccError
 
@@ -512,19 +511,17 @@ class FlashResourcePacker(Packer[FlashConfig]):
         :param config: An ordered iterable of `FlashField` to specify field types and sizes.
         :type config: FlashConfig
         """
-        # We actually want to overwrite ourselves with just the repacked version
-        try:
-            packed_child = await resource.get_only_child(
-                r_filter=ResourceFilter.with_tags(
-                    FlashOobResource,
-                ),
-            )
+        # We want to overwrite ourselves with just the repacked version
+        # TODO: Add supoort for multiple FlashOobResource in a dump.
+        packed_child = await resource.get_only_child(
+            r_filter=ResourceFilter.with_tags(
+                FlashOobResource,
+            ),
+        )
+        if packed_child is not None:
             patch_data = await packed_child.get_data()
             original_size = await resource.get_data_length()
             resource.queue_patch(Range(0, original_size), patch_data)
-        except NotFoundError:
-            # Child has not been packed, return itself
-            pass
 
 
 class FlashOobResourcePacker(Packer[FlashConfig]):
@@ -541,19 +538,16 @@ class FlashOobResourcePacker(Packer[FlashConfig]):
         :param config: An ordered iterable of `FlashField` to specify field types and sizes.
         :type config: FlashConfig
         """
-        # We actually want to overwrite ourselves with just the repacked version
-        try:
-            packed_child = await resource.get_only_child(
-                r_filter=ResourceFilter.with_tags(
-                    FlashOobResource,
-                ),
-            )
+        # We want to overwrite ourselves with just the repacked version
+        packed_child = await resource.get_only_child(
+            r_filter=ResourceFilter.with_tags(
+                FlashOobResource,
+            ),
+        )
+        if packed_child is not None:
             patch_data = await packed_child.get_data()
             original_size = await resource.get_data_length()
             resource.queue_patch(Range(0, original_size), patch_data)
-        except NotFoundError:
-            # Child has not been packed, return itself
-            pass
 
 
 class FlashLogicalDataResourcePacker(Packer[FlashConfig]):
