@@ -119,7 +119,7 @@ class FlashEccAttributes(ResourceAttributes):
     ecc_magic is assumed to be contained at the start of the file, but may also occur multiple times
     """
 
-    ecc_class: Callable[[Any], Any]
+    ecc_class: Callable[[Any], Any] = None
     ecc_magic: Optional[bytes] = None
     head_delimiter: Optional[bytes] = None
     first_data_delimiter: Optional[bytes] = None
