@@ -25,12 +25,14 @@ from ofrak import (
     ResourceFilter,
     Unpacker,
 )
-from ofrak.component.packer import PackerError
-from ofrak.component.unpacker import UnpackerError
+
 from ofrak.core.binary import GenericBinary
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak_type.range import Range
+from ofrak.component.packer import PackerError
+from ofrak.component.unpacker import UnpackerError
 from ofrak_components.ecc.abstract import EccError
+from ofrak_type.error import NotFoundError
 
 # Dict of data mapping MD5 checksum to ECC bytes, used to check for updates
 DATA_HASHES: Dict[bytes, bytes] = dict()
@@ -108,7 +110,7 @@ class FlashLogicalEccResource(GenericBinary):
 
 
 #####################
-#      CONFIGS      #
+#     ATTRIBUTES    #
 #####################
 @dataclass(**ResourceAttributes.DATACLASS_PARAMS)
 class FlashEccAttributes(ResourceAttributes):
@@ -153,7 +155,7 @@ class FlashField:
 @dataclass(**ResourceAttributes.DATACLASS_PARAMS)
 class FlashAttributes(ResourceAttributes):
     """
-    FlashConfig is for specifying everything about the specific model of flash.
+    FlashAttributes is for specifying everything about the specific model of flash.
     The intent is to expand to all common flash configurations.
     Every block has a format specifier to show where each field is in the block as well as the length.
     If there is no OOB data, data_block_format may take this form:
@@ -341,11 +343,14 @@ class FlashResourceUnpacker(Unpacker[None]):
 
     async def unpack(self, resource: Resource, config=None):
         """
-        Unpack a raw flash dump using a FlashConfig.
+        Unpack a raw flash dump using the FlashAttributes.
 
         :param resource:
         """
-        flash_attr = resource.get_attributes(FlashAttributes)
+        try:
+            flash_attr = resource.get_attributes(FlashAttributes)
+        except NotFoundError:
+            raise UnpackerError("Tried unpacking without FlashAttributes")
         ecc_attr: FlashEccAttributes = flash_attr.ecc_attributes
 
         start_index = 0
@@ -542,8 +547,6 @@ class FlashOobResourcePacker(Packer[None]):
     async def pack(self, resource: Resource, config=None):
         """
         :param resource:
-        :param config:
-        :type config: FlashConfig
         """
         # We want to overwrite ourselves with just the repacked version
         packed_child = await resource.get_only_child(
@@ -570,7 +573,10 @@ class FlashLogicalDataResourcePacker(Packer[None]):
         """
         :param resource:
         """
-        flash_attr = resource.get_attributes(FlashAttributes)
+        try:
+            flash_attr = resource.get_attributes(FlashAttributes)
+        except NotFoundError:
+            raise UnpackerError("Tried packing without FlashAttributes")
         data = await resource.get_data()
         bytes_left = len(data)
         original_size = bytes_left
@@ -721,7 +727,7 @@ def _build_block(
                 elif cur_block_type == attributes.tail_block_format:
                     block += ecc_attr.tail_delimiter
             except TypeError:
-                raise PackerError("Tried to add delimiter without specifying in FlashEccConfig")
+                raise PackerError("Tried to add delimiter without specifying in FlashEccAttributes")
         elif f is FlashFieldType.ECC:
             if data_hash in DATA_HASHES:
                 ecc = DATA_HASHES[data_hash]
@@ -732,7 +738,7 @@ def _build_block(
                     ecc = ecc_attr.ecc_class.encode(block)
                 except TypeError:
                     raise PackerError(
-                        "Tried to encode ECC without specifying ecc_class in FlashEccConfig"
+                        "Tried to encode ECC without specifying ecc_class in FlashEccAttributes"
                     )
             block += ecc
         elif f is FlashFieldType.ECC_SIZE:
@@ -750,5 +756,5 @@ def _build_block(
             try:
                 block += ecc_attr.ecc_magic
             except TypeError:
-                raise PackerError("Tried to add Magic without specifying in FlashEccConfig")
+                raise PackerError("Tried to add Magic without specifying in FlashEccAttributes")
     return block
