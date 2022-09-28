@@ -67,6 +67,7 @@ nav:
       - PatchMaker:
         - User Guide: "user-guide/patch-maker/user-guide.md"
         - Troubleshooting: "user-guide/patch-maker/troubleshooting.md"
+      - Flash Component: "user-guide/flash.md"
   - Contributor Guide:
       - Getting Started: "contributor-guide/getting-started.md"
       - Writing Components:
