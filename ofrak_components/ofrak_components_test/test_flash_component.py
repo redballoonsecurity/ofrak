@@ -54,7 +54,7 @@ DEFAULT_TEST_ATTR = FlashAttributes(
         FlashField(FlashFieldType.CHECKSUM, 16),
         FlashField(FlashFieldType.ECC, 32),
     ],
-    ecc_config=FlashEccAttributes(
+    ecc_attributes=FlashEccAttributes(
         ecc_class=ReedSolomon(nsym=32, fcr=1),
         ecc_magic=b"ECC_ME!",
         head_delimiter=b"*",
@@ -75,7 +75,7 @@ FLASH_TEST_CASES = [
                 FlashField(FlashFieldType.DATA, 223),
                 FlashField(FlashFieldType.ECC, 32),
             ],
-            ecc_config=FlashEccAttributes(
+            ecc_attributes=FlashEccAttributes(
                 ecc_class=ReedSolomon(nsym=32),
             ),
         ),
@@ -91,7 +91,7 @@ FLASH_TEST_CASES = [
                 FlashField(FlashFieldType.DATA, 223),
                 FlashField(FlashFieldType.ECC, 32),
             ],
-            ecc_config=FlashEccAttributes(
+            ecc_attributes=FlashEccAttributes(
                 ecc_class=ReedSolomon(nsym=32),
             ),
         ),
@@ -110,7 +110,7 @@ FLASH_TEST_CASES = [
             tail_block_format=[
                 FlashField(FlashFieldType.CHECKSUM, 16),
             ],
-            ecc_config=FlashEccAttributes(
+            ecc_attributes=FlashEccAttributes(
                 ecc_class=ReedSolomon(nsym=32, fcr=1),
             ),
             checksum_func=(lambda x: md5(x).digest()),

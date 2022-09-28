@@ -175,7 +175,7 @@ class FlashAttributes(ResourceAttributes):
     first_data_block_format: Optional[Iterable[FlashField]] = None
     last_data_block_format: Optional[Iterable[FlashField]] = None
     tail_block_format: Optional[Iterable[FlashField]] = None
-    ecc_config: Optional[FlashEccAttributes] = None
+    ecc_attributes: Optional[FlashEccAttributes] = None
     checksum_func: Optional[Callable[[Any], Any]] = lambda x: md5(x).digest()
 
     def get_block_formats(self) -> Iterable:
@@ -346,7 +346,7 @@ class FlashResourceUnpacker(Unpacker[None]):
         :param resource:
         """
         flash_attr = resource.get_attributes(FlashAttributes)
-        ecc_attr: FlashEccAttributes = flash_attr.ecc_config
+        ecc_attr: FlashEccAttributes = flash_attr.ecc_attributes
 
         start_index = 0
         data = await resource.get_data()
@@ -604,7 +604,7 @@ class FlashLogicalDataResourcePacker(Packer[None]):
 def _get_end_from_magic(attributes: FlashAttributes, start_index: int, data: bytes, data_len: int):
     search_offset = start_index
     search_field = FlashFieldType.MAGIC
-    search_key = attributes.ecc_config.ecc_magic
+    search_key = attributes.ecc_attributes.ecc_magic
 
     while 0 <= search_offset <= data_len:
         search_offset = data.find(search_key, search_offset, data_len)
@@ -681,10 +681,12 @@ def _build_block(
     original_data: bytes,
 ) -> bytes:
     # Update the checksum, even if its not used we use it for tracking if we need it to update ECC
+    if attributes is None:
+        raise UnpackerError("Cannot pack without providing FlashAttributes")
     data_hash = attributes.checksum_func(block_data)
-    ecc_config = attributes.ecc_config
-    if ecc_config is not None:
-        ecc_class = ecc_config.ecc_class
+    ecc_attr = attributes.ecc_attributes
+    if ecc_attr is not None:
+        ecc_class = ecc_attr.ecc_class
         if ecc_class is None:
             raise UnpackerError("Cannot pack FlashLogicalDataResource without providing ECC class")
     block = b""
@@ -709,15 +711,15 @@ def _build_block(
         elif f is FlashFieldType.DELIMITER:
             try:
                 if cur_block_type == attributes.header_block_format:
-                    block += attributes.ecc_config.head_delimiter
+                    block += ecc_attr.head_delimiter
                 elif cur_block_type == attributes.first_data_block_format:
-                    block += attributes.ecc_config.first_data_delimiter
+                    block += ecc_attr.first_data_delimiter
                 elif cur_block_type == attributes.data_block_format:
-                    block += attributes.ecc_config.data_delimiter
+                    block += ecc_attr.data_delimiter
                 elif cur_block_type == attributes.last_data_block_format:
-                    block += attributes.ecc_config.last_data_delimiter
+                    block += ecc_attr.last_data_delimiter
                 elif cur_block_type == attributes.tail_block_format:
-                    block += attributes.ecc_config.tail_delimiter
+                    block += ecc_attr.tail_delimiter
             except TypeError:
                 raise PackerError("Tried to add delimiter without specifying in FlashEccConfig")
         elif f is FlashFieldType.ECC:
@@ -727,7 +729,7 @@ def _build_block(
                 # Assumes that all previously added data in the block should be included in the ECC
                 # TODO: Support ECC that comes before data
                 try:
-                    ecc = attributes.ecc_config.ecc_class.encode(block)
+                    ecc = ecc_attr.ecc_class.encode(block)
                 except TypeError:
                     raise PackerError(
                         "Tried to encode ECC without specifying ecc_class in FlashEccConfig"
@@ -746,7 +748,7 @@ def _build_block(
             block += (total_size).to_bytes(field.size, "big")
         elif f is FlashFieldType.MAGIC:
             try:
-                block += attributes.ecc_config.ecc_magic
+                block += ecc_attr.ecc_magic
             except TypeError:
                 raise PackerError("Tried to add Magic without specifying in FlashEccConfig")
     return block
