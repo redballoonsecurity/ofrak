@@ -210,20 +210,30 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
         finish_stub_parts = [
             f"ARG OFRAK_SRC_DIR=/{package_name}",
             "WORKDIR $OFRAK_SRC_DIR",
-            f"ADD {package_path} $OFRAK_SRC_DIR",
-            "ARG INSTALL_TARGET",
-            "RUN make $INSTALL_TARGET\n\n",
+            f"ADD {package_path} $OFRAK_SRC_DIR\n",
         ]
         dockerfile_finish_parts.append("\n".join(finish_stub_parts))
     dockerfile_finish_parts.append("WORKDIR /\n")
+    dockerfile_finish_parts.append("ARG INSTALL_TARGET\n")
+    develop_makefile = "\\n\\\n".join(
+        [
+            "$INSTALL_TARGET:",
+            "\\n\\\n".join(
+                [f"\tmake -C {package_name} $INSTALL_TARGET" for package_name in package_names]
+            ),
+            "\\n",
+        ]
+    )
+    dockerfile_finish_parts.append(f'RUN printf "{develop_makefile}" >> Makefile\n\n')
+    dockerfile_finish_parts.append("RUN make $INSTALL_TARGET\n\n")
     finish_makefile = "\\n\\\n".join(
         [
             "test:",
             "\\n\\\n".join([f"\tmake -C {package_name} test" for package_name in package_names]),
-            "",
+            "\\n",
         ]
     )
-    dockerfile_finish_parts.append(f"RUN printf '{finish_makefile}' >> Makefile")
+    dockerfile_finish_parts.append(f'RUN printf "{finish_makefile}" >> Makefile')
     return "".join(dockerfile_finish_parts)
 
 
