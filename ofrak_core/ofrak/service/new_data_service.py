@@ -20,124 +20,6 @@ from ofrak_type.range import Range
 DataId = bytes
 
 
-@dataclass
-class _Waypoint:
-    offset: int
-    models_starting: Set[DataId]
-    models_ending: Set[DataId]
-    # models_overlapping: Set[DataId]
-
-    def is_empty(self) -> bool:
-        return not self.models_starting and not self.models_ending
-
-    def validate(self):
-        # assert self.models_overlapping.issubset(self.models_overlapping)
-        # assert self.models_ending.isdisjoint(self.models_overlapping)
-        assert self.models_ending.isdisjoint(self.models_starting)
-
-
-class _DataRoot:
-    """
-    A root data model which may have other data models mapped into it
-    """
-
-    def __init__(self, model: DataModel, data: bytes):
-        self.model: DataModel = model
-        self.data = data
-        self._waypoints: Dict[int, _Waypoint] = dict()
-        self._waypoint_offsets: SortedList[int] = SortedList()
-        self._children: Dict[DataId, DataModel] = dict()
-
-    def get_children(self) -> Iterable[DataModel]:
-        return self._children.values()
-
-    def add_new_model(self, model: DataModel):
-        if model.range.start < 0 or model.range.end > self.length:
-            raise OutOfBoundError(
-                f"New mapped data model {model.id.hex()} is outside the bounds of its root "
-                f"{self.model.id.hex()}: ({model.range} is outside of {self.model.range})"
-            )
-
-        start_offset = model.range.start
-        start_waypoint = self._waypoints.get(start_offset)
-        if start_waypoint is None:
-            start_waypoint = _Waypoint(start_offset, set(), set())
-            self._waypoints[start_offset] = start_waypoint
-            self._waypoint_offsets.add(start_offset)
-        start_waypoint.models_starting.add(model.id)
-
-        ending_offset = model.range.end
-        ending_waypoint = self._waypoints.get(ending_offset)
-        if ending_waypoint is None:
-            ending_waypoint = _Waypoint(ending_offset, set(), set())
-            self._waypoints[ending_offset] = ending_waypoint
-            self._waypoint_offsets.add(ending_offset)
-        ending_waypoint.models_ending.add(model.id)
-
-        self._children[model.id] = model
-
-    def delete_model(self, model: DataModel):
-        start_offset = model.range.start
-        start_waypoint = self._waypoints.get(start_offset)
-        ending_offset = model.range.end
-        ending_waypoint = self._waypoints.get(ending_offset)
-
-        if model.id not in self._children or start_waypoint is None or ending_waypoint is None:
-            raise NotFoundError(
-                f"Cannot delete mapped data model {model.id.hex()} from root {self.model.id.hex()}"
-                f"because it is not part of that root!"
-            )
-
-        start_waypoint.models_starting.remove(model.id)
-        ending_waypoint.models_ending.remove(model.id)
-
-        if start_waypoint.is_empty():
-            self._waypoint_offsets.remove(start_waypoint.offset)
-            del self._waypoints[start_waypoint.offset]
-        if ending_waypoint.is_empty():
-            self._waypoint_offsets.remove(ending_waypoint.offset)
-            del self._waypoints[ending_waypoint.offset]
-        del self._children[model.id]
-
-    def get_children_intersecting_range(self, r: Range) -> List[DataModel]:
-        intersecting_children = self.get_children_with_boundaries_intersecting_range(r)
-
-        # intersecting_children doesn't yet include models fully encompassing this range
-        # now look for models which start before the range, but don't end before or within the range
-        # (therefore they end after the range)
-        ids_ending_before_or_in_range = {model.id for model in intersecting_children}
-        for offset_before_range in self._waypoint_offsets.irange(maximum=r.start, reverse=True):
-            waypoint = self._waypoints[offset_before_range]
-            ids_ending_before_or_in_range.update(waypoint.models_ending)
-
-            intersecting_children.extend(
-                [
-                    self._children.get(data_id)
-                    for data_id in waypoint.models_starting
-                    if data_id not in ids_ending_before_or_in_range
-                ]
-            )
-
-        return intersecting_children
-
-    def get_children_with_boundaries_intersecting_range(self, r: Range) -> List[DataModel]:
-        intersecting_model_ids = set()
-        for waypoint_offset in self._waypoint_offsets.irange(
-            r.start, r.end, inclusive=(True, False)
-        ):
-            waypoint = self._waypoints[waypoint_offset]
-            if waypoint_offset != r.start:
-                intersecting_model_ids.update(waypoint.models_ending)
-            if waypoint_offset != r.end:
-                intersecting_model_ids.update(waypoint.models_starting)
-
-        return [self._children[data_id] for data_id in intersecting_model_ids]
-
-    @property
-    def length(self) -> int:
-        return len(self.data)
-
-
 class NewDataService(DataServiceInterface):
     def __init__(self):
         self._model_store: Dict[DataId, DataModel] = dict()
@@ -150,12 +32,15 @@ class NewDataService(DataServiceInterface):
         else:
             return model
 
-    def _get_root_by_id(self, data_id: DataId) -> _DataRoot:
+    def _get_root_by_id(self, data_id: DataId) -> "_DataRoot":
         root = self._roots.get(data_id)
         if root is None:
             raise NotFoundError(f"No data root with ID {data_id.hex()} exists")
         else:
             return root
+
+    def _is_root(self, data_id: DataId) -> bool:
+        return data_id in self._roots
 
     def _get_absolute_range(self, id_or_model: Union[DataId, DataModel], r: Range) -> Range:
         if isinstance(id_or_model, DataId):
@@ -215,6 +100,24 @@ class NewDataService(DataServiceInterface):
 
     async def get_data_range_within_root(self, data_id: bytes) -> Range:
         return self._get_by_id(data_id).range
+
+    async def get_range_within_other(self, data_id: bytes, within_data_id: bytes) -> Range:
+        model = self._get_by_id(data_id)
+        within_model = self._get_by_id(within_data_id)
+        if data_id == within_data_id:
+            return Range.from_size(0, model.range.length())
+        if self._is_root(data_id):
+            raise ValueError(
+                f"{data_id.hex()} is a root and not mapped into {within_data_id} (a root)!"
+            )
+        elif self._is_root(within_data_id) and model.root_id != within_model.id:
+            raise ValueError(f"{data_id.hex()} is not mapped into {within_data_id} (a root)!")
+        elif model.root_id != model.root_id:
+            raise ValueError(
+                f"{data_id.hex()} and {within_data_id} are not mapped into the same root!"
+            )
+        else:
+            return within_model.range.intersect(model.range)
 
     async def get_data(self, data_id: bytes, data_range: Range = None) -> bytes:
         model = self._get_by_id(data_id)
@@ -364,6 +267,125 @@ class NewDataService(DataServiceInterface):
             DataPatchesResult(data_id, results_for_id)
             for data_id, results_for_id in results.items()
         ]
+
+
+# Helper classes
+@dataclass
+class _Waypoint:
+    offset: int
+    models_starting: Set[DataId]
+    models_ending: Set[DataId]
+    # models_overlapping: Set[DataId]
+
+    def is_empty(self) -> bool:
+        return not self.models_starting and not self.models_ending
+
+    def validate(self):
+        # assert self.models_overlapping.issubset(self.models_overlapping)
+        # assert self.models_ending.isdisjoint(self.models_overlapping)
+        assert self.models_ending.isdisjoint(self.models_starting)
+
+
+class _DataRoot:
+    """
+    A root data model which may have other data models mapped into it
+    """
+
+    def __init__(self, model: DataModel, data: bytes):
+        self.model: DataModel = model
+        self.data = data
+        self._waypoints: Dict[int, _Waypoint] = dict()
+        self._waypoint_offsets: SortedList[int] = SortedList()
+        self._children: Dict[DataId, DataModel] = dict()
+
+    def get_children(self) -> Iterable[DataModel]:
+        return self._children.values()
+
+    def add_new_model(self, model: DataModel):
+        if model.range.start < 0 or model.range.end > self.length:
+            raise OutOfBoundError(
+                f"New mapped data model {model.id.hex()} is outside the bounds of its root "
+                f"{self.model.id.hex()}: ({model.range} is outside of {self.model.range})"
+            )
+
+        start_offset = model.range.start
+        start_waypoint = self._waypoints.get(start_offset)
+        if start_waypoint is None:
+            start_waypoint = _Waypoint(start_offset, set(), set())
+            self._waypoints[start_offset] = start_waypoint
+            self._waypoint_offsets.add(start_offset)
+        start_waypoint.models_starting.add(model.id)
+
+        ending_offset = model.range.end
+        ending_waypoint = self._waypoints.get(ending_offset)
+        if ending_waypoint is None:
+            ending_waypoint = _Waypoint(ending_offset, set(), set())
+            self._waypoints[ending_offset] = ending_waypoint
+            self._waypoint_offsets.add(ending_offset)
+        ending_waypoint.models_ending.add(model.id)
+
+        self._children[model.id] = model
+
+    def delete_model(self, model: DataModel):
+        start_offset = model.range.start
+        start_waypoint = self._waypoints.get(start_offset)
+        ending_offset = model.range.end
+        ending_waypoint = self._waypoints.get(ending_offset)
+
+        if model.id not in self._children or start_waypoint is None or ending_waypoint is None:
+            raise NotFoundError(
+                f"Cannot delete mapped data model {model.id.hex()} from root {self.model.id.hex()}"
+                f"because it is not part of that root!"
+            )
+
+        start_waypoint.models_starting.remove(model.id)
+        ending_waypoint.models_ending.remove(model.id)
+
+        if start_waypoint.is_empty():
+            self._waypoint_offsets.remove(start_waypoint.offset)
+            del self._waypoints[start_waypoint.offset]
+        if ending_waypoint.is_empty():
+            self._waypoint_offsets.remove(ending_waypoint.offset)
+            del self._waypoints[ending_waypoint.offset]
+        del self._children[model.id]
+
+    def get_children_intersecting_range(self, r: Range) -> List[DataModel]:
+        intersecting_children = self.get_children_with_boundaries_intersecting_range(r)
+
+        # intersecting_children doesn't yet include models fully encompassing this range
+        # now look for models which start before the range, but don't end before or within the range
+        # (therefore they end after the range)
+        ids_ending_before_or_in_range = {model.id for model in intersecting_children}
+        for offset_before_range in self._waypoint_offsets.irange(maximum=r.start, reverse=True):
+            waypoint = self._waypoints[offset_before_range]
+            ids_ending_before_or_in_range.update(waypoint.models_ending)
+
+            intersecting_children.extend(
+                [
+                    self._children.get(data_id)
+                    for data_id in waypoint.models_starting
+                    if data_id not in ids_ending_before_or_in_range
+                ]
+            )
+
+        return intersecting_children
+
+    def get_children_with_boundaries_intersecting_range(self, r: Range) -> List[DataModel]:
+        intersecting_model_ids = set()
+        for waypoint_offset in self._waypoint_offsets.irange(
+            r.start, r.end, inclusive=(True, False)
+        ):
+            waypoint = self._waypoints[waypoint_offset]
+            if waypoint_offset != r.start:
+                intersecting_model_ids.update(waypoint.models_ending)
+            if waypoint_offset != r.end:
+                intersecting_model_ids.update(waypoint.models_starting)
+
+        return [self._children[data_id] for data_id in intersecting_model_ids]
+
+    @property
+    def length(self) -> int:
+        return len(self.data)
 
 
 class _PatchResizeTracker:

@@ -213,7 +213,15 @@ class Resource:
                 "Resource does not have a data_id. Cannot get data range from a "
                 "resource with no data."
             )
-        return await self._data_service.get_range_within_parent(self._resource.data_id)
+        if self._resource.parent_id is None:
+            return Range(0, 0)
+        parent_resource = await self.get_parent()
+        try:
+            return await self._data_service.get_range_within_other(
+                self._resource.data_id, parent_resource.get_data_id()
+            )
+        except ValueError:
+            return Range(0, 0)
 
     async def get_data_range_within_root(self) -> Range:
         """

@@ -65,6 +65,10 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
+    async def get_range_within_other(self, data_id: bytes, within_data_id: bytes) -> Range:
+        raise NotImplementedError()
+
+    @abstractmethod
     async def get_data(self, data_id: bytes, data_range: Range = None) -> bytes:
         raise NotImplementedError()
 
