@@ -41,7 +41,7 @@ class Uf2Block(ResourceView):
     """
 
 
-@dataclass
+@dataclass(**ResourceAttributes.DATACLASS_PARAMS)
 class Uf2BlockHeader(ResourceAttributes):
     """
     Recreates the official spec
@@ -59,9 +59,6 @@ class Uf2BlockHeader(ResourceAttributes):
     508     4       Final magic number, 0x0AB16F30
     """
 
-    flags: int
-    target_addr: int
-    payload_size: int
     flags: int
     target_addr: int
     payload_size: int
@@ -140,7 +137,7 @@ class Uf2FilePacker(Packer[None]):
 
         for uf2_block in await resource.get_children(
             r_filter=ResourceFilter(
-                Uf2Block,
+                tags=(Uf2Block,),
             )
         ):
             uf2_data = await uf2_block.get_data()
@@ -181,7 +178,7 @@ class Uf2BlockPacker(Packer[None]):
         LOGGER.info(repacked_data)
 
 
-class Uf2BlockAnalyzer(Analyzer[None, Uf2Block]):
+class Uf2BlockAnalyzer(Analyzer[None, Uf2BlockHeader]):
     """
     Analyze the Uf2Blocks of a Uf2File
     """
@@ -196,8 +193,6 @@ class Uf2BlockAnalyzer(Analyzer[None, Uf2Block]):
             endianness=Endianness.LITTLE_ENDIAN,
             word_size=4,
         )
-
-        # TODO: add friendly name for family_id
 
         deserialized = deserializer.unpack_multiple("8I476sI")
         (
