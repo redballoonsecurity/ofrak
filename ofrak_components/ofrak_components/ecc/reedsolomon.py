@@ -1,4 +1,4 @@
-import reedsolo as rs
+import reedsolo as rs  # type: ignore
 from ofrak_components.ecc.abstract import EccAlgorithm, EccError
 
 
@@ -35,4 +35,4 @@ class ReedSolomon(EccAlgorithm):
             raise EccError()
 
     def check(self, payload: bytes) -> bool:
-        self.RSC.check(data=payload)
+        return self.RSC.check(data=payload)
