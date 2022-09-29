@@ -1,8 +1,8 @@
-import itertools
 from collections import defaultdict
 from typing import Dict, Iterable, Optional, List, Union, cast, Tuple, Set
 
-from sortedcontainers import SortedList, SortedDict
+from dataclasses import dataclass
+from sortedcontainers import SortedList
 
 from ofrak.model.data_model import (
     DataModel,
@@ -16,8 +16,24 @@ from ofrak.service.error import OutOfBoundError, PatchOverlapError
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 
-# Type alias; typechecker makes no distinction between this and bytes. It's just for the humans.
+# Type alias; typechecker makes no distinction between this and bytes. It's just for humans (you?).
 DataId = bytes
+
+
+@dataclass
+class _Waypoint:
+    offset: int
+    models_starting: Set[DataId]
+    models_ending: Set[DataId]
+    # models_overlapping: Set[DataId]
+
+    def is_empty(self) -> bool:
+        return not self.models_starting and not self.models_ending
+
+    def validate(self):
+        # assert self.models_overlapping.issubset(self.models_overlapping)
+        # assert self.models_ending.isdisjoint(self.models_overlapping)
+        assert self.models_ending.isdisjoint(self.models_starting)
 
 
 class _DataRoot:
@@ -28,41 +44,12 @@ class _DataRoot:
     def __init__(self, model: DataModel, data: bytes):
         self.model: DataModel = model
         self.data = data
-        # TODO: convert these 2 to SortedDict
-        self.children_by_start: SortedList[DataModel] = SortedList(
-            key=lambda data_model: data_model.range.start
-        )
-        self.children_by_end: SortedList[DataModel] = SortedList(
-            key=lambda data_model: data_model.range.end
-        )
-        self.children_by_offset: SortedDict[int, Set[DataModel]] = SortedDict({0: set()})
+        self._waypoints: Dict[int, _Waypoint] = dict()
+        self._waypoint_offsets: SortedList[int] = SortedList()
+        self._children: Dict[DataId, DataModel] = dict()
 
-    @property
-    def length(self) -> int:
-        return len(self.data)
-
-    def get_children_intersecting_range(self, r: Range) -> List[DataModel]:
-        nearest_child_start_index = self.children_by_offset.bisect_left(r.start)
-        _, children_intersecting_start = self.children_by_offset.peekitem(nearest_child_start_index)
-        return list(children_intersecting_start)
-
-    def get_children_with_boundaries_intersecting_range(self, r: Range) -> List[DataModel]:
-        starts_intersecting_patch_range = self.children_by_start.islice(
-            self.children_by_start.bisect_left(r),
-            self.children_by_start.bisect_left(r),
-        )
-
-        ends_intersecting_patch_range = self.children_by_end.islice(
-            self.children_by_end.bisect_left(r),
-            self.children_by_end.bisect_left(r),
-        )
-
-        return [
-            model
-            for model in itertools.chain(
-                starts_intersecting_patch_range, ends_intersecting_patch_range
-            )
-        ]
+    def get_children(self) -> Iterable[DataModel]:
+        return self._children.values()
 
     def add_new_model(self, model: DataModel):
         if model.range.start < 0 or model.range.end > self.length:
@@ -70,41 +57,85 @@ class _DataRoot:
                 f"New mapped data model {model.id.hex()} is outside the bounds of its root "
                 f"{self.model.id.hex()}: ({model.range} is outside of {self.model.range})"
             )
-        self.children_by_start.add(model)
-        self.children_by_end.add(model)
 
-        prev_waypoint_idx_to_start = self.children_by_offset.bisect_left(model.range.start)
-        prev_waypoint_idx_to_end = self.children_by_offset.bisect_left(model.range.end)
-        if model.range.start not in self.children_by_offset:
-            _, models_at_nearest_waypoint = self.children_by_offset.peekitem(
-                min(prev_waypoint_idx_to_start - 1, 0)
-            )
-            self.children_by_offset[model.range.start] = set(models_at_nearest_waypoint)
+        start_offset = model.range.start
+        start_waypoint = self._waypoints.get(start_offset)
+        if start_waypoint is None:
+            start_waypoint = _Waypoint(start_offset, set(), set())
+            self._waypoints[start_offset] = start_waypoint
+            self._waypoint_offsets.add(start_offset)
+        start_waypoint.models_starting.add(model.id)
 
-        if model.range.end not in self.children_by_offset:
-            _, models_at_nearest_waypoint = self.children_by_offset.peekitem(
-                min(prev_waypoint_idx_to_end - 1, 0)
-            )
-            self.children_by_offset[model.range.end] = set(models_at_nearest_waypoint)
+        ending_offset = model.range.end
+        ending_waypoint = self._waypoints.get(ending_offset)
+        if ending_waypoint is None:
+            ending_waypoint = _Waypoint(ending_offset, set(), set())
+            self._waypoints[ending_offset] = ending_waypoint
+            self._waypoint_offsets.add(ending_offset)
+        ending_waypoint.models_ending.add(model.id)
 
-        for waypoint in self.children_by_offset.islice(
-            prev_waypoint_idx_to_start,
-            prev_waypoint_idx_to_end,
-        ):
-            self.children_by_offset[waypoint].add(model)
+        self._children[model.id] = model
 
     def delete_model(self, model: DataModel):
-        self.children_by_start.remove(model)
-        self.children_by_end.remove(model)
+        start_offset = model.range.start
+        start_waypoint = self._waypoints.get(start_offset)
+        ending_offset = model.range.end
+        ending_waypoint = self._waypoints.get(ending_offset)
 
-        start_waypoint_idx = self.children_by_offset.index(model.range.start)
-        end_waypoint_idx = self.children_by_offset.index(model.range.end)
+        if model.id not in self._children or start_waypoint is None or ending_waypoint is None:
+            raise NotFoundError(
+                f"Cannot delete mapped data model {model.id.hex()} from root {self.model.id.hex()}"
+                f"because it is not part of that root!"
+            )
 
-        for waypoint in self.children_by_offset.islice(
-            start_waypoint_idx,
-            end_waypoint_idx,
+        start_waypoint.models_starting.remove(model.id)
+        ending_waypoint.models_ending.remove(model.id)
+
+        if start_waypoint.is_empty():
+            self._waypoint_offsets.remove(start_waypoint.offset)
+            del self._waypoints[start_waypoint.offset]
+        if ending_waypoint.is_empty():
+            self._waypoint_offsets.remove(ending_waypoint.offset)
+            del self._waypoints[ending_waypoint.offset]
+        del self._children[model.id]
+
+    def get_children_intersecting_range(self, r: Range) -> List[DataModel]:
+        intersecting_children = self.get_children_with_boundaries_intersecting_range(r)
+
+        # intersecting_children doesn't yet include models fully encompassing this range
+        # now look for models which start before the range, but don't end before or within the range
+        # (therefore they end after the range)
+        ids_ending_before_or_in_range = {model.id for model in intersecting_children}
+        for offset_before_range in self._waypoint_offsets.irange(maximum=r.start, reverse=True):
+            waypoint = self._waypoints[offset_before_range]
+            ids_ending_before_or_in_range.update(waypoint.models_ending)
+
+            intersecting_children.extend(
+                [
+                    self._children.get(data_id)
+                    for data_id in waypoint.models_starting
+                    if data_id not in ids_ending_before_or_in_range
+                ]
+            )
+
+        return intersecting_children
+
+    def get_children_with_boundaries_intersecting_range(self, r: Range) -> List[DataModel]:
+        intersecting_model_ids = set()
+        for waypoint_offset in self._waypoint_offsets.irange(
+            r.start, r.end, inclusive=(True, False)
         ):
-            waypoint.remove(model)
+            waypoint = self._waypoints[waypoint_offset]
+            if waypoint_offset != r.start:
+                intersecting_model_ids.update(waypoint.models_ending)
+            if waypoint_offset != r.end:
+                intersecting_model_ids.update(waypoint.models_starting)
+
+        return [self._children[data_id] for data_id in intersecting_model_ids]
+
+    @property
+    def length(self) -> int:
+        return len(self.data)
 
 
 class NewDataService(DataServiceInterface):
@@ -192,14 +223,7 @@ class NewDataService(DataServiceInterface):
         else:
             root = self._roots[data_id]
         if data_range is not None:
-            translated_range = data_range.translate(model.range.start)
-            if data_range.end == Range.MAX:
-                translated_range = Range(translated_range.start, model.range.end)
-            elif translated_range.end > model.range.end:
-                raise OutOfBoundError(
-                    f"Requested data at {data_range} of model {data_id.hex()} is outside the "
-                    f"model's range {model.range}"
-                )
+            translated_range = data_range.translate(model.range.start).intersect(root.model.range)
             return root.data[translated_range.start : translated_range.end]
         else:
             return root.data[model.range.start : model.range.end]
@@ -239,7 +263,7 @@ class NewDataService(DataServiceInterface):
         if model.root_id is None:
             # deleting a root node
             root = self._roots[model.id]
-            for child_model in root.children_by_start:
+            for child_model in root.get_children():
                 del self._model_store[child_model.id]
 
             del self._roots[model.id]
@@ -262,7 +286,7 @@ class NewDataService(DataServiceInterface):
 
         for root_model in roots_to_delete:
             root = self._roots[root_model.id]
-            for child_model in root.children_by_start:
+            for child_model in root.get_children():
                 mapped_to_delete.remove(child_model)
                 del self._model_store[child_model.id]
 
@@ -302,16 +326,17 @@ class NewDataService(DataServiceInterface):
                 absolute_patch_range
             )
 
-            size_diff = patch.data - patch.range.length()
+            size_diff = len(patch.data) - patch.range.length()
             if size_diff == 0:
-                finalized_ordered_patches.append((patch.range, patch.data))
+                finalized_ordered_patches.append((absolute_patch_range, patch.data))
             elif models_intersecting_patch_range:
                 raise PatchOverlapError(
                     f"Because patch to {patch.data_id.hex()} resizes data by {size_diff} bytes, "
                     f"the effects on {len(models_intersecting_patch_range)} model(s) "
-                    f"intersecting the patch range {patch.range} could not be determined. If "
-                    f"data must be resized, any resources overlapping the data must be "
-                    f"deleted before patching and re-created afterwards along new data ranges."
+                    f"intersecting the patch range {patch.range} ({absolute_patch_range} in the "
+                    f"root) could not be determined. If data must be resized, any resources "
+                    f"overlapping the data must be deleted before patching and re-created "
+                    f"afterwards along new data ranges."
                 )
             else:
                 finalized_ordered_patches.append((patch.range, patch.data))
@@ -319,19 +344,21 @@ class NewDataService(DataServiceInterface):
 
         results = defaultdict(list)
         for affected_range in Range.merge_ranges(raw_patch_ranges_in_root):
-            for affected_model in root.get_children_intersecting_range(affected_range.range):
+            for affected_model in root.get_children_intersecting_range(affected_range):
                 results[affected_model.id].append(DataPatchResult(affected_range))
             results[root_data_id].append(DataPatchResult(affected_range))
 
         # Apply finalized patches to data and data models
         for patch_range, data in finalized_ordered_patches:
-            root.data[patch_range.start : patch_range.end] = data
+            root.data = root.data[: patch_range.start] + data + root.data[patch_range.end :]
 
-        for child_model in root.children_by_start:
+        for child_model in root.get_children():
             new_child_range = resize_tracker.translate_range(child_model.range)
             child_model.range = new_child_range
 
-        root.model.range = Range(root.model.range.start, resize_tracker.get_total_size_diff())
+        root.model.range = Range(
+            root.model.range.start, root.model.range.end + resize_tracker.get_total_size_diff()
+        )
 
         return [
             DataPatchesResult(data_id, results_for_id)
@@ -362,7 +389,7 @@ class _PatchResizeTracker:
         total_offset_here = self.resizing_shifts[i - 1][1] + size_diff
         for node in self.resizing_shifts.islice(i):
             node[1] += size_diff
-        self.resizing_shifts.insert(i, (r.end, total_offset_here))
+        self.resizing_shifts.add((r.end, total_offset_here))
 
     def get_total_size_diff(self) -> int:
         return self.resizing_shifts[-1][1]

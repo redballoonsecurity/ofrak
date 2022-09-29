@@ -959,7 +959,7 @@ class ResourceService(ResourceServiceInterface):
         resource_node = self._resource_store.get(resource_id)
         if resource_node is None:
             # Already deleted, probably by an ancestor calling the recursive func below
-            return
+            return []
 
         former_parent_resource_node = resource_node.parent
         if former_parent_resource_node is not None:

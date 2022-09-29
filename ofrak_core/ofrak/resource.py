@@ -674,10 +674,11 @@ class Resource:
                     "Cannot create a child with mapped data from a parent that doesn't have data"
                 )
             data_model_id = self._id_service.generate_id()
+            own_data_range = await self._data_service.get_data_range_within_root(self.get_data_id())
             await self._data_service.create_mapped(
                 data_model_id,
                 self._resource.data_id,
-                data_range,
+                data_range.translate(own_data_range.start),
             )
         elif data is not None:
             if self._resource.data_id is None:
