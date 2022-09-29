@@ -43,9 +43,6 @@ class DataPatch:
 @dataclass
 class DataPatchResult:
     range: Range
-    size_change: int
-    child_index: int
-    child_relative_position: DataRangePosition
 
 
 @dataclass
@@ -53,16 +50,13 @@ class DataPatchesResult:
     data_id: bytes
     patches: List[DataPatchResult]
 
-    def get_size_change(self):
-        return sum(r.size_change for r in self.patches)
 
-
-@dataclass
+@dataclass(unsafe_hash=True)
 class DataModel:
     id: bytes
     range: Range
     alignment: int = 1
-    parent_id: Optional[bytes] = None
+    root_id: Optional[bytes] = None
 
     def is_mapped(self):
-        return self.parent_id is not None
+        return self.root_id is not None

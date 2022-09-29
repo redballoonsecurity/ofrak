@@ -61,9 +61,9 @@ class DataNode:
     def set_parent(self, parent: Optional["DataNode"]):
         self.parent = parent
         if parent is None:
-            self.model.parent_id = None
+            self.model.root_id = None
         else:
-            self.model.parent_id = parent.model.id
+            self.model.root_id = parent.model.id
 
     def is_root(self) -> bool:
         return self.parent is None
@@ -904,6 +904,7 @@ class DataService(DataServiceInterface):
     _savepoint_idxs: Dict[int, str]
 
     def __init__(self):
+        raise ValueError("Shouldn't get instantiated any more!")
         self._data_store = dict()
         self._data_node_store = dict()
         self._patchlog = []
@@ -921,7 +922,7 @@ class DataService(DataServiceInterface):
     async def create_mapped(
         self,
         data_id: bytes,
-        parent_id: bytes,
+        root_id: bytes,
         range: Range,
         alignment: int = 1,
         after_data_id: Optional[bytes] = None,
@@ -929,18 +930,18 @@ class DataService(DataServiceInterface):
     ) -> DataModel:
         if data_id in self._data_node_store:
             raise AlreadyExistError(f"The data {data_id.hex()} already exists")
-        parent_node = self._data_node_store.get(parent_id)
+        parent_node = self._data_node_store.get(root_id)
         if parent_node is None:
-            raise NotFoundError(f"The parent data {parent_id.hex()} does not exist")
+            raise NotFoundError(f"The parent data {root_id.hex()} does not exist")
         parent_alignment = parent_node.model.alignment
         if range.start % parent_alignment != 0:
             raise NotFoundError(
                 f"The provided data is not aligned according to the parent "
                 f"{parent_node.model.id.hex()} requirements of being {parent_alignment} bytes aligned"
             )
-        model = DataModel(data_id, range, alignment, parent_id)
+        model = DataModel(data_id, range, alignment, root_id)
         self._data_node_store[model.id] = parent_node.insert(model, after_data_id, before_data_id)
-        LOGGER.debug(f"Inserted child {data_id.hex()} into {parent_id.hex()} at {range}")
+        LOGGER.debug(f"Inserted child {data_id.hex()} into {root_id.hex()} at {range}")
         return model
 
     async def get_by_id(self, data_id: bytes) -> DataModel:

@@ -82,7 +82,7 @@ async def draw_populated_data_service(data: st.DataObject, num_nodes: int) -> Da
 
         # TODO: Remove duplicated code.
         # Validate the ``data_id`` and get a parent ID.
-        parent_id = data.draw(st.sampled_from(root_ids), label="parent_id")
+        parent_id = data.draw(st.sampled_from(root_ids), label="root_id")
 
         # Generate a new range.
         length = await service.get_data_length(parent_id)
@@ -185,7 +185,7 @@ class DataNodeStateMachine(RuleBasedStateMachine):
         """Insert a node."""
         assume(data_id not in self.nodes)
         data_ids = list(self.nodes.keys())
-        parent_id = data.draw(st.sampled_from(data_ids), label="parent_id")
+        parent_id = data.draw(st.sampled_from(data_ids), label="root_id")
         parent = self.nodes[parent_id]
 
         # Generate a new range.
@@ -255,7 +255,7 @@ class DataServiceStateMachine(TrioAsyncioRuleBasedStateMachine):
         """Add a mapped region and a corresponding new node."""
         # Validate the ``data_id`` and get a parent ID.
         assume(data_id not in self.data_ids)
-        parent_id = data.draw(st.sampled_from(self.data_ids), label="parent_id")
+        parent_id = data.draw(st.sampled_from(self.data_ids), label="root_id")
 
         # Generate a new range.
         length = await self.service.get_data_length(parent_id)
@@ -296,7 +296,7 @@ class DataServiceStateMachine(TrioAsyncioRuleBasedStateMachine):
         # Generate a parent ID and a duplicate node ID.
         sample_ids: st.SearchStrategy = st.sampled_from(self.data_ids)
         id_pairs: st.SearchStrategy = st.lists(sample_ids, min_size=2, max_size=2)
-        data_id, parent_id = data.draw(id_pairs, label="(data_id, parent_id)")
+        data_id, parent_id = data.draw(id_pairs, label="(data_id, root_id)")
 
         length = await self.service.get_data_length(parent_id)
         start = data.draw(st.integers(min_value=0, max_value=length), label="start")

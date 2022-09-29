@@ -302,8 +302,13 @@ class Resource:
         :raises NotFoundError: If the resource service does not have a model for this resource's ID
         """
         if self._resource.is_deleted:
-            await self._resource_service.delete_resource(self._resource.id)
-            await self._data_service.delete_tree(self._resource.data_id)
+            deleted_descendants = await self._resource_service.delete_resource(self._resource.id)
+            data_ids_to_delete = [
+                resource_m.data_id
+                for resource_m in deleted_descendants
+                if resource_m.data_id is not None
+            ]
+            await self._data_service.delete_models(data_ids_to_delete)
         elif self._resource.is_modified:
             modification_tracker = self._component_context.modification_trackers.get(
                 self._resource.id
@@ -673,8 +678,6 @@ class Resource:
                 data_model_id,
                 self._resource.data_id,
                 data_range,
-                after_data_id=data_after.get_data_id() if data_after is not None else None,
-                before_data_id=data_before.get_data_id() if data_before is not None else None,
             )
         elif data is not None:
             if self._resource.data_id is None:

@@ -1319,9 +1319,9 @@ class TestDataService:
          +- DATA_5 (0x10, 0x18)
         """
         data_3_model = await populated_data_service.get_by_id(DATA_3)
-        assert data_3_model.parent_id == DATA_2
+        assert data_3_model.root_id == DATA_2
         data_4_model = await populated_data_service.get_by_id(DATA_4)
-        assert data_4_model.parent_id == DATA_2
+        assert data_4_model.root_id == DATA_2
 
         await populated_data_service.gather_siblings(DATA_6, (DATA_3, DATA_4))
         """
@@ -1341,15 +1341,15 @@ class TestDataService:
         assert len(data_6) == 0x8
 
         data_6_model = await populated_data_service.get_by_id(DATA_6)
-        assert data_6_model.parent_id == DATA_2
+        assert data_6_model.root_id == DATA_2
 
         data_2_model = await populated_data_service.get_by_id(DATA_2)
-        assert data_2_model.parent_id == DATA_0
+        assert data_2_model.root_id == DATA_0
 
         data_3_model = await populated_data_service.get_by_id(DATA_3)
-        assert data_3_model.parent_id == DATA_6
+        assert data_3_model.root_id == DATA_6
         data_4_model = await populated_data_service.get_by_id(DATA_4)
-        assert data_4_model.parent_id == DATA_6
+        assert data_4_model.root_id == DATA_6
 
         # Gathering into DATA_7 should fail
         with pytest.raises(NonContiguousError):
@@ -1376,20 +1376,20 @@ class TestDataService:
         data_7 = await populated_data_service.get_data(DATA_7)
         assert len(data_7) == 0x10
         data_1_model = await populated_data_service.get_by_id(DATA_1)
-        assert data_1_model.parent_id == DATA_0
+        assert data_1_model.root_id == DATA_0
         data_7_model = await populated_data_service.get_by_id(DATA_7)
-        assert data_7_model.parent_id == DATA_0
+        assert data_7_model.root_id == DATA_0
         data_2_model = await populated_data_service.get_by_id(DATA_2)
-        assert data_2_model.parent_id == DATA_7
+        assert data_2_model.root_id == DATA_7
         assert data_2_model.range == Range(0, 0x8)
         data_6_model = await populated_data_service.get_by_id(DATA_6)
-        assert data_6_model.parent_id == DATA_2
+        assert data_6_model.root_id == DATA_2
         data_3_model = await populated_data_service.get_by_id(DATA_3)
-        assert data_3_model.parent_id == DATA_6
+        assert data_3_model.root_id == DATA_6
         data_4_model = await populated_data_service.get_by_id(DATA_4)
-        assert data_4_model.parent_id == DATA_6
+        assert data_4_model.root_id == DATA_6
         data_5_model = await populated_data_service.get_by_id(DATA_5)
-        assert data_5_model.parent_id == DATA_7
+        assert data_5_model.root_id == DATA_7
         assert data_5_model.range == Range(0x8, 0x10)
 
     async def test_delete(self, populated_data_service: DataService):
@@ -1414,12 +1414,12 @@ class TestDataService:
         ) = await populated_data_service.get_by_ids(
             [DATA_0, DATA_1, DATA_2, DATA_3, DATA_4, DATA_5]
         )
-        assert data_0_model.parent_id is None
-        assert data_1_model.parent_id == DATA_0
-        assert data_2_model.parent_id == DATA_0
-        assert data_3_model.parent_id == DATA_2
-        assert data_4_model.parent_id == DATA_2
-        assert data_5_model.parent_id == DATA_0
+        assert data_0_model.root_id is None
+        assert data_1_model.root_id == DATA_0
+        assert data_2_model.root_id == DATA_0
+        assert data_3_model.root_id == DATA_2
+        assert data_4_model.root_id == DATA_2
+        assert data_5_model.root_id == DATA_0
 
         await populated_data_service.delete_node(DATA_5)
         """
@@ -1441,11 +1441,11 @@ class TestDataService:
             data_3_model,
             data_4_model,
         ) = await populated_data_service.get_by_ids([DATA_0, DATA_1, DATA_2, DATA_3, DATA_4])
-        assert data_0_model.parent_id is None
-        assert data_1_model.parent_id == DATA_0
-        assert data_2_model.parent_id == DATA_0
-        assert data_3_model.parent_id == DATA_2
-        assert data_4_model.parent_id == DATA_2
+        assert data_0_model.root_id is None
+        assert data_1_model.root_id == DATA_0
+        assert data_2_model.root_id == DATA_0
+        assert data_3_model.root_id == DATA_2
+        assert data_4_model.root_id == DATA_2
 
         await populated_data_service.delete_node(DATA_2)
         """
@@ -1465,10 +1465,10 @@ class TestDataService:
             data_4_model,
         ) = await populated_data_service.get_by_ids([DATA_0, DATA_1, DATA_3, DATA_4])
         print(data_0_model, data_1_model, data_3_model, data_4_model)
-        assert data_0_model.parent_id is None
-        assert data_1_model.parent_id == DATA_0, data_1_model
-        assert data_3_model.parent_id == DATA_0, data_3_model
-        assert data_4_model.parent_id == DATA_0, data_4_model
+        assert data_0_model.root_id is None
+        assert data_1_model.root_id == DATA_0, data_1_model
+        assert data_3_model.root_id == DATA_0, data_3_model
+        assert data_4_model.root_id == DATA_0, data_4_model
         data_3_range = await populated_data_service.get_data_range_within_root(data_3_model.id)
         assert data_3_range == Range(0x8, 0xC)
         data_4_range = await populated_data_service.get_data_range_within_root(data_4_model.id)
@@ -1487,7 +1487,7 @@ class TestDataService:
          +- DATA_5 (0x10, 0x18)
         """
         data_3_model, data_4_model = await populated_data_service.get_by_ids([DATA_3, DATA_4])
-        assert data_3_model.parent_id == data_4_model.parent_id == DATA_2
+        assert data_3_model.root_id == data_4_model.root_id == DATA_2
 
         await populated_data_service.merge_siblings(DATA_6, (DATA_3, DATA_4))
         """
@@ -1503,7 +1503,7 @@ class TestDataService:
         data_6 = await populated_data_service.get_data(DATA_6)
         assert len(data_6) == 0x8
         data_6_model = await populated_data_service.get_by_id(DATA_6)
-        assert data_6_model.parent_id == DATA_2
+        assert data_6_model.root_id == DATA_2
         with pytest.raises(NotFoundError):
             await populated_data_service.get_by_id(DATA_3)
             await populated_data_service.get_by_id(DATA_4)
@@ -1525,9 +1525,9 @@ class TestDataService:
         data_7 = await populated_data_service.get_data(DATA_7)
         assert len(data_7) == 0x18
         data_7_model = await populated_data_service.get_by_id(DATA_7)
-        assert data_7_model.parent_id == DATA_0
+        assert data_7_model.root_id == DATA_0
         data_6_model = await populated_data_service.get_by_id(DATA_6)
-        assert data_6_model.parent_id == DATA_7
+        assert data_6_model.root_id == DATA_7
         for data_id in [DATA_1, DATA_2, DATA_3, DATA_4, DATA_5]:
             with pytest.raises(NotFoundError):
                 await populated_data_service.get_by_id(data_id)
@@ -1545,9 +1545,9 @@ class TestDataService:
          +- DATA_5 (0x10, 0x18)
         """
         data_2_model = await populated_data_service.get_by_id(DATA_2)
-        assert data_2_model.parent_id == DATA_0
+        assert data_2_model.root_id == DATA_0
         data_3_model, data_4_model = await populated_data_service.get_by_ids([DATA_3, DATA_4])
-        assert data_3_model.parent_id == data_4_model.parent_id == DATA_2
+        assert data_3_model.root_id == data_4_model.root_id == DATA_2
 
         await populated_data_service.delete_tree(DATA_2)
         """
@@ -1558,7 +1558,7 @@ class TestDataService:
          +- DATA_5 (0x10, 0x18)
         """
         data_1_model, data_5_model = await populated_data_service.get_by_ids([DATA_1, DATA_5])
-        assert data_1_model.parent_id == data_5_model.parent_id == DATA_0
+        assert data_1_model.root_id == data_5_model.root_id == DATA_0
         for data_id in [DATA_2, DATA_3, DATA_4]:
             with pytest.raises(NotFoundError):
                 await populated_data_service.get_by_id(data_id)

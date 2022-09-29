@@ -38,7 +38,7 @@ class DataServiceSerializer(SerializerInterface):
 
         for data_node in data_service._data_node_store.values():
             # Update `parent`
-            parent_id: Optional[bytes] = data_node.model.parent_id
+            parent_id: Optional[bytes] = data_node.model.root_id
             if parent_id is None:
                 parent = None
             else:
@@ -69,7 +69,7 @@ class DataNodeSerializer(SerializerInterface):
 
     The deserialized `DataNode` will be temporary and will need to be updated by the `DataService` deserializer.
     Its fields `parent` and `_children` aren't set, instead:
-     - the parent can be retrieved from the `parent_id` of the DataModel;
+     - the parent can be retrieved from the `root_id` of the DataModel;
     - children can be found from their IDs stored in a temporary field `_pjson_children_ids`.
     Recovering these attributes is the role of the `DataServiceSerializer`.
     """
