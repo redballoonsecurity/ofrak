@@ -17,7 +17,7 @@ There are several dataclasses that categorize the sections of the dump:
 from dataclasses import dataclass
 from hashlib import md5
 from enum import Enum
-from typing import Any, Callable, Dict, Generator, Iterable, Iterator, Optional
+from typing import Any, Callable, Dict, Generator, Iterable, Iterator, Optional, Type
 
 from ofrak import (
     Packer,
@@ -25,13 +25,12 @@ from ofrak import (
     ResourceFilter,
     Unpacker,
 )
-
 from ofrak.core.binary import GenericBinary
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak_type.range import Range
 from ofrak.component.packer import PackerError
 from ofrak.component.unpacker import UnpackerError
-from ofrak_components.ecc.abstract import EccError
+from ofrak_components.ecc.abstract import EccAlgorithm, EccError
 from ofrak_type.error import NotFoundError
 
 # Dict of data mapping MD5 checksum to ECC bytes, used to check for updates
@@ -119,7 +118,7 @@ class FlashEccAttributes(ResourceAttributes):
     ecc_magic is assumed to be contained at the start of the file, but may also occur multiple times
     """
 
-    ecc_class: Callable[[Any], Any] = None
+    ecc_class: Type[EccAlgorithm]
     ecc_magic: Optional[bytes] = None
     head_delimiter: Optional[bytes] = None
     first_data_delimiter: Optional[bytes] = None
