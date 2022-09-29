@@ -202,14 +202,16 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
 
 def create_dockerfile_finish(config: OfrakImageConfig) -> str:
     full_base_image_name = "/".join((config.registry, config.base_image_name))
-    dockerfile_finish_parts = [f"FROM {full_base_image_name}:{GIT_COMMIT_HASH}\n\n"]
+    dockerfile_finish_parts = [
+        f"FROM {full_base_image_name}:{GIT_COMMIT_HASH}\n\n",
+        f"ARG OFRAK_SRC_DIR=/\n",
+    ]
     package_names = list()
     for package_path in config.packages_paths:
         package_name = os.path.basename(package_path)
         package_names.append(package_name)
         finish_stub_parts = [
-            f"ARG OFRAK_SRC_DIR=/{package_name}",
-            f"ADD {package_path} $OFRAK_SRC_DIR\n",
+            f"ADD {package_path} $OFRAK_SRC_DIR/{package_name}\n",
         ]
         dockerfile_finish_parts.append("\n".join(finish_stub_parts))
     dockerfile_finish_parts.append("WORKDIR /\n")
