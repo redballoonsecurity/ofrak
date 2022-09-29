@@ -210,11 +210,8 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
     for package_path in config.packages_paths:
         package_name = os.path.basename(package_path)
         package_names.append(package_name)
-        finish_stub_parts = [
-            f"ADD {package_path} $OFRAK_SRC_DIR/{package_name}\n",
-        ]
-        dockerfile_finish_parts.append("\n".join(finish_stub_parts))
-    dockerfile_finish_parts.append("WORKDIR /\n")
+        dockerfile_finish_parts.append(f"ADD {package_path} $OFRAK_SRC_DIR/{package_name}\n")
+    dockerfile_finish_parts.append("\nWORKDIR /\n")
     dockerfile_finish_parts.append("ARG INSTALL_TARGET\n")
     develop_makefile = "\\n\\\n".join(
         [
@@ -225,7 +222,7 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
             "\\n",
         ]
     )
-    dockerfile_finish_parts.append(f'RUN printf "{develop_makefile}" >> Makefile\n\n')
+    dockerfile_finish_parts.append(f'RUN printf "{develop_makefile}" >> Makefile\n')
     dockerfile_finish_parts.append("RUN make $INSTALL_TARGET\n\n")
     finish_makefile = "\\n\\\n".join(
         [
@@ -234,7 +231,7 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
             "\\n",
         ]
     )
-    dockerfile_finish_parts.append(f'RUN printf "{finish_makefile}" >> Makefile')
+    dockerfile_finish_parts.append(f'RUN printf "{finish_makefile}" >> Makefile\n')
     return "".join(dockerfile_finish_parts)
 
 
