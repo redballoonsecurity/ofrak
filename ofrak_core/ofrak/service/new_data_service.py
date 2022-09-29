@@ -66,8 +66,8 @@ class NewDataService(DataServiceInterface):
                 )
             return absolute_range
 
-    async def create(self, data_id: DataId, data: bytes, alignment: int = 0) -> DataModel:
-        new_model = DataModel(data_id, Range(0, len(data)), alignment, None)
+    async def create(self, data_id: DataId, data: bytes) -> DataModel:
+        new_model = DataModel(data_id, Range(0, len(data)), None)
 
         self._model_store[data_id] = new_model
         self._roots[data_id] = _DataRoot(new_model, data)
@@ -76,15 +76,14 @@ class NewDataService(DataServiceInterface):
         self,
         data_id: bytes,
         parent_id: bytes,
-        range: Range,
-        alignment: int = 0,
+        mapped_range: Range,
     ) -> DataModel:
         parent_model = self._get_by_id(parent_id)
         if parent_model.is_mapped():
             root_id = parent_model.root_id
         else:
             root_id = parent_model.id
-        new_model = DataModel(data_id, range, alignment, root_id)
+        new_model = DataModel(data_id, mapped_range, root_id)
         self._roots[root_id].add_new_model(new_model)
         self._model_store[data_id] = new_model
 
@@ -94,7 +93,6 @@ class NewDataService(DataServiceInterface):
     async def get_by_ids(self, data_ids: Iterable[bytes]) -> Iterable[DataModel]:
         return [self._get_by_id(data_id) for data_id in data_ids]
 
-    # TODO: I think we can get rid of this, if resources hold their own data models
     async def get_data_length(self, data_id: bytes) -> int:
         return self._get_by_id(data_id).range.length()
 
@@ -130,12 +128,6 @@ class NewDataService(DataServiceInterface):
             return root.data[translated_range.start : translated_range.end]
         else:
             return root.data[model.range.start : model.range.end]
-
-    async def set_alignment(self, data_id: bytes, alignment: int):
-        self._get_by_id(data_id).alignment = alignment
-
-    async def set_overlaps_enabled(self, data_id: bytes, enable_overlaps: bool):
-        pass
 
     async def apply_patches(
         self,

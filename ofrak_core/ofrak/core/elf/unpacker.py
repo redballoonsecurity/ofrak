@@ -90,9 +90,6 @@ class ElfUnpacker(Unpacker[None]):
            [+] CodeRegion (if executable)     LOAD-able ElfSegments will populate the body of the resource tree instead)
         """
 
-        # Unfortunately, ELF files do allow sections to overlap each other.
-        await resource.set_data_overlaps_enabled(True)
-
         e_basic_header_r = await resource.create_child(
             tags=(ElfBasicHeader,), data_range=Range(0, 16)
         )
@@ -130,11 +127,9 @@ class ElfUnpacker(Unpacker[None]):
             if e_section_header.get_type() is ElfSectionType.NOBITS:
                 # NOBITS sections never have data in the file; their sh_size refers to in-mem size
                 opt_e_section_range = None
-            data_after = sections_by_range_start.get(e_section_offset)
             e_section_r = await resource.create_child(
                 tags=(ElfSection,),
                 data_range=opt_e_section_range,
-                data_after=data_after,
                 attributes=(ElfSectionStructure.attributes_type(index),),  # type: ignore
             )
             sections_by_range_start[e_section_offset] = e_section_r
@@ -162,8 +157,6 @@ class ElfUnpacker(Unpacker[None]):
 
         ###########################################################################################
         ### Unpack segment headers, conditionally unpack associated loadable segments
-
-        preceding_resource: Optional[Resource] = e_header_r
 
         # Create the program header resources
         for index in range(e_header.e_phnum):
@@ -198,7 +191,6 @@ class ElfUnpacker(Unpacker[None]):
                 e_segment_r = await resource.create_child(
                     tags=(ElfSegment,),
                     data_range=opt_e_segment_range,
-                    data_before=preceding_resource,
                     attributes=(ElfSegmentStructure.attributes_type(index),),  # type: ignore
                 )
 
@@ -206,8 +198,6 @@ class ElfUnpacker(Unpacker[None]):
                 if e_program_header.is_executable():
                     e_segment_r.add_tag(CodeRegion)
                 await e_segment_r.save()
-
-                preceding_resource = None
 
 
 class ElfDynamicSectionUnpacker(Unpacker[None]):

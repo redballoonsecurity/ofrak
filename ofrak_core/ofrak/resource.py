@@ -184,21 +184,6 @@ class Resource:
             )
         return await self._data_service.get_data_length(self._resource.data_id)
 
-    async def get_data_index_within_parent(self) -> int:
-        """
-        Data is stored as a tree structure. Each data ID corresponds to a node; nodes's children
-        are sorted by offset. The index of a node in their parent's list of children indicates
-        the relative ordering of the child resources which correspond to those child nodes.
-
-        :return: The relative position of this resource's data node in the parent
-        """
-        if self._resource.data_id is None:
-            raise ValueError(
-                "Resource does not have a data_id. Cannot get data index from a "
-                "resource with no data."
-            )
-        return await self._data_service.get_index_within_parent(self._resource.data_id)
-
     async def get_data_range_within_parent(self) -> Range:
         """
         If this resource is "mapped," i.e. its underlying data is defined as a range of its parent's
@@ -246,61 +231,6 @@ class Resource:
         """
         root_range = await self.get_data_range_within_root()
         return root_range.start
-
-    async def get_data_unmapped_range(self, offset: int) -> Range:
-        """
-        This resource may have children mapped in at particular ranges of this resource's
-        underlying binary data. This method gets a range starting at an ``offset`` and ending at
-        the start of the next range mapped by a child.
-
-        :param offset: An offset from the start of this resource's binary data where the unmapped
-        range should start
-
-        :raises OutOfBoundError: If the provided offset is not a valid offset within the resource
-        :raises AmbiguousOrderError: If there is unmapped data directly before the given offset
-
-        :return: A range starting at ``offset`` and ending at the the offset of the start of the
-        next range mapped by a child or, if the ``offset`` is within a mapped range,
-        ending at ``offset`` to create a 0-length range
-        """
-        if self._resource.data_id is None:
-            raise ValueError(
-                "Resource does not have a data_id. Cannot get data range from a "
-                "resource with no data."
-            )
-        return await self._data_service.get_unmapped_range(self._resource.data_id, offset)
-
-    async def set_data_alignment(self, alignment: int):
-        """
-        Set the alignment constraint for the data node associated with this resource. This method
-        does not modify the resource's data, but sets an alignment value that can be used to
-        ensure that unpackers and modifiers do not make changes that violate the set alignment.
-
-        :param alignment: The new alignment value
-        """
-        if self._resource.data_id is None:
-            raise ValueError(
-                "Resource does not have a data_id. Cannot set data alignment for a "
-                "resource with no data."
-            )
-        return await self._data_service.set_alignment(self._resource.data_id, alignment)
-
-    async def set_data_overlaps_enabled(self, enable_overlaps: bool):
-        """
-        Enable or disable allowing overlaps for the data node associated with this resource. If
-        enabled, mapped children can overlap each other. If disabled, attempting to map a child
-        which overlaps another will raise an error.
-
-        :param enable_overlaps: Whether or not data overlaps are enabled
-        """
-        if self._resource.data_id is None:
-            raise ValueError(
-                "Resource does not have a data_id. Cannot enable data overlaps for a "
-                "resource with no data."
-            )
-        return await self._data_service.set_overlaps_enabled(
-            self._resource.data_id, enable_overlaps
-        )
 
     async def save(self):
         """
@@ -618,8 +548,6 @@ class Resource:
         attributes: Iterable[ResourceAttributes] = None,
         data: Optional[bytes] = None,
         data_range: Optional[Range] = None,
-        data_after: Optional["Resource"] = None,
-        data_before: Optional["Resource"] = None,
     ) -> "Resource":
         """
         Create a new resource as a child of this resource. This method entirely defines the
@@ -692,11 +620,6 @@ class Resource:
             if self._resource.data_id is None:
                 raise ValueError(
                     "Cannot create a child with data from a parent that doesn't have data"
-                )
-            if data_after is not None or data_before is not None:
-                raise ValueError(
-                    "The data_after/data_before parameters should only be provided when creating "
-                    "a child with mapped data from this resource."
                 )
             data_model_id = self._id_service.generate_id()
             await self._data_service.create(data_model_id, data)

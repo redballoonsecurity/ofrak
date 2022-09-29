@@ -55,7 +55,6 @@ class DataPatchesResult:
 class DataModel:
     id: bytes
     range: Range
-    alignment: int = 1
     root_id: Optional[bytes] = None
 
     def is_mapped(self):
