@@ -209,7 +209,6 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
         package_names.append(package_name)
         finish_stub_parts = [
             f"ARG OFRAK_SRC_DIR=/{package_name}",
-            "WORKDIR $OFRAK_SRC_DIR",
             f"ADD {package_path} $OFRAK_SRC_DIR\n",
         ]
         dockerfile_finish_parts.append("\n".join(finish_stub_parts))
