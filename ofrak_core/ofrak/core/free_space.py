@@ -368,16 +368,13 @@ async def _find_and_delete_overlapping_children(resource: Resource, freed_range:
                 tags=(MemoryRegion,),
                 attribute_filters=(
                     ResourceAttributeRangeFilter(MemoryRegion.VirtualAddress, max=freed_range.end),
+                    ResourceAttributeRangeFilter(MemoryRegion.EndVaddr, min=freed_range.start),
                 ),
             ),
         )
     )
-    for possible_overlapping_child in overlap_resources:
-        if (
-            possible_overlapping_child.virtual_address > freed_range.start
-            or possible_overlapping_child.end_vaddr() > freed_range.start
-        ):
-            await possible_overlapping_child.resource.delete()
+    for overlapping_child in overlap_resources:
+        await possible_overlapping_child.resource.delete()
             await possible_overlapping_child.resource.save()
 
 
