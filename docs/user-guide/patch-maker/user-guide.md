@@ -396,11 +396,11 @@ for artifacts that will guide in the debug.
 
 These include:
 
-  - Compiled object files
-  - Generated symbol files (for GNU syntax, the .inc file extension)
-  - Generated linker scripts (for GNU syntax, the .ld file extension)
-  - Linker-generated map files, that include section placement in memory during/after link
-  - The resulting executable wrapped in the FEM, should link succeed
+- Compiled object files
+- Generated symbol files (for GNU syntax, the .inc file extension)
+- Generated linker scripts (for GNU syntax, the .ld file extension)
+- Linker-generated map files, that include section placement in memory during/after link
+- The resulting executable wrapped in the FEM, should link succeed
 
 For more information please refer to the [PatchMaker troubleshooting guide](./troubleshooting.md).
 

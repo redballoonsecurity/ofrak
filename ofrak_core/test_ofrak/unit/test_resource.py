@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Tuple
+import tempfile
+from io import BytesIO
 
 import pytest
 
@@ -12,8 +14,15 @@ from ofrak.core.program import Program
 from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import ResourceFilter
-from ofrak_components.zip import ZipArchive
+from ofrak.service.job_service_i import ComponentAutoRunFailure
 from ofrak_type.range import Range
+
+from test_ofrak.unit.component import mock_component
+from test_ofrak.unit.component.mock_component import (
+    MockFailException,
+    MockFile,
+    MockFailFile,
+)
 
 # Ignore the type below until MyPy supports recursive type definitions :(
 # https://github.com/python/mypy/issues/731
@@ -167,9 +176,43 @@ async def test_save_applies_patches(resource: Resource):
 
 
 async def test_get_most_specific_tags(resource: Resource):
-    resource.add_tag(
-        GenericBinary, GenericText, ZipArchive, FilesystemRoot, LinkableBinary, Program, Elf
-    )
+    resource.add_tag(GenericBinary, GenericText, FilesystemRoot, LinkableBinary, Program, Elf)
 
-    expected_most_specific_tags = {GenericText, Elf, ZipArchive}
+    expected_most_specific_tags = {GenericText, FilesystemRoot, Elf}
     assert set(resource.get_most_specific_tags()) == expected_most_specific_tags
+
+
+@pytest.fixture(autouse=True)
+def mock_ofrak_component(ofrak):
+    ofrak.injector.discover(mock_component)
+
+
+@pytest.mark.asyncio
+async def test_flush_to_disk_pack(ofrak_context: OFRAKContext):
+    # This test works as long as LZMA fails to pack() and the default is to
+    # pack recursively. The root resource is a LZMA archive in a LZMA archive,
+    # which as of 2022-09-13 will fail to pack and therefore pack_recursively
+    # won't work.
+
+    root_resource = await ofrak_context.create_root_resource("mock", b"\x00" * 0x100)
+    root_resource.add_tag(MockFile)
+
+    child = await root_resource.create_child((MockFailFile,), data_range=Range(0x10, 0x20))
+    child.add_tag(MockFailFile)
+
+    with BytesIO() as buffer:
+        # should fail because write_to runs pack_recursively and MockFailFile will fail on packing
+        with pytest.raises(ComponentAutoRunFailure) as exc_info:
+            await root_resource.write_to(buffer)
+
+        assert isinstance(exc_info.value.__cause__, MockFailException)
+
+        # this should not fail because pack_recursively was suppressed
+        await root_resource.write_to(buffer, pack=False)
+
+    with tempfile.NamedTemporaryFile() as t:
+        # again, should fail because the packer is run automatically
+        with pytest.raises(ComponentAutoRunFailure):
+            await root_resource.flush_to_disk(t.name)
+
+        await root_resource.flush_to_disk(t.name, pack=False)

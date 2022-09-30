@@ -13,8 +13,6 @@ from keystone import (
     Ks,
     KsError,
     KS_ARCH_PPC,
-    KS_MODE_V5E,
-    KS_MODE_XSCALE,
     KS_MODE_BIG_ENDIAN,
     KS_MODE_LITTLE_ENDIAN,
 )
@@ -86,10 +84,10 @@ class KeystoneAssemblerService(AssemblerServiceInterface):
                 return mode_flag | ks_endian_flag
             if program_attributes.processor is ProcessorType.XSCALE:
                 # XSCALE
-                return mode_flag | KS_MODE_XSCALE | ks_endian_flag
+                raise NotImplementedError("XSCALE not implemented")
             elif program_attributes.processor is ProcessorType.ARM926EJ_S:
                 # ARMv5
-                return mode_flag | KS_MODE_V5E | ks_endian_flag
+                raise NotImplementedError("AMRv5 not implemented")
             else:
                 # Default 32-bit ARM for other Processor types
                 return mode_flag | ks_endian_flag

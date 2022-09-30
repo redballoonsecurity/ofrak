@@ -23,7 +23,6 @@ from hypothesis.strategies import (
 from intervaltree import IntervalTree, Interval
 from typing_inspect import get_args
 
-import ofrak_components
 from ofrak import ResourceTag, OFRAK
 from ofrak.core.addressable import Addressable
 from ofrak_type.architecture import InstructionSet, InstructionSetMode
@@ -351,7 +350,13 @@ def _get_strict_descendants(cls: Type) -> List[Type]:
     import ofrak
 
     injector.discover(ofrak)
-    injector.discover(ofrak_components)
+
+    try:
+        import ofrak_components
+
+        injector.discover(ofrak_components)
+    except ModuleNotFoundError:
+        pass
     return [descendant for descendant in _get_descendants(cls, injector) if descendant != cls]
 
 

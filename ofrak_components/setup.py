@@ -15,27 +15,18 @@ class egg_info_ex(egg_info):
         egg_info.run(self)
 
 
-with open("LICENSE") as f:
-    license = "".join(["\n", f.read()])
+with open("README.md") as f:
+    long_description = f.read()
 
 
 setuptools.setup(
     name="ofrak_components",
-    version="0.1.0",
-    author="Red Balloon Security",
-    author_email="ofrak@redballoonsecurity.com",
-    description="OFRAK",
-    long_description="",
-    long_description_content_type="text/markdown",
-    url="",  # TODO
-    packages=setuptools.find_packages(),
+    version="0.1.1",
+    description="Suite of components extending core OFRAK",
+    packages=setuptools.find_packages(exclude=["ofrak_components_test"]),
     package_data={
         "ofrak_components": ["py.typed"],
     },
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "Operating System :: OS Independent",
-    ],
     install_requires=[
         "ofrak",
         "fdt==0.3.2",
@@ -72,7 +63,28 @@ setuptools.setup(
             "fun-coverage~=0.1.0",
         ],
     },
+    author="Red Balloon Security",
+    author_email="ofrak@redballoonsecurity.com",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url="https://ofrak.com/",
+    download_url="https://github.com/redballoonsecurity/ofrak",
+    project_urls={
+        "Documentation": "https://ofrak.com/docs/",
+        "Community License": "https://github.com/redballoonsecurity/ofrak/blob/master/LICENSE",
+        "Commercial Licensing Information": "https://ofrak.com/license/",
+    },
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "Operating System :: POSIX :: Linux",
+        "License :: Other/Proprietary License",
+        "License :: Free To Use But Restricted",
+        "License :: Free For Home Use",
+        "Topic :: Security",
+        "Typing :: Typed",
+    ],
     python_requires=">=3.7",
-    license=license,
+    license="Proprietary",
+    license_files=["LICENSE"],
     cmdclass={"egg_info": egg_info_ex},
 )
