@@ -47,8 +47,15 @@
       on:click="{async (e) => {
         const oldIcon = button.iconUrl;
         button.iconUrl = '/icons/loading.svg';
-        await button.onclick(e);
-        button.iconUrl = oldIcon;
+        await button
+          .onclick(e)
+          .then((_) => {
+            button.iconUrl = oldIcon;
+          })
+          .catch((e) => {
+            button.iconUrl = '/icons/error.svg';
+            console.error(e);
+          });
       }}"
     >
       {#if button.iconUrl}
