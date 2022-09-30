@@ -19,6 +19,7 @@ from ofrak_type.range import Range
 
 from test_ofrak.unit.component import mock_component
 from test_ofrak.unit.component.mock_component import (
+    MockFailException,
     MockFile,
     MockFailFile,
 )
@@ -201,8 +202,10 @@ async def test_flush_to_disk_pack(ofrak_context: OFRAKContext):
 
     with BytesIO() as buffer:
         # should fail because write_to runs pack_recursively and MockFailFile will fail on packing
-        with pytest.raises(ComponentAutoRunFailure):
+        with pytest.raises(ComponentAutoRunFailure) as exc_info:
             await root_resource.write_to(buffer)
+
+        assert isinstance(exc_info.value.__cause__, MockFailException)
 
         # this should not fail because pack_recursively was suppressed
         await root_resource.write_to(buffer, pack=False)
