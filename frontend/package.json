@@ -8,7 +8,7 @@
     "build": "rollup -c",
     "watch": "rollup -c -w",
     "serve": "sirv public --no-clear --host",
-    "lint": "prettier --write --plugin-search-dir=. ./**/*.html ./**/*.svelte ./**/*.js **/*.css"
+    "lint": "prettier --write --plugin-search-dir=. './**/*.{html,svelte,js,css}'"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^17.0.0",
