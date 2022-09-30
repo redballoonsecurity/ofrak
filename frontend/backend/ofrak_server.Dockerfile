@@ -1,4 +1,4 @@
-FROM registry.gitlab.com/redballoonsecurity/ofrak/dev:latest
+FROM redballoonsecurity/ofrak/dev:latest
 
 COPY ofrak_server.py /ofrak_server.py
 COPY docs /docs
