@@ -374,8 +374,8 @@ async def _find_and_delete_overlapping_children(resource: Resource, freed_range:
         )
     )
     for overlapping_child in overlap_resources:
-        await possible_overlapping_child.resource.delete()
-        await possible_overlapping_child.resource.save()
+        await overlapping_child.resource.delete()
+        await overlapping_child.resource.save()
 
 
 def _get_fill(freed_range: Range, fill: Optional[bytes]):
