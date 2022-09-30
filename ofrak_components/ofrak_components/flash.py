@@ -747,7 +747,8 @@ def _build_block(
                         # Assumes that all previously added data in the block should be included in the ECC
                         # TODO: Support ECC that comes before data
                         try:
-                            ecc = ecc_attr.ecc_class.encode(block)
+                            if ecc_attr.ecc_class is not None:
+                                ecc = ecc_attr.ecc_class.encode(block)
                         except TypeError:
                             raise PackerError(
                                 "Tried to encode ECC without specifying ecc_class in FlashEccAttributes"
