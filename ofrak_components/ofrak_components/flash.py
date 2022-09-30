@@ -17,7 +17,7 @@ There are several dataclasses that categorize the sections of the dump:
 from dataclasses import dataclass
 from hashlib import md5
 from enum import Enum
-from typing import Any, Callable, Dict, Generator, Iterable, Iterator, Optional, Type
+from typing import Any, Callable, Dict, Generator, Iterable, Optional
 
 from ofrak import (
     Packer,
@@ -118,7 +118,7 @@ class FlashEccAttributes(ResourceAttributes):
     ecc_magic is assumed to be contained at the start of the file, but may also occur multiple times
     """
 
-    ecc_class: Type[EccAlgorithm]
+    ecc_class: EccAlgorithm
     ecc_magic: Optional[bytes] = None
     head_delimiter: Optional[bytes] = None
     first_data_delimiter: Optional[bytes] = None
@@ -206,8 +206,8 @@ class FlashAttributes(ResourceAttributes):
         return 0
 
     def get_field_in_block(
-        self, block_format: Iterable[FlashField], field_type: FlashFieldType
-    ) -> FlashField:
+        self, block_format: Optional[Iterable[FlashField]], field_type: FlashFieldType
+    ) -> Optional[FlashField]:
         if block_format is not None:
             for field in block_format:
                 if field.field_type is field_type:
@@ -215,15 +215,16 @@ class FlashAttributes(ResourceAttributes):
         return None
 
     def get_field_range_in_block(
-        self, block_format: Iterable[FlashField], field_type: FlashFieldType
-    ) -> Range:
+        self, block_format: Optional[Iterable[FlashField]], field_type: FlashFieldType
+    ) -> Optional[Range]:
         offset = 0
-        for field in block_format:
-            if field.field_type is field_type:
-                data_size = field.size
-                return Range(offset, offset + data_size)
-            # Add all data in fields that come before data
-            offset += field.size
+        if block_format is not None:
+            for field in block_format:
+                if field.field_type is field_type:
+                    data_size = field.size
+                    return Range(offset, offset + data_size)
+                # Add all data in fields that come before data
+                offset += field.size
         return None
 
     def get_field_length_in_block(
@@ -239,11 +240,11 @@ class FlashAttributes(ResourceAttributes):
 
     def get_field_data_in_block(
         self,
-        block_format: Iterable[FlashField],
+        block_format: Optional[Iterable[FlashField]],
         field_type: FlashFieldType,
         data: bytes,
         block_start_offset: int,
-    ) -> bytes:
+    ) -> Optional[bytes]:
         field_range = self.get_field_range_in_block(
             block_format=block_format, field_type=field_type
         )
@@ -253,7 +254,7 @@ class FlashAttributes(ResourceAttributes):
             ]
         return None
 
-    def get_num_data_blocks(self, data_len: int, includes_oob: bool = False) -> Iterator[int]:
+    def get_num_data_blocks(self, data_len: int, includes_oob: bool = False) -> int:
         data_block_count = 0
         data_count = 0
         for c in self.get_block_formats():
@@ -349,7 +350,7 @@ class FlashResourceUnpacker(Unpacker[None]):
             flash_attr = resource.get_attributes(FlashAttributes)
         except NotFoundError:
             raise UnpackerError("Tried unpacking without FlashAttributes")
-        ecc_attr: FlashEccAttributes = flash_attr.ecc_attributes
+        ecc_attr: Optional[FlashEccAttributes] = flash_attr.ecc_attributes
 
         start_index = 0
         data = await resource.get_data()
@@ -384,7 +385,8 @@ class FlashResourceUnpacker(Unpacker[None]):
                     block_start_offset=0,
                 )
                 oob_size = flash_attr.get_total_oob_size(data_len=data_len, includes_oob=True)
-                total_ecc_protected_size = oob_size + int.from_bytes(data_size_bytes, "big")
+                if data_size_bytes is not None:
+                    total_ecc_protected_size = oob_size + int.from_bytes(data_size_bytes, "big")
             elif header_total_size is not None:
                 # Found total size in header
                 total_size_bytes = flash_attr.get_field_data_in_block(
@@ -393,7 +395,8 @@ class FlashResourceUnpacker(Unpacker[None]):
                     data=data,
                     block_start_offset=0,
                 )
-                total_ecc_protected_size = int.from_bytes(total_size_bytes, "big")
+                if total_size_bytes is not None:
+                    total_ecc_protected_size = int.from_bytes(total_size_bytes, "big")
 
             if total_ecc_protected_size > data_len:
                 raise UnpackerError("Expected larger resource than supplied")
@@ -432,7 +435,6 @@ class FlashResourceUnpacker(Unpacker[None]):
         # Parent FlashEccResource is created, redefine data to limited scope
         data = await ecc_resource.get_data()
         data_len = len(data)
-        print(data_len)
 
         # Now add children blocks until we reach the tail block
         offset = 0
@@ -447,12 +449,11 @@ class FlashResourceUnpacker(Unpacker[None]):
             block_data = await ecc_resource.get_data(range=block_range)
 
             # Create block as child resource
+            tag = FlashBlock
             if c == flash_attr.header_block_format:
                 tag = FlashHeaderBlock
             elif c == flash_attr.tail_block_format:
                 tag = FlashTailBlock
-            else:
-                tag = FlashBlock
             await ecc_resource.create_child(
                 tags=(tag,),
                 data_range=block_range,
@@ -473,15 +474,16 @@ class FlashResourceUnpacker(Unpacker[None]):
                     # Try decoding/correcting with ECC, otherwise just add the data anyway
                     try:
                         # Assumes that data comes before ECC
-                        only_data += ecc_attr.ecc_class.decode(block_data[: block_ecc_range.end])[
-                            block_data_range.start : block_data_range.end
-                        ]
+                        if ecc_attr is not None and ecc_attr.ecc_class is not None:
+                            only_data += ecc_attr.ecc_class.decode(
+                                block_data[: block_ecc_range.end]
+                            )[block_data_range.start : block_data_range.end]
+                        else:
+                            raise UnpackerError(
+                                "Tried to correct with ECC without providing an ecc_class in F"
+                            )
                     except EccError:
                         only_data += block_data[block_data_range.start : block_data_range.end]
-                    except TypeError:
-                        raise UnpackerError(
-                            "Tried to correct with ECC without providing an ecc_class in F"
-                        )
                 else:
                     only_data += block_data[block_data_range.start : block_data_range.end]
             offset += block_size
@@ -606,24 +608,30 @@ class FlashLogicalDataResourcePacker(Packer[None]):
 def _get_end_from_magic(attributes: FlashAttributes, start_index: int, data: bytes, data_len: int):
     search_offset = start_index
     search_field = FlashFieldType.MAGIC
-    search_key = attributes.ecc_attributes.ecc_magic
+    if attributes is not None and attributes.tail_block_format is not None:
+        if attributes.ecc_attributes is not None:
+            search_key = attributes.ecc_attributes.ecc_magic
+            if search_key is None:
+                raise UnpackerError(
+                    "Tried to find magic in tail without providing attribute in FlashEccAttributes"
+                )
 
-    while 0 <= search_offset <= data_len:
-        search_offset = data.find(search_key, search_offset, data_len)
-        search_offset += 1
+            while 0 <= search_offset <= data_len:
+                search_offset = data.find(search_key, search_offset, data_len)
+                search_offset += 1
 
-        search_offset_in_block = attributes.get_field_range_in_block(
-            attributes.tail_block_format, search_field
-        )
-        tail_start_offset = search_offset - search_offset_in_block.start
-        tail_read_magic = attributes.get_field_data_in_block(
-            attributes.tail_block_format, search_field, data, tail_start_offset
-        )
-
-        if tail_read_magic == search_key:
-            tail_block_size = attributes.get_block_size(attributes.tail_block_format)
-            tail_end_offset = tail_start_offset + tail_block_size
-            return tail_end_offset
+                search_offset_in_block = attributes.get_field_range_in_block(
+                    attributes.tail_block_format, search_field
+                )
+                if search_offset_in_block is not None:
+                    tail_start_offset = search_offset - search_offset_in_block.start
+                    tail_read_magic = attributes.get_field_data_in_block(
+                        attributes.tail_block_format, search_field, data, tail_start_offset
+                    )
+                    if tail_read_magic == search_key:
+                        tail_block_size = attributes.get_block_size(attributes.tail_block_format)
+                        tail_end_offset = tail_start_offset + tail_block_size
+                        return tail_end_offset
     return data_len
 
 
@@ -640,6 +648,8 @@ def _get_end_from_size(
     ):
         return data_len
 
+    if attributes.tail_block_format is None:
+        raise UnpackerError("Tried to find end of resource without providing tail block format")
     tail_block_size = attributes.get_block_size(attributes.tail_block_format)
 
     cur_offset = start_index
@@ -691,67 +701,76 @@ def _build_block(
         ecc_class = ecc_attr.ecc_class
         if ecc_class is None:
             raise UnpackerError("Cannot pack FlashLogicalDataResource without providing ECC class")
-    block = b""
-    for field in cur_block_type:
-        f = field.field_type
-        if f is FlashFieldType.ALIGNMENT:
-            block += b"\x00" * field.size
-        elif f is FlashFieldType.CHECKSUM:
-            if attributes.checksum_func is not None:
-                block += attributes.checksum_func(original_data)
-        elif f is FlashFieldType.DATA:
-            expected_data_size = attributes.get_field_length_in_block(
-                cur_block_type, FlashFieldType.DATA
-            )
-            real_data_len = len(block_data)
-            if real_data_len < expected_data_size:
-                cur_block_data = bytearray(expected_data_size)
-                cur_block_data[:real_data_len] = block_data
-                block_data = cur_block_data
-            block += block_data
-        elif f is FlashFieldType.DATA_SIZE:
-            block += len(original_data).to_bytes(field.size, "big")
-        elif f is FlashFieldType.DELIMITER:
-            try:
-                if cur_block_type == attributes.header_block_format:
-                    block += ecc_attr.head_delimiter
-                elif cur_block_type == attributes.first_data_block_format:
-                    block += ecc_attr.first_data_delimiter
-                elif cur_block_type == attributes.data_block_format:
-                    block += ecc_attr.data_delimiter
-                elif cur_block_type == attributes.last_data_block_format:
-                    block += ecc_attr.last_data_delimiter
-                elif cur_block_type == attributes.tail_block_format:
-                    block += ecc_attr.tail_delimiter
-            except TypeError:
-                raise PackerError("Tried to add delimiter without specifying in FlashEccAttributes")
-        elif f is FlashFieldType.ECC:
-            if data_hash in DATA_HASHES:
-                ecc = DATA_HASHES[data_hash]
-            else:
-                # Assumes that all previously added data in the block should be included in the ECC
-                # TODO: Support ECC that comes before data
-                try:
-                    ecc = ecc_attr.ecc_class.encode(block)
-                except TypeError:
-                    raise PackerError(
-                        "Tried to encode ECC without specifying ecc_class in FlashEccAttributes"
+        block = b""
+        for field in cur_block_type:
+            if field is not None:
+                f = field.field_type
+                f_size = field.size
+                if f is FlashFieldType.ALIGNMENT:
+                    block += b"\x00" * f_size
+                elif f is FlashFieldType.CHECKSUM:
+                    if attributes.checksum_func is not None:
+                        block += attributes.checksum_func(original_data)
+                elif f is FlashFieldType.DATA:
+                    expected_data_size = attributes.get_field_length_in_block(
+                        cur_block_type, FlashFieldType.DATA
                     )
-            block += ecc
-        elif f is FlashFieldType.ECC_SIZE:
-            block_ecc_field = attributes.get_field_in_block(cur_block_type, FlashFieldType.ECC)
-            block += block_ecc_field.size.to_bytes(field.size, "big")
-        elif f is FlashFieldType.TOTAL_SIZE:
-            data_size = len(original_data)
-            oob_size = attributes.get_total_oob_size(data_len=data_size)
-            expected_data_size = attributes.get_total_field_size(
-                data_len=data_size, field_type=FlashFieldType.DATA
-            )
-            total_size = expected_data_size + oob_size
-            block += (total_size).to_bytes(field.size, "big")
-        elif f is FlashFieldType.MAGIC:
-            try:
-                block += ecc_attr.ecc_magic
-            except TypeError:
-                raise PackerError("Tried to add Magic without specifying in FlashEccAttributes")
+                    real_data_len = len(block_data)
+                    if real_data_len < expected_data_size:
+                        cur_block_data = bytearray(expected_data_size)
+                        cur_block_data[:real_data_len] = block_data
+                        block_data = cur_block_data
+                    block += block_data
+                elif f is FlashFieldType.DATA_SIZE:
+                    block += len(original_data).to_bytes(f_size, "big")
+                elif f is FlashFieldType.DELIMITER:
+                    if cur_block_type == attributes.header_block_format:
+                        delimiter = ecc_attr.head_delimiter
+                    elif cur_block_type == attributes.first_data_block_format:
+                        delimiter = ecc_attr.first_data_delimiter
+                    elif cur_block_type == attributes.data_block_format:
+                        delimiter = ecc_attr.data_delimiter
+                    elif cur_block_type == attributes.last_data_block_format:
+                        delimiter = ecc_attr.last_data_delimiter
+                    elif cur_block_type == attributes.tail_block_format:
+                        delimiter = ecc_attr.tail_delimiter
+
+                    if delimiter is None:
+                        raise PackerError(
+                            "Tried to add delimiter without specifying in FlashEccAttributes"
+                        )
+                    block += delimiter
+                elif f is FlashFieldType.ECC:
+                    if data_hash in DATA_HASHES:
+                        ecc = DATA_HASHES[data_hash]
+                    else:
+                        # Assumes that all previously added data in the block should be included in the ECC
+                        # TODO: Support ECC that comes before data
+                        try:
+                            ecc = ecc_attr.ecc_class.encode(block)
+                        except TypeError:
+                            raise PackerError(
+                                "Tried to encode ECC without specifying ecc_class in FlashEccAttributes"
+                            )
+                    block += ecc
+                elif f is FlashFieldType.ECC_SIZE:
+                    block_ecc_field = attributes.get_field_in_block(
+                        cur_block_type, FlashFieldType.ECC
+                    )
+                    if block_ecc_field is not None:
+                        block += block_ecc_field.size.to_bytes(f_size, "big")
+                elif f is FlashFieldType.TOTAL_SIZE:
+                    data_size = len(original_data)
+                    oob_size = attributes.get_total_oob_size(data_len=data_size)
+                    expected_data_size = attributes.get_total_field_size(
+                        data_len=data_size, field_type=FlashFieldType.DATA
+                    )
+                    total_size = expected_data_size + oob_size
+                    block += (total_size).to_bytes(f_size, "big")
+                elif f is FlashFieldType.MAGIC:
+                    if ecc_attr.ecc_magic is None:
+                        raise PackerError(
+                            "Tried to add Magic without specifying in FlashEccAttributes"
+                        )
+                    block += ecc_attr.ecc_magic
     return block
