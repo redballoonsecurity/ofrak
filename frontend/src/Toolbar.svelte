@@ -54,6 +54,12 @@
           })
           .catch((e) => {
             button.iconUrl = '/icons/error.svg';
+            try {
+              let errorObject = JSON.parse(e.message);
+              alert(`${errorObject.type}: ${errorObject.message}`);
+            } catch {
+              alert(e);
+            }
             console.error(e);
           });
       }}"
