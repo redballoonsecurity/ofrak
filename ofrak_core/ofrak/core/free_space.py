@@ -407,7 +407,7 @@ class FreeSpaceModifierConfig(ComponentConfig):
 class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
     """
     Turn a [MemoryRegion][ofrak.core.memory_region.MemoryRegion] resource into allocatable free
-    space by replacing its data with NOP instructions and tagging it as
+    space by replacing its data with b'\x00' or optionally specified bytes.
     [FreeSpace][ofrak.core.free_space.FreeSpace].
     """
 
@@ -455,7 +455,7 @@ class PartialFreeSpaceModifierConfig(ComponentConfig):
 class PartialFreeSpaceModifier(Modifier[PartialFreeSpaceModifierConfig]):
     """
     Turn part of a [MemoryRegion][ofrak.core.memory_region.MemoryRegion] resource into allocatable
-    free space by replacing a range of its data with NOP instructions and creating a
+    free space by replacing a range of its data with b'\x00' or optionally specified fill bytes.
     [FreeSpace][ofrak.core.free_space.FreeSpace] child resource at that range.
     """
 
