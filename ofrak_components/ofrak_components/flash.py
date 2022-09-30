@@ -7,9 +7,6 @@ There are several dataclasses that categorize the sections of the dump:
 
 - `FlashResource` is the overarching resource. The component expects the user to add this tag in order for this component to be run.
     - `FlashOobResource` is the region of `FlashResource` that has OOB data. In the future, there may be multiple of these children resources.
-        - `FlashHeaderBlock` is a the first block of a `FlashOobResource`.
-        - `FlashBlock` is every block between the header and tail block.
-        - `FlashTailBlock` is the final block of a `FlashOobResource`.
         - `FlashLogicalDataResource` is the extracted data only with all of the OOB data removed. This will become a `FlashOobResource` when packed.
         - `FlashLogicalEccResource` is the extracted ECC only. No other OOB data is included.
 """
@@ -40,40 +37,6 @@ DATA_HASHES: Dict[bytes, bytes] = dict()
 #####################
 #     RESOURCES     #
 #####################
-@dataclass
-class FlashBlock(GenericBinary):
-    """
-    FlashBlock represents the smallest part of a memory dump.
-    Commonly, this is actually a page of memory or a series of pages with OOB data added to the end
-    """
-
-    data: Optional[bytes] = None
-    ecc: Optional[bytes] = None
-    alignment: Optional[bytes] = None
-    magic: Optional[bytes] = None
-    data_size: Optional[int] = None
-    ecc_size: Optional[int] = None
-    checksum: Optional[bytes] = None
-    delimiter: Optional[bytes] = None
-    total_size: Optional[int] = None
-
-
-@dataclass
-class FlashHeaderBlock(FlashBlock):
-    """
-    FlashHeaderBlock is the first block of a dump.
-    It is assumed that there is only a single header block.
-    """
-
-
-@dataclass
-class FlashTailBlock(FlashBlock):
-    """
-    The final block in the dump.
-    It is assumed that there is only a single tail block.
-    """
-
-
 @dataclass
 class FlashResource(GenericBinary):
     """
@@ -333,9 +296,6 @@ class FlashResourceUnpacker(Unpacker[None]):
     targets = (FlashResource,)
     children = (
         FlashOobResource,
-        FlashHeaderBlock,
-        FlashBlock,
-        FlashTailBlock,
         FlashLogicalDataResource,
         FlashLogicalEccResource,
     )
@@ -447,17 +407,6 @@ class FlashResourceUnpacker(Unpacker[None]):
                 raise UnpackerError("Expected complete block and received less than expected")
             block_range = Range(offset, block_end_offset)
             block_data = await ecc_resource.get_data(range=block_range)
-
-            # Create block as child resource
-            tag = FlashBlock
-            if c == flash_attr.header_block_format:
-                tag = FlashHeaderBlock
-            elif c == flash_attr.tail_block_format:
-                tag = FlashTailBlock
-            await ecc_resource.create_child(
-                tags=(tag,),
-                data_range=block_range,
-            )
 
             block_ecc_range = flash_attr.get_field_range_in_block(c, FlashFieldType.ECC)
             if block_ecc_range is not None:
