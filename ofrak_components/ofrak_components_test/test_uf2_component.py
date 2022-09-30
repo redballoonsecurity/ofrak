@@ -7,7 +7,7 @@ import struct
 from ofrak.ofrak_context import OFRAKContext
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceAttributeValueFilter
-from ofrak_components.uf2 import Uf2BlockAnalyzer, Uf2File, Uf2BlockData, Uf2BlockHeader
+from ofrak_components.uf2 import Uf2Block, Uf2BlockAnalyzer, Uf2File, Uf2BlockData, Uf2BlockHeader
 from ofrak.core.strings import StringPatchingModifier, StringPatchingConfig
 import ofrak_components_test
 from test_ofrak.unit.component.analyzer.analyzer_test_case import (
@@ -107,7 +107,9 @@ async def test_case(
     request, ofrak_context: OFRAKContext, test_id: str
 ) -> PopulatedUf2BlockAnalyzerTestCase:
     test_case: Uf2BlockAnalyzerTestCase = request.param
-    resource = await ofrak_context.create_root_resource(test_id, test_case.resource_contents)
+    resource = await ofrak_context.create_root_resource(
+        test_id, test_case.resource_contents, (Uf2Block,)
+    )
     return PopulatedUf2BlockAnalyzerTestCase(
         test_case.analyzer_type,
         test_case.expected_result,
