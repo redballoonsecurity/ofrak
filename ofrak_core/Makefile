@@ -16,12 +16,12 @@ inspect:
 .PHONY: test-core
 test-core:
 	$(PYTHON) -m pytest test_ofrak/unit test_ofrak/components --cov=ofrak --cov-report=term-missing
-	fun-coverage --cov-fail-under=65
+	fun-coverage --cov-fail-under=64
 
 .PHONY: test-services
 test-services:
 	$(PYTHON) -m pytest test_ofrak/service --cov=ofrak --cov-report=term-missing
-	fun-coverage --cov-fail-under=39
+	fun-coverage --cov-fail-under=38
 
 .PHONY: test
 test: inspect test-core test-services
