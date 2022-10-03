@@ -1,4 +1,4 @@
-import reedsolo as rs  # type: ignore
+import reedsolo as rs
 from ofrak_components.ecc.abstract import EccAlgorithm, EccError
 
 
