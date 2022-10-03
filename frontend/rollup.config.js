@@ -2,12 +2,12 @@
  * Forked from:
  * https://github.com/sveltejs/template/blob/master/rollup.config.js
  */
-import svelte from 'rollup-plugin-svelte';
-import commonjs from '@rollup/plugin-commonjs';
-import resolve from '@rollup/plugin-node-resolve';
-import livereload from 'rollup-plugin-livereload';
-import { terser } from 'rollup-plugin-terser';
-import css from 'rollup-plugin-css-only';
+import svelte from "rollup-plugin-svelte";
+import commonjs from "@rollup/plugin-commonjs";
+import resolve from "@rollup/plugin-node-resolve";
+import livereload from "rollup-plugin-livereload";
+import { terser } from "rollup-plugin-terser";
+import css from "rollup-plugin-css-only";
 
 const production = !process.env.ROLLUP_WATCH;
 
@@ -21,24 +21,28 @@ function serve() {
   return {
     writeBundle() {
       if (server) return;
-      server = require('child_process').spawn('npm', ['run', 'serve', '--', '--dev'], {
-        stdio: ['ignore', 'inherit', 'inherit'],
-        shell: true
-      });
+      server = require("child_process").spawn(
+        "npm",
+        ["run", "serve", "--", "--dev"],
+        {
+          stdio: ["ignore", "inherit", "inherit"],
+          shell: true,
+        }
+      );
 
-      process.on('SIGTERM', toExit);
-      process.on('exit', toExit);
-    }
+      process.on("SIGTERM", toExit);
+      process.on("exit", toExit);
+    },
   };
 }
 
 export default {
-  input: 'src/main.js',
+  input: "src/main.js",
   output: {
     sourcemap: true,
-    format: 'iife',
-    name: 'app',
-    file: 'public/build/bundle.js',
+    format: "iife",
+    name: "app",
+    file: "public/build/bundle.js",
     // Spline runtime uses dynamic imports and necessitates the following
     // option. See:
     // https://github.com/henriquehbr/svelte-typewriter/issues/21#issuecomment-968824615
@@ -47,22 +51,22 @@ export default {
   plugins: [
     svelte({
       compilerOptions: {
-        dev: !production
-      }
+        dev: !production,
+      },
     }),
     css({
-      output: 'bundle.css'
+      output: "bundle.css",
     }),
     resolve({
       browser: true,
-      dedupe: [ 'svelte' ]
+      dedupe: ["svelte"],
     }),
     commonjs(),
     !production && serve(),
-    !production && livereload('public'),
-    production && terser()
+    !production && livereload("public"),
+    production && terser(),
   ],
   watch: {
-    clearScreen: false
-  }
-}
+    clearScreen: false,
+  },
+};
