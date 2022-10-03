@@ -8,16 +8,11 @@ from ofrak import OFRAKContext, ResourceFilter
 from ofrak.resource import Resource
 from ofrak_components.flash import (
     FlashResource,
-    FlashOobResource,
     FlashLogicalDataResource,
     FlashAttributes,
     FlashEccAttributes,
     FlashField,
     FlashFieldType,
-    FlashLogicalDataResourcePacker,
-    FlashOobResourcePacker,
-    FlashResourcePacker,
-    FlashResourceUnpacker,
 )
 from ofrak_components.ecc.reedsolomon import ReedSolomon
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
@@ -136,7 +131,7 @@ class TestFlashUnpackModifyPack(UnpackModifyPackPattern):
     async def unpack(self, resource: Resource, config=None) -> None:
         resource.add_tag(FlashResource)
         await resource.save()
-        await resource.run(FlashResourceUnpacker)
+        await resource.unpack_recursively()
 
     async def modify(self, unpacked_root_resource: Resource) -> None:
         logical_data_resource = await unpacked_root_resource.get_only_descendant(
@@ -149,17 +144,7 @@ class TestFlashUnpackModifyPack(UnpackModifyPackPattern):
         await logical_data_resource.run(BinaryPatchModifier, patch_config)
 
     async def repack(self, resource: Resource, config=None) -> None:
-        logical_data_resource = await resource.get_only_descendant(
-            r_filter=ResourceFilter.with_tags(
-                FlashLogicalDataResource,
-            ),
-        )
-        await logical_data_resource.run(FlashLogicalDataResourcePacker)
-        ecc_resource = await resource.get_only_child(
-            r_filter=ResourceFilter.with_tags(FlashOobResource)
-        )
-        await ecc_resource.run(FlashOobResourcePacker)
-        await resource.run(FlashResourcePacker)
+        await resource.pack_recursively()
 
     async def verify(self, repacked_resource: Resource, VERIFY_FILE: str) -> None:
         # Check that the new file matches the manually verified file
