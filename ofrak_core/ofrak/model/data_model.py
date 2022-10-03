@@ -21,14 +21,6 @@ class DataPatchRef:
 
 
 @dataclass
-class DataMove:
-    range: Range
-    data_id: bytes
-    after_data_id: Optional[bytes] = None
-    before_data_id: Optional[bytes] = None
-
-
-@dataclass
 class DataPatch:
     range: Range
     data_id: bytes

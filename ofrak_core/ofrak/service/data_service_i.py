@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from typing import List, Iterable, Optional
 
-from ofrak.model.data_model import DataModel, DataPatch, DataPatchesResult, DataMove
+from ofrak.model.data_model import DataModel, DataPatch, DataPatchesResult
 from ofrak.service.abstract_ofrak_service import AbstractOfrakService
 from ofrak_type.range import Range
 
@@ -141,7 +141,6 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
     async def apply_patches(
         self,
         patches: Optional[List[DataPatch]] = None,
-        moves: Optional[List[DataMove]] = None,
     ) -> List[DataPatchesResult]:
         """
         Modify the data of a number of models, modeled as a list of `DataPatch` structures each
@@ -157,7 +156,6 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         Range(4, 10) of model A is not allowed (whether it increases or decreases the size).
 
         :param patches: A list of patch data structures to be applied, in order
-        :param moves:
 
         :return: A list of data structures describing all modified ranges of each data model
         affected by `patches`

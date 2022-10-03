@@ -7,7 +7,6 @@ from sortedcontainers import SortedList
 from ofrak.model.data_model import (
     DataModel,
     DataPatch,
-    DataMove,
     DataPatchesResult,
     DataPatchResult,
 )
@@ -139,12 +138,9 @@ class NewDataService(DataServiceInterface):
     async def apply_patches(
         self,
         patches: Optional[List[DataPatch]] = None,
-        moves: Optional[List[DataMove]] = None,  # We never use data moves. What's the point?
     ) -> List[DataPatchesResult]:
         if patches is None:
             patches = []
-        if moves is None:
-            moves = []
 
         patches_by_root: Dict[DataId, List[DataPatch]] = defaultdict(list)
         for patch in patches:
@@ -203,7 +199,6 @@ class NewDataService(DataServiceInterface):
         self,
         root_data_id: DataId,
         patches: List[DataPatch],
-        moves: List[DataMove],
     ) -> List[DataPatchesResult]:
         root: _DataRoot = self._roots[root_data_id]
         finalized_ordered_patches: List[Tuple[Range, bytes]] = []

@@ -6,7 +6,7 @@ from typing import BinaryIO, Iterable, List, Optional, Tuple, Type, TypeVar, cas
 
 from ofrak.component.interface import ComponentInterface
 from ofrak.model.component_model import ComponentContext, CC, ComponentRunResult
-from ofrak.model.data_model import DataPatch, DataMove
+from ofrak.model.data_model import DataPatch
 from ofrak.model.job_model import (
     JobRunContext,
 )
@@ -256,10 +256,9 @@ class Resource:
                 f"marked as modified but is missing a tracker!"
             )
             patch_results = await self._data_service.apply_patches(
-                modification_tracker.data_patches, modification_tracker.data_moves
+                modification_tracker.data_patches
             )
             modification_tracker.data_patches.clear()
-            modification_tracker.data_moves.clear()
             await self._dependency_handler.handle_post_patch_dependencies(patch_results)
             await self._resource_service.update(self._resource.save())
         else:
@@ -950,27 +949,6 @@ class Resource:
         if desired_version is None:
             return True
         return version == desired_version
-
-    def move(
-        self,
-        range: Range,
-        after: Optional["Resource"] = None,
-        before: Optional["Resource"] = None,
-    ):
-        if not self._component_context:
-            raise InvalidStateError(
-                f"Cannot remap resource {self._resource.id.hex()} outside of a modifier component"
-            )
-        if self._resource.data_id is None:
-            raise ValueError("Cannot create a data move for a resource with no data")
-        self._component_context.modification_trackers[self._resource.id].data_moves.append(
-            DataMove(
-                range,
-                self._resource.data_id,
-                after_data_id=after.get_data_id() if after is not None else None,
-                before_data_id=before.get_data_id() if before is not None else None,
-            )
-        )
 
     def queue_patch(
         self,

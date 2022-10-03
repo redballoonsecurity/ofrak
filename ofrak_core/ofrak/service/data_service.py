@@ -15,7 +15,6 @@ from ofrak.model.data_model import (
     DataPatch,
     DataPatchesResult,
     DataPatchResult,
-    DataMove,
     DataRangePosition,
 )
 from ofrak.service.data_service_i import DataServiceInterface
