@@ -158,44 +158,45 @@ class FlashAttributes(ResourceAttributes):
             return 0
 
     def get_oob_size_in_block(self, block_format: Iterable[FlashField]) -> int:
-        if block_format is not None:
-            data_length = self.get_field_length_in_block(
-                block_format=block_format, field_type=FlashFieldType.DATA
-            )
-            return self.get_block_size(block_format=block_format) - data_length
-        return 0
+        if block_format is None:
+            return 0
+        data_length = self.get_field_length_in_block(
+            block_format=block_format, field_type=FlashFieldType.DATA
+        )
+        return self.get_block_size(block_format=block_format) - data_length
 
     def get_field_in_block(
         self, block_format: Optional[Iterable[FlashField]], field_type: FlashFieldType
     ) -> Optional[FlashField]:
-        if block_format is not None:
-            for field in block_format:
-                if field.field_type is field_type:
-                    return field
-        return None
+        if block_format is None:
+            return None
+        for field in block_format:
+            if field.field_type is field_type:
+                return field
 
     def get_field_range_in_block(
         self, block_format: Optional[Iterable[FlashField]], field_type: FlashFieldType
     ) -> Optional[Range]:
         offset = 0
-        if block_format is not None:
-            for field in block_format:
-                if field.field_type is field_type:
-                    data_size = field.size
-                    return Range(offset, offset + data_size)
-                # Add all data in fields that come before data
-                offset += field.size
-        return None
+        if block_format is None:
+            return None
+        for field in block_format:
+            if field.field_type is field_type:
+                data_size = field.size
+                return Range(offset, offset + data_size)
+            # Add all data in fields that come before data
+            offset += field.size
 
     def get_field_length_in_block(
         self, block_format: Iterable[FlashField], field_type: FlashFieldType
     ) -> int:
-        if block_format is not None:
-            field_range = self.get_field_range_in_block(
-                block_format=block_format, field_type=field_type
-            )
-            if field_range is not None:
-                return field_range.length()
+        if block_format is None:
+            return 0
+        field_range = self.get_field_range_in_block(
+            block_format=block_format, field_type=field_type
+        )
+        if field_range is not None:
+            return field_range.length()
         return 0
 
     def get_field_data_in_block(
