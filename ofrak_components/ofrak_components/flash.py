@@ -78,7 +78,7 @@ class FlashLogicalEccResource(GenericBinary):
 class FlashEccAttributes(ResourceAttributes):
     """
     Must be configured if the resource includes ECC
-    ecc_magic is assumed to be contained at the start of the file, but may also occur multiple times
+    `ecc_magic` is assumed to be contained at the start of the file, but may also occur multiple times
     """
 
     ecc_class: Optional[EccAlgorithm] = None
@@ -92,9 +92,9 @@ class FlashEccAttributes(ResourceAttributes):
 
 class FlashFieldType(Enum):
     """
-    DATA_SIZE is the packed size of the DATA only (excluding MAGIC, CHECKSUM, DELIMITER, ECC, etc)
-    TOTAL_SIZE is the size of the entire region (including all DATA, MAGIC, CHECKSUM, DELIMITER, ECC, etc)
-    ALIGNMENT will pad with \x00 bytes by default
+    `DATA_SIZE` is the packed size of the DATA only (excluding `MAGIC`, `CHECKSUM`, `DELIMITER`, `ECC`, etc)
+    `TOTAL_SIZE` is the size of the entire region (including all `DATA`, `MAGIC`, `CHECKSUM`, `DELIMITER`, `ECC`, etc)
+    `ALIGNMENT` will pad with \x00 bytes by default
     """
 
     DATA = 0
@@ -123,9 +123,7 @@ class FlashAttributes(ResourceAttributes):
     If there is no OOB data, data_block_format may take this form:
 
         data_block_format = [FlashField(field_type=FlashFieldType.DATA,size=block_size),]
-    """
 
-    """
     Important Notes:
     Assumes that the provided list for each block format is ordered.
     Only define a block_format if they are different from other block formats.
@@ -467,9 +465,6 @@ class FlashResourcePacker(Packer[None]):
     targets = (FlashResource,)
 
     async def pack(self, resource: Resource, config=None):
-        """
-        :param resource:
-        """
         # We want to overwrite ourselves with just the repacked version
         # TODO: Add supoort for multiple FlashOobResource in a dump.
         packed_child = await resource.get_only_child(
@@ -492,9 +487,6 @@ class FlashOobResourcePacker(Packer[None]):
     targets = (FlashOobResource,)
 
     async def pack(self, resource: Resource, config=None):
-        """
-        :param resource:
-        """
         # We want to overwrite ourselves with just the repacked version
         packed_child = await resource.get_only_child(
             r_filter=ResourceFilter.with_tags(
@@ -517,9 +509,6 @@ class FlashLogicalDataResourcePacker(Packer[None]):
     targets = (FlashLogicalDataResource,)
 
     async def pack(self, resource: Resource, config=None):
-        """
-        :param resource:
-        """
         try:
             flash_attr = resource.get_attributes(FlashAttributes)
         except NotFoundError:
