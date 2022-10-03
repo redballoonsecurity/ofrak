@@ -637,11 +637,11 @@ def _build_block(
         raise UnpackerError("Cannot pack without providing FlashAttributes")
     data_hash = md5(block_data).digest()
     ecc_attr = attributes.ecc_attributes
+    block = b""
     if ecc_attr is not None:
         ecc_class = ecc_attr.ecc_class
         if ecc_class is None:
             raise UnpackerError("Cannot pack FlashLogicalDataResource without providing ECC class")
-        block = b""
         for field in cur_block_type:
             if field is not None:
                 f = field.field_type
