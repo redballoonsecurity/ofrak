@@ -13,7 +13,7 @@ from ofrak.model.data_model import (
 )
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.error import OutOfBoundError, PatchOverlapError
-from ofrak_type.error import NotFoundError
+from ofrak_type.error import NotFoundError, AlreadyExistError
 from ofrak_type.range import Range
 
 # Type alias; typechecker makes no distinction between this and bytes. It's just for humans (you?).
@@ -66,7 +66,10 @@ class NewDataService(DataServiceInterface):
                 )
             return absolute_range
 
-    async def create(self, data_id: DataId, data: bytes) -> DataModel:
+    async def create_root(self, data_id: DataId, data: bytes) -> DataModel:
+        if data_id in self._model_store:
+            raise AlreadyExistError(f"A model with {data_id.hex()} already exists!")
+
         new_model = DataModel(data_id, Range(0, len(data)), None)
 
         self._model_store[data_id] = new_model
@@ -78,9 +81,13 @@ class NewDataService(DataServiceInterface):
         parent_id: bytes,
         mapped_range: Range,
     ) -> DataModel:
+        if data_id in self._model_store:
+            raise AlreadyExistError(f"A model with {data_id.hex()} already exists!")
+
         parent_model = self._get_by_id(parent_id)
         if parent_model.is_mapped():
             root_id = parent_model.root_id
+            mapped_range = mapped_range.translate(parent_model.range.start)
         else:
             root_id = parent_model.id
         new_model = DataModel(data_id, mapped_range, root_id)
