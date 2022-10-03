@@ -152,11 +152,10 @@ class FlashAttributes(ResourceAttributes):
         )
 
     def get_block_size(self, block_format: Iterable[FlashField]) -> int:
-        size = 0
         if block_format is not None:
-            for field in block_format:
-                size += field.size
-        return size
+            return sum(field.size for field in block_format)
+        else:
+            return 0
 
     def get_oob_size_in_block(self, block_format: Iterable[FlashField]) -> int:
         if block_format is not None:
