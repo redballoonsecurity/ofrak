@@ -30,6 +30,12 @@ lint:
 	python3 -m black scripts/ backend/
 	shellcheck scripts/*.sh # https://github.com/koalaman/shellcheck
 
+.PHONY: check
+check:
+	npm run check
+	python3 -m black --check scripts/ backend/
+	shellcheck scripts/*.sh # https://github.com/koalaman/shellcheck
+
 .PHONY: app-stack-dev
 app-stack-dev: images
 	-docker swarm init
