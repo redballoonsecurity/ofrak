@@ -427,7 +427,7 @@ class FlashResourceUnpacker(Unpacker[None]):
                             )[block_data_range.start : block_data_range.end]
                         else:
                             raise UnpackerError(
-                                "Tried to correct with ECC without providing an ecc_class in F"
+                                "Tried to correct with ECC without providing an ecc_class in FlashEccAttributes"
                             )
                     except EccError:
                         only_data += block_data[block_data_range.start : block_data_range.end]
