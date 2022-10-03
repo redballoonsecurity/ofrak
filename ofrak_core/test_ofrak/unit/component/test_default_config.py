@@ -1,84 +1,19 @@
-import sys
-from dataclasses import dataclass
-
 import pytest
 
 from ofrak import OFRAKContext
-from ofrak.component.unpacker import Unpacker
 from ofrak.core.binary import GenericBinary
-from ofrak.model.component_model import ComponentConfig
-from ofrak.resource import Resource
-
-
-@dataclass
-class MockUnpackerConfig(ComponentConfig):
-    field_a: int
-    field_b: int
-
-
-class MockUnpackerRequiresDefault(Unpacker[MockUnpackerConfig]):
-    """
-    Component fails if the given config does not match a specific config value, which is the
-    default.
-    """
-
-    targets = (GenericBinary,)
-    children = ()
-
-    async def unpack(
-        self,
-        resource: Resource,
-        config: MockUnpackerConfig = MockUnpackerConfig(3, 6),
-    ) -> None:
-        assert config is not None
-
-        assert config.field_a == 3
-        assert config.field_b == 6
-
-
-class MockUnpackerWithDefaultRequiresPopulated(Unpacker[MockUnpackerConfig]):
-    """
-    Component fails if the given config does not match a specific config value, which is not the
-    default. The valid config must be successfully passed, and the default not used, for it to
-    not fail.
-    """
-
-    targets = (GenericBinary,)
-    children = ()
-
-    async def unpack(
-        self, resource: Resource, config: MockUnpackerConfig = MockUnpackerConfig(3, 6)
-    ) -> None:
-        assert config is not None
-
-        assert config.field_a == 4
-        assert config.field_b == 8
-
-
-class MockUnpackerModifiesDefaultArgument(Unpacker[MockUnpackerConfig]):
-    """
-    Component modifies the config after checking its field. When run twice in a row,
-    this would fail if the default config value is modifiable within the component body.
-    """
-
-    targets = (GenericBinary,)
-    children = ()
-
-    async def unpack(
-        self, resource: Resource, config: MockUnpackerConfig = MockUnpackerConfig(3, 6)
-    ) -> None:
-        assert config is not None
-
-        assert config.field_a == 3
-        assert config.field_b == 6
-
-        config.field_a = 1
-        config.field_b = 2
+from test_ofrak.unit.component import mock_component
+from test_ofrak.unit.component.mock_component import (
+    MockUnpackerConfig,
+    MockUnpackerRequiresDefault,
+    MockUnpackerWithDefaultRequiresPopulated,
+    MockUnpackerModifiesDefaultArgument,
+)
 
 
 @pytest.fixture(autouse=True)
 def mock_unpacker_component(ofrak):
-    ofrak.injector.discover(sys.modules[__name__])
+    ofrak.injector.discover(mock_component)
 
 
 async def test_unpacker_with_default(ofrak_context: OFRAKContext):
