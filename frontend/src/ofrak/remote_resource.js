@@ -141,7 +141,7 @@ export class RemoteResource extends Resource {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(
-        ["ofrak_components.string.StringFindReplaceConfig", {
+        ["ofrak.core.strings.StringFindReplaceConfig", {
           to_find: to_find,
           replace_with: replace_with,
           null_terminate: null_terminate,
