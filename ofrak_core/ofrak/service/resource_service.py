@@ -7,6 +7,8 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import Dict, List, Set, Optional, Iterable, Tuple, Any, TypeVar, Generic
 
+from sortedcontainers import SortedList
+
 from ofrak.model.resource_model import (
     ResourceModel,
     ResourceModelDiff,
@@ -148,9 +150,6 @@ class ResourceNode:
         return hash(self.model.id)
 
 
-from sortedcontainers import SortedList
-
-
 class ResourceAttributeIndex(Generic[T]):
     _attribute: ResourceIndexedAttribute[T]
     index: SortedList
@@ -171,15 +170,6 @@ class ResourceAttributeIndex(Generic[T]):
                 f"The provided resource {resource.model.id.hex()} is already in the "  # type: ignore
                 f"index for {self._attribute.__name__}"
             )
-        """
-        value_index = bisect.bisect_left(self.index, (value, resource))
-        if value_index < len(self.index) and self.index[value_index][1] == resource:
-            raise RuntimeError(
-                "If this error is raised, an index has gotten out of sync with "
-                "itself. An error should have been raised a few lines earlier."
-            )
-        self.index.insert(value_index, (value, resource))
-        """
         self.index.add((value, resource))
         self.values_by_node_id[resource.model.id] = value
 

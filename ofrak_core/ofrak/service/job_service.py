@@ -371,11 +371,12 @@ class JobService(JobServiceInterface):
                 for component in components:
                     queue.put((request, component))
             else:
-                LOGGER.debug(
-                    f"JOB {job_id.hex()} - Found no components to run on "
-                    f"{request.target_resource_id.hex()} matching filters "
-                    # f"{request.component_filter}"
-                )
+                if LOGGER.isEnabledFor(logging.DEBUG):
+                    LOGGER.debug(
+                        f"JOB {job_id.hex()} - Found no components to run on "
+                        f"{request.target_resource_id.hex()} matching filters "
+                        f"{request.component_filter}"
+                    )
 
         concurrent_run_tasks: Set[Future] = set()
         components_result = ComponentRunResult()
