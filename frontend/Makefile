@@ -27,7 +27,7 @@ public/sounds/%.mp3: scripts/download-music.sh
 .PHONY: lint
 lint:
 	npm run lint
-	black scripts/ backend/
+	python3 -m black scripts/ backend/
 	shellcheck scripts/*.sh # https://github.com/koalaman/shellcheck
 
 .PHONY: app-stack-dev
