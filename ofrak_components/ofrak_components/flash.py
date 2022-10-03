@@ -173,6 +173,7 @@ class FlashAttributes(ResourceAttributes):
         for field in block_format:
             if field.field_type is field_type:
                 return field
+        return None
 
     def get_field_range_in_block(
         self, block_format: Optional[Iterable[FlashField]], field_type: FlashFieldType
@@ -186,6 +187,7 @@ class FlashAttributes(ResourceAttributes):
                 return Range(offset, offset + data_size)
             # Add all data in fields that come before data
             offset += field.size
+        return None
 
     def get_field_length_in_block(
         self, block_format: Iterable[FlashField], field_type: FlashFieldType
@@ -698,7 +700,8 @@ def _build_block(
                         raise PackerError(
                             "Tried to add delimiter without specifying in FlashEccAttributes"
                         )
-                    block += delimiter
+                    if delimiter is not None:
+                        block += delimiter
                 elif f is FlashFieldType.ECC:
                     if data_hash in DATA_HASHES:
                         ecc = DATA_HASHES[data_hash]
