@@ -494,13 +494,15 @@ class Resource:
         """
         return await self._job_service.pack_recursively(self._job_id, self._resource.id)
 
-    async def write_to(self, destination: BinaryIO):
+    async def write_to(self, destination: BinaryIO, pack: bool = True):
         """
         Recursively repack resource and write data out to an arbitrary ``BinaryIO`` destination.
         :param destination: Destination for packed resource data
         :return:
         """
-        await self.pack_recursively()
+        if pack is True:
+            await self.pack_recursively()
+
         destination.write(await self.get_data())
 
     async def _analyze_attributes(self, attribute_type: Type[ResourceAttributes]):
@@ -1399,14 +1401,16 @@ class Resource:
         self._resource.is_modified = True
         self._resource.is_deleted = True
 
-    async def flush_to_disk(self, path: str):
+    async def flush_to_disk(self, path: str, pack: bool = True):
         """
         Recursively repack the resource and write its data out to a file on disk. If this is a
         dataless resource, creates an empty file.
 
         :param path: Path to the file to write out to. The file is created if it does not exist.
         """
-        await self.pack_recursively()
+        if pack is True:
+            await self.pack_recursively()
+
         data = await self.get_data()
         if data is not None:
             with open(path, "wb") as f:
