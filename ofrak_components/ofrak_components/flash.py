@@ -290,32 +290,26 @@ class FlashAttributes(ResourceAttributes):
 #     UNPACKERS     #
 #####################
 class FlashResourceUnpacker(Unpacker[None]):
+    """
+    Finds the overarching parent for region that includes OOB data.
+    Identifies the bounds based on the `FlashAttributes`.
+    """
 
     targets = (FlashResource,)
-    children = (
-        FlashOobResource,
-        FlashLogicalDataResource,
-        FlashLogicalEccResource,
-    )
+    children = (FlashOobResource,)
 
     async def unpack(self, resource: Resource, config=None):
-        """
-        Unpack a raw flash dump using the FlashAttributes.
-
-        :param resource:
-        """
         try:
             flash_attr = resource.get_attributes(FlashAttributes)
         except NotFoundError:
-            raise UnpackerError("Tried unpacking without FlashAttributes")
-        ecc_attr: Optional[FlashEccAttributes] = flash_attr.ecc_attributes
+            raise UnpackerError("Tried creating FlashOobResource without FlashAttributes")
 
         start_index = 0
         data = await resource.get_data()
         data_len = len(data)
 
-        if ecc_attr is not None:
-            magic = ecc_attr.ecc_magic
+        if flash_attr.ecc_attributes is not None:
+            magic = flash_attr.ecc_attributes.ecc_magic
             if magic is not None:
                 ecc_magic_offset = data.find(magic)
                 if ecc_magic_offset != -1:
@@ -386,12 +380,37 @@ class FlashResourceUnpacker(Unpacker[None]):
                 )
 
         # Create the overarching resource
-        ecc_resource = await resource.create_child(
-            tags=(FlashOobResource,), data_range=Range(start_index, end_offset)
+        return await resource.create_child(
+            tags=(FlashOobResource,),
+            data_range=Range(start_index, end_offset),
+            attributes=[
+                flash_attr,
+            ],
         )
 
+
+class FlashOobResourceUnpacker(Unpacker[None]):
+    """
+    Unpack a single `FlashOobResource` dump into logical data using the `FlashAttributes`.
+    """
+
+    targets = (FlashOobResource,)
+    children = (
+        FlashLogicalDataResource,
+        FlashLogicalEccResource,
+    )
+
+    async def unpack(self, resource: Resource, config=None):
+        try:
+            flash_attr = resource.get_attributes(FlashAttributes)
+        except NotFoundError:
+            raise UnpackerError("Tried unpacking without FlashAttributes")
+        ecc_attr: Optional[FlashEccAttributes] = flash_attr.ecc_attributes
+
+        # oob_resource = _create_oob_resource(resource=resource)
+        oob_resource = resource
         # Parent FlashEccResource is created, redefine data to limited scope
-        data = await ecc_resource.get_data()
+        data = await oob_resource.get_data()
         data_len = len(data)
 
         # Now add children blocks until we reach the tail block
@@ -404,7 +423,7 @@ class FlashResourceUnpacker(Unpacker[None]):
             if block_end_offset > data_len:
                 raise UnpackerError("Expected complete block and received less than expected")
             block_range = Range(offset, block_end_offset)
-            block_data = await ecc_resource.get_data(range=block_range)
+            block_data = await oob_resource.get_data(range=block_range)
 
             block_ecc_range = flash_attr.get_field_range_in_block(c, FlashFieldType.ECC)
             if block_ecc_range is not None:
@@ -436,7 +455,7 @@ class FlashResourceUnpacker(Unpacker[None]):
             offset += block_size
 
         # Add all block data to logical resource for recursive unpacking
-        await ecc_resource.create_child(
+        await oob_resource.create_child(
             tags=(FlashLogicalDataResource,),
             data=only_data,
             attributes=[
@@ -444,7 +463,7 @@ class FlashResourceUnpacker(Unpacker[None]):
             ],
         )
         if ecc_attr is not None:
-            await ecc_resource.create_child(
+            await oob_resource.create_child(
                 tags=(FlashLogicalEccResource,),
                 data=only_ecc,
                 attributes=[
