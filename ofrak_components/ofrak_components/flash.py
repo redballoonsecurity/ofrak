@@ -546,30 +546,33 @@ class FlashLogicalDataResourcePacker(Packer[None]):
 def _get_end_from_magic(attributes: FlashAttributes, start_index: int, data: bytes, data_len: int):
     search_offset = start_index
     search_field = FlashFieldType.MAGIC
-    if attributes is not None and attributes.tail_block_format is not None:
-        if attributes.ecc_attributes is not None:
-            search_key = attributes.ecc_attributes.ecc_magic
-            if search_key is None:
-                raise UnpackerError(
-                    "Tried to find magic in tail without providing attribute in FlashEccAttributes"
-                )
+    if (
+        attributes is not None
+        and attributes.tail_block_format is not None
+        and attributes.ecc_attributes is not None
+    ):
+        search_key = attributes.ecc_attributes.ecc_magic
+        if search_key is None:
+            raise UnpackerError(
+                "Tried to find magic in tail without providing attribute in FlashEccAttributes"
+            )
 
-            while 0 <= search_offset <= data_len:
-                search_offset = data.find(search_key, search_offset, data_len)
-                search_offset += 1
+        while 0 <= search_offset <= data_len:
+            search_offset = data.find(search_key, search_offset, data_len)
+            search_offset += 1
 
-                search_offset_in_block = attributes.get_field_range_in_block(
-                    attributes.tail_block_format, search_field
+            search_offset_in_block = attributes.get_field_range_in_block(
+                attributes.tail_block_format, search_field
+            )
+            if search_offset_in_block is not None:
+                tail_start_offset = search_offset - search_offset_in_block.start
+                tail_read_magic = attributes.get_field_data_in_block(
+                    attributes.tail_block_format, search_field, data, tail_start_offset
                 )
-                if search_offset_in_block is not None:
-                    tail_start_offset = search_offset - search_offset_in_block.start
-                    tail_read_magic = attributes.get_field_data_in_block(
-                        attributes.tail_block_format, search_field, data, tail_start_offset
-                    )
-                    if tail_read_magic == search_key:
-                        tail_block_size = attributes.get_block_size(attributes.tail_block_format)
-                        tail_end_offset = tail_start_offset + tail_block_size
-                        return tail_end_offset
+                if tail_read_magic == search_key:
+                    tail_block_size = attributes.get_block_size(attributes.tail_block_format)
+                    tail_end_offset = tail_start_offset + tail_block_size
+                    return tail_end_offset
     return data_len
 
 
@@ -672,8 +675,7 @@ def _build_block(
                         delimiter = ecc_attr.last_data_delimiter
                     elif cur_block_type == attributes.tail_block_format:
                         delimiter = ecc_attr.tail_delimiter
-
-                    if delimiter is None:
+                    else:
                         raise PackerError(
                             "Tried to add delimiter without specifying in FlashEccAttributes"
                         )
