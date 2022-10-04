@@ -129,7 +129,7 @@ root_resource.add_attributes(CUSTOM_FLASH_ATTRIBUTES)
 await root_resource.save()
 ```
 
-We have included an example that unpacks a provided flash dump, makes a modification, and repacks it into the same format in [`Example 9: Flash Modification`](`/examples/ex9_flash_modification.html`).
+We have included an example that unpacks a provided flash dump, makes a modification, and repacks it into the same format in [`Example 9: Flash Modification`](`https://ofrak.com/docs/examples/ex9_flash_modification.html`).
 
 
 <div align="right">
