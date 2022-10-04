@@ -120,7 +120,7 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def get_data(self, data_id: bytes, data_range: Range = None) -> bytes:
+    async def get_data(self, data_id: bytes, data_range: Optional[Range] = None) -> bytes:
         """
         Get the data (or section of data) of a model. The optional `data_range` parameter specifies
         which a range within `data_id`'s data to return; if this range actually falls outside the

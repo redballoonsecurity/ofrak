@@ -24,47 +24,6 @@ class NewDataService(DataServiceInterface):
         self._model_store: Dict[DataId, DataModel] = dict()
         self._roots: Dict[DataId, _DataRoot] = dict()
 
-    def _get_by_id(self, data_id: DataId) -> DataModel:
-        model = self._model_store.get(data_id)
-        if model is None:
-            raise NotFoundError(f"No data model with ID {data_id.hex()} exists")
-        else:
-            return model
-
-    def _get_root_by_id(self, data_id: DataId) -> "_DataRoot":
-        root = self._roots.get(data_id)
-        if root is None:
-            raise NotFoundError(f"No data root with ID {data_id.hex()} exists")
-        else:
-            return root
-
-    def _is_root(self, data_id: DataId) -> bool:
-        return data_id in self._roots
-
-    def _get_absolute_range(self, id_or_model: Union[DataId, DataModel], r: Range) -> Range:
-        if isinstance(id_or_model, DataId):
-            model = self._get_by_id(cast(DataId, id_or_model))
-        else:
-            model = cast(DataModel, id_or_model)
-
-        if r.start < 0 or r.end > model.range.end:
-            raise OutOfBoundError(
-                f"The requested range {r} of model {model.id.hex()} is outside the "
-                f"model's range {model.range}"
-            )
-
-        if model.root_id is None:
-            return r
-        else:
-            root = self._get_root_by_id(model.root_id)
-            absolute_range = r.translate(model.range.start)
-            if absolute_range.end > root.model.range.end:
-                raise OutOfBoundError(
-                    f"The requested range {r} of model {model.id.hex()} is outside the "
-                    f"root's range {root.model.range}"
-                )
-            return absolute_range
-
     async def create_root(self, data_id: DataId, data: bytes) -> DataModel:
         if data_id in self._model_store:
             raise AlreadyExistError(f"A model with {data_id.hex()} already exists!")
@@ -96,7 +55,7 @@ class NewDataService(DataServiceInterface):
         else:
             root_id = parent_model.id
         new_model = DataModel(data_id, mapped_range, root_id)
-        self._roots[root_id].add_new_model(new_model)
+        self._roots[root_id].add_mapped_model(new_model)
         self._model_store[data_id] = new_model
 
     async def get_by_id(self, data_id: DataId) -> DataModel:
@@ -129,7 +88,7 @@ class NewDataService(DataServiceInterface):
         else:
             return within_model.range.intersect(model.range)
 
-    async def get_data(self, data_id: bytes, data_range: Range = None) -> bytes:
+    async def get_data(self, data_id: bytes, data_range: Optional[Range] = None) -> bytes:
         model = self._get_by_id(data_id)
         if model.is_mapped():
             root = self._get_root_by_id(model.root_id)
@@ -174,33 +133,74 @@ class NewDataService(DataServiceInterface):
 
         else:
             root = self._get_root_by_id(model.root_id)
-            root.delete_model(model)
+            root.delete_mapped_model(model)
             del self._model_store[data_id]
 
     async def delete_models(self, data_ids: Iterable[bytes]) -> None:
-        roots_to_delete = set()
-        mapped_to_delete = set()
+        roots_to_delete = dict()
+        mapped_to_delete = dict()
 
         for data_id in data_ids:
             model = self._get_by_id(data_id)
             if model.root_id is None:
-                roots_to_delete.add(model)
+                roots_to_delete[model.id] = model
             else:
-                mapped_to_delete.add(model)
+                mapped_to_delete[model.id] = model
 
-        for root_model in roots_to_delete:
+        for root_model in roots_to_delete.values():
             root = self._roots[root_model.id]
             for child_model in root.get_children():
-                mapped_to_delete.discard(child_model)
+                mapped_to_delete.pop(child_model.id, None)
                 del self._model_store[child_model.id]
 
             del self._roots[root_model.id]
             del self._model_store[root_model.id]
 
-        for model in mapped_to_delete:
+        for model in mapped_to_delete.values():
             root = self._get_root_by_id(model.root_id)
-            root.delete_model(model)
+            root.delete_mapped_model(model)
             del self._model_store[model.id]
+
+    def _get_by_id(self, data_id: DataId) -> DataModel:
+        model = self._model_store.get(data_id)
+        if model is None:
+            raise NotFoundError(f"No data model with ID {data_id.hex()} exists")
+        else:
+            return model
+
+    def _get_root_by_id(self, data_id: DataId) -> "_DataRoot":
+        root = self._roots.get(data_id)
+        if root is None:
+            raise NotFoundError(f"No data root with ID {data_id.hex()} exists")
+        else:
+            return root
+
+    def _is_root(self, data_id: DataId) -> bool:
+        return data_id in self._roots
+
+    def _get_absolute_range(self, id_or_model: Union[DataId, DataModel], r: Range) -> Range:
+        if isinstance(id_or_model, DataId):
+            model = self._get_by_id(cast(DataId, id_or_model))
+        else:
+            model = cast(DataModel, id_or_model)
+
+        if r.start < 0 or r.end > model.range.end:
+            raise OutOfBoundError(
+                f"The requested range {r} of model {model.id.hex()} is outside the "
+                f"model's range {model.range}"
+            )
+
+        if model.root_id is None:
+            return r
+        else:
+            root = self._get_root_by_id(model.root_id)
+            absolute_range = r.translate(model.range.start)
+            if absolute_range.end > root.model.range.end:
+                raise OutOfBoundError(
+                    f"The requested range {r} of model {model.id.hex()} is outside the "
+                    f"root's range {root.model.range}"
+                )
+            return absolute_range
 
     def _apply_patches_to_root(
         self,
@@ -273,10 +273,6 @@ class NewDataService(DataServiceInterface):
                             child_model.range.start, child_model.range.end + size_diff
                         )
 
-        # for child_model in root.get_children():
-        #     new_child_range = resize_tracker.translate_range(child_model.range)
-        #     child_model.range = new_child_range
-
         root.model.range = Range(
             root.model.range.start, root.model.range.end + resize_tracker.get_total_size_diff()
         )
@@ -293,14 +289,11 @@ class _Waypoint:
     offset: int
     models_starting: Set[DataId]
     models_ending: Set[DataId]
-    # models_overlapping: Set[DataId]
 
     def is_empty(self) -> bool:
         return not self.models_starting and not self.models_ending
 
     def validate(self):
-        # assert self.models_overlapping.issubset(self.models_overlapping)
-        # assert self.models_ending.isdisjoint(self.models_overlapping)
         assert self.models_ending.isdisjoint(self.models_starting)
 
 
@@ -319,7 +312,7 @@ class _DataRoot:
     def get_children(self) -> Iterable[DataModel]:
         return self._children.values()
 
-    def add_new_model(self, model: DataModel):
+    def add_mapped_model(self, model: DataModel):
         if model.range.start < 0 or model.range.end > self.length:
             raise OutOfBoundError(
                 f"New mapped data model {model.id.hex()} is outside the bounds of its root "
@@ -344,7 +337,7 @@ class _DataRoot:
 
         self._children[model.id] = model
 
-    def delete_model(self, model: DataModel):
+    def delete_mapped_model(self, model: DataModel):
         start_offset = model.range.start
         start_waypoint = self._waypoints.get(start_offset)
         ending_offset = model.range.end
