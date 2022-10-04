@@ -1,16 +1,11 @@
-from typing import Tuple, Union, Any, Iterable, Optional
+from typing import Any, Iterable, Tuple, Union
 
 from intervaltree import IntervalTree
 
-from ofrak.service.data_service import DataNode
 from ofrak.service.serialization.pjson_types import PJSONType
 from ofrak.service.serialization.serializers.serializer_i import SerializerInterface
 
-# The data is actually not typed in the IntervalTree documentation. However, given how IntervalTree
-# is used in OFRAK, this serializer only expects to encounter data of this type.
-OFRAKIntervalTreeDataType = Optional[DataNode]
-IntervalTreeTupleType = Union[Tuple[int, int], Tuple[int, int, OFRAKIntervalTreeDataType]]
-IntervalTreeTuplesType = Iterable[IntervalTreeTupleType]
+IntervalTreeTupleType = Union[Tuple[int, int], Tuple[int, int, Any]]
 
 
 class IntervalTreeSerializer(SerializerInterface):
@@ -28,8 +23,10 @@ class IntervalTreeSerializer(SerializerInterface):
     def obj_to_pjson(self, obj: IntervalTree, _type_hint: Any) -> PJSONType:
         return self._service.to_pjson(
             [(interval.begin, interval.end, interval.data) for interval in obj.all_intervals],
-            IntervalTreeTuplesType,
+            Iterable[IntervalTreeTupleType],
         )
 
     def pjson_to_obj(self, pjson_obj: PJSONType, type_hint: Any) -> IntervalTree:
-        return IntervalTree.from_tuples(self._service.from_pjson(pjson_obj, IntervalTreeTuplesType))
+        return IntervalTree.from_tuples(
+            self._service.from_pjson(pjson_obj, Iterable[IntervalTreeTupleType])
+        )

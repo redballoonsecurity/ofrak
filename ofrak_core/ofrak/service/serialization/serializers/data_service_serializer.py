@@ -1,8 +1,9 @@
-from typing import Any, List, Tuple
-from typing import Dict, Optional
+from typing import Dict, Any, Set
 
-from ofrak.service.data_service import DataNode
-from ofrak.service.data_service import DataService
+from sortedcontainers import SortedList
+
+from ofrak.model.data_model import DataModel
+from ofrak.service.new_data_service import NewDataService, _DataRoot, _Waypoint
 from ofrak.service.serialization.pjson_types import PJSONType
 from ofrak.service.serialization.serializers.serializer_i import SerializerInterface
 
@@ -11,99 +12,81 @@ class DataServiceSerializer(SerializerInterface):
     """
     Serialize and deserialize `DataService` into `PJSONType`.
 
-    The challenging thing to serialize and deserialize is the `DataNode` store. This class
-    complements the `DataNodeSerializer`, which doesn't fully serialize the parents and children of a
-    node. So during deserialization, the major role of this class is to finalize the deserialization
-    of the `DataNode` objects, by recovering their parents and children and updating the `DataNode`s.
+    The `DataService` has some internal data structures which require custom
+    serialization/deserialization, specifically the _DataRoot and _Waypoint. This is done with
+    methods of this class, and avoids serializing redundant information.
     """
 
-    targets = (DataService,)
+    targets = (NewDataService,)
 
-    usable_annotations = DataService.__annotations__
-
-    def obj_to_pjson(self, obj: DataService, _type_hint: Any) -> Dict[str, PJSONType]:
-        return {
-            attr_name: self._service.to_pjson(getattr(obj, attr_name), type_hint)
-            for attr_name, type_hint in self.usable_annotations.items()
+    def obj_to_pjson(self, obj: NewDataService, _type_hint: Any) -> Dict[str, PJSONType]:
+        data_service_pjson = {
+            "_model_store": self._service.to_pjson(obj._model_store, Dict[bytes, DataModel]),
+            "_roots": [self._data_root_to_pjson(data_root) for data_root in obj._roots],
         }
 
-    def pjson_to_obj(self, pjson_obj: Dict[str, PJSONType], _type_hint: Any) -> DataService:
-        deserialized_attrs = {
-            attr_name: self._service.from_pjson(pjson_obj[attr_name], type_hint)
-            for attr_name, type_hint in self.usable_annotations.items()
-        }
-        data_service: DataService = DataService.__new__(DataService)
-        for attr_name, attr in deserialized_attrs.items():
-            setattr(data_service, attr_name, attr)
+        return data_service_pjson
 
-        for data_node in data_service._data_node_store.values():
-            # Update `parent`
-            parent_id: Optional[bytes] = data_node.model.root_id
-            if parent_id is None:
-                parent = None
-            else:
-                parent = data_service._data_node_store[parent_id]
-            data_node.parent = parent
-            # Update `_children`
-            children_ids = getattr(data_node, "_pjson_children_ids")
-            data_node._children = []
-            for child_position, child_id in children_ids:
-                data_node._children.append(
-                    (child_position, data_service._data_node_store[child_id])
-                )
-            delattr(data_node, "_pjson_children_ids")
+    def pjson_to_obj(self, pjson_obj: Dict[str, PJSONType], _type_hint: Any) -> NewDataService:
+        _model_store = self._service.from_pjson(pjson_obj["_model_store"], Dict[bytes, DataModel])
+        _roots = dict()
+        for root_pjson in pjson_obj["_roots"]:
+            root_obj = self._data_root_from_pjson(root_pjson, _model_store)
+            _roots[root_obj.model.id] = root_obj
+
+        data_service: NewDataService = NewDataService.__new__(NewDataService)
+        data_service._model_store = _model_store
+        data_service._roots = _roots
 
         return data_service
 
-
-class DataNodeSerializer(SerializerInterface):
-    """
-    Serialize and deserialize `DataNode` into `PJSONType`.
-
-    This requires a custom serializer because of the infinite recursion the default serializer
-    would encounter, with a DataNode storing instances of both its parent and children.
-
-    Implementation:
-    - the parent isn't serialized;
-    - children are serialized as the IDs of their DataModel instead of the children themselves.
-
-    The deserialized `DataNode` will be temporary and will need to be updated by the `DataService` deserializer.
-    Its fields `parent` and `_children` aren't set, instead:
-     - the parent can be retrieved from the `root_id` of the DataModel;
-    - children can be found from their IDs stored in a temporary field `_pjson_children_ids`.
-    Recovering these attributes is the role of the `DataServiceSerializer`.
-    """
-
-    targets = (DataNode,)
-
-    serialized_annotations = {
-        attr_name: attr_type
-        for attr_name, attr_type in DataNode.__annotations__.items()
-        if attr_name not in ("parent", "_children")
-    }
-
-    def obj_to_pjson(self, obj: DataNode, _type_hint: Any) -> PJSONType:
-        result = {}
-        for attr_name, type_hint in self.serialized_annotations.items():
-            result[attr_name] = self._service.to_pjson(getattr(obj, attr_name), type_hint)
-        children_ids = [(child_position, child.model.id) for child_position, child in obj._children]
-        result["_pjson_children_ids"] = self._service.to_pjson(
-            children_ids, List[Tuple[int, bytes]]
-        )
-        return result
-
-    def pjson_to_obj(self, pjson_obj: Any, _type_hint: Any) -> DataNode:
-        deserialized_attrs = {
-            attr_name: self._service.from_pjson(pjson_obj[attr_name], type_hint)
-            for attr_name, type_hint in self.serialized_annotations.items()
+    def _data_root_to_pjson(self, data_root: _DataRoot) -> PJSONType:
+        return {
+            "root_id": self._service.to_pjson(data_root.model.id, bytes),
+            "data": self._service.to_pjson(data_root.data, bytes),
+            "waypoints": [
+                self._waypoint_from_pjson(data_root._waypoints[wp_offset])
+                for wp_offset in data_root._waypoint_offsets
+            ],
+            "children": self._service.to_pjson(data_root._children.keys(), Set[bytes]),
         }
-        deserialized_attrs.update({"parent": None, "_children": []})
-        data_node = DataNode.__new__(DataNode)
-        for attr_name, attr in deserialized_attrs.items():
-            setattr(data_node, attr_name, attr)
-        setattr(
-            data_node,
-            "_pjson_children_ids",
-            self._service.from_pjson(pjson_obj["_pjson_children_ids"], List[Tuple[int, bytes]]),
+
+    def _data_root_from_pjson(
+        self, data_root_pjson: PJSONType, models: Dict[bytes, DataModel]
+    ) -> _DataRoot:
+        root_id = self._service.from_pjson(data_root_pjson["root_id"], bytes)
+        data = self._service.from_pjson(data_root_pjson["data"], bytes)
+        raw_waypoints = [
+            self._waypoint_from_pjson(waypoint_pjson)
+            for waypoint_pjson in data_root_pjson["waypoints"]
+        ]
+        raw_children = self._service.from_pjson(data_root_pjson["children"], Set[bytes])
+
+        root_model = models[root_id]
+
+        waypoints = {waypoint.offset: waypoint for waypoint in raw_waypoints}
+        waypoint_offsets = SortedList(waypoints.keys())
+
+        children = {child_id: models[child_id] for child_id in raw_children}
+
+        data_root: _DataRoot = _DataRoot.__new__(_DataRoot)
+        data_root.model = root_model
+        data_root.data = data
+        data_root._waypoints = waypoints
+        data_root._waypoint_offsets = waypoint_offsets
+        data_root._chilren = children
+
+        return data_root
+
+    def _waypoint_to_pjson(self, waypoint: _Waypoint) -> PJSONType:
+        return (
+            waypoint.offset,
+            self._service.to_pjson(waypoint.models_starting, Set[bytes]),
+            self._service.to_pjson(waypoint.models_ending, Set[bytes]),
         )
-        return data_node
+
+    def _waypoint_from_pjson(self, waypoint_pjson: PJSONType) -> _Waypoint:
+        offset, models_starting_pjson, models_ending_pjson = waypoint_pjson
+        models_starting = self._service.from_pjson(models_starting_pjson, Set[bytes])
+        models_ending = self._service.from_pjson(models_ending_pjson, Set[bytes])
+        return _Waypoint(offset, models_starting, models_ending)
