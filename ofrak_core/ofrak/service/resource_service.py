@@ -33,8 +33,8 @@ T = TypeVar("T", str, int, float, bytes)
 
 
 class LowValue:
-    def __lt__(self, other):
-        return True
+    def __gt__(self, other):
+        return False
 
 
 class HighValue:
@@ -136,7 +136,7 @@ class ResourceNode:
 
     def __lt__(self, other):
         if not isinstance(other, ResourceNode):
-            return False
+            return NotImplemented
         return self.model.id < other.model.id
 
     def __eq__(self, other):
@@ -218,21 +218,27 @@ class ResourceSortLogic(Generic[T], ABC):
     def has_effect(self) -> bool:
         raise NotImplementedError()
 
+    @abstractmethod
     def get_match_count(self) -> int:
         raise NotImplementedError()
 
+    @abstractmethod
     def _get_attribute_value(self, resource: ResourceModel) -> Optional[T]:
         raise NotImplementedError()
 
+    @abstractmethod
     def sort(self, resources: Iterable[ResourceModel]) -> Iterable[ResourceModel]:
         raise NotImplementedError()
 
+    @abstractmethod
     def walk(self) -> Iterable[ResourceNode]:
         raise NotImplementedError()
 
+    @abstractmethod
     def get_attribute(self) -> Optional[ResourceIndexedAttribute[T]]:
         raise NotImplementedError()
 
+    @abstractmethod
     def get_direction(self) -> ResourceSortDirection:
         raise NotImplementedError()
 
@@ -305,6 +311,23 @@ class NullResourceSortLogic(ResourceSortLogic):
     def get_attribute(self) -> None:
         return None
 
+    def get_match_count(self) -> int:  # pragma: no cover
+        raise NotImplementedError()
+
+    def _get_attribute_value(self, resource: ResourceModel) -> None:  # pragma: no cover
+        raise NotImplementedError()
+
+    def sort(
+        self, resources: Iterable[ResourceModel]
+    ) -> Iterable[ResourceModel]:  # pragma: no cover
+        raise NotImplementedError()
+
+    def walk(self) -> Iterable[ResourceNode]:  # pragma: no cover
+        raise NotImplementedError()
+
+    def get_direction(self) -> ResourceSortDirection:  # pragma: no cover
+        raise NotImplementedError()  # pragma: no cover
+
 
 class ResourceFilterLogic(Generic[T], ABC):
     def get_attribute(self) -> Optional[ResourceIndexedAttribute[T]]:
@@ -344,7 +367,7 @@ class ResourceAttributeFilterLogic(ResourceFilterLogic[T], ABC):
 
     @abstractmethod
     def _compute_ranges(self) -> Iterable[Range]:
-        pass
+        raise NotImplementedError()
 
     def walk(self, direction: ResourceSortDirection) -> Iterable[ResourceNode]:
         if self._cached_ranges is None:
@@ -570,9 +593,6 @@ class ResourceAncestorFilterLogic(ResourceFilterLogic):
         self.root = root
         self.include_root = include_root
         self.max_depth = max_depth
-
-    def has_effect(self) -> bool:
-        return self.root is not None
 
     def filter(self, resource: ResourceNode) -> bool:
         return resource.has_ancestor(self.root.model.id, self.max_depth, self.include_root)
