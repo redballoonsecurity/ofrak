@@ -40,10 +40,10 @@ Tail Block
 | --------- | --------- | -------- | --- |
 | 1 byte | 4 bytes | 16 bytes | 32 bytes |
 
-This format is interesting because it has a different sized tail block as well as different delimiters to represent the type of block. The component is able to handle these different types of fields by providing attributes in `FlashAttributes` that also includes a `FlashEccAttributes`. We will describe the other parts of these attributes and how to use them later in this page.
+This format is interesting because it has a different sized tail block as well as different delimiters to represent the type of block. The [FlashUnpacker][ofrak_component.flash.FlashResourceUnpacker] is able to handle these different types of fields by providing attributes in [FlashAttributes][ofrak_component.flash.FlashAttributes] that also includes a [FlashEccAttributes][ofrak_component.flash.FlashEccAttributes]. We will describe the other parts of these attributes and how to use them later in this page.
 
 ### Types of Fields
-In our experience, we have run into flash dumps that have included the following fields:
+The class [FlashFieldType][ofrak_components.flash.FlashFieldType] contains field types that are commonly encountered in flash dumps:
 ```python
 class FlashFieldType(Enum):
     DATA = 0
@@ -71,10 +71,10 @@ This class can be overridden or augmented if other field types are encountered.
 
 
 ## Usage
-A `FlashAttributes` must be provided in order to use the flash component. As with other aspects of OFRAK, this can be modified and overriden if it does not work specifically for your use case.
+A [FlashAttributes][ofrak_components.flash.FlashAttributes] must be provided in order to use the flash component. As with other aspects of OFRAK, this can be modified and overridden if it does not work specifically for your use case.
 
 ### `FlashAttributes`
-The `FlashAttributes` is necessary for communicating the information necessary to understand your specific flash format. This is the definition of the dataclass:
+The FlashAttributes][ofrak_components.flash.FlashAttributes] is necessary for communicating the information necessary to understand your specific flash format.
 
 The only required field is the `data_block_format`. These block formats are specified using an *ordered* `Iterable[FlashField]` to describe the block.
 
@@ -121,7 +121,7 @@ root_resource.add_attributes(CUSTOM_FLASH_ATTRIBUTES)
 await root_resource.save()
 ```
 
-We have included an example that unpacks a provided flash dump, makes a modification, and repacks it into the same format in [`Example 9: Flash Modification`](`https://ofrak.com/docs/examples/ex9_flash_modification.html`).
+See [Example 9: Flash Modification](https://ofrak.com/docs/examples/ex9_flash_modification.html) for example usage of these components.
 
 
 <div align="right">
