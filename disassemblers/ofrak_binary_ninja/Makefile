@@ -16,7 +16,7 @@ inspect:
 .PHONY: test
 test: inspect
 	$(PYTHON) -m pytest --cov=ofrak_binary_ninja --cov-report=term-missing ofrak_binary_ninja_test
-	fun-coverage
+	fun-coverage --cov-fail-under=87
 
 .PHONY: dependencies
 dependencies:
