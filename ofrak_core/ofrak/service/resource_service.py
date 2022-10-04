@@ -135,10 +135,8 @@ class ResourceNode:
             yield from child.walk_descendants(True, max_depth, _depth + 1)
 
     def __lt__(self, other):
-        if isinstance(other, LowValue):
-            return NotImplemented
         if not isinstance(other, ResourceNode):
-            return False
+            return NotImplemented
         return self.model.id < other.model.id
 
     def __eq__(self, other):
