@@ -43,8 +43,18 @@ class DataPatchesResult:
     patches: List[DataPatchResult]
 
 
-@dataclass(unsafe_hash=True)
+@dataclass
 class DataModel:
+    """
+    Representation of a chunk of binary data stored in a `DataServiceInterface` implementation.
+
+    :ivar id: Unique ID for this data model.
+    :ivar range: The slice of some underlying binary blob which belongs to this data model. For
+    root models, this range starts from 0 and ends at the total length of the blob.
+    :ivar root_id: If this model represents a part of a root model's data, this is the ID of that
+    root data model.
+    """
+
     id: bytes
     range: Range
     root_id: Optional[bytes] = None
