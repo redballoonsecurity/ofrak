@@ -1,17 +1,20 @@
-# Flash Component
+# NAND Flash Components
 ## Overview
 OFRAK includes a flash component that can unpack and pack a raw flash dump that includes out-of-band (OOB) data. A raw dump includes this extra data that make it hard to analyze without separating the "useful" data from the OOB data.
 
-In this page, we will cover why we have this component, what a typical dump may look like, and how to get started with the flash component.
+This page covers what a typical flash dump may look like and how to get started with using the flash components.
 
 ## A Typical Flash Dump
+
+A typical flash dump looks something like this:
+
 |    DATA   |    OOB   |    DATA   |    OOB   |    ...   |
 | --------- | -------- | --------- | -------- | -------- |
 | 512 Bytes | 16 Bytes | 512 Bytes | 16 Bytes |    ...   |
 
 This pattern may continue for the entire flash chip or could have fields in the header or tail block that show the size of the region that includes OOB data.
 
-Other examples are more complex. Sometimes this is because not all of the dump is ECC protected or needs OOB data so delimiters or magic bytes are necessary to show the area. An example format:
+Other examples are more complex. Sometimes this is due to the fact that not all of the dump is ECC protected or needs OOB data. In such cases, delimiters or magic bytes are necessary to show the area. An example format:
 
 Header Block
 
@@ -64,7 +67,7 @@ class FlashFieldType(Enum):
 - `DELIMITER` may be placed between fields in a block or to indicate what type of block it is.
 - `TOTAL_SIZE` indicates the size of the entire region that includes OOB data.
 
-We recognize that some fields may be used differently than our implementation currently allows and we are likely missing some fields to be truly universal. In these cases, these classes can be overriden to be more flexible with your own use case.
+This class can be overridden or augmented if other field types are encountered.
 
 
 ## Usage
@@ -73,18 +76,7 @@ A `FlashAttributes` must be provided in order to use the flash component. As wit
 ### `FlashAttributes`
 The `FlashAttributes` is necessary for communicating the information necessary to understand your specific flash format. This is the definition of the dataclass:
 
-```python
-class FlashAttributes(ResourceAttributes):
-    # Block formats must be ORDERED iterables
-    data_block_format: Iterable[FlashField]
-    header_block_format: Optional[Iterable[FlashField]] = None
-    first_data_block_format: Optional[Iterable[FlashField]] = None
-    last_data_block_format: Optional[Iterable[FlashField]] = None
-    tail_block_format: Optional[Iterable[FlashField]] = None
-    ecc_attributes: Optional[FlashEccAttributes] = None
-    checksum_func: Optional[Callable[[Any], Any]] = None
-```
-The only required field is the `data_block_format`. These block formats are specified using an *ordered* `Iterable[FlashField]` to describe the block:
+The only required field is the `data_block_format`. These block formats are specified using an *ordered* `Iterable[FlashField]` to describe the block.
 
 ```python
 @dataclass
@@ -115,8 +107,8 @@ class FlashEccAttributes(ResourceAttributes):
 ```
 
 
-### Running the component
-It can be used like any other component after first tagging the resource as `FlashResource` and then adding the attributes:
+### Running the Flash components
+The Flash components can be used like any other OFRAK components. The first step is to tag a resource as a [FlashResource][ofrak_components.flash.FlashResource] and tag it with its flash resource attributes:
 
 ```python
 # Create root resource and tag
