@@ -1,5 +1,4 @@
 import sys
-from typing import AsyncIterator, Iterable
 
 from keystone import (
     KS_ARCH_ARM64,
@@ -235,48 +234,3 @@ class KeystoneAssemblerService(AssemblerServiceInterface):
                     error,
                 )
             )
-
-    async def assemble_many(
-        self,
-        assembly_list: Iterable[str],
-        vm_addrs: Iterable[int],
-        program_attributes: ProgramAttributes,
-        mode=InstructionSetMode.NONE,  # type: InstructionSetMode
-    ) -> AsyncIterator[bytes]:
-        for assembly, vm_addr in zip(assembly_list, vm_addrs):
-            result = await self.assemble(assembly, vm_addr, program_attributes, mode)
-            yield result
-
-    async def assemble_file(
-        self,
-        assembly_file: str,
-        vm_addr: int,
-        program_attributes: ProgramAttributes,
-        mode=InstructionSetMode.NONE,
-    ) -> bytes:
-        """
-        Assemble the given assembly file.
-
-        :param assembly_file: The path to the assembly file.
-        :param vm_addr: The virtual address at which the assembly file should be assembled.
-        :param program_attributes: The processor targeted by the assembly
-        :param mode: The mode of the processor for the assembly
-
-        :return: The assembled machine code
-        """
-        with open(assembly_file) as file_handle:
-            assembly = file_handle.read()
-        # Keystone Seg faults when trying to assemble '.text'.
-        # It is therefore stripped from the assembly here.
-        assembly = assembly.replace(".text\n", "")
-        return await self.assemble(assembly, vm_addr, program_attributes, mode)
-
-    async def assemble_files(
-        self,
-        assembly_files: Iterable[str],
-        vm_addrs: Iterable[int],
-        program_attributes: ProgramAttributes,
-        mode: InstructionSetMode = InstructionSetMode.NONE,
-    ) -> AsyncIterator[bytes]:
-        for assembly_file, vm_addr in zip(assembly_files, vm_addrs):
-            yield await self.assemble_file(assembly_file, vm_addr, program_attributes, mode)
