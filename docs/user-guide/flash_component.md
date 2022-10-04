@@ -78,12 +78,6 @@ The FlashAttributes][ofrak_components.flash.FlashAttributes] is necessary for co
 
 The only required field is the `data_block_format`. These block formats are specified using an *ordered* `Iterable[FlashField]` to describe the block.
 
-```python
-@dataclass
-class FlashField:
-    field_type: FlashFieldType
-    size: int
-```
 This dataclass uses the previously shown `Enum` with our various field types. We just need to specify the field type and the size for each `FlashField` and provide them in order. An example:
 ```python
 FlashAttributes(
@@ -94,17 +88,7 @@ FlashAttributes(
 )
 ```
 
-The `ecc_attributes` is also important for any dumps that include ECC. You have the option of providing the algorithms for encoding, decoding, and correcting the data. In addition, this is where the magic and any delimiter bytes are specified. The definition:
-```python
-class FlashEccAttributes(ResourceAttributes):
-    ecc_class: Optional[EccAlgorithm] = None
-    ecc_magic: Optional[bytes] = None
-    head_delimiter: Optional[bytes] = None
-    first_data_delimiter: Optional[bytes] = None
-    data_delimiter: Optional[bytes] = None
-    last_data_delimiter: Optional[bytes] = None
-    tail_delimiter: Optional[bytes] = None
-```
+The `ecc_attributes` are also important for any dumps that include ECC. You have the option of providing the algorithms for encoding, decoding, and correcting the data. In addition, this is where the magic and any delimiter bytes are specified. See [FlashEccAttributes][ofrak_components.flash.FlashEccAttributes] for more information.
 
 
 ### Running the Flash components
