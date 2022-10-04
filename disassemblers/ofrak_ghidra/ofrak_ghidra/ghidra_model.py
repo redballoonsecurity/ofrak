@@ -60,7 +60,7 @@ class OfrakGhidraScript:
                 f"{root_ghidra_project.ghidra_url}/{self.script_name}", params=params
             )
             if response.status == 200:
-                return await response.json()
+                return await response.json(content_type=None)
             elif response.status == 404:
                 raise GhidraComponentException(
                     f"Ghidra OFRAK server has no registered endpoint '{self.script_name}'"
