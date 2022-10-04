@@ -64,18 +64,6 @@ class _ComponentAutoRunRequest:
     component_filter: ComponentFilter
 
 
-class _ComponentAutoRunResult:
-    def __init__(
-        self,
-        request: _ComponentAutoRunRequest,
-        matched_filters: Tuple[ComponentFilter, ...],
-        result: ComponentRunResult,
-    ):
-        self.request = request
-        self.matched_filters = matched_filters
-        self.result = result
-
-
 class JobService(JobServiceInterface):
     def __init__(
         self,
