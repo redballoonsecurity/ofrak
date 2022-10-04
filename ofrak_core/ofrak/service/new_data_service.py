@@ -84,9 +84,15 @@ class NewDataService(DataServiceInterface):
             raise AlreadyExistError(f"A model with {data_id.hex()} already exists!")
 
         parent_model = self._get_by_id(parent_id)
+        mapped_range = mapped_range.translate(parent_model.range.start)
+        if mapped_range.end > parent_model.range.end:
+            raise OutOfBoundError(
+                f"Cannot map a new node into range {mapped_range} into {parent_model.range} of "
+                f"{parent_id.hex()}"
+            )
+
         if parent_model.is_mapped():
             root_id = parent_model.root_id
-            mapped_range = mapped_range.translate(parent_model.range.start)
         else:
             root_id = parent_model.id
         new_model = DataModel(data_id, mapped_range, root_id)
@@ -152,7 +158,7 @@ class NewDataService(DataServiceInterface):
 
         results = []
         for root_id, patches_for_root in patches_by_root.items():
-            results.extend(self._apply_patches_to_root(root_id, patches_for_root, []))
+            results.extend(self._apply_patches_to_root(root_id, patches_for_root))
 
         return results
 
@@ -185,10 +191,11 @@ class NewDataService(DataServiceInterface):
         for root_model in roots_to_delete:
             root = self._roots[root_model.id]
             for child_model in root.get_children():
-                mapped_to_delete.remove(child_model)
+                mapped_to_delete.discard(child_model)
                 del self._model_store[child_model.id]
 
             del self._roots[root_model.id]
+            del self._model_store[root_model.id]
 
         for model in mapped_to_delete:
             root = self._get_root_by_id(model.root_id)
@@ -201,7 +208,7 @@ class NewDataService(DataServiceInterface):
         patches: List[DataPatch],
     ) -> List[DataPatchesResult]:
         root: _DataRoot = self._roots[root_data_id]
-        finalized_ordered_patches: List[Tuple[Range, bytes]] = []
+        finalized_ordered_patches: List[Tuple[Range, bytes, int]] = []
         resize_tracker = _PatchResizeTracker()
 
         # Screen patches for inconsistencies/overlaps
@@ -209,14 +216,15 @@ class NewDataService(DataServiceInterface):
         raw_patch_ranges_in_root = []
 
         for patch in patches:
-            if resize_tracker.overlaps_resized_range(patch.range):
+            target_model = self._get_by_id(patch.data_id)
+            raw_absolute_patch_range = self._get_absolute_range(target_model, patch.range)
+
+            if resize_tracker.overlaps_resized_range(raw_absolute_patch_range):
                 raise PatchOverlapError(
                     f"Patch to {patch.range} of {patch.data_id.hex()} overlaps previously resized "
                     f"area of {patch.data_id.hex()} and cannot be applied!"
                 )
-            target_model = self._get_by_id(patch.data_id)
 
-            raw_absolute_patch_range = self._get_absolute_range(target_model, patch.range)
             raw_patch_ranges_in_root.append(raw_absolute_patch_range)
             absolute_patch_range = resize_tracker.translate_range(raw_absolute_patch_range)
             models_intersecting_patch_range = root.get_children_with_boundaries_intersecting_range(
@@ -225,7 +233,7 @@ class NewDataService(DataServiceInterface):
 
             size_diff = len(patch.data) - patch.range.length()
             if size_diff == 0:
-                finalized_ordered_patches.append((absolute_patch_range, patch.data))
+                finalized_ordered_patches.append((absolute_patch_range, patch.data, size_diff))
             elif models_intersecting_patch_range:
                 raise PatchOverlapError(
                     f"Because patch to {patch.data_id.hex()} resizes data by {size_diff} bytes, "
@@ -236,22 +244,38 @@ class NewDataService(DataServiceInterface):
                     f"afterwards along new data ranges."
                 )
             else:
-                finalized_ordered_patches.append((patch.range, patch.data))
-                resize_tracker.add_new_resized_range(patch.range, size_diff)
+                finalized_ordered_patches.append((absolute_patch_range, patch.data, size_diff))
+                resize_tracker.add_new_resized_range(absolute_patch_range, size_diff)
 
         results = defaultdict(list)
         for affected_range in Range.merge_ranges(raw_patch_ranges_in_root):
             for affected_model in root.get_children_intersecting_range(affected_range):
-                results[affected_model.id].append(DataPatchResult(affected_range))
+                results[affected_model.id].append(
+                    DataPatchResult(
+                        affected_range.intersect(affected_model.range).translate(
+                            -affected_model.range.start
+                        )
+                    )
+                )
             results[root_data_id].append(DataPatchResult(affected_range))
 
         # Apply finalized patches to data and data models
-        for patch_range, data in finalized_ordered_patches:
+        for patch_range, data, size_diff in finalized_ordered_patches:
             root.data = root.data[: patch_range.start] + data + root.data[patch_range.end :]
+            if size_diff > 0:
+                for child_model in root.get_children():
+                    if child_model.range.end <= patch_range.start:
+                        continue
+                    elif child_model.range.start >= patch_range.end:
+                        child_model.range = child_model.range.translate(size_diff)
+                    else:
+                        child_model.range = Range(
+                            child_model.range.start, child_model.range.end + size_diff
+                        )
 
-        for child_model in root.get_children():
-            new_child_range = resize_tracker.translate_range(child_model.range)
-            child_model.range = new_child_range
+        # for child_model in root.get_children():
+        #     new_child_range = resize_tracker.translate_range(child_model.range)
+        #     child_model.range = new_child_range
 
         root.model.range = Range(
             root.model.range.start, root.model.range.end + resize_tracker.get_total_size_diff()
@@ -390,14 +414,26 @@ class _PatchResizeTracker:
         self.resizing_shifts.add([0, 0])
 
     def overlaps_resized_range(self, r: Range) -> bool:
-        return any(resized_range.overlaps(r) for resized_range in self.resized_ranges)
+        return any(
+            resized_range.overlaps(r) or resized_range.start == r.start
+            for resized_range in self.resized_ranges
+        )
 
     def translate_range(self, r: Range) -> Range:
-        i = self.resizing_shifts.bisect_left((r.start, 0))
+        return Range(
+            self.get_shifted_point(r.start, False),
+            self.get_shifted_point(r.end, True),
+        )
+
+    def get_shifted_point(self, point: int, exclusive_point: bool) -> int:
+        i = self.resizing_shifts.bisect_right((point, 0))
         if i == 0:
-            return r
-        i = min(i, len(self.resizing_shifts) - 1)
-        return r.translate(self.resizing_shifts[i][1])
+            return point
+        else:
+            previous_shift_end, shift = self.resizing_shifts[i - 1]
+            if not exclusive_point and previous_shift_end == point:
+                pass
+            return point + shift
 
     def add_new_resized_range(self, r: Range, size_diff: int):
         self.resized_ranges.append(r)

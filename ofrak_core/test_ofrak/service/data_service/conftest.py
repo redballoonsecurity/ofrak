@@ -1,7 +1,7 @@
 import pytest
 
+from ofrak.service.new_data_service import NewDataService
 from ofrak_type.range import Range
-from ofrak.service.data_service import DataService
 from test_ofrak.service.data_service.data_service_test import (
     DATA_0,
     DATA_1,
@@ -25,8 +25,8 @@ async def populated_data_service():
      |   +- DATA_4 (0x4, 0x8)
      +- DATA_5 (0x10, 0x18)
     """
-    data_service = DataService()
-    await data_service.create(DATA_0, b"\x00" * 0x18)
+    data_service = NewDataService()
+    await data_service.create_root(DATA_0, b"\x00" * 0x18)
     await data_service.create_mapped(DATA_1, DATA_0, Range(0x0, 0x8))
 
     await data_service.create_mapped(DATA_2, DATA_0, Range(0x8, 0x10))
