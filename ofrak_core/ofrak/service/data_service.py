@@ -19,7 +19,7 @@ from ofrak_type.range import Range
 DataId = bytes
 
 
-class NewDataService(DataServiceInterface):
+class DataService(DataServiceInterface):
     def __init__(self):
         self._model_store: Dict[DataId, DataModel] = dict()
         self._roots: Dict[DataId, _DataRoot] = dict()

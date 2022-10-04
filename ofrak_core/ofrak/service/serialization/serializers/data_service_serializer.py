@@ -3,7 +3,7 @@ from typing import Dict, Any, Set
 from sortedcontainers import SortedList
 
 from ofrak.model.data_model import DataModel
-from ofrak.service.new_data_service import NewDataService, _DataRoot, _Waypoint
+from ofrak.service.data_service import DataService, _DataRoot, _Waypoint
 from ofrak.service.serialization.pjson_types import PJSONType
 from ofrak.service.serialization.serializers.serializer_i import SerializerInterface
 
@@ -17,9 +17,9 @@ class DataServiceSerializer(SerializerInterface):
     methods of this class, and avoids serializing redundant information.
     """
 
-    targets = (NewDataService,)
+    targets = (DataService,)
 
-    def obj_to_pjson(self, obj: NewDataService, _type_hint: Any) -> Dict[str, PJSONType]:
+    def obj_to_pjson(self, obj: DataService, _type_hint: Any) -> Dict[str, PJSONType]:
         data_service_pjson = {
             "_model_store": self._service.to_pjson(obj._model_store, Dict[bytes, DataModel]),
             "_roots": [self._data_root_to_pjson(data_root) for data_root in obj._roots],
@@ -27,14 +27,14 @@ class DataServiceSerializer(SerializerInterface):
 
         return data_service_pjson
 
-    def pjson_to_obj(self, pjson_obj: Dict[str, PJSONType], _type_hint: Any) -> NewDataService:
+    def pjson_to_obj(self, pjson_obj: Dict[str, PJSONType], _type_hint: Any) -> DataService:
         _model_store = self._service.from_pjson(pjson_obj["_model_store"], Dict[bytes, DataModel])
         _roots = dict()
         for root_pjson in pjson_obj["_roots"]:
             root_obj = self._data_root_from_pjson(root_pjson, _model_store)
             _roots[root_obj.model.id] = root_obj
 
-        data_service: NewDataService = NewDataService.__new__(NewDataService)
+        data_service: DataService = DataService.__new__(DataService)
         data_service._model_store = _model_store
         data_service._roots = _roots
 

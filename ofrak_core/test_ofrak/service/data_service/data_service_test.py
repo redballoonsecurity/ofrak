@@ -6,7 +6,7 @@ from ofrak.service.error import (
     OutOfBoundError,
     PatchOverlapError,
 )
-from ofrak.service.new_data_service import NewDataService
+from ofrak.service.data_service import DataService
 from ofrak_type.error import AlreadyExistError, NotFoundError
 from ofrak_type.range import Range
 
@@ -27,7 +27,7 @@ DATA_TEST_1 = b"\x01\x01"
 
 @pytest.fixture
 def data_service():
-    return NewDataService()
+    return DataService()
 
 
 @pytest.fixture
