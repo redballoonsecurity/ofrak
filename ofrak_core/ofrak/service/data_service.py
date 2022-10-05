@@ -33,6 +33,8 @@ class DataService(DataServiceInterface):
         self._model_store[data_id] = new_model
         self._roots[data_id] = _DataRoot(new_model, data)
 
+        return new_model
+
     async def create_mapped(
         self,
         data_id: bytes,

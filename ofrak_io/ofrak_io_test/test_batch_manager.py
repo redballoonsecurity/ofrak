@@ -124,7 +124,7 @@ async def test_batch_data_service_accesses(
         data_id = int.to_bytes(abs(hash(s)), 8, "little")
         data = s.encode("UTF-8")
 
-        m = await data_service.create(data_id, data)
+        m = await data_service.create_root(data_id, data)
         expected_models[data_id] = m
 
     tasks = []
