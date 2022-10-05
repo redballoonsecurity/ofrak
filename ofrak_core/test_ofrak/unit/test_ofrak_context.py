@@ -7,6 +7,7 @@ def test_ofrak_context():
     """
     Test that OFRAK.run successfully creates an event loop and runs the target async function.
     """
+    # Reset the event loop (this appears to be necessary when running in CI)
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
