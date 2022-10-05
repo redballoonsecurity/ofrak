@@ -15,7 +15,7 @@ from ofrak.service.error import OutOfBoundError, PatchOverlapError
 from ofrak_type.error import NotFoundError, AlreadyExistError
 from ofrak_type.range import Range
 
-# Type alias; typechecker makes no distinction between this and bytes. It's just for humans (you?).
+# Type alias; typechecker makes no distinction between this and bytes. It's just for humans (you?)
 DataId = bytes
 
 
@@ -37,8 +37,8 @@ class DataService(DataServiceInterface):
 
     async def create_mapped(
         self,
-        data_id: bytes,
-        parent_id: bytes,
+        data_id: DataId,
+        parent_id: DataId,
         mapped_range: Range,
     ) -> DataModel:
         if data_id in self._model_store:
@@ -63,16 +63,16 @@ class DataService(DataServiceInterface):
     async def get_by_id(self, data_id: DataId) -> DataModel:
         return self._get_by_id(data_id)
 
-    async def get_by_ids(self, data_ids: Iterable[bytes]) -> Iterable[DataModel]:
+    async def get_by_ids(self, data_ids: Iterable[DataId]) -> Iterable[DataModel]:
         return [self._get_by_id(data_id) for data_id in data_ids]
 
-    async def get_data_length(self, data_id: bytes) -> int:
+    async def get_data_length(self, data_id: DataId) -> int:
         return self._get_by_id(data_id).range.length()
 
-    async def get_data_range_within_root(self, data_id: bytes) -> Range:
+    async def get_data_range_within_root(self, data_id: DataId) -> Range:
         return self._get_by_id(data_id).range
 
-    async def get_range_within_other(self, data_id: bytes, within_data_id: bytes) -> Range:
+    async def get_range_within_other(self, data_id: DataId, within_data_id: DataId) -> Range:
         model = self._get_by_id(data_id)
         within_model = self._get_by_id(within_data_id)
         if data_id == within_data_id:
@@ -90,7 +90,7 @@ class DataService(DataServiceInterface):
         else:
             return within_model.range.intersect(model.range)
 
-    async def get_data(self, data_id: bytes, data_range: Optional[Range] = None) -> bytes:
+    async def get_data(self, data_id: DataId, data_range: Optional[Range] = None) -> bytes:
         model = self._get_by_id(data_id)
         if model.is_mapped():
             root = self._get_root_by_id(model.root_id)
@@ -123,22 +123,7 @@ class DataService(DataServiceInterface):
 
         return results
 
-    async def delete_node(self, data_id: bytes) -> None:
-        model = self._get_by_id(data_id)
-        if model.root_id is None:
-            # deleting a root node
-            root = self._roots[model.id]
-            for child_model in root.get_children():
-                del self._model_store[child_model.id]
-
-            del self._roots[model.id]
-
-        else:
-            root = self._get_root_by_id(model.root_id)
-            root.delete_mapped_model(model)
-            del self._model_store[data_id]
-
-    async def delete_models(self, data_ids: Iterable[bytes]) -> None:
+    async def delete_models(self, data_ids: Iterable[DataId]) -> None:
         roots_to_delete = dict()
         mapped_to_delete = dict()
 
