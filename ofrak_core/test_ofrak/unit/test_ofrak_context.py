@@ -1,4 +1,15 @@
+import asyncio
+
+import pytest
+
 from ofrak import OFRAK, OFRAKContext
+
+
+@pytest.fixture
+def event_loop():
+    loop = asyncio.get_event_loop()
+    yield loop
+    loop.close()
 
 
 def test_ofrak_context():
