@@ -21,6 +21,32 @@ class GenericText(GenericBinary):
 
 
 @dataclass
+class BinaryExtendConfig(ComponentConfig):
+    """
+    Config for the [BinaryExtendModifier][ofrak.core.binary.BinaryExtendModifier].
+
+    :ivar content: the extended bytes.
+    """
+
+    content: bytes
+
+
+class BinaryExtendModifier(Modifier[BinaryExtendConfig]):
+    """
+    Extend a binary with new data.
+    """
+
+    targets = ()
+
+    async def modify(self, resource: Resource, config: BinaryExtendConfig):
+        if len(config.content) == 0:
+            raise ValueError("Content of the extended space not provided")
+        data = await resource.get_data()
+        data += config.content
+        resource.queue_patch(Range(0, await resource.get_data_length()), data)
+
+
+@dataclass
 class BinaryPatchConfig(ComponentConfig):
     """
     Config for the [BinaryPatchModifier][ofrak.core.binary.BinaryPatchModifier].
