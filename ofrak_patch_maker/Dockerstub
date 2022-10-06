@@ -18,7 +18,7 @@ RUN cd /tmp && \
 RUN cd /tmp && \
     apt-get -y update  && apt-get -y install software-properties-common gcc-10
 
-RUN if ["$TARGETARCH" = "amd64"]; then \
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
     cd /tmp && \
     apt-get update && apt-get install -y texinfo && \
     wget http://archive.ubuntu.com/ubuntu/pool/main/b/binutils/binutils_2.34.orig.tar.xz --show-progress --progress=bar:force:noscroll && \
@@ -29,19 +29,20 @@ RUN if ["$TARGETARCH" = "amd64"]; then \
     make -j32; \
 fi;
 
-RUN if ["$TARGETARCH" = "arm64"]; then \
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
     cd /tmp && \
     apt-get update && apt-get install -y texinfo && \
     wget http://archive.ubuntu.com/ubuntu/pool/main/b/binutils/binutils_2.34.orig.tar.xz --show-progress --progress=bar:force:noscroll && \
     tar xvf binutils_2.34.orig.tar.xz -C /opt/rbs/toolchain && \
     rm -rf binutils_2.34.orig.tar.xz && \
     cd /opt/rbs/toolchain/binutils-2.34 && \
-    ./configure CC=/usr/bin/x86_64-linux-gnu-gcc-10 && \
+    ./configure CC=/usr/bin/aarch64-linux-gnu-gcc-10 && \
     make -j32; \
 fi;
 
 #M68k GNU 10 Linux
-RUN if ["$TARGETARCH" = "amd64"]; then \
+#Only exists for x86
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
     apt-get update && apt-get install -y gcc-10-m68k-linux-gnu; \
 fi;
 
@@ -64,14 +65,12 @@ RUN cd /tmp/vbcc && cp ./bin/* /opt/rbs/toolchain/vbcc_0_9/bin/ && \
     cp ./vobjdump /opt/rbs/toolchain/vbcc_0_9/bin/
 
 #AARCH64 GNU 10 Linux
-RUN if ["$TARGETARCH" = "amd64"]; then \
+RUN if ![ "$TARGETARCH" = "arm64" ]; then \
     apt-get update && apt-get install -y gcc-10-aarch64-linux-gnu; \
 fi;
 
-RUN if ["$TARGETARCH" = "arm64"]; then \
-    ln -s gcc-10 /usr/bin/aarch64-linux-gnu-gcc-10 \
-    ln -s ld /usr/bin/aarch64-linux-gnu-ld \
-    ln -s objdump /usr/bin/aarch64-linux-gnu-objdump; \
+RUN if ![ "$TARGETARCH" = "amd64" ]; then \
+    apt-get update && install -y gcc-10-x86-64-linux-gnu; \
 fi;
 
 #AVR GCC
