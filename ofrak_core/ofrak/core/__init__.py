@@ -32,5 +32,4 @@ from ofrak.core.magic import *
 from ofrak.core.memory_region import *
 from ofrak.core.program import *
 from ofrak.core.program_section import *
-from ofrak.core.raw import *
 from ofrak.core.strings import *
