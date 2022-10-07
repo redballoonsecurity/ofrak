@@ -5,6 +5,7 @@
   import Toolbar from "./Toolbar.svelte";
 
   import { selectedResource, selected } from "./stores.js";
+  import SearchView from "./SearchView.svelte";
 
   export let resourceNodeDataMap, modifierView;
   $: rootResource = $selectedResource;
@@ -185,6 +186,14 @@
         iconUrl: "/icons/comment.svg",
         onclick: async (e) => {
           modifierView = CommentView;
+        },
+      },
+
+      {
+        text: "Search",
+        iconUrl: "/icons/modify.svg",
+        onclick: async (e) => {
+          modifierView = SearchView;
         },
       },
     ];
