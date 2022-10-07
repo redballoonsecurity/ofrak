@@ -271,12 +271,11 @@ class Resource:
 
     async def _fetch(self, resource: MutableResourceModel):
         """
-        #     Update the local model with the latest version from the resource service. This will fail
-        #     if this resource has been modified.
-        #
-        #     :raises InvalidStateError: If the local resource model has been modified
-        #     :raises NotFoundError: If the resource service does not have a model for this resource's ID
-        #
+        Update the local model with the latest version from the resource service. This will fail
+        if this resource has been modified.
+
+        :raises InvalidStateError: If the local resource model has been modified
+        :raises NotFoundError: If the resource service does not have a model for this resource's ID
         """
         if resource.is_modified and not resource.is_deleted:
             raise InvalidStateError(
