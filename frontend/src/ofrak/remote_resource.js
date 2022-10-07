@@ -270,7 +270,7 @@ export class RemoteResource extends Resource {
       }
       return await r.json();
     });
-    return this._remote_models_to_resources(matching_models)
+    return this._remote_models_to_resources(matching_models);
   }
 
   _remote_models_to_resources(remote_models) {

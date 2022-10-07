@@ -131,8 +131,8 @@
 </style>
 
 <script>
-  import {selected, selectedResource} from "./stores.js";
-  import {calculator} from "./helpers";
+  import { selected, selectedResource } from "./stores.js";
+  import { calculator } from "./helpers";
   import ResourceTreeNode from "./ResourceTreeNode.svelte";
 
   export let modifierView, resourceNodeDataMap;
@@ -140,7 +140,7 @@
     searchRangeStartInput,
     searchRangeEndInput,
     rangeSearch = false,
-          results = [],
+    results = [],
     errorMessage;
 
   const searchTarget = $selectedResource;
@@ -157,18 +157,19 @@
       try {
         if (rangeSearch) {
           const searchRangeStartAddress = calculator.calculate(
-                  searchRangeStartInput
-          ),
-                  searchRangeEndAddress = calculator.calculate(searchRangeEndInput);
+              searchRangeStartInput
+            ),
+            searchRangeEndAddress = calculator.calculate(searchRangeEndInput);
 
-          results = await searchTarget.search_for_vaddr(searchRangeStartAddress, searchRangeEndAddress);
+          results = await searchTarget.search_for_vaddr(
+            searchRangeStartAddress,
+            searchRangeEndAddress
+          );
         } else {
           const startAddress = calculator.calculate(searchInput);
 
           results = await searchTarget.search_for_vaddr(startAddress, null);
         }
-
-
       } catch (err) {
         try {
           errorMessage = JSON.parse(err.message).message;
@@ -183,8 +184,8 @@
 <div class="container">
   <div class="inputs">
     <p>
-      Searching for descendants of {searchTarget.get_id()} whose virtual address matches a specific
-      address or lies in a range of addresses.
+      Searching for descendants of {searchTarget.get_id()} whose virtual address
+      matches a specific address or lies in a range of addresses.
     </p>
     {#if rangeSearch}
       <label>
@@ -223,7 +224,11 @@
   </div>
   {#each results as matched_resource}
     <div class="resultsbox">
-      <ResourceTreeNode rootResource="{matched_resource}" collapsed="false" bind:resourceNodeDataMap />
+      <ResourceTreeNode
+        rootResource="{matched_resource}"
+        collapsed="false"
+        bind:resourceNodeDataMap
+      />
     </div>
   {/each}
 </div>
