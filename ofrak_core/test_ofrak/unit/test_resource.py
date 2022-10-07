@@ -252,3 +252,9 @@ async def test_get_range_within_parent_for_root(resource: Resource):
     Resource.get_data_range_within_parent returns Range(0, 0) if the resource is not mapped.
     """
     assert await resource.get_data_range_within_parent() == Range(0, 0)
+
+
+async def test_identify(resource: Resource):
+    await resource.identify()
+    assert resource.has_tag(GenericBinary) is True
+    assert resource.has_tag(Elf) is False
