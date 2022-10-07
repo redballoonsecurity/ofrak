@@ -216,3 +216,39 @@ async def test_flush_to_disk_pack(ofrak_context: OFRAKContext):
             await root_resource.flush_to_disk(t.name)
 
         await root_resource.flush_to_disk(t.name, pack=False)
+
+
+async def test_is_modified(resource: Resource):
+    """
+    Test Resource.is_modified raises true if the local resource is "dirty".
+    """
+    assert resource.is_modified() is False
+
+    resource.add_tag(Elf)
+
+    assert resource.is_modified() is True
+
+
+async def test_summarize(resource: Resource):
+    """
+    Test that the resource string summary returns a string
+    """
+    summary = await resource.summarize()
+    assert isinstance(summary, str)
+
+
+async def test_get_range_within_parent(resource: Resource):
+    """
+    Test that Resource.get_data_range_within_parent returns the correctly-mapped range.
+    """
+    child_range = Range(1, 3)
+    child = await resource.create_child(data_range=child_range)
+    data_range_within_parent = await child.get_data_range_within_parent()
+    assert data_range_within_parent == child_range
+
+
+async def test_get_range_within_parent_for_root(resource: Resource):
+    """
+    Resource.get_data_range_within_parent returns Range(0, 0) if the resource is not mapped.
+    """
+    assert await resource.get_data_range_within_parent() == Range(0, 0)
