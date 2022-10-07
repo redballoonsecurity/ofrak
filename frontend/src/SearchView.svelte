@@ -179,6 +179,15 @@
       }
     }
   }
+  async function leave_view() {
+    if ($selectedResource !== undefined) {
+      const ancestors = await $selectedResource.get_ancestors(null);
+      for (const ancestor of ancestors) {
+        resourceNodeDataMap[ancestor.get_id()].collapsed = false;
+      }
+    }
+    modifierView = undefined;
+  }
 </script>
 
 <div class="container">
@@ -217,7 +226,7 @@
   </div>
   <div class="actions">
     <button on:click="{search}">Search</button>
-    <button on:click="{() => (modifierView = undefined)}">Cancel</button>
+    <button on:click="{leave_view}">Cancel</button>
   </div>
   <div class="results">
     <p>Found {results.length} results</p>

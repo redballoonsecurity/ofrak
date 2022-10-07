@@ -31,6 +31,7 @@ from ofrak import (
     ResourceFilter,
     ResourceAttributeRangeFilter,
     ResourceAttributeValueFilter,
+    ResourceSort,
 )
 from ofrak.core import File, Addressable
 from ofrak.core import (
@@ -352,7 +353,8 @@ class AiohttpOFRAKServer:
                                 Addressable.VirtualAddress, vaddr_start, vaddr_end
                             ),
                         )
-                    )
+                    ),
+                    r_sort=ResourceSort(Addressable.VirtualAddress),
                 )
             else:
                 matching_resources = await resource.get_descendants(
@@ -360,7 +362,8 @@ class AiohttpOFRAKServer:
                         attribute_filters=(
                             ResourceAttributeValueFilter(Addressable.VirtualAddress, vaddr_start),
                         )
-                    )
+                    ),
+                    r_sort=ResourceSort(Addressable.VirtualAddress),
                 )
             return web.json_response(list(map(self._serialize_resource, matching_resources)))
         except NotFoundError:

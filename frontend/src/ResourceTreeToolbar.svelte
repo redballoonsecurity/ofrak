@@ -191,7 +191,7 @@
 
       {
         text: "Search",
-        iconUrl: "/icons/modify.svg",
+        iconUrl: "/icons/identify.svg",
         onclick: async (e) => {
           modifierView = SearchView;
         },
