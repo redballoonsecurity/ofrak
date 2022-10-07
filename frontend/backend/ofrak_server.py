@@ -343,25 +343,28 @@ class AiohttpOFRAKServer:
         vaddr_start, vaddr_end = self._serializer.from_pjson(
             await request.json(), Tuple[int, Optional[int]]
         )
-        if vaddr_end is not None:
-            matching_resources = await resource.get_descendants(
-                r_filter=ResourceFilter(
-                    attribute_filters=(
-                        ResourceAttributeRangeFilter(
-                            Addressable.VirtualAddress, vaddr_start, vaddr_end
+        try:
+            if vaddr_end is not None:
+                matching_resources = await resource.get_descendants(
+                    r_filter=ResourceFilter(
+                        attribute_filters=(
+                            ResourceAttributeRangeFilter(
+                                Addressable.VirtualAddress, vaddr_start, vaddr_end
+                            ),
                         )
                     )
                 )
-            )
-        else:
-            matching_resources = await resource.get_descendants(
-                r_filter=ResourceFilter(
-                    attribute_filters=(
-                        ResourceAttributeValueFilter(Addressable.VirtualAddress, vaddr_start)
+            else:
+                matching_resources = await resource.get_descendants(
+                    r_filter=ResourceFilter(
+                        attribute_filters=(
+                            ResourceAttributeValueFilter(Addressable.VirtualAddress, vaddr_start),
+                        )
                     )
                 )
-            )
-        return web.json_response(list(map(self._serialize_resource, matching_resources)))
+            return web.json_response(list(map(self._serialize_resource, matching_resources)))
+        except NotFoundError:
+            return web.json_response([])
 
     async def _get_resource_by_id(self, resource_id: bytes, job_id: bytes) -> Resource:
         resource = await self._ofrak_context.resource_factory.create(

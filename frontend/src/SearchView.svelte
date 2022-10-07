@@ -123,14 +123,15 @@
 </style>
 
 <script>
-  import { selected, selectedResource } from "./stores.js";
-  import { calculator } from "./helpers";
+  import {selected, selectedResource} from "./stores.js";
+  import {calculator} from "./helpers";
 
   export let modifierView;
   let searchInput,
     searchRangeStartInput,
     searchRangeEndInput,
     rangeSearch = false,
+          results = [],
     errorMessage;
 
   function refreshResource() {
@@ -140,21 +141,29 @@
     $selected = originalSelected;
   }
 
-  function search() {
-    try {
-      if (rangeSearch) {
-        let searchRangeStartAddress = calculator.calculate(
-          searchRangeStartInput
-        );
-        let searchRangeEndAddress = calculator.calculate(searchRangeEndInput);
-      } else {
-        let startAddress = calculator.calculate(searchInput);
-      }
-    } catch (err) {
+  async function search() {
+    if ($selectedResource) {
       try {
-        errorMessage = JSON.parse(err.message).message;
-      } catch (_) {
-        errorMessage = err.message;
+        if (rangeSearch) {
+          const searchRangeStartAddress = calculator.calculate(
+                  searchRangeStartInput
+          ),
+                  searchRangeEndAddress = calculator.calculate(searchRangeEndInput);
+
+          results = await $selectedResource.search_for_vaddr(searchRangeStartAddress, searchRangeEndAddress);
+        } else {
+          const startAddress = calculator.calculate(searchInput);
+
+          results = await $selectedResource.search_for_vaddr(startAddress, null);
+        }
+
+
+      } catch (err) {
+        try {
+          errorMessage = JSON.parse(err.message).message;
+        } catch (_) {
+          errorMessage = err.message;
+        }
       }
     }
   }
@@ -197,5 +206,8 @@
   <div class="actions">
     <button on:click="{search}">Search</button>
     <button on:click="{() => (modifierView = undefined)}">Cancel</button>
+  </div>
+  <div class="results">
+    <p>Found {results.length} results</p>
   </div>
 </div>

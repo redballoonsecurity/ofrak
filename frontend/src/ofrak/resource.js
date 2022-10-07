@@ -386,6 +386,10 @@ export class Resource {
     }
   }
 
+  async search_for_vaddr(vaddr_start, vaddr_end) {
+    throw new NotImplementedError("search_for_vaddr");
+  }
+
   /***
    * Return the string representation of a comment, which includes its range as prefix if it
    * has one.
