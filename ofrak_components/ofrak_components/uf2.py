@@ -1,19 +1,17 @@
-import io
 import logging
 import struct
+from enum import IntEnum
 from dataclasses import dataclass
+from typing import List, Tuple
+from ofrak.core.code_region import CodeRegion
 
 from ofrak.resource import Resource
-from ofrak.resource_view import ResourceView
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.component.unpacker import Unpacker
 from ofrak.component.packer import Packer
 from ofrak.component.identifier import Identifier
-from ofrak.component.analyzer import Analyzer
 from ofrak.core.binary import GenericBinary
 from ofrak_type.range import Range
-from ofrak_type.endianness import Endianness
-from ofrak_io.deserializer import BinaryDeserializer
 from ofrak.model.resource_model import index
 from ofrak.service.resource_service_i import ResourceFilter
 
@@ -34,11 +32,13 @@ class Uf2File(GenericBinary):
     """
 
 
-@dataclass
-class Uf2Block(ResourceView):
+@dataclass(**ResourceAttributes.DATACLASS_PARAMS)
+class Uf2FileAttributes(ResourceAttributes):
     """
-    A UF2 block in a UF2 file
+    Remembers all the information needed to repack that can't be deduced from the contents.
     """
+
+    family_id: int
 
 
 @dataclass(**ResourceAttributes.DATACLASS_PARAMS)
@@ -71,11 +71,12 @@ class Uf2BlockHeader(ResourceAttributes):
         return self.block_no
 
 
-@dataclass
-class Uf2BlockData(GenericBinary):
-    """
-    Data in the payload section of a UF2 block
-    """
+class Uf2Flags(IntEnum):
+    NOT_MAIN_FLASH = 0x1
+    FILE_CONTAINER = 0x1000
+    FAMILY_ID_PRESENT = 0x2000
+    MD5_CHECKSUM_PRESENT = 0x4000
+    EXTENSION_TAGS_PRESENT = 0x8000
 
 
 class Uf2Unpacker(Unpacker[None]):
@@ -86,7 +87,7 @@ class Uf2Unpacker(Unpacker[None]):
     """
 
     targets = (Uf2File,)
-    children = (Uf2Block,)
+    children = (CodeRegion,)  # TODO: will be various children
 
     async def unpack(self, resource: Resource, config=None):
         """
@@ -96,26 +97,88 @@ class Uf2Unpacker(Unpacker[None]):
         """
         data_length = await resource.get_data_length()
 
+        ranges: List[Tuple[Range, bytes]] = []
+
+        # block_no are 0 indexed, to make the check do one fewer check, we start at -1
+        previous_block_no = -1
+        family_id = None
+        file_num_blocks = None
+        # TODO: block_no vs num_blocks
+        # last_block_no = 0
+
         for i in range(0, data_length, 512):
-            block_r = await resource.create_child(tags=(Uf2Block,), data_range=Range(i, i + 512))
-            block_attributes = await block_r.analyze(Uf2BlockHeader)
-            block_r.add_attributes(block_attributes)
+            data = await resource.get_data(Range(i, (i + 512)))
+            (
+                magic_start_one,
+                magic_start_two,
+                flags,
+                target_addr,
+                payload_size,
+                block_no,
+                num_blocks,
+                filesize_familyID,
+                payload_data,
+                magic_end,
+            ) = struct.unpack("8I476sI", data)
 
+            # basic sanity checks
+            assert magic_start_one == UF2_MAGIC_START_ONE, "Bad Start Magic"
+            assert magic_start_two == UF2_MAGIC_START_TWO, "Bad Start Magic"
+            assert magic_end == UF2_MAGIC_END, "Bad End Magic"
 
-class Uf2BlockUnpacker(Unpacker[None]):
-    """
-    UF2 Block unpacker.
+            assert (previous_block_no - block_no) == -1, "Skipped a block"
+            previous_block_no = block_no
 
-    Extracts the data from a UF2 Block.
-    """
+            if not file_num_blocks:
+                file_num_blocks = num_blocks
 
-    targets = (Uf2Block,)
-    children = (Uf2BlockData,)
+            if family_id is None:
+                family_id = filesize_familyID
+            else:
+                assert family_id == filesize_familyID, "Multiple family IDs in file not supported"
 
-    async def unpack(self, resource: Resource, config=None):
-        await resource.create_child(
-            tags=(Uf2BlockData,), data_range=Range(HEADER_LENGTH, HEADER_LENGTH + DATA_LENGTH)
-        )
+            # last_block_no = block_no
+
+            # unpack data
+            if flags & Uf2Flags.NOT_MAIN_FLASH:
+                # data not written to main flash
+                # currently not implemented
+                continue
+            elif flags & Uf2Flags.FILE_CONTAINER:
+                # file container
+                # currently not implemented
+                continue
+            elif flags & Uf2Flags.FAMILY_ID_PRESENT:
+                data = payload_data[0:payload_size]
+                if len(ranges) == 0:
+                    ranges.append((Range(target_addr, target_addr + payload_size), data))
+                else:
+                    last_region_range, last_region_data = ranges[-1]
+
+                    # if range is adjacent, extend, otherwise start a new one
+                    if target_addr - last_region_range.end == 0:
+                        last_region_range.end = target_addr + payload_size
+                        last_region_data += data
+                        ranges[-1] = (last_region_range, last_region_data)
+                    else:
+                        ranges.append((Range(target_addr, target_addr + payload_size), data))
+
+            else:
+                # unsupported flags
+                continue
+
+        if family_id:
+            file_attributes = Uf2FileAttributes(family_id)
+            resource.add_attributes(file_attributes)
+
+        # print("num: ", last_block_no, "file: ", file_num_blocks)
+        # assert last_block_no == file_num_blocks, "Did not unpack enough blocks"
+
+        for flash_range, flash_data in ranges:
+            await resource.create_child_from_view(
+                CodeRegion(flash_range.start, flash_range.end - flash_range.start),
+                data=flash_data,
+            )
 
 
 class Uf2FilePacker(Packer[None]):
@@ -133,93 +196,49 @@ class Uf2FilePacker(Packer[None]):
         :param resource:
         :param config:
         """
-        repacked_data = b""
 
-        for uf2_block in await resource.get_children(
+        payloads: List[Tuple[int, int, bytes]] = []  # List of target_addr, payload_data
+
+        for memory_region_r in await resource.get_children(
             r_filter=ResourceFilter(
-                tags=(Uf2Block,),
+                tags=(CodeRegion,),
             )
         ):
-            uf2_data = await uf2_block.get_data()
-            repacked_data += uf2_data
+            memory_region = await memory_region_r.view_as(CodeRegion)
+            data = await memory_region_r.get_data()
+            data_length = await memory_region_r.get_data_length()
+            data_range = memory_region.vaddr_range()
+            addr = data_range.start
 
+            for i in range(0, data_length, 256):
+                payloads.append((addr + i, 256, data[i : (i + 256)]))
+                continue
 
-class Uf2BlockPacker(Packer[None]):
-    """
-    Pack a resource into the UF2 file format
-    """
+        num_blocks = len(payloads)
+        block_no = 0
 
-    id = b"Uf2BlockPacker"
-    targets = (Uf2Block,)
+        file_attributes = resource.get_attributes(attributes_type=Uf2FileAttributes)
+        family_id = file_attributes.family_id
 
-    async def pack(self, resource: Resource, config=None):
         repacked_data = b""
 
-        attributes = resource.get_attributes(Uf2BlockHeader)
-        header_data = struct.pack(
-            "8I",
-            UF2_MAGIC_START_ONE,
-            UF2_MAGIC_START_TWO,
-            attributes.flags,
-            attributes.target_addr,
-            attributes.payload_size,
-            attributes.block_no,
-            attributes.num_blocks,
-            attributes.filesize_family_id,
-        )
+        for target_addr, payload_size, payload_data in payloads:
+            repacked_data += struct.pack(
+                "8I476sI",
+                UF2_MAGIC_START_ONE,
+                UF2_MAGIC_START_TWO,
+                Uf2Flags.FAMILY_ID_PRESENT,
+                target_addr,
+                payload_size,
+                block_no,
+                num_blocks,
+                family_id,
+                payload_data + b"\x00" * (467 - payload_size),  # add padding
+                UF2_MAGIC_END,
+            )
+            block_no += 1
 
-        payload = await resource.get_only_child()
-        payload_data = await payload.get_data()
-
-        repacked_data += header_data
-        repacked_data += payload_data
-        repacked_data += bytes(UF2_MAGIC_END)
-
-        LOGGER.info(repacked_data)
-
-
-class Uf2BlockAnalyzer(Analyzer[None, Uf2BlockHeader]):
-    """
-    Analyze the Uf2Blocks of a Uf2File
-    """
-
-    targets = (Uf2Block,)
-    outputs = (Uf2BlockHeader,)
-
-    async def analyze(self, resource: Resource, config=None) -> Uf2BlockHeader:
-        data = await resource.get_data()
-        deserializer = BinaryDeserializer(
-            io.BytesIO(data),
-            endianness=Endianness.LITTLE_ENDIAN,
-            word_size=4,
-        )
-
-        deserialized = deserializer.unpack_multiple("8I476sI")
-        (
-            magic_start_one,
-            magic_start_two,
-            flags,
-            target_addr,
-            payload_size,
-            block_no,
-            num_blocks,
-            filesize_familyID,
-            data,
-            magic_end,
-        ) = deserialized
-
-        assert magic_start_one == UF2_MAGIC_START_ONE
-        assert magic_start_two == UF2_MAGIC_START_TWO
-        assert magic_end == UF2_MAGIC_END
-
-        return Uf2BlockHeader(
-            flags,
-            target_addr,
-            payload_size,
-            block_no,
-            num_blocks,
-            filesize_familyID,
-        )
+        resource.queue_patch(Range(0, await resource.get_data_length()), repacked_data)
 
 
 class Uf2FileIdentifier(Identifier):
