@@ -65,12 +65,8 @@ RUN cd /tmp/vbcc && cp ./bin/* /opt/rbs/toolchain/vbcc_0_9/bin/ && \
     cp ./vobjdump /opt/rbs/toolchain/vbcc_0_9/bin/
 
 #AARCH64 GNU 10 Linux
-RUN if ![ "$TARGETARCH" = "arm64" ]; then \
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
     apt-get update && apt-get install -y gcc-10-aarch64-linux-gnu; \
-fi;
-
-RUN if ![ "$TARGETARCH" = "amd64" ]; then \
-    apt-get update && install -y gcc-10-x86-64-linux-gnu; \
 fi;
 
 #AVR GCC
