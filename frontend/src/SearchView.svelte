@@ -42,8 +42,8 @@
     flex-direction: row;
     flex-wrap: nowrap;
     justify-content: space-evenly;
-    align-items: center;
-    align-content: center;
+    align-items: flex-start;
+    align-content: flex-start;
   }
 
   input {
@@ -120,19 +120,30 @@
   .error {
     margin-top: 2em;
   }
+
+  .treebox {
+    flex-grow: 1;
+    padding-left: 1em;
+    overflow-x: scroll;
+    white-space: nowrap;
+    text-align: left;
+  }
 </style>
 
 <script>
   import {selected, selectedResource} from "./stores.js";
   import {calculator} from "./helpers";
+  import ResourceTreeNode from "./ResourceTreeNode.svelte";
 
-  export let modifierView;
+  export let modifierView, resourceNodeDataMap;
   let searchInput,
     searchRangeStartInput,
     searchRangeEndInput,
     rangeSearch = false,
           results = [],
     errorMessage;
+
+  const searchTarget = $selectedResource;
 
   function refreshResource() {
     // Force hex view refresh with colors
@@ -142,7 +153,7 @@
   }
 
   async function search() {
-    if ($selectedResource) {
+    if (searchTarget) {
       try {
         if (rangeSearch) {
           const searchRangeStartAddress = calculator.calculate(
@@ -150,11 +161,11 @@
           ),
                   searchRangeEndAddress = calculator.calculate(searchRangeEndInput);
 
-          results = await $selectedResource.search_for_vaddr(searchRangeStartAddress, searchRangeEndAddress);
+          results = await searchTarget.search_for_vaddr(searchRangeStartAddress, searchRangeEndAddress);
         } else {
           const startAddress = calculator.calculate(searchInput);
 
-          results = await $selectedResource.search_for_vaddr(startAddress, null);
+          results = await searchTarget.search_for_vaddr(startAddress, null);
         }
 
 
@@ -172,8 +183,8 @@
 <div class="container">
   <div class="inputs">
     <p>
-      Search for resources whose virtual address matches a specific address or
-      lies in a range of addresses.
+      Searching for descendants of {searchTarget.get_id()} whose virtual address matches a specific
+      address or lies in a range of addresses.
     </p>
     {#if rangeSearch}
       <label>
@@ -210,4 +221,9 @@
   <div class="results">
     <p>Found {results.length} results</p>
   </div>
+  {#each results as matched_resource}
+    <div class="resultsbox">
+      <ResourceTreeNode rootResource="{matched_resource}" collapsed="false" bind:resourceNodeDataMap />
+    </div>
+  {/each}
 </div>
