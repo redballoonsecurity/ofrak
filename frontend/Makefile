@@ -56,8 +56,6 @@ images: app-image ofrak-server-image proxy-image
 
 .PHONY: ofrak-server-image
 ofrak-server-image:
-	cp -r $(OFRAK_SOURCE_DIR)/docs/ backend/
-	cp $(OFRAK_SOURCE_DIR)/mkdocs.yml backend/mkdocs.yml
 	docker build -t rbs/ofrak-server:latest -f backend/ofrak_server.Dockerfile backend
 
 .PHONY: proxy-image
