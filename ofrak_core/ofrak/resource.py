@@ -598,7 +598,6 @@ class Resource:
         :param data_before: The sibling resource whose data is sequentially before the new resource
         :return:
         """
-        data_model_id: Optional[bytes]
         if data_range is not None:
             if self._resource.data_id is None:
                 raise ValueError(
@@ -739,8 +738,7 @@ class Resource:
 
         :param view: An instance of a view
         """
-        attributes: ResourceAttributes
-        for attributes in view.get_attributes_instances().values():
+        for attributes in view.get_attributes_instances().values():  # type: ignore
             self.add_attributes(attributes)
         self.add_tag(type(view))
 
