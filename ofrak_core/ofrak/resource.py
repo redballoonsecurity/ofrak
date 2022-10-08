@@ -1159,55 +1159,6 @@ class Resource:
             )
         return await self._create_resource(models[0])
 
-    async def get_siblings_as_view(
-        self,
-        v_type: Type[RV],
-        r_filter: ResourceFilter = None,
-        r_sort: ResourceSort = None,
-    ) -> Iterable[RV]:
-        """
-        Get all the siblings (resources which share a parent) of this resource. May optionally
-        filter the siblings so only those matching certain parameters are returned. May optionally
-        sort the siblings by an indexable attribute value key. The siblings
-        will be returned as an instance of the given
-        [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag].
-
-        :param v_type: The type of [view][ofrak.resource] to get the siblings as
-        :param r_filter: Contains parameters which resources must match to be returned, including
-        any tags it must have and/or values of indexable attributes
-        :param r_sort: Specifies which indexable attribute to use as the key to sort and the
-        direction to sort
-        :return:
-
-        :raises NotFoundError: If a filter was provided and no resources match the provided filter
-        """
-        siblings = await self.get_siblings(r_filter, r_sort)
-        view_tasks = [r.view_as(v_type) for r in siblings]
-        return await asyncio.gather(*view_tasks)
-
-    async def get_siblings(
-        self,
-        r_filter: ResourceFilter = None,
-        r_sort: ResourceSort = None,
-    ) -> Iterable["Resource"]:
-        """
-        Get all the siblings (resources which share a parent) of this resource. May optionally
-        sort the siblings by an indexable attribute value key. May optionally
-        filter the siblings so only those matching certain parameters are returned.
-
-        :param r_filter: Contains parameters which resources must match to be returned, including
-        any tags it must have and/or values of indexable attributes
-        :param r_sort: Specifies which indexable attribute to use as the key to sort and the
-        direction to sort
-        :return:
-
-        :raises NotFoundError: If a filter was provided and no resources match the provided filter
-        """
-        models = await self._resource_service.get_siblings_by_id(
-            self._resource.id, r_filter=r_filter, r_sort=r_sort
-        )
-        return await self._create_resources(models)
-
     async def get_only_sibling_as_view(
         self,
         v_type: Type[RV],
