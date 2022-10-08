@@ -237,6 +237,11 @@ async def test_summarize(resource: Resource):
     assert isinstance(summary, str)
 
 
+async def test_summarize_tree(resource: Resource):
+    summary = await resource.summarize_tree()
+    assert isinstance(summary, str)
+
+
 async def test_get_range_within_parent(resource: Resource):
     """
     Test that Resource.get_data_range_within_parent returns the correctly-mapped range.
@@ -258,3 +263,20 @@ async def test_identify(resource: Resource):
     await resource.identify()
     assert resource.has_tag(GenericBinary) is True
     assert resource.has_tag(Elf) is False
+
+
+async def test_get_tags(resource: Resource):
+    tags = resource.get_tags()
+    assert GenericBinary in tags
+    assert Elf not in tags
+
+    resource.add_tag(Elf)
+    updated_tags = resource.get_tags()
+    assert Elf in updated_tags
+
+
+async def test_repr(resource: Resource, capsys):
+    print(resource)
+    captured = capsys.readouterr()
+    assert captured.out.startswith("Resource(resource_id=")
+    assert "GenericBinary" in captured.out
