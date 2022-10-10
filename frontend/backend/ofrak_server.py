@@ -346,26 +346,17 @@ class AiohttpOFRAKServer:
         )
         try:
             if vaddr_end is not None:
-                matching_resources = await resource.get_descendants(
-                    r_filter=ResourceFilter(
-                        attribute_filters=(
-                            ResourceAttributeRangeFilter(
-                                Addressable.VirtualAddress, vaddr_start, vaddr_end
-                            ),
-                        )
-                    ),
-                    r_sort=ResourceSort(Addressable.VirtualAddress),
+                vaddr_filter = ResourceAttributeRangeFilter(
+                    Addressable.VirtualAddress, vaddr_start, vaddr_end
                 )
             else:
-                matching_resources = await resource.get_descendants(
-                    r_filter=ResourceFilter(
-                        attribute_filters=(
-                            ResourceAttributeValueFilter(Addressable.VirtualAddress, vaddr_start),
-                        )
-                    ),
-                    r_sort=ResourceSort(Addressable.VirtualAddress),
-                )
+                vaddr_filter = ResourceAttributeValueFilter(Addressable.VirtualAddress, vaddr_start)
+            matching_resources = await resource.get_descendants(
+                r_filter=ResourceFilter(attribute_filters=(vaddr_filter,)),
+                r_sort=ResourceSort(Addressable.VirtualAddress),
+            )
             return web.json_response(list(map(self._serialize_resource, matching_resources)))
+
         except NotFoundError:
             return web.json_response([])
 

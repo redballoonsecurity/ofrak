@@ -64,37 +64,7 @@
   input[type="checkbox"] {
     flex-grow: 0;
     margin-left: 1ch;
-    /*
-    appearance: none;
-    background-color: var(--main-bg-color);
-    margin: 0;
-    color: currentColor;
-    width: 1em;
-    height: 1em;
-    border: 1px solid currentColor;
-    display: grid;
-    place-content: center;
-    */
   }
-
-  /*
-  input[type="checkbox"]:focus {
-    box-shadow: none;
-  }
-
-  input[type="checkbox"]::before {
-    content: "";
-    width: 0.45em;
-    height: 0.45em;
-    transform: scale(0);
-    transition: 120ms transform ease-in-out;
-    box-shadow: inset 1em 1em var(--main-fg-color);
-  }
-
-  input[type="checkbox"]:checked::before {
-    transform: scale(1);
-  }
-  */
 
   label {
     margin-bottom: 1em;
@@ -179,6 +149,7 @@
       }
     }
   }
+
   async function leave_view() {
     if ($selectedResource !== undefined) {
       const ancestors = await $selectedResource.get_ancestors(null);
