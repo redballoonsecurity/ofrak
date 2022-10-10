@@ -1,4 +1,4 @@
-site_name: OFRAK
+site_name: OFRAK Docs
 site_url: ""  # Required to have file:// paths work
 site_description: "Documentation for OFRAK (Open Firmware Reverse Analysis Konsole), a binary analysis and modification platform that combines the ability to unpack, analyze, modify, and repack binaries. "
 copyright: Copyright &copy; 2021 - 2022 Red Balloon Security, Inc.
@@ -7,7 +7,7 @@ use_directory_urls: false  # Required to have file:// paths work
 theme:
   name: material
   font:
-    text: Helvetica
+    text: Barlow
   logo: assets/icon_2.png
   favicon: assets/favishroom_smol.png
   palette:
@@ -67,6 +67,7 @@ nav:
       - PatchMaker:
         - User Guide: "user-guide/patch-maker/user-guide.md"
         - Troubleshooting: "user-guide/patch-maker/troubleshooting.md"
+      - NAND Flash Component: "user-guide/flash_component.md"
   - Contributor Guide:
       - Getting Started: "contributor-guide/getting-started.md"
       - Writing Components:

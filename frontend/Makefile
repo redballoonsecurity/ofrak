@@ -3,7 +3,7 @@
 ################################################################################
 
 PORT ?= 8888
-OFRAK_SOURCE_DIR ?= ~/ofrak
+OFRAK_SOURCE_DIR ?= $(CURDIR)/..
 
 
 ################################################################################
@@ -27,7 +27,13 @@ public/sounds/%.mp3: scripts/download-music.sh
 .PHONY: lint
 lint:
 	npm run lint
-	black scripts/ backend/
+	python3 -m black scripts/ backend/
+	shellcheck scripts/*.sh # https://github.com/koalaman/shellcheck
+
+.PHONY: check
+check:
+	npm run check
+	python3 -m black --check scripts/ backend/
 	shellcheck scripts/*.sh # https://github.com/koalaman/shellcheck
 
 .PHONY: app-stack-dev
@@ -50,8 +56,6 @@ images: app-image ofrak-server-image proxy-image
 
 .PHONY: ofrak-server-image
 ofrak-server-image:
-	cp --recursive $(OFRAK_SOURCE_DIR)/docs/ backend/
-	cp $(OFRAK_SOURCE_DIR)/mkdocs.yml backend/mkdocs.yml
 	docker build -t rbs/ofrak-server:latest -f backend/ofrak_server.Dockerfile backend
 
 .PHONY: proxy-image
