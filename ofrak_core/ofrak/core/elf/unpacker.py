@@ -37,6 +37,7 @@ from ofrak.core.elf.model import (
     ElfVirtualAddress,
 )
 from ofrak_type.bit_width import BitWidth
+from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.range import Range
 
 
@@ -203,7 +204,8 @@ class ElfUnpacker(Unpacker[None]):
                 )
 
                 # Tag the segment as a CodeRegion if the loaded segment is executable
-                if e_program_header.is_executable():
+                memory_permissions = e_program_header.get_memory_permissions()
+                if memory_permissions & MemoryPermissions.R is MemoryPermissions.R:
                     e_segment_r.add_tag(CodeRegion)
                 await e_segment_r.save()
 
