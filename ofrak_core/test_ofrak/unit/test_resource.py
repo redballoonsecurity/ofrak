@@ -11,6 +11,7 @@ from ofrak.core.elf.model import Elf
 from ofrak.core.filesystem import FilesystemRoot
 from ofrak.core.patch_maker.linkable_binary import LinkableBinary
 from ofrak.core.program import Program
+from ofrak.model.resource_model import ResourceAttributes
 from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import ResourceFilter
@@ -279,3 +280,22 @@ async def test_repr(resource: Resource):
     result = resource.__repr__()
     assert result.startswith("Resource(resource_id=")
     assert "GenericBinary" in result
+
+
+async def test_attributes(resource: Resource):
+    """
+    Test Resource.{has_attributes, add_attributes, remove_attributes}
+    """
+
+    @dataclass(**ResourceAttributes.DATACLASS_PARAMS)
+    class DummyAttributes(ResourceAttributes):
+        name: str
+
+    dummy_attributes = DummyAttributes("dummy")
+    assert resource.has_attributes(DummyAttributes) is False
+
+    resource.add_attributes(dummy_attributes)
+    assert resource.has_attributes(DummyAttributes) is True
+
+    resource.remove_attributes(DummyAttributes)
+    assert resource.has_attributes(DummyAttributes) is False

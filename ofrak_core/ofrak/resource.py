@@ -860,6 +860,18 @@ class Resource:
         )
         return attributes
 
+    def remove_attributes(self, attributes_type: Type[ResourceAttributes]):
+        """
+        Remove the value of a given attributes type from this resource, if there is such a value.
+        If the resource does not have a value for the given attributes type, do nothing.
+        :param attributes_type:
+        :return:
+        """
+        if not self._resource.has_attributes(attributes_type):
+            return
+        self._set_modified()
+        self._resource.remove_attributes(attributes_type)
+
     def add_component(
         self,
         component_id: bytes,
