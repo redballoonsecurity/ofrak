@@ -275,8 +275,7 @@ async def test_get_tags(resource: Resource):
     assert Elf in updated_tags
 
 
-async def test_repr(resource: Resource, capsys):
-    print(resource)
-    captured = capsys.readouterr()
-    assert captured.out.startswith("Resource(resource_id=")
-    assert "GenericBinary" in captured.out
+async def test_repr(resource: Resource):
+    result = resource.__repr__()
+    assert result.startswith("Resource(resource_id=")
+    assert "GenericBinary" in result
