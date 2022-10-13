@@ -377,10 +377,8 @@ export class Resource {
 
   async get_comments() {
     let attributes = this.get_attributes();
-    if ("ofrak_components.comments.CommentsAttributes" in attributes) {
-      return attributes["ofrak_components.comments.CommentsAttributes"][
-        "comments"
-      ];
+    if ("ofrak.core.comments.CommentsAttributes" in attributes) {
+      return attributes["ofrak.core.comments.CommentsAttributes"]["comments"];
     } else {
       return [];
     }
