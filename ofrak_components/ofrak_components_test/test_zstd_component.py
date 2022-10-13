@@ -37,7 +37,7 @@ class TestZstdUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
             command = ["zstd", "-d", "-k", compressed_file.name, "-o", output_filename]
             try:
                 subprocess.run(command, check=True, capture_output=True)
-                with open(output_filename, 'rb') as f:
+                with open(output_filename, "rb") as f:
                     result = f.read()
             except subprocess.CalledProcessError as e:
                 raise RuntimeError(format_called_process_error(e))

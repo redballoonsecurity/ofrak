@@ -23,6 +23,7 @@ class ZstdData(GenericBinary):
     async def get_child(self) -> GenericBinary:
         return await self.resource.get_only_child_as_view(GenericBinary)
 
+
 @dataclass
 class ZstdPackerConfig(ComponentConfig):
     compression_level: int
@@ -46,7 +47,7 @@ class ZstdUnpacker(Unpacker[None]):
             command = ["zstd", "-d", "-k", compressed_file.name, "-o", output_filename]
             try:
                 subprocess.run(command, check=True)
-                with open(output_filename, 'rb') as f:
+                with open(output_filename, "rb") as f:
                     result = f.read()
             except subprocess.CalledProcessError as e:
                 raise UnpackerError(format_called_process_error(e))
@@ -61,7 +62,9 @@ class ZstdPacker(Packer[None]):
 
     targets = (ZstdData,)
 
-    async def pack(self, resource: Resource, config: ZstdPackerConfig = ZstdPackerConfig(compression_level=19)):
+    async def pack(
+        self, resource: Resource, config: ZstdPackerConfig = ZstdPackerConfig(compression_level=19)
+    ):
         zstd_view = await resource.view_as(ZstdData)
         child_file = await zstd_view.get_child()
         uncompressed_data = await child_file.resource.get_data()
@@ -77,7 +80,7 @@ class ZstdPacker(Packer[None]):
             command.extend([uncompressed_file.name, "-o", output_filename])
             try:
                 subprocess.run(command, check=True)
-                with open(output_filename, 'rb') as f:
+                with open(output_filename, "rb") as f:
                     result = f.read()
             except subprocess.CalledProcessError as e:
                 raise PackerError(format_called_process_error(e))
@@ -88,4 +91,6 @@ class ZstdPacker(Packer[None]):
 
 
 MagicMimeIdentifier.register(ZstdData, "application/x-zstd")
-MagicDescriptionIdentifier.register(ZstdData, lambda s: s.lower().startswith("zstandard compressed data"))
+MagicDescriptionIdentifier.register(
+    ZstdData, lambda s: s.lower().startswith("zstandard compressed data")
+)
