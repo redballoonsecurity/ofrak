@@ -476,7 +476,7 @@ if __name__ == "__main__":
     if len(sys.argv) == 4:
         backend = sys.argv[3]
     else:
-        backend = "ghidra"
+        backend = None
 
     ofrak = OFRAK(logging.INFO)
 
@@ -486,9 +486,18 @@ if __name__ == "__main__":
 
         ofrak.injector.discover(ofrak_capstone)
         ofrak.injector.discover(ofrak_binary_ninja)
-    else:
+
+    elif backend == "ghidra":
         import ofrak_ghidra  # type: ignore
 
         ofrak.injector.discover(ofrak_ghidra)
+
+    elif backend == "angr":
+        import ofrak_angr  # type: ignore
+
+        ofrak.injector.discover(ofrak_angr)
+
+    else:
+        LOGGER.warning("No disassembler backend specified, so no disassembly will be possible")
 
     ofrak.run(main, _host, _port)  # type: ignore

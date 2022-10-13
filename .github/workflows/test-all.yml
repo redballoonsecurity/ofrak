@@ -43,6 +43,16 @@ jobs:
       - name: Run pre-commit
         run: |
           pre-commit run --all-files
+      - name: Install frontend linting dependencies
+        run: |
+          cd frontend
+          npm install
+          sudo apt-get install shellcheck
+          python3 -m pip install black==22.3.0
+      - name: Lint frontend
+        run: |
+          cd frontend
+          make check
 
   build-base-image:
     name: Build the common base OFRAK Docker image

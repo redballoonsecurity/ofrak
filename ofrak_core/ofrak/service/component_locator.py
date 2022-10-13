@@ -11,6 +11,8 @@ from ofrak.component.unpacker import Unpacker
 from ofrak.service.component_locator_i import ComponentLocatorInterface, ComponentFilter
 from ofrak_type.error import NotFoundError
 
+from functools import lru_cache
+
 LOGGER = logging.getLogger(__name__)
 CI = TypeVar("CI", bound="ComponentInterface")
 
@@ -149,6 +151,7 @@ class ComponentLocator(ComponentLocatorInterface):
     def get_by_type(self, component_type: Type[CI]) -> CI:
         return self.get_by_id(component_type.get_id())  # type: ignore
 
+    @lru_cache(maxsize=None)
     def get_components_matching_filter(
         self, component_filter: ComponentFilter
     ) -> Set[ComponentInterface]:
