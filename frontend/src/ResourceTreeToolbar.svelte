@@ -99,8 +99,8 @@
             }
             const blob = new Blob([data], {
               type:
-                rootResource.get_attributes()["ofrak_components.magic.Magic"]
-                  ?.mime || "",
+                rootResource.get_attributes()["ofrak.core.magic.Magic"]?.mime ||
+                "",
             });
             const blobUrl = URL.createObjectURL(blob);
 
