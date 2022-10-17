@@ -18,3 +18,7 @@ extra_build_args:
   ["--secret",
    "id=serial,src=serial.txt"
   ]
+entrypoint: |
+    nginx \
+      & python3 -m ofrak_ghidra.server start \
+      & python3 /ofrak_server.py 0.0.0.0 8877
