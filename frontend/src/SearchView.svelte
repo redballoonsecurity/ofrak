@@ -164,8 +164,8 @@
 <div class="container">
   <div class="inputs">
     <p>
-      Searching for descendants of {searchTarget.get_id()} whose virtual address
-      matches a specific address or lies in a range of addresses.
+      Searching for descendants of {searchTarget.get_caption()} ({searchTarget.get_id()}) whose
+      virtual address matches a specific address or lies in a range of addresses.
     </p>
     {#if rangeSearch}
       <label>
