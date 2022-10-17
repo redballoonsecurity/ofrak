@@ -76,48 +76,7 @@ print(my_sym.name)  # >> "foo"
 print(hex(my_sym.vaddr))  # >> "0x1000200"
 ```
 
-## Advanced ResourceView Usage
-
-Now that we have the basics out of the way, let's jump forward a few steps:
-
-```python
-@dataclass
-class Symbol(ResourceView):
-  name: str
-  vaddr: int
-
-  @index
-  def Vaddr(self) -> int:
-    return self.vaddr
-
-  async def get_alternative_names(self) -> Iterable[Symbol]:
-    """
-    This symbol is one possible name for a particular address. This method finds other names for
-    the same address. It assumes all symbols are children of one parent resource (all symbols are
-     siblings)
-    """
-    return self.resource.get_siblings_as_view(
-      Symbol,
-      r_filter=ResourceFilter(
-        tags=(Symbol,),
-        attribute_filters=(
-          ResourceAttributeValueFilter(Symbol.Vaddr, self.vaddr),
-        )
-      )
-    )
-```
-
-Now `Symbol` has been expanded to show off some of the other uses of a view:
-
-* Indexes can be added
- to views just like they can be added to `ResourceAttributes` classes. Adding an index allows us
- to filter and sort resources with these attributes by some value.
-
-* Views can have methods, and these methods have direct access to the fields of the view (e.g.
-`self.vaddr`).
-
-* Views provide a way to access the underlying resource (if it exists). The `get_alternative_names`
-method accesses `self.resource` to make a query to fetch more resources. `.resource` returns a
+ResourceViews provide a way to access the underlying resource (if it exists). `.resource` returns a
 `Resource` and is how you should access the resource when you need it. If the view does
 not have an underlying resource, a `ValueError` is raised:
 
