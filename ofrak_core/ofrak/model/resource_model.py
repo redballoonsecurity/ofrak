@@ -11,18 +11,15 @@ from typing import (
     MutableMapping,
     Union,
     Tuple,
-    Sequence,
     List,
     Callable,
     Generic,
     Any,
-    MutableSet,
     cast,
     overload,
 )
 from weakref import WeakValueDictionary
 
-from sortedcontainers import SortedSet as _SortedSet
 
 from ofrak.model.tag_model import ResourceTag
 from ofrak_type.range import Range
@@ -310,26 +307,10 @@ class ResourceAttributeDependency:
         )
 
 
-class SortedSet(_SortedSet, MutableSet[T], Sequence[T]):
-    """
-    Typing shim for `sortedcollections.SortedSet` since it still has no type annotations.
-
-    See <https://github.com/grantjenks/python-sortedcontainers/pull/136>.
-
-    If we want to get rid of this, we either stop using `SortedSet`, complete that PR and get it
-    accepted, or wait for someone else to.
-    """
-
-    def __init__(
-        self, iterable: Optional[Iterable[T]] = None, key: Optional[Callable[[T], Any]] = None
-    ):
-        super().__init__(iterable, key)
-
-
 ModelIdType = bytes
 ModelDataIdType = Optional[bytes]
 ModelParentIdType = Optional[bytes]
-ModelTagsType = SortedSet[ResourceTag]
+ModelTagsType = Set[ResourceTag]
 ModelAttributesType = Dict[Type[RA], RA]
 ModelDataDependenciesType = Dict[ResourceAttributeDependency, Set[Range]]
 ModelAttributeDependenciesType = Dict[Type[ResourceAttributes], Set[ResourceAttributeDependency]]
@@ -342,7 +323,7 @@ class ResourceModel:
     :param ModelIdType id:
     :param ModelDataIdType data_id:
     :param ModelParentIdType parent_id:
-    :param Optional[Sequence[ResourceTag]] tags:
+    :param Optional[Set[ResourceTag]] tags:
     :param Optional[ModelAttributesType] attributes:
     :param Optional[ModelAttributesType] data_dependencies: Stores the dependencies of other
         resources on specific data ranges within this resource
@@ -386,7 +367,7 @@ class ResourceModel:
         id: ModelIdType,
         data_id: ModelDataIdType = None,
         parent_id: ModelParentIdType = None,
-        tags: Optional[Sequence[ResourceTag]] = None,
+        tags: Optional[Set[ResourceTag]] = None,
         attributes: Optional[ModelAttributesType] = None,
         data_dependencies: Optional[ModelDataDependenciesType] = None,
         attribute_dependencies: Optional[ModelAttributeDependenciesType] = None,
@@ -402,7 +383,7 @@ class ResourceModel:
         self.id: ModelIdType = id
         self.data_id: ModelDataIdType = data_id
         self.parent_id: ModelParentIdType = parent_id
-        self.tags: ModelTagsType = SortedSet(tags or (), key=lambda t: t.tag_specificity())
+        self.tags: ModelTagsType = set(tags) if tags else set()
         self.attributes: ModelAttributesType = attributes
         self.data_dependencies: ModelDataDependenciesType = data_dependencies
         self.attribute_dependencies: ModelAttributeDependenciesType = attribute_dependencies
@@ -428,13 +409,13 @@ class ResourceModel:
             new_dependencies[dependency] = set(ranges)
         return new_dependencies
 
-    def get_tags(self, inherit: bool = True) -> Sequence[ResourceTag]:
+    def get_tags(self, inherit: bool = True) -> Set[ResourceTag]:
         if inherit is False:
-            return self.tags
+            return set(self.tags)
         tags = set()
         for _tag in self.tags:
             tags.update(_tag.tag_classes())
-        return SortedSet(tags, key=lambda t: t.tag_specificity())
+        return tags
 
     def get_specific_tags(self, tag: RT) -> List[RT]:
         tags: List[RT] = []
@@ -530,7 +511,7 @@ class ResourceModel:
             self.id,
             self.data_id,
             self.parent_id,
-            self.tags,
+            set(self.tags),
             dict(self.attributes),
             ResourceModel._clone_data_dependencies(self.data_dependencies),
             ResourceModel._clone_dependencies(self.attribute_dependencies),
@@ -576,7 +557,7 @@ class ResourceModel:
             id,
             data_id,
             parent_id,
-            SortedSet(final_tags, key=lambda t: t.tag_specificity()),
+            final_tags,
             attributes_dict,
             components_by_attributes=components_by_attributes,
             component_versions=components_by_version,
@@ -724,7 +705,7 @@ class MutableResourceModel(ResourceModel):
         id: bytes,
         data_id: Optional[bytes] = None,
         parent_id: Optional[bytes] = None,
-        tags: Optional[Sequence[ResourceTag]] = None,
+        tags: Optional[Set[ResourceTag]] = None,
         attributes: Optional[Dict[Type[ResourceAttributes], ResourceAttributes]] = None,
         data_dependencies: Optional[Dict[ResourceAttributeDependency, Set[Range]]] = None,
         attribute_dependencies: Optional[
@@ -860,7 +841,7 @@ class MutableResourceModel(ResourceModel):
         self.id = model.id
         self.data_id = model.data_id
         self.parent_id = model.parent_id
-        self.tags = SortedSet(model.tags, key=lambda t: t.tag_specificity())
+        self.tags = model.tags
         self.attributes = dict(model.attributes)
         self.data_dependencies: Dict[
             ResourceAttributeDependency, Set[Range]

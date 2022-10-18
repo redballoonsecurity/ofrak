@@ -265,6 +265,13 @@ class Resource:
             return
 
     async def _fetch(self, resource: MutableResourceModel):
+        """
+        Update the local model with the latest version from the resource service. This will fail
+        if this resource has been modified.
+
+        :raises InvalidStateError: If the local resource model has been modified
+        :raises NotFoundError: If the resource service does not have a model for this resource's ID
+        """
         if resource.is_modified and not resource.is_deleted:
             raise InvalidStateError(
                 f"Cannot fetch dirty resource {resource.id.hex()} (resource "
@@ -301,16 +308,6 @@ class Resource:
             views_in_context = self._resource_view_context.views_by_resource[resource_id]
             for view in views_in_context.values():
                 view.set_deleted()
-
-    async def fetch(self):
-        """
-        Update the local model with the latest version from the resource service. This will fail
-        if this resource has been modified.
-
-        :raises InvalidStateError: If the local resource model has been modified
-        :raises NotFoundError: If the resource service does not have a model for this resource's ID
-        """
-        return await self._fetch(self._resource)
 
     async def run(
         self,
@@ -604,7 +601,6 @@ class Resource:
         :param data_before: The sibling resource whose data is sequentially before the new resource
         :return:
         """
-        data_model_id: Optional[bytes]
         if data_range is not None:
             if self._resource.data_id is None:
                 raise ValueError(
@@ -738,8 +734,7 @@ class Resource:
 
         :param view: An instance of a view
         """
-        attributes: ResourceAttributes
-        for attributes in view.get_attributes_instances().values():
+        for attributes in view.get_attributes_instances().values():  # type: ignore
             self.add_attributes(attributes)
         self.add_tag(type(view))
 
@@ -773,12 +768,6 @@ class Resource:
         Get a set of tags associated with the resource.
         """
         return self._resource.get_tags(inherit)
-
-    def get_related_tags(self, tag: RT) -> List[RT]:
-        """
-        Get all tags associated with the resource which inherit from the given tag (if any).
-        """
-        return self._resource.get_specific_tags(tag)
 
     def has_tag(self, tag: ResourceTag, inherit: bool = True) -> bool:
         """
@@ -866,13 +855,6 @@ class Resource:
             attributes_type
         )
         return attributes
-
-    def get_all_attributes(self) -> Iterable[ResourceAttributes]:
-        """
-        Get values for all the attributes this resource has.
-        :return:
-        """
-        return list(self._resource.attributes.values())
 
     def remove_attributes(self, attributes_type: Type[ResourceAttributes]):
         """
@@ -1184,55 +1166,6 @@ class Resource:
                 f"matching the provided filter"
             )
         return await self._create_resource(models[0])
-
-    async def get_siblings_as_view(
-        self,
-        v_type: Type[RV],
-        r_filter: ResourceFilter = None,
-        r_sort: ResourceSort = None,
-    ) -> Iterable[RV]:
-        """
-        Get all the siblings (resources which share a parent) of this resource. May optionally
-        filter the siblings so only those matching certain parameters are returned. May optionally
-        sort the siblings by an indexable attribute value key. The siblings
-        will be returned as an instance of the given
-        [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag].
-
-        :param v_type: The type of [view][ofrak.resource] to get the siblings as
-        :param r_filter: Contains parameters which resources must match to be returned, including
-        any tags it must have and/or values of indexable attributes
-        :param r_sort: Specifies which indexable attribute to use as the key to sort and the
-        direction to sort
-        :return:
-
-        :raises NotFoundError: If a filter was provided and no resources match the provided filter
-        """
-        siblings = await self.get_siblings(r_filter, r_sort)
-        view_tasks = [r.view_as(v_type) for r in siblings]
-        return await asyncio.gather(*view_tasks)
-
-    async def get_siblings(
-        self,
-        r_filter: ResourceFilter = None,
-        r_sort: ResourceSort = None,
-    ) -> Iterable["Resource"]:
-        """
-        Get all the siblings (resources which share a parent) of this resource. May optionally
-        sort the siblings by an indexable attribute value key. May optionally
-        filter the siblings so only those matching certain parameters are returned.
-
-        :param r_filter: Contains parameters which resources must match to be returned, including
-        any tags it must have and/or values of indexable attributes
-        :param r_sort: Specifies which indexable attribute to use as the key to sort and the
-        direction to sort
-        :return:
-
-        :raises NotFoundError: If a filter was provided and no resources match the provided filter
-        """
-        models = await self._resource_service.get_siblings_by_id(
-            self._resource.id, r_filter=r_filter, r_sort=r_sort
-        )
-        return await self._create_resources(models)
 
     async def get_only_sibling_as_view(
         self,

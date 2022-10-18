@@ -64,18 +64,6 @@ class _ComponentAutoRunRequest:
     component_filter: ComponentFilter
 
 
-class _ComponentAutoRunResult:
-    def __init__(
-        self,
-        request: _ComponentAutoRunRequest,
-        matched_filters: Tuple[ComponentFilter, ...],
-        result: ComponentRunResult,
-    ):
-        self.request = request
-        self.matched_filters = matched_filters
-        self.result = result
-
-
 class JobService(JobServiceInterface):
     def __init__(
         self,
@@ -371,11 +359,12 @@ class JobService(JobServiceInterface):
                 for component in components:
                     queue.put((request, component))
             else:
-                LOGGER.debug(
-                    f"JOB {job_id.hex()} - Found no components to run on "
-                    f"{request.target_resource_id.hex()} matching filters "
-                    f"{request.component_filter}"
-                )
+                if LOGGER.isEnabledFor(logging.DEBUG):
+                    LOGGER.debug(
+                        f"JOB {job_id.hex()} - Found no components to run on "
+                        f"{request.target_resource_id.hex()} matching filters "
+                        f"{request.component_filter}"
+                    )
 
         concurrent_run_tasks: Set[Future] = set()
         components_result = ComponentRunResult()

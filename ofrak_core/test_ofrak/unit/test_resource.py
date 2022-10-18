@@ -11,6 +11,7 @@ from ofrak.core.elf.model import Elf
 from ofrak.core.filesystem import FilesystemRoot
 from ofrak.core.patch_maker.linkable_binary import LinkableBinary
 from ofrak.core.program import Program
+from ofrak.model.resource_model import ResourceAttributes
 from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import ResourceFilter
@@ -216,3 +217,85 @@ async def test_flush_to_disk_pack(ofrak_context: OFRAKContext):
             await root_resource.flush_to_disk(t.name)
 
         await root_resource.flush_to_disk(t.name, pack=False)
+
+
+async def test_is_modified(resource: Resource):
+    """
+    Test Resource.is_modified raises true if the local resource is "dirty".
+    """
+    assert resource.is_modified() is False
+
+    resource.add_tag(Elf)
+
+    assert resource.is_modified() is True
+
+
+async def test_summarize(resource: Resource):
+    """
+    Test that the resource string summary returns a string
+    """
+    summary = await resource.summarize()
+    assert isinstance(summary, str)
+
+
+async def test_summarize_tree(resource: Resource):
+    summary = await resource.summarize_tree()
+    assert isinstance(summary, str)
+
+
+async def test_get_range_within_parent(resource: Resource):
+    """
+    Test that Resource.get_data_range_within_parent returns the correctly-mapped range.
+    """
+    child_range = Range(1, 3)
+    child = await resource.create_child(data_range=child_range)
+    data_range_within_parent = await child.get_data_range_within_parent()
+    assert data_range_within_parent == child_range
+
+
+async def test_get_range_within_parent_for_root(resource: Resource):
+    """
+    Resource.get_data_range_within_parent returns Range(0, 0) if the resource is not mapped.
+    """
+    assert await resource.get_data_range_within_parent() == Range(0, 0)
+
+
+async def test_identify(resource: Resource):
+    await resource.identify()
+    assert resource.has_tag(GenericBinary) is True
+    assert resource.has_tag(Elf) is False
+
+
+async def test_get_tags(resource: Resource):
+    tags = resource.get_tags()
+    assert GenericBinary in tags
+    assert Elf not in tags
+
+    resource.add_tag(Elf)
+    updated_tags = resource.get_tags()
+    assert Elf in updated_tags
+
+
+async def test_repr(resource: Resource):
+    result = resource.__repr__()
+    assert result.startswith("Resource(resource_id=")
+    assert "GenericBinary" in result
+
+
+async def test_attributes(resource: Resource):
+    """
+    Test Resource.{has_attributes, add_attributes, remove_attributes}
+    """
+
+    @dataclass(**ResourceAttributes.DATACLASS_PARAMS)
+    class DummyAttributes(ResourceAttributes):
+        name: str
+
+    dummy_attributes = DummyAttributes("dummy")
+    assert resource.has_attributes(DummyAttributes) is False
+
+    resource.add_attributes(dummy_attributes)
+    assert resource.has_attributes(DummyAttributes) is True
+
+    resource.remove_attributes(DummyAttributes)
+    assert resource.has_attributes(DummyAttributes) is False
