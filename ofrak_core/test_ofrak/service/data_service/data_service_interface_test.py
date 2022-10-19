@@ -105,7 +105,7 @@ class TestDataService:
                 [DataPatch(Range(0x6, 0x9), DATA_1, b"\x01" * 0x3)]
             )
 
-    async def test_patches_overlapping(self, populated_data_service: DataServiceInterface):
+    async def test_patches_overlapping_resizes(self, populated_data_service: DataServiceInterface):
         with pytest.raises(PatchOverlapError):
             await populated_data_service.apply_patches(
                 [
@@ -135,7 +135,7 @@ class TestDataService:
                 ]
             )
 
-    async def test_patches_overlapping_with_children(
+    async def test_patches_overlapping_boundaries(
         self, populated_data_service: DataServiceInterface
     ):
         with pytest.raises(PatchOverlapError):
@@ -145,7 +145,10 @@ class TestDataService:
                     DataPatch(Range(0x2, 0x6), DATA_2, b"\x01" * 5),
                 ]
             )
-        # Cases that should work
+
+    async def test_patches_overlapping_mapped_children(
+        self, populated_data_service: DataServiceInterface
+    ):
         results = await populated_data_service.apply_patches(
             [
                 # Patch region overlapping with DATA_3 end and DATA_4 start, no resize
@@ -166,7 +169,7 @@ class TestDataService:
     async def test_patches_trailing_children(self, populated_data_service: DataServiceInterface):
         results = await populated_data_service.apply_patches(
             [
-                # Replace some data within DATA_0
+                # Insert some data within DATA_0
                 DataPatch(Range(0x00, 0x00), DATA_0, b"\x01" * 4),
             ]
         )

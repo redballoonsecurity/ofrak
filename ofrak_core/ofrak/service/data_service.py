@@ -385,16 +385,14 @@ class _PatchResizeTracker:
 
     def translate_range(self, r: Range) -> Range:
         return Range(
-            self.get_shifted_point(r.start, False),
-            self.get_shifted_point(r.end, True),
+            self.get_shifted_point(r.start),
+            self.get_shifted_point(r.end),
         )
 
-    def get_shifted_point(self, point: int, exclusive_point: bool) -> int:
+    def get_shifted_point(self, point: int) -> int:
         i = self.resizing_shifts.bisect_right((point, 0))
         assert i != 0
         previous_shift_end, shift = self.resizing_shifts[i - 1]
-        if not exclusive_point and previous_shift_end == point:
-            pass
         return point + shift
 
     def add_new_resized_range(self, r: Range, size_diff: int):

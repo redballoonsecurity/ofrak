@@ -63,11 +63,9 @@ class TestPatchResizeTracker:
         return prt
 
     async def test_get_shifted_point(self, tracker: _PatchResizeTracker):
-        assert tracker.get_shifted_point(0x0, False) == 0x0
-        assert tracker.get_shifted_point(0x15, False) == 0x15 + 0x8
-        # TODO come back to this, exclusive_point does nothing
-        assert tracker.get_shifted_point(0x10, True) == 0x10
-        assert tracker.get_shifted_point(0x10, False) == 0x10 + 0x8
+        assert tracker.get_shifted_point(0x0) == 0x0
+        assert tracker.get_shifted_point(0x15) == 0x15 + 0x8
+        assert tracker.get_shifted_point(0x10) == 0x10
 
     async def test_add_new_resized_range(self, tracker: _PatchResizeTracker):
         tracker.add_new_resized_range(Range(0x8, 0xA), -0x6)
