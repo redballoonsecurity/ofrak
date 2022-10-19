@@ -140,7 +140,7 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
     @abstractmethod
     async def apply_patches(
         self,
-        patches: Optional[List[DataPatch]] = None,
+        patches: List[DataPatch],
     ) -> List[DataPatchesResult]:
         """
         Modify the data of a number of models, modeled as a list of `DataPatch` structures each

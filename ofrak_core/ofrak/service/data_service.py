@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, Iterable, Optional, List, Union, cast, Tuple, Set
+from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 from dataclasses import dataclass
 from sortedcontainers import SortedList
@@ -79,11 +79,11 @@ class DataService(DataServiceInterface):
             return Range.from_size(0, model.range.length())
         if self._is_root(data_id):
             raise ValueError(
-                f"{data_id.hex()} is a root and not mapped into {within_data_id} (a root)!"
+                f"{data_id.hex()} is a root, not mapped into {within_data_id} (a root)!"
             )
         elif self._is_root(within_data_id) and model.root_id != within_model.id:
             raise ValueError(f"{data_id.hex()} is not mapped into {within_data_id} (a root)!")
-        elif model.root_id != model.root_id:
+        elif not self._is_root(within_data_id) and model.root_id != within_model.root_id:
             raise ValueError(
                 f"{data_id.hex()} and {within_data_id} are not mapped into the same root!"
             )
@@ -102,13 +102,7 @@ class DataService(DataServiceInterface):
         else:
             return root.data[model.range.start : model.range.end]
 
-    async def apply_patches(
-        self,
-        patches: Optional[List[DataPatch]] = None,
-    ) -> List[DataPatchesResult]:
-        if patches is None:
-            patches = []
-
+    async def apply_patches(self, patches: List[DataPatch]) -> List[DataPatchesResult]:
         patches_by_root: Dict[DataId, List[DataPatch]] = defaultdict(list)
         for patch in patches:
             target_data_model = self._get_by_id(patch.data_id)
@@ -165,12 +159,7 @@ class DataService(DataServiceInterface):
     def _is_root(self, data_id: DataId) -> bool:
         return data_id in self._roots
 
-    def _get_absolute_range(self, id_or_model: Union[DataId, DataModel], r: Range) -> Range:
-        if isinstance(id_or_model, DataId):
-            model = self._get_by_id(cast(DataId, id_or_model))
-        else:
-            model = cast(DataModel, id_or_model)
-
+    def _get_absolute_range(self, model: DataModel, r: Range) -> Range:
         if r.start < 0 or r.end > model.range.end:
             raise OutOfBoundError(
                 f"The requested range {r} of model {model.id.hex()} is outside the "
@@ -280,8 +269,9 @@ class _Waypoint:
     def is_empty(self) -> bool:
         return not self.models_starting and not self.models_ending
 
-    def validate(self):
-        assert self.models_ending.isdisjoint(self.models_starting)
+    #
+    # def validate(self):
+    #     assert self.models_ending.isdisjoint(self.models_starting)
 
 
 class _DataRoot:

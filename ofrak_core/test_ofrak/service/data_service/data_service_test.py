@@ -32,7 +32,7 @@ def data_service():
 
 @pytest.fixture
 async def populated_data_service(data_service: DataServiceInterface):
-    await data_service.create_root(DATA_0, b"\x00" * 0x18)
+    await data_service.create_root(DATA_0, (b"\x00" * 0x10) + (b"\x10" * 0x8))
     _ = await data_service.create_mapped(DATA_1, DATA_0, Range(0x0, 0x8))
     _ = await data_service.create_mapped(DATA_2, DATA_0, Range(0x8, 0x10))
     _ = await data_service.create_mapped(DATA_3, DATA_2, Range(0x0, 0x4))
@@ -55,7 +55,68 @@ class TestDataService:
 
     async def test_create_out_of_bounds(self, populated_data_service: DataServiceInterface):
         with pytest.raises(OutOfBoundError):
+            await populated_data_service.create_mapped(DATA_TEST_0, DATA_0, Range(0x18, 0x20))
+
+        with pytest.raises(OutOfBoundError):
             await populated_data_service.create_mapped(DATA_TEST_0, DATA_2, Range(0x4, 0x10))
+
+    async def test_get_by_id(self, populated_data_service: DataServiceInterface):
+        assert (await populated_data_service.get_by_id(DATA_0)).range == Range(0x0, 0x18)
+        models = await populated_data_service.get_by_ids([DATA_1, DATA_2, DATA_3])
+        assert [model.range for model in models] == [
+            Range(0x0, 0x8),
+            Range(0x8, 0x10),
+            Range(0x8, 0xC),
+        ]
+
+        with pytest.raises(NotFoundError):
+            await populated_data_service.get_by_id(DATA_8 + DATA_8)
+
+        with pytest.raises(NotFoundError):
+            await populated_data_service.get_by_ids([DATA_1, DATA_2, DATA_8 + DATA_8])
+
+    async def test_get_data_length(self, populated_data_service: DataServiceInterface):
+        assert 0x18 == await populated_data_service.get_data_length(DATA_0)
+        assert 0x4 == await populated_data_service.get_data_length(DATA_4)
+
+    async def test_get_range_within_other(self, populated_data_service: DataServiceInterface):
+        assert Range(0x0, 0x8) == await populated_data_service.get_range_within_other(
+            DATA_1, DATA_0
+        )
+        assert Range(0x8, 0xC) == await populated_data_service.get_range_within_other(
+            DATA_3, DATA_0
+        )
+        assert Range(0x0, 0x4) == await populated_data_service.get_range_within_other(
+            DATA_3, DATA_3
+        )
+        assert Range(0xC, 0xC) == await populated_data_service.get_range_within_other(
+            DATA_3, DATA_4
+        )
+
+        with pytest.raises(ValueError):
+            await populated_data_service.get_range_within_other(DATA_0, DATA_1)
+
+        await populated_data_service.create_root(DATA_6, b"\x00" * 0x18)
+        await populated_data_service.create_mapped(DATA_7, DATA_6, Range(0x2, 0x4))
+
+        with pytest.raises(ValueError):
+            await populated_data_service.get_range_within_other(DATA_7, DATA_0)
+
+        with pytest.raises(ValueError):
+            await populated_data_service.get_range_within_other(DATA_7, DATA_1)
+
+    async def test_get_data(self, populated_data_service: DataServiceInterface):
+        d = await populated_data_service.get_data(DATA_5)
+        assert d == b"\x10" * 8
+
+        d = await populated_data_service.get_data(DATA_0, Range(0xC, 0x14))
+        assert d == b"\x00\x00\x00\x00\x10\x10\x10\x10"
+
+        d = await populated_data_service.get_data(DATA_1, Range(0x18, 0x20))
+        assert d == b""
+
+        d = await populated_data_service.get_data(DATA_0, Range(0x18, 0x20))
+        assert d == b""
 
     async def test_patches_out_of_bounds(self, populated_data_service: DataServiceInterface):
         with pytest.raises(OutOfBoundError):
@@ -132,20 +193,11 @@ class TestDataService:
         data_1 = await populated_data_service.get_data(DATA_1)
         assert data_1 == b"\x00" * 0x8
         data_5 = await populated_data_service.get_data(DATA_5)
-        assert data_5 == b"".join(
-            [
-                b"\x00" * 4,  # Original data
-                b"\x00" * 4,  # Original data
-            ]
-        )
+        assert data_5 == b"\x10" * 0x8
         data_3 = await populated_data_service.get_data(DATA_3)
-        assert data_3 == b"".join([b"\x00" * 0x4])
+        assert data_3 == b"\x00" * 0x4
         data_4 = await populated_data_service.get_data(DATA_4)
-        assert data_4 == b"".join(
-            [
-                b"\x00" * 4,  # Original data
-            ]
-        )
+        assert data_4 == b"\x00" * 0x4
         data_2 = await populated_data_service.get_data(DATA_2)
         assert data_2 == b"".join(
             [
@@ -157,7 +209,8 @@ class TestDataService:
         assert data_0 == b"".join(
             [
                 b"\x01" * 4,  # Patch           (DATA_0)
-                b"\x00" * 24,  # Original data   (DATA_1)
+                b"\x00" * 0x10,  # Original data   (DATA_1)
+                b"\x10" * 0x8,  # Original data    (DATA_5)
             ]
         )
 
@@ -206,6 +259,20 @@ class TestDataService:
         data_4_range = await populated_data_service.get_data_range_within_root(data_4_model.id)
         assert data_4_range == Range(0xC, 0x10)
 
+        await populated_data_service.delete_models((DATA_1,))
+        await populated_data_service.delete_models((DATA_3,))
+        """
+        Expected state:
+        DATA_0 (0x0, 0x18)  | [-----------------------)
+        DATA_4 (0xC, 0x10)  |             [---)
+        """
+        (
+            data_0_model,
+            data_4_model,
+        ) = await populated_data_service.get_by_ids([DATA_0, DATA_4])
+        data_4_range = await populated_data_service.get_data_range_within_root(data_4_model.id)
+        assert data_4_range == Range(0xC, 0x10)
+
     async def test_delete_root(self, populated_data_service: DataServiceInterface):
         """
         Starting state:
@@ -217,15 +284,6 @@ class TestDataService:
         DATA_5 (0x10, 0x18) |                 [-------)
         """
         await populated_data_service.delete_models((DATA_0,))
-        with pytest.raises(NotFoundError):
-            await populated_data_service.get_by_id(DATA_0)
-        with pytest.raises(NotFoundError):
-            await populated_data_service.get_by_id(DATA_1)
-        with pytest.raises(NotFoundError):
-            await populated_data_service.get_by_id(DATA_2)
-        with pytest.raises(NotFoundError):
-            await populated_data_service.get_by_id(DATA_3)
-        with pytest.raises(NotFoundError):
-            await populated_data_service.get_by_id(DATA_4)
-        with pytest.raises(NotFoundError):
-            await populated_data_service.get_by_id(DATA_5)
+        for data_id in [DATA_0, DATA_1, DATA_2, DATA_3, DATA_4, DATA_5]:
+            with pytest.raises(NotFoundError):
+                await populated_data_service.get_by_id(data_id)
