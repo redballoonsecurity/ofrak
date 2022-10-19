@@ -32,6 +32,7 @@ setuptools.setup(
     ],
     install_requires=[
         "PyYAML~=6.0,>=5.4",
+        "aiohttp~=3.8.1",
     ],
     extras_require={
         "test": [
