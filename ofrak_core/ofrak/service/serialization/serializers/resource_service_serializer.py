@@ -1,7 +1,8 @@
 from collections import defaultdict
-from typing import Any, List, Set, Tuple
+from typing import Any, List, Set, Tuple, cast, Callable
 from typing import Dict, Optional
 
+from sortedcontainers import SortedList
 from typing_inspect import get_origin
 
 from ofrak import ResourceTag
@@ -93,15 +94,19 @@ class ResourceServiceSerializer(SerializerInterface):
 
         # convert ID shorthand in attribute indexes to actual nodes
         for attribute_index in deserialized_attrs["_attribute_indexes"].values():
-            attribute_index.index = [
-                (val, resource_service._resource_store[node_id])
-                for val, node_id in attribute_index.index
-            ]
+            attribute_index.index = SortedList(
+                [
+                    (val, resource_service._resource_store[node_id])
+                    for val, node_id in attribute_index.index
+                ]
+            )
         # _attribute_indexes is actually an AttributeIndexDict(ResourceAttributeIndex)
         setattr(
             resource_service,
             "_attribute_indexes",
-            AttributeIndexDict(ResourceAttributeIndex, deserialized_attrs["_attribute_indexes"]),
+            AttributeIndexDict(
+                cast(Callable, ResourceAttributeIndex), deserialized_attrs["_attribute_indexes"]
+            ),
         )
 
         # convert ID shorthand in tag indexes to actual nodes
@@ -205,6 +210,8 @@ class ResourceAttributeIndexSerializer(SerializerInterface):
         return result
 
     def pjson_to_obj(self, pjson_obj: PJSONType, type_hint: Any) -> ResourceAttributeIndex:
+        if not isinstance(pjson_obj, dict):
+            raise ValueError(f"Expected to deserialize a dict, got {type(pjson_obj)}")
         deserialized_attrs = {
             "_attribute": self._service.from_pjson(
                 pjson_obj["_attribute"], ResourceIndexedAttribute
@@ -216,7 +223,7 @@ class ResourceAttributeIndexSerializer(SerializerInterface):
         }
 
         reconstructed_index = ResourceAttributeIndex(deserialized_attrs["_attribute"])
-        reconstructed_index.index = deserialized_attrs["index"]
+        reconstructed_index.index = SortedList(deserialized_attrs["index"])
         reconstructed_index.values_by_node_id = deserialized_attrs["values_by_node_id"]
 
         return reconstructed_index  # Only partially reconstructed
