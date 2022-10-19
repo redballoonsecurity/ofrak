@@ -1,6 +1,7 @@
 import subprocess
 import tempfile
 from dataclasses import dataclass
+from typing import Optional
 
 from ofrak import Packer, Unpacker, Resource
 from ofrak.component.packer import PackerError
