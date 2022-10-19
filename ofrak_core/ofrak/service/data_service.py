@@ -160,7 +160,7 @@ class DataService(DataServiceInterface):
         return data_id in self._roots
 
     def _get_absolute_range(self, model: DataModel, r: Range) -> Range:
-        if r.start < 0 or r.end > model.range.end:
+        if r.start < 0 or r.end > model.range.length():
             raise OutOfBoundError(
                 f"The requested range {r} of model {model.id.hex()} is outside the "
                 f"model's range {model.range}"
@@ -169,13 +169,7 @@ class DataService(DataServiceInterface):
         if model.root_id is None:
             return r
         else:
-            root = self._get_root_by_id(model.root_id)
             absolute_range = r.translate(model.range.start)
-            if absolute_range.end > root.model.range.end:
-                raise OutOfBoundError(
-                    f"The requested range {r} of model {model.id.hex()} is outside the "
-                    f"root's range {root.model.range}"
-                )
             return absolute_range
 
     def _apply_patches_to_root(
@@ -397,13 +391,11 @@ class _PatchResizeTracker:
 
     def get_shifted_point(self, point: int, exclusive_point: bool) -> int:
         i = self.resizing_shifts.bisect_right((point, 0))
-        if i == 0:
-            return point
-        else:
-            previous_shift_end, shift = self.resizing_shifts[i - 1]
-            if not exclusive_point and previous_shift_end == point:
-                pass
-            return point + shift
+        assert i != 0
+        previous_shift_end, shift = self.resizing_shifts[i - 1]
+        if not exclusive_point and previous_shift_end == point:
+            pass
+        return point + shift
 
     def add_new_resized_range(self, r: Range, size_diff: int):
         self.resized_ranges.append(r)
@@ -411,7 +403,7 @@ class _PatchResizeTracker:
         total_offset_here = self.resizing_shifts[i - 1][1] + size_diff
         for node in self.resizing_shifts.islice(i):
             node[1] += size_diff
-        self.resizing_shifts.add((r.end, total_offset_here))
+        self.resizing_shifts.add([r.end, total_offset_here])
 
     def get_total_size_diff(self) -> int:
         return self.resizing_shifts[-1][1]
