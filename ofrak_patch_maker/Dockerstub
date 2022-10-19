@@ -1,3 +1,5 @@
+ARG TARGETARCH
+
 # LLVM
 RUN mkdir -p /opt/rbs/toolchain && \
     cd /tmp && \
@@ -16,17 +18,33 @@ RUN cd /tmp && \
 RUN cd /tmp && \
     apt-get -y update  && apt-get -y install software-properties-common gcc-10
 
-RUN cd /tmp && \
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+    cd /tmp && \
     apt-get update && apt-get install -y texinfo && \
     wget http://archive.ubuntu.com/ubuntu/pool/main/b/binutils/binutils_2.34.orig.tar.xz --show-progress --progress=bar:force:noscroll && \
     tar xvf binutils_2.34.orig.tar.xz -C /opt/rbs/toolchain && \
     rm -rf binutils_2.34.orig.tar.xz && \
     cd /opt/rbs/toolchain/binutils-2.34 && \
     ./configure CC=/usr/bin/x86_64-linux-gnu-gcc-10 && \
-    make -j32
+    make -j32; \
+fi;
+
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+    cd /tmp && \
+    apt-get update && apt-get install -y texinfo && \
+    wget http://archive.ubuntu.com/ubuntu/pool/main/b/binutils/binutils_2.34.orig.tar.xz --show-progress --progress=bar:force:noscroll && \
+    tar xvf binutils_2.34.orig.tar.xz -C /opt/rbs/toolchain && \
+    rm -rf binutils_2.34.orig.tar.xz && \
+    cd /opt/rbs/toolchain/binutils-2.34 && \
+    ./configure CC=/usr/bin/aarch64-linux-gnu-gcc-10 && \
+    make -j32; \
+fi;
 
 #M68k GNU 10 Linux
-RUN apt-get update && apt-get install -y gcc-10-m68k-linux-gnu
+#Only exists for x86
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+    apt-get update && apt-get install -y gcc-10-m68k-linux-gnu; \
+fi;
 
 #M68k VBCC
 RUN cd /tmp && \
@@ -47,7 +65,9 @@ RUN cd /tmp/vbcc && cp ./bin/* /opt/rbs/toolchain/vbcc_0_9/bin/ && \
     cp ./vobjdump /opt/rbs/toolchain/vbcc_0_9/bin/
 
 #AARCH64 GNU 10 Linux
-RUN apt-get update && apt-get install -y gcc-10-aarch64-linux-gnu
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+    apt-get update && apt-get install -y gcc-10-aarch64-linux-gnu; \
+fi;
 
 #AVR GCC
 RUN apt-get update && apt-get install -y gcc-avr binutils-avr avr-libc
