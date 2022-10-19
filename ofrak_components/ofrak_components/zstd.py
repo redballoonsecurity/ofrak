@@ -55,16 +55,16 @@ class ZstdUnpacker(Unpacker[None]):
             await resource.create_child(tags=(GenericBinary,), data=result)
 
 
-class ZstdPacker(Packer[None]):
+class ZstdPacker(Packer[ZstdPackerConfig]):
     """
     Pack data into a compressed zstd file.
     """
 
     targets = (ZstdData,)
 
-    async def pack(
-        self, resource: Resource, config: ZstdPackerConfig = ZstdPackerConfig(compression_level=19)
-    ):
+    async def pack(self, resource: Resource, config: Optional[ZstdPackerConfig] = None):
+        if config is None:
+            config = ZstdPackerConfig(compression_level=19)
         zstd_view = await resource.view_as(ZstdData)
         child_file = await zstd_view.get_child()
         uncompressed_data = await child_file.resource.get_data()
