@@ -1,4 +1,4 @@
-from typing import Dict, Any, Set, Tuple, cast
+from typing import Dict, Any, Set, Tuple
 
 from sortedcontainers import SortedList
 
@@ -44,12 +44,7 @@ class DataServiceSerializer(SerializerInterface):
         return {
             "root_id": self._service.to_pjson(data_root.model.id, bytes),
             "data": self._service.to_pjson(data_root.data, bytes),
-            "waypoints": [
-                self._waypoint_from_pjson(
-                    cast(Tuple[int, PJSONType, PJSONType], data_root._waypoints[wp_offset])
-                )
-                for wp_offset in data_root._waypoint_offsets
-            ],
+            "waypoints": [self._waypoint_to_pjson(wp) for wp in data_root._waypoints.values()],
             "children": self._service.to_pjson(data_root._children.keys(), Set[bytes]),
         }
 
