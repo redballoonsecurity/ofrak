@@ -30,7 +30,7 @@ class BinwalkAnalyzer(Analyzer[None, BinwalkAttributes]):
         super().__init__(resource_factory, data_service, resource_service)
         self.pool = ProcessPoolExecutor()
 
-    async def analyze(self, resource: Resource, config=None) -> BinwalkAttributes:        
+    async def analyze(self, resource: Resource, config=None) -> BinwalkAttributes:
         with tempfile.NamedTemporaryFile() as temp_file:
             data = await resource.get_data()
             temp_file.write(data)
@@ -42,6 +42,7 @@ class BinwalkAnalyzer(Analyzer[None, BinwalkAttributes]):
                 self.pool, _run_binwalk_on_file, temp_file.name
             )
         return BinwalkAttributes(offsets)
+
 
 def _run_binwalk_on_file(filename):  # pragma: no cover
     offsets = dict()
