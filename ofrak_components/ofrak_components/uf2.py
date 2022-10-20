@@ -103,8 +103,7 @@ class Uf2Unpacker(Unpacker[None]):
         previous_block_no = -1
         family_id = None
         file_num_blocks = None
-        # TODO: block_no vs num_blocks
-        # last_block_no = 0
+        block_no = 0
 
         for i in range(0, data_length, 512):
             data = await resource.get_data(Range(i, (i + 512)))
@@ -142,8 +141,6 @@ class Uf2Unpacker(Unpacker[None]):
                 if family_id != filesize_familyID:
                     raise NotImplementedError("Multiple family IDs in file not supported")
 
-            # last_block_no = block_no
-
             # unpack data
             if flags & Uf2Flags.NOT_MAIN_FLASH:
                 # data not written to main flash
@@ -167,10 +164,15 @@ class Uf2Unpacker(Unpacker[None]):
                         ranges[-1] = (last_region_range, last_region_data)
                     else:
                         ranges.append((Range(target_addr, target_addr + payload_size), data))
-
             else:
                 # unsupported flags
-                continue
+                raise ValueError(f"Unsupported flags {flags}")
+
+        # count vs 0 indexed (there are 256 blocks from 0-255)
+        if file_num_blocks != (block_no + 1):
+            raise ValueError(
+                f"Incorrect number of blocks. Expected {file_num_blocks}, got {block_no}"
+            )
 
         if family_id:
             file_attributes = Uf2FileAttributes(family_id)
