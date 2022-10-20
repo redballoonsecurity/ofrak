@@ -31,6 +31,13 @@ class BinwalkAnalyzer(Analyzer[None, BinwalkAttributes]):
         self.pool = ProcessPoolExecutor()
 
     async def analyze(self, resource: Resource, config=None) -> BinwalkAttributes:
+        def _run_binwalk_on_file(filename):
+            offsets = dict()
+            for module in binwalk.scan(filename, signature=True):
+                for result in module.results:
+                    offsets[result.offset] = result.description
+            return offsets
+        
         with tempfile.NamedTemporaryFile() as temp_file:
             data = await resource.get_data()
             temp_file.write(data)
@@ -42,10 +49,3 @@ class BinwalkAnalyzer(Analyzer[None, BinwalkAttributes]):
                 self.pool, _run_binwalk_on_file, temp_file.name
             )
         return BinwalkAttributes(offsets)
-
-def _run_binwalk_on_file(filename):  # pragma: no cover
-    offsets = dict()
-    for module in binwalk.scan(filename, signature=True):
-        for result in module.results:
-            offsets[result.offset] = result.description
-    return offsets
