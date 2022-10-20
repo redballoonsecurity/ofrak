@@ -21,7 +21,7 @@
     for (const [attrType, attrs] of Object.entries(resource.get_attributes())) {
       const skipped_attributes = [
         // already shown in the resource tree
-        "ofrak_components.comments.CommentsAttributes",
+        "ofrak.core.comments.CommentsAttributes",
         // verbose and unhelpful
         "ofrak_components.entropy.entropy.DataSummary",
       ];

@@ -151,14 +151,10 @@ class ResourceNode:
 
 
 class ResourceAttributeIndex(Generic[T]):
-    _attribute: ResourceIndexedAttribute[T]
-    index: SortedList
-    values_by_node_id: Dict[bytes, Any]
-
     def __init__(self, attribute: ResourceIndexedAttribute[T]):
-        self._attribute = attribute  # type: ignore
-        self.index = SortedList()
-        self.values_by_node_id = dict()
+        self._attribute: ResourceIndexedAttribute[T] = attribute
+        self.index: SortedList[Tuple[Any, ResourceNode]] = SortedList()
+        self.values_by_node_id: Dict[bytes, Any] = dict()
 
     def add_resource_attribute(
         self,
