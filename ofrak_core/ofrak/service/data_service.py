@@ -151,7 +151,7 @@ class DataService(DataServiceInterface):
     def _is_root(self, data_id: DataId) -> bool:
         return data_id in self._roots
 
-    def _get_absolute_range(self, model: DataModel, r: Range) -> Range:
+    def _get_range_in_root(self, model: DataModel, r: Range) -> Range:
         if r.start < 0 or r.end > model.range.length():
             raise OutOfBoundError(
                 f"The requested range {r} of model {model.id.hex()} is outside the "
@@ -176,35 +176,41 @@ class DataService(DataServiceInterface):
 
         for patch in patches:
             target_model = self._get_by_id(patch.data_id)
-            raw_absolute_patch_range = self._get_absolute_range(target_model, patch.range)
+            patch_range_in_prepatch_root = self._get_range_in_root(target_model, patch.range)
 
-            if resize_tracker.overlaps_resized_range(raw_absolute_patch_range):
+            if resize_tracker.overlaps_resized_range(patch_range_in_prepatch_root):
                 raise PatchOverlapError(
                     f"Patch to {patch.range} of {patch.data_id.hex()} overlaps previously resized "
                     f"area of {patch.data_id.hex()} and cannot be applied!"
                 )
 
-            raw_patch_ranges_in_root.append(raw_absolute_patch_range)
-            absolute_patch_range = resize_tracker.translate_range(raw_absolute_patch_range)
+            raw_patch_ranges_in_root.append(patch_range_in_prepatch_root)
+            patch_range_in_patched_root = resize_tracker.translate_range(
+                patch_range_in_prepatch_root
+            )
             models_intersecting_patch_range = root.get_children_with_boundaries_intersecting_range(
-                absolute_patch_range
+                patch_range_in_patched_root
             )
 
             size_diff = len(patch.data) - patch.range.length()
             if size_diff == 0:
-                finalized_ordered_patches.append((absolute_patch_range, patch.data, size_diff))
+                finalized_ordered_patches.append(
+                    (patch_range_in_patched_root, patch.data, size_diff)
+                )
             elif models_intersecting_patch_range:
                 raise PatchOverlapError(
                     f"Because patch to {patch.data_id.hex()} resizes data by {size_diff} bytes, "
                     f"the effects on {len(models_intersecting_patch_range)} model(s) "
-                    f"intersecting the patch range {patch.range} ({absolute_patch_range} in the "
-                    f"root) could not be determined. If data must be resized, any resources "
+                    f"intersecting the patch range {patch.range} ({patch_range_in_patched_root} "
+                    f"in the root) could not be determined. If data must be resized, any resources "
                     f"overlapping the data must be deleted before patching and re-created "
                     f"afterwards along new data ranges."
                 )
             else:
-                finalized_ordered_patches.append((absolute_patch_range, patch.data, size_diff))
-                resize_tracker.add_new_resized_range(absolute_patch_range, size_diff)
+                finalized_ordered_patches.append(
+                    (patch_range_in_patched_root, patch.data, size_diff)
+                )
+                resize_tracker.add_new_resized_range(patch_range_in_patched_root, size_diff)
 
         results = defaultdict(list)
         for affected_range in Range.merge_ranges(raw_patch_ranges_in_root):
