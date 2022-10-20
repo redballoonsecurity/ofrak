@@ -16,7 +16,7 @@ inspect:
 .PHONY: test
 test: inspect
 	$(PYTHON) -m pytest --cov=ofrak_angr ofrak_angr_test
-	fun-coverage
+	fun-coverage --cov-fail-under=82
 
 .PHONY: dependencies
 dependencies:

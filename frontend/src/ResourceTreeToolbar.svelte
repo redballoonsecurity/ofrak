@@ -5,6 +5,7 @@
   import Toolbar from "./Toolbar.svelte";
 
   import { selectedResource, selected } from "./stores.js";
+  import SearchView from "./SearchView.svelte";
 
   export let resourceNodeDataMap, modifierView;
   $: rootResource = $selectedResource;
@@ -99,8 +100,8 @@
             }
             const blob = new Blob([data], {
               type:
-                rootResource.get_attributes()["ofrak_components.magic.Magic"]
-                  ?.mime || "",
+                rootResource.get_attributes()["ofrak.core.magic.Magic"]?.mime ||
+                "",
             });
             const blobUrl = URL.createObjectURL(blob);
 
@@ -185,6 +186,14 @@
         iconUrl: "/icons/comment.svg",
         onclick: async (e) => {
           modifierView = CommentView;
+        },
+      },
+
+      {
+        text: "Search",
+        iconUrl: "/icons/identify.svg",
+        onclick: async (e) => {
+          modifierView = SearchView;
         },
       },
     ];

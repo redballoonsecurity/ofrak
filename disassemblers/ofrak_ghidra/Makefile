@@ -9,6 +9,6 @@ develop:
 
 test:
 	$(PYTHON) -m pytest --cov=ofrak_ghidra --cov-report=term-missing ofrak_ghidra_test
-	fun-coverage
+	fun-coverage --cov-fail-under=63
 
 dependencies:

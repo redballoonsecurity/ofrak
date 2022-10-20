@@ -1,9 +1,4 @@
-COPY mkdocs.yml /mkdocs.yml
-COPY docs /docs
-COPY examples /examples
-ENTRYPOINT python -m ofrak_ghidra.server start \
-    && jupyter notebook \
-        --no-browser \
-        --allow-root \
-        --ip 0.0.0.0 \
-        --notebook-dir "/ofrak_tutorial/notebooks"
+ARG OFRAK_DIR=.
+COPY $OFRAK_DIR/mkdocs.yml /mkdocs.yml
+COPY $OFRAK_DIR/docs /docs
+COPY $OFRAK_DIR/examples /examples

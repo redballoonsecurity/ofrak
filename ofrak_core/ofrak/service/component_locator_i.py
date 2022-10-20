@@ -21,12 +21,18 @@ class ComponentFilter(ABC):
 
     def __eq__(self, other) -> bool:
         if type(self) == type(other):
-            return all(
-                getattr(self, field_name) == getattr(other, field_name)
-                for field_name in getattr(self, "__annotations__", {})
-            )
+            for field_name in getattr(self, "__annotations__", {}):
+                if getattr(self, field_name) != getattr(other, field_name):
+                    return False
+            return True
         else:
             return False
+
+    def __hash__(self):
+        return hash(
+            (field_name, getattr(self, field_name))
+            for field_name in getattr(self, "__annotations__", {})
+        )
 
 
 class ComponentLocatorInterface(metaclass=ABCMeta):

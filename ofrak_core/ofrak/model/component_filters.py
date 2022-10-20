@@ -11,6 +11,13 @@ from ofrak.component.interface import ComponentInterface
 from ofrak.component.analyzer import Analyzer
 from ofrak.service.component_locator_i import ComponentFilter
 
+from functools import lru_cache
+
+
+@lru_cache(maxsize=None)
+def _isinstance(*args, **kwargs):
+    return isinstance(*args, **kwargs)
+
 
 class ComponentWhitelistFilter(ComponentFilter):
     """
@@ -40,7 +47,7 @@ class ComponentTypeFilter(ComponentFilter):
         return f"ComponentTypeFilter({self.component_type.__name__})"
 
     def filter(self, components: Set[ComponentInterface]) -> Set[ComponentInterface]:
-        return {c for c in components if isinstance(c, self.component_type)}
+        return {c for c in components if _isinstance(c, self.component_type)}
 
 
 class ComponentTargetFilter(ComponentFilter):
@@ -73,8 +80,8 @@ class AnalyzerOutputFilter(ComponentFilter):
 
     def filter(self, components: Set[ComponentInterface]) -> Set[ComponentInterface]:
         def component_is_analyzer_with_outputs(c: ComponentInterface):
-            if isinstance(c, Analyzer):
-                analyzer_outputs = set(c.get_outputs_as_attribute_types())
+            if _isinstance(c, Analyzer):
+                analyzer_outputs = set(c.get_outputs_as_attribute_types())  # type: ignore
                 return not analyzer_outputs.isdisjoint(self.outputs)
             return False
 

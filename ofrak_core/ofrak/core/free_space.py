@@ -3,34 +3,22 @@ from dataclasses import dataclass
 from itertools import chain
 from typing import List, Tuple, Dict, Optional, Iterable
 
-from ofrak.service.id_service_i import IDServiceInterface
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
-from ofrak.core.architecture import ProgramAttributes
-from ofrak.core.basic_block import BasicBlock
-from ofrak.core.complex_block import ComplexBlock
-from ofrak.core.instruction import Instruction
 from ofrak.core.memory_region import MemoryRegion
-from ofrak.core.program import Program
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import index
-from ofrak.resource import Resource, ResourceFactory
+from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
-from ofrak.service.assembler.assembler_service_i import AssemblerServiceInterface
-from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import (
-    ResourceServiceInterface,
     ResourceFilter,
     ResourceAttributeRangeFilter,
     ResourceAttributeValueFilter,
     ResourceSort,
 )
-from ofrak_type.architecture import InstructionSet, InstructionSetMode
 from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.range import Range, remove_subranges
-
-NOPS: Dict[Tuple[ProgramAttributes, InstructionSetMode], bytes] = dict()
 
 
 class FreeSpaceAllocationError(RuntimeError):
@@ -370,35 +358,57 @@ class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
         )
 
 
+async def _find_and_delete_overlapping_children(resource: Resource, freed_range: Range):
+    # Note this filter calculation has the potential to be very expensive if, for instance,
+    # the resource is an entire program segment...
+    overlap_resources = list(
+        await resource.get_children_as_view(
+            MemoryRegion,
+            r_filter=ResourceFilter(
+                tags=(MemoryRegion,),
+                attribute_filters=(
+                    ResourceAttributeRangeFilter(MemoryRegion.VirtualAddress, max=freed_range.end),
+                    ResourceAttributeRangeFilter(MemoryRegion.EndVaddr, min=freed_range.start),
+                ),
+            ),
+        )
+    )
+    for overlapping_child in overlap_resources:
+        await overlapping_child.resource.delete()
+        await overlapping_child.resource.save()
+
+
+def _get_fill(freed_range: Range, fill: Optional[bytes]):
+    if not fill:
+        return b"\x00" * freed_range.length()
+    else:
+        diff_len = freed_range.length() - len(fill)
+        if diff_len < 0:
+            raise ValueError("config.fill value cannot be longer than the range to be freed.")
+        return fill + b"\x00" * diff_len
+
+
 @dataclass
 class FreeSpaceModifierConfig(ComponentConfig):
     """
     Configuration for modifier which marks some free space.
 
     :var permissions: memory permissions to give the created free space.
+    :var fill: bytes to fill the free space with
     """
 
     permissions: MemoryPermissions
+    fill: Optional[bytes] = None
 
 
 class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
     """
     Turn a [MemoryRegion][ofrak.core.memory_region.MemoryRegion] resource into allocatable free
-    space by replacing its data with NOP instructions and tagging it as
+    space by replacing its data with b'\x00' or optionally specified bytes.
     [FreeSpace][ofrak.core.free_space.FreeSpace].
     """
 
     targets = (MemoryRegion,)
-
-    def __init__(
-        self,
-        resource_factory: ResourceFactory,
-        data_service: DataServiceInterface,
-        resource_service: ResourceServiceInterface,
-        assembler_service: AssemblerServiceInterface,
-    ):
-        self._assembler_service = assembler_service
-        super().__init__(resource_factory, data_service, resource_service)
 
     async def modify(self, resource: Resource, config: FreeSpaceModifierConfig):
         mem_region_view = await resource.view_as(MemoryRegion)
@@ -407,48 +417,10 @@ class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
             mem_region_view.virtual_address,
             mem_region_view.virtual_address + mem_region_view.size,
         )
-
+        patch_data = _get_fill(freed_range, config.fill)
         parent_mr_view = await resource.get_parent_as_view(MemoryRegion)
         patch_offset = parent_mr_view.get_offset_in_self(freed_range.start)
         patch_range = freed_range.translate(patch_offset - freed_range.start)
-        program_ancestor_r = await resource.get_only_ancestor(
-            r_filter=ResourceFilter.with_tags(Program)
-        )
-        program_attrs = await program_ancestor_r.analyze(ProgramAttributes)
-
-        if resource.has_tag(BasicBlock):
-            block = await resource.view_as(BasicBlock)
-            mode = block.mode
-        elif resource.has_tag(ComplexBlock):
-            complex_block = await resource.view_as(ComplexBlock)
-            mode = await complex_block.get_mode()
-        elif resource.has_tag(Instruction):
-            instruction = await resource.view_as(Instruction)
-            mode = instruction.mode
-        else:
-            if program_attrs.isa is InstructionSet.ARM:
-                # default to thumb mode on ARM
-                mode = InstructionSetMode.THUMB
-            else:
-                mode = InstructionSetMode.NONE
-        if (program_attrs, mode) not in NOPS:
-            assembled_nop = await self._assembler_service.assemble(
-                "nop",
-                freed_range.start,
-                program_attrs,
-                mode,
-            )
-            NOPS[(program_attrs, mode)] = assembled_nop
-        single_nop_bytes = NOPS[(program_attrs, mode)]
-        nop_instr_size = len(single_nop_bytes)
-        if freed_range.length() % nop_instr_size:
-            raise ValueError(
-                "Right now, we expect the length of the range to be freed to be a "
-                "multiple of sizeof(NOP instruction)."
-            )
-
-        n_nop_instructions = int(freed_range.length() / nop_instr_size)
-        patch_bytes = single_nop_bytes * n_nop_instructions
 
         await resource.delete()
         await resource.save()
@@ -460,96 +432,42 @@ class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
                 config.permissions,
             ),
             data_range=patch_range,
-            data=patch_bytes,
+            data=patch_data,
         )
 
 
 @dataclass
-class PartialFreeSpaceModifierConfig(FreeSpaceModifierConfig):
+class PartialFreeSpaceModifierConfig(ComponentConfig):
     """
-    Dataclass required to free space with `PartialFreeSpaceModifier`. The configuration describes
-    the range to remove, and the instruction mode (`InstructionSetMode`). Mode is required to
-    accurately assemble `NOP` instructions to replace existing instructions in `range_to_remove`.
-
+    :var permissions: memory permissions to give the created free space.
     :var range_to_remove: the ranges to consider as free space (remove)
-    :var mode: the [InstructionSetMode][ofrak_type.architecture.InstructionSetMode]
+    :var fill: bytes to fill the free space with
     """
 
+    permissions: MemoryPermissions
     range_to_remove: Range
-    mode: InstructionSetMode = InstructionSetMode.NONE
+    fill: Optional[bytes] = None
 
 
 class PartialFreeSpaceModifier(Modifier[PartialFreeSpaceModifierConfig]):
     """
     Turn part of a [MemoryRegion][ofrak.core.memory_region.MemoryRegion] resource into allocatable
-    free space by replacing a range of its data with NOP instructions and creating a
+    free space by replacing a range of its data with b'\x00' or optionally specified fill bytes.
     [FreeSpace][ofrak.core.free_space.FreeSpace] child resource at that range.
     """
 
     targets = (MemoryRegion,)
 
-    def __init__(
-        self,
-        resource_factory: ResourceFactory,
-        data_service: DataServiceInterface,
-        resource_service: ResourceServiceInterface,
-        assembler_service: AssemblerServiceInterface,
-        id_service: IDServiceInterface,
-    ):
-        self._assembler_service = assembler_service
-        self.id_service = id_service
-        super().__init__(resource_factory, data_service, resource_service)
-
     async def modify(self, resource: Resource, config: PartialFreeSpaceModifierConfig):
         mem_region_view = await resource.view_as(MemoryRegion)
-
         freed_range = config.range_to_remove
+        patch_data = _get_fill(freed_range, config.fill)
         virtual_patch_range = Range.intersect(
             Range(mem_region_view.virtual_address, mem_region_view.end_vaddr()), freed_range
         )
-
-        overlapping_children = set()
-        for possible_overlapping_child in await resource.get_children_as_view(
-            MemoryRegion,
-            r_filter=ResourceFilter(
-                tags=(MemoryRegion,),
-                attribute_filters=(
-                    ResourceAttributeRangeFilter(MemoryRegion.VirtualAddress, max=freed_range.end),
-                ),
-            ),
-        ):
-            if (
-                possible_overlapping_child.virtual_address > freed_range.start
-                or possible_overlapping_child.end_vaddr() > freed_range.start
-            ):
-                overlapping_children.add(possible_overlapping_child.resource)
-
-        for overlapping_child in overlapping_children:
-            await overlapping_child.delete()
-
-        program_ancestor_r = await resource.get_only_ancestor(
-            r_filter=ResourceFilter.with_tags(Program)
-        )
-        program_attrs = await program_ancestor_r.analyze(ProgramAttributes)
-
-        if (program_attrs, config.mode) not in NOPS:
-            assembled_nop = await self._assembler_service.assemble(
-                "nop",
-                virtual_patch_range.start,
-                program_attrs,
-                config.mode,
-            )
-            NOPS[(program_attrs, config.mode)] = assembled_nop
-        single_nop_bytes = NOPS[(program_attrs, config.mode)]
-        nop_instr_size = len(single_nop_bytes)
-
-        assert 0 == (virtual_patch_range.length() % nop_instr_size)
-        n_nop_instructions = int(virtual_patch_range.length() / nop_instr_size)
-        nop_bytes = single_nop_bytes * n_nop_instructions
-
+        await _find_and_delete_overlapping_children(resource, freed_range)
         patch_offset = mem_region_view.get_offset_in_self(virtual_patch_range.start)
         patch_range = Range.from_size(patch_offset, virtual_patch_range.length())
-        assert len(nop_bytes) == patch_range.length()
 
         await mem_region_view.resource.create_child_from_view(
             FreeSpace(
@@ -558,5 +476,5 @@ class PartialFreeSpaceModifier(Modifier[PartialFreeSpaceModifierConfig]):
                 config.permissions,
             ),
             data_range=patch_range,
-            data=nop_bytes,
+            data=patch_data,
         )

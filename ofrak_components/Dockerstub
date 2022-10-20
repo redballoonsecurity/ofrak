@@ -14,7 +14,8 @@ RUN apt-get -y update && \
       qemu \
       qemu-user-static \
       u-boot-tools \
-      unar
+      unar \
+      zstd
 
 # Install apktool and uber-apk-signer
 RUN apt-get -y update && apt-get -y install openjdk-11-jdk

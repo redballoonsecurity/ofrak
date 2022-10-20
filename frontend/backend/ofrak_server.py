@@ -25,8 +25,15 @@ from aiohttp.web_response import Response
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 
-from ofrak import OFRAKContext, OFRAK
-from ofrak.core import File
+from ofrak import (
+    OFRAKContext,
+    OFRAK,
+    ResourceFilter,
+    ResourceAttributeRangeFilter,
+    ResourceAttributeValueFilter,
+    ResourceSort,
+)
+from ofrak.core import File, Addressable
 from ofrak.core import (
     GenericBinary,
     AddCommentModifier,
@@ -131,6 +138,7 @@ class AiohttpOFRAKServer:
                 web.post("/{resource_id}/find_and_replace", self.find_and_replace),
                 web.post("/{resource_id}/add_comment", self.add_comment),
                 web.post("/{resource_id}/delete_comment", self.delete_comment),
+                web.post("/{resource_id}/search_for_vaddr", self.search_for_vaddr),
             ]
         )
 
@@ -330,6 +338,28 @@ class AiohttpOFRAKServer:
         )
         return web.json_response(await self._serialize_component_result(result))
 
+    @exceptions_to_http(SerializedError)
+    async def search_for_vaddr(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
+        vaddr_start, vaddr_end = self._serializer.from_pjson(
+            await request.json(), Tuple[int, Optional[int]]
+        )
+        try:
+            if vaddr_end is not None:
+                vaddr_filter = ResourceAttributeRangeFilter(
+                    Addressable.VirtualAddress, vaddr_start, vaddr_end
+                )
+            else:
+                vaddr_filter = ResourceAttributeValueFilter(Addressable.VirtualAddress, vaddr_start)
+            matching_resources = await resource.get_descendants(
+                r_filter=ResourceFilter(attribute_filters=(vaddr_filter,)),
+                r_sort=ResourceSort(Addressable.VirtualAddress),
+            )
+            return web.json_response(list(map(self._serialize_resource, matching_resources)))
+
+        except NotFoundError:
+            return web.json_response([])
+
     async def _get_resource_by_id(self, resource_id: bytes, job_id: bytes) -> Resource:
         resource = await self._ofrak_context.resource_factory.create(
             job_id,
@@ -476,7 +506,7 @@ if __name__ == "__main__":
     if len(sys.argv) == 4:
         backend = sys.argv[3]
     else:
-        backend = "ghidra"
+        backend = None
 
     ofrak = OFRAK(logging.INFO)
 
@@ -486,9 +516,18 @@ if __name__ == "__main__":
 
         ofrak.injector.discover(ofrak_capstone)
         ofrak.injector.discover(ofrak_binary_ninja)
-    else:
+
+    elif backend == "ghidra":
         import ofrak_ghidra  # type: ignore
 
         ofrak.injector.discover(ofrak_ghidra)
+
+    elif backend == "angr":
+        import ofrak_angr  # type: ignore
+
+        ofrak.injector.discover(ofrak_angr)
+
+    else:
+        LOGGER.warning("No disassembler backend specified, so no disassembly will be possible")
 
     ofrak.run(main, _host, _port)  # type: ignore

@@ -55,8 +55,9 @@ class DataNode:
         self._children_tree = IntervalTree() if overlap_allowed else None
         # Used to keep track of the unmapped ranges within the child
         length = model.range.length()
-        self._unmapped_ranges = [(0, Range(0, length))]
-        self._unmapped_sizes = [(length, hash(Range(0, length)), Range(0, length))]
+        r = Range(0, length)
+        self._unmapped_ranges = [(0, r)]
+        self._unmapped_sizes = [(length, hash(r), r)]
 
     def set_parent(self, parent: Optional["DataNode"]):
         self.parent = parent
