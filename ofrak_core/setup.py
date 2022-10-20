@@ -29,7 +29,7 @@ setuptools.setup(
     },
     install_requires=[
         "intervaltree==3.1.0",
-        "lief==0.11.5",
+        "lief==0.12.1",
         "orjson~=3.6.7",
         "pefile==2022.5.30",
         "python-magic",
@@ -41,7 +41,6 @@ setuptools.setup(
         "keystone-engine",
         "ofrak_io",
         "ofrak_type",
-        "uf2@git+https://github.com/sjossi/uf2@pythonpackaging#subdirectory=utils/pypi",
     ],
     extras_require={
         "docs": [
