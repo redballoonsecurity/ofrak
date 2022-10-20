@@ -87,7 +87,7 @@ class Uf2Unpacker(Unpacker[None]):
     """
 
     targets = (Uf2File,)
-    children = (CodeRegion,)  # TODO: will be various children
+    children = (CodeRegion,)
 
     async def unpack(self, resource: Resource, config=None):
         """
