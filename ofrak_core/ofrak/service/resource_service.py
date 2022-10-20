@@ -965,7 +965,7 @@ class ResourceService(ResourceServiceInterface):
             former_parent_resource_node.remove_child(resource_node)
         new_parent_resource_node.add_child(resource_node)
         resource_node.parent = new_parent_resource_node
-        resource_node.model.root_id = new_parent_id
+        resource_node.model.parent_id = new_parent_id
 
     async def delete_resource(self, resource_id: bytes):
         resource_node = self._resource_store.get(resource_id)

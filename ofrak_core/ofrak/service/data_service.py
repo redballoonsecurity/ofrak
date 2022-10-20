@@ -28,7 +28,7 @@ class DataService(DataServiceInterface):
         if data_id in self._model_store:
             raise AlreadyExistError(f"A model with {data_id.hex()} already exists!")
 
-        new_model = DataModel(data_id, Range(0, len(data)), None)
+        new_model = DataModel(data_id, Range(0, len(data)), data_id)
 
         self._model_store[data_id] = new_model
         self._roots[data_id] = _DataRoot(new_model, data)
@@ -52,13 +52,11 @@ class DataService(DataServiceInterface):
                 f"{parent_id.hex()}"
             )
 
-        if parent_model.is_mapped():
-            root_id = parent_model.root_id
-        else:
-            root_id = parent_model.id
-        new_model = DataModel(data_id, mapped_range, root_id)
-        self._roots[root_id].add_mapped_model(new_model)
+        new_model = DataModel(data_id, mapped_range, parent_model.root_id)
+        self._roots[parent_model.root_id].add_mapped_model(new_model)
         self._model_store[data_id] = new_model
+
+        return new_model
 
     async def get_by_id(self, data_id: DataId) -> DataModel:
         return self._get_by_id(data_id)
@@ -79,23 +77,20 @@ class DataService(DataServiceInterface):
             return Range.from_size(0, model.range.length())
         if self._is_root(data_id):
             raise ValueError(
-                f"{data_id.hex()} is a root, not mapped into {within_data_id} (a root)!"
+                f"{data_id.hex()} is a root, not mapped into {within_data_id.hex()} (a root)!"
             )
         elif self._is_root(within_data_id) and model.root_id != within_model.id:
-            raise ValueError(f"{data_id.hex()} is not mapped into {within_data_id} (a root)!")
+            raise ValueError(f"{data_id.hex()} is not mapped into {within_data_id.hex()} (a root)!")
         elif not self._is_root(within_data_id) and model.root_id != within_model.root_id:
             raise ValueError(
-                f"{data_id.hex()} and {within_data_id} are not mapped into the same root!"
+                f"{data_id.hex()} and {within_data_id.hex()} are not mapped into the same root!"
             )
         else:
             return within_model.range.intersect(model.range)
 
     async def get_data(self, data_id: DataId, data_range: Optional[Range] = None) -> bytes:
         model = self._get_by_id(data_id)
-        if model.is_mapped():
-            root = self._get_root_by_id(model.root_id)
-        else:
-            root = self._roots[data_id]
+        root = self._get_root_by_id(model.root_id)
         if data_range is not None:
             translated_range = data_range.translate(model.range.start).intersect(root.model.range)
             return root.data[translated_range.start : translated_range.end]
@@ -106,10 +101,7 @@ class DataService(DataServiceInterface):
         patches_by_root: Dict[DataId, List[DataPatch]] = defaultdict(list)
         for patch in patches:
             target_data_model = self._get_by_id(patch.data_id)
-            if target_data_model.is_mapped():
-                patches_by_root[target_data_model.root_id].append(patch)
-            else:
-                patches_by_root[target_data_model.id].append(patch)
+            patches_by_root[target_data_model.root_id].append(patch)
 
         results = []
         for root_id, patches_for_root in patches_by_root.items():
@@ -123,10 +115,10 @@ class DataService(DataServiceInterface):
 
         for data_id in data_ids:
             model = self._get_by_id(data_id)
-            if model.root_id is None:
-                roots_to_delete[model.id] = model
-            else:
+            if model.is_mapped():
                 mapped_to_delete[model.id] = model
+            else:
+                roots_to_delete[model.id] = model
 
         for root_model in roots_to_delete.values():
             root = self._roots[root_model.id]
@@ -166,11 +158,8 @@ class DataService(DataServiceInterface):
                 f"model's range {model.range}"
             )
 
-        if model.root_id is None:
-            return r
-        else:
-            absolute_range = r.translate(model.range.start)
-            return absolute_range
+        absolute_range = r.translate(model.range.start)
+        return absolute_range
 
     def _apply_patches_to_root(
         self,
@@ -344,7 +333,7 @@ class _DataRoot:
 
             intersecting_children.extend(
                 [
-                    self._children.get(data_id)
+                    self._children[data_id]
                     for data_id in waypoint.models_starting
                     if data_id not in ids_ending_before_or_in_range
                 ]

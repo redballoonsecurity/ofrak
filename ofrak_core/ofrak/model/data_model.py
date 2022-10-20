@@ -57,7 +57,7 @@ class DataModel:
 
     id: bytes
     range: Range
-    root_id: Optional[bytes] = None
+    root_id: bytes
 
     def is_mapped(self):
-        return self.root_id is not None
+        return self.root_id != self.id

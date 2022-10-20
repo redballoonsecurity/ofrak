@@ -189,7 +189,7 @@ class Resource:
         If this resource is "mapped," i.e. its underlying data is defined as a range of its parent's
         underlying data, this method returns the range within the parent resource's data where this
         resource lies. If this resource is not mapped (it is root), it returns a range starting at 0
-        with length equal to the length of this resource's data.
+        with length 0.
 
         :return: The range of the parent's data which this resource represents
         """
@@ -201,9 +201,13 @@ class Resource:
         if self._resource.parent_id is None:
             return Range(0, 0)
         parent_resource = await self.get_parent()
+        parent_data_id = parent_resource.get_data_id()
+        if parent_data_id is None:
+            return Range(0, 0)
+
         try:
             return await self._data_service.get_range_within_other(
-                self._resource.data_id, parent_resource.get_data_id()
+                self._resource.data_id, parent_data_id
             )
         except ValueError:
             return Range(0, 0)
