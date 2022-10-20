@@ -32,6 +32,8 @@ class OfrakImageConfig:
     no_cache: bool
     extra_build_args: Optional[List[str]]
     install_target: InstallTarget
+    cache_from: List[str]
+    entrypoint: Optional[str]
 
     def validate_serial_txt_existence(self):
         """
@@ -73,6 +75,11 @@ def main():
 
     if config.build_base:
         full_base_image_name = "/".join((config.registry, config.base_image_name))
+        cache_args = []
+        if config.cache_from is not None:
+            for cache in config.cache_from:
+                cache_args.append("--cache-from")
+                cache_args.append(cache)
         base_command = [
             "docker",
             "build",
@@ -80,6 +87,7 @@ def main():
             "BUILDKIT_INLINE_CACHE=1",
             "--cache-from",
             f"{full_base_image_name}:master",
+            *cache_args,
             "-t",
             f"{full_base_image_name}:{GIT_COMMIT_HASH}",
             "-t",
@@ -136,6 +144,7 @@ def parse_args() -> OfrakImageConfig:
         choices=[InstallTarget.DEVELOP.value, InstallTarget.INSTALL.value],
         default=InstallTarget.DEVELOP.value,
     )
+    parser.add_argument("--cache-from", action="append")
     args = parser.parse_args()
     with open(args.config) as file_handle:
         config_dict = yaml.safe_load(file_handle)
@@ -149,6 +158,8 @@ def parse_args() -> OfrakImageConfig:
         args.no_cache,
         config_dict.get("extra_build_args"),
         InstallTarget(args.target),
+        args.cache_from,
+        config_dict.get("entrypoint"),
     )
     image_config.validate_serial_txt_existence()
     return image_config
@@ -169,7 +180,9 @@ def check_package_contents(package_path: str):
 
 
 def create_dockerfile_base(config: OfrakImageConfig) -> str:
-    dockerfile_base_parts = []
+    dockerfile_base_parts = [
+        "# syntax = docker/dockerfile:1.3",
+    ]
 
     # Support multi-stage builds
     for package_path in config.packages_paths:
@@ -180,7 +193,6 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
         dockerfile_base_parts.append(dockerstub)
 
     dockerfile_base_parts += [
-        "# syntax = docker/dockerfile:1.3",
         "FROM python:3.7-bullseye@sha256:338ead05c1a0aa8bd8fcba8e4dbbe2afd0283b4732fd30cf9b3bfcfcbc4affab",
     ]
     for package_path in config.packages_paths:
@@ -192,28 +204,38 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
 
 def create_dockerfile_finish(config: OfrakImageConfig) -> str:
     full_base_image_name = "/".join((config.registry, config.base_image_name))
-    dockerfile_finish_parts = [f"FROM {full_base_image_name}:{GIT_COMMIT_HASH}\n\n"]
+    dockerfile_finish_parts = [
+        f"FROM {full_base_image_name}:{GIT_COMMIT_HASH}\n\n",
+        f"ARG OFRAK_SRC_DIR=/\n",
+    ]
     package_names = list()
     for package_path in config.packages_paths:
         package_name = os.path.basename(package_path)
         package_names.append(package_name)
-        finish_stub_parts = [
-            f"ARG OFRAK_SRC_DIR=/{package_name}",
-            "WORKDIR $OFRAK_SRC_DIR",
-            f"ADD {package_path} $OFRAK_SRC_DIR",
-            "ARG INSTALL_TARGET",
-            "RUN make $INSTALL_TARGET\n\n",
+        dockerfile_finish_parts.append(f"ADD {package_path} $OFRAK_SRC_DIR/{package_name}\n")
+    dockerfile_finish_parts.append("\nWORKDIR /\n")
+    dockerfile_finish_parts.append("ARG INSTALL_TARGET\n")
+    develop_makefile = "\\n\\\n".join(
+        [
+            "$INSTALL_TARGET:",
+            "\\n\\\n".join(
+                [f"\tmake -C {package_name} $INSTALL_TARGET" for package_name in package_names]
+            ),
+            "\\n",
         ]
-        dockerfile_finish_parts.append("\n".join(finish_stub_parts))
-    dockerfile_finish_parts.append("WORKDIR /\n")
+    )
+    dockerfile_finish_parts.append(f'RUN printf "{develop_makefile}" >> Makefile\n')
+    dockerfile_finish_parts.append("RUN make $INSTALL_TARGET\n\n")
     finish_makefile = "\\n\\\n".join(
         [
             "test:",
             "\\n\\\n".join([f"\tmake -C {package_name} test" for package_name in package_names]),
-            "",
+            "\\n",
         ]
     )
-    dockerfile_finish_parts.append(f"RUN printf '{finish_makefile}' >> Makefile")
+    dockerfile_finish_parts.append(f'RUN printf "{finish_makefile}" >> Makefile\n')
+    if config.entrypoint is not None:
+        dockerfile_finish_parts.append(f"ENTRYPOINT {config.entrypoint}")
     return "".join(dockerfile_finish_parts)
 
 

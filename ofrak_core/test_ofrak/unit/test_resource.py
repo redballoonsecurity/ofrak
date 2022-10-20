@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Tuple
+import tempfile
+from io import BytesIO
 
 import pytest
 
@@ -9,10 +11,19 @@ from ofrak.core.elf.model import Elf
 from ofrak.core.filesystem import FilesystemRoot
 from ofrak.core.patch_maker.linkable_binary import LinkableBinary
 from ofrak.core.program import Program
+from ofrak.model.resource_model import ResourceAttributes
 from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import ResourceFilter
+from ofrak.service.job_service_i import ComponentAutoRunFailure
 from ofrak_type.range import Range
+
+from test_ofrak.unit.component import mock_component
+from test_ofrak.unit.component.mock_component import (
+    MockFailException,
+    MockFile,
+    MockFailFile,
+)
 
 # Ignore the type below until MyPy supports recursive type definitions :(
 # https://github.com/python/mypy/issues/731
@@ -170,3 +181,121 @@ async def test_get_most_specific_tags(resource: Resource):
 
     expected_most_specific_tags = {GenericText, FilesystemRoot, Elf}
     assert set(resource.get_most_specific_tags()) == expected_most_specific_tags
+
+
+@pytest.fixture(autouse=True)
+def mock_ofrak_component(ofrak):
+    ofrak.injector.discover(mock_component)
+
+
+@pytest.mark.asyncio
+async def test_flush_to_disk_pack(ofrak_context: OFRAKContext):
+    # This test works as long as LZMA fails to pack() and the default is to
+    # pack recursively. The root resource is a LZMA archive in a LZMA archive,
+    # which as of 2022-09-13 will fail to pack and therefore pack_recursively
+    # won't work.
+
+    root_resource = await ofrak_context.create_root_resource("mock", b"\x00" * 0x100)
+    root_resource.add_tag(MockFile)
+
+    child = await root_resource.create_child((MockFailFile,), data_range=Range(0x10, 0x20))
+    child.add_tag(MockFailFile)
+
+    with BytesIO() as buffer:
+        # should fail because write_to runs pack_recursively and MockFailFile will fail on packing
+        with pytest.raises(ComponentAutoRunFailure) as exc_info:
+            await root_resource.write_to(buffer)
+
+        assert isinstance(exc_info.value.__cause__, MockFailException)
+
+        # this should not fail because pack_recursively was suppressed
+        await root_resource.write_to(buffer, pack=False)
+
+    with tempfile.NamedTemporaryFile() as t:
+        # again, should fail because the packer is run automatically
+        with pytest.raises(ComponentAutoRunFailure):
+            await root_resource.flush_to_disk(t.name)
+
+        await root_resource.flush_to_disk(t.name, pack=False)
+
+
+async def test_is_modified(resource: Resource):
+    """
+    Test Resource.is_modified raises true if the local resource is "dirty".
+    """
+    assert resource.is_modified() is False
+
+    resource.add_tag(Elf)
+
+    assert resource.is_modified() is True
+
+
+async def test_summarize(resource: Resource):
+    """
+    Test that the resource string summary returns a string
+    """
+    summary = await resource.summarize()
+    assert isinstance(summary, str)
+
+
+async def test_summarize_tree(resource: Resource):
+    summary = await resource.summarize_tree()
+    assert isinstance(summary, str)
+
+
+async def test_get_range_within_parent(resource: Resource):
+    """
+    Test that Resource.get_data_range_within_parent returns the correctly-mapped range.
+    """
+    child_range = Range(1, 3)
+    child = await resource.create_child(data_range=child_range)
+    data_range_within_parent = await child.get_data_range_within_parent()
+    assert data_range_within_parent == child_range
+
+
+async def test_get_range_within_parent_for_root(resource: Resource):
+    """
+    Resource.get_data_range_within_parent returns Range(0, 0) if the resource is not mapped.
+    """
+    assert await resource.get_data_range_within_parent() == Range(0, 0)
+
+
+async def test_identify(resource: Resource):
+    await resource.identify()
+    assert resource.has_tag(GenericBinary) is True
+    assert resource.has_tag(Elf) is False
+
+
+async def test_get_tags(resource: Resource):
+    tags = resource.get_tags()
+    assert GenericBinary in tags
+    assert Elf not in tags
+
+    resource.add_tag(Elf)
+    updated_tags = resource.get_tags()
+    assert Elf in updated_tags
+
+
+async def test_repr(resource: Resource):
+    result = resource.__repr__()
+    assert result.startswith("Resource(resource_id=")
+    assert "GenericBinary" in result
+
+
+async def test_attributes(resource: Resource):
+    """
+    Test Resource.{has_attributes, add_attributes, remove_attributes}
+    """
+
+    @dataclass(**ResourceAttributes.DATACLASS_PARAMS)
+    class DummyAttributes(ResourceAttributes):
+        name: str
+
+    dummy_attributes = DummyAttributes("dummy")
+    assert resource.has_attributes(DummyAttributes) is False
+
+    resource.add_attributes(dummy_attributes)
+    assert resource.has_attributes(DummyAttributes) is True
+
+    resource.remove_attributes(DummyAttributes)
+    assert resource.has_attributes(DummyAttributes) is False

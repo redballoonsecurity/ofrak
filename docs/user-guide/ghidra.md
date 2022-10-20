@@ -66,7 +66,7 @@ this is `~/.ghidra/.ghidra_10.1.2_PUBLIC/application.log`.
 You can check the log file path for your sysem by running 
 `python -m ofrak_ghidra.config dump` and searching for the `log_file` setting under `ghidra_install` .
 
-If you have doubts that the Ghidra server is running, you can run netstat in the docker container:
+If you have doubts that the Ghidra server is running, you can run netstat in the Docker container:
 ```
 apt install net-tools
 netstat -tulpn

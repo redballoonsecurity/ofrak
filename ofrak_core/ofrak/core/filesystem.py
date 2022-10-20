@@ -276,6 +276,16 @@ class FilesystemRoot(ResourceView):
         path: str,
     ):
         root_path = os.path.normpath(path)
+
+        if not os.path.exists(root_path):
+            raise FileNotFoundError(
+                f"Could not initialize from disk. Root path does not exist: {root_path}"
+            )
+        if not os.path.isdir(root_path):
+            raise FileNotFoundError(
+                f"Could not initialize from disk. Found a file instead of a directory: {root_path}"
+            )
+
         for root, dirs, files in os.walk(root_path):
             for d in sorted(dirs):
                 absolute_path = os.path.join(root, d)

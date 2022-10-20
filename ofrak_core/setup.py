@@ -15,30 +15,21 @@ class egg_info_ex(egg_info):
         egg_info.run(self)
 
 
-with open("LICENSE") as f:
-    license = "".join(["\n", f.read()])
+with open("README.md") as f:
+    long_description = f.read()
 
 
 setuptools.setup(
     name="ofrak",
-    version="0.1.0",
-    author="Red Balloon Security",
-    author_email="ofrak@redballoonsecurity.com",
-    description="OFRAK",
-    long_description="",
-    long_description_content_type="text/markdown",
-    url="",  # TODO
-    packages=setuptools.find_packages(),
+    version="1.0.0",
+    description="A binary analysis and modification platform",
+    packages=setuptools.find_packages(exclude=["test_ofrak", "test_ofrak.*"]),
     package_data={
         "ofrak": ["py.typed"],
     },
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "Operating System :: OS Independent",
-    ],
     install_requires=[
         "intervaltree==3.1.0",
-        "lief==0.11.5",
+        "lief==0.12.2",
         "orjson~=3.6.7",
         "pefile==2022.5.30",
         "python-magic",
@@ -46,6 +37,10 @@ setuptools.setup(
         "synthol~=0.1.1",
         "typeguard~=2.13.3",
         "xattr==0.9.7",
+        "ofrak_patch_maker",
+        "keystone-engine",
+        "ofrak_io",
+        "ofrak_type",
     ],
     extras_require={
         "docs": [
@@ -75,7 +70,28 @@ setuptools.setup(
             "fun-coverage~=0.1.0",
         ],
     },
+    author="Red Balloon Security",
+    author_email="ofrak@redballoonsecurity.com",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url="https://ofrak.com/",
+    download_url="https://github.com/redballoonsecurity/ofrak",
+    project_urls={
+        "Documentation": "https://ofrak.com/docs/",
+        "Community License": "https://github.com/redballoonsecurity/ofrak/blob/master/LICENSE",
+        "Commercial Licensing Information": "https://ofrak.com/license/",
+    },
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "Operating System :: OS Independent",
+        "License :: Other/Proprietary License",
+        "License :: Free To Use But Restricted",
+        "License :: Free For Home Use",
+        "Topic :: Security",
+        "Typing :: Typed",
+    ],
     python_requires=">=3.7",
-    license=license,
+    license="Proprietary",
+    license_files=["LICENSE"],
     cmdclass={"egg_info": egg_info_ex},
 )

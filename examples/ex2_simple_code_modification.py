@@ -21,7 +21,7 @@ import argparse
 import os
 
 import ofrak_binary_ninja
-import ofrak_components_capstone
+import ofrak_capstone
 from ofrak import OFRAK, OFRAKContext, ResourceFilter, ResourceAttributeValueFilter
 from ofrak.core import (
     ProgramAttributes,
@@ -68,9 +68,9 @@ async def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: st
     )
 
     # Patch in the modified bytes
-    ret_instruction_offset = await ret_instruction.resource.get_offset_within_root()
+    range_in_root = await ret_instruction.resource.get_data_range_within_root()
     binary_injector_config = BinaryPatchConfig(
-        ret_instruction_offset,
+        range_in_root.start,
         new_instruction_bytes,
     )
     await binary_resource.run(BinaryPatchModifier, binary_injector_config)
@@ -88,6 +88,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     ofrak = OFRAK()
-    ofrak.injector.discover(ofrak_components_capstone)
+    ofrak.injector.discover(ofrak_capstone)
     ofrak.injector.discover(ofrak_binary_ninja)
     ofrak.run(main, args.hello_world_file, args.output_file_name)

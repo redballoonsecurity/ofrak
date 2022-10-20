@@ -20,10 +20,14 @@ export class RemoteResource extends Resource {
     if (this.model.data_id === null) {
       return null;
     }
-    const r = await fetch(`${this.uri}/get_data_range_within_parent`, {
+    const rj = await fetch(`${this.uri}/get_data_range_within_parent`, {
       cache: "force-cache",
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return r.json();
     });
-    const rj = await r.json();
 
     if (rj.length !== 2 || (0 === rj[0] && 0 === rj[1])) {
       return null;
@@ -33,70 +37,123 @@ export class RemoteResource extends Resource {
   }
 
   async unpack() {
-    const r = await fetch(`${this.uri}/unpack`, { method: "POST" });
-    const unpack_results = await r.json();
-
+    const unpack_results = await fetch(`${this.uri}/unpack`, {
+      method: "POST",
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return r.json();
+    });
     this.factory.ingest_component_results(unpack_results);
   }
 
   async identify() {
-    const r = await fetch(`${this.uri}/identify`, { method: "POST" });
-    const identify_results = await r.json();
-
+    const identify_results = await fetch(`${this.uri}/identify`, {
+      method: "POST",
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return r.json();
+    });
     this.factory.ingest_component_results(identify_results);
   }
 
   async unpack_recursively() {
-    const r = await fetch(`${this.uri}/unpack_recursively`, { method: "POST" });
-    const unpack_recursively_results = await r.json();
-
+    const unpack_recursively_results = await fetch(
+      `${this.uri}/unpack_recursively`,
+      { method: "POST" }
+    ).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return r.json();
+    });
     this.factory.ingest_component_results(unpack_recursively_results);
   }
 
   async pack() {
-    const r = await fetch(`${this.uri}/pack`, { method: "POST" });
-    const pack_results = await r.json();
-
+    const pack_results = await fetch(`${this.uri}/pack`, {
+      method: "POST",
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return r.json();
+    });
     this.factory.ingest_component_results(pack_results);
   }
 
   async pack_recursively() {
-    const r = await fetch(`${this.uri}/pack_recursively`, { method: "POST" });
-    const pack_results = await r.json();
-
+    const pack_results = await fetch(`${this.uri}/pack_recursively`, {
+      method: "POST",
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return r.json();
+    });
     this.factory.ingest_component_results(pack_results);
   }
 
   async data_summary() {
-    const r = await fetch(`${this.uri}/data_summary`, { method: "POST" });
-    const data_summary_results = await r.json();
-
+    const data_summary_results = await fetch(`${this.uri}/data_summary`, {
+      method: "POST",
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return r.json();
+    });
     this.factory.ingest_component_results(data_summary_results);
   }
 
   async analyze() {
-    const r = await fetch(`${this.uri}/analyze`, { method: "POST" });
-    const analyze_results = await r.json();
-
+    const analyze_results = await fetch(`${this.uri}/analyze`, {
+      method: "POST",
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return r.json();
+    });
     this.factory.ingest_component_results(analyze_results);
   }
 
   async get_parent() {
-    const parent_model = await (
-      await fetch(`${this.uri}/get_parent`)
-    ).json();
+    const parent_model = await fetch(`${this.uri}/get_parent`).then(
+      async (r) => {
+        if (!r.ok) {
+          throw Error(JSON.stringify(await r.json(), undefined, 2));
+        }
+        return r.json();
+      }
+    );
     return this._remote_models_to_resources([parent_model])[0];
   }
 
   async get_ancestors(r_filter) {
-    const ancestor_models = await (
-      await fetch(`${this.uri}/get_ancestors`)
-    ).json();
+    const ancestor_models = await fetch(`${this.uri}/get_ancestors`).then(
+      async (r) => {
+        if (!r.ok) {
+          throw Error(JSON.stringify(await r.json(), undefined, 2));
+        }
+        return r.json();
+      }
+    );
     return this._remote_models_to_resources(ancestor_models);
   }
 
   async get_children(r_filter, r_sort) {
-    const child_models = await (await fetch(`${this.uri}/get_children`)).json();
+    const child_models = await fetch(`${this.uri}/get_children`).then(
+      async (r) => {
+        if (!r.ok) {
+          throw Error(JSON.stringify(await r.json(), undefined, 2));
+        }
+        return r.json();
+      }
+    );
     return this._remote_models_to_resources(child_models);
   }
 
@@ -106,6 +163,11 @@ export class RemoteResource extends Resource {
     await fetch(`${this.uri}/queue_patch`, {
       method: "POST",
       body: data,
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return r.json();
     });
   }
 
@@ -115,7 +177,7 @@ export class RemoteResource extends Resource {
     data,
     data_range,
     data_after,
-    data_before,
+    data_before
   ) {
     // TODO: Implement tags, attributes, data, data_after, data_before
 
@@ -125,8 +187,7 @@ export class RemoteResource extends Resource {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(data_range),
-    })
-    .then(async r => {
+    }).then(async (r) => {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }
@@ -134,21 +195,27 @@ export class RemoteResource extends Resource {
     });
   }
 
-  async find_and_replace(to_find, replace_with, null_terminate, allow_overflow) {
+  async find_and_replace(
+    to_find,
+    replace_with,
+    null_terminate,
+    allow_overflow
+  ) {
     const find_replace_results = await fetch(`${this.uri}/find_and_replace`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(
-        ["ofrak_components.string.StringFindReplaceConfig", {
+      body: JSON.stringify([
+        "ofrak.core.strings.StringFindReplaceConfig",
+        {
           to_find: to_find,
           replace_with: replace_with,
           null_terminate: null_terminate,
           allow_overflow: allow_overflow,
-        }]),
-    })
-    .then(async r => {
+        },
+      ]),
+    }).then(async (r) => {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }
@@ -157,22 +224,21 @@ export class RemoteResource extends Resource {
 
     this.factory.ingest_component_results(find_replace_results);
   }
-  
+
   async add_comment(optional_range, comment) {
     await fetch(`${this.uri}/add_comment`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify([optional_range, comment]),
-    })
-        .then(async r => {
-            if (!r.ok) {
-                throw Error(JSON.stringify(await r.json(), undefined, 2));
-            }
-            const add_comment_results = await r.json();
-            this.factory.ingest_component_results(add_comment_results);
-        });
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify([optional_range, comment]),
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      const add_comment_results = await r.json();
+      this.factory.ingest_component_results(add_comment_results);
+    });
   }
 
   async delete_comment(optional_range) {
@@ -182,14 +248,29 @@ export class RemoteResource extends Resource {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(optional_range),
-    })
-    .then(async r => {
-        if (!r.ok) {
-            throw Error(JSON.stringify(await r.json(), undefined, 2));
-        }
-        const delete_comment_results = await r.json();
-        this.factory.ingest_component_results(delete_comment_results);
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      const delete_comment_results = await r.json();
+      this.factory.ingest_component_results(delete_comment_results);
     });
+  }
+
+  async search_for_vaddr(vaddr_start, vaddr_end) {
+    const matching_models = await fetch(`${this.uri}/search_for_vaddr`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify([vaddr_start, vaddr_end]),
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return await r.json();
+    });
+    return this._remote_models_to_resources(matching_models);
   }
 
   _remote_models_to_resources(remote_models) {

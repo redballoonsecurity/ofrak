@@ -1,9 +1,8 @@
-import json
 import os
 from dataclasses import dataclass
 from typing import Any, Iterable
 
-import requests
+import aiohttp
 
 from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
@@ -56,26 +55,25 @@ class OfrakGhidraScript:
         root_ghidra_project = await OfrakGhidraMixin.get_ghidra_project(resource)
         params = {f"__arg_{i}": arg for i, arg in enumerate(script_args)}
 
-        response = requests.get(f"{root_ghidra_project.ghidra_url}/{self.script_name}", params)
-        if response.status_code == 200:
-            response_text = response.text
-            if response_text:
-                return json.loads(response.text)
+        async with aiohttp.ClientSession() as requests:
+            response = await requests.get(
+                f"{root_ghidra_project.ghidra_url}/{self.script_name}", params=params
+            )
+            if response.status == 200:
+                return await response.json(content_type=None)
+            elif response.status == 404:
+                raise GhidraComponentException(
+                    f"Ghidra OFRAK server has no registered endpoint '{self.script_name}'"
+                )
+            elif response.status == 500:
+                server_error_msg = await response.text()
+                paramtext = ",".join("=".join(k_v) for k_v in params.items())
+                raise GhidraComponentException(
+                    f"OFRAK Ghidra server encountered the following exception for request to "
+                    f"{self.script_name} with params {paramtext}: \n{server_error_msg}"
+                )
             else:
-                return None
-        elif response.status_code == 404:
-            raise GhidraComponentException(
-                f"Ghidra OFRAK server has no registered endpoint '{self.script_name}'"
-            )
-        elif response.status_code == 500:
-            server_error_msg = response.text
-            paramtext = ",".join("=".join(k_v) for k_v in params.items())
-            raise GhidraComponentException(
-                f"OFRAK Ghidra server encountered the following exception for request to "
-                f"{self.script_name} with params {paramtext}: \n{server_error_msg}"
-            )
-        else:
-            response.raise_for_status()
+                response.raise_for_status()
 
 
 class OfrakGhidraMixin:
