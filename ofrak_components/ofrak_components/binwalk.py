@@ -39,14 +39,14 @@ class BinwalkAnalyzer(Analyzer[None, BinwalkAttributes]):
             # Should errors be handled the way they are in the `DataSummaryAnalyzer`? Likely to be
             # overkill here.
             offsets = await asyncio.get_running_loop().run_in_executor(
-                self.pool, _run_binwalk_on_file, temp_file.name
+                self.pool, self._run_binwalk_on_file, temp_file.name
             )
         return BinwalkAttributes(offsets)
 
-
-def _run_binwalk_on_file(filename):
-    offsets = dict()
-    for module in binwalk.scan(filename, signature=True):
-        for result in module.results:
-            offsets[result.offset] = result.description
-    return offsets
+    @staticmethod
+    def _run_binwalk_on_file(filename):
+        offsets = dict()
+        for module in binwalk.scan(filename, signature=True):
+            for result in module.results:
+                offsets[result.offset] = result.description
+        return offsets
