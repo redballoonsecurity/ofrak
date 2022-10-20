@@ -28,7 +28,7 @@ class TestDataRoot:
         model = DataModel(
             self.ROOT_ID,
             Range(0x0, 0x100),
-            root_id=None,
+            self.ROOT_ID,
         )
 
         return _DataRoot(
