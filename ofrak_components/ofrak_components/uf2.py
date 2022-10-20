@@ -122,11 +122,15 @@ class Uf2Unpacker(Unpacker[None]):
             ) = struct.unpack("8I476sI", data)
 
             # basic sanity checks
-            assert magic_start_one == UF2_MAGIC_START_ONE, "Bad Start Magic"
-            assert magic_start_two == UF2_MAGIC_START_TWO, "Bad Start Magic"
-            assert magic_end == UF2_MAGIC_END, "Bad End Magic"
+            if magic_start_one != UF2_MAGIC_START_ONE:
+                raise ValueError("Bad Start Magic")
+            if magic_start_two != UF2_MAGIC_START_TWO:
+                raise ValueError("Bad Start Magic")
+            if magic_end != UF2_MAGIC_END:
+                raise ValueError("Bad End Magic")
 
-            assert (previous_block_no - block_no) == -1, "Skipped a block"
+            if (previous_block_no - block_no) != -1:
+                raise ValueError("Skipped a block number")
             previous_block_no = block_no
 
             if not file_num_blocks:
@@ -135,19 +139,20 @@ class Uf2Unpacker(Unpacker[None]):
             if family_id is None:
                 family_id = filesize_familyID
             else:
-                assert family_id == filesize_familyID, "Multiple family IDs in file not supported"
+                if family_id != filesize_familyID:
+                    raise NotImplementedError("Multiple family IDs in file not supported")
 
             # last_block_no = block_no
 
             # unpack data
             if flags & Uf2Flags.NOT_MAIN_FLASH:
                 # data not written to main flash
-                # currently not implemented
-                continue
+                raise NotImplementedError(
+                    "Data not written to main flash is currently not supported"
+                )
             elif flags & Uf2Flags.FILE_CONTAINER:
                 # file container
-                # currently not implemented
-                continue
+                raise NotImplementedError("File containers are currently not implemented")
             elif flags & Uf2Flags.FAMILY_ID_PRESENT:
                 data = payload_data[0:payload_size]
                 if len(ranges) == 0:
