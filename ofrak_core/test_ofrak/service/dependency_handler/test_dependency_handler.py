@@ -5,7 +5,7 @@ from typing import Tuple, Iterable, Dict, List, Set, Type, Optional
 import pytest
 
 from ofrak.model.component_model import ComponentContext, ClientComponentContext
-from ofrak.model.data_model import DataPatchesResult, DataPatchResult, DataRangePosition
+from ofrak.model.data_model import DataPatchResult, DataPatchesResult
 from ofrak.model.resource_model import (
     ResourceContext,
     EphemeralResourceContext,
@@ -118,7 +118,7 @@ DEPENDENCY_INVALIDATION_TEST_CASES = [
         [
             DataPatchesResult(
                 b"root resource",
-                [DataPatchResult(Range(0x4, 0x8), 0, 0, DataRangePosition.UNDEFINED)],
+                [DataPatchResult(Range(0x4, 0x8))],
             )
         ],
         (),
@@ -130,7 +130,7 @@ DEPENDENCY_INVALIDATION_TEST_CASES = [
         [
             DataPatchesResult(
                 b"root resource",
-                [DataPatchResult(Range(0x9, 0x12), 0, 0, DataRangePosition.UNDEFINED)],
+                [DataPatchResult(Range(0x9, 0x12))],
             )
         ],
         (b"first level dependent",),
@@ -142,7 +142,7 @@ DEPENDENCY_INVALIDATION_TEST_CASES = [
         [
             DataPatchesResult(
                 b"root resource",
-                [DataPatchResult(Range(0x9, 0x12), 0, 0, DataRangePosition.UNDEFINED)],
+                [DataPatchResult(Range(0x9, 0x12))],
             )
         ],
         (b"first level dependent", b"second level dependent"),
@@ -160,7 +160,7 @@ DEPENDENCY_INVALIDATION_TEST_CASES = [
         [
             DataPatchesResult(
                 b"root resource",
-                [DataPatchResult(Range(0x9, 0x12), 0, 0, DataRangePosition.UNDEFINED)],
+                [DataPatchResult(Range(0x9, 0x12))],
             )
         ],
         (b"first level dependent A", b"first level dependent B", b"second level dependent"),
@@ -175,7 +175,7 @@ DEPENDENCY_INVALIDATION_TEST_CASES = [
         [
             DataPatchesResult(
                 b"root resource",
-                [DataPatchResult(Range(0x9, 0x12), 0, 0, DataRangePosition.UNDEFINED)],
+                [DataPatchResult(Range(0x9, 0x12))],
             )
         ],
         (b"first level dependent", b"second level dependent"),
@@ -193,7 +193,7 @@ DEPENDENCY_INVALIDATION_TEST_CASES = [
         [
             DataPatchesResult(
                 b"root resource",
-                [DataPatchResult(Range(0x9, 0x12), 0, 0, DataRangePosition.UNDEFINED)],
+                [DataPatchResult(Range(0x9, 0x12))],
             )
         ],
         (b"resource1", b"resource2"),
@@ -209,7 +209,7 @@ DEPENDENCY_INVALIDATION_TEST_CASES = [
         [
             DataPatchesResult(
                 b"root resource",
-                [DataPatchResult(Range(0x9, 0x12), 0, 0, DataRangePosition.UNDEFINED)],
+                [DataPatchResult(Range(0x9, 0x12))],
             )
         ],
         (b"resource1", b"resource2", b"resource3"),
@@ -229,7 +229,7 @@ DEPENDENCY_INVALIDATION_TEST_CASES = [
         [
             DataPatchesResult(
                 b"root resource",
-                [DataPatchResult(Range(0x9, 0x12), 0, 0, DataRangePosition.UNDEFINED)],
+                [DataPatchResult(Range(0x9, 0x12))],
             )
         ],
         (b"first level dependent A", b"first level dependent B", b"second level dependent A"),
