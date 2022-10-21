@@ -1,4 +1,4 @@
-ARG TARGETARCH
+ARG TARGETARCH=amd64
 
 # LLVM
 RUN mkdir -p /opt/rbs/toolchain && \
