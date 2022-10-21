@@ -61,7 +61,7 @@ setuptools.setup(
             "hypothesis-trio",
             "trio-asyncio",
             "mypy==0.942",
-            "pytest-asyncio>=0.19.0",
+            "pytest-asyncio==0.19.0",
             "pytest-lazy-fixture",
             "pytest-cov",
             "pytest-xdist",

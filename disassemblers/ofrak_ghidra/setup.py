@@ -32,12 +32,13 @@ setuptools.setup(
     ],
     install_requires=[
         "PyYAML~=6.0,>=5.4",
+        "aiohttp~=3.8.1",
     ],
     extras_require={
         "test": [
             "fun-coverage~=0.1.0",
             "pytest",
-            "pytest-asyncio>=0.19.0",
+            "pytest-asyncio==0.19.0",
             "pytest-cov",
             "requests",
         ]
