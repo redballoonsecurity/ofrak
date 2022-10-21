@@ -70,7 +70,7 @@ class SquashfsPacker(Packer[None]):
             command = ["mksquashfs", temp_flush_dir, temp.name, "-noappend"]
             try:
                 subprocess.run(command, check=True, capture_output=True)
-            except CalledProcessError as error:
+            except CalledProcessError as error:  # pragma: no cover
                 raise PackerError(format_called_process_error(error))
             new_data = temp.read()
             # Passing in the original range effectively replaces the original data with the new data
