@@ -43,7 +43,7 @@ inspect:
 
 .PHONY: test
 test: inspect
-	$(PYTHON) -m pytest ofrak_tutorial_test
+	$(PYTHON) -m pytest -n auto ofrak_tutorial_test
 	# Note: this requires the Ghidra server to be up and running
 	$(PYTHON) -m pytest --nbval --sanitize-with=nbval_sanitizer.cfg --cov=ofrak_tutorial --cov-report=term-missing --cov-fail-under=100 notebooks_with_outputs
 	fun-coverage --cov-fail-under=100

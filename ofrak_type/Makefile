@@ -15,7 +15,7 @@ inspect:
 
 .PHONY: test
 test: inspect
-	$(PYTHON) -m pytest --cov=ofrak_type --cov-report=term-missing --cov-fail-under=100 ofrak_type_test
+	$(PYTHON) -m pytest -n auto --cov=ofrak_type --cov-report=term-missing --cov-fail-under=100 ofrak_type_test
 	fun-coverage --cov-fail-under=100
 
 .PHONY: dependencies
