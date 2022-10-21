@@ -42,7 +42,7 @@ class RarUnpacker(Unpacker[None]):
             command = ["unar", "-no-directory", "-no-recursion", temp_archive.name]
             try:
                 subprocess.run(command, cwd=temp_dir, check=True, capture_output=True)
-            except subprocess.CalledProcessError as e:
+            except subprocess.CalledProcessError as e:  # pragma: no cover
                 raise UnpackerError(format_called_process_error(e))
 
             rar_view = await resource.view_as(RarArchive)
