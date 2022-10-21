@@ -1,9 +1,9 @@
-import asyncio
+from dataclasses import dataclass
+import os
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Tuple, Type, Set, Optional, Sequence, Union, Iterable
 
-import os
 import pytest
 from beartype.roar import BeartypeCallHintParamViolation
 from hypothesis import given, settings, HealthCheck
@@ -21,12 +21,14 @@ from hypothesis.strategies import (
     floats,
 )
 from intervaltree import IntervalTree, Interval
+from synthol.injector import DependencyInjector
 from typing_inspect import get_args
 
-from ofrak import ResourceTag, OFRAK
+from ofrak import ResourceTag
 from ofrak.core.addressable import Addressable
-from ofrak_type.architecture import InstructionSet, InstructionSetMode
+from ofrak.core.elf.model import ElfHeader
 from ofrak.core.filesystem import FilesystemRoot
+from ofrak.core.magic import Magic
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.data_model import DataModel
@@ -35,60 +37,8 @@ from ofrak.resource_view import ResourceView
 from ofrak.service.component_locator_i import ComponentFilter
 from ofrak.service.data_service import DataNode
 from ofrak.service.serialization.pjson import PJSONSerializationService
-from ofrak.service.serialization.service_i import SerializationServiceInterface
-from ofrak.core.elf.model import ElfHeader
-from ofrak.core.magic import Magic
+from ofrak_type.architecture import InstructionSet, InstructionSetMode
 from ofrak_type.range import Range
-from synthol.injector import DependencyInjector
-
-from ofrak.service.serialization.stashed_pjson import StashedPJSONSerializationService
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Necessary to use scope="session" with async fixtures, see https://stackoverflow.com/a/56238383"""
-    loop = asyncio.get_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest.fixture(scope="session")
-def ofrak() -> OFRAK:
-    """Only create an OFRAK instance once per session for performance"""
-    import ofrak.service.serialization
-
-    o = OFRAK()
-    o.injector.discover(ofrak.service.serialization)
-    o.injector.bind_factory(PJSONSerializationService)
-    return o
-
-
-@pytest.fixture(scope="session")
-async def serializer(ofrak) -> PJSONSerializationService:
-    return await ofrak.injector.get_instance(PJSONSerializationService)
-
-
-@pytest.fixture(scope="session")
-async def stashed_serializer(ofrak) -> StashedPJSONSerializationService:
-    return await ofrak.injector.get_instance(StashedPJSONSerializationService)
-
-
-@pytest.fixture(scope="session", params=[0, 1])
-def _test_serialize_deserialize(request, serializer, stashed_serializer):
-    """
-    This fixture will be invoked twice for each test, one time with the `serializer` fixture and one time with
-    `stashed_serializer`.
-
-    It returns a function of an object and type hint that tests serialization and deserialization using the
-    above-mentioned serializer.
-    """
-    serializer_: SerializationServiceInterface = [serializer, stashed_serializer][request.param]
-
-    def _inner(obj, type_hint):
-        assert serializer_.from_pjson(serializer_.to_pjson(obj, type_hint), type_hint) == obj
-        assert serializer_.from_json(serializer_.to_json(obj, type_hint), type_hint) == obj
-
-    return _inner
 
 
 @composite
