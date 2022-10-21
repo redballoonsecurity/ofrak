@@ -45,6 +45,7 @@ from test_ofrak.service.conftest import (
     R_ID_1_ROOT,
     R_ID_2_ROOT,
     R_ID_1_1,
+    R_ID_2_1_1_1_1,
 )
 from test_ofrak.service.resource_service.conftest import (
     GetAncestorsTestCase,

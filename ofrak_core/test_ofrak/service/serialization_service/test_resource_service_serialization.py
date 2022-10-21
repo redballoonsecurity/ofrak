@@ -26,10 +26,7 @@ async def triple_populated_resource_service(
     triple_populated_resource_service,
     serializer: SerializationServiceInterface,
 ):
-    return _reserialize(
-        triple_populated_resource_service,
-        serializer,
-    )
+    return _reserialize(triple_populated_resource_service, serializer)
 
 
 class TestDeserializedSerializedResourceService(TestResourceService):
