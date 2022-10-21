@@ -1,6 +1,6 @@
 import pytest
 
-from ofrak.service.resource_service_i import ResourceServiceInterface
+from ofrak.service.resource_service import ResourceService
 from ofrak.service.serialization.service_i import SerializationServiceInterface
 from test_ofrak.service.resource_service.test_resource_service import TestResourceService
 
@@ -34,7 +34,7 @@ class TestDeserializedSerializedResourceService(TestResourceService):
 
 
 def _reserialize(
-    resource_service: ResourceServiceInterface, serializer: SerializationServiceInterface
-) -> ResourceServiceInterface:
-    serialized = serializer.to_json(resource_service, ResourceServiceInterface)
-    return serializer.from_json(serialized, ResourceServiceInterface)
+    resource_service: ResourceService, serializer: SerializationServiceInterface
+) -> ResourceService:
+    serialized = serializer.to_json(resource_service, ResourceService)
+    return serializer.from_json(serialized, ResourceService)

@@ -38,7 +38,6 @@ class ResourceServiceSerializer(SerializerInterface):
         "_resource_store": Dict[bytes, ResourceNode],
         "_resource_by_data_id_store": Dict[bytes, ResourceNode],
         "_attribute_indexes": Dict[ResourceIndexedAttribute[T], ResourceAttributeIndex[T]],
-        "_root_resources": Dict[bytes, ResourceNode],
     }
 
     def obj_to_pjson(self, obj: ResourceService, _type_hint: Any) -> Dict[str, PJSONType]:
