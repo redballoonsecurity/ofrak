@@ -1,12 +1,15 @@
+ARG TARGETARCH
+
 # - u-boot-tools: for mkimage, to test the UImage packer/unpacker
 RUN apt-get -y update && \
     apt-get -y install --no-install-recommends \
       build-essential
 
 # Install CMake
-ENV CMAKE_VERSION 3.19.2
-ENV CMAKE_SHA256 4d8a6d852c530f263b22479aad196416bb4406447e918bd9759c6593b7f5f3f9
-RUN cd /tmp && \
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+    export CMAKE_VERSION=3.19.2; \
+    export CMAKE_SHA256=4d8a6d852c530f263b22479aad196416bb4406447e918bd9759c6593b7f5f3f9; \
+    cd /tmp && \
     curl -sSL -O https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz && \
     echo "${CMAKE_SHA256}\tcmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz" | sha256sum -c && \
     tar -zxvf cmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz && \
@@ -14,7 +17,22 @@ RUN cd /tmp && \
     cp -r bin/ share/ /usr/local/ && \
     cp -r doc/ man/ /usr/local/share/ && \
 	cd /tmp && \
-    rm -rf cmake-${CMAKE_VERSION}-Linux-x86_64*
+    rm -rf cmake-${CMAKE_VERSION}-Linux-x86_64*; \
+fi;
+
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+    export CMAKE_VERSION=3.24.1; \
+    export CMAKE_SHA256=d50c40135df667ed659f8e4eb7cf7d53421250304f7b3e1a70af9cf3d0f2ab18; \
+    cd /tmp && \
+    curl -sSL -O https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-linux-aarch64.tar.gz && \
+    echo "$CMAKE_SHA256\tcmake-$CMAKE_VERSION-linux-aarch64.tar.gz" | sha256sum -c && \
+    tar -zxvf cmake-$CMAKE_VERSION-linux-aarch64.tar.gz && \
+    cd cmake-$CMAKE_VERSION-linux-aarch64 && \
+    cp -r bin/ share/ /usr/local/ && \
+    cp -r doc/ man/ /usr/local/share/ && \
+	cd /tmp && \
+    rm -rf cmake-$CMAKE_VERSION-linux-aarch64*; \
+fi;
 
 # Install Keystone
 RUN cd /tmp && \

@@ -4,17 +4,18 @@ RUN apt-get -y update && \
       build-essential \
       cpio \
       git \
-      gzip \
       liblz4-dev \
       liblzo2-dev \
       libzstd-dev \
       lzop \
+      pigz \
       p7zip-full \
       zip \
       qemu \
       qemu-user-static \
       u-boot-tools \
-      unar
+      unar \
+      zstd
 
 # Install apktool and uber-apk-signer
 RUN apt-get -y update && apt-get -y install openjdk-11-jdk
