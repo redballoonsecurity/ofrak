@@ -4,12 +4,7 @@ from typing import Dict, Iterable, List, Optional, Set, Tuple
 from dataclasses import dataclass
 from sortedcontainers import SortedList
 
-from ofrak.model.data_model import (
-    DataModel,
-    DataPatch,
-    DataPatchesResult,
-    DataPatchResult,
-)
+from ofrak.model.data_model import DataModel, DataPatch, DataPatchesResult
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.error import OutOfBoundError, PatchOverlapError
 from ofrak_type.error import NotFoundError, AlreadyExistError
@@ -39,20 +34,20 @@ class DataService(DataServiceInterface):
         self,
         data_id: DataId,
         parent_id: DataId,
-        mapped_range: Range,
+        range_in_parent: Range,
     ) -> DataModel:
         if data_id in self._model_store:
             raise AlreadyExistError(f"A model with {data_id.hex()} already exists!")
 
         parent_model = self._get_by_id(parent_id)
-        mapped_range = mapped_range.translate(parent_model.range.start)
-        if mapped_range.end > parent_model.range.end:
+        range_in_root = range_in_parent.translate(parent_model.range.start)
+        if range_in_root.end > parent_model.range.end:
             raise OutOfBoundError(
-                f"Cannot map a new node into range {mapped_range} into {parent_model.range} of "
+                f"Cannot map a new node into range {range_in_root} into {parent_model.range} of "
                 f"{parent_id.hex()}"
             )
 
-        new_model = DataModel(data_id, mapped_range, parent_model.root_id)
+        new_model = DataModel(data_id, range_in_root, parent_model.root_id)
         self._roots[parent_model.root_id].add_mapped_model(new_model)
         self._model_store[data_id] = new_model
 
@@ -216,13 +211,11 @@ class DataService(DataServiceInterface):
         for affected_range in Range.merge_ranges(raw_patch_ranges_in_root):
             for affected_model in root.get_children_intersecting_range(affected_range):
                 results[affected_model.id].append(
-                    DataPatchResult(
-                        affected_range.intersect(affected_model.range).translate(
-                            -affected_model.range.start
-                        )
+                    affected_range.intersect(affected_model.range).translate(
+                        -affected_model.range.start
                     )
                 )
-            results[root_data_id].append(DataPatchResult(affected_range))
+            results[root_data_id].append(affected_range)
 
         # Apply finalized patches to data and data models
         for patch_range, data, size_diff in finalized_ordered_patches:
@@ -257,10 +250,6 @@ class _Waypoint:
 
     def is_empty(self) -> bool:
         return not self.models_starting and not self.models_ending
-
-    #
-    # def validate(self):
-    #     assert self.models_ending.isdisjoint(self.models_starting)
 
 
 class _DataRoot:

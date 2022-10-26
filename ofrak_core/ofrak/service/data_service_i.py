@@ -26,18 +26,18 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         self,
         data_id: bytes,
         parent_id: bytes,
-        mapped_range: Range,
+        range_in_parent: Range,
     ) -> DataModel:
         """
         Create a new data model which is mapped into another data model. That is, it does not hold
         its own data, but defines its own data as a subsection of another model's data. The model
         it maps from (`parent_id`) may be a root model or another mapped model; if `parent_id` is
         another mapped node, the new mapped node created here will be mapped to the same root as
-        `parent_id` at a range translated to be within `parent_id` as defined by `mapped_range`.
+        `parent_id` at a range translated to be within `parent_id` as defined by `range_in_parent`.
 
         :param data_id: Unique ID for the new data model
         :param parent_id: ID of the data model to map the new model into
-        :param mapped_range: Range in `parent_id` which the new model will map
+        :param range_in_parent: Range in `parent_id` which the new model will map
 
         :return: The new data model object
 

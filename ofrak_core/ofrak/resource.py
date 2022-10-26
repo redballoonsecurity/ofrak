@@ -940,8 +940,6 @@ class Resource:
         self,
         patch_range: Range,
         data: bytes,
-        after: Optional["Resource"] = None,
-        before: Optional["Resource"] = None,
     ):
         """
         Replace the data within the provided range with the provided data. This operation may
@@ -968,8 +966,6 @@ class Resource:
                 patch_range,
                 self._resource.data_id,
                 data,
-                after_data_id=after.get_data_id() if after is not None else None,
-                before_data_id=before.get_data_id() if before is not None else None,
             )
         )
         self._resource.is_modified = True

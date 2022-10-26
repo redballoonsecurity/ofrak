@@ -1,46 +1,38 @@
 from dataclasses import dataclass
-from enum import IntEnum
-from typing import Optional, List
+from typing import List
 
 from ofrak_type.range import Range
 
 
-class DataRangePosition(IntEnum):
-    UNDEFINED = -3
-    UNMAPPED = -2
-    OVERLAP = -1
-    BEFORE = 0
-    WITHIN = 1
-    AFTER = 2
-
-
-@dataclass
-class DataPatchRef:
-    range: Range
-    data_id: bytes
-
-
 @dataclass
 class DataPatch:
+    """
+    Representation of a binary patch to part of a resource's data.
+
+    :ivar range: The slice of the binary blob to replace with new data (zero-length is allowed)
+    :ivar data_id: ID of the binary blob to apply this path to
+    :ivar data: The bytes to replace old data with (zero-length is allowed)
+    """
+
     range: Range
     data_id: bytes
     data: bytes
-    after_data_id: Optional[bytes] = None
-    before_data_id: Optional[bytes] = None
 
     def __repr__(self):
         return f"DataPatch({self.data_id.hex()}, {self.range}, {len(self.data)})"
 
 
 @dataclass
-class DataPatchResult:
-    range: Range
-
-
-@dataclass
 class DataPatchesResult:
+    """
+    Summary of changes to a binary blob resulting from the application of a ``DataPatch``.
+
+    :ivar data_id: ID of the patched blob
+    :ivar patches: Range in the original blob which have been altered by applying patches
+    """
+
     data_id: bytes
-    patches: List[DataPatchResult]
+    patches: List[Range]
 
 
 @dataclass
