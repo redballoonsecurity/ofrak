@@ -1,7 +1,7 @@
 import logging
 import lzma
 from io import BytesIO
-from typing import Union, Type
+from typing import Union
 
 from ofrak import Packer, Unpacker, Resource
 from ofrak.core import GenericBinary, MagicMimeIdentifier, MagicDescriptionIdentifier
@@ -62,7 +62,16 @@ class LzmaPacker(Packer[None]):
     targets = (LzmaData, XzData)
 
     async def pack(self, resource: Resource, config=None):
-        tag: Union[Type[XzData], Type[LzmaData]]
+        lzma_format, tag = await self._get_lzma_format_and_tag(resource)
+        lzma_file: Union[XzData, LzmaData] = await resource.view_as(tag)
+
+        lzma_child = await lzma_file.get_child()
+        lzma_compressed = lzma.compress(await lzma_child.resource.get_data(), lzma_format)
+
+        original_size = await lzma_file.resource.get_data_length()
+        resource.queue_patch(Range(0, original_size), lzma_compressed)
+
+    async def _get_lzma_format_and_tag(self, resource):
         if resource.has_tag(XzData):
             tag = XzData
             lzma_format = lzma.FORMAT_XZ
@@ -73,14 +82,7 @@ class LzmaPacker(Packer[None]):
             raise TypeError(
                 f"Expected target of {self.get_id().decode()} to be either XzFile or LzmaFile"
             )
-
-        lzma_file: Union[XzData, LzmaData] = await resource.view_as(tag)
-
-        lzma_child = await lzma_file.get_child()
-        lzma_compressed = lzma.compress(await lzma_child.resource.get_data(), lzma_format)
-
-        original_size = await lzma_file.resource.get_data_length()
-        resource.queue_patch(Range(0, original_size), lzma_compressed)
+        return lzma_format, tag
 
 
 MagicMimeIdentifier.register(LzmaData, "application/x-lzma")
