@@ -23,7 +23,7 @@ from test_ofrak.service.data_service.conftest import (
 )
 
 
-class TestDataService:
+class TestDataServiceInterface:
     async def test_create_existing(self, populated_data_service: DataServiceInterface):
         with pytest.raises(AlreadyExistError):
             await populated_data_service.create_root(DATA_0, b"\x00" * 0x10)
