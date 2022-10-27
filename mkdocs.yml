@@ -53,6 +53,8 @@ nav:
   - Getting Started: "getting-started.md"
   - Examples: examples/
   - User Guide:
+      - GUI: 
+        - Minimap View: "user-guide/gui/minimap.md"
       - Resource: "user-guide/resource.md"
       - ResourceView: "user-guide/resource_view.md"
       - Components:
