@@ -1,9 +1,10 @@
 import asyncio
 import tempfile
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, Optional
 
 from ofrak import ResourceAttributes, Analyzer, Resource
+from ofrak.core.binary import GenericBinary
 from ofrak.model.component_model import ComponentConfig
 
 
@@ -18,10 +19,12 @@ class StringsAttributes(ResourceAttributes):
 
 
 class StringsAnalyzer(Analyzer[StringsAnalyzerConfig, StringsAttributes]):
-    targets = ()
+    targets = (GenericBinary,)
     outputs = (StringsAttributes,)
 
-    async def analyze(self, resource: Resource, config: StringsAnalyzerConfig) -> StringsAttributes:
+    async def analyze(
+        self, resource: Resource, config: Optional[StringsAnalyzerConfig] = None
+    ) -> StringsAttributes:
         if config is None:
             config = StringsAnalyzerConfig()
 
