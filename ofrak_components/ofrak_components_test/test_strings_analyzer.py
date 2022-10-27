@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from ofrak_type.error import NotFoundError
 
 import pytest
 
@@ -49,4 +50,8 @@ async def test_case(
 
 
 class TestStringsAnalyzer(AnalyzerTests):
-    pass
+    async def test_resource_analyzer(self, test_case: PopulatedAnalyzerTestCase):
+        with pytest.raises(
+            NotFoundError, match="Unable to find any analyzer for attributes StringsAttributes"
+        ):
+            await super().test_resource_analyzer(test_case)
