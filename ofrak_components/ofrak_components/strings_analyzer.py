@@ -17,7 +17,7 @@ class StringsAttributes(ResourceAttributes):
     strings: Dict[int, str]
 
 
-class StringsAnalyzer(Analyzer[StringsAnalyzerConfig, StringsAttributes]):
+class StringsAnalyzer(Analyzer[Optional[StringsAnalyzerConfig], StringsAttributes]):
     targets = ()
     outputs = (StringsAttributes,)
 
