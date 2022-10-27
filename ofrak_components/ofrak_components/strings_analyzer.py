@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Dict, Optional
 
 from ofrak import ResourceAttributes, Analyzer, Resource
-from ofrak.core.binary import GenericBinary
 from ofrak.model.component_model import ComponentConfig
 
 
@@ -19,7 +18,7 @@ class StringsAttributes(ResourceAttributes):
 
 
 class StringsAnalyzer(Analyzer[StringsAnalyzerConfig, StringsAttributes]):
-    targets = (GenericBinary,)
+    targets = ()
     outputs = (StringsAttributes,)
 
     async def analyze(
