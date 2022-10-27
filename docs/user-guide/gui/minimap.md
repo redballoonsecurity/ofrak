@@ -1,5 +1,18 @@
 # Minimap View
 
+The “minimap view” (“minimap” for short) on the far right of the GUI (see
+figure below) is one way OFRAK helps users. The minimap visually represents all
+the data of a selected binary. Each pixel in the minimap corresponds to one
+byte of the resource's binary data, with the color of each pixel determined by
+the corresponding byte.
+
+![](assets/image4.png)
+
+The minimap accelerates exploring and navigating to the most important parts of
+the binary. Unlike the hex view (directly to the left of the minimap), which
+only shows a portion of a resource's binary data at a time, the minimap
+provides a bird's eye view of the entire resource. 
+
 Clicking the minimap scrolls the hex view to the corresponding part of the
 data. A red box overlaid on the minimap shows what part of the data the hex
 view is currently displaying.
