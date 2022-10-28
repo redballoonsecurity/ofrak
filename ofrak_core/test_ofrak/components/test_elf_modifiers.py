@@ -12,6 +12,7 @@ from ofrak.core.elf.model import (
     ElfDynamicEntry,
     ElfPointerArraySection,
     ElfVirtualAddress,
+    ElfProgramHeader,
 )
 from ofrak.core.elf.modifier import (
     ElfAddStringModifier,
@@ -24,8 +25,12 @@ from ofrak.core.elf.modifier import (
     ElfDynamicEntryModifierConfig,
     ElfVirtualAddressModifier,
     ElfVirtualAddressModifierConfig,
+    ElfProgramHeaderModifier,
+    ElfProgramHeaderModifierConfig,
+    ElfPointerArraySectionAddModifier,
+    ElfPointerArraySectionAddModifierConfig,
 )
-from ofrak import OFRAKContext
+from ofrak import OFRAKContext, Resource
 
 
 async def test_elf_add_symbols(
@@ -150,3 +155,78 @@ async def test_modifier(
     for view in views:
         for entry in await view.get_entries():
             assert entry == test_view_entry
+
+
+@pytest.fixture
+async def elf_resource(elf_executable_file: str, ofrak_context: OFRAKContext):
+    return await ofrak_context.create_root_resource_from_file(elf_executable_file)
+
+
+async def test_elf_program_header_modifier(elf_resource: Resource):
+    """
+    Test the ElfProgramHeaderModifier.
+    """
+    await elf_resource.unpack()
+    elf = await elf_resource.view_as(Elf)
+    for program_header in await elf.get_program_headers():
+        assert program_header.p_type != 0x1337
+        await program_header.resource.run(
+            ElfProgramHeaderModifier, ElfProgramHeaderModifierConfig(0x1337)
+        )
+        updated_program_header = await program_header.resource.view_as(ElfProgramHeader)
+        assert updated_program_header.p_type == 0x1337
+
+
+class TestElfPointerArraySectionModifier:
+
+    add_value = 0x1337
+
+    async def test_elf_pointer_array_section_modifier(self, elf_resource: Resource):
+        """
+        Test that `ElfPointerArraySectionModifier` modifies the underlying pointer bytes.
+        """
+        pointer_array_section = await self._unpack_and_get_first_pointer_array_section(elf_resource)
+        original_data_values = list()
+        for entry in await pointer_array_section.get_entries():
+            original_data = await entry.resource.get_data()
+            original_data_values.append(original_data)
+
+        await pointer_array_section.resource.run(
+            ElfPointerArraySectionAddModifier,
+            ElfPointerArraySectionAddModifierConfig(skip_list=(), add_value=self.add_value),
+        )
+        updated_pointer_array_section = await pointer_array_section.resource.view_as(
+            ElfPointerArraySection
+        )
+
+        for i, entry in enumerate(await updated_pointer_array_section.get_entries()):
+            new_data = await entry.resource.get_data()
+            assert new_data != original_data_values[i]
+
+    async def test_elf_pointer_array_section_modifier_virtual_address(self, elf_resource: Resource):
+        """
+        Test that `ElfPointerArraySectionModifier` results in updates to the children
+        `ElfVirtualAddress`.
+        """
+        pointer_array_section = await self._unpack_and_get_first_pointer_array_section(elf_resource)
+        original_values = list(await pointer_array_section.get_entries())
+
+        await pointer_array_section.resource.run(
+            ElfPointerArraySectionAddModifier,
+            ElfPointerArraySectionAddModifierConfig(skip_list=(), add_value=self.add_value),
+        )
+        updated_pointer_array_section = await pointer_array_section.resource.view_as(
+            ElfPointerArraySection
+        )
+
+        for i, entry in enumerate(await updated_pointer_array_section.get_entries()):
+            assert entry.value - self.add_value == original_values[i].value
+
+    async def _unpack_and_get_first_pointer_array_section(self, elf_resource):
+        await elf_resource.unpack()
+        pointer_array_section = list(
+            await elf_resource.get_descendants_as_view(
+                ElfPointerArraySection, r_filter=ResourceFilter.with_tags(ElfPointerArraySection)
+            )
+        )[0]
+        return pointer_array_section
