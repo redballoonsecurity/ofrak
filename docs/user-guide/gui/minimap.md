@@ -21,9 +21,9 @@ view is currently displaying.
 
 The default mode of the minimap is "magnitude view" mode. In this simple mode,
 each byte of the data is mapped to a grayscale color. Lower byte values create
-darker pixels. For example the minimum byte value of 0x00 (0) maps to pure
-black, and the maximum byte value of 0xFF (255) maps to pure white. The values
-in between map to corresponding shades of gray.
+darker pixels. For example the minimum byte value of `0x00` (0) maps to pure
+black, and the maximum byte value of `0xFF` (255) maps to pure white. The
+values in between map to corresponding shades of gray.
 
 ![](assets/image6.png)
 
@@ -57,11 +57,13 @@ distribution quantifies how close that distribution is to uniformly random. In
 concrete terms, if you make a histogram of the byte occurrences in a range of
 data, the entropy of that histogram is a measure of how flat the bars are. For
 example:
+
 - The bars in this histogram are very flat since each byte is approximately
   equally likely to occur. Thus, this data has high entropy -- the bytes are
   very random.
 
   ![Chart](assets/image2.png)
+
 - The bars in this histogram show that some bytes are much more likely to occur
   than others. Even though every byte value has some chance of occurring, the
   values at the middle of the range are more likely, and more predictable.
@@ -69,6 +71,7 @@ example:
   first.
 
   ![Chart](assets/image1.png)
+
 - There is only one bar in this histogram -- this range of data consists
   entirely of one repeating byte value. Thus, this data is entirely
   predictable, and has the lowest possible entropy value: 0.
@@ -84,7 +87,7 @@ this.
 
 Specifically, in OFRAK, entropy is calculated over a 256-byte sliding window
 that moves forward by one byte for each pixel in the minimap. The calculated
-entropies are mapped to values between 0x00 and 0xFF with higher entropy
+entropies are mapped to values between `0x00` and `0xFF` with higher entropy
 corresponding to lighter gray pixels and lower entropy corresponding to darker
 gray pixels, as in the magnitude mode.
 
