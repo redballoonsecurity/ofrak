@@ -1,6 +1,7 @@
 import os
 
 import pytest
+
 import test_ofrak.components
 from ofrak import OFRAKContext, Resource
 from ofrak.core import (

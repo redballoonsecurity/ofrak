@@ -117,26 +117,6 @@ class ElfHeaderAttributesAnalyzer(Analyzer[None, ElfHeader]):
         )
 
 
-class ElfSegmentStructureIndexAnalyzer(Analyzer[None, ElfSegmentStructure]):
-    targets = (ElfProgramHeader, ElfSegment)
-    outputs = (ElfSegmentStructure,)
-
-    async def analyze(self, resource: Resource, config=None) -> ElfSegmentStructure:  # TODO
-        elf = await resource.get_only_ancestor_as_view(Elf, ResourceFilter.with_tags(Elf))
-        elf_header = await elf.get_header()
-
-        if resource.has_tag(ElfProgramHeader):
-            segment_index = _calculate_elf_index(
-                entry_offset=(await resource.get_data_range_within_parent()).start,
-                table_offset=elf_header.e_phoff,
-                table_entry_size=elf_header.e_phentsize,
-            )
-
-            return ElfSegmentStructure(segment_index)
-        else:
-            raise TypeError(f"Resource did not have expected tags {ElfProgramHeader.__name__}")
-
-
 class ElfProgramHeaderAttributesAnalyzer(Analyzer[None, ElfProgramHeader]):
     """
     Deserialize an [ElfProgramHeader][ofrak.core.elf.model.ElfProgramHeader].
@@ -187,34 +167,6 @@ class ElfSegmentAnalyzer(Analyzer[None, ElfSegment]):
         )
 
 
-class ElfSectionStructureIndexAnalyzer(Analyzer[None, ElfSectionStructure]):
-    targets = (ElfSectionHeader, ElfSection)
-    outputs = (ElfSectionStructure,)
-
-    async def analyze(self, resource: Resource, config=None) -> ElfSectionStructure:  # TODO
-        elf = await resource.get_only_ancestor_as_view(Elf, ResourceFilter.with_tags(Elf))
-        elf_header = await elf.get_header()
-        resource_start_offset = (await resource.get_data_range_within_parent()).start
-
-        if resource.has_tag(ElfSectionHeader):
-            segment_index = _calculate_elf_index(
-                entry_offset=resource_start_offset,
-                table_offset=elf_header.e_shoff,
-                table_entry_size=elf_header.e_shentsize,
-            )
-
-            return ElfSectionStructure(segment_index)
-        elif resource.has_tag(ElfSection):
-            for section_header in await elf.get_section_headers():
-                if section_header.sh_offset == resource_start_offset:
-                    return ElfSectionStructure(section_header.section_index)
-            raise ValueError(
-                f"No header found for section starting at offset {hex(resource_start_offset)}"
-            )
-        else:
-            raise TypeError(f"Resource did not have expected tags {ElfSectionHeader.__name__}")
-
-
 class ElfSectionHeaderAttributesAnalyzer(Analyzer[None, ElfSectionHeader]):
     """
     Deserialize an [ElfSectionHeader][ofrak.core.elf.model.ElfSectionHeader].
@@ -256,23 +208,6 @@ class ElfSectionHeaderAttributesAnalyzer(Analyzer[None, ElfSectionHeader]):
             sh_addralign,
             sh_entsize,
         )
-
-
-class ElfSymbolStructureIndexAnalyzer(Analyzer[None, ElfSymbolStructure]):
-    targets = (ElfSymbol,)
-    outputs = (ElfSymbolStructure,)
-
-    async def analyze(self, resource: Resource, config=None) -> ElfSymbolStructure:  # TODO
-        elf = await resource.get_only_ancestor_as_view(Elf, ResourceFilter(tags=(Elf,)))
-        deserializer = await _create_deserializer(resource)
-        symbol_index = _calculate_elf_index(
-            entry_offset=(await resource.get_data_range_within_parent()).start,
-            # The entry offset is from the section start, not the ELF start. Match that
-            table_offset=0,
-            table_entry_size=24 if deserializer.get_word_size() == 8 else 16,
-        )
-
-        return ElfSymbolStructure(symbol_index)
 
 
 class ElfSymbolAttributesAnalyzer(Analyzer[None, ElfSymbol]):
@@ -446,28 +381,3 @@ async def _create_deserializer(resource: Resource) -> BinaryDeserializer:
         word_size=int(e_basic_header.get_bitwidth().get_word_size()),
     )
     return deserializer
-
-
-def _calculate_elf_index(
-    entry_offset: int,
-    table_offset: int,
-    table_entry_size: int,
-) -> int:
-    """
-    Helper for calculating index of an entry in a table. `entry_offset` and `table_offset` should
-    be relative to the same point, such as the start of the ELF.
-    """
-    entry_offset_in_table = entry_offset - table_offset
-    if 0 > entry_offset_in_table:
-        raise ValueError(
-            f"Elf structure "
-            f"{hex(entry_offset)} bytes into the ELF cannot be in "
-            f"the table which starts {hex(table_offset)} bytes in"
-        )
-    if 0 != (entry_offset_in_table % table_entry_size):
-        raise ValueError(
-            f"Elf structure is {hex(entry_offset_in_table)} bytes into the table which starts at "
-            f"{hex(table_offset)}, which does not divide evenly into a table entry size of "
-            f"{hex(table_entry_size)}"
-        )
-    return int(entry_offset_in_table / table_entry_size)

@@ -230,9 +230,6 @@ class ElfSegmentStructure(ResourceView):
     def SegmentIndex(self) -> int:
         return self.segment_index
 
-    # async def get_elf(self) -> "Elf":
-    #     return await self.resource.get_only_ancestor_as_view(Elf, ResourceFilter.with_tags(Elf))
-
 
 ##################################################################################
 #                           ELF PROGRAM HEADER
