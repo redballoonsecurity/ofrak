@@ -24,7 +24,6 @@ from ofrak.core.elf.model import (
     ElfRelaEntry,
     ElfDynamicEntry,
     ElfVirtualAddress,
-    ElfPointerArraySection,
     UnanalyzedElfSegment,
 )
 from ofrak_io.deserializer import BinaryDeserializer
@@ -122,7 +121,7 @@ class ElfSegmentStructureIndexAnalyzer(Analyzer[None, ElfSegmentStructure]):
     targets = (ElfProgramHeader, ElfSegment)
     outputs = (ElfSegmentStructure,)
 
-    async def analyze(self, resource: Resource, config=None) -> ElfSegmentStructure:
+    async def analyze(self, resource: Resource, config=None) -> ElfSegmentStructure:  # TODO
         elf = await resource.get_only_ancestor_as_view(Elf, ResourceFilter.with_tags(Elf))
         elf_header = await elf.get_header()
 
@@ -192,7 +191,7 @@ class ElfSectionStructureIndexAnalyzer(Analyzer[None, ElfSectionStructure]):
     targets = (ElfSectionHeader, ElfSection)
     outputs = (ElfSectionStructure,)
 
-    async def analyze(self, resource: Resource, config=None) -> ElfSectionStructure:
+    async def analyze(self, resource: Resource, config=None) -> ElfSectionStructure:  # TODO
         elf = await resource.get_only_ancestor_as_view(Elf, ResourceFilter.with_tags(Elf))
         elf_header = await elf.get_header()
         resource_start_offset = (await resource.get_data_range_within_parent()).start
@@ -263,7 +262,7 @@ class ElfSymbolStructureIndexAnalyzer(Analyzer[None, ElfSymbolStructure]):
     targets = (ElfSymbol,)
     outputs = (ElfSymbolStructure,)
 
-    async def analyze(self, resource: Resource, config=None) -> ElfSymbolStructure:
+    async def analyze(self, resource: Resource, config=None) -> ElfSymbolStructure:  # TODO
         elf = await resource.get_only_ancestor_as_view(Elf, ResourceFilter(tags=(Elf,)))
         deserializer = await _create_deserializer(resource)
         symbol_index = _calculate_elf_index(
@@ -329,22 +328,6 @@ class ElfDynamicSectionAnalyzer(Analyzer[None, ElfDynamicEntry]):
         else:
             d_tag, d_un = deserializer.unpack_multiple("II")
         return ElfDynamicEntry(d_tag, d_un)
-
-
-class ElfPointerArraySectionAnalyzer(Analyzer[None, ElfPointerArraySection]):
-    id = b"ElfPointerArraySectionAnalyzer"
-    targets = (UnanalyzedElfSection,)
-    outputs = (ElfPointerArraySection,)
-
-    async def analyze(self, resource: Resource, config=None) -> ElfPointerArraySection:
-        unnamed_section = await resource.view_as(UnanalyzedElfSection)
-        section_header = await unnamed_section.get_header()
-        elf_r = await unnamed_section.get_elf()
-        elf_basic_header = await elf_r.get_basic_header()
-        num_pointers = section_header.sh_size // elf_basic_header.get_bitwidth().value // 8  # bits
-        return ElfPointerArraySection(
-            section_index=section_header.section_index, num_pointers=num_pointers
-        )
 
 
 class ElfPointerAnalyzer(Analyzer[None, ElfVirtualAddress]):

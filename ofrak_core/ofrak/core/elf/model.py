@@ -660,8 +660,6 @@ class ElfPointerArraySection(UnanalyzedElfSection):
         errors.
     """
 
-    num_pointers: int
-
     async def get_entries(self):
         await self.resource.unpack()
         return await self.resource.get_children_as_view(
