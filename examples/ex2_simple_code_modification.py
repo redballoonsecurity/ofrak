@@ -68,9 +68,9 @@ async def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: st
     )
 
     # Patch in the modified bytes
-    ret_instruction_offset = await ret_instruction.resource.get_offset_within_root()
+    range_in_root = await ret_instruction.resource.get_data_range_within_root()
     binary_injector_config = BinaryPatchConfig(
-        ret_instruction_offset,
+        range_in_root.start,
         new_instruction_bytes,
     )
     await binary_resource.run(BinaryPatchModifier, binary_injector_config)

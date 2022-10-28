@@ -44,7 +44,7 @@ class BinwalkAnalyzer(Analyzer[None, BinwalkAttributes]):
         return BinwalkAttributes(offsets)
 
 
-def _run_binwalk_on_file(filename):
+def _run_binwalk_on_file(filename):  # pragma: no cover
     offsets = dict()
     for module in binwalk.scan(filename, signature=True):
         for result in module.results:

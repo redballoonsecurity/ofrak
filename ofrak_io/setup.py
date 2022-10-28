@@ -38,7 +38,7 @@ setuptools.setup(
             "hypothesis~=6.39.3",
             "mypy==0.942",
             "pytest",
-            "pytest-asyncio>=0.19.0",
+            "pytest-asyncio==0.19.0",
             "pytest-cov",
         ]
     },

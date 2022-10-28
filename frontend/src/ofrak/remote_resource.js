@@ -257,6 +257,22 @@ export class RemoteResource extends Resource {
     });
   }
 
+  async search_for_vaddr(vaddr_start, vaddr_end) {
+    const matching_models = await fetch(`${this.uri}/search_for_vaddr`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify([vaddr_start, vaddr_end]),
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return await r.json();
+    });
+    return this._remote_models_to_resources(matching_models);
+  }
+
   _remote_models_to_resources(remote_models) {
     if (remote_models.length === 0) {
       return [];

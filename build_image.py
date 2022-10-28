@@ -33,6 +33,7 @@ class OfrakImageConfig:
     extra_build_args: Optional[List[str]]
     install_target: InstallTarget
     cache_from: List[str]
+    entrypoint: Optional[str]
 
     def validate_serial_txt_existence(self):
         """
@@ -158,6 +159,7 @@ def parse_args() -> OfrakImageConfig:
         config_dict.get("extra_build_args"),
         InstallTarget(args.target),
         args.cache_from,
+        config_dict.get("entrypoint"),
     )
     image_config.validate_serial_txt_existence()
     return image_config
@@ -232,6 +234,8 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
         ]
     )
     dockerfile_finish_parts.append(f'RUN printf "{finish_makefile}" >> Makefile\n')
+    if config.entrypoint is not None:
+        dockerfile_finish_parts.append(f"ENTRYPOINT {config.entrypoint}")
     return "".join(dockerfile_finish_parts)
 
 

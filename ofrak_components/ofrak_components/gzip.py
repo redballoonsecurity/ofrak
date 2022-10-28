@@ -40,7 +40,7 @@ class GzipUnpacker(Unpacker[None]):
         with tempfile.NamedTemporaryFile(suffix=".gz") as temp_file:
             temp_file.write(await resource.get_data())
             temp_file.flush()
-            command = ["gzip", "-d", "-c", temp_file.name]  # Decompress to stdout
+            command = ["pigz", "-d", "-c", temp_file.name]  # Decompress to stdout
             try:
                 run_result = subprocess.run(command, check=True, capture_output=True)
                 data = run_result.stdout

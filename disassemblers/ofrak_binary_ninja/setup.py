@@ -41,7 +41,7 @@ setuptools.setup(
             "fun-coverage~=0.1.0",
             "pytest",
             "pytest-cov",
-            "pytest-asyncio>=0.19.0",
+            "pytest-asyncio==0.19.0",
             "requests",
         ]
     },

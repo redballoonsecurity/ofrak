@@ -151,14 +151,10 @@ class ResourceNode:
 
 
 class ResourceAttributeIndex(Generic[T]):
-    _attribute: ResourceIndexedAttribute[T]
-    index: SortedList
-    values_by_node_id: Dict[bytes, Any]
-
     def __init__(self, attribute: ResourceIndexedAttribute[T]):
-        self._attribute = attribute  # type: ignore
-        self.index = SortedList()
-        self.values_by_node_id = dict()
+        self._attribute: ResourceIndexedAttribute[T] = attribute
+        self.index: SortedList = SortedList()
+        self.values_by_node_id: Dict[bytes, Any] = dict()
 
     def add_resource_attribute(
         self,
@@ -183,13 +179,7 @@ class ResourceAttributeIndex(Generic[T]):
                 f"index for {self._attribute.__name__}"
             )
         value = self.values_by_node_id[resource.model.id]
-        value_index = bisect.bisect_left(self.index, (value, resource))
-        if value_index < len(self.index) and self.index[value_index][1] != resource:
-            raise RuntimeError(
-                "If this error is raised, an index has gotten out of sync with "
-                "itself. An error should have been raised a few lines earlier."
-            )
-        self.index.pop(value_index)
+        self.index.remove((value, resource))
         del self.values_by_node_id[resource.model.id]
 
 
