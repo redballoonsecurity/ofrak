@@ -51,6 +51,8 @@ nav:
   - Home: "index.md"
   - Environment Setup: "environment-setup.md"
   - Getting Started: "getting-started.md"
+  - GUI: 
+    - Minimap View: "user-guide/gui/minimap.md"
   - Examples: examples/
   - User Guide:
       - Resource: "user-guide/resource.md"
