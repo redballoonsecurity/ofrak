@@ -203,25 +203,6 @@ class TestElfPointerArraySectionModifier:
             new_data = await entry.resource.get_data()
             assert new_data != original_data_values[i]
 
-    async def test_elf_pointer_array_section_modifier_virtual_address(self, elf_resource: Resource):
-        """
-        Test that `ElfPointerArraySectionModifier` results in updates to the children
-        `ElfVirtualAddress`.
-        """
-        pointer_array_section = await self._unpack_and_get_first_pointer_array_section(elf_resource)
-        original_values = list(await pointer_array_section.get_entries())
-
-        await pointer_array_section.resource.run(
-            ElfPointerArraySectionAddModifier,
-            ElfPointerArraySectionAddModifierConfig(skip_list=(), add_value=self.add_value),
-        )
-        updated_pointer_array_section = await pointer_array_section.resource.view_as(
-            ElfPointerArraySection
-        )
-
-        for i, entry in enumerate(await updated_pointer_array_section.get_entries()):
-            assert entry.value - self.add_value == original_values[i].value
-
     async def _unpack_and_get_first_pointer_array_section(self, elf_resource):
         await elf_resource.unpack()
         pointer_array_section = list(
