@@ -4,11 +4,11 @@ RUN apt-get -y update && \
       build-essential \
       cpio \
       git \
-      gzip \
       liblz4-dev \
       liblzo2-dev \
       libzstd-dev \
       lzop \
+      pigz \
       p7zip-full \
       zip \
       qemu \

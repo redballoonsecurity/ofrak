@@ -50,7 +50,7 @@ class TestGzipUnpackWithTrailingBytes(UnpackModifyPackPattern):
                 f.write(self.INITIAL_DATA)
 
             gzip_path = os.path.join(d, self.GZIP_FILENAME)
-            gzip_command = ["gzip", file_path]
+            gzip_command = ["pigz", file_path]
             try:
                 subprocess.run(gzip_command, check=True, capture_output=True)
             except subprocess.CalledProcessError as e:
@@ -78,7 +78,7 @@ class TestGzipUnpackWithTrailingBytes(UnpackModifyPackPattern):
             with open(gzip_path, "wb") as f:
                 f.write(gzip_data)
 
-            gunzip_command = ["gzip", "-d", "-c", gzip_path]
+            gunzip_command = ["pigz", "-d", "-c", gzip_path]
             try:
                 result = subprocess.run(gunzip_command, check=True, capture_output=True)
                 data = result.stdout

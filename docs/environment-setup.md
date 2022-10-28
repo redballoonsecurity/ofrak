@@ -181,6 +181,7 @@ source ofrak-venv/bin/activate
       java \
       libmagic \
       lzop \
+      pigz \
       p7zip \
       qemu \
       squashfs \
