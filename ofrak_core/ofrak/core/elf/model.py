@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from typing import Iterable, Optional
@@ -12,11 +13,11 @@ from ofrak.service.resource_service_i import (
     ResourceAttributeValueFilter,
     ResourceSortDirection,
     ResourceSort,
-    ResourceAttributeRangeFilter,
 )
 from ofrak.core.magic import MagicDescriptionIdentifier
 from ofrak_type.bit_width import BitWidth
 from ofrak_type.endianness import Endianness
+from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.range import Range
 
 
@@ -54,9 +55,6 @@ class ElfBasicHeader(ResourceView):
             return BitWidth.BIT_64
         else:
             raise ValueError("Invalid bit width  value in the ELF header ")
-
-    async def get_parent(self) -> "Elf":
-        return await self.resource.get_parent_as_view(Elf)
 
 
 ##################################################################################
@@ -212,9 +210,6 @@ class ElfHeader(ResourceView):
     def get_isa(self) -> InstructionSet:
         return ElfMachine.get_isa(self.e_machine)
 
-    async def get_parent(self) -> "Elf":
-        return await self.resource.get_parent_as_view(Elf)
-
 
 ##################################################################################
 #                           ELF SEGMENT STRUCTURE
@@ -228,9 +223,6 @@ class ElfSegmentStructure(ResourceView):
     @index
     def SegmentIndex(self) -> int:
         return self.segment_index
-
-    async def get_elf(self) -> "Elf":
-        return await self.resource.get_only_ancestor_as_view(Elf, ResourceFilter.with_tags(Elf))
 
 
 ##################################################################################
@@ -250,12 +242,6 @@ class ElfProgramHeaderType(Enum):
     TLS = 7
 
 
-class ElfProgramHeaderPermission(Enum):
-    EXECUTE = 0x1
-    WRITE = 0x2
-    READ = 0x4
-
-
 @dataclass
 class ElfProgramHeader(ElfSegmentStructure):
     """
@@ -272,41 +258,11 @@ class ElfProgramHeader(ElfSegmentStructure):
     p_flags: int
     p_align: int
 
-    def get_file_range(self) -> Range:
-        return Range.from_size(self.p_offset, self.p_filesz)
-
-    def segment_memory_contains(self, vaddr: int) -> bool:
-        return Range.from_size(self.p_vaddr, self.p_memsz).contains_value(vaddr)
-
-    def get_type(self) -> ElfProgramHeaderType:
-        try:
-            return ElfProgramHeaderType(self.p_type)
-        except ValueError:
-            return ElfProgramHeaderType.UNKNOWN
-
-    def is_writable(self) -> bool:
-        write_bit = self.p_flags & ElfProgramHeaderPermission.WRITE.value
-        return write_bit == ElfProgramHeaderPermission.WRITE.value
-
-    def is_executable(self) -> bool:
-        execute_bit = self.p_flags & ElfProgramHeaderPermission.EXECUTE.value
-        return execute_bit == ElfProgramHeaderPermission.EXECUTE.value
-
-    async def get_parent(self) -> "Elf":
-        return await self.resource.get_parent_as_view(Elf)
-
-    async def get_body(self) -> "ElfSegment":
-        return await self.resource.get_only_sibling_as_view(
-            ElfSegment,
-            ResourceFilter(
-                tags=(ElfSegment,),
-                attribute_filters=(
-                    ResourceAttributeValueFilter(
-                        ElfSegmentStructure.SegmentIndex, self.segment_index
-                    ),
-                ),
-            ),
-        )
+    def get_memory_permissions(self) -> MemoryPermissions:
+        """
+        Get the MemoryPermission for the ElfProgramHeader.
+        """
+        return MemoryPermissions(self.p_flags)
 
 
 ##################################################################################
@@ -319,9 +275,6 @@ class UnanalyzedElfSegment(ElfSegmentStructure):
     """
     An unanalyzed ELF Segment
     """
-
-    async def get_parent(self) -> "Elf":
-        return await self.resource.get_parent_as_view(Elf)
 
     async def get_header(self) -> "ElfProgramHeader":
         return await self.resource.get_only_sibling_as_view(
@@ -444,27 +397,8 @@ class ElfSectionHeader(ElfSectionStructure):
     def get_file_range(self) -> Range:
         return Range.from_size(self.sh_offset, self.sh_size)
 
-    def get_file_end(self) -> int:
-        return self.sh_offset + self.sh_size
-
     def get_type(self) -> ElfSectionType:
         return ElfSectionType(self.sh_type)
-
-    async def get_parent(self) -> "Elf":
-        return await self.resource.get_parent_as_view(Elf)
-
-    async def get_body(self) -> "ElfSection":
-        return await self.resource.get_only_sibling_as_view(
-            ElfSection,
-            ResourceFilter(
-                tags=(ElfSection,),
-                attribute_filters=(
-                    ResourceAttributeValueFilter(
-                        ElfSectionStructure.SectionIndex, self.section_index
-                    ),
-                ),
-            ),
-        )
 
 
 ##################################################################################
@@ -544,9 +478,6 @@ class ElfSymbol(ElfSymbolStructure):
             return self.st_shndx
         return None
 
-    async def get_parent(self) -> "ElfSymbolSection":
-        return await self.resource.get_parent_as_view(ElfSymbolSection)
-
     async def get_name(self) -> str:
         elf = await self.resource.get_only_ancestor_as_view(Elf, ResourceFilter.with_tags(Elf))
         string_section = await elf.get_string_section()
@@ -573,6 +504,7 @@ class ElfRelaInfo(Enum):
     """
 
     @staticmethod
+    @abstractmethod
     def type_mask(value: int) -> int:
         raise NotImplementedError()
 
@@ -719,8 +651,6 @@ class ElfPointerArraySection(UnanalyzedElfSection):
         errors.
     """
 
-    num_pointers: int
-
     async def get_entries(self):
         await self.resource.unpack()
         return await self.resource.get_children_as_view(
@@ -823,6 +753,13 @@ class Elf(Program):
             ElfBasicHeader, ResourceFilter.with_tags(ElfBasicHeader)
         )
 
+    async def get_segments(self) -> Iterable[ElfSegment]:
+        return await self.resource.get_children_as_view(
+            ElfSegment,
+            ResourceFilter(tags=(ElfSegment,)),
+            ResourceSort(ElfSegmentStructure.SegmentIndex, ResourceSortDirection.ASCENDANT),
+        )
+
     async def get_sections(self) -> Iterable[ElfSection]:
         return await self.resource.get_children_as_view(
             ElfSection,
@@ -837,28 +774,6 @@ class Elf(Program):
                 tags=(ElfSection,),
                 attribute_filters=(
                     ResourceAttributeValueFilter(ElfSectionStructure.SectionIndex, index),
-                ),
-            ),
-        )
-
-    async def get_sections_after_index(self, index: int) -> Iterable[ElfSection]:
-        return await self.resource.get_children_as_view(
-            ElfSection,
-            ResourceFilter(
-                tags=(ElfSection,),
-                attribute_filters=(
-                    ResourceAttributeRangeFilter(ElfSectionStructure.SectionIndex, min=index + 1),
-                ),
-            ),
-        )
-
-    async def get_sections_before_index(self, index: int) -> Iterable[ElfSection]:
-        return await self.resource.get_children_as_view(
-            ElfSection,
-            ResourceFilter(
-                tags=(ElfSection,),
-                attribute_filters=(
-                    ResourceAttributeRangeFilter(ElfSectionStructure.SectionIndex, max=index + 1),
                 ),
             ),
         )
@@ -922,20 +837,6 @@ class Elf(Program):
             ),
         )
 
-    async def get_section_header_by_name(self, name: str) -> ElfSectionHeader:
-        _ = await self.get_sections()  # Forces analyzing name of all sections
-        return await self.resource.get_only_child_as_view(
-            ElfSectionHeader,
-            ResourceFilter(
-                tags=(ElfSectionHeader,),
-                attribute_filters=(ResourceAttributeValueFilter(ElfSection.SectionName, name),),
-            ),
-        )
-
-    async def get_string_section_header(self) -> ElfSectionHeader:
-        string_section_r = await self.get_string_section()
-        return await string_section_r.get_header()
-
     async def get_program_headers(self) -> Iterable[ElfProgramHeader]:
         return await self.resource.get_children_as_view(
             ElfProgramHeader,
@@ -943,7 +844,7 @@ class Elf(Program):
             ResourceSort(ElfProgramHeader.SegmentIndex, ResourceSortDirection.ASCENDANT),
         )
 
-    async def get_program_header(self, index: int) -> ElfProgramHeader:
+    async def get_program_header_by_index(self, index: int) -> ElfProgramHeader:
         return await self.resource.get_only_child_as_view(
             ElfProgramHeader,
             ResourceFilter(

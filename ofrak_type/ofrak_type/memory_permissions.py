@@ -7,9 +7,9 @@ class MemoryPermissions(Enum):
     are represented, with the exception of Write + eXecute (not a sane combination).
     """
 
-    R = 1
+    X = 1
     W = 2
-    X = 4
+    R = 4
     RW = R + W
     RX = R + X
     RWX = R + W + X
