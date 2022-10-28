@@ -56,9 +56,6 @@ class ElfBasicHeader(ResourceView):
         else:
             raise ValueError("Invalid bit width  value in the ELF header ")
 
-    # async def get_parent(self) -> "Elf":
-    #     return await self.resource.get_parent_as_view(Elf)
-
 
 ##################################################################################
 #                           ELF HEADER
@@ -212,9 +209,6 @@ class ElfHeader(ResourceView):
 
     def get_isa(self) -> InstructionSet:
         return ElfMachine.get_isa(self.e_machine)
-
-    # async def get_parent(self) -> "Elf":
-    #     return await self.resource.get_parent_as_view(Elf)
 
 
 ##################################################################################
