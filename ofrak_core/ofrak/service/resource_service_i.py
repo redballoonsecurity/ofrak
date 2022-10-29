@@ -299,12 +299,14 @@ class ResourceServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def delete_resource(self, resource_id: bytes):
+    async def delete_resource(self, resource_id: bytes) -> Iterable[ResourceModel]:
         """
-        Delete a resource by ID and all of its children, removing them from the database. If no
+        Delete a resource by ID and all of its descendants, removing them from the database. If no
         resource for the given ID is found, it is assumed the resource has already been deleted
         (does not raise an error).
 
         :param resource_id: The ID of the resource to delete
+
+        :return all of the models that were deleted
         """
         raise NotImplementedError()

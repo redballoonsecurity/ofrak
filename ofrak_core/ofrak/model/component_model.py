@@ -2,7 +2,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Set, Type, Dict, List, TypeVar, Optional
 
-from ofrak.model.data_model import DataPatch, DataMove
+from ofrak.model.data_model import DataPatch
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak_type.range import Range
 
@@ -48,7 +48,6 @@ class ComponentResourceAccessTracker:
 @dataclass
 class ComponentResourceModificationTracker:
     data_patches: List[DataPatch] = field(default_factory=list)
-    data_moves: List[DataMove] = field(default_factory=list)
 
 
 @dataclass

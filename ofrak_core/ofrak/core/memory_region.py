@@ -5,7 +5,7 @@ from typing import Iterable
 from ofrak.core.addressable import Addressable
 from ofrak.model.resource_model import index, ResourceAttributes
 from ofrak.resource import Resource
-from ofrak.service.data_service import OverlapError
+from ofrak.service.error import OverlapError
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 
