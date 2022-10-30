@@ -44,7 +44,7 @@ setuptools.setup(
     ],
     extras_require={
         "docs": [
-            "mkdocs==1.2.2",
+            "mkdocs==1.2.3",
             "mkdocs-autorefs==0.3.0",
             "mkdocstrings==0.16.2",
             "mkdocs-literate-nav==0.4.0",

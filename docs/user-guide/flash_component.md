@@ -40,7 +40,7 @@ Tail Block
 | --------- | --------- | -------- | --- |
 | 1 byte | 4 bytes | 16 bytes | 32 bytes |
 
-This format is interesting because it has a different sized tail block as well as different delimiters to represent the type of block. The [FlashUnpacker][ofrak_component.flash.FlashResourceUnpacker] is able to handle these different types of fields by providing attributes in [FlashAttributes][ofrak_component.flash.FlashAttributes] that also includes a [FlashEccAttributes][ofrak_component.flash.FlashEccAttributes]. We will describe the other parts of these attributes and how to use them later in this page.
+This format is interesting because it has a different sized tail block as well as different delimiters to represent the type of block. The [FlashUnpacker][ofrak_components.flash.FlashResourceUnpacker] is able to handle these different types of fields by providing attributes in [FlashAttributes][ofrak_components.flash.FlashAttributes] that also includes a [FlashEccAttributes][ofrak_components.flash.FlashEccAttributes]. We will describe the other parts of these attributes and how to use them later in this page.
 
 ### Types of Fields
 The class [FlashFieldType][ofrak_components.flash.FlashFieldType] contains field types that are commonly encountered in flash dumps:
