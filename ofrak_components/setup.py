@@ -36,15 +36,6 @@ setuptools.setup(
         "reedsolo==1.5.4",
     ],
     extras_require={
-        "docs": [
-            "mkdocs==1.2.2",
-            "mkdocs-autorefs==0.3.0",
-            "mkdocstrings==0.16.2",
-            "mkdocs-literate-nav==0.4.0",
-            "mkdocs-material==7.3.3",
-            "mkdocs_gen_files==0.3.3",
-            "jinja2==3.0.0",
-        ],
         "test": [
             "ofrak[test]",
             "autoflake==1.4",

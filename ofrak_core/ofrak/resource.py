@@ -581,19 +581,6 @@ class Resource:
         | ``data`` param not `None` | Child mapped, ``data`` patched into child (and parent) | Child unmapped, child's data set to ``data`` |
         | ``data`` param   `None`   | Child mapped, parent's data untouched                  | Child is dataless                            |
 
-        There are two additional data-centric parameters: ``data_after`` and ``data_before``.
-        These can only be used in combination with ``data_range``; zero, one, or both of them may
-        be used. These are useful in special cases when 1) the parent resource allows data
-        overlaps and 2) the new child already has some sibling resources who also map the parent's
-        data and overlap with the new child's data. These parameters hint to the data service what
-        order the children's data is
-        arranged, which may be useful in the future when patching the resource. For example,
-        if 3 resources A, B, and C are all created with `data_range=Range(2,2)`, and later each of
-        them are individually patched, the data service needs these hints to know whether the
-        children's data should be mapped into the parent's data as `aaabbbccc`, `aaacccbbb`,
-        `bbbaaaccc`, etc.
-        This should not happen often.
-
         :param tags: [tags][ofrak.model.tag_model.ResourceTag] to add to the new child
         :param attributes: [attributes][ofrak.model.resource_model.ResourceAttributes] to add to
         the new child
@@ -601,8 +588,6 @@ class Resource:
         the resource has no data. Defaults to `None`.
         :param data_range: The range of the parent's data which the new child maps. If `None` (
         default), the child will not map the parent's data.
-        :param data_after: The sibling resource whose data is sequentially after the new resource
-        :param data_before: The sibling resource whose data is sequentially before the new resource
         :return:
         """
         if data_range is not None:
@@ -949,10 +934,6 @@ class Resource:
 
         :param patch_range: The range of binary data in this resource to replace
         :param data: The bytes to replace part of this resource's data with
-        :param after: If the patched resource's data overlaps another resources, this hints to the
-        data service that the data added by patch should be after the data of resource ``after``
-        :param before: If the patched resource's data overlaps another resources, this hints to the
-        data service that the data added by patch should be before the data of resource ``before``
         :return:
         """
         if not self._component_context:
