@@ -56,7 +56,7 @@ class OFRAKContext:
         resource_id = self.id_service.generate_id()
 
         await self.job_service.create_job(job_id, name)
-        await self.data_service.create(data_id, data)
+        await self.data_service.create_root(data_id, data)
         resource_model = await self.resource_service.create(
             ResourceModel.create(resource_id, data_id, tags=tags)
         )

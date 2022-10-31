@@ -75,8 +75,8 @@ class DependencyHandler:
                 # Iterate over the resource's data dependency ranges to find a range that overlaps
                 # the patch range
                 for dependency_range in dependency_ranges:
-                    for patch in data_patch_result.patches:
-                        if not dependency_range.overlaps(patch.range):
+                    for patch_range in data_patch_result.patches:
+                        if not dependency_range.overlaps(patch_range):
                             continue
                         LOGGER.debug(
                             f"Invalidating results of {dependency.component_id!r} on resource "

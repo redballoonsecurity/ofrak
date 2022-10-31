@@ -5,14 +5,10 @@ from typing import Tuple, Iterable
 
 import pytest
 
-from ofrak.model.data_model import DataModel
-from ofrak.service.data_service import DataService
-from ofrak.service.data_service_i import DataServiceInterface
 from ofrak_io.batch_manager import (
     NotAllRequestsHandledError,
     AbstractBatchManager,
     make_batch_manager,
-    BatchManagerInterface,
 )
 
 
@@ -32,11 +28,6 @@ def many_strings():
 @pytest.fixture
 def counter():
     return Counter(0)
-
-
-@pytest.fixture
-def data_service():
-    return DataService()
 
 
 def batch_manager_with_function(counter):
@@ -74,30 +65,6 @@ def bad_batch_manager(counter):
     return make_batch_manager(handle_requests)
 
 
-def data_service_batch_manager_with_function(data_service: DataServiceInterface):
-    async def handle_requests(requests: Tuple[bytes, ...]) -> Iterable[Tuple[bytes, DataModel]]:
-        return zip(requests, await data_service.get_by_ids(requests))
-
-    return make_batch_manager(handle_requests)
-
-
-def data_service_batch_manager_with_subclass(data_service: DataServiceInterface):
-    class GetDataIdBatchManager(AbstractBatchManager[bytes, DataModel]):
-        async def handle_requests(
-            self, requests: Tuple[bytes, ...]
-        ) -> Iterable[Tuple[bytes, DataModel]]:
-            return zip(requests, await data_service.get_by_ids(requests))
-
-    return GetDataIdBatchManager()
-
-
-@pytest.fixture(
-    params=(data_service_batch_manager_with_function, data_service_batch_manager_with_subclass)
-)
-def data_service_batch_manager(request, data_service):
-    return request.param(data_service)
-
-
 async def test_single_result(batch_manager, counter):
     test_string = "OFRAk is awesome"
     res = await batch_manager.get_result(test_string)
@@ -113,36 +80,4 @@ async def test_many_results(batch_manager, many_strings, counter):
 async def test_incomplete_handling_raises_err(bad_batch_manager):
     test_string = "OFRAk is awesome"
     with pytest.raises(NotAllRequestsHandledError):
-        res = await bad_batch_manager.get_result(test_string)
-
-
-async def test_batch_data_service_accesses(
-    data_service: DataServiceInterface, data_service_batch_manager, many_strings
-):
-    expected_models = dict()
-    for s in many_strings:
-        data_id = int.to_bytes(abs(hash(s)), 8, "little")
-        data = s.encode("UTF-8")
-
-        m = await data_service.create(data_id, data)
-        expected_models[data_id] = m
-
-    tasks = []
-    for data_id, expected_m in expected_models.items():
-
-        async def _check():
-            m = await data_service_batch_manager.get_result(data_id)
-            assert m == expected_m
-
-        tasks.append(_check())
-
-    await asyncio.gather(*tasks)
-
-
-# TODO: Figure out why line coverage is not ignoring the abstractmethod
-async def test_raises_notimplemented():
-    with pytest.raises(NotImplementedError):
-        await AbstractBatchManager.handle_requests(None, ())
-
-    with pytest.raises(NotImplementedError):
-        await BatchManagerInterface.get_result(None, None)
+        _ = await bad_batch_manager.get_result(test_string)

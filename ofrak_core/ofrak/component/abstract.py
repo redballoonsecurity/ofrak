@@ -204,14 +204,11 @@ class AbstractComponent(ComponentInterface[CC], ABC):
     ) -> List[DataPatchesResult]:
         # Build a list of patches, making sure that there is at most one patch that causes a resize
         patches = []
-        moves = []
         for resource_id, tracker in component_context.modification_trackers.items():
-            moves.extend(tracker.data_moves)
-            tracker.data_moves.clear()
             patches.extend(tracker.data_patches)
             tracker.data_patches.clear()
-        if len(patches) > 0 or len(moves) > 0:
-            return await self._data_service.apply_patches(patches, moves)
+        if len(patches) > 0:
+            return await self._data_service.apply_patches(patches)
         else:
             return []
 

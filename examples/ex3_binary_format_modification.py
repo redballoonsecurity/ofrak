@@ -24,11 +24,11 @@ from ofrak import OFRAK, OFRAKContext
 from ofrak.core import (
     Elf,
     ElfProgramHeader,
-    ElfProgramHeaderPermission,
     ElfProgramHeaderType,
     ElfProgramHeaderModifier,
     ElfProgramHeaderModifierConfig,
 )
+from ofrak_type.memory_permissions import MemoryPermissions
 
 ASSETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
 BINARY_FILE = os.path.join(ASSETS_DIR, "example_program")
@@ -45,7 +45,7 @@ async def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: st
     await exec_load_program_header.resource.run(
         ElfProgramHeaderModifier,
         ElfProgramHeaderModifierConfig(
-            p_flags=exec_load_program_header.p_flags & ~ElfProgramHeaderPermission.EXECUTE.value
+            p_flags=exec_load_program_header.p_flags & ~MemoryPermissions.X.value
         ),
     )
 
@@ -60,7 +60,7 @@ async def get_exec_load_program_header(elf_v: Elf) -> ElfProgramHeader:
     for program_header in await elf_v.get_program_headers():
         if (
             program_header.p_type == ElfProgramHeaderType.LOAD.value
-            and program_header.p_flags & ElfProgramHeaderPermission.EXECUTE.value
+            and program_header.p_flags & MemoryPermissions.X.value
         ):
             return program_header
     raise RuntimeError(f"Could not find executable LOAD program header in {elf_v}")

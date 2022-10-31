@@ -31,11 +31,9 @@ from ofrak.core.filesystem import FilesystemRoot
 from ofrak.core.magic import Magic
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.model.component_model import ComponentConfig
-from ofrak.model.data_model import DataModel
 from ofrak.model.resource_model import ResourceAttributes, ResourceAttributeDependency
 from ofrak.resource_view import ResourceView
 from ofrak.service.component_locator_i import ComponentFilter
-from ofrak.service.data_service import DataNode
 from ofrak.service.serialization.pjson import PJSONSerializationService
 from ofrak_type.architecture import InstructionSet, InstructionSetMode
 from ofrak_type.range import Range
@@ -237,21 +235,16 @@ def test_to_pjson(obj: Any, type_hint: Any, _test_serialize_deserialize):
     _test_serialize_deserialize(obj, type_hint)
 
 
-data_model = DataModel(b"123", Range(0, 10))
-
-data_node = DataNode(data_model)
-
-
 @pytest.mark.parametrize(
     "obj",
     [
         IntervalTree(),
         IntervalTree.from_tuples([(0, 10)]),
-        IntervalTree.from_tuples([(0, 10, data_node)]),
-        IntervalTree.from_tuples([(0, 10), (10, 20, data_node)]),
+        IntervalTree.from_tuples([(0, 10, 1234)]),
+        IntervalTree.from_tuples([(0, 10), (10, 20, 5678)]),
         IntervalTree([Interval(0, 10)]),
-        IntervalTree([Interval(0, 10, data_node)]),
-        IntervalTree([Interval(0, 10), Interval(10, 20, data_node)]),
+        IntervalTree([Interval(0, 10, 2468)]),
+        IntervalTree([Interval(0, 10), Interval(10, 20, 1357)]),
     ],
 )
 def test_interval_tree_serialization(obj: IntervalTree, _test_serialize_deserialize):

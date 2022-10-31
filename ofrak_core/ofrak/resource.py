@@ -189,7 +189,7 @@ class Resource:
         If this resource is "mapped," i.e. its underlying data is defined as a range of its parent's
         underlying data, this method returns the range within the parent resource's data where this
         resource lies. If this resource is not mapped (it is root), it returns a range starting at 0
-        with length equal to the length of this resource's data.
+        with length 0.
 
         :return: The range of the parent's data which this resource represents
         """
@@ -198,7 +198,19 @@ class Resource:
                 "Resource does not have a data_id. Cannot get data range from a "
                 "resource with no data."
             )
-        return await self._data_service.get_range_within_parent(self._resource.data_id)
+        if self._resource.parent_id is None:
+            return Range(0, 0)
+        parent_resource = await self.get_parent()
+        parent_data_id = parent_resource.get_data_id()
+        if parent_data_id is None:
+            return Range(0, 0)
+
+        try:
+            return await self._data_service.get_range_within_other(
+                self._resource.data_id, parent_data_id
+            )
+        except ValueError:
+            return Range(0, 0)
 
     async def get_data_range_within_root(self) -> Range:
         """
@@ -214,22 +226,15 @@ class Resource:
             )
         return await self._data_service.get_data_range_within_root(self._resource.data_id)
 
-    async def set_data_overlaps_enabled(self, enable_overlaps: bool):
+    async def get_offset_within_root(self) -> int:
         """
-        Enable or disable allowing overlaps for the data node associated with this resource. If
-        enabled, mapped children can overlap each other. If disabled, attempting to map a child
-        which overlaps another will raise an error.
+        Does the same thing as `get_data_range_within_root`, except it returns the start offset of
+        the relative range to the root.
 
-        :param enable_overlaps: Whether or not data overlaps are enabled
+        :return: The start offset of the root node's data which this resource represents
         """
-        if self._resource.data_id is None:
-            raise ValueError(
-                "Resource does not have a data_id. Cannot enable data overlaps for a "
-                "resource with no data."
-            )
-        return await self._data_service.set_overlaps_enabled(
-            self._resource.data_id, enable_overlaps
-        )
+        root_range = await self.get_data_range_within_root()
+        return root_range.start
 
     async def save(self):
         """
@@ -239,8 +244,13 @@ class Resource:
         :raises NotFoundError: If the resource service does not have a model for this resource's ID
         """
         if self._resource.is_deleted:
-            await self._resource_service.delete_resource(self._resource.id)
-            await self._data_service.delete_tree(self._resource.data_id)
+            deleted_descendants = await self._resource_service.delete_resource(self._resource.id)
+            data_ids_to_delete = [
+                resource_m.data_id
+                for resource_m in deleted_descendants
+                if resource_m.data_id is not None
+            ]
+            await self._data_service.delete_models(data_ids_to_delete)
         elif self._resource.is_modified:
             modification_tracker = self._component_context.modification_trackers.get(
                 self._resource.id
@@ -250,10 +260,9 @@ class Resource:
                 f"marked as modified but is missing a tracker!"
             )
             patch_results = await self._data_service.apply_patches(
-                modification_tracker.data_patches, modification_tracker.data_moves
+                modification_tracker.data_patches
             )
             modification_tracker.data_patches.clear()
-            modification_tracker.data_moves.clear()
             await self._dependency_handler.handle_post_patch_dependencies(patch_results)
             await self._resource_service.update(self._resource.save())
         else:
@@ -541,8 +550,6 @@ class Resource:
         attributes: Iterable[ResourceAttributes] = None,
         data: Optional[bytes] = None,
         data_range: Optional[Range] = None,
-        data_after: Optional["Resource"] = None,
-        data_before: Optional["Resource"] = None,
     ) -> "Resource":
         """
         Create a new resource as a child of this resource. This method entirely defines the
@@ -574,19 +581,6 @@ class Resource:
         | ``data`` param not `None` | Child mapped, ``data`` patched into child (and parent) | Child unmapped, child's data set to ``data`` |
         | ``data`` param   `None`   | Child mapped, parent's data untouched                  | Child is dataless                            |
 
-        There are two additional data-centric parameters: ``data_after`` and ``data_before``.
-        These can only be used in combination with ``data_range``; zero, one, or both of them may
-        be used. These are useful in special cases when 1) the parent resource allows data
-        overlaps and 2) the new child already has some sibling resources who also map the parent's
-        data and overlap with the new child's data. These parameters hint to the data service what
-        order the children's data is
-        arranged, which may be useful in the future when patching the resource. For example,
-        if 3 resources A, B, and C are all created with `data_range=Range(2,2)`, and later each of
-        them are individually patched, the data service needs these hints to know whether the
-        children's data should be mapped into the parent's data as `aaabbbccc`, `aaacccbbb`,
-        `bbbaaaccc`, etc.
-        This should not happen often.
-
         :param tags: [tags][ofrak.model.tag_model.ResourceTag] to add to the new child
         :param attributes: [attributes][ofrak.model.resource_model.ResourceAttributes] to add to
         the new child
@@ -594,8 +588,6 @@ class Resource:
         the resource has no data. Defaults to `None`.
         :param data_range: The range of the parent's data which the new child maps. If `None` (
         default), the child will not map the parent's data.
-        :param data_after: The sibling resource whose data is sequentially after the new resource
-        :param data_before: The sibling resource whose data is sequentially before the new resource
         :return:
         """
         if data_range is not None:
@@ -608,21 +600,14 @@ class Resource:
                 data_model_id,
                 self._resource.data_id,
                 data_range,
-                after_data_id=data_after.get_data_id() if data_after is not None else None,
-                before_data_id=data_before.get_data_id() if data_before is not None else None,
             )
         elif data is not None:
             if self._resource.data_id is None:
                 raise ValueError(
                     "Cannot create a child with data from a parent that doesn't have data"
                 )
-            if data_after is not None or data_before is not None:
-                raise ValueError(
-                    "The data_after/data_before parameters should only be provided when creating "
-                    "a child with mapped data from this resource."
-                )
             data_model_id = self._id_service.generate_id()
-            await self._data_service.create(data_model_id, data)
+            await self._data_service.create_root(data_model_id, data)
         else:
             data_model_id = None
         resource_id = self._id_service.generate_id()
@@ -940,8 +925,6 @@ class Resource:
         self,
         patch_range: Range,
         data: bytes,
-        after: Optional["Resource"] = None,
-        before: Optional["Resource"] = None,
     ):
         """
         Replace the data within the provided range with the provided data. This operation may
@@ -951,10 +934,6 @@ class Resource:
 
         :param patch_range: The range of binary data in this resource to replace
         :param data: The bytes to replace part of this resource's data with
-        :param after: If the patched resource's data overlaps another resources, this hints to the
-        data service that the data added by patch should be after the data of resource ``after``
-        :param before: If the patched resource's data overlaps another resources, this hints to the
-        data service that the data added by patch should be before the data of resource ``before``
         :return:
         """
         if not self._component_context:
@@ -968,8 +947,6 @@ class Resource:
                 patch_range,
                 self._resource.data_id,
                 data,
-                after_data_id=after.get_data_id() if after is not None else None,
-                before_data_id=before.get_data_id() if before is not None else None,
             )
         )
         self._resource.is_modified = True
