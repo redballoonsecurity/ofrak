@@ -28,6 +28,7 @@ setuptools.setup(
         "ofrak": ["py.typed"],
     },
     install_requires=[
+        "beartype~=0.10.2",
         "intervaltree==3.1.0",
         "lief==0.12.2",
         "orjson~=3.6.7",
@@ -65,7 +66,6 @@ setuptools.setup(
             "pytest-lazy-fixture",
             "pytest-cov",
             "pytest-xdist",
-            "beartype~=0.10.2",
             "requests",
             "fun-coverage~=0.1.0",
         ],
