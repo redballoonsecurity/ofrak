@@ -52,8 +52,8 @@ class OFRAKContext:
         self, name: str, data: bytes, tags: Iterable[ResourceTag] = (GenericBinary,)
     ) -> Resource:
         job_id = self.id_service.generate_id()
-        data_id = self.id_service.generate_id()
         resource_id = self.id_service.generate_id()
+        data_id = resource_id
 
         await self.job_service.create_job(job_id, name)
         await self.data_service.create_root(data_id, data)
