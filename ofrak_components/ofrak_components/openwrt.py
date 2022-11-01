@@ -105,9 +105,6 @@ class OpenWrtTrxHeader(ResourceView):
     def get_version(self) -> OpenWrtTrxVersion:
         return OpenWrtTrxVersion(self.trx_version)
 
-    def get_length(self) -> int:
-        return self.trx_length
-
     def get_header_length(self) -> int:
         if self.get_version() == OpenWrtTrxVersion.VERSION1:
             return OPENWRT_TRXV1_HEADER_LEN

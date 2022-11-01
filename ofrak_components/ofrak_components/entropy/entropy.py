@@ -77,7 +77,9 @@ class DataSummaryAnalyzer(Analyzer[None, DataSummary]):
             return await self.analyze(resource, config=config, depth=depth + 1)
 
 
-def sample_entropy(data: bytes, resource_id: bytes, window_size=256, max_samples=2**20) -> bytes:
+def sample_entropy(
+    data: bytes, resource_id: bytes, window_size=256, max_samples=2**20
+) -> bytes:  # pragma: no cover
     """
     Return a list of entropy values where each value represents the Shannon entropy of the byte
     value distribution over a fixed-size, sliding window. If the entropy data is larger than a
@@ -92,7 +94,7 @@ def sample_entropy(data: bytes, resource_id: bytes, window_size=256, max_samples
     if len(data) < 256:
         return b""
 
-    def log_percent(percent):
+    def log_percent(percent):  # pragma: no cover
         LOGGER.info(f"Entropy calculation {percent}% complete for {resource_id.hex()}")
 
     # Make the entropy buffer mutable to the external C function
@@ -110,7 +112,7 @@ def sample_entropy(data: bytes, resource_id: bytes, window_size=256, max_samples
     return bytes(result[math.floor(i * skip)] for i in range(max_samples))
 
 
-def sample_magnitude(data: bytes, max_samples=2**20) -> bytes:
+def sample_magnitude(data: bytes, max_samples=2**20) -> bytes:  # pragma: no cover
     if len(data) < max_samples:
         # TODO: Should this be a shallow copy instead?
         return data
