@@ -33,6 +33,3 @@ class ReedSolomon(EccAlgorithm):
             return self.RSC.decode(data=payload)[0]
         except rs.ReedSolomonError:
             raise EccError()
-
-    def check(self, payload: bytes) -> bool:
-        return self.RSC.check(data=payload)
