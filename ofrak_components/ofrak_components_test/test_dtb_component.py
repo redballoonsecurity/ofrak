@@ -77,6 +77,11 @@ class TestDeviceTreeBlobUnpackModifyPack(UnpackModifyPackPattern):
                 ),
             ),
         )
+
+        prop_path = await prop.get_path()
+
+        assert prop_path == "/backlight/status", f'Expected "/backlight/status", got {prop_path}'
+
         child_text_string_config = StringPatchingConfig(0, "hey!")
         await prop.resource.run(StringPatchingModifier, child_text_string_config)
 
