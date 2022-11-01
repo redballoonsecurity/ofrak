@@ -109,7 +109,10 @@ class DataService(DataServiceInterface):
         mapped_to_delete = dict()
 
         for data_id in data_ids:
-            model = self._get_by_id(data_id)
+            try:
+                model = self._get_by_id(data_id)
+            except NotFoundError:
+                continue
             if model.is_mapped():
                 mapped_to_delete[model.id] = model
             else:
@@ -184,7 +187,7 @@ class DataService(DataServiceInterface):
                 patch_range_in_prepatch_root
             )
             models_intersecting_patch_range = root.get_children_with_boundaries_intersecting_range(
-                patch_range_in_patched_root
+                patch_range_in_prepatch_root
             )
 
             size_diff = len(patch.data) - patch.range.length()
@@ -199,7 +202,7 @@ class DataService(DataServiceInterface):
                     f"intersecting the patch range {patch.range} ({patch_range_in_patched_root} "
                     f"in the root) could not be determined. If data must be resized, any resources "
                     f"overlapping the data must be deleted before patching and re-created "
-                    f"afterwards along new data ranges."
+                    f"afterwards along new data ranges. Intersecting models: {models_intersecting_patch_range}"
                 )
             else:
                 finalized_ordered_patches.append(
@@ -219,21 +222,10 @@ class DataService(DataServiceInterface):
 
         # Apply finalized patches to data and data models
         for patch_range, data, size_diff in finalized_ordered_patches:
-            root.data = root.data[: patch_range.start] + data + root.data[patch_range.end :]
-            if size_diff > 0:
-                for child_model in root.get_children():
-                    if child_model.range.end <= patch_range.start:
-                        continue
-                    elif child_model.range.start >= patch_range.end:
-                        child_model.range = child_model.range.translate(size_diff)
-                    else:
-                        child_model.range = Range(
-                            child_model.range.start, child_model.range.end + size_diff
-                        )
-
-        root.model.range = Range(
-            root.model.range.start, root.model.range.end + resize_tracker.get_total_size_diff()
-        )
+            new_data = root.data[: patch_range.start] + data + root.data[patch_range.end :]
+            if size_diff != 0:
+                root.resize_range(patch_range, size_diff)
+            root.data = new_data
 
         return [
             DataPatchesResult(data_id, results_for_id)
@@ -316,30 +308,70 @@ class _DataRoot:
         del self._children[model.id]
 
     def get_children_intersecting_range(self, r: Range) -> List[DataModel]:
-        intersecting_children = self.get_children_with_boundaries_intersecting_range(r)
+        model_ids_ending_after_range_start = set()
+        for offset in self._waypoint_offsets.irange(minimum=r.start, inclusive=(False, True)):
+            model_ids_ending_after_range_start.update(self._waypoints[offset].models_ending)
+            for x in self._waypoints[offset].models_ending:
+                assert self._children[x].range.end == offset
 
-        # intersecting_children doesn't yet include models fully encompassing this range
-        # now look for models which start before the range, but don't end before or within the range
-        # (therefore they end after the range)
-        ids_ending_before_or_in_range = {model.id for model in intersecting_children}
-        for offset_before_range in self._waypoint_offsets.irange(maximum=r.start, reverse=True):
-            waypoint = self._waypoints[offset_before_range]
-            ids_ending_before_or_in_range.update(waypoint.models_ending)
+        model_ids_starting_before_range_end = set()
+        for offset in self._waypoint_offsets.irange(maximum=r.end, inclusive=(True, False)):
+            model_ids_starting_before_range_end.update(self._waypoints[offset].models_starting)
+            for x in self._waypoints[offset].models_starting:
+                assert self._children[x].range.start == offset
 
-            intersecting_children.extend(
-                [
-                    self._children[data_id]
-                    for data_id in waypoint.models_starting
-                    if data_id not in ids_ending_before_or_in_range
-                ]
-            )
+        intersecting_model_ids = model_ids_ending_after_range_start.intersection(
+            model_ids_starting_before_range_end
+        )
 
-        return intersecting_children
+        intersecting_models = [self._children[data_id] for data_id in intersecting_model_ids]
+
+        for m in intersecting_models:
+            assert m.range.intersect(r)
+
+        return intersecting_models
+
+    def resize_range(self, resized_range: Range, size_diff: int):
+
+        waypoints_to_shift = list(
+            self._waypoint_offsets.irange(minimum=resized_range.end, inclusive=(True, True))
+        )
+        new_waypoints = dict()
+        ends_already_shifted = set()
+        for waypoint_offset in waypoints_to_shift:
+            new_waypoint_offset = waypoint_offset + size_diff
+            self._waypoint_offsets.remove(waypoint_offset)
+            self._waypoint_offsets.add(new_waypoint_offset)
+
+            waypoint = self._waypoints[waypoint_offset]
+            del self._waypoints[waypoint_offset]
+
+            for model_id in waypoint.models_starting:
+                model = self._children[model_id]
+                model.range = model.range.translate(size_diff)
+                ends_already_shifted.add(model_id)
+
+            for model_id in waypoint.models_ending.difference(ends_already_shifted):
+                model = self._children[model_id]
+                model.range = Range(model.range.start, model.range.end + size_diff)
+
+            waypoint.offset = new_waypoint_offset
+            new_waypoints[new_waypoint_offset] = waypoint
+
+        for new_waypoint_offset, new_waypoint in new_waypoints.items():
+            if new_waypoint_offset in self._waypoints:
+                waypoint = self._waypoints[new_waypoint_offset]
+                waypoint.models_starting.update(new_waypoint.models_starting)
+                waypoint.models_ending.update(new_waypoint.models_ending)
+            else:
+                self._waypoints[new_waypoint_offset] = new_waypoint
+
+        self.model.range = Range(0, self.model.range.end + size_diff)
 
     def get_children_with_boundaries_intersecting_range(self, r: Range) -> List[DataModel]:
         intersecting_model_ids = set()
         for waypoint_offset in self._waypoint_offsets.irange(
-            r.start, r.end, inclusive=(True, False)
+            r.start, r.end, inclusive=(False, False)
         ):
             waypoint = self._waypoints[waypoint_offset]
             if waypoint_offset != r.start:
