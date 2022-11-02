@@ -7,9 +7,9 @@ from pycdlib import PyCdlib
 
 from ofrak.resource import Resource
 from ofrak_components.iso9660 import (
+    ISO9660Entry,
     ISO9660Image,
     ISO9660ImageAttributes,
-    ISO9660EntryAttributes,
 )
 from ofrak.core.strings import StringPatchingConfig, StringPatchingModifier
 from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import (
@@ -36,7 +36,7 @@ class Iso9660UnpackModifyPackPattern(CompressedFileUnpackModifyPackPattern):
         return None
 
     @property
-    def expected_file_attributes(self) -> Optional[ISO9660EntryAttributes]:
+    def expected_file_attributes(self) -> Optional[ISO9660Entry]:
         return None
 
     async def modify(self, unpacked_root_resource: Resource):
@@ -60,6 +60,14 @@ class Iso9660UnpackModifyPackPattern(CompressedFileUnpackModifyPackPattern):
         if self.expected_image_attributes:
             attributes = await repacked_root_resource.analyze(ISO9660ImageAttributes)
             assert attributes == self.expected_image_attributes
+
+        await repacked_root_resource.unpack()
+        await repacked_root_resource.summarize_tree()
+
+        repacked_iso_resource = await repacked_root_resource.view_as(ISO9660Image)
+
+        for desc in await repacked_iso_resource.get_entries():
+            await repacked_iso_resource.get_file(desc.Path)
 
 
 class TestIso9660UnpackModifyPack(Iso9660UnpackModifyPackPattern):
@@ -94,7 +102,7 @@ class TestJolietUnpackModifyPack(Iso9660UnpackModifyPackPattern):
         has_eltorito=False,
     )
 
-    expected_file_attributes = ISO9660EntryAttributes(
+    expected_file_attributes = ISO9660Entry(
         name=os.path.basename(Iso9660UnpackModifyPackPattern.TEST_FILE_NAME),
         path=Iso9660UnpackModifyPackPattern.TEST_FILE_NAME,
         is_dir=False,
