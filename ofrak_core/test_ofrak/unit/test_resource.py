@@ -252,6 +252,11 @@ async def test_get_range_within_parent(resource: Resource):
     data_range_within_parent = await child.get_data_range_within_parent()
     assert data_range_within_parent == child_range
 
+    grandchild_range = Range(1, 2)
+    grandchild = await child.create_child(data_range=grandchild_range)
+    data_range_within_child = await grandchild.get_data_range_within_parent()
+    assert data_range_within_child == grandchild_range
+
 
 async def test_get_range_within_parent_for_root(resource: Resource):
     """

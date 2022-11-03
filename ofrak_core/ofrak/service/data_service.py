@@ -81,7 +81,7 @@ class DataService(DataServiceInterface):
                 f"{data_id.hex()} and {within_data_id.hex()} are not mapped into the same root!"
             )
         else:
-            return within_model.range.intersect(model.range)
+            return within_model.range.intersect(model.range).translate(-within_model.range.start)
 
     async def get_data(self, data_id: DataId, data_range: Optional[Range] = None) -> bytes:
         model = self._get_by_id(data_id)
