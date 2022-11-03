@@ -46,8 +46,8 @@ class ISO9660ImageAttributes(ResourceAttributes):
     udf_version: Optional[str] = None
 
 
-@dataclass(**ResourceAttributes.DATACLASS_PARAMS)
-class ISO9660EntryAttributes(ResourceAttributes):
+@dataclass
+class ISO9660Entry(ResourceView):
     name: str
     path: str
     is_dir: bool
@@ -57,12 +57,9 @@ class ISO9660EntryAttributes(ResourceAttributes):
     is_dotdot: bool
     iso_version: int
 
-
-@dataclass
-class ISO9660Entry(ResourceView):
     @index
     def Path(self) -> str:
-        return self.resource.get_attributes(ISO9660EntryAttributes).path
+        return self.path
 
 
 @dataclass
@@ -71,11 +68,12 @@ class ISO9660Image(GenericBinary, FilesystemRoot):
     ISO 9660 image. ISO 9660 is a file system for optical disc media.
     """
 
-    async def get_file(self, path: str) -> Resource:
-        return await self.resource.get_only_child(
-            ResourceFilter(
+    async def get_file(self, path: str) -> ResourceView:
+        return await self.resource.get_only_descendant_as_view(
+            ISO9660Entry,
+            r_filter=ResourceFilter(
                 attribute_filters=(ResourceAttributeValueFilter(ISO9660Entry.Path, path),)
-            )
+            ),
         )
 
     async def get_entries(self) -> Iterable[ISO9660Entry]:
@@ -198,19 +196,19 @@ class ISO9660Unpacker(Unpacker[None]):
             for d in dirs:
                 path = os.path.join(root, d)
                 folder_tags = (ISO9660Entry, Folder)
-                attributes = (
-                    ISO9660EntryAttributes(
-                        name=d,
-                        path=path,
-                        is_dir=True,
-                        is_file=False,
-                        is_symlink=False,
-                        is_dot=(str(d).startswith(".") and not str(d).startswith("..")),
-                        is_dotdot=str(d).startswith(".."),
-                        iso_version=-1,
-                    ),
+                entry = ISO9660Entry(
+                    name=d,
+                    path=path,
+                    is_dir=True,
+                    is_file=False,
+                    is_symlink=False,
+                    is_dot=(str(d).startswith(".") and not str(d).startswith("..")),
+                    is_dotdot=str(d).startswith(".."),
+                    iso_version=-1,
                 )
-                await iso_resource.add_folder(path, None, None, folder_tags, attributes)
+                await iso_resource.add_folder(
+                    path, None, None, folder_tags, entry.get_attributes_instances().values()
+                )
             for f in files:
                 path = os.path.join(root, f)
                 file_tags = (ISO9660Entry, File)
@@ -230,19 +228,24 @@ class ISO9660Unpacker(Unpacker[None]):
                 else:
                     iso_version = -1
 
-                attributes = (
-                    ISO9660EntryAttributes(
-                        name=f,
-                        path=path,
-                        is_dir=False,
-                        is_file=True,
-                        is_symlink=False,
-                        is_dot=(str(f).startswith(".") and not str(f).startswith("..")),
-                        is_dotdot=str(f).startswith(".."),
-                        iso_version=iso_version,
-                    ),
+                entry = ISO9660Entry(
+                    name=f,
+                    path=path,
+                    is_dir=False,
+                    is_file=True,
+                    is_symlink=False,
+                    is_dot=(str(f).startswith(".") and not str(f).startswith("..")),
+                    is_dotdot=str(f).startswith(".."),
+                    iso_version=iso_version,
                 )
-                await iso_resource.add_file(path, file_data, None, None, file_tags, attributes)
+                await iso_resource.add_file(
+                    path,
+                    file_data,
+                    None,
+                    None,
+                    file_tags,
+                    entry.get_attributes_instances().values(),
+                )
                 fp.close()
 
         iso.close()
@@ -301,11 +304,10 @@ class ISO9660Packer(Packer[None]):
 
         while len(child_queue) > 0:
             child = child_queue.pop(0)
-            entry_attributes = child.resource.get_attributes(ISO9660EntryAttributes)
 
-            path = entry_attributes.path
-            if entry_attributes.iso_version != -1:
-                path += ";" + str(entry_attributes.iso_version)
+            path = child.path
+            if child.iso_version != -1:
+                path += ";" + str(child.iso_version)
 
             if child.resource.has_tag(Folder):
                 facade.add_directory(**{path_arg: path})
