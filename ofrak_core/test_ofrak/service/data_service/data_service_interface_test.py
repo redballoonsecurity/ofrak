@@ -70,8 +70,12 @@ class TestDataServiceInterface:
         assert Range(0x0, 0x4) == await populated_data_service.get_range_within_other(
             DATA_3, DATA_3
         )
-        assert Range(0xC, 0xC) == await populated_data_service.get_range_within_other(
+        assert Range(0x0, 0x0) == await populated_data_service.get_range_within_other(
             DATA_3, DATA_4
+        )
+
+        assert Range(0x4, 0x8) == await populated_data_service.get_range_within_other(
+            DATA_4, DATA_2
         )
 
         with pytest.raises(ValueError):
