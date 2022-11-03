@@ -90,7 +90,7 @@ class UnpackAndVerifyPattern(ABC):
 
         ## Build an info string about this test case
         info_str = [f"{'item':<16}{'unpacked':<16}{'expected':<16}{'optional':<16}"]
-        for item in unpacked_set | expected_set | optional_set:
+        for item in sorted(unpacked_set | expected_set | optional_set):
             item_fmt = str(_hexlify(item))
             row = (
                 f"{item_fmt:<16}"
