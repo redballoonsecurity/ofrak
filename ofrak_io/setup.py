@@ -32,7 +32,6 @@ setuptools.setup(
     ],
     extras_require={
         "test": [
-            "ofrak",
             "black==22.3.0",
             "fun-coverage~=0.1.0",
             "hypothesis~=6.39.3",

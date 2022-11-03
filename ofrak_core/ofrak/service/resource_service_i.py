@@ -307,6 +307,6 @@ class ResourceServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
 
         :param resource_id: The ID of the resource to delete
 
-        :return all of the models that were deleted
+        :return: all of the models that were deleted
         """
         raise NotImplementedError()
