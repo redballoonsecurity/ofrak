@@ -65,6 +65,7 @@ CODE_REGION_UNPACKER_TEST_CASES = [
             ## Optional cases
             0x4003E0: [],  # .text:_start (loader import)
             0x400390: [],  # .init:_init (loader import)
+            0x4003A8: [],  # .plt:? (unknown import thunk)
             0x4003B8: [],  # .plt:puts (lib import thunk)
             0x4003C8: [],  # .plt:__libc_start_main (lib import thunk)
             0x4004E0: [],  # .text:__libc_csu_fini (handled ambiguously without .text hint)

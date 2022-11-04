@@ -1,5 +1,7 @@
 import asyncio
 import logging
+
+from ofrak.component.unpacker import UnpackerError
 from ofrak_type.architecture import InstructionSetMode
 from ofrak.core.addressable import Addressable
 from ofrak.core.architecture import ProgramAttributes
@@ -108,9 +110,16 @@ class CapstoneInstructionAnalyzer(InstructionAnalyzer):
             parent_start_vaddr + instr_offset_in_parent,
         )
 
-        disassem_result = next(
-            iter(await self._disassembler_service.disassemble(disassemble_request))
-        )
+        try:
+            disassem_result = next(
+                iter(await self._disassembler_service.disassemble(disassemble_request))
+            )
+        except StopIteration:
+            raise UnpackerError(
+                f"Could not disassemble any {program_attrs.isa.name}-"
+                f"{program_attrs.bit_width.name}-{program_attrs.endianness.name} instructions "
+                f"from bytes {instruction_data.hex()}"
+            )
 
         return Instruction(
             disassem_result.address,
