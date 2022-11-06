@@ -579,9 +579,6 @@ def _get_end_from_magic(attributes: FlashAttributes, start_index: int, data: byt
             )
 
         while 0 <= search_offset <= data_len:
-            import pdb
-
-            pdb.set_trace()
             search_offset = data.find(search_key, search_offset, data_len)
             # search_offset += 1
 
