@@ -111,6 +111,42 @@ FLASH_TEST_CASES = [
             checksum_func=(lambda x: md5(x).digest()),
         ),
     ),
+    (
+        os.path.join(test_ofrak.components.ASSETS_DIR, "flash_test_magic.bin"),
+        os.path.join(test_ofrak.components.ASSETS_DIR, "flash_test_magic_verify.bin"),
+        FlashAttributes(
+            header_block_format=[
+                FlashField(FlashFieldType.MAGIC, 7),
+                FlashField(FlashFieldType.DATA, 215),
+                FlashField(FlashFieldType.DELIMITER, 1),
+                FlashField(FlashFieldType.ECC, 32),
+            ],
+            data_block_format=[
+                FlashField(FlashFieldType.DATA, 222),
+                FlashField(FlashFieldType.DELIMITER, 1),
+                FlashField(FlashFieldType.ECC, 32),
+            ],
+            last_data_block_format=[
+                FlashField(FlashFieldType.DATA, 220),
+                FlashField(FlashFieldType.DELIMITER, 1),
+                FlashField(FlashFieldType.ECC, 32),
+                FlashField(FlashFieldType.ALIGNMENT, 0),
+            ],
+            tail_block_format=[
+                FlashField(FlashFieldType.MAGIC, 7),
+                FlashField(FlashFieldType.CHECKSUM, 16),
+                FlashField(FlashFieldType.ECC, 32),
+            ],
+            ecc_attributes=FlashEccAttributes(
+                ecc_class=ReedSolomon(nsym=32, fcr=1),
+                ecc_magic=b"ECC_ME!",
+                head_delimiter=b"*",
+                data_delimiter=b"*",
+                last_data_delimiter=b"$",
+            ),
+            checksum_func=(lambda x: md5(x).digest()),
+        ),
+    ),
 ]
 
 
