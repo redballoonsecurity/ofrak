@@ -65,7 +65,11 @@ class PeOptionalHeaderMagic(Enum):
 @dataclass
 class PeOptionalHeader(ResourceView):
     """
-    PE optional header. Includes NT-specific attributes.
+    Base of PE optional header. Includes NT-specific attributes.
+    This header class is valid for 64 Bit non-Windows PE files,
+    however our pe_file package populates the additional Windows
+    fields so this is for all intents and purposes an abstract class.
+    More Info: https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#optional-header-windows-specific-fields-image-only
 
     Required for image files; object files don't have it.
     """
@@ -78,6 +82,42 @@ class PeOptionalHeader(ResourceView):
     size_of_uninitialized_data: int
     address_of_entry_point: int
     base_of_code: int
+
+
+@dataclass
+class Pe64POptionalHeader(PeOptionalHeader):
+    """
+    64 bit PE optional header with base_of_data field.
+    """
+
+    image_base: int
+    section_alignment: int
+    file_alignment: int
+    major_operating_system_version: int
+    minor_operating_system_version: int
+    major_image_version: int
+    minor_image_version: int
+    major_subsystem_version: int
+    minor_subsystem_version: int
+    size_of_image: int
+    size_of_headers: int
+    checksum: int
+    subsystem: int
+    dll_characteristics: int
+    size_of_stack_reserve: int
+    size_of_stack_commit: int
+    size_of_heap_reserve: int
+    size_of_heap_commit: int
+    loader_flags: int
+    number_of_rva_and_sizes: int
+
+
+@dataclass
+class Pe32OptionalHeader(PeOptionalHeader):
+    """
+    32 bit PE optional header with base of data field.
+    """
+
     base_of_data: int
     image_base: int
     section_alignment: int
