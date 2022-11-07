@@ -127,7 +127,7 @@ FLASH_TEST_CASES = [
                 FlashField(FlashFieldType.ECC, 32),
             ],
             last_data_block_format=[
-                FlashField(FlashFieldType.DATA, 220),
+                FlashField(FlashFieldType.DATA, 222),
                 FlashField(FlashFieldType.DELIMITER, 1),
                 FlashField(FlashFieldType.ECC, 32),
                 FlashField(FlashFieldType.ALIGNMENT, 0),
