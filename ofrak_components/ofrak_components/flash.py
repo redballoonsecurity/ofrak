@@ -314,8 +314,18 @@ class FlashResourceUnpacker(Unpacker[None]):
             magic = flash_attr.ecc_attributes.ecc_magic
             if magic is not None:
                 ecc_magic_offset = data.find(magic)
-                if ecc_magic_offset != -1:
-                    start_index = ecc_magic_offset
+
+                if ecc_magic_offset == -1:
+                    raise UnpackerError("No header magic found")
+
+                search_offset_in_block = flash_attr.get_field_range_in_block(
+                    flash_attr.header_block_format, FlashFieldType.MAGIC
+                )
+
+                if not search_offset_in_block:
+                    raise UnpackerError("Did not find offset for magic in header")
+
+                start_index = ecc_magic_offset - search_offset_in_block.start
 
         # Set fallback, in case the current check for the end of the resource fails
         end_offset = data_len
@@ -371,7 +381,13 @@ class FlashResourceUnpacker(Unpacker[None]):
             )
 
             if tail_magic is not None:
-                end_offset = _get_end_from_magic(flash_attr, start_index, data, data_len)
+                # we'll start looking after the header to make sure we don't
+                # accidentally find the header magic
+                if flash_attr.header_block_format:
+                    tail_start_index = flash_attr.get_block_size(flash_attr.header_block_format)
+                else:
+                    tail_start_index = start_index
+                end_offset = _get_end_from_magic(flash_attr, tail_start_index, data, data_len)
             elif tail_total_size is not None:
                 end_offset = _get_end_from_size(
                     flash_attr, start_index, data, data_len, FlashFieldType.TOTAL_SIZE
@@ -568,32 +584,37 @@ def _get_end_from_magic(attributes: FlashAttributes, start_index: int, data: byt
     search_offset = start_index
     search_field = FlashFieldType.MAGIC
     if (
-        attributes is not None
-        and attributes.tail_block_format is not None
-        and attributes.ecc_attributes is not None
+        attributes is None
+        or attributes.tail_block_format is None
+        or attributes.ecc_attributes is None
     ):
-        search_key = attributes.ecc_attributes.ecc_magic
-        if search_key is None:
-            raise UnpackerError(
-                "Tried to find magic in tail without providing attribute in FlashEccAttributes"
-            )
+        raise UnpackerError("Tried to find magic without all attributes defined")
 
-        while 0 <= search_offset <= data_len:
-            search_offset = data.find(search_key, search_offset, data_len)
-            # search_offset += 1
+    search_key = attributes.ecc_attributes.ecc_magic
+    if search_key is None:
+        raise UnpackerError(
+            "Tried to find magic in tail without providing attribute in FlashEccAttributes"
+        )
 
-            search_offset_in_block = attributes.get_field_range_in_block(
-                attributes.tail_block_format, search_field
+    while 0 <= search_offset <= data_len:
+        search_offset = data.find(search_key, search_offset, data_len)
+        if search_offset == -1:
+            break
+
+        search_offset_in_block = attributes.get_field_range_in_block(
+            attributes.tail_block_format, search_field
+        )
+        if search_offset_in_block is not None:
+            tail_start_offset = search_offset - search_offset_in_block.start
+            tail_read_magic = attributes.get_field_data_in_block(
+                attributes.tail_block_format, search_field, data, tail_start_offset
             )
-            if search_offset_in_block is not None:
-                tail_start_offset = search_offset - search_offset_in_block.start
-                tail_read_magic = attributes.get_field_data_in_block(
-                    attributes.tail_block_format, search_field, data, tail_start_offset
-                )
-                if tail_read_magic == search_key:
-                    tail_block_size = attributes.get_block_size(attributes.tail_block_format)
-                    tail_end_offset = tail_start_offset + tail_block_size
-                    return tail_end_offset
+            if tail_read_magic == search_key:
+                tail_block_size = attributes.get_block_size(attributes.tail_block_format)
+                tail_end_offset = tail_start_offset + tail_block_size
+                return tail_end_offset
+
+        search_offset += 1
     return data_len
 
 
