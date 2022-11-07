@@ -306,4 +306,4 @@ class Pe(Program):
             return None
 
 
-MagicDescriptionIdentifier.register(Pe, lambda s: s.startswith("PE32 "))
+MagicDescriptionIdentifier.register(Pe, lambda s: s.startswith("PE32"))
