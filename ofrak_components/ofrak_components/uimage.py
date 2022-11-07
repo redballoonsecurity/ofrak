@@ -219,6 +219,11 @@ class UImage(GenericBinary):
             ResourceFilter.with_tags(UImageHeader),
         )
 
+    async def get_multi_header(self) -> UImageMultiHeader:
+        return await self.resource.get_only_child_as_view(
+            UImageMultiHeader, ResourceFilter.with_tags(UImageMultiHeader)
+        )
+
     async def get_bodies(self) -> Iterable[UImageBody]:
         return await self.resource.get_children_as_view(
             UImageBody,
@@ -564,9 +569,7 @@ class UImagePacker(Packer[None]):
             image_sizes = []
             for uimage_body in await uimage_view.get_bodies():
                 image_sizes.append(await uimage_body.resource.get_data_length())
-            multi_header = await resource.get_only_child_as_view(
-                UImageMultiHeader, ResourceFilter.with_tags(UImageMultiHeader)
-            )
+            multi_header = await uimage_view.get_multi_header()
             multiheader_modifier_config = UImageMultiHeaderModifierConfig(image_sizes=image_sizes)
             await multi_header.resource.run(UImageMultiHeaderModifier, multiheader_modifier_config)
             repacked_body_data += await multi_header.resource.get_data()

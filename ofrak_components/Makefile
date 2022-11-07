@@ -18,7 +18,7 @@ inspect:
 .PHONY: test-components
 test-components:
 	$(PYTHON) -m pytest ofrak_components_test --cov=ofrak_components --cov-report=term-missing
-	fun-coverage --cov-fail-under=89
+	fun-coverage --cov-fail-under=99
 
 .PHONY: test
 test: inspect test-components
