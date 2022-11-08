@@ -1,22 +1,24 @@
 import os
+import sys
 from binascii import unhexlify
 from dataclasses import dataclass
-from typing import Dict, List, Type
+from typing import Dict, List
 
 import pytest
+
+from ofrak.core import BinaryPatchModifier, BinaryPatchConfig
 from ofrak.core.filesystem import File
 
 import ofrak_capstone
 from ofrak import OFRAKContext
+from ofrak.model.viewable_tag_model import ResourceViewContext
 from ofrak_type.architecture import InstructionSet, InstructionSetMode
-from ofrak.component.unpacker import Unpacker
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.basic_block import BasicBlock
 from ofrak.core.instruction import Instruction
 from ofrak.core.program import Program
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort
-from ofrak_capstone.components import CapstoneBasicBlockUnpacker
 from pytest_ofrak.patterns import TEST_PATTERN_ASSETS_DIR
 from pytest_ofrak.patterns.basic_block_unpacker import (
     BasicBlockUnpackerUnpackAndVerifyPattern,
@@ -98,15 +100,10 @@ class UnpackerTestCase:
     basic_block_data: bytes
     expected_children: List[Instruction]
 
-    async def run_test_case(self, ofrak: OFRAKContext, unpacker: Type[Unpacker]):
-        bb_r = await ofrak.create_root_resource(
-            "test_resource", self.basic_block_data, tags=(Program,)
-        )
-        bb_r.add_view(self.parent_basic_block)
-        bb_r.add_attributes(self.program_attributes)
-        await bb_r.save()
+    async def run_instruction_unpacker_test_case(self, ofrak: OFRAKContext):
+        bb_r = await self._initialize_basic_bloc_resource(ofrak)
 
-        await bb_r.run(unpacker)
+        await bb_r.unpack()
 
         children = list(
             await bb_r.get_children_as_view(
@@ -121,6 +118,29 @@ class UnpackerTestCase:
 
         for expected_child, child in zip(self.expected_children, children):
             assert expected_child == child
+
+    async def run_instruction_analzyer_test_case(self, ofrak: OFRAKContext):
+        bb_r = await self._initialize_basic_bloc_resource(ofrak)
+        await bb_r.unpack()
+        basic_block = await bb_r.view_as(BasicBlock)
+        for instruction in await basic_block.get_instructions():
+            raw_bytes = await instruction.resource.get_data()
+            # Patch ourselves
+            await instruction.resource.run(BinaryPatchModifier, BinaryPatchConfig(0, raw_bytes))
+            # Clear context to get resource view again, triggering InstructionAnalyzer. Without
+            # this step the InstructionAnalyzer does not run.
+            instruction.resource._resource_view_context = ResourceViewContext()
+            reanalyzed_instruction = await instruction.resource.view_as(Instruction)
+            assert instruction == reanalyzed_instruction
+
+    async def _initialize_basic_bloc_resource(self, ofrak) -> Resource:
+        bb_r = await ofrak.create_root_resource(
+            "test_resource", self.basic_block_data, tags=(Program,)
+        )
+        bb_r.add_view(self.parent_basic_block)
+        bb_r.add_attributes(self.program_attributes)
+        await bb_r.save()
+        return bb_r
 
 
 BASIC_BLOCK_TEST_CASES = [
@@ -183,7 +203,12 @@ BASIC_BLOCK_TEST_CASES = [
 
 @pytest.mark.parametrize("test_case", BASIC_BLOCK_TEST_CASES, ids=lambda tc: tc.label)
 async def test_capstone_unpacker(test_case, ofrak_context):
-    await test_case.run_test_case(ofrak_context, CapstoneBasicBlockUnpacker)
+    await test_case.run_instruction_analzyer_test_case(ofrak_context)
+
+
+@pytest.mark.parametrize("test_case", BASIC_BLOCK_TEST_CASES, ids=lambda tc: tc.label)
+async def test_capstone_analyzer(test_case, ofrak_context):
+    await test_case.run_instruction_analzyer_test_case(ofrak_context)
 
 
 class TestCapstoneRegisterUsage(RegisterUsageTestPattern):
@@ -192,8 +217,11 @@ class TestCapstoneRegisterUsage(RegisterUsageTestPattern):
             return True, "capstone fails to give register usage info for PPC instructions"
 
         elif test_case.program_attributes.isa is InstructionSet.X86:
+            mnemonics = {"call"}
+            if sys.platform == "darwin":
+                mnemonics.add("cmp")
             if (
-                "call" != test_case.instruction.mnemonic
+                test_case.instruction.mnemonic not in mnemonics
                 and "rip" not in test_case.instruction.operands
                 and "rip" in test_case.expected_regs_read
             ):
@@ -201,5 +229,4 @@ class TestCapstoneRegisterUsage(RegisterUsageTestPattern):
                     True,
                     "capstone fails to find some implicit rip reads",
                 )
-
         return False, ""

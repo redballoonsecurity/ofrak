@@ -15,7 +15,7 @@ inspect:
 
 .PHONY: test
 test: inspect
-	$(PYTHON) -m pytest --cov=ofrak_capstone --cov-report=term-missing test_ofrak_capstone.py
+	$(PYTHON) -m pytest ofrak_capstone_test --cov=ofrak_capstone --cov-report=term-missing
 	fun-coverage --cov-fail-under=100
 
 .PHONY: dependencies

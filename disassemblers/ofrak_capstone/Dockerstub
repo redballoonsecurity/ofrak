@@ -1,9 +1,0 @@
-# Install Capstone
-RUN cd /tmp && \
-    git clone https://github.com/rbs-forks/capstone.git && \
-    cd capstone && \
-    git checkout 2021.09.01 && \
-    cd /tmp/capstone && \
-    ./install_capstone.sh && \
-    cd /tmp && \
-    rm -r capstone

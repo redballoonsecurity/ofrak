@@ -23,7 +23,7 @@ setuptools.setup(
     version="0.1.1",
     packages=setuptools.find_packages(),
     package_data={"ofrak_capstone": ["py.typed"]},
-    install_requires=["capstone", "ofrak"],
+    install_requires=["capstone==4.0.2", "ofrak"],
     extras_require={
         "test": [
             "fun-coverage~=0.1.0",

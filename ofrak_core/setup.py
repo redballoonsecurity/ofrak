@@ -30,6 +30,7 @@ setuptools.setup(
     install_requires=[
         "beartype~=0.10.2",
         "intervaltree==3.1.0",
+        "keystone-engine==0.9.2",
         "lief==0.12.2",
         "orjson~=3.6.7",
         "pefile==2022.5.30",
@@ -39,7 +40,6 @@ setuptools.setup(
         "typeguard~=2.13.3",
         "xattr==0.9.7",
         "ofrak_patch_maker",
-        "keystone-engine",
         "ofrak_io",
         "ofrak_type",
     ],

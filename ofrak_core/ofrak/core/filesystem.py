@@ -87,23 +87,13 @@ class FilesystemEntry(ResourceView):
         filesystem_stat_attributes = os.stat_result(tuple(stat_attributes))
         await self.set_stat(filesystem_stat_attributes)
 
-    async def set_xattrs(self, xattrs: Dict[str, bytes]):
-        """
-        Set several extended file attributes ("xattrs") values.
-
-        :param xattrs: Dictionary of xattr names (as strings) and values (as bytes) to set
-        """
-        self.xattrs = xattrs
-        if self.resource is None:
-            return
-        all_view_attrs: Dict[
-            Type[ResourceAttributes], ResourceAttributes
-        ] = self.get_attributes_instances()
-        filesystem_attrs = all_view_attrs[FilesystemEntry.attributes_type]
-        self.resource.add_attributes(filesystem_attrs)
-        await self.resource.save()
-
     async def modify_xattr_attribute(self, attribute: str, value: bytes):
+        """
+        Modify the extended file attributes ("xattrs") for the filesystem entry.
+
+        :param attribute:
+        :param value:
+        """
         if self.xattrs is None:
             self.xattrs = dict()
         self.xattrs[attribute] = value
@@ -194,7 +184,6 @@ class Folder(FilesystemEntry):
         is returned
         """
         basename = os.path.basename(path)
-
         # only searching paths with the same base name should reduce the search space by quite a lot
         descendants = await self.resource.get_descendants_as_view(
             FilesystemEntry,
@@ -204,7 +193,8 @@ class Folder(FilesystemEntry):
         )
 
         for d in descendants:
-            if d.get_path() == path and self.resource.get_tags() == d.resource.get_tags():
+            descendant_path = await d.get_path()
+            if descendant_path.split(f"{self.name}/")[-1] == path:
                 return d
         return None
 
@@ -327,7 +317,6 @@ class FilesystemRoot(ResourceView):
                         folder_attributes_stat,
                         folder_attributes_xattr,
                     )
-
             for f in sorted(files):
                 absolute_path = os.path.join(root, f)
                 relative_path = os.path.normpath(os.path.join(os.path.relpath(root, root_path), f))
@@ -488,7 +477,6 @@ class FilesystemRoot(ResourceView):
         :return: the descendant `FilesystemEntry`, if found; otherwise, returns `None`
         """
         basename = os.path.basename(path)
-
         # only searching paths with the same base name should reduce the search space by quite a lot
         descendants = await self.resource.get_descendants_as_view(
             FilesystemEntry,
@@ -678,8 +666,9 @@ async def unpack_with_command(command: List[str]):
         raise UnpackerError(format_called_process_error(error))
 
 
+# Disable formatting so first line of function is seen by pycoverage as having executed.
+# fmt: off
 def format_called_process_error(error: subprocess.CalledProcessError) -> str:
-    return (
-        f"Command '{error.cmd}' returned non-zero exit status {error.returncode}. Stderr: "
-        f"{error.stderr}. Stdout: {error.stdout}."
-    )
+    return f"Command '{error.cmd}' returned non-zero exit status {error.returncode}. Stderr: " \
+             f"{error.stderr}. Stdout: {error.stdout}."
+# fmt: on

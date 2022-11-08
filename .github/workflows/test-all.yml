@@ -142,7 +142,7 @@ jobs:
                 && make test"
 
   ofrak-angr:
-    name: Test OFRAK angr components
+    name: Test OFRAK angr and capstone components
     runs-on: ubuntu-latest
     needs: build-base-image
     steps:
@@ -183,7 +183,7 @@ jobs:
             --entrypoint bash \
             --volume "$(pwd)":/ofrak \
             redballoonsecurity/ofrak/angr:latest \
-            -c "make -C /ofrak_angr test"
+            -c "make -C /ofrak_angr test && make -C /ofrak_capstone test"
 
   ofrak-tutorial:
     name: Test OFRAK tutorial notebooks
