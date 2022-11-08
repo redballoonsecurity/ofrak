@@ -85,9 +85,9 @@ class PeOptionalHeader(ResourceView):
 
 
 @dataclass
-class Pe64POptionalHeader(PeOptionalHeader):
-    """
-    64 bit PE optional header with base_of_data field.
+class PeWinOptionalHeader(PeOptionalHeader):
+    """PE Optional Header with all fields for Windows.
+    These fields are not necessary, yet will be parsed by the pefile package regardless.
     """
 
     image_base: int
@@ -113,32 +113,19 @@ class Pe64POptionalHeader(PeOptionalHeader):
 
 
 @dataclass
-class Pe32OptionalHeader(PeOptionalHeader):
+class Pe64POptionalHeader(PeWinOptionalHeader):
     """
-    32 bit PE optional header with base of data field.
+    64 bit PE optional header without the base_of_data field.
+    """
+
+
+@dataclass
+class Pe32OptionalHeader(PeWinOptionalHeader):
+    """
+    32 bit PE optional header with the base_of_data field.
     """
 
     base_of_data: int
-    image_base: int
-    section_alignment: int
-    file_alignment: int
-    major_operating_system_version: int
-    minor_operating_system_version: int
-    major_image_version: int
-    minor_image_version: int
-    major_subsystem_version: int
-    minor_subsystem_version: int
-    size_of_image: int
-    size_of_headers: int
-    checksum: int
-    subsystem: int
-    dll_characteristics: int
-    size_of_stack_reserve: int
-    size_of_stack_commit: int
-    size_of_heap_reserve: int
-    size_of_heap_commit: int
-    loader_flags: int
-    number_of_rva_and_sizes: int
 
 
 @dataclass
