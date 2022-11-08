@@ -318,14 +318,14 @@ class FlashResourceUnpacker(Unpacker[None]):
                 if ecc_magic_offset == -1:
                     raise UnpackerError("No header magic found")
 
-                search_offset_in_block = flash_attr.get_field_range_in_block(
+                magic_range_in_block = flash_attr.get_field_range_in_block(
                     flash_attr.header_block_format, FlashFieldType.MAGIC
                 )
 
-                if not search_offset_in_block:
+                if not magic_range_in_block:
                     raise UnpackerError("Did not find offset for magic in header")
 
-                start_index = ecc_magic_offset - search_offset_in_block.start
+                start_index = ecc_magic_offset - magic_range_in_block.start
 
         # Set fallback, in case the current check for the end of the resource fails
         end_offset = data_len
@@ -601,11 +601,11 @@ def _get_end_from_magic(attributes: FlashAttributes, start_index: int, data: byt
         if search_offset == -1:
             break
 
-        search_offset_in_block = attributes.get_field_range_in_block(
+        field_range_in_block = attributes.get_field_range_in_block(
             attributes.tail_block_format, search_field
         )
-        if search_offset_in_block is not None:
-            tail_start_offset = search_offset - search_offset_in_block.start
+        if field_range_in_block is not None:
+            tail_start_offset = search_offset - field_range_in_block.start
             tail_read_magic = attributes.get_field_data_in_block(
                 attributes.tail_block_format, search_field, data, tail_start_offset
             )
