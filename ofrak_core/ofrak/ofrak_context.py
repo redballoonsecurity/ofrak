@@ -5,24 +5,22 @@ import time
 from types import ModuleType
 from typing import Type, Any, Awaitable, Callable, List, Iterable
 
-from ofrak.resource import Resource, ResourceFactory
-
-from ofrak.model.tag_model import ResourceTag
+from synthol.injector import DependencyInjector
 
 from ofrak.component.interface import ComponentInterface
 from ofrak.core.binary import GenericBinary
 from ofrak.core.filesystem import File
 from ofrak.model.component_model import ClientComponentContext
-from ofrak.model.resource_model import ClientResourceContext, ResourceModel
+from ofrak.model.resource_model import ResourceModel, ClientResourceContextFactory
+from ofrak.model.tag_model import ResourceTag
 from ofrak.model.viewable_tag_model import ResourceViewContext
+from ofrak.resource import Resource, ResourceFactory
 from ofrak.service.abstract_ofrak_service import AbstractOfrakService
 from ofrak.service.component_locator_i import ComponentLocatorInterface
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.id_service_i import IDServiceInterface
 from ofrak.service.job_service_i import JobServiceInterface
 from ofrak.service.resource_service_i import ResourceServiceInterface
-from synthol.injector import DependencyInjector
-
 
 LOGGER = logging.getLogger("ofrak")
 
@@ -47,6 +45,7 @@ class OFRAKContext:
         self.resource_service = resource_service
         self.job_service = job_service
         self._all_ofrak_services = all_ofrak_services
+        self._resource_context_factory = ClientResourceContextFactory()
 
     async def create_root_resource(
         self, name: str, data: bytes, tags: Iterable[ResourceTag] = (GenericBinary,)
@@ -63,7 +62,7 @@ class OFRAKContext:
         root_resource = await self.resource_factory.create(
             job_id,
             resource_model.id,
-            ClientResourceContext(),
+            self._resource_context_factory.create(),
             ResourceViewContext(),
             ClientComponentContext(),
         )
