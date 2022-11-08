@@ -10,5 +10,4 @@ class AngrAnalysis(ResourceAttributes):
 
 
 class AngrAnalysisResource(ResourceView):
-    async def get_angr_analysis(self) -> AngrAnalysis:
-        return await self.resource.analyze(AngrAnalysis)
+    pass
