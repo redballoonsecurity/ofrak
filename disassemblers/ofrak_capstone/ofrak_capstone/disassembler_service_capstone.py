@@ -1,5 +1,6 @@
 import logging
 import re
+from dataclasses import dataclass
 from typing import Dict, Tuple, Optional, Iterable
 
 from capstone import (
@@ -36,14 +37,15 @@ from ofrak.service.disassembler.disassembler_service_i import (
 from ofrak_type.bit_width import BitWidth
 from ofrak_type.endianness import Endianness
 
-CapstoneDisassemblerType = Tuple[
-    InstructionSet,
-    Optional[SubInstructionSet],
-    BitWidth,
-    Endianness,
-    Optional[ProcessorType],
-    InstructionSetMode,
-]
+
+@dataclass(frozen=True)
+class CapstoneDisassemblerType:
+    isa: InstructionSet
+    sub_isa: Optional[SubInstructionSet]
+    bit_width: BitWidth
+    endianness: Endianness
+    processor: Optional[ProcessorType]
+    mode: InstructionSetMode
 
 
 LOGGER = logging.getLogger(__file__)
@@ -114,7 +116,8 @@ class CapstoneDisassemblerService(DisassemblerServiceInterface):
 
     @staticmethod
     def _get_cs_arch_flag(cs_disam: CapstoneDisassemblerType):
-        isa, _, bit_width, _, _, _ = cs_disam
+        isa = cs_disam.isa
+        bit_width = cs_disam.bit_width
 
         if isa is InstructionSet.ARM:
             return CS_ARCH_ARM64 if bit_width is BitWidth.BIT_64 else CS_ARCH_ARM
@@ -132,7 +135,11 @@ class CapstoneDisassemblerService(DisassemblerServiceInterface):
 
     @staticmethod
     def _get_cs_mode_flag(cs_disam: CapstoneDisassemblerType):
-        isa, _, bit_width, endianness, processor, mode = cs_disam
+        isa = cs_disam.isa
+        bit_width = cs_disam.bit_width
+        endianness = cs_disam.endianness
+        processor = cs_disam.processor
+        mode = cs_disam.mode
 
         if endianness is Endianness.BIG_ENDIAN:
             cs_endian_flag = CS_MODE_BIG_ENDIAN
@@ -197,7 +204,7 @@ def _asm_fixups(base_mnemonic: str, base_operands: str, isa: InstructionSet) -> 
 
 
 def _get_cs_disam_type(request: DisassemblerServiceRequest) -> CapstoneDisassemblerType:
-    return (
+    return CapstoneDisassemblerType(
         request.isa,
         request.sub_isa,
         request.bit_width,
