@@ -153,7 +153,7 @@ class TestDataServiceInterface:
     async def test_patches_overlapping_mapped_children(
         self, populated_data_service: DataServiceInterface
     ):
-        await populated_data_service.apply_patches(
+        results = await populated_data_service.apply_patches(
             [
                 # Resize entirety of a mapped child
                 DataPatch(Range(0x0, 0x8), DATA_1, b"\xaa" * 0xA)
@@ -161,8 +161,10 @@ class TestDataServiceInterface:
         )
         patched_data = await populated_data_service.get_data(DATA_1)
         assert patched_data == b"\xaa" * 0xA
+        modified_ranges = {res.data_id: res.patches for res in results}
+        assert modified_ranges == {DATA_0: [Range(0x0, 0x8)], DATA_1: [Range(0x0, 0x8)]}
 
-        await populated_data_service.apply_patches(
+        results = await populated_data_service.apply_patches(
             [
                 # Patch region overlapping with DATA_3 end and DATA_4 start, no resize
                 DataPatch(Range(0x2, 0x6), DATA_2, b"\x01" * 4),
@@ -170,7 +172,15 @@ class TestDataServiceInterface:
         )
         patched_data = await populated_data_service.get_data(DATA_2)
         assert patched_data == b"\x00\x00\x01\x01\x01\x01\x00\x00"
-        await populated_data_service.apply_patches(
+        modified_ranges = {res.data_id: res.patches for res in results}
+        assert modified_ranges == {
+            DATA_0: [Range(0xC, 0x10)],
+            DATA_2: [Range(0x2, 0x6)],
+            DATA_3: [Range(0x2, 0x4)],
+            DATA_4: [Range(0x0, 0x2)],
+        }
+
+        results = await populated_data_service.apply_patches(
             [
                 # Insert some on boundary between DATA_3 and DATA_4
                 DataPatch(Range(0x4, 0x4), DATA_2, b"\x02" * 4),
@@ -178,14 +188,18 @@ class TestDataServiceInterface:
         )
         patched_data = await populated_data_service.get_data(DATA_2)
         assert patched_data == b"\x00\x00\x01\x01\x02\x02\x02\x02\x01\x01\x00\x00"
+        modified_ranges = {res.data_id: res.patches for res in results}
+        assert modified_ranges == {DATA_0: [Range(0xE, 0xE)], DATA_2: [Range(0x4, 0x4)]}
 
     async def test_patches_trailing_children(self, populated_data_service: DataServiceInterface):
-        await populated_data_service.apply_patches(
+        results = await populated_data_service.apply_patches(
             [
                 # Insert some data within DATA_0
                 DataPatch(Range(0x00, 0x00), DATA_0, b"\x01" * 4),
             ]
         )
+        modified_ranges = {res.data_id: res.patches for res in results}
+        assert modified_ranges == {DATA_0: [Range(0x0, 0x0)]}
 
         data_1 = await populated_data_service.get_data(DATA_1)
         assert data_1 == b"\x00" * 0x8

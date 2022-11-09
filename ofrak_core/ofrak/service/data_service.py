@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, Iterable, List, Optional, Set, Tuple
+from typing import Dict, Iterable, List, Optional, Set, Tuple, Union, cast
 
 from dataclasses import dataclass
 from sortedcontainers import SortedList
@@ -210,22 +210,23 @@ class DataService(DataServiceInterface):
                 )
                 resize_tracker.add_new_resized_range(patch_range_in_patched_root, size_diff)
 
+        affected_ranges = Range.merge_ranges(raw_patch_ranges_in_root)
+
         results = defaultdict(list)
-        for affected_range in Range.merge_ranges(raw_patch_ranges_in_root):
-            for affected_model in root.get_children_intersecting_range(affected_range):
-                results[affected_model.id].append(
-                    affected_range.intersect(affected_model.range).translate(
-                        -affected_model.range.start
-                    )
-                )
+
+        for affected_id, affected_range in root.get_children_affected_by_ranges(affected_ranges):
+            results[affected_id].append(affected_range)
+
+        for affected_range in affected_ranges:
             results[root_data_id].append(affected_range)
 
+        new_root_data = bytearray(root.data)
         # Apply finalized patches to data and data models
         for patch_range, data, size_diff in finalized_ordered_patches:
-            new_data = root.data[: patch_range.start] + data + root.data[patch_range.end :]
+            new_root_data[patch_range.start : patch_range.end] = data
             if size_diff != 0:
                 root.resize_range(patch_range, size_diff)
-            root.data = new_data
+        root.data = bytes(new_root_data)
 
         return [
             DataPatchesResult(data_id, results_for_id)
@@ -255,6 +256,10 @@ class _DataRoot:
         self._waypoints: Dict[int, _Waypoint] = dict()
         self._waypoint_offsets: SortedList[int] = SortedList()
         self._children: Dict[DataId, DataModel] = dict()
+
+    def waypoints(self) -> Iterable[_Waypoint]:
+        for waypoint_offset in self._waypoint_offsets:
+            yield self._waypoints[waypoint_offset]
 
     def get_children(self) -> Iterable[DataModel]:
         return self._children.values()
@@ -380,6 +385,75 @@ class _DataRoot:
                 intersecting_model_ids.update(waypoint.models_starting)
 
         return [self._children[data_id] for data_id in intersecting_model_ids]
+
+    def get_children_affected_by_ranges(
+        self, patch_ranges: List[Range]
+    ) -> Iterable[Tuple[DataId, Range]]:
+        # Build a flat map of various types of points of interest, to be scanned in order of offset
+        points_of_interest: List[Tuple[int, int, Union[Range, Set[DataId]]]] = []
+
+        # int values represent the order that different types of points should be processed in
+        # (if they all had the same offset)
+        POINT_CHILDREN_ENDS = -2  # End of one or more children
+        POINT_RANGE_END = -1  # End of a patched range
+        POINT_ZERO_LENGTH_RANGE = 0  # Special case of patched range: it
+        POINT_RANGE_START = 1  # Start of a patched range
+        POINT_CHILDREN_STARTS = 2  # Start of one or more children
+
+        for r in patch_ranges:
+            if r.length() == 0:
+                points_of_interest.append((r.start, POINT_ZERO_LENGTH_RANGE, r))
+            else:
+                points_of_interest.append((r.start, POINT_RANGE_START, r))
+                points_of_interest.append((r.end, POINT_RANGE_END, r))
+
+        for waypoint in self.waypoints():
+            # Make sure no 0-length children (start and end at same waypoint) are counted
+            # These are never affected by a patch, UNLESS the patch is specifically to them
+            # That case is handled outside this function
+            # (the data ID the patch is "for" is always affected, so no need to check for it here)
+            points_of_interest.append(
+                (
+                    waypoint.offset,
+                    POINT_CHILDREN_ENDS,
+                    waypoint.models_ending.difference(waypoint.models_starting),
+                )
+            )
+            points_of_interest.append(
+                (
+                    waypoint.offset,
+                    POINT_CHILDREN_STARTS,
+                    waypoint.models_starting.difference(waypoint.models_ending),
+                )
+            )
+
+        points_of_interest.sort()
+
+        curr_overlapping_children = set()
+        curr_range: Optional[Range] = None
+        children_overlapping_ranges: Dict[Range, Set[DataId]] = defaultdict(set)
+        for _, point_type, point in points_of_interest:
+            if point_type is POINT_CHILDREN_STARTS:
+                children_starting: Set[bytes] = cast(Set[bytes], point)
+                curr_overlapping_children.update(children_starting)
+            elif point_type is POINT_CHILDREN_ENDS:
+                children_ending: Set[bytes] = cast(Set[bytes], point)
+                curr_overlapping_children.difference_update(children_ending)
+            elif point_type is POINT_RANGE_START:
+                curr_range = cast(Range, point)
+            elif point_type is POINT_RANGE_END:
+                curr_range = None
+            elif point_type is POINT_ZERO_LENGTH_RANGE:
+                zero_length_range = cast(Range, point)
+                children_overlapping_ranges[zero_length_range].update(curr_overlapping_children)
+
+            if curr_range:
+                children_overlapping_ranges[curr_range].update(curr_overlapping_children)
+
+        for patched_range, overlapping_data_ids in children_overlapping_ranges.items():
+            for data_id in overlapping_data_ids:
+                model = self._children[data_id]
+                yield data_id, patched_range.intersect(model.range).translate(-model.range.start)
 
     @property
     def length(self) -> int:
