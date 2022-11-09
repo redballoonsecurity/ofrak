@@ -312,30 +312,6 @@ class _DataRoot:
             del self._waypoints[ending_waypoint.offset]
         del self._children[model.id]
 
-    def get_children_intersecting_range(self, r: Range) -> List[DataModel]:
-        model_ids_ending_after_range_start = set()
-        for offset in self._waypoint_offsets.irange(minimum=r.start, inclusive=(False, True)):
-            model_ids_ending_after_range_start.update(self._waypoints[offset].models_ending)
-            for x in self._waypoints[offset].models_ending:
-                assert self._children[x].range.end == offset
-
-        model_ids_starting_before_range_end = set()
-        for offset in self._waypoint_offsets.irange(maximum=r.end, inclusive=(True, False)):
-            model_ids_starting_before_range_end.update(self._waypoints[offset].models_starting)
-            for x in self._waypoints[offset].models_starting:
-                assert self._children[x].range.start == offset
-
-        intersecting_model_ids = model_ids_ending_after_range_start.intersection(
-            model_ids_starting_before_range_end
-        )
-
-        intersecting_models = [self._children[data_id] for data_id in intersecting_model_ids]
-
-        for m in intersecting_models:
-            assert m.range.intersect(r)
-
-        return intersecting_models
-
     def resize_range(self, resized_range: Range, size_diff: int):
 
         waypoints_to_shift = list(
