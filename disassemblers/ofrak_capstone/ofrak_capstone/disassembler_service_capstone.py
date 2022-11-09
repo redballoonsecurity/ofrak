@@ -89,7 +89,7 @@ class CapstoneDisassemblerService(DisassemblerServiceInterface):
             if request.isa is InstructionSet.X86 and cs_instruction.mnemonic == "cmp":
                 raise DisassemblerRegisterUsageSupportError(
                     f"Capstone's support for x86 'cmp' instructions is flaky and platform "
-                    f"dependant! For consistency, a hard error is always raised."
+                    f"dependent! For consistency, a hard error is always raised."
                 )
             try:
                 (regs_read_indexes, regs_write_indexes) = cs_instruction.regs_access()
