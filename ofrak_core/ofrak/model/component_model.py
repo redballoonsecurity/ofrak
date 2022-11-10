@@ -1,9 +1,11 @@
+import asyncio
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Set, Type, Dict, List, TypeVar, Optional
 
 from ofrak.model.data_model import DataPatch
 from ofrak.model.resource_model import ResourceAttributes
+from ofrak_type.error import ComponentSubprocessError, ComponentMissingDependencyError
 from ofrak_type.range import Range
 
 CLIENT_COMPONENT_ID = b"__client_context__"
@@ -15,6 +17,62 @@ class ComponentConfig:
     """
     Base class for all components' configs. All subclasses should also be dataclasses.
     """
+
+
+@dataclass
+class ComponentExternalTool:
+    """
+    An external tool or utility (like `zip` or `squashfs`) a component depends on
+    """
+
+    tool: str
+    install_hints: str = None  # e.g. version
+    install_check_arg: str = "--help"
+
+    async def run_tool(self, *args: str) -> str:
+        """
+        Run an external CLI tool this component depends on, as a subprocess.
+
+        :param args: arguments to give the tool
+
+        :return: standard output if the subprocess completes successfully.
+
+        :raises ComponentMissingDependencyError: If the OS indicates it cannot find the tool.
+        :raises ComponentSubprocessError: If the subprocess fails (any return other than 0).
+        """
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                self.tool, *args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+            )
+        except FileNotFoundError:
+            raise ComponentMissingDependencyError(self.tool, self.install_hints)
+
+        proc_stdout, proc_stderr = await proc.communicate()
+        if proc.returncode == 0:
+            return proc_stdout.decode("ascii")
+        else:
+            raise ComponentSubprocessError(
+                self.tool,
+                args,
+                proc.returncode,
+                proc_stdout.decode("ascii"),
+                proc_stderr.decode("ascii"),
+            )
+
+    async def is_tool_installed(self) -> bool:
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                self.tool,
+                self.install_check_arg,
+            )
+        except FileNotFoundError:
+            return False
+
+        retcode = await proc.wait()
+        if retcode == 0:
+            return True
+        else:
+            return False
 
 
 CC = TypeVar("CC", bound=Optional[ComponentConfig])

@@ -11,10 +11,17 @@ from typing import (
     Callable,
     Any,
     cast,
+    Tuple,
 )
 
 from ofrak.component.interface import ComponentInterface
-from ofrak.model.component_model import ComponentContext, CC, ComponentRunResult, ComponentConfig
+from ofrak.model.component_model import (
+    ComponentContext,
+    CC,
+    ComponentRunResult,
+    ComponentConfig,
+    ComponentExternalTool,
+)
 from ofrak.model.data_model import DataPatchesResult
 from ofrak.model.job_model import (
     JobRunContext,
@@ -218,4 +225,12 @@ class AbstractComponent(ComponentInterface[CC], ABC):
     def _log_component_has_run_warning(self, resource: Resource):
         LOGGER.warning(
             f"{self.get_id().decode()} has already been run on resource {resource.get_id().hex()}"
+        )
+
+    @classmethod
+    def get_external_dependencies(cls) -> Tuple[ComponentExternalTool, ...]:
+        return tuple(
+            class_attr
+            for class_attr in cls.__dict__.values()
+            if isinstance(class_attr, ComponentExternalTool)
         )
