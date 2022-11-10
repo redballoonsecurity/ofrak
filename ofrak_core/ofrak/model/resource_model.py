@@ -417,14 +417,6 @@ class ResourceModel:
             tags.update(_tag.tag_classes())
         return tags
 
-    def get_specific_tags(self, tag: RT) -> List[RT]:
-        tags: List[RT] = []
-        for _tag in self.tags:
-            if issubclass(_tag, tag) and _tag is not tag:
-                tags.append(cast(RT, _tag))
-
-        return tags  # already guaranteed to be sorted
-
     def get_most_specific_tags(self) -> Iterable[ResourceTag]:
         tiered_tags = ResourceTag.sort_tags_into_tiers(self.tags)
         if len(tiered_tags) == 0:
@@ -860,12 +852,6 @@ class MutableResourceModel(ResourceModel):
         self.diff = ResourceModelDiff(self.id)
         return diff
 
-    def to_diff(self):
-        return self.diff
-
-    def to_model(self):
-        return super().clone()
-
 
 class ResourceContext(ABC):
     """
@@ -936,15 +922,3 @@ def _validate_indexed_type(getter_func: Callable[[Any], X]):
             f"Type of index {getter_func.__name__} is {index_type}, which is not "
             f"one of {_INDEXABLE_TYPES.values()}; cannot index by this value!"
         )
-
-
-# MyPy does not yet support cyclic types (https://stackoverflow.com/a/58383852), so the input type
-# annotation must be more general than the actual type is
-def _get_leaves(tree: Dict) -> Iterable[ResourceTag]:
-    result = []
-    for cls, children in tree.items():
-        if children is None:
-            result.append(cls)
-        else:
-            result.extend(_get_leaves(children))
-    return result
