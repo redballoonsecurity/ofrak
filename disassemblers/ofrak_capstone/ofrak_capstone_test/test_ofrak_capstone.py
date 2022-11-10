@@ -1,5 +1,4 @@
 import os
-import sys
 from binascii import unhexlify
 from dataclasses import dataclass
 from typing import Dict, List
@@ -218,8 +217,6 @@ class TestCapstoneRegisterUsage(RegisterUsageTestPattern):
 
         elif test_case.program_attributes.isa is InstructionSet.X86:
             mnemonics = {"call"}
-            if sys.platform == "darwin":
-                mnemonics.add("cmp")
             if (
                 test_case.instruction.mnemonic not in mnemonics
                 and "rip" not in test_case.instruction.operands
