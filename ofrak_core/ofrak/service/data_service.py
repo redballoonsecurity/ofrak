@@ -409,7 +409,7 @@ class _DataRoot:
 
         # Scan through the points of interest, tracking the current data models as we enter/leave
         # each one, as well as the current patch range.
-        curr_overlapping_children = set()
+        curr_overlapping_children: Set[DataId] = set()
         curr_range: Optional[Range] = None
         children_overlapping_ranges: Dict[Range, Set[DataId]] = defaultdict(set)
         for _, point_type, point in points_of_interest:
