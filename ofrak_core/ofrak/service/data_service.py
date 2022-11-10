@@ -403,26 +403,34 @@ class _DataRoot:
                 )
             )
 
+        # the points representing data model and patch start/ends will be sorted by data offset
+        # Ties (points w/ same offset) will be broken by the point type, enumerated above
         points_of_interest.sort()
 
+        # Scan through the points of interest, tracking the current data models as we enter/leave
+        # each one, as well as the current patch range.
         curr_overlapping_children = set()
         curr_range: Optional[Range] = None
         children_overlapping_ranges: Dict[Range, Set[DataId]] = defaultdict(set)
         for _, point_type, point in points_of_interest:
-            if point_type is POINT_CHILDREN_STARTS:
-                children_starting: Set[bytes] = cast(Set[bytes], point)
-                curr_overlapping_children.update(children_starting)
-            elif point_type is POINT_CHILDREN_ENDS:
+            # These cases are written out in the same order they would be executed for points with
+            # the same offset.
+            if point_type is POINT_CHILDREN_ENDS:
                 children_ending: Set[bytes] = cast(Set[bytes], point)
                 curr_overlapping_children.difference_update(children_ending)
-            elif point_type is POINT_RANGE_START:
-                curr_range = cast(Range, point)
             elif point_type is POINT_RANGE_END:
                 curr_range = None
             elif point_type is POINT_ZERO_LENGTH_RANGE:
                 zero_length_range = cast(Range, point)
                 children_overlapping_ranges[zero_length_range].update(curr_overlapping_children)
+            elif point_type is POINT_RANGE_START:
+                curr_range = cast(Range, point)
+            elif point_type is POINT_CHILDREN_STARTS:
+                children_starting: Set[bytes] = cast(Set[bytes], point)
+                curr_overlapping_children.update(children_starting)
 
+            # At each point, if the point is in one of the patch ranges, associate any data models
+            # overlapping with that point with the patch range.
             if curr_range:
                 children_overlapping_ranges[curr_range].update(curr_overlapping_children)
 
