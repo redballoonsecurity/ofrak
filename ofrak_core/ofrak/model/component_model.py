@@ -1,7 +1,8 @@
 import asyncio
+import dataclasses
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Set, Type, Dict, List, TypeVar, Optional
+from typing import Set, Type, Dict, List, TypeVar, Optional, ClassVar, Tuple
 
 from ofrak.model.data_model import DataPatch
 from ofrak.model.resource_model import ResourceAttributes
@@ -22,12 +23,51 @@ class ComponentConfig:
 @dataclass
 class ComponentExternalTool:
     """
-    An external tool or utility (like `zip` or `squashfs`) a component depends on
+    An external tool or utility (like `zip` or `squashfs`) a component depends on. Includes some
+    basic information on installation, either via package manager or bespoke process.
+
+    There is a set of required package managers: ``ComponentExternalTool.REQUIRED_PKG_MANAGERS``. By
+    default, OFRAK assumes that a tool can be installed with `<pkg_manager> install <tool>`. If this
+    is not the case but the tool can still be installed via package manager (for example, the
+    package containing the tool does not have the same name as the tool itself), custom packages for
+    each manager can be provided. If the tool cannot be installed via one or more package manager
+    at all, the package for that manager should be provided as None, and the `install_hint` must be
+    provided so that a user has some guidance on how to install the tool.
+
+    :ivar tool: Name of the command-line tool that will be run
+    :ivar install_packages: Dictionary of package names to install `tool` for different package
+    managers, including all of ``ComponentExternalTool.REQUIRED_PKG_MANAGERS``; by default, it is
+    assumed that a tool can be installed via a package of the same name, so this argument is only
+    necessary if that is NOT the case for one or more package managers.
+    :ivar install_hints: String to provide guidance for a user on how to install a tool; only
+    required if it is not possible to install via the supported package managers.
+    :ivar install_check_arg: Argument to pass to the tool to check if it can be found and run on
+    the host; defaults to `--help` so that by default, `tool`'s install is checked with:
+        `<tool> --help`
     """
 
     tool: str
+    install_packages: Dict[str, Optional[str]] = dataclasses.field(default_factory=dict)
     install_hints: str = None  # e.g. version
     install_check_arg: str = "--help"
+
+    REQUIRED_PKG_MANAGERS: ClassVar[Tuple[str, ...]] = ("brew", "apt")
+
+    def __post_init__(self):
+        if len(self.install_packages) == 0:
+            self.install_packages = {pkg_man: self.tool for pkg_man in self.REQUIRED_PKG_MANAGERS}
+        elif any(pkg_man not in self.install_packages for pkg_man in self.REQUIRED_PKG_MANAGERS):
+            raise ValueError(
+                f"Must include [{', '.join(self.REQUIRED_PKG_MANAGERS)}] packages for {self.tool} "
+                f"(can be None for one or more of these if the tool cannot be installed via "
+                f"call these package managers, as long as an install_hint is provided as well)"
+            )
+        elif None in self.install_packages.values() and self.install_hints is None:
+            raise ValueError(
+                f"If {self.tool} is not installable via one of "
+                f"[{', '.join(self.REQUIRED_PKG_MANAGERS)}], an `install_hint` must be provided "
+                f"for users."
+            )
 
     async def run_tool(self, *args: str) -> str:
         """
@@ -45,7 +85,9 @@ class ComponentExternalTool:
                 self.tool, *args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
             )
         except FileNotFoundError:
-            raise ComponentMissingDependencyError(self.tool, self.install_hints)
+            raise ComponentMissingDependencyError(
+                self.tool, self.install_packages, self.install_hints
+            )
 
         proc_stdout, proc_stderr = await proc.communicate()
         if proc.returncode == 0:
@@ -60,6 +102,13 @@ class ComponentExternalTool:
             )
 
     async def is_tool_installed(self) -> bool:
+        """
+        Check if a tool is installed by running it with the `install_check_arg`. This defaults to
+        `--help`, so by default, this method runs `<tool> --help`.
+
+        :return: True if the `tool` command returned zero, False if `tool` could not be found or
+        returned non-zero exit code.
+        """
         try:
             proc = await asyncio.create_subprocess_exec(
                 self.tool,

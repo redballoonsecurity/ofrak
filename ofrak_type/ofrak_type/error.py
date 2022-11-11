@@ -1,4 +1,4 @@
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Dict
 
 
 class NotFoundError(RuntimeError):
@@ -21,13 +21,21 @@ class ComponentMissingDependencyError(RuntimeError):
     def __init__(
         self,
         dependency_name: str,
+        install_packages: Dict[str, str],
         install_hint: Optional[str] = None,
     ):
         errstring = (
             f"Missing an external tool needed for a component! {dependency_name} is missing."
         )
-        if install_hint:
-            errstring += "Installation hint: " + install_hint
+        if install_packages:
+            install_str = "\n\t".join(
+                f"{pkg_manager} installation: {pkg_manager} install {pkg}"
+                for pkg_manager, pkg in install_packages.items()
+            )
+        else:
+            install_str = f"Not installable via package manager. See the following: {install_hint}"
+
+        errstring += "\n\t" + install_str
 
         super().__init__(errstring)
 
