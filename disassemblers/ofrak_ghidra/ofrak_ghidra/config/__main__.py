@@ -8,18 +8,18 @@ from ofrak_ghidra.config.ofrak_ghidra_config import (
 )
 
 
-def _dump_config(args):
+def _dump_config(args):  # pragma: no cover
     print(load_ghidra_config().to_yaml())
 
 
-def _import_config(args):
+def _import_config(args):  # pragma: no cover
     with open(args.config_path) as f:
         raw_new_config = f.read()
         new_config = OfrakGhidraConfig.from_yaml(raw_new_config)
         save_ghidra_config(new_config)
 
 
-def _restore_config(args):
+def _restore_config(args):  # pragma: no cover
     restore_default_ghidra_config()
 
 
