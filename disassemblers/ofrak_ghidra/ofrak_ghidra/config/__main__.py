@@ -42,7 +42,7 @@ restore_parser = command_parser.add_parser(
 restore_parser.set_defaults(func=_restore_config)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     args = parser.parse_args()
     if hasattr(args, "func"):
         args.func(args)
