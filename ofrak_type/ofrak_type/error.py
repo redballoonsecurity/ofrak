@@ -21,7 +21,7 @@ class ComponentMissingDependencyError(RuntimeError):
     def __init__(
         self,
         dependency_name: str,
-        install_packages: Dict[str, str],
+        install_packages: Dict[str, Optional[str]],
         install_hint: Optional[str] = None,
     ):
         errstring = (
@@ -29,9 +29,12 @@ class ComponentMissingDependencyError(RuntimeError):
         )
         if install_packages:
             install_str = "\n\t".join(
-                f"{pkg_manager} installation: {pkg_manager} install {pkg}"
+                f"{pkg_manager} installation: "
+                + ("{pkg_manager} install {pkg}" if pkg else "unavailable")
                 for pkg_manager, pkg in install_packages.items()
             )
+            if not all(install_packages.values()):
+                install_str += f"\n\tNot installable via all package managers, see: {install_hint}"
         else:
             install_str = f"Not installable via package manager. See the following: {install_hint}"
 

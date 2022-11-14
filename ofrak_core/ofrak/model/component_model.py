@@ -2,7 +2,7 @@ import asyncio
 import dataclasses
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Set, Type, Dict, List, TypeVar, Optional, ClassVar, Tuple
+from typing import Set, Type, Dict, List, TypeVar, Optional, ClassVar, Tuple, cast
 
 from ofrak.model.data_model import DataPatch
 from ofrak.model.resource_model import ResourceAttributes
@@ -48,7 +48,7 @@ class ComponentExternalTool:
 
     tool: str
     install_packages: Dict[str, Optional[str]] = dataclasses.field(default_factory=dict)
-    install_hints: str = None  # e.g. version
+    install_hints: Optional[str] = None  # e.g. version
     install_check_arg: str = "--help"
 
     REQUIRED_PKG_MANAGERS: ClassVar[Tuple[str, ...]] = ("brew", "apt")
@@ -114,7 +114,7 @@ class ComponentExternalTool:
             raise ComponentSubprocessError(
                 self.tool,
                 args,
-                proc.returncode,
+                cast(int, proc.returncode),
                 decoded_proc_stdout,
                 proc_stderr.decode("ascii"),
             )
