@@ -56,6 +56,9 @@ class AbstractComponent(ComponentInterface[CC], ABC):
     def get_id(cls) -> bytes:
         return cls.id if cls.id is not None else cls.__name__.encode()
 
+    # By default, assume component has no external dependencies
+    external_dependencies: Tuple[ComponentExternalTool, ...] = ()
+
     async def run(
         self,
         job_id: bytes,
@@ -225,12 +228,4 @@ class AbstractComponent(ComponentInterface[CC], ABC):
     def _log_component_has_run_warning(self, resource: Resource):
         LOGGER.warning(
             f"{self.get_id().decode()} has already been run on resource {resource.get_id().hex()}"
-        )
-
-    @classmethod
-    def get_external_dependencies(cls) -> Tuple[ComponentExternalTool, ...]:
-        return tuple(
-            class_attr
-            for class_attr in cls.__dict__.values()
-            if isinstance(class_attr, ComponentExternalTool)
         )

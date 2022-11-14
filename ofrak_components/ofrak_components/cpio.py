@@ -24,6 +24,8 @@ from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
 
+CPIO_TOOL = ComponentExternalTool("cpio")
+
 
 class CpioArchiveType(Enum):
     """
@@ -81,8 +83,7 @@ class CpioUnpacker(Unpacker[None]):
 
     targets = (CpioFilesystem,)
     children = (File, Folder, SpecialFileType)
-
-    CPIO_TOOL = ComponentExternalTool("cpio")
+    external_dependencies = (CPIO_TOOL,)
 
     async def unpack(self, resource: Resource, config=None):
         cpio_v = await resource.view_as(CpioFilesystem)
@@ -91,7 +92,7 @@ class CpioUnpacker(Unpacker[None]):
             temp_file.write(resource_data)
             temp_file.flush()
             with tempfile.TemporaryDirectory() as temp_flush_dir:
-                await self.CPIO_TOOL.run_tool("-id", input=resource_data, cwd=temp_flush_dir)
+                await CPIO_TOOL.run_tool("-id", input=resource_data, cwd=temp_flush_dir)
                 await cpio_v.initialize_from_disk(temp_flush_dir)
 
 
@@ -101,8 +102,7 @@ class CpioPacker(Packer[None]):
     """
 
     targets = (CpioFilesystem,)
-
-    CPIO_TOOL = ComponentExternalTool("cpio")
+    external_dependencies = (CPIO_TOOL,)
 
     async def pack(self, resource: Resource, config=None):
         cpio_v: CpioFilesystem = await resource.view_as(CpioFilesystem)
@@ -130,7 +130,7 @@ class CpioPacker(Packer[None]):
 
         paths = [str(path).encode("ascii") for path in paths]
 
-        new_data = await self.CPIO_TOOL.run_tool(
+        new_data = await CPIO_TOOL.run_tool(
             "-o", f"--format={cpio_format}", input=b"\n".join(paths), cwd=temp_flush_dir
         )
         resource.queue_patch(Range(0, await resource.get_data_length()), new_data)

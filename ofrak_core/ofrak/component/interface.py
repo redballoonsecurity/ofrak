@@ -31,9 +31,9 @@ class ComponentInterface(Generic[CC], ABC):
     def targets(self) -> Tuple[ResourceTag, ...]:
         raise NotImplementedError()
 
-    @classmethod
+    @property
     @abstractmethod
-    def get_external_dependencies(cls) -> Tuple[ComponentExternalTool, ...]:
+    def external_dependencies(self) -> Tuple[ComponentExternalTool, ...]:
         raise NotImplementedError()
 
     @abstractmethod
