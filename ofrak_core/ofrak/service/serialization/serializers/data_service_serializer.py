@@ -49,25 +49,12 @@ class DataServiceSerializer(SerializerInterface):
 
     targets = (DataService,)
 
-    data_service_annotations = {
-        "_model_store": Dict[DataId, DataModel],
-        "_roots": Dict[DataId, _DataRoot],
-    }
-
-    def obj_to_pjson(self, obj: DataService, _type_hint: Any) -> Dict[str, PJSONType]:
-        data_service_pjson = {
-            attr_name: self._service.to_pjson(getattr(obj, attr_name), type_hint)
-            for attr_name, type_hint in self.data_service_annotations.items()
-        }
-        return data_service_pjson
+    def obj_to_pjson(self, obj: DataService, _type_hint: Any) -> PJSONType:
+        return self._service.to_pjson(getattr(obj, "_roots"), Dict[DataId, _DataRoot])
 
     def pjson_to_obj(self, pjson_obj: Dict[str, Dict], _type_hint: Any) -> DataService:
-        deserialized_attrs = {
-            attr_name: self._service.from_pjson(pjson_obj[attr_name], type_hint)
-            for attr_name, type_hint in self.data_service_annotations.items()
-        }
-        model_store = deserialized_attrs["_model_store"]
-        roots = deserialized_attrs["_roots"]
+        model_store = {}
+        roots = self._service.from_pjson(pjson_obj, Dict[DataId, _DataRoot])
         # The DataService assumes that the DataModel instance in the model store is the same
         # instance in the _DataRoot.model (and _DataRoot._children). Ensure that this is the case
         # before returning the DataService.
