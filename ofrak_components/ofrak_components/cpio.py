@@ -1,24 +1,25 @@
 import logging
-import subprocess
 import tempfile
 from dataclasses import dataclass
 from enum import Enum
-from subprocess import CalledProcessError
+from pathlib import Path, PurePath
+from typing import List
+
+from ofrak.service.resource_service_i import ResourceFilter
 
 from ofrak import Analyzer, Packer, Unpacker, Resource
-from ofrak.component.packer import PackerError
-from ofrak.component.unpacker import UnpackerError
 from ofrak.core import (
     GenericBinary,
     File,
     Folder,
     FilesystemRoot,
-    format_called_process_error,
     SpecialFileType,
     MagicMimeIdentifier,
     MagicDescriptionIdentifier,
     Magic,
+    FilesystemEntry,
 )
+from ofrak.model.component_model import ComponentExternalTool
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
@@ -81,6 +82,8 @@ class CpioUnpacker(Unpacker[None]):
     targets = (CpioFilesystem,)
     children = (File, Folder, SpecialFileType)
 
+    CPIO_TOOL = ComponentExternalTool("cpio")
+
     async def unpack(self, resource: Resource, config=None):
         cpio_v = await resource.view_as(CpioFilesystem)
         resource_data = await cpio_v.resource.get_data()
@@ -88,13 +91,7 @@ class CpioUnpacker(Unpacker[None]):
             temp_file.write(resource_data)
             temp_file.flush()
             with tempfile.TemporaryDirectory() as temp_flush_dir:
-                # Use subshell to handle relative paths and avoid changing directories back and
-                # forth
-                command = f"(cd {temp_flush_dir} && cpio -id < {temp_file.name})"
-                try:
-                    subprocess.run(command, check=True, capture_output=True, shell=True)
-                except subprocess.CalledProcessError as error:
-                    raise UnpackerError(format_called_process_error(error))
+                await self.CPIO_TOOL.run_tool("-id", input=resource_data, cwd=temp_flush_dir)
                 await cpio_v.initialize_from_disk(temp_flush_dir)
 
 
@@ -105,20 +102,38 @@ class CpioPacker(Packer[None]):
 
     targets = (CpioFilesystem,)
 
+    CPIO_TOOL = ComponentExternalTool("cpio")
+
     async def pack(self, resource: Resource, config=None):
         cpio_v: CpioFilesystem = await resource.view_as(CpioFilesystem)
         temp_flush_dir = await cpio_v.flush_to_disk()
         cpio_format = cpio_v.archive_type.value
-        with tempfile.NamedTemporaryFile(suffix=".cpio", mode="rb") as temp:
-            # Use subshell to handle relative paths and avoid changing directories back and forth
-            command = f"(cd {temp_flush_dir} && find . -print | cpio -o --format={cpio_format} > {temp.name})"
-            try:
-                subprocess.run(command, check=True, capture_output=True, shell=True)
-            except CalledProcessError as error:
-                raise PackerError(format_called_process_error(error))
-            new_data = temp.read()
-            # Passing in the original range effectively replaces the original data with the new data
-            resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
+
+        # TODO: This should probably be part of FilesystemEntry interface
+        async def _get_paths_recursively(fs_entry: FilesystemEntry) -> List[PurePath]:
+            own_path = Path(fs_entry.Name)
+            paths = [own_path]
+            for child_fs_entry in await fs_entry.resource.get_children_as_view(
+                FilesystemEntry, r_filter=ResourceFilter.with_tags(FilesystemEntry)
+            ):
+                paths.extend(
+                    own_path.joinpath(child_path)
+                    for child_path in await _get_paths_recursively(child_fs_entry)
+                )
+            return paths
+
+        paths = []
+        for child_fs_entry in await resource.get_children_as_view(
+            FilesystemEntry, r_filter=ResourceFilter.with_tags(FilesystemEntry)
+        ):
+            paths.extend(await _get_paths_recursively(child_fs_entry))
+
+        paths = [str(path).encode("ascii") for path in paths]
+
+        new_data = await self.CPIO_TOOL.run_tool(
+            "-o", f"--format={cpio_format}", input=b"\n".join(paths), cwd=temp_flush_dir
+        )
+        resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
 
 
 MagicMimeIdentifier.register(CpioFilesystem, "application/x-cpio")
