@@ -1,7 +1,9 @@
 import logging
 import os
+import subprocess
 import tempfile
 from dataclasses import dataclass
+
 
 from ofrak import Resource, Packer, Unpacker
 from ofrak.core import (
@@ -14,6 +16,7 @@ from ofrak.core import (
     GenericBinary,
 )
 from ofrak.model.component_model import ComponentExternalTool
+from ofrak_type.error import ComponentSubprocessError
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
@@ -44,7 +47,14 @@ class ZipUnpacker(Unpacker[None]):
             temp_archive.write(await resource.get_data())
             temp_archive.flush()
             with tempfile.TemporaryDirectory() as temp_dir:
-                await UNZIP_TOOL.run_tool(temp_archive.name, "-d", temp_dir)
+                try:
+                    subprocess.run(
+                        ["unzip", temp_archive.name, "-d", temp_dir],
+                        check=True,
+                        capture_output=True,
+                    )
+                except subprocess.CalledProcessError as e:
+                    raise ComponentSubprocessError(e)
                 cwd = os.getcwd()
                 os.chdir(temp_dir)
                 await zip_view.initialize_from_disk(temp_dir)
@@ -65,11 +75,10 @@ class ZipPacker(Packer[None]):
         temp_archive = f"{flush_dir}.zip"
         cwd = os.getcwd()
         os.chdir(flush_dir)
-        await ZIP_TOOL.run_tool(
-            "-r",
-            temp_archive,
-            ".",
-        )
+        try:
+            subprocess.run(["zip", "-r", temp_archive, "."], check=True, capture_output=True)
+        except subprocess.CalledProcessError as e:
+            raise ComponentSubprocessError(e)
         os.chdir(cwd)
         with open(temp_archive, "rb") as fh:
             resource.queue_patch(Range(0, await zip_view.resource.get_data_length()), fh.read())

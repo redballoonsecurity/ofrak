@@ -1,4 +1,5 @@
-from typing import Tuple, Optional, Dict
+from subprocess import CalledProcessError
+from typing import Dict, Optional
 
 
 class NotFoundError(RuntimeError):
@@ -44,23 +45,14 @@ class ComponentMissingDependencyError(RuntimeError):
 
 
 class ComponentSubprocessError(RuntimeError):
-    def __init__(
-        self,
-        cmd: str,
-        cmd_args: Tuple[str, ...],
-        cmd_retcode: int,
-        cmd_stdout: str,
-        cmd_stderr: str,
-    ):
-        full_command = f"{cmd} {' '.join(cmd_args)}"
+    def __init__(self, error: CalledProcessError):
         errstring = (
-            f"Command '{full_command}' returned non-zero exit status {cmd_retcode}.\n"
-            f"Stderr: {cmd_stderr}.\n"
-            f"Stdout: {cmd_stdout}."
+            f"Command '{error.cmd}' returned non-zero exit status {error.returncode}.\n"
+            f"Stderr: {error.stderr}.\n"
+            f"Stdout: {error.stdout}."
         )
         super().__init__(errstring)
-        self.cmd = cmd
-        self.cmd_args = cmd_args
-        self.cmd_retcode = cmd_retcode
-        self.cmd_stdout = cmd_stdout
-        self.cmd_stderr = cmd_stderr
+        self.cmd = error.cmd
+        self.cmd_retcode = error.returncode
+        self.cmd_stdout = error.stdout
+        self.cmd_stderr = error.stderr

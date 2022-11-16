@@ -1,11 +1,9 @@
 import logging
+import subprocess
 import tempfile
 from dataclasses import dataclass
 from enum import Enum
-from pathlib import Path, PurePath
-from typing import List
 
-from ofrak.service.resource_service_i import ResourceFilter
 
 from ofrak import Analyzer, Packer, Unpacker, Resource
 from ofrak.core import (
@@ -17,9 +15,9 @@ from ofrak.core import (
     MagicMimeIdentifier,
     MagicDescriptionIdentifier,
     Magic,
-    FilesystemEntry,
 )
 from ofrak.model.component_model import ComponentExternalTool
+from ofrak_type.error import ComponentSubprocessError
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
@@ -88,12 +86,20 @@ class CpioUnpacker(Unpacker[None]):
     async def unpack(self, resource: Resource, config=None):
         cpio_v = await resource.view_as(CpioFilesystem)
         resource_data = await cpio_v.resource.get_data()
-        with tempfile.NamedTemporaryFile() as temp_file:
-            temp_file.write(resource_data)
-            temp_file.flush()
-            with tempfile.TemporaryDirectory() as temp_flush_dir:
-                await CPIO_TOOL.run_tool("-id", input=resource_data, cwd=temp_flush_dir)
-                await cpio_v.initialize_from_disk(temp_flush_dir)
+        with tempfile.TemporaryDirectory() as temp_flush_dir:
+            command = ["cpio", "-id"]
+            try:
+                subprocess.run(
+                    command,
+                    check=True,
+                    capture_output=True,
+                    cwd=temp_flush_dir,
+                    stdin=subprocess.PIPE,
+                    input=resource_data,
+                )
+            except subprocess.CalledProcessError as error:
+                raise ComponentSubprocessError(error)
+            await cpio_v.initialize_from_disk(temp_flush_dir)
 
 
 class CpioPacker(Packer[None]):
@@ -108,31 +114,25 @@ class CpioPacker(Packer[None]):
         cpio_v: CpioFilesystem = await resource.view_as(CpioFilesystem)
         temp_flush_dir = await cpio_v.flush_to_disk()
         cpio_format = cpio_v.archive_type.value
-
-        # TODO: This should probably be part of FilesystemEntry interface
-        async def _get_paths_recursively(fs_entry: FilesystemEntry) -> List[PurePath]:
-            own_path = Path(fs_entry.Name)
-            paths = [own_path]
-            for child_fs_entry in await fs_entry.resource.get_children_as_view(
-                FilesystemEntry, r_filter=ResourceFilter.with_tags(FilesystemEntry)
-            ):
-                paths.extend(
-                    own_path.joinpath(child_path)
-                    for child_path in await _get_paths_recursively(child_fs_entry)
-                )
-            return paths
-
-        paths = []
-        for child_fs_entry in await resource.get_children_as_view(
-            FilesystemEntry, r_filter=ResourceFilter.with_tags(FilesystemEntry)
-        ):
-            paths.extend(await _get_paths_recursively(child_fs_entry))
-
-        paths = [str(path).encode("ascii") for path in paths]
-
-        new_data = await CPIO_TOOL.run_tool(
-            "-o", f"--format={cpio_format}", input=b"\n".join(paths), cwd=temp_flush_dir
-        )
+        try:
+            list_files_output = subprocess.run(
+                ["find", ".", "-print"],
+                check=True,
+                capture_output=True,
+                cwd=temp_flush_dir,
+            )
+            cpio_pack_output = subprocess.run(
+                ["cpio", "-o", f"--format={cpio_format}"],
+                check=True,
+                capture_output=True,
+                cwd=temp_flush_dir,
+                stdin=subprocess.PIPE,
+                input=list_files_output.stdout,
+            )
+        except subprocess.CalledProcessError as error:
+            raise ComponentSubprocessError(error)
+        new_data = cpio_pack_output.stdout
+        # Passing in the original range effectively replaces the original data with the new data
         resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
 
 
