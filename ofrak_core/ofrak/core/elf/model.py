@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Iterable, Optional
 
+
 from ofrak_type.architecture import InstructionSet
 from ofrak.core.program import Program
 from ofrak.core.program_section import NamedProgramSection, ProgramSegment
@@ -639,6 +640,10 @@ class ElfSection(UnanalyzedElfSection, NamedProgramSection):
     """
     An analyzed ELF Section
     """
+
+    async def is_writable_section(self) -> bool:
+        header = await self.get_header()
+        return header.has_flag(ElfSectionFlag.WRITE)
 
 
 @dataclass

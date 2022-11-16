@@ -7,6 +7,7 @@ import re
 import subprocess
 
 from ofrak import OFRAKContext
+from ofrak.core import UpdateLinkableSymbolsModifier, UpdateLinkableSymbolsModifierConfig
 from ofrak.core.architecture import ProgramAttributes
 from ofrak_type.architecture import (
     InstructionSet,
@@ -16,7 +17,7 @@ from ofrak_type.architecture import (
 from ofrak.core.basic_block import BasicBlock
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.core.program import Program
-from ofrak.core.patch_maker.linkable_symbol import LinkableSymbolType
+from ofrak.core.patch_maker.linkable_symbol import LinkableSymbolType, LinkableSymbol
 from ofrak.core.patch_maker.model import SourceBundle
 from ofrak.core.patch_maker.modifiers import (
     FunctionReplacementModifierConfig,
@@ -188,8 +189,18 @@ async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config
     dummy_bb = BasicBlock(0, 0, InstructionSetMode.NONE, False, None)
     await function_cb.resource.create_child_from_view(dummy_bb)
 
-    await target_program.define_linkable_symbols(
-        {config.program.function_name: (config.program.function_vaddr, LinkableSymbolType.FUNC)}
+    await target_program.resource.run(
+        UpdateLinkableSymbolsModifier,
+        UpdateLinkableSymbolsModifierConfig(
+            (
+                LinkableSymbol(
+                    config.program.function_vaddr,
+                    config.program.function_name,
+                    LinkableSymbolType.FUNC,
+                ),
+            ),
+            verify_func_modes=True,
+        ),
     )
 
     target_program.resource.add_attributes(config.program.attrs)

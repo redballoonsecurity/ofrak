@@ -5,19 +5,15 @@ from dataclasses import dataclass
 from typing import Dict, Iterable, Optional, Tuple
 
 from ofrak.component.modifier import Modifier
-from ofrak.core.addressable import Addressable
-from ofrak_type.architecture import InstructionSetMode
 from ofrak.core.binary import GenericBinary
 from ofrak.core.complex_block import ComplexBlock
-from ofrak.core.label import LabeledAddress
+from ofrak.core.patch_maker.linkable_symbol import LinkableSymbol, LinkableSymbolType
 from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import (
     ResourceFilter,
     ResourceAttributeValueFilter,
-    ResourceAttributeValuesFilter,
 )
-from ofrak.core.patch_maker.linkable_symbol import LinkableSymbol, LinkableSymbolType
 from ofrak_patch_maker.model import BOM, PatchRegionConfig
 from ofrak_patch_maker.toolchain.model import Segment
 from ofrak_type.error import NotFoundError
@@ -101,49 +97,6 @@ class LinkableBinary(GenericBinary):
             ),
         )
 
-    async def define_linkable_symbols(
-        self, proto_symbols: Dict[str, Tuple[int, LinkableSymbolType]]
-    ):
-        """
-        From some basic info about symbols in this program, create a LinkableSymbol resource for
-        each one and get any remaining needed info to do this. Usage is to pass a dictionary that
-        defines each symbol like so:
-        "symbol_name": (symbol_vaddr, symbol_type)
-
-        :param proto_symbols: Mapping of each symbol name to its known vaddr and symbol type.
-
-        :raises NotFoundError: if a ComplexBlock resource with the indicated vaddr does not exist
-        for a provided FUNC symbol.
-        """
-        symbols = []
-        for sym_name, (sym_vaddr, sym_type) in proto_symbols.items():
-            mode = InstructionSetMode.NONE
-            if sym_type is LinkableSymbolType.FUNC:
-                try:
-                    cb = await self.resource.get_only_descendant_as_view(
-                        ComplexBlock,
-                        r_filter=ResourceFilter(
-                            tags=(ComplexBlock,),
-                            attribute_filters=(
-                                ResourceAttributeValueFilter(
-                                    ComplexBlock.VirtualAddress, sym_vaddr
-                                ),
-                            ),
-                        ),
-                    )
-                except NotFoundError:
-                    raise NotFoundError(
-                        f"No ComplexBlock resource exists at vaddr 0x"
-                        f"{sym_vaddr:x}; cannot infer its mode."
-                    )
-                mode = await cb.get_mode()
-            symbols.append(LinkableSymbol(sym_vaddr, sym_name, sym_type, mode))
-
-        await self.resource.run(
-            UpdateLinkableSymbolsModifier,
-            UpdateLinkableSymbolsModifierConfig(tuple(symbols)),
-        )
-
     # TODO: Un-stringify PatchMaker; OFRAK imports in PatchMaker results in circular Program imports
     async def make_linkable_bom(
         self,
@@ -201,7 +154,18 @@ class LinkableBinary(GenericBinary):
 
 @dataclass
 class UpdateLinkableSymbolsModifierConfig(ComponentConfig):
+    """
+    :ivar updated_symbols: LinkableSymbols to add or updated.
+    :ivar verify_func_modes: Override the mode of FUNC symbols if there is a ComplexBlock that can
+    be checked and whose mode does not match the described LinkableSymbol's type.
+    :ivar override_existing_names: If a LinkableSymbol already exists with the same name as one in
+    updated_symbols, if this option is True, overwrite it with the new symbol info; if False, raise
+    an error.
+    """
+
     updated_symbols: Tuple[LinkableSymbol, ...]
+    verify_func_modes: bool = False
+    override_existing_names: bool = True
 
     def __post_init__(self):
         stripped_symbols = []
@@ -222,91 +186,49 @@ class UpdateLinkableSymbolsModifier(Modifier[UpdateLinkableSymbolsModifierConfig
     targets = (LinkableBinary,)
 
     async def modify(self, resource: Resource, config: UpdateLinkableSymbolsModifierConfig) -> None:
-        unhandled_symbols = {symbol.name: symbol for symbol in config.updated_symbols}
-        unhandled_vaddrs: Dict[int, LinkableSymbol] = {}
         for symbol in config.updated_symbols:
-            if symbol.virtual_address not in unhandled_vaddrs:
-                unhandled_vaddrs[symbol.virtual_address] = symbol
-            else:
-                raise ValueError(
-                    f"Too many symbols supplied for address {symbol.virtual_address}! Need "
-                    f"exactly one."
+            try:
+                existing_symbol_with_name = await resource.get_only_descendant_as_view(
+                    LinkableSymbol,
+                    r_filter=ResourceFilter(
+                        tags=(LinkableSymbol,),
+                        attribute_filters=(
+                            ResourceAttributeValueFilter(LinkableSymbol.Label, symbol.name),
+                        ),
+                    ),
                 )
 
-        # Overwrite existing ComplexBlock with new LinkableSymbols
-        filter_for_cb_by_vaddr = ResourceFilter(
-            tags=(ComplexBlock,),
-            attribute_filters=(
-                ResourceAttributeValuesFilter(
-                    ComplexBlock.VirtualAddress,
-                    tuple(
-                        vaddr
-                        for vaddr, symbol in unhandled_vaddrs.items()
-                        if symbol.symbol_type is LinkableSymbolType.FUNC
-                    ),
-                ),
-            ),
-        )
-
-        try:
-            for existing_cb in await resource.get_descendants_as_view(
-                ComplexBlock, r_filter=filter_for_cb_by_vaddr
-            ):
-                symbol = unhandled_vaddrs[existing_cb.virtual_address]
-                existing_cb.resource.add_view(symbol)
-                # Update the value of the ComplexBlock.name attribute
-                existing_cb.resource.add_view(dataclasses.replace(existing_cb, name=symbol.name))
-                unhandled_symbols.pop(symbol.name)
-        except NotFoundError:
-            LOGGER.debug("No existing ComplexBlocks found for the provided symbols, moving on")
-
-        # Overwrite existing LabeledAddress with new LinkableSymbols
-        filter_for_label_by_name = ResourceFilter(
-            tags=(LabeledAddress,),
-            attribute_filters=(
-                ResourceAttributeValuesFilter(
-                    LabeledAddress.Label, tuple(unhandled_symbols.keys())
-                ),
-            ),
-        )
-        try:
-            for existing_label in await resource.get_descendants_as_view(
-                LabeledAddress,
-                r_filter=filter_for_label_by_name,
-            ):
-                if existing_label.name not in unhandled_symbols:
-                    raise SymbolExistsError(
-                        f"Multiple LabeledAddress resources with name {existing_label.name}!"
+                if existing_symbol_with_name == symbol:
+                    continue
+                elif config.override_existing_names:
+                    existing_symbol_with_name.resource.add_view(symbol)
+                    continue
+                else:
+                    raise ValueError(
+                        f"Symbol name {symbol.name} is duplicated between differing symbol "
+                        f"definitions {existing_symbol_with_name} (old) and {symbol}"
                     )
-                existing_label.resource.add_view(unhandled_symbols.pop(existing_label.name))
-        except NotFoundError:
-            LOGGER.debug("No existing LabeledAddresses found for the provided symbols, moving on")
+            except NotFoundError:
+                pass
 
-        # Overwrite existing Addressables with new LinkableSymbols
-        # Only do this for LinkableSymbols which did not override existing LabeledAddress above
-        unhandled_vaddrs = {symbol.virtual_address: symbol for symbol in unhandled_symbols.values()}
-
-        filter_for_label_by_vaddr = ResourceFilter(
-            tags=(Addressable,),
-            attribute_filters=(
-                ResourceAttributeValuesFilter(
-                    Addressable.VirtualAddress, tuple(unhandled_vaddrs.keys())
-                ),
-            ),
-        )
-
-        try:
-            for existing_addressable in await resource.get_descendants_as_view(
-                Addressable,
-                r_filter=filter_for_label_by_vaddr,
-            ):
-                symbol = unhandled_vaddrs[existing_addressable.virtual_address]
-                existing_addressable.resource.add_view(symbol)
-                unhandled_symbols.pop(symbol.name)
-        except NotFoundError:
-            LOGGER.debug("No existing Addressable found for the provided symbols, moving on")
-
-        # For any new LinkableSymbols that we could not add to existing resources, create a new
-        # resource
-        for symbol in unhandled_symbols.values():
+            if symbol.symbol_type is LinkableSymbolType.FUNC and config.verify_func_modes:
+                try:
+                    (cb,) = await resource.get_descendants_as_view(
+                        ComplexBlock,
+                        r_filter=ResourceFilter(
+                            tags=(ComplexBlock,),
+                            attribute_filters=(
+                                ResourceAttributeValueFilter(
+                                    ComplexBlock.VirtualAddress, symbol.virtual_address
+                                ),
+                            ),
+                        ),
+                    )
+                    symbol = dataclasses.replace(symbol, mode=await cb.get_mode())
+                except NotFoundError:
+                    LOGGER.warning(
+                        f"Option `verify_func_modes` was set, but no ComplexBlock exists at "
+                        f"address {hex(symbol.virtual_address)} so cannot verify the mode of "
+                        f"{symbol}"
+                    )
             await resource.create_child_from_view(symbol)
