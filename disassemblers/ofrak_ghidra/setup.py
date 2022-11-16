@@ -47,4 +47,5 @@ setuptools.setup(
     include_package_data=True,
     license=license,
     cmdclass={"egg_info": egg_info_ex},
+    entry_points={"ofrak.packages": ["ofrak_ghidra_pkg = ofrak_ghidra"]},
 )

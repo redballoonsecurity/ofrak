@@ -4,6 +4,7 @@ import os
 import time
 from types import ModuleType
 from typing import Type, Any, Awaitable, Callable, List, Iterable
+from importlib_metadata import entry_points
 
 from synthol.injector import DependencyInjector
 
@@ -101,6 +102,10 @@ class OFRAK:
 
     def set_id_service(self, service: IDServiceInterface):
         self.injector.bind_instance(service)
+
+    def get_installed_ofrak_packages(self) -> List[ModuleType]:
+        ofrak_eps = entry_points(group="ofrak.packages")
+        return [ofrak_pkg.load() for ofrak_pkg in ofrak_eps]
 
     async def create_ofrak_context(self) -> OFRAKContext:
         """
