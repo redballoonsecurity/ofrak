@@ -254,10 +254,10 @@ def _get_indexes(namespace: Dict[str, Any]) -> Dict[str, ResourceIndexedAttribut
 
 @dataclass
 class ResourceViewInterface(metaclass=ViewableResourceTag):
-    def get_attributes_instances(self) -> Dict[Type[RA], RA]:
+    def get_attributes_instances(self) -> Dict[Type[RA], RA]:  # pragma: no cover
         raise NotImplementedError()
 
-    def set_deleted(self):
+    def set_deleted(self):  # pragma: no cover
         """
         Mark that the underlying resource has been deleted.
         :return:
