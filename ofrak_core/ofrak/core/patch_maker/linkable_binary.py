@@ -8,7 +8,7 @@ from ofrak.component.modifier import Modifier
 from ofrak.core.binary import GenericBinary
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.core.patch_maker.linkable_symbol import LinkableSymbol, LinkableSymbolType
-from ofrak.model.component_model import ComponentConfig
+from ofrak.model.component_model import ComponentConfig, CLIENT_COMPONENT_ID
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import (
     ResourceFilter,
@@ -89,13 +89,30 @@ class LinkableBinary(GenericBinary):
         if name is not None:
             attributes_filters.append(ResourceAttributeValueFilter(LinkableSymbol.Label, name))
 
-        return await self.resource.get_descendants_as_view(
+        symbols_by_name = dict()
+
+        for sym in await self.resource.get_descendants_as_view(
             LinkableSymbol,
             r_filter=ResourceFilter(
                 tags=(LinkableSymbol,),
                 attribute_filters=tuple(attributes_filters) if attributes_filters else None,
             ),
-        )
+        ):
+            if sym.name in symbols_by_name:
+                other_sym = symbols_by_name[sym.name]
+                if other_sym == sym:
+                    continue
+                else:
+                    sym_source, _ = _describe_symbol_source(sym)
+                    other_sym_source, _ = _describe_symbol_source(other_sym)
+
+                    raise ValueError(
+                        f"Multiple symbols with the name {sym.name} found, and they have different "
+                        f"information! {sym} ({sym_source}) vs. {other_sym} ({other_sym_source})"
+                    )
+            symbols_by_name[sym.name] = sym
+
+        return symbols_by_name.values()
 
     # TODO: Un-stringify PatchMaker; OFRAK imports in PatchMaker results in circular Program imports
     async def make_linkable_bom(
@@ -126,8 +143,6 @@ class LinkableBinary(GenericBinary):
         """
         stubs: Dict[str, Tuple[Segment, ...]] = dict()
         for symbol in await self.get_symbols():
-            # if symbol.name in excluded_symbols:
-            #     continue
             stubs_file = os.path.join(build_tmp_dir, f"stub_{symbol.name}.as")
             stub_info = symbol.get_stub_info()
             stub_body = "\n".join(
@@ -240,3 +255,25 @@ class UpdateLinkableSymbolsModifier(Modifier[UpdateLinkableSymbolsModifierConfig
                             f"{symbol}"
                         )
             await resource.create_child_from_view(symbol)
+
+
+def _describe_symbol_source(sym: LinkableSymbol) -> Tuple[str, bytes]:
+    """
+    Output a short string describing what defined this symbol, either manual input or automatic
+    analysis. Useful for debugging linker problems when using LinkableSymbols.
+
+    :param sym:
+
+    :return: A tuple with the description string and the actual component ID
+    """
+    sym_source = sym.resource.get_model().get_component_id_by_attributes(
+        LinkableSymbol.attributes_type
+    )
+    if sym_source == CLIENT_COMPONENT_ID:
+        sym_source_str = f"defined manually by adding view or attributes in a script"
+    elif sym_source == UpdateLinkableSymbolsModifier.id:
+        sym_source_str = f"defined manually via {sym_source.decode('ascii')}"
+    else:
+        sym_source_str = f"analyzed via {sym_source.decode('ascii')}"
+
+    return sym_source_str, sym_source

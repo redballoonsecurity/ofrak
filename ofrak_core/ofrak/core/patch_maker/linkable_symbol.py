@@ -35,6 +35,11 @@ class LinkableSymbol(LabeledAddress):
     A 'symbol' in the binary that may be used for the purpose of linking when injecting a patch.
     It may be extracted from symbol information that was already in the binary, added manually,
     or inferred by some analysis.
+
+    :ivar symbol_type: Type of this symbol, necessary to know how it should be treated when
+    linking: code, writable data, and general data
+    :ivar mode: Mode of this symbol, only relevant if it is code (FUNC) and the architecture has
+    multiple possible modes which need to be handled by the linker (e.g. ARM Thumb interworking)
     """
 
     symbol_type: LinkableSymbolType
