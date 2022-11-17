@@ -158,9 +158,9 @@ class UpdateLinkableSymbolsModifierConfig(ComponentConfig):
     :ivar updated_symbols: LinkableSymbols to add or updated.
     :ivar verify_func_modes: Override the mode of FUNC symbols if there is a ComplexBlock that can
     be checked and whose mode does not match the described LinkableSymbol's type.
-    :ivar override_existing_names: If a LinkableSymbol already exists with the same name as one in
-    updated_symbols, if this option is True, overwrite it with the new symbol info; if False, raise
-    an error.
+    :ivar override_existing_names: Handles the case where a LinkableSymbol already exists with the
+    same name as one in updated_symbols, or a ComplexBlock already exists at the same address; if
+    this option is True, overwrite it with the new symbol info, if False, raise an error.
     """
 
     updated_symbols: Tuple[LinkableSymbol, ...]
@@ -211,9 +211,13 @@ class UpdateLinkableSymbolsModifier(Modifier[UpdateLinkableSymbolsModifierConfig
             except NotFoundError:
                 pass
 
-            if symbol.symbol_type is LinkableSymbolType.FUNC and config.verify_func_modes:
+            if (
+                symbol.symbol_type is LinkableSymbolType.FUNC
+                and config.verify_func_modes
+                or config.override_existing_names
+            ):
                 try:
-                    (cb,) = await resource.get_descendants_as_view(
+                    for cb in await resource.get_descendants_as_view(
                         ComplexBlock,
                         r_filter=ResourceFilter(
                             tags=(ComplexBlock,),
@@ -223,12 +227,16 @@ class UpdateLinkableSymbolsModifier(Modifier[UpdateLinkableSymbolsModifierConfig
                                 ),
                             ),
                         ),
-                    )
-                    symbol = dataclasses.replace(symbol, mode=await cb.get_mode())
+                    ):
+                        if config.verify_func_modes:
+                            symbol = dataclasses.replace(symbol, mode=await cb.get_mode())
+                        if config.override_existing_names:
+                            cb.resource.add_view(dataclasses.replace(cb, name=symbol.name))
                 except NotFoundError:
-                    LOGGER.warning(
-                        f"Option `verify_func_modes` was set, but no ComplexBlock exists at "
-                        f"address {hex(symbol.virtual_address)} so cannot verify the mode of "
-                        f"{symbol}"
-                    )
+                    if config.verify_func_modes:
+                        LOGGER.warning(
+                            f"Option `verify_func_modes` was set, but no ComplexBlock exists at "
+                            f"address {hex(symbol.virtual_address)} so cannot verify the mode of "
+                            f"{symbol}"
+                        )
             await resource.create_child_from_view(symbol)

@@ -6,7 +6,6 @@ from typing import Tuple, Iterable
 from ofrak import Identifier
 from ofrak.core.patch_maker.linkable_symbol import LinkableSymbol, LinkableSymbolType
 
-from ofrak.core.label import LabeledAddress
 
 from ofrak.resource import Resource
 
@@ -27,7 +26,7 @@ class ComplexBlockDataReferenceAttributes(ResourceAttributes):
 
 
 @dataclass
-class ComplexBlock(LabeledAddress, MemoryRegion):
+class ComplexBlock(MemoryRegion):
     """
     A collection of [basic blocks][ofrak.core.basic_block.BasicBlock] and
     [data words][ofrak.core.data.DataWord] that represent a logical unit of code (usually a
@@ -37,6 +36,8 @@ class ComplexBlock(LabeledAddress, MemoryRegion):
     :ivar size: the size of the complex block
     :ivar name: the complex block's name
     """
+
+    name: str
 
     @index
     def Symbol(self) -> str:
