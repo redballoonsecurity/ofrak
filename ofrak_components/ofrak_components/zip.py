@@ -48,10 +48,7 @@ class ZipUnpacker(Unpacker[None]):
                     subprocess.run(command, check=True, capture_output=True)
                 except subprocess.CalledProcessError as e:
                     raise UnpackerError(format_called_process_error(e))
-                cwd = os.getcwd()
-                os.chdir(temp_dir)
                 await zip_view.initialize_from_disk(temp_dir)
-                os.chdir(cwd)
 
 
 class ZipPacker(Packer[None]):
