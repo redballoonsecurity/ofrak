@@ -591,7 +591,7 @@ class PatchMaker:
             ),
         )
         self.logger.log(logger_level, f"Injecting patch: {patch_fem.name}")
-        patches = defaultdict(list)
+        patches: Dict[MemoryRegion, List[Tuple[int, bytes]]] = defaultdict(list)
         for segment in patch_fem.executable.segments:
             if segment.length == 0 or segment.vm_address == 0:
                 continue
