@@ -591,6 +591,7 @@ class PatchMaker:
             ),
         )
         self.logger.log(logger_level, f"Injecting patch: {patch_fem.name}")
+        patches = dict()
         for segment in patch_fem.executable.segments:
             if segment.length == 0 or segment.vm_address == 0:
                 continue
@@ -603,7 +604,6 @@ class PatchMaker:
             if segment.segment_name.startswith(".bss"):
                 continue
             segment_data = exe_data[segment.offset : segment.offset + segment.length]
-            patches = [(segment.vm_address, segment_data)]
             region = MemoryRegion.get_mem_region_with_vaddr_from_sorted(
                 segment.vm_address, sorted_regions
             )
@@ -612,8 +612,15 @@ class PatchMaker:
                     f"Cannot inject patch because the memory region at vaddr "
                     f"{hex(segment.vm_address)} is None"
                 )
+            if region in patches:
+                patches[region].append((segment.vm_address, segment_data))
+            else:
+                patches[region] = [(segment.vm_address, segment_data)]
 
-            await region.resource.run(BinaryInjectorModifier, BinaryInjectorModifierConfig(patches))
+        for region, patch_data in patches.items():
+            await region.resource.run(
+                BinaryInjectorModifier, BinaryInjectorModifierConfig(patch_data)
+            )
 
         return resource
 
