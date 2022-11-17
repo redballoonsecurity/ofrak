@@ -591,7 +591,7 @@ class PatchMaker:
             ),
         )
         self.logger.log(logger_level, f"Injecting patch: {patch_fem.name}")
-        patches = dict()
+        patches = defaultdict(list)
         for segment in patch_fem.executable.segments:
             if segment.length == 0 or segment.vm_address == 0:
                 continue
@@ -612,10 +612,7 @@ class PatchMaker:
                     f"Cannot inject patch because the memory region at vaddr "
                     f"{hex(segment.vm_address)} is None"
                 )
-            if region in patches:
-                patches[region].append((segment.vm_address, segment_data))
-            else:
-                patches[region] = [(segment.vm_address, segment_data)]
+            patches[region].append((segment.vm_address, segment_data))
 
         for region, patch_data in patches.items():
             await region.resource.run(
