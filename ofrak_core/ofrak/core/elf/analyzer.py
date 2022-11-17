@@ -10,7 +10,7 @@ from ofrak.core.architecture import ProgramAttributes
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.resource import Resource
-from ofrak.service.resource_service_i import ResourceFilter, ResourceAttributeRangeFilter
+from ofrak.service.resource_service_i import ResourceFilter, ResourceAttributeValueFilter
 from ofrak.core.elf.model import (
     ElfSectionHeader,
     Elf,
@@ -29,6 +29,7 @@ from ofrak.core.elf.model import (
     ElfVirtualAddress,
     UnanalyzedElfSegment,
     ElfSymbolType,
+    ElfSectionFlag,
 )
 from ofrak_io.deserializer import BinaryDeserializer
 from ofrak_type.architecture import InstructionSet, InstructionSetMode
@@ -252,6 +253,13 @@ class ElfLinkableSymbolIdentifier(Identifier[None]):
     targets = (ElfSymbol,)
 
     async def identify(self, resource: Resource, config: None) -> None:
+        elf_sym = await resource.view_as(ElfSymbol)
+        if elf_sym.st_shndx == 0 or elf_sym.st_shndx >= 0xFF00:
+            return
+        if elf_sym.symbol_index == 0:
+            return
+        if elf_sym.st_name == 0:
+            return
         resource.add_tag(LinkableSymbol)
 
 
@@ -272,24 +280,19 @@ class ElfLinkableSymbolAnalyzer(Analyzer[None, LinkableSymbol]):
         if elf_symbol.get_type() is ElfSymbolType.FUNC:
             sym_type = LinkableSymbolType.FUNC
         elif elf_symbol.get_type() is ElfSymbolType.OBJECT:
-            # Need to check what section it is in
-            sections_containing_symbol = await elf_r.get_children_as_view(
-                ElfSection,
-                ResourceFilter(
+            # Need to check what section it is in to see if it is writable
+            section_containing_symbol = await elf_r.get_only_descendant_as_view(
+                ElfSectionHeader,
+                r_filter=ResourceFilter(
+                    tags=(ElfSectionHeader,),
                     attribute_filters=(
-                        ResourceAttributeRangeFilter(
-                            ElfSection.VirtualAddress, max=elf_symbol.st_value
+                        ResourceAttributeValueFilter(
+                            ElfSectionHeader.SectionIndex, elf_symbol.st_shndx
                         ),
-                        ResourceAttributeRangeFilter(ElfSection.EndVaddr, min=elf_symbol.st_value),
                     ),
-                    tags=(ElfSection,),
                 ),
             )
-            writable_sym = any(
-                await elf_section.is_writable_section()
-                for elf_section in sections_containing_symbol
-            )
-            if writable_sym:
+            if section_containing_symbol.has_flag(ElfSectionFlag.WRITE):
                 sym_type = LinkableSymbolType.RW_DATA
             else:
                 sym_type = LinkableSymbolType.RO_DATA
