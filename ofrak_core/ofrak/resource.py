@@ -226,16 +226,6 @@ class Resource:
             )
         return await self._data_service.get_data_range_within_root(self._resource.data_id)
 
-    async def get_offset_within_root(self) -> int:
-        """
-        Does the same thing as `get_data_range_within_root`, except it returns the start offset of
-        the relative range to the root.
-
-        :return: The start offset of the root node's data which this resource represents
-        """
-        root_range = await self.get_data_range_within_root()
-        return root_range.start
-
     async def save(self):
         """
         If this resource has been modified, update the model stored in the resource service with
