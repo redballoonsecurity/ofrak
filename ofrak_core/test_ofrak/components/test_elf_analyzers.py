@@ -10,7 +10,6 @@ from typing import Union, Callable, Optional, Tuple, Type, cast, Iterable
 import pytest
 
 from ofrak import OFRAKContext
-from ofrak.core import LinkableSymbol, LinkableSymbolType
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.model.viewable_tag_model import ViewableResourceTag
 from ofrak.resource import Resource
@@ -43,7 +42,6 @@ from ofrak.core.elf.model import (
     ElfRelaSection,
     ElfDynamicSection,
     ElfPointerArraySection,
-    ElfSymbolType,
 )
 from ofrak_type.architecture import InstructionSet
 from ofrak_type.bit_width import BitWidth
@@ -805,37 +803,6 @@ def readelf_extract_vaddrs(readelf_path: str, executable_file: str) -> Iterable[
     return result
 
 
-def readelf_extract_syms(
-    readelf_path: str, executable_file: str
-) -> Iterable[Tuple[str, int, ElfSymbolType]]:
-    """
-    Extract the symbols via readelf
-    Symbol table '.symtab' contains 166 entries:
-       Num:    Value  Size Type    Bind   Vis      Ndx Name
-         0: 00000000     0 NOTYPE  LOCAL  DEFAULT  UND
-         1: 00000000     0 FILE    LOCAL  DEFAULT  ABS adler32.c
-         2: 00000000     0 SECTION LOCAL  DEFAULT    1 .text
-         3: 00000000     0 SECTION LOCAL  DEFAULT    2 .debug_sfnames
-    etc.
-    """
-    args = [readelf_path, "--syms", "--wide", executable_file]
-    proc = subprocess.run(args, stdout=subprocess.PIPE, encoding="utf-8", check=True)
-    lines = proc.stdout.split("\n")
-    result = list()
-    for line in lines:
-        lstripped_line = line.lstrip()
-        if lstripped_line.startswith("Symbol table") or lstripped_line.startswith("Num:"):
-            continue
-        tokens = line.split()
-        if len(tokens) == 0 or len(tokens) == 7:
-            continue
-
-        _, vaddr, _, sym_type, _, _, _, *name = tuple(tokens)
-        result.append((" ".join(name), int(vaddr, 16), getattr(ElfSymbolType, sym_type)))
-
-    return result
-
-
 ANALYZER_VIEWS_UNDER_TEST = [
     (
         readelf_extract_relocs,
@@ -903,28 +870,3 @@ async def test_analyzer(
     extracted_sorted = sorted(entries, key=lambda x: getattr(x, entry_sort))
     for entry, expected_entry in zip(extracted_sorted, expected_sorted):
         assert entry == expected_entry
-
-
-async def test_symbolic_analysis(
-    elf_executable_file,
-    ofrak_context: OFRAKContext,
-):
-    readelf_path = "/usr/bin/readelf"
-    original_elf = await ofrak_context.create_root_resource_from_file(elf_executable_file)
-    expected_entries = {
-        name: (vaddr, sym_type)
-        for name, vaddr, sym_type in readelf_extract_syms(readelf_path, elf_executable_file)
-    }
-
-    await original_elf.unpack_recursively()
-    analyzed_syms = await original_elf.get_descendants_as_view(
-        LinkableSymbol, r_filter=ResourceFilter.with_tags(LinkableSymbol)
-    )
-
-    for sym in analyzed_syms:
-        print(sym)
-        assert sym.name in expected_entries
-        expected_vaddr, expected_type = expected_entries[sym.name]
-        assert sym.virtual_address == expected_vaddr
-        if expected_type is ElfSymbolType.FUNC:
-            assert sym.symbol_type is LinkableSymbolType.FUNC

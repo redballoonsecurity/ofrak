@@ -260,6 +260,8 @@ class ElfLinkableSymbolIdentifier(Identifier[None]):
             return
         if elf_sym.st_name == 0:
             return
+        if elf_sym.get_type() not in [ElfSymbolType.FUNC, ElfSymbolType.OBJECT]:
+            return
         resource.add_tag(LinkableSymbol)
 
 
@@ -297,9 +299,13 @@ class ElfLinkableSymbolAnalyzer(Analyzer[None, LinkableSymbol]):
             else:
                 sym_type = LinkableSymbolType.RO_DATA
         else:
-            # TODO: We don't really do anything with UNDEF symbols, so it might be better to
-            #  exclude them here, otherwise it might create a confusing error message later
-            sym_type = LinkableSymbolType.UNDEF
+            raise ValueError(
+                f"Cannot analyze LinkableSymbol for {sym_name} because it has unsupported "
+                f"ElfSymbolType {elf_symbol.get_type().name} (only type FUNC and OBJECT) are "
+                f"supported for auto-analysis). ElfLinkableSymbolIdentifier should have already "
+                f"filtered this out; was this resource erroneously manually tagged as a "
+                f"LinkableSymbol?"
+            )
 
         sym_mode = InstructionSetMode.NONE
         sym_vaddr = elf_symbol.st_value

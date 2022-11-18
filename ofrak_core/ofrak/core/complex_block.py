@@ -93,7 +93,7 @@ class ComplexBlock(MemoryRegion):
         :raises ValueError: if the basic blocks in the complex block have more than one mode
         :return: the mode of the complex block
         """
-        await self.resource.unpack()
+        await self.resource.auto_run(all_unpackers=True)
         bb_modes = {bb.mode for bb in await self.get_basic_blocks()}
         if len(bb_modes) == 1:
             return bb_modes.pop()
@@ -190,6 +190,17 @@ class ComplexBlockLinkableSymbolIdentifier(Identifier[None]):
     targets = (ComplexBlock,)
 
     async def identify(self, resource: Resource, config: None) -> None:
+        cb = await resource.view_as(ComplexBlock)
+
+        if cb.name == "":
+            return
+        try:
+            _ = await cb.get_mode()
+        except ValueError:
+            # If a ComplexBlock's mode is ambiguous, for any reason, do no extract linkable
+            # symbols from it
+            return
+
         resource.add_tag(LinkableSymbol)
 
 
