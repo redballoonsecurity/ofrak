@@ -2,7 +2,7 @@ import dataclasses
 import logging
 import os
 from dataclasses import dataclass
-from typing import Dict, Iterable, Optional, Tuple
+from typing import Dict, Iterable, Optional, Tuple, cast
 
 from ofrak.component.modifier import Modifier
 from ofrak.core.binary import GenericBinary
@@ -89,7 +89,7 @@ class LinkableBinary(GenericBinary):
         if name is not None:
             attributes_filters.append(ResourceAttributeValueFilter(LinkableSymbol.Label, name))
 
-        symbols_by_name = dict()
+        symbols_by_name: Dict[str, LinkableSymbol] = dict()
 
         for sym in await self.resource.get_descendants_as_view(
             LinkableSymbol,
@@ -266,8 +266,9 @@ def _describe_symbol_source(sym: LinkableSymbol) -> Tuple[str, bytes]:
 
     :return: A tuple with the description string and the actual component ID
     """
-    sym_source = sym.resource.get_model().get_component_id_by_attributes(
-        LinkableSymbol.attributes_type
+    sym_source = cast(
+        bytes,
+        sym.resource.get_model().get_component_id_by_attributes(LinkableSymbol.attributes_type),
     )
     if sym_source == CLIENT_COMPONENT_ID:
         sym_source_str = f"defined manually by adding view or attributes in a script"
