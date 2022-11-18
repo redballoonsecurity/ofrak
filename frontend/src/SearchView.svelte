@@ -208,7 +208,7 @@
       <ResourceTreeNode
         rootResource="{matched_resource}"
         collapsed="false"
-        bind:resourceNodeDataMap
+        bind:resourceNodeDataMap="{resourceNodeDataMap}"
       />
     </div>
   {/each}
