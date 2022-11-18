@@ -257,13 +257,16 @@ async def test_resource_view_updates(ofrak_context: OFRAKContext):
     await instr_view.resource.run(
         InstructionModifier, InstructionModifierConfig("add", "r4, r5", InstructionSetMode.NONE)
     )
-    instr_r.add_view(
-        Instruction(0x100, 0x4, "add r4, r5", "add", "r4, r5", InstructionSetMode.NONE)
-    )
-    await instr_r.save()
 
     assert instr_view.mnemonic == "add"
     assert instr_view.operands == "r4, r5"
+
+    instr_r.add_view(
+        Instruction(0x100, 0x4, "sub r4, r5", "sub", "r4, r5", InstructionSetMode.NONE)
+    )
+    await instr_r.save()
+
+    assert instr_view.mnemonic == "sub"
 
 
 async def test_resource_view_delete_resource(ofrak_context: OFRAKContext):
