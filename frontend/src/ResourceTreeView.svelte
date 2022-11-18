@@ -43,10 +43,16 @@
 
 <div class="hbox">
   <div class="toolbar">
-    <ResourceTreeToolbar bind:resourceNodeDataMap bind:modifierView />
+    <ResourceTreeToolbar
+      bind:resourceNodeDataMap="{resourceNodeDataMap}"
+      bind:modifierView="{modifierView}"
+    />
   </div>
 
   <div class="treebox">
-    <ResourceTreeNode rootResource="{rootResource}" bind:resourceNodeDataMap />
+    <ResourceTreeNode
+      rootResource="{rootResource}"
+      bind:resourceNodeDataMap="{resourceNodeDataMap}"
+    />
   </div>
 </div>

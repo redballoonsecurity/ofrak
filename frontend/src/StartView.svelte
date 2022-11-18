@@ -218,7 +218,11 @@
       <p>Failed to get any pre-existing root resources!</p>
       <p>The back end server may be down.</p>
     {/await}
-    <Animals x="{mouseX}" visible="{true}" bind:selectedAnimal />
+    <Animals
+      x="{mouseX}"
+      visible="{true}"
+      bind:selectedAnimal="{selectedAnimal}"
+    />
   </div>
 {:else}
   <div class="center">
