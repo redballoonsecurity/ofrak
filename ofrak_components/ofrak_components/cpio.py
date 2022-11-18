@@ -94,7 +94,6 @@ class CpioUnpacker(Unpacker[None]):
                     check=True,
                     capture_output=True,
                     cwd=temp_flush_dir,
-                    stdin=subprocess.PIPE,
                     input=resource_data,
                 )
             except subprocess.CalledProcessError as error:
@@ -126,7 +125,6 @@ class CpioPacker(Packer[None]):
                 check=True,
                 capture_output=True,
                 cwd=temp_flush_dir,
-                stdin=subprocess.PIPE,
                 input=list_files_output.stdout,
             )
         except subprocess.CalledProcessError as error:
