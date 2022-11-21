@@ -36,7 +36,7 @@ setuptools.setup(
     ],
     extras_require={
         "test": [
-            "fun-coverage~=0.1.0",
+            "fun-coverage==0.1.3",
             "pytest",
             "pytest-asyncio==0.19.0",
             "pytest-cov",
