@@ -26,7 +26,7 @@ setuptools.setup(
     install_requires=["capstone==4.0.2", "ofrak"],
     extras_require={
         "test": [
-            "fun-coverage==0.1.2",
+            "fun-coverage==0.1.3",
             "pytest",
             "pytest-cov",
             "pytest-asyncio==0.19.0",
