@@ -198,7 +198,7 @@ source ofrak-venv/bin/activate
 
     If not all of the dependencies are installed, core OFRAK will still work, but most of the components will not.
 
-1. OFRAK uses `binwalk` for analyzing packed binary files. It can be installed with the following script:
+2. OFRAK uses `binwalk` for analyzing packed binary files. It can be installed with the following script:
    ```bash
    set -e
    pushd /tmp
@@ -207,19 +207,19 @@ source ofrak-venv/bin/activate
    python3 setup.py install
    popd
    ```
-5. The `uber-apk-signer` for unpacking and packing APK files can be installed using the following script:
+3. The `uber-apk-signer` for unpacking and packing APK files can be installed using the following script:
 
     ```bash
     brew install wget apktool java
     echo 'export PATH="/usr/local/opt/openjdk/bin:$PATH"' >> ~/.zshrc
     wget https://github.com/patrickfav/uber-apk-signer/releases/download/v1.0.0/uber-apk-signer-1.0.0.jar -O /usr/local/bin/uber-apk-signer.jar
     ```
-5. Install core OFRAK and its dependencies:
+4. Install core OFRAK and its dependencies:
 
     ```bash
     for d in ofrak_io ofrak_type ofrak_patch_maker ofrak_components ofrak; do make -C "${d}" develop; done 
     ```
-6. If you are planning to contribute to OFRAK, install the pre-commit hooks. For more information, see the [contributor guide](docs/contributor-guide/getting-started.md).
+5. If you are planning to contribute to OFRAK, install the pre-commit hooks. For more information, see the [contributor guide](docs/contributor-guide/getting-started.md).
 
     ```bash
     python3 -m pip install --user pre-commit
