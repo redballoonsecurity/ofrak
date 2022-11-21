@@ -1,8 +1,9 @@
+import subprocess
 from argparse import ArgumentParser
 from inspect import isabstract
 from itertools import chain
 from types import ModuleType
-from typing import Dict, List
+from typing import Dict, List, Iterable
 
 from ofrak import OFRAK
 from ofrak.component.interface import ComponentInterface
@@ -94,21 +95,7 @@ def setup_list_argparser(ofrak_subparsers):
             if args.packages:
                 indent -= 1
 
-        # strip duplicates
-        prev_indent = 0
-        seen = set()
-        deduplicated_lines = []
-        for line in output_lines:
-            indent = line.rfind("\t") + 1
-            if indent != prev_indent:
-                seen = set()
-            prev_indent = indent
-            if line not in seen:
-                deduplicated_lines.append(line)
-            seen.add(line)
-
-        for line in deduplicated_lines:
-            print(line)
+        _print_lines_without_duplicates(output_lines)
 
     list_parser.set_defaults(func=ofrak_list_handler)
 
@@ -127,15 +114,53 @@ def setup_deps_argparser(ofrak_subparsers):
         action="store",
         dest="package_manager",
         choices=ComponentExternalTool.REQUIRED_PKG_MANAGERS,
-        help="List names of packages (known to <package_manager>) which provide dependencies required "
-        "by installed OFRAK packages.",
+        help="List names of packages (known to <package_manager>) which provide dependencies "
+        "required by installed OFRAK packages.",
+        default=None,
     )
     deps_parser.add_argument(
         "--check", "-c", action="store_true", help="Check that each dependency is present"
     )
 
     def ofrak_deps_handler(args):
-        checking = args.check or args.missing_only
+        deps_by_component = _get_ofrak_dependencies()
+        dependencies = list()
+
+        for dep_list in deps_by_component.values():
+            for dep in dep_list:
+                if args.check or args.missing_only:
+                    try:
+                        res = subprocess.check_call(
+                            [dep.tool, dep.install_check_arg],
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL,
+                        )
+                        installed_correctly = 0 == res
+                    except subprocess.CalledProcessError:
+                        installed_correctly = False
+                    except FileNotFoundError:
+                        installed_correctly = False
+                else:
+                    installed_correctly = None
+
+                if args.missing_only and installed_correctly is True:
+                    continue
+                else:
+                    dependencies.append((dep, installed_correctly))
+
+        output_lines = []
+
+        for dep, is_installed in dependencies:
+            if args.check:
+                output_lines.append(
+                    f"{dep.tool}{' (Missing)' if not is_installed else ' (Installed)'}"
+                )
+            elif args.package_manager:
+                dep_pkg = dep.install_packages[args.package_manager]
+                if dep_pkg:
+                    output_lines.append(dep_pkg)
+
+        _print_lines_without_duplicates(output_lines)
 
     deps_parser.set_defaults(func=ofrak_deps_handler)
 
@@ -151,6 +176,24 @@ def setup_argparser():
     setup_deps_argparser(ofrak_subparsers)
 
     return ofrak_parser
+
+
+def _print_lines_without_duplicates(output_lines: Iterable[str]):
+    # strip duplicates
+    prev_indent = 0
+    seen = set()
+    deduplicated_lines = []
+    for line in output_lines:
+        indent = line.rfind("\t") + 1
+        if indent != prev_indent:
+            seen = set()
+        prev_indent = indent
+        if line not in seen:
+            deduplicated_lines.append(line)
+        seen.add(line)
+
+    for line in deduplicated_lines:
+        print(line)
 
 
 if __name__ == "__main__":
