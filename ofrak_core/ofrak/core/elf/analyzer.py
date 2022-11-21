@@ -2,15 +2,12 @@ import io
 import logging
 from typing import Optional, TypeVar
 
-from ofrak import Identifier
-from ofrak.core.patch_maker.linkable_symbol import LinkableSymbol, LinkableSymbolType
-
 from ofrak.component.analyzer import Analyzer
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.resource import Resource
-from ofrak.service.resource_service_i import ResourceFilter, ResourceAttributeValueFilter
+from ofrak.service.resource_service_i import ResourceFilter
 from ofrak.core.elf.model import (
     ElfSectionHeader,
     Elf,
@@ -28,11 +25,8 @@ from ofrak.core.elf.model import (
     ElfDynamicEntry,
     ElfVirtualAddress,
     UnanalyzedElfSegment,
-    ElfSymbolType,
-    ElfSectionFlag,
 )
 from ofrak_io.deserializer import BinaryDeserializer
-from ofrak_type.architecture import InstructionSet, InstructionSetMode
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
@@ -243,80 +237,6 @@ class ElfSymbolAttributesAnalyzer(Analyzer[None, ElfSymbol]):
                 "IIIBBH"
             )
         return ElfSymbol(elf_index, st_name, st_value, st_size, st_info, st_other, st_shndx)
-
-
-class ElfLinkableSymbolIdentifier(Identifier[None]):
-    """
-    ElfSymbols are linkable, so tag them as LinkableSymbols.
-    """
-
-    targets = (ElfSymbol,)
-
-    async def identify(self, resource: Resource, config: None) -> None:
-        elf_sym = await resource.view_as(ElfSymbol)
-        if elf_sym.st_shndx == 0 or elf_sym.st_shndx >= 0xFF00:
-            return
-        if elf_sym.symbol_index == 0:
-            return
-        if elf_sym.st_name == 0:
-            return
-        if elf_sym.get_type() not in [ElfSymbolType.FUNC, ElfSymbolType.OBJECT]:
-            return
-        resource.add_tag(LinkableSymbol)
-
-
-class ElfLinkableSymbolAnalyzer(Analyzer[None, LinkableSymbol]):
-    """
-    Extract the linking info relevant for OFRAK's PatchMaker.
-    """
-
-    targets = (ElfSymbol,)
-    outputs = (LinkableSymbol,)
-
-    async def analyze(self, resource: Resource, config: None) -> LinkableSymbol:
-        elf_symbol = await resource.view_as(ElfSymbol)
-        elf_r = await resource.get_only_ancestor(ResourceFilter(tags=(Elf,)))
-        prog_attrs = await elf_r.analyze(ProgramAttributes)
-
-        sym_name = await elf_symbol.get_name()
-        if elf_symbol.get_type() is ElfSymbolType.FUNC:
-            sym_type = LinkableSymbolType.FUNC
-        elif elf_symbol.get_type() is ElfSymbolType.OBJECT:
-            # Need to check what section it is in to see if it is writable
-            section_containing_symbol = await elf_r.get_only_descendant_as_view(
-                ElfSectionHeader,
-                r_filter=ResourceFilter(
-                    tags=(ElfSectionHeader,),
-                    attribute_filters=(
-                        ResourceAttributeValueFilter(
-                            ElfSectionHeader.SectionIndex, elf_symbol.st_shndx
-                        ),
-                    ),
-                ),
-            )
-            if section_containing_symbol.has_flag(ElfSectionFlag.WRITE):
-                sym_type = LinkableSymbolType.RW_DATA
-            else:
-                sym_type = LinkableSymbolType.RO_DATA
-        else:
-            raise ValueError(
-                f"Cannot analyze LinkableSymbol for {sym_name} because it has unsupported "
-                f"ElfSymbolType {elf_symbol.get_type().name} (only type FUNC and OBJECT) are "
-                f"supported for auto-analysis). ElfLinkableSymbolIdentifier should have already "
-                f"filtered this out; was this resource erroneously manually tagged as a "
-                f"LinkableSymbol?"
-            )
-
-        sym_mode = InstructionSetMode.NONE
-        sym_vaddr = elf_symbol.st_value
-
-        # Check if this is a THUMB function symbol
-        if prog_attrs.isa is InstructionSet.ARM and sym_type is LinkableSymbolType.FUNC:
-            if elf_symbol.st_value & 0x1:
-                sym_mode = InstructionSetMode.THUMB
-                sym_vaddr = elf_symbol.st_value - 1
-
-        return LinkableSymbol(sym_vaddr, sym_name, sym_type, sym_mode)
 
 
 class ElfDynamicSectionAnalyzer(Analyzer[None, ElfDynamicEntry]):

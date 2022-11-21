@@ -3,10 +3,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Tuple, Iterable
 
-from ofrak import Identifier
-from ofrak.core.patch_maker.linkable_symbol import LinkableSymbol, LinkableSymbolType
-
-
 from ofrak.resource import Resource
 
 from ofrak.component.analyzer import Analyzer
@@ -180,41 +176,3 @@ class DataRefsAnalyzer(Analyzer[None, Tuple[ComplexBlockDataReferenceAttributes]
         :return: The virtual addresses of all the data words referenced by the complex block.
         """
         raise NotImplementedError()
-
-
-class ComplexBlockLinkableSymbolIdentifier(Identifier[None]):
-    """
-    ComplexBlocks are linkable, so tag them as LinkableSymbols.
-    """
-
-    targets = (ComplexBlock,)
-
-    async def identify(self, resource: Resource, config: None) -> None:
-        cb = await resource.view_as(ComplexBlock)
-
-        if cb.name == "":
-            return
-        try:
-            _ = await cb.get_mode()
-        except ValueError:
-            # If a ComplexBlock's mode is ambiguous, for any reason, do no extract linkable
-            # symbols from it
-            return
-
-        resource.add_tag(LinkableSymbol)
-
-
-class ComplexBlockSymbolAnalyzer(Analyzer[None, LinkableSymbol]):
-    targets = (ComplexBlock,)
-    outputs = (LinkableSymbol,)
-
-    async def analyze(self, resource: Resource, config: None) -> LinkableSymbol:
-        cb = await resource.view_as(ComplexBlock)
-        cb_mode = await cb.get_mode()
-
-        return LinkableSymbol(
-            cb.virtual_address,
-            cb.name,
-            LinkableSymbolType.FUNC,
-            cb_mode,
-        )
