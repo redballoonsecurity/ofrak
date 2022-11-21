@@ -16,6 +16,9 @@ from ofrak.service.resource_service_i import ResourceFilter, ResourceAttributeVa
 from ofrak_type.architecture import InstructionSetMode, InstructionSet
 
 
+_DISALLOWED_SYMBOL_NAMES = {"_GLOBAL_OFFSET_TABLE_"}
+
+
 class ElfLinkableSymbolIdentifier(Identifier[None]):
     """
     ElfSymbols are linkable, so tag them as LinkableSymbols.
@@ -32,6 +35,9 @@ class ElfLinkableSymbolIdentifier(Identifier[None]):
         if elf_sym.st_name == 0:
             return
         if elf_sym.get_type() not in [ElfSymbolType.FUNC, ElfSymbolType.OBJECT]:
+            return
+        sym_name = await elf_sym.get_name()
+        if sym_name in _DISALLOWED_SYMBOL_NAMES:
             return
         resource.add_tag(LinkableSymbol)
 
