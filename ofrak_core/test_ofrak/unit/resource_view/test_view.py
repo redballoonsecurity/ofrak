@@ -245,6 +245,13 @@ async def test_modifier_updates_view(instr_view: Instruction):
     assert instr_view.mnemonic == "add"
     assert instr_view.operands == "r4, r5"
 
+    instr_r.add_view(
+        Instruction(0x100, 0x4, "sub r4, r5", "sub", "r4, r5", InstructionSetMode.NONE)
+    )
+    await instr_r.save()
+
+    assert instr_view.mnemonic == "sub"
+
 
 async def test_save_updates_view(instr_view: Instruction):
     instr_view.resource.add_view(

@@ -89,7 +89,7 @@ class ComplexBlock(MemoryRegion):
         :raises ValueError: if the basic blocks in the complex block have more than one mode
         :return: the mode of the complex block
         """
-        await self.resource.unpack()
+        await self.resource.auto_run(all_unpackers=True)
         bb_modes = {bb.mode for bb in await self.get_basic_blocks()}
         if len(bb_modes) == 1:
             return bb_modes.pop()

@@ -2,7 +2,6 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from typing import Iterable, Optional
-
 from ofrak_type.architecture import InstructionSet
 from ofrak.core.program import Program
 from ofrak.core.program_section import NamedProgramSection, ProgramSegment
