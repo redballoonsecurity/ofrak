@@ -255,6 +255,7 @@ class Resource:
             modification_tracker.data_patches.clear()
             await self._dependency_handler.handle_post_patch_dependencies(patch_results)
             await self._resource_service.update(self._resource.save())
+            await self._update_views((self._resource.id,), ())
         else:
             return
 
@@ -287,8 +288,8 @@ class Resource:
                 tasks.append(self._fetch(context_resource))
         await asyncio.gather(*tasks)
 
-    async def _update_views(self, component_result: ComponentRunResult):
-        for resource_id in component_result.resources_modified:
+    async def _update_views(self, modified: Iterable[bytes], deleted: Iterable[bytes]):
+        for resource_id in modified:
             views_in_context = self._resource_view_context.views_by_resource[resource_id]
             for view in views_in_context.values():
                 updated_model = self._resource_context.resource_models[resource_id]
@@ -298,7 +299,7 @@ class Resource:
                         continue
                     setattr(view, field.name, getattr(fresh_view, field.name))
 
-        for resource_id in component_result.resources_deleted:
+        for resource_id in deleted:
             views_in_context = self._resource_view_context.views_by_resource[resource_id]
             for view in views_in_context.values():
                 view.set_deleted()
@@ -327,7 +328,9 @@ class Resource:
             job_context,
         )
         await self._fetch_resources(component_result.resources_modified)
-        await self._update_views(component_result)
+        await self._update_views(
+            component_result.resources_modified, component_result.resources_deleted
+        )
         return component_result
 
     async def auto_run(
@@ -367,7 +370,9 @@ class Resource:
             )
         )
         await self._fetch_resources(components_result.resources_modified)
-        await self._update_views(components_result)
+        await self._update_views(
+            components_result.resources_modified, components_result.resources_deleted
+        )
         return components_result
 
     async def unpack(self) -> ComponentRunResult:
@@ -445,7 +450,9 @@ class Resource:
             )
         )
         await self._fetch_resources(components_result.resources_modified)
-        await self._update_views(components_result)
+        await self._update_views(
+            components_result.resources_modified, components_result.resources_deleted
+        )
         return components_result
 
     async def unpack_recursively(
@@ -509,7 +516,9 @@ class Resource:
         # Update all the resources in the local context that were modified as part of the
         # analysis
         await self._fetch_resources(components_result.resources_modified)
-        await self._update_views(components_result)
+        await self._update_views(
+            components_result.resources_modified, components_result.resources_deleted
+        )
         return components_result
 
     async def _create_resource(self, resource_model: ResourceModel) -> "Resource":
