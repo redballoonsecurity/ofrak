@@ -16,7 +16,9 @@ from ofrak.service.resource_service_i import ResourceFilter, ResourceAttributeVa
 from ofrak_type.architecture import InstructionSetMode, InstructionSet
 
 
-_DISALLOWED_SYMBOL_NAMES = {"_GLOBAL_OFFSET_TABLE_"}
+_DISALLOWED_SYMBOL_NAMES = {
+    "_GLOBAL_OFFSET_TABLE_",  # Linker-generated and explicitly checked by lld; even WEAK scope leads to "redefined" errors
+}
 
 
 class ElfLinkableSymbolIdentifier(Identifier[None]):
@@ -28,15 +30,21 @@ class ElfLinkableSymbolIdentifier(Identifier[None]):
 
     async def identify(self, resource: Resource, config: None) -> None:
         elf_sym = await resource.view_as(ElfSymbol)
+        # These are "magic values" for st_shndx - Skip symbols which don't have a section
         if elf_sym.st_shndx == 0 or elf_sym.st_shndx >= 0xFF00:
             return
+        # First symbols is always a placeholder/null symbol we don't need
         if elf_sym.symbol_index == 0:
             return
+        # Skip unnamed symbols
         if elf_sym.st_name == 0:
             return
+        # Only analyze symbols which fit the pattern of being either functions or data
         if elf_sym.get_type() not in [ElfSymbolType.FUNC, ElfSymbolType.OBJECT]:
             return
         sym_name = await elf_sym.get_name()
+        # Some symbol names will cause errors if we try to automatically pass to the linker later
+        # These are not really 'linkable symbols', so skip them
         if sym_name in _DISALLOWED_SYMBOL_NAMES:
             return
         resource.add_tag(LinkableSymbol)
