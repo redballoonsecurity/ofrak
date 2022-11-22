@@ -1,4 +1,3 @@
-import subprocess
 from argparse import ArgumentParser
 from inspect import isabstract
 from itertools import chain
@@ -113,7 +112,7 @@ def setup_deps_argparser(ofrak_subparsers):
         "--dependency-packages",
         action="store",
         dest="package_manager",
-        choices=ComponentExternalTool.REQUIRED_PKG_MANAGERS,
+        choices=("apt", "brew"),
         help="List names of packages (known to <package_manager>) which provide dependencies "
         "required by installed OFRAK packages.",
         default=None,
@@ -129,17 +128,7 @@ def setup_deps_argparser(ofrak_subparsers):
         for dep_list in deps_by_component.values():
             for dep in dep_list:
                 if args.check or args.missing_only:
-                    try:
-                        res = subprocess.check_call(
-                            [dep.tool, dep.install_check_arg],
-                            stdout=subprocess.DEVNULL,
-                            stderr=subprocess.DEVNULL,
-                        )
-                        installed_correctly = 0 == res
-                    except subprocess.CalledProcessError:
-                        installed_correctly = False
-                    except FileNotFoundError:
-                        installed_correctly = False
+                    installed_correctly = dep.is_tool_installed()
                 else:
                     installed_correctly = None
 
@@ -156,7 +145,12 @@ def setup_deps_argparser(ofrak_subparsers):
                     f"{dep.tool}{' (Missing)' if not is_installed else ' (Installed)'}"
                 )
             elif args.package_manager:
-                dep_pkg = dep.install_packages[args.package_manager]
+                if args.package_manager == "apt":
+                    dep_pkg = dep.apt_package
+                elif args.package_manager == "brew":
+                    dep_pkg = dep.brew_package
+                else:
+                    dep_pkg = None
                 if dep_pkg:
                     output_lines.append(dep_pkg)
 
