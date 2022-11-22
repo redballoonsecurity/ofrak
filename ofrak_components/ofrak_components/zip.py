@@ -21,8 +21,18 @@ from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
 
-ZIP_TOOL = ComponentExternalTool("zip")
-UNZIP_TOOL = ComponentExternalTool("unzip")
+ZIP_TOOL = ComponentExternalTool(
+    "zip",
+    install_check_arg="--help",
+    apt_package="zip",
+    brew_package="zip",
+)
+UNZIP_TOOL = ComponentExternalTool(
+    "unzip",
+    install_check_arg="--help",
+    apt_package="unzip",
+    brew_package="unzip",
+)
 
 
 @dataclass

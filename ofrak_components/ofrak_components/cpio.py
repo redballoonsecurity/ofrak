@@ -22,7 +22,12 @@ from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
 
-CPIO_TOOL = ComponentExternalTool("cpio")
+CPIO_TOOL = ComponentExternalTool(
+    "cpio",
+    install_check_arg="--help",
+    apt_package="cpio",
+    brew_package="cpio",
+)
 
 
 class CpioArchiveType(Enum):
