@@ -85,16 +85,22 @@ class Packer(AbstractComponent[CC], ABC):
     def _get_which_unpackers_ran(self, resource: Resource) -> Tuple[bytes, ...]:
         unpackers_ran = self._component_locator.get_components_matching_filter(
             ComponentAndMetaFilter(
-                ComponentWhitelistFilter(*resource.get_model().component_versions.keys()),
-                # Use process of elimination to avoid circular import between unpacker.py, packer.py
-                ComponentNotMetaFilter(
-                    ComponentOrMetaFilter(
-                        ComponentTypeFilter(Packer),  # type: ignore
-                        ComponentTypeFilter(Analyzer),  # type: ignore
-                        ComponentTypeFilter(Identifier),  # type: ignore
-                        ComponentTypeFilter(Modifier),  # type: ignore
-                    )
-                ),
+                (
+                    ComponentWhitelistFilter(
+                        frozenset(resource.get_model().component_versions.keys())
+                    ),
+                    # Use process of elimination to avoid circular import between unpacker.py, packer.py
+                    ComponentNotMetaFilter(
+                        ComponentOrMetaFilter(
+                            (
+                                ComponentTypeFilter(Packer),  # type: ignore
+                                ComponentTypeFilter(Analyzer),  # type: ignore
+                                ComponentTypeFilter(Identifier),  # type: ignore
+                                ComponentTypeFilter(Modifier),  # type: ignore
+                            )
+                        )
+                    ),
+                )
             )
         )
         return tuple(unpacker.get_id() for unpacker in unpackers_ran)
