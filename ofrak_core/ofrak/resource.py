@@ -391,9 +391,12 @@ class Resource:
 
         :return:
         """
-        await self.analyze_attributes(resource_attributes)
-        attributes = self.get_attributes(resource_attributes)
-        return attributes
+        attributes = self._check_attributes(resource_attributes)
+        if attributes is None:
+            await self._analyze_attributes(resource_attributes)
+            return self.get_attributes(resource_attributes)
+        else:
+            return attributes
 
     async def identify(self):
         """
@@ -706,7 +709,15 @@ class Resource:
                     f"{viewable_tag.__name__}"
                 )
             composed_attrs_types = viewable_tag.composed_attributes_types
-            analysis_tasks = [self.analyze(attrs_t) for attrs_t in composed_attrs_types]
+            existing_attributes = zip(
+                composed_attrs_types,
+                [self._check_attributes(attrs_t) for attrs_t in composed_attrs_types],
+            )
+            analysis_tasks = [
+                self._analyze_attributes(attrs_t)
+                for attrs_t, existing in existing_attributes
+                if not existing
+            ]
             await asyncio.gather(*analysis_tasks)
             view = viewable_tag.create(self.get_model())
             view.resource = self  # type: ignore
@@ -783,21 +794,25 @@ class Resource:
         """
         return self._resource.get_most_specific_tags()
 
-    async def analyze_attributes(
-        self,
-        attributes_type: Type[RA],
-    ):
-        # TODO: Should we be using the version as well? The client wouldn't now the
-        #  version of the component in a client-server environment. We could do that efficiently by
-        #  adding a service method that list all available components (and their version)
-        # Check that the attributes are there to begin with
+    def _check_attributes(self, attributes_type: Type[RA]) -> Optional[RA]:
+        """
+        Try to get the current attributes.
+
+        TODO: Should we be using the version as well? The client wouldn't know the
+        version of the component in a client-server environment. We could do that efficiently by
+        adding a service method that list all available components (and their version)
+
+        :param attributes_type: The type of attributes to check this resource for.
+
+        :return: The requested attributes if they are present and up-to-date, otherwise return None.
+        """
         attributes = self._resource.get_attributes(attributes_type)
         if attributes is not None:
             # Make sure that the attributes have not been invalidated
             component_id = self._resource.get_component_id_by_attributes(type(attributes))
             if component_id is not None:
                 return attributes
-        await self._analyze_attributes(attributes_type)
+        return None
 
     def _add_attributes(self, attributes: ResourceAttributes):
         existing_attributes = self._resource.get_attributes(type(attributes))
