@@ -2,7 +2,20 @@ import asyncio
 import dataclasses
 import hashlib
 import logging
-from typing import BinaryIO, Iterable, List, Optional, Tuple, Type, TypeVar, cast, Union
+from inspect import isawaitable
+from typing import (
+    BinaryIO,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    cast,
+    Union,
+    Awaitable,
+    Sequence,
+)
 
 from ofrak.component.interface import ComponentInterface
 from ofrak.model.component_model import ComponentContext, CC, ComponentRunResult
@@ -683,6 +696,54 @@ class Resource:
         )
         return new_resource
 
+    def _view_as(self, viewable_tag: Type[RV]) -> Union[RV, Awaitable[RV]]:
+        """
+        Try to get a view without calling any analysis, to avoid as many unnecessary
+        `asyncio.gather` calls as possible.
+
+        Checks cached views first for view, and if not found, then checks if the attributes needed
+        to create the view are already present and up-to-date, and only if both of those are not
+        found does it return an awaitable.
+        """
+        if self._resource_view_context.has_view(self.get_id(), viewable_tag):
+            # First early return: View already exists in cache
+            return self._resource_view_context.get_view(self.get_id(), viewable_tag)
+        if not issubclass(viewable_tag, ResourceViewInterface):
+            raise ValueError(
+                f"Cannot get view for resource {self.get_id().hex()} of a type "
+                f"{viewable_tag.__name__} because it is not a subclass of ResourceView"
+            )
+        if not self.has_tag(viewable_tag):
+            raise ValueError(
+                f"Cannot get resource {self.get_id().hex()} as view "
+                f"{viewable_tag.__name__} because the resource is not tagged as a "
+                f"{viewable_tag.__name__}"
+            )
+        composed_attrs_types = viewable_tag.composed_attributes_types
+        existing_attributes = [self._check_attributes(attrs_t) for attrs_t in composed_attrs_types]
+        if all(existing_attributes):
+            # Second early return: All attributes needed for view are present and up-to-date
+            view = viewable_tag.create(self.get_model())
+            view.resource = self  # type: ignore
+            self._resource_view_context.add_view(self.get_id(), view)
+            return cast(RV, view)
+
+        analysis_tasks = [
+            self._analyze_attributes(attrs_t)
+            for attrs_t, existing in zip(composed_attrs_types, existing_attributes)
+            if not existing
+        ]
+
+        # Only if analysis is absolutely necessary is an awaitable created and returned
+        async def finish_view_creation() -> RV:
+            await asyncio.gather(*analysis_tasks)
+            view = viewable_tag.create(self.get_model())
+            view.resource = self  # type: ignore
+            self._resource_view_context.add_view(self.get_id(), view)
+            return cast(RV, view)
+
+        return finish_view_creation()
+
     async def view_as(self, viewable_tag: Type[RV]) -> RV:
         """
         Provides a specific type of view instance for this resource. The returned instance is an
@@ -696,34 +757,11 @@ class Resource:
 
         :return:
         """
-        if not self._resource_view_context.has_view(self.get_id(), viewable_tag):
-            if not issubclass(viewable_tag, ResourceViewInterface):
-                raise ValueError(
-                    f"Cannot get view for resource {self.get_id().hex()} of a type "
-                    f"{viewable_tag.__name__} because it is not a subclass of ResourceView"
-                )
-            if not self.has_tag(viewable_tag):
-                raise ValueError(
-                    f"Cannot get resource {self.get_id().hex()} as view "
-                    f"{viewable_tag.__name__} because the resource is not tagged as a "
-                    f"{viewable_tag.__name__}"
-                )
-            composed_attrs_types = viewable_tag.composed_attributes_types
-            existing_attributes = zip(
-                composed_attrs_types,
-                [self._check_attributes(attrs_t) for attrs_t in composed_attrs_types],
-            )
-            analysis_tasks = [
-                self._analyze_attributes(attrs_t)
-                for attrs_t, existing in existing_attributes
-                if not existing
-            ]
-            await asyncio.gather(*analysis_tasks)
-            view = viewable_tag.create(self.get_model())
-            view.resource = self  # type: ignore
-            self._resource_view_context.add_view(self.get_id(), view)
-            return cast(RV, view)
-        return self._resource_view_context.get_view(self.get_id(), viewable_tag)
+        view_or_create_view_task = self._view_as(viewable_tag)
+        if isawaitable(view_or_create_view_task):
+            return await view_or_create_view_task
+        else:
+            return view_or_create_view_task
 
     def add_view(self, view: ResourceViewInterface):
         """
@@ -1067,8 +1105,24 @@ class Resource:
         :raises NotFoundError: If a filter was provided and no resources match the provided filter
         """
         descendants = await self.get_descendants(max_depth, r_filter, r_sort)
-        view_tasks = [r.view_as(v_type) for r in descendants]
-        return await asyncio.gather(*view_tasks)
+        views_or_tasks = [r._view_as(v_type) for r in descendants]
+        view_tasks = []
+        views_or_task_indexes = []
+        for view_or_create_view_task in views_or_tasks:
+            if isawaitable(view_or_create_view_task):
+                views_or_task_indexes.append(len(view_tasks))
+                view_tasks.append(view_or_create_view_task)
+            else:
+                views_or_task_indexes.append(view_or_create_view_task)
+
+        if view_tasks:
+            completed_views: Sequence[RV] = await asyncio.gather(*view_tasks)
+            return [
+                completed_views[v_or_i] if type(v_or_i) is int else cast(RV, v_or_i)
+                for v_or_i in views_or_task_indexes
+            ]
+        else:
+            return views_or_task_indexes
 
     async def get_descendants(
         self,
