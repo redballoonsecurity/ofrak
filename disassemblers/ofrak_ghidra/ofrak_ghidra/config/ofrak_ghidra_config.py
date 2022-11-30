@@ -71,7 +71,7 @@ server:
             ghidra_analysis_port=int(raw_config["server"]["analysis"]["port"]),
         )
 
-    def to_yaml(self) -> str:  # pragma: no funcover
+    def to_yaml(self) -> str:
         raw_config = {
             "ghidra_install": {
                 "path": self.ghidra_path,
