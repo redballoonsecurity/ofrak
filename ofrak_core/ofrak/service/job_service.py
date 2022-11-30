@@ -647,7 +647,7 @@ def _build_auto_run_filter(
 ) -> ComponentFilter:
     filters: List[ComponentFilter] = []
     if request.components_allowed:
-        filters.append(ComponentWhitelistFilter(frozenset(request.components_allowed)))
+        filters.append(ComponentWhitelistFilter(*request.components_allowed))
 
     type_filters = []
     if request.all_unpackers:
@@ -661,9 +661,7 @@ def _build_auto_run_filter(
     filters.append(ComponentOrMetaFilter(*type_filters))
     if request.components_disallowed:
         filters.append(
-            ComponentNotMetaFilter(
-                ComponentWhitelistFilter(frozenset(request.components_disallowed))
-            )
+            ComponentNotMetaFilter(ComponentWhitelistFilter(*request.components_disallowed))
         )
     if request.tags_ignored:
         filters.append(ComponentNotMetaFilter(ComponentTargetFilter(*request.tags_ignored)))

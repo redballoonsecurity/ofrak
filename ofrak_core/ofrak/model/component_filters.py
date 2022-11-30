@@ -1,5 +1,5 @@
 import itertools
-from typing import Set, Type, Tuple, FrozenSet, Sequence
+from typing import FrozenSet, Set, Tuple, Type
 
 from dataclasses import dataclass
 
@@ -29,7 +29,7 @@ class ComponentWhitelistFilter(ComponentFilter):
     whitelisted_component_ids: FrozenSet[bytes]
 
     def __init__(self, *whitelisted_component_ids):
-        object.__setattr__(self, "whitelisted_component_ids", whitelisted_component_ids)
+        object.__setattr__(self, "whitelisted_component_ids", frozenset(whitelisted_component_ids))
 
     def filter(self, components: Set[ComponentInterface]) -> Set[ComponentInterface]:
         return {c for c in components if c.get_id() in self.whitelisted_component_ids}
@@ -57,7 +57,7 @@ class ComponentTargetFilter(ComponentFilter):
     strictly equal, that is, super/subclasses of the tags are not checked.
     """
 
-    tags: Sequence[ResourceTag]
+    tags: Tuple[ResourceTag, ...]
 
     def __init__(self, *tags: ResourceTag):
         object.__setattr__(self, "tags", tags)

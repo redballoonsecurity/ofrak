@@ -92,7 +92,7 @@ class Unpacker(AbstractComponent[CC], ABC):
     def _get_which_packers_ran(self, resource: Resource) -> Tuple[bytes, ...]:
         unpackers_ran = self._component_locator.get_components_matching_filter(
             ComponentAndMetaFilter(
-                ComponentWhitelistFilter(frozenset(resource.get_model().component_versions.keys())),
+                ComponentWhitelistFilter(*resource.get_model().component_versions.keys()),
                 # Use process of elimination to avoid circular import between unpacker.py, packer.py
                 ComponentNotMetaFilter(
                     ComponentOrMetaFilter(

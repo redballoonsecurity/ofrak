@@ -3,9 +3,10 @@ from typing import Iterable, Set, Tuple, Optional, cast, List
 
 
 class ResourceTag(type):
-    _specificity: Optional[int] = None
+    def __init__(cls, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        cls._specificity: Optional[int] = None
 
-    @functools.lru_cache(None)
     def tag_specificity(cls) -> int:
         """
         Indicates how specific an abstraction this tag is.
@@ -63,7 +64,7 @@ class ResourceTag(type):
                 levels.extend([] for _ in range(spec - len(levels)))
             levels[spec].append(t)
 
-        return tuple(tuple(level) for level in levels if reversed(level))
+        return tuple(tuple(level) for level in reversed(levels) if len(level) > 0)
 
     def caption(cls, attributes) -> str:
         return str(cls.__name__)
