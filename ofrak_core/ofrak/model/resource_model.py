@@ -423,7 +423,7 @@ class ResourceModel:
             return ()
         tags_not_most_specific: Set[ResourceTag] = set()
         most_specific_tags = set()
-        for tag_tier in reversed(tiered_tags):
+        for tag_tier in tiered_tags:
             most_specific_tags_in_tier = set(tag_tier).difference(tags_not_most_specific)
             most_specific_tags.update(most_specific_tags_in_tier)
             for tag in tag_tier:

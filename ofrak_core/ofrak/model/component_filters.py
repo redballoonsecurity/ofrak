@@ -1,5 +1,5 @@
 import itertools
-from typing import Set, Type, Tuple, FrozenSet
+from typing import Set, Type, Tuple, FrozenSet, Sequence
 
 from dataclasses import dataclass
 
@@ -20,13 +20,16 @@ def _isinstance(*args, **kwargs):
     return isinstance(*args, **kwargs)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, init=False)
 class ComponentWhitelistFilter(ComponentFilter):
     """
     Only allow components which belong to a specific set to be run.
     """
 
     whitelisted_component_ids: FrozenSet[bytes]
+
+    def __init__(self, *whitelisted_component_ids):
+        object.__setattr__(self, "whitelisted_component_ids", whitelisted_component_ids)
 
     def filter(self, components: Set[ComponentInterface]) -> Set[ComponentInterface]:
         return {c for c in components if c.get_id() in self.whitelisted_component_ids}
@@ -47,29 +50,36 @@ class ComponentTypeFilter(ComponentFilter):
         return {c for c in components if _isinstance(c, self.component_type)}
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, init=False)
 class ComponentTargetFilter(ComponentFilter):
     """
     Only allow components which target at least one of the tags in a set. The tags must be
     strictly equal, that is, super/subclasses of the tags are not checked.
     """
 
-    tags: FrozenSet[ResourceTag]
+    tags: Sequence[ResourceTag]
+
+    def __init__(self, *tags: ResourceTag):
+        object.__setattr__(self, "tags", tags)
 
     def __repr__(self) -> str:
         return f"ComponentTargetFilter({', '.join(t.__name__ for t in self.tags)})"
 
     def filter(self, components: Set[ComponentInterface]) -> Set[ComponentInterface]:
-        return {c for c in components if any(t in self.tags for t in c.targets)}
+
+        return {c for c in components if any(t in c.targets for t in self.tags)}
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, init=False)
 class AnalyzerOutputFilter(ComponentFilter):
     """
     Only allow analyzers whose outputs have some overlap with the requested outputs.
     """
 
     outputs: FrozenSet[Type[ResourceAttributes]]
+
+    def __init__(self, *outputs: Type[ResourceAttributes]):
+        object.__setattr__(self, "outputs", frozenset(outputs))
 
     def filter(self, components: Set[ComponentInterface]) -> Set[ComponentInterface]:
         def component_is_analyzer_with_outputs(c: ComponentInterface):
@@ -84,7 +94,7 @@ class AnalyzerOutputFilter(ComponentFilter):
         return f"AnalyzerOutputFilter({', '.join(attr_t.__name__ for attr_t in self.outputs)})"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, init=False)
 class ComponentOrMetaFilter(ComponentFilter):
     """
     Only allow components which match any one of multiple filters. If there are no filters, no
@@ -92,6 +102,9 @@ class ComponentOrMetaFilter(ComponentFilter):
     """
 
     filters: Tuple[ComponentFilter, ...]
+
+    def __init__(self, *filters: ComponentFilter):
+        object.__setattr__(self, "filters", filters)
 
     def __repr__(self) -> str:
         return f"({' or '.join(f.__repr__() for f in self.filters)})"
@@ -103,7 +116,7 @@ class ComponentOrMetaFilter(ComponentFilter):
             return set(itertools.chain(*(f.filter(components) for f in self.filters)))
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, init=False)
 class ComponentAndMetaFilter(ComponentFilter):
     """
     Only allow components which match all of multiple filters. If there are no filters, all
@@ -111,6 +124,9 @@ class ComponentAndMetaFilter(ComponentFilter):
     """
 
     filters: Tuple[ComponentFilter, ...]
+
+    def __init__(self, *filters: ComponentFilter):
+        object.__setattr__(self, "filters", filters)
 
     def __repr__(self) -> str:
         return f"({' and '.join(f.__repr__() for f in self.filters)})"
@@ -126,7 +142,7 @@ class ComponentAndMetaFilter(ComponentFilter):
         return components
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, init=False)
 class ComponentPrioritySelectingMetaFilter(ComponentFilter):
     """
     Selects exactly one filter to apply from a prioritized list of component filters. Only the first
@@ -146,6 +162,9 @@ class ComponentPrioritySelectingMetaFilter(ComponentFilter):
     """
 
     filters: Tuple[ComponentFilter, ...]
+
+    def __init__(self, *filters: ComponentFilter):
+        object.__setattr__(self, "filters", filters)
 
     def __repr__(self) -> str:
         return f"({' then '.join(f.__repr__() for f in self.filters)})"

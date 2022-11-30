@@ -1,9 +1,10 @@
 import functools
-from collections import defaultdict
-from typing import Set, Iterable, Tuple
+from typing import Iterable, Set, Tuple
 
 
 class ResourceTag(type):
+    _specificity = None
+
     @functools.lru_cache(None)
     def tag_specificity(cls) -> int:
         """
@@ -11,11 +12,13 @@ class ResourceTag(type):
         :return: The number of classes in the inheritance hierarchy between this class and
         Resource
         """
-        specificity = 0
-        for base in cls.base_tags():
-            specificity = max(specificity, base.tag_specificity())
+        if cls._specificity is None:
+            specificity = 0
+            for base in cls.base_tags():
+                specificity = max(specificity, base.tag_specificity())
 
-        return specificity + 1
+            cls._specificity = specificity + 1
+        return cls._specificity
 
     @functools.lru_cache(None)
     def tag_classes(cls) -> Set["ResourceTag"]:
@@ -53,12 +56,14 @@ class ResourceTag(type):
         :return: Tuple of groups of tags with the same specificity, sorting all of these by the
         specificity value each group represents from least to greatest.
         """
-        level_dict = defaultdict(list)
+        levels = [[], [], [], [], [], [], [], [], [], []]
         for t in tags:
-            level_dict[t.tag_specificity()].append(t)
+            spec = t.tag_specificity()
+            if spec > len(levels):
+                levels.extend([] for _ in range(spec - len(levels)))
+            levels[spec].append(t)
 
-        level_list = [tuple(level_dict[level]) for level in sorted(level_dict.keys())]
-        return tuple(level_list)
+        return tuple(tuple(level) for level in levels if reversed(level))
 
     def caption(cls, attributes) -> str:
         return str(cls.__name__)
