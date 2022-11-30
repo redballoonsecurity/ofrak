@@ -90,7 +90,7 @@ class ClassInstanceSerializer(SerializerInterface):
             field_name: self._service.from_pjson(cls_fields_pjson[field_name], field_type)
             for field_name, field_type in expected_fields_and_types.items()
         }
-        if is_dataclass(cls) and getattr(cls, dataclasses._PARAMS).init:
+        if is_dataclass(cls) and getattr(cls, dataclasses._PARAMS).init:  # type: ignore
             return cls(**deserialized_fields)
         else:
             cls_instance = cls.__new__(cls)
