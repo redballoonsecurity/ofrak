@@ -1,9 +1,9 @@
 import functools
-from typing import Iterable, Set, Tuple
+from typing import Iterable, Set, Tuple, Optional, cast, List
 
 
 class ResourceTag(type):
-    _specificity = None
+    _specificity: Optional[int] = None
 
     @functools.lru_cache(None)
     def tag_specificity(cls) -> int:
@@ -18,7 +18,7 @@ class ResourceTag(type):
                 specificity = max(specificity, base.tag_specificity())
 
             cls._specificity = specificity + 1
-        return cls._specificity
+        return cast(int, cls._specificity)
 
     @functools.lru_cache(None)
     def tag_classes(cls) -> Set["ResourceTag"]:
@@ -56,7 +56,7 @@ class ResourceTag(type):
         :return: Tuple of groups of tags with the same specificity, sorting all of these by the
         specificity value each group represents from least to greatest.
         """
-        levels = [[], [], [], [], [], [], [], [], [], []]
+        levels: List[List[ResourceTag]] = [[], [], [], [], [], [], [], [], [], []]
         for t in tags:
             spec = t.tag_specificity()
             if spec > len(levels):

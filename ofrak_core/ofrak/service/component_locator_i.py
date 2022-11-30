@@ -9,7 +9,9 @@ from ofrak.component.interface import ComponentInterface
 CI = TypeVar("CI", bound="ComponentInterface")
 
 
-@dataclass(frozen=True)
+# MyPy shows a type error on the next line, root cause unknown:
+# error: Only concrete class can be given where "Type[ComponentFilter]" is expected
+@dataclass(frozen=True, init=False)  # type: ignore
 class ComponentFilter(ABC):
     @abstractmethod
     def filter(self, components: Set[ComponentInterface]) -> Set[ComponentInterface]:
