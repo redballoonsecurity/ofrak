@@ -155,6 +155,28 @@
   async function modifyData() {
     try {
       const patchData = hexToByteArray(userData.replace(/\s/g, ""));
+
+      const expectedPatchSize = endOffset - startOffset;
+      if (
+        patchData.length > expectedPatchSize &&
+        !window.confirm(
+          `Your patch overflows the original range by ${
+            patchData.length - expectedPatchSize
+          } bytes. Are you sure you want to proceed?`
+        )
+      ) {
+        return;
+      } else if (
+        patchData.length < expectedPatchSize &&
+        !window.confirm(
+          `Your patch is smaller than the original range by ${
+            expectedPatchSize - patchData.length
+          } bytes. Are you sure you want to proceed?`
+        )
+      ) {
+        return;
+      }
+
       if (selectedResource) {
         await selectedResource.queue_patch(patchData, startOffset, endOffset);
       }
@@ -175,6 +197,10 @@
   {#if userData}
     <p>
       Editing range 0x{startOffset.toString(16)} - 0x{endOffset.toString(16)}
+    </p>
+    <p>
+      Feel free to disregard whitespace when editing. "deadbeef" and "de ad be
+      eef" and "dea d eef" are all evaluated the same.
     </p>
     <textarea
       autocomplete="off"
