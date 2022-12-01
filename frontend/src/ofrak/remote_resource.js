@@ -174,7 +174,6 @@ export class RemoteResource extends Resource {
       }
       return r.json();
     });
-    this.factory.ingest_component_results(patch_results);
   }
 
   async create_child(
