@@ -27,18 +27,6 @@
     align-items: stretch;
     align-content: center;
   }
-
-  /*
-  .actions {
-    margin-top: 2em;
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    justify-content: space-evenly;
-    align-items: center;
-    align-content: center;
-  }
-  */
 </style>
 
 <script>

@@ -29,6 +29,7 @@
     line-height: inherit;
     resize: none;
     flex-grow: 1;
+    padding: 1em 1.5em;
   }
 
   .container {
@@ -94,7 +95,7 @@
 </style>
 
 <script>
-  import { buf2hex, chunkList, calculator } from "./helpers.js";
+  import { buf2hex, chunkList, calculator, hexToByteArray } from "./helpers.js";
   import { selected, selectedResource } from "./stores.js";
 
   export let modifierView, dataPromise;
@@ -104,7 +105,7 @@
     endOffset,
     dataLength,
     errorMessage,
-    dataRange;
+    userData;
 
   $: dataPromise.then((data) => (dataLength = data.byteLength));
 
@@ -132,7 +133,13 @@
 
       if ($selectedResource) {
         dataPromise.then(
-          (data) => (dataRange = data.slice(startOffset, endOffset))
+          (data) =>
+            (userData = chunkList(
+              new Uint8Array(data.slice(startOffset, endOffset)),
+              16
+            )
+              .map((r) => buf2hex(r, " "))
+              .join("\n"))
         );
       }
     } catch (err) {
@@ -145,7 +152,18 @@
   }
 
   async function modifyData() {
-    // TODO: Modification
+    try {
+      const patchData = hexToByteArray(userData.replace(/\s/g, ""));
+      if ($selectedResource) {
+        await $selectedResource.queue_patch(patchData, startOffset, endOffset);
+      }
+    } catch (err) {
+      try {
+        errorMessage = JSON.parse(err.message).message;
+      } catch (_) {
+        errorMessage = err.message;
+      }
+    }
 
     modifierView = undefined;
     refreshResource();
@@ -153,15 +171,16 @@
 </script>
 
 <div class="container">
-  {#if dataRange}
+  {#if userData}
     <p>
       Editing range 0x{startOffset.toString(16)} - 0x{endOffset.toString(16)}
     </p>
-    <textarea autocomplete="off" autocorrect="off" spellcheck="false" wrap="off"
-      >{chunkList(new Uint8Array(dataRange), 16)
-        .map((r) => buf2hex(r, " "))
-        .join("\n")}</textarea
-    >
+    <textarea
+      autocomplete="off"
+      autocorrect="off"
+      spellcheck="false"
+      wrap="off"
+      bind:value="{userData}"></textarea>
     {#if errorMessage}
       <p class="error">
         Error:
@@ -169,7 +188,7 @@
       </p>
     {/if}
     <div class="actions">
-      <button on:click="{getRange}">Apply Edits</button>
+      <button on:click="{modifyData}">Apply Edits</button>
       <button on:click="{() => (modifierView = undefined)}">Cancel</button>
     </div>
   {:else}

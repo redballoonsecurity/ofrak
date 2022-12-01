@@ -157,18 +157,24 @@ export class RemoteResource extends Resource {
     return this._remote_models_to_resources(child_models);
   }
 
-  async queue_patch(patch_range, data, after, before) {
-    // TODO: Implement patch_range, after, and before
+  async queue_patch(data, start, end, after, before) {
+    // TODO: Implement after and before
 
-    await fetch(`${this.uri}/queue_patch`, {
-      method: "POST",
-      body: data,
-    }).then(async (r) => {
+    start = start || 0;
+    end = end || 0;
+    const patch_results = await fetch(
+      `${this.uri}/queue_patch?start=${start}&end=${end}`,
+      {
+        method: "POST",
+        body: data,
+      }
+    ).then(async (r) => {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }
       return r.json();
     });
+    this.factory.ingest_component_results(patch_results);
   }
 
   async create_child(

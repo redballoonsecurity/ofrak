@@ -278,7 +278,7 @@ export class Resource {
     throw new NotImplementedError("move");
   }
 
-  async queue_patch(patch_range, data, after, before) {
+  async queue_patch(data, start, after, before) {
     // Sync in ResourceInterface
     throw new NotImplementedError("queue_patch");
   }
