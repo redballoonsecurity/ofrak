@@ -21,7 +21,7 @@ export class RemoteResource extends Resource {
       return null;
     }
     const rj = await fetch(`${this.uri}/get_data_range_within_parent`, {
-      cache: "force-cache",
+      // cache: "force-cache",
     }).then(async (r) => {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));

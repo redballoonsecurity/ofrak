@@ -96,7 +96,8 @@
 
 <script>
   import { buf2hex, chunkList, calculator, hexToByteArray } from "./helpers.js";
-  import { selected, selectedResource } from "./stores.js";
+  import { selected, selectedResource as _selectedResource } from "./stores.js";
+  const selectedResource = $_selectedResource;
 
   export let modifierView, dataPromise;
   let startInput,
@@ -131,7 +132,7 @@
         }
       }
 
-      if ($selectedResource) {
+      if (selectedResource) {
         dataPromise.then(
           (data) =>
             (userData = chunkList(
@@ -154,9 +155,12 @@
   async function modifyData() {
     try {
       const patchData = hexToByteArray(userData.replace(/\s/g, ""));
-      if ($selectedResource) {
-        await $selectedResource.queue_patch(patchData, startOffset, endOffset);
+      if (selectedResource) {
+        await selectedResource.queue_patch(patchData, startOffset, endOffset);
       }
+
+      modifierView = undefined;
+      refreshResource();
     } catch (err) {
       try {
         errorMessage = JSON.parse(err.message).message;
@@ -164,9 +168,6 @@
         errorMessage = err.message;
       }
     }
-
-    modifierView = undefined;
-    refreshResource();
   }
 </script>
 
