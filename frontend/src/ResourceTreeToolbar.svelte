@@ -1,7 +1,7 @@
 <script>
   import CarveView from "./CarveView.svelte";
   import CommentView from "./CommentView.svelte";
-  import FindReplaceView from "./FindReplaceView.svelte";
+  import ModifyView from "./ModifyView.svelte";
   import Toolbar from "./Toolbar.svelte";
 
   import { selectedResource, selected } from "./stores.js";
@@ -72,7 +72,7 @@
         text: "Modify",
         iconUrl: "/icons/modify.svg",
         onclick: async (e) => {
-          modifierView = FindReplaceView;
+          modifierView = ModifyView;
         },
       },
 
