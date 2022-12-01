@@ -59,11 +59,11 @@ class ResourceIndexedAttribute(Generic[X]):
     def __init__(
         self,
         getter_func: Callable[[Any], X],
-        nested_indexes: Iterable["ResourceIndexedAttribute"] = (),
+        uses_indexes: Iterable["ResourceIndexedAttribute"] = (),
     ):
         """
         :param getter_func: Getter function for the property
-        :param nested_indexes: Additional index types that are required to calculate the value
+        :param uses_indexes: Additional index types that are required to calculate the value
         of this index
 
         :raises TypeError: if the getter function does not have a return type annotation
@@ -72,8 +72,12 @@ class ResourceIndexedAttribute(Generic[X]):
         _validate_indexed_type(getter_func)
         self.fget: Callable[[Any], X] = getter_func
         self.attributes_owner: Optional[Type[ResourceAttributes]] = None
-        self.nested_indexes = nested_indexes
+        self.uses_indexes = uses_indexes
+        self.used_by_indexes = []
         self.index_name: str = getter_func.__name__
+
+        for other_index in self.uses_indexes:
+            other_index.used_by_indexes.append(self)
 
     def __set_name__(self, owner, name):
         self.attributes_owner = owner
@@ -126,10 +130,10 @@ class ResourceIndexedAttribute(Generic[X]):
             attributes = index_holder.get_attributes(self.attributes_owner)
             if attributes is None:
                 return None
-            elif self.nested_indexes:
+            elif self.uses_indexes:
                 # Create new copy of attributes to inject index values into
                 attributes_plus_required_indexes = dataclasses.replace(attributes)
-                for nested_index in self.nested_indexes:
+                for nested_index in self.uses_indexes:
                     val = nested_index.get_value(index_holder)
                     if val is None:
                         # Not all of the nested indexes are available, can't calculate index val.
@@ -148,12 +152,12 @@ class ResourceIndexedAttribute(Generic[X]):
 @overload
 def index(
     *,
-    nested_indexes: Iterable[ResourceIndexedAttribute] = ...,
+    uses_indexes: Iterable[ResourceIndexedAttribute] = ...,
 ) -> Callable[[Callable[[Any], X]], ResourceIndexedAttribute[X]]:
     """
     When called as:
 
-    @index(nested_indexes=(...))
+    @index(uses_indexes=(...))
     def MyIndex(self):
         ...
     """
@@ -177,7 +181,7 @@ def index(
 def index(
     index_value_getter: Callable[[Any], X] = None,
     *,
-    nested_indexes: Iterable[ResourceIndexedAttribute] = (),
+    uses_indexes: Iterable[ResourceIndexedAttribute] = (),
 ) -> Union[
     Callable[[Callable[[Any], X]], ResourceIndexedAttribute[X]], ResourceIndexedAttribute[X]
 ]:
@@ -188,7 +192,7 @@ def index(
     :param index_value_getter: Method of
         [ResourceAttributes][ofrak.model.resource_model.ResourceAttributes] which returns the
         value of the index for that instance.
-    :param nested_indexes: Additional index types that are required to calculate the value
+    :param uses_indexes: Additional index types that are required to calculate the value
     of this index.
 
     :return: [ResourceIndexedAttribute][ofrak.model.resource_model.ResourceIndexedAttribute]
@@ -198,7 +202,7 @@ def index(
     if index_value_getter is None:
         # We're called with parens.
         def wrap(_index_value_getter) -> ResourceIndexedAttribute[X]:
-            return ResourceIndexedAttribute[X](_index_value_getter, nested_indexes)
+            return ResourceIndexedAttribute[X](_index_value_getter, uses_indexes)
 
         return wrap  # type: ignore
 
@@ -458,28 +462,23 @@ class ResourceModel:
         return indexable_values
 
     def get_index_values_depending_on_indexes(
-        self, other_indexes: Iterable[ResourceIndexedAttribute]
+        self, base_indexes: Iterable[ResourceIndexedAttribute]
     ) -> Dict[ResourceIndexedAttribute[X], Optional[X]]:
+        indexes_to_search = set()
+        for base_index in base_indexes:
+            indexes_to_search.update(base_index.used_by_indexes)
+        searched_indexes = set()
         indexable_values: Dict[ResourceIndexedAttribute[X], Optional[X]] = dict()
-        next_indexes_to_search_for: Set[ResourceIndexedAttribute[X]] = set(other_indexes)
-        all_indexable_attributes_with_nested: Set[ResourceIndexedAttribute[X]] = set()
-        for attributes in self.attributes.values():
-            all_indexable_attributes_with_nested.update(
-                indexable_attr
-                for indexable_attr in attributes.get_indexable_attributes()
-                if indexable_attr.nested_indexes
-            )
-
-        while len(next_indexes_to_search_for) > 0:
-            index_nesting_search_space = next_indexes_to_search_for
-            next_indexes_to_search_for = set()
-            for indexable_attr in all_indexable_attributes_with_nested:
-                if any(
-                    nested_index in index_nesting_search_space
-                    for nested_index in indexable_attr.nested_indexes
-                ):
-                    next_indexes_to_search_for.add(indexable_attr)
-                    indexable_values[indexable_attr] = indexable_attr.get_value(self)
+        while indexes_to_search:
+            next_indexes_to_search = set()
+            for idx in indexes_to_search:
+                if idx in searched_indexes:
+                    continue
+                if self.has_attributes(idx.attributes_owner):
+                    indexable_values[idx] = idx.get_value(self)
+                    next_indexes_to_search.update(idx.used_by_indexes)
+                searched_indexes.add(idx)
+            indexes_to_search = next_indexes_to_search.difference(searched_indexes)
 
         return indexable_values
 

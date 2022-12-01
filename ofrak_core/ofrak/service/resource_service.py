@@ -700,6 +700,15 @@ class ResourceService(ResourceServiceInterface):
         index = self._attribute_indexes[indexable_attribute]
         index.add_resource_attribute(value, resource)
 
+        for dependent_indexable in indexable_attribute.used_by_indexes:
+            dependant_value = dependent_indexable.get_value(resource.model)
+            try:
+                self._add_resource_attribute_to_index(
+                    dependent_indexable, dependant_value, resource
+                )
+            except ValueError:
+                continue
+
     def _remove_resource_attribute_from_index(
         self,
         indexable_attribute: ResourceIndexedAttribute[T],
@@ -707,6 +716,11 @@ class ResourceService(ResourceServiceInterface):
     ):
         index = self._attribute_indexes[indexable_attribute]
         index.remove_resource_attribute(resource)
+        for dependent_indexable in indexable_attribute.used_by_indexes:
+            try:
+                self._remove_resource_attribute_from_index(dependent_indexable, resource)
+            except ValueError:
+                continue
 
     async def create(self, resource: ResourceModel) -> ResourceModel:
         if resource.id in self._resource_store:
@@ -734,6 +748,9 @@ class ResourceService(ResourceServiceInterface):
         for tag in resource.tags:
             self._add_resource_tag_to_index(tag, resource_node)
         for indexable_attribute, value in resource.get_index_values().items():
+            if indexable_attribute.uses_indexes:
+                # _add_resource_attribute_to_index will deal with index dependencies separately
+                continue
             self._add_resource_attribute_to_index(indexable_attribute, value, resource_node)
         return resource
 
@@ -919,13 +936,6 @@ class ResourceService(ResourceServiceInterface):
                 self._remove_resource_attribute_from_index(
                     indexable_attribute_removed, resource_node
                 )
-        indexable_attrs_indirectly_removed = next_resource.get_index_values_depending_on_indexes(
-            indexable_attributes_removed
-        )
-        for indexable_attr_indirectly_removed in indexable_attrs_indirectly_removed.keys():
-            self._remove_resource_attribute_from_index(
-                indexable_attr_indirectly_removed, resource_node
-            )
 
         indexable_attributes_added = set()
         for attributes_type_added, attributes_added in resource_diff.attributes_added.items():
@@ -936,19 +946,6 @@ class ResourceService(ResourceServiceInterface):
                     indexable_attribute_added.get_value(next_resource),
                     resource_node,
                 )
-        for indexable_attribute, value in next_resource.get_index_values_depending_on_indexes(
-            indexable_attributes_added
-        ).items():
-            if indexable_attribute in indexable_attributes_added:
-                # It was already added to the index in earlier steps
-                continue
-            elif value is None:
-                # Index can only be calculated if all the required attributes are present
-                # None value indicates one or more required attributes are not present
-                # Therefore don't try to index this resource by this index type
-                continue
-            else:
-                self._add_resource_attribute_to_index(indexable_attribute, value, resource_node)
 
         resource_node.model = next_resource
         return next_resource
@@ -1003,6 +1000,9 @@ class ResourceService(ResourceServiceInterface):
             deleted_models.extend(self._delete_resource_helper(child))
 
         for indexable_attribute, val in _resource_node.model.get_index_values().items():
+            if indexable_attribute.uses_indexes:
+                # _remove_resource_attribute_from_index will deal with index dependencies separately
+                continue
             try:
                 self._remove_resource_attribute_from_index(indexable_attribute, _resource_node)
             except ValueError as e:
