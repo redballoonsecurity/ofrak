@@ -888,6 +888,14 @@ class ResourceService(ResourceServiceInterface):
         )
 
     async def update(self, resource_diff: ResourceModelDiff) -> ResourceModel:
+        return self._update(resource_diff)
+
+    async def update_many(
+        self, resource_diffs: Iterable[ResourceModelDiff]
+    ) -> Iterable[ResourceModel]:
+        return [self._update(resource_diff) for resource_diff in resource_diffs]
+
+    def _update(self, resource_diff: ResourceModelDiff) -> ResourceModel:
         LOGGER.debug(f"Saving resource {resource_diff.id.hex()}")
         resource_node = self._resource_store.get(resource_diff.id)
         if resource_node is None:
@@ -971,33 +979,48 @@ class ResourceService(ResourceServiceInterface):
         if former_parent_resource_node is not None:
             former_parent_resource_node.remove_child(resource_node)
 
+        deleted_models = self._delete_resource_helper(resource_node)
+        return deleted_models
+
+    async def delete_resources(self, resource_ids: Iterable[bytes]):
         deleted_models = []
+        for resource_id in resource_ids:
+            resource_node = self._resource_store.get(resource_id)
+            if resource_node is None:
+                # Already deleted, probably by an ancestor calling the recursive func below
+                continue
 
-        def _delete_resource_helper(_resource_node: ResourceNode):
-            for child in _resource_node._children:
-                _delete_resource_helper(child)
+            former_parent_resource_node = resource_node.parent
+            if former_parent_resource_node is not None:
+                former_parent_resource_node.remove_child(resource_node)
 
-            for indexable_attribute, val in _resource_node.model.get_index_values().items():
-                try:
-                    self._remove_resource_attribute_from_index(indexable_attribute, _resource_node)
-                except ValueError as e:
-                    if val is None:
-                        # Index value could not be calculated, so it is not surprising it was not
-                        # in the index
-                        continue
-                    else:
-                        raise e
+            deleted_models.extend(self._delete_resource_helper(resource_node))
+        return deleted_models
 
-            tag_removal_blacklist: Set[ResourceTag] = set()
-            for tag in _resource_node.model.tags:
-                self._remove_resource_tag_from_index(tag, _resource_node, tag_removal_blacklist)
-                tag_removal_blacklist.update(tag.tag_classes())
+    def _delete_resource_helper(self, _resource_node: ResourceNode):
+        deleted_models = []
+        for child in _resource_node._children:
+            deleted_models.extend(self._delete_resource_helper(child))
 
-            del self._resource_store[_resource_node.model.id]
-            if _resource_node.model.data_id is not None:
-                del self._resource_by_data_id_store[_resource_node.model.data_id]
+        for indexable_attribute, val in _resource_node.model.get_index_values().items():
+            try:
+                self._remove_resource_attribute_from_index(indexable_attribute, _resource_node)
+            except ValueError as e:
+                if val is None:
+                    # Index value could not be calculated, so it is not surprising it was not
+                    # in the index
+                    continue
+                else:
+                    raise e
 
-            deleted_models.append(_resource_node.model)
+        tag_removal_blacklist: Set[ResourceTag] = set()
+        for tag in _resource_node.model.tags:
+            self._remove_resource_tag_from_index(tag, _resource_node, tag_removal_blacklist)
+            tag_removal_blacklist.update(tag.tag_classes())
 
-        _delete_resource_helper(resource_node)
+        del self._resource_store[_resource_node.model.id]
+        if _resource_node.model.data_id is not None:
+            del self._resource_by_data_id_store[_resource_node.model.data_id]
+
+        deleted_models.append(_resource_node.model)
         return deleted_models

@@ -93,13 +93,6 @@ class Resource:
         self._data_service: DataServiceInterface = data_service
         self._job_service: JobServiceInterface = job_service
 
-        self._dependency_handler = DependencyHandler(
-            self._resource_service,
-            self._data_service,
-            self._component_context,
-            self._resource_context,
-        )
-
     def get_id(self) -> bytes:
         """
         :return: This resource's ID
@@ -233,14 +226,23 @@ class Resource:
 
         :raises NotFoundError: If the resource service does not have a model for this resource's ID
         """
+        await save_resources(
+            (self,),
+            self._resource_service,
+            self._data_service,
+            self._component_context,
+            self._resource_context,
+            self._resource_view_context,
+        )
+
+    def _save(
+        self,
+        resources_to_delete: List[bytes],
+        patches_to_apply: List[DataPatch],
+        resources_to_update: List[MutableResourceModel],
+    ):
         if self._resource.is_deleted:
-            deleted_descendants = await self._resource_service.delete_resource(self._resource.id)
-            data_ids_to_delete = [
-                resource_m.data_id
-                for resource_m in deleted_descendants
-                if resource_m.data_id is not None
-            ]
-            await self._data_service.delete_models(data_ids_to_delete)
+            resources_to_delete.append(self._resource.id)
         elif self._resource.is_modified:
             modification_tracker = self._component_context.modification_trackers.get(
                 self._resource.id
@@ -249,15 +251,9 @@ class Resource:
                 f"Resource {self._resource.id.hex()} was "
                 f"marked as modified but is missing a tracker!"
             )
-            patch_results = await self._data_service.apply_patches(
-                modification_tracker.data_patches
-            )
+            patches_to_apply.extend(modification_tracker.data_patches)
+            resources_to_update.append(self._resource)
             modification_tracker.data_patches.clear()
-            await self._dependency_handler.handle_post_patch_dependencies(patch_results)
-            await self._resource_service.update(self._resource.save())
-            await self._update_views((self._resource.id,), ())
-        else:
-            return
 
     async def _fetch(self, resource: MutableResourceModel):
         """
@@ -1409,6 +1405,44 @@ class Resource:
             )
             tree_string += f"{indent}{branch_symbol}{SPACER_LINE}{child_tree_string}"
         return tree_string
+
+
+async def save_resources(
+    resources: Iterable["Resource"],
+    resource_service: ResourceServiceInterface,
+    data_service: DataServiceInterface,
+    component_context: ComponentContext,
+    resource_context: ResourceContext,
+    resource_view_context: ResourceViewContext,
+):
+    dependency_handler = DependencyHandler(
+        resource_service, data_service, component_context, resource_context
+    )
+    resources_to_delete: List[bytes] = []
+    patches_to_apply: List[DataPatch] = []
+    resources_to_update: List[MutableResourceModel] = []
+
+    for resource in resources:
+        resource._save(
+            resources_to_delete,
+            patches_to_apply,
+            resources_to_update,
+        )
+
+    deleted_descendants = await resource_service.delete_resources(resources_to_delete)
+    data_ids_to_delete = [
+        resource_m.data_id for resource_m in deleted_descendants if resource_m.data_id is not None
+    ]
+    await data_service.delete_models(data_ids_to_delete)
+    patch_results = await data_service.apply_patches(patches_to_apply)
+    await dependency_handler.handle_post_patch_dependencies(patch_results)
+    diffs = []
+    updated_ids = []
+    for resource in resources_to_update:
+        diffs.append(resource.save())
+        updated_ids.append(resource.id)
+    await resource_service.update_many(diffs)
+    resource_view_context.update_views(updated_ids, resources_to_delete, resource_context)
 
 
 class ResourceFactory:
