@@ -73,7 +73,7 @@ class ResourceIndexedAttribute(Generic[X]):
         self.fget: Callable[[Any], X] = getter_func
         self.attributes_owner: Optional[Type[ResourceAttributes]] = None
         self.uses_indexes = uses_indexes
-        self.used_by_indexes = []
+        self.used_by_indexes: List["ResourceIndexedAttribute"] = []
         self.index_name: str = getter_func.__name__
 
         for other_index in self.uses_indexes:
@@ -459,27 +459,6 @@ class ResourceModel:
         for attributes in self.attributes.values():
             for indexable_attribute in attributes.get_indexable_attributes():
                 indexable_values[indexable_attribute] = indexable_attribute.get_value(self)
-        return indexable_values
-
-    def get_index_values_depending_on_indexes(
-        self, base_indexes: Iterable[ResourceIndexedAttribute]
-    ) -> Dict[ResourceIndexedAttribute[X], Optional[X]]:
-        indexes_to_search = set()
-        for base_index in base_indexes:
-            indexes_to_search.update(base_index.used_by_indexes)
-        searched_indexes = set()
-        indexable_values: Dict[ResourceIndexedAttribute[X], Optional[X]] = dict()
-        while indexes_to_search:
-            next_indexes_to_search = set()
-            for idx in indexes_to_search:
-                if idx in searched_indexes:
-                    continue
-                if self.has_attributes(idx.attributes_owner):
-                    indexable_values[idx] = idx.get_value(self)
-                    next_indexes_to_search.update(idx.used_by_indexes)
-                searched_indexes.add(idx)
-            indexes_to_search = next_indexes_to_search.difference(searched_indexes)
-
         return indexable_values
 
     def has_attributes(self, attributes_type: Type[ResourceAttributes]) -> bool:

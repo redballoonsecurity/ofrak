@@ -162,10 +162,13 @@ class ResourceAttributeIndex(Generic[T]):
         resource: ResourceNode,
     ):
         if resource.model.id in self.values_by_node_id:
-            raise ValueError(
-                f"The provided resource {resource.model.id.hex()} is already in the "  # type: ignore
-                f"index for {self._attribute.__name__}"
-            )
+            if self.values_by_node_id[resource.model.id] != value:
+                raise ValueError(
+                    f"The provided resource {resource.model.id.hex()} is already in the "
+                    f"index for {self._attribute.__name__} with a different value!"
+                )
+            else:
+                return
         self.index.add((value, resource))
         self.values_by_node_id[resource.model.id] = value
 
@@ -174,10 +177,7 @@ class ResourceAttributeIndex(Generic[T]):
         resource: ResourceNode,
     ):
         if resource.model.id not in self.values_by_node_id:
-            raise ValueError(
-                f"The provided resource {resource.model.id.hex()} is not in the "  # type: ignore
-                f"index for {self._attribute.__name__}"
-            )
+            return
         value = self.values_by_node_id[resource.model.id]
         self.index.remove((value, resource))
         del self.values_by_node_id[resource.model.id]
@@ -702,12 +702,7 @@ class ResourceService(ResourceServiceInterface):
 
         for dependent_indexable in indexable_attribute.used_by_indexes:
             dependant_value = dependent_indexable.get_value(resource.model)
-            try:
-                self._add_resource_attribute_to_index(
-                    dependent_indexable, dependant_value, resource
-                )
-            except ValueError:
-                continue
+            self._add_resource_attribute_to_index(dependent_indexable, dependant_value, resource)
 
     def _remove_resource_attribute_from_index(
         self,
@@ -717,10 +712,7 @@ class ResourceService(ResourceServiceInterface):
         index = self._attribute_indexes[indexable_attribute]
         index.remove_resource_attribute(resource)
         for dependent_indexable in indexable_attribute.used_by_indexes:
-            try:
-                self._remove_resource_attribute_from_index(dependent_indexable, resource)
-            except ValueError:
-                continue
+            self._remove_resource_attribute_from_index(dependent_indexable, resource)
 
     async def create(self, resource: ResourceModel) -> ResourceModel:
         if resource.id in self._resource_store:
@@ -748,9 +740,6 @@ class ResourceService(ResourceServiceInterface):
         for tag in resource.tags:
             self._add_resource_tag_to_index(tag, resource_node)
         for indexable_attribute, value in resource.get_index_values().items():
-            if indexable_attribute.uses_indexes:
-                # _add_resource_attribute_to_index will deal with index dependencies separately
-                continue
             self._add_resource_attribute_to_index(indexable_attribute, value, resource_node)
         return resource
 
@@ -1000,18 +989,7 @@ class ResourceService(ResourceServiceInterface):
             deleted_models.extend(self._delete_resource_helper(child))
 
         for indexable_attribute, val in _resource_node.model.get_index_values().items():
-            if indexable_attribute.uses_indexes:
-                # _remove_resource_attribute_from_index will deal with index dependencies separately
-                continue
-            try:
-                self._remove_resource_attribute_from_index(indexable_attribute, _resource_node)
-            except ValueError as e:
-                if val is None:
-                    # Index value could not be calculated, so it is not surprising it was not
-                    # in the index
-                    continue
-                else:
-                    raise e
+            self._remove_resource_attribute_from_index(indexable_attribute, _resource_node)
 
         tag_removal_blacklist: Set[ResourceTag] = set()
         for tag in _resource_node.model.tags:

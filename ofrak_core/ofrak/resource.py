@@ -1438,9 +1438,9 @@ async def save_resources(
     await dependency_handler.handle_post_patch_dependencies(patch_results)
     diffs = []
     updated_ids = []
-    for resource in resources_to_update:
-        diffs.append(resource.save())
-        updated_ids.append(resource.id)
+    for resource_m in resources_to_update:
+        diffs.append(resource_m.save())
+        updated_ids.append(resource_m.id)
     await resource_service.update_many(diffs)
     resource_view_context.update_views(updated_ids, resources_to_delete, resource_context)
 
