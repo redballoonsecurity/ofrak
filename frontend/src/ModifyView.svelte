@@ -28,6 +28,7 @@
     align-content: center;
   }
 
+  /*
   .actions {
     margin-top: 2em;
     display: flex;
@@ -37,19 +38,22 @@
     align-items: center;
     align-content: center;
   }
+  */
 </style>
 
 <script>
+  import BinaryModifyView from "./BinaryModifyView.svelte";
   import FindReplaceView from "./FindReplaceView.svelte";
 
-  export let modifierView, resourceNodeDataMap, dataPromise;
+  export let modifierView;
 </script>
 
 <div class="container">
   <button on:click="{() => (modifierView = FindReplaceView)}">
     Modify String
   </button>
-  <!-- TODO -->
-  <button on:click="{() => (modifierView = undefined)}">Modify Binary</button>
+  <button on:click="{() => (modifierView = BinaryModifyView)}">
+    Modify Binary
+  </button>
   <button on:click="{() => (modifierView = undefined)}">Cancel</button>
 </div>

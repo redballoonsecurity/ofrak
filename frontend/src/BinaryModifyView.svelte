@@ -1,0 +1,210 @@
+<style>
+  button {
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+    padding-left: 1em;
+    padding-right: 1em;
+  }
+
+  button:hover,
+  button:focus {
+    outline: none;
+    box-shadow: inset 1px 1px 0 var(--main-fg-color),
+      inset -1px -1px 0 var(--main-fg-color);
+  }
+
+  button:active {
+    box-shadow: inset 2px 2px 0 var(--main-fg-color),
+      inset -2px -2px 0 var(--main-fg-color);
+  }
+
+  textarea {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    background: inherit;
+    border: 1px solid;
+    border-color: inherit;
+    box-shadow: none;
+    line-height: inherit;
+    resize: none;
+    flex-grow: 1;
+  }
+
+  .container {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: stretch;
+    align-content: center;
+  }
+
+  .inputs {
+    flex-grow: 1;
+  }
+
+  .inputs *:first-child {
+    margin-top: 0;
+  }
+
+  .actions {
+    margin-top: 2em;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-evenly;
+    align-items: center;
+    align-content: center;
+  }
+
+  input {
+    background: inherit;
+    color: inherit;
+    border: none;
+    border-bottom: 1px solid white;
+    flex-grow: 1;
+    margin-left: 1ch;
+  }
+
+  input:focus {
+    outline: none;
+    box-shadow: inset 0 -1px 0 var(--main-fg-color);
+  }
+
+  label {
+    margin-bottom: 1em;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-evenly;
+    align-items: baseline;
+    align-content: center;
+    white-space: nowrap;
+  }
+
+  .nowrap {
+    white-space: nowrap;
+  }
+
+  .error {
+    margin-top: 2em;
+  }
+</style>
+
+<script>
+  import { buf2hex, chunkList, calculator } from "./helpers.js";
+  import { selected, selectedResource } from "./stores.js";
+
+  export let modifierView, dataPromise;
+  let startInput,
+    endInput,
+    startOffset,
+    endOffset,
+    dataLength,
+    errorMessage,
+    dataRange;
+
+  $: dataPromise.then((data) => (dataLength = data.byteLength));
+
+  function refreshResource() {
+    // Force hex view refresh with colors
+    const originalSelected = $selected;
+    $selected = undefined;
+    $selected = originalSelected;
+  }
+
+  async function getRange() {
+    try {
+      startOffset = calculator.calculate(startInput.value);
+      endOffset = calculator.calculate(endInput.value);
+
+      if (endOffset - startOffset > 0x100000) {
+        if (
+          !window.confirm(
+            "Loading and editing a large range may be slow. Are you sure?"
+          )
+        ) {
+          return;
+        }
+      }
+
+      if ($selectedResource) {
+        dataPromise.then(
+          (data) => (dataRange = data.slice(startOffset, endOffset))
+        );
+      }
+    } catch (err) {
+      try {
+        errorMessage = JSON.parse(err.message).message;
+      } catch (_) {
+        errorMessage = err.message;
+      }
+    }
+  }
+
+  async function modifyData() {
+    // TODO: Modification
+
+    modifierView = undefined;
+    refreshResource();
+  }
+</script>
+
+<div class="container">
+  {#if dataRange}
+    <p>
+      Editing range 0x{startOffset.toString(16)} - 0x{endOffset.toString(16)}
+    </p>
+    <textarea autocomplete="off" autocorrect="off" spellcheck="false" wrap="off"
+      >{chunkList(new Uint8Array(dataRange), 16)
+        .map((r) => buf2hex(r, " "))
+        .join("\n")}</textarea
+    >
+    {#if errorMessage}
+      <p class="error">
+        Error:
+        {errorMessage}
+      </p>
+    {/if}
+    <div class="actions">
+      <button on:click="{getRange}">Apply Edits</button>
+      <button on:click="{() => (modifierView = undefined)}">Cancel</button>
+    </div>
+  {:else}
+    <div class="inputs">
+      <p>Select a range of binary data to edit.</p>
+      <p>
+        Hex input and basic arithmetic operations with grouping are supported.
+        For example: <code class="nowrap"
+          >0xbeefbeef + 0x10 * 5^((4 + 4 - 2) / 3)</code
+        >.
+      </p>
+      <label>
+        Starting offset:
+        <input type="text" bind:this="{startInput}" value="{0}" />
+      </label>
+      <label>
+        Ending offset:
+        <input
+          type="text"
+          bind:this="{endInput}"
+          value="{dataLength && !endInput.value
+            ? `0x${dataLength.toString(16)}`
+            : ''}"
+        />
+      </label>
+      {#if errorMessage}
+        <p class="error">
+          Error:
+          {errorMessage}
+        </p>
+      {/if}
+    </div>
+    <div class="actions">
+      <button on:click="{getRange}">Edit Range</button>
+      <button on:click="{() => (modifierView = undefined)}">Cancel</button>
+    </div>
+  {/if}
+</div>
