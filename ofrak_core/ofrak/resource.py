@@ -395,11 +395,11 @@ class Resource:
         attributes = self.get_attributes(resource_attributes)
         return attributes
 
-    async def identify(self):
+    async def identify(self) -> ComponentRunResult:
         """
         Run all registered identifiers on the resource, tagging it with matching resource tags.
         """
-        await self.auto_run(all_identifiers=True)
+        return await self.auto_run(all_identifiers=True)
 
     async def pack(self) -> ComponentRunResult:
         """
