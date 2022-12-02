@@ -28,7 +28,6 @@ region_config = patch_maker.allocate_bom(
 
 fem = patch_maker.make_fem([(bom, region_config)], ofrak_fw_resource, verbose=True)
 
-# deprecated patch_maker.inject_patch(fem, ofrak_fw_resource, verbose=True)
 await ofrak_fw_resource.run(SegmentInjectorModifier, SegmentInjectorModifierConfig.from_fem(fem))
 ```
 """
@@ -42,15 +41,9 @@ from typing import Optional, List, Dict, Union, Tuple, Iterable, Mapping
 from immutabledict import immutabledict
 
 from ofrak.core.architecture import ProgramAttributes
-from ofrak.core.memory_region import MemoryRegion
-from ofrak.core.program import Program
-from ofrak.resource import Resource
-from ofrak.service.resource_service_i import ResourceFilter, ResourceSort, ResourceSortDirection
-from ofrak.core.elf.model import Elf
 from ofrak.core.free_space import (
     Allocatable,
 )
-from ofrak.core.injector import BinaryInjectorModifierConfig, BinaryInjectorModifier
 from ofrak_patch_maker.model import (
     AssembledObject,
     BOM,
@@ -560,101 +553,3 @@ class PatchMaker:
         }
 
         return PatchRegionConfig(bom.name + "_patch", immutabledict(all_segments))
-
-    async def inject_patch(
-        self,
-        patch_fem: FEM,
-        resource: Resource,
-        verbose: bool = False,
-    ) -> Resource:
-        """
-        Leverages OFRAK's Injection Modifier to update the target
-        firmware resource.
-
-        :param patch_fem: final executable path and metadata about symbols, sections
-        :param resource: OFRAK firmware resource
-        :param verbose: prints patch section sizes and destinations at the effective logging level.
-        """
-        self.logger.warn("This function is being deprecated!!")
-        logger_level = self.logger.getEffectiveLevel() if verbose else logging.INFO
-        program: Program = await resource.view_as(Program)
-
-        with open(patch_fem.executable.path, "rb") as f:
-            exe_data = f.read()
-        sorted_regions = await program.resource.get_descendants_as_view(
-            MemoryRegion,
-            r_filter=ResourceFilter(
-                include_self=True,
-                tags=(MemoryRegion,),
-            ),
-            r_sort=ResourceSort(
-                attribute=MemoryRegion.Size,
-                direction=ResourceSortDirection.DESCENDANT,
-            ),
-        )
-        self.logger.log(logger_level, f"Injecting patch: {patch_fem.name}")
-        for segment in patch_fem.executable.segments:
-            if segment.length == 0 or segment.vm_address == 0:
-                continue
-            if segment.length > 0:
-                self.logger.log(
-                    logger_level,
-                    f"    Segment {segment.segment_name} - {segment.length} "
-                    f"bytes @ {hex(segment.vm_address)}",
-                )
-            if segment.segment_name.startswith(".bss"):
-                continue
-            segment_data = exe_data[segment.offset : segment.offset + segment.length]
-            patches = [(segment.vm_address, segment_data)]
-            region = MemoryRegion.get_mem_region_with_vaddr_from_sorted(
-                segment.vm_address, sorted_regions
-            )
-            if region is None:
-                raise ValueError(
-                    f"Cannot inject patch because the memory region at vaddr "
-                    f"{hex(segment.vm_address)} is None"
-                )
-
-            await region.resource.run(BinaryInjectorModifier, BinaryInjectorModifierConfig(patches))
-
-        return resource
-
-    @staticmethod
-    def _orbytes(abytes, bbytes):
-        return bytes(a | b for a, b in zip(abytes, bbytes))
-
-    async def inject_null_base(self, patch_fem: FEM, resource: Resource, target: bytes) -> bytes:
-        """
-        This function injects the FEM patch into a `bytes` type base the same size as `resource`.
-
-        Usecases for this debug result binary are emulation, static validation, test etc.
-
-        :param patch_fem:
-        :param resource:
-        :param target:
-        """
-        elf = await resource.view_as(Elf)
-        sections = await elf.get_sections()
-        with open(patch_fem.executable.path, "rb") as f:
-            exe_data = f.read()
-        for segment in patch_fem.executable.segments:
-            if segment.segment_name == ".bss":
-                continue
-            if segment.length == 0 or segment.vm_address == 0:
-                continue
-            segment_data = exe_data[segment.offset : segment.offset + segment.length]
-            for s in sections:
-                try:
-                    offset = s.get_offset_in_self(segment.vm_address)
-                    patch_first_half = b"\x00" * offset + segment_data
-                    patch_second_half = b"\x00" * (s.size - len(patch_first_half))
-                    patch = patch_first_half + patch_second_half
-                    target = self._orbytes(target, patch)
-                    self.logger.info(
-                        f"Applying: {segment.segment_name} at offset: {hex(offset)} with "
-                        f"virtual address: {hex(segment.vm_address)}"
-                    )
-                except AssertionError:
-                    continue
-
-        return target
