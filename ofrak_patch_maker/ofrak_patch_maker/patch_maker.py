@@ -29,7 +29,7 @@ region_config = patch_maker.allocate_bom(
 fem = patch_maker.make_fem([(bom, region_config)], ofrak_fw_resource, verbose=True)
 
 # deprecated patch_maker.inject_patch(fem, ofrak_fw_resource, verbose=True)
-ofrak_fw_resource.run(SegmentInjectorModifier, SegmentInjectorModifierConfig.from_fem(fem))
+await ofrak_fw_resource.run(SegmentInjectorModifier, SegmentInjectorModifierConfig.from_fem(fem))
 ```
 """
 import logging
