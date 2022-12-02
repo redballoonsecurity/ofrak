@@ -248,7 +248,13 @@ class DependencyHandler:
                 handled_dependencies.add(dependency)
                 continue
 
-            resource_m = self._resource_context.resource_models[dependency.dependent_resource_id]
+            try:
+                resource_m = self._resource_context.resource_models[
+                    dependency.dependent_resource_id
+                ]
+            except KeyError as e:
+                print(dependency.dependent_resource_id.hex())
+                raise e
 
             # Invalidate the attributes on the resource
             handled_dependencies.add(dependency)
