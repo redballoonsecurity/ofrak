@@ -11,26 +11,25 @@ from ofrak_patch_maker_test.toolchain_c import run_hello_world_test, run_bounds_
 from ofrak_type.architecture import (
     InstructionSet,
     ProcessorType,
-    SubInstructionSet,
 )
 from ofrak_type.bit_width import BitWidth
 from ofrak_type.endianness import Endianness
 
-AVR_EXTENSION = ".avr"
+AARCH64_EXTENSION = ".aarch64"
 
 
 @pytest.fixture(
     params=[
         ToolchainUnderTest(
-            ToolchainVersion.GNU_AVR_5,
+            ToolchainVersion.GNU_AARCH64_LINUX_10,
             ProgramAttributes(
-                InstructionSet.AVR,
-                SubInstructionSet.AVR2,
+                InstructionSet.AARCH64,
+                None,
                 BitWidth.BIT_32,
-                Endianness.LITTLE_ENDIAN,
-                ProcessorType.AVR,
+                Endianness.BIG_ENDIAN,
+                ProcessorType.CORTEX_A53,
             ),
-            AVR_EXTENSION,
+            AARCH64_EXTENSION,
         )
     ]
 )
