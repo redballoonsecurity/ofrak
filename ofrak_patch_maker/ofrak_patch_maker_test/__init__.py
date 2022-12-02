@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from ofrak_type.endianness import Endianness
 from ofrak_type.bit_width import BitWidth
 from ofrak_type.architecture import (
@@ -15,6 +17,14 @@ AARCH64_EXTENSION = ".aarch64"
 X86_EXTENSION = ".x86"
 M68K_EXTENSION = ".m68k"
 AVR_EXTENSION = ".avr"
+
+
+@dataclass
+class ToolchainUnderTest:
+    toolchain_version: ToolchainVersion
+    proc: ProgramAttributes
+    extension: str
+
 
 ARM_TOOLCHAINS_UNDER_TEST = [
     (

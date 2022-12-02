@@ -2,7 +2,6 @@ import logging
 import os
 import tempfile
 
-import pytest
 
 from ofrak.core.architecture import ProgramAttributes
 from ofrak_type.architecture import InstructionSet
@@ -16,32 +15,25 @@ from ofrak_patch_maker.toolchain.model import (
 )
 from ofrak_patch_maker.toolchain.utils import get_file_format
 from ofrak_patch_maker.toolchain.version import ToolchainVersion
-from ofrak_patch_maker_test import (
-    ARM_TOOLCHAINS_UNDER_TEST,
-    X86_TOOLCHAINS_UNDER_TEST,
-    M68K_TOOLCHAINS_UNDER_TEST,
-    AARCH64_TOOLCHAINS_UNDER_TEST,
-    AVR_TOOLCHAINS_UNDER_TEST,
-)
 from ofrak_type.memory_permissions import MemoryPermissions
 
 
-@pytest.mark.parametrize(
-    "toolchain, proc, extension",
-    ARM_TOOLCHAINS_UNDER_TEST
-    + X86_TOOLCHAINS_UNDER_TEST
-    + M68K_TOOLCHAINS_UNDER_TEST
-    + AARCH64_TOOLCHAINS_UNDER_TEST
-    + AVR_TOOLCHAINS_UNDER_TEST,
-)
-@pytest.mark.params_format(
-    "toolchain={toolchain} proc={proc} extension={extension}",
-    toolchain=lambda p: p[0],
-    proc=lambda p: p[1],
-    extension=lambda p: p[2],
-    ids=lambda p: p[0].name,
-)
-def test_bounds_check(toolchain: ToolchainVersion, proc: ProgramAttributes, extension: str):
+# @pytest.mark.parametrize(
+#     "toolchain, proc, extension",
+#     ARM_TOOLCHAINS_UNDER_TEST
+#     + X86_TOOLCHAINS_UNDER_TEST
+#     + M68K_TOOLCHAINS_UNDER_TEST
+#     + AARCH64_TOOLCHAINS_UNDER_TEST
+#     + AVR_TOOLCHAINS_UNDER_TEST,
+# )
+# @pytest.mark.params_format(
+#     "toolchain={toolchain} proc={proc} extension={extension}",
+#     toolchain=lambda p: p[0],
+#     proc=lambda p: p[1],
+#     extension=lambda p: p[2],
+#     ids=lambda p: p[0].name,
+# )
+def run_bounds_check_test(toolchain: ToolchainVersion, proc: ProgramAttributes):
     """
     Example solution patch for bounds_check challenge.
     """
@@ -110,21 +102,21 @@ def test_bounds_check(toolchain: ToolchainVersion, proc: ProgramAttributes, exte
     assert get_file_format(exec_path) == tc_config.file_format
 
 
-@pytest.mark.parametrize(
-    "toolchain, proc, extension",
-    ARM_TOOLCHAINS_UNDER_TEST
-    + X86_TOOLCHAINS_UNDER_TEST
-    + M68K_TOOLCHAINS_UNDER_TEST
-    + AVR_TOOLCHAINS_UNDER_TEST,
-)
-@pytest.mark.params_format(
-    "toolchain={toolchain} proc={proc}, extension={extension}",
-    toolchain=lambda p: p[0],
-    proc=lambda p: p[1],
-    extension=lambda p: p[2],
-    ids=lambda p: p[0].name,
-)
-def test_hello_world(toolchain: ToolchainVersion, proc: ProgramAttributes, extension: str):
+# @pytest.mark.parametrize(
+#     "toolchain, proc, extension",
+#     ARM_TOOLCHAINS_UNDER_TEST
+#     + X86_TOOLCHAINS_UNDER_TEST
+#     + M68K_TOOLCHAINS_UNDER_TEST
+#     + AVR_TOOLCHAINS_UNDER_TEST,
+# )
+# @pytest.mark.params_format(
+#     "toolchain={toolchain} proc={proc}, extension={extension}",
+#     toolchain=lambda p: p[0],
+#     proc=lambda p: p[1],
+#     extension=lambda p: p[2],
+#     ids=lambda p: p[0].name,
+# )
+def run_hello_world_test(toolchain: ToolchainVersion, proc: ProgramAttributes):
     """
     Make sure we can run the toolchain components without falling over.
     """

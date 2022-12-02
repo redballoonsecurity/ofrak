@@ -2,7 +2,6 @@ import logging
 import os
 import tempfile
 
-import pytest
 
 from ofrak.core.architecture import ProgramAttributes
 from ofrak_patch_maker.model import PatchRegionConfig
@@ -15,26 +14,21 @@ from ofrak_patch_maker.toolchain.model import (
 )
 from ofrak_patch_maker.toolchain.utils import get_file_format
 from ofrak_patch_maker.toolchain.version import ToolchainVersion
-from ofrak_patch_maker_test import (
-    ARM_TOOLCHAINS_UNDER_TEST,
-    M68K_TOOLCHAINS_UNDER_TEST,
-    AARCH64_TOOLCHAINS_UNDER_TEST,
-)
 from ofrak_type.memory_permissions import MemoryPermissions
 
 
-@pytest.mark.parametrize(
-    "toolchain, proc, extension",
-    ARM_TOOLCHAINS_UNDER_TEST + M68K_TOOLCHAINS_UNDER_TEST + AARCH64_TOOLCHAINS_UNDER_TEST,
-)
-@pytest.mark.params_format(
-    "toolchain={toolchain} proc={proc}, extension={extension}",
-    toolchain=lambda p: p[0],
-    proc=lambda p: p[1],
-    extension=lambda p: p[2],
-    ids=lambda p: p[0].name,
-)
-def test_challenge_3_reloc_toy_example(
+# @pytest.mark.parametrize(
+#     "toolchain, proc, extension",
+#     ARM_TOOLCHAINS_UNDER_TEST + M68K_TOOLCHAINS_UNDER_TEST + AARCH64_TOOLCHAINS_UNDER_TEST,
+# )
+# @pytest.mark.params_format(
+#     "toolchain={toolchain} proc={proc}, extension={extension}",
+#     toolchain=lambda p: p[0],
+#     proc=lambda p: p[1],
+#     extension=lambda p: p[2],
+#     ids=lambda p: p[0].name,
+# )
+def run_challenge_3_reloc_toy_example_test(
     toolchain: ToolchainVersion, proc: ProgramAttributes, extension: str
 ):
     """
@@ -188,18 +182,18 @@ def test_challenge_3_reloc_toy_example(
     assert get_file_format(exec_path) == tc_config.file_format
 
 
-@pytest.mark.parametrize(
-    "toolchain, proc, extension",
-    ARM_TOOLCHAINS_UNDER_TEST + M68K_TOOLCHAINS_UNDER_TEST + AARCH64_TOOLCHAINS_UNDER_TEST,
-)
-@pytest.mark.params_format(
-    "toolchain={toolchain} proc={proc} extension={extension}",
-    toolchain=lambda p: p[0],
-    proc=lambda p: p[1],
-    extension=lambda p: p[2],
-    ids=lambda p: p[0].name,
-)
-def test_monkey_patch(toolchain: ToolchainVersion, proc: ProgramAttributes, extension: str):
+# @pytest.mark.parametrize(
+#     "toolchain, proc, extension",
+#     ARM_TOOLCHAINS_UNDER_TEST + M68K_TOOLCHAINS_UNDER_TEST + AARCH64_TOOLCHAINS_UNDER_TEST,
+# )
+# @pytest.mark.params_format(
+#     "toolchain={toolchain} proc={proc} extension={extension}",
+#     toolchain=lambda p: p[0],
+#     proc=lambda p: p[1],
+#     extension=lambda p: p[2],
+#     ids=lambda p: p[0].name,
+# )
+def run_monkey_patch_test(toolchain: ToolchainVersion, proc: ProgramAttributes, extension: str):
     """
     Example showing how to manually generate an executable with assembly at client-specified locs.
     """
