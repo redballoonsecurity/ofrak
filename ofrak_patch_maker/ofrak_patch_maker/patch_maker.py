@@ -28,7 +28,8 @@ region_config = patch_maker.allocate_bom(
 
 fem = patch_maker.make_fem([(bom, region_config)], ofrak_fw_resource, verbose=True)
 
-patch_maker.inject_patch(verbose=True)
+# deprecated patch_maker.inject_patch(fem, ofrak_fw_resource, verbose=True)
+ofrak_fw_resource.run(SegmentInjectorModifier, SegmentInjectorModifierConfig.from_fem(fem))
 ```
 """
 import logging
@@ -574,6 +575,7 @@ class PatchMaker:
         :param resource: OFRAK firmware resource
         :param verbose: prints patch section sizes and destinations at the effective logging level.
         """
+        self.logger.warn("This function is being deprecated!!")
         logger_level = self.logger.getEffectiveLevel() if verbose else logging.INFO
         program: Program = await resource.view_as(Program)
 

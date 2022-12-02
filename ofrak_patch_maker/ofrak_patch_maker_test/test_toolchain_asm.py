@@ -309,7 +309,7 @@ def test_monkey_patch(toolchain: ToolchainVersion, proc: ProgramAttributes, exte
     fem = patch_maker.make_fem([(bom, p)], exec_path)
 
     # Run pytest with -sk to check out the .ld script you generated!
-    # `PatchMaker.inject_patch` will ignore 0-length sections!
+    # `SegmentInjectorModifier` will ignore 0-length sections!
 
     assert os.path.exists(exec_path)
     assert get_file_format(exec_path) == tc_config.file_format
