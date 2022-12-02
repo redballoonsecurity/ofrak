@@ -25,32 +25,20 @@ class ComponentExternalTool:
     basic information on installation, either via package manager or bespoke process.
 
     :ivar tool: Name of the command-line tool that will be run
+    :ivar tool_homepage: Like to homepage of the tool, with install instructions etc.
     :ivar install_check_arg: Argument to pass to the tool to check if it can be found and run on
     the host, typically something like "--help":
         `<tool> <install_check_arg>`\
     :ivar apt_package: An `apt` package that installs this tool, if such a package exists
     :ivar brew_package: An `brew` package that installs this tool, if such a package exists
-    :ivar install_hints: String to provide guidance for a user on how to install a tool; only
-    required if it is not possible to install via brew or apt.
 
     """
 
     tool: str
+    tool_homepage: str
     install_check_arg: str
     apt_package: Optional[str] = None
     brew_package: Optional[str] = None
-    install_hints: Optional[str] = None
-
-    def __post_init__(self):
-        if self.apt_package and self.brew_package:
-            if self.install_hints is None:
-                self.install_hints = "Install with brew (Mac) or apt (Debian/Ubuntu)"
-        if self.apt_package is None or self.brew_package is None:
-            if self.install_hints is None:
-                raise ValueError(
-                    f"If {self.tool} is not installable via brew and apt an `install_hint` must "
-                    f"be provided for users."
-                )
 
     def is_tool_installed(self) -> bool:
         """

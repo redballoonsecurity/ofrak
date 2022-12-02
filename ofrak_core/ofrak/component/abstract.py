@@ -2,6 +2,7 @@ import asyncio
 import dataclasses
 import inspect
 import logging
+import subprocess
 from abc import ABC, abstractmethod
 from typing import (
     Dict,
@@ -89,7 +90,15 @@ class AbstractComponent(ComponentInterface[CC], ABC):
         )
         if config is None:
             config = self.get_default_config()
-        await self._run(resource, config)
+        try:
+            await self._run(resource, config)
+        except FileNotFoundError as e:
+            # Check if the problem was that one of the dependencies is missing
+            missing_file = e.filename
+            for dep in self.external_dependencies:
+                if dep.tool == missing_file:
+                    raise ComponentMissingDependencyError(self, dep)
+            raise
         deleted_resource_models: List[MutableResourceModel] = list()
 
         for deleted_r_id in component_context.resources_deleted:
@@ -229,3 +238,35 @@ class AbstractComponent(ComponentInterface[CC], ABC):
         LOGGER.warning(
             f"{self.get_id().decode()} has already been run on resource {resource.get_id().hex()}"
         )
+
+
+class ComponentMissingDependencyError(RuntimeError):
+    def __init__(
+        self,
+        component: ComponentInterface,
+        dependency: ComponentExternalTool,
+    ):
+        self.component = component
+        self.dependency = dependency
+        errstring = f"Missing {dependency.tool} tool needed for {type(component).__name__}!"
+        if dependency.apt_package:
+            errstring += f"\n\tapt installation: apt install {dependency.brew_package}"
+        if dependency.brew_package:
+            errstring += f"\n\tbrew installation: brew install {dependency.brew_package}"
+        errstring += f"\n\tSee {dependency.tool_homepage} for more info and installation help."
+
+        super().__init__(errstring)
+
+
+class ComponentSubprocessError(RuntimeError):
+    def __init__(self, error: subprocess.CalledProcessError):
+        errstring = (
+            f"Command '{error.cmd}' returned non-zero exit status {error.returncode}.\n"
+            f"Stderr: {error.stderr}.\n"
+            f"Stdout: {error.stdout}."
+        )
+        super().__init__(errstring)
+        self.cmd = error.cmd
+        self.cmd_retcode = error.returncode
+        self.cmd_stdout = error.stdout
+        self.cmd_stderr = error.stderr

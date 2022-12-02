@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 
 from ofrak import Resource, Packer, Unpacker
+from ofrak.component.abstract import ComponentSubprocessError
 from ofrak.core import (
     File,
     Folder,
@@ -16,19 +17,20 @@ from ofrak.core import (
     GenericBinary,
 )
 from ofrak.model.component_model import ComponentExternalTool
-from ofrak_type.error import ComponentSubprocessError
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
 
 ZIP_TOOL = ComponentExternalTool(
     "zip",
+    "https://linux.die.net/man/1/zip",
     install_check_arg="--help",
     apt_package="zip",
     brew_package="zip",
 )
 UNZIP_TOOL = ComponentExternalTool(
     "unzip",
+    "https://linux.die.net/man/1/unzip",
     install_check_arg="--help",
     apt_package="unzip",
     brew_package="unzip",

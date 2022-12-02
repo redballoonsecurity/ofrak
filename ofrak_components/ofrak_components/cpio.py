@@ -6,6 +6,7 @@ from enum import Enum
 
 
 from ofrak import Analyzer, Packer, Unpacker, Resource
+from ofrak.component.abstract import ComponentSubprocessError
 from ofrak.core import (
     GenericBinary,
     File,
@@ -17,13 +18,13 @@ from ofrak.core import (
     Magic,
 )
 from ofrak.model.component_model import ComponentExternalTool
-from ofrak_type.error import ComponentSubprocessError
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
 
 CPIO_TOOL = ComponentExternalTool(
     "cpio",
+    "https://www.gnu.org/software/cpio/",
     install_check_arg="--help",
     apt_package="cpio",
     brew_package="cpio",
