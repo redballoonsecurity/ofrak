@@ -757,11 +757,11 @@ class Resource:
 
         :return:
         """
-        view_or_create_view_task = self._view_as(viewable_tag)
+        view_or_create_view_task: Union[RV, Awaitable[RV]] = self._view_as(viewable_tag)
         if isawaitable(view_or_create_view_task):
             return await view_or_create_view_task
         else:
-            return view_or_create_view_task
+            return cast(RV, view_or_create_view_task)
 
     def add_view(self, view: ResourceViewInterface):
         """
@@ -1106,14 +1106,16 @@ class Resource:
         """
         descendants = await self.get_descendants(max_depth, r_filter, r_sort)
         views_or_tasks = [r._view_as(v_type) for r in descendants]
-        view_tasks = []
-        views_or_task_indexes = []
+        # analysis tasks to generate views of resources which don't have attrs for the view already
+        view_tasks: List[Awaitable[RV]] = []
+        # each resources' already-existing views OR the index in `view_tasks` of the analysis task
+        views_or_task_indexes: List[Union[int, RV]] = []
         for view_or_create_view_task in views_or_tasks:
             if isawaitable(view_or_create_view_task):
                 views_or_task_indexes.append(len(view_tasks))
                 view_tasks.append(view_or_create_view_task)
             else:
-                views_or_task_indexes.append(view_or_create_view_task)
+                views_or_task_indexes.append(cast(RV, view_or_create_view_task))
 
         if view_tasks:
             completed_views: Sequence[RV] = await asyncio.gather(*view_tasks)
@@ -1122,7 +1124,8 @@ class Resource:
                 for v_or_i in views_or_task_indexes
             ]
         else:
-            return views_or_task_indexes
+            # There are no tasks, so all needed views are already present
+            return cast(List[RV], views_or_task_indexes)
 
     async def get_descendants(
         self,

@@ -90,7 +90,7 @@ class CapstoneInstructionAnalyzer(InstructionAnalyzer):
         mode: InstructionSetMode
         if parent_block.resource.has_tag(BasicBlock):
             bb_attrs = await parent_block.resource.analyze(BasicBlock.attributes_type)
-            mode = bb_attrs.mode
+            mode = bb_attrs.mode  # type: ignore
         else:
             mode = InstructionSetMode.NONE
         instruction_data = await resource.get_data()
