@@ -33,7 +33,7 @@ from ofrak import (
     ResourceAttributeValueFilter,
     ResourceSort,
 )
-from ofrak.core import File, Addressable, BinaryPatchModifier, BinaryPatchConfig
+from ofrak.core import Addressable, File
 from ofrak.core import (
     GenericBinary,
     AddCommentModifier,
@@ -139,7 +139,6 @@ class AiohttpOFRAKServer:
                 web.post("/{resource_id}/add_comment", self.add_comment),
                 web.post("/{resource_id}/delete_comment", self.delete_comment),
                 web.post("/{resource_id}/search_for_vaddr", self.search_for_vaddr),
-                web.post("/{resource_id}/binary_patch", self.binary_patch),
             ]
         )
 
@@ -297,10 +296,6 @@ class AiohttpOFRAKServer:
         resource = await self._get_resource_for_request(request)
         new_data = await request.read()
 
-        # This is required to work around an extremely strange OFRAK bug
-        root = list(await resource.get_ancestors())[-1]
-        _ = list(await root.get_children())
-
         start_param = request.query.get("start")
         start = int(start_param) if start_param is not None else 0
         end_param = request.query.get("end")
@@ -364,24 +359,6 @@ class AiohttpOFRAKServer:
 
         except NotFoundError:
             return web.json_response([])
-
-    @exceptions_to_http(SerializedError)
-    async def binary_patch(self, request: Request) -> Response:
-        resource = await self._get_resource_for_request(request)
-        new_data = await request.read()
-
-        start_param = request.query.get("start")
-        start = int(start_param) if start_param is not None else 0
-
-        result = await resource.run(
-            BinaryPatchModifier,
-            config=BinaryPatchConfig(
-                offset=start,
-                patch_bytes=new_data,
-            ),
-        )
-        response_pjson = await self._serialize_component_result(result)
-        return web.json_response(response_pjson)
 
     async def _get_resource_by_id(self, resource_id: bytes, job_id: bytes) -> Resource:
         resource = await self._ofrak_context.resource_factory.create(

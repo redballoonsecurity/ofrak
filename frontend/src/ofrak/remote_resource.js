@@ -176,24 +176,6 @@ export class RemoteResource extends Resource {
     });
   }
 
-  async binary_patch(data, start) {
-    // TODO: Implement after and before
-
-    start = start || 0;
-    const patch_results = await fetch(
-      `${this.uri}/binary_patch?start=${start}`,
-      {
-        method: "POST",
-        body: data,
-      }
-    ).then(async (r) => {
-      if (!r.ok) {
-        throw Error(JSON.stringify(await r.json(), undefined, 2));
-      }
-      return r.json();
-    });
-  }
-
   async create_child(
     tags,
     attributes,
