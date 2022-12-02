@@ -67,10 +67,7 @@ class ZipUnpacker(Unpacker[None]):
                     )
                 except subprocess.CalledProcessError as e:
                     raise ComponentSubprocessError(e)
-                cwd = os.getcwd()
-                os.chdir(temp_dir)
                 await zip_view.initialize_from_disk(temp_dir)
-                os.chdir(cwd)
 
 
 class ZipPacker(Packer[None]):

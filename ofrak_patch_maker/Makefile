@@ -23,8 +23,8 @@ inspect:
 
 .PHONY: test
 test: inspect
-	$(PYTHON) -m pytest --cov=ofrak_patch_maker --cov-report=term-missing ofrak_patch_maker_test
-	fun-coverage --cov-fail-under=79
+	$(PYTHON) -m pytest -n auto --cov=ofrak_patch_maker --cov-report=term-missing ofrak_patch_maker_test
+	fun-coverage --cov-fail-under=82
 
 .PHONY: dependencies
 dependencies:

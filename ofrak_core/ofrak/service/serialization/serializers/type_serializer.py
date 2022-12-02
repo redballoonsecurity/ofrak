@@ -9,12 +9,13 @@ from ofrak.service.serialization.serializers.serializer_i import SerializerInter
 
 def is_metaclass(type_hint):
     """Will recognize Type, Type[X], and metaclasses"""
-    result = (
-        type_hint == Type
-        or get_origin(type_hint) == type
-        or (inspect.isclass(type_hint) and issubclass(type_hint, type))
+    return any(
+        [
+            type_hint == Type,
+            get_origin(type_hint) == type,
+            inspect.isclass(type_hint) and issubclass(type_hint, type),
+        ]
     )
-    return result
 
 
 class TypeSerializer(SerializerInterface):
