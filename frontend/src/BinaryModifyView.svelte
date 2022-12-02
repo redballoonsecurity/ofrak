@@ -194,9 +194,9 @@
 </script>
 
 <div class="container">
-  {#if userData}
+  {#if userData !== undefined && userData !== null}
     <p>
-      Editing range 0x{startOffset.toString(16)} - 0x{endOffset.toString(16)}
+      Editing range 0x{startOffset.toString(16)} - 0x{endOffset.toString(16)}.
     </p>
     <p>
       Feel free to disregard whitespace when editing. "deadbeef" and "de ad be
