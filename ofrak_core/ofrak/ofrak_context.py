@@ -105,7 +105,9 @@ class OFRAK:
 
     def get_installed_ofrak_packages(self) -> List[ModuleType]:
         ofrak_eps = entry_points(group="ofrak.packages")
-        return [ofrak_pkg.load() for ofrak_pkg in ofrak_eps]
+        import ofrak
+
+        return [ofrak] + [ofrak_pkg.load() for ofrak_pkg in ofrak_eps]
 
     async def create_ofrak_context(self) -> OFRAKContext:
         """

@@ -18,7 +18,7 @@ class ComponentConfig:
     """
 
 
-@dataclass
+@dataclass(frozen=True)
 class ComponentExternalTool:
     """
     An external tool or utility (like `zip` or `squashfs`) a component depends on. Includes some

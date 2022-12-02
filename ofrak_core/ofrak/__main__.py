@@ -7,6 +7,7 @@ from typing import Dict, List, Iterable, Optional, Type, Set
 from ofrak import OFRAK
 from ofrak.component.interface import ComponentInterface
 from ofrak.model.component_model import ComponentExternalTool
+from ofrak_type.error import NotFoundError
 from synthol.injector import DependencyInjector
 
 """
@@ -19,6 +20,9 @@ _OFRAK_PACKAGES: Optional[List[ModuleType]] = None
 _OFRAK_COMPONENTS: Optional[Dict[ModuleType, List[Type[ComponentInterface]]]] = None
 _OFRAK_DEPENDENCIES: Optional[Dict[Type[ComponentInterface], List[ComponentExternalTool]]] = None
 
+_OFRAK_PACKAGES_BY_NAME: Optional[Dict[str, ModuleType]] = None
+_OFRAK_COMPONENTS_BY_NAME: Optional[Dict[str, Type[ComponentInterface]]] = None
+
 
 def _get_all_ofrak_packages() -> List[ModuleType]:
     global _OFRAK_PACKAGES
@@ -26,6 +30,17 @@ def _get_all_ofrak_packages() -> List[ModuleType]:
         o = OFRAK()
         _OFRAK_PACKAGES = list(o.get_installed_ofrak_packages())
     return _OFRAK_PACKAGES
+
+
+def _get_package_by_name(pkg_name: str) -> ModuleType:
+    global _OFRAK_PACKAGES_BY_NAME
+    if _OFRAK_PACKAGES_BY_NAME is None:
+        _OFRAK_PACKAGES_BY_NAME = {pkg.__name__: pkg for pkg in _get_all_ofrak_packages()}
+    pkg = _OFRAK_PACKAGES_BY_NAME.get(pkg_name)
+    if not pkg:
+        raise NotFoundError(f"No OFRAK package with the name {pkg_name}")
+    else:
+        return pkg
 
 
 def _get_ofrak_components() -> Dict[ModuleType, List[Type[ComponentInterface]]]:
@@ -52,6 +67,17 @@ def _get_ofrak_components() -> Dict[ModuleType, List[Type[ComponentInterface]]]:
     return _OFRAK_COMPONENTS
 
 
+def _get_component_by_name(component_name: str) -> Type[ComponentInterface]:
+    global _OFRAK_COMPONENTS_BY_NAME
+    if _OFRAK_COMPONENTS_BY_NAME is None:
+        _OFRAK_COMPONENTS_BY_NAME = {c.__name__: c for c in _get_ofrak_dependencies().keys()}
+    component = _OFRAK_COMPONENTS_BY_NAME.get(component_name)
+    if not component:
+        raise NotFoundError(f"No OFRAK component with the name {component_name}")
+    else:
+        return component
+
+
 def _get_ofrak_dependencies() -> Dict[Type[ComponentInterface], List[ComponentExternalTool]]:
     global _OFRAK_DEPENDENCIES
     if not _OFRAK_DEPENDENCIES:
@@ -61,20 +87,24 @@ def _get_ofrak_dependencies() -> Dict[Type[ComponentInterface], List[ComponentEx
 
 
 def setup_list_argparser(ofrak_subparsers):
-    list_parser = ofrak_subparsers.add_parser("list")
-    list_parser.add_argument(
-        "--packages", "-p", action="store_true", help="List installed OFRAK packages"
+    list_parser = ofrak_subparsers.add_parser(
+        "list",
+        help="List installed OFRAK modules and/or components. By default, prints all "
+        "installed components, organized by module (equivalent to `--packages --components` "
+        "flags)",
     )
     list_parser.add_argument(
-        "--components", "-c", action="store_true", help="List installed OFRAK components"
+        "--packages", "-p", action="store_true", help="List installed OFRAK packages", default=True
     )
     list_parser.add_argument(
-        "--dependencies", "-d", action="store_true", help="List dependencies of OFRAK components"
+        "--components",
+        "-c",
+        action="store_true",
+        help="List installed OFRAK components",
+        default=True,
     )
 
     def ofrak_list_handler(args):
-        output_struct = dict()
-
         output_lines = []
 
         indent = 0
@@ -86,9 +116,6 @@ def setup_list_argparser(ofrak_subparsers):
                 if args.components:
                     output_lines.append("\t" * indent + component.__name__)
                     indent += 1
-                for dep in _get_ofrak_dependencies()[component]:
-                    if args.dependencies:
-                        output_lines.append("\t" * indent + dep.tool)
                 if args.components:
                     indent -= 1
             if args.packages:
@@ -100,8 +127,19 @@ def setup_list_argparser(ofrak_subparsers):
 
 
 def setup_deps_argparser(ofrak_subparsers):
-    deps_parser = ofrak_subparsers.add_parser("deps")
+    deps_parser = ofrak_subparsers.add_parser(
+        "deps",
+        help="Show/check the dependencies of OFRAK components. Can show the brew/apt install "
+        "packages for dependencies, and filter by component or package (if no "
+        "component/package filters are provided, all dependencies are included).",
+    )
 
+    deps_parser.add_argument(
+        "--package", action="append", help="Include dependencies of this package"
+    )
+    deps_parser.add_argument(
+        "--component", action="append", help="Include dependencies of this component"
+    )
     deps_parser.add_argument(
         "--missing-only",
         action="store_true",
@@ -122,10 +160,35 @@ def setup_deps_argparser(ofrak_subparsers):
     )
 
     def ofrak_deps_handler(args):
-        deps_by_component = _get_ofrak_dependencies()
         dependencies = list()
 
-        for dep_list in deps_by_component.values():
+        if args.package:
+            packages = [_get_package_by_name(pkg_name) for pkg_name in args.package]
+        elif args.component:
+            packages = []
+        else:
+            packages = _get_all_ofrak_packages()
+
+        if args.component:
+            components = [
+                _get_component_by_name(component_name) for component_name in args.component
+            ]
+        elif args.package:
+            components = []
+        else:
+            components = list(_get_ofrak_dependencies().keys())
+
+        components_by_pkg = _get_ofrak_components()
+        for pkg in packages:
+            components.extend(components_by_pkg[pkg])
+
+        if not components:
+            return
+
+        deps_by_component = _get_ofrak_dependencies()
+        components_by_dep = dict()
+        for component in components:
+            dep_list = deps_by_component[component]
             for dep in dep_list:
                 if args.check or args.missing_only:
                     installed_correctly = dep.is_tool_installed()
@@ -134,8 +197,11 @@ def setup_deps_argparser(ofrak_subparsers):
 
                 if args.missing_only and installed_correctly is True:
                     continue
-                else:
-                    dependencies.append((dep, installed_correctly))
+
+                dependencies.append((dep, installed_correctly))
+                if dep not in components_by_dep:
+                    components_by_dep[dep] = set()
+                components_by_dep[dep].add(component.__name__)
 
         output_lines = []
 
@@ -153,6 +219,8 @@ def setup_deps_argparser(ofrak_subparsers):
                     dep_pkg = None
                 if dep_pkg:
                     output_lines.append(dep_pkg)
+            else:
+                output_lines.append(f"{dep.tool} [{', '.join(c for c in components_by_dep[dep])}]")
 
         _print_lines_without_duplicates(output_lines)
 
