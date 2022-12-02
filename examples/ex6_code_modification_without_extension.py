@@ -42,8 +42,12 @@ import tempfile
 
 import ofrak_binary_ninja
 from ofrak import OFRAK, OFRAKContext, ResourceFilter, ResourceAttributeValueFilter
-from ofrak.core import ProgramAttributes, ComplexBlock, SegmentInjectorModifierConfig, \
-    SegmentInjectorModifier
+from ofrak.core import (
+    ProgramAttributes,
+    ComplexBlock,
+    SegmentInjectorModifierConfig,
+    SegmentInjectorModifier,
+)
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.model import (
