@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 from inspect import isabstract
 from itertools import chain
 from types import ModuleType
-from typing import Dict, List, Iterable
+from typing import Dict, List, Iterable, Optional, Type, Set
 
 from ofrak import OFRAK
 from ofrak.component.interface import ComponentInterface
@@ -15,9 +15,9 @@ ofrak deps --missing-only --check --packages-only
 """
 
 
-_OFRAK_PACKAGES = None
-_OFRAK_COMPONENTS = None
-_OFRAK_DEPENDENCIES = None
+_OFRAK_PACKAGES: Optional[List[ModuleType]] = None
+_OFRAK_COMPONENTS: Optional[Dict[ModuleType, List[Type[ComponentInterface]]]] = None
+_OFRAK_DEPENDENCIES: Optional[Dict[Type[ComponentInterface], List[ComponentExternalTool]]] = None
 
 
 def _get_all_ofrak_packages() -> List[ModuleType]:
@@ -28,12 +28,12 @@ def _get_all_ofrak_packages() -> List[ModuleType]:
     return _OFRAK_PACKAGES
 
 
-def _get_ofrak_components() -> Dict[ModuleType, List[ComponentInterface]]:
+def _get_ofrak_components() -> Dict[ModuleType, List[Type[ComponentInterface]]]:
     global _OFRAK_COMPONENTS
     if not _OFRAK_COMPONENTS:
         ofrak_packages = _get_all_ofrak_packages()
         _OFRAK_COMPONENTS = {}
-        prev_packages = []
+        prev_packages: List[ModuleType] = []
         next_packages = list(ofrak_packages)
         while next_packages:
             package = next_packages.pop(0)
@@ -52,11 +52,11 @@ def _get_ofrak_components() -> Dict[ModuleType, List[ComponentInterface]]:
     return _OFRAK_COMPONENTS
 
 
-def _get_ofrak_dependencies() -> Dict[ComponentInterface, List[ComponentExternalTool]]:
+def _get_ofrak_dependencies() -> Dict[Type[ComponentInterface], List[ComponentExternalTool]]:
     global _OFRAK_DEPENDENCIES
     if not _OFRAK_DEPENDENCIES:
         ofrak_components = chain(*(_get_ofrak_components().values()))
-        _OFRAK_DEPENDENCIES = {c: list(c.external_dependencies) for c in ofrak_components}
+        _OFRAK_DEPENDENCIES = {c: list(c.external_dependencies) for c in ofrak_components}  # type: ignore
     return _OFRAK_DEPENDENCIES
 
 
@@ -175,7 +175,7 @@ def setup_argparser():
 def _print_lines_without_duplicates(output_lines: Iterable[str]):
     # strip duplicates
     prev_indent = 0
-    seen = set()
+    seen: Set[str] = set()
     deduplicated_lines = []
     for line in output_lines:
         indent = line.rfind("\t") + 1
