@@ -44,6 +44,7 @@ class AbstractComponent(ComponentInterface[CC], ABC):
         self._data_service = data_service
         self._resource_service = resource_service
         self._dependency_handler_factory = DependencyHandlerFactory()
+        self._default_config = self.get_default_config()
 
     @classmethod
     def get_id(cls) -> bytes:
@@ -77,8 +78,8 @@ class AbstractComponent(ComponentInterface[CC], ABC):
             component_context,
             job_context,
         )
-        if config is None:
-            config = self.get_default_config()
+        if config is None and self._default_config is not None:
+            config = dataclasses.replace(self._default_config)
         await self._run(resource, config)
         deleted_resource_models: List[MutableResourceModel] = list()
 
@@ -184,7 +185,7 @@ class AbstractComponent(ComponentInterface[CC], ABC):
 
         if isinstance(default_arg, ComponentConfig):
             try:
-                return cast(CC, dataclasses.replace(default_arg))
+                return cast(CC, default_arg)
             except TypeError as e:
                 raise TypeError(
                     f"ComponentConfig subclass {type(default_arg)} is not a dataclass! This is "
