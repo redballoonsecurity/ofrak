@@ -127,8 +127,26 @@ def test_arm_alignment(toolchain_under_test: ToolchainUnderTest):
         length=2,
         access_perms=MemoryPermissions.RX,
     )
+    # LLVM requires memory regions be defined for 0-length sections.
+    # It'd be nice to find a compiler flag that doesn't generate empty sections in the object files.
+    data_segment_placeholder = Segment(
+        segment_name=".data",
+        vm_address=0xFACE,
+        offset=0,
+        is_entry=False,
+        length=0,
+        access_perms=MemoryPermissions.RW,
+    )
+    bss_segment_placeholder = Segment(
+        segment_name=".bss",
+        vm_address=0xFEED,
+        offset=0,
+        is_entry=False,
+        length=0,
+        access_perms=MemoryPermissions.RW,
+    )
     segment_dict = {
-        patch_object.path: (text_segment_patch,),
+        patch_object.path: (text_segment_patch, data_segment_placeholder, bss_segment_placeholder),
     }
 
     exec_path = os.path.join(build_dir, "patch_exec")
