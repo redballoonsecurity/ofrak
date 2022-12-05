@@ -5,7 +5,8 @@ from inspect import isabstract
 from types import ModuleType
 from typing import Dict, Optional, Type, List, Iterable, Set
 
-from ofrak import OFRAK
+from importlib_metadata import entry_points
+
 from ofrak.component.interface import ComponentInterface
 from ofrak.model.component_model import ComponentExternalTool
 from synthol.injector import DependencyInjector
@@ -13,7 +14,6 @@ from synthol.injector import DependencyInjector
 
 class OFRAKEnvironment:
     def __init__(self):
-        self._ofrak = OFRAK()
         self._ofrak_packages: Optional[Dict[str, ModuleType]] = None
         self._ofrak_components: Optional[Dict[str, Type[ComponentInterface]]] = None
         self._ofrak_package_components: Optional[
@@ -35,9 +35,11 @@ class OFRAKEnvironment:
     @property
     def packages(self) -> Dict[str, ModuleType]:
         if self._ofrak_packages is None:
-            self._ofrak_packages = {
-                pkg.__name__: pkg for pkg in self._ofrak.get_installed_ofrak_packages()
-            }
+            ofrak_eps = entry_points(group="ofrak.packages")
+            import ofrak
+
+            installed_ofrak_pkgs = [ofrak] + [ofrak_pkg.load() for ofrak_pkg in ofrak_eps]
+            self._ofrak_packages = {pkg.__name__: pkg for pkg in installed_ofrak_pkgs}
         return self._ofrak_packages
 
     @property
