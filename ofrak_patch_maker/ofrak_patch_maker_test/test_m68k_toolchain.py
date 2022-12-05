@@ -90,15 +90,7 @@ def test_hello_world(toolchain_under_test: ToolchainUnderTest):
     )
 
 
-def test_m68k_alignment():
-    program_attributes = ProgramAttributes(
-        InstructionSet.M68K,
-        None,
-        BitWidth.BIT_32,
-        Endianness.BIG_ENDIAN,
-        ProcessorType.COLDFIRE4E,
-    )
-
+def test_m68k_alignment(toolchain_under_test: ToolchainUnderTest):
     tc_config = ToolchainConfig(
         file_format=BinFileType.ELF,
         force_inlines=True,
@@ -116,9 +108,9 @@ def test_m68k_alignment():
     build_dir = tempfile.mkdtemp()
 
     patch_maker = PatchMaker(
-        program_attributes=program_attributes,
+        program_attributes=toolchain_under_test.proc,
         toolchain_config=tc_config,
-        toolchain_version=ToolchainVersion.GNU_M68K_LINUX_10,
+        toolchain_version=toolchain_under_test.toolchain_version,
         build_dir=build_dir,
         base_symbols={"bye_world": 0x80000468},
     )

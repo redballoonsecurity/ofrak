@@ -91,15 +91,7 @@ def test_hello_world(toolchain_under_test: ToolchainUnderTest):
     )
 
 
-def test_arm_alignment():
-    program_attributes = ProgramAttributes(
-        InstructionSet.ARM,
-        SubInstructionSet.ARMv7A,
-        BitWidth.BIT_32,
-        Endianness.LITTLE_ENDIAN,
-        ProcessorType.GENERIC_A9_V7_THUMB,
-    )
-
+def test_arm_alignment(toolchain_under_test: ToolchainUnderTest):
     tc_config = ToolchainConfig(
         file_format=BinFileType.ELF,
         force_inlines=True,
@@ -117,9 +109,9 @@ def test_arm_alignment():
     build_dir = tempfile.mkdtemp()
 
     patch_maker = PatchMaker(
-        program_attributes=program_attributes,
+        program_attributes=toolchain_under_test.proc,
         toolchain_config=tc_config,
-        toolchain_version=ToolchainVersion.GNU_ARM_NONE_EABI_10_2_1,
+        toolchain_version=toolchain_under_test.toolchain_version,
         build_dir=build_dir,
     )
     patch_source = os.path.join(CURRENT_DIRECTORY, "test_alignment/patch_arm.as")
