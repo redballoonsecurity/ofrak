@@ -4,7 +4,6 @@ from ofrak.core.architecture import ProgramAttributes
 from ofrak_patch_maker.toolchain.version import ToolchainVersion
 from ofrak_patch_maker_test import ToolchainUnderTest
 from ofrak_patch_maker_test.toolchain_asm import (
-    run_challenge_3_reloc_toy_example_test,
     run_monkey_patch_test,
 )
 from ofrak_patch_maker_test.toolchain_c import run_hello_world_test, run_bounds_check_test
@@ -39,20 +38,14 @@ def toolchain_under_test(request) -> ToolchainUnderTest:
 
 
 # ASM Tests
-def test_challenge_3_reloc_toy_example(toolchain_under_test: ToolchainUnderTest):
-    run_challenge_3_reloc_toy_example_test(
-        toolchain_under_test.toolchain_version,
-        toolchain_under_test.proc,
-        toolchain_under_test.extension,
-    )
-
-
 def test_monkey_patch(toolchain_under_test: ToolchainUnderTest):
-    run_monkey_patch_test(
-        toolchain_under_test.toolchain_version,
-        toolchain_under_test.proc,
-        toolchain_under_test.extension,
-    )
+    with pytest.raises(ValueError) as e_info:
+        run_monkey_patch_test(
+            toolchain_under_test.toolchain_version,
+            toolchain_under_test.proc,
+            toolchain_under_test.extension,
+        )
+    assert str(e_info.value) == "-pie not supported for AVR"
 
 
 # C Tests
