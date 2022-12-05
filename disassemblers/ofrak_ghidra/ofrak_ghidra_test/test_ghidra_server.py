@@ -37,6 +37,9 @@ def test_start_ofrak_ghidra_server():
 
     assert _is_ghidra_server_running(), "Tried to start server, but could not find process"
 
+    if not ghidra_was_running:
+        server_main._stop_ghidra_server("stop")
+
 
 def test_stop_ofrak_ghidra_server():
     ghidra_was_running = False
