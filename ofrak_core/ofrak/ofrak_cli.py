@@ -244,19 +244,20 @@ class DepsSubCommand(OFRAKSubCommand):
         _print_lines_without_duplicates(output_lines)
 
 
-def setup_ofrak_cli_argparser(subcommands: List[OFRAKSubCommand]):
-    ofrak_parser = ArgumentParser()
-    ofrak_env = OFRAKEnvironment()
+class OFRAKCommandLineInterface:
+    def __init__(self, ofrak_env: OFRAKEnvironment, subcommands: List[OFRAKSubCommand]):
+        self.ofrak_parser = ArgumentParser()
+        ofrak_subparsers = self.ofrak_parser.add_subparsers(
+            help="Command line utilities to use or configure OFRAK"
+        )
 
-    ofrak_subparsers = ofrak_parser.add_subparsers(
-        help="Command line utilities to use or configure OFRAK"
-    )
+        for ofrak_subcommand in subcommands:
+            subparser = ofrak_subcommand.create_parser(ofrak_subparsers)
+            subparser.set_defaults(func=functools.partial(ofrak_subcommand.handler, ofrak_env))
 
-    for ofrak_subcommand in subcommands:
-        subparser = ofrak_subcommand.create_parser(ofrak_subparsers)
-        subparser.set_defaults(func=functools.partial(ofrak_subcommand.handler, ofrak_env))
-
-    return ofrak_parser
+    def parse_and_run(self, args=None):
+        args = self.ofrak_parser.parse_args(args)
+        args.func(args)
 
 
 def _print_lines_without_duplicates(output_lines: Iterable[str]):

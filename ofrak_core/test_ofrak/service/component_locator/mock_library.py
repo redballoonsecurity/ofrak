@@ -3,35 +3,16 @@ from dataclasses import dataclass
 from typing import Tuple, Optional
 
 from ofrak.component.analyzer import Analyzer
-from ofrak.component.unpacker import Unpacker
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
+from pytest_ofrak.mock_component_types import MockAnalyzer, MockUnpacker
 
 
 ##################################################################################
 # A mock library of ResourceAttributes, Resources, and Analyzers for tests to use
 ##################################################################################
-
-
-class MockAnalyzer(Analyzer[None, Tuple], ABC):
-    def __init__(self):
-        super().__init__(None, None, None)
-
-    async def analyze(self, resource: Resource, config=None) -> Tuple:
-        return ()
-
-
-class MockUnpacker(Unpacker[None]):
-    targets = ()
-    children = ()
-
-    def __init__(self):
-        super().__init__(None, None, None, None)
-
-    async def unpack(self, resource, config=None):
-        pass
 
 
 @dataclass(**ResourceAttributes.DATACLASS_PARAMS)
