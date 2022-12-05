@@ -39,11 +39,18 @@ def test_start_ofrak_ghidra_server():
 
 
 def test_stop_ofrak_ghidra_server():
+    ghidra_was_running = False
+
     if not _is_ghidra_server_running():
         server_main._run_ghidra_server("start")
+    else:
+        ghidra_was_running = True
 
     assert _is_ghidra_server_running(), "Could not start Ghidra server"
 
     server_main._stop_ghidra_server("stop")
 
     assert not _is_ghidra_server_running(), "Could not stop Ghidra server"
+
+    if ghidra_was_running:
+        server_main._run_ghidra_server("start")
