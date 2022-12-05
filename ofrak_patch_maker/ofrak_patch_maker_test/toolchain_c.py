@@ -132,10 +132,6 @@ def run_hello_world_test(toolchain: ToolchainVersion, proc: ProgramAttributes):
         header_dirs=[source_dir],
     )
 
-    # TODO: Implement test with an actual firmware resource so we can run allocation etc.
-    # allocator_config = patch_maker.allocate_bom(None, bom)
-
-    # TODO: Delete me once the above is completed:
     all_segments = {}
     current_vm_address = 0x10000
     for o in bom.object_map.values():
