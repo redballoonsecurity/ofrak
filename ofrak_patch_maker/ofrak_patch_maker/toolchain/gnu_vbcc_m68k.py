@@ -115,10 +115,6 @@ class VBCC_0_9_GNU_Hybrid_Toolchain(Abstract_GNU_Toolchain, ABC):
         if toolchain_config.isysroot is not None:
             pass
 
-    @property
-    def name(self):
-        return "VBCC_M68K_0_9"
-
     @staticmethod
     def _make_gas_compatible(in_file: str) -> str:
         def add_percent(lines: List[str]) -> List[str]:

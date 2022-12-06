@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
-
+from ofrak_patch_maker.toolchain.version import ToolchainVersion
 from ofrak_type.memory_permissions import MemoryPermissions
 
 
@@ -82,6 +82,7 @@ class ToolchainConfig:
 
     It is expected the functionality described by the parameter will be achieved to the best effort.
 
+    :var toolchain_version: The enum for the configured toolchain.
     :var file_format: Usually ELF
     :var force_inlines: forces inlines when specified in the function signature
     :var relocatable: Enables PC-relative data references, branches, etc. (via `pic`/`pie`)
@@ -101,6 +102,7 @@ class ToolchainConfig:
     :var hard_float: Compile with support for hardware floating point operations (Default: `False`)
     """
 
+    toolchain_version: ToolchainVersion
     file_format: BinFileType
     force_inlines: bool
     relocatable: bool

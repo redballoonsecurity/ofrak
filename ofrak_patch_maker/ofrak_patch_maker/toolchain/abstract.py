@@ -98,12 +98,11 @@ class Toolchain(ABC):
         self._compiler_target = self._get_compiler_target(processor)
 
     @property
-    @abstractmethod
     def name(self) -> str:
         """
         :return str: name property that matches the value used in `toolchain.conf` to access paths
         """
-        raise NotImplementedError()
+        self._config.toolchain_version.value
 
     @abstractmethod
     def _get_assembler_target(self, processor: ProgramAttributes) -> str:
