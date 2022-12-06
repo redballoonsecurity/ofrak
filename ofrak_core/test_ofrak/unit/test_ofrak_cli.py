@@ -140,3 +140,10 @@ def test_ofrak_help():
         ofrak_cli.parse_and_run(["--help"])
     except SystemExit as e:
         assert e.code == 0
+
+
+def test_install_checks():
+    ofrak_env = OFRAKEnvironment()
+    subcommands = [ListSubCommand(), DepsSubCommand()]
+    ofrak_cli = OFRAKCommandLineInterface(ofrak_env, subcommands)
+    ofrak_cli.parse_and_run(["deps", "-c"])
