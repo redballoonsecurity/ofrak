@@ -24,11 +24,16 @@ class ComponentExternalTool:
     An external tool or utility (like `zip` or `squashfs`) a component depends on. Includes some
     basic information on installation, either via package manager or bespoke process.
 
+    Part of this class's responsibility is to check if the tool is installed. Most tools are
+    simple command-line utilities whose installation can be check by running:
+        `<tool> <install_check_arg>`
+    For dependencies which do NOT follow this pattern, subclass ComponentExternalTool and redefine
+    the `is_tool_installed` method to perform the check.
+
     :ivar tool: Name of the command-line tool that will be run
     :ivar tool_homepage: Like to homepage of the tool, with install instructions etc.
     :ivar install_check_arg: Argument to pass to the tool to check if it can be found and run on
-    the host, typically something like "--help":
-        `<tool> <install_check_arg>`\
+    the host, typically something like "--help"
     :ivar apt_package: An `apt` package that installs this tool, if such a package exists
     :ivar brew_package: An `brew` package that installs this tool, if such a package exists
 

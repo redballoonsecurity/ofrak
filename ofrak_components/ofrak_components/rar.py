@@ -12,7 +12,15 @@ from ofrak.core import (
     MagicMimeIdentifier,
     MagicDescriptionIdentifier,
 )
-from ofrak.model.component_model import CC
+from ofrak.model.component_model import CC, ComponentExternalTool
+
+UNAR = ComponentExternalTool(
+    "unar",
+    "https://theunarchiver.com/command-line",
+    "--help",
+    apt_package="unar",
+    brew_package="unar",
+)
 
 
 @dataclass
@@ -29,6 +37,7 @@ class RarUnpacker(Unpacker[None]):
 
     targets = (RarArchive,)
     children = (File, Folder, SpecialFileType)
+    external_dependencies = (UNAR,)
 
     async def unpack(self, resource: Resource, config: CC):
         with tempfile.NamedTemporaryFile(

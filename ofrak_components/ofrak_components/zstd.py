@@ -9,8 +9,13 @@ from ofrak.core import (
     MagicMimeIdentifier,
     MagicDescriptionIdentifier,
 )
-from ofrak.model.component_model import CC, ComponentConfig
+from ofrak.model.component_model import CC, ComponentConfig, ComponentExternalTool
 from ofrak_type.range import Range
+
+
+ZSTD = ComponentExternalTool(
+    "zstd", "http://facebook.github.io/zstd/", "--help", apt_package="zstd", brew_package="zstd"
+)
 
 
 class ZstdData(GenericBinary):
@@ -35,6 +40,7 @@ class ZstdUnpacker(Unpacker[None]):
     id = b"ZstdUnpacker"
     targets = (ZstdData,)
     children = (GenericBinary,)
+    external_dependencies = (ZSTD,)
 
     async def unpack(self, resource: Resource, config: CC) -> None:
         with tempfile.NamedTemporaryFile(suffix=".zstd") as compressed_file:
@@ -56,6 +62,7 @@ class ZstdPacker(Packer[ZstdPackerConfig]):
     """
 
     targets = (ZstdData,)
+    external_dependencies = (ZSTD,)
 
     async def pack(self, resource: Resource, config: Optional[ZstdPackerConfig] = None):
         if config is None:

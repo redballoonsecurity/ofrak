@@ -13,9 +13,41 @@ from ofrak.core import (
     MagicDescriptionIdentifier,
 )
 from ofrak.core.binary import GenericBinary
+from ofrak.model.component_model import ComponentExternalTool
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
+
+MKSQUASHFS = ComponentExternalTool(
+    "mksquashfs", "https://github.com/plougher/squashfs-tools.git", "-help"
+)
+
+
+class _UnsquashfsV45Tool(ComponentExternalTool):
+    def __init__(self):
+        super().__init__("unsquashfs", "https://github.com/plougher/squashfs-tools.git", "")
+
+    def is_tool_installed(self) -> bool:
+        try:
+            result = subprocess.run(
+                ["unsquashfs", "-help"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+            )
+        except FileNotFoundError:
+            return False
+
+        if 0 != result.returncode:
+            return False
+
+        if b"-no-exit" not in result.stdout:
+            # Version 4.5+ has the required -no-exit option
+            return False
+
+        return True
+
+
+UNSQUASHFS = _UnsquashfsV45Tool()
 
 
 @dataclass
@@ -30,6 +62,7 @@ class SquashfsUnpacker(Unpacker[None]):
 
     targets = (SquashfsFilesystem,)
     children = (File, Folder, SpecialFileType)
+    external_dependencies = (UNSQUASHFS,)
 
     async def unpack(self, resource: Resource, config=None):
         with tempfile.NamedTemporaryFile() as temp_file:
@@ -58,6 +91,7 @@ class SquashfsPacker(Packer[None]):
     """
 
     targets = (SquashfsFilesystem,)
+    external_dependencies = (MKSQUASHFS,)
 
     async def pack(self, resource: Resource, config=None):
         squashfs_view: SquashfsFilesystem = await resource.view_as(SquashfsFilesystem)

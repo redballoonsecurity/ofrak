@@ -11,9 +11,43 @@ from ofrak.core import (
     MagicMimeIdentifier,
     Magic,
 )
-from ofrak.model.component_model import ComponentConfig
-from ofrak_components.zip import ZipArchive
+from ofrak.model.component_model import ComponentConfig, ComponentExternalTool
+from ofrak_components.zip import ZipArchive, UNZIP_TOOL
 from ofrak_type.range import Range
+
+
+APKTOOL = ComponentExternalTool("apktool", "https://ibotpeaches.github.io/Apktool/", "--help")
+JAVA = ComponentExternalTool(
+    "java",
+    "https://openjdk.org/projects/jdk/11/",
+    "--help",
+    apt_package="openjdk-11-jdk",
+    brew_package="openjdk@11",
+)
+
+
+class _UberApkSignerTool(ComponentExternalTool):
+    def __init__(self):
+        super().__init__(
+            "/usr/local/bin/uber-apk-signer.jar",
+            "https://github.com/patrickfav/uber-apk-signer",
+            install_check_arg="",
+        )
+
+    def is_tool_installed(self) -> bool:
+        try:
+            retcode = subprocess.call(
+                ("java", "-jar", "/usr/local/bin/uber-apk-signer.jar", "--help"),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except FileNotFoundError:
+            return False
+
+        return 0 == retcode
+
+
+UBER_APK_SIGNER = _UberApkSignerTool()
 
 
 class Apk(ZipArchive):
@@ -29,6 +63,7 @@ class ApkUnpacker(Unpacker[None]):
 
     targets = (Apk,)
     children = (File, Folder)
+    external_dependencies = (APKTOOL,)
 
     async def unpack(self, resource: Resource, config=None):
         """
@@ -74,6 +109,7 @@ class ApkPacker(Packer[ApkPackerConfig]):
     """
 
     targets = (Apk,)
+    external_dependencies = (APKTOOL, JAVA, UBER_APK_SIGNER)
 
     async def pack(
         self, resource: Resource, config: ApkPackerConfig = ApkPackerConfig(sign_apk=True)
@@ -124,6 +160,7 @@ class ApkPacker(Packer[ApkPackerConfig]):
 
 class ApkIdentifier(Identifier):
     targets = (File, GenericBinary)
+    external_dependencies = (UNZIP_TOOL,)
 
     async def identify(self, resource: Resource, config=None) -> None:
         await resource.run(MagicMimeIdentifier)
@@ -135,7 +172,6 @@ class ApkIdentifier(Identifier):
 
                 command = ["unzip", "-l", temp_file.name]
                 filenames = subprocess.run(command, check=True, capture_output=True).stdout
-                subprocess.run(command, check=True, capture_output=True)
 
                 if b"androidmanifest.xml" in filenames.lower():
                     resource.add_tag(Apk)

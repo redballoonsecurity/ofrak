@@ -7,8 +7,12 @@ from ofrak.core import (
     MagicMimeIdentifier,
     MagicDescriptionIdentifier,
 )
-from ofrak.model.component_model import CC
+from ofrak.model.component_model import CC, ComponentExternalTool
 from ofrak_type.range import Range
+
+LZOP = ComponentExternalTool(
+    "lzop", "https://www.lzop.org/", "--help", apt_package="lzop", brew_package="lzop"
+)
 
 
 class LzoData(GenericBinary):
@@ -28,6 +32,7 @@ class LzoUnpacker(Unpacker[None]):
     id = b"LzoUnpacker"
     targets = (LzoData,)
     children = (GenericBinary,)
+    external_dependencies = (LZOP,)
 
     async def unpack(self, resource: Resource, config: CC) -> None:
         with tempfile.NamedTemporaryFile(suffix=".lzo") as compressed_file:
@@ -46,6 +51,7 @@ class LzoPacker(Packer[None]):
     """
 
     targets = (LzoData,)
+    external_dependencies = (LZOP,)
 
     async def pack(self, resource: Resource, config=None):
         lzo_view = await resource.view_as(LzoData)

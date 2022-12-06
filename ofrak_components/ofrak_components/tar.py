@@ -14,8 +14,11 @@ from ofrak.core import (
     MagicMimeIdentifier,
     MagicDescriptionIdentifier,
 )
-from ofrak.model.component_model import CC
+from ofrak.model.component_model import CC, ComponentExternalTool
 from ofrak_type.range import Range
+
+
+TAR = ComponentExternalTool("tar", "https://www.gnu.org/software/tar/", "--help", apt_package="tar")
 
 
 @dataclass
@@ -32,6 +35,7 @@ class TarUnpacker(Unpacker[None]):
 
     targets = (TarArchive,)
     children = (File, Folder, SpecialFileType)
+    external_dependencies = (TAR,)
 
     async def unpack(self, resource: Resource, config: CC) -> None:
         # Write the archive data to a file
@@ -67,6 +71,7 @@ class TarPacker(Packer[None]):
     """
 
     targets = (TarArchive,)
+    external_dependencies = (TAR,)
 
     async def pack(self, resource: Resource, config: CC) -> None:
         # Flush the child files to the filesystem
