@@ -2,8 +2,8 @@ import asyncio
 import dataclasses
 import inspect
 import logging
-import subprocess
 from abc import ABC, abstractmethod
+from subprocess import CalledProcessError
 from typing import (
     Dict,
     Iterable,
@@ -100,6 +100,9 @@ class AbstractComponent(ComponentInterface[CC], ABC):
                 if dep.tool == missing_file:
                     raise ComponentMissingDependencyError(self, dep)
             raise
+        except CalledProcessError as e:
+            raise ComponentSubprocessError(e)
+
         deleted_resource_models: List[MutableResourceModel] = list()
 
         for deleted_r_id in component_context.resources_deleted:
@@ -260,7 +263,7 @@ class ComponentMissingDependencyError(RuntimeError):
 
 
 class ComponentSubprocessError(RuntimeError):
-    def __init__(self, error: subprocess.CalledProcessError):
+    def __init__(self, error: CalledProcessError):
         errstring = (
             f"Command '{error.cmd}' returned non-zero exit status {error.returncode}.\n"
             f"Stderr: {error.stderr}.\n"

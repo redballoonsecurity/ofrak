@@ -6,7 +6,6 @@ from enum import Enum
 
 
 from ofrak import Analyzer, Packer, Unpacker, Resource
-from ofrak.component.abstract import ComponentSubprocessError
 from ofrak.core import (
     GenericBinary,
     File,
@@ -94,16 +93,13 @@ class CpioUnpacker(Unpacker[None]):
         resource_data = await cpio_v.resource.get_data()
         with tempfile.TemporaryDirectory() as temp_flush_dir:
             command = ["cpio", "-id"]
-            try:
-                subprocess.run(
-                    command,
-                    check=True,
-                    capture_output=True,
-                    cwd=temp_flush_dir,
-                    input=resource_data,
-                )
-            except subprocess.CalledProcessError as error:
-                raise ComponentSubprocessError(error)
+            subprocess.run(
+                command,
+                check=True,
+                capture_output=True,
+                cwd=temp_flush_dir,
+                input=resource_data,
+            )
             await cpio_v.initialize_from_disk(temp_flush_dir)
 
 
@@ -119,22 +115,19 @@ class CpioPacker(Packer[None]):
         cpio_v: CpioFilesystem = await resource.view_as(CpioFilesystem)
         temp_flush_dir = await cpio_v.flush_to_disk()
         cpio_format = cpio_v.archive_type.value
-        try:
-            list_files_output = subprocess.run(
-                ["find", ".", "-print"],
-                check=True,
-                capture_output=True,
-                cwd=temp_flush_dir,
-            )
-            cpio_pack_output = subprocess.run(
-                ["cpio", "-o", f"--format={cpio_format}"],
-                check=True,
-                capture_output=True,
-                cwd=temp_flush_dir,
-                input=list_files_output.stdout,
-            )
-        except subprocess.CalledProcessError as error:
-            raise ComponentSubprocessError(error)
+        list_files_output = subprocess.run(
+            ["find", ".", "-print"],
+            check=True,
+            capture_output=True,
+            cwd=temp_flush_dir,
+        )
+        cpio_pack_output = subprocess.run(
+            ["cpio", "-o", f"--format={cpio_format}"],
+            check=True,
+            capture_output=True,
+            cwd=temp_flush_dir,
+            input=list_files_output.stdout,
+        )
         new_data = cpio_pack_output.stdout
         # Passing in the original range effectively replaces the original data with the new data
         resource.queue_patch(Range(0, await resource.get_data_length()), new_data)

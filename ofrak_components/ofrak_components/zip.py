@@ -6,7 +6,6 @@ from dataclasses import dataclass
 
 
 from ofrak import Resource, Packer, Unpacker
-from ofrak.component.abstract import ComponentSubprocessError
 from ofrak.core import (
     File,
     Folder,
@@ -59,14 +58,11 @@ class ZipUnpacker(Unpacker[None]):
             temp_archive.write(await resource.get_data())
             temp_archive.flush()
             with tempfile.TemporaryDirectory() as temp_dir:
-                try:
-                    subprocess.run(
-                        ["unzip", temp_archive.name, "-d", temp_dir],
-                        check=True,
-                        capture_output=True,
-                    )
-                except subprocess.CalledProcessError as e:
-                    raise ComponentSubprocessError(e)
+                subprocess.run(
+                    ["unzip", temp_archive.name, "-d", temp_dir],
+                    check=True,
+                    capture_output=True,
+                )
                 await zip_view.initialize_from_disk(temp_dir)
 
 
@@ -84,10 +80,7 @@ class ZipPacker(Packer[None]):
         temp_archive = f"{flush_dir}.zip"
         cwd = os.getcwd()
         os.chdir(flush_dir)
-        try:
-            subprocess.run(["zip", "-r", temp_archive, "."], check=True, capture_output=True)
-        except subprocess.CalledProcessError as e:
-            raise ComponentSubprocessError(e)
+        subprocess.run(["zip", "-r", temp_archive, "."], check=True, capture_output=True)
         os.chdir(cwd)
         with open(temp_archive, "rb") as fh:
             resource.queue_patch(Range(0, await zip_view.resource.get_data_length()), fh.read())

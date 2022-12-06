@@ -11,14 +11,24 @@ from ofrak.model.resource_model import ResourceContext
 from ofrak.model.viewable_tag_model import ResourceViewContext
 
 
-async def test_missing_dependency_caught(ofrak_context: OFRAKContext, tmpdir):
-    dependency_path = os.path.join(tmpdir, "made_up_ofrak_dependency")
+@pytest.fixture()
+def dependency_path(tmpdir):
+    return os.path.join(tmpdir, "made_up_ofrak_dependency")
 
+
+@pytest.fixture()
+def mock_dependency(dependency_path):
+    return ComponentExternalTool(dependency_path, "", "")
+
+
+async def test_missing_dependency_caught(
+    ofrak_context: OFRAKContext, dependency_path, mock_dependency
+):
     class _MockComponent(Unpacker):
         targets = ()
         children = ()
 
-        external_dependencies = (ComponentExternalTool(dependency_path, "", ""),)
+        external_dependencies = (mock_dependency,)
 
         async def unpack(self, resource, config=None):
             subprocess.run(dependency_path)
@@ -56,3 +66,10 @@ async def test_missing_dependency_caught(ofrak_context: OFRAKContext, tmpdir):
             ResourceViewContext(),
             None,
         )
+
+
+async def test_tool_install_check(mock_dependency):
+    assert not mock_dependency.is_tool_installed()
+
+    echo_tool = ComponentExternalTool("echo", "", install_check_arg=".")
+    assert echo_tool.is_tool_installed()
