@@ -119,13 +119,13 @@ def test_deps(ofrak_cli_parser, capsys):
         capsys,
     )
 
-    ofrak_cli_parser.parse_and_run(["deps", "--dependency-packages", "apt"])
+    ofrak_cli_parser.parse_and_run(["deps", "--packages-for", "apt"])
     _check_cli_output_matches(
         "tool_a_apt\n",
         capsys,
     )
 
-    ofrak_cli_parser.parse_and_run(["deps", "--dependency-packages", "brew"])
+    ofrak_cli_parser.parse_and_run(["deps", "--packages-for", "brew"])
     _check_cli_output_matches(
         "tool_a_brew\n",
         capsys,

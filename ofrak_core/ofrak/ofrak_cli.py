@@ -1,6 +1,6 @@
 import functools
 from abc import ABC, abstractmethod
-from argparse import Namespace, ArgumentParser
+from argparse import Namespace, ArgumentParser, RawDescriptionHelpFormatter
 from inspect import isabstract
 from types import ModuleType
 from typing import Dict, Optional, Type, List, Iterable, Set
@@ -152,8 +152,14 @@ class DepsSubCommand(OFRAKSubCommand):
         deps_parser = ofrak_subparsers.add_parser(
             "deps",
             help="Show/check the dependencies of OFRAK components. Can show the brew/apt install "
-            "packages for dependencies, and filter by component or package (if no "
-            "component/package filters are provided, all dependencies are included).",
+            "packages for dependencies, and filter by component or package.",
+            description="Show/check the dependencies of OFRAK components.\n"
+            "Examples:\n"
+            "\tGet all dependencies of core ofrak:\n"
+            "\t\tpython3 -m ofrak deps --package ofrak\n"
+            "\tList all the apt packages needed for missing dependencies:\n"
+            "\t\tpython3 -m ofrak deps --missing-only --packages-for apt",
+            formatter_class=RawDescriptionHelpFormatter,
         )
 
         deps_parser.add_argument(
@@ -169,12 +175,12 @@ class DepsSubCommand(OFRAKSubCommand):
         )
 
         deps_parser.add_argument(
-            "--dependency-packages",
+            "--packages-for",
             action="store",
             dest="package_manager",
             choices=("apt", "brew"),
-            help="List names of packages (known to <package_manager>) which provide dependencies "
-            "required by installed OFRAK packages.",
+            help="List only names of packages (known to the selected package manager) which "
+            "provide required dependencies.",
             default=None,
         )
         deps_parser.add_argument(
