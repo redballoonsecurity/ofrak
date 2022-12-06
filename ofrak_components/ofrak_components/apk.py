@@ -2,18 +2,12 @@ import os
 import subprocess
 import tempfile
 from dataclasses import dataclass
-from subprocess import CalledProcessError
-from typing import Type
 
 from ofrak import Identifier, Packer, Unpacker, Resource
-from ofrak.component.identifier import IdentifierError
-from ofrak.component.packer import PackerError
-from ofrak.component.unpacker import UnpackerError
 from ofrak.core import (
     GenericBinary,
     File,
     Folder,
-    format_called_process_error,
     MagicMimeIdentifier,
     Magic,
 )
@@ -57,7 +51,7 @@ class ApkUnpacker(Unpacker[None]):
                     "--force",
                     temp_file.name,
                 ]
-                _run_command(command, UnpackerError)
+                subprocess.run(command, check=True, capture_output=True)
                 await apk.initialize_from_disk(temp_flush_dir)
 
 
@@ -95,7 +89,7 @@ class ApkPacker(Packer[ApkPackerConfig]):
         apk_suffix = ".apk"
         with tempfile.NamedTemporaryFile(suffix=apk_suffix) as temp_apk:
             command = ["apktool", "build", "--force-all", temp_flush_dir, "--output", temp_apk.name]
-            _run_command(command, PackerError)
+            subprocess.run(command, check=True, capture_output=True)
             if not config.sign_apk:
                 # Close the file handle and reopen, to avoid observed situations where temp.read()
                 # was not returning data
@@ -113,7 +107,7 @@ class ApkPacker(Packer[ApkPackerConfig]):
                         signed_apk_temp_dir,
                         "--allowResign",
                     ]
-                    _run_command(command, PackerError)
+                    subprocess.run(command, check=True, capture_output=True)
                     signed_apk_filename = (
                         os.path.basename(temp_apk.name)[: -len(apk_suffix)]
                         + "-aligned-debugSigned.apk"
@@ -140,15 +134,8 @@ class ApkIdentifier(Identifier):
                 temp_file.flush()
 
                 command = ["unzip", "-l", temp_file.name]
-                filenames = _run_command(command, IdentifierError)
+                filenames = subprocess.run(command, check=True, capture_output=True).stdout
+                subprocess.run(command, check=True, capture_output=True)
 
                 if b"androidmanifest.xml" in filenames.lower():
                     resource.add_tag(Apk)
-
-
-def _run_command(command, error_type: Type[Exception]):
-    try:
-        run = subprocess.run(command, check=True, capture_output=True)
-        return run.stdout
-    except CalledProcessError as error:
-        raise error_type(format_called_process_error(error))

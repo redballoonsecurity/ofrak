@@ -4,11 +4,8 @@ from dataclasses import dataclass
 from typing import Optional
 
 from ofrak import Packer, Unpacker, Resource
-from ofrak.component.packer import PackerError
-from ofrak.component.unpacker import UnpackerError
 from ofrak.core import (
     GenericBinary,
-    format_called_process_error,
     MagicMimeIdentifier,
     MagicDescriptionIdentifier,
 )
@@ -46,12 +43,9 @@ class ZstdUnpacker(Unpacker[None]):
             output_filename = tempfile.mktemp()
 
             command = ["zstd", "-d", "-k", compressed_file.name, "-o", output_filename]
-            try:
-                subprocess.run(command, check=True)
-                with open(output_filename, "rb") as f:
-                    result = f.read()
-            except subprocess.CalledProcessError as e:
-                raise UnpackerError(format_called_process_error(e))
+            subprocess.run(command, check=True)
+            with open(output_filename, "rb") as f:
+                result = f.read()
 
             await resource.create_child(tags=(GenericBinary,), data=result)
 
@@ -79,12 +73,9 @@ class ZstdPacker(Packer[ZstdPackerConfig]):
             if config.compression_level > 19:
                 command.append("--ultra")
             command.extend([uncompressed_file.name, "-o", output_filename])
-            try:
-                subprocess.run(command, check=True)
-                with open(output_filename, "rb") as f:
-                    result = f.read()
-            except subprocess.CalledProcessError as e:
-                raise PackerError(format_called_process_error(e))
+            subprocess.run(command, check=True)
+            with open(output_filename, "rb") as f:
+                result = f.read()
 
             compressed_data = result
             original_size = await zstd_view.resource.get_data_length()

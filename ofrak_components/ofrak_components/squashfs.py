@@ -2,16 +2,12 @@ import logging
 import subprocess
 import tempfile
 from dataclasses import dataclass
-from subprocess import CalledProcessError
 
 from ofrak import Packer, Unpacker, Resource
-from ofrak.component.packer import PackerError
 from ofrak.core import (
     File,
     Folder,
     FilesystemRoot,
-    format_called_process_error,
-    unpack_with_command,
     SpecialFileType,
     MagicMimeIdentifier,
     MagicDescriptionIdentifier,
@@ -50,7 +46,7 @@ class SquashfsUnpacker(Unpacker[None]):
                     temp_flush_dir,
                     temp_file.name,
                 ]
-                await unpack_with_command(command)
+                subprocess.run(command, check=True, capture_output=True)
 
                 squashfs_view = await resource.view_as(SquashfsFilesystem)
                 await squashfs_view.initialize_from_disk(temp_flush_dir)
@@ -68,10 +64,7 @@ class SquashfsPacker(Packer[None]):
         temp_flush_dir = await squashfs_view.flush_to_disk()
         with tempfile.NamedTemporaryFile(suffix=".sqsh", mode="rb") as temp:
             command = ["mksquashfs", temp_flush_dir, temp.name, "-noappend"]
-            try:
-                subprocess.run(command, check=True, capture_output=True)
-            except CalledProcessError as error:
-                raise PackerError(format_called_process_error(error))
+            subprocess.run(command, check=True, capture_output=True)
             new_data = temp.read()
             # Passing in the original range effectively replaces the original data with the new data
             resource.queue_patch(Range(0, await resource.get_data_length()), new_data)

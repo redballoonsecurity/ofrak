@@ -3,7 +3,6 @@ import tempfile
 
 import pytest
 
-from ofrak.core.filesystem import format_called_process_error
 from ofrak.resource import Resource
 from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import (
     CompressedFileUnpackModifyPackPattern,
@@ -20,10 +19,7 @@ class TestLzoUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
 
         compressed_filename = d.join("hello.lzo").realpath()
         command = ["lzop", "-o", compressed_filename, uncompressed_filename]
-        try:
-            subprocess.run(command, check=True, capture_output=True)
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError(format_called_process_error(e))
+        subprocess.run(command, check=True, capture_output=True)
 
         self._test_file = compressed_filename
 
@@ -34,9 +30,6 @@ class TestLzoUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
             compressed_file.flush()
 
             command = ["lzop", "-d", "-f", "-c", compressed_file.name]
-            try:
-                result = subprocess.run(command, check=True, capture_output=True)
-            except subprocess.CalledProcessError as e:
-                raise RuntimeError(format_called_process_error(e))
+            result = subprocess.run(command, check=True, capture_output=True)
 
             assert result.stdout == self.EXPECTED_REPACKED_DATA

@@ -3,7 +3,6 @@ import subprocess
 import tempfile
 
 from ofrak import OFRAKContext
-from ofrak.core.filesystem import unpack_with_command
 from ofrak.resource import Resource
 from ofrak_components.p7zip import P7zFilesystem
 from ofrak.core.strings import StringPatchingConfig, StringPatchingModifier
@@ -51,7 +50,7 @@ class TestPzUnpackModifyPack(UnpackModifyPackPattern):
 
             with tempfile.TemporaryDirectory() as temp_flush_dir:
                 command = ["7z", "x", f"-o{temp_flush_dir}", temp_file.name]
-                await unpack_with_command(command)
+                subprocess.run(command, check=True, capture_output=True)
                 with open(os.path.join(temp_flush_dir, P7ZIP_ENTRY_NAME), "rb") as f:
                     patched_data = f.read()
                 assert patched_data == EXPECTED_DATA

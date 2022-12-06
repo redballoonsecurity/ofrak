@@ -5,10 +5,8 @@ from gzip import GzipFile
 from io import BytesIO
 
 from ofrak import Packer, Unpacker, Resource
-from ofrak.component.unpacker import UnpackerError
 from ofrak.core import (
     GenericBinary,
-    format_called_process_error,
     MagicMimeIdentifier,
     MagicDescriptionIdentifier,
 )
@@ -50,7 +48,7 @@ class GzipUnpacker(Unpacker[None]):
                     LOGGER.warning(e.stderr)
                     data = e.stdout
                 else:
-                    raise UnpackerError(format_called_process_error(e))
+                    raise
 
             await resource.create_child(
                 tags=(GenericBinary,),

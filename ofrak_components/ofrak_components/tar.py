@@ -4,7 +4,6 @@ import tempfile
 from dataclasses import dataclass
 
 from ofrak import Packer, Unpacker, Resource
-from ofrak.component.packer import PackerError
 from ofrak.component.unpacker import UnpackerError
 from ofrak.core import (
     GenericBinary,
@@ -12,7 +11,6 @@ from ofrak.core import (
     Folder,
     File,
     SpecialFileType,
-    format_called_process_error,
     MagicMimeIdentifier,
     MagicDescriptionIdentifier,
 )
@@ -43,10 +41,7 @@ class TarUnpacker(Unpacker[None]):
 
             # Check the archive member files to ensure none unpack to a parent directory
             command = ["tar", "-P", "-tf", temp_archive.name]
-            try:
-                output = subprocess.run(command, check=True, capture_output=True)
-            except subprocess.CalledProcessError as e:
-                raise UnpackerError(format_called_process_error(e))
+            output = subprocess.run(command, check=True, capture_output=True)
             for filename in output.stdout.decode().splitlines():
                 # Handles relative parent paths and rooted paths, and normalizes paths like "./../"
                 rel_filename = os.path.relpath(filename)
@@ -59,10 +54,7 @@ class TarUnpacker(Unpacker[None]):
             # Unpack into a temporary directory using the temporary file
             with tempfile.TemporaryDirectory() as temp_dir:
                 command = ["tar", "--xattrs", "-C", temp_dir, "-xf", temp_archive.name]
-                try:
-                    subprocess.run(command, check=True, capture_output=True)
-                except subprocess.CalledProcessError as e:
-                    raise UnpackerError(format_called_process_error(e))
+                subprocess.run(command, check=True, capture_output=True)
 
                 # Initialize a filesystem from the unpacked/untarred temporary folder
                 tar_view = await resource.view_as(TarArchive)
@@ -84,10 +76,7 @@ class TarPacker(Packer[None]):
         # Pack it back into a temporary archive
         with tempfile.NamedTemporaryFile(suffix=".tar") as temp_archive:
             command = ["tar", "--xattrs", "-C", flush_dir, "-cf", temp_archive.name, "."]
-            try:
-                subprocess.run(command, check=True, capture_output=True)
-            except subprocess.CalledProcessError as e:
-                raise PackerError(format_called_process_error(e))
+            subprocess.run(command, check=True, capture_output=True)
 
             # Replace the original archive data
             resource.queue_patch(Range(0, await resource.get_data_length()), temp_archive.read())

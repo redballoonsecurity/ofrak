@@ -7,14 +7,11 @@ import tempfile
 import pytest
 
 from ofrak import OFRAKContext
-from ofrak.component.unpacker import UnpackerError
 from ofrak.core import FilesystemRoot
 from ofrak.core.binary import GenericBinary
 from ofrak.core.filesystem import (
-    format_called_process_error,
     FilesystemEntry,
     Folder,
-    unpack_with_command,
 )
 from ofrak.resource import Resource
 from pytest_ofrak.patterns.pack_unpack_filesystem import FilesystemPackUnpackVerifyPattern
@@ -321,10 +318,7 @@ class TestSymbolicLinkUnpackPack(FilesystemPackUnpackVerifyPattern):
         # Pack with command line `tar` because it supports symbolic links
         with tempfile.NamedTemporaryFile(suffix=".tar") as archive:
             command = ["tar", "--xattrs", "-C", directory, "-cf", archive.name, "."]
-            try:
-                subprocess.run(command, check=True, capture_output=True)
-            except subprocess.CalledProcessError as e:
-                raise RuntimeError(format_called_process_error(e))
+            subprocess.run(command, check=True, capture_output=True)
 
             return await ofrak_context.create_root_resource_from_file(archive.name)
 
@@ -341,10 +335,7 @@ class TestSymbolicLinkUnpackPack(FilesystemPackUnpackVerifyPattern):
             tar.flush()
 
             command = ["tar", "--xattrs", "-C", extract_dir, "-xf", tar.name]
-            try:
-                subprocess.run(command, check=True, capture_output=True)
-            except subprocess.CalledProcessError as e:
-                raise RuntimeError(format_called_process_error(e))
+            subprocess.run(command, check=True, capture_output=True)
 
 
 class TestLoadInMemoryFilesystem(TestSymbolicLinkUnpackPack):
@@ -352,10 +343,7 @@ class TestLoadInMemoryFilesystem(TestSymbolicLinkUnpackPack):
         with tempfile.TemporaryDirectory() as archive_dir:
             archive_name = os.path.join(archive_dir, "archive.tar")
             command = ["tar", "--xattrs", "-C", directory, "-cf", archive_name, "."]
-            try:
-                subprocess.run(command, check=True, capture_output=True)
-            except subprocess.CalledProcessError as e:
-                raise RuntimeError(format_called_process_error(e))
+            subprocess.run(command, check=True, capture_output=True)
 
             with open(archive_name, "rb") as f:
                 data = f.read()
@@ -409,18 +397,3 @@ def diff_directories(dir_1, dir_2, extra_diff_flags):
             second_type = " ".join(second.split(" ")[4:])
 
             assert first_type == second_type
-
-
-class TestUnpackWithCommand:
-    async def test_unpack_with_command(self):
-        """
-        Run unpack_with_command successfully.
-        """
-        await unpack_with_command(["whoami"])
-
-    async def test_unpack_with_command_error(self):
-        """
-        Test that unpock_with_command raises an UnpackerError when the command fails.
-        """
-        with pytest.raises(UnpackerError):
-            await unpack_with_command(["whoami", "yo"])

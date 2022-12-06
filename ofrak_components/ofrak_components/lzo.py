@@ -2,11 +2,8 @@ import subprocess
 import tempfile
 
 from ofrak import Packer, Unpacker, Resource
-from ofrak.component.packer import PackerError
-from ofrak.component.unpacker import UnpackerError
 from ofrak.core import (
     GenericBinary,
-    format_called_process_error,
     MagicMimeIdentifier,
     MagicDescriptionIdentifier,
 )
@@ -38,10 +35,7 @@ class LzoUnpacker(Unpacker[None]):
             compressed_file.flush()
 
             command = ["lzop", "-d", "-f", "-c", compressed_file.name]
-            try:
-                result = subprocess.run(command, check=True, capture_output=True)
-            except subprocess.CalledProcessError as e:
-                raise UnpackerError(format_called_process_error(e))
+            result = subprocess.run(command, check=True, capture_output=True)
 
             await resource.create_child(tags=(GenericBinary,), data=result.stdout)
 
@@ -63,10 +57,7 @@ class LzoPacker(Packer[None]):
             uncompressed_file.flush()
 
             command = ["lzop", "-f", "-c", uncompressed_file.name]
-            try:
-                result = subprocess.run(command, check=True, capture_output=True)
-            except subprocess.CalledProcessError as e:
-                raise PackerError(format_called_process_error(e))
+            result = subprocess.run(command, check=True, capture_output=True)
 
             compressed_data = result.stdout
             original_size = await lzo_view.resource.get_data_length()
