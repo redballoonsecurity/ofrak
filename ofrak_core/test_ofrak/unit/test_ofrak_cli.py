@@ -1,3 +1,5 @@
+from typing import Iterable
+
 import pytest
 
 from ofrak.model.component_model import ComponentExternalTool
@@ -58,9 +60,14 @@ def ofrak_cli_parser():
     return OFRAKCommandLineInterface(ofrak_env)  # type: ignore
 
 
-def _check_cli_output_matches(expected_output, capsys):
+def _check_cli_output_matches(expected_output: str, capsys):
     output = capsys.readouterr().out
     assert output == expected_output
+
+
+def _check_cli_output_matches_one_of(expected_outputs: Iterable[str], capsys):
+    output = capsys.readouterr().out
+    assert any(output == expected_output for expected_output in expected_outputs)
 
 
 def test_list(ofrak_cli_parser, capsys):
@@ -90,29 +97,32 @@ def test_list(ofrak_cli_parser, capsys):
 
 
 def test_deps(ofrak_cli_parser, capsys):
-    ofrak_cli_parser.parse_and_run(["deps"])
-    _check_cli_output_matches(
-        "tool_a [_MockComponentA]\ntool_b [_MockComponentB]\n",
+    ofrak_cli_parser.parse_and_run(["deps", "--no-check"])
+    _check_cli_output_matches_one_of(
+        (
+            "tool_a\n\ttool_a.com\n\t[_MockComponentA]\ntool_b\n\ttool_b.com\n\t[_MockComponentB]\n",
+            "tool_b\n\ttool_b.com\n\t[_MockComponentB]\ntool_a\n\ttool_a.com\n\t[_MockComponentA]\n",
+        ),
         capsys,
     )
 
-    ofrak_cli_parser.parse_and_run(["deps", "--package", "_MockOFRAKPackage2"])
+    ofrak_cli_parser.parse_and_run(["deps", "--package", "_MockOFRAKPackage2", "--no-check"])
     _check_cli_output_matches(
         "",
         capsys,
     )
 
-    ofrak_cli_parser.parse_and_run(["deps", "--component", "_MockComponentA"])
+    ofrak_cli_parser.parse_and_run(["deps", "--component", "_MockComponentA", "--no-check"])
     _check_cli_output_matches(
-        "tool_a [_MockComponentA]\n",
+        "tool_a\n\ttool_a.com\n\t[_MockComponentA]\n",
         capsys,
     )
 
     ofrak_cli_parser.parse_and_run(
-        ["deps", "--component", "_MockComponentA", "--component", "_MockComponentB"]
+        ["deps", "--component", "_MockComponentA", "--component", "_MockComponentB", "--no-check"]
     )
     _check_cli_output_matches(
-        "tool_a [_MockComponentA]\ntool_b [_MockComponentB]\n",
+        "tool_a\n\ttool_a.com\n\t[_MockComponentA]\ntool_b\n\ttool_b.com\n\t[_MockComponentB]\n",
         capsys,
     )
 
@@ -128,6 +138,18 @@ def test_deps(ofrak_cli_parser, capsys):
         capsys,
     )
 
+    ofrak_cli_parser.parse_and_run(["deps", "--no-packages-for", "apt", "--no-check"])
+    _check_cli_output_matches(
+        "tool_b\n\ttool_b.com\n\t[_MockComponentB]\n",
+        capsys,
+    )
+
+    ofrak_cli_parser.parse_and_run(["deps", "--no-packages-for", "brew", "--no-check"])
+    _check_cli_output_matches(
+        "tool_a\n\ttool_a.com\n\t[_MockComponentA]\n",
+        capsys,
+    )
+
 
 def test_ofrak_help():
     ofrak_env = OFRAKEnvironment()
@@ -140,4 +162,4 @@ def test_ofrak_help():
 
 def test_install_checks():
     ofrak_cli = OFRAKCommandLineInterface()
-    ofrak_cli.parse_and_run(["deps", "--package", "ofrak", "-c"])
+    ofrak_cli.parse_and_run(["deps", "--package", "ofrak"])
