@@ -21,6 +21,10 @@ class GNU_ARM_NONE_EABI_10_2_1_Toolchain(GNU_10_Toolchain):
         else:
             self._compiler_flags.append("-msoft-float")
 
+    @property
+    def name(self) -> str:
+        return "GNU_ARM_NONE_EABI_10_2_1"
+
     def _get_assembler_target(self, processor: ProgramAttributes):
         """
         Thumb mode should be defined in the assembler source at the top, using:

@@ -28,7 +28,8 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
     ):
         super().__init__(processor, toolchain_config, logger=logger)
 
-        assert self.file_format == BinFileType.ELF
+        if self.file_format != BinFileType.ELF:
+            raise ToolchainException("No supported binary file formats other than ELF for now.")
 
         self._preprocessor_flags.append("-E")
 

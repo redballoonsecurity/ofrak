@@ -34,12 +34,10 @@ import logging
 import os
 import tempfile
 from collections import defaultdict
-from types import ModuleType
-from typing import Optional, List, Dict, Union, Tuple, Iterable, Mapping
+from typing import Dict, Iterable, List, Mapping, Optional, Tuple
 
 from immutabledict import immutabledict
 
-from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.free_space import (
     Allocatable,
 )
@@ -53,10 +51,8 @@ from ofrak_patch_maker.model import (
 )
 from ofrak_patch_maker.toolchain.abstract import Toolchain
 from ofrak_patch_maker.toolchain.model import (
-    ToolchainConfig,
     Segment,
 )
-from ofrak_patch_maker.toolchain.version import ToolchainVersion
 from ofrak_type.memory_permissions import MemoryPermissions
 
 

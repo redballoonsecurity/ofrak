@@ -21,6 +21,10 @@ class GNU_AARCH64_LINUX_10_Toolchain(GNU_10_Toolchain):
         # Enable compilation of the GNU atomics intrinsics.
         self._compiler_flags.append("-mno-outline-atomics")
 
+    @property
+    def name(self) -> str:
+        return "GNU_AARCH64_LINUX_10"
+
     def get_required_alignment(self, segment: Segment) -> int:
         return 4
 

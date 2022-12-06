@@ -110,6 +110,10 @@ class LLVM_12_0_1_Toolchain(Toolchain):
         if not self._config.check_overlap:
             self._linker_flags.append("--no-check-sections")
 
+    @property
+    def name(self) -> str:
+        return "LLVM_12_0_1"
+
     def _get_assembler_target(self, processor: ProgramAttributes) -> str:
         arch = processor.isa.value
         if self._config.assembler_target:

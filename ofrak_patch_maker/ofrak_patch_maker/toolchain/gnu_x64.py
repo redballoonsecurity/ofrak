@@ -26,6 +26,10 @@ class GNU_X86_64_LINUX_EABI_10_3_0_Toolchain(GNU_10_Toolchain):
         if not self._config.hard_float:
             self._compiler_flags.append("-msoft-float")
 
+    @property
+    def name(self) -> str:
+        return "GNU_X86_64_LINUX_EABI_10_3_0"
+
     def _get_assembler_target(self, processor: ProgramAttributes):
         if self._config.assembler_target:
             return self._config.assembler_target

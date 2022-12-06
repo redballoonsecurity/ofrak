@@ -39,6 +39,10 @@ class GNU_AVR_5_Toolchain(Abstract_GNU_Toolchain):
         else:
             raise ValueError("sub_isa is required for AVR linking")
 
+    @property
+    def name(self) -> str:
+        return "GNU_AVR_5"
+
     def _get_assembler_target(self, processor: ProgramAttributes) -> str:
         if processor.isa is not InstructionSet.AVR:
             raise ValueError(

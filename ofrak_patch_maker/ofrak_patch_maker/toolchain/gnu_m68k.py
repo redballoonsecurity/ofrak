@@ -26,6 +26,10 @@ class GNU_M68K_LINUX_10_Toolchain(GNU_10_Toolchain):
         else:
             self._compiler_flags.append("-msoft-float")
 
+    @property
+    def name(self) -> str:
+        return "GNU_M68K_LINUX_10"
+
     def get_required_alignment(self, segment: Segment) -> int:
         return 4
 

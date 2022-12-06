@@ -4,8 +4,8 @@ import tempfile
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
+from ofrak_patch_maker.toolchain.abstract import Toolchain
 from ofrak.component.modifier import Modifier
-from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.core.program import Program
@@ -17,10 +17,8 @@ from ofrak.core.patch_maker.model import SourceBundle
 from ofrak_patch_maker.model import PatchRegionConfig, FEM
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.model import (
-    ToolchainConfig,
     Segment,
 )
-from ofrak_patch_maker.toolchain.version import ToolchainVersion
 from ofrak_type.memory_permissions import MemoryPermissions
 
 LOGGER = logging.getLogger(__file__)
@@ -42,9 +40,7 @@ class PatchFromSourceModifierConfig(ComponentConfig):
 
     source_code_resource_id: bytes
     source_patches: Dict[str, Tuple[Segment, ...]]
-    toolchain_config: ToolchainConfig
-    toolchain_version: ToolchainVersion
-
+    toolchain: Toolchain
     patch_name: Optional[str] = None
     header_directory_resource_ids: Optional[Tuple[bytes, ...]] = None
 
@@ -102,12 +98,8 @@ class PatchFromSourceModifier(Modifier):
             os.path.join(source_tmp_dir, src_file) for src_file in config.source_patches.keys()
         ]
 
-        program_attrs = await resource.analyze_attributes(ProgramAttributes)
-
         patch_maker = PatchMaker(
-            program_attributes=program_attrs,
-            toolchain_config=config.toolchain_config,
-            toolchain_version=config.toolchain_version,
+            toolchain_config=config.toolchain,
             build_dir=build_tmp_dir,
         )
 
@@ -240,9 +232,7 @@ class FunctionReplacementModifierConfig(ComponentConfig):
 
     source_code_resource_id: bytes
     new_function_sources: Dict[str, str]
-    toolchain_config: ToolchainConfig
-    toolchain_version: ToolchainVersion
-
+    toolchain: Toolchain
     patch_name: Optional[str] = None
     header_directory_resource_ids: Optional[Tuple[bytes, ...]] = None
 
@@ -272,8 +262,7 @@ class FunctionReplacementModifier(Modifier[FunctionReplacementModifierConfig]):
         patch_from_source_config = PatchFromSourceModifierConfig(
             config.source_code_resource_id,
             source_patches,
-            config.toolchain_config,
-            config.toolchain_version,
+            config.toolchain,
             config.patch_name,
             config.header_directory_resource_ids,
         )
