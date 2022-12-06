@@ -242,7 +242,7 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def identify(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
-        result = await resource.auto_run(all_identifiers=True)
+        result = await resource.identify()
         response_pjson = await self._serialize_component_result(result)
         return web.json_response(response_pjson)
 

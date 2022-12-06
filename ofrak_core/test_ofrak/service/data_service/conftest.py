@@ -66,7 +66,7 @@ async def populate_data_service(data_service: DataServiceInterface):
     DATA_0 (0x0, 0x18)  | [-----------------------)
     DATA_1 (0x0, 0x8)   | [-------)
     DATA_2 (0x8, 0x10)  |         [-------)
-    DATA_3 (8x0, 0xC)   |         [---)
+    DATA_3 (0x8, 0xC)   |         [---)
     DATA_4 (0xC, 0x10)  |             [---)
     DATA_5 (0x10, 0x18) |                 [-------)
     """
