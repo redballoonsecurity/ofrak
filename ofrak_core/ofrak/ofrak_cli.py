@@ -151,8 +151,9 @@ class DepsSubCommand(OFRAKSubCommand):
     def create_parser(self, ofrak_subparsers):
         deps_parser = ofrak_subparsers.add_parser(
             "deps",
-            help="Show/check the dependencies of OFRAK components. Can show the brew/apt install "
-            "packages for dependencies, and filter by component or package.",
+            help="Show and check the external (non-Python) dependencies of OFRAK components. Can "
+            "show the brew/apt install packages for dependencies, and filter by component or "
+            "package.",
             description="Show/check the dependencies of OFRAK components.\n"
             "Examples:\n"
             "\tGet all dependencies of core ofrak:\n"
@@ -171,53 +172,69 @@ class DepsSubCommand(OFRAKSubCommand):
         deps_parser.add_argument(
             "--missing-only",
             action="store_true",
-            help="Only output information for missing dependencies (will check all dependencies)",
+            help="Only output information for missing dependencies",
         )
-
-        deps_parser.add_argument(
+        mutex_group = deps_parser.add_mutually_exclusive_group()
+        mutex_group.add_argument(
             "--packages-for",
             action="store",
-            dest="package_manager",
             choices=("apt", "brew"),
             help="List only names of packages (known to the selected package manager) which "
             "provide required dependencies.",
             default=None,
         )
+        mutex_group.add_argument(
+            "--no-packages-for",
+            action="store",
+            choices=("apt", "brew"),
+            help="List only dependencies which cannot be installed via the selected package "
+            "manager.",
+            default=None,
+        )
         deps_parser.add_argument(
-            "--check", "-c", action="store_true", help="Check that each dependency is present"
+            "--no-check",
+            "-n",
+            action="store_true",
+            help="Do not check that each dependency is present (ignored if --missing-only is also "
+            "provided)",
         )
         return deps_parser
 
     @staticmethod
     def handler(ofrak_env: OFRAKEnvironment, args: Namespace):
-        dependencies = list()
+        dependencies = set()
         packages: Iterable[ModuleType]
+        check_deps = args.missing_only or not args.no_check
 
-        if args.package:
-            packages = [ofrak_env.packages[pkg_name] for pkg_name in args.package]
-        elif args.component:
+        if args.package or args.component:
             packages = []
         else:
             packages = ofrak_env.packages.values()
 
+        if args.package:
+            packages = [ofrak_env.packages[pkg_name] for pkg_name in args.package]
+
         if args.component:
             components = [ofrak_env.components[component_name] for component_name in args.component]
-        elif args.package:
-            components = []
         else:
-            components = list(ofrak_env.components.values())
+            components = []
 
         for pkg in packages:
             components.extend(ofrak_env.components_by_package[pkg])
 
         if not components:
             return
-
         components_by_dep: Dict[ComponentExternalTool, Set[str]] = dict()
+        for component in ofrak_env.components.values():
+            for dep in component.external_dependencies:  # type: ignore
+                if dep not in components_by_dep:
+                    components_by_dep[dep] = set()
+                components_by_dep[dep].add(component.__name__)
+
         for component in components:
             dep_list = ofrak_env.dependencies_by_component[component]
             for dep in dep_list:
-                if args.check or args.missing_only:
+                if check_deps:
                     installed_correctly = dep.is_tool_installed()
                 else:
                     installed_correctly = None
@@ -225,29 +242,37 @@ class DepsSubCommand(OFRAKSubCommand):
                 if args.missing_only and installed_correctly is True:
                     continue
 
-                dependencies.append((dep, installed_correctly))
-                if dep not in components_by_dep:
-                    components_by_dep[dep] = set()
-                components_by_dep[dep].add(component.__name__)
+                dependencies.add((dep, installed_correctly))
 
         output_lines = []
 
         for dep, is_installed in dependencies:
-            if args.check:
-                output_lines.append(
-                    f"{dep.tool}{' (Missing)' if not is_installed else ' (Installed)'}"
-                )
-            elif args.package_manager:
-                if args.package_manager == "apt":
-                    dep_pkg = dep.apt_package
-                elif args.package_manager == "brew":
-                    dep_pkg = dep.brew_package
-                else:
-                    dep_pkg = None
-                if dep_pkg:
-                    output_lines.append(dep_pkg)
+            if args.no_packages_for:
+                pkg_manager = args.no_packages_for
+            elif args.packages_for:
+                pkg_manager = args.packages_for
             else:
-                output_lines.append(f"{dep.tool} [{', '.join(c for c in components_by_dep[dep])}]")
+                pkg_manager = None
+
+            if pkg_manager == "apt":
+                dep_pkg = dep.apt_package
+            elif pkg_manager == "brew":
+                dep_pkg = dep.brew_package
+            else:
+                dep_pkg = None
+
+            if args.packages_for:
+                if dep_pkg is not None:
+                    output_lines.append(dep_pkg)
+                continue
+            elif args.no_packages_for and dep_pkg is not None:
+                continue
+
+            dependency_info = f"{dep.tool}\n\t{dep.tool_homepage}\n\t[{', '.join(c for c in components_by_dep[dep])}]"
+            if not args.no_check:
+                dependency_info = f"[{' ' if not is_installed else '✓'}] " + dependency_info
+
+            output_lines.append(dependency_info)
 
         _print_lines_without_duplicates(output_lines)
 
@@ -268,8 +293,8 @@ class OFRAKCommandLineInterface:
             subparser.set_defaults(func=functools.partial(ofrak_subcommand.handler, ofrak_env))
 
     def parse_and_run(self, args: Sequence[str]):
-        args = self.ofrak_parser.parse_args(args)
-        args.func(args)
+        parsed = self.ofrak_parser.parse_args(args)
+        parsed.func(parsed)
 
 
 def _print_lines_without_duplicates(output_lines: Iterable[str]):
