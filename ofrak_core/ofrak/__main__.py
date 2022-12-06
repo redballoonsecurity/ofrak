@@ -1,12 +1,7 @@
-from ofrak.ofrak_cli import (
-    ListSubCommand,
-    DepsSubCommand,
-    OFRAKEnvironment,
-    OFRAKCommandLineInterface,
-)
+import sys
+
+from ofrak.ofrak_cli import OFRAKCommandLineInterface
 
 if __name__ == "__main__":
-    ofrak_env = OFRAKEnvironment()
-    subcommands = [ListSubCommand(), DepsSubCommand()]
-    ofrak_cli = OFRAKCommandLineInterface(ofrak_env, subcommands)
-    ofrak_cli.parse_and_run()
+    ofrak_cli = OFRAKCommandLineInterface()
+    ofrak_cli.parse_and_run(sys.argv[1:])

@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from argparse import Namespace, ArgumentParser, RawDescriptionHelpFormatter
 from inspect import isabstract
 from types import ModuleType
-from typing import Dict, Optional, Type, List, Iterable, Set
+from typing import Dict, Optional, Type, List, Iterable, Set, Sequence
 
 from importlib_metadata import entry_points
 
@@ -253,7 +253,11 @@ class DepsSubCommand(OFRAKSubCommand):
 
 
 class OFRAKCommandLineInterface:
-    def __init__(self, ofrak_env: OFRAKEnvironment, subcommands: List[OFRAKSubCommand]):
+    def __init__(
+        self,
+        ofrak_env: OFRAKEnvironment = OFRAKEnvironment(),
+        subcommands: Iterable[OFRAKSubCommand] = (ListSubCommand(), DepsSubCommand()),
+    ):
         self.ofrak_parser = ArgumentParser()
         ofrak_subparsers = self.ofrak_parser.add_subparsers(
             help="Command line utilities to use or configure OFRAK"
@@ -263,7 +267,7 @@ class OFRAKCommandLineInterface:
             subparser = ofrak_subcommand.create_parser(ofrak_subparsers)
             subparser.set_defaults(func=functools.partial(ofrak_subcommand.handler, ofrak_env))
 
-    def parse_and_run(self, args=None):
+    def parse_and_run(self, args: Sequence[str]):
         args = self.ofrak_parser.parse_args(args)
         args.func(args)
 

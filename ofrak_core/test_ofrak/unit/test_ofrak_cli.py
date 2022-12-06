@@ -2,8 +2,6 @@ import pytest
 
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.ofrak_cli import (
-    ListSubCommand,
-    DepsSubCommand,
     OFRAKCommandLineInterface,
     OFRAKEnvironment,
 )
@@ -57,8 +55,7 @@ class MockOFRAKEnvironment:
 @pytest.fixture
 def ofrak_cli_parser():
     ofrak_env = MockOFRAKEnvironment()
-    subcommands = [ListSubCommand(), DepsSubCommand()]
-    return OFRAKCommandLineInterface(ofrak_env, subcommands)
+    return OFRAKCommandLineInterface(ofrak_env)  # type: ignore
 
 
 def _check_cli_output_matches(expected_output, capsys):
@@ -134,8 +131,7 @@ def test_deps(ofrak_cli_parser, capsys):
 
 def test_ofrak_help():
     ofrak_env = OFRAKEnvironment()
-    subcommands = [ListSubCommand(), DepsSubCommand()]
-    ofrak_cli = OFRAKCommandLineInterface(ofrak_env, subcommands)
+    ofrak_cli = OFRAKCommandLineInterface(ofrak_env)
     try:
         ofrak_cli.parse_and_run(["--help"])
     except SystemExit as e:
@@ -143,7 +139,5 @@ def test_ofrak_help():
 
 
 def test_install_checks():
-    ofrak_env = OFRAKEnvironment()
-    subcommands = [ListSubCommand(), DepsSubCommand()]
-    ofrak_cli = OFRAKCommandLineInterface(ofrak_env, subcommands)
-    ofrak_cli.parse_and_run(["deps", "-c"])
+    ofrak_cli = OFRAKCommandLineInterface()
+    ofrak_cli.parse_and_run(["deps", "--package", "ofrak", "-c"])
