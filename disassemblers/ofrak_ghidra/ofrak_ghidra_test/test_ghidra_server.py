@@ -28,7 +28,9 @@ def _is_ghidra_server_running() -> bool:
 
 
 def test_start_ofrak_ghidra_server():
+    ghidra_was_running = False
     if _is_ghidra_server_running():
+        ghidra_was_running = True
         process = _get_ghidra_server_process()
         if process is not None:
             process.kill()
