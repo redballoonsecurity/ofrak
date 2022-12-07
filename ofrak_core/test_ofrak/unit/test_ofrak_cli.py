@@ -78,20 +78,42 @@ def test_list(ofrak_cli_parser, capsys):
     )
 
     ofrak_cli_parser.parse_and_run(["list", "-p", "-c"])
-    _check_cli_output_matches(
-        "_MockOFRAKPackage\n\t_MockComponentA\n\t_MockComponentB\n\t_MockComponentC\n_MockOFRAKPackage2\n",
+    _check_cli_output_matches_one_of(
+        (
+            "_MockOFRAKPackage\n\t_MockComponentA\n\t_MockComponentB\n\t_MockComponentC\n_MockOFRAKPackage2\n",
+            "_MockOFRAKPackage\n\t_MockComponentA\n\t_MockComponentB\n\t_MockComponentC\n_MockOFRAKPackage2\n",
+            "_MockOFRAKPackage\n\t_MockComponentB\n\t_MockComponentA\n\t_MockComponentC\n_MockOFRAKPackage2\n",
+            "_MockOFRAKPackage\n\t_MockComponentB\n\t_MockComponentC\n\t_MockComponentA\n_MockOFRAKPackage2\n",
+            "_MockOFRAKPackage\n\t_MockComponentC\n\t_MockComponentA\n\t_MockComponentB\n_MockOFRAKPackage2\n",
+            "_MockOFRAKPackage\n\t_MockComponentC\n\t_MockComponentB\n\t_MockComponentA\n_MockOFRAKPackage2\n",
+            "_MockOFRAKPackage2\n_MockOFRAKPackage\n\t_MockComponentA\n\t_MockComponentB\n\t_MockComponentC\n",
+            "_MockOFRAKPackage2\n_MockOFRAKPackage\n\t_MockComponentA\n\t_MockComponentB\n\t_MockComponentC\n",
+            "_MockOFRAKPackage2\n_MockOFRAKPackage\n\t_MockComponentB\n\t_MockComponentA\n\t_MockComponentC\n",
+            "_MockOFRAKPackage2\n_MockOFRAKPackage\n\t_MockComponentB\n\t_MockComponentC\n\t_MockComponentA\n",
+            "_MockOFRAKPackage2\n_MockOFRAKPackage\n\t_MockComponentC\n\t_MockComponentA\n\t_MockComponentB\n",
+            "_MockOFRAKPackage2\n_MockOFRAKPackage\n\t_MockComponentC\n\t_MockComponentB\n\t_MockComponentA\n",
+        ),
         capsys,
     )
 
     ofrak_cli_parser.parse_and_run(["list", "-p"])
-    _check_cli_output_matches(
-        "_MockOFRAKPackage\n_MockOFRAKPackage2\n",
+    _check_cli_output_matches_one_of(
+        (
+            "_MockOFRAKPackage\n_MockOFRAKPackage2\n",
+            "_MockOFRAKPackage2\n_MockOFRAKPackage\n",
+        ),
         capsys,
     )
 
     ofrak_cli_parser.parse_and_run(["list", "-c"])
-    _check_cli_output_matches(
-        "_MockComponentA\n_MockComponentB\n_MockComponentC\n",
+    _check_cli_output_matches_one_of(
+        (
+            "_MockComponentA\n_MockComponentB\n_MockComponentC\n",
+            "_MockComponentB\n_MockComponentA\n_MockComponentC\n",
+            "_MockComponentB\n_MockComponentC\n_MockComponentA\n",
+            "_MockComponentC\n_MockComponentA\n_MockComponentB\n",
+            "_MockComponentC\n_MockComponentB\n_MockComponentA\n",
+        ),
         capsys,
     )
 
@@ -121,8 +143,11 @@ def test_deps(ofrak_cli_parser, capsys):
     ofrak_cli_parser.parse_and_run(
         ["deps", "--component", "_MockComponentA", "--component", "_MockComponentB", "--no-check"]
     )
-    _check_cli_output_matches(
-        "tool_a\n\ttool_a.com\n\t[_MockComponentA]\ntool_b\n\ttool_b.com\n\t[_MockComponentB]\n",
+    _check_cli_output_matches_one_of(
+        (
+            "tool_a\n\ttool_a.com\n\t[_MockComponentA]\ntool_b\n\ttool_b.com\n\t[_MockComponentB]\n",
+            "tool_b\n\ttool_b.com\n\t[_MockComponentB]\ntool_a\n\ttool_a.com\n\t[_MockComponentA]\n",
+        ),
         capsys,
     )
 
