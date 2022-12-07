@@ -30,9 +30,7 @@ class PatchFromSourceModifierConfig(ComponentConfig):
     :var source_code_resource_id: ID of FilesystemRoot resource with all source code for patch
     :var source_patches: path of each source file to build and inject, with one or more segments
     defining where to inject one or more of the .text, .data, and .rodata from the build file
-    :var toolchain_config: configuration for the
-    [Toolchain][ofrak_patch_maker.toolchain.abstract.Toolchain] to use
-    :var toolchain_version: which toolchain version to use
+    :var Toolchain: [Toolchain][ofrak_patch_maker.toolchain.abstract.Toolchain] to use
     :var patch_name: Optional name of patch
     :var header_directory_resource_ids: Optional additional FilesystemRoot resources with header
     directories
@@ -99,7 +97,7 @@ class PatchFromSourceModifier(Modifier):
         ]
 
         patch_maker = PatchMaker(
-            toolchain_config=config.toolchain,
+            toolchain=config.toolchain,
             build_dir=build_tmp_dir,
         )
 
@@ -222,9 +220,7 @@ class FunctionReplacementModifierConfig(ComponentConfig):
     :var source_code_resource_id: ID of FilesystemRoot resource with all source code for patch
     :var new_function_sources: a mapping from function names (to replace) to source code file paths (to use as
     replacements). The paths are relative paths within the source code FilesystemRoot.
-    :var toolchain_config: configuration for the
-    [Toolchain][ofrak_patch_maker.toolchain.abstract.Toolchain] to use
-    :var toolchain_version: which toolchain version to use
+    :var toolchain: [Toolchain][ofrak_patch_maker.toolchain.abstract.Toolchain] to use
     :var patch_name: Optional name of patch
     :var header_directory_resource_ids: Optional additional FilesystemRoot resources with header
     directories
