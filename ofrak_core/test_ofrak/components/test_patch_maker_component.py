@@ -1,10 +1,16 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List
+from typing import List, Type
 
 import pytest
 import re
 import subprocess
+
+from ofrak_patch_maker.toolchain.gnu_x64 import GNU_X86_64_LINUX_EABI_10_3_0_Toolchain
+
+from ofrak_patch_maker.toolchain.gnu_arm import GNU_ARM_NONE_EABI_10_2_1_Toolchain
+from ofrak_patch_maker.toolchain.llvm_12 import LLVM_12_0_1_Toolchain
+from ofrak_patch_maker.toolchain.abstract import Toolchain
 
 from ofrak import OFRAKContext
 from ofrak.core.architecture import ProgramAttributes
@@ -28,7 +34,6 @@ from ofrak_patch_maker.toolchain.model import (
     ToolchainConfig,
 )
 from ofrak_patch_maker.toolchain.utils import get_repository_config
-from ofrak_patch_maker.toolchain.version import ToolchainVersion
 from ofrak_type.bit_width import BitWidth
 from ofrak_type.endianness import Endianness
 
@@ -69,7 +74,7 @@ class FunctionReplacementTestCaseConfig:
     replacement_patch: str
     # Name of the section to use in the toolchain.conf file
     toolchain_name: str
-    toolchain_version: ToolchainVersion
+    toolchain: Type[Toolchain]
     # A list of lines that are expected to appear consecutively in the output of `objdump -d <modified program>`.
     # Note that the comparison is done after applying `normalize_assembly()` on both texts.
     expected_objdump_output: List[str]
@@ -108,8 +113,8 @@ TEST_CASE_CONFIGS = [
     FunctionReplacementTestCaseConfig(
         X86_64_PROGRAM_CONFIG,
         "patch_basic.c",
-        "GNU_X86_64_LINUX",
-        ToolchainVersion.GNU_X86_64_LINUX_EABI_10_3_0,
+        "GNU_X86_64_LINUX_EABI_10_3_0",
+        GNU_X86_64_LINUX_EABI_10_3_0_Toolchain,
         [
             "00000000004004c4 <main>:",
             "  4004c4: b8 03 00 00 00        mov    $0x3,%eax",
@@ -120,7 +125,7 @@ TEST_CASE_CONFIGS = [
         X86_64_PROGRAM_CONFIG,
         "patch_basic.c",
         "LLVM_12_0_1",
-        ToolchainVersion.LLVM_12_0_1,
+        LLVM_12_0_1_Toolchain,
         [
             "00000000004004c4 <main>:",
             "  4004c4: 6a 03                         pushq $3",
@@ -130,8 +135,8 @@ TEST_CASE_CONFIGS = [
     FunctionReplacementTestCaseConfig(
         ARM32_PROGRAM_CONFIG,
         "patch_basic.c",
-        "GNU_ARM_NONE",
-        ToolchainVersion.GNU_ARM_NONE_EABI_10_2_1,
+        "GNU_ARM_NONE_EABI_10_2_1",
+        GNU_ARM_NONE_EABI_10_2_1_Toolchain,
         [
             "00008068 <main>:",
             "    8068: e3a00003  mov r0, #3",
@@ -141,8 +146,8 @@ TEST_CASE_CONFIGS = [
     FunctionReplacementTestCaseConfig(
         X86_64_PROGRAM_CONFIG,
         "patch_two_functions.c",
-        "GNU_X86_64_LINUX",
-        ToolchainVersion.GNU_X86_64_LINUX_EABI_10_3_0,
+        "GNU_X86_64_LINUX_EABI_10_3_0",
+        GNU_X86_64_LINUX_EABI_10_3_0_Toolchain,
         [
             "00000000004004c4 <main>:",
             "  4004c4: 55                    push   %rbp",
@@ -199,17 +204,19 @@ async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config
     function_replacement_config = FunctionReplacementModifierConfig(
         source_bundle.resource.get_id(),
         {config.program.function_name: config.replacement_patch},
-        ToolchainConfig(
-            file_format=BinFileType.ELF,
-            force_inlines=True,
-            relocatable=False,
-            no_std_lib=True,
-            no_jump_tables=True,
-            no_bss_section=True,
-            compiler_optimization_level=config.compiler_optimization_level,
-            check_overlap=False,
+        config.toolchain(
+            config.program.attrs,
+            ToolchainConfig(
+                file_format=BinFileType.ELF,
+                force_inlines=True,
+                relocatable=False,
+                no_std_lib=True,
+                no_jump_tables=True,
+                no_bss_section=True,
+                compiler_optimization_level=config.compiler_optimization_level,
+                check_overlap=False,
+            ),
         ),
-        config.toolchain_version,
     )
 
     await target_program.resource.run(FunctionReplacementModifier, function_replacement_config)

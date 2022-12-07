@@ -7,7 +7,11 @@
 tc = SOME_GNU_VERSION_ARM_Toolchain(...)
 known_symbols = {"memcpy": 0xdeadbeef}
 patch_maker = PatchMaker(
+<<<<<<< Updated upstream
     toolchain_config=tc
+=======
+    toolchain=tc
+>>>>>>> Stashed changes
     platform_includes="../usr/include",
     base_symbols=known_symbols
 )
