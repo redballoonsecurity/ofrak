@@ -104,7 +104,8 @@ class ListSubCommand(OFRAKSubCommand):
     def create_parser(self, ofrak_subparsers):
         list_parser = ofrak_subparsers.add_parser(
             "list",
-            help="List installed OFRAK modules and/or components. By default, prints all "
+            help="List installed OFRAK modules and/or components.",
+            description="List installed OFRAK modules and/or components. By default, prints all "
             "installed components, organized by module (equivalent to `--packages --components` "
             "flags)",
         )
