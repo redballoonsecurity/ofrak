@@ -235,19 +235,17 @@ class DepsSubCommand(OFRAKSubCommand):
         for component in components:
             dep_list = ofrak_env.dependencies_by_component[component]
             for dep in dep_list:
-                if check_deps:
-                    installed_correctly = dep.is_tool_installed()
-                else:
-                    installed_correctly = None
+                dependencies.add(dep)
 
-                if args.missing_only and installed_correctly is True:
-                    continue
+        for dep in dependencies:
+            if check_deps:
+                is_installed = dep.is_tool_installed()
+            else:
+                is_installed = None
 
-                dependencies.add((dep, installed_correctly))
+            if args.missing_only and is_installed:
+                continue
 
-        output_lines = []
-
-        for dep, is_installed in dependencies:
             if args.no_packages_for:
                 pkg_manager = args.no_packages_for
             elif args.packages_for:
@@ -264,7 +262,7 @@ class DepsSubCommand(OFRAKSubCommand):
 
             if args.packages_for:
                 if dep_pkg is not None:
-                    output_lines.append(dep_pkg)
+                    print(dep_pkg)
                 continue
             elif args.no_packages_for and dep_pkg is not None:
                 continue
@@ -273,10 +271,7 @@ class DepsSubCommand(OFRAKSubCommand):
             if not args.no_check:
                 dependency_info = f"[{' ' if not is_installed else '✓'}] " + dependency_info
 
-            output_lines.append(dependency_info)
-
-        for line in output_lines:
-            print(line)
+            print(dependency_info)
 
 
 class OFRAKCommandLineInterface:
