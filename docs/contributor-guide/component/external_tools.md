@@ -67,8 +67,8 @@ ofrak.component.abstract.ComponentMissingDependencyError: Missing unzip tool nee
 	See https://linux.die.net/man/1/unzip for more info and installation help.
 ```
 
-See the `ofrak.model.component_model.ComponentExternalTool` docs for a breakdown of the fields of 
-that class.
+See the [ComponentExternalTool][ofrak.model.component_model.ComponentExternalTool] docs for a 
+breakdown of the fields of that class.
 
 ### Edge Cases
 
