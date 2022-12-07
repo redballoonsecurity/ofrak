@@ -567,9 +567,7 @@ class Resource:
         range of the parent's data which the child maps. That is, `data_range=Range(0,
         10)` creates a resource which maps the first 10 bytes of the parent.
         The optional ``data`` param defines whether to populate the new child's data. It can be used
-        whether the resource is mapped or unmapped. If the child is mapped, the value of
-        ``data`` is applied as a patch to the mapped child; because it is mapped, those bytes are
-        also patched into the parent resource. If the child is unmapped, the value of ``data``
+        only if the data is unmapped. If the child is unmapped, the value of ``data``
         still becomes that child's data, but the parent's data is unaffected. If ``data`` and
         ``data_range`` are both `None` (default), the new child is a dataless resource.
 
@@ -577,7 +575,7 @@ class Resource:
 
         |                          | ``data_range`` param not `None`                        | ``data_range`` param `None`                  |
         |--------------------------|--------------------------------------------------------|----------------------------------------------|
-        | ``data`` param not `None` | Child mapped, ``data`` patched into child (and parent) | Child unmapped, child's data set to ``data`` |
+        | ``data`` param not `None` | Not allowed                                            | Child unmapped, child's data set to ``data`` |
         | ``data`` param   `None`   | Child mapped, parent's data untouched                  | Child is dataless                            |
 
         :param tags: [tags][ofrak.model.tag_model.ResourceTag] to add to the new child
@@ -589,6 +587,11 @@ class Resource:
         default), the child will not map the parent's data.
         :return:
         """
+        if data is not None and data_range is not None:
+            raise ValueError(
+                "Cannot create a child from both data and data_range. These parameters are "
+                "mutually exclusive."
+            )
         resource_id = self._id_service.generate_id()
         if data_range is not None:
             if self._resource.data_id is None:
@@ -626,9 +629,6 @@ class Resource:
         self._component_context.mark_resource_modified(resource_id)
         self._component_context.resources_created.add(resource_model.id)
         created_resource = await self._create_resource(resource_model)
-        if data_range is not None and data is not None:
-            # Patch the resource with the provided data
-            created_resource.queue_patch(Range.from_size(0, data_range.length()), data)
         return created_resource
 
     async def create_child_from_view(
