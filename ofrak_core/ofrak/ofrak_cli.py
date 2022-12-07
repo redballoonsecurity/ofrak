@@ -274,7 +274,8 @@ class DepsSubCommand(OFRAKSubCommand):
 
             output_lines.append(dependency_info)
 
-        _print_lines_without_duplicates(output_lines)
+        for line in output_lines:
+            print(line)
 
 
 class OFRAKCommandLineInterface:

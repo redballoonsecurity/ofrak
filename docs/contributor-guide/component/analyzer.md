@@ -33,6 +33,13 @@ class FooAnalyzer(Analyzer[None, FooBar]):
         return FooBar("foobar!")
 ```
 
+### Handling External Dependencies
+
+If the Analyzer makes use of tools that are not packaged in modules installable via `pip` from 
+PyPI (commonly command-line tools), these dependencies must be explicitly declared as part of the 
+analyzer's class declaration. See the [Components Using External Tools](./external_tools.md) doc for 
+information on how to do that.
+
 ### Testing Analyzers
 `test_ofrak.unit.analyzer.analyzer_test_case.AnalyzerTests` provides a suite of test cases that can be used to test implemented OFRAK Analyzers.
 
