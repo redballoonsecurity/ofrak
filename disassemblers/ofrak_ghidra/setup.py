@@ -41,6 +41,7 @@ setuptools.setup(
             "pytest-asyncio==0.19.0",
             "pytest-cov",
             "requests",
+            "psutil",
         ]
     },
     python_requires=">=3.7",
