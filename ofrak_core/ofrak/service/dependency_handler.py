@@ -248,7 +248,15 @@ class DependencyHandler:
                 handled_dependencies.add(dependency)
                 continue
 
-            resource_m = self._resource_context.resource_models[dependency.dependent_resource_id]
+            try:
+                resource_m = self._resource_context.resource_models[
+                    dependency.dependent_resource_id
+                ]
+            except KeyError as e:
+                missing_model = await self._resource_service.get_by_id(
+                    dependency.dependent_resource_id
+                )
+                resource_m = MutableResourceModel.from_model(missing_model)
 
             # Invalidate the attributes on the resource
             handled_dependencies.add(dependency)

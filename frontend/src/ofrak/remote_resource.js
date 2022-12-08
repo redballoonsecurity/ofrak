@@ -20,14 +20,14 @@ export class RemoteResource extends Resource {
     if (this.model.data_id === null) {
       return null;
     }
-    const rj = await fetch(`${this.uri}/get_data_range_within_parent`, {
-      cache: "force-cache",
-    }).then(async (r) => {
-      if (!r.ok) {
-        throw Error(JSON.stringify(await r.json(), undefined, 2));
+    const rj = await fetch(`${this.uri}/get_data_range_within_parent`).then(
+      async (r) => {
+        if (!r.ok) {
+          throw Error(JSON.stringify(await r.json(), undefined, 2));
+        }
+        return r.json();
       }
-      return r.json();
-    });
+    );
 
     if (rj.length !== 2 || (0 === rj[0] && 0 === rj[1])) {
       return null;
@@ -157,13 +157,18 @@ export class RemoteResource extends Resource {
     return this._remote_models_to_resources(child_models);
   }
 
-  async queue_patch(patch_range, data, after, before) {
-    // TODO: Implement patch_range, after, and before
+  async queue_patch(data, start, end, after, before) {
+    // TODO: Implement after and before
 
-    await fetch(`${this.uri}/queue_patch`, {
-      method: "POST",
-      body: data,
-    }).then(async (r) => {
+    start = start || 0;
+    end = end || 0;
+    const patch_results = await fetch(
+      `${this.uri}/queue_patch?start=${start}&end=${end}`,
+      {
+        method: "POST",
+        body: data,
+      }
+    ).then(async (r) => {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }

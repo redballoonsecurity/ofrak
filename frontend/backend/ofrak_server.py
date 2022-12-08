@@ -33,7 +33,7 @@ from ofrak import (
     ResourceAttributeValueFilter,
     ResourceSort,
 )
-from ofrak.core import File, Addressable
+from ofrak.core import Addressable, File
 from ofrak.core import (
     GenericBinary,
     AddCommentModifier,
