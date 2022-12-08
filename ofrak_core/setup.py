@@ -67,7 +67,7 @@ setuptools.setup(
             "pytest-cov",
             "pytest-xdist",
             "requests",
-            "fun-coverage==0.1.3",
+            "fun-coverage==0.1.4",
         ],
     },
     author="Red Balloon Security",
