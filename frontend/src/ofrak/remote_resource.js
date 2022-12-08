@@ -20,12 +20,14 @@ export class RemoteResource extends Resource {
     if (this.model.data_id === null) {
       return null;
     }
-    const rj = await fetch(`${this.uri}/get_data_range_within_parent`).then(async (r) => {
-      if (!r.ok) {
-        throw Error(JSON.stringify(await r.json(), undefined, 2));
+    const rj = await fetch(`${this.uri}/get_data_range_within_parent`).then(
+      async (r) => {
+        if (!r.ok) {
+          throw Error(JSON.stringify(await r.json(), undefined, 2));
+        }
+        return r.json();
       }
-      return r.json();
-    });
+    );
 
     if (rj.length !== 2 || (0 === rj[0] && 0 === rj[1])) {
       return null;
