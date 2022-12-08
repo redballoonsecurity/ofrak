@@ -1,61 +1,53 @@
+import psutil
+import pytest
+
 import ofrak_ghidra.server.__main__ as server_main
 
-from typing import Optional
 
-import psutil
-
-
-def _get_ghidra_server_process() -> Optional[psutil.Process]:
-    ghidra_pid = None
+def _get_ghidra_server_process() -> psutil.Process:
     for proc in psutil.process_iter():
         cmdline = proc.cmdline()
         if (
             cmdline[0] == "/usr/lib/jvm/java-11-openjdk-amd64/bin/java"
             and cmdline[1] == "-Dwrapper.pidfile=/run/wrapper.ghidraSvr.pid"
         ):
-            ghidra_pid = proc
-
-    return ghidra_pid
+            return proc
+    raise ValueError("Could not find Ghidra server process")
 
 
 def _is_ghidra_server_running() -> bool:
-    pid = _get_ghidra_server_process()
-
-    if isinstance(pid, psutil.Process):
+    try:
+        pid = _get_ghidra_server_process()
         return True
-    else:
+    except ValueError:
         return False
 
 
-def test_start_ofrak_ghidra_server():
-    ghidra_was_running = False
-    if _is_ghidra_server_running():
-        ghidra_was_running = True
-        process = _get_ghidra_server_process()
-        if process is not None:
-            process.kill()
+@pytest.fixture
+def ghidra_is_running() -> bool:
+    """
+    Get Ghidra server state before test, and restore state after test.
+    """
+    ghidra_is_running = _is_ghidra_server_running()
 
-    server_main._run_ghidra_server("start")
+    yield ghidra_is_running
 
-    assert _is_ghidra_server_running(), "Tried to start server, but could not find process"
-
-    if not ghidra_was_running:
+    if ghidra_is_running:
+        server_main._run_ghidra_server("start")
+    else:
         server_main._stop_ghidra_server("stop")
 
 
-def test_stop_ofrak_ghidra_server():
-    ghidra_was_running = False
+def test_start_stop_ghidra_server(ghidra_is_running: bool):
+    """
+    Test that the Ghidra server can be started and stopped using ofrak_ghidra.server.
 
-    if not _is_ghidra_server_running():
-        server_main._run_ghidra_server("start")
+    If the server is running, stop it, then restart it.
+    If the server is not running ,start
+    """
+    if ghidra_is_running:
+        server_main._stop_ghidra_server("stop")
+        assert not _is_ghidra_server_running(), "Could not stop Ghidra server"
     else:
-        ghidra_was_running = True
-
-    assert _is_ghidra_server_running(), "Could not start Ghidra server"
-
-    server_main._stop_ghidra_server("stop")
-
-    assert not _is_ghidra_server_running(), "Could not stop Ghidra server"
-
-    if ghidra_was_running:
         server_main._run_ghidra_server("start")
+        assert _is_ghidra_server_running(), "Could not start Ghidra Server"
