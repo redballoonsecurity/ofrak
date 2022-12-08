@@ -8,18 +8,18 @@ from ofrak_ghidra.config.ofrak_ghidra_config import (
 )
 
 
-def _dump_config(args):  # pragma: no cover
+def _dump_config(args):
     print(load_ghidra_config().to_yaml())
 
 
-def _import_config(args):  # pragma: no cover
+def _import_config(args):
     with open(args.config_path) as f:
         raw_new_config = f.read()
         new_config = OfrakGhidraConfig.from_yaml(raw_new_config)
         save_ghidra_config(new_config)
 
 
-def _restore_config(args):  # pragma: no cover
+def _restore_config(args):
     restore_default_ghidra_config()
 
 
@@ -42,7 +42,7 @@ restore_parser = command_parser.add_parser(
 restore_parser.set_defaults(func=_restore_config)
 
 
-if __name__ == "__main__":  # pragma: no cover
+if __name__ == "__main__":
     args = parser.parse_args()
     if hasattr(args, "func"):
         args.func(args)
