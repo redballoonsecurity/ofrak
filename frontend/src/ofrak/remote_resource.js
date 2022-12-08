@@ -20,9 +20,7 @@ export class RemoteResource extends Resource {
     if (this.model.data_id === null) {
       return null;
     }
-    const rj = await fetch(`${this.uri}/get_data_range_within_parent`, {
-      // cache: "force-cache",
-    }).then(async (r) => {
+    const rj = await fetch(`${this.uri}/get_data_range_within_parent`).then(async (r) => {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }
