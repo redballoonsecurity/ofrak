@@ -51,7 +51,7 @@ setuptools.setup(
             "pytest-xdist",
             "beartype~=0.10.2",
             "requests",
-            "fun-coverage==0.1.3",
+            "fun-coverage==0.1.4",
         ],
     },
     author="Red Balloon Security",
