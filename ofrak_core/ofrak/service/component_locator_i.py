@@ -2,11 +2,16 @@ from abc import ABCMeta, abstractmethod, ABC
 from types import ModuleType
 from typing import List, Type, Optional, TypeVar, Set
 
+from dataclasses import dataclass
+
 from ofrak.component.interface import ComponentInterface
 
 CI = TypeVar("CI", bound="ComponentInterface")
 
 
+# MyPy shows a type error on the next line, root cause unknown:
+# error: Only concrete class can be given where "Type[ComponentFilter]" is expected
+@dataclass(frozen=True, init=False)  # type: ignore
 class ComponentFilter(ABC):
     @abstractmethod
     def filter(self, components: Set[ComponentInterface]) -> Set[ComponentInterface]:
@@ -18,21 +23,6 @@ class ComponentFilter(ABC):
         :return: All components which this filter allows
         """
         raise NotImplementedError()
-
-    def __eq__(self, other) -> bool:
-        if type(self) == type(other):
-            for field_name in getattr(self, "__annotations__", {}):
-                if getattr(self, field_name) != getattr(other, field_name):
-                    return False
-            return True
-        else:
-            return False
-
-    def __hash__(self):
-        return hash(
-            (field_name, getattr(self, field_name))
-            for field_name in getattr(self, "__annotations__", {})
-        )
 
 
 class ComponentLocatorInterface(metaclass=ABCMeta):

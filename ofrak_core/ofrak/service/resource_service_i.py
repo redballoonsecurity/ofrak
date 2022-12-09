@@ -286,6 +286,23 @@ class ResourceServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
+    async def update_many(
+        self, resource_diffs: Iterable[ResourceModelDiff]
+    ) -> Iterable[ResourceModel]:
+        """
+        Modify a stored resource model according to the differences in the given diff object.
+
+        :param resource_diffs: Diff objects containing changes to resource models, as well as the
+        resource ID of each model to update
+
+        :raises NotFoundError: If there is not a resource with resource ID matching one of the IDs
+        in `resource_diffs`
+
+        :return: The updated resource models (with changes applied)
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
     async def rebase_resource(self, resource_id: bytes, new_parent_id: bytes):
         """
         Move a resource which was a child to instead be a child of a different resource.
@@ -306,6 +323,19 @@ class ResourceServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         (does not raise an error).
 
         :param resource_id: The ID of the resource to delete
+
+        :return: all of the models that were deleted
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    async def delete_resources(self, resource_ids: Iterable[bytes]) -> Iterable[ResourceModel]:
+        """
+        Delete multiple resources by ID and all of their descendants, removing them from the
+        database. If no resource for any given ID is found, it is assumed the resource has already
+        been deleted (does not raise an error).
+
+        :param resource_ids: The ID of the resources to delete
 
         :return: all of the models that were deleted
         """

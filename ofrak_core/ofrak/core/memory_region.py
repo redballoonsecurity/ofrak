@@ -39,7 +39,7 @@ class MemoryRegion(Addressable):
     def Size(self) -> int:
         return self.size
 
-    @index(nested_indexes=(Addressable.VirtualAddress,))
+    @index(uses_indexes=(Addressable.VirtualAddress,))
     def EndVaddr(self) -> int:
         return self.size + self.VirtualAddress
 

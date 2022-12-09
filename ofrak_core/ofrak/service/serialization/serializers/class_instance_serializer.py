@@ -1,3 +1,4 @@
+import dataclasses
 from dataclasses import is_dataclass, fields
 from typing import Any, Dict, Type, cast, Tuple
 
@@ -89,10 +90,10 @@ class ClassInstanceSerializer(SerializerInterface):
             field_name: self._service.from_pjson(cls_fields_pjson[field_name], field_type)
             for field_name, field_type in expected_fields_and_types.items()
         }
-        if is_dataclass(cls):
+        if is_dataclass(cls) and getattr(cls, dataclasses._PARAMS).init:  # type: ignore
             return cls(**deserialized_fields)
         else:
             cls_instance = cls.__new__(cls)
             for field_name, field in deserialized_fields.items():
-                setattr(cls_instance, field_name, field)
+                object.__setattr__(cls_instance, field_name, field)
             return cls_instance

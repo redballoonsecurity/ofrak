@@ -1,4 +1,3 @@
-import asyncio
 import dataclasses
 import inspect
 import logging
@@ -32,7 +31,7 @@ from ofrak.model.resource_model import (
     MutableResourceModel,
 )
 from ofrak.model.viewable_tag_model import ResourceViewContext
-from ofrak.resource import Resource, ResourceFactory
+from ofrak.resource import Resource, ResourceFactory, save_resources
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.dependency_handler import DependencyHandlerFactory
 from ofrak.service.resource_service_i import ResourceServiceInterface
@@ -181,21 +180,22 @@ class AbstractComponent(ComponentInterface[CC], ABC):
         job_context: Optional[JobRunContext],
         component_context: ComponentContext,
     ):
-        locator_tasks = list()
-        for mutable_resource_model in mutable_resource_models:
-            locator_tasks.append(
-                self._resource_factory.create(
-                    job_id,
-                    mutable_resource_model.id,
-                    resource_context,
-                    resource_view_context,
-                    component_context,
-                    job_context,
-                )
-            )
-        resources = await asyncio.gather(*locator_tasks)
-        for resource in resources:
-            await resource.save()
+        resources = await self._resource_factory.create_many(
+            job_id,
+            (mutable_resource_model.id for mutable_resource_model in mutable_resource_models),
+            resource_context,
+            resource_view_context,
+            component_context,
+            job_context,
+        )
+        await save_resources(
+            resources,
+            self._resource_service,
+            self._data_service,
+            component_context,
+            resource_context,
+            resource_view_context,
+        )
 
     @staticmethod
     def _get_default_config_from_method(

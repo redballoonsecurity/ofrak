@@ -162,10 +162,13 @@ class ResourceAttributeIndex(Generic[T]):
         resource: ResourceNode,
     ):
         if resource.model.id in self.values_by_node_id:
-            raise ValueError(
-                f"The provided resource {resource.model.id.hex()} is already in the "  # type: ignore
-                f"index for {self._attribute.__name__}"
-            )
+            if self.values_by_node_id[resource.model.id] != value:
+                raise ValueError(
+                    f"The provided resource {resource.model.id.hex()} is already in the "
+                    f"index for {self._attribute.__name__} with a different value!"
+                )
+            else:
+                return
         self.index.add((value, resource))
         self.values_by_node_id[resource.model.id] = value
 
@@ -174,10 +177,7 @@ class ResourceAttributeIndex(Generic[T]):
         resource: ResourceNode,
     ):
         if resource.model.id not in self.values_by_node_id:
-            raise ValueError(
-                f"The provided resource {resource.model.id.hex()} is not in the "  # type: ignore
-                f"index for {self._attribute.__name__}"
-            )
+            return
         value = self.values_by_node_id[resource.model.id]
         self.index.remove((value, resource))
         del self.values_by_node_id[resource.model.id]
@@ -700,6 +700,10 @@ class ResourceService(ResourceServiceInterface):
         index = self._attribute_indexes[indexable_attribute]
         index.add_resource_attribute(value, resource)
 
+        for dependent_indexable in indexable_attribute.used_by_indexes:
+            dependant_value = dependent_indexable.get_value(resource.model)
+            self._add_resource_attribute_to_index(dependent_indexable, dependant_value, resource)
+
     def _remove_resource_attribute_from_index(
         self,
         indexable_attribute: ResourceIndexedAttribute[T],
@@ -707,6 +711,8 @@ class ResourceService(ResourceServiceInterface):
     ):
         index = self._attribute_indexes[indexable_attribute]
         index.remove_resource_attribute(resource)
+        for dependent_indexable in indexable_attribute.used_by_indexes:
+            self._remove_resource_attribute_from_index(dependent_indexable, resource)
 
     async def create(self, resource: ResourceModel) -> ResourceModel:
         if resource.id in self._resource_store:
@@ -888,6 +894,14 @@ class ResourceService(ResourceServiceInterface):
         )
 
     async def update(self, resource_diff: ResourceModelDiff) -> ResourceModel:
+        return self._update(resource_diff)
+
+    async def update_many(
+        self, resource_diffs: Iterable[ResourceModelDiff]
+    ) -> Iterable[ResourceModel]:
+        return [self._update(resource_diff) for resource_diff in resource_diffs]
+
+    def _update(self, resource_diff: ResourceModelDiff) -> ResourceModel:
         LOGGER.debug(f"Saving resource {resource_diff.id.hex()}")
         resource_node = self._resource_store.get(resource_diff.id)
         if resource_node is None:
@@ -911,13 +925,6 @@ class ResourceService(ResourceServiceInterface):
                 self._remove_resource_attribute_from_index(
                     indexable_attribute_removed, resource_node
                 )
-        indexable_attrs_indirectly_removed = next_resource.get_index_values_depending_on_indexes(
-            indexable_attributes_removed
-        )
-        for indexable_attr_indirectly_removed in indexable_attrs_indirectly_removed.keys():
-            self._remove_resource_attribute_from_index(
-                indexable_attr_indirectly_removed, resource_node
-            )
 
         indexable_attributes_added = set()
         for attributes_type_added, attributes_added in resource_diff.attributes_added.items():
@@ -928,19 +935,6 @@ class ResourceService(ResourceServiceInterface):
                     indexable_attribute_added.get_value(next_resource),
                     resource_node,
                 )
-        for indexable_attribute, value in next_resource.get_index_values_depending_on_indexes(
-            indexable_attributes_added
-        ).items():
-            if indexable_attribute in indexable_attributes_added:
-                # It was already added to the index in earlier steps
-                continue
-            elif value is None:
-                # Index can only be calculated if all the required attributes are present
-                # None value indicates one or more required attributes are not present
-                # Therefore don't try to index this resource by this index type
-                continue
-            else:
-                self._add_resource_attribute_to_index(indexable_attribute, value, resource_node)
 
         resource_node.model = next_resource
         return next_resource
@@ -971,33 +965,40 @@ class ResourceService(ResourceServiceInterface):
         if former_parent_resource_node is not None:
             former_parent_resource_node.remove_child(resource_node)
 
+        deleted_models = self._delete_resource_helper(resource_node)
+        return deleted_models
+
+    async def delete_resources(self, resource_ids: Iterable[bytes]):
         deleted_models = []
+        for resource_id in resource_ids:
+            resource_node = self._resource_store.get(resource_id)
+            if resource_node is None:
+                # Already deleted, probably by an ancestor calling the recursive func below
+                continue
 
-        def _delete_resource_helper(_resource_node: ResourceNode):
-            for child in _resource_node._children:
-                _delete_resource_helper(child)
+            former_parent_resource_node = resource_node.parent
+            if former_parent_resource_node is not None:
+                former_parent_resource_node.remove_child(resource_node)
 
-            for indexable_attribute, val in _resource_node.model.get_index_values().items():
-                try:
-                    self._remove_resource_attribute_from_index(indexable_attribute, _resource_node)
-                except ValueError as e:
-                    if val is None:
-                        # Index value could not be calculated, so it is not surprising it was not
-                        # in the index
-                        continue
-                    else:
-                        raise e
+            deleted_models.extend(self._delete_resource_helper(resource_node))
+        return deleted_models
 
-            tag_removal_blacklist: Set[ResourceTag] = set()
-            for tag in _resource_node.model.tags:
-                self._remove_resource_tag_from_index(tag, _resource_node, tag_removal_blacklist)
-                tag_removal_blacklist.update(tag.tag_classes())
+    def _delete_resource_helper(self, _resource_node: ResourceNode):
+        deleted_models = []
+        for child in _resource_node._children:
+            deleted_models.extend(self._delete_resource_helper(child))
 
-            del self._resource_store[_resource_node.model.id]
-            if _resource_node.model.data_id is not None:
-                del self._resource_by_data_id_store[_resource_node.model.data_id]
+        for indexable_attribute, val in _resource_node.model.get_index_values().items():
+            self._remove_resource_attribute_from_index(indexable_attribute, _resource_node)
 
-            deleted_models.append(_resource_node.model)
+        tag_removal_blacklist: Set[ResourceTag] = set()
+        for tag in _resource_node.model.tags:
+            self._remove_resource_tag_from_index(tag, _resource_node, tag_removal_blacklist)
+            tag_removal_blacklist.update(tag.tag_classes())
 
-        _delete_resource_helper(resource_node)
+        del self._resource_store[_resource_node.model.id]
+        if _resource_node.model.data_id is not None:
+            del self._resource_by_data_id_store[_resource_node.model.data_id]
+
+        deleted_models.append(_resource_node.model)
         return deleted_models
