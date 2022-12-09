@@ -102,7 +102,7 @@ class PatchFromSourceModifier(Modifier):
             os.path.join(source_tmp_dir, src_file) for src_file in config.source_patches.keys()
         ]
 
-        program_attrs = await resource.analyze_attributes(ProgramAttributes)
+        program_attrs = await resource.analyze(ProgramAttributes)
 
         patch_maker = PatchMaker(
             program_attributes=program_attrs,
