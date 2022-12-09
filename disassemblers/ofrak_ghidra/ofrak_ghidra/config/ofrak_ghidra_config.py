@@ -26,14 +26,14 @@ class OfrakGhidraConfig:
         return """
 python -m ofrak_ghidra.config dump
   Dumps the current OFRAK Ghidra config as yaml to stdout.
-  
+
 python -m ofrak_ghidra.config import <config-path>
-  Loads a complete OFRAK Ghidra config from a path to a yaml file and saves it as the current 
+  Loads a complete OFRAK Ghidra config from a path to a yaml file and saves it as the current
   Ghidra config.
-  
+
 python -m ofrak_ghidra.config restore
   Restore the default OFRAK Ghidra settings.
-  
+
 To change one or more of the options, the recommended process is:
 1. Use `dump` to save the current settings to a temporary yaml file
 2. Edit the temporary yaml file, changing settings as desired
@@ -61,14 +61,14 @@ server:
         raw_config = yaml.safe_load(StringIO(raw_yaml))
 
         return OfrakGhidraConfig(
-            raw_config["ghidra_install"]["path"],
-            raw_config["ghidra_install"]["log_file"],
-            raw_config["server"]["user"],
-            raw_config["server"]["pass"],
-            raw_config["server"]["repository"]["host"],
-            int(raw_config["server"]["repository"]["port"]),
-            raw_config["server"]["analysis"]["host"],
-            int(raw_config["server"]["analysis"]["port"]),
+            ghidra_path=raw_config["ghidra_install"]["path"],
+            ghidra_log_file=raw_config["ghidra_install"]["log_file"],
+            ghidra_server_user=raw_config["server"]["user"],
+            ghidra_server_pass=raw_config["server"]["pass"],
+            ghidra_repository_host=raw_config["server"]["repository"]["host"],
+            ghidra_repository_port=int(raw_config["server"]["repository"]["port"]),
+            ghidra_analysis_host=raw_config["server"]["analysis"]["host"],
+            ghidra_analysis_port=int(raw_config["server"]["analysis"]["port"]),
         )
 
     def to_yaml(self) -> str:

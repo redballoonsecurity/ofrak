@@ -5,16 +5,19 @@ from gzip import GzipFile
 from io import BytesIO
 
 from ofrak import Packer, Unpacker, Resource
-from ofrak.component.unpacker import UnpackerError
 from ofrak.core import (
     GenericBinary,
-    format_called_process_error,
     MagicMimeIdentifier,
     MagicDescriptionIdentifier,
 )
+from ofrak.model.component_model import ComponentExternalTool
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
+
+PIGZ = ComponentExternalTool(
+    "pigz", "https://zlib.net/pigz/", "--help", apt_package="pigz", brew_package="pigz"
+)
 
 
 class GzipData(GenericBinary):
@@ -34,6 +37,7 @@ class GzipUnpacker(Unpacker[None]):
     id = b"GzipUnpacker"
     targets = (GzipData,)
     children = (GenericBinary,)
+    external_dependencies = (PIGZ,)
 
     async def unpack(self, resource: Resource, config=None):
         # Create temporary file with .gz xtension
@@ -50,7 +54,7 @@ class GzipUnpacker(Unpacker[None]):
                     LOGGER.warning(e.stderr)
                     data = e.stdout
                 else:
-                    raise UnpackerError(format_called_process_error(e))
+                    raise
 
             await resource.create_child(
                 tags=(GenericBinary,),
@@ -64,6 +68,7 @@ class GzipPacker(Packer[None]):
     """
 
     targets = (GzipData,)
+    external_dependencies = (PIGZ,)
 
     async def pack(self, resource: Resource, config=None):
         gzip_view = await resource.view_as(GzipData)

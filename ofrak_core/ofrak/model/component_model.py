@@ -1,6 +1,7 @@
+import subprocess
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Set, Type, Dict, List, TypeVar, Optional
+from typing import Dict, List, Optional, Set, Type, TypeVar
 
 from ofrak.model.data_model import DataPatch
 from ofrak.model.resource_model import ResourceAttributes
@@ -15,6 +16,53 @@ class ComponentConfig:
     """
     Base class for all components' configs. All subclasses should also be dataclasses.
     """
+
+
+@dataclass(frozen=True)
+class ComponentExternalTool:
+    """
+    An external tool or utility (like `zip` or `squashfs`) a component depends on. Includes some
+    basic information on installation, either via package manager or bespoke process.
+
+    Part of this class's responsibility is to check if the tool is installed. Most tools are
+    simple command-line utilities whose installation can be check by running:
+        `<tool> <install_check_arg>`
+    For dependencies which do NOT follow this pattern, subclass ComponentExternalTool and redefine
+    the `is_tool_installed` method to perform the check.
+
+    :ivar tool: Name of the command-line tool that will be run
+    :ivar tool_homepage: Like to homepage of the tool, with install instructions etc.
+    :ivar install_check_arg: Argument to pass to the tool to check if it can be found and run on
+    the host, typically something like "--help"
+    :ivar apt_package: An `apt` package that installs this tool, if such a package exists
+    :ivar brew_package: An `brew` package that installs this tool, if such a package exists
+
+    """
+
+    tool: str
+    tool_homepage: str
+    install_check_arg: str
+    apt_package: Optional[str] = None
+    brew_package: Optional[str] = None
+
+    def is_tool_installed(self) -> bool:
+        """
+        Check if a tool is installed by running it with the `install_check_arg`.
+        This method runs `<tool> <install_check_arg>`.
+
+        :return: True if the `tool` command returned zero, False if `tool` could not be found or
+        returned non-zero exit code.
+        """
+        try:
+            retcode = subprocess.call(
+                [self.tool, self.install_check_arg],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except FileNotFoundError:
+            return False
+
+        return 0 == retcode
 
 
 CC = TypeVar("CC", bound=Optional[ComponentConfig])

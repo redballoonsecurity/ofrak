@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from itertools import chain
 from typing import List, Tuple, Dict, Optional, Iterable
 
+from ofrak.core.binary import BinaryPatchModifier, BinaryPatchConfig
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
@@ -425,6 +426,11 @@ class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
         await resource.delete()
         await resource.save()
 
+        # Patch in the patch_data
+        await parent_mr_view.resource.run(
+            BinaryPatchModifier, BinaryPatchConfig(patch_offset, patch_data)
+        )
+        # Create the FreeSpace child
         await parent_mr_view.resource.create_child_from_view(
             FreeSpace(
                 mem_region_view.virtual_address,
@@ -432,7 +438,6 @@ class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
                 config.permissions,
             ),
             data_range=patch_range,
-            data=patch_data,
         )
 
 

@@ -3,18 +3,24 @@ import tempfile
 from dataclasses import dataclass
 
 from ofrak import Unpacker, Resource
-from ofrak.component.unpacker import UnpackerError
 from ofrak.core import (
     FilesystemRoot,
     File,
     Folder,
-    format_called_process_error,
     SpecialFileType,
     GenericBinary,
     MagicMimeIdentifier,
     MagicDescriptionIdentifier,
 )
-from ofrak.model.component_model import CC
+from ofrak.model.component_model import CC, ComponentExternalTool
+
+UNAR = ComponentExternalTool(
+    "unar",
+    "https://theunarchiver.com/command-line",
+    "--help",
+    apt_package="unar",
+    brew_package="unar",
+)
 
 
 @dataclass
@@ -31,6 +37,7 @@ class RarUnpacker(Unpacker[None]):
 
     targets = (RarArchive,)
     children = (File, Folder, SpecialFileType)
+    external_dependencies = (UNAR,)
 
     async def unpack(self, resource: Resource, config: CC):
         with tempfile.NamedTemporaryFile(
@@ -40,10 +47,7 @@ class RarUnpacker(Unpacker[None]):
             temp_archive.flush()
 
             command = ["unar", "-no-directory", "-no-recursion", temp_archive.name]
-            try:
-                subprocess.run(command, cwd=temp_dir, check=True, capture_output=True)
-            except subprocess.CalledProcessError as e:
-                raise UnpackerError(format_called_process_error(e))
+            subprocess.run(command, cwd=temp_dir, check=True, capture_output=True)
 
             rar_view = await resource.view_as(RarArchive)
             await rar_view.initialize_from_disk(temp_dir)

@@ -3,24 +3,25 @@ import os
 import subprocess
 import tempfile
 from dataclasses import dataclass
-from subprocess import CalledProcessError
 
 from ofrak import Packer, Unpacker, Resource
-from ofrak.component.packer import PackerError
 from ofrak.core import (
     GenericBinary,
     File,
     Folder,
     FilesystemRoot,
-    format_called_process_error,
-    unpack_with_command,
     SpecialFileType,
     MagicMimeIdentifier,
     MagicDescriptionIdentifier,
 )
+from ofrak.model.component_model import ComponentExternalTool
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
+
+SEVEN_ZIP = ComponentExternalTool(
+    "7z", "https://p7zip.sourceforge.net/", "--help", apt_package="p7zip-full", brew_package="p7zip"
+)
 
 
 @dataclass
@@ -37,6 +38,7 @@ class P7zUnpacker(Unpacker[None]):
 
     targets = (P7zFilesystem,)
     children = (File, Folder, SpecialFileType)
+    external_dependencies = (SEVEN_ZIP,)
 
     async def unpack(self, resource: Resource, config=None):
         p7zip_v = await resource.view_as(P7zFilesystem)
@@ -46,7 +48,7 @@ class P7zUnpacker(Unpacker[None]):
             temp_file.flush()
             with tempfile.TemporaryDirectory() as temp_flush_dir:
                 command = ["7z", "x", f"-o{temp_flush_dir}", temp_file.name]
-                await unpack_with_command(command)
+                subprocess.run(command, check=True, capture_output=True)
                 await p7zip_v.initialize_from_disk(temp_flush_dir)
 
 
@@ -56,6 +58,7 @@ class P7zPacker(Packer[None]):
     """
 
     targets = (P7zFilesystem,)
+    external_dependencies = (SEVEN_ZIP,)
 
     async def pack(self, resource: Resource, config=None):
         p7zip_v: P7zFilesystem = await resource.view_as(P7zFilesystem)
@@ -64,10 +67,7 @@ class P7zPacker(Packer[None]):
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_name = os.path.join(temp_dir, "temp.7z")
             command = ["7z", "a", temp_name, temp_flush_dir]
-            try:
-                subprocess.run(command, check=True, capture_output=True)
-            except CalledProcessError as error:
-                raise PackerError(format_called_process_error(error))
+            subprocess.run(command, check=True, capture_output=True)
             with open(temp_name, "rb") as f:
                 new_data = f.read()
             # Passing in the original range effectively replaces the original data with the new data

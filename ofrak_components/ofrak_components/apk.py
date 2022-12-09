@@ -2,24 +2,52 @@ import os
 import subprocess
 import tempfile
 from dataclasses import dataclass
-from subprocess import CalledProcessError
-from typing import Type
 
 from ofrak import Identifier, Packer, Unpacker, Resource
-from ofrak.component.identifier import IdentifierError
-from ofrak.component.packer import PackerError
-from ofrak.component.unpacker import UnpackerError
 from ofrak.core import (
     GenericBinary,
     File,
     Folder,
-    format_called_process_error,
     MagicMimeIdentifier,
     Magic,
 )
-from ofrak.model.component_model import ComponentConfig
-from ofrak_components.zip import ZipArchive
+from ofrak.model.component_model import ComponentConfig, ComponentExternalTool
+from ofrak_components.zip import ZipArchive, UNZIP_TOOL
 from ofrak_type.range import Range
+
+
+APKTOOL = ComponentExternalTool("apktool", "https://ibotpeaches.github.io/Apktool/", "--help")
+JAVA = ComponentExternalTool(
+    "java",
+    "https://openjdk.org/projects/jdk/11/",
+    "--help",
+    apt_package="openjdk-11-jdk",
+    brew_package="openjdk@11",
+)
+
+
+class _UberApkSignerTool(ComponentExternalTool):
+    def __init__(self):
+        super().__init__(
+            "/usr/local/bin/uber-apk-signer.jar",
+            "https://github.com/patrickfav/uber-apk-signer",
+            install_check_arg="",
+        )
+
+    def is_tool_installed(self) -> bool:
+        try:
+            retcode = subprocess.call(
+                ("java", "-jar", "/usr/local/bin/uber-apk-signer.jar", "--help"),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except FileNotFoundError:
+            return False
+
+        return 0 == retcode
+
+
+UBER_APK_SIGNER = _UberApkSignerTool()
 
 
 class Apk(ZipArchive):
@@ -35,6 +63,7 @@ class ApkUnpacker(Unpacker[None]):
 
     targets = (Apk,)
     children = (File, Folder)
+    external_dependencies = (APKTOOL,)
 
     async def unpack(self, resource: Resource, config=None):
         """
@@ -57,7 +86,7 @@ class ApkUnpacker(Unpacker[None]):
                     "--force",
                     temp_file.name,
                 ]
-                _run_command(command, UnpackerError)
+                subprocess.run(command, check=True, capture_output=True)
                 await apk.initialize_from_disk(temp_flush_dir)
 
 
@@ -80,6 +109,7 @@ class ApkPacker(Packer[ApkPackerConfig]):
     """
 
     targets = (Apk,)
+    external_dependencies = (APKTOOL, JAVA, UBER_APK_SIGNER)
 
     async def pack(
         self, resource: Resource, config: ApkPackerConfig = ApkPackerConfig(sign_apk=True)
@@ -95,7 +125,7 @@ class ApkPacker(Packer[ApkPackerConfig]):
         apk_suffix = ".apk"
         with tempfile.NamedTemporaryFile(suffix=apk_suffix) as temp_apk:
             command = ["apktool", "build", "--force-all", temp_flush_dir, "--output", temp_apk.name]
-            _run_command(command, PackerError)
+            subprocess.run(command, check=True, capture_output=True)
             if not config.sign_apk:
                 # Close the file handle and reopen, to avoid observed situations where temp.read()
                 # was not returning data
@@ -113,7 +143,7 @@ class ApkPacker(Packer[ApkPackerConfig]):
                         signed_apk_temp_dir,
                         "--allowResign",
                     ]
-                    _run_command(command, PackerError)
+                    subprocess.run(command, check=True, capture_output=True)
                     signed_apk_filename = (
                         os.path.basename(temp_apk.name)[: -len(apk_suffix)]
                         + "-aligned-debugSigned.apk"
@@ -130,6 +160,7 @@ class ApkPacker(Packer[ApkPackerConfig]):
 
 class ApkIdentifier(Identifier):
     targets = (File, GenericBinary)
+    external_dependencies = (UNZIP_TOOL,)
 
     async def identify(self, resource: Resource, config=None) -> None:
         await resource.run(MagicMimeIdentifier)
@@ -140,15 +171,7 @@ class ApkIdentifier(Identifier):
                 temp_file.flush()
 
                 command = ["unzip", "-l", temp_file.name]
-                filenames = _run_command(command, IdentifierError)
+                filenames = subprocess.run(command, check=True, capture_output=True).stdout
 
                 if b"androidmanifest.xml" in filenames.lower():
                     resource.add_tag(Apk)
-
-
-def _run_command(command, error_type: Type[Exception]):
-    try:
-        run = subprocess.run(command, check=True, capture_output=True)
-        return run.stdout
-    except CalledProcessError as error:
-        raise error_type(format_called_process_error(error))

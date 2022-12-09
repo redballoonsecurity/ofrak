@@ -102,7 +102,7 @@ class ElfHeaderModifier(Modifier[ElfHeaderModifierConfig], AbstractElfAttributeM
         )
 
     async def modify(self, resource: Resource, config: ElfHeaderModifierConfig):
-        original_attributes = await resource.analyze_attributes(ElfHeader.attributes_type)
+        original_attributes = await resource.analyze(ElfHeader.attributes_type)
         await self.serialize_and_patch(resource, original_attributes, config)
 
 
@@ -124,7 +124,7 @@ class ElfProgramHeaderModifier(
     targets = (ElfProgramHeader,)
 
     async def modify(self, resource: Resource, config: ElfProgramHeaderModifierConfig):
-        original_attributes = await resource.analyze_attributes(ElfProgramHeader.attributes_type)
+        original_attributes = await resource.analyze(ElfProgramHeader.attributes_type)
         await self.serialize_and_patch(resource, original_attributes, config)
 
     @classmethod
@@ -242,7 +242,7 @@ class ElfSymbolModifier(AbstractElfAttributeModifier, Modifier[ElfSymbolModifier
         resource: Resource,
         config: ElfSymbolModifierConfig,
     ):
-        original_attributes = await resource.analyze_attributes(ElfSymbol.attributes_type)
+        original_attributes = await resource.analyze(ElfSymbol.attributes_type)
         await self.serialize_and_patch(resource, original_attributes, config)
 
 
@@ -293,7 +293,7 @@ class ElfRelaModifier(AbstractElfAttributeModifier, Modifier[ElfRelaModifierConf
         """
         Patches the Elf{32, 64}_Rela struct
         """
-        original_attributes = await resource.analyze_attributes(ElfRelaEntry.attributes_type)
+        original_attributes = await resource.analyze(ElfRelaEntry.attributes_type)
         await self.serialize_and_patch(resource, original_attributes, config)
 
 
@@ -344,7 +344,7 @@ class ElfDynamicEntryModifier(
         """
         Patches the Elf{32, 64}_Dyn struct
         """
-        original_attributes = await resource.analyze_attributes(ElfDynamicEntry.attributes_type)
+        original_attributes = await resource.analyze(ElfDynamicEntry.attributes_type)
         await self.serialize_and_patch(resource, original_attributes, config)
 
 
@@ -382,7 +382,7 @@ class ElfVirtualAddressModifier(
         """
         Patches the virtual address
         """
-        original_attributes = await resource.analyze_attributes(ElfVirtualAddress.attributes_type)
+        original_attributes = await resource.analyze(ElfVirtualAddress.attributes_type)
         await self.serialize_and_patch(resource, original_attributes, config)
 
 

@@ -12,7 +12,6 @@ from ofrak.component.packer import Packer
 from ofrak.component.identifier import Identifier
 from ofrak.core.binary import GenericBinary
 from ofrak_type.range import Range
-from ofrak.model.resource_model import index
 from ofrak.service.resource_service_i import ResourceFilter
 
 LOGGER = logging.getLogger(__name__)
@@ -65,10 +64,6 @@ class Uf2BlockHeader(ResourceAttributes):
     block_no: int
     num_blocks: int
     filesize_family_id: int
-
-    @index
-    def BlockNo(self) -> int:
-        return self.block_no
 
 
 class Uf2Flags(IntEnum):

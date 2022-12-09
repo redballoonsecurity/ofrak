@@ -7,8 +7,13 @@ from ofrak import OFRAKContext, Resource
 from ofrak.core.pe.model import Pe, PeSection, PeSectionFlag, PeSectionHeader, PeOptionalHeader
 
 
-@pytest.fixture(params=["jumpnbump.exe", "kernel32.dll"])
-async def pe_root_resource(ofrak_context: OFRAKContext, request):
+@pytest.fixture(params=["jumpnbump.exe", "kernel32.dll", "x64kernel32.dll"])
+async def pe_root_resource(ofrak_context: OFRAKContext, request) -> Resource:
+    return await _get_test_resource_from_file_name(ofrak_context, request.param)
+
+
+@pytest.fixture(params=["kernel32.dll", "x64kernel32.dll"])
+async def kernel32_dll(ofrak_context: OFRAKContext, request) -> Resource:
     return await _get_test_resource_from_file_name(ofrak_context, request.param)
 
 
@@ -35,11 +40,6 @@ async def test_pe_unpacker(pe_root_resource: Resource):
     code_region_header = await code_region.get_header()
     assert code_region_header.name == ".text"
     assert await code_region_header.get_body() == code_region
-
-
-@pytest.fixture
-async def kernel32_dll(ofrak_context: OFRAKContext) -> Resource:
-    return await _get_test_resource_from_file_name(ofrak_context, "kernel32.dll")
 
 
 async def test_pe_get_memory_region_for_vaddr(kernel32_dll: Resource):

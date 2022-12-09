@@ -5,7 +5,6 @@ import tempfile
 import pytest
 
 from ofrak import OFRAKContext
-from ofrak.core.filesystem import format_called_process_error
 from ofrak.resource import Resource
 from ofrak.service.job_service_i import ComponentAutoRunFailure
 from ofrak.core.strings import StringPatchingConfig, StringPatchingModifier
@@ -31,10 +30,7 @@ class TestTarSingleFileUnpackModifyPack(UnpackModifyPackPattern):
 
             archive_path = os.path.join(d, self.ARCHIVE_FILENAME)
             command = ["tar", "-cf", archive_path, "-C", d, self.INNER_FILENAME]
-            try:
-                subprocess.run(command, check=True, capture_output=True)
-            except subprocess.CalledProcessError as e:
-                raise RuntimeError(format_called_process_error(e))
+            subprocess.run(command, check=True, capture_output=True)
 
             return await ofrak_context.create_root_resource_from_file(archive_path)
 
@@ -58,10 +54,7 @@ class TestTarSingleFileUnpackModifyPack(UnpackModifyPackPattern):
                 f.write(patched_data)
 
             command = ["tar", "-C", d, "-xf", archive_path]
-            try:
-                subprocess.run(command, check=True, capture_output=True)
-            except subprocess.CalledProcessError as e:
-                raise RuntimeError(format_called_process_error(e))
+            subprocess.run(command, check=True, capture_output=True)
 
             result_file_path = os.path.join(d, self.INNER_FILENAME)
             with open(result_file_path, "rb") as f:
@@ -104,10 +97,7 @@ class TestTarUnpackerDirectoryTraversalFailure:
                 inner_dir,
                 os.path.join("..", self.INNER_FILENAME),
             ]
-            try:
-                subprocess.run(command, check=True, capture_output=True)
-            except subprocess.CalledProcessError as e:
-                raise RuntimeError(format_called_process_error(e))
+            subprocess.run(command, check=True, capture_output=True)
 
             root_resource = await ofrak_context.create_root_resource_from_file(archive_path)
 
@@ -125,10 +115,7 @@ class TestTarFilesystemUnpackRepack(FilesystemPackUnpackVerifyPattern):
     async def create_root_resource(self, ofrak_context: OFRAKContext, directory: str) -> Resource:
         with tempfile.NamedTemporaryFile(suffix=".tar") as archive:
             command = ["tar", "--xattrs", "-C", directory, "-cf", archive.name, "."]
-            try:
-                subprocess.run(command, check=True, capture_output=True)
-            except subprocess.CalledProcessError as e:
-                raise RuntimeError(format_called_process_error(e))
+            subprocess.run(command, check=True, capture_output=True)
 
             return await ofrak_context.create_root_resource_from_file(archive.name)
 
@@ -145,10 +132,7 @@ class TestTarFilesystemUnpackRepack(FilesystemPackUnpackVerifyPattern):
             tar.flush()
 
             command = ["tar", "--xattrs", "-C", extract_dir, "-xf", tar.name]
-            try:
-                subprocess.run(command, check=True, capture_output=True)
-            except subprocess.CalledProcessError as e:
-                raise RuntimeError(format_called_process_error(e))
+            subprocess.run(command, check=True, capture_output=True)
 
 
 class TestTarNestedUnpackModifyPack(UnpackModifyPackPattern):
@@ -179,10 +163,7 @@ class TestTarNestedUnpackModifyPack(UnpackModifyPackPattern):
                     d,
                     self.INNER_FILENAME if i == 0 else f"hello_{i - 1}.tar",
                 ]
-                try:
-                    subprocess.run(command, check=True, capture_output=True)
-                except subprocess.CalledProcessError as e:
-                    raise RuntimeError(format_called_process_error(e))
+                subprocess.run(command, check=True, capture_output=True)
 
             return await ofrak_context.create_root_resource_from_file(archive_path)
 
@@ -213,10 +194,7 @@ class TestTarNestedUnpackModifyPack(UnpackModifyPackPattern):
 
             for i in range(self.LEVELS - 1, -1, -1):
                 command = ["tar", "-C", d, "-xf", os.path.join(d, f"hello_{i}.tar")]
-                try:
-                    subprocess.run(command, check=True, capture_output=True)
-                except subprocess.CalledProcessError as e:
-                    raise RuntimeError(format_called_process_error(e))
+                subprocess.run(command, check=True, capture_output=True)
 
             result_file_path = os.path.join(d, self.INNER_FILENAME)
             with open(result_file_path, "rb") as f:
@@ -234,10 +212,7 @@ class TestComplexTarWithSpecialFiles(FilesystemPackUnpackVerifyPattern):
 
     def create_local_file_structure(self, root: str):
         command = ["tar", "--xattrs", "-C", root, "-xf", self.testtar_path]
-        try:
-            subprocess.run(command, check=True, capture_output=True)
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError(format_called_process_error(e))
+        subprocess.run(command, check=True, capture_output=True)
 
     async def unpack(self, root_resource: Resource):
         await root_resource.unpack_recursively()
@@ -252,7 +227,4 @@ class TestComplexTarWithSpecialFiles(FilesystemPackUnpackVerifyPattern):
             tar.flush()
 
             command = ["tar", "--xattrs", "-C", extract_dir, "-xf", tar.name]
-            try:
-                subprocess.run(command, check=True, capture_output=True)
-            except subprocess.CalledProcessError as e:
-                raise RuntimeError(format_called_process_error(e))
+            subprocess.run(command, check=True, capture_output=True)

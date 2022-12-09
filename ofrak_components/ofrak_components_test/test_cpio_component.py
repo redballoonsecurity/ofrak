@@ -3,8 +3,6 @@ import subprocess
 import tempfile
 
 from ofrak import OFRAKContext
-from ofrak.component.unpacker import UnpackerError
-from ofrak.core.filesystem import format_called_process_error
 from ofrak.resource import Resource
 from ofrak_components.cpio import CpioFilesystem
 from ofrak.core.strings import StringPatchingConfig, StringPatchingModifier
@@ -51,10 +49,7 @@ class TestCpioUnpackModifyPack(UnpackModifyPackPattern):
             temp_file.flush()
             with tempfile.TemporaryDirectory() as temp_flush_dir:
                 command = f"(cd {temp_flush_dir} && cpio -id < {temp_file.name})"
-                try:
-                    subprocess.run(command, check=True, capture_output=True, shell=True)
-                except subprocess.CalledProcessError as error:
-                    raise UnpackerError(format_called_process_error(error))
+                subprocess.run(command, check=True, capture_output=True, shell=True)
                 with open(os.path.join(temp_flush_dir, CPIO_ENTRY_NAME), "rb") as f:
                     patched_data = f.read()
                 assert patched_data == EXPECTED_DATA

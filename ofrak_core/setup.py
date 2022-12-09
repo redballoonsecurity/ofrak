@@ -67,7 +67,7 @@ setuptools.setup(
             "pytest-cov",
             "pytest-xdist",
             "requests",
-            "fun-coverage==0.1.3",
+            "fun-coverage==0.1.4",
         ],
     },
     author="Red Balloon Security",
@@ -94,4 +94,5 @@ setuptools.setup(
     license="Proprietary",
     license_files=["LICENSE"],
     cmdclass={"egg_info": egg_info_ex},
+    entry_points={"ofrak.packages": ["ofrak_pkg = ofrak"]},
 )

@@ -2,7 +2,20 @@ import asyncio
 import dataclasses
 import hashlib
 import logging
-from typing import BinaryIO, Iterable, List, Optional, Tuple, Type, TypeVar, cast, Union
+from inspect import isawaitable
+from typing import (
+    BinaryIO,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    cast,
+    Union,
+    Awaitable,
+    Sequence,
+)
 
 from ofrak.component.interface import ComponentInterface
 from ofrak.model.component_model import ComponentContext, CC, ComponentRunResult
@@ -387,15 +400,18 @@ class Resource:
 
         :return:
         """
-        await self.analyze_attributes(resource_attributes)
-        attributes = self.get_attributes(resource_attributes)
-        return attributes
+        attributes = self._check_attributes(resource_attributes)
+        if attributes is None:
+            await self._analyze_attributes(resource_attributes)
+            return self.get_attributes(resource_attributes)
+        else:
+            return attributes
 
-    async def identify(self):
+    async def identify(self) -> ComponentRunResult:
         """
         Run all registered identifiers on the resource, tagging it with matching resource tags.
         """
-        await self.auto_run(all_identifiers=True)
+        return await self.auto_run(all_identifiers=True)
 
     async def pack(self) -> ComponentRunResult:
         """
@@ -563,9 +579,7 @@ class Resource:
         range of the parent's data which the child maps. That is, `data_range=Range(0,
         10)` creates a resource which maps the first 10 bytes of the parent.
         The optional ``data`` param defines whether to populate the new child's data. It can be used
-        whether the resource is mapped or unmapped. If the child is mapped, the value of
-        ``data`` is applied as a patch to the mapped child; because it is mapped, those bytes are
-        also patched into the parent resource. If the child is unmapped, the value of ``data``
+        only if the data is unmapped. If the child is unmapped, the value of ``data``
         still becomes that child's data, but the parent's data is unaffected. If ``data`` and
         ``data_range`` are both `None` (default), the new child is a dataless resource.
 
@@ -573,7 +587,7 @@ class Resource:
 
         |                          | ``data_range`` param not `None`                        | ``data_range`` param `None`                  |
         |--------------------------|--------------------------------------------------------|----------------------------------------------|
-        | ``data`` param not `None` | Child mapped, ``data`` patched into child (and parent) | Child unmapped, child's data set to ``data`` |
+        | ``data`` param not `None` | Not allowed                                            | Child unmapped, child's data set to ``data`` |
         | ``data`` param   `None`   | Child mapped, parent's data untouched                  | Child is dataless                            |
 
         :param tags: [tags][ofrak.model.tag_model.ResourceTag] to add to the new child
@@ -585,6 +599,11 @@ class Resource:
         default), the child will not map the parent's data.
         :return:
         """
+        if data is not None and data_range is not None:
+            raise ValueError(
+                "Cannot create a child from both data and data_range. These parameters are "
+                "mutually exclusive."
+            )
         resource_id = self._id_service.generate_id()
         if data_range is not None:
             if self._resource.data_id is None:
@@ -622,9 +641,6 @@ class Resource:
         self._component_context.mark_resource_modified(resource_id)
         self._component_context.resources_created.add(resource_model.id)
         created_resource = await self._create_resource(resource_model)
-        if data_range is not None and data is not None:
-            # Patch the resource with the provided data
-            created_resource.queue_patch(Range.from_size(0, data_range.length()), data)
         return created_resource
 
     async def create_child_from_view(
@@ -676,6 +692,54 @@ class Resource:
         )
         return new_resource
 
+    def _view_as(self, viewable_tag: Type[RV]) -> Union[RV, Awaitable[RV]]:
+        """
+        Try to get a view without calling any analysis, to avoid as many unnecessary
+        `asyncio.gather` calls as possible.
+
+        Checks cached views first for view, and if not found, then checks if the attributes needed
+        to create the view are already present and up-to-date, and only if both of those are not
+        found does it return an awaitable.
+        """
+        if self._resource_view_context.has_view(self.get_id(), viewable_tag):
+            # First early return: View already exists in cache
+            return self._resource_view_context.get_view(self.get_id(), viewable_tag)
+        if not issubclass(viewable_tag, ResourceViewInterface):
+            raise ValueError(
+                f"Cannot get view for resource {self.get_id().hex()} of a type "
+                f"{viewable_tag.__name__} because it is not a subclass of ResourceView"
+            )
+        if not self.has_tag(viewable_tag):
+            raise ValueError(
+                f"Cannot get resource {self.get_id().hex()} as view "
+                f"{viewable_tag.__name__} because the resource is not tagged as a "
+                f"{viewable_tag.__name__}"
+            )
+        composed_attrs_types = viewable_tag.composed_attributes_types
+        existing_attributes = [self._check_attributes(attrs_t) for attrs_t in composed_attrs_types]
+        if all(existing_attributes):
+            # Second early return: All attributes needed for view are present and up-to-date
+            view = viewable_tag.create(self.get_model())
+            view.resource = self  # type: ignore
+            self._resource_view_context.add_view(self.get_id(), view)
+            return cast(RV, view)
+
+        analysis_tasks = [
+            self._analyze_attributes(attrs_t)
+            for attrs_t, existing in zip(composed_attrs_types, existing_attributes)
+            if not existing
+        ]
+
+        # Only if analysis is absolutely necessary is an awaitable created and returned
+        async def finish_view_creation() -> RV:
+            await asyncio.gather(*analysis_tasks)
+            view = viewable_tag.create(self.get_model())
+            view.resource = self  # type: ignore
+            self._resource_view_context.add_view(self.get_id(), view)
+            return cast(RV, view)
+
+        return finish_view_creation()
+
     async def view_as(self, viewable_tag: Type[RV]) -> RV:
         """
         Provides a specific type of view instance for this resource. The returned instance is an
@@ -689,26 +753,11 @@ class Resource:
 
         :return:
         """
-        if not self._resource_view_context.has_view(self.get_id(), viewable_tag):
-            if not issubclass(viewable_tag, ResourceViewInterface):
-                raise ValueError(
-                    f"Cannot get view for resource {self.get_id().hex()} of a type "
-                    f"{viewable_tag.__name__} because it is not a subclass of ResourceView"
-                )
-            if not self.has_tag(viewable_tag):
-                raise ValueError(
-                    f"Cannot get resource {self.get_id().hex()} as view "
-                    f"{viewable_tag.__name__} because the resource is not tagged as a "
-                    f"{viewable_tag.__name__}"
-                )
-            composed_attrs_types = viewable_tag.composed_attributes_types
-            analysis_tasks = [self.analyze(attrs_t) for attrs_t in composed_attrs_types]
-            await asyncio.gather(*analysis_tasks)
-            view = viewable_tag.create(self.get_model())
-            view.resource = self  # type: ignore
-            self._resource_view_context.add_view(self.get_id(), view)
-            return cast(RV, view)
-        return self._resource_view_context.get_view(self.get_id(), viewable_tag)
+        view_or_create_view_task: Union[RV, Awaitable[RV]] = self._view_as(viewable_tag)
+        if isawaitable(view_or_create_view_task):
+            return await view_or_create_view_task
+        else:
+            return cast(RV, view_or_create_view_task)
 
     def add_view(self, view: ResourceViewInterface):
         """
@@ -779,21 +828,25 @@ class Resource:
         """
         return self._resource.get_most_specific_tags()
 
-    async def analyze_attributes(
-        self,
-        attributes_type: Type[RA],
-    ):
-        # TODO: Should we be using the version as well? The client wouldn't now the
-        #  version of the component in a client-server environment. We could do that efficiently by
-        #  adding a service method that list all available components (and their version)
-        # Check that the attributes are there to begin with
+    def _check_attributes(self, attributes_type: Type[RA]) -> Optional[RA]:
+        """
+        Try to get the current attributes.
+
+        TODO: Should we be using the version as well? The client wouldn't know the
+        version of the component in a client-server environment. We could do that efficiently by
+        adding a service method that list all available components (and their version)
+
+        :param attributes_type: The type of attributes to check this resource for.
+
+        :return: The requested attributes if they are present and up-to-date, otherwise return None.
+        """
         attributes = self._resource.get_attributes(attributes_type)
         if attributes is not None:
             # Make sure that the attributes have not been invalidated
             component_id = self._resource.get_component_id_by_attributes(type(attributes))
             if component_id is not None:
                 return attributes
-        await self._analyze_attributes(attributes_type)
+        return None
 
     def _add_attributes(self, attributes: ResourceAttributes):
         existing_attributes = self._resource.get_attributes(type(attributes))
@@ -1048,8 +1101,27 @@ class Resource:
         :raises NotFoundError: If a filter was provided and no resources match the provided filter
         """
         descendants = await self.get_descendants(max_depth, r_filter, r_sort)
-        view_tasks = [r.view_as(v_type) for r in descendants]
-        return await asyncio.gather(*view_tasks)
+        views_or_tasks = [r._view_as(v_type) for r in descendants]
+        # analysis tasks to generate views of resources which don't have attrs for the view already
+        view_tasks: List[Awaitable[RV]] = []
+        # each resources' already-existing views OR the index in `view_tasks` of the analysis task
+        views_or_task_indexes: List[Union[int, RV]] = []
+        for view_or_create_view_task in views_or_tasks:
+            if isawaitable(view_or_create_view_task):
+                views_or_task_indexes.append(len(view_tasks))
+                view_tasks.append(view_or_create_view_task)
+            else:
+                views_or_task_indexes.append(cast(RV, view_or_create_view_task))
+
+        if view_tasks:
+            completed_views: Sequence[RV] = await asyncio.gather(*view_tasks)
+            return [
+                completed_views[v_or_i] if type(v_or_i) is int else cast(RV, v_or_i)
+                for v_or_i in views_or_task_indexes
+            ]
+        else:
+            # There are no tasks, so all needed views are already present
+            return cast(List[RV], views_or_task_indexes)
 
     async def get_descendants(
         self,
