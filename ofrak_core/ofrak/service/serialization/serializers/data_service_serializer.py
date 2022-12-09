@@ -1,9 +1,8 @@
-from typing import Dict, Any
+from typing import Dict, Any, Set
 
-from sortedcontainers import SortedList
 
 from ofrak.model.data_model import DataModel
-from ofrak.service.data_service import DataService, _DataRoot, _Waypoint, DataId
+from ofrak.service.data_service import DataService, _DataRoot, DataId, _CustomSortedIntDict
 from ofrak.service.serialization.pjson_types import PJSONType
 from ofrak.service.serialization.serializers.serializer_i import SerializerInterface
 
@@ -15,7 +14,6 @@ class DataRootSerializer(SerializerInterface):
     data_root_annotations = {
         "model": DataModel,
         "data": bytes,
-        "_waypoints": Dict[int, _Waypoint],
         "_children": Dict[DataId, DataModel],
     }
 
@@ -29,12 +27,23 @@ class DataRootSerializer(SerializerInterface):
     def pjson_to_obj(self, pjson_obj: Dict[str, PJSONType], type_hint: Any) -> _DataRoot:
         model = self._service.from_pjson(pjson_obj["model"], DataModel)
         data = self._service.from_pjson(pjson_obj["data"], bytes)
-        waypoints = self._service.from_pjson(pjson_obj["_waypoints"], Dict[int, _Waypoint])
         children = self._service.from_pjson(pjson_obj["_children"], Dict[DataId, DataModel])
+
+        child_grid: _CustomSortedIntDict[_CustomSortedIntDict[Set[bytes]]] = _CustomSortedIntDict(
+            lambda: _CustomSortedIntDict(set)
+        )
+        inverse_grid: _CustomSortedIntDict[_CustomSortedIntDict[Set[bytes]]] = _CustomSortedIntDict(
+            lambda: _CustomSortedIntDict(set)
+        )
+
+        for model in children.values():
+            child_grid[model.range.start][model.range.end].add(model.id)
+            inverse_grid[model.range.end][model.range.start].add(model.id)
+
         data_root = _DataRoot(model, data)
-        data_root._waypoints = waypoints
-        data_root._waypoint_offsets = SortedList(waypoints.keys())
         data_root._children = children
+        data_root._child_grid = child_grid
+        data_root._inverse_grid = inverse_grid
         return data_root
 
 

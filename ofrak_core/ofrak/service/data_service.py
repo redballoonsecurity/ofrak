@@ -1,5 +1,7 @@
+from bisect import bisect_left, bisect_right
 from collections import defaultdict
-from typing import Dict, Iterable, List, Optional, Set, Tuple, Union, cast
+from itertools import chain
+from typing import Dict, Iterable, List, Optional, Set, Tuple, Generic, TypeVar, Callable
 
 from dataclasses import dataclass
 from sortedcontainers import SortedList
@@ -245,6 +247,122 @@ class _Waypoint:
         return not self.models_starting and not self.models_ending
 
 
+T = TypeVar("T")
+
+
+class _CustomSortedIntDict(Generic[T]):
+    def __init__(self, default_constructor: Callable[..., T]):
+        self._keys: List[int] = []
+        self._values: List[T] = []
+        self._default_constructor = default_constructor
+
+    def __len__(self):
+        return len(self._keys)
+
+    def __getitem__(self, key: int) -> T:
+        key_i = bisect_left(self._keys, key)
+        if key_i >= len(self._keys) or self._keys[key_i] != key:
+            self._keys.insert(key_i, key)
+            self._values.insert(key_i, self._default_constructor())
+        return self._values[key_i]
+
+    def __setitem__(self, key: int, value: T):
+        key_i = bisect_left(self._keys, key)
+        if key_i >= len(self._keys) or self._keys[key_i] != key:
+            self._keys.insert(key_i, key)
+            self._values.insert(key_i, value)
+        else:
+            self._values[key_i] = value
+
+    def __delitem__(self, key: int):
+        key_i = bisect_left(self._keys, key)
+        if self._keys[key_i] == key:
+            self._keys.pop(key_i)
+            self._values.pop(key_i)
+        else:
+            raise KeyError()
+
+    def __iter__(self) -> Iterable[T]:
+        return iter(self._values)
+
+    def irange(
+        self,
+        minimum: Optional[int] = None,
+        maximum: Optional[int] = None,
+        inclusive: Tuple[bool, bool] = (True, False),
+    ) -> Iterable[T]:
+        if minimum is not None:
+            if inclusive[0]:
+                min_i = bisect_left(self._keys, minimum)
+            else:
+                min_i = bisect_right(self._keys, minimum)
+        else:
+            min_i = 0
+
+        if maximum is not None:
+            if inclusive[1]:
+                max_i = bisect_right(self._keys, maximum)
+            else:
+                max_i = bisect_left(self._keys, maximum)
+        else:
+            max_i = len(self._keys)
+
+        value_i = min_i
+        while value_i < max_i:
+            yield self._values[value_i]
+            value_i += 1
+
+    def shift_key_range(
+        self, shift: int, minimum: Optional[int] = None, maximum: Optional[int] = None
+    ) -> Iterable[T]:
+        """
+        Shift a number of keys by a certain amount, so that the same ordering of key/value pairs
+        is maintained but some of the keys are altered. For example, with pairs initially:
+
+        (3, X), (5, Y), (7, Z)
+
+        and we called shift_key_range(shift=3, minimum=4) then the result would be:
+
+        (3, X), (8, Y), (10, Z)
+
+        If the key/value pairs would be shifted such that some of the shifted keys should swap
+        positions with a non-shifted value, a ValueError is raised. For example, with the initial
+        state shown previously, calling shift_key_range(shift=-3, minimum=4) would raise ValueError
+        because the shifted key 5 would be re-assigned as 2, but would still be after the key 3 and
+        the order would be broken.
+
+        :param shift:
+        :param minimum:
+        :param maximum:
+        :return:
+        """
+        if minimum is not None:
+            min_i = bisect_left(self._keys, minimum)
+        else:
+            min_i = 0
+
+        if maximum is not None:
+            max_i = bisect_right(self._keys, maximum)
+        else:
+            max_i = len(self._keys)
+
+        if 0 < min_i < len(self._keys) and self._keys[min_i - 1] > (self._keys[min_i] + shift):
+            raise ValueError(
+                f"shifting {minimum} to {maximum} by {shift} would collide at the lower range!"
+            )
+
+        if 0 < max_i < len(self._keys) and self._keys[max_i] < (self._keys[max_i - 1] + shift):
+            raise ValueError(
+                f"shifting {minimum} to {maximum} by {shift} would collide at the upper range!"
+            )
+
+        key_i = min_i
+        while key_i < max_i:
+            self._keys[key_i] += shift
+            yield self._values[key_i]
+            key_i += 1
+
+
 class _DataRoot:
     """
     A root data model which may have other data models mapped into it
@@ -253,13 +371,14 @@ class _DataRoot:
     def __init__(self, model: DataModel, data: bytes):
         self.model: DataModel = model
         self.data = data
-        self._waypoints: Dict[int, _Waypoint] = dict()
-        self._waypoint_offsets: SortedList[int] = SortedList()
         self._children: Dict[DataId, DataModel] = dict()
 
-    def waypoints(self) -> Iterable[_Waypoint]:
-        for waypoint_offset in self._waypoint_offsets:
-            yield self._waypoints[waypoint_offset]
+        self._child_grid: _CustomSortedIntDict[
+            _CustomSortedIntDict[Set[bytes]]
+        ] = _CustomSortedIntDict(lambda: _CustomSortedIntDict(set))
+        self._inverse_grid: _CustomSortedIntDict[
+            _CustomSortedIntDict[Set[bytes]]
+        ] = _CustomSortedIntDict(lambda: _CustomSortedIntDict(set))
 
     def get_children(self) -> Iterable[DataModel]:
         return self._children.values()
@@ -271,168 +390,65 @@ class _DataRoot:
                 f"{self.model.id.hex()}: ({model.range} is outside of {self.model.range})"
             )
 
-        start_offset = model.range.start
-        start_waypoint = self._waypoints.get(start_offset)
-        if start_waypoint is None:
-            start_waypoint = _Waypoint(start_offset, set(), set())
-            self._waypoints[start_offset] = start_waypoint
-            self._waypoint_offsets.add(start_offset)
-        start_waypoint.models_starting.add(model.id)
-
-        ending_offset = model.range.end
-        ending_waypoint = self._waypoints.get(ending_offset)
-        if ending_waypoint is None:
-            ending_waypoint = _Waypoint(ending_offset, set(), set())
-            self._waypoints[ending_offset] = ending_waypoint
-            self._waypoint_offsets.add(ending_offset)
-        ending_waypoint.models_ending.add(model.id)
+        self._child_grid[model.range.start][model.range.end].add(model.id)
+        self._inverse_grid[model.range.end][model.range.start].add(model.id)
 
         self._children[model.id] = model
 
     def delete_mapped_model(self, model: DataModel):
-        start_offset = model.range.start
-        start_waypoint = self._waypoints.get(start_offset)
-        ending_offset = model.range.end
-        ending_waypoint = self._waypoints.get(ending_offset)
+        self._child_grid[model.range.start][model.range.end].remove(model.id)
+        self._inverse_grid[model.range.end][model.range.start].remove(model.id)
 
-        if model.id not in self._children or start_waypoint is None or ending_waypoint is None:
-            raise NotFoundError(
-                f"Cannot delete mapped data model {model.id.hex()} from root {self.model.id.hex()}"
-                f"because it is not part of that root!"
-            )
-
-        start_waypoint.models_starting.remove(model.id)
-        ending_waypoint.models_ending.remove(model.id)
-
-        if start_waypoint.is_empty():
-            self._waypoint_offsets.remove(start_waypoint.offset)
-            del self._waypoints[start_waypoint.offset]
-        if ending_waypoint.is_empty():
-            self._waypoint_offsets.remove(ending_waypoint.offset)
-            del self._waypoints[ending_waypoint.offset]
         del self._children[model.id]
 
     def resize_range(self, resized_range: Range, size_diff: int):
+        try:
+            for starts in self._inverse_grid.shift_key_range(size_diff, minimum=resized_range.end):
+                for ids_entirely_after_range in starts.shift_key_range(
+                    size_diff, minimum=resized_range.end
+                ):
+                    for model_id in ids_entirely_after_range:
+                        model = self._children[model_id]
+                        model.range = model.range.translate(size_diff)
+                for ids_starting_before_range in starts.irange(
+                    maximum=resized_range.end, inclusive=(True, True)
+                ):
+                    for model_id in ids_starting_before_range:
+                        model = self._children[model_id]
+                        model.range = Range(model.range.start, model.range.end + size_diff)
 
-        waypoints_to_shift = list(
-            self._waypoint_offsets.irange(minimum=resized_range.end, inclusive=(True, True))
-        )
-        new_waypoints = dict()
-        ends_already_shifted = set()
-        for waypoint_offset in waypoints_to_shift:
-            new_waypoint_offset = waypoint_offset + size_diff
-            self._waypoint_offsets.remove(waypoint_offset)
-            self._waypoint_offsets.add(new_waypoint_offset)
+            for ends in self._child_grid.shift_key_range(size_diff, minimum=resized_range.end):
+                ends.shift_key_range(size_diff)
 
-            waypoint = self._waypoints[waypoint_offset]
-            del self._waypoints[waypoint_offset]
-
-            for model_id in waypoint.models_starting:
-                model = self._children[model_id]
-                model.range = model.range.translate(size_diff)
-                ends_already_shifted.add(model_id)
-
-            for model_id in waypoint.models_ending.difference(ends_already_shifted):
-                model = self._children[model_id]
-                model.range = Range(model.range.start, model.range.end + size_diff)
-
-            waypoint.offset = new_waypoint_offset
-            new_waypoints[new_waypoint_offset] = waypoint
-
-        for new_waypoint_offset, new_waypoint in new_waypoints.items():
-            if new_waypoint_offset in self._waypoints:
-                waypoint = self._waypoints[new_waypoint_offset]
-                waypoint.models_starting.update(new_waypoint.models_starting)
-                waypoint.models_ending.update(new_waypoint.models_ending)
-            else:
-                self._waypoints[new_waypoint_offset] = new_waypoint
+        except ValueError as e:
+            raise ValueError(
+                "Cannot resize child overlapping with the boundaries of other children!"
+            )
 
         self.model.range = Range(0, self.model.range.end + size_diff)
 
     def get_children_with_boundaries_intersecting_range(self, r: Range) -> List[DataModel]:
         intersecting_model_ids = set()
-        for waypoint_offset in self._waypoint_offsets.irange(
-            r.start, r.end, inclusive=(False, False)
-        ):
-            waypoint = self._waypoints[waypoint_offset]
-            if waypoint_offset != r.start:
-                intersecting_model_ids.update(waypoint.models_ending)
-            if waypoint_offset != r.end:
-                intersecting_model_ids.update(waypoint.models_starting)
+        for starts_in_range in self._child_grid.irange(r.start, r.end, inclusive=(False, False)):
+            intersecting_model_ids.update(chain(*starts_in_range))
+
+        for ends_in_range in self._inverse_grid.irange(r.start, r.end, inclusive=(False, False)):
+            intersecting_model_ids.update(chain(*ends_in_range))
 
         return [self._children[data_id] for data_id in intersecting_model_ids]
 
     def get_children_affected_by_ranges(
         self, patch_ranges: List[Range]
     ) -> Iterable[Tuple[DataId, Range]]:
-        # Build a flat map of various types of points of interest, to be scanned in order of offset
-        points_of_interest: List[Tuple[int, int, Union[Range, Set[DataId]]]] = []
-
-        # int values represent the order that different types of points should be processed in
-        # (if they all had the same offset)
-        POINT_CHILDREN_ENDS = -2  # End of one or more children
-        POINT_RANGE_END = -1  # End of a patched range
-        POINT_ZERO_LENGTH_RANGE = 0  # Special case of patched range: it
-        POINT_RANGE_START = 1  # Start of a patched range
-        POINT_CHILDREN_STARTS = 2  # Start of one or more children
-
-        for r in patch_ranges:
-            if r.length() == 0:
-                points_of_interest.append((r.start, POINT_ZERO_LENGTH_RANGE, r))
-            else:
-                points_of_interest.append((r.start, POINT_RANGE_START, r))
-                points_of_interest.append((r.end, POINT_RANGE_END, r))
-
-        for waypoint in self.waypoints():
-            # Make sure no 0-length children (start and end at same waypoint) are counted
-            # These are never affected by a patch, UNLESS the patch is specifically to them
-            # That case is handled outside this function
-            # (the data ID the patch is "for" is always affected, so no need to check for it here)
-            points_of_interest.append(
-                (
-                    waypoint.offset,
-                    POINT_CHILDREN_ENDS,
-                    waypoint.models_ending.difference(waypoint.models_starting),
-                )
-            )
-            points_of_interest.append(
-                (
-                    waypoint.offset,
-                    POINT_CHILDREN_STARTS,
-                    waypoint.models_starting.difference(waypoint.models_ending),
-                )
-            )
-
-        # the points representing data model and patch start/ends will be sorted by data offset
-        # Ties (points w/ same offset) will be broken by the point type, enumerated above
-        points_of_interest.sort()
-
-        # Scan through the points of interest, tracking the current data models as we enter/leave
-        # each one, as well as the current patch range.
-        curr_overlapping_children: Set[DataId] = set()
-        curr_range: Optional[Range] = None
         children_overlapping_ranges: Dict[Range, Set[DataId]] = defaultdict(set)
-        for _, point_type, point in points_of_interest:
-            # These cases are written out in the same order they would be executed for points with
-            # the same offset.
-            if point_type is POINT_CHILDREN_ENDS:
-                children_ending: Set[bytes] = cast(Set[bytes], point)
-                curr_overlapping_children.difference_update(children_ending)
-            elif point_type is POINT_RANGE_END:
-                curr_range = None
-            elif point_type is POINT_ZERO_LENGTH_RANGE:
-                zero_length_range = cast(Range, point)
-                children_overlapping_ranges[zero_length_range].update(curr_overlapping_children)
-            elif point_type is POINT_RANGE_START:
-                curr_range = cast(Range, point)
-            elif point_type is POINT_CHILDREN_STARTS:
-                children_starting: Set[bytes] = cast(Set[bytes], point)
-                curr_overlapping_children.update(children_starting)
-
-            # At each point, if the point is in one of the patch ranges, associate any data models
-            # overlapping with that point with the patch range.
-            if curr_range:
-                children_overlapping_ranges[curr_range].update(curr_overlapping_children)
+        for patch_range in patch_ranges:
+            for starting_before_patch_end in self._child_grid.irange(
+                minimum=None, maximum=patch_range.end
+            ):
+                for ending_after_patch_start in starting_before_patch_end.irange(
+                    minimum=patch_range.start, maximum=None
+                ):
+                    children_overlapping_ranges[patch_range].update(ending_after_patch_start)
 
         for patched_range, overlapping_data_ids in children_overlapping_ranges.items():
             for data_id in overlapping_data_ids:
