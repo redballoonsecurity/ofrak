@@ -1,11 +1,15 @@
 import functools
-from typing import Iterable, Set, Tuple, Optional, cast, List
+from typing import Iterable, List, Set, Tuple
 
 
 class ResourceTag(type):
     def __init__(cls, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        cls._specificity: Optional[int] = None
+        specificity = 0
+        for base in cls.base_tags():
+            specificity = max(specificity, base.tag_specificity())
+
+        cls._specificity: int = specificity + 1
 
     def tag_specificity(cls) -> int:
         """
@@ -13,13 +17,7 @@ class ResourceTag(type):
         :return: The number of classes in the inheritance hierarchy between this class and
         Resource
         """
-        if cls._specificity is None:
-            specificity = 0
-            for base in cls.base_tags():
-                specificity = max(specificity, base.tag_specificity())
-
-            cls._specificity = specificity + 1
-        return cast(int, cls._specificity)
+        return cls._specificity
 
     @functools.lru_cache(None)
     def tag_classes(cls) -> Set["ResourceTag"]:
