@@ -78,6 +78,7 @@ nav:
         - Analyzer: "contributor-guide/component/analyzer.md"
         - Modifier: "contributor-guide/component/modifier.md"
         - Packer: "contributor-guide/component/packer.md"
+        - Components Using External Tools: "contributor-guide/component/external_tools.md"
         - Ghidra Components: "contributor-guide/component/ghidra_components.md"
       - ResourceView: "contributor-guide/core/resource_view.md"
   # Built by gen-files and literate-nav

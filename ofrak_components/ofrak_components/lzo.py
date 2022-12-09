@@ -2,16 +2,17 @@ import subprocess
 import tempfile
 
 from ofrak import Packer, Unpacker, Resource
-from ofrak.component.packer import PackerError
-from ofrak.component.unpacker import UnpackerError
 from ofrak.core import (
     GenericBinary,
-    format_called_process_error,
     MagicMimeIdentifier,
     MagicDescriptionIdentifier,
 )
-from ofrak.model.component_model import CC
+from ofrak.model.component_model import CC, ComponentExternalTool
 from ofrak_type.range import Range
+
+LZOP = ComponentExternalTool(
+    "lzop", "https://www.lzop.org/", "--help", apt_package="lzop", brew_package="lzop"
+)
 
 
 class LzoData(GenericBinary):
@@ -31,6 +32,7 @@ class LzoUnpacker(Unpacker[None]):
     id = b"LzoUnpacker"
     targets = (LzoData,)
     children = (GenericBinary,)
+    external_dependencies = (LZOP,)
 
     async def unpack(self, resource: Resource, config: CC) -> None:
         with tempfile.NamedTemporaryFile(suffix=".lzo") as compressed_file:
@@ -38,10 +40,7 @@ class LzoUnpacker(Unpacker[None]):
             compressed_file.flush()
 
             command = ["lzop", "-d", "-f", "-c", compressed_file.name]
-            try:
-                result = subprocess.run(command, check=True, capture_output=True)
-            except subprocess.CalledProcessError as e:
-                raise UnpackerError(format_called_process_error(e))
+            result = subprocess.run(command, check=True, capture_output=True)
 
             await resource.create_child(tags=(GenericBinary,), data=result.stdout)
 
@@ -52,6 +51,7 @@ class LzoPacker(Packer[None]):
     """
 
     targets = (LzoData,)
+    external_dependencies = (LZOP,)
 
     async def pack(self, resource: Resource, config=None):
         lzo_view = await resource.view_as(LzoData)
@@ -63,10 +63,7 @@ class LzoPacker(Packer[None]):
             uncompressed_file.flush()
 
             command = ["lzop", "-f", "-c", uncompressed_file.name]
-            try:
-                result = subprocess.run(command, check=True, capture_output=True)
-            except subprocess.CalledProcessError as e:
-                raise PackerError(format_called_process_error(e))
+            result = subprocess.run(command, check=True, capture_output=True)
 
             compressed_data = result.stdout
             original_size = await lzo_view.resource.get_data_length()

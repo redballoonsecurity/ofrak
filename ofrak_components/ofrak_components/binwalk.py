@@ -8,8 +8,12 @@ import binwalk
 
 from ofrak import Analyzer, Resource, ResourceFactory, ResourceAttributes
 from ofrak.core import GenericBinary, File
+from ofrak.model.component_model import ComponentExternalTool
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceServiceInterface
+
+
+BINWALK_TOOL = ComponentExternalTool("binwalk", "https://github.com/ReFirmLabs/binwalk", "--help")
 
 
 @dataclass(**ResourceAttributes.DATACLASS_PARAMS)
@@ -20,6 +24,7 @@ class BinwalkAttributes(ResourceAttributes):
 class BinwalkAnalyzer(Analyzer[None, BinwalkAttributes]):
     targets = (GenericBinary, File)
     outputs = (BinwalkAttributes,)
+    external_dependencies = (BINWALK_TOOL,)
 
     def __init__(
         self,

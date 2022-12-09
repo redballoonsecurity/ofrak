@@ -3,7 +3,6 @@ import tempfile
 
 import pytest
 
-from ofrak.core.filesystem import format_called_process_error
 from ofrak.resource import Resource
 from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import (
     CompressedFileUnpackModifyPackPattern,
@@ -20,10 +19,7 @@ class TestZstdUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
 
         compressed_filename = d.join("hello.zstd").realpath()
         command = ["zstd", "-19", uncompressed_filename, "-o", compressed_filename]
-        try:
-            subprocess.run(command, check=True, capture_output=True)
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError(format_called_process_error(e))
+        subprocess.run(command, check=True, capture_output=True)
 
         self._test_file = compressed_filename
 
@@ -35,11 +31,8 @@ class TestZstdUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
             output_filename = tempfile.mktemp()
 
             command = ["zstd", "-d", "-k", compressed_file.name, "-o", output_filename]
-            try:
-                subprocess.run(command, check=True, capture_output=True)
-                with open(output_filename, "rb") as f:
-                    result = f.read()
-            except subprocess.CalledProcessError as e:
-                raise RuntimeError(format_called_process_error(e))
+            subprocess.run(command, check=True, capture_output=True)
+            with open(output_filename, "rb") as f:
+                result = f.read()
 
             assert result == self.EXPECTED_REPACKED_DATA

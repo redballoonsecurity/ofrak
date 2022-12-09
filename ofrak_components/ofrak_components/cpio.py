@@ -3,25 +3,31 @@ import subprocess
 import tempfile
 from dataclasses import dataclass
 from enum import Enum
-from subprocess import CalledProcessError
+
 
 from ofrak import Analyzer, Packer, Unpacker, Resource
-from ofrak.component.packer import PackerError
-from ofrak.component.unpacker import UnpackerError
 from ofrak.core import (
     GenericBinary,
     File,
     Folder,
     FilesystemRoot,
-    format_called_process_error,
     SpecialFileType,
     MagicMimeIdentifier,
     MagicDescriptionIdentifier,
     Magic,
 )
+from ofrak.model.component_model import ComponentExternalTool
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
+
+CPIO_TOOL = ComponentExternalTool(
+    "cpio",
+    "https://www.gnu.org/software/cpio/",
+    install_check_arg="--help",
+    apt_package="cpio",
+    brew_package="cpio",
+)
 
 
 class CpioArchiveType(Enum):
@@ -80,22 +86,21 @@ class CpioUnpacker(Unpacker[None]):
 
     targets = (CpioFilesystem,)
     children = (File, Folder, SpecialFileType)
+    external_dependencies = (CPIO_TOOL,)
 
     async def unpack(self, resource: Resource, config=None):
         cpio_v = await resource.view_as(CpioFilesystem)
         resource_data = await cpio_v.resource.get_data()
-        with tempfile.NamedTemporaryFile() as temp_file:
-            temp_file.write(resource_data)
-            temp_file.flush()
-            with tempfile.TemporaryDirectory() as temp_flush_dir:
-                # Use subshell to handle relative paths and avoid changing directories back and
-                # forth
-                command = f"(cd {temp_flush_dir} && cpio -id < {temp_file.name})"
-                try:
-                    subprocess.run(command, check=True, capture_output=True, shell=True)
-                except subprocess.CalledProcessError as error:
-                    raise UnpackerError(format_called_process_error(error))
-                await cpio_v.initialize_from_disk(temp_flush_dir)
+        with tempfile.TemporaryDirectory() as temp_flush_dir:
+            command = ["cpio", "-id"]
+            subprocess.run(
+                command,
+                check=True,
+                capture_output=True,
+                cwd=temp_flush_dir,
+                input=resource_data,
+            )
+            await cpio_v.initialize_from_disk(temp_flush_dir)
 
 
 class CpioPacker(Packer[None]):
@@ -104,21 +109,28 @@ class CpioPacker(Packer[None]):
     """
 
     targets = (CpioFilesystem,)
+    external_dependencies = (CPIO_TOOL,)
 
     async def pack(self, resource: Resource, config=None):
         cpio_v: CpioFilesystem = await resource.view_as(CpioFilesystem)
         temp_flush_dir = await cpio_v.flush_to_disk()
         cpio_format = cpio_v.archive_type.value
-        with tempfile.NamedTemporaryFile(suffix=".cpio", mode="rb") as temp:
-            # Use subshell to handle relative paths and avoid changing directories back and forth
-            command = f"(cd {temp_flush_dir} && find . -print | cpio -o --format={cpio_format} > {temp.name})"
-            try:
-                subprocess.run(command, check=True, capture_output=True, shell=True)
-            except CalledProcessError as error:
-                raise PackerError(format_called_process_error(error))
-            new_data = temp.read()
-            # Passing in the original range effectively replaces the original data with the new data
-            resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
+        list_files_output = subprocess.run(
+            ["find", ".", "-print"],
+            check=True,
+            capture_output=True,
+            cwd=temp_flush_dir,
+        )
+        cpio_pack_output = subprocess.run(
+            ["cpio", "-o", f"--format={cpio_format}"],
+            check=True,
+            capture_output=True,
+            cwd=temp_flush_dir,
+            input=list_files_output.stdout,
+        )
+        new_data = cpio_pack_output.stdout
+        # Passing in the original range effectively replaces the original data with the new data
+        resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
 
 
 MagicMimeIdentifier.register(CpioFilesystem, "application/x-cpio")

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Generic, Optional, Tuple
 
-from ofrak.model.component_model import CC, ComponentRunResult
+from ofrak.model.component_model import CC, ComponentRunResult, ComponentExternalTool
 from ofrak.model.job_model import JobRunContext
 from ofrak.model.resource_model import ResourceContext
 from ofrak.model.tag_model import ResourceTag
@@ -29,6 +29,11 @@ class ComponentInterface(Generic[CC], ABC):
     @property
     @abstractmethod
     def targets(self) -> Tuple[ResourceTag, ...]:
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def external_dependencies(self) -> Tuple[ComponentExternalTool, ...]:
         raise NotImplementedError()
 
     @abstractmethod

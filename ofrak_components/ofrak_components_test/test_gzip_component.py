@@ -7,7 +7,6 @@ from io import BytesIO
 import pytest
 
 from ofrak import OFRAKContext
-from ofrak.core.filesystem import format_called_process_error
 from ofrak.resource import Resource
 from ofrak_components.gzip import GzipData
 from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import (
@@ -51,10 +50,7 @@ class TestGzipUnpackWithTrailingBytes(UnpackModifyPackPattern):
 
             gzip_path = os.path.join(d, self.GZIP_FILENAME)
             gzip_command = ["pigz", file_path]
-            try:
-                subprocess.run(gzip_command, check=True, capture_output=True)
-            except subprocess.CalledProcessError as e:
-                raise RuntimeError(format_called_process_error(e))
+            subprocess.run(gzip_command, check=True, capture_output=True)
 
             # Add trailing bytes
             with open(gzip_path, "ab") as a:
@@ -86,6 +82,6 @@ class TestGzipUnpackWithTrailingBytes(UnpackModifyPackPattern):
                 if e.returncode == 2 or e.returncode == -2:
                     data = e.stdout
                 else:
-                    raise RuntimeError(format_called_process_error(e))
+                    raise
 
             assert data == self.EXPECTED_DATA

@@ -1,14 +1,12 @@
 import os
 import stat
-import subprocess
 import tempfile
 from dataclasses import dataclass
-from typing import Dict, Iterable, List, Optional, Type, Union
+from typing import Dict, Iterable, Optional, Type, Union
 
 import xattr
 from ofrak.resource import Resource
 
-from ofrak.component.unpacker import UnpackerError
 from ofrak.model.resource_model import index, ResourceAttributes
 from ofrak.model.tag_model import ResourceTag
 from ofrak.resource_view import ResourceView
@@ -657,18 +655,3 @@ class FilesystemRoot(ResourceView):
         for attr in xattr.listxattr(path, symlink=True):  # Don't follow links
             xattr_dict[attr] = xattr.getxattr(path, attr)
         return xattr_dict
-
-
-async def unpack_with_command(command: List[str]):
-    try:
-        subprocess.run(command, check=True, capture_output=True)
-    except subprocess.CalledProcessError as error:
-        raise UnpackerError(format_called_process_error(error))
-
-
-# Disable formatting so first line of function is seen by pycoverage as having executed.
-# fmt: off
-def format_called_process_error(error: subprocess.CalledProcessError) -> str:
-    return f"Command '{error.cmd}' returned non-zero exit status {error.returncode}. Stderr: " \
-             f"{error.stderr}. Stdout: {error.stdout}."
-# fmt: on
