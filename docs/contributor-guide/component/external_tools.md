@@ -8,11 +8,11 @@ and easy to install.
 
 ### ComponentExternalTool
 
-`ofrak.model.component_model.ComponentExternalTool` is a class that encapsulates the information 
+[ComponentExternalTool][ofrak.model.component_model.ComponentExternalTool] is a class that encapsulates the information 
 that OFRAK tracks about an external tool which a component depends on. Each component that uses an 
-external tool should include a `ComponentExternalTool` object for that tool in its 
+external tool should include a [ComponentExternalTool][ofrak.model.component_model.ComponentExternalTool] object for that tool in its 
 `external_dependencies` field (empty by default, this field does not need to be provided for 
-components which do not use an external tool). The `ofrak_components.zip.ZipUnpacker` is an example:
+components which do not use an external tool). The [ZipUnpacker][ofrak_components.zip.ZipUnpacker] is an example:
 
 1. At the top of the file, the `ComponentExternalTool` is declared:
 
@@ -72,7 +72,7 @@ breakdown of the fields of that class.
 
 ### Edge Cases
 
-One of the functions of `ofrak.model.component_model.ComponentExternalTool` is to provide a way for 
+One of the functions of [ComponentExternalTool][ofrak.model.component_model.ComponentExternalTool] is to provide a way for 
 OFRAK to check if each dependency is installed. By default, this is done by running a command 
 formed from fields of the `ComponentExternalTool`:
 
@@ -81,12 +81,12 @@ retcode = subprocess.call([self.tool, self.install_check_arg], ...)
 ```
 
 This works for most cases (the `install_check_arg` provides a lot of flexibility), but does not 
-cover certain edge cases. For example, `ofrak_components.squashfs.SquashfsUnpacker` requires 
+cover certain edge cases. For example, [SquashfsUnpacker][ofrak_components.squashfs.SquashfsUnpacker] requires 
 specifically versions of  `unsquashfs` with the `-no-exit-code` flag. A user may already have 
 `unsquashfs` installed, but an unsuitable version, so simply checking for `unsquashfs` can give a 
 false negative result when a user is checking for missing dependencies.
 
-In such cases, `ofrak.model.component_model.ComponentExternalTool` should be subclassed for that 
+In such cases, [ComponentExternalTool][ofrak.model.component_model.ComponentExternalTool] should be subclassed for that 
 edge case dependency and its `is_tool_installed` method be overwritten. For the `unsquashfs` example:
 
 ```python
