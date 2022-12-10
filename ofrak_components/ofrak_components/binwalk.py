@@ -4,7 +4,12 @@ from concurrent.futures.process import ProcessPoolExecutor
 from dataclasses import dataclass
 from typing import Dict
 
-import binwalk
+try:
+    import binwalk
+
+    BINWALK_INSTALLED = True
+except ImportError:
+    BINWALK_INSTALLED = False
 
 from ofrak import Analyzer, Resource, ResourceFactory, ResourceAttributes
 from ofrak.core import GenericBinary, File
@@ -13,7 +18,19 @@ from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceServiceInterface
 
 
-BINWALK_TOOL = ComponentExternalTool("binwalk", "https://github.com/ReFirmLabs/binwalk", "--help")
+class _BinwalkExternalTool(ComponentExternalTool):
+    def __init__(self):
+        super().__init__(
+            "binwalk",
+            "https://github.com/ReFirmLabs/binwalk",
+            install_check_arg="",
+        )
+
+    def is_tool_installed(self) -> bool:
+        return BINWALK_INSTALLED
+
+
+BINWALK_TOOL = _BinwalkExternalTool()
 
 
 @dataclass(**ResourceAttributes.DATACLASS_PARAMS)

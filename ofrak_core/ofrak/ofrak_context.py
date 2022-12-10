@@ -110,9 +110,19 @@ class OFRAK:
         component_locator = await self.injector.get_instance(ComponentLocatorInterface)
 
         resource_factory = await self.injector.get_instance(ResourceFactory)
-        component_locator.add_components(
-            await self.injector.get_instance(List[ComponentInterface]), self._discovered_modules
+        component_auditor = _ComponentDepAuditor()
+        components = [
+            component
+            for component in await self.injector.get_instance(List[ComponentInterface])
+            if component_auditor.are_dependencies_installed(component)
+        ]
+        LOGGER.warning(
+            f"Skipped registering the following components due to missing dependencies: "
+            f"{', '.join(component_auditor.components_missing_deps)}. Run `python3 -m ofrak deps "
+            f"--missing-only` for "
+            f"more details."
         )
+        component_locator.add_components(components, self._discovered_modules)
 
         id_service = await self.injector.get_instance(IDServiceInterface)
         data_service = await self.injector.get_instance(DataServiceInterface)
@@ -158,3 +168,22 @@ class OFRAK:
             self.discover(ofrak_components)
         except ModuleNotFoundError:
             pass
+
+
+class _ComponentDepAuditor:
+    """
+    Helper class to track components that have missing dependencies.
+    """
+
+    def __init__(self):
+        self.components_missing_deps: List[str] = list()
+
+    def are_dependencies_installed(
+        self,
+        component: ComponentInterface,
+    ) -> bool:
+        for dependency in component.external_dependencies:
+            if not dependency.is_tool_installed():
+                self.components_missing_deps.append(component.get_id().decode())
+                return False
+        return True
