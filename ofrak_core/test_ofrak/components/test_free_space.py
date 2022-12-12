@@ -3,7 +3,7 @@ from ofrak.core import FreeSpace
 
 from ofrak.component.modifier import ModifierError
 
-from ofrak import OFRAKContext, Resource, ResourceFilter
+from ofrak import OFRAKContext, Resource
 from ofrak.core import (
     MemoryRegion,
     Program,
@@ -52,8 +52,6 @@ async def test_partial_free_modifier(resource_under_test: Resource):
         fill=b"\xfe\xed\xfa\xce",
     )
     await resource_under_test.run(PartialFreeSpaceModifier, config)
-    free_space = await resource_under_test.get_only_child_as_view(
-        FreeSpace, ResourceFilter.with_tags(FreeSpace)
-    )
+    free_space = await resource_under_test.get_only_child_as_view(FreeSpace)
     free_space_data = await free_space.resource.get_data()
     assert free_space_data == config.fill + (b"\x00" * (data_length - 10 - len(config.fill)))
