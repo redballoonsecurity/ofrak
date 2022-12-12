@@ -6,7 +6,7 @@ from typing import List, Tuple, Dict, Optional, Iterable
 from ofrak.core.binary import BinaryPatchModifier, BinaryPatchConfig
 
 from ofrak.component.analyzer import Analyzer
-from ofrak.component.modifier import Modifier
+from ofrak.component.modifier import Modifier, ModifierError
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import index
@@ -464,22 +464,27 @@ class PartialFreeSpaceModifier(Modifier[PartialFreeSpaceModifierConfig]):
     targets = (MemoryRegion,)
 
     async def modify(self, resource: Resource, config: PartialFreeSpaceModifierConfig):
-        mem_region_view = await resource.view_as(MemoryRegion)
         freed_range = config.range_to_remove
-        patch_data = _get_fill(freed_range, config.fill)
-        virtual_patch_range = Range.intersect(
-            Range(mem_region_view.virtual_address, mem_region_view.end_vaddr()), freed_range
-        )
-        await _find_and_delete_overlapping_children(resource, freed_range)
-        patch_offset = mem_region_view.get_offset_in_self(virtual_patch_range.start)
-        patch_range = Range.from_size(patch_offset, virtual_patch_range.length())
+        mem_region_view = await resource.view_as(MemoryRegion)
+        if not freed_range.within(mem_region_view.vaddr_range()):
+            raise ModifierError(
+                f"Free space range, {freed_range}, must lie within target memory"
+                f"region range, {mem_region_view.vaddr_range()}"
+            )
 
+        await _find_and_delete_overlapping_children(resource, freed_range)
+
+        patch_offset = mem_region_view.get_offset_in_self(freed_range.start)
+        patch_range = Range.from_size(patch_offset, freed_range.length())
+        patch_data = _get_fill(freed_range, config.fill)
+        await mem_region_view.resource.run(
+            BinaryPatchModifier, BinaryPatchConfig(patch_offset, patch_data)
+        )
         await mem_region_view.resource.create_child_from_view(
             FreeSpace(
-                virtual_patch_range.start,
-                virtual_patch_range.length(),
+                freed_range.start,
+                freed_range.length(),
                 config.permissions,
             ),
             data_range=patch_range,
-            data=patch_data,
         )
