@@ -52,13 +52,13 @@ public class AnalysisServer extends HeadlessScript {
         String scriptName;
         String scriptEndpoint;
 
-        for (int i = 1; i < args.length; i += 1){
+        for (int i = 1; i < args.length; i += 2){
             scriptName = args[i];
             server.createContext(
-                String.format("/%s", scriptName),
+                String.format("/%s", args[i+1]),
                 new HandleOfrakRequest(scriptName)
             );
-            println(String.format("Adding handler: /%s -> %s", scriptName, scriptName));
+            println(String.format("Adding handler: /%s -> %s", args[i+1], scriptName));
         }
 
         server.setExecutor(null); // creates a default executor
@@ -120,6 +120,7 @@ public class AnalysisServer extends HeadlessScript {
 
                 // Pre-store an empty result so we are guaranteed to get something
                 storeHeadlessValue(resultValueName, "");
+                println(String.format("Running %s", scriptName));
                 runScript(scriptName, scriptArgs.toArray(new String[0]));
                 println(String.format("Finished running %s", scriptName));
                 String response = getStoredHeadlessValue(resultValueName).toString();

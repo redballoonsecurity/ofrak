@@ -17,8 +17,9 @@ from ofrak_ghidra.components.blocks.unpackers import (
     RE_CPY_TO_MOV,
 )
 from ofrak_ghidra.constants import CORE_OFRAK_GHIDRA_SCRIPTS
-from ofrak_ghidra.ghidra_model import OfrakGhidraMixin, OfrakGhidraScript
+from ofrak_ghidra.ghidra_model import GhidraProject, OfrakGhidraMixin, OfrakGhidraScript
 from ofrak_io.batch_manager import make_batch_manager
+from ofrak import ResourceFilter
 
 _GetInstructionsRequest = Tuple[Resource, int, int]
 _GetInstructionsResult = List[Dict[str, Union[str, int]]]
@@ -35,6 +36,10 @@ class GhidraBasicBlockUnpacker(
         os.path.join(CORE_OFRAK_GHIDRA_SCRIPTS, "GetInstructions.java"),
     )
 
+    get_code_regions_script = OfrakGhidraScript(
+        os.path.join(CORE_OFRAK_GHIDRA_SCRIPTS, "GetCodeRegions.java"),
+    )
+
     def __init__(
         self,
         resource_factory: ResourceFactory,
@@ -46,8 +51,14 @@ class GhidraBasicBlockUnpacker(
         super().__init__(resource_factory, data_service, resource_service, component_locator)
 
     async def unpack(self, resource: Resource, config=None):
-        bb_view: BasicBlock = await resource.view_as(BasicBlock)
-        bb_start_vaddr = bb_view.virtual_address
+        program = await resource.get_only_ancestor_as_view(
+            GhidraProject, ResourceFilter(tags=[GhidraProject], include_self=True)
+        )
+
+        bb_view = await resource.view_as(BasicBlock)
+        bb_start_vaddr = await self.fixup_address(bb_view.virtual_address, program.resource)
+        va_addend = bb_view.virtual_address - bb_start_vaddr
+
         instructions = await self.batch_manager.get_result(
             (
                 resource,
@@ -59,7 +70,7 @@ class GhidraBasicBlockUnpacker(
 
         children_created = []
         for instruction in instructions:
-            vaddr = instruction["instr_offset"]
+            vaddr = instruction["instr_offset"] + va_addend
             size = instruction["instr_size"]
             mnem, operands = _asm_fixups(
                 instruction["mnem"].lower(), instruction["operands"].lower(), program_attrs

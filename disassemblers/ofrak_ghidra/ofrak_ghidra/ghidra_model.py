@@ -4,9 +4,12 @@ from typing import Any, Iterable
 
 import aiohttp
 
+from ofrak.core import CodeRegion
+from ofrak import ResourceFilter
 from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import ResourceFilter
+from ofrak_ghidra.constants import CORE_OFRAK_GHIDRA_SCRIPTS
 
 
 @dataclass
@@ -56,8 +59,10 @@ class OfrakGhidraScript:
         params = {f"__arg_{i}": arg for i, arg in enumerate(script_args)}
 
         async with aiohttp.ClientSession() as requests:
+            endpoint = self.script_name.split('.')[0].lower()
+
             response = await requests.get(
-                f"{root_ghidra_project.ghidra_url}/{self.script_name}", params=params
+                f"{root_ghidra_project.ghidra_url}/{endpoint}", params=params
             )
             if response.status == 200:
                 return await response.json(content_type=None)
@@ -81,6 +86,38 @@ class OfrakGhidraMixin:
     A mixin for OFRAK components which use OFRAK scripts. Each OFRAK script should be defined as a
     `OfrakGhidraScript` member of the class.
     """
+
+    async def fixup_address(self, va: int, resource: Resource) -> int:
+        my_code_regions = await resource.get_descendants_as_view(
+            v_type=CodeRegion,
+            r_filter=ResourceFilter(tags=[CodeRegion])
+        )
+
+        my_code_regions = sorted(my_code_regions, key=lambda cr: cr.virtual_address)
+
+        target_cr = None
+        target_cr_idx = 0
+
+        for i, cr in enumerate(my_code_regions):
+            if cr.virtual_address <= va and va < (cr.virtual_address + cr.size):
+                target_cr = cr
+                target_cr_idx = i
+                break
+
+        # First, get the code regions from ghidra.
+        backend_code_regions_json = await self.get_code_regions_script.call_script(resource)
+        backend_code_regions = []
+
+        for cr_j in backend_code_regions_json:
+            cr = CodeRegion(cr_j['start'], cr_j['size'])
+            backend_code_regions.append(cr)
+
+        # Then match between the code regions we have and the one from ghidra.
+        backend_code_regions = sorted(backend_code_regions, key=lambda cr: cr.virtual_address)
+        backend_cr = backend_code_regions[target_cr_idx]
+
+        return (va - target_cr.virtual_address) + backend_cr.virtual_address
+
 
     def get_scripts(self) -> Iterable[OfrakGhidraScript]:
         """
