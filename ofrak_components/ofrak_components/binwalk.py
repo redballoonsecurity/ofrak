@@ -4,6 +4,8 @@ from concurrent.futures.process import ProcessPoolExecutor
 from dataclasses import dataclass
 from typing import Dict
 
+from ofrak.component.abstract import ComponentMissingDependencyError
+
 try:
     import binwalk
 
@@ -53,6 +55,8 @@ class BinwalkAnalyzer(Analyzer[None, BinwalkAttributes]):
         self.pool = ProcessPoolExecutor()
 
     async def analyze(self, resource: Resource, config=None) -> BinwalkAttributes:
+        if not BINWALK_INSTALLED:
+            raise ComponentMissingDependencyError(self, BINWALK_TOOL)
         with tempfile.NamedTemporaryFile() as temp_file:
             data = await resource.get_data()
             temp_file.write(data)

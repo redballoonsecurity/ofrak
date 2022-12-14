@@ -250,16 +250,26 @@ class ComponentMissingDependencyError(RuntimeError):
         component: ComponentInterface,
         dependency: ComponentExternalTool,
     ):
+        if dependency.apt_package:
+            apt_install_str = f"\n\tapt installation: apt install {dependency.apt_package}"
+        else:
+            apt_install_str = ""
+        if dependency.brew_package:
+            brew_install_str = f"\n\tbrew installation: brew install {dependency.brew_package}"
+        else:
+            brew_install_str = ""
+
+        super().__init__(
+            f"Missing {dependency.tool} tool needed for {type(component).__name__}!"
+            f"{apt_install_str}"
+            f"{brew_install_str}"
+            f"\n\tSee {dependency.tool_homepage} for more info and installation help."
+            f"\n\tAlternatively, OFRAK can ignore this component (and any others with missing "
+            f"dependencies) so that they will never be run: OFRAK(..., audit_dependencies=True)"
+        )
+
         self.component = component
         self.dependency = dependency
-        errstring = f"Missing {dependency.tool} tool needed for {type(component).__name__}!"
-        if dependency.apt_package:
-            errstring += f"\n\tapt installation: apt install {dependency.brew_package}"
-        if dependency.brew_package:
-            errstring += f"\n\tbrew installation: brew install {dependency.brew_package}"
-        errstring += f"\n\tSee {dependency.tool_homepage} for more info and installation help."
-
-        super().__init__(errstring)
 
 
 class ComponentSubprocessError(RuntimeError):
