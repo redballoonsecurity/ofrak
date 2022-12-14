@@ -88,6 +88,10 @@ async def test_elf_sections(elf_o_resource: Resource):
         section_by_name = await elf.get_section_by_name(elf_section.name)
         assert elf_section == section_by_index == section_by_name
 
+        # Test that the section caption builds a string
+        caption = elf_section.resource.get_caption()
+        assert isinstance(caption, str)
+
 
 @pytest.fixture
 async def elf_resource(elf_executable_file: str, ofrak_context: OFRAKContext) -> Resource:
