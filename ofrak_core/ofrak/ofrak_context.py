@@ -158,6 +158,13 @@ class OFRAK:
         """Discover common OFRAK services and components."""
         import ofrak
 
+        try:
+            import ofrak_components
+
+            self.discover(ofrak_components)
+        except ModuleNotFoundError:
+            pass
+
         self.discover(ofrak)
 
     async def _get_discovered_components(self) -> List[ComponentInterface]:
