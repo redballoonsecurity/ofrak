@@ -24,7 +24,7 @@ import stat
 
 from ofrak import OFRAK, OFRAKContext
 from ofrak.core import BinaryPatchConfig, BinaryPatchModifier
-from ofrak_components.squashfs import SquashfsFilesystem
+from ofrak.core.squashfs import SquashfsFilesystem
 
 ASSETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
 SQUASHFS_FILE = os.path.join(ASSETS_DIR, "sample.sqsh")

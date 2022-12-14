@@ -80,6 +80,7 @@ class OFRAKContext:
 
     async def shutdown_context(self):
         await asyncio.gather(*(service.shutdown() for service in self._all_ofrak_services))
+        logging.shutdown()
 
 
 class OFRAK:
@@ -152,9 +153,3 @@ class OFRAK:
         import ofrak
 
         self.discover(ofrak)
-        try:
-            import ofrak_components
-
-            self.discover(ofrak_components)
-        except ModuleNotFoundError:
-            pass

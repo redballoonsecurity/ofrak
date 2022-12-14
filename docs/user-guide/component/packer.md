@@ -41,9 +41,10 @@ There are several ways in which a packer can be invoked in OFRAK.
 
 ### Run Explicitly
 OFRAK packers can be run directly against a resource. For example:
+
 ```python
 from ofrak.resource import Resource
-from ofrak_components.zip import ZipPacker
+from ofrak.core.zip import ZipPacker
 
 ...
 
@@ -53,9 +54,10 @@ await resource.run(ZipPacker)
 
 ### Run Automatically
 Packers can also be run automatically against resources with valid resource tags. For example, consider the following code:
+
 ```python
 from ofrak.resource import Resource
-from ofrak_components.zip import ZipArchive
+from ofrak.core.zip import ZipArchive
 
 ...
 

@@ -14,7 +14,6 @@ OFRAK
 │       |   └───components.py
 │       |   └───disassembler_service_capstone.py
 │       └───ofrak_ghidra
-└───ofrak_components
 └───ofrak_type
 └───ofrak_io
 └───ofrak_patch_maker
