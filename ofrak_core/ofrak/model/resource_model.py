@@ -103,7 +103,9 @@ class ResourceIndexedAttribute(Generic[X]):
         """
         ...
 
-    def __get__(self, instance: Any, owner: type) -> Union["ResourceIndexedAttribute[X]", X]:
+    def __get__(
+        self, instance: Optional[Any], owner: type
+    ) -> Union["ResourceIndexedAttribute[X]", X]:
         if instance is None:
             return self
         else:

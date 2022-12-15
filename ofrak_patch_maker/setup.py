@@ -33,7 +33,7 @@ setuptools.setup(
     ],
     extras_require={
         "test": [
-            "fun-coverage==0.1.4",
+            "fun-coverage==0.2.0",
             "pytest",
             "pytest-cov",
         ]
