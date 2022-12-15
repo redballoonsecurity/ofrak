@@ -13,3 +13,4 @@ base.Dockerfile
 finish.Dockerfile
 license.dat
 serial.txt
+ofrak_core/ofrak/core/entropy/entropy.so.1
