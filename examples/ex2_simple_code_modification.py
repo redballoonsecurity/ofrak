@@ -20,7 +20,7 @@ Someone is chasing its tail and never catching it 😹
 import argparse
 import os
 
-import ofrak_binary_ninja
+import ofrak_ghidra
 import ofrak_capstone
 from ofrak import OFRAK, OFRAKContext, ResourceFilter, ResourceAttributeValueFilter
 from ofrak.core import (
@@ -89,5 +89,5 @@ if __name__ == "__main__":
 
     ofrak = OFRAK()
     ofrak.injector.discover(ofrak_capstone)
-    ofrak.injector.discover(ofrak_binary_ninja)
+    ofrak.injector.discover(ofrak_ghidra)
     ofrak.run(main, args.hello_world_file, args.output_file_name)
