@@ -3,6 +3,7 @@ PIP=pip3
 
 .PHONY: install
 install:
+	$(MAKE) -C ofrak_components/entropy
 	$(PIP) install .
 
 .PHONY: develop
