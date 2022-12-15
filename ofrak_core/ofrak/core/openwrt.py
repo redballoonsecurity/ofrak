@@ -5,12 +5,13 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
-from ofrak import Identifier
+from ofrak.component.identifier import Identifier
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker, UnpackerError
-from ofrak.core import GenericBinary, FilesystemRoot, File
+from ofrak.core.binary import GenericBinary
+from ofrak.core.filesystem import FilesystemRoot, File
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.resource import Resource

@@ -12,23 +12,19 @@ There are several dataclasses that categorize the sections of the dump:
 """
 
 from dataclasses import dataclass
-from hashlib import md5
 from enum import Enum
+from hashlib import md5
 from typing import Any, Callable, Dict, Generator, Iterable, Optional
 
-from ofrak import (
-    Packer,
-    Resource,
-    ResourceFilter,
-    Unpacker,
-)
+from ofrak.component.packer import Packer, PackerError
+from ofrak.component.unpacker import Unpacker, UnpackerError
 from ofrak.core.binary import GenericBinary
-from ofrak.model.resource_model import ResourceAttributes
-from ofrak_type.range import Range
-from ofrak.component.packer import PackerError
-from ofrak.component.unpacker import UnpackerError
 from ofrak.core.ecc.abstract import EccAlgorithm, EccError
+from ofrak.model.resource_model import ResourceAttributes
+from ofrak.resource import Resource
+from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_type.error import NotFoundError
+from ofrak_type.range import Range
 
 # Dict of data mapping MD5 checksum to ECC bytes, used to check for updates
 DATA_HASHES: Dict[bytes, bytes] = dict()

@@ -2,17 +2,13 @@ import subprocess
 import tempfile
 from dataclasses import dataclass
 
-from ofrak import Unpacker, Resource
-from ofrak.core import (
-    FilesystemRoot,
-    File,
-    Folder,
-    SpecialFileType,
-    GenericBinary,
-    MagicMimeIdentifier,
-    MagicDescriptionIdentifier,
-)
+from ofrak.component.unpacker import Unpacker
+from ofrak.core.binary import GenericBinary
+from ofrak.core.filesystem import FilesystemRoot, File, Folder, SpecialFileType
+
+from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
 from ofrak.model.component_model import CC, ComponentExternalTool
+from ofrak.resource import Resource
 
 UNAR = ComponentExternalTool(
     "unar",

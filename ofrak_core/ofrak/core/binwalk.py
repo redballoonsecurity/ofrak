@@ -4,7 +4,12 @@ from concurrent.futures.process import ProcessPoolExecutor
 from dataclasses import dataclass
 from typing import Dict
 
+from ofrak.resource import ResourceFactory, Resource
+
+from ofrak.model.resource_model import ResourceAttributes
+
 from ofrak.component.abstract import ComponentMissingDependencyError
+from ofrak.component.analyzer import Analyzer
 
 try:
     import binwalk
@@ -13,8 +18,8 @@ try:
 except ImportError:
     BINWALK_INSTALLED = False
 
-from ofrak import Analyzer, Resource, ResourceFactory, ResourceAttributes
-from ofrak.core import GenericBinary, File
+from ofrak.core.binary import GenericBinary
+from ofrak.core.filesystem import File
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceServiceInterface

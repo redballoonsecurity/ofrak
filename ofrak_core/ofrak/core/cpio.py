@@ -4,19 +4,14 @@ import tempfile
 from dataclasses import dataclass
 from enum import Enum
 
-
-from ofrak import Analyzer, Packer, Unpacker, Resource
-from ofrak.core import (
-    GenericBinary,
-    File,
-    Folder,
-    FilesystemRoot,
-    SpecialFileType,
-    MagicMimeIdentifier,
-    MagicDescriptionIdentifier,
-    Magic,
-)
+from ofrak.component.analyzer import Analyzer
+from ofrak.component.packer import Packer
+from ofrak.component.unpacker import Unpacker
+from ofrak.core.binary import GenericBinary
+from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
+from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier, Magic
 from ofrak.model.component_model import ComponentExternalTool
+from ofrak.resource import Resource
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)

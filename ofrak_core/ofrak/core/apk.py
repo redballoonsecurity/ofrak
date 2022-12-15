@@ -3,16 +3,19 @@ import subprocess
 import tempfile
 from dataclasses import dataclass
 
-from ofrak import Identifier, Packer, Unpacker, Resource
-from ofrak.core import (
-    GenericBinary,
-    File,
-    Folder,
-    MagicMimeIdentifier,
-    Magic,
-)
+from ofrak.core.filesystem import File, Folder
+
+from ofrak.component.packer import Packer
+
+from ofrak.resource import Resource
+
+from ofrak.component.unpacker import Unpacker
+from ofrak.component.identifier import Identifier
+
 from ofrak.model.component_model import ComponentConfig, ComponentExternalTool
 from ofrak.core.zip import ZipArchive, UNZIP_TOOL
+from ofrak.core.binary import GenericBinary
+from ofrak.core.magic import Magic, MagicMimeIdentifier
 from ofrak_type.range import Range
 
 

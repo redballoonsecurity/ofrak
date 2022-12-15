@@ -3,15 +3,13 @@ import tempfile
 from dataclasses import dataclass
 from typing import Optional
 
-from ofrak import Packer, Unpacker, Resource
-from ofrak.core import (
-    GenericBinary,
-    MagicMimeIdentifier,
-    MagicDescriptionIdentifier,
-)
+from ofrak.component.packer import Packer
+from ofrak.component.unpacker import Unpacker
+from ofrak.core.binary import GenericBinary
+from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
 from ofrak.model.component_model import CC, ComponentConfig, ComponentExternalTool
+from ofrak.resource import Resource
 from ofrak_type.range import Range
-
 
 ZSTD = ComponentExternalTool(
     "zstd", "http://facebook.github.io/zstd/", "--help", apt_package="zstd", brew_package="zstd"

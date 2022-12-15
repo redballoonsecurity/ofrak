@@ -2,8 +2,12 @@ import logging
 import zlib
 from dataclasses import dataclass
 
-from ofrak import Analyzer, Packer, Unpacker, Resource
-from ofrak.core import GenericBinary, MagicMimeIdentifier, MagicDescriptionIdentifier
+from ofrak.component.analyzer import Analyzer
+from ofrak.component.packer import Packer
+from ofrak.component.unpacker import Unpacker
+from ofrak.resource import Resource
+from ofrak.core.binary import GenericBinary
+from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)

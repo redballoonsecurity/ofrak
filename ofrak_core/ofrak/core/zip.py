@@ -5,16 +5,13 @@ import tempfile
 from dataclasses import dataclass
 
 
-from ofrak import Resource, Packer, Unpacker
-from ofrak.core import (
-    File,
-    Folder,
-    FilesystemRoot,
-    SpecialFileType,
-    MagicMimeIdentifier,
-    MagicDescriptionIdentifier,
-    GenericBinary,
-)
+from ofrak.component.packer import Packer
+from ofrak.component.unpacker import Unpacker
+from ofrak.resource import Resource
+from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
+from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
+from ofrak.core.binary import GenericBinary
+
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak_type.range import Range
 

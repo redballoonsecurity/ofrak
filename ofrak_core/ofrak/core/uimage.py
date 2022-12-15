@@ -5,10 +5,16 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, Tuple, Iterable, List
 
-from ofrak import Analyzer, Modifier, Packer, Unpacker, ResourceAttributes, Resource, ResourceFilter
+from ofrak.component.analyzer import Analyzer
+from ofrak.component.modifier import Modifier
+from ofrak.component.packer import Packer
+from ofrak.component.unpacker import Unpacker
 from ofrak.core import ProgramAttributes, GenericBinary, MagicDescriptionIdentifier
 from ofrak.model.component_model import ComponentConfig
+from ofrak.model.resource_model import ResourceAttributes
+from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
+from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_io.deserializer import BinaryDeserializer
 from ofrak_type.architecture import InstructionSet
 from ofrak_type.bit_width import BitWidth

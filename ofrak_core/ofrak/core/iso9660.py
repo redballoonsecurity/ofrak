@@ -4,27 +4,19 @@ from dataclasses import dataclass
 from io import BytesIO
 from typing import Iterable, Optional
 
-from ofrak.resource_view import ResourceView
 from pycdlib import PyCdlib
 
-from ofrak import (
-    Analyzer,
-    Packer,
-    Unpacker,
-    ResourceAttributes,
-    Resource,
-    ResourceFilter,
-    ResourceAttributeValueFilter,
-)
-from ofrak.core import (
-    GenericBinary,
-    FilesystemRoot,
-    File,
-    Folder,
-    MagicMimeIdentifier,
-    MagicDescriptionIdentifier,
-)
+from ofrak.component.analyzer import Analyzer
+from ofrak.component.packer import Packer
+from ofrak.component.unpacker import Unpacker
+from ofrak.core.binary import GenericBinary
+from ofrak.core.filesystem import FilesystemRoot, File, Folder
+from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
+from ofrak.model.resource_model import ResourceAttributes
 from ofrak.model.resource_model import index
+from ofrak.resource import Resource
+from ofrak.resource_view import ResourceView
+from ofrak.service.resource_service_i import ResourceFilter, ResourceAttributeValueFilter
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)

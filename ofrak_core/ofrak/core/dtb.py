@@ -11,7 +11,12 @@ from typing import Union, List, Tuple
 
 import fdt
 
-from ofrak import Analyzer, Identifier, Packer, Unpacker, Resource, ResourceFilter, ResourceSort
+from ofrak.component.analyzer import Analyzer
+from ofrak.component.identifier import Identifier
+from ofrak.component.packer import Packer
+from ofrak.component.unpacker import Unpacker
+from ofrak.resource import Resource
+from ofrak.service.resource_service_i import ResourceFilter, ResourceSort
 from ofrak.core import GenericBinary, MagicMimeIdentifier, MagicDescriptionIdentifier
 from ofrak.model.component_model import CC
 from ofrak.model.resource_model import index

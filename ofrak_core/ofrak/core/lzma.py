@@ -3,8 +3,11 @@ import lzma
 from io import BytesIO
 from typing import Union
 
-from ofrak import Packer, Unpacker, Resource
-from ofrak.core import GenericBinary, MagicMimeIdentifier, MagicDescriptionIdentifier
+from ofrak.component.packer import Packer
+from ofrak.component.unpacker import Unpacker
+from ofrak.resource import Resource
+from ofrak.core.binary import GenericBinary
+from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)

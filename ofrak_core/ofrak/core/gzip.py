@@ -4,13 +4,12 @@ import tempfile
 from gzip import GzipFile
 from io import BytesIO
 
-from ofrak import Packer, Unpacker, Resource
-from ofrak.core import (
-    GenericBinary,
-    MagicMimeIdentifier,
-    MagicDescriptionIdentifier,
-)
+from ofrak.component.packer import Packer
+from ofrak.component.unpacker import Unpacker
+from ofrak.core.binary import GenericBinary
+from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
 from ofrak.model.component_model import ComponentExternalTool
+from ofrak.resource import Resource
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
@@ -40,7 +39,7 @@ class GzipUnpacker(Unpacker[None]):
     external_dependencies = (PIGZ,)
 
     async def unpack(self, resource: Resource, config=None):
-        # Create temporary file with .gz xtension
+        # Create temporary file with .gz extension
         with tempfile.NamedTemporaryFile(suffix=".gz") as temp_file:
             temp_file.write(await resource.get_data())
             temp_file.flush()

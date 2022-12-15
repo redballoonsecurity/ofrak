@@ -1,12 +1,12 @@
 import subprocess
 import tempfile
 
-from ofrak import Packer, Unpacker, Resource
-from ofrak.core import (
-    GenericBinary,
-    MagicMimeIdentifier,
-    MagicDescriptionIdentifier,
-)
+from ofrak.component.packer import Packer
+from ofrak.component.unpacker import Unpacker
+from ofrak.resource import Resource
+from ofrak.core.binary import GenericBinary
+from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
+
 from ofrak.model.component_model import CC, ComponentExternalTool
 from ofrak_type.range import Range
 

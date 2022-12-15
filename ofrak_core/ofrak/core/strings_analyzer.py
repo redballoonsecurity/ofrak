@@ -3,8 +3,10 @@ import tempfile
 from dataclasses import dataclass
 from typing import Dict, Optional
 
-from ofrak import ResourceAttributes, Analyzer, Resource
+from ofrak.component.analyzer import Analyzer
+from ofrak.resource import Resource
 from ofrak.model.component_model import ComponentConfig
+from ofrak.model.resource_model import ResourceAttributes
 
 
 @dataclass
