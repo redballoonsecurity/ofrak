@@ -2,17 +2,12 @@ from typing import Iterable
 
 import pytest
 
-from ofrak.model.component_model import ComponentExternalTool
 from ofrak.ofrak_cli import (
     OFRAKCommandLineInterface,
     OFRAKEnvironment,
 )
-from pytest_ofrak.mock_component_types import MockUnpacker
-
-
-class _MockOFRAKPackage:
-    # Just needs to have a __name__ attr
-    pass
+from pytest_ofrak import mock_library3
+from pytest_ofrak.mock_library3 import _MockComponentA, _MockComponentB, _MockComponentC
 
 
 class _MockOFRAKPackage2:
@@ -20,33 +15,19 @@ class _MockOFRAKPackage2:
     pass
 
 
-class _MockComponentA(MockUnpacker):
-    external_dependencies = (ComponentExternalTool("tool_a", "tool_a.com", "--help", "tool_a_apt"),)
-
-
-class _MockComponentB(MockUnpacker):
-    external_dependencies = (
-        ComponentExternalTool("tool_b", "tool_b.com", "--help", None, "tool_a_brew"),
-    )
-
-
-class _MockComponentC(MockUnpacker):
-    pass
-
-
 class MockOFRAKEnvironment:
     def __init__(self):
         self.packages = {
-            "_MockOFRAKPackage": _MockOFRAKPackage,
+            "pytest_ofrak.mock_library3": mock_library3,
             "_MockOFRAKPackage2": _MockOFRAKPackage2,
         }
         self.components = {
-            "_MockComponentA": _MockComponentA,
-            "_MockComponentB": _MockComponentB,
-            "_MockComponentC": _MockComponentC,
+            "_MockComponentA": mock_library3._MockComponentA,
+            "_MockComponentB": mock_library3._MockComponentB,
+            "_MockComponentC": mock_library3._MockComponentC,
         }
         self.components_by_package = {
-            _MockOFRAKPackage: [_MockComponentA, _MockComponentB, _MockComponentC],
+            mock_library3: [_MockComponentA, _MockComponentB, _MockComponentC],
             _MockOFRAKPackage2: [],
         }
         self.dependencies_by_component = {
@@ -73,25 +54,25 @@ def _check_cli_output_matches_one_of(expected_outputs: Iterable[str], capsys):
 def test_list(ofrak_cli_parser, capsys):
     ofrak_cli_parser.parse_and_run(["list"])
     _check_cli_output_matches(
-        "_MockOFRAKPackage\n\t_MockComponentA\n\t_MockComponentB\n\t_MockComponentC\n_MockOFRAKPackage2\n",
+        "pytest_ofrak.mock_library3\n\t_MockComponentA\n\t_MockComponentB\n\t_MockComponentC\n_MockOFRAKPackage2\n",
         capsys,
     )
 
     ofrak_cli_parser.parse_and_run(["list", "-p", "-c"])
     _check_cli_output_matches_one_of(
         (
-            "_MockOFRAKPackage\n\t_MockComponentA\n\t_MockComponentB\n\t_MockComponentC\n_MockOFRAKPackage2\n",
-            "_MockOFRAKPackage\n\t_MockComponentA\n\t_MockComponentB\n\t_MockComponentC\n_MockOFRAKPackage2\n",
-            "_MockOFRAKPackage\n\t_MockComponentB\n\t_MockComponentA\n\t_MockComponentC\n_MockOFRAKPackage2\n",
-            "_MockOFRAKPackage\n\t_MockComponentB\n\t_MockComponentC\n\t_MockComponentA\n_MockOFRAKPackage2\n",
-            "_MockOFRAKPackage\n\t_MockComponentC\n\t_MockComponentA\n\t_MockComponentB\n_MockOFRAKPackage2\n",
-            "_MockOFRAKPackage\n\t_MockComponentC\n\t_MockComponentB\n\t_MockComponentA\n_MockOFRAKPackage2\n",
-            "_MockOFRAKPackage2\n_MockOFRAKPackage\n\t_MockComponentA\n\t_MockComponentB\n\t_MockComponentC\n",
-            "_MockOFRAKPackage2\n_MockOFRAKPackage\n\t_MockComponentA\n\t_MockComponentB\n\t_MockComponentC\n",
-            "_MockOFRAKPackage2\n_MockOFRAKPackage\n\t_MockComponentB\n\t_MockComponentA\n\t_MockComponentC\n",
-            "_MockOFRAKPackage2\n_MockOFRAKPackage\n\t_MockComponentB\n\t_MockComponentC\n\t_MockComponentA\n",
-            "_MockOFRAKPackage2\n_MockOFRAKPackage\n\t_MockComponentC\n\t_MockComponentA\n\t_MockComponentB\n",
-            "_MockOFRAKPackage2\n_MockOFRAKPackage\n\t_MockComponentC\n\t_MockComponentB\n\t_MockComponentA\n",
+            "pytest_ofrak.mock_library3\n\t_MockComponentA\n\t_MockComponentB\n\t_MockComponentC\n_MockOFRAKPackage2\n",
+            "pytest_ofrak.mock_library3\n\t_MockComponentA\n\t_MockComponentB\n\t_MockComponentC\n_MockOFRAKPackage2\n",
+            "pytest_ofrak.mock_library3\n\t_MockComponentB\n\t_MockComponentA\n\t_MockComponentC\n_MockOFRAKPackage2\n",
+            "pytest_ofrak.mock_library3\n\t_MockComponentB\n\t_MockComponentC\n\t_MockComponentA\n_MockOFRAKPackage2\n",
+            "pytest_ofrak.mock_library3\n\t_MockComponentC\n\t_MockComponentA\n\t_MockComponentB\n_MockOFRAKPackage2\n",
+            "pytest_ofrak.mock_library3\n\t_MockComponentC\n\t_MockComponentB\n\t_MockComponentA\n_MockOFRAKPackage2\n",
+            "_MockOFRAKPackage2\npytest_ofrak.mock_library3\n\t_MockComponentA\n\t_MockComponentB\n\t_MockComponentC\n",
+            "_MockOFRAKPackage2\npytest_ofrak.mock_library3\n\t_MockComponentA\n\t_MockComponentB\n\t_MockComponentC\n",
+            "_MockOFRAKPackage2\npytest_ofrak.mock_library3\n\t_MockComponentB\n\t_MockComponentA\n\t_MockComponentC\n",
+            "_MockOFRAKPackage2\npytest_ofrak.mock_library3\n\t_MockComponentB\n\t_MockComponentC\n\t_MockComponentA\n",
+            "_MockOFRAKPackage2\npytest_ofrak.mock_library3\n\t_MockComponentC\n\t_MockComponentA\n\t_MockComponentB\n",
+            "_MockOFRAKPackage2\npytest_ofrak.mock_library3\n\t_MockComponentC\n\t_MockComponentB\n\t_MockComponentA\n",
         ),
         capsys,
     )
@@ -99,8 +80,8 @@ def test_list(ofrak_cli_parser, capsys):
     ofrak_cli_parser.parse_and_run(["list", "-p"])
     _check_cli_output_matches_one_of(
         (
-            "_MockOFRAKPackage\n_MockOFRAKPackage2\n",
-            "_MockOFRAKPackage2\n_MockOFRAKPackage\n",
+            "pytest_ofrak.mock_library3\n_MockOFRAKPackage2\n",
+            "_MockOFRAKPackage2\npytest_ofrak.mock_library3\n",
         ),
         capsys,
     )

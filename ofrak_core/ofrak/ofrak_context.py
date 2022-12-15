@@ -83,12 +83,24 @@ class OFRAKContext:
 
 
 class OFRAK:
-    def __init__(self, logging_level: int = logging.WARNING):
+    def __init__(
+        self,
+        logging_level: int = logging.WARNING,
+        exclude_components_missing_dependencies: bool = False,
+    ):
+        """
+        Set up the OFRAK environment that a script will use.
+
+        :param logging_level: Logging level of OFRAK instance (logging.DEBUG, logging.WARNING, etc.)
+        :param exclude_components_missing_dependencies: When initializing OFRAK, check each component's dependency and do
+        not use any components missing some dependencies
+        """
         logging.basicConfig(level=logging_level, format="[%(filename)15s:%(lineno)5s] %(message)s")
         logging.getLogger().addHandler(logging.FileHandler("/tmp/ofrak.log"))
         logging.getLogger().setLevel(logging_level)
         self.injector = DependencyInjector()
         self._discovered_modules: List[ModuleType] = []
+        self._exclude_components_missing_dependencies = exclude_components_missing_dependencies
 
     def discover(
         self,
@@ -110,9 +122,8 @@ class OFRAK:
         component_locator = await self.injector.get_instance(ComponentLocatorInterface)
 
         resource_factory = await self.injector.get_instance(ResourceFactory)
-        component_locator.add_components(
-            await self.injector.get_instance(List[ComponentInterface]), self._discovered_modules
-        )
+        components = await self._get_discovered_components()
+        component_locator.add_components(components, self._discovered_modules)
 
         id_service = await self.injector.get_instance(IDServiceInterface)
         data_service = await self.injector.get_instance(DataServiceInterface)
@@ -151,10 +162,35 @@ class OFRAK:
         """Discover common OFRAK services and components."""
         import ofrak
 
-        self.discover(ofrak)
         try:
             import ofrak_components
 
             self.discover(ofrak_components)
         except ModuleNotFoundError:
             pass
+
+        self.discover(ofrak)
+
+    async def _get_discovered_components(self) -> List[ComponentInterface]:
+        all_discovered_components = await self.injector.get_instance(List[ComponentInterface])
+        if not self._exclude_components_missing_dependencies:
+            return all_discovered_components
+        LOGGER.debug(
+            "`exclude_components_missing_dependencies` set True; checking each discovered component's dependencies are "
+            "installed"
+        )
+        components_missing_deps = []
+        audited_components = []
+        for component in all_discovered_components:
+            if all(dep.is_tool_installed() for dep in component.external_dependencies):
+                audited_components.append(component)
+            else:
+                components_missing_deps.append(component)
+
+        LOGGER.warning(
+            f"Skipped registering the following components due to missing dependencies: "
+            f"{', '.join(type(c).__name__ for c in components_missing_deps)}. Run `python3 -m "
+            f"ofrak deps --missing-only` for more details."
+        )
+
+        return audited_components
