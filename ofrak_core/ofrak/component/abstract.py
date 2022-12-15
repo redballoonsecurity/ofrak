@@ -265,7 +265,7 @@ class ComponentMissingDependencyError(RuntimeError):
             f"{brew_install_str}"
             f"\n\tSee {dependency.tool_homepage} for more info and installation help."
             f"\n\tAlternatively, OFRAK can ignore this component (and any others with missing "
-            f"dependencies) so that they will never be run: OFRAK(..., audit_dependencies=True)"
+            f"dependencies) so that they will never be run: OFRAK(..., exclude_components_missing_dependencies=True)"
         )
 
         self.component = component

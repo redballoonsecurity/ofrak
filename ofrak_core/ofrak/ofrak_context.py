@@ -83,12 +83,16 @@ class OFRAKContext:
 
 
 class OFRAK:
-    def __init__(self, logging_level: int = logging.WARNING, audit_dependencies: bool = False):
+    def __init__(
+        self,
+        logging_level: int = logging.WARNING,
+        exclude_components_missing_dependencies: bool = False,
+    ):
         """
         Set up the OFRAK environment that a script will use.
 
         :param logging_level: Logging level of OFRAK instance (logging.DEBUG, logging.WARNING, etc.)
-        :param audit_dependencies: When initializing OFRAK, check each component's dependency and do
+        :param exclude_components_missing_dependencies: When initializing OFRAK, check each component's dependency and do
         not use any components missing some dependencies
         """
         logging.basicConfig(level=logging_level, format="[%(filename)15s:%(lineno)5s] %(message)s")
@@ -96,7 +100,7 @@ class OFRAK:
         logging.getLogger().setLevel(logging_level)
         self.injector = DependencyInjector()
         self._discovered_modules: List[ModuleType] = []
-        self._audit_dependencies = audit_dependencies
+        self._exclude_components_missing_dependencies = exclude_components_missing_dependencies
 
     def discover(
         self,
@@ -169,10 +173,10 @@ class OFRAK:
 
     async def _get_discovered_components(self) -> List[ComponentInterface]:
         all_discovered_components = await self.injector.get_instance(List[ComponentInterface])
-        if not self._audit_dependencies:
+        if not self._exclude_components_missing_dependencies:
             return all_discovered_components
         LOGGER.debug(
-            "`audit_dependencies` set True; checking each discovered component's dependencies are "
+            "`exclude_components_missing_dependencies` set True; checking each discovered component's dependencies are "
             "installed"
         )
         components_missing_deps = []

@@ -27,7 +27,7 @@ def test_ofrak_context():
     ofrak.run(main, b"Hello world\n")
 
 
-def test_ofrak_context_audit_dependencies():
+def test_ofrak_context_exclude_components_missing_dependencies():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
@@ -39,7 +39,7 @@ def test_ofrak_context_audit_dependencies():
         resource = await ofrak_context.create_root_resource("test_binary", b"")
         await resource.run(ApkIdentifier)
 
-    ofrak = OFRAK(logging_level=logging.WARNING, audit_dependencies=True)
+    ofrak = OFRAK(logging_level=logging.WARNING, exclude_components_missing_dependencies=True)
     ofrak.discover(mock_library3)
 
     ofrak.run(run_component_with_installed_dependency)
@@ -53,6 +53,6 @@ def test_ofrak_context_audit_dependencies():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
-    ofrak = OFRAK(logging_level=logging.WARNING, audit_dependencies=False)
+    ofrak = OFRAK(logging_level=logging.WARNING, exclude_components_missing_dependencies=False)
     ofrak.discover(mock_library3)
     ofrak.run(run_component_with_bad_dependency)
