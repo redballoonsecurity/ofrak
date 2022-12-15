@@ -5,7 +5,6 @@ from typing import Iterable
 from ofrak.core.addressable import Addressable
 from ofrak.model.resource_model import index, ResourceAttributes
 from ofrak.resource import Resource
-from ofrak.service.error import OverlapError
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 
@@ -122,18 +121,11 @@ class MemoryRegion(Addressable):
                 f"{hex(self.end_vaddr())}."
             )
 
-        try:
-            return await self.resource.create_child_from_view(
-                child_mr,
-                data_range=Range(start_offset, end_offset),
-                additional_attributes=additional_attributes,
-            )
-        except OverlapError as e:
-            existing_child_vaddr = e.existing_child_node.model.range.start + self.virtual_address
-            existing_child_size = e.existing_child_node.model.range.length()
-            raise MemoryOverlapError(
-                child_mr, MemoryRegion(existing_child_vaddr, existing_child_size)
-            ) from e
+        return await self.resource.create_child_from_view(
+            child_mr,
+            data_range=Range(start_offset, end_offset),
+            additional_attributes=additional_attributes,
+        )
 
     @staticmethod
     def get_mem_region_with_vaddr_from_sorted(vaddr: int, sorted_regions: Iterable["MemoryRegion"]):
