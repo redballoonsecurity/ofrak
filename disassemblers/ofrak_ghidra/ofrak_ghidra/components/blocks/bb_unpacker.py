@@ -56,8 +56,7 @@ class GhidraBasicBlockUnpacker(
         )
 
         bb_view = await resource.view_as(BasicBlock)
-        bb_start_vaddr = await self.fixup_address(bb_view.virtual_address, program.resource)
-        va_addend = bb_view.virtual_address - bb_start_vaddr
+        bb_start_vaddr = bb_view.virtual_address
 
         instructions = await self.batch_manager.get_result(
             (
@@ -70,7 +69,7 @@ class GhidraBasicBlockUnpacker(
 
         children_created = []
         for instruction in instructions:
-            vaddr = instruction["instr_offset"] + va_addend
+            vaddr = instruction["instr_offset"]
             size = instruction["instr_size"]
             mnem, operands = _asm_fixups(
                 instruction["mnem"].lower(), instruction["operands"].lower(), program_attrs

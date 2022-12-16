@@ -88,37 +88,6 @@ class OfrakGhidraMixin:
     `OfrakGhidraScript` member of the class.
     """
 
-    # Hi Ed, I know this isn't the right way to do this but I don't know how to add an attribute to a Resource.
-    ofrak_code_regions = {}
-    backend_code_regions = {}
-
-    async def fixup_address(self, va: int, r: Resource) -> int:
-        if r not in OfrakGhidraMixin.ofrak_code_regions:
-            ofrak_code_regions = await resource.get_descendants_as_view(
-                v_type=CodeRegion,
-                r_filter=ResourceFilter(tags=[CodeRegion])
-            )
-
-            OfrakGhidraMixin.ofrak_code_regions[r] = sorted(ofrak_code_regions, key=lambda cr: cr.virtual_address)
-
-        if r not in OfrakGhidraMixin.backend_code_regions:
-            backend_code_regions_json = await self.get_code_regions_script.call_script(resource)
-            backend_code_regions = []
-
-            for cr_j in backend_code_regions_json:
-                cr = CodeRegion(cr_j['start'], cr_j['size'])
-                backend_code_regions.append(cr)
-
-            OfrakGhidraMixin.backend_code_regions[r] = sorted(backend_code_regions, key=lambda cr: cr.virtual_address)
-
-        for i, cr in enumerate(OfrakGhidraMixin.ofrak_code_regions[r]):
-            if cr.virtual_address <= va and va < (cr.virtual_address + cr.size):
-                backend_cr = OfrakGhidraMixin.backend_code_regions[r][i]
-                return (va - cr.virtual_address) + backend_cr.virtual_address
-
-        raise NotFoundError(f"Could not find CodeRegion containing virtual address {hex(va)}")
-
-
     def get_scripts(self) -> Iterable[OfrakGhidraScript]:
         """
         Generator yielding all scripts used by this class, as defined by class members of type

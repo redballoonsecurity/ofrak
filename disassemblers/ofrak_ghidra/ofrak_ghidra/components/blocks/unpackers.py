@@ -17,6 +17,7 @@ from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceFilter, ResourceServiceInterface
 from ofrak_ghidra.constants import CORE_OFRAK_GHIDRA_SCRIPTS
 from ofrak_ghidra.ghidra_model import GhidraProject, OfrakGhidraMixin, OfrakGhidraScript
+from ofrak_ghidra.components.ghidra_analyzer import GhidraCodeRegionAnalyzer
 from ofrak_io.batch_manager import make_batch_manager
 
 LOGGER = logging.getLogger(__name__)
@@ -35,19 +36,19 @@ class GhidraCodeRegionUnpacker(CodeRegionUnpacker, OfrakGhidraMixin):
         os.path.join(CORE_OFRAK_GHIDRA_SCRIPTS, "GetComplexBlocks.java"),
     )
 
-    get_code_regions_script = OfrakGhidraScript(
-        os.path.join(CORE_OFRAK_GHIDRA_SCRIPTS, "GetCodeRegions.java"),
-    )
-
     async def unpack(self, resource: Resource, config=None) -> None:
+        # Run the GetCodeRegions script for every CodeRegion to match with the backend.
+        # This is not efficient but shouldn't matter much since there shouldn't be too many CodeRegions.
+        code_region = await resource.view_as(CodeRegion)
+        await resource.run(GhidraCodeRegionAnalyzer, None)
+
+        code_region_start = code_region.virtual_address
+        code_region_end = code_region_start + code_region.size
+
         program = await resource.get_only_ancestor_as_view(
             GhidraProject, ResourceFilter(tags=[GhidraProject], include_self=True)
         )
         program_attributes = await program.resource.analyze(ProgramAttributes)
-        code_region = await resource.view_as(CodeRegion)
-        code_region_start = await self.fixup_address(code_region.virtual_address, program.resource)
-        code_region_end = code_region_start + code_region.size
-        va_addend = code_region.virtual_address - code_region_start
 
         complex_blocks = await self.get_complex_blocks_script.call_script(
             resource,
@@ -59,7 +60,7 @@ class GhidraCodeRegionUnpacker(CodeRegionUnpacker, OfrakGhidraMixin):
 
         for complex_block in complex_blocks:
             complex_block = ComplexBlock(
-                complex_block["loadAddress"] + va_addend, complex_block["size"], complex_block["name"]
+                complex_block["loadAddress"], complex_block["size"], complex_block["name"]
             )
 
             complex_blocks_created.append(
@@ -84,10 +85,6 @@ class GhidraComplexBlockUnpacker(
         os.path.join(CORE_OFRAK_GHIDRA_SCRIPTS, "GetDataWords.java")
     )
 
-    get_code_regions_script = OfrakGhidraScript(
-        os.path.join(CORE_OFRAK_GHIDRA_SCRIPTS, "GetCodeRegions.java"),
-    )
-
     def __init__(
         self,
         resource_factory: ResourceFactory,
@@ -109,8 +106,7 @@ class GhidraComplexBlockUnpacker(
         program_attrs = await resource.analyze(ProgramAttributes)
 
         cb_data_range = await resource.get_data_range_within_root()
-        cb_start_vaddr = await self.fixup_address(cb_view.virtual_address, program.resource)
-        va_addend = cb_view.virtual_address - cb_start_vaddr
+        cb_start_vaddr = cb_view.virtual_address
 
         children_created = []
 
@@ -119,12 +115,12 @@ class GhidraComplexBlockUnpacker(
         )
 
         for bb_info in basic_blocks:
-            bb_start_vaddr = bb_info["bb_start_vaddr"] + va_addend
+            bb_start_vaddr = bb_info["bb_start_vaddr"]
             bb_size = bb_info["bb_size"]
             is_exit_point = bb_info["is_exit_point"]
             mode_string = bb_info["instr_mode"]
-            exit_vaddr = bb_info["exit_vaddr"] + va_addend
-            if (exit_vaddr - va_addend) == -1:
+            exit_vaddr = bb_info["exit_vaddr"]
+            if (exit_vaddr) == -1:
                 exit_vaddr = None
 
             if bb_size == 0:
@@ -159,9 +155,9 @@ class GhidraComplexBlockUnpacker(
         )
 
         for data_word_info in data_words:
-            word_vaddr = data_word_info["word_vaddr"] + va_addend
+            word_vaddr = data_word_info["word_vaddr"]
             word_size = data_word_info["word_size"]
-            xrefs = [xref + va_addend for xref in data_word_info["xrefs"]]
+            xrefs = [xref for xref in data_word_info["xrefs"]]
 
             if (
                 word_vaddr < cb_view.virtual_address
