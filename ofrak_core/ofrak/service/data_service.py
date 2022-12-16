@@ -2,7 +2,7 @@ import heapq
 import itertools
 from bisect import bisect_left, bisect_right
 from collections import defaultdict
-from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, TypeVar
+from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, TypeVar, Generic
 
 from sortedcontainers import SortedList
 
@@ -239,272 +239,40 @@ class DataService(DataServiceInterface):
 T = TypeVar("T")
 
 
-class ShiftBreaksSortError(RuntimeError):
+class _ShiftBreaksSortError(RuntimeError):
     pass
 
 
-class SimplerGrid:
-    class _TupleWrapper(
-        tuple,
-    ):
-        def __new__(cls, *args):
-            return super(SimplerGrid._TupleWrapper, cls).__new__(cls, args)
+class _CompareFirstTuple(Tuple, Generic[T]):
+    """
+    Wrapper for tuple that ensures only the first item in the tuple is checked.
+    Necessary because bisect methods don't have a `key` function
+    Helpful for making sorted dictionary-like data structures
+    """
 
-        def __lt__(self, other):
-            return self[0] < other[0]
+    def __new__(cls, *args):
+        return super().__new__(cls, args)
 
-        def __eq__(self, other):
-            return self[0] == other[0]
+    def __lt__(self, other):
+        return self[0] < other[0]
 
-        def __gt__(self, other):
-            return self[0] > other[0]
+    def __eq__(self, other):
+        return self[0] == other[0]
 
-    def __init__(self):
-        self._grid: List[Tuple[int, List[Tuple[int, Set[bytes]]]]] = []
-        self._inverted: List[Tuple[int, List[Tuple[int, Set[bytes]]]]] = []
-
-    def add_range(self, r: Range, range_id: bytes):
-        default_point: Set[bytes] = set()
-        p1 = self._add_to_grid(self._grid, r.start, r.end, default_point)
-        p2 = self._add_to_grid(self._inverted, r.end, r.start, default_point)
-
-        assert p1 is p2
-        p1.add(range_id)
-
-    def remove_range(self, r: Range, range_id: bytes):
-        ids_at_point = self.get_ids_at(r.start, r.end)
-        ids_at_point.remove(range_id)
-        if len(ids_at_point) == 0:
-            self._remove_from_grid(self._grid, r.start, r.end)
-            self._remove_from_grid(self._inverted, r.end, r.start)
-
-    def get_ids_at(self, start: int, end: int) -> Set[bytes]:
-        i = SimplerGrid.bisect_left(self._grid, start)
-        if i >= len(self._grid) or self._grid[i][0] != start:
-            raise KeyError()
-        column: List[Tuple[int, Set[bytes]]] = self._grid[i][1]
-
-        j = SimplerGrid.bisect_left(column, end)
-        if j >= len(column) or column[j][0] != end:
-            raise KeyError()
-
-        return column[j][1]
-
-    def get_ids_in_range(
-        self,
-        start_range: Tuple[Optional[int], Optional[int]] = (None, None),
-        end_range: Tuple[Optional[int], Optional[int]] = (None, None),
-        start_inclusivity: Tuple[bool, bool] = (True, False),
-        end_inclusivity: Tuple[bool, bool] = (True, False),
-    ) -> Iterable[bytes]:
-        start_min, start_max = start_range
-        end_min, end_max = end_range
-
-        if start_range != (None, None):
-            starts_iter = self._irange(self._grid, start_min, start_max, start_inclusivity)
-            for start, ends in starts_iter:
-                for end, vals in self._irange(ends, end_min, end_max, end_inclusivity):
-                    yield from vals
-        elif end_range != (None, None):
-            ends_iter = self._irange(self._grid, end_min, end_max, end_inclusivity)
-            for end, starts in ends_iter:
-                for start, vals in self._irange(starts, start_min, start_max, start_inclusivity):
-                    yield from vals
-        else:
-            for _, column in self._grid:
-                for _, vals in column:
-                    yield from vals
-
-    def resize_range(
-        self, resized_range: Range, size_diff: int
-    ) -> Iterable[Tuple[bytes, Tuple[int, int]]]:
-        for ids_ending_after_range in self._shift_grid_axis(
-            self._inverted,
-            shift=size_diff,
-            fold_func=self._merge_columns,
-            minimum=resized_range.end,
-            maximum=None,
-        ):
-            for _, ids_starting_before_range in self._irange(
-                ids_ending_after_range,
-                minimum=None,
-                maximum=resized_range.end,
-                inclusive=(True, False),
-            ):
-                for model_id in ids_starting_before_range:
-                    yield model_id, (0, size_diff)
-            for ids_entirely_after_range in self._shift_grid_axis(
-                ids_ending_after_range,
-                shift=size_diff,
-                fold_func=set.union,
-                minimum=resized_range.end,
-                maximum=None,
-            ):
-                for model_id in ids_entirely_after_range:
-                    yield model_id, (size_diff, size_diff)
-
-        for ends in self._shift_grid_axis(
-            self._grid,
-            shift=size_diff,
-            fold_func=self._merge_columns,
-            minimum=resized_range.end,
-            maximum=None,
-        ):
-            self._shift_grid_axis(
-                ends,
-                shift=size_diff,
-                fold_func=set.union,
-                minimum=None,
-                maximum=None,
-            )
-
-    @staticmethod
-    def _add_to_grid(
-        grid: List[Tuple[int, List[Tuple[int, Set[bytes]]]]],
-        x: int,
-        y: int,
-        default: Set[bytes],
-    ) -> Set[bytes]:
-        i = SimplerGrid.bisect_left(grid, x)
-        if i >= len(grid) or grid[i][0] != x:
-            column: List[Tuple[int, Set[bytes]]] = []
-            grid.insert(i, SimplerGrid._TupleWrapper(x, column))
-        else:
-            column = grid[i][1]
-
-        j = SimplerGrid.bisect_left(column, y)
-        if i >= len(column) or column[j][0] != y:
-            column.insert(j, SimplerGrid._TupleWrapper(y, default))
-
-        return column[j][1]
-
-    @staticmethod
-    def _remove_from_grid(grid: List[Tuple[int, List[Tuple[int, Set[bytes]]]]], x: int, y: int):
-        i = SimplerGrid.bisect_left(grid, x)
-        if i >= len(grid) or grid[i][0] != x:
-            raise KeyError(f"No column {x} in the grid!")
-        else:
-            column = grid[i][1]
-
-        j = SimplerGrid.bisect_left(column, y)
-        if j >= len(column) or column[j][0] != y:
-            raise KeyError(f"No point {y} in column {x} in the grid!")
-
-        column.pop(j)
-        if len(column) == 0:
-            grid.pop(i)
-
-    @staticmethod
-    def _irange(
-        grid: List[T], minimum: Optional[int], maximum: Optional[int], inclusive: Tuple[bool, bool]
-    ) -> Iterable[T]:
-        if minimum is not None:
-            if inclusive[0]:
-                min_i = SimplerGrid.bisect_left(grid, minimum)
-            else:
-                min_i = SimplerGrid.bisect_right(grid, minimum)
-        else:
-            min_i = 0
-
-        if maximum is not None:
-            if inclusive[1]:
-                max_i = SimplerGrid.bisect_right(grid, maximum)
-            else:
-                max_i = SimplerGrid.bisect_left(grid, maximum)
-        else:
-            max_i = len(grid)
-
-        i = min_i
-        while i < max_i:
-            yield grid[i]
-            i += 1
-
-    @staticmethod
-    def _shift_grid_axis(
-        grid: List[Tuple[int, T]],
-        shift: int,
-        fold_func: Callable[[T, T], T],
-        minimum: Optional[int] = None,
-        maximum: Optional[int] = None,
-    ) -> Iterable[T]:
-        pre_yield = None
-        post_yield = None
-
-        if minimum is not None:
-            min_i = SimplerGrid.bisect_left(grid, minimum)
-        else:
-            min_i = 0
-
-        if 0 < min_i < (len(grid) - 1):
-            post_shift_min = grid[min_i][0] + shift
-            if post_shift_min < grid[min_i - 1][0]:
-                raise ShiftBreaksSortError(
-                    f"shifting {minimum} to {maximum} by {shift} would collide at the lower range!"
-                )
-            elif post_shift_min == grid[min_i - 1][0]:
-                # combine the lowest val in shifted range into previous
-                val1 = grid[min_i - 1][1]
-                _, pre_yield = grid.pop(min_i)
-                grid[min_i - 1] = (post_shift_min, fold_func(val1, pre_yield))
-
-        if maximum is not None:
-            max_i = SimplerGrid.bisect_right(grid, maximum)
-        else:
-            max_i = len(grid)
-
-        if 0 < (max_i + 1) < len(grid):
-            post_shift_max = grid[max_i][0] + shift
-            if post_shift_max > grid[max_i + 1][0]:
-                raise ShiftBreaksSortError(
-                    f"shifting {minimum} to {maximum} by {shift} would collide at the upper range!"
-                )
-            elif post_shift_max == grid[max_i + 1][0]:
-                # combine the highest val in shifted range into next
-                val1 = grid[max_i + 1][1]
-                _, post_yield = grid.pop(max_i)
-                grid[max_i + 1] = (post_shift_max, fold_func(val1, post_yield))
-
-                max_i -= 1
-
-        if pre_yield is not None:
-            yield pre_yield
-
-        i = min_i
-        while i < max_i:
-            old_key, val = grid[i]
-            grid[i] = (old_key + shift, val)
-            yield val
-            i += 1
-
-        if post_yield is not None:
-            yield post_yield
-
-    @staticmethod
-    def _merge_columns(
-        col1: List[Tuple[int, Set[bytes]]],
-        col2: List[Tuple[int, Set[bytes]]],
-    ) -> List[Tuple[int, Set[bytes]]]:
-        merged_columns: List[Tuple[int, Set[bytes]]] = []
-        for key, _vals in itertools.groupby(heapq.merge(col1, col2), key=lambda x: x[0]):
-            vals = tuple(v for _, v in _vals)
-            if len(vals) == 1:
-                val: Set[bytes] = vals[0]
-            elif len(vals) == 2:
-                val = set.union(*vals)
-            else:
-                raise NotImplementedError()
-
-            merged_columns.append(SimplerGrid._TupleWrapper(key, val))
-
-        return merged_columns
+    def __gt__(self, other):
+        return self[0] > other[0]
 
     @staticmethod
     def bisect_left(grid, val: int) -> int:
-        return bisect_left(grid, SimplerGrid._TupleWrapper(val, None))
+        return bisect_left(grid, _CompareFirstTuple(val, None))
 
     @staticmethod
     def bisect_right(grid, val: int) -> int:
-        return bisect_right(grid, SimplerGrid._TupleWrapper(val, None))
+        return bisect_right(grid, _CompareFirstTuple(val, None))
+
+
+_GridYAxisT = List[_CompareFirstTuple[Set[DataId]]]
+_GridXAxisT = List[_CompareFirstTuple[_GridYAxisT]]
 
 
 class _DataRoot:
@@ -512,12 +280,23 @@ class _DataRoot:
     A root data model which may have other data models mapped into it
     """
 
+    @property
+    def length(self) -> int:
+        return len(self.data)
+
     def __init__(self, model: DataModel, data: bytes):
         self.model: DataModel = model
         self.data = data
         self._children: Dict[DataId, DataModel] = dict()
 
-        self._grid = SimplerGrid()
+        # A pair of sorted 2D arrays, where each "point" in the grid is a set of children's data IDs
+        # The (X, Y) coordinates of each grid correspond to the range of these children
+        # The coordinates are flipped between these 2 grids:
+        #   (x,y) in _grid_starts_first is (y,x) in _grid_ends_first
+        #   The same set object is shared by both points
+        # Sometimes it is more efficient to search in one grid or the other
+        self._grid_starts_first: _GridXAxisT = []  # X axis is range starts, Y axis is ends
+        self._grid_ends_first: _GridXAxisT = []  # X axis is range ends, Y axis is starts
 
     def get_children(self) -> Iterable[DataModel]:
         return self._children.values()
@@ -529,9 +308,21 @@ class _DataRoot:
                 f"{self.model.id.hex()}: ({model.range} is outside of {self.model.range})"
             )
 
-        self._grid.add_range(model.range, model.id)
-
         self._children[model.id] = model
+
+        # if there is not already a set at the coords of model.range, a new set is created
+        # _grid_starts_first and _grid_ends_first must share this set
+        # So we create it outside, then pass it into _add_to_grid, in case it is needed
+        default_set: Set[DataId] = set()
+        set1 = self._add_to_grid(
+            self._grid_starts_first, model.range.start, model.range.end, default_set
+        )
+        set2 = self._add_to_grid(
+            self._grid_ends_first, model.range.end, model.range.start, default_set
+        )
+
+        assert set1 is set2  # These sets should always be the same!
+        set1.add(model.id)
 
     def delete_mapped_model(self, model: DataModel):
         if model.id not in self._children:
@@ -539,13 +330,17 @@ class _DataRoot:
                 f"Data model with ID {model.id.hex()} is not a child of {self.model.id.hex()}"
             )
 
-        self._grid.remove_range(model.range, model.id)
+        ids_at_point = self._get_ids_at(model.range.start, model.range.end)
+        ids_at_point.remove(model.id)
+        if len(ids_at_point) == 0:
+            self._remove_from_grid(self._grid_starts_first, model.range.start, model.range.end)
+            self._remove_from_grid(self._grid_ends_first, model.range.end, model.range.start)
 
         del self._children[model.id]
 
     def resize_range(self, resized_range: Range, size_diff: int):
         try:
-            for shifted_child_id, (start_shift, end_shift) in self._grid.resize_range(
+            for shifted_child_id, (start_shift, end_shift) in self._resize_range(
                 resized_range, size_diff
             ):
                 shifted_child = self._children[shifted_child_id]
@@ -554,7 +349,7 @@ class _DataRoot:
                     shifted_child.range.end + end_shift,
                 )
 
-        except ShiftBreaksSortError:
+        except _ShiftBreaksSortError:
             raise PatchOverlapError(
                 "Cannot resize child overlapping with the boundaries of other children!"
             )
@@ -562,14 +357,14 @@ class _DataRoot:
         self.model.range = Range(0, self.model.range.end + size_diff)
 
     def get_children_with_boundaries_intersecting_range(self, r: Range) -> List[DataModel]:
-        intersecting_model_ids: Set[bytes] = set()
+        intersecting_model_ids: Set[DataId] = set()
 
-        for starts_in_range in self._grid.get_ids_in_range(
+        for starts_in_range in self._get_ids_in_range(
             start_range=(r.start, r.end), start_inclusivity=(False, False)
         ):
             intersecting_model_ids.add(starts_in_range)
 
-        for ends_in_range in self._grid.get_ids_in_range(
+        for ends_in_range in self._get_ids_in_range(
             end_range=(r.start, r.end), end_inclusivity=(False, False)
         ):
             intersecting_model_ids.add(ends_in_range)
@@ -581,7 +376,7 @@ class _DataRoot:
     ) -> Iterable[Tuple[DataId, Range]]:
         children_overlapping_ranges: Dict[Range, Iterable[DataId]] = defaultdict(set)
         for patch_range in patch_ranges:
-            children_overlapping_ranges[patch_range] = self._grid.get_ids_in_range(
+            children_overlapping_ranges[patch_range] = self._get_ids_in_range(
                 start_range=(None, patch_range.end),
                 end_range=(patch_range.start, None),
             )
@@ -591,9 +386,235 @@ class _DataRoot:
                 model = self._children[data_id]
                 yield data_id, patched_range.intersect(model.range).translate(-model.range.start)
 
-    @property
-    def length(self) -> int:
-        return len(self.data)
+    def _get_ids_at(self, start: int, end: int) -> Set[DataId]:
+        i = _CompareFirstTuple.bisect_left(self._grid_starts_first, start)
+        if i >= len(self._grid_starts_first) or self._grid_starts_first[i][0] != start:
+            raise KeyError()
+        column: _GridYAxisT = self._grid_starts_first[i][1]
+
+        j = _CompareFirstTuple.bisect_left(column, end)
+        if j >= len(column) or column[j][0] != end:
+            raise KeyError()
+
+        return column[j][1]
+
+    def _get_ids_in_range(
+        self,
+        start_range: Tuple[Optional[int], Optional[int]] = (None, None),
+        end_range: Tuple[Optional[int], Optional[int]] = (None, None),
+        start_inclusivity: Tuple[bool, bool] = (True, False),
+        end_inclusivity: Tuple[bool, bool] = (True, False),
+    ) -> Iterable[DataId]:
+        start_min, start_max = start_range
+        end_min, end_max = end_range
+
+        if start_range != (None, None):
+            starts_iter = self._iter_grid_axis(
+                self._grid_starts_first, start_min, start_max, start_inclusivity
+            )
+            for _, ends in starts_iter:
+                ends_iter = self._iter_grid_axis(ends, end_min, end_max, end_inclusivity)
+                for _, vals in ends_iter:
+                    yield from vals
+        elif end_range != (None, None):
+            ends_iter = self._iter_grid_axis(
+                self._grid_starts_first, end_min, end_max, end_inclusivity
+            )
+            for _, starts in ends_iter:
+                starts_iter = self._iter_grid_axis(starts, start_min, start_max, start_inclusivity)
+                for _, vals in starts_iter:
+                    yield from vals
+        else:
+            for _, column in self._grid_starts_first:
+                for _, vals in column:
+                    yield from vals
+
+    def _resize_range(
+        self, resized_range: Range, size_diff: int
+    ) -> Iterable[Tuple[DataId, Tuple[int, int]]]:
+        for ids_ending_after_range in self._shift_grid_axis(
+            self._grid_ends_first,
+            size_diff,
+            merge_func=self._merge_columns,
+            minimum=resized_range.end,
+        ):
+            for _, ids_starting_before_range in self._iter_grid_axis(
+                ids_ending_after_range,
+                maximum=resized_range.end,
+            ):
+                for model_id in ids_starting_before_range:
+                    yield model_id, (0, size_diff)
+            for ids_entirely_after_range in self._shift_grid_axis(
+                ids_ending_after_range,
+                size_diff,
+                merge_func=set.union,
+                minimum=resized_range.end,
+            ):
+                for model_id in ids_entirely_after_range:
+                    yield model_id, (size_diff, size_diff)
+
+        for ends in self._shift_grid_axis(
+            self._grid_starts_first,
+            size_diff,
+            merge_func=self._merge_columns,
+            minimum=resized_range.end,
+        ):
+            self._shift_grid_axis(ends, size_diff, merge_func=set.union)
+
+    @staticmethod
+    def _add_to_grid(
+        grid: _GridXAxisT,
+        x: int,
+        y: int,
+        default: Set[DataId],
+    ) -> Set[DataId]:
+        i = _CompareFirstTuple.bisect_left(grid, x)
+        if i >= len(grid) or grid[i][0] != x:
+            column: _GridYAxisT = []
+            grid.insert(i, _CompareFirstTuple(x, column))
+        else:
+            column = grid[i][1]
+
+        j = _CompareFirstTuple.bisect_left(column, y)
+        if i >= len(column) or column[j][0] != y:
+            column.insert(j, _CompareFirstTuple(y, default))
+
+        return column[j][1]
+
+    @staticmethod
+    def _remove_from_grid(grid: _GridXAxisT, x: int, y: int):
+        i = _CompareFirstTuple.bisect_left(grid, x)
+        if i >= len(grid) or grid[i][0] != x:
+            raise KeyError(f"No column {x} in the grid!")
+        else:
+            column = grid[i][1]
+
+        j = _CompareFirstTuple.bisect_left(column, y)
+        if j >= len(column) or column[j][0] != y:
+            raise KeyError(f"No point {y} in column {x} in the grid!")
+
+        column.pop(j)
+        if len(column) == 0:
+            grid.pop(i)
+
+    @staticmethod
+    def _iter_grid_axis(
+        grid: List[T],
+        minimum: Optional[int] = None,
+        maximum: Optional[int] = None,
+        inclusive: Tuple[bool, bool] = (True, False),
+    ) -> Iterable[T]:
+        if minimum is not None:
+            if inclusive[0]:
+                min_i = _CompareFirstTuple.bisect_left(grid, minimum)
+            else:
+                min_i = _CompareFirstTuple.bisect_right(grid, minimum)
+        else:
+            min_i = 0
+
+        if maximum is not None:
+            if inclusive[1]:
+                max_i = _CompareFirstTuple.bisect_right(grid, maximum)
+            else:
+                max_i = _CompareFirstTuple.bisect_left(grid, maximum)
+        else:
+            max_i = len(grid)
+
+        i = min_i
+        while i < max_i:
+            yield grid[i]
+            i += 1
+
+    @staticmethod
+    def _shift_grid_axis(
+        axis: List[_CompareFirstTuple[T]],
+        shift: int,
+        merge_func: Callable[[T, T], T],
+        minimum: Optional[int] = None,
+        maximum: Optional[int] = None,
+    ) -> Iterable[T]:
+        """
+        Shift a range of values in an axis, without affecting the sorted order of the points in
+        the axis. With two exceptions:
+        - If the minimum shifted point is shifted DOWN exactly enough to be equal to the previous
+          point (which has by definition not been shifted), those two points are allowed to merge
+        - If the maximum shifted point is shifted UP exactly enough to be equal to the next
+          point (which has by definition not been shifted), those two points are allowed to merge
+
+        At most one of these can happen when shifting. The `merge_func` parameter handles merging
+        those two points. Since we may be shifting either a row or a column, the merged "points" may
+        be either columns (if shifting rows) or sets of bytes (if shifting columns).
+        """
+        pre_yield = None
+        post_yield = None
+
+        if minimum is not None:
+            min_i = _CompareFirstTuple.bisect_left(axis, minimum)
+        else:
+            min_i = 0
+
+        if 0 < min_i < (len(axis) - 1):
+            post_shift_min = axis[min_i][0] + shift
+            if post_shift_min < axis[min_i - 1][0]:
+                raise _ShiftBreaksSortError(
+                    f"shifting {minimum} to {maximum} by {shift} would collide at the lower range!"
+                )
+            elif post_shift_min == axis[min_i - 1][0]:
+                # merge the lowest val in shifted range into previous
+                val1 = axis[min_i - 1][1]
+                _, pre_yield = axis.pop(min_i)
+                axis[min_i - 1] = _CompareFirstTuple(post_shift_min, merge_func(val1, pre_yield))
+
+        if maximum is not None:
+            max_i = _CompareFirstTuple.bisect_right(axis, maximum)
+        else:
+            max_i = len(axis)
+
+        if 0 < (max_i + 1) < len(axis):
+            post_shift_max = axis[max_i][0] + shift
+            if post_shift_max > axis[max_i + 1][0]:
+                raise _ShiftBreaksSortError(
+                    f"shifting {minimum} to {maximum} by {shift} would collide at the upper range!"
+                )
+            elif post_shift_max == axis[max_i + 1][0]:
+                # merge the highest val in shifted range into next
+                val1 = axis[max_i + 1][1]
+                _, post_yield = axis.pop(max_i)
+                axis[max_i + 1] = _CompareFirstTuple(post_shift_max, merge_func(val1, post_yield))
+
+                max_i -= 1
+
+        if pre_yield is not None:
+            yield pre_yield
+
+        i = min_i
+        while i < max_i:
+            old_key, val = axis[i]
+            axis[i] = _CompareFirstTuple(old_key + shift, val)
+            yield val
+            i += 1
+
+        if post_yield is not None:
+            yield post_yield
+
+    @staticmethod
+    def _merge_columns(
+        col1: _GridYAxisT,
+        col2: _GridYAxisT,
+    ) -> _GridYAxisT:
+        merged_columns: _GridYAxisT = []
+        for key, _vals in itertools.groupby(heapq.merge(col1, col2), key=lambda x: x[0]):
+            vals = tuple(v for _, v in _vals)
+            if len(vals) == 1:
+                val: Set[DataId] = vals[0]
+            elif len(vals) == 2:
+                val = set.union(*vals)
+            else:
+                raise NotImplementedError()
+
+            merged_columns.append(_CompareFirstTuple(key, val))
+
+        return merged_columns
 
 
 class _PatchResizeTracker:
