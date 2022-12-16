@@ -2,7 +2,7 @@ import heapq
 import itertools
 from bisect import bisect_left, bisect_right
 from collections import defaultdict
-from typing import Callable, Dict, Iterable, Iterator, List, Optional, Set, Tuple, TypeVar
+from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, TypeVar
 
 from sortedcontainers import SortedList
 
@@ -237,223 +237,6 @@ class DataService(DataServiceInterface):
 
 
 T = TypeVar("T")
-
-
-class _RootChildBoundsDict(Iterable[T]):
-    """
-    Data structure very similar to SortedDict:
-    https://grantjenks.com/docs/sortedcontainers/sorteddict.html
-
-    It always has ints as keys, and only the methods necessary for the data service are implemented.
-
-    The major, crucial difference is that a range of keys can be efficiently shifted with
-    `shift_key_range` in O(n) time. This is necessary when resizing ranges, as any sorted way of
-    storing a root's children must be able to update those keys. SortedDict provides no mechanism
-    to do that, other than removing and re-adding the affected key-value pairs.
-    """
-
-    class ShiftBreaksSortError(RuntimeError):
-        pass
-
-    def __init__(self, value_constructor: Callable[..., T], value_combiner: Callable[[T, T], T]):
-        self._keys: List[int] = []
-        self._values: List[T] = []
-        self._value_constructor = value_constructor
-        self._value_combiner = value_combiner
-
-    def __len__(self):
-        return len(self._keys)
-
-    def __getitem__(self, key: int) -> T:
-        key_i = bisect_left(self._keys, key)
-        if key_i >= len(self._keys) or self._keys[key_i] != key:
-            self._keys.insert(key_i, key)
-            self._values.insert(key_i, self._value_constructor())
-        return self._values[key_i]
-
-    def __setitem__(self, key: int, value: T):
-        key_i = bisect_left(self._keys, key)
-        if key_i >= len(self._keys) or self._keys[key_i] != key:
-            self._keys.insert(key_i, key)
-            self._values.insert(key_i, value)
-        else:
-            self._values[key_i] = value
-
-    def __delitem__(self, key: int):
-        key_i = bisect_left(self._keys, key)
-        if self._keys[key_i] == key:
-            self._keys.pop(key_i)
-            self._values.pop(key_i)
-        else:
-            raise KeyError()
-
-    def __add__(self, other: "_RootChildBoundsDict[T]"):
-        i_1_iter = iter(range(len(self._keys)))
-        i_2_iter = iter(range(len(other._keys)))
-
-        merged_keys: List[int] = []
-        merged_values: List[T] = []
-
-        # Need all the remaining vals from other iterator when we reach the end of either iterator
-        # So, before each `next()` call on an iterator, set `remainder` to point to other iterator
-        remainder: Tuple[Iterator[int], _RootChildBoundsDict[T]] = (None, None)  # type: ignore
-
-        i_1 = 0
-        i_2 = 0
-
-        def increment(incr_i_1: bool, incr_i_2: bool):
-            nonlocal remainder
-            nonlocal i_1
-            nonlocal i_2
-
-            if incr_i_1:
-                remainder = i_2_iter, other
-                i_1 = next(i_1_iter)
-            if incr_i_2:
-                remainder = i_1_iter, self
-                i_2 = next(i_2_iter)
-
-        try:
-            increment(True, True)
-
-            while True:
-                k_1 = self._keys[i_1]
-                k_2 = other._keys[i_2]
-                if k_1 == k_2:
-                    merged_keys.append(k_1)
-                    merged_values.append(
-                        self._value_combiner(self._values[i_1], other._values[i_2])
-                    )
-                    increment(True, True)
-                elif k_1 < k_2:
-                    merged_keys.append(k_1)
-                    merged_values.append(self._values[i_1])
-                    increment(True, False)
-                else:  # k_1 > k_2
-                    merged_keys.append(k_2)
-                    merged_values.append(other._values[i_2])
-                    increment(False, True)
-
-        except StopIteration:
-            remainder_key_iter, remainder_dict = remainder
-            for remaining_i in remainder_key_iter:
-                remaining_key = remainder_dict._keys[remaining_i]
-                remaining_value = remainder_dict._values[remaining_i]
-                merged_keys.append(remaining_key)
-                merged_values.append(remaining_value)
-
-            merged_dict = _RootChildBoundsDict.__new__(_RootChildBoundsDict)
-            merged_dict._keys = merged_keys
-            merged_dict._values = merged_values
-            merged_dict._value_constructor = self._value_constructor
-            merged_dict._value_combiner = self._value_combiner
-
-            return merged_dict
-
-    def __iter__(self) -> Iterator[T]:
-        return iter(self._values)
-
-    def irange(
-        self,
-        minimum: Optional[int] = None,
-        maximum: Optional[int] = None,
-        inclusive: Tuple[bool, bool] = (True, False),
-    ) -> Iterable[T]:
-        if minimum is not None:
-            if inclusive[0]:
-                min_i = bisect_left(self._keys, minimum)
-            else:
-                min_i = bisect_right(self._keys, minimum)
-        else:
-            min_i = 0
-
-        if maximum is not None:
-            if inclusive[1]:
-                max_i = bisect_right(self._keys, maximum)
-            else:
-                max_i = bisect_left(self._keys, maximum)
-        else:
-            max_i = len(self._keys)
-
-        value_i = min_i
-        while value_i < max_i:
-            yield self._values[value_i]
-            value_i += 1
-
-    def shift_key_range(
-        self,
-        shift: int,
-        minimum: Optional[int] = None,
-        maximum: Optional[int] = None,
-    ) -> Iterable[T]:
-        """
-        Shift a number of keys by a certain amount, so that the same ordering of key/value pairs
-        is maintained but some keys are altered. If any original key + `shift` already
-        exists as another key, the values of each are merged with `value_combiner` such that the
-        now-duplicated key maps to the merged values.
-
-        Examples, using the initial pairs: (3, X), (5, Y), (7, Z)
-
-        - shift_key_range(shift=3, minimum=5)
-            resuls in pairs: (3, X), (8, Y), (10, Z)
-            returns: Y, Z
-        - shift_key_range(shift=-2, minimum=5)
-            results in pairs: (3, value_combiner(X, Y)), (5, Z)
-            returns: Y, Z
-        -shift_key_range(shift=-2, minimum=5)
-            raises ShiftBreaksSortError
-
-        :returns: An iterator over the values associated with the shifted keys
-
-        :raises ShiftBreaksSortError: If shifting the given keys by `shift` would break their
-        ordering relative to unshifted keys
-        """
-        if minimum is not None:
-            min_i = bisect_left(self._keys, minimum)
-        else:
-            min_i = 0
-
-        if maximum is not None:
-            max_i = bisect_right(self._keys, maximum)
-        else:
-            max_i = len(self._keys)
-
-        key_i = min_i
-        while key_i < max_i:
-            new_key = self._keys[key_i] + shift
-            if key_i > 0:
-                if self._keys[key_i - 1] == new_key:
-                    self._values[key_i - 1] = self._value_combiner(
-                        self._values[key_i - 1], self._values[key_i]
-                    )
-                    self._keys.pop(key_i)
-                    # Yield specifically the values whose keys were shifted
-                    yield self._values.pop(key_i)
-                    max_i -= 1
-                    continue
-                elif self._keys[key_i - 1] > new_key:
-                    raise self.ShiftBreaksSortError(
-                        f"shifting {minimum} to {maximum} by {shift} would collide at the lower range!"
-                    )
-
-            if max_i <= key_i + 1 < len(self._keys):
-                if self._keys[key_i + 1] == new_key:
-                    self._values[key_i + 1] = self._value_combiner(
-                        self._values[key_i + 1], self._values[key_i]
-                    )
-                    self._keys.pop(key_i)
-                    # Yield specifically the values whose keys were shifted
-                    yield self._values.pop(key_i)
-                    max_i -= 1
-                    continue
-                elif self._keys[key_i + 1] < new_key:
-                    raise self.ShiftBreaksSortError(
-                        f"shifting {minimum} to {maximum} by {shift} would collide at the upper range!"
-                    )
-
-            self._keys[key_i] = new_key
-            yield self._values[key_i]
-            key_i += 1
 
 
 class ShiftBreaksSortError(RuntimeError):
@@ -729,23 +512,12 @@ class _DataRoot:
     A root data model which may have other data models mapped into it
     """
 
-    ChildGridT = _RootChildBoundsDict[_RootChildBoundsDict[Set[bytes]]]
-
-    @staticmethod
-    def create_grid() -> ChildGridT:
-        return _RootChildBoundsDict(
-            lambda: _RootChildBoundsDict(set, lambda x, y: x.union(y)), lambda x, y: x + y
-        )
-
     def __init__(self, model: DataModel, data: bytes):
         self.model: DataModel = model
         self.data = data
         self._children: Dict[DataId, DataModel] = dict()
 
         self._grid = SimplerGrid()
-
-        self._child_grid: _DataRoot.ChildGridT = self.create_grid()
-        self._inverse_grid: _DataRoot.ChildGridT = self.create_grid()
 
     def get_children(self) -> Iterable[DataModel]:
         return self._children.values()
@@ -782,7 +554,7 @@ class _DataRoot:
                     shifted_child.range.end + end_shift,
                 )
 
-        except _RootChildBoundsDict.ShiftBreaksSortError:
+        except ShiftBreaksSortError:
             raise PatchOverlapError(
                 "Cannot resize child overlapping with the boundaries of other children!"
             )
