@@ -1,3 +1,5 @@
+import heapq
+import itertools
 from bisect import bisect_left, bisect_right
 from collections import defaultdict
 from typing import Callable, Dict, Iterable, Iterator, List, Optional, Set, Tuple, TypeVar
@@ -454,6 +456,274 @@ class _RootChildBoundsDict(Iterable[T]):
             key_i += 1
 
 
+class ShiftBreaksSortError(RuntimeError):
+    pass
+
+
+class SimplerGrid:
+    class _TupleWrapper(
+        tuple,
+    ):
+        def __new__(cls, *args):
+            return super(SimplerGrid._TupleWrapper, cls).__new__(cls, args)
+
+        def __lt__(self, other):
+            return self[0] < other[0]
+
+        def __eq__(self, other):
+            return self[0] == other[0]
+
+        def __gt__(self, other):
+            return self[0] > other[0]
+
+    def __init__(self):
+        self._grid: List[Tuple[int, List[Tuple[int, Set[bytes]]]]] = []
+        self._inverted: List[Tuple[int, List[Tuple[int, Set[bytes]]]]] = []
+
+    def add_range(self, r: Range, range_id: bytes):
+        default_point: Set[bytes] = set()
+        p1 = self._add_to_grid(self._grid, r.start, r.end, default_point)
+        p2 = self._add_to_grid(self._inverted, r.end, r.start, default_point)
+
+        assert p1 is p2
+        p1.add(range_id)
+
+    def remove_range(self, r: Range, range_id: bytes):
+        ids_at_point = self.get_ids_at(r.start, r.end)
+        ids_at_point.remove(range_id)
+        if len(ids_at_point) == 0:
+            self._remove_from_grid(self._grid, r.start, r.end)
+            self._remove_from_grid(self._inverted, r.end, r.start)
+
+    def get_ids_at(self, start: int, end: int) -> Set[bytes]:
+        i = SimplerGrid.bisect_left(self._grid, start)
+        if i >= len(self._grid) or self._grid[i][0] != start:
+            raise KeyError()
+        column: List[Tuple[int, Set[bytes]]] = self._grid[i][1]
+
+        j = SimplerGrid.bisect_left(column, end)
+        if j >= len(column) or column[j][0] != end:
+            raise KeyError()
+
+        return column[j][1]
+
+    def get_ids_in_range(
+        self,
+        start_range: Tuple[Optional[int], Optional[int]] = (None, None),
+        end_range: Tuple[Optional[int], Optional[int]] = (None, None),
+        start_inclusivity: Tuple[bool, bool] = (True, False),
+        end_inclusivity: Tuple[bool, bool] = (True, False),
+    ) -> Iterable[bytes]:
+        start_min, start_max = start_range
+        end_min, end_max = end_range
+
+        if start_range != (None, None):
+            starts_iter = self._irange(self._grid, start_min, start_max, start_inclusivity)
+            for start, ends in starts_iter:
+                for end, vals in self._irange(ends, end_min, end_max, end_inclusivity):
+                    yield from vals
+        elif end_range != (None, None):
+            ends_iter = self._irange(self._grid, end_min, end_max, end_inclusivity)
+            for end, starts in ends_iter:
+                for start, vals in self._irange(starts, start_min, start_max, start_inclusivity):
+                    yield from vals
+        else:
+            for _, column in self._grid:
+                for _, vals in column:
+                    yield from vals
+
+    def resize_range(
+        self, resized_range: Range, size_diff: int
+    ) -> Iterable[Tuple[bytes, Tuple[int, int]]]:
+        for ids_ending_after_range in self._shift_grid_axis(
+            self._inverted,
+            shift=size_diff,
+            fold_func=self._merge_columns,
+            minimum=resized_range.end,
+            maximum=None,
+        ):
+            for _, ids_starting_before_range in self._irange(
+                ids_ending_after_range,
+                minimum=None,
+                maximum=resized_range.end,
+                inclusive=(True, False),
+            ):
+                for model_id in ids_starting_before_range:
+                    yield model_id, (0, size_diff)
+            for ids_entirely_after_range in self._shift_grid_axis(
+                ids_ending_after_range,
+                shift=size_diff,
+                fold_func=set.union,
+                minimum=resized_range.end,
+                maximum=None,
+            ):
+                for model_id in ids_entirely_after_range:
+                    yield model_id, (size_diff, size_diff)
+
+        for ends in self._shift_grid_axis(
+            self._grid,
+            shift=size_diff,
+            fold_func=self._merge_columns,
+            minimum=resized_range.end,
+            maximum=None,
+        ):
+            self._shift_grid_axis(
+                ends,
+                shift=size_diff,
+                fold_func=set.union,
+                minimum=None,
+                maximum=None,
+            )
+
+    @staticmethod
+    def _add_to_grid(
+        grid: List[Tuple[int, List[Tuple[int, Set[bytes]]]]],
+        x: int,
+        y: int,
+        default: Set[bytes],
+    ) -> Set[bytes]:
+        i = SimplerGrid.bisect_left(grid, x)
+        if i >= len(grid) or grid[i][0] != x:
+            column: List[Tuple[int, Set[bytes]]] = []
+            grid.insert(i, SimplerGrid._TupleWrapper(x, column))
+        else:
+            column = grid[i][1]
+
+        j = SimplerGrid.bisect_left(column, y)
+        if i >= len(column) or column[j][0] != y:
+            column.insert(j, SimplerGrid._TupleWrapper(y, default))
+
+        return column[j][1]
+
+    @staticmethod
+    def _remove_from_grid(grid: List[Tuple[int, List[Tuple[int, Set[bytes]]]]], x: int, y: int):
+        i = SimplerGrid.bisect_left(grid, x)
+        if i >= len(grid) or grid[i][0] != x:
+            raise KeyError(f"No column {x} in the grid!")
+        else:
+            column = grid[i][1]
+
+        j = SimplerGrid.bisect_left(column, y)
+        if j >= len(column) or column[j][0] != y:
+            raise KeyError(f"No point {y} in column {x} in the grid!")
+
+        column.pop(j)
+        if len(column) == 0:
+            grid.pop(i)
+
+    @staticmethod
+    def _irange(
+        grid: List[T], minimum: Optional[int], maximum: Optional[int], inclusive: Tuple[bool, bool]
+    ) -> Iterable[T]:
+        if minimum is not None:
+            if inclusive[0]:
+                min_i = SimplerGrid.bisect_left(grid, minimum)
+            else:
+                min_i = SimplerGrid.bisect_right(grid, minimum)
+        else:
+            min_i = 0
+
+        if maximum is not None:
+            if inclusive[1]:
+                max_i = SimplerGrid.bisect_right(grid, maximum)
+            else:
+                max_i = SimplerGrid.bisect_left(grid, maximum)
+        else:
+            max_i = len(grid)
+
+        i = min_i
+        while i < max_i:
+            yield grid[i]
+            i += 1
+
+    @staticmethod
+    def _shift_grid_axis(
+        grid: List[Tuple[int, T]],
+        shift: int,
+        fold_func: Callable[[T, T], T],
+        minimum: Optional[int] = None,
+        maximum: Optional[int] = None,
+    ) -> Iterable[T]:
+        pre_yield = None
+        post_yield = None
+
+        if minimum is not None:
+            min_i = SimplerGrid.bisect_left(grid, minimum)
+        else:
+            min_i = 0
+
+        if 0 < min_i < (len(grid) - 1):
+            post_shift_min = grid[min_i][0] + shift
+            if post_shift_min < grid[min_i - 1][0]:
+                raise ShiftBreaksSortError(
+                    f"shifting {minimum} to {maximum} by {shift} would collide at the lower range!"
+                )
+            elif post_shift_min == grid[min_i - 1][0]:
+                # combine the lowest val in shifted range into previous
+                val1 = grid[min_i - 1][1]
+                _, pre_yield = grid.pop(min_i)
+                grid[min_i - 1] = (post_shift_min, fold_func(val1, pre_yield))
+
+        if maximum is not None:
+            max_i = SimplerGrid.bisect_right(grid, maximum)
+        else:
+            max_i = len(grid)
+
+        if 0 < (max_i + 1) < len(grid):
+            post_shift_max = grid[max_i][0] + shift
+            if post_shift_max > grid[max_i + 1][0]:
+                raise ShiftBreaksSortError(
+                    f"shifting {minimum} to {maximum} by {shift} would collide at the upper range!"
+                )
+            elif post_shift_max == grid[max_i + 1][0]:
+                # combine the highest val in shifted range into next
+                val1 = grid[max_i + 1][1]
+                _, post_yield = grid.pop(max_i)
+                grid[max_i + 1] = (post_shift_max, fold_func(val1, post_yield))
+
+                max_i -= 1
+
+        if pre_yield is not None:
+            yield pre_yield
+
+        i = min_i
+        while i < max_i:
+            old_key, val = grid[i]
+            grid[i] = (old_key + shift, val)
+            yield val
+            i += 1
+
+        if post_yield is not None:
+            yield post_yield
+
+    @staticmethod
+    def _merge_columns(
+        col1: List[Tuple[int, Set[bytes]]],
+        col2: List[Tuple[int, Set[bytes]]],
+    ) -> List[Tuple[int, Set[bytes]]]:
+        merged_columns: List[Tuple[int, Set[bytes]]] = []
+        for key, _vals in itertools.groupby(heapq.merge(col1, col2), key=lambda x: x[0]):
+            vals = tuple(v for _, v in _vals)
+            if len(vals) == 1:
+                val: Set[bytes] = vals[0]
+            elif len(vals) == 2:
+                val = set.union(*vals)
+            else:
+                raise NotImplementedError()
+
+            merged_columns.append(SimplerGrid._TupleWrapper(key, val))
+
+        return merged_columns
+
+    @staticmethod
+    def bisect_left(grid, val: int) -> int:
+        return bisect_left(grid, SimplerGrid._TupleWrapper(val, None))
+
+    @staticmethod
+    def bisect_right(grid, val: int) -> int:
+        return bisect_right(grid, SimplerGrid._TupleWrapper(val, None))
+
+
 class _DataRoot:
     """
     A root data model which may have other data models mapped into it
@@ -472,6 +742,8 @@ class _DataRoot:
         self.data = data
         self._children: Dict[DataId, DataModel] = dict()
 
+        self._grid = SimplerGrid()
+
         self._child_grid: _DataRoot.ChildGridT = self.create_grid()
         self._inverse_grid: _DataRoot.ChildGridT = self.create_grid()
 
@@ -485,8 +757,7 @@ class _DataRoot:
                 f"{self.model.id.hex()}: ({model.range} is outside of {self.model.range})"
             )
 
-        self._child_grid[model.range.start][model.range.end].add(model.id)
-        self._inverse_grid[model.range.end][model.range.start].add(model.id)
+        self._grid.add_range(model.range, model.id)
 
         self._children[model.id] = model
 
@@ -496,43 +767,22 @@ class _DataRoot:
                 f"Data model with ID {model.id.hex()} is not a child of {self.model.id.hex()}"
             )
 
-        self._child_grid[model.range.start][model.range.end].remove(model.id)
-        self._inverse_grid[model.range.end][model.range.start].remove(model.id)
-
-        if 0 == len(self._child_grid[model.range.start][model.range.end]):
-            del self._child_grid[model.range.start][model.range.end]
-        if 0 == len(self._child_grid[model.range.start]):
-            del self._child_grid[model.range.start]
-
-        if 0 == len(self._inverse_grid[model.range.end][model.range.start]):
-            del self._inverse_grid[model.range.end][model.range.start]
-        if 0 == len(self._inverse_grid[model.range.end]):
-            del self._inverse_grid[model.range.end]
+        self._grid.remove_range(model.range, model.id)
 
         del self._children[model.id]
 
     def resize_range(self, resized_range: Range, size_diff: int):
         try:
-            for ids_ending_after_range in self._inverse_grid.shift_key_range(
-                size_diff, minimum=resized_range.end
+            for shifted_child_id, (start_shift, end_shift) in self._grid.resize_range(
+                resized_range, size_diff
             ):
-                for ids_starting_before_range in ids_ending_after_range.irange(
-                    maximum=resized_range.end, inclusive=(True, False)
-                ):
-                    for model_id in ids_starting_before_range:
-                        model = self._children[model_id]
-                        model.range = Range(model.range.start, model.range.end + size_diff)
-                for ids_entirely_after_range in ids_ending_after_range.shift_key_range(
-                    size_diff, minimum=resized_range.end
-                ):
-                    for model_id in ids_entirely_after_range:
-                        model = self._children[model_id]
-                        model.range = model.range.translate(size_diff)
+                shifted_child = self._children[shifted_child_id]
+                shifted_child.range = Range(
+                    shifted_child.range.start + start_shift,
+                    shifted_child.range.end + end_shift,
+                )
 
-            for ends in self._child_grid.shift_key_range(size_diff, minimum=resized_range.end):
-                ends.shift_key_range(size_diff)
-
-        except _RootChildBoundsDict.ShiftBreaksSortError as e:
+        except _RootChildBoundsDict.ShiftBreaksSortError:
             raise PatchOverlapError(
                 "Cannot resize child overlapping with the boundaries of other children!"
             )
@@ -541,28 +791,28 @@ class _DataRoot:
 
     def get_children_with_boundaries_intersecting_range(self, r: Range) -> List[DataModel]:
         intersecting_model_ids: Set[bytes] = set()
-        for starts_in_range in self._child_grid.irange(r.start, r.end, inclusive=(False, False)):
-            intersecting_model_ids.update(model_id for ends in starts_in_range for model_id in ends)
 
-        for ends_in_range in self._inverse_grid.irange(r.start, r.end, inclusive=(False, False)):
-            intersecting_model_ids.update(
-                model_id for starts in ends_in_range for model_id in starts
-            )
+        for starts_in_range in self._grid.get_ids_in_range(
+            start_range=(r.start, r.end), start_inclusivity=(False, False)
+        ):
+            intersecting_model_ids.add(starts_in_range)
+
+        for ends_in_range in self._grid.get_ids_in_range(
+            end_range=(r.start, r.end), end_inclusivity=(False, False)
+        ):
+            intersecting_model_ids.add(ends_in_range)
 
         return [self._children[data_id] for data_id in intersecting_model_ids]
 
     def get_children_affected_by_ranges(
         self, patch_ranges: List[Range]
     ) -> Iterable[Tuple[DataId, Range]]:
-        children_overlapping_ranges: Dict[Range, Set[DataId]] = defaultdict(set)
+        children_overlapping_ranges: Dict[Range, Iterable[DataId]] = defaultdict(set)
         for patch_range in patch_ranges:
-            for starting_before_patch_end in self._child_grid.irange(
-                minimum=None, maximum=patch_range.end
-            ):
-                for ending_after_patch_start in starting_before_patch_end.irange(
-                    minimum=patch_range.start, maximum=None
-                ):
-                    children_overlapping_ranges[patch_range].update(ending_after_patch_start)
+            children_overlapping_ranges[patch_range] = self._grid.get_ids_in_range(
+                start_range=(None, patch_range.end),
+                end_range=(patch_range.start, None),
+            )
 
         for patched_range, overlapping_data_ids in children_overlapping_ranges.items():
             for data_id in overlapping_data_ids:
