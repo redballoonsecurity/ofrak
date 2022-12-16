@@ -269,8 +269,8 @@ class ResourceViewInterface(metaclass=ViewableResourceTag):
         """
         raise NotImplementedError()
 
-    @classmethod
-    def create(cls: Type[RVI], resource_model: ResourceModel) -> RVI:
+    @classmethod  # pragma: no cover
+    def create(cls: Type[RVI], resource_model: ResourceModel) -> RVI:  # pragma: no cover
         raise NotImplementedError()
 
 
