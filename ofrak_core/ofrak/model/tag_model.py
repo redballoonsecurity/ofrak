@@ -1,4 +1,5 @@
 import functools
+from abc import abstractmethod
 from typing import Iterable, List, Set, Tuple
 
 
@@ -64,8 +65,10 @@ class ResourceTag(type):
 
         return tuple(tuple(level) for level in reversed(levels) if len(level) > 0)
 
+    @classmethod
+    @abstractmethod
     def caption(cls, attributes) -> str:
-        return str(cls.__name__)
+        raise NotImplementedError()
 
-    def __repr__(self):
-        return self.__name__
+    def __repr__(cls):
+        return cls.__name__
