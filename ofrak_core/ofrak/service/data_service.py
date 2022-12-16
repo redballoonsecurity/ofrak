@@ -476,7 +476,7 @@ class _DataRoot:
             column = grid[i][1]
 
         j = _CompareFirstTuple.bisect_left(column, y)
-        if i >= len(column) or column[j][0] != y:
+        if j >= len(column) or column[j][0] != y:
             column.insert(j, _CompareFirstTuple(y, default))
 
         return column[j][1]
