@@ -5,21 +5,20 @@ from typing import Optional
 from warnings import warn
 
 from binaryninja import BinaryView, Endianness, TypeClass
-
-from ofrak_type.range import Range
 from ofrak_type.architecture import InstructionSetMode
-from ofrak.model.component_model import ComponentConfig
-from ofrak.service.resource_service_i import ResourceFilter
+from ofrak_type.range import Range
+
 from ofrak.core.architecture import ProgramAttributes
+from ofrak.core.basic_block import BasicBlock
 from ofrak.core.code_region import CodeRegionUnpacker, CodeRegion
 from ofrak.core.complex_block import ComplexBlock, ComplexBlockStructureError, ComplexBlockUnpacker
-from ofrak.core.basic_block import BasicBlock
-from ofrak.core.memory_region import MemoryOverlapError
-from ofrak.core.program import Program
 from ofrak.core.data import DataWord
+from ofrak.core.program import Program
+from ofrak.model.component_model import ComponentConfig
+from ofrak.resource import Resource
+from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_binary_ninja.components.identifiers import BinaryNinjaAnalysisResource
 from ofrak_binary_ninja.model import BinaryNinjaAnalysis
-from ofrak.resource import Resource
 
 LOGGER = logging.getLogger(__name__)
 
@@ -49,16 +48,7 @@ class BinaryNinjaCodeRegionUnpacker(CodeRegionUnpacker):
             binaryview, region_start_vaddr, region_end_vaddr
         ):
             cb_view = ComplexBlock(cb_start_ea, cb_end_ea - cb_start_ea, cb_name)
-            try:
-                await region_view.create_child_region(
-                    cb_view, additional_attributes=(program_attrs,)
-                )
-            except MemoryOverlapError as e:
-                LOGGER.debug(
-                    f"Skipped complex block at {cb_start_ea:#x} because that would have resulted in overlap: {e}"
-                )
-                skip_count += 1
-                continue
+            await region_view.create_child_region(cb_view, additional_attributes=(program_attrs,))
 
         if skip_count > 0:
             LOGGER.warning(
