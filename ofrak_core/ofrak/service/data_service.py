@@ -259,9 +259,6 @@ class _CompareFirstTuple(Tuple, Generic[T]):
     def __eq__(self, other):
         return self[0] == other[0]
 
-    def __gt__(self, other):
-        return self[0] > other[0]
-
     @staticmethod
     def bisect_left(grid, val: int) -> int:
         return bisect_left(grid, _CompareFirstTuple(val, None))
