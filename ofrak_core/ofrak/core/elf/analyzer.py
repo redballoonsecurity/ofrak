@@ -2,15 +2,9 @@ import io
 import logging
 from typing import Optional, TypeVar
 
-from ofrak.core.memory_region import MemoryRegion
-
 from ofrak.component.analyzer import Analyzer
 from ofrak.core import NamedProgramSection
 from ofrak.core.architecture import ProgramAttributes
-from ofrak.model.component_model import ComponentConfig
-from ofrak.model.resource_model import ResourceAttributes
-from ofrak.resource import Resource
-from ofrak.service.resource_service_i import ResourceFilter
 from ofrak.core.elf.model import (
     ElfSectionHeader,
     Elf,
@@ -29,6 +23,12 @@ from ofrak.core.elf.model import (
     ElfVirtualAddress,
     UnanalyzedElfSegment,
 )
+from ofrak.core.memory_region import MemoryRegion
+from ofrak.model.component_model import ComponentConfig
+from ofrak.model.resource_model import ResourceAttributes
+from ofrak.model.viewable_tag_model import AttributesType
+from ofrak.resource import Resource
+from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_io.deserializer import BinaryDeserializer
 from ofrak_type.range import Range
 
@@ -308,7 +308,7 @@ class ElfRelaAnalyzer(Analyzer[None, ElfRelaEntry]):
         return ElfRelaEntry(r_offset, r_info, r_addend)
 
 
-class ElfSectionNameAnalyzer(Analyzer[None, NamedProgramSection.attributes_type]):
+class ElfSectionNameAnalyzer(Analyzer[None, AttributesType[NamedProgramSection]]):
     """
     Get the name of an ELF section. ELF section names are stored as null-terminated strings in
     dedicated string section, and each ELF section header's `sh_name` field is an offset in this
@@ -317,9 +317,9 @@ class ElfSectionNameAnalyzer(Analyzer[None, NamedProgramSection.attributes_type]
 
     id = b"ElfSectionNameAnalyzer"
     targets = (ElfSection,)
-    outputs = (NamedProgramSection.attributes_type,)
+    outputs = (AttributesType[NamedProgramSection],)
 
-    async def analyze(self, resource: Resource, config=None) -> NamedProgramSection.attributes_type:
+    async def analyze(self, resource: Resource, config=None) -> AttributesType[NamedProgramSection]:
         unnamed_section = await resource.view_as(UnanalyzedElfSection)
         section_header = await unnamed_section.get_header()
         elf_r = await unnamed_section.get_elf()
@@ -336,7 +336,7 @@ class ElfSectionNameAnalyzer(Analyzer[None, NamedProgramSection.attributes_type]
         except ValueError:
             LOGGER.info("String section is empty! Using '<no-strings>' as section name")
             section_name = "<no-strings>"  # This is what readelf returns in this situation
-        return NamedProgramSection.attributes_type(
+        return AttributesType[NamedProgramSection](
             name=section_name,
         )
 

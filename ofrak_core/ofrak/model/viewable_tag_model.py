@@ -2,7 +2,7 @@ import dataclasses
 from _warnings import warn
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Tuple, Type, Dict, Any, List, Set, TypeVar, Iterable, MutableMapping
+from typing import Tuple, Type, Dict, Any, List, Set, TypeVar, Iterable, MutableMapping, Generic
 from weakref import WeakValueDictionary
 
 import ofrak.model._auto_attributes
@@ -21,6 +21,14 @@ _VIEW_ATTRIBUTE_TYPE_NAME_SUFFIX = "AutoAttributes"
 
 RA = TypeVar("RA", bound=ResourceAttributes)
 RVI = TypeVar("RVI", bound="ResourceViewInterface")
+
+
+class AttributesType(ResourceAttributes, Generic[RVI]):
+    def __init__(self, *args: Any, **kwargs: Any):
+        ...
+
+    def __class_getitem__(cls, item: Type[RVI]) -> Type[ResourceAttributes]:
+        return item.attributes_type
 
 
 @dataclass
