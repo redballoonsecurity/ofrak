@@ -11,18 +11,6 @@ from ofrak_type.range import Range
 LOGGER = logging.getLogger(__file__)
 
 
-class MemoryOverlapError(RuntimeError):
-    """
-    Error raised when a memory region overlaps with an existing child memory region.
-    """
-
-    def __init__(self, new_region: "MemoryRegion", existing_region: "MemoryRegion"):
-        message = f"New MemoryRegion {new_region} overlaps with an existing child {existing_region}"
-        super().__init__(message)
-        self.new_region = new_region
-        self.existing_region = existing_region
-
-
 @dataclass
 class MemoryRegion(Addressable):
     """
@@ -103,7 +91,6 @@ class MemoryRegion(Addressable):
         :param child_mr: the child memory region
         :param additional_attributes: additional attributes passed to the child memory region
 
-        :raises OverlapError: if the child to be created overlaps with an existing child node
         :raises ValueError: if the child's end offset is larger than the memory region's size
         :return: the created child resource
         """
