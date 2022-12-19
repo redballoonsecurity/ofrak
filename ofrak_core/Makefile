@@ -16,7 +16,7 @@ inspect:
 .PHONY: test
 test: inspect
 	$(PYTHON) -m pytest -n auto test_ofrak --cov=ofrak --cov-report=term-missing
-	fun-coverage --cov-fail-under=97
+	fun-coverage --cov-fail-under=98
 
 .PHONY: dependencies
 dependencies:
