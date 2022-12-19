@@ -25,7 +25,7 @@ RVI = TypeVar("RVI", bound="ResourceViewInterface")
 
 class AttributesType(ResourceAttributes, Generic[RVI]):
     def __init__(self, *args: Any, **kwargs: Any):
-        ...
+        raise NotImplementedError("AttributesType cannot be instantiated")
 
     def __class_getitem__(cls, item: Type[RVI]) -> Type[ResourceAttributes]:
         return item.attributes_type

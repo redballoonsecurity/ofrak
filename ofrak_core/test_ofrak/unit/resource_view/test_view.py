@@ -3,7 +3,7 @@ from typing import Optional
 
 import pytest
 
-from ofrak import OFRAKContext
+from ofrak import OFRAKContext, ResourceAttributes
 from ofrak.core import InstructionModifier, InstructionModifierConfig
 from ofrak.core.addressable import Addressable
 from ofrak.core.architecture import ProgramAttributes
@@ -11,6 +11,7 @@ from ofrak.core.basic_block import BasicBlock
 from ofrak.core.instruction import Instruction
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.core.program import Program
+from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import ResourceFilter, ResourceAttributeValueFilter
 from ofrak.core.free_space import (
@@ -202,6 +203,26 @@ async def test_view_indexes(mock_basic_block, mock_instruction_view, ofrak_conte
         )
     )
     assert len(bb_children) == 0
+
+
+async def test_AttributesType():
+    # Constructor fails without a type parameter
+    with pytest.raises(NotImplementedError):
+        AttributesType()
+
+    # With a type parameter, the constructor of an actual attribute is used
+    _ = AttributesType[Instruction](
+        "add r1, r2, r3",
+        "add",
+        "r1, r2, r3",
+        InstructionSetMode.NONE,
+    )
+
+    # We get a ResourceAttributes type (the expected type) from AttributesType
+    instr_attrs_t = AttributesType[Instruction]
+    assert issubclass(instr_attrs_t, ResourceAttributes)
+    assert instr_attrs_t.__name__ == "InstructionAutoAttributes"
+    assert AttributesType[Instruction] is instr_attrs_t
 
 
 @pytest.fixture()
