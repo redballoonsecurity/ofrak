@@ -66,7 +66,7 @@ What is included:
   - `MagicAnalyzer` and two Identifier components which uses `python-libmagic` to automatically tag OFRAK `Resource`s
   - Basic modifiers like `StringFindReplaceModifier` and `BinaryInjectorModifier`
   - Basic useful analyzers like `Sha256Analyzer` and `MD5Analyzer` which calculate the respective checksums of OFRAK `Resource`s
-  - An unpacker Linux device tree blobs (DTB)
+  - An unpacker for Linux device tree blobs (DTB)
   - Analyzers wrapping `strings` and `binwalk`
   - An analyzer to calculate Shannon entropy of binary data
 
