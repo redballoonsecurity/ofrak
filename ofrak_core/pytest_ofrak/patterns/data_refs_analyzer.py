@@ -40,7 +40,6 @@ class DataRefsAnalyzerTestPattern:
     """
     Test pattern for testing DataRefsAnalyzer implementation for different frontends. Each test
     case should have at least all of the expected data refs analyzed successfully.
-
     """
 
     @pytest.fixture(params=DATA_REFS_TEST_CASES, ids=lambda tc: os.path.basename(tc.binary))

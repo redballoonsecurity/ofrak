@@ -11,17 +11,22 @@ from pytest_ofrak.patterns.data_refs_analyzer import (
 from ofrak.core import DataWord, ReferencedDataAttributes
 
 
+@dataclass
 class MockResource:
-    def __init__(self, data: bytes):
-        self._data = data
+
+    data: bytes
 
     async def get_data(self):
-        return self._data
+        return self.data
 
 
 @dataclass
 class MockDataWord(DataWord):
-    resource: MockResource
+    mock_resource: MockResource
+
+    @property
+    def resource(self):
+        return self.mock_resource
 
 
 @dataclass
@@ -89,6 +94,7 @@ class TestDataRefsAnalyzerLogic(DataRefsAnalyzerTestPattern):
         referencing_addresses = list()
         referenced_data = list()
         references = list()
+        # Build up a ReferencedDataAttributes object without backend analysis.
         for i, reference in enumerate(data_refs_test_case.expected_references):
             from_vaddr, to_vaddr = reference
             referencing_addresses.append(from_vaddr)
