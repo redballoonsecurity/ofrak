@@ -228,23 +228,25 @@ async def test_lief_add_segment_modifier(hello_out: Resource, tmp_path):
     segment_vaddr = 0x108000
     segment_length = 0x2000
 
+    # Assert new segment not in original binary
     original_path = tmp_path / "original"
     await hello_out.flush_to_disk(original_path)
     with pytest.raises(ValueError):
         assert_segment_exists(original_path, segment_vaddr, segment_length)
 
-    empty_vaddr = 0x108000
-    config = LiefAddSegmentConfig(empty_vaddr, 0x1000, [0 for _ in range(segment_length)], "rw")
+    # Add segment
+    config = LiefAddSegmentConfig(segment_vaddr, 0x1000, [0 for _ in range(segment_length)], "rw")
     await hello_out.run(LiefAddSegmentModifier, config)
 
+    # Assert new segment is in extended binary
     extended_path = tmp_path / "extended"
     await hello_out.flush_to_disk(extended_path)
-    assert_segment_exists(extended_path, empty_vaddr, 0x2000)
+    assert_segment_exists(extended_path, segment_vaddr, 0x2000)
 
 
 def assert_segment_exists(filepath: str, vaddr: int, length: int):
     """
-    Assert segment with given vaddr and lenght exist
+    Assert segment with given vaddr and length exist.
     """
     with open(filepath, "rb") as f:
         elffile = ELFFile(f)
