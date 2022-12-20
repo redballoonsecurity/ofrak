@@ -67,7 +67,6 @@ def generate_docs(packages: List[str], directory: str):
 
 nav = mkdocs_gen_files.Nav()
 generate_docs(["ofrak"], "ofrak_core")
-generate_docs(["ofrak_components"], "ofrak_components")
 generate_docs(["ofrak_io"], "ofrak_io")
 generate_docs(["ofrak_patch_maker"], "ofrak_patch_maker")
 generate_docs(["ofrak_type"], "ofrak_type")
