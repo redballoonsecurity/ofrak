@@ -31,7 +31,7 @@ class TestOfrakBlocks:
         Test that ComplexBlock.get_assembly returns an assembly string.
         """
         assembly = await frame_dummy_complex_block.get_assembly()
-        assert isinstance(assembly, str)
+        assert assembly == EXPECTED_ASSEMBLY
 
     async def test_get_data_words(self, frame_dummy_complex_block: ComplexBlock):
         """
@@ -137,3 +137,15 @@ DEFLATED_FRAME_DUMMY = DeflatedRegion(
         DeflatedRegion(DataWord(0x8064, 0x4, "<L", (0x8048,)), []),
     ],
 )
+
+EXPECTED_ASSEMBLY = """ldr r0, [pc, #0x24]
+push {r3, lr}
+ldr r3, [r0]
+cmp r3, #0x0
+beq #0x8058
+ldr r3, [pc, #0x14]
+cmp r3, #0x0
+movne lr, pc
+bxne re
+pop {r3,lr}
+bx lr"""
