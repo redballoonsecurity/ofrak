@@ -50,7 +50,7 @@ class ResourceView(ResourceViewInterface):
 
     @classmethod
     def caption(cls, attributes) -> str:
-        return super().caption(attributes)  # type: ignore
+        return str(cls.__name__)
 
     @property
     def resource(self) -> Resource:

@@ -64,8 +64,8 @@ class ResourceTag(type):
 
         return tuple(tuple(level) for level in reversed(levels) if len(level) > 0)
 
-    @classmethod
-    def caption(cls, attributes) -> str:
+    @classmethod  # pragma: no cover
+    def caption(cls, attributes) -> str:  # pragma: no cover
         return str(cls.__name__)
 
     def __repr__(cls):
