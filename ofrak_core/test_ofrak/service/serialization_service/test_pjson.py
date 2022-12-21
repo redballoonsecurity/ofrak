@@ -293,13 +293,6 @@ def _get_strict_descendants(cls: Type) -> List[Type]:
     import ofrak
 
     injector.discover(ofrak)
-
-    try:
-        import ofrak_components
-
-        injector.discover(ofrak_components)
-    except ModuleNotFoundError:
-        pass
     return [descendant for descendant in _get_descendants(cls, injector) if descendant != cls]
 
 

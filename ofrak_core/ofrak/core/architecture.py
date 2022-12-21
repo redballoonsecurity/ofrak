@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from ofrak import ResourceAttributes
+from ofrak.model.resource_model import ResourceAttributes
+
 from ofrak_type.architecture import InstructionSet, SubInstructionSet, ProcessorType
 from ofrak_type.bit_width import BitWidth
 from ofrak_type.endianness import Endianness

@@ -7,7 +7,6 @@ packages_paths:
     "ofrak_io",
     "ofrak_patch_maker",
     "ofrak_core",
-    "ofrak_components",
     "disassemblers/ofrak_angr",
     "disassemblers/ofrak_capstone",
   ]

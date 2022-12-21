@@ -61,7 +61,7 @@ from ofrak.service.serialization.pjson import (
     PJSONSerializationService,
 )
 from ofrak.service.serialization.pjson_types import PJSONType
-from ofrak_components.entropy import DataSummaryAnalyzer
+from ofrak.core.entropy import DataSummaryAnalyzer
 
 T = TypeVar("T")
 LOGGER = logging.getLogger(__name__)

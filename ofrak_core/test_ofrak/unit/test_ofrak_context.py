@@ -4,7 +4,7 @@ import logging
 import pytest
 
 from ofrak import OFRAK, OFRAKContext
-from ofrak_components.apk import ApkIdentifier
+from ofrak.core.apk import ApkIdentifier
 from ofrak_type.error import NotFoundError
 from pytest_ofrak import mock_library3
 from pytest_ofrak.mock_library3 import _MockComponentA
