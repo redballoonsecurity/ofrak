@@ -56,9 +56,9 @@ class LiefAddSegmentModifier(Modifier[LiefAddSegmentConfig]):
             #   and https://github.com/lief-project/LIEF/issues/143
             if not binary.has(lief.ELF.SEGMENT_TYPES.NOTE):
                 raise ValueError("Binary must have a NOTE section to add a new section")
-            segment = binary.replace(segment, binary[lief.ELF.SEGMENT_TYPES.NOTE])
+            _ = binary.replace(segment, binary[lief.ELF.SEGMENT_TYPES.NOTE])
         else:
-            segment = binary.add(segment)
+            _ = binary.add(segment)
 
         with tempfile.NamedTemporaryFile() as temp_file:
             binary.write(temp_file.name)
