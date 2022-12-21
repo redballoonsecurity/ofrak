@@ -17,7 +17,7 @@ from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceFilter, ResourceServiceInterface
 from ofrak_ghidra.constants import CORE_OFRAK_GHIDRA_SCRIPTS
 from ofrak_ghidra.ghidra_model import GhidraProject, OfrakGhidraMixin, OfrakGhidraScript
-from ofrak_ghidra.components.ghidra_analyzer import GhidraCodeRegionAnalyzer
+from ofrak_ghidra.components.ghidra_analyzer import GhidraCodeRegionModifier
 from ofrak_io.batch_manager import make_batch_manager
 
 LOGGER = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ class GhidraCodeRegionUnpacker(CodeRegionUnpacker, OfrakGhidraMixin):
         # Run the GetCodeRegions script for every CodeRegion to match with the backend.
         # This is not efficient but shouldn't matter much since there shouldn't be too many CodeRegions.
         code_region = await resource.view_as(CodeRegion)
-        await resource.run(GhidraCodeRegionAnalyzer, None)
+        await resource.run(GhidraCodeRegionModifier, None)
 
         code_region_start = code_region.virtual_address
         code_region_end = code_region_start + code_region.size

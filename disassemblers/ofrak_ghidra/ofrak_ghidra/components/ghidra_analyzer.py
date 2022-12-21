@@ -9,7 +9,9 @@ from typing import Optional, List
 
 from ofrak import ResourceFilter
 from ofrak.core import CodeRegion
+from ofrak_type.error import NotFoundError
 from ofrak.component.analyzer import Analyzer
+from ofrak.component.modifier import Modifier
 from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource, ResourceFactory
 from ofrak.service.data_service_i import DataServiceInterface
@@ -234,16 +236,15 @@ class GhidraCodeRegionConfig(ComponentConfig):
     pass
 
 
-class GhidraCodeRegionAnalyzer(Analyzer[Optional[GhidraCodeRegionConfig], CodeRegion], OfrakGhidraMixin):
-    id = b"GhidraCodeRegionAnalyzer"
+class GhidraCodeRegionModifier(Modifier[Optional[GhidraCodeRegionConfig]], OfrakGhidraMixin):
+    id = b"GhidraCodeRegionModifier"
     targets = (CodeRegion,)
-    outputs = (CodeRegion,)
 
     get_code_regions_script = OfrakGhidraScript(
         os.path.join(CORE_OFRAK_GHIDRA_SCRIPTS, "GetCodeRegions.java"),
     )
 
-    async def analyze(self, resource: Resource, config: Optional[GhidraCodeRegionConfig] = None):
+    async def modify(self, resource: Resource, config: Optional[GhidraCodeRegionConfig] = None):
         code_region = await resource.view_as(CodeRegion)
         ghidra_project = await OfrakGhidraMixin.get_ghidra_project(resource)
 
@@ -262,11 +263,15 @@ class GhidraCodeRegionAnalyzer(Analyzer[Optional[GhidraCodeRegionConfig], CodeRe
         ofrak_code_regions = sorted(ofrak_code_regions, key=lambda cr: cr.virtual_address)
         backend_code_regions = sorted(backend_code_regions, key=lambda cr: cr.virtual_address)
 
-        for i, cr in enumerate(ofrak_code_regions):
+        for cr in ofrak_code_regions:
             if cr.virtual_address == code_region.virtual_address:
-                backend_cr = backend_code_regions[i]
-                cr.resource.add_view(backend_cr)
-                return ()
+                relative_va = cr.virtual_address - ofrak_code_regions[0].virtual_address
 
-        raise NotFoundError(f"Could not find CodeRegion for {code_region}")
+                for backend_cr in backend_code_regions:
+                    backend_relative_va = backend_cr.virtual_address - backend_code_regions[0].virtual_address
+
+                    if backend_relative_va == relative_va and backend_cr.size == cr.size:
+                        cr.resource.add_view(backend_cr)
+
+        LOGGER.debug(f"Could not find CodeRegion for {code_region}")
 
