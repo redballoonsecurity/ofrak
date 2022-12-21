@@ -48,6 +48,10 @@ class ResourceView(ResourceViewInterface):
     def get_special_field_names(cls) -> Set[str]:
         return {"_resource", "_deleted"}
 
+    @classmethod
+    def caption(cls, attributes) -> str:
+        return super().caption(attributes)  # type: ignore
+
     @property
     def resource(self) -> Resource:
         """
