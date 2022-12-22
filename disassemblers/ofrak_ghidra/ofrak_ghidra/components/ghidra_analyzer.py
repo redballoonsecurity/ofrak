@@ -9,7 +9,6 @@ from typing import Optional, List
 
 from ofrak import ResourceFilter
 from ofrak.core import CodeRegion
-from ofrak_type.error import NotFoundError
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
 from ofrak.model.component_model import ComponentConfig
@@ -26,7 +25,7 @@ from ofrak_ghidra.constants import (
     GHIDRA_SERVER_HOST,
     GHIDRA_SERVER_PORT,
     GHIDRA_LOG_FILE,
-    CORE_OFRAK_GHIDRA_SCRIPTS
+    CORE_OFRAK_GHIDRA_SCRIPTS,
 )
 from ofrak_ghidra.ghidra_model import (
     GhidraProject,
@@ -249,15 +248,14 @@ class GhidraCodeRegionModifier(Modifier[Optional[GhidraCodeRegionConfig]], Ofrak
         ghidra_project = await OfrakGhidraMixin.get_ghidra_project(resource)
 
         ofrak_code_regions = await ghidra_project.resource.get_descendants_as_view(
-            v_type=CodeRegion,
-            r_filter=ResourceFilter(tags=[CodeRegion])
+            v_type=CodeRegion, r_filter=ResourceFilter(tags=[CodeRegion])
         )
 
         backend_code_regions_json = await self.get_code_regions_script.call_script(resource)
         backend_code_regions = []
 
         for cr_j in backend_code_regions_json:
-            cr = CodeRegion(cr_j['start'], cr_j['size'])
+            cr = CodeRegion(cr_j["start"], cr_j["size"])
             backend_code_regions.append(cr)
 
         ofrak_code_regions = sorted(ofrak_code_regions, key=lambda cr: cr.virtual_address)
@@ -268,10 +266,11 @@ class GhidraCodeRegionModifier(Modifier[Optional[GhidraCodeRegionConfig]], Ofrak
                 relative_va = cr.virtual_address - ofrak_code_regions[0].virtual_address
 
                 for backend_cr in backend_code_regions:
-                    backend_relative_va = backend_cr.virtual_address - backend_code_regions[0].virtual_address
+                    backend_relative_va = (
+                        backend_cr.virtual_address - backend_code_regions[0].virtual_address
+                    )
 
                     if backend_relative_va == relative_va and backend_cr.size == cr.size:
                         cr.resource.add_view(backend_cr)
 
         LOGGER.debug(f"Could not find CodeRegion for {code_region}")
-

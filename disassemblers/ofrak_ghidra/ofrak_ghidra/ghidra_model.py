@@ -4,13 +4,10 @@ from typing import Any, Iterable
 
 import aiohttp
 
-from ofrak.core import CodeRegion
 from ofrak import ResourceFilter
 from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import ResourceFilter
-from ofrak_ghidra.constants import CORE_OFRAK_GHIDRA_SCRIPTS
-from ofrak_type.error import NotFoundError
 
 
 @dataclass
@@ -60,7 +57,7 @@ class OfrakGhidraScript:
         params = {f"__arg_{i}": arg for i, arg in enumerate(script_args)}
 
         async with aiohttp.ClientSession() as requests:
-            endpoint = self.script_name.split('.')[0].lower()
+            endpoint = self.script_name.split(".")[0].lower()
 
             response = await requests.get(
                 f"{root_ghidra_project.ghidra_url}/{endpoint}", params=params
