@@ -57,10 +57,8 @@ class OfrakGhidraScript:
         params = {f"__arg_{i}": arg for i, arg in enumerate(script_args)}
 
         async with aiohttp.ClientSession() as requests:
-            endpoint = self.script_name.split(".")[0].lower()
-
             response = await requests.get(
-                f"{root_ghidra_project.ghidra_url}/{endpoint}", params=params
+                f"{root_ghidra_project.ghidra_url}/{self.script_name}", params=params
             )
             if response.status == 200:
                 return await response.json(content_type=None)

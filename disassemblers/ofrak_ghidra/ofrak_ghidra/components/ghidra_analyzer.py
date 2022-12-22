@@ -225,7 +225,6 @@ class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProjec
 
         for ghidra_script in self._scripts:
             args.append(ghidra_script)
-            args.append(ghidra_script.split(".")[0].lower())
 
         return args
 

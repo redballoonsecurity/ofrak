@@ -52,13 +52,13 @@ public class AnalysisServer extends HeadlessScript {
         String scriptName;
         String scriptEndpoint;
 
-        for (int i = 1; i < args.length; i += 2){
+        for (int i = 1; i < args.length; i += 1){
             scriptName = args[i];
             server.createContext(
-                String.format("/%s", args[i+1]),
+                String.format("/%s", scriptName),
                 new HandleOfrakRequest(scriptName)
             );
-            println(String.format("Adding handler: /%s -> %s", args[i+1], scriptName));
+            println(String.format("Adding handler: /%s -> %s", scriptName, scriptName));
         }
 
         server.setExecutor(null); // creates a default executor
