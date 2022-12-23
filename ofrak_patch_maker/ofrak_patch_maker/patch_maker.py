@@ -34,16 +34,11 @@ await ofrak_fw_resource.run(SegmentInjectorModifier, SegmentInjectorModifierConf
 import logging
 import os
 import tempfile
-from collections import defaultdict
 from types import ModuleType
 from typing import Optional, List, Dict, Union, Tuple, Iterable, Mapping
 
 from immutabledict import immutabledict
 
-from ofrak_type import ArchInfo
-from ofrak.core.free_space import (
-    Allocatable,
-)
 from ofrak_patch_maker.model import (
     AssembledObject,
     BOM,
@@ -58,6 +53,7 @@ from ofrak_patch_maker.toolchain.model import (
     Segment,
 )
 from ofrak_patch_maker.toolchain.version import ToolchainVersion
+from ofrak_type import ArchInfo
 from ofrak_type.memory_permissions import MemoryPermissions
 
 
@@ -483,72 +479,13 @@ class PatchMaker:
 
         return FEM(name, linked_executable)
 
-    @staticmethod
-    async def _get_space(
-        allocatable: Allocatable,
-        perms: MemoryPermissions,
-        required_size: int,
-        alignment: int = 1,
-    ) -> Tuple[int, int]:
-        allocs = await allocatable.allocate(
-            perms,
-            required_size,
-            min_fragment_size=required_size,
-            alignment=alignment,
-        )
-        allocation = next(iter(allocs))
-        return allocation.start, allocation.length()
-
     async def allocate_bom(
         self,
-        allocatable: Allocatable,
+        allocatable,
         bom: BOM,
     ) -> PatchRegionConfig:
-        """
-        Responsible for allocating the patches if free memory is required and
-        providing details about where space was made.
-
-        Future, hopeful improvements include removing the `free_space_service` parameter once that
-        functionality can be leveraged through
-        [Resource][ofrak.resource.Resource].
-
-        :param Allocatable allocatable:
-        :param bom:
-
-        :raises PatchMakerException: if the data service for `fw_resource` is in a bad state
-        :return: information required to generate the linker directive script
-        """
-        segments_to_allocate: List[Tuple[AssembledObject, Segment]] = []
-        for obj in bom.object_map.values():
-            for segment in obj.segment_map.values():
-                segments_to_allocate.append((obj, segment))
-
-        # Allocate largest segments first
-        segments_to_allocate.sort(key=lambda o_s: o_s[1].length, reverse=True)
-        segments_by_object: Dict[str, List[Segment]] = defaultdict(list)
-        for obj, segment in segments_to_allocate:
-            vaddr, final_size = 0, 0
-            if segment.length > 0:
-                vaddr, final_size = await PatchMaker._get_space(
-                    allocatable,
-                    segment.access_perms,
-                    segment.length,
-                    alignment=bom.segment_alignment,
-                )
-
-            segments_by_object[obj.path].append(
-                Segment(
-                    segment_name=segment.segment_name,
-                    vm_address=vaddr,
-                    offset=segment.offset,
-                    is_entry=segment.is_entry,
-                    length=final_size,
-                    access_perms=segment.access_perms,
-                )
-            )
-
-        all_segments: Dict[str, Tuple[Segment, ...]] = {
-            object_path: tuple(segments) for object_path, segments in segments_by_object.items()
-        }
-
-        return PatchRegionConfig(bom.name + "_patch", immutabledict(all_segments))
+        # raise DeprecationWarning(
+        #     "PatchMaker.allocate_bom(allocatable, bom) is deprecated! Use "
+        #     "allocatable.allocate_bom(bom) instead."
+        # )
+        return await allocatable.allocate_bom(bom)
