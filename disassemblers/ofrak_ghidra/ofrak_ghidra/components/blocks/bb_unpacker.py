@@ -35,10 +35,6 @@ class GhidraBasicBlockUnpacker(
         os.path.join(CORE_OFRAK_GHIDRA_SCRIPTS, "GetInstructions.java"),
     )
 
-    get_code_regions_script = OfrakGhidraScript(
-        os.path.join(CORE_OFRAK_GHIDRA_SCRIPTS, "GetCodeRegions.java"),
-    )
-
     def __init__(
         self,
         resource_factory: ResourceFactory,
@@ -50,9 +46,8 @@ class GhidraBasicBlockUnpacker(
         super().__init__(resource_factory, data_service, resource_service, component_locator)
 
     async def unpack(self, resource: Resource, config=None):
-        bb_view = await resource.view_as(BasicBlock)
+        bb_view: BasicBlock = await resource.view_as(BasicBlock)
         bb_start_vaddr = bb_view.virtual_address
-
         instructions = await self.batch_manager.get_result(
             (
                 resource,
