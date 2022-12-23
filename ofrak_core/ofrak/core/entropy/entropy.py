@@ -5,7 +5,6 @@ import math
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures.process import BrokenProcessPool
 from dataclasses import dataclass
-from typing import Callable
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.model.resource_model import ResourceAttributes
@@ -18,8 +17,6 @@ LOGGER = logging.getLogger(__name__)
 
 C_LOG_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_uint8)
 
-
-entropy_func: Callable[[bytes, int, Callable[[int], None]], bytes]
 
 try:
     from .entropy_c import entropy_c as entropy_func

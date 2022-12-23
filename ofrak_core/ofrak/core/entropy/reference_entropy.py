@@ -49,7 +49,7 @@ def _shannon_entropy(distribution: List[int], window_size: int) -> float:
     entropy. More here: <https://en.wikipedia.org/wiki/Entropy_(information_theory)>.
     """
 
-    result = 0
+    result = 0.0
     for num_occurrences in distribution:
         probability = num_occurrences / window_size
         # Note that the zero check is required because the domain of log2 is the positive reals
