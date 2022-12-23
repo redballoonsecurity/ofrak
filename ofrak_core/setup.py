@@ -24,7 +24,7 @@ entropy_so = setuptools.Extension(
     sources=["ofrak/core/entropy/entropy.c"],
     libraries=["m"],  # math library
     export_symbols=["shannon_entropy"],
-    optional=True,
+    optional=True,  # If this fails the build, OFRAK will fall back to Python implementation
 )
 
 

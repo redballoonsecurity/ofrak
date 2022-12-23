@@ -5,6 +5,7 @@ import math
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures.process import BrokenProcessPool
 from dataclasses import dataclass
+from typing import Callable
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.model.resource_model import ResourceAttributes
@@ -16,6 +17,9 @@ LOGGER = logging.getLogger(__name__)
 
 
 C_LOG_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_uint8)
+
+
+entropy_func: Callable[[bytes, int, Callable[[int], None]], bytes]
 
 try:
     from .entropy_c import entropy_c as entropy_func
@@ -90,7 +94,7 @@ def sample_entropy(
     def log_percent(percent):  # pragma: no cover
         LOGGER.info(f"Entropy calculation {percent}% complete for {resource_id.hex()}")
 
-    result = entropy_func(data, len(data), window_size, log_percent)
+    result = entropy_func(data, window_size, log_percent)
 
     if len(result) <= max_samples:
         return result

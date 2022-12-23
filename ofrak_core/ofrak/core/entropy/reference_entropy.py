@@ -1,19 +1,23 @@
 import logging
 import math
-from typing import Callable, List
+from typing import Callable, List, Optional
 
 
 def entropy_func(
-    data: bytes, data_len: int, window_size: int, log_percent: Callable[[int], None]
+    data: bytes, window_size: int, log_percent: Optional[Callable[[int], None]] = None
 ) -> bytes:
     """
     Return a list of entropy values where each value represents the Shannon entropy of the byte
     value distribution over a fixed-size, sliding window.
     """
-    logging.warning(
-        f"Using the Python implementation of the Shannon entropy calculation! This is potentially "
-        f"very slow, and is only used when the C extension cannot be built/found."
-    )
+    if log_percent is None:
+        log_percent = lambda x: None
+    else:
+        # Sort of hacky way to know we are being called from the tests and don't need to log this
+        logging.warning(
+            f"Using the Python implementation of the Shannon entropy calculation! This is potentially "
+            f"very slow, and is only used when the C extension cannot be built/found."
+        )
 
     # Create a histogram, and populate it with initial values
     histogram = [0] * 256
@@ -21,13 +25,13 @@ def entropy_func(
         histogram[b] += 1
 
     # Calculate the entropy using a sliding window
-    entropy = [0] * (data_len - window_size)
+    entropy = [0] * (len(data) - window_size)
     last_percent_logged = 0
     for i in range(len(entropy)):
         entropy[i] = math.floor(255 * _shannon_entropy(histogram, window_size))
         histogram[data[i]] -= 1
         histogram[data[i + window_size]] += 1
-        percent = int((i * 100) / data_len)
+        percent = int((i * 100) / len(data))
         if percent > last_percent_logged and percent % 10 == 0:
             log_percent(percent)
             last_percent_logged = percent

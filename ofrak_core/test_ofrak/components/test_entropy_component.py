@@ -32,9 +32,9 @@ async def test_analyzer(ofrak_context: OFRAKContext, test_file_path):
     data_summary = root.get_attributes(DataSummary)
     entropy = data_summary.entropy_samples
     data = await root.get_data()
-    assert len(entropy) == len(entropy_func(data, len(data), 256, lambda s: None))
+    assert len(entropy) == len(entropy_func(data, 256))
     assert _almost_equal(
-        entropy, entropy_func(data, len(data), 256, lambda s: None)
+        entropy, entropy_func(data, 256)
     ), f"Entropy analysis for {test_file_path} differs from reference entropy."
 
 
