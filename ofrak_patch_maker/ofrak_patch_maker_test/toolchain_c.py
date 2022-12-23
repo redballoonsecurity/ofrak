@@ -3,7 +3,7 @@ import os
 import tempfile
 
 
-from ofrak.core.architecture import ProgramAttributes
+from ofrak_type import ArchInfo
 from ofrak_type.architecture import InstructionSet
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
@@ -18,7 +18,7 @@ from ofrak_patch_maker.toolchain.version import ToolchainVersion
 from ofrak_type.memory_permissions import MemoryPermissions
 
 
-def run_bounds_check_test(toolchain: ToolchainVersion, proc: ProgramAttributes):
+def run_bounds_check_test(toolchain: ToolchainVersion, proc: ArchInfo):
     """
     Example solution patch for bounds_check challenge.
     """
@@ -87,7 +87,7 @@ def run_bounds_check_test(toolchain: ToolchainVersion, proc: ProgramAttributes):
     assert get_file_format(exec_path) == tc_config.file_format
 
 
-def run_hello_world_test(toolchain: ToolchainVersion, proc: ProgramAttributes):
+def run_hello_world_test(toolchain: ToolchainVersion, proc: ArchInfo):
     """
     Make sure we can run the toolchain components without falling over.
     """

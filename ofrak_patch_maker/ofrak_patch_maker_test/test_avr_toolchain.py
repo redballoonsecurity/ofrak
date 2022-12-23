@@ -1,6 +1,6 @@
 import pytest
 
-from ofrak.core.architecture import ProgramAttributes
+from ofrak_type import ArchInfo
 from ofrak_patch_maker.toolchain.version import ToolchainVersion
 from ofrak_patch_maker_test import ToolchainUnderTest
 from ofrak_patch_maker_test.toolchain_asm import (
@@ -22,7 +22,7 @@ AVR_EXTENSION = ".avr"
     params=[
         ToolchainUnderTest(
             ToolchainVersion.GNU_AVR_5,
-            ProgramAttributes(
+            ArchInfo(
                 InstructionSet.AVR,
                 SubInstructionSet.AVR2,
                 BitWidth.BIT_32,
