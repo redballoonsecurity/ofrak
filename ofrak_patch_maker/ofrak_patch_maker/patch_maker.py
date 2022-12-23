@@ -40,7 +40,7 @@ from typing import Optional, List, Dict, Union, Tuple, Iterable, Mapping
 
 from immutabledict import immutabledict
 
-from ofrak.core.architecture import ProgramAttributes
+from ofrak_type import ArchInfo
 from ofrak.core.free_space import (
     Allocatable,
 )
@@ -64,7 +64,7 @@ from ofrak_type.memory_permissions import MemoryPermissions
 class PatchMaker:
     def __init__(
         self,
-        program_attributes: ProgramAttributes,
+        program_attributes: ArchInfo,
         toolchain_config: ToolchainConfig,
         toolchain_version: ToolchainVersion,
         platform_includes: Optional[Iterable[str]] = None,
@@ -125,7 +125,7 @@ class PatchMaker:
 
     @staticmethod
     def _get_toolchain(
-        program_attributes: ProgramAttributes,
+        program_attributes: ArchInfo,
         toolchain_config: ToolchainConfig,
         toolchain_version: ToolchainVersion,
         logger: Union[logging.Logger, ModuleType] = logging,

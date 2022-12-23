@@ -5,7 +5,7 @@ from abc import ABC
 from typing import Iterable, List, Mapping, Optional, Tuple, Dict
 from warnings import warn
 
-from ofrak.core.architecture import ProgramAttributes
+from ofrak_type import ArchInfo
 from ofrak_type.architecture import InstructionSet, SubInstructionSet
 from ofrak_patch_maker.binary_parser.gnu import GNU_ELF_Parser, GNU_V10_ELF_Parser
 from ofrak_patch_maker.toolchain.abstract import Toolchain, RBS_AUTOGEN_WARNING
@@ -23,7 +23,7 @@ from ofrak_type.memory_permissions import MemoryPermissions
 class Abstract_GNU_Toolchain(Toolchain, ABC):
     def __init__(
         self,
-        processor: ProgramAttributes,
+        processor: ArchInfo,
         toolchain_config: ToolchainConfig,
         logger: logging.Logger = logging.getLogger(__name__),
     ):
@@ -106,7 +106,7 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
     def name(self) -> str:
         raise NotImplementedError()
 
-    def _get_compiler_target(self, processor: ProgramAttributes) -> Optional[str]:
+    def _get_compiler_target(self, processor: ArchInfo) -> Optional[str]:
         return self._config.compiler_target
 
     @property
@@ -354,7 +354,7 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
 class GNU_10_Toolchain(Abstract_GNU_Toolchain):
     def __init__(
         self,
-        processor: ProgramAttributes,
+        processor: ArchInfo,
         toolchain_config: ToolchainConfig,
         logger: logging.Logger = logging.getLogger(__name__),
     ):
@@ -385,7 +385,7 @@ class GNU_ARM_NONE_EABI_10_2_1_Toolchain(GNU_10_Toolchain):
 
     def __init__(
         self,
-        processor: ProgramAttributes,
+        processor: ArchInfo,
         toolchain_config: ToolchainConfig,
         logger: logging.Logger = logging.getLogger(__name__),
     ):
@@ -399,7 +399,7 @@ class GNU_ARM_NONE_EABI_10_2_1_Toolchain(GNU_10_Toolchain):
     def name(self):
         return "GNU_ARM_NONE"
 
-    def _get_assembler_target(self, processor: ProgramAttributes):
+    def _get_assembler_target(self, processor: ArchInfo):
         """
         Thumb mode should be defined in the assembler source at the top, using:
 
@@ -427,7 +427,7 @@ class GNU_X86_64_LINUX_EABI_10_3_0_Toolchain(GNU_10_Toolchain):
 
     def __init__(
         self,
-        processor: ProgramAttributes,
+        processor: ArchInfo,
         toolchain_config: ToolchainConfig,
         logger: logging.Logger = logging.getLogger(__name__),
     ):
@@ -447,7 +447,7 @@ class GNU_X86_64_LINUX_EABI_10_3_0_Toolchain(GNU_10_Toolchain):
     def name(self) -> str:
         return "GNU_X86_64_LINUX"
 
-    def _get_assembler_target(self, processor: ProgramAttributes):
+    def _get_assembler_target(self, processor: ArchInfo):
         if self._config.assembler_target:
             return self._config.assembler_target
         return "generic64"
@@ -485,7 +485,7 @@ class GNU_M68K_LINUX_10_Toolchain(GNU_10_Toolchain):
 
     def __init__(
         self,
-        processor: ProgramAttributes,
+        processor: ArchInfo,
         toolchain_config: ToolchainConfig,
         logger: logging.Logger = logging.getLogger(__name__),
     ):
@@ -502,7 +502,7 @@ class GNU_M68K_LINUX_10_Toolchain(GNU_10_Toolchain):
     def get_required_alignment(self, segment: Segment) -> int:
         return 4
 
-    def _get_assembler_target(self, processor: ProgramAttributes):
+    def _get_assembler_target(self, processor: ArchInfo):
         if processor.isa is not InstructionSet.M68K:
             raise ValueError(
                 f"The GNU M68K toolchain does not support ISAs which are not M68K; "
@@ -545,7 +545,7 @@ class GNU_AARCH64_LINUX_10_Toolchain(GNU_10_Toolchain):
 
     def __init__(
         self,
-        processor: ProgramAttributes,
+        processor: ArchInfo,
         toolchain_config: ToolchainConfig,
         logger: logging.Logger = logging.getLogger(__name__),
     ):
@@ -603,7 +603,7 @@ class GNU_AARCH64_LINUX_10_Toolchain(GNU_10_Toolchain):
             f"    }} > {memory_region_name}"
         )
 
-    def _get_assembler_target(self, processor: ProgramAttributes):
+    def _get_assembler_target(self, processor: ArchInfo):
         if processor.isa is not InstructionSet.AARCH64:
             raise ValueError(
                 f"The GNU AARCH64 toolchain does not support ISAs which are not AARCH64; "
@@ -619,7 +619,7 @@ class GNU_AVR_5_Toolchain(Abstract_GNU_Toolchain):
 
     def __init__(
         self,
-        processor: ProgramAttributes,
+        processor: ArchInfo,
         toolchain_config: ToolchainConfig,
         logger: logging.Logger = logging.getLogger(__name__),
     ):
@@ -651,7 +651,7 @@ class GNU_AVR_5_Toolchain(Abstract_GNU_Toolchain):
     def name(self) -> str:
         return "GNU_AVR_5"
 
-    def _get_assembler_target(self, processor: ProgramAttributes) -> str:
+    def _get_assembler_target(self, processor: ArchInfo) -> str:
         if processor.isa is not InstructionSet.AVR:
             raise ValueError(
                 f"The GNU AVR toolchain does not support ISAs which are not AVR; "

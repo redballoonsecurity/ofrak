@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from os.path import join, split
 from typing import Dict, Iterable, List, Optional, Tuple, Mapping
 
-from ofrak.core.architecture import ProgramAttributes
+from ofrak_type import ArchInfo
 from ofrak_patch_maker.binary_parser.abstract import AbstractBinaryFileParser
 from ofrak_patch_maker.toolchain.model import Segment, ToolchainConfig
 from ofrak_patch_maker.toolchain.utils import get_repository_config
@@ -32,7 +32,7 @@ class Toolchain(ABC):
 
     def __init__(
         self,
-        processor: ProgramAttributes,
+        processor: ArchInfo,
         toolchain_config: ToolchainConfig,
         logger: logging.Logger = logging.getLogger(),
     ):
@@ -106,7 +106,7 @@ class Toolchain(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def _get_assembler_target(self, processor: ProgramAttributes) -> str:
+    def _get_assembler_target(self, processor: ArchInfo) -> str:
         """
         Red Balloon Security strongly recommends all users provide their specific hardware target
         for best results.
@@ -121,7 +121,7 @@ class Toolchain(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def _get_compiler_target(self, processor: ProgramAttributes) -> Optional[str]:
+    def _get_compiler_target(self, processor: ArchInfo) -> Optional[str]:
         """
         Returns a default compiler target for the provided processor unless one is provided
         in `self._config`.
