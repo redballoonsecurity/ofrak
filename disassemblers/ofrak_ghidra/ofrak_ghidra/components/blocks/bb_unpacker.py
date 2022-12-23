@@ -17,9 +17,8 @@ from ofrak_ghidra.components.blocks.unpackers import (
     RE_CPY_TO_MOV,
 )
 from ofrak_ghidra.constants import CORE_OFRAK_GHIDRA_SCRIPTS
-from ofrak_ghidra.ghidra_model import GhidraProject, OfrakGhidraMixin, OfrakGhidraScript
+from ofrak_ghidra.ghidra_model import OfrakGhidraMixin, OfrakGhidraScript
 from ofrak_io.batch_manager import make_batch_manager
-from ofrak import ResourceFilter
 
 _GetInstructionsRequest = Tuple[Resource, int, int]
 _GetInstructionsResult = List[Dict[str, Union[str, int]]]
@@ -51,10 +50,6 @@ class GhidraBasicBlockUnpacker(
         super().__init__(resource_factory, data_service, resource_service, component_locator)
 
     async def unpack(self, resource: Resource, config=None):
-        program = await resource.get_only_ancestor_as_view(
-            GhidraProject, ResourceFilter(tags=[GhidraProject], include_self=True)
-        )
-
         bb_view = await resource.view_as(BasicBlock)
         bb_start_vaddr = bb_view.virtual_address
 

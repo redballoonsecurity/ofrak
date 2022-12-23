@@ -40,7 +40,7 @@ class GhidraCodeRegionUnpacker(CodeRegionUnpacker, OfrakGhidraMixin):
         # Run the GetCodeRegions script for every CodeRegion to match with the backend.
         # This is not efficient but shouldn't matter much since there shouldn't be too many CodeRegions.
         code_region = await resource.view_as(CodeRegion)
-        await resource.run(GhidraCodeRegionModifier, None)
+        await resource.run(GhidraCodeRegionModifier)
 
         code_region_start = code_region.virtual_address
         code_region_end = code_region_start + code_region.size
@@ -97,10 +97,6 @@ class GhidraComplexBlockUnpacker(
         super().__init__(resource_factory, data_service, resource_service, component_locator)
 
     async def unpack(self, resource: Resource, config=None):
-        program = await resource.get_only_ancestor_as_view(
-            GhidraProject, ResourceFilter(tags=[GhidraProject], include_self=True)
-        )
-
         cb_view = await resource.view_as(ComplexBlock)
 
         program_attrs = await resource.analyze(ProgramAttributes)

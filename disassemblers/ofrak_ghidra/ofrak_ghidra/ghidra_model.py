@@ -4,7 +4,6 @@ from typing import Any, Iterable
 
 import aiohttp
 
-from ofrak import ResourceFilter
 from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import ResourceFilter
