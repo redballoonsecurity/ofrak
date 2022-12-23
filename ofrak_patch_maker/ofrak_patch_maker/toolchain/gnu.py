@@ -42,7 +42,7 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
                 #      where we allocated them... e.g. hooks.
                 # The downside is that it applies to all functions in a
                 #      section, so our manual alignment of sections with
-                #      get_required_alignment() doesn't quite make up for it
+                #      segment_alignment doesn't quite make up for it
                 #      if sections contain more than one function =/
                 "-fno-merge-constants",  # avoids sections like .rodata.cst16, .rodata.str1.1 etc
                 "-fno-reorder-functions",
@@ -328,7 +328,8 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
 
         return ld_script_path
 
-    def get_required_alignment(self, segment: Segment) -> int:
+    @property
+    def segment_alignment(self) -> int:
         if self._processor.isa == InstructionSet.X86:
             return 16
         return 1
@@ -499,7 +500,8 @@ class GNU_M68K_LINUX_10_Toolchain(GNU_10_Toolchain):
     def name(self):
         return "GNU_M68K_LINUX_10"
 
-    def get_required_alignment(self, segment: Segment) -> int:
+    @property
+    def segment_alignment(self) -> int:
         return 4
 
     def _get_assembler_target(self, processor: ArchInfo):
@@ -557,7 +559,8 @@ class GNU_AARCH64_LINUX_10_Toolchain(GNU_10_Toolchain):
     def name(self):
         return "GNU_AARCH64_LINUX_10"
 
-    def get_required_alignment(self, segment: Segment) -> int:
+    @property
+    def segment_alignment(self) -> int:
         return 4
 
     def _ld_generate_got_region(self, vm_address, length):
@@ -661,5 +664,6 @@ class GNU_AVR_5_Toolchain(Abstract_GNU_Toolchain):
             return self._config.assembler_target
         return InstructionSet.AVR.value.lower()
 
-    def get_required_alignment(self, segment: Segment) -> int:
+    @property
+    def segment_alignment(self) -> int:
         return 2

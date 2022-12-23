@@ -216,6 +216,16 @@ class Toolchain(ABC):
         """
         return self._config.relocatable
 
+    @property
+    def segment_alignment(self) -> int:
+        """
+        For example, x86 returns 16. This will most often be used when programmatically allocating
+        memory for code/data.
+
+        :return int: required alignment factor for the toolchain/ISA
+        """
+        return 1
+
     def _execute_tool(
         self,
         tool_path: str,
@@ -457,15 +467,6 @@ class Toolchain(ABC):
         :return str: path to the generated linker script
         """
         raise NotImplementedError()
-
-    def get_required_alignment(self, segment: Segment) -> int:
-        """
-        For example, x86 returns 16. This will most often be used when programmatically allocating
-        memory for code/data.
-
-        :return int: required alignment factor for the toolchain/ISA
-        """
-        return 1
 
     def get_bin_file_symbols(self, executable_path: str) -> Dict[str, int]:
         """

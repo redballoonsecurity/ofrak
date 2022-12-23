@@ -284,7 +284,8 @@ class LLVM_12_0_1_Toolchain(Toolchain):
 
         return ld_script_path
 
-    def get_required_alignment(self, segment: Segment) -> int:
+    @property
+    def segment_alignment(self) -> int:
         # The linker will align function starts to 16-byte boundaries
         # https://patchwork.kernel.org/project/kernel-hardening/patch/20200205223950.1212394-7-kristen@linux.intel.com/
         # Plus, some other memory will also be aligned to 16

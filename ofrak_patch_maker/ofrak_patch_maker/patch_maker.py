@@ -183,14 +183,24 @@ class PatchMaker:
 
         segments = self._toolchain.get_bin_file_segments(object_path)
         symbols = self._toolchain.get_bin_file_symbols(object_path)
+        bss_size_required = 0
         segment_map = {}
         for s in segments:
-            segment_map[s.segment_name] = s
+            if self._toolchain.keep_section(s.segment_name):
+                segment_map[s.segment_name] = s
+            if s.segment_name.startswith(".bss"):
+                if s.length > 0 and self._toolchain._config.no_bss_section:
+                    raise PatchMakerException(
+                        f"{s.segment_name} found but `no_bss_section` is set in the provided ToolchainConfig!"
+                    )
+                bss_size_required += s.length
+
         return AssembledObject(
             object_path,
             self._toolchain.file_format,
             immutabledict(segment_map),
             immutabledict(symbols),
+            bss_size_required,
         )
 
     @staticmethod
@@ -285,17 +295,7 @@ class PatchMaker:
         bss_size_required = 0
         symbols: Dict[str, int] = {}
         for o in object_map.values():
-            for segment_name in o.segment_map.keys():
-                if not segment_name.startswith(".bss"):
-                    continue
-                bss_segment = o.segment_map[segment_name]
-                if bss_segment.length == 0:
-                    continue
-                if self._toolchain._config.no_bss_section:
-                    raise PatchMakerException(
-                        f"{segment_name} found but `no_bss_section` is set in the provided ToolchainConfig!"
-                    )
-                bss_size_required += bss_segment.length
+            bss_size_required += o.bss_size_required
             symbols.update(o.symbols)
 
         if entry_point_name and entry_point_name not in symbols:
@@ -306,6 +306,7 @@ class PatchMaker:
             immutabledict(object_map),
             bss_size_required,
             entry_point_name,
+            self._toolchain.segment_alignment,
         )
 
     def create_unsafe_bss_segment(self, vm_address: int, size: int) -> Segment:
@@ -328,7 +329,7 @@ class PatchMaker:
             length=size,
             access_perms=MemoryPermissions.RW,
         )
-        align = self._toolchain.get_required_alignment(segment)
+        align = self._toolchain.segment_alignment
         if vm_address % align != 0:
             raise PatchMakerException(
                 f"Provided address {hex(vm_address)} not aligned to required alignment: {hex(align)}"
@@ -482,8 +483,8 @@ class PatchMaker:
 
         return FEM(name, linked_executable)
 
+    @staticmethod
     async def _get_space(
-        self,
         allocatable: Allocatable,
         perms: MemoryPermissions,
         required_size: int,
@@ -520,8 +521,6 @@ class PatchMaker:
         segments_to_allocate: List[Tuple[AssembledObject, Segment]] = []
         for obj in bom.object_map.values():
             for segment in obj.segment_map.values():
-                if not self._toolchain.keep_section(segment.segment_name):
-                    continue
                 segments_to_allocate.append((obj, segment))
 
         # Allocate largest segments first
@@ -530,11 +529,11 @@ class PatchMaker:
         for obj, segment in segments_to_allocate:
             vaddr, final_size = 0, 0
             if segment.length > 0:
-                vaddr, final_size = await self._get_space(
+                vaddr, final_size = await PatchMaker._get_space(
                     allocatable,
                     segment.access_perms,
                     segment.length,
-                    alignment=self._toolchain.get_required_alignment(segment),
+                    alignment=bom.segment_alignment,
                 )
 
             segments_by_object[obj.path].append(

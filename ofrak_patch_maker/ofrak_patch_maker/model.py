@@ -36,6 +36,7 @@ class AssembledObject:
     file_format: BinFileType
     segment_map: Mapping[str, Segment]  # segment name to Segment
     symbols: Mapping[str, int]
+    bss_size_required: int
 
 
 @dataclass(frozen=True)
@@ -115,3 +116,4 @@ class BOM:
     object_map: Mapping[str, AssembledObject]
     bss_size_required: int
     entry_point_symbol: Optional[str]
+    segment_alignment: int
