@@ -1,13 +1,11 @@
-import math
 import os.path
-from typing import List
 
 import pytest
 from ofrak.core.entropy import DataSummaryAnalyzer, DataSummary
 
 from ofrak import OFRAKContext
 import test_ofrak.components
-
+from ofrak.core.entropy.reference_entropy import entropy_func
 
 TEST_FILES = [
     "hello.out",
@@ -33,8 +31,10 @@ async def test_analyzer(ofrak_context: OFRAKContext, test_file_path):
     await root.run(DataSummaryAnalyzer)
     data_summary = root.get_attributes(DataSummary)
     entropy = data_summary.entropy_samples
+    data = await root.get_data()
+    assert len(entropy) == len(entropy_func(data, len(data), 256, lambda s: None))
     assert _almost_equal(
-        entropy, _reference_entropy(await root.get_data())
+        entropy, entropy_func(data, len(data), 256, lambda s: None)
     ), f"Entropy analysis for {test_file_path} differs from reference entropy."
 
 
@@ -52,42 +52,3 @@ def _almost_equal(bytes1: bytes, bytes2: bytes) -> bool:
             print(f"Inputs differ at byte {i} ({bytes1[i]} != {bytes2[i]})")
             return False
     return True
-
-
-def _reference_entropy(data: bytes, window_size: int = 256) -> bytes:
-    """
-    Return a list of entropy values where each value represents the Shannon entropy of the byte
-    value distribution over a fixed-size, sliding window.
-    """
-
-    # Create a histogram, and populate it with initial values
-    histogram = [0] * 256
-    for b in data[:window_size]:
-        histogram[b] += 1
-
-    # Calculate the entropy using a sliding window
-    entropy = [0] * (len(data) - window_size)
-    for i in range(len(entropy)):
-        entropy[i] = math.floor(255 * _shannon_entropy(histogram, window_size))
-        histogram[data[i]] -= 1
-        histogram[data[i + window_size]] += 1
-    return bytes(entropy)
-
-
-def _shannon_entropy(distribution: List[int], window_size: int) -> float:
-    """
-    Return the Shannon entropy of the input probability distribution (represented as a histogram
-    counting byte occurrences over a window of known size).
-
-    Shannon entropy represents how uniform a probability distribution is. Since more uniform
-    implies less predictable (because the probability of any outcome is equally likely in a
-    uniform distribution), a sample with higher entropy is "more random" than one with lower
-    entropy. More here: <https://en.wikipedia.org/wiki/Entropy_(information_theory)>.
-    """
-
-    result = 0
-    for num_occurrences in distribution:
-        probability = num_occurrences / window_size
-        # Note that the zero check is required because the domain of log2 is the positive reals
-        result += probability * math.log2(probability) if probability != 0.0 else 0.0
-    return -result / math.log2(window_size)

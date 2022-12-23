@@ -2,14 +2,11 @@ import asyncio
 import ctypes
 import logging
 import math
-import os
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures.process import BrokenProcessPool
 from dataclasses import dataclass
 
-from ofrak.component.abstract import ComponentMissingDependencyError
 from ofrak.component.analyzer import Analyzer
-from ofrak.model.component_model import ComponentExternalTool
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.resource import Resource, ResourceFactory
 from ofrak.service.data_service_i import DataServiceInterface
@@ -21,33 +18,9 @@ LOGGER = logging.getLogger(__name__)
 C_LOG_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_uint8)
 
 try:
-    _lib_entropy = ctypes.cdll.LoadLibrary(
-        os.path.abspath(os.path.join(os.path.dirname(__file__), "entropy.so.1"))
-    )
-    ENTROPY_FUNCTION = _lib_entropy.entropy
-
-    ENTROPY_FUNCTION.argtypes = (
-        ctypes.c_char_p,
-        ctypes.c_size_t,
-        ctypes.c_char_p,
-        ctypes.c_size_t,
-        C_LOG_TYPE,
-    )
-    ENTROPY_FUNCTION.restype = ctypes.c_int
-except OSError:
-    ENTROPY_FUNCTION = None  # type: ignore
-
-
-class _EntropyCTypesTool(ComponentExternalTool):
-    def __init__(self):
-        # TODO: Add docs page on building entropy.so.1
-        super().__init__("entropy.so.1", None, None, None)
-
-    def is_tool_installed(self) -> bool:
-        return ENTROPY_FUNCTION is not None
-
-
-_ENTROPY_SO_DEPENDENCY = _EntropyCTypesTool()
+    from .entropy_c import entropy_c as entropy_func
+except:
+    from ofrak.core.entropy.reference_entropy import entropy_func
 
 
 @dataclass(**ResourceAttributes.DATACLASS_PARAMS)
@@ -64,7 +37,6 @@ class DataSummaryAnalyzer(Analyzer[None, DataSummary]):
 
     targets = ()  # Target any resource with data
     outputs = (DataSummary,)
-    external_dependencies = (_ENTROPY_SO_DEPENDENCY,)
 
     def __init__(
         self,
@@ -81,9 +53,6 @@ class DataSummaryAnalyzer(Analyzer[None, DataSummary]):
             raise RuntimeError(
                 f"Analysis process killed more than {self.max_analysis_retries} times. Aborting."
             )
-
-        if not _ENTROPY_SO_DEPENDENCY.is_tool_installed():
-            raise ComponentMissingDependencyError(self, _ENTROPY_SO_DEPENDENCY)
 
         data = await resource.get_data()
         # Run blocking computations in separate processes
@@ -121,12 +90,7 @@ def sample_entropy(
     def log_percent(percent):  # pragma: no cover
         LOGGER.info(f"Entropy calculation {percent}% complete for {resource_id.hex()}")
 
-    # Make the entropy buffer mutable to the external C function
-    entropy = ctypes.create_string_buffer(len(data) - window_size)
-    errval = ENTROPY_FUNCTION(data, len(data), entropy, window_size, C_LOG_TYPE(log_percent))
-    if errval != 0:
-        raise ValueError("Bad input to entropy function.")
-    result = bytes(entropy.raw)
+    result = entropy_func(data, len(data), window_size, log_percent)
 
     if len(result) <= max_samples:
         return result
