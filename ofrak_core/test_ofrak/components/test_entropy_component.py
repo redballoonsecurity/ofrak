@@ -5,11 +5,13 @@ from ofrak.core.entropy import DataSummaryAnalyzer, DataSummary
 
 from ofrak import OFRAKContext
 import test_ofrak.components
-from ofrak.core.entropy.reference_entropy import entropy_func
+from ofrak.core.entropy.entropy_py import entropy_py
+from ofrak.core.entropy.entropy_c import entropy_c
 
 TEST_FILES = [
     "hello.out",
     "arm_reloc_relocated.elf",
+    "flash_test_magic.bin",
     "hello.rar",
     "imx7d-sdb.dtb",
     "simple_arm_gcc.o.elf",
@@ -27,14 +29,27 @@ async def test_analyzer(ofrak_context: OFRAKContext, test_file_path):
     1. The sampling of large files may lead to spurious test failures.
     2. The reference method is *extremely* slow for even moderately sized files.
     """
+    with open(test_file_path, "rb") as f:
+        data = f.read()
+    c_implementation_entropy = entropy_c(data, 256, lambda s: None)
+    py_implementation_entropy = entropy_py(data, 256)
+
+    if len(data) < 256:
+        assert c_implementation_entropy == b""
+        assert py_implementation_entropy == b""
+
+    assert _almost_equal(
+        c_implementation_entropy, py_implementation_entropy
+    ), f"Python and C entropy implementations for {test_file_path} differ."
+
+    expected_entropy = c_implementation_entropy
+
     root = await ofrak_context.create_root_resource_from_file(test_file_path)
     await root.run(DataSummaryAnalyzer)
     data_summary = root.get_attributes(DataSummary)
     entropy = data_summary.entropy_samples
-    data = await root.get_data()
-    assert len(entropy) == len(entropy_func(data, 256))
     assert _almost_equal(
-        entropy, entropy_func(data, 256)
+        entropy, expected_entropy
     ), f"Entropy analysis for {test_file_path} differs from reference entropy."
 
 

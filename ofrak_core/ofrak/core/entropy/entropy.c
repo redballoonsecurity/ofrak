@@ -116,7 +116,16 @@ PyObject* entropy_wrapper(PyObject* _, PyObject* args){
     PyObject* py_log_percent;
 
     if (!PyArg_ParseTuple(args, "y*nO", &data_buffer, &window_size, &py_log_percent)){
+        PyErr_SetString(PyExc_RuntimeError, "Failed to parse arguments to entropy_wrapper!");
         return NULL;
+    }
+
+    if (data_buffer.len <= window_size){
+        PyBuffer_Release(&data_buffer);
+         // return b""
+         // we just need a definitely non-NULL pointer to pass to Py_BuildValue
+         // &window_size works fine (no data is read from it)
+        return Py_BuildValue("y#", &window_size, 0);
     }
 
     uint8_t *data = data_buffer.buf;

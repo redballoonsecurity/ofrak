@@ -19,13 +19,22 @@ C_LOG_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_uint8)
 
 
 try:
-    from .entropy_c import entropy_c as entropy_func
+    from ofrak.core.entropy.entropy_c import entropy_c as entropy_func
 except:
-    from ofrak.core.entropy.reference_entropy import entropy_func
+    from ofrak.core.entropy.entropy_py import entropy_py as entropy_func
 
 
 @dataclass(**ResourceAttributes.DATACLASS_PARAMS)
 class DataSummary(ResourceAttributes):
+    """
+    High-level summary of binary data.
+
+    :ivar entropy_samples: Shannon entropy of the data. A description of Shannon entropy and how it
+    can be used is [here](../../../../user-guide/gui/minimap.md#entropy-view).
+    :ivar magnitude_samples: Sample of the binary data to put an upper limit on the displayed byte
+    magnitudes; if the input data is smaller than this upper limit, all bytes are sampled.
+    """
+
     entropy_samples: bytes
     magnitude_samples: bytes
 

@@ -3,7 +3,7 @@ import math
 from typing import Callable, List, Optional
 
 
-def entropy_func(
+def entropy_py(
     data: bytes, window_size: int, log_percent: Optional[Callable[[int], None]] = None
 ) -> bytes:
     """
