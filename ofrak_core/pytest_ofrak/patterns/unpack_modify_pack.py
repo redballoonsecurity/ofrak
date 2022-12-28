@@ -42,7 +42,7 @@ class UnpackModifyPackPattern(ABC):
             await self.verify(root_resource)
         except CalledProcessError as e:
             # Better printing of errors if something goes wrong in test setup/execution
-            ComponentSubprocessError(e)
+            raise ComponentSubprocessError(e)
 
     @abstractmethod
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
