@@ -3,12 +3,10 @@ PIP=pip3
 
 .PHONY: install
 install:
-	$(MAKE) -C ofrak/core/entropy
 	$(PIP) install .
 
 .PHONY: develop
 develop:
-	$(MAKE) -C ofrak/core/entropy
 	$(PIP) install -e .[docs,test]
 
 .PHONY: inspect

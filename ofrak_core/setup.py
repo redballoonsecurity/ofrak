@@ -19,6 +19,15 @@ with open("README.md") as f:
     long_description = f.read()
 
 
+entropy_so = setuptools.Extension(
+    "ofrak.core.entropy.entropy_c",
+    sources=["ofrak/core/entropy/entropy.c"],
+    libraries=["m"],  # math library
+    optional=True,  # If this fails the build, OFRAK will fall back to Python implementation
+    extra_compile_args=["-O3"],
+)
+
+
 setuptools.setup(
     name="ofrak",
     version="1.0.0",
@@ -99,4 +108,5 @@ setuptools.setup(
     license_files=["LICENSE"],
     cmdclass={"egg_info": egg_info_ex},
     entry_points={"ofrak.packages": ["ofrak_pkg = ofrak"]},
+    ext_modules=[entropy_so],
 )
