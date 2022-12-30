@@ -36,6 +36,7 @@ import os
 import tempfile
 from types import ModuleType
 from typing import Optional, List, Dict, Union, Tuple, Iterable, Mapping
+from warnings import warn
 
 from immutabledict import immutabledict
 
@@ -484,8 +485,9 @@ class PatchMaker:
         allocatable,
         bom: BOM,
     ) -> PatchRegionConfig:
-        # raise DeprecationWarning(
-        #     "PatchMaker.allocate_bom(allocatable, bom) is deprecated! Use "
-        #     "allocatable.allocate_bom(bom) instead."
-        # )
+        warn(
+            "PatchMaker.allocate_bom(allocatable, bom) is deprecated! Use "
+            "allocatable.allocate_bom(bom) instead.",
+            category=DeprecationWarning,
+        )
         return await allocatable.allocate_bom(bom)
