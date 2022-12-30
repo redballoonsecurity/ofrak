@@ -3,7 +3,7 @@ import os
 import tempfile
 from typing import List, Mapping, Optional, Tuple, Dict
 
-from ofrak.core.architecture import ProgramAttributes
+from ofrak_type import ArchInfo
 from ofrak_patch_maker.binary_parser.llvm import LLVM_ELF_Parser, LLVM_MACH_O_Parser
 from ofrak_patch_maker.toolchain.abstract import Toolchain, RBS_AUTOGEN_WARNING
 from ofrak_patch_maker.toolchain.model import (
@@ -23,7 +23,7 @@ class LLVM_12_0_1_Toolchain(Toolchain):
 
     def __init__(
         self,
-        processor: ProgramAttributes,
+        processor: ArchInfo,
         toolchain_config: ToolchainConfig,
         logger: logging.Logger = logging.getLogger(__name__),
     ):
@@ -114,7 +114,7 @@ class LLVM_12_0_1_Toolchain(Toolchain):
     def name(self) -> str:
         return "LLVM_12_0_1"
 
-    def _get_assembler_target(self, processor: ProgramAttributes) -> str:
+    def _get_assembler_target(self, processor: ArchInfo) -> str:
         arch = processor.isa.value
         if self._config.assembler_target:
             return self._config.assembler_target
@@ -125,7 +125,7 @@ class LLVM_12_0_1_Toolchain(Toolchain):
         else:
             raise ToolchainException("Assembler Target not provided and no valid default found!")
 
-    def _get_compiler_target(self, processor: ProgramAttributes) -> Optional[str]:
+    def _get_compiler_target(self, processor: ArchInfo) -> Optional[str]:
         arch = processor.isa.value
         if self._config.compiler_target:
             return self._config.compiler_target
@@ -284,7 +284,8 @@ class LLVM_12_0_1_Toolchain(Toolchain):
 
         return ld_script_path
 
-    def get_required_alignment(self, segment: Segment) -> int:
+    @property
+    def segment_alignment(self) -> int:
         # The linker will align function starts to 16-byte boundaries
         # https://patchwork.kernel.org/project/kernel-hardening/patch/20200205223950.1212394-7-kristen@linux.intel.com/
         # Plus, some other memory will also be aligned to 16

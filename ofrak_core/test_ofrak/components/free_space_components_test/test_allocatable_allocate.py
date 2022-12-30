@@ -1,7 +1,10 @@
+import logging
+import os
 import sys
 from dataclasses import dataclass
 from typing import Optional, List
 
+import ofrak_patch_maker_test
 import pytest
 
 from ofrak import OFRAKContext
@@ -12,6 +15,21 @@ from ofrak.core.free_space import (
     Allocatable,
     RemoveFreeSpaceModifier,
     FreeSpaceAllocationError,
+)
+from ofrak_patch_maker.patch_maker import PatchMaker
+from ofrak_patch_maker.toolchain.model import (
+    ToolchainConfig,
+    BinFileType,
+    CompilerOptimizationLevel,
+)
+from ofrak_patch_maker.toolchain.version import ToolchainVersion
+from ofrak_type import (
+    ArchInfo,
+    InstructionSet,
+    SubInstructionSet,
+    BitWidth,
+    Endianness,
+    ProcessorType,
 )
 from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.range import Range
@@ -158,3 +176,72 @@ async def test_allocate(ofrak_context: OFRAKContext, test_case: AllocateTestCase
                 test_case.min_fragment_size,
                 test_case.within_range,
             )
+
+
+async def test_allocate_bom(ofrak_context: OFRAKContext, tmpdir):
+    source_dir = os.path.join(os.path.dirname(ofrak_patch_maker_test.__file__), "example_1")
+    source_path = os.path.join(source_dir, "hello_world.c")
+
+    toolchain = ToolchainVersion.LLVM_12_0_1
+    proc = ArchInfo(
+        InstructionSet.ARM,
+        SubInstructionSet.ARMv8A,
+        BitWidth.BIT_32,
+        Endianness.LITTLE_ENDIAN,
+        ProcessorType.GENERIC_A9_V7_THUMB,
+    )
+    tc_config = ToolchainConfig(
+        file_format=BinFileType.ELF,
+        force_inlines=True,
+        relocatable=False,
+        no_std_lib=True,
+        no_jump_tables=True,
+        no_bss_section=False,
+        create_map_files=True,
+        compiler_optimization_level=CompilerOptimizationLevel.FULL,
+        debug_info=True,
+    )
+
+    logger = logging.getLogger("ToolchainTest")
+    logger.setLevel("INFO")
+
+    patch_maker = PatchMaker(
+        program_attributes=proc,
+        toolchain_config=tc_config,
+        toolchain_version=toolchain,
+        logger=logger,
+        build_dir=tmpdir,
+    )
+
+    bom = patch_maker.make_bom(
+        name="example_3",
+        source_list=[source_path],
+        object_list=[],
+        header_dirs=[source_dir],
+    )
+
+    resource = await ofrak_context.create_root_resource("test_allocate_bom", b"\x00")
+    resource.add_view(
+        Allocatable(
+            {
+                MemoryPermissions.RX: [
+                    Range(0x100, 0x110),
+                    Range(0x80, 0xA0),
+                    Range(0xC0, 0xE0),
+                    Range(0x0, 0x40),
+                    Range(0x120, 0x200),
+                ]
+            }
+        )
+    )
+    await resource.save()
+
+    allocatable = await resource.view_as(Allocatable)
+
+    patch_config = await allocatable.allocate_bom(bom)
+
+    assert len(patch_config.segments) == 1
+    for segments in patch_config.segments.values():
+        seg = segments[0]
+        assert seg.segment_name == ".text"
+        assert seg.vm_address == 0x120

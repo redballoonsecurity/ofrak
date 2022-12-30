@@ -63,6 +63,7 @@ setuptools.setup(
             "mkdocs-material==7.3.3",
             "mkdocs_gen_files==0.3.3",
             "jinja2==3.0.0",
+            "pytkdocs>=0.12.0",
             "PyYAML~=6.0,>=5.4",
         ],
         "test": [
