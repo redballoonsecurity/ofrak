@@ -26,7 +26,6 @@ setuptools.setup(
     packages=setuptools.find_packages(exclude=("ofrak_patch_maker_test",)),
     package_data={"ofrak_patch_maker": ["py.typed"]},
     install_requires=[
-        "ofrak",
         "ofrak_type",
         "immutabledict==2.2.0",
         "python-magic",
