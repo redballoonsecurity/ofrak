@@ -1,7 +1,7 @@
 import logging
 import os
 import tempfile
-
+from typing import Optional
 
 from ofrak_type import ArchInfo
 from ofrak_type.architecture import InstructionSet
@@ -87,7 +87,9 @@ def run_bounds_check_test(toolchain: ToolchainVersion, proc: ArchInfo):
     assert get_file_format(exec_path) == tc_config.file_format
 
 
-def run_hello_world_test(toolchain: ToolchainVersion, proc: ArchInfo):
+def run_hello_world_test(
+    toolchain: ToolchainVersion, proc: ArchInfo, userspace_dynamic_linker: Optional[str] = None
+):
     """
     Make sure we can run the toolchain components without falling over.
     """
@@ -111,6 +113,7 @@ def run_hello_world_test(toolchain: ToolchainVersion, proc: ArchInfo):
         create_map_files=True,
         compiler_optimization_level=CompilerOptimizationLevel.FULL,
         debug_info=True,
+        userspace_dynamic_linker=userspace_dynamic_linker,
     )
 
     logger = logging.getLogger("ToolchainTest")

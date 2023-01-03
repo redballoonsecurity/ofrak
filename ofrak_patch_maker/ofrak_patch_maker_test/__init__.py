@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass
+from typing import Optional
 
 from ofrak_type import ArchInfo
 from ofrak_patch_maker.toolchain.version import ToolchainVersion
@@ -12,3 +13,4 @@ class ToolchainUnderTest:
     toolchain_version: ToolchainVersion
     proc: ArchInfo
     extension: str
+    userspace_dynamic_linker: Optional[str] = None
