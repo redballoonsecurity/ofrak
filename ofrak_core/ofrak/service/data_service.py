@@ -385,9 +385,11 @@ class _DataRoot:
 
     def _get_ids_at(self, start: int, end: int) -> Set[DataId]:
         i = _CompareFirstTuple.bisect_left(self._grid_starts_first, start)
-        if i >= len(self._grid_starts_first) or self._grid_starts_first[i][0] != start:
+        if i >= len(self._grid_starts_first):
             raise KeyError()
-        column: _GridYAxisT = self._grid_starts_first[i][1]
+        fetched_start: int, column: _GridYAxisT = self._grid_starts_first[i]
+        if fetched_start != start:
+            raise KeyError()
 
         j = _CompareFirstTuple.bisect_left(column, end)
         if j >= len(column) or column[j][0] != end:
