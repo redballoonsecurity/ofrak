@@ -182,7 +182,7 @@ class Toolchain(ABC):
         """
         return get_repository_config(self.name, "BIN_PARSER")
 
-    @property
+    @property  # TODO
     def _lib_path(self) -> str:
         """
         :return str: path to the toolchain libraries
@@ -197,7 +197,7 @@ class Toolchain(ABC):
         """
         raise NotImplementedError()
 
-    def is_userspace(self) -> bool:
+    def is_userspace(self) -> bool:  # TODO
         """
         Provides whether the toolchain is configured for userspace patch generation.
 
@@ -217,6 +217,7 @@ class Toolchain(ABC):
         return self._config.relocatable
 
     @property
+    @abstractmethod
     def segment_alignment(self) -> int:
         """
         For example, x86 returns 16. This will most often be used when programmatically allocating
@@ -224,7 +225,7 @@ class Toolchain(ABC):
 
         :return int: required alignment factor for the toolchain/ISA
         """
-        return 1
+        raise NotImplementedError()
 
     def _execute_tool(
         self,
@@ -318,6 +319,7 @@ class Toolchain(ABC):
         return os.path.abspath(out_file)
 
     @staticmethod
+    @abstractmethod
     def _get_linker_map_flag(exec_path: str) -> Iterable[str]:
         """
         Generates the linker map file flag for a linker invocation given the executable path.
@@ -387,6 +389,7 @@ class Toolchain(ABC):
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def ld_generate_region(
         self,
         object_path: str,
@@ -402,6 +405,7 @@ class Toolchain(ABC):
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def ld_generate_bss_region(self, vm_address: int, length: int) -> Tuple[str, str]:
         """
         Generates `.bss` regions for linker scripts.
@@ -411,6 +415,7 @@ class Toolchain(ABC):
         raise NotImplementedError()
 
     @staticmethod
+    @abstractmethod
     def ld_generate_section(object_path: str, segment_name: str, memory_region_name: str) -> str:
         """
         Generates sections for linker scripts.
@@ -420,6 +425,7 @@ class Toolchain(ABC):
         raise NotImplementedError()
 
     @staticmethod
+    @abstractmethod
     def ld_generate_bss_section(memory_region_name: str) -> str:
         """
         Generates `.bss` sections for linker scripts.
@@ -443,6 +449,7 @@ class Toolchain(ABC):
         """
         return [], []
 
+    @abstractmethod
     def ld_script_create(
         self,
         name: str,
@@ -468,6 +475,7 @@ class Toolchain(ABC):
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def get_bin_file_symbols(self, executable_path: str) -> Dict[str, int]:
         """
         For now, this utility only searches for global function and data symbols which are
@@ -480,6 +488,7 @@ class Toolchain(ABC):
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def get_bin_file_segments(self, path: str) -> Tuple[Segment, ...]:
         """
         Parses all segments found in the executable path provided.
