@@ -52,7 +52,7 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
         if self._config.separate_data_sections:
             self._compiler_flags.append("-fdata-sections")
 
-        if not self._config.userspace_dynamic_linker:
+        if not self.is_userspace():
             self._linker_flags.append(
                 "--no-dynamic-linker",
             )

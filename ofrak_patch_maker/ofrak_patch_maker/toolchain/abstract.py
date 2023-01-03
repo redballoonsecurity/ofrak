@@ -197,7 +197,7 @@ class Toolchain(ABC):
         """
         raise NotImplementedError()
 
-    def is_userspace(self) -> bool:  # TODO
+    def is_userspace(self) -> bool:
         """
         Provides whether the toolchain is configured for userspace patch generation.
 

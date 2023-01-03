@@ -67,7 +67,7 @@ class LLVM_12_0_1_Toolchain(Toolchain):
             llvm12_compiler_optimization_map[self._config.compiler_optimization_level]
         )
 
-        if not self._config.userspace_dynamic_linker:
+        if not self.is_userspace():
             self._compiler_flags.append("-ffreestanding")
 
         if self._config.force_inlines:
@@ -141,7 +141,7 @@ class LLVM_12_0_1_Toolchain(Toolchain):
         return "-T"
 
     def compile(self, c_file: str, header_dirs: List[str], out_dir: str = ".") -> str:
-        if self._config.userspace_dynamic_linker:
+        if self.is_userspace():
             out_file = os.path.join(out_dir, os.path.split(c_file)[-1] + ".o")
             # For now a complete override of the flags; we sidestep the clang front-end
             # in favor of a more userspace-friendly GNU configuration.
@@ -156,7 +156,7 @@ class LLVM_12_0_1_Toolchain(Toolchain):
             return super().compile(c_file, header_dirs, out_dir=out_dir)
 
     def link(self, o_files: List[str], exec_path: str, script=None):
-        if self._config.userspace_dynamic_linker:
+        if self.is_userspace():
             # We will ignore the script and any lld flags in this case
             flags = [
                 f"--dynamic-linker={self._config.userspace_dynamic_linker}",
