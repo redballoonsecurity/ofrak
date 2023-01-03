@@ -128,7 +128,9 @@ def generate_arm_stubs(
     return segment_map
 
 
-def _gen_file(
+# Helper function excluded from function coverage results since it runs in a process pool. Tests
+# for generate_arm_stubs test this helper function.
+def _gen_file(  # pragma: no cover
     name: str, address: int, stub_str: str, out_dir: str
 ) -> Mapping[str, Tuple[Segment, Segment]]:
     path = os.path.join(out_dir, name + ".as")
