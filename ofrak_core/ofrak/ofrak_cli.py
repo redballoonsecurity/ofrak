@@ -1,4 +1,5 @@
 import functools
+import sys
 from abc import ABC, abstractmethod
 from argparse import Namespace, ArgumentParser, RawDescriptionHelpFormatter
 from inspect import isabstract
@@ -291,6 +292,9 @@ class OFRAKCommandLineInterface:
 
     def parse_and_run(self, args: Sequence[str]):
         parsed = self.ofrak_parser.parse_args(args)
+        if not hasattr(parsed, "func"):
+            self.ofrak_parser.print_help()
+            sys.exit(1)
         parsed.func(parsed)
 
 
