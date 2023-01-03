@@ -6,8 +6,8 @@ PIP=pip3
 #  assembling, compiling, linking, analyzing binaries for each currently supported toolchain.
 .PHONY: toolchain_conf
 toolchain_conf:
-	cp toolchain.conf /etc/toolchain.conf
-	mv toolchain.conf toolchain.conf.bak
+	cp ofrak_patch_maker/toolchain.conf /etc/toolchain.conf
+	mv ofrak_patch_maker/toolchain.conf ofrak_patch_maker/toolchain.conf.bak
 
 .PHONY: install
 install: toolchain_conf
