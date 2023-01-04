@@ -40,7 +40,7 @@ import logging
 import os
 import tempfile
 
-import ofrak_binary_ninja
+import ofrak_ghidra
 from ofrak import OFRAK, OFRAKContext, ResourceFilter, ResourceAttributeValueFilter
 from ofrak.core import (
     ProgramAttributes,
@@ -181,5 +181,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     ofrak = OFRAK()
-    ofrak.discover(ofrak_binary_ninja)
+    ofrak.discover(ofrak_ghidra)
     ofrak.run(main, args.hello_world_file, args.print_kitteh_source, args.output_file_name)

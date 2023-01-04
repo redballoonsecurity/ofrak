@@ -10,6 +10,7 @@ packages_paths:
     "disassemblers/ofrak_ghidra",
     "frontend",
     "ofrak_tutorial",
+    "examples"
   ]
 entrypoint: |
     python -m ofrak_ghidra.server start \
