@@ -21,12 +21,12 @@ with open("README.md") as f:
 
 setuptools.setup(
     name="ofrak_patch_maker",
-    version="1.0.0",
+    version="2.0.0",
     description="PatchMaker tool for applying source-code patches to binaries",
     packages=setuptools.find_packages(exclude=("ofrak_patch_maker_test",)),
     package_data={"ofrak_patch_maker": ["py.typed"]},
     install_requires=[
-        "ofrak_type",
+        "ofrak_type~=2.0",
         "immutabledict==2.2.0",
         "python-magic",
     ],
@@ -61,4 +61,5 @@ setuptools.setup(
     license="Proprietary",
     license_files=["LICENSE"],
     cmdclass={"egg_info": egg_info_ex},
+    include_package_data=True,
 )

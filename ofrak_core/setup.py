@@ -30,7 +30,7 @@ entropy_so = setuptools.Extension(
 
 setuptools.setup(
     name="ofrak",
-    version="1.0.0",
+    version="2.0.0",
     description="A binary analysis and modification platform",
     packages=setuptools.find_packages(exclude=["test_ofrak", "test_ofrak.*"]),
     package_data={
@@ -39,11 +39,13 @@ setuptools.setup(
     install_requires=[
         "beartype~=0.10.2",
         "fdt==0.3.2",
+        "importlib-metadata>=1.4",
         "intervaltree==3.1.0",
         "keystone-engine==0.9.2",
         "lief==0.12.2",
-        "ofrak_io",
-        "ofrak_type",
+        "ofrak_io~=1.0",
+        "ofrak_type~=2.0",
+        "ofrak_patch_maker~=2.0",
         "orjson~=3.6.7",
         "pefile==2022.5.30",
         "pycdlib==1.12.0",
@@ -74,6 +76,7 @@ setuptools.setup(
             "hypothesis-trio",
             "trio-asyncio",
             "mypy==0.942",
+            "psutil~=5.9",
             "pyelftools==0.29",
             "pytest-asyncio==0.19.0",
             "pytest-lazy-fixture",
