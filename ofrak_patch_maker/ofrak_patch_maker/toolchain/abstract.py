@@ -182,7 +182,7 @@ class Toolchain(ABC):
         """
         return get_repository_config(self.name, "BIN_PARSER")
 
-    @property  # TODO
+    @property
     def _lib_path(self) -> str:
         """
         :return str: path to the toolchain libraries
