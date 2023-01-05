@@ -1,5 +1,4 @@
 **/Dockerstub
-examples/Makefile
 **/.git*
 **/.mypy_cache
 **/*.egg-info

@@ -39,8 +39,7 @@ import logging
 import os
 import tempfile
 
-import ofrak_binary_ninja
-import ofrak_capstone
+import ofrak_ghidra
 from ofrak import OFRAK, OFRAKContext, Resource, ResourceFilter, ResourceAttributeValueFilter
 from ofrak.core import (
     ProgramAttributes,
@@ -70,6 +69,7 @@ from ofrak_type.memory_permissions import MemoryPermissions
 ASSETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
 BINARY_FILE = os.path.join(ASSETS_DIR, "example_program")
 PAGE_ALIGN = 0x1000
+GHIDRA_PIE_OFFSET = 0x100000  # Ghidra bases PIE executables at 0x100000
 
 
 async def add_and_return_segment(elf_resource: Resource, vaddr: int, size: int) -> ElfProgramHeader:
@@ -102,7 +102,9 @@ async def call_new_segment_instead(resource: Resource, new_segment: ElfProgramHe
             attribute_filters=(ResourceAttributeValueFilter(Instruction.Mnemonic, "call"),)
         ),
     )
-    await call_instruction.modify_assembly("call", f"0x{new_segment.p_vaddr:x}")
+
+    ghidra_new_segment_vaddr = new_segment.p_vaddr + GHIDRA_PIE_OFFSET
+    await call_instruction.modify_assembly("call", f"0x{ghidra_new_segment_vaddr:x}")
 
 
 async def patch_uppercase(resource: Resource, source_dir: str, new_segment: ElfProgramHeader):
@@ -137,7 +139,6 @@ async def patch_uppercase(resource: Resource, source_dir: str, new_segment: ElfP
             attribute_filters=(ResourceAttributeValueFilter(ComplexBlock.Symbol, "puts"),)
         ),
     )
-
     # Initialize the PatchMaker. This is where we tell it that our `_puts` will
     # need to be linked to the address of the existing `puts`.
     logger = logging.getLogger("ToolchainTest")
@@ -149,9 +150,7 @@ async def patch_uppercase(resource: Resource, source_dir: str, new_segment: ElfP
         toolchain_version=ToolchainVersion.LLVM_12_0_1,
         logger=logger,
         build_dir=build_dir,
-        base_symbols={
-            "_puts": puts_cb.virtual_address,
-        },
+        base_symbols={"_puts": puts_cb.virtual_address - GHIDRA_PIE_OFFSET},
     )
 
     # Make a Batch of Objects and Metadata (BOM)
@@ -245,6 +244,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     ofrak = OFRAK()
-    ofrak.discover(ofrak_capstone)
-    ofrak.discover(ofrak_binary_ninja)
+    ofrak.discover(ofrak_ghidra)
     ofrak.run(main, args.hello_world_file, args.output_file_name)
