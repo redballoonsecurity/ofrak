@@ -21,14 +21,14 @@ with open("README.md") as f:
 
 setuptools.setup(
     name="ofrak_io",
-    version="1.0.0",
+    version="1.1.0",
     description="Classes useful for general I/O in OFRAK",
     packages=setuptools.find_packages(),
     package_data={
         "ofrak_io": ["py.typed"],
     },
     install_requires=[
-        "ofrak_type",
+        "ofrak_type>=1.0",
     ],
     extras_require={
         "test": [

@@ -4,7 +4,10 @@ import tempfile
 from typing import List, Mapping, Optional, Tuple, Dict
 
 from ofrak_type import ArchInfo
-from ofrak_patch_maker.binary_parser.llvm import LLVM_ELF_Parser, LLVM_MACH_O_Parser
+from ofrak_type.architecture import InstructionSet
+from ofrak_type.memory_permissions import MemoryPermissions
+
+from ofrak_patch_maker.binary_parser.llvm import LLVM_ELF_Parser
 from ofrak_patch_maker.toolchain.abstract import Toolchain, RBS_AUTOGEN_WARNING
 from ofrak_patch_maker.toolchain.model import (
     Segment,
@@ -14,12 +17,10 @@ from ofrak_patch_maker.toolchain.model import (
     ToolchainException,
 )
 from ofrak_patch_maker.toolchain.utils import get_file_format
-from ofrak_type.architecture import InstructionSet
-from ofrak_type.memory_permissions import MemoryPermissions
 
 
 class LLVM_12_0_1_Toolchain(Toolchain):
-    binary_file_parsers = [LLVM_ELF_Parser(), LLVM_MACH_O_Parser()]
+    binary_file_parsers = [LLVM_ELF_Parser()]
 
     def __init__(
         self,
