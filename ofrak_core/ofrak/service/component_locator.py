@@ -43,6 +43,7 @@ class ComponentLocator(ComponentLocatorInterface):
             category: list() for category in ComponentLocator.COMPONENT_CATEGORIES
         }
         self._components_by_id: Dict[bytes, ComponentInterface] = {}
+        self._all_components = set(self._components_by_id.values())
 
     def _resolve_id_conflict(
         self,
@@ -140,6 +141,8 @@ class ComponentLocator(ComponentLocatorInterface):
                 f"Registered component {component.get_id().decode()} as {component_category.__name__}"
             )
 
+        self._all_components = set(self._components_by_id.values())
+
     def get_by_id(self, component_id: bytes) -> ComponentInterface:
         component = self._components_by_id.get(component_id)
         if component is None:
@@ -157,6 +160,5 @@ class ComponentLocator(ComponentLocatorInterface):
     ) -> Set[ComponentInterface]:
         # naive implementation to start
         # will be improved by caching
-        components = set(self._components_by_id.values())
 
-        return component_filter.filter(components)
+        return component_filter.filter(self._all_components)

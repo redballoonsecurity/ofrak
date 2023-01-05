@@ -304,3 +304,12 @@ async def test_attributes(resource: Resource):
 
     resource.remove_attributes(DummyAttributes)
     assert resource.has_attributes(DummyAttributes) is False
+
+
+async def test_create_child_data_and_data_range(ofrak_context: OFRAKContext):
+    """
+    Assert that passing both data and data_range to `Resource.create_child` raises a ValueError.
+    """
+    resource = await ofrak_context.create_root_resource(name="test_file", data=b"\xff" * 10)
+    with pytest.raises(ValueError):
+        await resource.create_child(data=b"\x00", data_range=Range(0, 1))

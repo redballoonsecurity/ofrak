@@ -23,7 +23,7 @@
         // already shown in the resource tree
         "ofrak.core.comments.CommentsAttributes",
         // verbose and unhelpful
-        "ofrak_components.entropy.entropy.DataSummary",
+        "ofrak.core.entropy.entropy.DataSummary",
       ];
       if (skipped_attributes.includes(attrType)) {
         continue;

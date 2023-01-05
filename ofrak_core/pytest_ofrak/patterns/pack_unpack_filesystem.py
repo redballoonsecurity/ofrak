@@ -2,10 +2,12 @@ import os
 import stat
 import tempfile
 from abc import ABC, abstractmethod
+from subprocess import CalledProcessError
 
 import xattr
 
 from ofrak import OFRAKContext
+from ofrak.component.abstract import ComponentSubprocessError
 from ofrak.resource import Resource
 
 
@@ -24,15 +26,19 @@ class FilesystemPackUnpackVerifyPattern(ABC):
         self.check_stat = True
 
     async def test_pack_unpack_verify(self, ofrak_context: OFRAKContext):
-        self.setup()
-        with tempfile.TemporaryDirectory() as root_path:
-            self.create_local_file_structure(root_path)
-            root_resource = await self.create_root_resource(ofrak_context, root_path)
-            await self.unpack(root_resource)
-            await self.repack(root_resource)
-            with tempfile.TemporaryDirectory() as extract_dir:
-                await self.extract(root_resource, extract_dir)
-                self.verify_filesystem_equality(root_path, extract_dir)
+        try:
+            self.setup()
+            with tempfile.TemporaryDirectory() as root_path:
+                self.create_local_file_structure(root_path)
+                root_resource = await self.create_root_resource(ofrak_context, root_path)
+                await self.unpack(root_resource)
+                await self.repack(root_resource)
+                with tempfile.TemporaryDirectory() as extract_dir:
+                    await self.extract(root_resource, extract_dir)
+                    self.verify_filesystem_equality(root_path, extract_dir)
+        except CalledProcessError as e:
+            # Better printing of errors if something goes wrong in test setup/execution
+            raise ComponentSubprocessError(e)
 
     def _dirs_from_list(self, parent, names, depth):
         # Create a file

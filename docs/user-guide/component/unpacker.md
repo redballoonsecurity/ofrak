@@ -41,7 +41,7 @@ The most direct way to run a specific unpacker is to run it directly against a r
 
 ```python
 from ofrak.resource import Resource
-from ofrak_components.elf.unpacker import ElfUnpacker
+from ofrak.core.elf.unpacker import ElfUnpacker
 
 ...
 

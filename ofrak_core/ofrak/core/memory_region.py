@@ -5,23 +5,10 @@ from typing import Iterable
 from ofrak.core.addressable import Addressable
 from ofrak.model.resource_model import index, ResourceAttributes
 from ofrak.resource import Resource
-from ofrak.service.error import OverlapError
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__file__)
-
-
-class MemoryOverlapError(RuntimeError):
-    """
-    Error raised when a memory region overlaps with an existing child memory region.
-    """
-
-    def __init__(self, new_region: "MemoryRegion", existing_region: "MemoryRegion"):
-        message = f"New MemoryRegion {new_region} overlaps with an existing child {existing_region}"
-        super().__init__(message)
-        self.new_region = new_region
-        self.existing_region = existing_region
 
 
 @dataclass
@@ -39,7 +26,7 @@ class MemoryRegion(Addressable):
     def Size(self) -> int:
         return self.size
 
-    @index(nested_indexes=(Addressable.VirtualAddress,))
+    @index(uses_indexes=(Addressable.VirtualAddress,))
     def EndVaddr(self) -> int:
         return self.size + self.VirtualAddress
 
@@ -104,7 +91,6 @@ class MemoryRegion(Addressable):
         :param child_mr: the child memory region
         :param additional_attributes: additional attributes passed to the child memory region
 
-        :raises OverlapError: if the child to be created overlaps with an existing child node
         :raises ValueError: if the child's end offset is larger than the memory region's size
         :return: the created child resource
         """
@@ -122,18 +108,11 @@ class MemoryRegion(Addressable):
                 f"{hex(self.end_vaddr())}."
             )
 
-        try:
-            return await self.resource.create_child_from_view(
-                child_mr,
-                data_range=Range(start_offset, end_offset),
-                additional_attributes=additional_attributes,
-            )
-        except OverlapError as e:
-            existing_child_vaddr = e.existing_child_node.model.range.start + self.virtual_address
-            existing_child_size = e.existing_child_node.model.range.length()
-            raise MemoryOverlapError(
-                child_mr, MemoryRegion(existing_child_vaddr, existing_child_size)
-            ) from e
+        return await self.resource.create_child_from_view(
+            child_mr,
+            data_range=Range(start_offset, end_offset),
+            additional_attributes=additional_attributes,
+        )
 
     @staticmethod
     def get_mem_region_with_vaddr_from_sorted(vaddr: int, sorted_regions: Iterable["MemoryRegion"]):

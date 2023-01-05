@@ -38,7 +38,7 @@ setuptools.setup(
     ],
     extras_require={
         "test": [
-            "fun-coverage==0.1.3",
+            "fun-coverage==0.2.0",
             "pytest",
             "pytest-asyncio==0.19.0",
             "pytest-cov",
@@ -49,4 +49,5 @@ setuptools.setup(
     python_requires=">=3.7",
     license=license,
     cmdclass={"egg_info": egg_info_ex},
+    entry_points={"ofrak.packages": ["ofrak_angr_pkg = ofrak_angr"]},
 )

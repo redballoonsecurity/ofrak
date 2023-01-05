@@ -7,7 +7,6 @@ OFRAK (Open Firmware Reverse Analysis Konsole) is a binary analysis and modifica
 ```
 OFRAK
 └───ofrak
-└───ofrak_components
 └───ofrak_type  <-- //YOU ARE HERE//
 │   └───architecture
 │   └───bit_width

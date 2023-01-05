@@ -6,7 +6,12 @@ from typing import Tuple, Type, Dict, Any, List, Set, TypeVar, Iterable, Mutable
 from weakref import WeakValueDictionary
 
 import ofrak.model._auto_attributes
-from ofrak.model.resource_model import ResourceAttributes, ResourceIndexedAttribute, ResourceModel
+from ofrak.model.resource_model import (
+    ResourceAttributes,
+    ResourceIndexedAttribute,
+    ResourceModel,
+    ResourceContext,
+)
 from ofrak.model.tag_model import ResourceTag
 
 _VIEW_ATTRIBUTES_TYPE = "__view_attributes_type__"
@@ -264,8 +269,8 @@ class ResourceViewInterface(metaclass=ViewableResourceTag):
         """
         raise NotImplementedError()
 
-    @classmethod
-    def create(cls: Type[RVI], resource_model: ResourceModel) -> RVI:
+    @classmethod  # pragma: no cover
+    def create(cls: Type[RVI], resource_model: ResourceModel) -> RVI:  # pragma: no cover
         raise NotImplementedError()
 
 
@@ -285,3 +290,21 @@ class ResourceViewContext:
 
     def add_view(self, resource_id: bytes, view: ResourceViewInterface):
         self.views_by_resource[resource_id][type(view)] = view
+
+    def update_views(
+        self, modified: Iterable[bytes], deleted: Iterable[bytes], resource_context: ResourceContext
+    ):
+        for resource_id in modified:
+            views_in_context = self.views_by_resource[resource_id]
+            for view in views_in_context.values():
+                updated_model = resource_context.resource_models[resource_id]
+                fresh_view = view.create(updated_model)
+                for field in dataclasses.fields(fresh_view):
+                    if field.name == "_resource":
+                        continue
+                    setattr(view, field.name, getattr(fresh_view, field.name))
+
+        for resource_id in deleted:
+            views_in_context = self.views_by_resource[resource_id]
+            for view in views_in_context.values():
+                view.set_deleted()

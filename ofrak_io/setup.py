@@ -21,19 +21,19 @@ with open("README.md") as f:
 
 setuptools.setup(
     name="ofrak_io",
-    version="1.0.0",
+    version="1.1.0",
     description="Classes useful for general I/O in OFRAK",
     packages=setuptools.find_packages(),
     package_data={
         "ofrak_io": ["py.typed"],
     },
     install_requires=[
-        "ofrak_type",
+        "ofrak_type>=1.0",
     ],
     extras_require={
         "test": [
             "black==22.3.0",
-            "fun-coverage==0.1.3",
+            "fun-coverage==0.2.0",
             "hypothesis~=6.39.3",
             "mypy==0.942",
             "pytest",

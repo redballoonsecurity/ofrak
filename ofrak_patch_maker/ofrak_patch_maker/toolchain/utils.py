@@ -34,20 +34,21 @@ def get_repository_config(section: str, key: Optional[str] = None):
     """
 
     config = configparser.RawConfigParser()
-    config_root = "/etc"
     config_name = "toolchain.conf"
-    try:
-        local_etc = os.path.join(os.environ["HOME"], "etc")
-        paths = [local_etc, config_root]
-    except KeyError:
-        print("unable to find home directory")
-        paths = [config_root]
-
     if platform.system().find("CYGWIN") > -1 or platform.system().find("Windows") > -1:
         config_root = "/winetc"
+    else:
+        config_root = "/etc"
+    local_config = os.path.join(os.path.dirname(__file__), os.path.pardir)
+    config_paths = [config_root, local_config]
+    try:
+        local_etc = os.path.join(os.environ["HOME"], "etc")
+        config_paths = [local_etc] + config_paths
+    except KeyError:
+        print("unable to find home directory")
 
     error_by_config_file: Dict[str, Exception] = dict()
-    for p in paths:
+    for p in config_paths:
         conf = os.path.join(p, config_name)
         if not os.path.exists(conf):
             continue

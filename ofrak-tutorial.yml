@@ -7,10 +7,10 @@ packages_paths:
     "ofrak_io",
     "ofrak_patch_maker",
     "ofrak_core",
-    "ofrak_components",
     "disassemblers/ofrak_ghidra",
     "frontend",
     "ofrak_tutorial",
+    "examples"
   ]
 entrypoint: |
     python -m ofrak_ghidra.server start \

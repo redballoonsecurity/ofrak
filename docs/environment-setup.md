@@ -217,7 +217,7 @@ source ofrak-venv/bin/activate
 4. Install core OFRAK and its dependencies:
 
     ```bash
-    for d in ofrak_io ofrak_type ofrak_patch_maker ofrak_components ofrak; do make -C "${d}" develop; done 
+    for d in ofrak_io ofrak_type ofrak_patch_maker ofrak_core; do make -C "${d}" develop; done 
     ```
 5. If you are planning to contribute to OFRAK, install the pre-commit hooks. For more information, see the [contributor guide](docs/contributor-guide/getting-started.md).
 

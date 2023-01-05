@@ -1,21 +1,23 @@
 import functools
-from collections import defaultdict
-from typing import Set, Iterable, Tuple
+from typing import Iterable, List, Set, Tuple
 
 
 class ResourceTag(type):
-    @functools.lru_cache(None)
+    def __init__(cls, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        specificity = 0
+        for base in cls.base_tags():
+            specificity = max(specificity, base.tag_specificity())
+
+        cls._specificity: int = specificity + 1
+
     def tag_specificity(cls) -> int:
         """
         Indicates how specific an abstraction this tag is.
         :return: The number of classes in the inheritance hierarchy between this class and
         Resource
         """
-        specificity = 0
-        for base in cls.base_tags():
-            specificity = max(specificity, base.tag_specificity())
-
-        return specificity + 1
+        return cls._specificity
 
     @functools.lru_cache(None)
     def tag_classes(cls) -> Set["ResourceTag"]:
@@ -53,15 +55,18 @@ class ResourceTag(type):
         :return: Tuple of groups of tags with the same specificity, sorting all of these by the
         specificity value each group represents from least to greatest.
         """
-        level_dict = defaultdict(list)
+        levels: List[List[ResourceTag]] = [[], [], [], [], [], [], [], [], [], []]
         for t in tags:
-            level_dict[t.tag_specificity()].append(t)
+            spec = t.tag_specificity()
+            if spec > len(levels):
+                levels.extend([] for _ in range(spec - len(levels)))
+            levels[spec].append(t)
 
-        level_list = [tuple(level_dict[level]) for level in sorted(level_dict.keys())]
-        return tuple(level_list)
+        return tuple(tuple(level) for level in reversed(levels) if len(level) > 0)
 
-    def caption(cls, attributes) -> str:
+    @classmethod  # pragma: no cover
+    def caption(cls, attributes) -> str:  # pragma: no cover
         return str(cls.__name__)
 
-    def __repr__(self):
-        return self.__name__
+    def __repr__(cls):
+        return cls.__name__

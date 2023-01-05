@@ -5,7 +5,7 @@ from abc import ABC
 from typing import Iterable, List, Mapping, Optional, Tuple, Dict
 from warnings import warn
 
-from ofrak.core.architecture import ProgramAttributes
+from ofrak_type import ArchInfo
 from ofrak_type.architecture import InstructionSet
 from ofrak_patch_maker.toolchain.abstract import Toolchain, RBS_AUTOGEN_WARNING
 from ofrak_patch_maker.toolchain.model import (
@@ -22,7 +22,7 @@ from ofrak_type.memory_permissions import MemoryPermissions
 class Abstract_GNU_Toolchain(Toolchain, ABC):
     def __init__(
         self,
-        processor: ProgramAttributes,
+        processor: ArchInfo,
         toolchain_config: ToolchainConfig,
         logger: logging.Logger = logging.getLogger(__name__),
     ):
@@ -42,7 +42,7 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
                 #      where we allocated them... e.g. hooks.
                 # The downside is that it applies to all functions in a
                 #      section, so our manual alignment of sections with
-                #      get_required_alignment() doesn't quite make up for it
+                #      segment_alignment doesn't quite make up for it
                 #      if sections contain more than one function =/
                 "-fno-merge-constants",  # avoids sections like .rodata.cst16, .rodata.str1.1 etc
                 "-fno-reorder-functions",
@@ -102,7 +102,11 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
         if toolchain_config.isysroot is not None:
             self._compiler_flags.append(f"-isysroot {toolchain_config.isysroot}")
 
-    def _get_compiler_target(self, processor: ProgramAttributes) -> Optional[str]:
+    @property
+    def name(self) -> str:
+        raise NotImplementedError()
+
+    def _get_compiler_target(self, processor: ArchInfo) -> Optional[str]:
         return self._config.compiler_target
 
     @property
@@ -324,7 +328,8 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
 
         return ld_script_path
 
-    def get_required_alignment(self, segment: Segment) -> int:
+    @property
+    def segment_alignment(self) -> int:
         if self._processor.isa == InstructionSet.X86:
             return 16
         return 1
@@ -350,7 +355,7 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
 class GNU_10_Toolchain(Abstract_GNU_Toolchain):
     def __init__(
         self,
-        processor: ProgramAttributes,
+        processor: ArchInfo,
         toolchain_config: ToolchainConfig,
         logger: logging.Logger = logging.getLogger(__name__),
     ):

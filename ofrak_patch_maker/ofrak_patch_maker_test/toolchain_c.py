@@ -2,7 +2,6 @@ import logging
 import os
 import tempfile
 from ofrak_patch_maker.toolchain.gnu_avr import GNU_AVR_5_Toolchain
-
 from ofrak_patch_maker.toolchain.gnu_x64 import GNU_X86_64_LINUX_EABI_10_3_0_Toolchain
 from ofrak_patch_maker_test import ToolchainUnderTest
 from ofrak_type.architecture import InstructionSet

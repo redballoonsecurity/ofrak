@@ -9,6 +9,14 @@ MagicDescriptionIdentifier.register(UImage, lambda s: s.startswith("u-boot legac
 
 This line ensures that the `MagicDescriptionIdentifier` adds a `UImage` tag to resources matching that description pattern. As a result, any unpackers targeting a `UImage` will automatically run when `Resource.unpack` is run.
 
+
+### Handling External Dependencies
+
+If the Identifier makes use of tools that are not packaged in modules installable via `pip` from 
+PyPI (commonly command-line tools), these dependencies must be explicitly declared as part of the 
+identifier's class declaration. See the [Components Using External Tools](./external_tools.md) doc 
+for information on how to do that.
+
 <div align="right">
 <img src="../../assets/square_01.png" width="125" height="125">
 </div>

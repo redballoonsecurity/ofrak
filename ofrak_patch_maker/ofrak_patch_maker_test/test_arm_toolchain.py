@@ -4,7 +4,7 @@ import tempfile
 import pytest
 from ofrak_patch_maker.toolchain.llvm_12 import LLVM_12_0_1_Toolchain
 
-from ofrak.core.architecture import ProgramAttributes
+from ofrak_type import ArchInfo
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.gnu_arm import GNU_ARM_NONE_EABI_10_2_1_Toolchain
@@ -37,7 +37,7 @@ ARM_EXTENSION = ".arm"
     params=[
         ToolchainUnderTest(
             GNU_ARM_NONE_EABI_10_2_1_Toolchain,
-            ProgramAttributes(
+            ArchInfo(
                 InstructionSet.ARM,
                 SubInstructionSet.ARMv8A,
                 BitWidth.BIT_32,
@@ -48,7 +48,7 @@ ARM_EXTENSION = ".arm"
         ),
         ToolchainUnderTest(
             LLVM_12_0_1_Toolchain,
-            ProgramAttributes(
+            ArchInfo(
                 InstructionSet.ARM,
                 SubInstructionSet.ARMv8A,
                 BitWidth.BIT_32,

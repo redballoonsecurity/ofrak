@@ -26,8 +26,9 @@ from ofrak.model.component_filters import (
     ComponentNotMetaFilter,
 )
 from ofrak_type.error import NotFoundError
-from test_ofrak.service.component_locator import mock_library, mock_library2
-from test_ofrak.service.component_locator.mock_library import (
+from pytest_ofrak.mock_component_types import MockAnalyzer
+from pytest_ofrak import mock_library2, mock_library
+from pytest_ofrak.mock_library import (
     TargetsCommonOutputsA,
     TargetsQOutputsABC,
     TargetsPOutputsA,
@@ -39,7 +40,6 @@ from test_ofrak.service.component_locator.mock_library import (
     AbstractionR,
     ITargetsRROutputsD,
     IWithoutImplementation,
-    MockAnalyzer,
     AbstractionAttributesUnknown,
     AbstractionPUnpacker,
     AbstractionCommon,
@@ -48,7 +48,7 @@ from test_ofrak.service.component_locator.mock_library import (
     AbstractionAttributesB,
     AbstractionAttributesC,
 )
-from test_ofrak.service.component_locator.mock_library2 import AlternativeTargetsRROutputsD
+from pytest_ofrak.mock_library2 import AlternativeTargetsRROutputsD
 
 
 @pytest.fixture

@@ -26,7 +26,7 @@ setuptools.setup(
     install_requires=["capstone==4.0.2", "ofrak"],
     extras_require={
         "test": [
-            "fun-coverage==0.1.3",
+            "fun-coverage==0.2.0",
             "pytest",
             "pytest-cov",
             "pytest-asyncio==0.19.0",
@@ -58,4 +58,5 @@ setuptools.setup(
     license="Proprietary",
     license_files=["LICENSE"],
     cmdclass={"egg_info": egg_info_ex},
+    entry_points={"ofrak.packages": ["ofrak_capstone_pkg = ofrak_capstone"]},
 )

@@ -38,7 +38,7 @@ class TestNestedIndexAttributes(ResourceAttributes):
 
     val: int
 
-    @index(nested_indexes=(TestIndexAttributes.TestIndex,))
+    @index(uses_indexes=(TestIndexAttributes.TestIndex,))
     def TestNestedIndex(self) -> int:
         return self.val + self.TestIndex
 
