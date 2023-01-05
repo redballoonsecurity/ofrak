@@ -5,7 +5,7 @@ from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.architecture import InstructionSet, ArchInfo
 from ofrak_patch_maker.toolchain.gnu import GNU_10_Toolchain
 from ofrak_patch_maker.binary_parser.gnu import GNU_ELF_Parser
-from ofrak_patch_maker.toolchain.model import ToolchainConfig, Segment
+from ofrak_patch_maker.toolchain.model import ToolchainConfig
 import logging
 
 
@@ -28,7 +28,8 @@ class GNU_M68K_LINUX_10_Toolchain(GNU_10_Toolchain):
     def name(self) -> str:
         return "GNU_M68K_LINUX_10"
 
-    def get_required_alignment(self, segment: Segment) -> int:
+    @property
+    def segment_alignment(self) -> int:
         return 4
 
     def _get_assembler_target(self, processor: ArchInfo):

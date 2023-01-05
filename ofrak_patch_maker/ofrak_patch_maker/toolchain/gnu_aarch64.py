@@ -1,7 +1,7 @@
 from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_patch_maker.toolchain.gnu import GNU_10_Toolchain
 from ofrak_patch_maker.binary_parser.gnu import GNU_V10_ELF_Parser
-from ofrak_patch_maker.toolchain.model import ToolchainConfig, Segment
+from ofrak_patch_maker.toolchain.model import ToolchainConfig
 from ofrak_type.architecture import InstructionSet, SubInstructionSet, ArchInfo
 import logging
 from typing import Tuple
@@ -24,7 +24,8 @@ class GNU_AARCH64_LINUX_10_Toolchain(GNU_10_Toolchain):
     def name(self) -> str:
         return "GNU_AARCH64_LINUX_10"
 
-    def get_required_alignment(self, segment: Segment) -> int:
+    @property
+    def segment_alignment(self) -> int:
         return 4
 
     def _ld_generate_got_region(self, vm_address, length):

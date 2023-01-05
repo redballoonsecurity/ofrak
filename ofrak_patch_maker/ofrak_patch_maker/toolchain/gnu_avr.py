@@ -1,6 +1,6 @@
 from ofrak_patch_maker.binary_parser.gnu import GNU_ELF_Parser
 from ofrak_patch_maker.toolchain.gnu import Abstract_GNU_Toolchain
-from ofrak_patch_maker.toolchain.model import ToolchainConfig, Segment
+from ofrak_patch_maker.toolchain.model import ToolchainConfig
 from ofrak_type.architecture import InstructionSet, ArchInfo
 import logging
 
@@ -42,6 +42,10 @@ class GNU_AVR_5_Toolchain(Abstract_GNU_Toolchain):
     def name(self) -> str:
         return "GNU_AVR_5"
 
+    @property
+    def segment_alignment(self) -> int:
+        return 2
+
     def _get_assembler_target(self, processor: ArchInfo) -> str:
         if processor.isa is not InstructionSet.AVR:
             raise ValueError(
@@ -51,6 +55,3 @@ class GNU_AVR_5_Toolchain(Abstract_GNU_Toolchain):
         if self._config.assembler_target:
             return self._config.assembler_target
         return InstructionSet.AVR.value.lower()
-
-    def get_required_alignment(self, segment: Segment) -> int:
-        return 2
