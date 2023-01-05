@@ -116,21 +116,3 @@ class LLVM_ELF_Parser(Abstract_LLVM_Readobj_Parser):
                 if symbol_section and symbol_section.group(0) != "Undefined":
                     result.update({name.group(0): int(addr_value.group(0), 16)})
         return result
-
-
-class LLVM_MACH_O_Parser(Abstract_LLVM_Readobj_Parser):
-    file_format = BinFileType.MACH_O
-
-    def parse_sections(self, output: str) -> Tuple[Segment, ...]:
-        section_keys = {
-            "Name": "segment_name",
-            "Address": "vm_address",
-            "Offset": "offset",
-            "Size": "length",
-            "Attributes": "access_perms",
-        }
-
-        return self._parse_readobj_sections(output, section_keys, "Attributes")
-
-    def parse_symbols(self, output: str) -> Dict[str, int]:
-        raise NotImplementedError()
