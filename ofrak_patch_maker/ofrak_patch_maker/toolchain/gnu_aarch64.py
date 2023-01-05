@@ -1,9 +1,8 @@
-from ofrak.core import ProgramAttributes
 from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_patch_maker.toolchain.gnu import GNU_10_Toolchain
 from ofrak_patch_maker.binary_parser.gnu import GNU_V10_ELF_Parser
 from ofrak_patch_maker.toolchain.model import ToolchainConfig, Segment
-from ofrak_type.architecture import InstructionSet, SubInstructionSet
+from ofrak_type.architecture import InstructionSet, SubInstructionSet, ArchInfo
 import logging
 from typing import Tuple
 
@@ -13,7 +12,7 @@ class GNU_AARCH64_LINUX_10_Toolchain(GNU_10_Toolchain):
 
     def __init__(
         self,
-        processor: ProgramAttributes,
+        processor: ArchInfo,
         toolchain_config: ToolchainConfig,
         logger: logging.Logger = logging.getLogger(__name__),
     ):
@@ -71,7 +70,7 @@ class GNU_AARCH64_LINUX_10_Toolchain(GNU_10_Toolchain):
             f"    }} > {memory_region_name}"
         )
 
-    def _get_assembler_target(self, processor: ProgramAttributes):
+    def _get_assembler_target(self, processor: ArchInfo):
         if processor.isa is not InstructionSet.AARCH64:
             raise ValueError(
                 f"The GNU AARCH64 toolchain does not support ISAs which are not AARCH64; "

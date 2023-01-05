@@ -1,8 +1,7 @@
-from ofrak.core import ProgramAttributes
 from ofrak_patch_maker.binary_parser.gnu import GNU_ELF_Parser
 from ofrak_patch_maker.toolchain.gnu import Abstract_GNU_Toolchain
 from ofrak_patch_maker.toolchain.model import ToolchainConfig, Segment
-from ofrak_type.architecture import InstructionSet
+from ofrak_type.architecture import InstructionSet, ArchInfo
 import logging
 
 
@@ -11,7 +10,7 @@ class GNU_AVR_5_Toolchain(Abstract_GNU_Toolchain):
 
     def __init__(
         self,
-        processor: ProgramAttributes,
+        processor: ArchInfo,
         toolchain_config: ToolchainConfig,
         logger: logging.Logger = logging.getLogger(__name__),
     ):
@@ -43,7 +42,7 @@ class GNU_AVR_5_Toolchain(Abstract_GNU_Toolchain):
     def name(self) -> str:
         return "GNU_AVR_5"
 
-    def _get_assembler_target(self, processor: ProgramAttributes) -> str:
+    def _get_assembler_target(self, processor: ArchInfo) -> str:
         if processor.isa is not InstructionSet.AVR:
             raise ValueError(
                 f"The GNU AVR toolchain does not support ISAs which are not AVR; "

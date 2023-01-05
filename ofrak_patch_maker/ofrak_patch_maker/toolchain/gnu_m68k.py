@@ -2,9 +2,7 @@ from typing import Tuple
 
 from ofrak_type.memory_permissions import MemoryPermissions
 
-from ofrak_type.architecture import InstructionSet
-
-from ofrak.core import ProgramAttributes
+from ofrak_type.architecture import InstructionSet, ArchInfo
 from ofrak_patch_maker.toolchain.gnu import GNU_10_Toolchain
 from ofrak_patch_maker.binary_parser.gnu import GNU_ELF_Parser
 from ofrak_patch_maker.toolchain.model import ToolchainConfig, Segment
@@ -16,7 +14,7 @@ class GNU_M68K_LINUX_10_Toolchain(GNU_10_Toolchain):
 
     def __init__(
         self,
-        processor: ProgramAttributes,
+        processor: ArchInfo,
         toolchain_config: ToolchainConfig,
         logger: logging.Logger = logging.getLogger(__name__),
     ):
@@ -33,7 +31,7 @@ class GNU_M68K_LINUX_10_Toolchain(GNU_10_Toolchain):
     def get_required_alignment(self, segment: Segment) -> int:
         return 4
 
-    def _get_assembler_target(self, processor: ProgramAttributes):
+    def _get_assembler_target(self, processor: ArchInfo):
         if processor.isa is not InstructionSet.M68K:
             raise ValueError(
                 f"The GNU M68K toolchain does not support ISAs which are not M68K; "

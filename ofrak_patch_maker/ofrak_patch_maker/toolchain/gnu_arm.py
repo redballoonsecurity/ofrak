@@ -1,8 +1,7 @@
-from ofrak.core import ProgramAttributes
 from ofrak_patch_maker.binary_parser.gnu import GNU_ELF_Parser
 from ofrak_patch_maker.toolchain.gnu import GNU_10_Toolchain
 from ofrak_patch_maker.toolchain.model import ToolchainConfig, ToolchainException
-from ofrak_type.architecture import InstructionSet, SubInstructionSet
+from ofrak_type.architecture import InstructionSet, SubInstructionSet, ArchInfo
 import logging
 
 
@@ -11,7 +10,7 @@ class GNU_ARM_NONE_EABI_10_2_1_Toolchain(GNU_10_Toolchain):
 
     def __init__(
         self,
-        processor: ProgramAttributes,
+        processor: ArchInfo,
         toolchain_config: ToolchainConfig,
         logger: logging.Logger = logging.getLogger(__name__),
     ):
@@ -25,7 +24,7 @@ class GNU_ARM_NONE_EABI_10_2_1_Toolchain(GNU_10_Toolchain):
     def name(self) -> str:
         return "GNU_ARM_NONE_EABI_10_2_1"
 
-    def _get_assembler_target(self, processor: ProgramAttributes):
+    def _get_assembler_target(self, processor: ArchInfo):
         """
         Thumb mode should be defined in the assembler source at the top, using:
 

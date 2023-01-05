@@ -1,8 +1,9 @@
-from ofrak.core import ProgramAttributes
 from ofrak_patch_maker.toolchain.gnu import GNU_10_Toolchain
 from ofrak_patch_maker.binary_parser.gnu import GNU_V10_ELF_Parser
 from ofrak_patch_maker.toolchain.model import ToolchainConfig
 import logging
+
+from ofrak_type.architecture import ArchInfo
 
 
 class GNU_X86_64_LINUX_EABI_10_3_0_Toolchain(GNU_10_Toolchain):
@@ -10,7 +11,7 @@ class GNU_X86_64_LINUX_EABI_10_3_0_Toolchain(GNU_10_Toolchain):
 
     def __init__(
         self,
-        processor: ProgramAttributes,
+        processor: ArchInfo,
         toolchain_config: ToolchainConfig,
         logger: logging.Logger = logging.getLogger(__name__),
     ):
@@ -30,7 +31,7 @@ class GNU_X86_64_LINUX_EABI_10_3_0_Toolchain(GNU_10_Toolchain):
     def name(self) -> str:
         return "GNU_X86_64_LINUX_EABI_10_3_0"
 
-    def _get_assembler_target(self, processor: ProgramAttributes):
+    def _get_assembler_target(self, processor: ArchInfo):
         if self._config.assembler_target:
             return self._config.assembler_target
         return "generic64"
