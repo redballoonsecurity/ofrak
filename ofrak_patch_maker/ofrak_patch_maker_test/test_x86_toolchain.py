@@ -21,12 +21,12 @@ X86_EXTENSION = ".x86"
             ArchInfo(
                 InstructionSet.X86,
                 None,
-                BitWidth.BIT_32,
+                BitWidth.BIT_64,
                 Endianness.LITTLE_ENDIAN,
                 ProcessorType.X64,
             ),
             X86_EXTENSION,
-        )
+        ),
     ]
 )
 def toolchain_under_test(request) -> ToolchainUnderTest:

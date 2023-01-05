@@ -56,7 +56,7 @@ class VBCC_0_9_GNU_Hybrid_Toolchain(Abstract_GNU_Toolchain, ABC):
             # Defaults to 68000
             self._compiler_flags.append(f"-cpu={self._config.compiler_cpu}")
 
-        if not self._config.userspace_dynamic_linker:
+        if not self.is_userspace():
             self._linker_flags.append(
                 "--no-dynamic-linker",
             )

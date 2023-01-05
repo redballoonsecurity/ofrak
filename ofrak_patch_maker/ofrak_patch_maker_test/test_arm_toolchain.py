@@ -57,6 +57,19 @@ ARM_EXTENSION = ".arm"
             ),
             ARM_EXTENSION,
         ),
+        # Exercise userspace_dynamic_linker logic
+        ToolchainUnderTest(
+            LLVM_12_0_1_Toolchain,
+            ArchInfo(
+                InstructionSet.ARM,
+                SubInstructionSet.ARMv8A,
+                BitWidth.BIT_32,
+                Endianness.LITTLE_ENDIAN,
+                ProcessorType.GENERIC_A9_V7_THUMB,
+            ),
+            ARM_EXTENSION,
+            "/opt/rbs/toolchain/gcc-arm-none-eabi-10-2020-q4-major/bin/arm-none-eabi-ld",
+        ),
     ]
 )
 def toolchain_under_test(request) -> ToolchainUnderTest:
