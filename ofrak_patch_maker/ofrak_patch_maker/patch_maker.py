@@ -117,10 +117,6 @@ class PatchMaker:
         """
         return self._toolchain.get_bin_file_symbols(path)
 
-    @staticmethod
-    def _is_executable_file(path: str) -> bool:
-        return os.access(path, os.X_OK)
-
     def _prepare_executable(self, executable_path: str) -> LinkedExecutable:
         """
         :param executable_path:
@@ -449,7 +445,8 @@ class PatchMaker:
 
         return FEM(name, linked_executable)
 
-    async def allocate_bom(
+    # This deprecated method is no longer part of PatchMaker public API.
+    async def allocate_bom(  # pragma: no cover
         self,
         allocatable,
         bom: BOM,

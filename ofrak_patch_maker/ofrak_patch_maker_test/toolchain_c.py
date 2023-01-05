@@ -108,6 +108,7 @@ def run_hello_world_test(toolchain_under_test: ToolchainUnderTest):
         create_map_files=True,
         compiler_optimization_level=CompilerOptimizationLevel.FULL,
         debug_info=True,
+        userspace_dynamic_linker=toolchain_under_test.userspace_dynamic_linker,
     )
 
     logger = logging.getLogger("ToolchainTest")
