@@ -52,7 +52,7 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
         if self._config.separate_data_sections:
             self._compiler_flags.append("-fdata-sections")
 
-        if not self._config.userspace_dynamic_linker:
+        if not self.is_userspace():
             self._linker_flags.append(
                 "--no-dynamic-linker",
             )
@@ -101,10 +101,6 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
 
         if toolchain_config.isysroot is not None:
             self._compiler_flags.append(f"-isysroot {toolchain_config.isysroot}")
-
-    @property
-    def name(self) -> str:
-        raise NotImplementedError()
 
     def _get_compiler_target(self, processor: ArchInfo) -> Optional[str]:
         return self._config.compiler_target
