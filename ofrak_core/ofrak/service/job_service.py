@@ -233,6 +233,7 @@ class JobService(JobServiceInterface):
         else:
             raise NotFoundError(
                 f"Unable to find any analyzer for attributes {request.attributes.__name__}"
+                f"\nFilter:{component_filter}"
             )
 
     def _build_target_cache(self, component_filter: ComponentFilter) -> TargetCache:

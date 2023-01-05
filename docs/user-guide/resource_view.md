@@ -61,15 +61,15 @@ In short, when the view is
  created in the `view_as` call, OFRAK attempts to analyze the resource to find those values. Like
  a normal `analyze` call, it will first check if the resource already has up-to-date attributes
  and use those; otherwise it will look for an appropriate analyzer. In this case the attributes
- do not exist, and OFRAK will look for an analyzer which outputs `Symbol.attributes_type`. `
- .attributes_type` is simply a way to access the class of `ResourceAttributes` associated with
+ do not exist, and OFRAK will look for an analyzer which outputs `AttributesType[Symbol]`. `
+ AttributesType[Symbol]` is simply a way to access the class of `ResourceAttributes` associated with
  `Symbol`. This `ResourceAttributes` class is automatically generated.
 
 We don't need to rely on an analyzer - we can also add the attributes manually:
 
 ```python
 my_resource.add_tag(Symbol)
-my_resource.add_attributes(Symbol.attributes_type("foo", 0x1000200))
+my_resource.add_attributes(AttributesType[Symbol]("foo", 0x1000200))
 my_sym = await my_resource.view_as(Symbol)
 
 print(my_sym.name)  # >> "foo"

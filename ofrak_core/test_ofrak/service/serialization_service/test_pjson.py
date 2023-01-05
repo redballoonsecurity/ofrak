@@ -21,6 +21,8 @@ from hypothesis.strategies import (
     floats,
 )
 from intervaltree import IntervalTree, Interval
+
+from ofrak.model.viewable_tag_model import AttributesType
 from synthol.injector import DependencyInjector
 from typing_inspect import get_args
 
@@ -303,7 +305,7 @@ def _type_and_descendants(superclass_type) -> List[Tuple[Type, Type]]:
 @pytest.mark.parametrize(
     "superclass_type,descendant_type",
     _type_and_descendants(ResourceView)
-    + _type_and_descendants(ResourceAttributes)
+    + [(t, d) for t, d in _type_and_descendants(ResourceAttributes) if d is not AttributesType]
     + _type_and_descendants(ComponentFilter)
     + _type_and_descendants(ComponentConfig),
 )
