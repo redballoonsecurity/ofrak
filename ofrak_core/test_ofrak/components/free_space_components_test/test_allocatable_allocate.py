@@ -4,6 +4,8 @@ import sys
 from dataclasses import dataclass
 from typing import Optional, List
 
+from ofrak_patch_maker.toolchain.llvm_12 import LLVM_12_0_1_Toolchain
+
 import ofrak_patch_maker_test
 import pytest
 
@@ -22,7 +24,6 @@ from ofrak_patch_maker.toolchain.model import (
     BinFileType,
     CompilerOptimizationLevel,
 )
-from ofrak_patch_maker.toolchain.version import ToolchainVersion
 from ofrak_type import (
     ArchInfo,
     InstructionSet,
@@ -182,7 +183,6 @@ async def test_allocate_bom(ofrak_context: OFRAKContext, tmpdir):
     source_dir = os.path.join(os.path.dirname(ofrak_patch_maker_test.__file__), "example_1")
     source_path = os.path.join(source_dir, "hello_world.c")
 
-    toolchain = ToolchainVersion.LLVM_12_0_1
     proc = ArchInfo(
         InstructionSet.ARM,
         SubInstructionSet.ARMv8A,
@@ -204,11 +204,9 @@ async def test_allocate_bom(ofrak_context: OFRAKContext, tmpdir):
 
     logger = logging.getLogger("ToolchainTest")
     logger.setLevel("INFO")
-
+    toolchain = LLVM_12_0_1_Toolchain(proc, tc_config)
     patch_maker = PatchMaker(
-        program_attributes=proc,
-        toolchain_config=tc_config,
-        toolchain_version=toolchain,
+        toolchain=toolchain,
         logger=logger,
         build_dir=tmpdir,
     )

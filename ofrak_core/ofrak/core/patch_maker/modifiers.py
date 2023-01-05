@@ -96,8 +96,6 @@ class PatchFromSourceModifier(Modifier):
             os.path.join(source_tmp_dir, src_file) for src_file in config.source_patches.keys()
         ]
 
-        program_attrs = await resource.analyze(ProgramAttributes)
-
         patch_maker = PatchMaker(
             toolchain=config.toolchain,
             build_dir=build_tmp_dir,
