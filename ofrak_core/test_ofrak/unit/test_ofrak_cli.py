@@ -1,8 +1,20 @@
-from typing import Iterable
+import hashlib
+import os
+from pathlib import Path
+from typing import Iterable, Dict, Tuple
 
 import pytest
+from dataclasses import fields
 
-from ofrak.ofrak_cli import (
+from ofrak.ofrak_context import OFRAKContext
+
+import test_ofrak.components
+from ofrak.cli.command.identify import Identify
+from ofrak.cli.command.unpack import Unpack
+
+from ofrak.cli.command.deps import DepsSubCommand
+from ofrak.cli.command.list import ListSubCommand
+from ofrak.cli.ofrak_cli import (
     OFRAKCommandLineInterface,
     OFRAKEnvironment,
 )
@@ -36,9 +48,14 @@ class MockOFRAKEnvironment:
 
 
 @pytest.fixture
-def ofrak_cli_parser():
+def cli_commands():
+    return [ListSubCommand(), DepsSubCommand(), Identify(), Unpack()]
+
+
+@pytest.fixture
+def ofrak_cli_parser(cli_commands):
     ofrak_env = MockOFRAKEnvironment()
-    return OFRAKCommandLineInterface(ofrak_env)  # type: ignore
+    return OFRAKCommandLineInterface(cli_commands, ofrak_env)  # type: ignore
 
 
 def _check_cli_output_matches(expected_output: str, capsys):
@@ -157,15 +174,88 @@ def test_deps(ofrak_cli_parser, capsys):
     )
 
 
-def test_ofrak_help():
+TEST_FILES = [
+    "simple_arm_gcc.o.elf",
+    "jumpnbump.exe",
+    "testtar.tar",
+]
+
+
+@pytest.fixture
+async def all_expected_analysis(ofrak_context: OFRAKContext):
+    all_expected_analysis = dict()
+    for filename in TEST_FILES:
+        file_path = os.path.join(
+            os.path.dirname(test_ofrak.components.__file__), "assets", filename
+        )
+        test_resource = await ofrak_context.create_root_resource_from_file(file_path)
+        await test_resource.identify()
+        expected_tags = test_resource.get_most_specific_tags()
+        expected_attributes = test_resource.get_model().attributes.values()
+        all_expected_analysis[filename] = expected_tags, expected_attributes
+    return all_expected_analysis
+
+
+@pytest.mark.parametrize("filename", TEST_FILES)
+def test_identify(ofrak_cli_parser, capsys, filename, all_expected_analysis: Tuple[Dict, Dict]):
+    expected_tags, expected_attributes = all_expected_analysis[filename]
+    assert len(expected_tags) > 0
+    assert len(expected_attributes) > 0
+    file_path = os.path.join(os.path.dirname(test_ofrak.components.__file__), "assets", filename)
+    ofrak_cli_parser.parse_and_run(["identify", file_path])
+
+    captured = capsys.readouterr()
+    for tag in expected_tags:
+        assert str(tag.__name__) in captured.out
+
+    for attribute in expected_attributes:
+        for field in fields(attribute):
+            field_content = str(getattr(attribute, field.name))
+            assert (
+                field_content in captured.out
+            ), f"Expected {field_content}, not found in \n\t{captured.out}"
+
+
+@pytest.fixture
+async def all_expected_hashes(ofrak_context: OFRAKContext):
+    all_expected_hashes = dict()
+    for filename in TEST_FILES:
+        expected_hashes = set()
+        file_path = os.path.join(
+            os.path.dirname(test_ofrak.components.__file__), "assets", filename
+        )
+        res = await ofrak_context.create_root_resource_from_file(file_path)
+        await res.unpack()
+        for child in await res.get_children():
+            if child.get_data_id() is not None:
+                expected_hashes.add(hashlib.sha256(await child.get_data()).hexdigest())
+        all_expected_hashes[filename] = expected_hashes
+    return all_expected_hashes
+
+
+@pytest.mark.parametrize("filename", TEST_FILES)
+def test_unpack(ofrak_cli_parser, capsys, filename, tmpdir, ofrak_context, all_expected_hashes):
+    file_path = os.path.join(os.path.dirname(test_ofrak.components.__file__), "assets", filename)
+    ofrak_cli_parser.parse_and_run(["unpack", "-o", str(tmpdir), file_path])
+
+    unpacked_hashes = set()
+    for unpacked_file in Path(tmpdir).iterdir():
+        with open(unpacked_file, "rb") as file:
+            unpacked_hashes.add(hashlib.sha256(file.read()).hexdigest())
+    expected_hashes = all_expected_hashes[filename]
+
+    assert unpacked_hashes == expected_hashes
+
+
+def test_ofrak_help(cli_commands):
     ofrak_env = OFRAKEnvironment()
-    ofrak_cli = OFRAKCommandLineInterface(ofrak_env)
+    ofrak_cli = OFRAKCommandLineInterface(cli_commands, ofrak_env)
     try:
         ofrak_cli.parse_and_run(["--help"])
     except SystemExit as e:
         assert e.code == 0
 
 
-def test_install_checks():
-    ofrak_cli = OFRAKCommandLineInterface()
+def test_install_checks(cli_commands):
+    ofrak_cli = OFRAKCommandLineInterface(cli_commands)
     ofrak_cli.parse_and_run(["deps", "--package", "ofrak"])
