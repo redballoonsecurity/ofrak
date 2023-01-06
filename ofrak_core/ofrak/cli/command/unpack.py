@@ -5,19 +5,26 @@ from pathlib import Path
 import time
 import sys
 
-from ofrak.cli.ofrak_cli import OfrakMakeContextCommand
+from ofrak.cli.ofrak_cli import OfrakCommandRunsScript
 
 
-class Unpack(OfrakMakeContextCommand):
-    name = "Unpack"
-
+class Unpack(OfrakCommandRunsScript):
     def create_parser(self, parser: argparse._SubParsersAction):
         subparser = parser.add_parser(
-            "unpack", help="Unpack all identified structures " "that can be unpacked with OFRAK"
+            "unpack",
+            help="Unpack all identified structures that can be unpacked with OFRAK",
+            description="Import a file as an OFRAK resource, then identifies and unpacks it. The "
+            "resource's children are written to the output directory as individual "
+            "files. Children which have no data are not written as files.",
         )
-        subparser.set_defaults(command=Unpack.run)
-        subparser.add_argument("-o", "--output_directory")
-        subparser.add_argument("filename")
+        subparser.add_argument(
+            "-o",
+            "--output_directory",
+            help="Directory to write unpacked resource tree to. If no directory is given, a new one"
+            " will be created in the same directory as the file being unpacked.",
+        )
+        subparser.add_argument("filename", help="File to unpack")
+        self.add_ofrak_arguments(subparser)
 
         return subparser
 

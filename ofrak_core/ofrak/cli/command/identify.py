@@ -1,20 +1,21 @@
 import argparse
 
 from ofrak import OFRAKContext
-from ofrak.cli.ofrak_cli import OfrakMakeContextCommand
+from ofrak.cli.ofrak_cli import OfrakCommandRunsScript
 from ofrak.core.magic import Magic
 from ofrak.resource import Resource
 
 
-class Identify(OfrakMakeContextCommand):
-    name = "Identify"
-
+class Identify(OfrakCommandRunsScript):
     def create_parser(self, parser: argparse._SubParsersAction):
         subparser = parser.add_parser(
-            "identify", help="Identify all known structures in the binary"
+            "identify",
+            help="Identify all known structures in the binary",
+            description="Import a file as an OFRAK resource, then identifies it and prints all the"
+            " tags and attributes.",
         )
-        subparser.set_defaults(command=Identify.run)
-        subparser.add_argument("filename")
+        subparser.add_argument("filename", help="File to identify")
+        self.add_ofrak_arguments(subparser)
 
         return subparser
 

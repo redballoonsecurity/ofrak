@@ -1,4 +1,5 @@
 import functools
+import logging
 import sys
 from abc import ABC, abstractmethod
 from argparse import ArgumentParser, _SubParsersAction, Namespace
@@ -92,8 +93,6 @@ class OFRAKEnvironment:
 
 
 class OfrakCommand(ABC):
-    name: str
-
     @abstractmethod
     def create_parser(self, ofrak_subparser: _SubParsersAction):
         raise NotImplementedError()
@@ -103,20 +102,43 @@ class OfrakCommand(ABC):
         raise NotImplementedError()
 
 
-class OfrakMakeContextCommand(OfrakCommand, ABC):
-    name: str
+class OfrakCommandRunsScript(OfrakCommand, ABC):
+    """
+    An OFRAK CLI command that needs to set up a full OFRAK Context and use it to run an OFRAK
+    script. Has additional scaffolding to make this process easy.
+    """
 
     @staticmethod
-    def add_arguments(command_subparser):
-        pass
+    def add_ofrak_arguments(command_subparser):
+        # TODO: Add CLI arguments for additional modules to discover (e.g. ofrak_ghidra)
+        command_subparser.add_argument(
+            "--logging-level",
+            "-l",
+            help="Minimum level of messages to print",
+            choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+            default=OFRAK.DEFAULT_LOG_LEVEL,
+        )
+        command_subparser.add_argument(
+            "--exclude-components-missing-dependencies",
+            "-x",
+            help="When initializing OFRAK, check each component's dependency and do not use any "
+            "components missing some dependencies",
+            action="store_true",
+        )
 
     def run(self, ofrak_env: OFRAKEnvironment, args: Namespace):
-        ofrak = OFRAK()
+        if type(args.logging_level) is int:
+            logging_level = args.logging_level
+        else:
+            logging_level = getattr(logging, args.logging_level.upper())
+        ofrak = OFRAK(
+            logging_level=logging_level,
+            exclude_components_missing_dependencies=args.exclude_components_missing_dependencies,
+        )
         ofrak.run(self.ofrak_func, args)
 
-    @staticmethod
     @abstractmethod
-    async def ofrak_func(ofrak_context: OFRAKContext, args: Namespace):
+    async def ofrak_func(self, ofrak_context: OFRAKContext, args: Namespace):
         raise NotImplementedError()
 
 
@@ -126,7 +148,7 @@ class OFRAKCommandLineInterface:
         subcommands: Iterable[OfrakCommand],
         ofrak_env: OFRAKEnvironment = OFRAKEnvironment(),
     ):
-        self.ofrak_parser = ArgumentParser()
+        self.ofrak_parser = ArgumentParser(prog="ofrak")
         ofrak_subparsers = self.ofrak_parser.add_subparsers(
             help="Command line utilities to use or configure OFRAK"
         )

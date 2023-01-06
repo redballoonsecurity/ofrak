@@ -84,9 +84,11 @@ class OFRAKContext:
 
 
 class OFRAK:
+    DEFAULT_LOG_LEVEL = logging.WARNING
+
     def __init__(
         self,
-        logging_level: int = logging.WARNING,
+        logging_level: int = DEFAULT_LOG_LEVEL,
         exclude_components_missing_dependencies: bool = False,
     ):
         """
