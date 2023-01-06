@@ -3,7 +3,7 @@ import tempfile
 
 import pytest
 
-from ofrak.core.architecture import ProgramAttributes
+from ofrak_type import ArchInfo
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.model import (
@@ -35,7 +35,7 @@ AARCH64_EXTENSION = ".aarch64"
     params=[
         ToolchainUnderTest(
             ToolchainVersion.GNU_AARCH64_LINUX_10,
-            ProgramAttributes(
+            ArchInfo(
                 InstructionSet.AARCH64,
                 None,
                 BitWidth.BIT_64,

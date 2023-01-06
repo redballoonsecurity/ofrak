@@ -40,10 +40,10 @@ Tail Block
 | --------- | --------- | -------- | --- |
 | 1 byte | 4 bytes | 16 bytes | 32 bytes |
 
-This format is interesting because it has a different sized tail block as well as different delimiters to represent the type of block. The [FlashUnpacker][ofrak_components.flash.FlashResourceUnpacker] is able to handle these different types of fields by providing attributes in [FlashAttributes][ofrak_components.flash.FlashAttributes] that also includes a [FlashEccAttributes][ofrak_components.flash.FlashEccAttributes]. We will describe the other parts of these attributes and how to use them later in this page.
+This format is interesting because it has a different sized tail block as well as different delimiters to represent the type of block. The [FlashUnpacker][ofrak.core.flash.FlashResourceUnpacker] is able to handle these different types of fields by providing attributes in [FlashAttributes][ofrak.core.flash.FlashAttributes] that also includes a [FlashEccAttributes][ofrak.core.flash.FlashEccAttributes]. We will describe the other parts of these attributes and how to use them later in this page.
 
 ### Types of Fields
-The class [FlashFieldType][ofrak_components.flash.FlashFieldType] contains field types that are commonly encountered in flash dumps:
+The class [FlashFieldType][ofrak.core.flash.FlashFieldType] contains field types that are commonly encountered in flash dumps:
 ```python
 class FlashFieldType(Enum):
     DATA = 0
@@ -71,10 +71,10 @@ This class can be overridden or augmented if other field types are encountered.
 
 
 ## Usage
-A [FlashAttributes][ofrak_components.flash.FlashAttributes] must be provided in order to use the flash component. As with other aspects of OFRAK, this can be modified and overridden if it does not work specifically for your use case.
+A [FlashAttributes][ofrak.core.flash.FlashAttributes] must be provided in order to use the flash component. As with other aspects of OFRAK, this can be modified and overridden if it does not work specifically for your use case.
 
 ### `FlashAttributes`
-The FlashAttributes][ofrak_components.flash.FlashAttributes] is necessary for communicating the information necessary to understand your specific flash format.
+The FlashAttributes][ofrak.core.flash.FlashAttributes] is necessary for communicating the information necessary to understand your specific flash format.
 
 The only required field is the `data_block_format`. These block formats are specified using an *ordered* `Iterable[FlashField]` to describe the block.
 
@@ -88,11 +88,11 @@ FlashAttributes(
 )
 ```
 
-The `ecc_attributes` are also important for any dumps that include ECC. You have the option of providing the algorithms for encoding, decoding, and correcting the data. In addition, this is where the magic and any delimiter bytes are specified. See [FlashEccAttributes][ofrak_components.flash.FlashEccAttributes] for more information.
+The `ecc_attributes` are also important for any dumps that include ECC. You have the option of providing the algorithms for encoding, decoding, and correcting the data. In addition, this is where the magic and any delimiter bytes are specified. See [FlashEccAttributes][ofrak.core.flash.FlashEccAttributes] for more information.
 
 
 ### Running the Flash components
-The Flash components can be used like any other OFRAK components. The first step is to tag a resource as a [FlashResource][ofrak_components.flash.FlashResource] and tag it with its flash resource attributes:
+The Flash components can be used like any other OFRAK components. The first step is to tag a resource as a [FlashResource][ofrak.core.flash.FlashResource] and tag it with its flash resource attributes:
 
 ```python
 # Create root resource and tag

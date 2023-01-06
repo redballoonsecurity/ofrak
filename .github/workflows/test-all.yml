@@ -186,7 +186,7 @@ jobs:
             -c "make -C /ofrak_angr test && make -C /ofrak_capstone test"
 
   ofrak-tutorial:
-    name: Test OFRAK tutorial notebooks
+    name: Test OFRAK examples and tutorial notebooks
     runs-on: ubuntu-latest
     needs: build-base-image
     steps:
@@ -227,4 +227,5 @@ jobs:
             --entrypoint bash \
             redballoonsecurity/ofrak/tutorial:latest \
             -c "python -m ofrak_ghidra.server start \
+                && make -C /examples test \
                 && make -C /ofrak_tutorial test"

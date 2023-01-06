@@ -3,7 +3,7 @@ import tempfile
 
 import pytest
 
-from ofrak.core.architecture import ProgramAttributes
+from ofrak_type import ArchInfo
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.model import (
@@ -36,7 +36,7 @@ ARM_EXTENSION = ".arm"
     params=[
         ToolchainUnderTest(
             ToolchainVersion.GNU_ARM_NONE_EABI_10_2_1,
-            ProgramAttributes(
+            ArchInfo(
                 InstructionSet.ARM,
                 SubInstructionSet.ARMv8A,
                 BitWidth.BIT_32,
@@ -47,7 +47,7 @@ ARM_EXTENSION = ".arm"
         ),
         ToolchainUnderTest(
             ToolchainVersion.LLVM_12_0_1,
-            ProgramAttributes(
+            ArchInfo(
                 InstructionSet.ARM,
                 SubInstructionSet.ARMv8A,
                 BitWidth.BIT_32,
@@ -55,6 +55,19 @@ ARM_EXTENSION = ".arm"
                 ProcessorType.GENERIC_A9_V7_THUMB,
             ),
             ARM_EXTENSION,
+        ),
+        # Exercise userspace_dynamic_linker logic
+        ToolchainUnderTest(
+            ToolchainVersion.LLVM_12_0_1,
+            ArchInfo(
+                InstructionSet.ARM,
+                SubInstructionSet.ARMv8A,
+                BitWidth.BIT_32,
+                Endianness.LITTLE_ENDIAN,
+                ProcessorType.GENERIC_A9_V7_THUMB,
+            ),
+            ARM_EXTENSION,
+            "/opt/rbs/toolchain/gcc-arm-none-eabi-10-2020-q4-major/bin/arm-none-eabi-ld",
         ),
     ]
 )
@@ -88,6 +101,7 @@ def test_hello_world(toolchain_under_test: ToolchainUnderTest):
     run_hello_world_test(
         toolchain_under_test.toolchain_version,
         toolchain_under_test.proc,
+        toolchain_under_test.userspace_dynamic_linker,
     )
 
 

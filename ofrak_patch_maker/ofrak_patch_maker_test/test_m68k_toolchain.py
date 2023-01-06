@@ -3,7 +3,7 @@ import tempfile
 
 import pytest
 
-from ofrak.core.architecture import ProgramAttributes
+from ofrak_type import ArchInfo
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.model import (
@@ -35,7 +35,7 @@ M68K_EXTENSION = ".m68k"
     params=[
         ToolchainUnderTest(
             ToolchainVersion.GNU_M68K_LINUX_10,
-            ProgramAttributes(
+            ArchInfo(
                 InstructionSet.M68K,
                 None,
                 BitWidth.BIT_32,
@@ -46,7 +46,7 @@ M68K_EXTENSION = ".m68k"
         ),
         ToolchainUnderTest(
             ToolchainVersion.VBCC_M68K_0_9,
-            ProgramAttributes(
+            ArchInfo(
                 InstructionSet.M68K,
                 None,
                 BitWidth.BIT_32,

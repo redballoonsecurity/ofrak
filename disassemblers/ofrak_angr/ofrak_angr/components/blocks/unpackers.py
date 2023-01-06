@@ -1,24 +1,21 @@
 import logging
-from typing import Optional
-from ofrak_type.architecture import InstructionSetMode
-from ofrak.core.basic_block import BasicBlock
-from ofrak.core.data import DataWord
-from ofrak.core.memory_region import MemoryOverlapError
-from ofrak_angr.components.angr_analyzer import AngrAnalyzerConfig
-from ofrak_type.range import Range
 from typing import Iterable, Tuple
-
-from ofrak.service.resource_service_i import ResourceFilter
-from ofrak.core.code_region import CodeRegionUnpacker, CodeRegion
-from ofrak.core.complex_block import ComplexBlock, ComplexBlockUnpacker
-from ofrak.resource import Resource
-
-from ofrak_angr.components.identifiers import AngrAnalysisResource
-from ofrak_angr.model import AngrAnalysis
-
-from archinfo.arch_arm import get_real_address_if_arm
+from typing import Optional
 
 from angr.knowledge_plugins.functions.function import Function as AngrFunction
+from archinfo.arch_arm import get_real_address_if_arm
+from ofrak_type.architecture import InstructionSetMode
+from ofrak_type.range import Range
+
+from ofrak.core.basic_block import BasicBlock
+from ofrak.core.code_region import CodeRegionUnpacker, CodeRegion
+from ofrak.core.complex_block import ComplexBlock, ComplexBlockUnpacker
+from ofrak.core.data import DataWord
+from ofrak.resource import Resource
+from ofrak.service.resource_service_i import ResourceFilter
+from ofrak_angr.components.angr_analyzer import AngrAnalyzerConfig
+from ofrak_angr.components.identifiers import AngrAnalysisResource
+from ofrak_angr.model import AngrAnalysis
 
 LOGGER = logging.getLogger(__name__)
 
@@ -39,14 +36,7 @@ class AngrCodeRegionUnpacker(CodeRegionUnpacker):
         num_overlapping_cbs = 0
 
         for complex_block in self._angr_get_complex_blocks(angr_analysis, cr_vaddr_range):
-            try:
-                await cr_view.create_child_region(complex_block)
-            except MemoryOverlapError as e:
-                num_overlapping_cbs += 1
-                LOGGER.debug(
-                    f"Skipped complex block at {complex_block.virtual_address:#x} because that would have resulted in overlap: {e}"
-                )
-                continue
+            await cr_view.create_child_region(complex_block)
 
         if num_overlapping_cbs > 0:
             LOGGER.warning(

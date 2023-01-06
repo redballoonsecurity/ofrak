@@ -1,6 +1,6 @@
 import pytest
 
-from ofrak.core.architecture import ProgramAttributes
+from ofrak_type import ArchInfo
 from ofrak_patch_maker.toolchain.version import ToolchainVersion
 from ofrak_patch_maker_test import ToolchainUnderTest
 from ofrak_patch_maker_test.toolchain_c import run_hello_world_test, run_bounds_check_test
@@ -18,15 +18,15 @@ X86_EXTENSION = ".x86"
     params=[
         ToolchainUnderTest(
             ToolchainVersion.GNU_X86_64_LINUX_EABI_10_3_0,
-            ProgramAttributes(
+            ArchInfo(
                 InstructionSet.X86,
                 None,
-                BitWidth.BIT_32,
+                BitWidth.BIT_64,
                 Endianness.LITTLE_ENDIAN,
                 ProcessorType.X64,
             ),
             X86_EXTENSION,
-        )
+        ),
     ]
 )
 def toolchain_under_test(request) -> ToolchainUnderTest:

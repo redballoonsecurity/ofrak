@@ -3,8 +3,11 @@ import os
 import tempfile
 from typing import List, Mapping, Optional, Tuple, Dict
 
-from ofrak.core.architecture import ProgramAttributes
-from ofrak_patch_maker.binary_parser.llvm import LLVM_ELF_Parser, LLVM_MACH_O_Parser
+from ofrak_type import ArchInfo
+from ofrak_type.architecture import InstructionSet
+from ofrak_type.memory_permissions import MemoryPermissions
+
+from ofrak_patch_maker.binary_parser.llvm import LLVM_ELF_Parser
 from ofrak_patch_maker.toolchain.abstract import Toolchain, RBS_AUTOGEN_WARNING
 from ofrak_patch_maker.toolchain.model import (
     Segment,
@@ -14,16 +17,14 @@ from ofrak_patch_maker.toolchain.model import (
     ToolchainException,
 )
 from ofrak_patch_maker.toolchain.utils import get_file_format
-from ofrak_type.architecture import InstructionSet
-from ofrak_type.memory_permissions import MemoryPermissions
 
 
 class LLVM_12_0_1_Toolchain(Toolchain):
-    binary_file_parsers = [LLVM_ELF_Parser(), LLVM_MACH_O_Parser()]
+    binary_file_parsers = [LLVM_ELF_Parser()]
 
     def __init__(
         self,
-        processor: ProgramAttributes,
+        processor: ArchInfo,
         toolchain_config: ToolchainConfig,
         logger: logging.Logger = logging.getLogger(__name__),
     ):
@@ -67,7 +68,7 @@ class LLVM_12_0_1_Toolchain(Toolchain):
             llvm12_compiler_optimization_map[self._config.compiler_optimization_level]
         )
 
-        if not self._config.userspace_dynamic_linker:
+        if not self.is_userspace():
             self._compiler_flags.append("-ffreestanding")
 
         if self._config.force_inlines:
@@ -114,7 +115,7 @@ class LLVM_12_0_1_Toolchain(Toolchain):
     def name(self) -> str:
         return "LLVM_12_0_1"
 
-    def _get_assembler_target(self, processor: ProgramAttributes) -> str:
+    def _get_assembler_target(self, processor: ArchInfo) -> str:
         arch = processor.isa.value
         if self._config.assembler_target:
             return self._config.assembler_target
@@ -125,7 +126,7 @@ class LLVM_12_0_1_Toolchain(Toolchain):
         else:
             raise ToolchainException("Assembler Target not provided and no valid default found!")
 
-    def _get_compiler_target(self, processor: ProgramAttributes) -> Optional[str]:
+    def _get_compiler_target(self, processor: ArchInfo) -> Optional[str]:
         arch = processor.isa.value
         if self._config.compiler_target:
             return self._config.compiler_target
@@ -141,7 +142,7 @@ class LLVM_12_0_1_Toolchain(Toolchain):
         return "-T"
 
     def compile(self, c_file: str, header_dirs: List[str], out_dir: str = ".") -> str:
-        if self._config.userspace_dynamic_linker:
+        if self.is_userspace():
             out_file = os.path.join(out_dir, os.path.split(c_file)[-1] + ".o")
             # For now a complete override of the flags; we sidestep the clang front-end
             # in favor of a more userspace-friendly GNU configuration.
@@ -156,7 +157,7 @@ class LLVM_12_0_1_Toolchain(Toolchain):
             return super().compile(c_file, header_dirs, out_dir=out_dir)
 
     def link(self, o_files: List[str], exec_path: str, script=None):
-        if self._config.userspace_dynamic_linker:
+        if self.is_userspace():
             # We will ignore the script and any lld flags in this case
             flags = [
                 f"--dynamic-linker={self._config.userspace_dynamic_linker}",
@@ -284,7 +285,8 @@ class LLVM_12_0_1_Toolchain(Toolchain):
 
         return ld_script_path
 
-    def get_required_alignment(self, segment: Segment) -> int:
+    @property
+    def segment_alignment(self) -> int:
         # The linker will align function starts to 16-byte boundaries
         # https://patchwork.kernel.org/project/kernel-hardening/patch/20200205223950.1212394-7-kristen@linux.intel.com/
         # Plus, some other memory will also be aligned to 16

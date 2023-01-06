@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from os.path import join, split
 from typing import Dict, Iterable, List, Optional, Tuple, Mapping
 
-from ofrak.core.architecture import ProgramAttributes
+from ofrak_type import ArchInfo
 from ofrak_patch_maker.binary_parser.abstract import AbstractBinaryFileParser
 from ofrak_patch_maker.toolchain.model import Segment, ToolchainConfig
 from ofrak_patch_maker.toolchain.utils import get_repository_config
@@ -32,7 +32,7 @@ class Toolchain(ABC):
 
     def __init__(
         self,
-        processor: ProgramAttributes,
+        processor: ArchInfo,
         toolchain_config: ToolchainConfig,
         logger: logging.Logger = logging.getLogger(),
     ):
@@ -106,7 +106,7 @@ class Toolchain(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def _get_assembler_target(self, processor: ProgramAttributes) -> str:
+    def _get_assembler_target(self, processor: ArchInfo) -> str:
         """
         Red Balloon Security strongly recommends all users provide their specific hardware target
         for best results.
@@ -121,7 +121,7 @@ class Toolchain(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def _get_compiler_target(self, processor: ProgramAttributes) -> Optional[str]:
+    def _get_compiler_target(self, processor: ArchInfo) -> Optional[str]:
         """
         Returns a default compiler target for the provided processor unless one is provided
         in `self._config`.
@@ -216,6 +216,17 @@ class Toolchain(ABC):
         """
         return self._config.relocatable
 
+    @property
+    @abstractmethod
+    def segment_alignment(self) -> int:
+        """
+        For example, x86 returns 16. This will most often be used when programmatically allocating
+        memory for code/data.
+
+        :return int: required alignment factor for the toolchain/ISA
+        """
+        raise NotImplementedError()
+
     def _execute_tool(
         self,
         tool_path: str,
@@ -308,6 +319,7 @@ class Toolchain(ABC):
         return os.path.abspath(out_file)
 
     @staticmethod
+    @abstractmethod
     def _get_linker_map_flag(exec_path: str) -> Iterable[str]:
         """
         Generates the linker map file flag for a linker invocation given the executable path.
@@ -377,6 +389,7 @@ class Toolchain(ABC):
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def ld_generate_region(
         self,
         object_path: str,
@@ -392,6 +405,7 @@ class Toolchain(ABC):
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def ld_generate_bss_region(self, vm_address: int, length: int) -> Tuple[str, str]:
         """
         Generates `.bss` regions for linker scripts.
@@ -401,6 +415,7 @@ class Toolchain(ABC):
         raise NotImplementedError()
 
     @staticmethod
+    @abstractmethod
     def ld_generate_section(object_path: str, segment_name: str, memory_region_name: str) -> str:
         """
         Generates sections for linker scripts.
@@ -410,6 +425,7 @@ class Toolchain(ABC):
         raise NotImplementedError()
 
     @staticmethod
+    @abstractmethod
     def ld_generate_bss_section(memory_region_name: str) -> str:
         """
         Generates `.bss` sections for linker scripts.
@@ -433,6 +449,7 @@ class Toolchain(ABC):
         """
         return [], []
 
+    @abstractmethod
     def ld_script_create(
         self,
         name: str,
@@ -458,15 +475,7 @@ class Toolchain(ABC):
         """
         raise NotImplementedError()
 
-    def get_required_alignment(self, segment: Segment) -> int:
-        """
-        For example, x86 returns 16. This will most often be used when programmatically allocating
-        memory for code/data.
-
-        :return int: required alignment factor for the toolchain/ISA
-        """
-        return 1
-
+    @abstractmethod
     def get_bin_file_symbols(self, executable_path: str) -> Dict[str, int]:
         """
         For now, this utility only searches for global function and data symbols which are
@@ -479,6 +488,7 @@ class Toolchain(ABC):
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def get_bin_file_segments(self, path: str) -> Tuple[Segment, ...]:
         """
         Parses all segments found in the executable path provided.

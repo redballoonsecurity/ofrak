@@ -3,7 +3,7 @@ import os
 import tempfile
 
 
-from ofrak.core.architecture import ProgramAttributes
+from ofrak_type import ArchInfo
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.model import (
@@ -18,7 +18,7 @@ from ofrak_type.memory_permissions import MemoryPermissions
 
 
 def run_challenge_3_reloc_toy_example_test(
-    toolchain: ToolchainVersion, proc: ProgramAttributes, extension: str
+    toolchain: ToolchainVersion, proc: ArchInfo, extension: str
 ):
     """
     Example solution patch for bounds_check challenge.
@@ -171,7 +171,7 @@ def run_challenge_3_reloc_toy_example_test(
     assert get_file_format(exec_path) == tc_config.file_format
 
 
-def run_monkey_patch_test(toolchain: ToolchainVersion, proc: ProgramAttributes, extension: str):
+def run_monkey_patch_test(toolchain: ToolchainVersion, proc: ArchInfo, extension: str):
     """
     Example showing how to manually generate an executable with assembly at client-specified locs.
     """

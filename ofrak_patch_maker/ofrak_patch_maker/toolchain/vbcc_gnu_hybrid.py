@@ -8,7 +8,7 @@ import re
 
 from ofrak_patch_maker.toolchain.gnu import Abstract_GNU_Toolchain
 
-from ofrak.core.architecture import ProgramAttributes
+from ofrak_type import ArchInfo
 from ofrak_type.architecture import InstructionSet
 from ofrak_patch_maker.binary_parser.gnu import GNU_ELF_Parser
 from ofrak_patch_maker.toolchain.model import (
@@ -27,7 +27,7 @@ class VBCC_0_9_GNU_Hybrid_Toolchain(Abstract_GNU_Toolchain, ABC):
 
     def __init__(
         self,
-        processor: ProgramAttributes,
+        processor: ArchInfo,
         toolchain_config: ToolchainConfig,
         logger: logging.Logger = logging.getLogger(__name__),
     ):
@@ -56,7 +56,7 @@ class VBCC_0_9_GNU_Hybrid_Toolchain(Abstract_GNU_Toolchain, ABC):
             # Defaults to 68000
             self._compiler_flags.append(f"-cpu={self._config.compiler_cpu}")
 
-        if not self._config.userspace_dynamic_linker:
+        if not self.is_userspace():
             self._linker_flags.append(
                 "--no-dynamic-linker",
             )
@@ -164,7 +164,7 @@ class VBCC_0_9_GNU_Hybrid_Toolchain(Abstract_GNU_Toolchain, ABC):
         self._make_gas_compatible(out_file)
         return self.assemble(out_file, header_dirs, out_dir)
 
-    def _get_assembler_target(self, processor: ProgramAttributes):
+    def _get_assembler_target(self, processor: ArchInfo):
         if processor.isa is not InstructionSet.M68K:
             raise ValueError(
                 f"The GNU M68K toolchain does not support ISAs which are not M68K; "

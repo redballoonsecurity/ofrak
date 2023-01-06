@@ -80,6 +80,7 @@ class OFRAKContext:
 
     async def shutdown_context(self):
         await asyncio.gather(*(service.shutdown() for service in self._all_ofrak_services))
+        logging.shutdown()
 
 
 class OFRAK:
@@ -98,6 +99,7 @@ class OFRAK:
         logging.basicConfig(level=logging_level, format="[%(filename)15s:%(lineno)5s] %(message)s")
         logging.getLogger().addHandler(logging.FileHandler("/tmp/ofrak.log"))
         logging.getLogger().setLevel(logging_level)
+        logging.captureWarnings(True)
         self.injector = DependencyInjector()
         self._discovered_modules: List[ModuleType] = []
         self._exclude_components_missing_dependencies = exclude_components_missing_dependencies
@@ -161,13 +163,6 @@ class OFRAK:
     def _setup(self):
         """Discover common OFRAK services and components."""
         import ofrak
-
-        try:
-            import ofrak_components
-
-            self.discover(ofrak_components)
-        except ModuleNotFoundError:
-            pass
 
         self.discover(ofrak)
 
