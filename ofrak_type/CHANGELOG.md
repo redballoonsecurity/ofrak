@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [2.0.0](https://github.com/redballoonsecurity/ofrak/releases/tag/ofrak-type-v2.0.0) - 2023-01-03
 ### Added
-- `ArchInfo` to describe an architecture
+- Add `ArchInfo` to describe an architecture.
 - Classes in package all discoverable at `ofrak_type`, e.g., `from ofrak_type import Range`.
 
 ### Changed

@@ -20,11 +20,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - `DataService` was refactored for speed and clarity of implementation.
 
 ### Changed
-- `Resource.{write_to, flush_to_disk}` now have optional `pack` parameter to pack before writing
-- Resource views are now updated when `Resource.save` is run
-- Free space components decoupled from ISA
-- `Filesystem.initialize_from_disk` raises `FileNotFoundError` when path does not exist or is not a file ([@galbwe](https://github.com/galbwe))
-- Rename `RawExtendModifier` to `BinaryExtendModifier`
+- `Resource.{write_to, flush_to_disk}` now have optional `pack` parameter to pack before writing.
+- Resource views are now updated when `Resource.save` is run.
+- Free space components decoupled from ISA.
+- `Filesystem.initialize_from_disk` raises `FileNotFoundError` when path does not exist or is not a file ([@galbwe](https://github.com/galbwe)).
+- Rename `RawExtendModifier` to `BinaryExtendModifier`.
 - `ElfProgramHeader` simplified to have only one method, `get_memory_permissions`.
 - Switch to using PyPI versions of keystone & capstone.
 - `PeOptionalHeader` divided into 32 and 64 bit.
@@ -34,7 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   - Removed `Resource.{get_data_index_within_parent, get_offset_within_root, get_data_unmapped_range, set_data_alignment, fetch, get_related_tags, get_all_attributes, move, get_siblings_as_view, get_siblings}`.
   - Removed `AssemblerServiceInterface.{assemble_many, assemble_file, assemble_files}`.
   - Removed `RawReplaceModifier`, `InjectorModifier`.
-  - Removed `ElfProgramHeaderPermission`, replaced usage with `MemoryPermissions` (from `ofrak-type`)
+  - Removed `ElfProgramHeaderPermission`, replaced usage with `MemoryPermissions` (from `ofrak-type`).
   - Remove unused `Elf,{get_sections_after_index, get_sections_before_index, get_section_header_by_name, get_string_section_header`.
   - Removed `get_parent`/`get_elf` from Elf resource views, `UnanalyzedElfSegment`, `ElfSegmentStructureIndexAnalyzer`, `ElfSectionStructureIndexAnalyzer`, `ElfSymbolStructureIndexAnalyzer`, `ElfModifierUtils`.
 
