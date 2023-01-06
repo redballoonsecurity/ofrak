@@ -4,11 +4,10 @@
 **Usage:**
 
 ```python
+tc = GNU_ARM_NONE_EABI_10_2_1_Toolchain(...). # Instantiate the toolchain you want to use.
 known_symbols = {"memcpy": 0xdeadbeef}
 patch_maker = PatchMaker(
-    program_attributes=attr,
-    toolchain_config=tc_config,
-    toolchain_version=tc_version,
+    toolchain=tc
     platform_includes="../usr/include",
     base_symbols=known_symbols
 )
@@ -34,8 +33,7 @@ await ofrak_fw_resource.run(SegmentInjectorModifier, SegmentInjectorModifierConf
 import logging
 import os
 import tempfile
-from types import ModuleType
-from typing import Optional, List, Dict, Union, Tuple, Iterable, Mapping
+from typing import Dict, Iterable, List, Mapping, Optional, Tuple
 from warnings import warn
 
 from immutabledict import immutabledict
@@ -50,20 +48,15 @@ from ofrak_patch_maker.model import (
 )
 from ofrak_patch_maker.toolchain.abstract import Toolchain
 from ofrak_patch_maker.toolchain.model import (
-    ToolchainConfig,
     Segment,
 )
-from ofrak_patch_maker.toolchain.version import ToolchainVersion
-from ofrak_type import ArchInfo
 from ofrak_type.memory_permissions import MemoryPermissions
 
 
 class PatchMaker:
     def __init__(
         self,
-        program_attributes: ArchInfo,
-        toolchain_config: ToolchainConfig,
-        toolchain_version: ToolchainVersion,
+        toolchain: Toolchain,
         platform_includes: Optional[Iterable[str]] = None,
         base_symbols: Mapping[str, int] = None,
         build_dir: str = ".",
@@ -92,9 +85,7 @@ class PatchMaker:
         We should not raise exceptions in protected APIs. Protected programming interfaces should
         not be used external to this class. Use outside of the class at your own risk.
 
-        :param program_attributes: information about ISA/hardware
-        :param toolchain_config: information that will be translated to various flags
-        :param toolchain_version: used to derive the toolchain we'll be using
+        :param toolchain: a Toolchain instance with compile, link, assemble, etc. methods
         :param platform_includes: Additional include directories
         :param base_symbols: maps symbol name to effective address for patches
         :param build_dir: output directory for build artifacts
@@ -102,9 +93,7 @@ class PatchMaker:
         """
         self._platform_includes = platform_includes
         self.build_dir = build_dir
-        self._toolchain = self._get_toolchain(
-            program_attributes, toolchain_config, toolchain_version, logger=logger
-        )
+        self._toolchain = toolchain
 
         # String to file path of symbols.inc. This will be a build artifact.
         self._base_symbols: Dict[str, int] = {}
@@ -119,26 +108,6 @@ class PatchMaker:
             self._base_symbols.update(base_symbols)
 
         self.logger = logger
-
-    @staticmethod
-    def _get_toolchain(
-        program_attributes: ArchInfo,
-        toolchain_config: ToolchainConfig,
-        toolchain_version: ToolchainVersion,
-        logger: Union[logging.Logger, ModuleType] = logging,
-    ) -> Toolchain:
-        """
-        :param program_attributes: information about ISA/hardware
-        :param toolchain_config: information that will be translated to various flags
-        :param toolchain_version: used to derive the toolchain we'll be using
-        :param logger:
-
-        :return: A Toolchain matching the given arguments
-        """
-        toolchain_cls = toolchain_version.value
-        return toolchain_cls(
-            processor=program_attributes, toolchain_config=toolchain_config, logger=logger
-        )
 
     def _extract_symbols(self, path: str) -> Dict[str, int]:
         """
