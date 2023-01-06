@@ -24,6 +24,10 @@ class GNU_ARM_NONE_EABI_10_2_1_Toolchain(GNU_10_Toolchain):
     def name(self) -> str:
         return "GNU_ARM_NONE_EABI_10_2_1"
 
+    @property
+    def segment_alignment(self) -> int:
+        return 4
+
     def _get_assembler_target(self, processor: ArchInfo):
         """
         Thumb mode should be defined in the assembler source at the top, using:
