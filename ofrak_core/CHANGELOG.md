@@ -31,7 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Removed
 - Removed unused, untested APIs:
-  - Removed `Resource.{get_data_index_within_parent, get_offset_within_root, get_data_unmapped_range, set_data_alignment, fetch, get_related_tags, get_all_attributes, move, get_siblings_as_view, get_siblings`.
+  - Removed `Resource.{get_data_index_within_parent, get_offset_within_root, get_data_unmapped_range, set_data_alignment, fetch, get_related_tags, get_all_attributes, move, get_siblings_as_view, get_siblings}`.
   - Removed `AssemblerServiceInterface.{assemble_many, assemble_file, assemble_files}`.
   - Removed `RawReplaceModifier`, `InjectorModifier`.
   - Removed `ElfProgramHeaderPermission`, replaced usage with `MemoryPermissions` (from `ofrak-type`)
