@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
     - `python -m ofrak list` lists installed OFRAK modules and/or components.
     - `python -m ofrak deps` shows and checks external (non-Python) dependencies of OFRAK components, and shows hints on how they might be installed.
   - `OFRAKContext` logs if a discovered component is missing an external dependency; these components can be excluded using the `exclude_components_missing_depenencies` parameter in `OFRAK`.
-- Speed improvements to `resource.unpack_recursively` method.
+- Speed improvements to `Resource.unpack_recursively` method.
 - `DataService` was refactored for speed and clarity of implementation.
 
 ### Changed
