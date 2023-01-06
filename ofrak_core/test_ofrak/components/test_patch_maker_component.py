@@ -204,19 +204,17 @@ async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config
     function_replacement_config = FunctionReplacementModifierConfig(
         source_bundle.resource.get_id(),
         {config.program.function_name: config.replacement_patch},
-        config.toolchain(
-            config.program.attrs,
-            ToolchainConfig(
-                file_format=BinFileType.ELF,
-                force_inlines=True,
-                relocatable=False,
-                no_std_lib=True,
-                no_jump_tables=True,
-                no_bss_section=True,
-                compiler_optimization_level=config.compiler_optimization_level,
-                check_overlap=False,
-            ),
+        ToolchainConfig(
+            file_format=BinFileType.ELF,
+            force_inlines=True,
+            relocatable=False,
+            no_std_lib=True,
+            no_jump_tables=True,
+            no_bss_section=True,
+            compiler_optimization_level=config.compiler_optimization_level,
+            check_overlap=False,
         ),
+        config.toolchain,
     )
 
     await target_program.resource.run(FunctionReplacementModifier, function_replacement_config)

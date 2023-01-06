@@ -31,6 +31,10 @@ class GNU_X86_64_LINUX_EABI_10_3_0_Toolchain(GNU_10_Toolchain):
     def name(self) -> str:
         return "GNU_X86_64_LINUX_EABI_10_3_0"
 
+    @property
+    def segment_alignment(self) -> int:
+        return 16
+
     def _get_assembler_target(self, processor: ArchInfo):
         if self._config.assembler_target:
             return self._config.assembler_target

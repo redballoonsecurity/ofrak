@@ -1,12 +1,11 @@
 import logging
 import os
 import tempfile
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import Iterable, List, Mapping, Optional, Tuple, Dict
 from warnings import warn
 
 from ofrak_type import ArchInfo
-from ofrak_type.architecture import InstructionSet
 from ofrak_patch_maker.toolchain.abstract import Toolchain, RBS_AUTOGEN_WARNING
 from ofrak_patch_maker.toolchain.model import (
     Segment,
@@ -325,10 +324,9 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
         return ld_script_path
 
     @property
+    @abstractmethod
     def segment_alignment(self) -> int:
-        if self._processor.isa == InstructionSet.X86:
-            return 16
-        return 1
+        raise NotImplementedError()
 
     def get_bin_file_symbols(self, executable_path: str) -> Dict[str, int]:
         # This happens to be the same as LLVM but it really doesn't belong in Parent code.
