@@ -46,7 +46,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Bump to `fun-coverage==0.2.0` for more accurate test coverage reporting.
 
 ### Security
-in case of vulnerabilities.
 - Bump `lief` dependency to 0.12.2 to avoid [vulnerability](lief-project/LIEF#763) in lower versions.
 ## 1.0.0 - 2022-09-02
 ### Added
