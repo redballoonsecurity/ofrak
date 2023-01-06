@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Classes in package all discoverable at `ofrak_type`, e.g., `from ofrak_type import Range`.
 
 ### Changed
-- Removed reference to obsolete `ofrak-components` from README.md.
+- Removed reference to obsolete `ofrak_components` from README.md.
 
 ### Fixed
 - Fixed bug that flipped integer values of  `MemoryPermissions.R` and `MemoryPermission.X`.
