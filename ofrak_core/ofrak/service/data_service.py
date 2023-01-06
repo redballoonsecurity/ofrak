@@ -387,7 +387,9 @@ class _DataRoot:
         i = _CompareFirstTuple.bisect_left(self._grid_starts_first, start)
         if i >= len(self._grid_starts_first):
             raise KeyError()
-        fetched_start: int, column: _GridYAxisT = self._grid_starts_first[i]
+        fetched_start: int
+        column: _GridYAxisT
+        fetched_start, column = self._grid_starts_first[i]
         if fetched_start != start:
             raise KeyError()
 
