@@ -1,9 +1,9 @@
 import logging
 import os
 import tempfile
-from typing import Optional
-
-from ofrak_type import ArchInfo
+from ofrak_patch_maker.toolchain.gnu_avr import GNU_AVR_5_Toolchain
+from ofrak_patch_maker.toolchain.gnu_x64 import GNU_X86_64_LINUX_EABI_10_3_0_Toolchain
+from ofrak_patch_maker_test import ToolchainUnderTest
 from ofrak_type.architecture import InstructionSet
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
@@ -14,11 +14,10 @@ from ofrak_patch_maker.toolchain.model import (
     CompilerOptimizationLevel,
 )
 from ofrak_patch_maker.toolchain.utils import get_file_format
-from ofrak_patch_maker.toolchain.version import ToolchainVersion
 from ofrak_type.memory_permissions import MemoryPermissions
 
 
-def run_bounds_check_test(toolchain: ToolchainVersion, proc: ArchInfo):
+def run_bounds_check_test(toolchain_under_test: ToolchainUnderTest):
     """
     Example solution patch for bounds_check challenge.
     """
@@ -26,7 +25,7 @@ def run_bounds_check_test(toolchain: ToolchainVersion, proc: ArchInfo):
     source_path = os.path.join(source_dir, "bounds_check.c")
     build_dir = tempfile.mkdtemp()
 
-    if proc.isa == InstructionSet.AVR:
+    if toolchain_under_test.proc.isa == InstructionSet.AVR:
         # avr-gcc does not support relocatable
         relocatable = False
     else:
@@ -48,9 +47,7 @@ def run_bounds_check_test(toolchain: ToolchainVersion, proc: ArchInfo):
 
     exec_path = os.path.join(build_dir, "fem")
     patch_maker = PatchMaker(
-        program_attributes=proc,
-        toolchain_config=tc_config,
-        toolchain_version=toolchain,
+        toolchain=toolchain_under_test.toolchain(toolchain_under_test.proc, tc_config),
         logger=logger,
         build_dir=build_dir,
     )
@@ -87,9 +84,7 @@ def run_bounds_check_test(toolchain: ToolchainVersion, proc: ArchInfo):
     assert get_file_format(exec_path) == tc_config.file_format
 
 
-def run_hello_world_test(
-    toolchain: ToolchainVersion, proc: ArchInfo, userspace_dynamic_linker: Optional[str] = None
-):
+def run_hello_world_test(toolchain_under_test: ToolchainUnderTest):
     """
     Make sure we can run the toolchain components without falling over.
     """
@@ -97,7 +92,7 @@ def run_hello_world_test(
     source_path = os.path.join(source_dir, "hello_world.c")
     build_dir = tempfile.mkdtemp()
 
-    if toolchain in [ToolchainVersion.GNU_AVR_5]:
+    if toolchain_under_test.toolchain == GNU_AVR_5_Toolchain:
         relocatable = False
         base_symbols = {"__mulhi3": 0x1234}  # Dummy address to fix missing symbol
     else:
@@ -113,16 +108,14 @@ def run_hello_world_test(
         create_map_files=True,
         compiler_optimization_level=CompilerOptimizationLevel.FULL,
         debug_info=True,
-        userspace_dynamic_linker=userspace_dynamic_linker,
+        userspace_dynamic_linker=toolchain_under_test.userspace_dynamic_linker,
     )
 
     logger = logging.getLogger("ToolchainTest")
     logger.setLevel("INFO")
 
     patch_maker = PatchMaker(
-        program_attributes=proc,
-        toolchain_config=tc_config,
-        toolchain_version=toolchain,
+        toolchain=toolchain_under_test.toolchain(toolchain_under_test.proc, tc_config),
         logger=logger,
         build_dir=build_dir,
         base_symbols=base_symbols,
@@ -152,7 +145,7 @@ def run_hello_world_test(
             )
             current_vm_address += s.length
 
-            if toolchain in [ToolchainVersion.GNU_X86_64_LINUX_EABI_10_3_0]:
+            if toolchain_under_test.toolchain in [GNU_X86_64_LINUX_EABI_10_3_0_Toolchain]:
                 if current_vm_address % 16 > 0:
                     current_vm_address += 16 - current_vm_address % 16
             else:
