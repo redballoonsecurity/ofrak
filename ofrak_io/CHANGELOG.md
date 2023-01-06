@@ -1,0 +1,15 @@
+# Changelog
+All notable changes to `ofrak-io` will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+
+## [1.1.0](https://github.com/redballoonsecurity/ofrak/releases/tag/ofrak-io-v1.1.0) - 2023-01-03
+### Changed
+- Removed reference to obsolete `ofrak-components` from README.md.
+- Remove `ofrak-io[test]` reliance on `ofrak`.
+
+## 1.0.0 - 2022-09-02
+### Added
+Initial release. Hello world!

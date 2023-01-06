@@ -76,6 +76,9 @@ What is *not* included:
 - The OFRAK PatchMaker
 - Components which integrate the disassembler backends (Ghidra, BinaryNinja, Angr, Capstone)
 
+## Testing
+This package maintains 100% test coverage of functions.
+
 ## License
 The code in this repository comes with an [OFRAK Community License](https://github.com/redballoonsecurity/ofrak/blob/master/LICENSE), which is intended for educational uses, personal development, or just having fun.
 
