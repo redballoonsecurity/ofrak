@@ -232,7 +232,7 @@ class OpenWrtTrxUnpacker(Unpacker[None]):
             await resource.create_child(
                 tags=(OpenWrtTrxRootfs,),
                 data=data[
-                     trx_header.trx_rootfs_offset: trx_header.trx_binheader_offset] if trx_header.trx_rootfs_offset > 0 else None,
+                     trx_header.trx_rootfs_offset: trx_header.trx_binheader_offset] if trx_header.trx_rootfs_offset > 0 else [],
             )
             # Create binHeader child
             await resource.create_child(
