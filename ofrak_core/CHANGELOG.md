@@ -17,11 +17,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
     - `python -m ofrak deps` shows and checks external (non-Python) dependencies of OFRAK components, and shows hints on how they might be installed.
   - `OFRAKContext` logs if a discovered component is missing an external dependency; these components can be excluded using the `exclude_components_missing_depenencies` parameter in `OFRAK`.
 - Speed improvements to `Resource.unpack_recursively` method.
-- `DataService` was refactored for speed and clarity of implementation.
 
 ### Changed
 - `Resource.{write_to, flush_to_disk}` now have optional `pack` parameter to pack before writing.
 - Resource views are now updated when `Resource.save` is run.
+- `DataService` was refactored for speed and clarity of implementation. It also now allows sibling Resources to overlap with each other.
 - Free space components decoupled from ISA.
 - `Filesystem.initialize_from_disk` raises `FileNotFoundError` when path does not exist or is not a file ([@galbwe](https://github.com/galbwe)).
 - Rename `RawExtendModifier` to `BinaryExtendModifier`.
