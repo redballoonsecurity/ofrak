@@ -4,6 +4,14 @@ All notable changes to `ofrak-patch-maker` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+### Changed
+- `PatchMaker` is now initialized with an existing `Toolchain` instance. GNU toolchain implementations are split into separate files.
+- Make toolchain names in `toolchain.conf` more specific:
+  - `GNU_ARM_NONE` changed to `GNU_ARM_NONE_EABI_10_2_1`.
+  - `GNU_X86_64_LINUX` changed to `GNU_X86_64_LINUX_EABI_10_3_0`.
+
+### Removed
+- Removed `ToolchainVersion`.
 
 ## [2.0.0](https://github.com/redballoonsecurity/ofrak/releases/tag/ofrak-patch-maker-v.2.0.0) - 2023-01-03
 ### Changed
