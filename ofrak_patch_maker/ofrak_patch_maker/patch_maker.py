@@ -4,7 +4,7 @@
 **Usage:**
 
 ```python
-tc = SOME_GNU_VERSION_ARM_Toolchain(...)
+tc = GNU_ARM_NONE_EABI_10_2_1_Toolchain(...). # Instantiate the toolchain you want to use.
 known_symbols = {"memcpy": 0xdeadbeef}
 patch_maker = PatchMaker(
     toolchain=tc

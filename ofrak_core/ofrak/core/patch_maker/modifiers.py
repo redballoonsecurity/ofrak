@@ -31,7 +31,7 @@ class PatchFromSourceModifierConfig(ComponentConfig):
     defining where to inject one or more of the .text, .data, and .rodata from the build file
     :var toolchain_config: configuration for the
     [Toolchain][ofrak_patch_maker.toolchain.abstract.Toolchain] to use
-    :var toolchain: the type of which [ofrak_patch_maker.toolchain.abstract.Toolchain] to use
+    :var toolchain: the type of which [Toolchain][ofrak_patch_maker.toolchain.abstract.Toolchain] to use
     :var patch_name: Optional name of patch
     :var header_directory_resource_ids: Optional additional FilesystemRoot resources with header
     directories
@@ -224,7 +224,7 @@ class FunctionReplacementModifierConfig(ComponentConfig):
     replacements). The paths are relative paths within the source code FilesystemRoot.
     :var toolchain_config: configuration for the
     [Toolchain][ofrak_patch_maker.toolchain.abstract.Toolchain] to use
-    :var toolchain: the type of which type of [ofrak_patch_maker.toolchain.abstract.Toolchain] to use
+    :var toolchain: the type of which type of [Toolchain][ofrak_patch_maker.toolchain.abstract.Toolchain] to use
     :var patch_name: Optional name of patch
     :var header_directory_resource_ids: Optional additional FilesystemRoot resources with header
     directories
