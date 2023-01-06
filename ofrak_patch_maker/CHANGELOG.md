@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - `Toolchain` interface uses `ArchInfo` instead of `ProgramAttributes` to remove dependency on `ofrak`.
 - `bss_size_required` parameter added to `AssembledObject`.
 - `segment_alignment` parameter added to `BOM`.
-- Removed reference to obsolete `ofrak-componets` from README.md.
+- Removed reference to obsolete `ofrak_components` from README.md.
 
 ### Deprecated
 - Deprecated `PatchMaker.allocate_bom` to remove dependency on `ofrak`. Use `ofrak==2.0.0`'s `Allocatable.allocate_bom` instead.
