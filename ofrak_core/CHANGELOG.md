@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [2.0.0](https://github.com/redballoonsecurity/ofrak/releases/tag/ofrak-v2.0.0) - 2023-01-03
 ### Added
-- `ofrak` now contains all the components that were in the (now sunset) `ofrak-components` package.
+- `ofrak` now contains all the components that were in the (now sunset) `ofrak_components` package.
 - Add components for analyzing, unpacking, and repacking raw flash dumps.
 - UF2 unpacker and packer added.
 - Several new features to make tracking and installing external dependencies easier (for non-Docker users):
