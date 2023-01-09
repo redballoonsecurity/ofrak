@@ -12,10 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Changed
 - Removed reference to obsolete `ofrak_components` from README.md.
-- Integer values for `MemoryPermission.R` and `MemoryPermission.X`now correctly match bitfield values.
-
-### Fixed
-- Fixed bug that flipped integer values of  `MemoryPermissions.R` and `MemoryPermission.X`.
+- Integer values for `MemoryPermission.R` and `MemoryPermission.X` now correctly match bitfield values.
 
 ## 1.0.0 - 2022-09-02
 ### Added
