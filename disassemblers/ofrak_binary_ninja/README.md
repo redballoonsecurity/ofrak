@@ -23,3 +23,6 @@ Follow the instructions in the [OFRAK environment setup guide](https://ofrak.com
     ```
 3. Install `ofrak` and its dependencies.
 4. Finally, run `make {install, develop}` to install `ofrak_binary_ninja`.
+
+## Testing
+This package maintains 100% test coverage of functions.
