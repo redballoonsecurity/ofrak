@@ -1,13 +1,11 @@
 import logging
 import os
 import tempfile
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import Iterable, List, Mapping, Optional, Tuple, Dict
 from warnings import warn
 
 from ofrak_type import ArchInfo
-from ofrak_type.architecture import InstructionSet, SubInstructionSet
-from ofrak_patch_maker.binary_parser.gnu import GNU_ELF_Parser, GNU_V10_ELF_Parser
 from ofrak_patch_maker.toolchain.abstract import Toolchain, RBS_AUTOGEN_WARNING
 from ofrak_patch_maker.toolchain.model import (
     Segment,
@@ -29,7 +27,8 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
     ):
         super().__init__(processor, toolchain_config, logger=logger)
 
-        assert self.file_format == BinFileType.ELF
+        if self.file_format != BinFileType.ELF:
+            raise ToolchainException("No supported binary file formats other than ELF for now.")
 
         self._preprocessor_flags.append("-E")
 
@@ -325,10 +324,9 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
         return ld_script_path
 
     @property
+    @abstractmethod
     def segment_alignment(self) -> int:
-        if self._processor.isa == InstructionSet.X86:
-            return 16
-        return 1
+        raise NotImplementedError()
 
     def get_bin_file_symbols(self, executable_path: str) -> Dict[str, int]:
         # This happens to be the same as LLVM but it really doesn't belong in Parent code.
@@ -375,291 +373,3 @@ class GNU_10_Toolchain(Abstract_GNU_Toolchain):
             self._linker_flags.append("--pic-executable")
         else:
             self._compiler_flags.append("-fno-plt")
-
-
-class GNU_ARM_NONE_EABI_10_2_1_Toolchain(GNU_10_Toolchain):
-    binary_file_parsers = [GNU_ELF_Parser()]
-
-    def __init__(
-        self,
-        processor: ArchInfo,
-        toolchain_config: ToolchainConfig,
-        logger: logging.Logger = logging.getLogger(__name__),
-    ):
-        super().__init__(processor, toolchain_config, logger=logger)
-        if self._config.hard_float:
-            self._compiler_flags.append("-mfloat-abi=hard")
-        else:
-            self._compiler_flags.append("-msoft-float")
-
-    @property
-    def name(self):
-        return "GNU_ARM_NONE"
-
-    def _get_assembler_target(self, processor: ArchInfo):
-        """
-        Thumb mode should be defined in the assembler source at the top, using:
-
-            .syntax unified
-            .thumb           ; or .code 16
-        """
-        if processor.isa is not InstructionSet.ARM:
-            raise ValueError(
-                f"The GNU ARM toolchain does not support ISAs which are not ARM; "
-                f"given ISA {processor.isa.name}"
-            )
-        if self._config.assembler_target:
-            return self._config.assembler_target
-
-        if processor.sub_isa:
-            return processor.sub_isa.value.lower()
-        elif processor.isa == InstructionSet.ARM:
-            return SubInstructionSet.ARMv7A.value.lower()
-        else:
-            raise ToolchainException("Assembler Target not provided and no valid default found!")
-
-
-class GNU_X86_64_LINUX_EABI_10_3_0_Toolchain(GNU_10_Toolchain):
-    binary_file_parsers = [GNU_V10_ELF_Parser()]
-
-    def __init__(
-        self,
-        processor: ArchInfo,
-        toolchain_config: ToolchainConfig,
-        logger: logging.Logger = logging.getLogger(__name__),
-    ):
-        super().__init__(processor, toolchain_config, logger=logger)
-
-        self._compiler_flags.extend(
-            [
-                "-malign-data=abi",  # further relaxes compiler data alignment policy
-                "-mno-sse2",  # restricts usage of xmm register / avx instruction usage.
-            ]
-        )
-
-        if not self._config.hard_float:
-            self._compiler_flags.append("-msoft-float")
-
-    @property
-    def name(self) -> str:
-        return "GNU_X86_64_LINUX"
-
-    def _get_assembler_target(self, processor: ArchInfo):
-        if self._config.assembler_target:
-            return self._config.assembler_target
-        return "generic64"
-
-    @staticmethod
-    def ld_generate_bss_section(
-        memory_region_name: str,
-    ) -> str:
-        """
-        We override this for x64 so we can provide SUBALIGN(1)
-        This is required to correctly estimate how much size we need for bss
-        when splitting up data structures into their own individual bss sections.
-        If we were to let the linker align every structure's section to 8 or 16, it would
-        insert empty space that we had not allocated for the bss memory region.
-        gcc/ld do prefer 8 alignment for data if you don't force this, but it is not likely to be
-        hugely faster on recent hardware for most situations (ie not locked instructions
-        across a cache line):
-        https://lemire.me/blog/2012/05/31/data-alignment-for-speed-myth-or-reality/
-        Pre-2011 x64 chips might be slower with these kinds of accesses, but:
-           - We should not bend over backwards for processors we've not evaluated yet.
-           - .bss handling is already difficult enough as is.
-           - The flexibility granted by this feature likely justifies a relatively small performance impact.
-        We should address this as a problem if future users find that performance is noticeably/severely impacted.
-        """
-        bss_section_name = ".bss"
-        return (
-            f"    {bss_section_name} : SUBALIGN(1) {{\n"
-            f"        *.o({bss_section_name}, {bss_section_name}.*)\n"
-            f"    }} > {memory_region_name}"
-        )
-
-
-class GNU_M68K_LINUX_10_Toolchain(GNU_10_Toolchain):
-    binary_file_parsers = [GNU_ELF_Parser()]
-
-    def __init__(
-        self,
-        processor: ArchInfo,
-        toolchain_config: ToolchainConfig,
-        logger: logging.Logger = logging.getLogger(__name__),
-    ):
-        super().__init__(processor, toolchain_config, logger=logger)
-        if self._config.hard_float:
-            self._compiler_flags.append("-mfloat-abi=hard")
-        else:
-            self._compiler_flags.append("-msoft-float")
-
-    @property
-    def name(self):
-        return "GNU_M68K_LINUX_10"
-
-    @property
-    def segment_alignment(self) -> int:
-        return 4
-
-    def _get_assembler_target(self, processor: ArchInfo):
-        if processor.isa is not InstructionSet.M68K:
-            raise ValueError(
-                f"The GNU M68K toolchain does not support ISAs which are not M68K; "
-                f"given ISA {processor.isa.name}"
-            )
-        if self._config.assembler_target:
-            return self._config.assembler_target
-        arch = processor.isa.value
-        if processor.sub_isa is not None:
-            arch = processor.sub_isa.value
-        return arch
-
-    def _ld_generate_rel_dyn_region(
-        self,
-        vm_address: int,
-        length: int,
-    ) -> Tuple[str, str]:
-        region_name = '".rela.dyn_mem"'
-        perms_string = self._ld_perm2str(MemoryPermissions.RW)
-        return (
-            f"    {region_name} ({perms_string}) : ORIGIN = {hex(vm_address)}, "
-            f"LENGTH = {hex(length)}",
-            region_name,
-        )
-
-    @staticmethod
-    def _ld_generate_rel_dyn_section(
-        memory_region_name: str,
-    ) -> str:
-        rel_dyn_section_name = ".rela.dyn"
-        return (
-            f"    {rel_dyn_section_name} : {{\n"
-            f"        *.o({rel_dyn_section_name})\n"
-            f"    }} > {memory_region_name}"
-        )
-
-
-class GNU_AARCH64_LINUX_10_Toolchain(GNU_10_Toolchain):
-    binary_file_parsers = [GNU_V10_ELF_Parser()]
-
-    def __init__(
-        self,
-        processor: ArchInfo,
-        toolchain_config: ToolchainConfig,
-        logger: logging.Logger = logging.getLogger(__name__),
-    ):
-        super().__init__(processor, toolchain_config, logger=logger)
-        # Enable compilation of the GNU atomics intrinsics.
-        self._compiler_flags.append("-mno-outline-atomics")
-
-    @property
-    def name(self):
-        return "GNU_AARCH64_LINUX_10"
-
-    @property
-    def segment_alignment(self) -> int:
-        return 4
-
-    def _ld_generate_got_region(self, vm_address, length):
-        region_name = '".got_mem"'
-        perms_string = self._ld_perm2str(MemoryPermissions.R)
-        return (
-            f"    {region_name} ({perms_string}) : ORIGIN = {hex(vm_address)}, "
-            f"LENGTH = {hex(length)}",
-            region_name,
-        )
-
-    def ld_generate_placeholder_reloc_sections(self):
-        regions, sections = super().ld_generate_placeholder_reloc_sections()
-        (
-            got_region,
-            got_name,
-        ) = self._ld_generate_got_region(0xDEADBEEF + 0x30000, 0x1000)
-        regions.append(got_region)
-        sections.append(self._ld_generate_got_section(got_name))
-        return regions, sections
-
-    def _ld_generate_rel_dyn_region(
-        self,
-        vm_address: int,
-        length: int,
-    ) -> Tuple[str, str]:
-        region_name = '".rela.dyn_mem"'
-        perms_string = self._ld_perm2str(MemoryPermissions.RW)
-        return (
-            f"    {region_name} ({perms_string}) : ORIGIN = {hex(vm_address)}, "
-            f"LENGTH = {hex(length)}",
-            region_name,
-        )
-
-    @staticmethod
-    def _ld_generate_rel_dyn_section(
-        memory_region_name: str,
-    ) -> str:
-        rel_dyn_section_name = ".rela.dyn"
-        return (
-            f"    {rel_dyn_section_name} : {{\n"
-            f"        *.o({rel_dyn_section_name})\n"
-            f"    }} > {memory_region_name}"
-        )
-
-    def _get_assembler_target(self, processor: ArchInfo):
-        if processor.isa is not InstructionSet.AARCH64:
-            raise ValueError(
-                f"The GNU AARCH64 toolchain does not support ISAs which are not AARCH64; "
-                f"given ISA {processor.isa.name}"
-            )
-        if processor.sub_isa is not None:
-            return processor.sub_isa.value.lower()
-        return SubInstructionSet.ARMv8A.value.lower()
-
-
-class GNU_AVR_5_Toolchain(Abstract_GNU_Toolchain):
-    binary_file_parsers = [GNU_ELF_Parser()]
-
-    def __init__(
-        self,
-        processor: ArchInfo,
-        toolchain_config: ToolchainConfig,
-        logger: logging.Logger = logging.getLogger(__name__),
-    ):
-        super().__init__(processor, toolchain_config, logger=logger)
-
-        if self._config.relocatable:
-            raise ValueError("-pie not supported for AVR")
-
-        if toolchain_config.hard_float:
-            raise ValueError("hard float not supported for AVR")
-
-        # avr-gcc's -mmcu flag allows you to specify either the exact target chip, or a chip
-        #      architecture. Specifying an exact chip will choose the correct avr/io.h and startup
-        #      code for the chip. Here, we will first look for an exact chip supplied in the
-        #      ToolchainConfig, and fall back on sub-ISA.
-        #      See https://gcc.gnu.org/wiki/avr-gcc#Supporting_.22unsupported.22_Devices
-        if processor.sub_isa is not None:
-            self._linker_flags.append(f"-m{processor.sub_isa.value}")
-            self._compiler_flags.append(
-                f"-mmcu={self._config.compiler_cpu or processor.sub_isa.value}"
-            )
-            self._assembler_flags.append(
-                f"-mmcu={self._config.assembler_cpu or processor.sub_isa.value}"
-            )
-        else:
-            raise ValueError("sub_isa is required for AVR linking")
-
-    @property
-    def name(self) -> str:
-        return "GNU_AVR_5"
-
-    def _get_assembler_target(self, processor: ArchInfo) -> str:
-        if processor.isa is not InstructionSet.AVR:
-            raise ValueError(
-                f"The GNU AVR toolchain does not support ISAs which are not AVR; "
-                f"given ISA {processor.isa.name}"
-            )
-        if self._config.assembler_target:
-            return self._config.assembler_target
-        return InstructionSet.AVR.value.lower()
-
-    @property
-    def segment_alignment(self) -> int:
-        return 2

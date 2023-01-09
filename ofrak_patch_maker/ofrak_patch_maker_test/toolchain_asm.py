@@ -1,9 +1,6 @@
 import logging
 import os
 import tempfile
-
-
-from ofrak_type import ArchInfo
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.model import (
@@ -13,13 +10,11 @@ from ofrak_patch_maker.toolchain.model import (
     CompilerOptimizationLevel,
 )
 from ofrak_patch_maker.toolchain.utils import get_file_format
-from ofrak_patch_maker.toolchain.version import ToolchainVersion
+from ofrak_patch_maker_test import ToolchainUnderTest
 from ofrak_type.memory_permissions import MemoryPermissions
 
 
-def run_challenge_3_reloc_toy_example_test(
-    toolchain: ToolchainVersion, proc: ArchInfo, extension: str
-):
+def run_challenge_3_reloc_toy_example_test(toolchain_under_test: ToolchainUnderTest):
     """
     Example solution patch for bounds_check challenge.
     """
@@ -111,7 +106,7 @@ def run_challenge_3_reloc_toy_example_test(
     # Arguably, we could come up with a better way to test these toolchains and construct this
     # `manual_map` in a more intelligent manner... just trying to keep source clutter/duplication
     # down for now.
-    source_files = [f for f in os.listdir(source_dir) if extension in f]
+    source_files = [f for f in os.listdir(source_dir) if toolchain_under_test.extension in f]
     try:
         assert len(source_files) <= len(text_segments)
     except AssertionError:
@@ -142,9 +137,7 @@ def run_challenge_3_reloc_toy_example_test(
 
     exec_path = os.path.join(build_dir, "fem")
     patch_maker = PatchMaker(
-        program_attributes=proc,
-        toolchain_config=tc_config,
-        toolchain_version=toolchain,
+        toolchain=toolchain_under_test.toolchain(toolchain_under_test.proc, tc_config),
         logger=logger,
         build_dir=build_dir,
         base_symbols={"reloc_0x13ce_0x13d6": 0x13D6},
@@ -171,12 +164,16 @@ def run_challenge_3_reloc_toy_example_test(
     assert get_file_format(exec_path) == tc_config.file_format
 
 
-def run_monkey_patch_test(toolchain: ToolchainVersion, proc: ArchInfo, extension: str):
+def run_monkey_patch_test(toolchain_under_test: ToolchainUnderTest):
     """
     Example showing how to manually generate an executable with assembly at client-specified locs.
     """
     source_dir = os.path.join(os.path.dirname(__file__), "example_2")
-    source_files = [os.path.join(source_dir, x) for x in os.listdir(source_dir) if extension in x]
+    source_files = [
+        os.path.join(source_dir, x)
+        for x in os.listdir(source_dir)
+        if toolchain_under_test.extension in x
+    ]
     build_dir = tempfile.mkdtemp()
 
     tc_config = ToolchainConfig(
@@ -196,9 +193,7 @@ def run_monkey_patch_test(toolchain: ToolchainVersion, proc: ArchInfo, extension
 
     exec_path = os.path.join(build_dir, "fem")
     patch_maker = PatchMaker(
-        program_attributes=proc,
-        toolchain_config=tc_config,
-        toolchain_version=toolchain,
+        toolchain=toolchain_under_test.toolchain(toolchain_under_test.proc, tc_config),
         logger=logger,
         build_dir=build_dir,
     )

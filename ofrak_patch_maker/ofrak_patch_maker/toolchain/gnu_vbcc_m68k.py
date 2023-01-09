@@ -116,8 +116,12 @@ class VBCC_0_9_GNU_Hybrid_Toolchain(Abstract_GNU_Toolchain, ABC):
             pass
 
     @property
-    def name(self):
+    def name(self) -> str:
         return "VBCC_M68K_0_9"
+
+    @property
+    def segment_alignment(self) -> int:
+        return 1
 
     @staticmethod
     def _make_gas_compatible(in_file: str) -> str:
