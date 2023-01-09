@@ -212,32 +212,35 @@ class OpenWrtTrxUnpacker(Unpacker[None]):
         # Create lzma loader child
         await resource.create_child(
             tags=(OpenWrtTrxLzmaLoader,),
-            data=data[trx_header.trx_loader_offset: trx_header.trx_kernel_offset],
+            data=data[trx_header.trx_loader_offset : trx_header.trx_kernel_offset],
         )
         # Create kernel child
         await resource.create_child(
             tags=(OpenWrtTrxKernel,),
-            data=data[
-                 trx_header.trx_kernel_offset: trx_header.trx_rootfs_offset] if trx_header.trx_rootfs_offset > 0 else data[
-                                                                                                                      trx_header.trx_kernel_offset:],
+            data=data[trx_header.trx_kernel_offset : trx_header.trx_rootfs_offset]
+            if trx_header.trx_rootfs_offset > 0
+            else data[trx_header.trx_kernel_offset :],
         )
         if trx_version == OpenWrtTrxVersion.VERSION1:
             # Create rootfs child
             await resource.create_child(
                 tags=(OpenWrtTrxRootfs,),
-                data=data[trx_header.trx_rootfs_offset:] if trx_header.trx_rootfs_offset > 0 else b'',
+                data=data[trx_header.trx_rootfs_offset :]
+                if trx_header.trx_rootfs_offset > 0
+                else b"",
             )
         else:  # TRX Version 2
             # Create rootfs child
             await resource.create_child(
                 tags=(OpenWrtTrxRootfs,),
-                data=data[
-                     trx_header.trx_rootfs_offset: trx_header.trx_binheader_offset] if trx_header.trx_rootfs_offset > 0 else b'',
+                data=data[trx_header.trx_rootfs_offset : trx_header.trx_binheader_offset]
+                if trx_header.trx_rootfs_offset > 0
+                else b"",
             )
             # Create binHeader child
             await resource.create_child(
                 tags=(OpenWrtTrxBinheader,),
-                data=data[trx_header.trx_binheader_offset:],
+                data=data[trx_header.trx_binheader_offset :],
             )
 
 
@@ -362,7 +365,7 @@ class OpenWrtTrxHeaderModifier(Modifier[OpenWrtTrxHeaderModifierConfig]):
 
     @staticmethod
     async def serialize(
-            updated_attributes: OpenWrtTrxHeader.attributes_type,  # type: ignore
+        updated_attributes: OpenWrtTrxHeader.attributes_type,  # type: ignore
     ) -> bytes:
         """
         Serialize `updated_attributes` into bytes. This method doesn't perform any check or compute
