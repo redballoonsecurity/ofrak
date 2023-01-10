@@ -68,3 +68,35 @@ class TestOpenWrtTrxUnpackRepackIdempotency(TestOpenWrtTrxUnpackModifyPack):
         trx_crc = struct.unpack("<I", resource_data[8:12])[0]
         assert trx_crc == openwrt_crc32(resource_data[12:])
         assert trx_crc == 0xB83AFAD6
+
+
+class TestOpenWrtTrxUnpackRepackNullRootfs(TestOpenWrtTrxUnpackModifyPack):
+    """
+    Unpack and repack an image without a valid rootfs segment - this seems to be seen on most non-MIPS boards
+    """
+
+    async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
+        """
+        Create a root resource from the test image stored in Git LFS.
+        """
+        testfile_path = os.path.join(
+            ASSETS_DIR, "openwrt-19.07.0-bcm53xx-buffalo-wxr-1900dhp-squashfs.trx"
+        )
+        image_path = os.path.abspath(os.path.join(os.path.dirname(__file__), testfile_path))
+        resource = await ofrak_context.create_root_resource_from_file(image_path)
+        return resource
+
+    async def unpack(self, resource: Resource) -> None:
+        await resource.unpack()
+        kernel = await resource.get_only_descendant_as_view(
+            OpenWrtTrxKernel, r_filter=ResourceFilter(tags=(OpenWrtTrxKernel,))
+        )
+        kernel_data = await kernel.resource.get_data()
+        assert kernel_data.startswith(b"UBI#")
+
+    async def verify(self, resource: Resource) -> None:
+        resource_data = await resource.get_data()
+        assert resource_data.startswith(b"HDR0")
+        trx_crc = struct.unpack("<I", resource_data[8:12])[0]
+        assert trx_crc == openwrt_crc32(resource_data[12:])
+        assert trx_crc == 0x6B550F3C
