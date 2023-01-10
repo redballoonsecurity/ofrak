@@ -13,11 +13,7 @@ from ofrak.core.complex_block import ComplexBlock, ComplexBlockUnpacker
 from ofrak.core.data import DataWord
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter
-from ofrak_angr.components.angr_analyzer import (
-    AngrAnalyzerConfig, 
-    AngrCodeRegionModifierConfig, 
-    AngrCodeRegionModifier
-)
+from ofrak_angr.components.angr_analyzer import AngrAnalyzerConfig, AngrCodeRegionModifier
 from ofrak_angr.components.identifiers import AngrAnalysisResource
 from ofrak_angr.model import AngrAnalysis
 

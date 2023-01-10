@@ -13,7 +13,7 @@ from ofrak.core.elf.model import Elf, ElfHeader, ElfType
 from ofrak_angr.components.identifiers import AngrAnalysisResource
 from ofrak_angr.model import AngrAnalysis
 from ofrak.component.modifier import Modifier
-from ofrak.core import Program, CodeRegion
+from ofrak.core import CodeRegion
 from ofrak import ResourceFilter
 
 
@@ -75,17 +75,12 @@ class AngrAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
         """
 
 
-@dataclass
-class AngrCodeRegionModifierConfig(ComponentConfig):
-    angr_analysis: AngrAnalysis
-
-
 class AngrCodeRegionModifier(Modifier):
     id = b"AngrCodeRegionModifier"
     targets = (CodeRegion,)
 
     async def modify(self, resource: Resource, config=None):
-        code_region  = await resource.view_as(CodeRegion)
+        code_region = await resource.view_as(CodeRegion)
 
         root_resource = await resource.get_only_ancestor(
             ResourceFilter(tags=[AngrAnalysisResource], include_self=True)
@@ -103,7 +98,9 @@ class AngrCodeRegionModifier(Modifier):
             if elf_header is not None and elf_header.e_type == ElfType.ET_DYN.value:
                 fixup_address = True
         else:
-            LOGGER.warning(f"Have not implemented PIE-detection for {root_resource}. The address of {code_region} will likely be incorrect.")
+            LOGGER.warning(
+                f"Have not implemented PIE-detection for {root_resource}. The address of {code_region} will likely be incorrect."
+            )
 
         if fixup_address:
             angr_analysis = await root_resource.analyze(AngrAnalysis)
@@ -111,4 +108,3 @@ class AngrCodeRegionModifier(Modifier):
 
             new_cr = CodeRegion(code_region.virtual_address + obj.min_addr, code_region.size)
             code_region.resource.add_view(new_cr)
-
