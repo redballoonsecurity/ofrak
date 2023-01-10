@@ -214,23 +214,24 @@ instruction-level patches).
 ---
 
 ### PatchMaker steps
-Compile the patch source using OFRAK PatchMaker, after defining the program attributes, toolchain and symbols we wish to
+Compile the patch source using OFRAK PatchMaker, after defining the arch info, toolchain and symbols we wish to
 re-link to the target-under-analysis.
 
 This is composed of a few steps in itself, which are:
-- Define the `ProgramAttributes` dataclass, which specifies the target CPU, ISA, etc.;
+- Define the `ArchInfo` dataclass, which specifies the target CPU, ISA, etc.;
 - Define the `ToolchainConfig` dataclass, which specifies toolchain configuration parameters, such as optimization flags, reloc flags, etc.;
-- Initialize `PatchMaker` with the toolchain variant to use (LLVM, GCC, vbcc and version) and the symbol addresses to re-link, which in;
+- Initialize a `Toolchain` with the arch info and toolchain config;
+- Initialize `PatchMaker` with the toolchain and the symbol addresses to re-link, which in;
 - Define the `BOM` (Batch of Objects and Metadata) dataclass to include the source file with the `uppercase_and_print` patch;
 - Define the `PatchRegionConfig` dataclass describing the object files of the patch; then finally,
 - Compile the patch into a `FEM` (Final Executable and Metadata) object.
 
 First, certain information needs to be known ahead of time:
 
-#### Program attributes
+#### ArchInfo
 Specify the CPU / ISA related parameters of the binary-under-analysis:
 ```
-dataclass ProgramAttributes:
+dataclass ArchInfo:
   isa:        InstructionSet
   sub_isa:    Optional[SubInstructionSet]
   bit_width:  BitWidth
@@ -255,9 +256,11 @@ dataclass ToolchainConfig:
 Check out the [ToolchainConfig][ofrak_patch_maker.toolchain.model.ToolchainConfig] for the full suite
 of tunables (they are likely to get updated frequently while OFRAK is developed).
 
+Together, [ArchInfo][ofrak_type.architecture.ArchInfo] and [ToolchainConfig][ofrak_patch_maker.toolchain.model.ToolchainConfig] can be used to instantiate a [Toolchain][ofrak_patch_maker.abstract.Toolchain].
+
+
 #### PatchMaker Instantiation
-Once the program attributes and toolchain configuration are defined, instantiate PatchMaker with the symbol
-mapping required for linking the patch.
+Once the toolchain is instantiated, instantiate PatchMaker with the symbol mapping required for linking the patch.
 
 We can get the virtual address of the functions that the patch will need to import, for instance:
 
@@ -277,9 +280,7 @@ Then we instantiate PatchMaker with that mapping:
 
 ```
 class PatchMaker:
-    program_attributes:  ProgramAttributes,
-    toolchain_config:    ToolchainConfig,
-    toolchain_version:   ToolchainVersion,
+    toolchain:  Toolchain,
     platform_includes:   Optional[Iterable[str]] = None,
     base_symbols:        Mapping[str, int]       = None,
     build_dir:           str                     = ".",
