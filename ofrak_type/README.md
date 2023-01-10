@@ -30,7 +30,6 @@ This package contains primitive types used across OFRAK packages, including:
 ## Testing
 This package maintains 100% test coverage of statements.
 
-
 ## License
 The code in this repository comes with an [OFRAK Community License](https://github.com/redballoonsecurity/ofrak/blob/master/LICENSE), which is intended for educational uses, personal development, or just having fun.
 

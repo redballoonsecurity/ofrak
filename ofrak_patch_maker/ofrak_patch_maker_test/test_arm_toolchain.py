@@ -2,10 +2,12 @@ import os
 import tempfile
 
 import pytest
+from ofrak_patch_maker.toolchain.llvm_12 import LLVM_12_0_1_Toolchain
 
 from ofrak_type import ArchInfo
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
+from ofrak_patch_maker.toolchain.gnu_arm import GNU_ARM_NONE_EABI_10_2_1_Toolchain
 from ofrak_patch_maker.toolchain.model import (
     CompilerOptimizationLevel,
     BinFileType,
@@ -13,7 +15,6 @@ from ofrak_patch_maker.toolchain.model import (
     Segment,
 )
 from ofrak_patch_maker.toolchain.utils import get_file_format
-from ofrak_patch_maker.toolchain.version import ToolchainVersion
 from ofrak_patch_maker_test import ToolchainUnderTest, CURRENT_DIRECTORY
 from ofrak_patch_maker_test.toolchain_asm import (
     run_challenge_3_reloc_toy_example_test,
@@ -35,7 +36,7 @@ ARM_EXTENSION = ".arm"
 @pytest.fixture(
     params=[
         ToolchainUnderTest(
-            ToolchainVersion.GNU_ARM_NONE_EABI_10_2_1,
+            GNU_ARM_NONE_EABI_10_2_1_Toolchain,
             ArchInfo(
                 InstructionSet.ARM,
                 SubInstructionSet.ARMv8A,
@@ -46,7 +47,7 @@ ARM_EXTENSION = ".arm"
             ARM_EXTENSION,
         ),
         ToolchainUnderTest(
-            ToolchainVersion.LLVM_12_0_1,
+            LLVM_12_0_1_Toolchain,
             ArchInfo(
                 InstructionSet.ARM,
                 SubInstructionSet.ARMv8A,
@@ -56,6 +57,19 @@ ARM_EXTENSION = ".arm"
             ),
             ARM_EXTENSION,
         ),
+        # Exercise userspace_dynamic_linker logic
+        ToolchainUnderTest(
+            LLVM_12_0_1_Toolchain,
+            ArchInfo(
+                InstructionSet.ARM,
+                SubInstructionSet.ARMv8A,
+                BitWidth.BIT_32,
+                Endianness.LITTLE_ENDIAN,
+                ProcessorType.GENERIC_A9_V7_THUMB,
+            ),
+            ARM_EXTENSION,
+            "/opt/rbs/toolchain/gcc-arm-none-eabi-10-2020-q4-major/bin/arm-none-eabi-ld",
+        ),
     ]
 )
 def toolchain_under_test(request) -> ToolchainUnderTest:
@@ -64,31 +78,20 @@ def toolchain_under_test(request) -> ToolchainUnderTest:
 
 # ASM Tests
 def test_challenge_3_reloc_toy_example(toolchain_under_test: ToolchainUnderTest):
-    run_challenge_3_reloc_toy_example_test(
-        toolchain_under_test.toolchain_version,
-        toolchain_under_test.proc,
-        toolchain_under_test.extension,
-    )
+    run_challenge_3_reloc_toy_example_test(toolchain_under_test)
 
 
 def test_monkey_patch(toolchain_under_test: ToolchainUnderTest):
-    run_monkey_patch_test(
-        toolchain_under_test.toolchain_version,
-        toolchain_under_test.proc,
-        toolchain_under_test.extension,
-    )
+    run_monkey_patch_test(toolchain_under_test)
 
 
 # C Tests
 def test_bounds_check(toolchain_under_test: ToolchainUnderTest):
-    run_bounds_check_test(toolchain_under_test.toolchain_version, toolchain_under_test.proc)
+    run_bounds_check_test(toolchain_under_test)
 
 
 def test_hello_world(toolchain_under_test: ToolchainUnderTest):
-    run_hello_world_test(
-        toolchain_under_test.toolchain_version,
-        toolchain_under_test.proc,
-    )
+    run_hello_world_test(toolchain_under_test)
 
 
 def test_arm_alignment(toolchain_under_test: ToolchainUnderTest):
@@ -109,9 +112,7 @@ def test_arm_alignment(toolchain_under_test: ToolchainUnderTest):
     build_dir = tempfile.mkdtemp()
 
     patch_maker = PatchMaker(
-        program_attributes=toolchain_under_test.proc,
-        toolchain_config=tc_config,
-        toolchain_version=toolchain_under_test.toolchain_version,
+        toolchain=toolchain_under_test.toolchain(toolchain_under_test.proc, tc_config),
         build_dir=build_dir,
     )
     patch_source = os.path.join(CURRENT_DIRECTORY, "test_alignment/patch_arm.as")

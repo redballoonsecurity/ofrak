@@ -1,7 +1,7 @@
 import pytest
 
 from ofrak_type import ArchInfo
-from ofrak_patch_maker.toolchain.version import ToolchainVersion
+from ofrak_patch_maker.toolchain.gnu_x64 import GNU_X86_64_LINUX_EABI_10_3_0_Toolchain
 from ofrak_patch_maker_test import ToolchainUnderTest
 from ofrak_patch_maker_test.toolchain_c import run_hello_world_test, run_bounds_check_test
 from ofrak_type.architecture import (
@@ -17,16 +17,16 @@ X86_EXTENSION = ".x86"
 @pytest.fixture(
     params=[
         ToolchainUnderTest(
-            ToolchainVersion.GNU_X86_64_LINUX_EABI_10_3_0,
+            GNU_X86_64_LINUX_EABI_10_3_0_Toolchain,
             ArchInfo(
                 InstructionSet.X86,
                 None,
-                BitWidth.BIT_32,
+                BitWidth.BIT_64,
                 Endianness.LITTLE_ENDIAN,
                 ProcessorType.X64,
             ),
             X86_EXTENSION,
-        )
+        ),
     ]
 )
 def toolchain_under_test(request) -> ToolchainUnderTest:
@@ -35,11 +35,8 @@ def toolchain_under_test(request) -> ToolchainUnderTest:
 
 # C Tests
 def test_bounds_check(toolchain_under_test: ToolchainUnderTest):
-    run_bounds_check_test(toolchain_under_test.toolchain_version, toolchain_under_test.proc)
+    run_bounds_check_test(toolchain_under_test)
 
 
 def test_hello_world(toolchain_under_test: ToolchainUnderTest):
-    run_hello_world_test(
-        toolchain_under_test.toolchain_version,
-        toolchain_under_test.proc,
-    )
+    run_hello_world_test(toolchain_under_test)
