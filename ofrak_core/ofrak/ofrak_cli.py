@@ -28,9 +28,7 @@ class OFRAKEnvironment:
         ] = None
 
         _OFRAK_PACKAGES: Optional[List[ModuleType]] = None
-        _OFRAK_COMPONENTS: Optional[
-            Dict[ModuleType, List[Type[ComponentInterface]]]
-        ] = None
+        _OFRAK_COMPONENTS: Optional[Dict[ModuleType, List[Type[ComponentInterface]]]] = None
         _OFRAK_DEPENDENCIES: Optional[
             Dict[Type[ComponentInterface], List[ComponentExternalTool]]
         ] = None
@@ -44,9 +42,7 @@ class OFRAKEnvironment:
             ofrak_eps = entry_points(group="ofrak.packages")
             import ofrak
 
-            installed_ofrak_pkgs = [ofrak] + [
-                ofrak_pkg.load() for ofrak_pkg in ofrak_eps
-            ]
+            installed_ofrak_pkgs = [ofrak] + [ofrak_pkg.load() for ofrak_pkg in ofrak_eps]
             self._ofrak_packages = {pkg.__name__: pkg for pkg in installed_ofrak_pkgs}
         return self._ofrak_packages
 
@@ -226,10 +222,7 @@ class DepsSubCommand(OFRAKSubCommand):
             packages = [ofrak_env.packages[pkg_name] for pkg_name in args.package]
 
         if args.component:
-            components = [
-                ofrak_env.components[component_name]
-                for component_name in args.component
-            ]
+            components = [ofrak_env.components[component_name] for component_name in args.component]
         else:
             components = []
 
@@ -282,9 +275,7 @@ class DepsSubCommand(OFRAKSubCommand):
 
             dependency_info = f"{dep.tool}\n\t{dep.tool_homepage}\n\t[{', '.join(c for c in components_by_dep[dep])}]"
             if not args.no_check:
-                dependency_info = (
-                    f"[{' ' if not is_installed else '✓'}] " + dependency_info
-                )
+                dependency_info = f"[{' ' if not is_installed else '✓'}] " + dependency_info
 
             print(dependency_info)
 
@@ -307,6 +298,7 @@ class GUISubCommand(OFRAKSubCommand):
             "-p",
             "--port",
             action="store",
+            type=int,
             help="Set GUI server host port.",
             default=None,
         )
@@ -330,7 +322,7 @@ class GUISubCommand(OFRAKSubCommand):
             "No disassembler backend specified, so no disassembly will be possible"
         )
 
-        url = "http://" + host + ":" + port
+        url = f"http://{host}:{port}"
         webbrowser.open(url)
 
         ofrak.run(server.main, host, port)  # type: ignore
@@ -353,9 +345,7 @@ class OFRAKCommandLineInterface:
 
         for ofrak_subcommand in subcommands:
             subparser = ofrak_subcommand.create_parser(ofrak_subparsers)
-            subparser.set_defaults(
-                func=functools.partial(ofrak_subcommand.handler, ofrak_env)
-            )
+            subparser.set_defaults(func=functools.partial(ofrak_subcommand.handler, ofrak_env))
 
     def parse_and_run(self, args: Sequence[str]):
         parsed = self.ofrak_parser.parse_args(args)

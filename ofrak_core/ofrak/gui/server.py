@@ -135,9 +135,7 @@ class AiohttpOFRAKServer:
                 web.get("/{resource_id}/get_ancestors", self.get_ancestors),
                 web.get("/{resource_id}/get_children", self.get_children),
                 web.post("/{resource_id}/queue_patch", self.queue_patch),
-                web.post(
-                    "/{resource_id}/create_mapped_child", self.create_mapped_child
-                ),
+                web.post("/{resource_id}/create_mapped_child", self.create_mapped_child),
                 web.post("/{resource_id}/find_and_replace", self.find_and_replace),
                 web.post("/{resource_id}/add_comment", self.add_comment),
                 web.post("/{resource_id}/delete_comment", self.delete_comment),
@@ -187,9 +185,7 @@ class AiohttpOFRAKServer:
         if name is None:
             return HTTPBadRequest(reason="Missing root resource `name` from request")
         resource_data = await request.read()
-        root_resource = await self._ofrak_context.create_root_resource(
-            name, resource_data, (File,)
-        )
+        root_resource = await self._ofrak_context.create_root_resource(name, resource_data, (File,))
         if request.remote is not None:
             self._job_ids[request.remote] = root_resource.get_job_id()
         return web.json_response(self._serialize_resource(root_resource))
@@ -310,11 +306,7 @@ class AiohttpOFRAKServer:
         start_param = request.query.get("start")
         start = int(start_param) if start_param is not None else 0
         end_param = request.query.get("end")
-        end = (
-            int(end_param)
-            if end_param is not None
-            else (await resource.get_data_length())
-        )
+        end = int(end_param) if end_param is not None else (await resource.get_data_length())
 
         resource.queue_patch(Range(start, end), new_data)
         await resource.save()
@@ -330,9 +322,7 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def find_and_replace(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
-        config = self._serializer.from_pjson(
-            await request.json(), StringFindReplaceConfig
-        )
+        config = self._serializer.from_pjson(await request.json(), StringFindReplaceConfig)
         result = await resource.run(StringFindReplaceModifier, config=config)
         response_pjson = await self._serialize_component_result(result)
         return web.json_response(response_pjson)
@@ -342,20 +332,14 @@ class AiohttpOFRAKServer:
         Expected POST body is a comment in the form Tuple[Optional[Range], str] (serialized to JSON).
         """
         resource = await self._get_resource_for_request(request)
-        comment = self._serializer.from_pjson(
-            await request.json(), Tuple[Optional[Range], str]
-        )
-        result = await resource.run(
-            AddCommentModifier, AddCommentModifierConfig(comment)
-        )
+        comment = self._serializer.from_pjson(await request.json(), Tuple[Optional[Range], str])
+        result = await resource.run(AddCommentModifier, AddCommentModifierConfig(comment))
         return web.json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
     async def delete_comment(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
-        comment_range = self._serializer.from_pjson(
-            await request.json(), Optional[Range]
-        )
+        comment_range = self._serializer.from_pjson(await request.json(), Optional[Range])
         result = await resource.run(
             DeleteCommentModifier, DeleteCommentModifierConfig(comment_range)
         )
@@ -373,25 +357,19 @@ class AiohttpOFRAKServer:
                     Addressable.VirtualAddress, vaddr_start, vaddr_end
                 )
             else:
-                vaddr_filter = ResourceAttributeValueFilter(
-                    Addressable.VirtualAddress, vaddr_start
-                )
+                vaddr_filter = ResourceAttributeValueFilter(Addressable.VirtualAddress, vaddr_start)
             matching_resources = await resource.get_descendants(
                 r_filter=ResourceFilter(attribute_filters=(vaddr_filter,)),
                 r_sort=ResourceSort(Addressable.VirtualAddress),
             )
-            return web.json_response(
-                list(map(self._serialize_resource, matching_resources))
-            )
+            return web.json_response(list(map(self._serialize_resource, matching_resources)))
 
         except NotFoundError:
             return web.json_response([])
 
     @exceptions_to_http(SerializedError)
     async def get_static_files(self, request: Request) -> Response:
-        return web.FileResponse(
-            os.path.join(os.path.dirname(__file__), "./public/index.html")
-        )
+        return web.FileResponse(os.path.join(os.path.dirname(__file__), "./public/index.html"))
 
     async def _get_resource_by_id(self, resource_id: bytes, job_id: bytes) -> Resource:
         resource = await self._ofrak_context.resource_factory.create(
@@ -403,19 +381,13 @@ class AiohttpOFRAKServer:
         )
         return resource
 
-    async def _serialize_component_result(
-        self, result: ComponentRunResult
-    ) -> PJSONType:
+    async def _serialize_component_result(self, result: ComponentRunResult) -> PJSONType:
         async def get_and_serialize(resource_id) -> PJSONType:
-            resource_model = await self._ofrak_context.resource_service.get_by_id(
-                resource_id
-            )
+            resource_model = await self._ofrak_context.resource_service.get_by_id(resource_id)
             return self._serialize_resource_model(resource_model)
 
         serialized_result = {
-            "created": await asyncio.gather(
-                *map(get_and_serialize, result.resources_created)
-            ),
+            "created": await asyncio.gather(*map(get_and_serialize, result.resources_created)),
             "modified": await asyncio.gather(
                 *map(
                     get_and_serialize,
@@ -485,9 +457,7 @@ class AiohttpOFRAKServer:
 
         Convenience function for when a type hint is all that's needed to deserialize the message.
         """
-        return self._serializer.from_pjson(
-            await self.message_as_pjson(message), type_hint
-        )
+        return self._serializer.from_pjson(await self.message_as_pjson(message), type_hint)
 
 
 async def main(ofrak_context: OFRAKContext, host: str, port: int):
@@ -569,8 +539,6 @@ if __name__ == "__main__":
         ofrak.injector.discover(ofrak_angr)
 
     else:
-        LOGGER.warning(
-            "No disassembler backend specified, so no disassembly will be possible"
-        )
+        LOGGER.warning("No disassembler backend specified, so no disassembly will be possible")
 
     ofrak.run(main, _host, _port)  # type: ignore
