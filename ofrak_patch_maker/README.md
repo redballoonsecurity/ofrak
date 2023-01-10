@@ -42,8 +42,9 @@ installed individually and added to a `toolchain.conf`, which by default is plac
 An example of the `toolchain.conf` can be found [here](https://github.com/redballoonsecurity/ofrak/blob/master/ofrak_patch_maker/toolchain.conf),
 and examples of how to install the toolchains can be found [here](https://github.com/redballoonsecurity/ofrak/blob/master/ofrak_patch_maker/Dockerstub).
 
-
 ## Testing
+This package maintains 100% test coverage of functions.
+
 The tests for `ofrak_patch_maker` are not distributed with this package.
 If you wish to run the tests, download the [OFRAK source code](https://github.com/redballoonsecurity/ofrak) and install/run the tests from there.
 

@@ -51,6 +51,9 @@ pytest --pyargs ofrak_capstone_test
 
 ```
 
+## Testing
+This package maintains 100% test coverage of functions.
+
 ## License
 The code in this repository comes with an [OFRAK Community License](https://github.com/redballoonsecurity/ofrak/blob/master/LICENSE), which is intended for educational uses, personal development, or just having fun.
 
