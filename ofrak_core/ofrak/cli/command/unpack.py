@@ -1,4 +1,7 @@
-from ofrak import OFRAKContext
+import os.path
+from typing import Dict
+
+from ofrak import OFRAKContext, Resource
 
 import argparse
 from pathlib import Path
@@ -6,6 +9,7 @@ import time
 import sys
 
 from ofrak.cli.ofrak_cli import OfrakCommandRunsScript
+from ofrak.core import FilesystemEntry
 
 
 class Unpack(OfrakCommandRunsScript):
@@ -52,12 +56,41 @@ class Unpack(OfrakCommandRunsScript):
 
         print(f"Extracting data to {extraction_dir}")
 
-        for child_resource in await root_resource.get_children():
-            # TODO: make stable, sensible filename
-            filename = child_resource.get_id().hex()
-            outpath = str(extraction_dir / filename)
+        root_resource_path = os.path.join(
+            extraction_dir,
+            await self._get_filesystem_name(root_resource),
+        )
+        await self.resource_tree_to_files(root_resource, root_resource_path)
 
-            try:
-                await child_resource.flush_to_disk(outpath)
-            except Exception as e:
-                print(f"Could not unpack {filename} with error: {e}")
+    async def resource_tree_to_files(self, resource: Resource, path):
+        name_counters: Dict[str, int] = dict()
+        children_dir = path + ".ofrak_children"
+        for child_resource in await resource.get_children():
+            filename = await self._get_filesystem_name(child_resource)
+            if filename in name_counters:
+                name_counters[filename] += 1
+                filename = filename + f"_{name_counters[filename]}"
+            else:
+                name_counters[filename] = 0
+
+            if not os.path.exists(children_dir):
+                os.mkdir(children_dir)
+
+            child_path = os.path.join(children_dir, filename)
+            await self.resource_tree_to_files(child_resource, child_path)
+
+        if resource.get_data_id() is None:
+            return
+        data = await resource.get_data()
+        if len(data) == 0:
+            return
+        with open(path, "wb") as f:
+            f.write(data)
+
+    async def _get_filesystem_name(self, resource: Resource) -> str:
+        if resource.has_tag(FilesystemEntry):
+            file_view = await resource.view_as(FilesystemEntry)
+            filename = file_view.name
+        else:
+            filename = resource.get_caption()
+        return filename

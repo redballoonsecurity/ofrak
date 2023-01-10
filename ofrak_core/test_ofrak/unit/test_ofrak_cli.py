@@ -1,6 +1,5 @@
 import hashlib
 import os
-from pathlib import Path
 from typing import Iterable, Dict, Tuple
 
 import pytest
@@ -226,9 +225,11 @@ async def all_expected_hashes(ofrak_context: OFRAKContext):
         )
         res = await ofrak_context.create_root_resource_from_file(file_path)
         await res.unpack()
-        for child in await res.get_children():
+        for child in await res.get_descendants():
             if child.get_data_id() is not None:
-                expected_hashes.add(hashlib.sha256(await child.get_data()).hexdigest())
+                data = await child.get_data()
+                if len(data) > 0:
+                    expected_hashes.add(hashlib.sha256(data).hexdigest())
         all_expected_hashes[filename] = expected_hashes
     return all_expected_hashes
 
@@ -239,9 +240,14 @@ def test_unpack(ofrak_cli_parser, capsys, filename, tmpdir, ofrak_context, all_e
     ofrak_cli_parser.parse_and_run(["unpack", "-o", str(tmpdir), file_path])
 
     unpacked_hashes = set()
-    for unpacked_file in Path(tmpdir).iterdir():
-        with open(unpacked_file, "rb") as file:
-            unpacked_hashes.add(hashlib.sha256(file.read()).hexdigest())
+    for dirpath, dirnames, filenames in os.walk(tmpdir):
+        if dirpath == tmpdir:
+            continue
+        assert dirpath.endswith(".ofrak_children")
+        for unpacked_file in filenames:
+            path = os.path.join(dirpath, unpacked_file)
+            with open(path, "rb") as file:
+                unpacked_hashes.add(hashlib.sha256(file.read()).hexdigest())
     expected_hashes = all_expected_hashes[filename]
 
     assert unpacked_hashes == expected_hashes
