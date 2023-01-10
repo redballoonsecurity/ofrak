@@ -225,6 +225,40 @@ class TestDataServiceInterface:
             ]
         )
 
+    async def test_patch_resizes_to_zero(self, populated_data_service: DataServiceInterface):
+        await populated_data_service.apply_patches(
+            [
+                # Resize DATA_4 to 0
+                DataPatch(Range(0x0, 0x4), DATA_4, b""),
+            ]
+        )
+        model_0, model_2, model_3, model_4, model_5 = await populated_data_service.get_by_ids(
+            (DATA_0, DATA_2, DATA_3, DATA_4, DATA_5)
+        )
+        assert model_0.range == Range(0x0, 0x14)
+        assert model_2.range == Range(0x8, 0xC)
+        assert model_3.range == Range(0x8, 0xC)
+        assert model_4.range == Range(0xC, 0xC)
+        assert model_5.range == Range(0xC, 0x14)
+
+        await populated_data_service.apply_patches(
+            [
+                # Resize DATA_3 to 0
+                DataPatch(Range(0x0, 0x4), DATA_3, b""),
+            ]
+        )
+
+        model_0, model_2, model_3, model_4, model_5 = await populated_data_service.get_by_ids(
+            (DATA_0, DATA_2, DATA_3, DATA_4, DATA_5)
+        )
+        assert model_0.range == Range(0x0, 0x10)
+        assert model_2.range == Range(0x8, 0x8)
+        assert model_3.range == Range(0x8, 0x8)
+        assert model_4.range == Range(0x8, 0x8)
+        assert model_5.range == Range(0x8, 0x10)
+
+        assert b"" == await populated_data_service.get_data(DATA_2)
+
     async def test_delete(self, populated_data_service: DataServiceInterface):
         """
         Starting state:
