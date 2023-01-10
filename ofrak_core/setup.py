@@ -37,6 +37,7 @@ setuptools.setup(
         "ofrak": ["py.typed"],
     },
     install_requires=[
+        "aiohttp~=3.8.1",
         "beartype~=0.10.2",
         "fdt==0.3.2",
         "importlib-metadata>=1.4",
@@ -113,4 +114,5 @@ setuptools.setup(
     cmdclass={"egg_info": egg_info_ex},
     entry_points={"ofrak.packages": ["ofrak_pkg = ofrak"]},
     ext_modules=[entropy_so],
+    include_package_data=True,
 )

@@ -2,7 +2,6 @@ COPY --from=svelte --chown=root:root /home/node/frontend/public /ofrak_gui
 
 ARG OFRAK_DIR=.
 COPY $OFRAK_DIR/frontend/nginx.conf /etc/nginx/sites-enabled/default
-COPY $OFRAK_DIR/frontend/backend/ofrak_server.py /ofrak_server.py
 
 COPY $OFRAK_DIR/mkdocs.yml /mkdocs.yml
 COPY $OFRAK_DIR/docs /docs

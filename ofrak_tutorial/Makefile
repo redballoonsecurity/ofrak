@@ -21,7 +21,7 @@ run:
 		--entrypoint bash \
 		${FULL_IMAGE_NAME} \
 		-c 'nginx \
-			& python3 /ofrak_server.py 0.0.0.0 8877 \
+			& python3 -m ofrak gui -H 0.0.0.0 -p 8877 \
 			& jupyter notebook --no-browser --allow-root --ip 0.0.0.0 --notebook-dir "/ofrak_tutorial/notebooks" --NotebookApp.port 8888 --NotebookApp.token "" --NotebookApp.password "" \
 			& mkdocs serve --dev-addr 0.0.0.0:8000 \
 			& python3 -m ofrak_ghidra.server start \

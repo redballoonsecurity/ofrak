@@ -2,6 +2,7 @@ import asyncio
 import functools
 import json
 import logging
+import os
 import sys
 from typing import (
     Iterable,
@@ -139,6 +140,12 @@ class AiohttpOFRAKServer:
                 web.post("/{resource_id}/add_comment", self.add_comment),
                 web.post("/{resource_id}/delete_comment", self.delete_comment),
                 web.post("/{resource_id}/search_for_vaddr", self.search_for_vaddr),
+                web.get("/", self.get_static_files),
+                web.static(
+                    "/",
+                    os.path.join(os.path.dirname(__file__), "./public"),
+                    show_index=True,
+                ),
             ]
         )
 
@@ -359,6 +366,10 @@ class AiohttpOFRAKServer:
 
         except NotFoundError:
             return web.json_response([])
+
+    @exceptions_to_http(SerializedError)
+    async def get_static_files(self, request: Request) -> Response:
+        return web.FileResponse(os.path.join(os.path.dirname(__file__), "./public/index.html"))
 
     async def _get_resource_by_id(self, resource_id: bytes, job_id: bytes) -> Resource:
         resource = await self._ofrak_context.resource_factory.create(
