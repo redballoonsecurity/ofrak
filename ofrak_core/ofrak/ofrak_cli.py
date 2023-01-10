@@ -1,5 +1,6 @@
 import functools
 import sys
+import webbrowser
 from abc import ABC, abstractmethod
 from argparse import Namespace, ArgumentParser, RawDescriptionHelpFormatter
 from inspect import isabstract
@@ -11,6 +12,8 @@ from importlib_metadata import entry_points
 from ofrak.component.interface import ComponentInterface
 from ofrak.model.component_model import ComponentExternalTool
 from synthol.injector import DependencyInjector
+
+import ofrak.gui.server as server
 
 
 class OFRAKEnvironment:
@@ -25,7 +28,9 @@ class OFRAKEnvironment:
         ] = None
 
         _OFRAK_PACKAGES: Optional[List[ModuleType]] = None
-        _OFRAK_COMPONENTS: Optional[Dict[ModuleType, List[Type[ComponentInterface]]]] = None
+        _OFRAK_COMPONENTS: Optional[
+            Dict[ModuleType, List[Type[ComponentInterface]]]
+        ] = None
         _OFRAK_DEPENDENCIES: Optional[
             Dict[Type[ComponentInterface], List[ComponentExternalTool]]
         ] = None
@@ -39,7 +44,9 @@ class OFRAKEnvironment:
             ofrak_eps = entry_points(group="ofrak.packages")
             import ofrak
 
-            installed_ofrak_pkgs = [ofrak] + [ofrak_pkg.load() for ofrak_pkg in ofrak_eps]
+            installed_ofrak_pkgs = [ofrak] + [
+                ofrak_pkg.load() for ofrak_pkg in ofrak_eps
+            ]
             self._ofrak_packages = {pkg.__name__: pkg for pkg in installed_ofrak_pkgs}
         return self._ofrak_packages
 
@@ -169,7 +176,9 @@ class DepsSubCommand(OFRAKSubCommand):
             "--package", action="append", help="Include dependencies of this package"
         )
         deps_parser.add_argument(
-            "--component", action="append", help="Include dependencies of this component"
+            "--component",
+            action="append",
+            help="Include dependencies of this component",
         )
         deps_parser.add_argument(
             "--missing-only",
@@ -217,7 +226,10 @@ class DepsSubCommand(OFRAKSubCommand):
             packages = [ofrak_env.packages[pkg_name] for pkg_name in args.package]
 
         if args.component:
-            components = [ofrak_env.components[component_name] for component_name in args.component]
+            components = [
+                ofrak_env.components[component_name]
+                for component_name in args.component
+            ]
         else:
             components = []
 
@@ -270,16 +282,69 @@ class DepsSubCommand(OFRAKSubCommand):
 
             dependency_info = f"{dep.tool}\n\t{dep.tool_homepage}\n\t[{', '.join(c for c in components_by_dep[dep])}]"
             if not args.no_check:
-                dependency_info = f"[{' ' if not is_installed else '✓'}] " + dependency_info
+                dependency_info = (
+                    f"[{' ' if not is_installed else '✓'}] " + dependency_info
+                )
 
             print(dependency_info)
+
+
+class GUISubCommand(OFRAKSubCommand):
+    def create_parser(self, ofrak_subparsers):
+        gui_parser = ofrak_subparsers.add_parser(
+            "gui",
+            help="Launch the OFRAK GUI server.",
+            description="Launch the OFRAK GUI server.",
+        )
+        gui_parser.add_argument(
+            "-H",
+            "--hostname",
+            action="store",
+            help="Set GUI server host address.",
+            default=None,
+        )
+        gui_parser.add_argument(
+            "-p",
+            "--port",
+            action="store",
+            help="Set GUI server host port.",
+            default=None,
+        )
+        return gui_parser
+
+    @staticmethod
+    def handler(ofrak_env: OFRAKEnvironment, args: Namespace):
+        if args.hostname is not None:
+            host = args.hostname
+        else:
+            host = "127.0.0.1"
+
+        if args.port is not None:
+            port = args.port
+        else:
+            port = "8080"
+
+        ofrak = server.OFRAK(server.logging.INFO)
+
+        server.LOGGER.warning(
+            "No disassembler backend specified, so no disassembly will be possible"
+        )
+
+        url = "http://" + host + ":" + port
+        webbrowser.open(url)
+
+        ofrak.run(server.main, host, port)  # type: ignore
 
 
 class OFRAKCommandLineInterface:
     def __init__(
         self,
         ofrak_env: OFRAKEnvironment = OFRAKEnvironment(),
-        subcommands: Iterable[OFRAKSubCommand] = (ListSubCommand(), DepsSubCommand()),
+        subcommands: Iterable[OFRAKSubCommand] = (
+            ListSubCommand(),
+            DepsSubCommand(),
+            GUISubCommand(),
+        ),
     ):
         self.ofrak_parser = ArgumentParser()
         ofrak_subparsers = self.ofrak_parser.add_subparsers(
@@ -288,7 +353,9 @@ class OFRAKCommandLineInterface:
 
         for ofrak_subcommand in subcommands:
             subparser = ofrak_subcommand.create_parser(ofrak_subparsers)
-            subparser.set_defaults(func=functools.partial(ofrak_subcommand.handler, ofrak_env))
+            subparser.set_defaults(
+                func=functools.partial(ofrak_subcommand.handler, ofrak_env)
+            )
 
     def parse_and_run(self, args: Sequence[str]):
         parsed = self.ofrak_parser.parse_args(args)
