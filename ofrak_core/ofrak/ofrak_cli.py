@@ -2,7 +2,12 @@ import functools
 import sys
 import webbrowser
 from abc import ABC, abstractmethod
-from argparse import Namespace, ArgumentParser, RawDescriptionHelpFormatter
+from argparse import (
+    Namespace,
+    ArgumentParser,
+    RawDescriptionHelpFormatter,
+    ArgumentDefaultsHelpFormatter,
+)
 from inspect import isabstract
 from types import ModuleType
 from typing import Dict, Optional, Type, List, Iterable, Set, Sequence
@@ -286,13 +291,14 @@ class GUISubCommand(OFRAKSubCommand):
             "gui",
             help="Launch the OFRAK GUI server.",
             description="Launch the OFRAK GUI server.",
+            formatter_class=ArgumentDefaultsHelpFormatter,
         )
         gui_parser.add_argument(
             "-H",
             "--hostname",
             action="store",
             help="Set GUI server host address.",
-            default=None,
+            default="127.0.0.1",
         )
         gui_parser.add_argument(
             "-p",
@@ -300,7 +306,7 @@ class GUISubCommand(OFRAKSubCommand):
             action="store",
             type=int,
             help="Set GUI server host port.",
-            default=None,
+            default=8080,
         )
         gui_parser.add_argument(
             "-b",
@@ -327,16 +333,6 @@ class GUISubCommand(OFRAKSubCommand):
 
     @staticmethod
     def handler(ofrak_env: OFRAKEnvironment, args: Namespace):
-        if args.hostname is not None:
-            host = args.hostname
-        else:
-            host = "127.0.0.1"
-
-        if args.port is not None:
-            port = args.port
-        else:
-            port = "8080"
-
         if args.verbose is True:
             ofrak = server.OFRAK(server.logging.DEBUG)
 
@@ -369,10 +365,11 @@ class GUISubCommand(OFRAKSubCommand):
                 "No disassembler backend specified, so no disassembly will be possible"
             )
 
-        url = f"http://{host}:{port}"
+        url = f"http://{args.hostname}:{args.port}"
+        server.LOGGER.warning(f"GUI is being served on {url}")
         webbrowser.open(url)
 
-        ofrak.run(server.main, host, port)  # type: ignore
+        ofrak.run(server.main, args.hostname, args.port)  # type: ignore
 
 
 class OFRAKCommandLineInterface:
