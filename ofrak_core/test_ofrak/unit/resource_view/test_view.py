@@ -221,7 +221,7 @@ async def test_AttributesType():
     # We get a ResourceAttributes type (the expected type) from AttributesType
     instr_attrs_t = AttributesType[Instruction]
     assert issubclass(instr_attrs_t, ResourceAttributes)
-    assert instr_attrs_t.__name__ == "InstructionAutoAttributes"
+    assert instr_attrs_t.__name__ == "AttributesType[Instruction]"
     assert AttributesType[Instruction] is instr_attrs_t
 
 

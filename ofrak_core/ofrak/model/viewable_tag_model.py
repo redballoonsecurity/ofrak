@@ -16,7 +16,6 @@ from ofrak.model.tag_model import ResourceTag
 
 _VIEW_ATTRIBUTES_TYPE = "__view_attributes_type__"
 _COMPOSED_ATTRIBUTES_TYPE = "__composed_attributes_types__"
-_VIEW_ATTRIBUTE_TYPE_NAME_SUFFIX = "AutoAttributes"
 
 
 RA = TypeVar("RA", bound=ResourceAttributes)
@@ -24,11 +23,19 @@ RVI = TypeVar("RVI", bound="ResourceViewInterface")
 
 
 class AttributesType(ResourceAttributes, Generic[RVI]):
+    """
+    A Generic type for `ViewableResourceTag` to get the auto-generated `ResourceAttributes`
+    class associated with that view type. The returned class is a `dataclass` which encapsulates
+    the fields defined in one specific `ViewableResourceTag`.
+    For example if `B` inherits from `A` and `A` defines one or more new fields,
+    `AttributesType[B]` has only fields defined in `B`, and none of the fields defined in `A`.
+    """
+
     def __init__(self, *args: Any, **kwargs: Any):
         raise NotImplementedError("AttributesType cannot be instantiated")
 
     def __class_getitem__(cls, item: Type[RVI]) -> Type[ResourceAttributes]:
-        return item.attributes_type
+        return getattr(item, _VIEW_ATTRIBUTES_TYPE)
 
 
 @dataclass
@@ -119,6 +126,10 @@ class ViewableResourceTag(ResourceTag):
         :return: The auto-generated `ResourceAttributes` subclass for this `ViewableResourceTag`
         class, in no particular order.
         """
+        warn(
+            "T.attributes_type is deprecated! Use AttributesType[T] instead.",
+            category=DeprecationWarning,
+        )
         return getattr(cls, _VIEW_ATTRIBUTES_TYPE)
 
     @property
@@ -164,7 +175,7 @@ class ViewableResourceTag(ResourceTag):
         # Creates a new class inheriting from ResourceAttributes, with the same fields as this
         # ViewableResourceTag, as well as the same indexed attribute descriptors
         attributes_type = dataclasses.make_dataclass(
-            f"{name}{_VIEW_ATTRIBUTE_TYPE_NAME_SUFFIX}",
+            f"{AttributesType.__name__}[{name}]",
             fields,
             bases=(ResourceAttributes,),
             namespace=indexed_attributes_namespace,
