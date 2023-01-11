@@ -1,8 +1,8 @@
-import asyncio
 import dataclasses
 import inspect
 import logging
 from abc import ABC, abstractmethod
+from subprocess import CalledProcessError
 from typing import (
     Dict,
     Iterable,
@@ -11,10 +11,17 @@ from typing import (
     Callable,
     Any,
     cast,
+    Tuple,
 )
 
 from ofrak.component.interface import ComponentInterface
-from ofrak.model.component_model import ComponentContext, CC, ComponentRunResult, ComponentConfig
+from ofrak.model.component_model import (
+    ComponentContext,
+    CC,
+    ComponentRunResult,
+    ComponentConfig,
+    ComponentExternalTool,
+)
 from ofrak.model.data_model import DataPatchesResult
 from ofrak.model.job_model import (
     JobRunContext,
@@ -24,7 +31,7 @@ from ofrak.model.resource_model import (
     MutableResourceModel,
 )
 from ofrak.model.viewable_tag_model import ResourceViewContext
-from ofrak.resource import Resource, ResourceFactory
+from ofrak.resource import Resource, ResourceFactory, save_resources
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.dependency_handler import DependencyHandlerFactory
 from ofrak.service.resource_service_i import ResourceServiceInterface
@@ -44,10 +51,14 @@ class AbstractComponent(ComponentInterface[CC], ABC):
         self._data_service = data_service
         self._resource_service = resource_service
         self._dependency_handler_factory = DependencyHandlerFactory()
+        self._default_config = self.get_default_config()
 
     @classmethod
     def get_id(cls) -> bytes:
         return cls.id if cls.id is not None else cls.__name__.encode()
+
+    # By default, assume component has no external dependencies
+    external_dependencies: Tuple[ComponentExternalTool, ...] = ()
 
     async def run(
         self,
@@ -77,9 +88,20 @@ class AbstractComponent(ComponentInterface[CC], ABC):
             component_context,
             job_context,
         )
-        if config is None:
-            config = self.get_default_config()
-        await self._run(resource, config)
+        if config is None and self._default_config is not None:
+            config = dataclasses.replace(self._default_config)
+        try:
+            await self._run(resource, config)
+        except FileNotFoundError as e:
+            # Check if the problem was that one of the dependencies is missing
+            missing_file = e.filename
+            for dep in self.external_dependencies:
+                if dep.tool == missing_file:
+                    raise ComponentMissingDependencyError(self, dep)
+            raise
+        except CalledProcessError as e:
+            raise ComponentSubprocessError(e)
+
         deleted_resource_models: List[MutableResourceModel] = list()
 
         for deleted_r_id in component_context.resources_deleted:
@@ -158,21 +180,22 @@ class AbstractComponent(ComponentInterface[CC], ABC):
         job_context: Optional[JobRunContext],
         component_context: ComponentContext,
     ):
-        locator_tasks = list()
-        for mutable_resource_model in mutable_resource_models:
-            locator_tasks.append(
-                self._resource_factory.create(
-                    job_id,
-                    mutable_resource_model.id,
-                    resource_context,
-                    resource_view_context,
-                    component_context,
-                    job_context,
-                )
-            )
-        resources = await asyncio.gather(*locator_tasks)
-        for resource in resources:
-            await resource.save()
+        resources = await self._resource_factory.create_many(
+            job_id,
+            (mutable_resource_model.id for mutable_resource_model in mutable_resource_models),
+            resource_context,
+            resource_view_context,
+            component_context,
+            job_context,
+        )
+        await save_resources(
+            resources,
+            self._resource_service,
+            self._data_service,
+            component_context,
+            resource_context,
+            resource_view_context,
+        )
 
     @staticmethod
     def _get_default_config_from_method(
@@ -184,7 +207,7 @@ class AbstractComponent(ComponentInterface[CC], ABC):
 
         if isinstance(default_arg, ComponentConfig):
             try:
-                return cast(CC, dataclasses.replace(default_arg))
+                return cast(CC, default_arg)
             except TypeError as e:
                 raise TypeError(
                     f"ComponentConfig subclass {type(default_arg)} is not a dataclass! This is "
@@ -219,3 +242,45 @@ class AbstractComponent(ComponentInterface[CC], ABC):
         LOGGER.warning(
             f"{self.get_id().decode()} has already been run on resource {resource.get_id().hex()}"
         )
+
+
+class ComponentMissingDependencyError(RuntimeError):
+    def __init__(
+        self,
+        component: ComponentInterface,
+        dependency: ComponentExternalTool,
+    ):
+        if dependency.apt_package:
+            apt_install_str = f"\n\tapt installation: apt install {dependency.apt_package}"
+        else:
+            apt_install_str = ""
+        if dependency.brew_package:
+            brew_install_str = f"\n\tbrew installation: brew install {dependency.brew_package}"
+        else:
+            brew_install_str = ""
+
+        super().__init__(
+            f"Missing {dependency.tool} tool needed for {type(component).__name__}!"
+            f"{apt_install_str}"
+            f"{brew_install_str}"
+            f"\n\tSee {dependency.tool_homepage} for more info and installation help."
+            f"\n\tAlternatively, OFRAK can ignore this component (and any others with missing "
+            f"dependencies) so that they will never be run: OFRAK(..., exclude_components_missing_dependencies=True)"
+        )
+
+        self.component = component
+        self.dependency = dependency
+
+
+class ComponentSubprocessError(RuntimeError):
+    def __init__(self, error: CalledProcessError):
+        errstring = (
+            f"Command '{error.cmd}' returned non-zero exit status {error.returncode}.\n"
+            f"Stderr: {error.stderr}.\n"
+            f"Stdout: {error.stdout}."
+        )
+        super().__init__(errstring)
+        self.cmd = error.cmd
+        self.cmd_retcode = error.returncode
+        self.cmd_stdout = error.stdout
+        self.cmd_stderr = error.stderr

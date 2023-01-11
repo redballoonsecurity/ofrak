@@ -45,3 +45,6 @@ python3 build_image.py --config ofrak-angr.yml --base --finish
     ```
 2. Install `ofrak` and its dependencies.
 3. Finally, run `make {install, develop, test}`
+
+## Testing
+This package maintains 100% test coverage of functions.

@@ -40,9 +40,16 @@ import logging
 import os
 import tempfile
 
-import ofrak_binary_ninja
+from ofrak_patch_maker.toolchain.llvm_12 import LLVM_12_0_1_Toolchain
+
+import ofrak_ghidra
 from ofrak import OFRAK, OFRAKContext, ResourceFilter, ResourceAttributeValueFilter
-from ofrak.core import ProgramAttributes, ComplexBlock
+from ofrak.core import (
+    ProgramAttributes,
+    ComplexBlock,
+    SegmentInjectorModifierConfig,
+    SegmentInjectorModifier,
+)
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.model import (
@@ -51,7 +58,6 @@ from ofrak_patch_maker.toolchain.model import (
     CompilerOptimizationLevel,
     Segment,
 )
-from ofrak_patch_maker.toolchain.version import ToolchainVersion
 from ofrak_type.memory_permissions import MemoryPermissions
 
 PAGE_ALIGN = 0x1000
@@ -111,10 +117,9 @@ async def main(
     logger = logging.getLogger("ToolchainTest")
     logger.setLevel("INFO")
     build_dir = tempfile.mkdtemp()
+    toolchain = LLVM_12_0_1_Toolchain(program_attributes, tc_config)
     patch_maker = PatchMaker(
-        program_attributes=program_attributes,
-        toolchain_config=tc_config,
-        toolchain_version=ToolchainVersion.LLVM_12_0_1,
+        toolchain=toolchain,
         logger=logger,
         build_dir=build_dir,
         base_symbols={
@@ -161,7 +166,7 @@ async def main(
     fem = patch_maker.make_fem([(bom, p)], exec_path)
 
     # Inject the patch
-    await patch_maker.inject_patch(fem, root_resource)
+    await root_resource.run(SegmentInjectorModifier, SegmentInjectorModifierConfig.from_fem(fem))
 
     await root_resource.pack()
     await root_resource.flush_to_disk(output_file_name)
@@ -176,5 +181,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     ofrak = OFRAK()
-    ofrak.discover(ofrak_binary_ninja)
+    ofrak.discover(ofrak_ghidra)
     ofrak.run(main, args.hello_world_file, args.print_kitteh_source, args.output_file_name)

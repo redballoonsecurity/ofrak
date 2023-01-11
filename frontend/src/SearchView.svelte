@@ -60,12 +60,6 @@
     box-shadow: inset 0 -1px 0 var(--main-fg-color);
   }
 
-  /* Adapted from: https://moderncss.dev/pure-css-custom-checkbox-style/ */
-  input[type="checkbox"] {
-    flex-grow: 0;
-    margin-left: 1ch;
-  }
-
   label {
     margin-bottom: 1em;
     display: flex;
@@ -90,20 +84,13 @@
   .error {
     margin-top: 2em;
   }
-
-  .treebox {
-    flex-grow: 1;
-    padding-left: 1em;
-    overflow-x: scroll;
-    white-space: nowrap;
-    text-align: left;
-  }
 </style>
 
 <script>
-  import { selected, selectedResource } from "./stores.js";
+  import { selectedResource } from "./stores.js";
   import { calculator } from "./helpers";
   import ResourceTreeNode from "./ResourceTreeNode.svelte";
+  import Checkbox from "./Checkbox.svelte";
 
   export let modifierView, resourceNodeDataMap;
   let searchInput,
@@ -114,13 +101,6 @@
     errorMessage;
 
   const searchTarget = $selectedResource;
-
-  function refreshResource() {
-    // Force hex view refresh with colors
-    const originalSelected = $selected;
-    $selected = undefined;
-    $selected = originalSelected;
-  }
 
   async function search() {
     if (searchTarget) {
@@ -184,10 +164,7 @@
       </label>
     {/if}
     <div class="row">
-      <label>
-        Range
-        <input type="checkbox" bind:checked="{rangeSearch}" />
-      </label>
+      <Checkbox bind:checked="{rangeSearch}">Range</Checkbox>
     </div>
     {#if errorMessage}
       <p class="error">
@@ -208,7 +185,7 @@
       <ResourceTreeNode
         rootResource="{matched_resource}"
         collapsed="false"
-        bind:resourceNodeDataMap
+        bind:resourceNodeDataMap="{resourceNodeDataMap}"
       />
     </div>
   {/each}

@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 from difflib import ndiff
+from subprocess import CalledProcessError
 
 from ofrak import OFRAKContext
+from ofrak.component.abstract import ComponentSubprocessError
 from ofrak.resource import Resource
 
 
@@ -20,22 +22,27 @@ class UnpackModifyPackPattern(ABC):
     """
 
     async def test_unpack_modify_pack(self, ofrak_context):
-        root_resource = await self.create_root_resource(ofrak_context)
-        await self.unpack(root_resource)
-        original_tree = await root_resource.summarize_tree()
-        await self.modify(root_resource)
-        modified_tree = await root_resource.summarize_tree()
-        print("\n")
-        print(
-            "".join(
-                ndiff(
-                    original_tree.splitlines(keepends=True), modified_tree.splitlines(keepends=True)
-                )
-            ),
-            end="",
-        )
-        await self.repack(root_resource)
-        await self.verify(root_resource)
+        try:
+            root_resource = await self.create_root_resource(ofrak_context)
+            await self.unpack(root_resource)
+            original_tree = await root_resource.summarize_tree()
+            await self.modify(root_resource)
+            modified_tree = await root_resource.summarize_tree()
+            print("\n")
+            print(
+                "".join(
+                    ndiff(
+                        original_tree.splitlines(keepends=True),
+                        modified_tree.splitlines(keepends=True),
+                    )
+                ),
+                end="",
+            )
+            await self.repack(root_resource)
+            await self.verify(root_resource)
+        except CalledProcessError as e:
+            # Better printing of errors if something goes wrong in test setup/execution
+            raise ComponentSubprocessError(e)
 
     @abstractmethod
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:

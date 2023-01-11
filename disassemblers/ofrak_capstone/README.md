@@ -14,7 +14,6 @@ OFRAK
 │       |   └───components.py
 │       |   └───disassembler_service_capstone.py
 │       └───ofrak_ghidra
-└───ofrak_components
 └───ofrak_type
 └───ofrak_io
 └───ofrak_patch_maker
@@ -52,10 +51,13 @@ pytest --pyargs ofrak_capstone_test
 
 ```
 
+## Testing
+This package maintains 100% test coverage of functions.
+
 ## License
 The code in this repository comes with an [OFRAK Community License](https://github.com/redballoonsecurity/ofrak/blob/master/LICENSE), which is intended for educational uses, personal development, or just having fun.
 
-Users interested in using OFRAK for commercial purposes can request the Pro License, which for a limited period is available for a free 6-month trial. See [OFRAK Licensing](https://ofrak.com/license/) for more information.
+Users interested in using OFRAK for commercial purposes can request the Pro or Enterprise License. See [OFRAK Licensing](https://ofrak.com/license/) for more information.
 
 ## Documentation
 OFRAK has general documentation and API documentation, which can be viewed at <https://ofrak.com/docs>.

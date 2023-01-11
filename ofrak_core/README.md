@@ -29,11 +29,10 @@ See [ofrak.com](https://ofrak.com) for more details.
 OFRAK
 └───ofrak  <-- //YOU ARE HERE//
 │   └───component   // Definitions for abstract Component classes (e.g. Analyzer)
-│   └───core        // Definitions for common software and reverse engineering abstractions
+│   └───core        // Definitions for standard OFRAK components (plus related tags, views, etc.)
 │   └───model       // Definitions for core OFRAK data structures
 │   └───service     // Definitions for core OFRAK services
 │   
-└───ofrak_components
 └───ofrak_type
 └───ofrak_io
 └───ofrak_patch_maker
@@ -49,22 +48,41 @@ What is included:
   - ELF
   - PE Files
 - Definitions for common software and reverse engineering abstractions like `Instruction`, `File`, and `BasicBlock`
+- Unpackers & Packers for a number of file types, including:
+  - APK
+  - bzip2
+  - CPIO
+  - gip
+  - ISO 9660
+  - LZMA/XZ
+  - LZO
+  - 7z
+  - squashfs
+  - tar
+  - UImage
+  - zip
+  - zlib
 - Miscellaneous helpful components:
   - `MagicAnalyzer` and two Identifier components which uses `python-libmagic` to automatically tag OFRAK `Resource`s
   - Basic modifiers like `StringFindReplaceModifier` and `BinaryInjectorModifier`
   - Basic useful analyzers like `Sha256Analyzer` and `MD5Analyzer` which calculate the respective checksums of OFRAK `Resource`s
+  - An unpacker for Linux device tree blobs (DTB)
+  - Analyzers wrapping `strings` and `binwalk`
+  - An analyzer to calculate Shannon entropy of binary data
 
 This is only a representative sampling of the features in the core OFRAK. Consult the code reference [docs](https://ofrak.com/docs) for a complete manifest.
 
 What is *not* included:
 - The OFRAK PatchMaker
-- Components (e.g. unpackers) for other filesystems and file formats like tar, ZIP, SquashFS, RAR, UImage, and more. These are in the `ofrak_components` package and have heavier dependencies
 - Components which integrate the disassembler backends (Ghidra, BinaryNinja, Angr, Capstone)
+
+## Testing
+This package maintains 100% test coverage of functions.
 
 ## License
 The code in this repository comes with an [OFRAK Community License](https://github.com/redballoonsecurity/ofrak/blob/master/LICENSE), which is intended for educational uses, personal development, or just having fun.
 
-Users interested in using OFRAK for commercial purposes can request the Pro License, which for a limited period is available for a free 6-month trial. See [OFRAK Licensing](https://ofrak.com/license/) for more information.
+Users interested in using OFRAK for commercial purposes can request the Pro or Enterprise License. See [OFRAK Licensing](https://ofrak.com/license/) for more information.
 
 ## Documentation
 OFRAK has general documentation and API documentation, which can be viewed at <https://ofrak.com/docs>.

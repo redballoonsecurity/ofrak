@@ -186,7 +186,7 @@
             <svelte:self
               rootResource="{child}"
               collapsed="{childrenCollapsed}"
-              bind:resourceNodeDataMap
+              bind:resourceNodeDataMap="{resourceNodeDataMap}"
             />
           </div>
         </li>

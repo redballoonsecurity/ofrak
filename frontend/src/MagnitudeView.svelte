@@ -38,7 +38,7 @@
   async function loadData(resource) {
     await resource.data_summary();
     let summaryAttributes =
-      resource.get_attributes()["ofrak_components.entropy.entropy.DataSummary"];
+      resource.get_attributes()["ofrak.core.entropy.entropy.DataSummary"];
     data =
       summaryAttributes !== undefined
         ? hexToByteArray(summaryAttributes?.magnitude_samples)
@@ -49,7 +49,7 @@
     data = undefined;
     let summaryAttributes =
       $selectedResource.get_attributes()[
-        "ofrak_components.entropy.entropy.DataSummary"
+        "ofrak.core.entropy.entropy.DataSummary"
       ];
     if (summaryAttributes !== undefined) {
       data = hexToByteArray(summaryAttributes?.magnitude_samples);

@@ -33,7 +33,7 @@ from ofrak import (
     ResourceAttributeValueFilter,
     ResourceSort,
 )
-from ofrak.core import File, Addressable
+from ofrak.core import Addressable, File
 from ofrak.core import (
     GenericBinary,
     AddCommentModifier,
@@ -61,7 +61,7 @@ from ofrak.service.serialization.pjson import (
     PJSONSerializationService,
 )
 from ofrak.service.serialization.pjson_types import PJSONType
-from ofrak_components.entropy import DataSummaryAnalyzer
+from ofrak.core.entropy import DataSummaryAnalyzer
 
 T = TypeVar("T")
 LOGGER = logging.getLogger(__name__)
@@ -242,7 +242,7 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def identify(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
-        result = await resource.auto_run(all_identifiers=True)
+        result = await resource.identify()
         response_pjson = await self._serialize_component_result(result)
         return web.json_response(response_pjson)
 

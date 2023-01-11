@@ -38,8 +38,7 @@ Obey the kitteh 😼
 import argparse
 import os
 
-import ofrak_binary_ninja
-import ofrak_capstone
+import ofrak_ghidra
 from ofrak import OFRAK, OFRAKContext, ResourceFilter, ResourceAttributeValueFilter
 from ofrak.core import (
     BinaryPatchModifier,
@@ -103,13 +102,15 @@ async def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: st
             attribute_filters=(ResourceAttributeValueFilter(ComplexBlock.Symbol, "main"),)
         ),
     )
+    main_cb_assembly = await main_cb.get_assembly()
     lea_instruction = await main_cb.resource.get_only_descendant_as_view(
         v_type=Instruction,
         r_filter=ResourceFilter(
             attribute_filters=(ResourceAttributeValueFilter(Instruction.Mnemonic, "lea"),)
         ),
     )
-    kitty_offset = empty_vaddr - lea_instruction.virtual_address - 7
+    ghidra_empty_vaddr = empty_vaddr + 0x100000  # Ghidra bases PIE executables at 0x100000
+    kitty_offset = ghidra_empty_vaddr - lea_instruction.virtual_address - 7
     await lea_instruction.modify_assembly("lea", f"rdi, [rip + {kitty_offset}]")
 
     await root_resource.pack()
@@ -124,6 +125,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     ofrak = OFRAK()
-    ofrak.discover(ofrak_capstone)
-    ofrak.discover(ofrak_binary_ninja)
+    ofrak.discover(ofrak_ghidra)
     ofrak.run(main, args.hello_world_file, args.output_file_name)

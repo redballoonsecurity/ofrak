@@ -1,8 +1,7 @@
 import io
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
-from typing import Any, Iterable, List, Tuple, Union, Dict, Optional
-from typing import cast
+from typing import Any, Dict, Iterable, Optional, Tuple, Union
 
 from ofrak.component.modifier import Modifier
 from ofrak.model.component_model import ComponentConfig
@@ -15,7 +14,6 @@ from ofrak.core.elf.model import (
     ElfProgramHeader,
     ElfHeader,
     ElfSymbol,
-    ElfSymbolType,
     ElfSectionFlag,
     ElfRelaEntry,
     ElfDynamicEntry,
@@ -102,7 +100,7 @@ class ElfHeaderModifier(Modifier[ElfHeaderModifierConfig], AbstractElfAttributeM
         )
 
     async def modify(self, resource: Resource, config: ElfHeaderModifierConfig):
-        original_attributes = await resource.analyze_attributes(ElfHeader.attributes_type)
+        original_attributes = await resource.analyze(ElfHeader.attributes_type)
         await self.serialize_and_patch(resource, original_attributes, config)
 
 
@@ -124,7 +122,7 @@ class ElfProgramHeaderModifier(
     targets = (ElfProgramHeader,)
 
     async def modify(self, resource: Resource, config: ElfProgramHeaderModifierConfig):
-        original_attributes = await resource.analyze_attributes(ElfProgramHeader.attributes_type)
+        original_attributes = await resource.analyze(ElfProgramHeader.attributes_type)
         await self.serialize_and_patch(resource, original_attributes, config)
 
     @classmethod
@@ -242,7 +240,7 @@ class ElfSymbolModifier(AbstractElfAttributeModifier, Modifier[ElfSymbolModifier
         resource: Resource,
         config: ElfSymbolModifierConfig,
     ):
-        original_attributes = await resource.analyze_attributes(ElfSymbol.attributes_type)
+        original_attributes = await resource.analyze(ElfSymbol.attributes_type)
         await self.serialize_and_patch(resource, original_attributes, config)
 
 
@@ -293,7 +291,7 @@ class ElfRelaModifier(AbstractElfAttributeModifier, Modifier[ElfRelaModifierConf
         """
         Patches the Elf{32, 64}_Rela struct
         """
-        original_attributes = await resource.analyze_attributes(ElfRelaEntry.attributes_type)
+        original_attributes = await resource.analyze(ElfRelaEntry.attributes_type)
         await self.serialize_and_patch(resource, original_attributes, config)
 
 
@@ -344,7 +342,7 @@ class ElfDynamicEntryModifier(
         """
         Patches the Elf{32, 64}_Dyn struct
         """
-        original_attributes = await resource.analyze_attributes(ElfDynamicEntry.attributes_type)
+        original_attributes = await resource.analyze(ElfDynamicEntry.attributes_type)
         await self.serialize_and_patch(resource, original_attributes, config)
 
 
@@ -382,7 +380,7 @@ class ElfVirtualAddressModifier(
         """
         Patches the virtual address
         """
-        original_attributes = await resource.analyze_attributes(ElfVirtualAddress.attributes_type)
+        original_attributes = await resource.analyze(ElfVirtualAddress.attributes_type)
         await self.serialize_and_patch(resource, original_attributes, config)
 
 
@@ -397,18 +395,12 @@ class ElfPointerArraySectionAddModifierConfig(ComponentConfig):
     add_value: int
 
 
-class ElfPointerArraySectionAddModifier(
-    AbstractElfAttributeModifier, Modifier[ElfPointerArraySectionAddModifierConfig]
-):
+class ElfPointerArraySectionAddModifier(Modifier[ElfPointerArraySectionAddModifierConfig]):
     """
     The ElfPointerArrayAddModifier updates batches of pointer values
     """
 
     targets = (ElfPointerArraySection,)
-
-    @classmethod
-    def populate_serializer(cls, serializer: BinarySerializer, attributes: Any):
-        pass
 
     async def modify(
         self,
@@ -447,61 +439,6 @@ class ElfPointerArraySectionAddModifier(
 
         patch_length = await resource.get_data_length()
         resource.queue_patch(Range.from_size(0, patch_length), buf.getvalue())
-
-
-class ElfModifierUtils:
-    @staticmethod
-    async def assert_sections_sorted(e_section_headers_r: Iterable[ElfSectionHeader]):
-        e_section_header_offset = -1
-        for e_section_header_r in e_section_headers_r:
-            if e_section_header_r.sh_offset < e_section_header_offset:
-                # That would cause the logic identifying where to stick the section's data to fail
-                # in very bad ways.
-                raise NotImplementedError(
-                    "The sections data is not in the same order as their headers"
-                )
-            e_section_header_offset = e_section_header_r.sh_offset
-
-    @staticmethod
-    async def assert_section_headers_last(
-        e_header_r: ElfHeader,
-        e_section_headers_r: List[ElfSectionHeader],
-    ):
-        for e_section_header_r in e_section_headers_r:
-            if e_header_r.e_shoff < e_section_header_r.sh_offset + e_section_header_r.sh_size:
-                raise ValueError("The elf headers are located before one of the section's data")
-
-    @staticmethod
-    async def assert_name_unique(e_section_headers_r: Iterable[ElfSectionHeader], name: str):
-        for e_section_header_r in e_section_headers_r:
-            e_section_header_name = e_section_header_r.sh_name
-            if e_section_header_name == name:
-                raise ValueError(f"A section named {name} already exist")
-
-    @staticmethod
-    async def find_last_mapped_section_index(e_symbols_r: Iterable[ElfSymbol]) -> int:
-        e_section_added_index = -1
-        for e_symbol_r in e_symbols_r:
-            if e_symbol_r.get_type() is not ElfSymbolType.SECTION:
-                continue
-            e_section_added_index = max(
-                e_section_added_index,
-                # e_symbol_r.get_section_index returns an Optional[int], but should never be None
-                # here since we know e_symbol_r.get_type() is ElfSymbolType.SECTION. Thus we cast.
-                cast(int, e_symbol_r.get_section_index()),
-            )
-        return e_section_added_index
-
-    @staticmethod
-    async def find_mutable_start(
-        e_section_headers_r: List[ElfSectionHeader],
-        e_symbols_r: Iterable[ElfSymbol],
-    ) -> int:
-        # Anything after the last section mapped in can be moved around freely. The resize event
-        # handler will take care of updating the necessary offsets.
-        e_section_index = await ElfModifierUtils.find_last_mapped_section_index(e_symbols_r)
-        e_section_header_r = e_section_headers_r[e_section_index]
-        return e_section_header_r.get_file_range().end
 
 
 @dataclass

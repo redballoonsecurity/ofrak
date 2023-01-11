@@ -22,7 +22,7 @@ class JobComponentRequest:
     config: Optional[ComponentConfig] = None
 
 
-@dataclass
+@dataclass(frozen=True)
 class JobMultiComponentRequest:
     job_id: bytes
     resource_id: bytes

@@ -59,6 +59,15 @@ class UImageUnpacker(Unpacker[None]):
 
 This unpacker targets a `UImage` and unpacks two possible children: a `UImageHeader` and `UImageBody`.
 
+
+
+### Handling External Dependencies
+
+If the Unpacker makes use of tools that are not packaged in modules installable via `pip` from 
+PyPI (commonly command-line tools), these dependencies must be explicitly declared as part of the 
+unpacker's class declaration. See the [Components Using External Tools](./external_tools.md) doc for 
+information on how to do that.
+
 <div align="right">
 <img src="../../assets/square_02.png" width="125" height="125">
 </div>

@@ -65,7 +65,11 @@ class PeOptionalHeaderMagic(Enum):
 @dataclass
 class PeOptionalHeader(ResourceView):
     """
-    PE optional header. Includes NT-specific attributes.
+    Base of PE optional header. Includes NT-specific attributes.
+    This header class is valid for 64 Bit non-Windows PE files,
+    however our pe_file package populates the additional Windows
+    fields so this is for all intents and purposes an abstract class.
+    More Info: https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#optional-header-windows-specific-fields-image-only
 
     Required for image files; object files don't have it.
     """
@@ -78,7 +82,14 @@ class PeOptionalHeader(ResourceView):
     size_of_uninitialized_data: int
     address_of_entry_point: int
     base_of_code: int
-    base_of_data: int
+
+
+@dataclass
+class PeWinOptionalHeader(PeOptionalHeader):
+    """PE Optional Header with all fields for Windows.
+    These fields are not necessary, yet will be parsed by the pefile package regardless.
+    """
+
     image_base: int
     section_alignment: int
     file_alignment: int
@@ -99,6 +110,22 @@ class PeOptionalHeader(ResourceView):
     size_of_heap_commit: int
     loader_flags: int
     number_of_rva_and_sizes: int
+
+
+@dataclass
+class Pe64POptionalHeader(PeWinOptionalHeader):
+    """
+    64 bit PE optional header without the base_of_data field.
+    """
+
+
+@dataclass
+class Pe32OptionalHeader(PeWinOptionalHeader):
+    """
+    32 bit PE optional header with the base_of_data field.
+    """
+
+    base_of_data: int
 
 
 @dataclass
@@ -266,4 +293,4 @@ class Pe(Program):
             return None
 
 
-MagicDescriptionIdentifier.register(Pe, lambda s: s.startswith("PE32 "))
+MagicDescriptionIdentifier.register(Pe, lambda s: s.startswith("PE32"))

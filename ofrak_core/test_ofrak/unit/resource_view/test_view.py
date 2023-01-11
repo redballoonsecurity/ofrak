@@ -204,7 +204,8 @@ async def test_view_indexes(mock_basic_block, mock_instruction_view, ofrak_conte
     assert len(bb_children) == 0
 
 
-async def test_resource_property_does_not_modify(ofrak_context: OFRAKContext):
+@pytest.fixture()
+async def instr_view(ofrak_context: OFRAKContext):
     instr_r = await ofrak_context.create_root_resource(
         "test_instruction",
         b"\x00" * 4,
@@ -222,38 +223,21 @@ async def test_resource_property_does_not_modify(ofrak_context: OFRAKContext):
     )
     await instr_r.save()
 
-    instr_view = await instr_r.view_as(Instruction)
+    return await instr_r.view_as(Instruction)
 
+
+async def test_resource_property_does_not_modify(instr_view: Instruction):
     await instr_view.resource.run(
         InstructionModifier, InstructionModifierConfig("add", "r4, r5", InstructionSetMode.NONE)
     )
 
-    new_instr_view = await instr_r.view_as(Instruction)
+    new_instr_view = await instr_view.resource.view_as(Instruction)
 
     assert new_instr_view.mnemonic == "add"
     assert new_instr_view.operands == "r4, r5"
 
 
-async def test_resource_view_updates(ofrak_context: OFRAKContext):
-    instr_r = await ofrak_context.create_root_resource(
-        "test_instruction",
-        b"\x00" * 4,
-        (Instruction,),
-    )
-    instr_r.add_view(Instruction(0x100, 0x4, "", "", "", InstructionSetMode.NONE))
-    instr_r.add_attributes(
-        ProgramAttributes(
-            InstructionSet.ARM,
-            None,
-            BitWidth.BIT_32,
-            Endianness.LITTLE_ENDIAN,
-            None,
-        ),
-    )
-    await instr_r.save()
-
-    instr_view = await instr_r.view_as(Instruction)
-
+async def test_modifier_updates_view(instr_view: Instruction):
     await instr_view.resource.run(
         InstructionModifier, InstructionModifierConfig("add", "r4, r5", InstructionSetMode.NONE)
     )
@@ -265,6 +249,15 @@ async def test_resource_view_updates(ofrak_context: OFRAKContext):
         Instruction(0x100, 0x4, "sub r4, r5", "sub", "r4, r5", InstructionSetMode.NONE)
     )
     await instr_r.save()
+
+    assert instr_view.mnemonic == "sub"
+
+
+async def test_save_updates_view(instr_view: Instruction):
+    instr_view.resource.add_view(
+        Instruction(0x100, 0x4, "sub r4, r5", "sub", "r4, r5", InstructionSetMode.NONE)
+    )
+    await instr_view.resource.save()
 
     assert instr_view.mnemonic == "sub"
 

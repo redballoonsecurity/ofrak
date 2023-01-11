@@ -9,7 +9,7 @@ import os
 import test_ofrak.components
 from ofrak import OFRAK, OFRAKContext, ResourceFilter
 from ofrak.core.binary import BinaryPatchConfig, BinaryPatchModifier
-from ofrak_components.flash import (
+from ofrak.core.flash import (
     FlashAttributes,
     FlashEccAttributes,
     FlashField,
@@ -17,7 +17,7 @@ from ofrak_components.flash import (
     FlashResource,
     FlashLogicalDataResource,
 )
-from ofrak_components.ecc.reedsolomon import ReedSolomon
+from ofrak.core.ecc.reedsolomon import ReedSolomon
 
 TEST_FILE = os.path.join(test_ofrak.components.ASSETS_DIR, "flash_test_plain.bin")
 

@@ -120,6 +120,7 @@ public class AnalysisServer extends HeadlessScript {
 
                 // Pre-store an empty result so we are guaranteed to get something
                 storeHeadlessValue(resultValueName, "");
+                println(String.format("Running %s", scriptName));
                 runScript(scriptName, scriptArgs.toArray(new String[0]));
                 println(String.format("Finished running %s", scriptName));
                 String response = getStoredHeadlessValue(resultValueName).toString();

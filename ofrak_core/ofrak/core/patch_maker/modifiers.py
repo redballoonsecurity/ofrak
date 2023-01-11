@@ -2,10 +2,11 @@ import logging
 import os
 import tempfile
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Type
 
+from ofrak.core import ProgramAttributes
+from ofrak_patch_maker.toolchain.abstract import Toolchain
 from ofrak.component.modifier import Modifier
-from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.core.program import Program
@@ -16,11 +17,7 @@ from ofrak.core.injector import BinaryInjectorModifier, BinaryInjectorModifierCo
 from ofrak.core.patch_maker.model import SourceBundle
 from ofrak_patch_maker.model import PatchRegionConfig, FEM
 from ofrak_patch_maker.patch_maker import PatchMaker
-from ofrak_patch_maker.toolchain.model import (
-    ToolchainConfig,
-    Segment,
-)
-from ofrak_patch_maker.toolchain.version import ToolchainVersion
+from ofrak_patch_maker.toolchain.model import Segment, ToolchainConfig
 from ofrak_type.memory_permissions import MemoryPermissions
 
 LOGGER = logging.getLogger(__file__)
@@ -34,7 +31,7 @@ class PatchFromSourceModifierConfig(ComponentConfig):
     defining where to inject one or more of the .text, .data, and .rodata from the build file
     :var toolchain_config: configuration for the
     [Toolchain][ofrak_patch_maker.toolchain.abstract.Toolchain] to use
-    :var toolchain_version: which toolchain version to use
+    :var toolchain: the type of which [Toolchain][ofrak_patch_maker.toolchain.abstract.Toolchain] to use
     :var patch_name: Optional name of patch
     :var header_directory_resource_ids: Optional additional FilesystemRoot resources with header
     directories
@@ -43,8 +40,7 @@ class PatchFromSourceModifierConfig(ComponentConfig):
     source_code_resource_id: bytes
     source_patches: Dict[str, Tuple[Segment, ...]]
     toolchain_config: ToolchainConfig
-    toolchain_version: ToolchainVersion
-
+    toolchain: Type[Toolchain]
     patch_name: Optional[str] = None
     header_directory_resource_ids: Optional[Tuple[bytes, ...]] = None
 
@@ -101,13 +97,9 @@ class PatchFromSourceModifier(Modifier):
         absolute_source_list = [
             os.path.join(source_tmp_dir, src_file) for src_file in config.source_patches.keys()
         ]
-
-        program_attrs = await resource.analyze_attributes(ProgramAttributes)
-
+        program_attributes = await resource.analyze(ProgramAttributes)
         patch_maker = PatchMaker(
-            program_attributes=program_attrs,
-            toolchain_config=config.toolchain_config,
-            toolchain_version=config.toolchain_version,
+            toolchain=config.toolchain(program_attributes, config.toolchain_config),
             build_dir=build_tmp_dir,
         )
 
@@ -232,7 +224,7 @@ class FunctionReplacementModifierConfig(ComponentConfig):
     replacements). The paths are relative paths within the source code FilesystemRoot.
     :var toolchain_config: configuration for the
     [Toolchain][ofrak_patch_maker.toolchain.abstract.Toolchain] to use
-    :var toolchain_version: which toolchain version to use
+    :var toolchain: the type of which type of [Toolchain][ofrak_patch_maker.toolchain.abstract.Toolchain] to use
     :var patch_name: Optional name of patch
     :var header_directory_resource_ids: Optional additional FilesystemRoot resources with header
     directories
@@ -241,8 +233,7 @@ class FunctionReplacementModifierConfig(ComponentConfig):
     source_code_resource_id: bytes
     new_function_sources: Dict[str, str]
     toolchain_config: ToolchainConfig
-    toolchain_version: ToolchainVersion
-
+    toolchain: Type[Toolchain]
     patch_name: Optional[str] = None
     header_directory_resource_ids: Optional[Tuple[bytes, ...]] = None
 
@@ -273,7 +264,7 @@ class FunctionReplacementModifier(Modifier[FunctionReplacementModifierConfig]):
             config.source_code_resource_id,
             source_patches,
             config.toolchain_config,
-            config.toolchain_version,
+            config.toolchain,
             config.patch_name,
             config.header_directory_resource_ids,
         )

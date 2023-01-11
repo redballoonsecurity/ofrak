@@ -1,7 +1,7 @@
 <script>
   import CarveView from "./CarveView.svelte";
   import CommentView from "./CommentView.svelte";
-  import FindReplaceView from "./FindReplaceView.svelte";
+  import ModifyView from "./ModifyView.svelte";
   import Toolbar from "./Toolbar.svelte";
 
   import { selectedResource, selected } from "./stores.js";
@@ -72,7 +72,7 @@
         text: "Modify",
         iconUrl: "/icons/modify.svg",
         onclick: async (e) => {
-          modifierView = FindReplaceView;
+          modifierView = ModifyView;
         },
       },
 
@@ -132,7 +132,7 @@
                 if (input.files.length > 0) {
                   const file = input.files[0];
                   const data = await file.arrayBuffer();
-                  await rootResource.queue_patch(undefined, data);
+                  await rootResource.queue_patch(data);
                 }
                 refreshResource();
               },

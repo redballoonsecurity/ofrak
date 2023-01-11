@@ -21,7 +21,7 @@ import argparse
 import os
 
 from ofrak import OFRAK, OFRAKContext
-from ofrak_components.tar import TarArchive
+from ofrak.core.tar import TarArchive
 
 ASSETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
 ARCHIVE = os.path.join(ASSETS_DIR, "example_8.tar.gz")

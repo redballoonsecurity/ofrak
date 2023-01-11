@@ -36,15 +36,17 @@ setuptools.setup(
     ],
     extras_require={
         "test": [
-            "fun-coverage~=0.1.0",
+            "fun-coverage==0.2.0",
             "pytest",
             "pytest-asyncio==0.19.0",
             "pytest-cov",
             "requests",
+            "psutil",
         ]
     },
     python_requires=">=3.7",
     include_package_data=True,
     license=license,
     cmdclass={"egg_info": egg_info_ex},
+    entry_points={"ofrak.packages": ["ofrak_ghidra_pkg = ofrak_ghidra"]},
 )

@@ -111,14 +111,14 @@
             <svelte:component
               this="{modifierView}"
               dataPromise="{displayDataPromise}"
-              bind:modifierView
-              bind:resourceNodeDataMap
+              bind:modifierView="{modifierView}"
+              bind:resourceNodeDataMap="{resourceNodeDataMap}"
             />
           {:else}
             <ResourceTreeView
               rootResource="{rootResource}"
-              bind:resourceNodeDataMap
-              bind:modifierView
+              bind:resourceNodeDataMap="{resourceNodeDataMap}"
+              bind:modifierView="{modifierView}"
             />
           {/if}
         </Pane>
@@ -139,7 +139,7 @@
           <HexView
             dataPromise="{displayDataPromise}"
             scrollY="{hexScrollY}"
-            bind:resourceNodeDataMap
+            bind:resourceNodeDataMap="{resourceNodeDataMap}"
           />
         {/if}
         <!-- 
@@ -170,14 +170,14 @@
   </div>
 {:else}
   <StartView
-    bind:rootResourceLoadPromise
-    bind:showRootResource
-    bind:resourceFactory
-    bind:rootResource
-    bind:resourceNodeDataMap
+    bind:rootResourceLoadPromise="{rootResourceLoadPromise}"
+    bind:showRootResource="{showRootResource}"
+    bind:resourceFactory="{resourceFactory}"
+    bind:rootResource="{rootResource}"
+    bind:resourceNodeDataMap="{resourceNodeDataMap}"
   />
 {/if}
 
 <div class="bottomright">
-  <p><a href="https://ofrak.com" target="_blank">v0.6.0</a></p>
+  <p><a href="https://ofrak.com" target="_blank" rel="noreferrer">v0.6.0</a></p>
 </div>

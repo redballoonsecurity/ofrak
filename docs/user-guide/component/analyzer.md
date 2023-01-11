@@ -40,7 +40,7 @@ The preferred way to run OFRAK Analyzers is to use `Resource.analyze`:
 ```python
 from ofrak.resource import Resource
 from ofrak.core.filesystem import File
-from ofrak_components.magic import Magic
+from ofrak.core.magic import Magic
 
 
 resource: Resource
@@ -54,7 +54,7 @@ When `Resource.analyze` is run, OFRAK will search for and run a registered analy
 Analyzers can also be run explicitly:
 
 ```python
-from ofrak_components.magic import MagicAnalyzer
+from ofrak.core.magic import MagicAnalyzer
 from ofrak.resource import Resource
 
 

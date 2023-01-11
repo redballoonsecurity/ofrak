@@ -176,8 +176,6 @@ source ofrak-venv/bin/activate
     ```bash
     brew install \
       apktool \
-      binwalk \
-      cmake \
       java \
       libmagic \
       lzop \
@@ -191,8 +189,6 @@ source ofrak-venv/bin/activate
     ```
 
     - OFRAK uses `apktool`, `java`, and `wget` to install `uber-apk-signer` for unpacking and packing APK files.
-    - OFRAK uses `binwalk` for analyzing packed binary files.
-    - OFRAK uses `cmake` to install a custom branch of `keystone-engine`.
     - OFRAK uses the `libmagic` library for `python-magic`, which automatically determines which packers/unpackers to use with binaries.
     - OFRAK uses the `lzop` command line utility for packing/unpacking LZO archives
     - OFRAK uses the 7-zip command line utility for packing/unpacking 7z archives
@@ -202,54 +198,28 @@ source ofrak-venv/bin/activate
 
     If not all of the dependencies are installed, core OFRAK will still work, but most of the components will not.
 
-2. The following script can then be used to install `keystone`:
-
-    ```bash
-    #!/usr/bin/env bash
-    set -e
-    pushd /tmp
-    git clone https://github.com/rbs-forks/keystone.git
-    cd keystone
-    git checkout 2021.09.01
-    mkdir build
-    cd build
-    ../make-share.sh
-    cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -G "Unix Makefiles" ..
-    make -j8
-    sudo make install
-    cd ../bindings/python
-    make install3
-    pip3 install .
-    popd
-    ```
-3. The custom branch of `capstone` can be installed using the following script:
-
-    ```bash
-    #!/usr/bin/env bash
-    set -e
-    pushd /tmp
-    git clone https://github.com/rbs-forks/capstone.git
-    cd capstone
-    git checkout 2021.09.01
-    ./make.sh
-    sudo ./make.sh install
-    cd bindings/python
-    make install3
-    popd
-    ```
-4. The `uber-apk-signer` for unpacking and packing APK files can be installed using the following script:
+2. OFRAK uses `binwalk` for analyzing packed binary files. It can be installed with the following script:
+   ```bash
+   set -e
+   pushd /tmp
+   git clone https://github.com/ReFirmLabs/binwalk
+   cd binwalk
+   python3 setup.py install
+   popd
+   ```
+3. The `uber-apk-signer` for unpacking and packing APK files can be installed using the following script:
 
     ```bash
     brew install wget apktool java
     echo 'export PATH="/usr/local/opt/openjdk/bin:$PATH"' >> ~/.zshrc
     wget https://github.com/patrickfav/uber-apk-signer/releases/download/v1.0.0/uber-apk-signer-1.0.0.jar -O /usr/local/bin/uber-apk-signer.jar
     ```
-5. Install core OFRAK and its dependencies:
+4. Install core OFRAK and its dependencies:
 
     ```bash
-    for d in ofrak_io ofrak_type ofrak_patch_maker ofrak_components ofrak; do make -C "${d}" develop; done 
+    for d in ofrak_io ofrak_type ofrak_patch_maker ofrak_core; do make -C "${d}" develop; done 
     ```
-6. If you are planning to contribute to OFRAK, install the pre-commit hooks. For more information, see the [contributor guide](docs/contributor-guide/getting-started.md).
+5. If you are planning to contribute to OFRAK, install the pre-commit hooks. For more information, see the [contributor guide](docs/contributor-guide/getting-started.md).
 
     ```bash
     python3 -m pip install --user pre-commit

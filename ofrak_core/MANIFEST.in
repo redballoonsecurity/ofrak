@@ -1,1 +1,2 @@
 recursive-exclude test_ofrak *
+recursive-include ofrak/core/entropy/ *

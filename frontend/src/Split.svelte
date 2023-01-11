@@ -57,7 +57,7 @@
   });
 </script>
 
-<div class="container" class:vertical>
+<div class="container" class:vertical="{vertical}">
   <div
     id="first"
     style:border="{vertical ? "none" : ""}"
