@@ -302,6 +302,27 @@ class GUISubCommand(OFRAKSubCommand):
             help="Set GUI server host port.",
             default=None,
         )
+        gui_parser.add_argument(
+            "-b",
+            "--backend",
+            action="store",
+            help="Set GUI server backend.",
+            default=None,
+        )
+        gui_parser.add_argument(
+            "-v",
+            "--verbose",
+            action="store_true",
+            help="Enable verbose mode for debugging",
+            default=None,
+        )
+        gui_parser.add_argument(
+            "-q",
+            "--quiet",
+            action="store_true",
+            help="Enable quiet mode to minimize logging",
+            default=None,
+        )
         return gui_parser
 
     @staticmethod
@@ -316,11 +337,37 @@ class GUISubCommand(OFRAKSubCommand):
         else:
             port = "8080"
 
-        ofrak = server.OFRAK(server.logging.INFO)
+        if args.verbose is True:
+            ofrak = server.OFRAK(server.logging.DEBUG)
 
-        server.LOGGER.warning(
-            "No disassembler backend specified, so no disassembly will be possible"
-        )
+        elif args.quiet is True:
+            ofrak = server.OFRAK(server.logging.WARNING)
+
+        else:
+            ofrak = server.OFRAK(server.logging.INFO)
+
+        if args.backend is not None:
+            if args.backend.lower() == "binary-ninja":
+                import ofrak_capstone  # type: ignore
+                import ofrak_binary_ninja  # type: ignore
+
+                ofrak.injector.discover(ofrak_capstone)
+                ofrak.injector.discover(ofrak_binary_ninja)
+
+            elif args.backend.lower() == "ghidra":
+                import ofrak_ghidra  # type: ignore
+
+                ofrak.injector.discover(ofrak_ghidra)
+
+            elif args.backend.lower() == "angr":
+                import ofrak_angr  # type: ignore
+
+                ofrak.injector.discover(ofrak_angr)
+
+        else:
+            server.LOGGER.warning(
+                "No disassembler backend specified, so no disassembly will be possible"
+            )
 
         url = f"http://{host}:{port}"
         webbrowser.open(url)
