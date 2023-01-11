@@ -106,5 +106,10 @@ class AngrCodeRegionModifier(Modifier):
             angr_analysis = await root_resource.analyze(AngrAnalysis)
             obj = angr_analysis.project.loader.main_object
 
-            new_cr = CodeRegion(code_region.virtual_address + obj.min_addr, code_region.size)
-            code_region.resource.add_view(new_cr)
+            if obj is not None:
+                new_cr = CodeRegion(code_region.virtual_address + obj.min_addr, code_region.size)
+                code_region.resource.add_view(new_cr)
+            else:
+                LOGGER.warning(
+                    f"There is no angr main object for resource {root_resource}. Something went wrong."
+                )
