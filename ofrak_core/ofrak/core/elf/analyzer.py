@@ -343,9 +343,8 @@ class ElfSectionNameAnalyzer(Analyzer[None, AttributesType[NamedProgramSection]]
 
 class ElfSectionMemoryRegionAnalyzer(Analyzer[None, MemoryRegion]):
     """
-    Get the name of an ELF section. ELF section names are stored as null-terminated strings in
-    dedicated string section, and each ELF section header's `sh_name` field is an offset in this
-    section.
+    Get the in-memory address and size of an ELF section. These are stored in the corresponding
+    ELF section header.
     """
 
     id = b"ElfSectionMemoryRegionAnalyzer"
