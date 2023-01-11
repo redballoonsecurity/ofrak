@@ -267,7 +267,7 @@ class Toolchain(ABC):
                 proc = subprocess.run(args, stdout=subprocess.PIPE, encoding="utf-8", check=True)
         except subprocess.CalledProcessError as e:
             cmd = " ".join(args)
-            raise ValueError(f"Command \"{cmd}\" returned non-zero exit status {e.returncode}")
+            raise ValueError(f'Command "{cmd}" returned non-zero exit status {e.returncode}')
 
         return proc.stdout
 

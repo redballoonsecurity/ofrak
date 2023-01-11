@@ -40,9 +40,7 @@ class GNU_AVR_5_Toolchain(Abstract_GNU_Toolchain):
             )
         else:
             raise ValueError("sub_isa is required for AVR linking")
-        self._compiler_flags.append(
-            "-fno-optimize-sibling-calls"
-        )
+        self._compiler_flags.append("-fno-optimize-sibling-calls")
 
     @property
     def name(self) -> str:
