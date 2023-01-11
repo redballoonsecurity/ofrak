@@ -23,6 +23,7 @@ from aiohttp import web, ClientResponse
 from aiohttp.web_exceptions import HTTPBadRequest
 from aiohttp.web_request import Request
 from aiohttp.web_response import Response
+from aiohttp.web_fileresponse import FileResponse
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 
@@ -352,6 +353,7 @@ class AiohttpOFRAKServer:
             await request.json(), Tuple[int, Optional[int]]
         )
         try:
+            vaddr_filter: Union[ResourceAttributeRangeFilter, ResourceAttributeValueFilter]
             if vaddr_end is not None:
                 vaddr_filter = ResourceAttributeRangeFilter(
                     Addressable.VirtualAddress, vaddr_start, vaddr_end
@@ -368,8 +370,8 @@ class AiohttpOFRAKServer:
             return web.json_response([])
 
     @exceptions_to_http(SerializedError)
-    async def get_static_files(self, request: Request) -> Response:
-        return web.FileResponse(os.path.join(os.path.dirname(__file__), "./public/index.html"))
+    async def get_static_files(self, request: Request) -> FileResponse:
+        return FileResponse(os.path.join(os.path.dirname(__file__), "./public/index.html"))
 
     async def _get_resource_by_id(self, resource_id: bytes, job_id: bytes) -> Resource:
         resource = await self._ofrak_context.resource_factory.create(
@@ -514,6 +516,7 @@ if __name__ == "__main__":
         _host = "127.0.0.1"
         _port = 8080
 
+    backend: Optional[str]
     if len(sys.argv) == 4:
         backend = sys.argv[3]
     else:
