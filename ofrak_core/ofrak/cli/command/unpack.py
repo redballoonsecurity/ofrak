@@ -8,6 +8,7 @@ from pathlib import Path
 import time
 import sys
 
+from ofrak.cli.command.identify import Identify
 from ofrak.cli.ofrak_cli import OfrakCommandRunsScript
 from ofrak.core import FilesystemEntry
 
@@ -19,13 +20,22 @@ class Unpack(OfrakCommandRunsScript):
             help="Unpack all identified structures that can be unpacked with OFRAK",
             description="Import a file as an OFRAK resource, then identifies and unpacks it. The "
             "resource's children are written to the output directory as individual "
-            "files. Children which have no data are not written as files.",
+            "files. Children which have no data are not written as files. A file `__ofrak_info__` "
+            "is also written to the output directory, containing the known OFRAK tags and "
+            "attributes for each descendant.",
         )
         subparser.add_argument(
             "-o",
             "--output_directory",
             help="Directory to write unpacked resource tree to. If no directory is given, a new one"
             " will be created in the same directory as the file being unpacked.",
+        )
+        subparser.add_argument(
+            "--print-info",
+            "-p",
+            help="Print contents of __ofrak_info__ (which may be large!) to stdout as well as the "
+            "__ofrak_info__ file.",
+            action="store_true",
         )
         subparser.add_argument("filename", help="File to unpack")
         self.add_ofrak_arguments(subparser)
@@ -60,9 +70,18 @@ class Unpack(OfrakCommandRunsScript):
             extraction_dir,
             await self._get_filesystem_name(root_resource),
         )
-        await self.resource_tree_to_files(root_resource, root_resource_path)
+        info_dump_path = os.path.join(extraction_dir, "__ofrak_info__")
+        info_dump = await self.resource_tree_to_files(root_resource, root_resource_path)
 
-    async def resource_tree_to_files(self, resource: Resource, path):
+        with open(info_dump_path, "wb") as f:
+            f.write(info_dump.encode("utf-8", "surrogateescape"))
+
+        if args.print_info:
+            print(info_dump)
+
+    async def resource_tree_to_files(self, resource: Resource, path) -> str:
+        info_dump = path + "\n" + await Identify.print_info(resource)
+
         name_counters: Dict[str, int] = dict()
         children_dir = path + ".ofrak_children"
         for child_resource in await resource.get_children():
@@ -77,15 +96,18 @@ class Unpack(OfrakCommandRunsScript):
                 os.mkdir(children_dir)
 
             child_path = os.path.join(children_dir, filename)
-            await self.resource_tree_to_files(child_resource, child_path)
+            child_info_dump = await self.resource_tree_to_files(child_resource, child_path)
+            info_dump = info_dump + "\n\n" + child_info_dump
 
         if resource.get_data_id() is None:
-            return
+            return info_dump
         data = await resource.get_data()
         if len(data) == 0:
-            return
+            return info_dump
         with open(path, "wb") as f:
             f.write(data)
+
+        return info_dump
 
     async def _get_filesystem_name(self, resource: Resource) -> str:
         if resource.has_tag(FilesystemEntry):

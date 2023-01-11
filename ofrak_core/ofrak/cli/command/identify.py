@@ -24,10 +24,10 @@ class Identify(OfrakCommandRunsScript):
         root_resource = await ofrak_context.create_root_resource_from_file(args.filename)
 
         await root_resource.identify()
-        print(await Identify._print_info(root_resource))
+        print(await Identify.print_info(root_resource))
 
     @staticmethod
-    async def _print_info(resource: Resource) -> str:
+    async def print_info(resource: Resource) -> str:
         output = ""
 
         output += "= Tags = \n"
