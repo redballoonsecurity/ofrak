@@ -259,6 +259,8 @@ class _CompareFirstTuple(Tuple, Generic[T]):
     def __eq__(self, other):
         return self[0] == other[0]
 
+    # __gt__ function excluded, as it is not needed by built-in Python utils like `sort`
+
     @staticmethod
     def bisect_left(grid, val: int) -> int:
         return bisect_left(grid, _CompareFirstTuple(val, None))
@@ -268,6 +270,8 @@ class _CompareFirstTuple(Tuple, Generic[T]):
         return bisect_right(grid, _CompareFirstTuple(val, None))
 
 
+# These lists undergo inserts, appends, and removals fairly often. If they become a bottleneck,
+#   another data structure (e.g. tree) would give better performance for those operations.
 _GridYAxisT = List[_CompareFirstTuple[Set[DataId]]]
 _GridXAxisT = List[_CompareFirstTuple[_GridYAxisT]]
 
