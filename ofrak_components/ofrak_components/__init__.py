@@ -1,1 +1,0 @@
-from ofrak_components._bind_dependencies import bind_dependencies

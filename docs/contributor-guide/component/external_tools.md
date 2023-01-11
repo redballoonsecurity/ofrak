@@ -12,7 +12,7 @@ and easy to install.
 that OFRAK tracks about an external tool which a component depends on. Each component that uses an 
 external tool should include a [ComponentExternalTool][ofrak.model.component_model.ComponentExternalTool] object for that tool in its 
 `external_dependencies` field (empty by default, this field does not need to be provided for 
-components which do not use an external tool). The [ZipUnpacker][ofrak_components.zip.ZipUnpacker] is an example:
+components which do not use an external tool). The [ZipUnpacker][ofrak.core.zip.ZipUnpacker] is an example:
 
 1. At the top of the file, the `ComponentExternalTool` is declared:
 
@@ -81,7 +81,7 @@ retcode = subprocess.call([self.tool, self.install_check_arg], ...)
 ```
 
 This works for most cases (the `install_check_arg` provides a lot of flexibility), but does not 
-cover certain edge cases. For example, [SquashfsUnpacker][ofrak_components.squashfs.SquashfsUnpacker] requires 
+cover certain edge cases. For example, [SquashfsUnpacker][ofrak.core.squashfs.SquashfsUnpacker] requires 
 specifically versions of  `unsquashfs` with the `-no-exit-code` flag. A user may already have 
 `unsquashfs` installed, but an unsuitable version, so simply checking for `unsquashfs` can give a 
 false negative result when a user is checking for missing dependencies.

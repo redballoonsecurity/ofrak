@@ -3,9 +3,10 @@ import tempfile
 
 import pytest
 
-from ofrak.core.architecture import ProgramAttributes
+from ofrak_type import ArchInfo
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
+from ofrak_patch_maker.toolchain.gnu_aarch64 import GNU_AARCH64_LINUX_10_Toolchain
 from ofrak_patch_maker.toolchain.model import (
     Segment,
     CompilerOptimizationLevel,
@@ -13,7 +14,6 @@ from ofrak_patch_maker.toolchain.model import (
     BinFileType,
 )
 from ofrak_patch_maker.toolchain.utils import get_file_format
-from ofrak_patch_maker.toolchain.version import ToolchainVersion
 from ofrak_patch_maker_test import ToolchainUnderTest, CURRENT_DIRECTORY
 from ofrak_patch_maker_test.toolchain_asm import (
     run_challenge_3_reloc_toy_example_test,
@@ -34,8 +34,8 @@ AARCH64_EXTENSION = ".aarch64"
 @pytest.fixture(
     params=[
         ToolchainUnderTest(
-            ToolchainVersion.GNU_AARCH64_LINUX_10,
-            ProgramAttributes(
+            GNU_AARCH64_LINUX_10_Toolchain,
+            ArchInfo(
                 InstructionSet.AARCH64,
                 None,
                 BitWidth.BIT_64,
@@ -52,31 +52,20 @@ def toolchain_under_test(request) -> ToolchainUnderTest:
 
 # ASM Tests
 def test_challenge_3_reloc_toy_example(toolchain_under_test: ToolchainUnderTest):
-    run_challenge_3_reloc_toy_example_test(
-        toolchain_under_test.toolchain_version,
-        toolchain_under_test.proc,
-        toolchain_under_test.extension,
-    )
+    run_challenge_3_reloc_toy_example_test(toolchain_under_test)
 
 
 def test_monkey_patch(toolchain_under_test: ToolchainUnderTest):
-    run_monkey_patch_test(
-        toolchain_under_test.toolchain_version,
-        toolchain_under_test.proc,
-        toolchain_under_test.extension,
-    )
+    run_monkey_patch_test(toolchain_under_test)
 
 
 # C Tests
 def test_bounds_check(toolchain_under_test: ToolchainUnderTest):
-    run_bounds_check_test(toolchain_under_test.toolchain_version, toolchain_under_test.proc)
+    run_bounds_check_test(toolchain_under_test)
 
 
 def test_hello_world(toolchain_under_test: ToolchainUnderTest):
-    run_hello_world_test(
-        toolchain_under_test.toolchain_version,
-        toolchain_under_test.proc,
-    )
+    run_hello_world_test(toolchain_under_test)
 
 
 def test_aarch64_alignment(toolchain_under_test: ToolchainUnderTest):
@@ -97,9 +86,7 @@ def test_aarch64_alignment(toolchain_under_test: ToolchainUnderTest):
     build_dir = tempfile.mkdtemp()
 
     patch_maker = PatchMaker(
-        program_attributes=toolchain_under_test.proc,
-        toolchain_config=tc_config,
-        toolchain_version=toolchain_under_test.toolchain_version,
+        toolchain=toolchain_under_test.toolchain(toolchain_under_test.proc, tc_config),
         build_dir=build_dir,
     )
     patch_source = os.path.join(CURRENT_DIRECTORY, "test_alignment/patch_aarch64.as")

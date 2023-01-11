@@ -38,7 +38,7 @@ class FilesystemPackUnpackVerifyPattern(ABC):
                     self.verify_filesystem_equality(root_path, extract_dir)
         except CalledProcessError as e:
             # Better printing of errors if something goes wrong in test setup/execution
-            ComponentSubprocessError(e)
+            raise ComponentSubprocessError(e)
 
     def _dirs_from_list(self, parent, names, depth):
         # Create a file

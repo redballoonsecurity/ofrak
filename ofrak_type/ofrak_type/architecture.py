@@ -1,4 +1,10 @@
 from enum import Enum
+from typing import Optional
+
+from dataclasses import dataclass
+
+from ofrak_type.bit_width import BitWidth
+from ofrak_type.endianness import Endianness
 
 
 class InstructionSet(Enum):
@@ -146,4 +152,24 @@ class ProcessorType(Enum):
     XSCALE = "xscale"
     COLDFIRE4E = "cfv4e"
     CORTEX_A53 = "cortex-a53"
+    CORTEX_A55 = "cortex-a55"
     AVR = "avr"
+
+
+@dataclass(frozen=True, eq=True)
+class ArchInfo:
+    """
+    Collection of fields used to describe an architecture
+
+    :ivar isa: Instruction set architecture
+    :ivar sub_isa: Sub instruction set
+    :ivar bit_width: Bits per word
+    :ivar endianness: Endianness as `Endianness.BIG_ENDIAN` or `Endianness.LITTLE_ENDIAN`
+    :ivar processor: Processor type
+    """
+
+    isa: InstructionSet
+    sub_isa: Optional[SubInstructionSet]
+    bit_width: BitWidth
+    endianness: Endianness
+    processor: Optional[ProcessorType]

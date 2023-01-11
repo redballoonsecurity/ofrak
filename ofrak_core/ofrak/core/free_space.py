@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from itertools import chain
 from typing import List, Tuple, Dict, Optional, Iterable
 
+from immutabledict import immutabledict
+
 from ofrak.core.binary import BinaryPatchModifier, BinaryPatchConfig
 
 from ofrak.component.analyzer import Analyzer
@@ -18,6 +20,8 @@ from ofrak.service.resource_service_i import (
     ResourceAttributeValueFilter,
     ResourceSort,
 )
+from ofrak_patch_maker.model import AssembledObject, PatchRegionConfig, BOM
+from ofrak_patch_maker.toolchain.model import Segment
 from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.range import Range, remove_subranges
 
@@ -106,6 +110,56 @@ class Allocatable(ResourceView):
         self.remove_allocation_from_cached_free_ranges(allocated_ranges, permissions)
 
         return allocated_ranges
+
+    async def allocate_bom(
+        self,
+        bom: BOM,
+    ) -> PatchRegionConfig:
+        """
+        Responsible for allocating the patches if free memory is required and
+        providing details about where space was made.
+
+        :param bom:
+
+        :return: information required to generate the linker directive script
+        """
+        segments_to_allocate: List[Tuple[AssembledObject, Segment]] = []
+        for obj in bom.object_map.values():
+            for segment in obj.segment_map.values():
+                segments_to_allocate.append((obj, segment))
+
+        # Allocate largest segments first
+        segments_to_allocate.sort(key=lambda o_s: o_s[1].length, reverse=True)
+        segments_by_object: Dict[str, List[Segment]] = defaultdict(list)
+        for obj, segment in segments_to_allocate:
+            vaddr, final_size = 0, 0
+            if segment.length > 0:
+                allocs = await self.allocate(
+                    segment.access_perms,
+                    segment.length,
+                    min_fragment_size=segment.length,
+                    alignment=bom.segment_alignment,
+                )
+                allocation = next(iter(allocs))
+                vaddr = allocation.start
+                final_size = allocation.length()
+
+            segments_by_object[obj.path].append(
+                Segment(
+                    segment_name=segment.segment_name,
+                    vm_address=vaddr,
+                    offset=segment.offset,
+                    is_entry=segment.is_entry,
+                    length=final_size,
+                    access_perms=segment.access_perms,
+                )
+            )
+
+        all_segments: Dict[str, Tuple[Segment, ...]] = {
+            object_path: tuple(segments) for object_path, segments in segments_by_object.items()
+        }
+
+        return PatchRegionConfig(bom.name + "_patch", immutabledict(all_segments))
 
     async def _allocate(
         self,

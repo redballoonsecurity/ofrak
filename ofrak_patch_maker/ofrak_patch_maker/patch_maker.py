@@ -4,11 +4,10 @@
 **Usage:**
 
 ```python
+tc = GNU_ARM_NONE_EABI_10_2_1_Toolchain(...). # Instantiate the toolchain you want to use.
 known_symbols = {"memcpy": 0xdeadbeef}
 patch_maker = PatchMaker(
-    program_attributes=attr,
-    toolchain_config=tc_config,
-    toolchain_version=tc_version,
+    toolchain=tc
     platform_includes="../usr/include",
     base_symbols=known_symbols
 )
@@ -34,16 +33,11 @@ await ofrak_fw_resource.run(SegmentInjectorModifier, SegmentInjectorModifierConf
 import logging
 import os
 import tempfile
-from collections import defaultdict
-from types import ModuleType
-from typing import Optional, List, Dict, Union, Tuple, Iterable, Mapping
+from typing import Dict, Iterable, List, Mapping, Optional, Tuple
+from warnings import warn
 
 from immutabledict import immutabledict
 
-from ofrak.core.architecture import ProgramAttributes
-from ofrak.core.free_space import (
-    Allocatable,
-)
 from ofrak_patch_maker.model import (
     AssembledObject,
     BOM,
@@ -54,19 +48,15 @@ from ofrak_patch_maker.model import (
 )
 from ofrak_patch_maker.toolchain.abstract import Toolchain
 from ofrak_patch_maker.toolchain.model import (
-    ToolchainConfig,
     Segment,
 )
-from ofrak_patch_maker.toolchain.version import ToolchainVersion
 from ofrak_type.memory_permissions import MemoryPermissions
 
 
 class PatchMaker:
     def __init__(
         self,
-        program_attributes: ProgramAttributes,
-        toolchain_config: ToolchainConfig,
-        toolchain_version: ToolchainVersion,
+        toolchain: Toolchain,
         platform_includes: Optional[Iterable[str]] = None,
         base_symbols: Mapping[str, int] = None,
         build_dir: str = ".",
@@ -95,9 +85,7 @@ class PatchMaker:
         We should not raise exceptions in protected APIs. Protected programming interfaces should
         not be used external to this class. Use outside of the class at your own risk.
 
-        :param program_attributes: information about ISA/hardware
-        :param toolchain_config: information that will be translated to various flags
-        :param toolchain_version: used to derive the toolchain we'll be using
+        :param toolchain: a Toolchain instance with compile, link, assemble, etc. methods
         :param platform_includes: Additional include directories
         :param base_symbols: maps symbol name to effective address for patches
         :param build_dir: output directory for build artifacts
@@ -105,9 +93,7 @@ class PatchMaker:
         """
         self._platform_includes = platform_includes
         self.build_dir = build_dir
-        self._toolchain = self._get_toolchain(
-            program_attributes, toolchain_config, toolchain_version, logger=logger
-        )
+        self._toolchain = toolchain
 
         # String to file path of symbols.inc. This will be a build artifact.
         self._base_symbols: Dict[str, int] = {}
@@ -123,26 +109,6 @@ class PatchMaker:
 
         self.logger = logger
 
-    @staticmethod
-    def _get_toolchain(
-        program_attributes: ProgramAttributes,
-        toolchain_config: ToolchainConfig,
-        toolchain_version: ToolchainVersion,
-        logger: Union[logging.Logger, ModuleType] = logging,
-    ) -> Toolchain:
-        """
-        :param program_attributes: information about ISA/hardware
-        :param toolchain_config: information that will be translated to various flags
-        :param toolchain_version: used to derive the toolchain we'll be using
-        :param logger:
-
-        :return: A Toolchain matching the given arguments
-        """
-        toolchain_cls = toolchain_version.value
-        return toolchain_cls(
-            processor=program_attributes, toolchain_config=toolchain_config, logger=logger
-        )
-
     def _extract_symbols(self, path: str) -> Dict[str, int]:
         """
         :param path: path to a program or library binary with symbols
@@ -150,10 +116,6 @@ class PatchMaker:
         :return: mapping symbol name to effective address
         """
         return self._toolchain.get_bin_file_symbols(path)
-
-    @staticmethod
-    def _is_executable_file(path: str) -> bool:
-        return os.access(path, os.X_OK)
 
     def _prepare_executable(self, executable_path: str) -> LinkedExecutable:
         """
@@ -183,14 +145,24 @@ class PatchMaker:
 
         segments = self._toolchain.get_bin_file_segments(object_path)
         symbols = self._toolchain.get_bin_file_symbols(object_path)
+        bss_size_required = 0
         segment_map = {}
         for s in segments:
-            segment_map[s.segment_name] = s
+            if self._toolchain.keep_section(s.segment_name):
+                segment_map[s.segment_name] = s
+            if s.segment_name.startswith(".bss"):
+                if s.length > 0 and self._toolchain._config.no_bss_section:
+                    raise PatchMakerException(
+                        f"{s.segment_name} found but `no_bss_section` is set in the provided ToolchainConfig!"
+                    )
+                bss_size_required += s.length
+
         return AssembledObject(
             object_path,
             self._toolchain.file_format,
             immutabledict(segment_map),
             immutabledict(symbols),
+            bss_size_required,
         )
 
     @staticmethod
@@ -285,17 +257,7 @@ class PatchMaker:
         bss_size_required = 0
         symbols: Dict[str, int] = {}
         for o in object_map.values():
-            for segment_name in o.segment_map.keys():
-                if not segment_name.startswith(".bss"):
-                    continue
-                bss_segment = o.segment_map[segment_name]
-                if bss_segment.length == 0:
-                    continue
-                if self._toolchain._config.no_bss_section:
-                    raise PatchMakerException(
-                        f"{segment_name} found but `no_bss_section` is set in the provided ToolchainConfig!"
-                    )
-                bss_size_required += bss_segment.length
+            bss_size_required += o.bss_size_required
             symbols.update(o.symbols)
 
         if entry_point_name and entry_point_name not in symbols:
@@ -306,6 +268,7 @@ class PatchMaker:
             immutabledict(object_map),
             bss_size_required,
             entry_point_name,
+            self._toolchain.segment_alignment,
         )
 
     def create_unsafe_bss_segment(self, vm_address: int, size: int) -> Segment:
@@ -328,7 +291,7 @@ class PatchMaker:
             length=size,
             access_perms=MemoryPermissions.RW,
         )
-        align = self._toolchain.get_required_alignment(segment)
+        align = self._toolchain.segment_alignment
         if vm_address % align != 0:
             raise PatchMakerException(
                 f"Provided address {hex(vm_address)} not aligned to required alignment: {hex(align)}"
@@ -482,74 +445,15 @@ class PatchMaker:
 
         return FEM(name, linked_executable)
 
-    async def _get_space(
+    # This deprecated method is no longer part of PatchMaker public API.
+    async def allocate_bom(  # pragma: no cover
         self,
-        allocatable: Allocatable,
-        perms: MemoryPermissions,
-        required_size: int,
-        alignment: int = 1,
-    ) -> Tuple[int, int]:
-        allocs = await allocatable.allocate(
-            perms,
-            required_size,
-            min_fragment_size=required_size,
-            alignment=alignment,
-        )
-        allocation = next(iter(allocs))
-        return allocation.start, allocation.length()
-
-    async def allocate_bom(
-        self,
-        allocatable: Allocatable,
+        allocatable,
         bom: BOM,
     ) -> PatchRegionConfig:
-        """
-        Responsible for allocating the patches if free memory is required and
-        providing details about where space was made.
-
-        Future, hopeful improvements include removing the `free_space_service` parameter once that
-        functionality can be leveraged through
-        [Resource][ofrak.resource.Resource].
-
-        :param Allocatable allocatable:
-        :param bom:
-
-        :raises PatchMakerException: if the data service for `fw_resource` is in a bad state
-        :return: information required to generate the linker directive script
-        """
-        segments_to_allocate: List[Tuple[AssembledObject, Segment]] = []
-        for obj in bom.object_map.values():
-            for segment in obj.segment_map.values():
-                if not self._toolchain.keep_section(segment.segment_name):
-                    continue
-                segments_to_allocate.append((obj, segment))
-
-        # Allocate largest segments first
-        segments_to_allocate.sort(key=lambda o_s: o_s[1].length, reverse=True)
-        segments_by_object: Dict[str, List[Segment]] = defaultdict(list)
-        for obj, segment in segments_to_allocate:
-            vaddr, final_size = 0, 0
-            if segment.length > 0:
-                vaddr, final_size = await self._get_space(
-                    allocatable,
-                    segment.access_perms,
-                    segment.length,
-                    alignment=self._toolchain.get_required_alignment(segment),
-                )
-
-            segments_by_object[obj.path].append(
-                Segment(
-                    segment_name=segment.segment_name,
-                    vm_address=vaddr,
-                    offset=segment.offset,
-                    is_entry=segment.is_entry,
-                    length=final_size,
-                    access_perms=segment.access_perms,
-                )
-            )
-
-        all_segments: Dict[str, Tuple[Segment, ...]] = {
-            object_path: tuple(segments) for object_path, segments in segments_by_object.items()
-        }
-
-        return PatchRegionConfig(bom.name + "_patch", immutabledict(all_segments))
+        warn(
+            "PatchMaker.allocate_bom(allocatable, bom) is deprecated! Use "
+            "allocatable.allocate_bom(bom) instead.",
+            category=DeprecationWarning,
+        )
+        return await allocatable.allocate_bom(bom)

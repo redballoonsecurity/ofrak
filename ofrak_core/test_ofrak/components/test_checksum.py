@@ -1,5 +1,6 @@
 import os
 
+import psutil
 import pytest
 from dataclasses import dataclass
 
@@ -80,6 +81,8 @@ async def test_sha256(ofrak_context: OFRAKContext, test_file):
 
 @pytest.mark.parametrize("test_file", MD5_TEST_CASES, ids=lambda tc: tc.filename)
 async def test_md5(ofrak_context: OFRAKContext, test_file):
+    p = psutil.Process()
+    [print(f.path) for f in p.open_files()]
     filepath = os.path.join(ASSETS_DIR, test_file.filename)
     resource = await ofrak_context.create_root_resource_from_file(filepath)
     await resource.analyze_recursively()

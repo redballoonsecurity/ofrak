@@ -7,7 +7,10 @@ import time
 from dataclasses import dataclass
 from typing import Optional, List
 
+from ofrak import ResourceFilter
+from ofrak.core import CodeRegion
 from ofrak.component.analyzer import Analyzer
+from ofrak.component.modifier import Modifier
 from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource, ResourceFactory
 from ofrak.service.data_service_i import DataServiceInterface
@@ -22,9 +25,11 @@ from ofrak_ghidra.constants import (
     GHIDRA_SERVER_HOST,
     GHIDRA_SERVER_PORT,
     GHIDRA_LOG_FILE,
+    CORE_OFRAK_GHIDRA_SCRIPTS,
 )
 from ofrak_ghidra.ghidra_model import (
     GhidraProject,
+    OfrakGhidraScript,
     OfrakGhidraMixin,
     GhidraComponentException,
 )
@@ -220,6 +225,50 @@ class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProjec
 
         for ghidra_script in self._scripts:
             args.append(ghidra_script)
-            args.append(ghidra_script.split(".")[0].lower())
 
         return args
+
+
+class GhidraCodeRegionModifier(Modifier, OfrakGhidraMixin):
+    id = b"GhidraCodeRegionModifier"
+    targets = (CodeRegion,)
+
+    get_code_regions_script = OfrakGhidraScript(
+        os.path.join(CORE_OFRAK_GHIDRA_SCRIPTS, "GetCodeRegions.java"),
+    )
+
+    async def modify(self, resource: Resource, config=None):
+        code_region = await resource.view_as(CodeRegion)
+        ghidra_project = await OfrakGhidraMixin.get_ghidra_project(resource)
+
+        ofrak_code_regions = await ghidra_project.resource.get_descendants_as_view(
+            v_type=CodeRegion, r_filter=ResourceFilter(tags=[CodeRegion])
+        )
+
+        backend_code_regions_json = await self.get_code_regions_script.call_script(resource)
+        backend_code_regions = []
+
+        for cr_j in backend_code_regions_json:
+            cr = CodeRegion(cr_j["start"], cr_j["size"])
+            backend_code_regions.append(cr)
+
+        ofrak_code_regions = sorted(ofrak_code_regions, key=lambda cr: cr.virtual_address)
+        backend_code_regions = sorted(backend_code_regions, key=lambda cr: cr.virtual_address)
+
+        if len(ofrak_code_regions) > 0:
+            relative_va = code_region.virtual_address - ofrak_code_regions[0].virtual_address
+
+            for backend_cr in backend_code_regions:
+                backend_relative_va = (
+                    backend_cr.virtual_address - backend_code_regions[0].virtual_address
+                )
+
+                if backend_relative_va == relative_va and backend_cr.size == code_region.size:
+                    resource.add_view(backend_cr)
+                    return
+
+            LOGGER.debug(
+                f"No code region with relative offset {relative_va} and size {code_region.size} found in Ghidra"
+            )
+        else:
+            LOGGER.debug("No OFRAK code regions to match in Ghidra")

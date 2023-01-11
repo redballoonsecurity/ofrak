@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
-
 from ofrak_type.memory_permissions import MemoryPermissions
 
 
