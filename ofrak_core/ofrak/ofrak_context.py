@@ -9,7 +9,7 @@ from synthol.injector import DependencyInjector
 
 from ofrak.component.interface import ComponentInterface
 from ofrak.core.binary import GenericBinary
-from ofrak.core.filesystem import File
+from ofrak.core.filesystem import File, FilesystemRoot
 from ofrak.model.component_model import ClientComponentContext
 from ofrak.model.resource_model import ResourceModel, ClientResourceContextFactory
 from ofrak.model.tag_model import ResourceTag
@@ -71,9 +71,18 @@ class OFRAKContext:
     async def create_root_resource_from_file(self, file_path: str) -> Resource:
         full_file_path = os.path.abspath(file_path)
         with open(full_file_path, "rb") as f:
-            return await self.create_root_resource(
+            root_resource = await self.create_root_resource(
                 os.path.basename(full_file_path), f.read(), (File,)
             )
+        root_resource.add_view(
+            File(
+                os.path.basename(full_file_path),
+                os.lstat(full_file_path),
+                FilesystemRoot._get_xattr_map(full_file_path),
+            )
+        )
+        await root_resource.save()
+        return root_resource
 
     async def start_context(self):
         await asyncio.gather(*(service.run() for service in self._all_ofrak_services))
@@ -84,9 +93,11 @@ class OFRAKContext:
 
 
 class OFRAK:
+    DEFAULT_LOG_LEVEL = logging.WARNING
+
     def __init__(
         self,
-        logging_level: int = logging.WARNING,
+        logging_level: int = DEFAULT_LOG_LEVEL,
         exclude_components_missing_dependencies: bool = False,
     ):
         """
