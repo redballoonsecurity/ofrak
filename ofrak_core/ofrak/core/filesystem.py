@@ -593,7 +593,6 @@ class FilesystemRoot(ResourceView):
             additional_tags=tags,
             additional_attributes=attributes,
         )
-        await parent_folder.resource.save()
         return new_file
 
     async def remove_file(self, path: str) -> None:

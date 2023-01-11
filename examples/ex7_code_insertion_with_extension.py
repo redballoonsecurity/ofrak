@@ -39,6 +39,8 @@ import logging
 import os
 import tempfile
 
+from ofrak_patch_maker.toolchain.llvm_12 import LLVM_12_0_1_Toolchain
+
 import ofrak_ghidra
 from ofrak import OFRAK, OFRAKContext, Resource, ResourceFilter, ResourceAttributeValueFilter
 from ofrak.core import (
@@ -61,7 +63,6 @@ from ofrak_patch_maker.toolchain.model import (
     Segment,
 )
 from ofrak_patch_maker.toolchain.utils import get_file_format
-from ofrak_patch_maker.toolchain.version import ToolchainVersion
 from ofrak_type.bit_width import BitWidth
 from ofrak_type.endianness import Endianness
 from ofrak_type.memory_permissions import MemoryPermissions
@@ -144,10 +145,9 @@ async def patch_uppercase(resource: Resource, source_dir: str, new_segment: ElfP
     logger = logging.getLogger("ToolchainTest")
     logger.setLevel("INFO")
     build_dir = tempfile.mkdtemp()
+    toolchain = LLVM_12_0_1_Toolchain(proc, tc_config)
     patch_maker = PatchMaker(
-        program_attributes=proc,
-        toolchain_config=tc_config,
-        toolchain_version=ToolchainVersion.LLVM_12_0_1,
+        toolchain=toolchain,
         logger=logger,
         build_dir=build_dir,
         base_symbols={"_puts": puts_cb.virtual_address - GHIDRA_PIE_OFFSET},

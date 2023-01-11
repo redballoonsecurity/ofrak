@@ -47,7 +47,7 @@ If you wish to make changes to the documentation or serve it yourself, follow th
 
 The code in this repository comes with an [OFRAK Community License](LICENSE), which is intended for educational uses, personal development, or just having fun.
 
-Users interested in OFRAK for commercial purposes can request the Pro License, which for a limited period is available for a free 6-month trial. See [OFRAK Licensing](https://ofrak.com/license/) for more information.
+Users interested in OFRAK for commercial purposes can request the Pro or Enterprise License. See [OFRAK Licensing](https://ofrak.com/license/) for more information.
 
 ## Contributing
 
