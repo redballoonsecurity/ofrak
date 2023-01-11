@@ -9,6 +9,7 @@ from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import index, ResourceAttributes
+from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource, ResourceFactory
 from ofrak.service.assembler.assembler_service_i import AssemblerServiceInterface
 from ofrak.service.data_service_i import DataServiceInterface
@@ -42,7 +43,7 @@ class Instruction(MemoryRegion):
     @classmethod
     def caption(cls, all_attributes) -> str:
         try:
-            instruction_attributes = all_attributes[Instruction.attributes_type]
+            instruction_attributes = all_attributes[AttributesType[Instruction]]
         except KeyError:
             return super().caption(all_attributes)
         return f"{instruction_attributes.mnemonic} {instruction_attributes.operands}"
@@ -176,7 +177,7 @@ class InstructionModifier(Modifier[InstructionModifierConfig]):
             len(asm) == resource_memory_region.size
         ), "The modified instruction length does not match the original instruction length"
 
-        new_attributes = Instruction.attributes_type(  # type: ignore
+        new_attributes = AttributesType[Instruction](  # type: ignore
             disassembly=modified_assembly,
             mnemonic=config.mnemonic,
             operands=config.operands,

@@ -15,6 +15,7 @@ from ofrak.core import (
     Instruction,
 )
 from ofrak.model.resource_model import index
+from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.service.resource_service import ResourceService
 from ofrak.service.resource_service_i import ResourceServiceInterface
 
@@ -110,13 +111,13 @@ def tree3_resource_models() -> List[ResourceModel]:
             R_ID_3_1,
             parent_id=R_ID_3_ROOT,
             tags=(CodeRegion,),
-            attributes=(TestIndexAttributes(3), MemoryRegion.attributes_type(1024)),
+            attributes=(TestIndexAttributes(3), AttributesType[MemoryRegion](1024)),
         ),
         ResourceModel.create(
             R_ID_3_1_1,
             parent_id=R_ID_3_1,
             tags=(ComplexBlock,),
-            attributes=(TestIndexAttributes(4), MemoryRegion.attributes_type(64)),
+            attributes=(TestIndexAttributes(4), AttributesType[MemoryRegion](64)),
         ),
         ResourceModel.create(
             R_ID_3_1_1_1,
@@ -124,7 +125,7 @@ def tree3_resource_models() -> List[ResourceModel]:
             tags=(BasicBlock,),
             attributes=(
                 TestIndexAttributes(2),
-                MemoryRegion.attributes_type(16),
+                AttributesType[MemoryRegion](16),
                 TestNestedIndexAttributes(4),
             ),
         ),
@@ -134,7 +135,7 @@ def tree3_resource_models() -> List[ResourceModel]:
             tags=(Instruction,),
             attributes=(
                 TestIndexAttributes(1),
-                MemoryRegion.attributes_type(4),
+                AttributesType[MemoryRegion](4),
                 TestNestedIndexAttributes(6),
             ),
         ),
@@ -154,7 +155,7 @@ def tree3_resource_models() -> List[ResourceModel]:
             tags=(ComplexBlock,),
             attributes=(
                 TestIndexAttributes(4),
-                MemoryRegion.attributes_type(32),
+                AttributesType[MemoryRegion](32),
                 TestNestedIndexAttributes(4),
             ),
         ),
@@ -164,7 +165,7 @@ def tree3_resource_models() -> List[ResourceModel]:
             tags=(ComplexBlock,),
             attributes=(
                 TestIndexAttributes(9),
-                MemoryRegion.attributes_type(64),
+                AttributesType[MemoryRegion](64),
                 TestNestedIndexAttributes(-4),
             ),
         ),
