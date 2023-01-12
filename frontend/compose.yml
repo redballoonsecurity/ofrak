@@ -22,6 +22,25 @@ services:
       replicas: 1
       restart_policy:
         condition: any
+    volumes:
+      - ../../amp_demos:/amp_demos
+      - ../../amp_integrations:/amp_integrations
+      - ../../ofrak_aiohttp:/ofrak_aiohttp
+      - ../../rbs_amp:/rbs_amp
+      - ../../rbs_ofrak_components_autotomy:/rbs_ofrak_components_autotomy
+      - ../../rbs_ofrak_components_ida:/rbs_ofrak_components_ida
+      - ../../rbs_ofrak_internal:/rbs_ofrak_internal
+      - ../../rbs_ofrak_components_relocation:/rbs_ofrak_components_relocation
+      - ../../ofrak/disassemblers/ofrak_binary_ninja:/ofrak_binary_ninja
+      - ../../ofrak/disassemblers/ofrak_ghidra:/ofrak_ghidra
+      - ../../ofrak/disassemblers/ofrak_angr:/ofrak_angr
+      - ../../ofrak/disassemblers/ofrak_capstone:/ofrak_capstone
+      - ../../ofrak/ofrak_components:/ofrak_components
+      - ../../ofrak/ofrak_core:/ofrak_core
+      - ../../ofrak/ofrak_io:/ofrak_io
+      - ../../ofrak/ofrak_patch_maker:/ofrak_patch_maker
+      - ../../ofrak/ofrak_tutorial:/ofrak_tutorial
+      - ../../ofrak/ofrak_type:/ofrak_type
     networks:
       - ofrak_swarm
   app:
