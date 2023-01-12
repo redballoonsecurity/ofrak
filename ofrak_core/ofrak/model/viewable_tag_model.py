@@ -27,7 +27,7 @@ class AttributesType(ResourceAttributes, Generic[RVI]):
     A Generic type for `ViewableResourceTag` to get the auto-generated `ResourceAttributes`
     class associated with that view type. The returned class is a `dataclass` which encapsulates
     the fields defined in one specific `ViewableResourceTag`.
-    
+
     For example if `B` inherits from `A` and `A` defines one or more new fields,
     `AttributesType[B]` has only fields defined in `B`, and none of the fields defined in `A`.
     """
