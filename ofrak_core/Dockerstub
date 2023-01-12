@@ -10,6 +10,7 @@ RUN apt-get -y update && \
       liblzo2-dev \
       libzstd-dev \
       lzop \
+      mtd-utils \
       pigz \
       p7zip-full \
       zip \

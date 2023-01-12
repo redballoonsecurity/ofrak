@@ -54,6 +54,7 @@ setuptools.setup(
         "sortedcontainers==2.2.2",
         "synthol~=0.1.1",
         "typeguard~=2.13.3",
+        "ubi-reader==0.8.5",
         "xattr==0.9.7",
     ],
     extras_require={
