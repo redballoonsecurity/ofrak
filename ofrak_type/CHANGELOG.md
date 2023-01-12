@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Added
 - `ProcessorType.CORTEX_A55`
 
+### Changed
+- Updated README info about OFRAK licensing
+
 ## [2.0.0](https://github.com/redballoonsecurity/ofrak/releases/tag/ofrak-type-v2.0.0) - 2023-01-03
 ### Added
 - Add `ArchInfo` to describe an architecture.
