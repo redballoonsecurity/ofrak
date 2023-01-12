@@ -152,13 +152,13 @@ class AiohttpOFRAKServer:
 
         self._job_ids: Dict[str, bytes] = dict()
 
-    def run(self):
+    def run(self):  # pragma: no cover
         """
         Start and run the server until shutdown is requested via e.g. SIGINT.
         """
         web.run_app(self._app, host=self._host, port=self._port)
 
-    async def start(self):
+    async def start(self):  # pragma: no cover
         """
         Start the server then return.
         """

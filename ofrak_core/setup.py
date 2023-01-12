@@ -79,6 +79,7 @@ setuptools.setup(
             "mypy==0.942",
             "psutil~=5.9",
             "pyelftools==0.29",
+            "pytest-aiohttp",
             "pytest-asyncio==0.19.0",
             "pytest-lazy-fixture",
             "pytest-cov",
