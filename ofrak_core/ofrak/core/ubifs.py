@@ -27,17 +27,19 @@ MKFS_UBIFS_TOOL = ComponentExternalTool(
     "http://www.linux-mtd.infradead.org/faq/ubifs.html",
     install_check_arg="--help",
     apt_package="mtd-utils",
-    brew_package="", # This isn't compatible with macos, but there may be an alternative tool to do the bidding.
+    brew_package="",  # This isn't compatible with macos, but there may be an alternative tool to do the bidding.
 )
+
 
 @dataclass
 class SuperblockNode:
     max_leb_count: int
-    default_compr: str # PRINT_UBIFS_COMPR
+    default_compr: str  # PRINT_UBIFS_COMPR
     fanout: int
-    key_hash: str # PRINT_UBIFS_KEY_HASH
+    key_hash: str  # PRINT_UBIFS_KEY_HASH
     orph_lebs: int
     log_lebs: int
+
 
 @dataclass
 class Ubifs(GenericBinary, FilesystemRoot):
@@ -46,6 +48,7 @@ class Ubifs(GenericBinary, FilesystemRoot):
     Minimum number of bytes per transaction (see http://www.linux-mtd.infradead.org/doc/ubi.html#L_min_io_unit)
     Size of logical erase blocks and superblock parameters required for repacking.
     """
+
     min_io_size: int
     leb_size: int
     superblock: SuperblockNode
@@ -55,6 +58,7 @@ class UbifsAnalyzer(Analyzer[None, Ubifs]):
     """
     Extract UBIFS parameters required for packing a resource.
     """
+
     targets = (Ubifs,)
     outputs = (Ubifs,)
 
@@ -64,8 +68,14 @@ class UbifsAnalyzer(Analyzer[None, Ubifs]):
             temp_file.write(resource_data)
             temp_file.flush()
 
-            ubifs_obj = ubireader_ubifs(ubi_io.ubi_file(temp_file.name, block_size=guess_leb_size(temp_file.name),
-                                              start_offset=0, end_offset=None))
+            ubifs_obj = ubireader_ubifs(
+                ubi_io.ubi_file(
+                    temp_file.name,
+                    block_size=guess_leb_size(temp_file.name),
+                    start_offset=0,
+                    end_offset=None,
+                )
+            )
             return Ubifs(
                 ubifs_obj._get_min_io_size(),
                 ubifs_obj._get_leb_size(),
@@ -76,7 +86,7 @@ class UbifsAnalyzer(Analyzer[None, Ubifs]):
                     PRINT_UBIFS_KEY_HASH[ubifs_obj.superblock_node.key_hash],
                     ubifs_obj.superblock_node.orph_lebs,
                     ubifs_obj.superblock_node.log_lebs,
-                )
+                ),
             )
 
 
@@ -84,6 +94,7 @@ class UbifsUnpacker(Unpacker[None]):
     """
     Extract the UBIFS image into a directory and import the extraction as a Filesystem entries in the Ubifs resource.
     """
+
     targets = (Ubifs,)
     children = (File, Folder, SpecialFileType)
     external_dependencies = ()
@@ -107,6 +118,7 @@ class UbifsUnpacker(Unpacker[None]):
                 ubifs_view = await resource.view_as(Ubifs)
                 await ubifs_view.initialize_from_disk(temp_flush_dir)
 
+
 class UbifsPacker(Packer[None]):
     """
     Generate an UBIFS image from an Ubifs resource view.
@@ -122,17 +134,26 @@ class UbifsPacker(Packer[None]):
         with tempfile.NamedTemporaryFile(mode="rb") as temp:
             command = [
                 "mkfs.ubifs",
-                "-m", f"{ubifs_view.min_io_size}",
-                "-e", f"{ubifs_view.leb_size}",
-                "-c", f"{ubifs_view.superblock.max_leb_count}",
-                "-x", f"{ubifs_view.superblock.default_compr}",
-                "-f", f"{ubifs_view.superblock.fanout}",
-                "-k", f"{ubifs_view.superblock.key_hash}",
-                "-p", f"{ubifs_view.superblock.orph_lebs}",
-                "-l", f"{ubifs_view.superblock.log_lebs}",
+                "-m",
+                f"{ubifs_view.min_io_size}",
+                "-e",
+                f"{ubifs_view.leb_size}",
+                "-c",
+                f"{ubifs_view.superblock.max_leb_count}",
+                "-x",
+                f"{ubifs_view.superblock.default_compr}",
+                "-f",
+                f"{ubifs_view.superblock.fanout}",
+                "-k",
+                f"{ubifs_view.superblock.key_hash}",
+                "-p",
+                f"{ubifs_view.superblock.orph_lebs}",
+                "-l",
+                f"{ubifs_view.superblock.log_lebs}",
                 "-F",
-                "-r", flush_dir,
-                temp.name
+                "-r",
+                flush_dir,
+                temp.name,
             ]
             subprocess.run(command, check=True, capture_output=True)
             new_data = temp.read()
@@ -144,12 +165,12 @@ class UbifsIdentifier(Identifier):
     """
     Check the first four bytes of a resource and tag the resource as Ubifs if it matches the file magic.
     """
+
     targets = (File, GenericBinary)
 
     async def identify(self, resource: Resource, config=None) -> None:
         datalength = await resource.get_data_length()
         if datalength >= 4:
-            data = await resource.get_data(Range(0,4))
+            data = await resource.get_data(Range(0, 4))
             if data == UBIFS_NODE_MAGIC:
                 resource.add_tag(Ubifs)
-

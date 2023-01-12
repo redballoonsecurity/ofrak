@@ -1,12 +1,11 @@
 import subprocess
 import tempfile
 
-import test_ofrak.components
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
-from ofrak.core.ubifs import Ubifs, UbifsUnpacker
 from pytest_ofrak.patterns.pack_unpack_filesystem import FilesystemPackUnpackVerifyPattern
-#from pytest_ofrak.patterns.unpack_modify_pack import UnpackPackPattern
+
+# from pytest_ofrak.patterns.unpack_modify_pack import UnpackPackPattern
 
 
 class TestUbifsUnpackRepack(FilesystemPackUnpackVerifyPattern):
@@ -22,12 +21,15 @@ class TestUbifsUnpackRepack(FilesystemPackUnpackVerifyPattern):
         with tempfile.NamedTemporaryFile() as ubifs_blob:
             command = [
                 "mkfs.ubifs",
-                "-m", "512",
-                "-e", "128KiB",
-                "-c", "100",
+                "-m",
+                "512",
+                "-e",
+                "128KiB",
+                "-c",
+                "100",
                 "-r",
                 directory,
-                ubifs_blob.name
+                ubifs_blob.name,
             ]
             subprocess.run(command, check=True, capture_output=True)
             return await ofrak_context.create_root_resource_from_file(ubifs_blob.name)
@@ -49,12 +51,6 @@ class TestUbifsUnpackRepack(FilesystemPackUnpackVerifyPattern):
             ubifs_blob.write(data)
             ubifs_blob.flush()
 
-            command = [
-                "ubireader_extract_files",
-                "-k",
-                "-o",
-                extract_dir,
-                ubifs_blob.name
-                ]
+            command = ["ubireader_extract_files", "-k", "-o", extract_dir, ubifs_blob.name]
 
             subprocess.run(command, check=True, capture_output=True)
