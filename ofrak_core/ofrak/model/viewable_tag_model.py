@@ -27,6 +27,7 @@ class AttributesType(ResourceAttributes, Generic[RVI]):
     A Generic type for `ViewableResourceTag` to get the auto-generated `ResourceAttributes`
     class associated with that view type. The returned class is a `dataclass` which encapsulates
     the fields defined in one specific `ViewableResourceTag`.
+    
     For example if `B` inherits from `A` and `A` defines one or more new fields,
     `AttributesType[B]` has only fields defined in `B`, and none of the fields defined in `A`.
     """
@@ -41,8 +42,11 @@ class AttributesType(ResourceAttributes, Generic[RVI]):
         """
         Type stub that 'tricks' MyPy into not trying to typecheck attribute accesses of an
         `AttributesType` instance. This stub solves the following case:
+
+        ```
         x: AttributesType[X] = func()
         x.any_field  <--- Always is a type error because MyPy thinks AttributesType has no fields!
+        ```
 
         Without this stub, each instance of x.any_field would need to be marked with # type: ignore
         """
