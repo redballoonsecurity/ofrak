@@ -487,7 +487,7 @@ class UImageHeaderModifier(Modifier[UImageHeaderModifierConfig]):
 
     @staticmethod
     async def serialize(
-        updated_attributes: AttributesType[UImageHeader], ih_hcrc: int = 0  # type: ignore
+        updated_attributes: AttributesType[UImageHeader], ih_hcrc: int = 0
     ) -> bytes:
         """
         Serialize `updated_attributes` into bytes, using `ih_hcrc` for the eponymous field.
@@ -541,7 +541,7 @@ class UImageMultiHeaderModifier(Modifier[UImageMultiHeaderModifierConfig]):
 
     @staticmethod
     async def serialize(
-        updated_attributes: AttributesType[UImageMultiHeader],  # type: ignore
+        updated_attributes: AttributesType[UImageMultiHeader],
     ) -> bytes:
         """
         Serialize `updated_attributes` into bytes

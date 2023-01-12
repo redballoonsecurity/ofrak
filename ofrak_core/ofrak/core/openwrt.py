@@ -360,7 +360,7 @@ class OpenWrtTrxHeaderModifier(Modifier[OpenWrtTrxHeaderModifierConfig]):
 
     @staticmethod
     async def serialize(
-        updated_attributes: AttributesType[OpenWrtTrxHeader],  # type: ignore
+        updated_attributes: AttributesType[OpenWrtTrxHeader],
     ) -> bytes:
         """
         Serialize `updated_attributes` into bytes. This method doesn't perform any check or compute

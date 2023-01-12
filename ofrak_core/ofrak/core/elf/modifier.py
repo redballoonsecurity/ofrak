@@ -80,7 +80,7 @@ class ElfHeaderModifier(Modifier[ElfHeaderModifierConfig], AbstractElfAttributeM
 
     @classmethod
     def populate_serializer(
-        cls, serializer: BinarySerializer, attributes: AttributesType[ElfHeader]  # type: ignore
+        cls, serializer: BinarySerializer, attributes: AttributesType[ElfHeader]
     ):
         serializer.pack_multiple(
             "HHIQQQIHHHHHH",
@@ -171,7 +171,7 @@ class ElfSectionHeaderModifier(
     def populate_serializer(
         cls,
         serializer: BinarySerializer,
-        attributes: AttributesType[ElfSectionHeader],  # type: ignore
+        attributes: AttributesType[ElfSectionHeader],
     ):
         serializer.pack_multiple(
             "IIQQQQIIQQ",
@@ -213,7 +213,7 @@ class ElfSymbolModifier(AbstractElfAttributeModifier, Modifier[ElfSymbolModifier
 
     @classmethod
     def populate_serializer(
-        cls, serializer: BinarySerializer, attributes: AttributesType[ElfSymbol]  # type: ignore
+        cls, serializer: BinarySerializer, attributes: AttributesType[ElfSymbol]
     ):
         if serializer.get_word_size() == 8:
             serializer.pack_multiple(
@@ -267,7 +267,7 @@ class ElfRelaModifier(AbstractElfAttributeModifier, Modifier[ElfRelaModifierConf
 
     @classmethod
     def populate_serializer(
-        cls, serializer: BinarySerializer, attributes: AttributesType[ElfRelaEntry]  # type: ignore
+        cls, serializer: BinarySerializer, attributes: AttributesType[ElfRelaEntry]
     ):
         if serializer.get_word_size() == 8:
             serializer.pack_multiple(
@@ -320,7 +320,7 @@ class ElfDynamicEntryModifier(
     def populate_serializer(
         cls,
         serializer: BinarySerializer,
-        attributes: AttributesType[ElfDynamicEntry],  # type: ignore
+        attributes: AttributesType[ElfDynamicEntry],
     ):
         if serializer.get_word_size() == 8:
             serializer.pack_multiple(
@@ -369,7 +369,7 @@ class ElfVirtualAddressModifier(
     def populate_serializer(
         cls,
         serializer: BinarySerializer,
-        attributes: AttributesType[ElfVirtualAddress],  # type: ignore
+        attributes: AttributesType[ElfVirtualAddress],
     ):
         serializer.pack_ulong(attributes.value)
 

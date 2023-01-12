@@ -116,7 +116,7 @@ class ElfUnpacker(Unpacker[None]):
             e_section_header_r = await resource.create_child(
                 tags=(ElfSectionHeader,),
                 data_range=e_section_header_range,
-                attributes=(AttributesType[ElfSectionStructure](index),),  # type: ignore
+                attributes=(AttributesType[ElfSectionStructure](index),),
             )
             e_section_header = await e_section_header_r.view_as(ElfSectionHeader)
 
@@ -132,7 +132,7 @@ class ElfUnpacker(Unpacker[None]):
             e_section_r = await resource.create_child(
                 tags=(ElfSection,),
                 data_range=opt_e_section_range,
-                attributes=(AttributesType[ElfSectionStructure](index),),  # type: ignore
+                attributes=(AttributesType[ElfSectionStructure](index),),
             )
             sections_by_range_start[e_section_offset] = e_section_r
             if e_section_header.get_type() is ElfSectionType.FINI_ARRAY:
@@ -168,7 +168,7 @@ class ElfUnpacker(Unpacker[None]):
             e_program_header_r = await resource.create_child(
                 tags=(ElfProgramHeader,),
                 data_range=e_program_header_range,
-                attributes=(AttributesType[ElfSegmentStructure](index),),  # type: ignore
+                attributes=(AttributesType[ElfSegmentStructure](index),),
             )
 
             e_program_header = await e_program_header_r.view_as(ElfProgramHeader)
@@ -193,7 +193,7 @@ class ElfUnpacker(Unpacker[None]):
                 e_segment_r = await resource.create_child(
                     tags=(ElfSegment,),
                     data_range=opt_e_segment_range,
-                    attributes=(AttributesType[ElfSegmentStructure](index),),  # type: ignore
+                    attributes=(AttributesType[ElfSegmentStructure](index),),
                 )
 
                 # Tag the segment as a CodeRegion if the loaded segment is executable
