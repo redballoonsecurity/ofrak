@@ -32,7 +32,6 @@ class AngrCodeRegionUnpacker(CodeRegionUnpacker):
         angr_analysis = await root_resource.analyze(AngrAnalysis)
 
         ## Fixup the CodeRegion's virtual address after analyzing with angr.
-        # await resource.run(AngrCodeRegionModifier, AngrCodeRegionModifierConfig(angr_analysis))
         await resource.run(AngrCodeRegionModifier, None)
 
         cr_vaddr_range = cr_view.vaddr_range()
