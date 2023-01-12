@@ -6,7 +6,7 @@ from ofrak.core.magic import Magic
 from ofrak.resource import Resource
 
 
-class Identify(OfrakCommandRunsScript):
+class IdentifyCommand(OfrakCommandRunsScript):
     def create_parser(self, parser: argparse._SubParsersAction):
         subparser = parser.add_parser(
             "identify",
@@ -24,7 +24,7 @@ class Identify(OfrakCommandRunsScript):
         root_resource = await ofrak_context.create_root_resource_from_file(args.filename)
 
         await root_resource.identify()
-        print(await Identify.print_info(root_resource))
+        print(await IdentifyCommand.print_info(root_resource))
 
     @staticmethod
     async def print_info(resource: Resource) -> str:

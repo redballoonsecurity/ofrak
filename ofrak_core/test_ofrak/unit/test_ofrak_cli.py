@@ -8,11 +8,11 @@ from dataclasses import fields
 from ofrak.ofrak_context import OFRAKContext
 
 import test_ofrak.components
-from ofrak.cli.command.identify import Identify
-from ofrak.cli.command.unpack import Unpack
+from ofrak.cli.command.identify import IdentifyCommand
+from ofrak.cli.command.unpack import UnpackCommand
 
-from ofrak.cli.command.deps import DepsSubCommand
-from ofrak.cli.command.list import ListSubCommand
+from ofrak.cli.command.deps import DepsCommand
+from ofrak.cli.command.list import ListCommand
 from ofrak.cli.ofrak_cli import (
     OFRAKCommandLineInterface,
     OFRAKEnvironment,
@@ -48,7 +48,7 @@ class MockOFRAKEnvironment:
 
 @pytest.fixture
 def cli_commands():
-    return [ListSubCommand(), DepsSubCommand(), Identify(), Unpack()]
+    return [ListCommand(), DepsCommand(), IdentifyCommand(), UnpackCommand()]
 
 
 @pytest.fixture
@@ -251,6 +251,14 @@ def test_unpack(ofrak_cli_parser, capsys, filename, tmpdir, ofrak_context, all_e
     expected_hashes = all_expected_hashes[filename]
 
     assert unpacked_hashes == expected_hashes
+
+    info_dump_file = os.path.join(tmpdir, "__ofrak_info__")
+    with open(info_dump_file) as f:
+        info_dump = f.read()
+
+    assert len(info_dump) > 1
+    # Some unicode characters which will be malformed if the re-encoding is messed up
+    assert any(["┌" in info_dump, "┬" in info_dump, "─" in info_dump])
 
 
 def test_ofrak_help(cli_commands):

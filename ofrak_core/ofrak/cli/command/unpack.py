@@ -8,12 +8,11 @@ from pathlib import Path
 import time
 import sys
 
-from ofrak.cli.command.identify import Identify
 from ofrak.cli.ofrak_cli import OfrakCommandRunsScript
 from ofrak.core import FilesystemEntry
 
 
-class Unpack(OfrakCommandRunsScript):
+class UnpackCommand(OfrakCommandRunsScript):
     def create_parser(self, parser: argparse._SubParsersAction):
         subparser = parser.add_parser(
             "unpack",
@@ -71,17 +70,21 @@ class Unpack(OfrakCommandRunsScript):
             await self._get_filesystem_name(root_resource),
         )
         info_dump_path = os.path.join(extraction_dir, "__ofrak_info__")
-        info_dump = await self.resource_tree_to_files(root_resource, root_resource_path)
+        await self.resource_tree_to_files(root_resource, root_resource_path)
+        info_dump = await root_resource.summarize_tree()
+        # Some characters in filename bytestrings are no valid unicode, can't be printed, must be replaced
+        # https://stackoverflow.com/questions/27366479/python-3-os-walk-file-paths-unicodeencodeerror-utf-8-codec-cant-encode-s
+        info_dump = info_dump.encode("utf-8", "replace").decode(
+            "utf-8",
+        )
 
-        with open(info_dump_path, "wb") as f:
-            f.write(info_dump.encode("utf-8", "surrogateescape"))
+        with open(info_dump_path, "w") as f:
+            f.write(info_dump)
 
         if args.print_info:
             print(info_dump)
 
-    async def resource_tree_to_files(self, resource: Resource, path) -> str:
-        info_dump = path + "\n" + await Identify.print_info(resource)
-
+    async def resource_tree_to_files(self, resource: Resource, path):
         name_counters: Dict[str, int] = dict()
         children_dir = path + ".ofrak_children"
         for child_resource in await resource.get_children():
@@ -96,18 +99,15 @@ class Unpack(OfrakCommandRunsScript):
                 os.mkdir(children_dir)
 
             child_path = os.path.join(children_dir, filename)
-            child_info_dump = await self.resource_tree_to_files(child_resource, child_path)
-            info_dump = info_dump + "\n\n" + child_info_dump
+            await self.resource_tree_to_files(child_resource, child_path)
 
         if resource.get_data_id() is None:
-            return info_dump
+            return
         data = await resource.get_data()
         if len(data) == 0:
-            return info_dump
+            return
         with open(path, "wb") as f:
             f.write(data)
-
-        return info_dump
 
     async def _get_filesystem_name(self, resource: Resource) -> str:
         if resource.has_tag(FilesystemEntry):
