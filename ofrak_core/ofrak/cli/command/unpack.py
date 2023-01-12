@@ -1,4 +1,5 @@
 import os.path
+from typing import Optional
 
 from ofrak import OFRAKContext, Resource
 
@@ -134,6 +135,9 @@ class UnpackCommand(OfrakCommandRunsScript):
             name_suffixes[resource.get_id()] = suffix
             return filename + suffix
 
+    def get_path(self, resource: Resource) -> Optional[str]:
+        return self._resource_paths.get(resource.get_id())
+
 
 async def _custom_summarize_resource(resource: Resource, unpack_cmd: UnpackCommand) -> str:
     attributes_info = ", ".join(attrs_type.__name__ for attrs_type in resource._resource.attributes)
@@ -146,8 +150,9 @@ async def _custom_summarize_resource(resource: Resource, unpack_cmd: UnpackComma
     else:
         data_info = ", no data"
 
-    if resource.get_id() in unpack_cmd._resource_paths:
-        path_info = f", path={unpack_cmd._resource_paths[resource.get_id()]}"
+    path = unpack_cmd.get_path(resource)
+    if path is None:
+        path_info = ", (no path)"
     else:
-        path_info = ", (not written)"
+        path_info = f", path={unpack_cmd.get_path(resource)}"
     return f"{name}: [attributes=({attributes_info}){data_info}{path_info}]"
