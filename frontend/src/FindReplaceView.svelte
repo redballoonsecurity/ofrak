@@ -60,42 +60,6 @@
     box-shadow: inset 0 -1px 0 var(--main-fg-color);
   }
 
-  /* Adapted from: https://moderncss.dev/pure-css-custom-checkbox-style/ */
-  input[type="checkbox"] {
-    flex-grow: 0;
-    margin-left: 1ch;
-    /*
-    appearance: none;
-    background-color: var(--main-bg-color);
-    margin: 0;
-    color: currentColor;
-    width: 1em;
-    height: 1em;
-    border: 1px solid currentColor;
-    display: grid;
-    place-content: center;
-    */
-  }
-
-  /*
-  input[type="checkbox"]:focus {
-    box-shadow: none;
-  }
-
-  input[type="checkbox"]::before {
-    content: "";
-    width: 0.45em;
-    height: 0.45em;
-    transform: scale(0);
-    transition: 120ms transform ease-in-out;
-    box-shadow: inset 1em 1em var(--main-fg-color);
-  }
-
-  input[type="checkbox"]:checked::before {
-    transform: scale(1);
-  }
-  */
-
   label {
     margin-bottom: 1em;
     display: flex;
@@ -123,6 +87,7 @@
 </style>
 
 <script>
+  import Checkbox from "./Checkbox.svelte";
   import { selected, selectedResource } from "./stores.js";
 
   export let modifierView;
@@ -177,14 +142,12 @@
       <input type="text" bind:value="{toReplace}" />
     </label>
     <div class="row">
-      <label>
+      <Checkbox bind:checked="{nullTerminated}">
         Null terminate replacement string
-        <input type="checkbox" bind:checked="{nullTerminated}" />
-      </label>
-      <label>
+      </Checkbox>
+      <Checkbox bind:checked="{allowOverflow}">
         Allow overflowing replaced string
-        <input type="checkbox" bind:checked="{allowOverflow}" />
-      </label>
+      </Checkbox>
     </div>
     {#if errorMessage}
       <p class="error">
