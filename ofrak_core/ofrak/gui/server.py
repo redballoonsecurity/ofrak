@@ -16,7 +16,6 @@ from typing import (
     Type,
     Callable,
     TypeVar,
-    List,
 )
 
 from aiohttp import web, ClientResponse
@@ -152,12 +151,6 @@ class AiohttpOFRAKServer:
 
         self._job_ids: Dict[str, bytes] = dict()
 
-    def run(self):  # pragma: no cover
-        """
-        Start and run the server until shutdown is requested via e.g. SIGINT.
-        """
-        web.run_app(self._app, host=self._host, port=self._port)
-
     async def start(self):  # pragma: no cover
         """
         Start the server then return.
@@ -167,7 +160,7 @@ class AiohttpOFRAKServer:
         server = web.TCPSite(self.runner, host=self._host, port=self._port)
         await server.start()
 
-    async def run_until_cancelled(self):
+    async def run_until_cancelled(self):  # pragma: no cover
         """
         To be run after `start_server`, within an asyncio Task.
         cancel() that task to shutdown the server.
@@ -493,11 +486,6 @@ def respond_with_error(error: Exception, error_cls: Type[SerializedError]) -> Re
 
 def pluck_id(request: Request, get_parameter_name: str) -> bytes:
     return bytes.fromhex(request.match_info[get_parameter_name])
-
-
-def pluck_ids(request: Request, get_parameter_name: str) -> List[bytes]:
-    ids_hex = request.match_info[get_parameter_name].split(",")
-    return [bytes.fromhex(id) for id in ids_hex]
 
 
 def get_query_string_as_pjson(request: Request) -> Dict[str, PJSONType]:
