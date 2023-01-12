@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.model.resource_model import index
+from ofrak.model.viewable_tag_model import AttributesType
 
 
 @dataclass
@@ -33,7 +34,7 @@ class NamedProgramSection(ProgramSection):
     @classmethod
     def caption(cls, all_attributes) -> str:
         try:
-            namedprogram_attributes = all_attributes[NamedProgramSection.attributes_type]
+            namedprogram_attributes = all_attributes[AttributesType[NamedProgramSection]]
         except KeyError:
             return super().caption(all_attributes)
         return f"{str(cls.__name__)}: {namedprogram_attributes.name}"

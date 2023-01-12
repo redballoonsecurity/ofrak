@@ -3,7 +3,7 @@ from typing import Optional
 
 import pytest
 
-from ofrak import OFRAKContext
+from ofrak import OFRAKContext, ResourceAttributes
 from ofrak.core import InstructionModifier, InstructionModifierConfig
 from ofrak.core.addressable import Addressable
 from ofrak.core.architecture import ProgramAttributes
@@ -11,6 +11,7 @@ from ofrak.core.basic_block import BasicBlock
 from ofrak.core.instruction import Instruction
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.core.program import Program
+from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import ResourceFilter, ResourceAttributeValueFilter
 from ofrak.core.free_space import (
@@ -46,11 +47,11 @@ def mock_instruction():
     return FlattenedResource(
         (Instruction,),
         (
-            Addressable.attributes_type(0x100),
-            MemoryRegion.attributes_type(
+            AttributesType[Addressable](0x100),
+            AttributesType[MemoryRegion](
                 0x4,
             ),
-            Instruction.attributes_type(
+            AttributesType[Instruction](
                 "add r1, r2, r3",
                 "add",
                 "r1, r2, r3",
@@ -78,16 +79,16 @@ def mock_basic_block():
     return FlattenedResource(
         (BasicBlock, MemoryRegion, MockProgram),
         (
-            Addressable.attributes_type(0x100),
-            MemoryRegion.attributes_type(
+            AttributesType[Addressable](0x100),
+            AttributesType[MemoryRegion](
                 0x10,
             ),
-            BasicBlock.attributes_type(
+            AttributesType[BasicBlock](
                 InstructionSetMode.NONE,
                 False,
                 None,
             ),
-            MockProgram.attributes_type(
+            AttributesType[MockProgram](
                 InstructionSet.ARM,
                 None,
                 BitWidth.BIT_32,
@@ -113,9 +114,9 @@ async def test_create_resource_from_view(mock_basic_block, mock_instruction_view
 
     instr_r = await bb_r.create_child_from_view(instr_view, data_range=Range(0x0, 0x4))
 
-    assert instr_r.get_attributes(Instruction.attributes_type) is not None
-    assert instr_r.get_attributes(MemoryRegion.attributes_type) is not None
-    assert instr_r.get_attributes(Addressable.attributes_type) is not None
+    assert instr_r.get_attributes(AttributesType[Instruction]) is not None
+    assert instr_r.get_attributes(AttributesType[MemoryRegion]) is not None
+    assert instr_r.get_attributes(AttributesType[Addressable]) is not None
     bb_children = list(await bb_r.get_children())
     assert len(bb_children) == 1
 
@@ -132,9 +133,9 @@ async def test_create_view_from_resource(mock_instruction, mock_instruction_view
 
 
 async def test_view_indexes_types():
-    assert Instruction.VirtualAddress.attributes_owner is Addressable.attributes_type
-    assert Instruction.Size.attributes_owner is MemoryRegion.attributes_type
-    assert Instruction.Mnemonic.attributes_owner is Instruction.attributes_type
+    assert Instruction.VirtualAddress.attributes_owner is AttributesType[Addressable]
+    assert Instruction.Size.attributes_owner is AttributesType[MemoryRegion]
+    assert Instruction.Mnemonic.attributes_owner is AttributesType[Instruction]
 
 
 async def test_view_indexes(mock_basic_block, mock_instruction_view, ofrak_context):
@@ -202,6 +203,26 @@ async def test_view_indexes(mock_basic_block, mock_instruction_view, ofrak_conte
         )
     )
     assert len(bb_children) == 0
+
+
+async def test_AttributesType():
+    # Constructor fails without a type parameter
+    with pytest.raises(NotImplementedError):
+        AttributesType()
+
+    # With a type parameter, the constructor of an actual attribute is used
+    _ = AttributesType[Instruction](
+        "add r1, r2, r3",
+        "add",
+        "r1, r2, r3",
+        InstructionSetMode.NONE,
+    )
+
+    # We get a ResourceAttributes type (the expected type) from AttributesType
+    instr_attrs_t = AttributesType[Instruction]
+    assert issubclass(instr_attrs_t, ResourceAttributes)
+    assert instr_attrs_t.__name__ == "AttributesType[Instruction]"
+    assert AttributesType[Instruction] is instr_attrs_t
 
 
 @pytest.fixture()

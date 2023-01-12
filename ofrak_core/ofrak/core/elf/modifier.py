@@ -6,6 +6,7 @@ from typing import Any, Dict, Iterable, Optional, Tuple, Union
 from ofrak.component.modifier import Modifier
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributes
+from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter
 from ofrak.core.elf.model import (
@@ -79,7 +80,7 @@ class ElfHeaderModifier(Modifier[ElfHeaderModifierConfig], AbstractElfAttributeM
 
     @classmethod
     def populate_serializer(
-        cls, serializer: BinarySerializer, attributes: ElfHeader.attributes_type  # type: ignore
+        cls, serializer: BinarySerializer, attributes: AttributesType[ElfHeader]
     ):
         serializer.pack_multiple(
             "HHIQQQIHHHHHH",
@@ -100,7 +101,7 @@ class ElfHeaderModifier(Modifier[ElfHeaderModifierConfig], AbstractElfAttributeM
         )
 
     async def modify(self, resource: Resource, config: ElfHeaderModifierConfig):
-        original_attributes = await resource.analyze(ElfHeader.attributes_type)
+        original_attributes = await resource.analyze(AttributesType[ElfHeader])
         await self.serialize_and_patch(resource, original_attributes, config)
 
 
@@ -122,7 +123,7 @@ class ElfProgramHeaderModifier(
     targets = (ElfProgramHeader,)
 
     async def modify(self, resource: Resource, config: ElfProgramHeaderModifierConfig):
-        original_attributes = await resource.analyze(ElfProgramHeader.attributes_type)
+        original_attributes = await resource.analyze(AttributesType[ElfProgramHeader])
         await self.serialize_and_patch(resource, original_attributes, config)
 
     @classmethod
@@ -170,7 +171,7 @@ class ElfSectionHeaderModifier(
     def populate_serializer(
         cls,
         serializer: BinarySerializer,
-        attributes: ElfSectionHeader.attributes_type,  # type: ignore
+        attributes: AttributesType[ElfSectionHeader],
     ):
         serializer.pack_multiple(
             "IIQQQQIIQQ",
@@ -192,7 +193,7 @@ class ElfSectionHeaderModifier(
         resource: Resource,
         config: ElfSectionHeaderModifierConfig,
     ):
-        original_attributes = await resource.analyze(ElfSectionHeader.attributes_type)
+        original_attributes = await resource.analyze(AttributesType[ElfSectionHeader])
         await self.serialize_and_patch(resource, original_attributes, config)
 
 
@@ -212,7 +213,7 @@ class ElfSymbolModifier(AbstractElfAttributeModifier, Modifier[ElfSymbolModifier
 
     @classmethod
     def populate_serializer(
-        cls, serializer: BinarySerializer, attributes: ElfSymbol.attributes_type  # type: ignore
+        cls, serializer: BinarySerializer, attributes: AttributesType[ElfSymbol]
     ):
         if serializer.get_word_size() == 8:
             serializer.pack_multiple(
@@ -240,7 +241,7 @@ class ElfSymbolModifier(AbstractElfAttributeModifier, Modifier[ElfSymbolModifier
         resource: Resource,
         config: ElfSymbolModifierConfig,
     ):
-        original_attributes = await resource.analyze(ElfSymbol.attributes_type)
+        original_attributes = await resource.analyze(AttributesType[ElfSymbol])
         await self.serialize_and_patch(resource, original_attributes, config)
 
 
@@ -266,7 +267,7 @@ class ElfRelaModifier(AbstractElfAttributeModifier, Modifier[ElfRelaModifierConf
 
     @classmethod
     def populate_serializer(
-        cls, serializer: BinarySerializer, attributes: ElfRelaEntry.attributes_type  # type: ignore
+        cls, serializer: BinarySerializer, attributes: AttributesType[ElfRelaEntry]
     ):
         if serializer.get_word_size() == 8:
             serializer.pack_multiple(
@@ -291,7 +292,7 @@ class ElfRelaModifier(AbstractElfAttributeModifier, Modifier[ElfRelaModifierConf
         """
         Patches the Elf{32, 64}_Rela struct
         """
-        original_attributes = await resource.analyze(ElfRelaEntry.attributes_type)
+        original_attributes = await resource.analyze(AttributesType[ElfRelaEntry])
         await self.serialize_and_patch(resource, original_attributes, config)
 
 
@@ -319,7 +320,7 @@ class ElfDynamicEntryModifier(
     def populate_serializer(
         cls,
         serializer: BinarySerializer,
-        attributes: ElfDynamicEntry.attributes_type,  # type: ignore
+        attributes: AttributesType[ElfDynamicEntry],
     ):
         if serializer.get_word_size() == 8:
             serializer.pack_multiple(
@@ -342,7 +343,7 @@ class ElfDynamicEntryModifier(
         """
         Patches the Elf{32, 64}_Dyn struct
         """
-        original_attributes = await resource.analyze(ElfDynamicEntry.attributes_type)
+        original_attributes = await resource.analyze(AttributesType[ElfDynamicEntry])
         await self.serialize_and_patch(resource, original_attributes, config)
 
 
@@ -368,7 +369,7 @@ class ElfVirtualAddressModifier(
     def populate_serializer(
         cls,
         serializer: BinarySerializer,
-        attributes: ElfVirtualAddress.attributes_type,  # type: ignore
+        attributes: AttributesType[ElfVirtualAddress],
     ):
         serializer.pack_ulong(attributes.value)
 
@@ -380,7 +381,7 @@ class ElfVirtualAddressModifier(
         """
         Patches the virtual address
         """
-        original_attributes = await resource.analyze(ElfVirtualAddress.attributes_type)
+        original_attributes = await resource.analyze(AttributesType[ElfVirtualAddress])
         await self.serialize_and_patch(resource, original_attributes, config)
 
 

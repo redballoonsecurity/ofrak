@@ -4,6 +4,7 @@ from typing import Iterable
 
 from ofrak.core.addressable import Addressable
 from ofrak.model.resource_model import index, ResourceAttributes
+from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
@@ -44,8 +45,8 @@ class MemoryRegion(Addressable):
     @classmethod
     def caption(cls, all_attributes) -> str:
         try:
-            mem_region_attributes = all_attributes[MemoryRegion.attributes_type]
-            addressable_attributes = all_attributes[Addressable.attributes_type]
+            mem_region_attributes = all_attributes[AttributesType[MemoryRegion]]
+            addressable_attributes = all_attributes[AttributesType[Addressable]]
         except KeyError:
             return super().caption(all_attributes)
         return (

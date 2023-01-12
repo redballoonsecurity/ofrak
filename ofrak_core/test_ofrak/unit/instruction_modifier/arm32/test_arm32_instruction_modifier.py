@@ -1,5 +1,6 @@
 import pytest
 
+from ofrak.model.viewable_tag_model import AttributesType
 from ofrak_type.bit_width import BitWidth
 from ofrak_type.endianness import Endianness
 from ofrak_type.architecture import (
@@ -23,7 +24,7 @@ ARM32_INSTRUCTION_MODIFICATION_TEST_CASES = [
         FlattenedResource(
             (Instruction,),
             (
-                Instruction.attributes_type(
+                AttributesType[Instruction](
                     "ldrsh.w r3, [r7,#0x1C]",
                     "ldrsh.w",
                     "r3, [r7,#0x1C]",
@@ -53,7 +54,7 @@ ARM32_INSTRUCTION_MODIFICATION_TEST_CASES = [
         FlattenedResource(
             (Instruction,),
             (
-                Instruction.attributes_type(
+                AttributesType[Instruction](
                     "add r2, r3, 1",
                     "add",
                     "r2, r3, 1",
@@ -83,7 +84,7 @@ ARM32_INSTRUCTION_MODIFICATION_TEST_CASES = [
         FlattenedResource(
             (Instruction,),
             (
-                Instruction.attributes_type(
+                AttributesType[Instruction](
                     "add r2, r3, 1",
                     "add",
                     "r2, r3, 1",
