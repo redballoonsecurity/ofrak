@@ -1,5 +1,4 @@
 import os.path
-from typing import Dict
 
 from ofrak import OFRAKContext, Resource
 
@@ -13,6 +12,10 @@ from ofrak.core import FilesystemEntry
 
 
 class UnpackCommand(OfrakCommandRunsScript):
+    def __init__(self):
+        self._filename_trackers = dict()
+        self._resource_paths = dict()
+
     def create_parser(self, parser: argparse._SubParsersAction):
         subparser = parser.add_parser(
             "unpack",
@@ -67,11 +70,14 @@ class UnpackCommand(OfrakCommandRunsScript):
 
         root_resource_path = os.path.join(
             extraction_dir,
-            await self._get_filesystem_name(root_resource),
+            await self.get_filesystem_name(root_resource),
         )
         info_dump_path = os.path.join(extraction_dir, "__ofrak_info__")
         await self.resource_tree_to_files(root_resource, root_resource_path)
-        info_dump = await root_resource.summarize_tree()
+
+        info_dump = await root_resource.summarize_tree(
+            summarize_resource_callback=lambda resource: _custom_summarize_resource(resource, self)
+        )
         # Some characters in filename bytestrings are no valid unicode, can't be printed, must be replaced
         # https://stackoverflow.com/questions/27366479/python-3-os-walk-file-paths-unicodeencodeerror-utf-8-codec-cant-encode-s
         info_dump = info_dump.encode("utf-8", "replace").decode(
@@ -85,15 +91,9 @@ class UnpackCommand(OfrakCommandRunsScript):
             print(info_dump)
 
     async def resource_tree_to_files(self, resource: Resource, path):
-        name_counters: Dict[str, int] = dict()
         children_dir = path + ".ofrak_children"
         for child_resource in await resource.get_children():
-            filename = await self._get_filesystem_name(child_resource)
-            if filename in name_counters:
-                name_counters[filename] += 1
-                filename = filename + f"_{name_counters[filename]}"
-            else:
-                name_counters[filename] = 0
+            filename = await self.get_filesystem_name(child_resource)
 
             if not os.path.exists(children_dir):
                 os.mkdir(children_dir)
@@ -108,11 +108,46 @@ class UnpackCommand(OfrakCommandRunsScript):
             return
         with open(path, "wb") as f:
             f.write(data)
+        self._resource_paths[resource.get_id()] = path
 
-    async def _get_filesystem_name(self, resource: Resource) -> str:
+    async def get_filesystem_name(self, resource: Resource) -> str:
         if resource.has_tag(FilesystemEntry):
             file_view = await resource.view_as(FilesystemEntry)
             filename = file_view.name
         else:
             filename = resource.get_caption()
-        return filename
+
+        parent_id = resource.get_model().parent_id
+        filesystem_name_key = (parent_id, filename)
+        if filesystem_name_key in self._filename_trackers:
+            name_suffixes = self._filename_trackers[filesystem_name_key]
+        else:
+            name_suffixes = {resource.get_id(): ""}
+            self._filename_trackers[filesystem_name_key] = name_suffixes
+
+            return filename
+
+        if resource.get_id() in name_suffixes:
+            return filename + name_suffixes[resource.get_id()]
+        else:
+            suffix = f"_{len(name_suffixes)}"
+            name_suffixes[resource.get_id()] = suffix
+            return filename + suffix
+
+
+async def _custom_summarize_resource(resource: Resource, unpack_cmd: UnpackCommand) -> str:
+    attributes_info = ", ".join(attrs_type.__name__ for attrs_type in resource._resource.attributes)
+    name = await unpack_cmd.get_filesystem_name(resource)
+    if " " in name:
+        name = f"'{name}'"
+
+    if resource._resource.data_id:
+        data_info = f", size={await resource.get_data_length()} bytes"
+    else:
+        data_info = ", no data"
+
+    if resource.get_id() in unpack_cmd._resource_paths:
+        path_info = f", path={unpack_cmd._resource_paths[resource.get_id()]}"
+    else:
+        path_info = ", (not written)"
+    return f"{name}: [attributes=({attributes_info}){data_info}{path_info}]"
