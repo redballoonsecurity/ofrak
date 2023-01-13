@@ -132,7 +132,8 @@ class AiohttpOFRAKServer:
                 web.post("/{resource_id}/data_summary", self.data_summary),
                 web.get("/{resource_id}/get_parent", self.get_parent),
                 web.get("/{resource_id}/get_ancestors", self.get_ancestors),
-                web.get("/{resource_id}/get_children", self.get_children),
+                web.post("/batch/get_children", self.batch_get_children),
+                # web.get("/{resource_id}/get_children", self.get_children),
                 web.post("/{resource_id}/queue_patch", self.queue_patch),
                 web.post("/{resource_id}/create_mapped_child", self.create_mapped_child),
                 web.post("/{resource_id}/find_and_replace", self.find_and_replace),
@@ -272,6 +273,25 @@ class AiohttpOFRAKServer:
         # TODO: filter argument
         ancestors = await resource.get_ancestors()
         return web.json_response(self._serialize_multi_resource(ancestors))
+
+    @exceptions_to_http(SerializedError)
+    async def batch_get_children(self, request: Request) -> Response:
+        if request.remote is not None:
+            job_id = self._job_ids[request.remote]
+        else:
+            raise ValueError("No IP address found for the remote request!")
+
+        async def get_resource_children(resource_id):
+            resource = await self._get_resource_by_id(bytes.fromhex(resource_id), job_id)
+            children = await resource.get_children()
+            return self._serialize_multi_resource(children)
+
+        return web.json_response(
+            {
+                resource_id: await get_resource_children(resource_id)
+                for resource_id in await request.json()
+            }
+        )
 
     @exceptions_to_http(SerializedError)
     async def get_children(self, request: Request) -> Response:

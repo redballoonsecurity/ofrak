@@ -1,10 +1,54 @@
 import { Resource, ResourceModel, ResourceFactory } from "./resource";
 
+let childQueue = {
+  maxlen: 1024,
+  requests: [],
+  responses: {},
+  timeout: null,
+  getAllChildren: async () => {
+    const all_child_models = await fetch(`/api/batch/get_children`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(childQueue.requests),
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return await r.json();
+    });
+    for (const [child_id, child_models] of Object.entries(all_child_models)) {
+      childQueue.responses[child_id](child_models);
+    }
+    childQueue.requests = [];
+  },
+};
+
 export class RemoteResource extends Resource {
   constructor(resource_model, factory) {
     super(resource_model);
     this.factory = factory;
     this.uri = `/api/${this.model.resource_id}`;
+  }
+
+  async get_children(r_filter, r_sort) {
+    clearTimeout(childQueue.timeout);
+    childQueue.requests.push(this.model.resource_id);
+    const result = new Promise((resolve) => {
+      childQueue.responses[this.model.resource_id] = (response) => {
+        delete childQueue.responses[this.model.resource_id];
+        resolve(response);
+      };
+    });
+
+    if (childQueue.length > childQueue.maxlen) {
+      await childQueue.getAllChildren();
+    } else {
+      childQueue.timeout = setTimeout(childQueue.getAllChildren, 500);
+    }
+
+    return this._remote_models_to_resources(await result);
   }
 
   async get_data(range) {
@@ -143,18 +187,6 @@ export class RemoteResource extends Resource {
       }
     );
     return this._remote_models_to_resources(ancestor_models);
-  }
-
-  async get_children(r_filter, r_sort) {
-    const child_models = await fetch(`${this.uri}/get_children`).then(
-      async (r) => {
-        if (!r.ok) {
-          throw Error(JSON.stringify(await r.json(), undefined, 2));
-        }
-        return r.json();
-      }
-    );
-    return this._remote_models_to_resources(child_models);
   }
 
   async queue_patch(data, start, end, after, before) {
