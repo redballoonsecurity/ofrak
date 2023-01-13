@@ -55,20 +55,29 @@ async def test_get_index(ofrak_server, aiohttp_client):
     client = await aiohttp_client(ofrak_server._app)
     resp = await client.get("/")
     assert resp.status == 200
-
-
-async def test_get_root_resources(ofrak_server, aiohttp_client):
-    client = await aiohttp_client(ofrak_server._app)
-    resp = await client.get("/get_root_resources")
-    assert resp.status == 200
+    assert resp.headers["Content-Type"] == "text/html"
 
 
 async def test_create_root_resource(ofrak_server, aiohttp_client, hello_world_elf):
     client = await aiohttp_client(ofrak_server._app)
     resp = await client.post("/create_root_resource", params={"name": "test"}, data=hello_world_elf)
     assert resp.status == 200
+    body = await resp.json()
+    assert body["id"] is not None
 
 
+async def test_get_root_resources(ofrak_server, aiohttp_client, hello_world_elf):
+    client = await aiohttp_client(ofrak_server._app)
+    create_resp = await client.post(
+        "/create_root_resource", params={"name": "test"}, data=hello_world_elf
+    )
+    get_resp = await client.get("/get_root_resources")
+    assert get_resp.status == 200
+    body = await get_resp.json()
+    assert body[0]["id"] is not None
+
+
+# Cannot find manual example to compare against
 async def test_get_resource(ofrak_server, aiohttp_client, hello_world_elf):
     client = await aiohttp_client(ofrak_server._app)
     create_resp = await client.post(
@@ -84,9 +93,36 @@ async def test_get_data(ofrak_server, aiohttp_client, hello_world_elf):
     create_resp = await client.post(
         "/create_root_resource", params={"name": "test"}, data=hello_world_elf
     )
-    body = await create_resp.json()
-    resp = await client.get(f"/{body['id']}/get_data")
+    create_body = await create_resp.json()
+    resp = await client.get(f"/{create_body['id']}/get_data")
     assert resp.status == 200
+    resp_body = await resp.read()
+    assert resp_body is not None
+
+
+async def test_unpack(ofrak_server, aiohttp_client, hello_world_elf):
+    client = await aiohttp_client(ofrak_server._app)
+    create_resp = await client.post(
+        "/create_root_resource", params={"name": "test"}, data=hello_world_elf
+    )
+    create_body = await create_resp.json()
+    resp = await client.post(f"/{create_body['id']}/unpack")
+    assert resp.status == 200
+    resp_body = await resp.json()
+    assert resp_body["created"] is not None
+
+
+async def test_get_children(ofrak_server, aiohttp_client, hello_world_elf):
+    client = await aiohttp_client(ofrak_server._app)
+    create_resp = await client.post(
+        "/create_root_resource", params={"name": "test"}, data=hello_world_elf
+    )
+    create_body = await create_resp.json()
+    unpack_resp = await client.post(f"/{create_body['id']}/unpack")
+    children_resp = await client.get(f"/{create_body['id']}/get_children")
+    assert children_resp.status == 200
+    children_body = await children_resp.json()
+    assert children_body[0]["id"] is not None
 
 
 async def test_get_data_range(ofrak_server, aiohttp_client, hello_world_elf):
@@ -94,11 +130,16 @@ async def test_get_data_range(ofrak_server, aiohttp_client, hello_world_elf):
     create_resp = await client.post(
         "/create_root_resource", params={"name": "test"}, data=hello_world_elf
     )
-    body = await create_resp.json()
-    resp = await client.get(f"/{body['id']}/get_data_range_within_parent")
-    assert resp.status == 200
+    create_body = await create_resp.json()
+    unpack_resp = await client.post(f"/{create_body['id']}/unpack")
+    children_resp = await client.get(f"/{create_body['id']}/get_children")
+    children_body = await children_resp.json()
+    get_data_resp = await client.get(f"/{children_body[0]['id']}/get_data_range_within_parent")
+    get_data_resp_body = await get_data_resp.json()
+    assert get_data_resp_body == [0, 16]
 
 
+# Cannot find manual example to compare against
 async def test_get_root(ofrak_server, aiohttp_client, hello_world_elf):
     client = await aiohttp_client(ofrak_server._app)
     create_resp = await client.post(
@@ -109,26 +150,19 @@ async def test_get_root(ofrak_server, aiohttp_client, hello_world_elf):
     assert resp.status == 200
 
 
-async def test_unpack(ofrak_server, aiohttp_client, hello_world_elf):
-    client = await aiohttp_client(ofrak_server._app)
-    create_resp = await client.post(
-        "/create_root_resource", params={"name": "test"}, data=hello_world_elf
-    )
-    body = await create_resp.json()
-    resp = await client.post(f"/{body['id']}/unpack")
-    assert resp.status == 200
-
-
 async def test_unpack_recursively(ofrak_server, aiohttp_client, hello_world_elf):
     client = await aiohttp_client(ofrak_server._app)
     create_resp = await client.post(
         "/create_root_resource", params={"name": "test"}, data=hello_world_elf
     )
-    body = await create_resp.json()
-    resp = await client.post(f"/{body['id']}/unpack_recursively")
+    create_body = await create_resp.json()
+    resp = await client.post(f"/{create_body['id']}/unpack_recursively")
     assert resp.status == 200
+    resp_body = await resp.json()
+    assert resp_body["created"] is not None
 
 
+# Cannot find manual example to compare against
 async def test_pack(ofrak_server, aiohttp_client, hello_world_elf):
     client = await aiohttp_client(ofrak_server._app)
     create_resp = await client.post(
@@ -139,6 +173,7 @@ async def test_pack(ofrak_server, aiohttp_client, hello_world_elf):
     assert resp.status == 200
 
 
+# Cannot find manual example to compare against
 async def test_pack_recursively(ofrak_server, aiohttp_client, hello_world_elf):
     client = await aiohttp_client(ofrak_server._app)
     create_resp = await client.post(
@@ -154,9 +189,11 @@ async def test_analyze(ofrak_server, aiohttp_client, hello_world_elf):
     create_resp = await client.post(
         "/create_root_resource", params={"name": "test"}, data=hello_world_elf
     )
-    body = await create_resp.json()
-    resp = await client.post(f"/{body['id']}/analyze")
+    create_body = await create_resp.json()
+    resp = await client.post(f"/{create_body['id']}/analyze")
     assert resp.status == 200
+    resp_body = await resp.json()
+    assert resp_body is not None
 
 
 async def test_identify(ofrak_server, aiohttp_client, hello_world_elf):
@@ -164,9 +201,11 @@ async def test_identify(ofrak_server, aiohttp_client, hello_world_elf):
     create_resp = await client.post(
         "/create_root_resource", params={"name": "test"}, data=hello_world_elf
     )
-    body = await create_resp.json()
-    resp = await client.post(f"/{body['id']}/identify")
+    create_body = await create_resp.json()
+    resp = await client.post(f"/{create_body['id']}/identify")
     assert resp.status == 200
+    resp_body = await resp.json()
+    assert resp_body["modified"][0]["id"] == create_body["id"]
 
 
 async def test_data_summary(ofrak_server, aiohttp_client, hello_world_elf):
@@ -174,9 +213,11 @@ async def test_data_summary(ofrak_server, aiohttp_client, hello_world_elf):
     create_resp = await client.post(
         "/create_root_resource", params={"name": "test"}, data=hello_world_elf
     )
-    body = await create_resp.json()
-    resp = await client.post(f"/{body['id']}/data_summary")
+    create_body = await create_resp.json()
+    resp = await client.post(f"/{create_body['id']}/data_summary")
     assert resp.status == 200
+    resp_body = await resp.json()
+    assert resp_body["modified"][0]["id"] == create_body["id"]
 
 
 async def test_get_parent(ofrak_server, aiohttp_client, hello_world_elf):
@@ -189,6 +230,8 @@ async def test_get_parent(ofrak_server, aiohttp_client, hello_world_elf):
     unpack_body = await unpack_resp.json()
     resp = await client.get(f"/{unpack_body['created'][0]['id']}/get_parent")
     assert resp.status == 200
+    resp_body = await resp.json()
+    assert resp_body["id"] == create_body["id"]
 
 
 async def test_get_ancestors(ofrak_server, aiohttp_client, hello_world_elf):
@@ -196,19 +239,13 @@ async def test_get_ancestors(ofrak_server, aiohttp_client, hello_world_elf):
     create_resp = await client.post(
         "/create_root_resource", params={"name": "test"}, data=hello_world_elf
     )
-    body = await create_resp.json()
-    resp = await client.get(f"/{body['id']}/get_ancestors")
+    create_body = await create_resp.json()
+    unpack_resp = await client.post(f"/{create_body['id']}/unpack")
+    unpack_body = await unpack_resp.json()
+    resp = await client.get(f"/{unpack_body['created'][0]['id']}/get_ancestors")
     assert resp.status == 200
-
-
-async def test_get_children(ofrak_server, aiohttp_client, hello_world_elf):
-    client = await aiohttp_client(ofrak_server._app)
-    create_resp = await client.post(
-        "/create_root_resource", params={"name": "test"}, data=hello_world_elf
-    )
-    body = await create_resp.json()
-    resp = await client.get(f"/{body['id']}/get_children")
-    assert resp.status == 200
+    resp_body = await resp.json()
+    assert resp_body[0]["id"] == create_body["id"]
 
 
 async def test_queue_patch(ofrak_server, aiohttp_client, hello_world_elf):
@@ -216,9 +253,12 @@ async def test_queue_patch(ofrak_server, aiohttp_client, hello_world_elf):
     create_resp = await client.post(
         "/create_root_resource", params={"name": "test"}, data=hello_world_elf
     )
-    body = await create_resp.json()
-    resp = await client.post(f"/{body['id']}/queue_patch")
+    create_body = await create_resp.json()
+    unpack_resp = await client.post(f"/{create_body['id']}/unpack")
+    resp = await client.post(f"/{create_body['id']}/queue_patch", data=hello_world_elf)
     assert resp.status == 200
+    resp_body = await resp.json()
+    assert resp_body["id"] == create_body["id"]
 
 
 async def test_create_mapped_child(ofrak_server, aiohttp_client, hello_world_elf):
@@ -226,11 +266,16 @@ async def test_create_mapped_child(ofrak_server, aiohttp_client, hello_world_elf
     create_resp = await client.post(
         "/create_root_resource", params={"name": "test"}, data=hello_world_elf
     )
-    body = await create_resp.json()
-    resp = await client.post(f"/{body['id']}/create_mapped_child", json=[0, 16])
+    create_body = await create_resp.json()
+    unpack_resp = await client.post(f"/{create_body['id']}/unpack")
+    unpack_body = await unpack_resp.json()
+    resp = await client.post(f"/{unpack_body['created'][0]['id']}/create_mapped_child", json=[0, 1])
     assert resp.status == 200
+    resp_body = await resp.json()
+    assert resp_body["parent_id"] == unpack_body["created"][0]["id"]
 
 
+# find_and_replace doesn't appear to send back any information in the response
 async def test_find_and_replace(ofrak_server, aiohttp_client, hello_world_elf):
     client = await aiohttp_client(ofrak_server._app)
     create_resp = await client.post(
@@ -257,9 +302,15 @@ async def test_add_comment(ofrak_server, aiohttp_client, hello_world_elf):
     create_resp = await client.post(
         "/create_root_resource", params={"name": "test"}, data=hello_world_elf
     )
-    body = await create_resp.json()
-    resp = await client.post(f"/{body['id']}/add_comment", json=[[10, 20], "test"])
+    create_body = await create_resp.json()
+    unpack_resp = await client.post(f"/{create_body['id']}/unpack")
+    unpack_body = await unpack_resp.json()
+    resp = await client.post(
+        f"/{unpack_body['created'][0]['id']}/add_comment", json=[[10, 20], "test"]
+    )
     assert resp.status == 200
+    resp_body = await resp.json()
+    assert resp_body["modified"][0]["id"] == unpack_body["created"][0]["id"]
 
 
 async def test_delete_comment(ofrak_server, aiohttp_client, hello_world_elf):
@@ -267,10 +318,14 @@ async def test_delete_comment(ofrak_server, aiohttp_client, hello_world_elf):
     create_resp = await client.post(
         "/create_root_resource", params={"name": "test"}, data=hello_world_elf
     )
-    body = await create_resp.json()
-    await client.post(f"/{body['id']}/add_comment", json=[[10, 20], "test"])
-    resp = await client.post(f"/{body['id']}/delete_comment", json=[10, 20])
+    create_body = await create_resp.json()
+    unpack_resp = await client.post(f"/{create_body['id']}/unpack")
+    unpack_body = await unpack_resp.json()
+    await client.post(f"/{unpack_body['created'][0]['id']}/add_comment", json=[[10, 20], "test"])
+    resp = await client.post(f"/{unpack_body['created'][0]['id']}/delete_comment", json=[10, 20])
     assert resp.status == 200
+    resp_body = await resp.json()
+    assert resp_body["modified"][0]["id"] == unpack_body["created"][0]["id"]
 
 
 async def test_search_for_vaddr(ofrak_server, aiohttp_client, hello_world_elf):
@@ -278,6 +333,9 @@ async def test_search_for_vaddr(ofrak_server, aiohttp_client, hello_world_elf):
     create_resp = await client.post(
         "/create_root_resource", params={"name": "test"}, data=hello_world_elf
     )
-    body = await create_resp.json()
-    resp = await client.post(f"/{body['id']}/search_for_vaddr", json=[16, 20])
+    create_body = await create_resp.json()
+    await client.post(f"/{create_body['id']}/unpack_recursively")
+    resp = await client.post(f"/{create_body['id']}/search_for_vaddr", json=[0, None])
     assert resp.status == 200
+    resp_body = await resp.json()
+    assert resp_body[0] is not None
