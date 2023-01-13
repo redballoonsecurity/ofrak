@@ -49,6 +49,7 @@ setuptools.setup(
         "orjson~=3.6.7",
         "pefile==2022.5.30",
         "pycdlib==1.12.0",
+        "python-lzo==1.14",
         "python-magic",
         "reedsolo==1.5.4",
         "sortedcontainers==2.2.2",
