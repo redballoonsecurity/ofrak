@@ -53,9 +53,6 @@ jobs:
         run: |
           cd frontend
           make check
-      - name: Check for updated CHANGELOGs
-        run: |
-          git diff --name-only $GITHUB_BASE_REF $GITHUB_HEAD_REF | grep CHANGELOG.md || echo "::warning :: This PR has not updated any CHANGELOG.md!"
 
   build-base-image:
     name: Build the common base OFRAK Docker image
