@@ -331,7 +331,7 @@ class GUISubCommand(OFRAKSubCommand):
         )
         return gui_parser
 
-    @staticmethod
+    @staticmethod  # pragma: no cover
     def handler(ofrak_env: OFRAKEnvironment, args: Namespace):
         if args.verbose is True:
             ofrak = server.OFRAK(server.logging.DEBUG)

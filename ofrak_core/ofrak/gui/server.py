@@ -11,14 +11,13 @@ from typing import (
     cast,
     Set,
     Tuple,
-    no_type_check,
     Union,
     Type,
     Callable,
     TypeVar,
 )
 
-from aiohttp import web, ClientResponse
+from aiohttp import web
 from aiohttp.web_exceptions import HTTPBadRequest
 from aiohttp.web_request import Request
 from aiohttp.web_response import Response
@@ -430,32 +429,8 @@ class AiohttpOFRAKServer:
         del resource_model_fields["component_versions"]
         del resource_model_fields["components_by_attributes"]
 
-    async def message_as_pjson(
-        self, message: Union[Request, ClientResponse]
-    ) -> Dict[str, PJSONType]:
-        """
-        Read the HTTP message (request or response) and return it in PJSON form.
 
-        It's assumed that the message is a dictionary.
-        """
-        message_raw = await message.read()
-        return json.loads(message_raw.decode("UTF-8"))
-
-    # ignore type hints because mypy doesn't currently allow to use Type[X] when X is not a concrete type,
-    # see e.g. https://github.com/python/mypy/issues/4717#issuecomment-617676034
-    @no_type_check
-    async def deserialize_message(
-        self, message: Union[Request, ClientResponse], type_hint: Type[T]
-    ) -> T:
-        """
-        Read the HTTP message (request or response) and return it in deserialized form.
-
-        Convenience function for when a type hint is all that's needed to deserialize the message.
-        """
-        return self._serializer.from_pjson(await self.message_as_pjson(message), type_hint)
-
-
-async def main(ofrak_context: OFRAKContext, host: str, port: int):
+async def main(ofrak_context: OFRAKContext, host: str, port: int):  # pragma: no cover
     # Force using the correct PJSON serialization with the expected structure. Otherwise the
     # dependency injector may accidentally use the Stashed PJSON serialization service,
     # which returns PJSON that has a different, problematic structure.

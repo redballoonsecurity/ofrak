@@ -1,8 +1,9 @@
-# import pdb
 import pytest
 
+import ofrak.gui.server as server
 
-from ofrak.gui.server import AiohttpOFRAKServer
+from multiprocessing import Process
+
 from ofrak.service.serialization.pjson import (
     PJSONSerializationService,
 )
@@ -17,26 +18,40 @@ def hello_world_elf() -> bytes:
 # Create test server that will be spun up for each test
 @pytest.fixture
 async def ofrak_server(ofrak, ofrak_context):
-    # This is an OFRAK instance, not a server. Create a server instance specifically?
     ofrak = ofrak
-    # ofrak.run(server.main, "127.0.0.1", 8080)
 
     ofrak.injector.bind_factory(PJSONSerializationService)
 
     ofrak.injector.bind_factory(
-        AiohttpOFRAKServer,
+        server.AiohttpOFRAKServer,
         ofrak_context=ofrak_context,
         host="127.0.0.1",
         port=8080,
     )
-    server = await ofrak.injector.get_instance(AiohttpOFRAKServer)
-    return server
+    ofrak_server = await ofrak.injector.get_instance(server.AiohttpOFRAKServer)
+    return ofrak_server
 
 
-# Test server methods (run, start, etc.)
+# Test server methods and top-level functions.
+# Does not effect coverage because it runs in a subprocess. Could use in future to test end-to-end.
+async def test_server_main(ofrak_context, ofrak_server, aiohttp_client):
+    args = {"ofrak_context": ofrak_context, "host": "127.0.0.1", "port": 8080}
+    proc = Process(target=server.main, kwargs=args)
+    proc.start()
+    client = await aiohttp_client(ofrak_server._app)
+    resp = await client.get("/")
+    assert resp.status == 200
+    proc.join(timeout=5)
+
+
+async def test_error(ofrak_server, aiohttp_client):
+    client = await aiohttp_client(ofrak_server._app)
+    resp = await client.get("/1234/")
+    assert resp.status == 500
+
 
 # Test calls to each of the routes set on the server, this should hit each of the callbacks
-async def test_get_root(ofrak_server, aiohttp_client):
+async def test_get_index(ofrak_server, aiohttp_client):
     client = await aiohttp_client(ofrak_server._app)
     resp = await client.get("/")
     assert resp.status == 200
@@ -50,7 +65,6 @@ async def test_get_root_resources(ofrak_server, aiohttp_client):
 
 async def test_create_root_resource(ofrak_server, aiohttp_client, hello_world_elf):
     client = await aiohttp_client(ofrak_server._app)
-    # pdb.set_trace()
     resp = await client.post("/create_root_resource", params={"name": "test"}, data=hello_world_elf)
     assert resp.status == 200
 
