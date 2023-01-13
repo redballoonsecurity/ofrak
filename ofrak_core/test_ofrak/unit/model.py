@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from itertools import chain
 from typing import Tuple, Union, Iterable, Optional, Dict
 
+from ofrak.model.viewable_tag_model import AttributesType
 from ofrak_type.range import Range
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.model.tag_model import ResourceTag
@@ -52,7 +53,7 @@ class FlattenedResource(IFlattenedResource):
             attributes = tuple(
                 chain(
                     attributes,
-                    (Addressable.attributes_type(vaddr), MemoryRegion.attributes_type(size)),
+                    (AttributesType[Addressable](vaddr), AttributesType[MemoryRegion](size)),
                 )
             )
 

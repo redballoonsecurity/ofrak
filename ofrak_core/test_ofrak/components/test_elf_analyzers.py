@@ -11,7 +11,7 @@ import pytest
 
 from ofrak import OFRAKContext
 from ofrak.core.architecture import ProgramAttributes
-from ofrak.model.viewable_tag_model import ViewableResourceTag
+from ofrak.model.viewable_tag_model import ViewableResourceTag, AttributesType
 from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
 from ofrak.service.job_service_i import ComponentAutoRunFailure
@@ -95,16 +95,16 @@ class ElfDeserializingAnalyzerTestCase:
         if issubclass(self.get_target_tag(), ElfSegmentStructure):
             expected_elf_structure = cast(ElfSegmentStructure, self.expected_view)
             attributes = (
-                ElfSegmentStructure.attributes_type(expected_elf_structure.segment_index),
+                AttributesType[ElfSegmentStructure](expected_elf_structure.segment_index),
             )
         elif issubclass(self.get_target_tag(), ElfSectionStructure):
             expected_elf_structure = cast(ElfSectionStructure, self.expected_view)
             attributes = (
-                ElfSectionStructure.attributes_type(expected_elf_structure.section_index),
+                AttributesType[ElfSectionStructure](expected_elf_structure.section_index),
             )
         elif issubclass(self.get_target_tag(), ElfSymbolStructure):
             expected_elf_structure = cast(ElfSymbolStructure, self.expected_view)
-            attributes = (ElfSymbolStructure.attributes_type(expected_elf_structure.symbol_index),)
+            attributes = (AttributesType[ElfSymbolStructure](expected_elf_structure.symbol_index),)
         else:
             attributes = ()
         return await elf_r.create_child(

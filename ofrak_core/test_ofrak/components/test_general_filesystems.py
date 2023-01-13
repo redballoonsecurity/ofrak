@@ -7,6 +7,7 @@ import pytest
 
 from ofrak import OFRAKContext, Resource, ResourceAttributes
 from ofrak.core import FilesystemRoot, StringPatchingConfig, StringPatchingModifier
+from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import RV
 from ofrak.core.cpio import CpioFilesystem, CpioArchiveType
 from ofrak.core.tar import TarArchive
@@ -30,7 +31,7 @@ EXPECTED_SUBCHILD_TEXT = "Goodbye OFrak\n"
 TAGS = [
     (ZipArchive, []),
     (TarArchive, []),
-    (CpioFilesystem, [CpioFilesystem.attributes_type(CpioArchiveType.BINARY)]),
+    (CpioFilesystem, [AttributesType[CpioFilesystem](CpioArchiveType.BINARY)]),
 ]
 
 
