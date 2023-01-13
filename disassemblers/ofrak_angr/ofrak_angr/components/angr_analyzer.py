@@ -9,8 +9,12 @@ from ofrak.model.resource_model import ResourceAttributeDependency
 from ofrak.resource import Resource
 
 import angr.project
+from ofrak.core.elf.model import Elf, ElfHeader, ElfType
 from ofrak_angr.components.identifiers import AngrAnalysisResource
 from ofrak_angr.model import AngrAnalysis
+from ofrak.component.modifier import Modifier
+from ofrak.core import CodeRegion
+from ofrak import ResourceFilter
 
 
 LOGGER = logging.getLogger(__file__)
@@ -69,3 +73,43 @@ class AngrAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
         Step 2. Modification
         Step 3. Packing
         """
+
+
+class AngrCodeRegionModifier(Modifier):
+    id = b"AngrCodeRegionModifier"
+    targets = (CodeRegion,)
+
+    async def modify(self, resource: Resource, config=None):
+        code_region = await resource.view_as(CodeRegion)
+
+        root_resource = await resource.get_only_ancestor(
+            ResourceFilter(tags=[AngrAnalysisResource], include_self=True)
+        )
+
+        fixup_address = False
+
+        # We only want to adjust the address of a CodeRegion if the original binary is position-independent.
+        # Implement PIE-detection for other file types as necessary.
+        if root_resource.has_tag(Elf):
+            elf_header = await root_resource.get_only_descendant_as_view(
+                ElfHeader, r_filter=ResourceFilter(tags=[ElfHeader])
+            )
+
+            if elf_header is not None and elf_header.e_type == ElfType.ET_DYN.value:
+                fixup_address = True
+        else:
+            LOGGER.warning(
+                f"Have not implemented PIE-detection for {root_resource}. The address of {code_region} will likely be incorrect."
+            )
+
+        if fixup_address:
+            angr_analysis = await root_resource.analyze(AngrAnalysis)
+            obj = angr_analysis.project.loader.main_object
+
+            if obj is not None:
+                new_cr = CodeRegion(code_region.virtual_address + obj.min_addr, code_region.size)
+                code_region.resource.add_view(new_cr)
+            else:
+                LOGGER.warning(
+                    f"There is no angr main object for resource {root_resource}. Something went wrong."
+                )

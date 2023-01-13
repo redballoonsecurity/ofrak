@@ -12,6 +12,7 @@ from ofrak.core.filesystem import FilesystemRoot
 from ofrak.core.patch_maker.linkable_binary import LinkableBinary
 from ofrak.core.program import Program
 from ofrak.model.resource_model import ResourceAttributes
+from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import ResourceFilter
@@ -144,15 +145,15 @@ async def test_add_view(resource: Resource):
 
     assert not resource.has_tag(DummyViewA)
     assert not resource.has_tag(DummyViewB)
-    assert not resource.has_attributes(DummyViewA.attributes_type)
-    assert not resource.has_attributes(DummyViewB.attributes_type)
+    assert not resource.has_attributes(AttributesType[DummyViewA])
+    assert not resource.has_attributes(AttributesType[DummyViewB])
 
     resource.add_view(DummyViewB(a, b))
 
     assert resource.has_tag(DummyViewA)
     assert resource.has_tag(DummyViewB)
-    assert resource.has_attributes(DummyViewA.attributes_type)
-    assert resource.has_attributes(DummyViewB.attributes_type)
+    assert resource.has_attributes(AttributesType[DummyViewA])
+    assert resource.has_attributes(AttributesType[DummyViewB])
 
     view = await resource.view_as(DummyViewB)
     assert view.a == a
