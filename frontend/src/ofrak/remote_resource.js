@@ -19,7 +19,9 @@ let childQueue = {
       return await r.json();
     });
     for (const [child_id, child_models] of Object.entries(all_child_models)) {
-      childQueue.responses[child_id](child_models);
+      childQueue.responses[child_id].forEach((callback) =>
+        callback(child_models)
+      );
     }
     childQueue.requests = [];
   },
@@ -35,11 +37,14 @@ export class RemoteResource extends Resource {
   async get_children(r_filter, r_sort) {
     clearTimeout(childQueue.timeout);
     childQueue.requests.push(this.model.resource_id);
-    const result = new Promise((resolve) => {
-      childQueue.responses[this.model.resource_id] = (response) => {
-        delete childQueue.responses[this.model.resource_id];
-        resolve(response);
-      };
+    let result;
+    if (!childQueue.responses[this.model.resource_id]) {
+      childQueue.responses[this.model.resource_id] = [];
+    }
+    result = new Promise((resolve) => {
+      childQueue.responses[this.model.resource_id].push((response) =>
+        resolve(response)
+      );
     });
 
     if (childQueue.length > childQueue.maxlen) {
