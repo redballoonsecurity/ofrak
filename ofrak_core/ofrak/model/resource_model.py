@@ -237,9 +237,7 @@ class ResourceAttributes:
         return indexable_attributes
 
     @staticmethod
-    def replace_updated(
-        resource_attributes: "ResourceAttributes", updated_attributes: Any
-    ) -> "ResourceAttributes":
+    def replace_updated(resource_attributes: RA, updated_attributes: Any) -> RA:
         """
         Replace the fields of `resource_attributes` with the updated values found in
         `updated_attributes`, returning a new object. The fields having non-`None` values in
