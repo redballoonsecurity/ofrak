@@ -22,6 +22,7 @@ let childQueue = {
       childQueue.responses[child_id].forEach((callback) =>
         callback(child_models)
       );
+      delete childQueue.responses[child_id];
     }
     childQueue.requests = [];
   },
