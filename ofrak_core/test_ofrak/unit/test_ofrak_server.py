@@ -1,9 +1,11 @@
+import json
 import pytest
 
 import ofrak.gui.server as server
 
 from multiprocessing import Process
 
+from ofrak.core.entropy import DataSummaryAnalyzer
 from ofrak.service.serialization.pjson import (
     PJSONSerializationService,
 )
@@ -97,7 +99,7 @@ async def test_get_data(ofrak_server, aiohttp_client, hello_world_elf):
     resp = await client.get(f"/{create_body['id']}/get_data")
     assert resp.status == 200
     resp_body = await resp.read()
-    assert resp_body is not None
+    assert resp_body == hello_world_elf
 
 
 async def test_unpack(ofrak_server, aiohttp_client, hello_world_elf):
@@ -208,7 +210,7 @@ async def test_identify(ofrak_server, aiohttp_client, hello_world_elf):
     assert resp_body["modified"][0]["id"] == create_body["id"]
 
 
-async def test_data_summary(ofrak_server, aiohttp_client, hello_world_elf):
+async def test_data_summary(ofrak_context, ofrak_server, aiohttp_client, hello_world_elf):
     client = await aiohttp_client(ofrak_server._app)
     create_resp = await client.post(
         "/create_root_resource", params={"name": "test"}, data=hello_world_elf
@@ -218,6 +220,14 @@ async def test_data_summary(ofrak_server, aiohttp_client, hello_world_elf):
     assert resp.status == 200
     resp_body = await resp.json()
     assert resp_body["modified"][0]["id"] == create_body["id"]
+
+    # use ofrak_context to create root resource, then run DataSummaryAnalyzer on it
+    resource = await ofrak_context.create_root_resource(hello_world_elf, hello_world_elf)
+    result = await resource.run(DataSummaryAnalyzer)
+    serialized_result = await ofrak_server._serialize_component_result(result)
+    # Need to replace tuples with lists as per proper json structure
+    json_result = json.loads(json.dumps(serialized_result))
+    assert resp_body["modified"][0]["attributes"] == json_result["modified"][0]["attributes"]
 
 
 async def test_get_parent(ofrak_server, aiohttp_client, hello_world_elf):
@@ -306,7 +316,7 @@ async def test_add_comment(ofrak_server, aiohttp_client, hello_world_elf):
     unpack_resp = await client.post(f"/{create_body['id']}/unpack")
     unpack_body = await unpack_resp.json()
     resp = await client.post(
-        f"/{unpack_body['created'][0]['id']}/add_comment", json=[[10, 20], "test"]
+        f"/{unpack_body['created'][0]['id']}/add_comment", json=[[0, 8], "test"]
     )
     assert resp.status == 200
     resp_body = await resp.json()
@@ -321,8 +331,8 @@ async def test_delete_comment(ofrak_server, aiohttp_client, hello_world_elf):
     create_body = await create_resp.json()
     unpack_resp = await client.post(f"/{create_body['id']}/unpack")
     unpack_body = await unpack_resp.json()
-    await client.post(f"/{unpack_body['created'][0]['id']}/add_comment", json=[[10, 20], "test"])
-    resp = await client.post(f"/{unpack_body['created'][0]['id']}/delete_comment", json=[10, 20])
+    await client.post(f"/{unpack_body['created'][0]['id']}/add_comment", json=[[0, 8], "test"])
+    resp = await client.post(f"/{unpack_body['created'][0]['id']}/delete_comment", json=[0, 8])
     assert resp.status == 200
     resp_body = await resp.json()
     assert resp_body["modified"][0]["id"] == unpack_body["created"][0]["id"]
