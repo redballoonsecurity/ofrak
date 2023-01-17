@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from typing import Dict, Iterable, Optional, Type, Union
 
 import xattr
+
+from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
 
 from ofrak.model.resource_model import index, ResourceAttributes
@@ -35,7 +37,7 @@ class FilesystemEntry(ResourceView):
     @classmethod
     def caption(cls, all_attributes) -> str:
         try:
-            filesystem_attributes = all_attributes[FilesystemEntry.attributes_type]
+            filesystem_attributes = all_attributes[AttributesType[FilesystemEntry]]
         except KeyError:
             return super().caption(all_attributes)
         return f"{cls.__name__}: {filesystem_attributes.name}"
@@ -61,7 +63,7 @@ class FilesystemEntry(ResourceView):
         all_view_attrs: Dict[
             Type[ResourceAttributes], ResourceAttributes
         ] = self.get_attributes_instances()
-        filesystem_attrs = all_view_attrs[FilesystemEntry.attributes_type]
+        filesystem_attrs = all_view_attrs[AttributesType[FilesystemEntry]]
         self.resource.add_attributes(filesystem_attrs)
         await self.resource.save()
 
