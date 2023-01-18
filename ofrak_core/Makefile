@@ -2,11 +2,11 @@ PYTHON=python3
 PIP=pip3
 
 .PHONY: install
-install:
+install: ofrak/gui/public
 	$(PIP) install .
 
 .PHONY: develop
-develop:
+develop: ofrak/gui/public
 	$(PIP) install -e .[docs,test]
 
 .PHONY: inspect
@@ -20,3 +20,13 @@ test: inspect
 
 .PHONY: dependencies
 dependencies:
+
+ofrak/gui/public:
+	if [ -d /ofrak_gui ] ; then \
+		cp -r /ofrak_gui ofrak/gui/public ; \
+	else \
+		pushd ../frontend ; \
+		npm run build ; \
+		popd ; \
+		cp -r ../frontend/public ofrak/gui/public ; \
+	fi

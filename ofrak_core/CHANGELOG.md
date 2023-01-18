@@ -5,7 +5,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 ### Added
-- UBIFS filesystem analyzer / unpacker / packer added.
+- UBIFS filesystem analyzer / unpacker / packer added. [#173](https://github.com/redballoonsecurity/ofrak/pull/173)
+- Move GUI server to `ofrak_core`, startup GUI through CLI, add testing for server, make GUI pip installable. [#168](https://github.com/redballoonsecurity/ofrak/pull/168)
+  - `python -m ofrak gui` starts the OFRAK GUI server.
+
+### Changed
+- Refactored `DataService` internals to more efficiently find resources affected by patches [#140](https://github.com/redballoonsecurity/ofrak/pull/140)
+
+### Deprecated
+- Deprecate `view_type.attributes_type` in favor of `AttributesType[view_type]` [#149](https://github.com/redballoonsecurity/ofrak/pull/149)
+
+### Fixed
+- Remove unneeded and slow `.save()` when unpacking filesystems [#171](https://github.com/redballoonsecurity/ofrak/pull/171)
 
 ## [2.0.0](https://github.com/redballoonsecurity/ofrak/releases/tag/ofrak-v2.0.0) - 2023-01-03
 ### Added

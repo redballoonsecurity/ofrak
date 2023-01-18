@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Tuple, Iterable
 
+from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
 
 from ofrak.component.analyzer import Analyzer
@@ -42,8 +43,8 @@ class ComplexBlock(MemoryRegion):
     @classmethod
     def caption(cls, all_attributes) -> str:
         try:
-            cb_attributes = all_attributes[ComplexBlock.attributes_type]
-            addressable_attributes = all_attributes[Addressable.attributes_type]
+            cb_attributes = all_attributes[AttributesType[ComplexBlock]]
+            addressable_attributes = all_attributes[AttributesType[Addressable]]
         except KeyError:
             return super().caption(all_attributes)
         return f"{hex(addressable_attributes.virtual_address)}: {cb_attributes.name}"

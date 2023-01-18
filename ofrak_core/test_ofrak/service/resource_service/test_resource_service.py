@@ -16,6 +16,7 @@ from ofrak.model.resource_model import (
     ResourceModelDiff,
     ResourceAttributeDependency,
 )
+from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.service.resource_service_i import (
     ResourceServiceInterface,
     ResourceFilter,
@@ -89,7 +90,7 @@ class TestResourceService:
 
         # Can create a resource with indexable attributes
         model = tree2_resource_models[2]
-        model.attributes[Addressable.attributes_type] = Addressable.attributes_type(0x100)
+        model.attributes[AttributesType[Addressable]] = AttributesType[Addressable](0x100)
         await resource_service.create(model)
 
     async def test_get_by_data_ids(self, resource_service, tree1_resource_models):
@@ -638,12 +639,12 @@ class TestResourceService:
             await populated_resource_service.update(ResourceModelDiff(b"\xFF"))
         # Test we can add non-indexing resource model fields
         dependency = ResourceAttributeDependency(
-            b"\xFF", b"dummy_component", MemoryRegion.attributes_type
+            b"\xFF", b"dummy_component", AttributesType[MemoryRegion]
         )
         new_data_dependencies = {(dependency, Range(0, 10))}
-        new_attribute_dependencies = {(Addressable.attributes_type, dependency)}
+        new_attribute_dependencies = {(AttributesType[Addressable], dependency)}
         new_component_versions = {(b"dummy_component", 1)}
-        new_attributes_components = {(Addressable.attributes_type, b"dummy_component", 1)}
+        new_attributes_components = {(AttributesType[Addressable], b"dummy_component", 1)}
         simple_addition_diff = ResourceModelDiff(
             id=R_ID_3_1,
             data_dependencies_added=new_data_dependencies,
@@ -653,10 +654,10 @@ class TestResourceService:
         )
         new_model = await populated_resource_service.update(simple_addition_diff)
         assert new_model.data_dependencies[dependency] == {Range(0, 10)}
-        assert new_model.attribute_dependencies[Addressable.attributes_type] == {dependency}
+        assert new_model.attribute_dependencies[AttributesType[Addressable]] == {dependency}
         assert new_model.component_versions.get(b"dummy_component") == 1
         assert (
-            new_model.components_by_attributes.get(Addressable.attributes_type)[0]
+            new_model.components_by_attributes.get(AttributesType[Addressable])[0]
             == b"dummy_component"
         )
 
@@ -677,10 +678,10 @@ class TestResourceService:
         new_model = await populated_resource_service.update(simple_removal_diff)
         assert new_model != old_model
         assert new_model.data_dependencies[dependency] == set()
-        assert new_model.attribute_dependencies[Addressable.attributes_type] == {dependency}
+        assert new_model.attribute_dependencies[AttributesType[Addressable]] == {dependency}
         assert new_model.component_versions.get(b"dummy_component") is None
         assert (
-            new_model.components_by_attributes.get(Addressable.attributes_type)[0]
+            new_model.components_by_attributes.get(AttributesType[Addressable])[0]
             == b"dummy_component"
         )
 
