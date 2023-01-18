@@ -21,6 +21,8 @@ from ubireader.ubi import ubi as ubireader_ubi
 from ubireader.ubi.defines import UBI_EC_HDR_MAGIC, UBI_VID_HDR_MAGIC, PRINT_VOL_TYPE_LIST
 from ubireader.utils import guess_leb_size, guess_peb_size
 
+from ofrak.model.resource_model import index
+
 LOGGER = logging.getLogger(__name__)
 
 UBINIZE_TOOL = ComponentExternalTool(
@@ -42,6 +44,10 @@ class UbiVolume(ResourceView):
     name: str
     flag_autoresize: bool # `vol_flags` only specifies an auto-resize flag
     alignment: int
+
+    @index
+    def UbiVolumeId(self) -> int:
+        return self.id
 
 
 @dataclass
