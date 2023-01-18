@@ -34,7 +34,7 @@ class TestUbiUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
         ubi_view = await root_resource.view_as(Ubi)
         ubi_vol_resource = UbiVolume(
             2,
-            (await root_resource.get_data_length() // ubi_view.peb_size),
+            -(await root_resource.get_data_length() // -ubi_view.peb_size),
             'dynamic',
             "ohfrak",
             False,  # Autoresize flag for standard UBI
