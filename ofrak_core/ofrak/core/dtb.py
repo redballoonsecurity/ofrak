@@ -15,6 +15,7 @@ from ofrak.component.analyzer import Analyzer
 from ofrak.component.identifier import Identifier
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
+from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort
 from ofrak.core import GenericBinary, MagicMimeIdentifier, MagicDescriptionIdentifier
@@ -40,7 +41,7 @@ class DtbNode(GenericBinary):
     @classmethod
     def caption(cls, attributes) -> str:
         try:
-            dtb_attributes = attributes[DtbNode.attributes_type]
+            dtb_attributes = attributes[AttributesType[DtbNode]]
         except KeyError:
             return super().caption(attributes)
         return f"{cls.__name__}: {dtb_attributes.name}"
@@ -175,7 +176,7 @@ class DtbProperty(GenericBinary):
     @classmethod
     def caption(cls, attributes) -> str:
         try:
-            dtb_attributes = attributes[DtbProperty.attributes_type]
+            dtb_attributes = attributes[AttributesType[DtbProperty]]
         except KeyError:
             return super().caption(attributes)
         return f"{cls.__name__}: {dtb_attributes.name}"

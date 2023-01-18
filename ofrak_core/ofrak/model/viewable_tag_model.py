@@ -2,7 +2,7 @@ import dataclasses
 from _warnings import warn
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Tuple, Type, Dict, Any, List, Set, TypeVar, Iterable, MutableMapping
+from typing import Tuple, Type, Dict, Any, List, Set, TypeVar, Iterable, MutableMapping, Generic
 from weakref import WeakValueDictionary
 
 import ofrak.model._auto_attributes
@@ -16,11 +16,41 @@ from ofrak.model.tag_model import ResourceTag
 
 _VIEW_ATTRIBUTES_TYPE = "__view_attributes_type__"
 _COMPOSED_ATTRIBUTES_TYPE = "__composed_attributes_types__"
-_VIEW_ATTRIBUTE_TYPE_NAME_SUFFIX = "AutoAttributes"
 
 
 RA = TypeVar("RA", bound=ResourceAttributes)
 RVI = TypeVar("RVI", bound="ResourceViewInterface")
+
+
+class AttributesType(ResourceAttributes, Generic[RVI]):
+    """
+    A Generic type for `ViewableResourceTag` to get the auto-generated `ResourceAttributes`
+    class associated with that view type. The returned class is a `dataclass` which encapsulates
+    the fields defined in one specific `ViewableResourceTag`.
+
+    For example if `B` inherits from `A` and `A` defines one or more new fields,
+    `AttributesType[B]` has only fields defined in `B`, and none of the fields defined in `A`.
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any):
+        raise NotImplementedError("AttributesType cannot be instantiated")
+
+    def __class_getitem__(cls, item: Type[RVI]) -> Type[ResourceAttributes]:
+        return getattr(item, _VIEW_ATTRIBUTES_TYPE)
+
+    def __getattr__(self, item):  # pragma: no cover
+        """
+        Type stub that 'tricks' MyPy into not trying to typecheck attribute accesses of an
+        `AttributesType` instance. This stub solves the following case:
+
+        ```
+        x: AttributesType[X] = func()
+        x.any_field  <--- Always is a type error because MyPy thinks AttributesType has no fields!
+        ```
+
+        Without this stub, each instance of x.any_field would need to be marked with # type: ignore
+        """
+        ...
 
 
 @dataclass
@@ -90,17 +120,17 @@ class ViewableResourceTag(ResourceTag):
         """
         # Change owner of the indexes to be the attributes type
         for name, index_descriptor in _get_indexes(namespace).items():
-            if cls.attributes_type is None:
+            if getattr(cls, _VIEW_ATTRIBUTES_TYPE) is None:
                 raise TypeError(
                     f"Cannot have an index in a ResourceView which has no attributes "
                     f"- an index should only access one set of attributes, "
                     f"so this index is likely illegal anyway."
                 )
-            index_descriptor.__set_name__(cls.attributes_type, name)
+            index_descriptor.__set_name__(getattr(cls, _VIEW_ATTRIBUTES_TYPE), name)
 
         super().__init__(cls, name, bases)  # type: ignore
 
-    @property
+    @property  # pragma: no cover
     def attributes_type(cls) -> Type[ResourceAttributes]:
         """
         Get the auto-generated `ResourceAttributes` subclass for this `ViewableResourceTag`. The
@@ -111,13 +141,17 @@ class ViewableResourceTag(ResourceTag):
         :return: The auto-generated `ResourceAttributes` subclass for this `ViewableResourceTag`
         class, in no particular order.
         """
+        warn(
+            "T.attributes_type is deprecated! Use AttributesType[T] instead.",
+            category=DeprecationWarning,
+        )
         return getattr(cls, _VIEW_ATTRIBUTES_TYPE)
 
     @property
     def composed_attributes_types(cls) -> Iterable[Type[ResourceAttributes]]:
         """
         Get all of the `ResourceAttributes` subclasses which this class is composed of. This means
-        walking back through the class hierarchy and getting the `base.attributes_type` for every
+        walking back through the class hierarchy and getting the `AttributesType[base]` for every
         base class of this class.
 
         :return: The `attributes_type` of every `ViewableResourceTag` this class inherits from,
@@ -156,7 +190,7 @@ class ViewableResourceTag(ResourceTag):
         # Creates a new class inheriting from ResourceAttributes, with the same fields as this
         # ViewableResourceTag, as well as the same indexed attribute descriptors
         attributes_type = dataclasses.make_dataclass(
-            f"{name}{_VIEW_ATTRIBUTE_TYPE_NAME_SUFFIX}",
+            f"{AttributesType.__name__}[{name}]",
             fields,
             bases=(ResourceAttributes,),
             namespace=indexed_attributes_namespace,
@@ -177,7 +211,7 @@ class ViewableResourceTag(ResourceTag):
 
 def _get_attributes_types_recursively(cls: type) -> List[Type[ResourceAttributes]]:
     if isinstance(cls, ViewableResourceTag):
-        attrs_types = [cls.attributes_type]
+        attrs_types = [getattr(cls, _VIEW_ATTRIBUTES_TYPE)]
         for base_cls in cls.__bases__:
             attrs_types.extend(_get_attributes_types_recursively(base_cls))
         return attrs_types
