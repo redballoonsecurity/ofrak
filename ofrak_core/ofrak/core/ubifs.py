@@ -58,7 +58,7 @@ class SuperblockNode:
 @dataclass
 class Ubifs(GenericBinary, FilesystemRoot):
     """
-    UBIFS is a filesystem specially made to run on top of an UBI translation layer. UBIFS specifically provides
+    UBIFS is a filesystem specially made to run on top of an UBI volume layer. UBIFS specifically provides
     indexing, compression, encryption / authentication and some other filesystem-related features.
 
     As part of an UBI image, re-packing an UBIFS image requires the 'min_io_size' and 'leb_size' properties that
