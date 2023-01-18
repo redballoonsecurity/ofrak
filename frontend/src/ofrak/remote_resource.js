@@ -5,13 +5,18 @@ let childQueue = {
   requests: [],
   responses: {},
   timeout: null,
-  getAllChildren: async () => {
+  getAllChildren: async (requests) => {
+    if (!requests) {
+      requests = childQueue.requests;
+      childQueue.requests = [];
+    }
+
     const all_child_models = await fetch(`/api/batch/get_children`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(childQueue.requests),
+      body: JSON.stringify(requests),
     }).then(async (r) => {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
@@ -24,7 +29,6 @@ let childQueue = {
       );
       delete childQueue.responses[child_id];
     }
-    childQueue.requests = [];
   },
 };
 
@@ -48,10 +52,13 @@ export class RemoteResource extends Resource {
       );
     });
 
-    if (childQueue.length > childQueue.maxlen) {
-      await childQueue.getAllChildren();
+    if (childQueue.requests.length > childQueue.maxlen) {
+      const requestsCopy = childQueue.requests;
+      childQueue.requests = [];
+
+      await childQueue.getAllChildren(requestsCopy);
     } else {
-      childQueue.timeout = setTimeout(childQueue.getAllChildren, 500);
+      childQueue.timeout = setTimeout(childQueue.getAllChildren, 100);
     }
 
     return this._remote_models_to_resources(await result);

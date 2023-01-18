@@ -69,6 +69,7 @@
   import LoadingText from "./LoadingText.svelte";
 
   import { selected } from "./stores.js";
+  import { chunkList, sleep } from "./helpers";
 
   export let rootResource,
     resourceNodeDataMap,
@@ -127,9 +128,11 @@
       rootResource.get_comments();
   }
 
+  /*
   $: if ($selected !== undefined && $selected === self?.id) {
     self?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
+  */
 </script>
 
 {#await childrenPromise then children}
@@ -157,21 +160,19 @@
 </button>
 {#await commentsPromise then comments}
   {#each comments as comment}
-    {#await rootResource.prettify_comment(comment) then comment_pretty}
-      <div class="comment">
-        <Hoverable let:hovering>
-          <button
-            title="Delete this comment"
-            on:click="{onDeleteClick(comment[0])}"
-          >
-            <Icon
-              class="comment_icon"
-              url="{hovering ? '/icons/trash_can.svg' : '/icons/comment.svg'}"
-            />
-          </button></Hoverable
-        >{comment_pretty}
-      </div>
-    {/await}
+    <div class="comment">
+      <Hoverable let:hovering>
+        <button
+          title="Delete this comment"
+          on:click="{onDeleteClick(comment[0])}"
+        >
+          <Icon
+            class="comment_icon"
+            url="{hovering ? '/icons/trash_can.svg' : '/icons/comment.svg'}"
+          />
+        </button></Hoverable
+      >{comment[1]}
+    </div>
   {/each}
 {/await}
 
@@ -180,16 +181,20 @@
 {:then children}
   {#if !collapsed && children.length > 0}
     <ul>
-      {#each children as child}
-        <li>
-          <div>
-            <svelte:self
-              rootResource="{child}"
-              collapsed="{childrenCollapsed}"
-              bind:resourceNodeDataMap="{resourceNodeDataMap}"
-            />
-          </div>
-        </li>
+      {#each chunkList(children, 4096) as chunk}
+        {#await sleep(Math.floor(Math.random() * 200)) then _}
+          {#each chunk as child}
+            <li>
+              <div>
+                <svelte:self
+                  rootResource="{child}"
+                  collapsed="{childrenCollapsed}"
+                  bind:resourceNodeDataMap="{resourceNodeDataMap}"
+                />
+              </div>
+            </li>
+          {/each}
+        {/await}
       {/each}
     </ul>
   {/if}
