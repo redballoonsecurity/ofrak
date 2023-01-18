@@ -27,7 +27,7 @@ MKFS_UBIFS_TOOL = ComponentExternalTool(
     "http://www.linux-mtd.infradead.org/faq/ubifs.html",
     install_check_arg="--help",
     apt_package="mtd-utils",
-    brew_package="",  # This isn't compatible with macos, but there may be an alternative tool to do the bidding.
+    brew_package=None,  # This isn't compatible with macos, but there may be an alternative tool to do the bidding.
 )
 
 
