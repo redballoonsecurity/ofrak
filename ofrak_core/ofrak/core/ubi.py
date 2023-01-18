@@ -36,8 +36,11 @@ UBINIZE_TOOL = ComponentExternalTool(
 
 @dataclass
 class UbiVolume(ResourceView):
-    # mode = ubi
-    # image = <filepath to image>
+    """
+    Reflect the 'config.ini' UBI volume entries expected by `ubinize`; see:
+    http://www.linux-mtd.infradead.org/faq/ubi.html#L_ubi_mkimg and
+    https://github.com/vamanea/mtd-utils/blob/master/ubi-utils/ubinize.c#L288`
+    """
     id: int
     peb_count: int  # size = UbiVolume.peb_count * Ubi.peb_size
     type: str
@@ -53,6 +56,7 @@ class UbiVolume(ResourceView):
 @dataclass
 class Ubi(GenericBinary):
     """
+    Reflect arguments required by `ubinize` and volumes associated with the ubi blob; see:
     http://www.linux-mtd.infradead.org/doc/ubi.html
     """
 
@@ -75,6 +79,7 @@ class UbiAnalyzer(Analyzer[None, Ubi]):
     outputs = (Ubi,)
 
     async def analyze(self, resource: Resource, config=None) -> Ubi:
+        # Flush to disk
         with tempfile.NamedTemporaryFile() as temp_file:
             resource_data = await resource.get_data()
             temp_file.write(resource_data)
@@ -89,6 +94,8 @@ class UbiAnalyzer(Analyzer[None, Ubi]):
                 )
             )
 
+        # Technically multiple images can be encountered in an UBI blob, but that should be handled by
+        # OFRAK by treating them as separate UBI resources.
         if len(ubi_obj.images) > 1:
             raise Exception("Multi-image UBI blobs are not directly supported. Carve each image into a separate "
                             "resource and run UbiAnalyzer on each of them.")
@@ -129,34 +136,34 @@ class UbiUnpacker(Unpacker[None]):
     external_dependencies = ()
 
     async def unpack(self, resource: Resource, config=None):
-        with tempfile.NamedTemporaryFile() as temp_file:
+        with tempfile.TemporaryDirectory() as temp_flush_dir:
             # flush to disk
-            resource_data = await resource.get_data()
-            temp_file.write(resource_data)
-            temp_file.flush()
+            with open(f"{temp_flush_dir}/input.img", "wb") as temp_file:
+                resource_data = await resource.get_data()
+                temp_file.write(resource_data)
+                temp_file.flush()
 
             # extract temp_file to temp_flush_dir
-            with tempfile.TemporaryDirectory() as temp_flush_dir:
-                command = [
-                    "ubireader_extract_images",
-                    "-o",
-                    temp_flush_dir,
-                    temp_file.name,
-                ]
-                subprocess.run(command, check=True, capture_output=True)
+            command = [
+                "ubireader_extract_images",
+                "-o",
+                f"{temp_flush_dir}/output",
+                temp_file.name,
+            ]
+            subprocess.run(command, check=True, capture_output=True)
 
-                ubi_view = await resource.view_as(Ubi)
+            ubi_view = await resource.view_as(Ubi)
 
-                # Each file extracted by `ubireader_extract_images` is populated as an UbiVolume
-                # `ubireader_extract_images` incorrectly appends a `ubifs` suffix despite unpacking ubi images / volumes
-                for vol in ubi_view.volumes:
-                    f_path = f"{temp_flush_dir}/{os.path.basename(temp_file.name)}" \
-                             f"/img-{ubi_view.image_seq}_vol-{vol.name}.ubifs"
-                    with open(f_path, "rb") as f:
-                        await resource.create_child_from_view(
-                            vol,
-                            data=f.read()
-                        )
+            # Each file extracted by `ubireader_extract_images` is populated as an UbiVolume
+            # `ubireader_extract_images` incorrectly appends a `ubifs` suffix despite unpacking ubi images / volumes
+            for vol in ubi_view.volumes:
+                f_path = f"{temp_flush_dir}/output/{os.path.basename(temp_file.name)}" \
+                         f"/img-{ubi_view.image_seq}_vol-{vol.name}.ubifs"
+                with open(f_path, "rb") as f:
+                    await resource.create_child_from_view(
+                        vol,
+                        data=f.read()
+                    )
 
 
 class UbiPacker(Packer[None]):
@@ -188,6 +195,10 @@ class UbiPacker(Packer[None]):
             for volume in ubi_volumes:
                 volume_view = await volume.view_as(UbiVolume)
                 volume_size = await volume.get_data_length()
+
+                # I think the `ubinize` rounds up the number of required PEBs based on the provided size.
+                # Maybe this? allocated PEBs = -(volume_size // -peb_size) + 1
+                # For empty volumes I reverse this operation
                 if volume_size != 0:
                     volume_path = f"{temp_flush_dir}/input-{ubi_view.image_seq}_vol-{volume_view.name}.ubivol"
                     await volume.flush_to_disk(volume_path)
@@ -195,6 +206,7 @@ class UbiPacker(Packer[None]):
                     volume_path = None
                     volume_size = (volume_view.peb_count - 1) * ubi_view.peb_size
 
+                # Generate a volume entry for `ubinize`'s config.ini
                 ubinize_ini_entry = f"""\
 [{volume_view.name}-volume]
 mode=ubi
