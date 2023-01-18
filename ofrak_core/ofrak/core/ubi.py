@@ -37,9 +37,18 @@ UBINIZE_TOOL = ComponentExternalTool(
 @dataclass
 class UbiVolume(ResourceView):
     """
-    Reflect the 'config.ini' UBI volume entries expected by `ubinize`; see:
+    An UbiVolume is a volume entry in UBI. It typically contains an image of arbitrary data, typically a filesystem or a
+    log. They can be empty while reserving PEBs for future volume modification or for padding.
+
+    Volume information reflected in the 'config.ini' UBI volume entries expected by `ubinize` are stored here. Also see:
     http://www.linux-mtd.infradead.org/faq/ubi.html#L_ubi_mkimg and
-    https://github.com/vamanea/mtd-utils/blob/master/ubi-utils/ubinize.c#L288`
+
+    :cvar id: The assigned volume ID within the UBI image
+    :cvar peb_count: Number of PEBs allocated for the volume
+    :cvar type: UBI volume type, either 'static' or 'dynamic'; see http://www.linux-mtd.infradead.org/doc/ubi.html#L_overview
+    :cvar name: Label assigned to the volume
+    :cvar flag_autoresize: Tells UBI to resize this volume to occupy unused space in the UBI image once; see http://www.linux-mtd.infradead.org/doc/ubi.html#L_autoresize
+    :cvar alignment: LEB size of this volume has to be aligned on, such that Ubi.leb_size % UbiVolume.alignment == 0; see https://elixir.bootlin.com/linux/v6.1.7/source/include/uapi/mtd/ubi-user.h#L328
     """
 
     id: int
@@ -57,8 +66,21 @@ class UbiVolume(ResourceView):
 @dataclass
 class Ubi(GenericBinary):
     """
-    Reflect arguments required by `ubinize` and volumes associated with the ubi blob; see:
+    UBI is a volume management layer for raw / unmanaged flash devices. It can be thought of LVM
+    (Logical Volume Manager) with some additional features necessary for reliably using raw flash memory such as wear
+    leveling and error correction. Each volume can contain any arbitrary data, though UBIFS is specially made to be used
+    within an UBI volume.
+
+    UBI parameters and volumes required by `ubinize` for repacking are defined here. Also see:
     http://www.linux-mtd.infradead.org/doc/ubi.html
+    https://github.com/vamanea/mtd-utils/blob/master/ubi-utils/ubinize.c#L288`
+
+    :cvar min_io_size: Minimum number of bytes per I/O transaction (see http://www.linux-mtd.infradead.org/doc/ubi.html#L_min_io_unit)
+    :cvar leb_size: Size of Logical Erase Blocks
+    :cvar peb_size: Size of Physical Erase Blocks
+    :cvar total_peb_count: The total number of PEBs, which includes hidden layout blocks in addition to data blocks allocated per volume
+    :cvar image_seq: image sequence number recorded on EC headers (typically random)
+    :cvar volumes: List of volumes associated with the UBI image
     """
 
     min_io_size: int
