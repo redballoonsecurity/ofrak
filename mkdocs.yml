@@ -66,10 +66,12 @@ nav:
         - Packer: "user-guide/component/packer.md"
       - Ghidra Backend: "user-guide/ghidra.md"
       - Binary Ninja Backend: "user-guide/binary_ninja.md"
+      - Angr Backend: "user-guide/angr.md"
       - PatchMaker:
         - User Guide: "user-guide/patch-maker/user-guide.md"
         - Troubleshooting: "user-guide/patch-maker/troubleshooting.md"
       - NAND Flash Component: "user-guide/flash_component.md"
+      - Gotchas: "user-guide/gotchas.md"
   - Contributor Guide:
       - Getting Started: "contributor-guide/getting-started.md"
       - Writing Components:
