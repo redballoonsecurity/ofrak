@@ -33,6 +33,20 @@ MKFS_UBIFS_TOOL = ComponentExternalTool(
 
 @dataclass
 class SuperblockNode:
+    """
+    Each UBIFS image has a superblock which describe a large number of parameters regarding the filesystem. The
+    minimal set of parameters necessary to re-pack an UBIFS filesystem are stored here.
+    (see also: https://elixir.bootlin.com/linux/v6.1.7/source/fs/ubifs/ubifs.h#L1017).
+
+
+    :cvar max_leb_count: Maximum number / limit of Logical Erase Blocks
+    :cvar default_compr: Default compression algorithm
+    :cvar fanout: Fanout of the index tree (number of links per indexing node)
+    :cvar key_hash: Type of hash function used for keying direntries (typically 'r5' of reiserfs)
+    :cvar orph_lebs: Number of LEBs used for orphan area (orphans are inodes with no links; see https://elixir.bootlin.com/linux/v6.1.7/source/fs/ubifs/orphan.c#L13)
+    :cvar log_lebs: LEBs reserved for the journal (see the 'Journal' section in https://www.kernel.org/doc/Documentation/filesystems/ubifs-authentication.rst)
+    """
+
     max_leb_count: int
     default_compr: str  # PRINT_UBIFS_COMPR
     fanout: int
@@ -44,9 +58,22 @@ class SuperblockNode:
 @dataclass
 class Ubifs(GenericBinary, FilesystemRoot):
     """
+    UBIFS is a filesystem specially made to run on top of an UBI translation layer. UBIFS specifically provides
+    indexing, compression, encryption / authentication and some other filesystem-related features.
+
+    As part of an UBI image, re-packing an UBIFS image requires the 'min_io_size' and 'leb_size' properties that
+    are stored as part of the UBI header (https://elixir.bootlin.com/linux/v6.1.7/source/drivers/mtd/ubi/ubi.h#L441).
+
+    Each UBIFS image has a superblock which is encoded in OFRAK as a SuperblockNode.
+
+    Some documentation about UBIFS layout can also be found here:
+    https://www.kernel.org/doc/Documentation/filesystems/ubifs-authentication.rst
     http://www.linux-mtd.infradead.org/doc/ubifs.html
-    Minimum number of bytes per transaction (see http://www.linux-mtd.infradead.org/doc/ubi.html#L_min_io_unit)
-    Size of logical erase blocks and superblock parameters required for repacking.
+
+    :cvar min_io_size: Minimum number of bytes per I/O transaction (see http://www.linux-mtd.infradead.org/doc/ubi.html#L_min_io_unit)
+    :cvar leb_size: Size of Logical Erase Blocks
+    :cvar superblock: A SuberblockNode
+
     """
 
     min_io_size: int
@@ -92,7 +119,7 @@ class UbifsAnalyzer(Analyzer[None, Ubifs]):
 
 class UbifsUnpacker(Unpacker[None]):
     """
-    Extract the UBIFS image into a directory and import the extraction as a Filesystem entries in the Ubifs resource.
+    Unpack the UBIFS image into a filesystem representation.
     """
 
     targets = (Ubifs,)
@@ -121,7 +148,7 @@ class UbifsUnpacker(Unpacker[None]):
 
 class UbifsPacker(Packer[None]):
     """
-    Generate an UBIFS image from an Ubifs resource view.
+    Generate an UBIFS image from a filesystem representation in OFRAK.
     """
 
     targets = (Ubifs,)
