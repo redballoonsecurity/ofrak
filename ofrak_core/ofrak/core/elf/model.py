@@ -329,12 +329,14 @@ class ElfSectionType(Enum):
     NOTE = 0x7
     NOBITS = 0x8
     REL = 0x9
-    SHT_PREINIT_ARRAY = 0x10
     SHLIB = 0xA
     DYNSYM = 0xB
     INIT_ARRAY = 0xE
     FINI_ARRAY = 0xF
-
+    SHT_PREINIT_ARRAY = 0x10
+    SHT_GROUP = 0x11
+    SHT_SYMTAB_SHNDX = 0x12
+    SHT_NUM = 0x13
     HIPROC = 0x7FFFFFFF
     HIUSER = 0xFFFFFFFF
     LOPROC = 0x70000000
