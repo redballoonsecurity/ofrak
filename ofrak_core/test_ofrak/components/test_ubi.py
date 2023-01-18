@@ -1,18 +1,12 @@
 import hashlib
 import os
 
-import pytest
-from _pytest._py.path import LocalPath
-
-from ofrak.core.ubi import Ubi, UbiVolume
-from ofrak_type import Range
-from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import CompressedFileUnpackModifyPackPattern
-
-from test_ofrak.components import ASSETS_DIR
-
 from ofrak import OFRAKContext, ResourceSort
 from ofrak.resource import Resource
-from ofrak.core.checksum import Md5Attributes, Sha256Attributes
+from ofrak.core.ubi import Ubi, UbiVolume
+
+from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import CompressedFileUnpackModifyPackPattern
+from test_ofrak.components import ASSETS_DIR
 
 TEST_PAYLOAD = b"$ base64 -d <<< f0VMRuH//xAICIDSEAAAFAIAtwABAAAABAAAAAEAAAAcAAAAAAAAAAAA\
 AAAAAAAAAQAAAEAAOAABAADU8v//FwAAAADy//8XAAAAAIIAgNL6//8X > aarch64.elf;EOF"
@@ -58,7 +52,6 @@ class TestUbiUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
     async def verify(self, root_resource: Resource) -> None:
         assert root_resource.has_tag(Ubi)
         await root_resource.unpack()
-        tree = await root_resource.summarize_tree()
 
         for ubi_vol in await root_resource.get_children(r_sort=ResourceSort(UbiVolume.UbiVolumeId)):
             ubi_vol_view = await  ubi_vol.view_as(UbiVolume)

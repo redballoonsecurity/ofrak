@@ -10,7 +10,7 @@ from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.resource import Resource
-from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
+from ofrak.core.filesystem import File
 from ofrak.core.binary import GenericBinary
 from ofrak.resource_view import ResourceView
 
@@ -19,7 +19,7 @@ from ofrak_type.range import Range
 from ubireader import ubi_io
 from ubireader.ubi import ubi as ubireader_ubi
 from ubireader.ubi.defines import UBI_EC_HDR_MAGIC, UBI_VID_HDR_MAGIC, PRINT_VOL_TYPE_LIST
-from ubireader.utils import guess_leb_size, guess_peb_size
+from ubireader.utils import guess_peb_size
 
 from ofrak.model.resource_model import index
 
