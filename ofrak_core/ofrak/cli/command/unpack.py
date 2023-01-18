@@ -144,7 +144,7 @@ async def _custom_summarize_resource(resource: Resource, unpack_cmd: UnpackComma
 
     path = unpack_cmd.get_path(resource)
     if path is None:
-        path_info = ", (no path)"
+        path_info = ", (not written)"
     else:
-        path_info = f", path={unpack_cmd.get_path(resource)}"
+        path_info = f", extracted-path={unpack_cmd.get_path(resource)}"
     return f"{name}: [attributes=({attributes_info}){data_info}{path_info}]"
