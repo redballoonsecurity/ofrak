@@ -152,7 +152,6 @@ class UbiUnpacker(Unpacker[None]):
                 for vol in ubi_view.volumes:
                     f_path = f"{temp_flush_dir}/{os.path.basename(temp_file.name)}" \
                              f"/img-{ubi_view.image_seq}_vol-{vol.name}.ubifs"
-                    print(f"path is: {f_path}")
                     with open(f_path, "rb") as f:
                         await resource.create_child_from_view(
                             vol,
