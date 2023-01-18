@@ -3,7 +3,6 @@ import functools
 import json
 import logging
 import os
-import sys
 from typing import (
     Iterable,
     Optional,
@@ -27,7 +26,6 @@ from ofrak_type.range import Range
 
 from ofrak import (
     OFRAKContext,
-    OFRAK,
     ResourceFilter,
     ResourceAttributeRangeFilter,
     ResourceAttributeValueFilter,
@@ -430,7 +428,7 @@ class AiohttpOFRAKServer:
         del resource_model_fields["components_by_attributes"]
 
 
-async def main(ofrak_context: OFRAKContext, host: str, port: int):  # pragma: no cover
+async def start_server(ofrak_context: OFRAKContext, host: str, port: int):  # pragma: no cover
     # Force using the correct PJSON serialization with the expected structure. Otherwise the
     # dependency injector may accidentally use the Stashed PJSON serialization service,
     # which returns PJSON that has a different, problematic structure.
@@ -444,8 +442,6 @@ async def main(ofrak_context: OFRAKContext, host: str, port: int):  # pragma: no
     )
     server = await ofrak_context.injector.get_instance(AiohttpOFRAKServer)
     await server.start()
-
-    print("Started server")
 
     await server.run_until_cancelled()
 
@@ -469,42 +465,3 @@ def get_query_string_as_pjson(request: Request) -> Dict[str, PJSONType]:
     or 1 as '1', which isn't valid PJSON. We fix this by applying `json.loads` on each parameter.
     """
     return {key: json.loads(value) for key, value in request.query.items()}
-
-
-if __name__ == "__main__":
-    if len(sys.argv) >= 3:
-        _host = sys.argv[1]
-        _port = int(sys.argv[2])
-    else:
-        _host = "127.0.0.1"
-        _port = 8080
-
-    backend: Optional[str]
-    if len(sys.argv) == 4:
-        backend = sys.argv[3]
-    else:
-        backend = None
-
-    ofrak = OFRAK(logging.INFO)
-
-    if backend == "binary-ninja":
-        import ofrak_capstone  # type: ignore
-        import ofrak_binary_ninja  # type: ignore
-
-        ofrak.injector.discover(ofrak_capstone)
-        ofrak.injector.discover(ofrak_binary_ninja)
-
-    elif backend == "ghidra":
-        import ofrak_ghidra  # type: ignore
-
-        ofrak.injector.discover(ofrak_ghidra)
-
-    elif backend == "angr":
-        import ofrak_angr  # type: ignore
-
-        ofrak.injector.discover(ofrak_angr)
-
-    else:
-        LOGGER.warning("No disassembler backend specified, so no disassembly will be possible")
-
-    ofrak.run(main, _host, _port)  # type: ignore

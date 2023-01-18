@@ -1,4 +1,5 @@
 import functools
+import logging
 import sys
 import webbrowser
 from abc import ABC, abstractmethod
@@ -14,11 +15,14 @@ from typing import Dict, Optional, Type, List, Iterable, Set, Sequence
 
 from importlib_metadata import entry_points
 
+from ofrak import OFRAK
 from ofrak.component.interface import ComponentInterface
 from ofrak.model.component_model import ComponentExternalTool
 from synthol.injector import DependencyInjector
 
-import ofrak.gui.server as server
+from ofrak.gui.server import start_server
+
+LOGGER = logging.getLogger(__name__)
 
 
 class OFRAKEnvironment:
@@ -334,13 +338,13 @@ class GUISubCommand(OFRAKSubCommand):
     @staticmethod  # pragma: no cover
     def handler(ofrak_env: OFRAKEnvironment, args: Namespace):
         if args.verbose is True:
-            ofrak = server.OFRAK(server.logging.DEBUG)
+            ofrak = OFRAK(logging.DEBUG)
 
         elif args.quiet is True:
-            ofrak = server.OFRAK(server.logging.WARNING)
+            ofrak = OFRAK(logging.WARNING)
 
         else:
-            ofrak = server.OFRAK(server.logging.INFO)
+            ofrak = OFRAK(logging.INFO)
 
         if args.backend is not None:
             if args.backend.lower() == "binary-ninja":
@@ -356,20 +360,20 @@ class GUISubCommand(OFRAKSubCommand):
                 ofrak.injector.discover(ofrak_ghidra)
 
             elif args.backend.lower() == "angr":
+                import ofrak_capstone  # type: ignore
                 import ofrak_angr  # type: ignore
 
+                ofrak.injector.discover(ofrak_capstone)
                 ofrak.injector.discover(ofrak_angr)
 
         else:
-            server.LOGGER.warning(
-                "No disassembler backend specified, so no disassembly will be possible"
-            )
+            LOGGER.warning("No disassembler backend specified, so no disassembly will be possible")
 
         url = f"http://{args.hostname}:{args.port}"
-        server.LOGGER.warning(f"GUI is being served on {url}")
+        print(f"GUI is being served on {url}")
         webbrowser.open(url)
 
-        ofrak.run(server.main, args.hostname, args.port)  # type: ignore
+        ofrak.run(start_server, args.hostname, args.port)  # type: ignore
 
 
 class OFRAKCommandLineInterface:
