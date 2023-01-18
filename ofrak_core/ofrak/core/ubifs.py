@@ -127,23 +127,24 @@ class UbifsUnpacker(Unpacker[None]):
     external_dependencies = ()
 
     async def unpack(self, resource: Resource, config=None):
-        with tempfile.NamedTemporaryFile() as temp_file:
-            resource_data = await resource.get_data()
-            temp_file.write(resource_data)
-            temp_file.flush()
+        with tempfile.TemporaryDirectory() as temp_flush_dir:
+            # flush to disk
+            with open(f"{temp_flush_dir}/input.img", "wb") as temp_file:
+                resource_data = await resource.get_data()
+                temp_file.write(resource_data)
+                temp_file.flush()
 
-            with tempfile.TemporaryDirectory() as temp_flush_dir:
-                command = [
-                    "ubireader_extract_files",
-                    "-k",
-                    "-o",
-                    temp_flush_dir,
-                    temp_file.name,
-                ]
-                subprocess.run(command, check=True, capture_output=True)
+            command = [
+                "ubireader_extract_files",
+                "-k",
+                "-o",
+                f"{temp_flush_dir}/output",
+                temp_file.name,
+            ]
+            subprocess.run(command, check=True, capture_output=True)
 
-                ubifs_view = await resource.view_as(Ubifs)
-                await ubifs_view.initialize_from_disk(temp_flush_dir)
+            ubifs_view = await resource.view_as(Ubifs)
+            await ubifs_view.initialize_from_disk(f"{temp_flush_dir}/output")
 
 
 class UbifsPacker(Packer[None]):
