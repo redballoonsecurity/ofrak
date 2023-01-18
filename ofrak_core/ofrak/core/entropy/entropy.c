@@ -1,6 +1,8 @@
 #include <stddef.h>   // size_t, NULL
 #include <inttypes.h> // uint8_t, uint32_t
 #include <math.h>     // floor, log2
+// Required to prevent exception with Python >= 3.10
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
 #define HISTOGRAM_SIZE 256

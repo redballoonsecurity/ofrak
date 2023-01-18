@@ -1,16 +1,28 @@
 import functools
+import logging
 import sys
+import webbrowser
 from abc import ABC, abstractmethod
-from argparse import Namespace, ArgumentParser, RawDescriptionHelpFormatter
+from argparse import (
+    Namespace,
+    ArgumentParser,
+    RawDescriptionHelpFormatter,
+    ArgumentDefaultsHelpFormatter,
+)
 from inspect import isabstract
 from types import ModuleType
 from typing import Dict, Optional, Type, List, Iterable, Set, Sequence
 
 from importlib_metadata import entry_points
 
+from ofrak import OFRAK
 from ofrak.component.interface import ComponentInterface
 from ofrak.model.component_model import ComponentExternalTool
 from synthol.injector import DependencyInjector
+
+from ofrak.gui.server import start_server
+
+LOGGER = logging.getLogger(__name__)
 
 
 class OFRAKEnvironment:
@@ -169,7 +181,9 @@ class DepsSubCommand(OFRAKSubCommand):
             "--package", action="append", help="Include dependencies of this package"
         )
         deps_parser.add_argument(
-            "--component", action="append", help="Include dependencies of this component"
+            "--component",
+            action="append",
+            help="Include dependencies of this component",
         )
         deps_parser.add_argument(
             "--missing-only",
@@ -275,11 +289,102 @@ class DepsSubCommand(OFRAKSubCommand):
             print(dependency_info)
 
 
+class GUISubCommand(OFRAKSubCommand):
+    def create_parser(self, ofrak_subparsers):
+        gui_parser = ofrak_subparsers.add_parser(
+            "gui",
+            help="Launch the OFRAK GUI server.",
+            description="Launch the OFRAK GUI server.",
+            formatter_class=ArgumentDefaultsHelpFormatter,
+        )
+        gui_parser.add_argument(
+            "-H",
+            "--hostname",
+            action="store",
+            help="Set GUI server host address.",
+            default="127.0.0.1",
+        )
+        gui_parser.add_argument(
+            "-p",
+            "--port",
+            action="store",
+            type=int,
+            help="Set GUI server host port.",
+            default=8080,
+        )
+        gui_parser.add_argument(
+            "-b",
+            "--backend",
+            action="store",
+            help="Set GUI server backend.",
+            default=None,
+        )
+        gui_parser.add_argument(
+            "-v",
+            "--verbose",
+            action="store_true",
+            help="Enable verbose mode for debugging",
+            default=None,
+        )
+        gui_parser.add_argument(
+            "-q",
+            "--quiet",
+            action="store_true",
+            help="Enable quiet mode to minimize logging",
+            default=None,
+        )
+        return gui_parser
+
+    @staticmethod  # pragma: no cover
+    def handler(ofrak_env: OFRAKEnvironment, args: Namespace):
+        if args.verbose is True:
+            ofrak = OFRAK(logging.DEBUG)
+
+        elif args.quiet is True:
+            ofrak = OFRAK(logging.WARNING)
+
+        else:
+            ofrak = OFRAK(logging.INFO)
+
+        if args.backend is not None:
+            if args.backend.lower() == "binary-ninja":
+                import ofrak_capstone  # type: ignore
+                import ofrak_binary_ninja  # type: ignore
+
+                ofrak.injector.discover(ofrak_capstone)
+                ofrak.injector.discover(ofrak_binary_ninja)
+
+            elif args.backend.lower() == "ghidra":
+                import ofrak_ghidra  # type: ignore
+
+                ofrak.injector.discover(ofrak_ghidra)
+
+            elif args.backend.lower() == "angr":
+                import ofrak_capstone  # type: ignore
+                import ofrak_angr  # type: ignore
+
+                ofrak.injector.discover(ofrak_capstone)
+                ofrak.injector.discover(ofrak_angr)
+
+        else:
+            LOGGER.warning("No disassembler backend specified, so no disassembly will be possible")
+
+        url = f"http://{args.hostname}:{args.port}"
+        print(f"GUI is being served on {url}")
+        webbrowser.open(url)
+
+        ofrak.run(start_server, args.hostname, args.port)  # type: ignore
+
+
 class OFRAKCommandLineInterface:
     def __init__(
         self,
         ofrak_env: OFRAKEnvironment = OFRAKEnvironment(),
-        subcommands: Iterable[OFRAKSubCommand] = (ListSubCommand(), DepsSubCommand()),
+        subcommands: Iterable[OFRAKSubCommand] = (
+            ListSubCommand(),
+            DepsSubCommand(),
+            GUISubCommand(),
+        ),
     ):
         self.ofrak_parser = ArgumentParser()
         ofrak_subparsers = self.ofrak_parser.add_subparsers(
