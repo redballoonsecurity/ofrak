@@ -41,11 +41,12 @@ class UbiVolume(ResourceView):
     http://www.linux-mtd.infradead.org/faq/ubi.html#L_ubi_mkimg and
     https://github.com/vamanea/mtd-utils/blob/master/ubi-utils/ubinize.c#L288`
     """
+
     id: int
     peb_count: int  # size = UbiVolume.peb_count * Ubi.peb_size
     type: str
     name: str
-    flag_autoresize: bool # `vol_flags` only specifies an auto-resize flag
+    flag_autoresize: bool  # `vol_flags` only specifies an auto-resize flag
     alignment: int
 
     @index
@@ -97,8 +98,10 @@ class UbiAnalyzer(Analyzer[None, Ubi]):
         # Technically multiple images can be encountered in an UBI blob, but that should be handled by
         # OFRAK by treating them as separate UBI resources.
         if len(ubi_obj.images) > 1:
-            raise Exception("Multi-image UBI blobs are not directly supported. Carve each image into a separate "
-                            "resource and run UbiAnalyzer on each of them.")
+            raise Exception(
+                "Multi-image UBI blobs are not directly supported. Carve each image into a separate "
+                "resource and run UbiAnalyzer on each of them."
+            )
         if len(ubi_obj.images) == 0:
             raise Exception("UBI resource does not have any images.")
 
@@ -110,9 +113,9 @@ class UbiAnalyzer(Analyzer[None, Ubi]):
                     volume.vol_rec.rec_index,
                     volume.vol_rec.reserved_pebs,
                     PRINT_VOL_TYPE_LIST[volume.vol_rec.vol_type],
-                    volume.vol_rec.name.decode('utf-8'),  # TODO support unicode / make tunable?
+                    volume.vol_rec.name.decode("utf-8"),
                     volume.vol_rec.flags,  # Autoresize flag for standard UBI
-                    volume.vol_rec.alignment
+                    volume.vol_rec.alignment,
                 )
             )
 
@@ -122,7 +125,7 @@ class UbiAnalyzer(Analyzer[None, Ubi]):
             ubi_obj.peb_size,
             ubi_obj.block_count,
             image.image_seq,
-            ubi_image_vols
+            ubi_image_vols,
         )
 
 
@@ -157,13 +160,12 @@ class UbiUnpacker(Unpacker[None]):
             # Each file extracted by `ubireader_extract_images` is populated as an UbiVolume
             # `ubireader_extract_images` incorrectly appends a `ubifs` suffix despite unpacking ubi images / volumes
             for vol in ubi_view.volumes:
-                f_path = f"{temp_flush_dir}/output/{os.path.basename(temp_file.name)}" \
-                         f"/img-{ubi_view.image_seq}_vol-{vol.name}.ubifs"
+                f_path = (
+                    f"{temp_flush_dir}/output/{os.path.basename(temp_file.name)}"
+                    f"/img-{ubi_view.image_seq}_vol-{vol.name}.ubifs"
+                )
                 with open(f_path, "rb") as f:
-                    await resource.create_child_from_view(
-                        vol,
-                        data=f.read()
-                    )
+                    await resource.create_child_from_view(vol, data=f.read())
 
 
 class UbiPacker(Packer[None]):
@@ -188,7 +190,7 @@ class UbiPacker(Packer[None]):
                 str(ubi_view.min_io_size),
                 "-o",
                 f"{temp_flush_dir}/output.ubi",
-                f"{temp_flush_dir}/config.ini"
+                f"{temp_flush_dir}/config.ini",
             ]
             ubinize_ini_entries = []
 
@@ -200,7 +202,9 @@ class UbiPacker(Packer[None]):
                 # Maybe this? allocated PEBs = -(volume_size // -peb_size) + 1
                 # For empty volumes I reverse this operation
                 if volume_size != 0:
-                    volume_path = f"{temp_flush_dir}/input-{ubi_view.image_seq}_vol-{volume_view.name}.ubivol"
+                    volume_path = (
+                        f"{temp_flush_dir}/input-{ubi_view.image_seq}_vol-{volume_view.name}.ubivol"
+                    )
                     await volume.flush_to_disk(volume_path)
                 else:
                     volume_path = None
@@ -220,7 +224,7 @@ vol_name={volume_view.name}
                 ubinize_ini_entries.append(ubinize_ini_entry)
 
             with open(f"{temp_flush_dir}/config.ini", "w") as config_ini_file:
-                config_ini_file.write('\n'.join(ubinize_ini_entries))
+                config_ini_file.write("\n".join(ubinize_ini_entries))
 
             subprocess.run(command, check=True, capture_output=True)
 
