@@ -33,13 +33,6 @@ class UnpackCommand(OfrakCommandRunsScript):
             help="Directory to write unpacked resource tree to. If no directory is given, a new one"
             " will be created in the same directory as the file being unpacked.",
         )
-        subparser.add_argument(
-            "--print-info",
-            "-p",
-            help="Print contents of __ofrak_info__ (which may be large!) to stdout as well as the "
-            "__ofrak_info__ file.",
-            action="store_true",
-        )
         subparser.add_argument("filename", help="File to unpack")
         self.add_ofrak_arguments(subparser)
 
@@ -88,8 +81,7 @@ class UnpackCommand(OfrakCommandRunsScript):
         with open(info_dump_path, "w") as f:
             f.write(info_dump)
 
-        if args.print_info:
-            print(info_dump)
+        print(info_dump)
 
     async def resource_tree_to_files(self, resource: Resource, path):
         children_dir = path + ".ofrak_children"
