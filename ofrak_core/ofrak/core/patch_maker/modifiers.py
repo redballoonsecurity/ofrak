@@ -9,7 +9,6 @@ from ofrak.core import ProgramAttributes
 from ofrak_patch_maker.toolchain.abstract import Toolchain
 from ofrak.component.modifier import Modifier
 from ofrak.core.complex_block import ComplexBlock
-from ofrak.core.instruction import Instruction
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.core.program import Program
 from ofrak.model.component_model import ComponentConfig
@@ -222,11 +221,7 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
             )
             to_delete = []
             for parent in parents_to_delete:
-                to_delete.extend(
-                    list(
-                        await parent.get_descendants(r_filter=ResourceFilter.with_tags(Instruction))
-                    )
-                )
+                to_delete.extend(list(await parent.get_descendants()))
             await asyncio.gather(*(r.delete() for r in to_delete))
 
 
