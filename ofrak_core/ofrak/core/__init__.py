@@ -49,6 +49,7 @@ from ofrak.core.squashfs import *
 from ofrak.core.strings import *
 from ofrak.core.strings_analyzer import *
 from ofrak.core.tar import *
+from ofrak.core.ubi import *
 from ofrak.core.ubifs import *
 from ofrak.core.uf2 import *
 from ofrak.core.uimage import *
