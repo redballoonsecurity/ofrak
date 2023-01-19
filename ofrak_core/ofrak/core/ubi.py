@@ -43,12 +43,12 @@ class UbiVolume(ResourceView):
     Volume information reflected in the 'config.ini' UBI volume entries expected by `ubinize` are stored here. Also see:
     http://www.linux-mtd.infradead.org/faq/ubi.html#L_ubi_mkimg and
 
-    :cvar id: The assigned volume ID within the UBI image
-    :cvar peb_count: Number of PEBs allocated for the volume
-    :cvar type: UBI volume type, either 'static' or 'dynamic'; see http://www.linux-mtd.infradead.org/doc/ubi.html#L_overview
-    :cvar name: Label assigned to the volume
-    :cvar flag_autoresize: Tells UBI to resize this volume to occupy unused space in the UBI image once; see http://www.linux-mtd.infradead.org/doc/ubi.html#L_autoresize
-    :cvar alignment: LEB size of this volume has to be aligned on, such that Ubi.leb_size % UbiVolume.alignment == 0; see https://elixir.bootlin.com/linux/v6.1.7/source/include/uapi/mtd/ubi-user.h#L328
+    :var id: The assigned volume ID within the UBI image
+    :var peb_count: Number of PEBs allocated for the volume
+    :var type: UBI volume type, either 'static' or 'dynamic'; see http://www.linux-mtd.infradead.org/doc/ubi.html#L_overview
+    :var name: Label assigned to the volume
+    :var flag_autoresize: Tells UBI to resize this volume to occupy unused space in the UBI image once; see http://www.linux-mtd.infradead.org/doc/ubi.html#L_autoresize
+    :var alignment: LEB size of this volume has to be aligned on, such that Ubi.leb_size % UbiVolume.alignment == 0; see https://elixir.bootlin.com/linux/v6.1.7/source/include/uapi/mtd/ubi-user.h#L328
     """
 
     id: int
@@ -75,12 +75,12 @@ class Ubi(GenericBinary):
     http://www.linux-mtd.infradead.org/doc/ubi.html
     https://github.com/vamanea/mtd-utils/blob/master/ubi-utils/ubinize.c#L288`
 
-    :cvar min_io_size: Minimum number of bytes per I/O transaction (see http://www.linux-mtd.infradead.org/doc/ubi.html#L_min_io_unit)
-    :cvar leb_size: Size of Logical Erase Blocks
-    :cvar peb_size: Size of Physical Erase Blocks
-    :cvar total_peb_count: The total number of PEBs, which includes hidden layout blocks in addition to data blocks allocated per volume
-    :cvar image_seq: image sequence number recorded on EC headers (typically random)
-    :cvar volumes: List of volumes associated with the UBI image
+    :var min_io_size: Minimum number of bytes per I/O transaction (see http://www.linux-mtd.infradead.org/doc/ubi.html#L_min_io_unit)
+    :var leb_size: Size of Logical Erase Blocks
+    :var peb_size: Size of Physical Erase Blocks
+    :var total_peb_count: The total number of PEBs, which includes hidden layout blocks in addition to data blocks allocated per volume
+    :var image_seq: image sequence number recorded on EC headers (typically random)
+    :var volumes: List of volumes associated with the UBI image
     """
 
     min_io_size: int
