@@ -56,8 +56,7 @@ class GUICommand(OfrakCommand):
         )
         return gui_parser
 
-    # pragma: no cover
-    def run(self, ofrak_env: OFRAKEnvironment, args: Namespace):
+    def run(self, ofrak_env: OFRAKEnvironment, args: Namespace):  # pragma: no cover
         if args.verbose is True:
             ofrak = OFRAK(logging.DEBUG)
 
