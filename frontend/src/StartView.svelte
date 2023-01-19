@@ -86,7 +86,7 @@
   }
 
   async function createRootResource(f) {
-    const rootModel = await fetch(`/api/create_root_resource?name=${f.name}`, {
+    const rootModel = await fetch(`/create_root_resource?name=${f.name}`, {
       method: "POST",
       body: await f.arrayBuffer(),
     }).then((r) => r.json());
@@ -120,7 +120,7 @@
   }
 
   async function getResourcesFromHash(resourceId) {
-    const root = await fetch(`/api/${resourceId}/get_root`).then((r) => {
+    const root = await fetch(`/${resourceId}/get_root`).then((r) => {
       if (!r.ok) {
         throw Error(r.statusText);
       }
@@ -131,7 +131,7 @@
     _resourceFactory.add_to_cache(root);
     setBackend(root.id, _resourceFactory);
 
-    let resource = await fetch(`/api/${resourceId}/`).then((r) => {
+    let resource = await fetch(`/${resourceId}/`).then((r) => {
       if (!r.ok) {
         throw Error(r.statusText);
       }
@@ -139,7 +139,7 @@
     });
     _resourceFactory.add_to_cache(resource);
     while (resource.parent_id) {
-      resource = await fetch(`/api/${resource.parent_id}/`).then((r) => {
+      resource = await fetch(`/${resource.parent_id}/`).then((r) => {
         if (!r.ok) {
           throw Error(r.statusText);
         }
@@ -167,7 +167,7 @@
   }
 
   onMount(async () => {
-    preExistingRootsPromise = await fetch(`/api/get_root_resources`).then((r) =>
+    preExistingRootsPromise = await fetch(`/get_root_resources`).then((r) =>
       r.json()
     );
   });

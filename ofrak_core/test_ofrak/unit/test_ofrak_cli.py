@@ -5,6 +5,7 @@ from typing import Iterable, Dict, Tuple
 import pytest
 from dataclasses import fields
 
+from ofrak.cli.command.gui import GUICommand
 from ofrak.ofrak_context import OFRAKContext
 
 import test_ofrak.components
@@ -48,7 +49,7 @@ class MockOFRAKEnvironment:
 
 @pytest.fixture
 def cli_commands():
-    return [ListCommand(), DepsCommand(), IdentifyCommand(), UnpackCommand()]
+    return [ListCommand(), DepsCommand(), IdentifyCommand(), UnpackCommand(), GUICommand()]
 
 
 @pytest.fixture

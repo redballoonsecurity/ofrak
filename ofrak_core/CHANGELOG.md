@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 ### Added
 - New `identify` and `unpack` subcommands to CLI [#164](https://github.com/redballoonsecurity/ofrak/pull/164)
+- Move GUI server to `ofrak_core`, startup GUI through CLI, add testing for server, make GUI pip installable. [#168](https://github.com/redballoonsecurity/ofrak/pull/168)
+  - `python -m ofrak gui` starts the OFRAK GUI server.
 
 ### Changed
 - Refactored `DataService` internals to more efficiently find resources affected by patches [#140](https://github.com/redballoonsecurity/ofrak/pull/140)
