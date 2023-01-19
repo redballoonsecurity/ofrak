@@ -50,11 +50,13 @@ setuptools.setup(
         "orjson~=3.6.7",
         "pefile==2022.5.30",
         "pycdlib==1.12.0",
+        "python-lzo==1.14",
         "python-magic",
         "reedsolo==1.5.4",
         "sortedcontainers==2.2.2",
         "synthol~=0.1.1",
         "typeguard~=2.13.3",
+        "ubi-reader==0.8.5",
         "xattr==0.9.7",
     ],
     extras_require={
