@@ -1,36 +1,68 @@
 import { Resource, ResourceModel, ResourceFactory } from "./resource";
 
-let childQueue = {
-  maxlen: 1024,
-  requests: [],
-  responses: {},
-  timeout: null,
-  getAllChildren: async (requests) => {
-    if (!requests) {
-      requests = childQueue.requests;
-      childQueue.requests = [];
-    }
+let batchQueues = {};
 
-    const all_child_models = await fetch(`/api/batch/get_children`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requests),
-    }).then(async (r) => {
-      if (!r.ok) {
-        throw Error(JSON.stringify(await r.json(), undefined, 2));
+function createQueue(route) {
+  batchQueues[route] = {
+    maxlen: 1024,
+    requests: [],
+    responses: {},
+    timeout: null,
+    getResults: async (requests) => {
+      const queue = batchQueues[route];
+      if (!requests) {
+        requests = queue.requests;
+        queue.requests = [];
       }
-      return await r.json();
-    });
-    for (const [child_id, child_models] of Object.entries(all_child_models)) {
-      childQueue.responses[child_id].forEach((callback) =>
-        callback(child_models)
-      );
-      delete childQueue.responses[child_id];
-    }
-  },
-};
+
+      const result_models = await fetch(`/api/batch/${route}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requests),
+      }).then(async (r) => {
+        if (!r.ok) {
+          throw Error(JSON.stringify(await r.json(), undefined, 2));
+        }
+        return await r.json();
+      });
+
+      for (const [child_id, child_models] of Object.entries(result_models)) {
+        queue.responses[child_id].forEach((callback) => callback(child_models));
+        delete queue.responses[child_id];
+      }
+    },
+  };
+}
+
+async function batchedCall(resource, route) {
+  if (!batchQueues[route]) {
+    createQueue(route);
+  }
+  const queue = batchQueues[route];
+
+  clearTimeout(queue.timeout);
+  queue.requests.push(resource.model.resource_id);
+  let result;
+  if (!queue.responses[resource.model.resource_id]) {
+    queue.responses[resource.model.resource_id] = [];
+  }
+  result = new Promise((resolve) => {
+    queue.responses[resource.model.resource_id].push(resolve);
+  });
+
+  if (queue.requests.length > queue.maxlen) {
+    const requestsCopy = queue.requests;
+    queue.requests = [];
+
+    await queue.getResults(requestsCopy);
+  } else {
+    queue.timeout = setTimeout(queue.getResults, 100);
+  }
+
+  return await result;
+}
 
 export class RemoteResource extends Resource {
   constructor(resource_model, factory) {
@@ -40,26 +72,8 @@ export class RemoteResource extends Resource {
   }
 
   async get_children(r_filter, r_sort) {
-    clearTimeout(childQueue.timeout);
-    childQueue.requests.push(this.model.resource_id);
-    let result;
-    if (!childQueue.responses[this.model.resource_id]) {
-      childQueue.responses[this.model.resource_id] = [];
-    }
-    result = new Promise((resolve) => {
-      childQueue.responses[this.model.resource_id].push(resolve);
-    });
-
-    if (childQueue.requests.length > childQueue.maxlen) {
-      const requestsCopy = childQueue.requests;
-      childQueue.requests = [];
-
-      await childQueue.getAllChildren(requestsCopy);
-    } else {
-      childQueue.timeout = setTimeout(childQueue.getAllChildren, 100);
-    }
-
-    return this._remote_models_to_resources(await result);
+    const model = await batchedCall(this, "get_children");
+    return this._remote_models_to_resources(model);
   }
 
   async get_data(range) {
