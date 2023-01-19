@@ -78,6 +78,7 @@
     childrenPromise,
     commentsPromise,
     childrenCollapsed = false;
+
   $: {
     if (resourceNodeDataMap[self?.id] === undefined) {
       resourceNodeDataMap[self?.id] = {};
@@ -181,7 +182,18 @@
 {:then children}
   {#if !collapsed && children.length > 0}
     <ul>
-      {#each chunkList(children, 4096) as chunk}
+      {#each children.slice(0, 512) as child}
+        <li>
+          <div>
+            <svelte:self
+              rootResource="{child}"
+              collapsed="{childrenCollapsed}"
+              bind:resourceNodeDataMap="{resourceNodeDataMap}"
+            />
+          </div>
+        </li>
+      {/each}
+      {#each chunkList(children.slice(512), 4096) as chunk}
         {#await sleep(Math.floor(Math.random() * 200)) then _}
           {#each chunk as child}
             <li>
