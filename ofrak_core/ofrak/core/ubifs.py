@@ -39,12 +39,12 @@ class SuperblockNode:
     (see also: https://elixir.bootlin.com/linux/v6.1.7/source/fs/ubifs/ubifs.h#L1017).
 
 
-    :cvar max_leb_count: Maximum number / limit of Logical Erase Blocks
-    :cvar default_compr: Default compression algorithm
-    :cvar fanout: Fanout of the index tree (number of links per indexing node)
-    :cvar key_hash: Type of hash function used for keying direntries (typically 'r5' of reiserfs)
-    :cvar orph_lebs: Number of LEBs used for orphan area (orphans are inodes with no links; see https://elixir.bootlin.com/linux/v6.1.7/source/fs/ubifs/orphan.c#L13)
-    :cvar log_lebs: LEBs reserved for the journal (see the 'Journal' section in https://www.kernel.org/doc/Documentation/filesystems/ubifs-authentication.rst)
+    :var max_leb_count: Maximum number / limit of Logical Erase Blocks
+    :var default_compr: Default compression algorithm
+    :var fanout: Fanout of the index tree (number of links per indexing node)
+    :var key_hash: Type of hash function used for keying direntries (typically 'r5' of reiserfs)
+    :var orph_lebs: Number of LEBs used for orphan area (orphans are inodes with no links; see https://elixir.bootlin.com/linux/v6.1.7/source/fs/ubifs/orphan.c#L13)
+    :var log_lebs: LEBs reserved for the journal (see the 'Journal' section in https://www.kernel.org/doc/Documentation/filesystems/ubifs-authentication.rst)
     """
 
     max_leb_count: int
@@ -70,9 +70,9 @@ class Ubifs(GenericBinary, FilesystemRoot):
     https://www.kernel.org/doc/Documentation/filesystems/ubifs-authentication.rst
     http://www.linux-mtd.infradead.org/doc/ubifs.html
 
-    :cvar min_io_size: Minimum number of bytes per I/O transaction (see http://www.linux-mtd.infradead.org/doc/ubi.html#L_min_io_unit)
-    :cvar leb_size: Size of Logical Erase Blocks
-    :cvar superblock: A SuberblockNode
+    :var min_io_size: Minimum number of bytes per I/O transaction (see http://www.linux-mtd.infradead.org/doc/ubi.html#L_min_io_unit)
+    :var leb_size: Size of Logical Erase Blocks
+    :var superblock: A SuberblockNode
 
     """
 
