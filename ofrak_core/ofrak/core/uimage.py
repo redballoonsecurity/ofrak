@@ -12,6 +12,7 @@ from ofrak.component.unpacker import Unpacker
 from ofrak.core import ProgramAttributes, GenericBinary, MagicDescriptionIdentifier
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributes
+from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import ResourceFilter
@@ -471,7 +472,7 @@ class UImageHeaderModifier(Modifier[UImageHeaderModifierConfig]):
     targets = (UImageHeader,)
 
     async def modify(self, resource: Resource, config: UImageHeaderModifierConfig) -> None:
-        original_attributes = await resource.analyze(UImageHeader.attributes_type)
+        original_attributes = await resource.analyze(AttributesType[UImageHeader])
         # First serialize the header with the ih_hcrc field set to 0, to compute this CRC later
         new_attributes = ResourceAttributes.replace_updated(original_attributes, config)
         tmp_serialized_header = await UImageHeaderModifier.serialize(new_attributes, ih_hcrc=0)
@@ -486,7 +487,7 @@ class UImageHeaderModifier(Modifier[UImageHeaderModifierConfig]):
 
     @staticmethod
     async def serialize(
-        updated_attributes: UImageHeader.attributes_type, ih_hcrc: int = 0  # type: ignore
+        updated_attributes: AttributesType[UImageHeader], ih_hcrc: int = 0
     ) -> bytes:
         """
         Serialize `updated_attributes` into bytes, using `ih_hcrc` for the eponymous field.
@@ -528,7 +529,7 @@ class UImageMultiHeaderModifier(Modifier[UImageMultiHeaderModifierConfig]):
     async def modify(self, resource: Resource, config: UImageMultiHeaderModifierConfig) -> None:
 
         # # First serialize the header with the ih_hcrc field set to 0, to compute this CRC later
-        original_attributes = await resource.analyze(UImageMultiHeader.attributes_type)
+        original_attributes = await resource.analyze(AttributesType[UImageMultiHeader])
         new_attributes = ResourceAttributes.replace_updated(original_attributes, config)
         serialized_multiheader = await UImageMultiHeaderModifier.serialize(new_attributes)
         uimage_multi_header = await resource.view_as(UImageMultiHeader)
@@ -540,7 +541,7 @@ class UImageMultiHeaderModifier(Modifier[UImageMultiHeaderModifierConfig]):
 
     @staticmethod
     async def serialize(
-        updated_attributes: UImageMultiHeader.attributes_type,  # type: ignore
+        updated_attributes: AttributesType[UImageMultiHeader],
     ) -> bytes:
         """
         Serialize `updated_attributes` into bytes

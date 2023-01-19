@@ -48,13 +48,7 @@ class PatchFromSourceModifierConfig(ComponentConfig):
 
 class PatchFromSourceModifier(Modifier):
     """
-    Modifier exposing some basic source code patching capabilities. Requires a SourceBundle,
-    a list of source files in that bundle to build patches from, a dictionary mapping those
-    source file paths to definitions for all the Segments to extract & inject from the built
-    translation unit.
-
-    Also requires: Defined ToolchainConfig and ToolchainVersion to use, as well as symbols to
-    link against.
+    Modifier exposing some basic source code patching capabilities.
     """
 
     targets = (Program,)
