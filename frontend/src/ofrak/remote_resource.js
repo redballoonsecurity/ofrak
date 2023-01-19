@@ -47,9 +47,7 @@ export class RemoteResource extends Resource {
       childQueue.responses[this.model.resource_id] = [];
     }
     result = new Promise((resolve) => {
-      childQueue.responses[this.model.resource_id].push((response) =>
-        resolve(response)
-      );
+      childQueue.responses[this.model.resource_id].push(resolve);
     });
 
     if (childQueue.requests.length > childQueue.maxlen) {
