@@ -28,8 +28,15 @@ function createQueue(route) {
         return await r.json();
       });
 
-      for (const [child_id, child_models] of Object.entries(result_models)) {
-        queue.responses[child_id].forEach((callback) => callback(child_models));
+      for (const [child_id, result_model] of Object.entries(result_models)) {
+        if (!queue.responses[child_id]) {
+          // This should only happen in two cases:
+          // 1. The server responds with IDs we didn't ask for
+          // 2. batchedCall was called with this ID twice, and an earlier batch
+          //    resolved all of the responses for this ID already
+          continue;
+        }
+        queue.responses[child_id].forEach((callback) => callback(result_model));
         delete queue.responses[child_id];
       }
     },
@@ -44,11 +51,10 @@ async function batchedCall(resource, route) {
 
   clearTimeout(queue.timeout);
   queue.requests.push(resource.model.resource_id);
-  let result;
   if (!queue.responses[resource.model.resource_id]) {
     queue.responses[resource.model.resource_id] = [];
   }
-  result = new Promise((resolve) => {
+  let result = new Promise((resolve) => {
     queue.responses[resource.model.resource_id].push(resolve);
   });
 
@@ -89,19 +95,10 @@ export class RemoteResource extends Resource {
     if (this.model.data_id === null) {
       return null;
     }
-    const rj = await fetch(`${this.uri}/get_data_range_within_parent`).then(
-      async (r) => {
-        if (!r.ok) {
-          throw Error(JSON.stringify(await r.json(), undefined, 2));
-        }
-        return r.json();
-      }
-    );
-
+    const rj = await batchedCall(this, "get_data_range_within_parent");
     if (rj.length !== 2 || (0 === rj[0] && 0 === rj[1])) {
       return null;
     }
-
     return rj;
   }
 

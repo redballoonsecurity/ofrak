@@ -118,10 +118,14 @@ class AiohttpOFRAKServer:
                 web.get("/get_root_resources", self.get_root_resources),
                 web.get("/{resource_id}/", self.get_resource),
                 web.get("/{resource_id}/get_data", self.get_data),
-                web.get(
-                    "/{resource_id}/get_data_range_within_parent",
-                    self.get_data_range_within_parent,
+                web.post(
+                    "/batch/get_data_range_within_parent",
+                    self.batch_get_range,
                 ),
+                # web.get(
+                #     "/{resource_id}/get_data_range_within_parent",
+                #     self.get_data_range_within_parent,
+                # ),
                 web.get("/{resource_id}/get_root", self.get_root_resource_from_child),
                 web.post("/{resource_id}/unpack", self.unpack),
                 web.post("/{resource_id}/unpack_recursively", self.unpack_recursively),
@@ -210,6 +214,25 @@ class AiohttpOFRAKServer:
         return Response(
             content_type="application/json",
             body=self._serializer.to_json(data_range, Range),
+        )
+
+    @exceptions_to_http(SerializedError)
+    async def batch_get_range(self, request: Request) -> Response:
+        if request.remote is not None:
+            job_id = self._job_ids[request.remote]
+        else:
+            raise ValueError("No IP address found for the remote request!")
+
+        async def get_resource_range(resource_id):
+            resource = await self._get_resource_by_id(bytes.fromhex(resource_id), job_id)
+            data_range = await resource.get_data_range_within_parent()
+            return self._serializer.to_pjson(data_range, Range)
+
+        return web.json_response(
+            {
+                resource_id: await get_resource_range(resource_id)
+                for resource_id in await request.json()
+            }
         )
 
     @exceptions_to_http(SerializedError)
