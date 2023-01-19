@@ -4,7 +4,12 @@ All notable changes to `ofrak` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+### Added
+- `LiefAddSegmentConfig` now has an optional `physical_address` argument.
 
+### Fixed
+- Fixed null pointer bug in Ghidra scripts.
+- `SegmentInjectorModifier` deletes all descendants of the modified section, fixing a bug that would arrise when applying more than one segment modification.
 ## [2.0.0](https://github.com/redballoonsecurity/ofrak/releases/tag/ofrak-v2.0.0) - 2023-01-03
 ### Added
 - `ofrak` now contains all the components that were in the (now sunset) `ofrak_components` package.
