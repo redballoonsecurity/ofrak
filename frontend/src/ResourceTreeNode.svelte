@@ -39,6 +39,37 @@
     height: 1em;
   }
 
+  div.morebutton {
+    padding-left: 1.25em;
+    margin: 2em 0;
+  }
+
+  div.morebutton button {
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+    padding-left: 1em;
+    padding-right: 1em;
+    background-color: var(--main-bg-color);
+    color: var(--main-fg-color);
+    border: 1px solid var(--main-fg-color);
+    border-radius: 0;
+    font-size: smaller;
+    overflow: hidden;
+    box-shadow: none;
+  }
+
+  div.morebutton button:hover,
+  div.morebutton button:focus {
+    outline: none;
+    box-shadow: inset 1px 1px 0 var(--main-fg-color),
+      inset -1px -1px 0 var(--main-fg-color);
+  }
+
+  div.morebutton button:active {
+    box-shadow: inset 2px 2px 0 var(--main-fg-color),
+      inset -2px -2px 0 var(--main-fg-color);
+  }
+
   .selected {
     background-color: var(--selected-bg-color);
     background-clip: border-box;
@@ -77,7 +108,8 @@
   let self,
     childrenPromise,
     commentsPromise,
-    childrenCollapsed = false;
+    childrenCollapsed = false,
+    kiddoChunksize = 512;
 
   $: {
     if (resourceNodeDataMap[self?.id] === undefined) {
@@ -182,7 +214,7 @@
 {:then children}
   {#if !collapsed && children.length > 0}
     <ul>
-      {#each children.slice(0, 512) as child}
+      {#each children.slice(0, kiddoChunksize) as child}
         <li>
           <div>
             <svelte:self
@@ -193,21 +225,26 @@
           </div>
         </li>
       {/each}
-      {#each chunkList(children.slice(512), 4096) as chunk}
-        {#await sleep(Math.floor(Math.random() * 200)) then _}
-          {#each chunk as child}
-            <li>
-              <div>
-                <svelte:self
-                  rootResource="{child}"
-                  collapsed="{childrenCollapsed}"
-                  bind:resourceNodeDataMap="{resourceNodeDataMap}"
-                />
-              </div>
-            </li>
-          {/each}
-        {/await}
-      {/each}
+      {#if children.length > kiddoChunksize * 2}
+        <div class="morebutton">
+          <button on:click="{() => (kiddoChunksize += 512)}">
+            Show 512 more children...
+          </button>
+        </div>
+      {/if}
+      {#if children.length > kiddoChunksize}
+        {#each children.slice(-kiddoChunksize) as child}
+          <li>
+            <div>
+              <svelte:self
+                rootResource="{child}"
+                collapsed="{childrenCollapsed}"
+                bind:resourceNodeDataMap="{resourceNodeDataMap}"
+              />
+            </div>
+          </li>
+        {/each}
+      {/if}
     </ul>
   {/if}
 {/await}
