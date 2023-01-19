@@ -37,11 +37,11 @@ UBINIZE_TOOL = ComponentExternalTool(
 @dataclass
 class UbiVolume(ResourceView):
     """
-    An UbiVolume is a volume entry in UBI. It typically contains an image of arbitrary data, typically a filesystem or a
-    log. They can be empty while reserving PEBs for future volume modification or for padding.
+    An UbiVolume is a volume entry in UBI. It contains an image of arbitrary data, typically a filesystem or a
+    log. Empty UbiVolumes can still reserve physical erase blocks, in case they are expected to grow.
 
     Volume information reflected in the 'config.ini' UBI volume entries expected by `ubinize` are stored here. Also see:
-    http://www.linux-mtd.infradead.org/faq/ubi.html#L_ubi_mkimg and
+    http://www.linux-mtd.infradead.org/faq/ubi.html#L_ubi_mkimg
 
     :var id: The assigned volume ID within the UBI image
     :var peb_count: Number of PEBs allocated for the volume
@@ -72,7 +72,7 @@ class Ubi(GenericBinary):
     within an UBI volume.
 
     UBI parameters and volumes required by `ubinize` for repacking are defined here. Also see:
-    http://www.linux-mtd.infradead.org/doc/ubi.html
+    http://www.linux-mtd.infradead.org/doc/ubi.html and
     https://github.com/vamanea/mtd-utils/blob/master/ubi-utils/ubinize.c#L288`
 
     :var min_io_size: Minimum number of bytes per I/O transaction (see http://www.linux-mtd.infradead.org/doc/ubi.html#L_min_io_unit)
