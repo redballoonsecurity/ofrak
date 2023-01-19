@@ -260,7 +260,7 @@ Together, [ArchInfo][ofrak_type.architecture.ArchInfo] and [ToolchainConfig][ofr
 
 
 #### PatchMaker Instantiation
-Once the toolchain is instantiated, instantiate PatchMaker with the symbol mapping required for linking the patch.
+Once the toolchain is instantiated, instantiate PatchMaker with any symbol mapping that may be required to link the patch. Note that this may not be required if the developer's patch does not reference external functions or data.
 
 We can get the virtual address of the functions that the patch will need to import, for instance:
 
