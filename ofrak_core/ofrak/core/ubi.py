@@ -2,8 +2,10 @@ import subprocess
 import tempfile
 from dataclasses import dataclass
 import logging
-from typing import List
+from typing import List, Tuple
 import os
+
+from ofrak.model.tag_model import ResourceTag
 
 from ofrak import Identifier, Analyzer
 from ofrak.component.packer import Packer
@@ -189,7 +191,7 @@ class UbiUnpacker(Unpacker[None]):
                 with open(f_path, "rb") as f:
                     data = f.read()
                     if len(data) > 0:
-                        other_tags = (GenericBinary,)
+                        other_tags: Tuple[ResourceTag, ...] = (GenericBinary,)
                     else:
                         other_tags = ()
                     await resource.create_child_from_view(
