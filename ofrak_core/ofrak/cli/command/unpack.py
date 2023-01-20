@@ -34,6 +34,14 @@ class UnpackCommand(OfrakCommandRunsScript):
             help="Directory to write unpacked resource tree to. If no directory is given, a new one"
             " will be created in the same directory as the file being unpacked.",
         )
+        subparser.add_argument(
+            "--recursive",
+            "-r",
+            action="store_true",
+            default=False,
+            help="Unpack recursively: all resources unpacked from the root will be unpack, as "
+            "well as all resources unpacked from those, and so.",
+        )
         subparser.add_argument("filename", help="File to unpack")
 
         # GUI args
@@ -67,7 +75,10 @@ class UnpackCommand(OfrakCommandRunsScript):
         print(f"Unpacking file: {args.filename}\n")
         root_resource = await ofrak_context.create_root_resource_from_file(args.filename)
 
-        await root_resource.unpack()
+        if args.recursive:
+            await root_resource.unpack_recursively()
+        else:
+            await root_resource.unpack()
 
         if args.output_directory:
             extraction_dir = Path(args.output_directory)
