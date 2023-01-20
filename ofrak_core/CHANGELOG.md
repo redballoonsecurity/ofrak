@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Fixed
 - Remove unneeded and slow `.save()` when unpacking filesystems [#171](https://github.com/redballoonsecurity/ofrak/pull/171)
+- Added missing elf section types to ElfSectionType [#178](https://github.com/redballoonsecurity/ofrak/pull/178)
 
 ## [2.0.0](https://github.com/redballoonsecurity/ofrak/releases/tag/ofrak-v2.0.0) - 2023-01-03
 ### Added
