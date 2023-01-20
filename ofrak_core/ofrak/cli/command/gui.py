@@ -3,14 +3,14 @@ import webbrowser
 from argparse import ArgumentDefaultsHelpFormatter, Namespace
 
 from ofrak.gui.server import start_server
-from ofrak.ofrak_context import OFRAK
+from ofrak.ofrak_context import OFRAKContext
 
-from ofrak.cli.ofrak_cli import OFRAKEnvironment, OfrakCommand
+from ofrak.cli.ofrak_cli import OfrakCommandRunsScript
 
 LOGGER = logging.getLogger(__name__)
 
 
-class GUICommand(OfrakCommand):
+class GUICommand(OfrakCommandRunsScript):
     def create_parser(self, ofrak_subparsers):
         gui_parser = ofrak_subparsers.add_parser(
             "gui",
@@ -33,64 +33,12 @@ class GUICommand(OfrakCommand):
             help="Set GUI server host port.",
             default=8080,
         )
-        gui_parser.add_argument(
-            "-b",
-            "--backend",
-            action="store",
-            help="Set GUI server backend.",
-            default=None,
-        )
-        gui_parser.add_argument(
-            "-v",
-            "--verbose",
-            action="store_true",
-            help="Enable verbose mode for debugging",
-            default=None,
-        )
-        gui_parser.add_argument(
-            "-q",
-            "--quiet",
-            action="store_true",
-            help="Enable quiet mode to minimize logging",
-            default=None,
-        )
+        self.add_ofrak_arguments(gui_parser)
         return gui_parser
 
-    def run(self, ofrak_env: OFRAKEnvironment, args: Namespace):  # pragma: no cover
-        if args.verbose is True:
-            ofrak = OFRAK(logging.DEBUG)
-
-        elif args.quiet is True:
-            ofrak = OFRAK(logging.WARNING)
-
-        else:
-            ofrak = OFRAK(logging.INFO)
-
-        if args.backend is not None:
-            if args.backend.lower() == "binary-ninja":
-                import ofrak_capstone  # type: ignore
-                import ofrak_binary_ninja  # type: ignore
-
-                ofrak.injector.discover(ofrak_capstone)
-                ofrak.injector.discover(ofrak_binary_ninja)
-
-            elif args.backend.lower() == "ghidra":
-                import ofrak_ghidra  # type: ignore
-
-                ofrak.injector.discover(ofrak_ghidra)
-
-            elif args.backend.lower() == "angr":
-                import ofrak_capstone  # type: ignore
-                import ofrak_angr  # type: ignore
-
-                ofrak.injector.discover(ofrak_capstone)
-                ofrak.injector.discover(ofrak_angr)
-
-        else:
-            LOGGER.warning("No disassembler backend specified, so no disassembly will be possible")
-
+    async def ofrak_func(self, ofrak_context: OFRAKContext, args: Namespace):  # pragma: no cover
         url = f"http://{args.hostname}:{args.port}"
         print(f"GUI is being served on {url}")
         webbrowser.open(url)
 
-        ofrak.run(start_server, args.hostname, args.port)  # type: ignore
+        await start_server(ofrak_context, args.hostname, args.port)  # type: ignore

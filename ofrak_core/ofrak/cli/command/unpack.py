@@ -1,4 +1,5 @@
 import os.path
+import webbrowser
 from typing import Optional
 
 from ofrak import OFRAKContext, Resource
@@ -10,6 +11,7 @@ import sys
 
 from ofrak.cli.ofrak_cli import OfrakCommandRunsScript
 from ofrak.core import FilesystemEntry
+from ofrak.gui.server import start_server
 
 
 class UnpackCommand(OfrakCommandRunsScript):
@@ -34,6 +36,30 @@ class UnpackCommand(OfrakCommandRunsScript):
             " will be created in the same directory as the file being unpacked.",
         )
         subparser.add_argument("filename", help="File to unpack")
+
+        # GUI args
+        subparser.add_argument(
+            "--gui",
+            action="store_true",
+            help="Open the OFRAK GUI after unpacking",
+            default=False,
+        )
+        subparser.add_argument(
+            "-gH",
+            "--gui-hostname",
+            action="store",
+            help="Set GUI server host address.",
+            default="127.0.0.1",
+        )
+        subparser.add_argument(
+            "-gp",
+            "--gui-port",
+            action="store",
+            type=int,
+            help="Set GUI server host port.",
+            default=8080,
+        )
+
         self.add_ofrak_arguments(subparser)
 
         return subparser
@@ -82,6 +108,12 @@ class UnpackCommand(OfrakCommandRunsScript):
             f.write(info_dump)
 
         print(info_dump)
+
+        if args.gui:
+            url = f"http://{args.gui_hostname}:{args.gui_port}/#{root_resource.get_id().hex()}"
+            print(f"GUI is being served on {url}")
+            webbrowser.open(url)
+            await start_server(ofrak_context, host=args.gui_hostname, port=args.gui_port)
 
     async def resource_tree_to_files(self, resource: Resource, path):
         children_dir = path + ".ofrak_children"

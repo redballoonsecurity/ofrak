@@ -3,6 +3,7 @@ import functools
 import json
 import logging
 import os
+from collections import defaultdict
 from typing import (
     Iterable,
     Optional,
@@ -146,7 +147,9 @@ class AiohttpOFRAKServer:
             ]
         )
 
-        self._job_ids: Dict[str, bytes] = dict()
+        self._job_ids: Dict[str, bytes] = defaultdict(
+            lambda: ofrak_context.id_service.generate_id()
+        )
 
     async def start(self):  # pragma: no cover
         """
