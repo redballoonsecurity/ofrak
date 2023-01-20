@@ -49,7 +49,7 @@ class _PyLzoTool(ComponentExternalTool):
 
     def is_tool_installed(self) -> bool:
         try:
-            import lzo
+            import lzo  # type: ignore
             return True
         except ModuleNotFoundError:
             return False
