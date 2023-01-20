@@ -8,7 +8,7 @@ from ofrak.cli.command.unpack import UnpackCommand
 from ofrak.cli.ofrak_cli import OFRAKCommandLineInterface
 
 
-def main():
+def main():  # pragma: no cover
     ofrak_cli = OFRAKCommandLineInterface(
         (ListCommand(), DepsCommand(), IdentifyCommand(), UnpackCommand(), GUICommand())
     )
