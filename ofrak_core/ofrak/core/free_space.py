@@ -135,36 +135,33 @@ class Allocatable(ResourceView):
         # Allocate largest segments first
         segments_to_allocate.sort(key=lambda o_s: o_s[1].length, reverse=True)
         segments_by_object: Dict[str, List[Segment]] = defaultdict(list)
-        possible_perms = None
         for obj, segment in segments_to_allocate:
             vaddr, final_size = 0, 0
-            if segment.length > 0:
-                if permission_map is not None:
-                    possible_perms = permission_map[segment.access_perms]  # type: ignore
-                else:
-                    possible_perms = (segment.access_perms,)
-                for candidate_permissions in possible_perms:
-                    try:
-                        allocs = await self.allocate(
-                            candidate_permissions,
-                            segment.length,
-                            min_fragment_size=segment.length,
-                            alignment=bom.segment_alignment,
-                        )
-                        allocation = next(iter(allocs))
-                        vaddr = allocation.start
-                        final_size = allocation.length()
-                        break
-                    except FreeSpaceAllocationError:
-                        continue
-            if vaddr == 0 or final_size == 0:
-                if possible_perms:
-                    raise FreeSpaceAllocationError(
-                        f"Could not find enough free space for access perms {possible_perms} and "
-                        f"length {segment.length}"
+            if segment.length == 0:
+                continue
+            if permission_map is not None:
+                possible_perms = permission_map[segment.access_perms]  # type: ignore
+            else:
+                possible_perms = (segment.access_perms,)
+            for candidate_permissions in possible_perms:
+                try:
+                    allocs = await self.allocate(
+                        candidate_permissions,
+                        segment.length,
+                        min_fragment_size=segment.length,
+                        alignment=bom.segment_alignment,
                     )
-                else:
-                    raise FreeSpaceAllocationError(f"No provided segments longer than 0 bytes.")
+                    allocation = next(iter(allocs))
+                    vaddr = allocation.start
+                    final_size = allocation.length()
+                    break
+                except FreeSpaceAllocationError:
+                    continue
+            if vaddr == 0 or final_size == 0:
+                raise FreeSpaceAllocationError(
+                    f"Could not find enough free space for access perms {possible_perms} and "
+                    f"length {segment.length}"
+                )
             segments_by_object[obj.path].append(
                 Segment(
                     segment_name=segment.segment_name,
