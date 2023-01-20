@@ -86,6 +86,10 @@ class OFRAKContext:
         return root_resource
 
     async def start_context(self):
+        if "_ofrak_context" in globals():
+            raise InvalidStateError(
+                "Cannot start OFRAK context as a context has already been started in this process!"
+            )
         globals()["_ofrak_context"] = self
         await asyncio.gather(*(service.run() for service in self._all_ofrak_services))
 
