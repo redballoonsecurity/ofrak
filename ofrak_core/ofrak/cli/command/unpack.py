@@ -1,5 +1,4 @@
 import os.path
-import webbrowser
 from typing import Optional
 
 from ofrak import OFRAKContext, Resource
@@ -11,7 +10,7 @@ import sys
 
 from ofrak.cli.ofrak_cli import OfrakCommandRunsScript
 from ofrak.core import FilesystemEntry
-from ofrak.gui.server import start_server
+from ofrak.gui.server import open_gui
 
 
 class UnpackCommand(OfrakCommandRunsScript):
@@ -110,10 +109,8 @@ class UnpackCommand(OfrakCommandRunsScript):
         print(info_dump)
 
         if args.gui:
-            url = f"http://{args.gui_hostname}:{args.gui_port}/#{root_resource.get_id().hex()}"
-            print(f"GUI is being served on {url}")
-            webbrowser.open(url)
-            await start_server(ofrak_context, host=args.gui_hostname, port=args.gui_port)
+            server = await open_gui(args.gui_hostname, args.gui_port, focus_resource=root_resource)
+            await server.run_until_cancelled()
 
     async def resource_tree_to_files(self, resource: Resource, path):
         children_dir = path + ".ofrak_children"

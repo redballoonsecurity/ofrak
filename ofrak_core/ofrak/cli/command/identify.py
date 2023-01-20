@@ -1,10 +1,9 @@
 import argparse
-import webbrowser
 
 from ofrak import OFRAKContext
 from ofrak.cli.ofrak_cli import OfrakCommandRunsScript
 from ofrak.core.magic import Magic
-from ofrak.gui.server import start_server
+from ofrak.gui.server import open_gui
 from ofrak.resource import Resource
 
 
@@ -52,10 +51,8 @@ class IdentifyCommand(OfrakCommandRunsScript):
         print(await IdentifyCommand.print_info(root_resource))
 
         if args.gui:
-            url = f"http://{args.gui_hostname}:{args.gui_port}/#{root_resource.get_id().hex()}"
-            print(f"GUI is being served on {url}")
-            webbrowser.open(url)
-            await start_server(ofrak_context, host=args.gui_hostname, port=args.gui_port)
+            server = await open_gui(args.gui_hostname, args.gui_port, focus_resource=root_resource)
+            await server.run_until_cancelled()
 
     @staticmethod
     async def print_info(resource: Resource) -> str:

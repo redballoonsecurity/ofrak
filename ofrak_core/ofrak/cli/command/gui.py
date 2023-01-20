@@ -1,11 +1,9 @@
 import logging
-import webbrowser
 from argparse import ArgumentDefaultsHelpFormatter, Namespace
 
-from ofrak.gui.server import start_server
-from ofrak.ofrak_context import OFRAKContext
-
 from ofrak.cli.ofrak_cli import OfrakCommandRunsScript
+from ofrak.gui.server import open_gui
+from ofrak.ofrak_context import OFRAKContext
 
 LOGGER = logging.getLogger(__name__)
 
@@ -37,8 +35,5 @@ class GUICommand(OfrakCommandRunsScript):
         return gui_parser
 
     async def ofrak_func(self, ofrak_context: OFRAKContext, args: Namespace):  # pragma: no cover
-        url = f"http://{args.hostname}:{args.port}"
-        print(f"GUI is being served on {url}")
-        webbrowser.open(url)
-
-        await start_server(ofrak_context, args.hostname, args.port)  # type: ignore
+        server = await open_gui(args.hostname, args.port)
+        await server.run_until_cancelled()
