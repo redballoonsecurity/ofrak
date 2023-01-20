@@ -140,7 +140,7 @@ class Allocatable(ResourceView):
             if segment.length == 0:
                 continue
             if permission_map is not None:
-                possible_perms = permission_map[segment.access_perms]  # type: ignore
+                possible_perms = permission_map[segment.access_perms]
             else:
                 possible_perms = (segment.access_perms,)
             for candidate_permissions in possible_perms:
