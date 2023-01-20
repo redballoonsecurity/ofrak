@@ -20,6 +20,9 @@ RUN apt-get -y update && \
       unar \
       zstd
 
+# python-lzo needed by ubireader
+RUN python3 -m pip install python-lzo
+
 # Install apktool and uber-apk-signer
 RUN apt-get -y update && apt-get -y install openjdk-11-jdk
 RUN wget https://raw.githubusercontent.com/iBotPeaches/Apktool/v2.3.3/scripts/linux/apktool -O /usr/local/bin/apktool && \
