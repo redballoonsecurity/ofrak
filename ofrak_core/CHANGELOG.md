@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   - `python -m ofrak gui` starts the OFRAK GUI server.
 - UBI and UBIFS filesystem analyzers / unpackers / packers added. [#173](https://github.com/redballoonsecurity/ofrak/pull/173), [#177](https://github.com/redballoonsecurity/ofrak/pull/177)
 - Add APIs to open GUI in a script or after CLI commands complete.
+- Installing ofrak also installs it as a console tool, so for example `ofrak unpack ...` works, instead of requiring `python -m ofrak unpack...`
 
 ### Changed
 - Refactored `DataService` internals to more efficiently find resources affected by patches [#140](https://github.com/redballoonsecurity/ofrak/pull/140)
