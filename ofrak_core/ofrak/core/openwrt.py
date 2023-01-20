@@ -3,7 +3,7 @@ import struct
 import zlib
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
+from typing import Optional, List
 
 from ofrak.component.identifier import Identifier
 from ofrak.component.analyzer import Analyzer
@@ -25,6 +25,7 @@ OPENWRT_TRX_MAGIC_BYTES = b"HDR0"
 (OPENWRT_TRX_MAGIC_START,) = struct.unpack("<I", OPENWRT_TRX_MAGIC_BYTES)
 OPENWRT_TRXV1_HEADER_LEN = 28
 OPENWRT_TRXV2_HEADER_LEN = 32
+OPENWRT_TRX_MARK = struct.pack(">I", 0xdeadc0de)
 
 
 #####################
@@ -62,9 +63,6 @@ class OpenWrtTrxHeader(ResourceView):
      +---------------------------------------------------------------+
      |                      Partition offset[2]                      |
      +---------------------------------------------------------------+
-    offset[0] = lzma-loader
-    offset[1] = Linux-Kernel
-    offset[2] = rootfs
 
     TRX v2
       0                   1                   2                   3
@@ -86,10 +84,6 @@ class OpenWrtTrxHeader(ResourceView):
      +---------------------------------------------------------------+
      |                      Partition offset[3]                      |
      +---------------------------------------------------------------+
-    offset[0] = lzma-loader
-    offset[1] = Linux-Kernel
-    offset[2] = rootfs
-    offset[3] = bin-Header
     ```
     """
 
@@ -98,10 +92,7 @@ class OpenWrtTrxHeader(ResourceView):
     trx_crc: int
     trx_flags: int
     trx_version: int
-    trx_loader_offset: int
-    trx_kernel_offset: int
-    trx_rootfs_offset: int
-    trx_binheader_offset: Optional[int]
+    trx_partition_offsets: List[int]
 
     def get_version(self) -> OpenWrtTrxVersion:
         return OpenWrtTrxVersion(self.trx_version)
@@ -115,22 +106,6 @@ class OpenWrtTrxHeader(ResourceView):
             raise ValueError(f"Unknown OpenWrt TRX version: {self.trx_version}")
 
 
-class OpenWrtTrxLzmaLoader(GenericBinary):
-    pass
-
-
-class OpenWrtTrxKernel(GenericBinary):
-    pass
-
-
-class OpenWrtTrxRootfs(FilesystemRoot):
-    pass
-
-
-class OpenWrtTrxBinheader(GenericBinary):
-    pass
-
-
 @dataclass
 class OpenWrtTrx(GenericBinary):
     """
@@ -138,11 +113,7 @@ class OpenWrtTrx(GenericBinary):
 
     TRX binaries are used for upgrading the firmware of devices already running OpenWrt firmware
 
-    The OpenWrtTrx consists of 1 OpenWrtTrxHeader and 3 or 4 partition(s):
-        - OpenWrtTrxLzmaLoader
-        - OpenWrtTrxKernel
-        - OpenWrtTrxRootfs
-        - OpenWrtTrxBinheader (in TRX v2)
+    The OpenWrtTrx consists of 1 OpenWrtTrxHeader and 3 or 4 partition(s).
     """
 
     async def get_header(self) -> OpenWrtTrxHeader:
@@ -173,12 +144,7 @@ class OpenWrtIdentifier(Identifier[None]):
 ####################
 class OpenWrtTrxUnpacker(Unpacker[None]):
     """
-    Unpack an OpenWrtTrx firmware file into:
-    - OpenWrtTrxHeader
-    - OpenWrtTrxLzmaLoader
-    - OpenWrtTrxKernel
-    - OpenWrtTrxRootfs
-    - OpenWrtTrxBinheader (if TRX v2)
+    Unpack an OpenWrtTrx firmware file into its partitions.
 
     The header has a mapped data range, whereas all partitions are unmapped data.
     """
@@ -187,60 +153,39 @@ class OpenWrtTrxUnpacker(Unpacker[None]):
     targets = (OpenWrtTrx,)
     children = (
         OpenWrtTrxHeader,
-        OpenWrtTrxLzmaLoader,
-        OpenWrtTrxKernel,
-        OpenWrtTrxRootfs,
-        OpenWrtTrxBinheader,
+        GenericBinary,
     )
 
     async def unpack(self, resource: Resource, config=None):
         data = await resource.get_data()
         # Peek into TRX version to know how big the header is
         trx_version = OpenWrtTrxVersion(struct.unpack("<H", data[14:16])[0])
-        if trx_version == OpenWrtTrxVersion.VERSION1:
-            trx_header_r = await resource.create_child(
-                tags=(OpenWrtTrxHeader,), data_range=Range(0, OPENWRT_TRXV1_HEADER_LEN)
-            )
-        elif trx_version == OpenWrtTrxVersion.VERSION2:
-            trx_header_r = await resource.create_child(
-                tags=(OpenWrtTrxHeader,), data_range=Range(0, OPENWRT_TRXV2_HEADER_LEN)
-            )
-        else:
+
+        if trx_version not in [OpenWrtTrxVersion.VERSION1, OpenWrtTrxVersion.VERSION2]:
             raise UnpackerError(f"Unknown OpenWrt TRX version: {trx_version}")
 
+        header_len = OPENWRT_TRXV1_HEADER_LEN if trx_version == OpenWrtTrxVersion.VERSION1 else OPENWRT_TRXV2_HEADER_LEN
+
+        trx_header_r = await resource.create_child(
+            tags=(OpenWrtTrxHeader,), data_range=Range(0, header_len)
+        )
+
         trx_header = await trx_header_r.view_as(OpenWrtTrxHeader)
-        # Create lzma loader child
-        await resource.create_child(
-            tags=(OpenWrtTrxLzmaLoader,),
-            data=data[trx_header.trx_loader_offset : trx_header.trx_kernel_offset],
-        )
-        # Create kernel child
-        await resource.create_child(
-            tags=(OpenWrtTrxKernel,),
-            data=data[trx_header.trx_kernel_offset : trx_header.trx_rootfs_offset]
-            if trx_header.trx_rootfs_offset > 0
-            else data[trx_header.trx_kernel_offset :],
-        )
-        if trx_version == OpenWrtTrxVersion.VERSION1:
-            # Create rootfs child
+        partition_offsets = trx_header.trx_partition_offsets
+
+        for i, offset in enumerate(partition_offsets):
+            if offset == 0:
+                break
+
+            next_offset = partition_offsets[i+1] if i < (len(partition_offsets) - 1) else len(data)
+            partition = data[offset:next_offset]
+
+            if OPENWRT_TRX_MARK in partition:
+                partition = partition[:partition.index(OPENWRT_TRX_MARK)]
+
             await resource.create_child(
-                tags=(OpenWrtTrxRootfs,),
-                data=data[trx_header.trx_rootfs_offset :]
-                if trx_header.trx_rootfs_offset > 0
-                else b"",
-            )
-        else:  # TRX Version 2
-            # Create rootfs child
-            await resource.create_child(
-                tags=(OpenWrtTrxRootfs,),
-                data=data[trx_header.trx_rootfs_offset : trx_header.trx_binheader_offset]
-                if trx_header.trx_rootfs_offset > 0
-                else b"",
-            )
-            # Create binHeader child
-            await resource.create_child(
-                tags=(OpenWrtTrxBinheader,),
-                data=data[trx_header.trx_binheader_offset :],
+                tags=(GenericBinary,),
+                data=partition
             )
 
 
@@ -272,45 +217,28 @@ class OpenWrtTrxHeaderAttributesAnalyzer(Analyzer[None, OpenWrtTrxHeader]):
         ) = deserialized
         assert trx_magic == OPENWRT_TRX_MAGIC_START
 
-        if trx_version == OpenWrtTrxVersion.VERSION1.value:
-            deserialized = deserializer.unpack_multiple("III")
-            (
-                trx_loader_offset,
-                trx_kernel_offset,
-                trx_rootfs_offset,
-            ) = deserialized
-            header = OpenWrtTrxHeader(
-                trx_magic,
-                trx_length,
-                trx_crc,
-                trx_flags,
-                trx_version,
-                trx_loader_offset,
-                trx_kernel_offset,
-                trx_rootfs_offset,
-                None,
-            )
-        elif trx_version == OpenWrtTrxVersion.VERSION2.value:
-            deserialized = deserializer.unpack_multiple("IIII")
-            (
-                trx_loader_offset,
-                trx_kernel_offset,
-                trx_rootfs_offset,
-                trx_binheader_offset,
-            ) = deserialized
-            header = OpenWrtTrxHeader(
-                trx_magic,
-                trx_length,
-                trx_crc,
-                trx_flags,
-                trx_version,
-                trx_loader_offset,
-                trx_kernel_offset,
-                trx_rootfs_offset,
-                trx_binheader_offset,
-            )
-        else:
+        if trx_version not in [OpenWrtTrxVersion.VERSION1.value, OpenWrtTrxVersion.VERSION2.value]:
             raise ValueError(f"Unknown OpenWrt TRX version: {trx_version}")
+
+        max_num_partitions = 3 if trx_version == OpenWrtTrxVersion.VERSION1.value else 4
+        trx_partition_offsets = []
+
+        for _ in range(max_num_partitions):
+            offset = deserializer.unpack_uint()
+
+            if offset == 0:
+                break
+
+            trx_partition_offsets.append(offset)
+
+        header = OpenWrtTrxHeader(
+            trx_magic,
+            trx_length,
+            trx_crc,
+            trx_flags,
+            trx_version,
+            trx_partition_offsets
+        )
 
         return header
 
