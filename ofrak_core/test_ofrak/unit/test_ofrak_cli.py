@@ -193,6 +193,7 @@ async def all_expected_analysis(ofrak_context: OFRAKContext):
         expected_tags = test_resource.get_most_specific_tags()
         expected_attributes = test_resource.get_model().attributes.values()
         all_expected_analysis[filename] = expected_tags, expected_attributes
+    await ofrak_context.shutdown_context()
     return all_expected_analysis
 
 
@@ -232,6 +233,7 @@ async def all_expected_hashes(ofrak_context: OFRAKContext):
                 if len(data) > 0:
                     expected_hashes.add(hashlib.sha256(data).hexdigest())
         all_expected_hashes[filename] = expected_hashes
+    await ofrak_context.shutdown_context()
     return all_expected_hashes
 
 

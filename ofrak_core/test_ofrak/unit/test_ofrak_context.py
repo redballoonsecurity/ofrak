@@ -5,7 +5,8 @@ import pytest
 
 from ofrak import OFRAK, OFRAKContext
 from ofrak.core.apk import ApkIdentifier
-from ofrak_type.error import NotFoundError
+from ofrak.ofrak_context import get_current_ofrak_context
+from ofrak_type.error import NotFoundError, InvalidStateError
 from pytest_ofrak import mock_library3
 from pytest_ofrak.mock_library3 import _MockComponentA
 
@@ -56,3 +57,29 @@ def test_ofrak_context_exclude_components_missing_dependencies():
     ofrak = OFRAK(logging_level=logging.WARNING, exclude_components_missing_dependencies=False)
     ofrak.discover(mock_library3)
     ofrak.run(run_component_with_bad_dependency)
+
+
+def test_get_ofrak_context_over_time():
+    # No active context before running OFRAK
+    with pytest.raises(InvalidStateError):
+        get_current_ofrak_context()
+
+    ofrak = OFRAK()
+
+    async def foo(ofrak_context):
+        # Active context while in script
+        current_ofrak_context = get_current_ofrak_context()
+        assert current_ofrak_context is not None
+        assert current_ofrak_context is ofrak_context
+
+    ofrak.run(foo)
+
+    # No active context after script finishes
+    with pytest.raises(InvalidStateError):
+        get_current_ofrak_context()
+
+
+async def test_get_ofrak_context_fixture(ofrak_context: OFRAKContext):
+    current_ofrak_context = get_current_ofrak_context()
+    assert current_ofrak_context is not None
+    assert current_ofrak_context is ofrak_context
