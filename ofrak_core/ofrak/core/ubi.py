@@ -2,8 +2,10 @@ import subprocess
 import tempfile
 from dataclasses import dataclass
 import logging
-from typing import List
+from typing import List, Tuple
 import os
+
+from ofrak.model.tag_model import ResourceTag
 
 from ofrak import Identifier, Analyzer
 from ofrak.component.packer import Packer
@@ -187,7 +189,14 @@ class UbiUnpacker(Unpacker[None]):
                     f"/img-{ubi_view.image_seq}_vol-{vol.name}.ubifs"
                 )
                 with open(f_path, "rb") as f:
-                    await resource.create_child_from_view(vol, data=f.read())
+                    data = f.read()
+                    if len(data) > 0:
+                        other_tags: Tuple[ResourceTag, ...] = (GenericBinary,)
+                    else:
+                        other_tags = ()
+                    await resource.create_child_from_view(
+                        vol, data=data, additional_tags=other_tags
+                    )
 
 
 class UbiPacker(Packer[None]):

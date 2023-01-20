@@ -5,6 +5,7 @@ import time
 from types import ModuleType
 from typing import Type, Any, Awaitable, Callable, List, Iterable
 
+from ofrak_type import InvalidStateError
 from synthol.injector import DependencyInjector
 
 from ofrak.component.interface import ComponentInterface
@@ -85,9 +86,16 @@ class OFRAKContext:
         return root_resource
 
     async def start_context(self):
+        if "_ofrak_context" in globals():
+            raise InvalidStateError(
+                "Cannot start OFRAK context as a context has already been started in this process!"
+            )
+        globals()["_ofrak_context"] = self
         await asyncio.gather(*(service.run() for service in self._all_ofrak_services))
 
     async def shutdown_context(self):
+        if "_ofrak_context" in globals():
+            del globals()["_ofrak_context"]
         await asyncio.gather(*(service.shutdown() for service in self._all_ofrak_services))
         logging.shutdown()
 
@@ -200,3 +208,13 @@ class OFRAK:
         )
 
         return audited_components
+
+
+def get_current_ofrak_context() -> OFRAKContext:
+    # TODO: This is a brittle MVP, creating multiple simultaneous contexts in a single process
+    #  will probably break it!
+    ctx = globals().get("_ofrak_context")
+    if ctx is None:
+        raise InvalidStateError("Not in an OFRAK context!")
+    else:
+        return ctx

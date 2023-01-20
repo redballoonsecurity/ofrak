@@ -311,37 +311,29 @@ async def test_find_and_replace(ofrak_client, hello_world_elf):
     assert resp.status == 200
 
 
-async def test_add_comment(ofrak_client, hello_world_elf):
-    create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+async def test_add_comment(ofrak_server, aiohttp_client, hello_world_elf):
+    client = await aiohttp_client(ofrak_server._app)
+    create_resp = await client.post(
+        "/create_root_resource", params={"name": "test"}, data=hello_world_elf
     )
     create_body = await create_resp.json()
-    unpack_resp = await ofrak_client.post(f"/{create_body['id']}/unpack")
-    unpack_body = await unpack_resp.json()
-    resp = await ofrak_client.post(
-        f"/{unpack_body['created'][0]['id']}/add_comment", json=[[0, 8], "test"]
-    )
+    resp = await client.post(f"/{create_body['id']}/add_comment", json=[[0, 425], "test"])
     assert resp.status == 200
     resp_body = await resp.json()
-    assert resp_body["modified"][0]["id"] == unpack_body["created"][0]["id"]
+    assert resp_body["modified"][0]["id"] == create_body["id"]
 
 
-async def test_delete_comment(ofrak_client, hello_world_elf):
-    create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+async def test_delete_comment(ofrak_server, aiohttp_client, hello_world_elf):
+    client = await aiohttp_client(ofrak_server._app)
+    create_resp = await client.post(
+        "/create_root_resource", params={"name": "test"}, data=hello_world_elf
     )
     create_body = await create_resp.json()
-    unpack_resp = await ofrak_client.post(f"/{create_body['id']}/unpack")
-    unpack_body = await unpack_resp.json()
-    await ofrak_client.post(
-        f"/{unpack_body['created'][0]['id']}/add_comment", json=[[0, 8], "test"]
-    )
-    resp = await ofrak_client.post(
-        f"/{unpack_body['created'][0]['id']}/delete_comment", json=[0, 8]
-    )
+    await client.post(f"/{create_body['id']}/add_comment", json=[[0, 425], "test"])
+    resp = await client.post(f"/{create_body['id']}/delete_comment", json=[0, 425])
     assert resp.status == 200
     resp_body = await resp.json()
-    assert resp_body["modified"][0]["id"] == unpack_body["created"][0]["id"]
+    assert resp_body["modified"][0]["id"] == create_body["id"]
 
 
 async def test_search_for_vaddr(ofrak_client, hello_world_elf):
