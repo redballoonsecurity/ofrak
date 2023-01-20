@@ -4,6 +4,8 @@ All notable changes to `ofrak-patch-maker` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+
+## [2.1.0](https://github.com/redballoonsecurity/ofrak/releases/tag/ofrak-patch-maker-v.2.1.0) - 2023-01-20
 ### Added
 - Optional permission map parameter to `Allocatable.allocate_bom`, which enables developers to express where 
 segments of one set of permissions may be placed in the destination binary. For example, a developer may specify

@@ -30,7 +30,7 @@ entropy_so = setuptools.Extension(
 
 setuptools.setup(
     name="ofrak",
-    version="2.0.0",
+    version="2.1.0rc3",
     description="A binary analysis and modification platform",
     packages=setuptools.find_packages(exclude=["test_ofrak", "test_ofrak.*"]),
     package_data={
@@ -50,7 +50,6 @@ setuptools.setup(
         "orjson~=3.6.7",
         "pefile==2022.5.30",
         "pycdlib==1.12.0",
-        "python-lzo==1.14",
         "python-magic",
         "reedsolo==1.5.4",
         "sortedcontainers==2.2.2",
