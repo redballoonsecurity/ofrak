@@ -187,7 +187,14 @@ class UbiUnpacker(Unpacker[None]):
                     f"/img-{ubi_view.image_seq}_vol-{vol.name}.ubifs"
                 )
                 with open(f_path, "rb") as f:
-                    await resource.create_child_from_view(vol, data=f.read())
+                    data = f.read()
+                    if len(data) > 0:
+                        other_tags = (GenericBinary,)
+                    else:
+                        other_tags = ()
+                    await resource.create_child_from_view(
+                        vol, data=data, additional_tags=other_tags
+                    )
 
 
 class UbiPacker(Packer[None]):
