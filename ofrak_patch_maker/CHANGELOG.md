@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 
-## [2.1.0](https://github.com/redballoonsecurity/ofrak/releases/tag/ofrak-patch-maker-v.2.1.0) - 2023-01-20
+## [3.0.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-patch-maker-v.2.0.0...ofrak-patch-maker-v.3.0.0) - 2023-01-20
 ### Added
 - Optional permission map parameter to `Allocatable.allocate_bom`, which enables developers to express where 
 segments of one set of permissions may be placed in the destination binary. For example, a developer may specify

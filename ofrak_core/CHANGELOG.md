@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 
-## [2.1.0](https://github.com/redballoonsecurity/ofrak/releases/tag/ofrak-v2.1.0) - 2023-01-20
+## [2.1.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.0.0...ofrak-v2.1.0) - 2023-01-20
 ### Added
 - New `identify` and `unpack` subcommands to CLI [#164](https://github.com/redballoonsecurity/ofrak/pull/164)
 - Move GUI server to `ofrak_core`, startup GUI through CLI, add testing for server, make GUI pip installable. [#168](https://github.com/redballoonsecurity/ofrak/pull/168)
