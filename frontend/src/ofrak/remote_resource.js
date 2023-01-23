@@ -74,7 +74,7 @@ export class RemoteResource extends Resource {
   constructor(resource_model, factory) {
     super(resource_model);
     this.factory = factory;
-    this.uri = `/api/${this.model.resource_id}`;
+    this.uri = `/${this.model.resource_id}`;
   }
 
   async get_children(r_filter, r_sort) {

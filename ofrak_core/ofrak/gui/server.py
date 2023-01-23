@@ -2,7 +2,9 @@ import asyncio
 import functools
 import json
 import logging
-import sys
+import os
+import webbrowser
+from collections import defaultdict
 from typing import (
     Iterable,
     Optional,
@@ -10,24 +12,24 @@ from typing import (
     cast,
     Set,
     Tuple,
-    no_type_check,
     Union,
     Type,
     Callable,
     TypeVar,
-    List,
 )
 
-from aiohttp import web, ClientResponse
+from aiohttp import web
 from aiohttp.web_exceptions import HTTPBadRequest
 from aiohttp.web_request import Request
 from aiohttp.web_response import Response
+from aiohttp.web_fileresponse import FileResponse
+
+from ofrak.ofrak_context import get_current_ofrak_context
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 
 from ofrak import (
     OFRAKContext,
-    OFRAK,
     ResourceFilter,
     ResourceAttributeRangeFilter,
     ResourceAttributeValueFilter,
@@ -144,18 +146,20 @@ class AiohttpOFRAKServer:
                 web.post("/{resource_id}/add_comment", self.add_comment),
                 web.post("/{resource_id}/delete_comment", self.delete_comment),
                 web.post("/{resource_id}/search_for_vaddr", self.search_for_vaddr),
+                web.get("/", self.get_static_files),
+                web.static(
+                    "/",
+                    os.path.join(os.path.dirname(__file__), "./public"),
+                    show_index=True,
+                ),
             ]
         )
 
-        self._job_ids: Dict[str, bytes] = dict()
+        self._job_ids: Dict[str, bytes] = defaultdict(
+            lambda: ofrak_context.id_service.generate_id()
+        )
 
-    def run(self):
-        """
-        Start and run the server until shutdown is requested via e.g. SIGINT.
-        """
-        web.run_app(self._app, host=self._host, port=self._port)
-
-    async def start(self):
+    async def start(self):  # pragma: no cover
         """
         Start the server then return.
         """
@@ -164,7 +168,14 @@ class AiohttpOFRAKServer:
         server = web.TCPSite(self.runner, host=self._host, port=self._port)
         await server.start()
 
-    async def run_until_cancelled(self):
+    async def stop(self):  # pragma: no cover
+        """
+        Stop the server.
+        """
+        await self.runner.server.shutdown()
+        await self.runner.cleanup()
+
+    async def run_until_cancelled(self):  # pragma: no cover
         """
         To be run after `start_server`, within an asyncio Task.
         cancel() that task to shutdown the server.
@@ -388,6 +399,7 @@ class AiohttpOFRAKServer:
             await request.json(), Tuple[int, Optional[int]]
         )
         try:
+            vaddr_filter: Union[ResourceAttributeRangeFilter, ResourceAttributeValueFilter]
             if vaddr_end is not None:
                 vaddr_filter = ResourceAttributeRangeFilter(
                     Addressable.VirtualAddress, vaddr_start, vaddr_end
@@ -402,6 +414,10 @@ class AiohttpOFRAKServer:
 
         except NotFoundError:
             return web.json_response([])
+
+    @exceptions_to_http(SerializedError)
+    async def get_static_files(self, request: Request) -> FileResponse:
+        return FileResponse(os.path.join(os.path.dirname(__file__), "./public/index.html"))
 
     async def _get_resource_by_id(self, resource_id: bytes, job_id: bytes) -> Resource:
         resource = await self._ofrak_context.resource_factory.create(
@@ -467,32 +483,18 @@ class AiohttpOFRAKServer:
         del resource_model_fields["component_versions"]
         del resource_model_fields["components_by_attributes"]
 
-    async def message_as_pjson(
-        self, message: Union[Request, ClientResponse]
-    ) -> Dict[str, PJSONType]:
-        """
-        Read the HTTP message (request or response) and return it in PJSON form.
-
-        It's assumed that the message is a dictionary.
-        """
-        message_raw = await message.read()
-        return json.loads(message_raw.decode("UTF-8"))
-
-    # ignore type hints because mypy doesn't currently allow to use Type[X] when X is not a concrete type,
-    # see e.g. https://github.com/python/mypy/issues/4717#issuecomment-617676034
-    @no_type_check
-    async def deserialize_message(
-        self, message: Union[Request, ClientResponse], type_hint: Type[T]
-    ) -> T:
-        """
-        Read the HTTP message (request or response) and return it in deserialized form.
-
-        Convenience function for when a type hint is all that's needed to deserialize the message.
-        """
-        return self._serializer.from_pjson(await self.message_as_pjson(message), type_hint)
+    def open_resource_in_browser(self, resource: Optional[Resource]):  # pragma: no cover
+        if resource is None:
+            url = f"http://{self._host}:{self._port}/"
+        else:
+            url = f"http://{self._host}:{self._port}/#{resource.get_id().hex()}"
+        print(f"GUI is being served on {url}")
+        webbrowser.open(url)
 
 
-async def main(ofrak_context: OFRAKContext, host: str, port: int):
+async def start_server(
+    ofrak_context: OFRAKContext, host: str, port: int
+) -> AiohttpOFRAKServer:  # pragma: no cover
     # Force using the correct PJSON serialization with the expected structure. Otherwise the
     # dependency injector may accidentally use the Stashed PJSON serialization service,
     # which returns PJSON that has a different, problematic structure.
@@ -507,9 +509,7 @@ async def main(ofrak_context: OFRAKContext, host: str, port: int):
     server = await ofrak_context.injector.get_instance(AiohttpOFRAKServer)
     await server.start()
 
-    print("Started server")
-
-    await server.run_until_cancelled()
+    return server
 
 
 def respond_with_error(error: Exception, error_cls: Type[SerializedError]) -> Response:
@@ -525,11 +525,6 @@ def pluck_id(request: Request, get_parameter_name: str) -> bytes:
     return bytes.fromhex(request.match_info[get_parameter_name])
 
 
-def pluck_ids(request: Request, get_parameter_name: str) -> List[bytes]:
-    ids_hex = request.match_info[get_parameter_name].split(",")
-    return [bytes.fromhex(id) for id in ids_hex]
-
-
 def get_query_string_as_pjson(request: Request) -> Dict[str, PJSONType]:
     """
     URL-encoded GET parameters are all strings. For example, None is encoded as 'None',
@@ -538,39 +533,15 @@ def get_query_string_as_pjson(request: Request) -> Dict[str, PJSONType]:
     return {key: json.loads(value) for key, value in request.query.items()}
 
 
-if __name__ == "__main__":
-    if len(sys.argv) >= 3:
-        _host = sys.argv[1]
-        _port = int(sys.argv[2])
-    else:
-        _host = "127.0.0.1"
-        _port = 8080
+async def open_gui(
+    host: str,
+    port: int,
+    focus_resource: Optional[Resource] = None,
+    ofrak_context: Optional[OFRAKContext] = None,
+) -> AiohttpOFRAKServer:  # pragma: no cover
+    if ofrak_context is None:
+        ofrak_context = get_current_ofrak_context()
 
-    if len(sys.argv) == 4:
-        backend = sys.argv[3]
-    else:
-        backend = None
-
-    ofrak = OFRAK(logging.INFO)
-
-    if backend == "binary-ninja":
-        import ofrak_capstone  # type: ignore
-        import ofrak_binary_ninja  # type: ignore
-
-        ofrak.injector.discover(ofrak_capstone)
-        ofrak.injector.discover(ofrak_binary_ninja)
-
-    elif backend == "ghidra":
-        import ofrak_ghidra  # type: ignore
-
-        ofrak.injector.discover(ofrak_ghidra)
-
-    elif backend == "angr":
-        import ofrak_angr  # type: ignore
-
-        ofrak.injector.discover(ofrak_angr)
-
-    else:
-        LOGGER.warning("No disassembler backend specified, so no disassembly will be possible")
-
-    ofrak.run(main, _host, _port)  # type: ignore
+    server = await start_server(ofrak_context, host, port)
+    server.open_resource_in_browser(focus_resource)
+    return server

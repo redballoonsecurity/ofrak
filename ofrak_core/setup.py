@@ -37,6 +37,7 @@ setuptools.setup(
         "ofrak": ["py.typed"],
     },
     install_requires=[
+        "aiohttp~=3.8.1",
         "beartype~=0.10.2",
         "fdt==0.3.2",
         "importlib-metadata>=1.4",
@@ -49,11 +50,13 @@ setuptools.setup(
         "orjson~=3.6.7",
         "pefile==2022.5.30",
         "pycdlib==1.12.0",
+        "python-lzo==1.14",
         "python-magic",
         "reedsolo==1.5.4",
         "sortedcontainers==2.2.2",
         "synthol~=0.1.1",
         "typeguard~=2.13.3",
+        "ubi-reader==0.8.5",
         "xattr==0.9.7",
     ],
     extras_require={
@@ -78,6 +81,7 @@ setuptools.setup(
             "mypy==0.942",
             "psutil~=5.9",
             "pyelftools==0.29",
+            "pytest-aiohttp",
             "pytest-asyncio==0.19.0",
             "pytest-lazy-fixture",
             "pytest-cov",
@@ -111,6 +115,10 @@ setuptools.setup(
     license="Proprietary",
     license_files=["LICENSE"],
     cmdclass={"egg_info": egg_info_ex},
-    entry_points={"ofrak.packages": ["ofrak_pkg = ofrak"]},
+    entry_points={
+        "ofrak.packages": ["ofrak_pkg = ofrak"],
+        "console_scripts": ["ofrak = ofrak.__main__:main"],
+    },
     ext_modules=[entropy_so],
+    include_package_data=True,
 )
