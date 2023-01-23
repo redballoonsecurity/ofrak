@@ -1,6 +1,4 @@
 # - u-boot-tools: for mkimage, to test the UImage packer/unpacker
-
-# - u-boot-tools: for mkimage, to test the UImage packer/unpacker
 RUN apt-get -y update && \
     apt-get -y install --no-install-recommends \
       build-essential \
