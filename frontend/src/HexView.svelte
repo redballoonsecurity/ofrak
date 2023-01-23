@@ -190,9 +190,9 @@
   }
 </script>
 
-{#await Promise.all([dataPromise, childRangesPromise])}
+{#await dataPromise}
   <LoadingAnimation />
-{:then [dataResult, childRangesResult]}
+{:then dataResult}
   {#if dataResult !== undefined && dataResult.byteLength > 0}
     <!-- 
       The magic number below is the largest height that Firefox will support with
@@ -221,37 +221,49 @@
 
           <span class="spacer"> </span>
 
-          <div>
-            {#each chunks as hexes, chunkIndex}
-              <div>
-                {#each hexes as byte, byteIndex}
-                  {@const rangeInfo = getRangeInfo(
-                    chunkIndex * alignment + byteIndex + start,
-                    childRangesResult,
-                    byte
-                  )}
-                  {#if rangeInfo?.resource_id === null || rangeInfo?.resource_id === undefined}
+          {#await childRangesPromise}
+            <div>
+              {#each chunks as hexes}
+                <div>
+                  {#each hexes as byte}
                     <span class="byte">{byte}</span>
-                  {:else}
-                    <span
-                      class="byte"
-                      style:background-color="{rangeInfo.background}"
-                      style:color="{rangeInfo.foreground}"
-                      style:cursor="pointer"
-                      style:user-select="none"
-                      title="{rangeInfo.resource_id !== null
-                        ? rangeInfo.resource_id
-                        : ''}"
-                      on:dblclick="{() => {
-                        resourceNodeDataMap[$selected].collapsed = false;
-                        $selected = rangeInfo.resource_id;
-                      }}">{byte}</span
-                    >
-                  {/if}
-                {/each}
-              </div>
-            {/each}
-          </div>
+                  {/each}
+                </div>
+              {/each}
+            </div>
+          {:then childRangesResult}
+            <div>
+              {#each chunks as hexes, chunkIndex}
+                <div>
+                  {#each hexes as byte, byteIndex}
+                    {@const rangeInfo = getRangeInfo(
+                      chunkIndex * alignment + byteIndex + start,
+                      childRangesResult,
+                      byte
+                    )}
+                    {#if rangeInfo?.resource_id === null || rangeInfo?.resource_id === undefined}
+                      <span class="byte">{byte}</span>
+                    {:else}
+                      <span
+                        class="byte"
+                        style:background-color="{rangeInfo.background}"
+                        style:color="{rangeInfo.foreground}"
+                        style:cursor="pointer"
+                        style:user-select="none"
+                        title="{rangeInfo.resource_id !== null
+                          ? rangeInfo.resource_id
+                          : ''}"
+                        on:dblclick="{() => {
+                          resourceNodeDataMap[$selected].collapsed = false;
+                          $selected = rangeInfo.resource_id;
+                        }}">{byte}</span
+                      >
+                    {/if}
+                  {/each}
+                </div>
+              {/each}
+            </div>
+          {/await}
 
           <span class="spacer"></span>
 
