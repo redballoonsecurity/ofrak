@@ -15,7 +15,7 @@ function createQueue(route) {
         queue.requests = [];
       }
 
-      const result_models = await fetch(`/api/batch/${route}`, {
+      const result_models = await fetch(`/batch/${route}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
