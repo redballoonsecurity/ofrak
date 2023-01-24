@@ -18,10 +18,13 @@ from ofrak.resource_view import ResourceView
 
 from ofrak_type.range import Range
 
-from ubireader import ubi_io
-from ubireader.ubi import ubi as ubireader_ubi
-from ubireader.ubi.defines import UBI_EC_HDR_MAGIC, UBI_VID_HDR_MAGIC, PRINT_VOL_TYPE_LIST
-from ubireader.utils import guess_peb_size
+try:
+    from ubireader import ubi_io
+    from ubireader.ubi import ubi as ubireader_ubi
+    from ubireader.ubi.defines import UBI_EC_HDR_MAGIC, UBI_VID_HDR_MAGIC, PRINT_VOL_TYPE_LIST
+    from ubireader.utils import guess_peb_size
+except ModuleNotFoundError:
+    pass
 
 from ofrak.model.resource_model import index
 
@@ -34,6 +37,26 @@ UBINIZE_TOOL = ComponentExternalTool(
     apt_package="mtd-utils",
     brew_package="",  # This isn't compatible with macos, but there may be an alternative tool to do the bidding.
 )
+
+
+class _PyLzoTool(ComponentExternalTool):
+    def __init__(self):
+        super().__init__(
+            "python-lzo",
+            "https://github.com/jd-boyd/python-lzo",
+            install_check_arg="",
+        )
+
+    def is_tool_installed(self) -> bool:
+        try:
+            import lzo  # type: ignore
+
+            return True
+        except ModuleNotFoundError:
+            return False
+
+
+PY_LZO_TOOL = _PyLzoTool()
 
 
 @dataclass
@@ -103,6 +126,8 @@ class UbiAnalyzer(Analyzer[None, Ubi]):
     targets = (Ubi,)
     outputs = (Ubi,)
 
+    external_dependencies = (PY_LZO_TOOL,)
+
     async def analyze(self, resource: Resource, config=None) -> Ubi:
         # Flush to disk
         with tempfile.NamedTemporaryFile() as temp_file:
@@ -160,7 +185,7 @@ class UbiUnpacker(Unpacker[None]):
 
     targets = (Ubi,)
     children = (UbiVolume,)
-    external_dependencies = ()
+    external_dependencies = (PY_LZO_TOOL,)
 
     async def unpack(self, resource: Resource, config=None):
         with tempfile.TemporaryDirectory() as temp_flush_dir:
@@ -205,7 +230,7 @@ class UbiPacker(Packer[None]):
     """
 
     targets = (Ubi,)
-    external_dependencies = (UBINIZE_TOOL,)
+    external_dependencies = (UBINIZE_TOOL, PY_LZO_TOOL)
 
     async def pack(self, resource: Resource, config=None) -> None:
         ubi_view = await resource.view_as(Ubi)
@@ -271,6 +296,8 @@ class UbiIdentifier(Identifier):
     """
 
     targets = (File, GenericBinary)
+
+    external_dependencies = (PY_LZO_TOOL,)
 
     async def identify(self, resource: Resource, config=None) -> None:
         datalength = await resource.get_data_length()

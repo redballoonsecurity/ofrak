@@ -6,6 +6,7 @@ import logging
 from ofrak import Identifier, Analyzer
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
+from ofrak.core import PY_LZO_TOOL
 from ofrak.resource import Resource
 from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
 from ofrak.core.binary import GenericBinary
@@ -13,12 +14,15 @@ from ofrak.core.binary import GenericBinary
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak_type.range import Range
 
-from ubireader.ubifs.defines import UBIFS_NODE_MAGIC
+try:
+    from ubireader.ubifs.defines import UBIFS_NODE_MAGIC
 
-from ubireader import ubi_io
-from ubireader.ubifs import ubifs as ubireader_ubifs
-from ubireader.ubifs.defines import PRINT_UBIFS_KEY_HASH, PRINT_UBIFS_COMPR
-from ubireader.utils import guess_leb_size
+    from ubireader import ubi_io
+    from ubireader.ubifs import ubifs as ubireader_ubifs
+    from ubireader.ubifs.defines import PRINT_UBIFS_KEY_HASH, PRINT_UBIFS_COMPR
+    from ubireader.utils import guess_leb_size
+except ModuleNotFoundError:
+    pass
 
 LOGGER = logging.getLogger(__name__)
 
@@ -89,6 +93,8 @@ class UbifsAnalyzer(Analyzer[None, Ubifs]):
     targets = (Ubifs,)
     outputs = (Ubifs,)
 
+    external_dependencies = (PY_LZO_TOOL,)
+
     async def analyze(self, resource: Resource, config=None) -> Ubifs:
         with tempfile.NamedTemporaryFile() as temp_file:
             resource_data = await resource.get_data()
@@ -124,7 +130,8 @@ class UbifsUnpacker(Unpacker[None]):
 
     targets = (Ubifs,)
     children = (File, Folder, SpecialFileType)
-    external_dependencies = ()
+
+    external_dependencies = (PY_LZO_TOOL,)
 
     async def unpack(self, resource: Resource, config=None):
         with tempfile.TemporaryDirectory() as temp_flush_dir:
@@ -195,6 +202,8 @@ class UbifsIdentifier(Identifier):
     """
 
     targets = (File, GenericBinary)
+
+    external_dependencies = (PY_LZO_TOOL,)
 
     async def identify(self, resource: Resource, config=None) -> None:
         datalength = await resource.get_data_length()
