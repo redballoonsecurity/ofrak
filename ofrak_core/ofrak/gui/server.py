@@ -238,8 +238,38 @@ class AiohttpOFRAKServer:
             raise ValueError("No IP address found for the remote request!")
 
         async def get_resource_range(resource_id):
-            resource = await self._get_resource_by_id(bytes.fromhex(resource_id), job_id)
-            data_range = await resource.get_data_range_within_parent()
+            resource_model = await self._get_resource_model_by_id(
+                bytes.fromhex(resource_id), job_id
+            )
+            if resource_model.data_id is None:
+                raise ValueError(
+                    "Resource does not have a data_id. Cannot get data range from a "
+                    "resource with no data."
+                )
+            if resource_model.parent_id is None:
+                data_range = Range(0, 0)
+            else:
+                resource_service = self._ofrak_context.resource_factory._resource_service
+                data_service = self._ofrak_context.resource_factory._data_service
+                parent_models = list(
+                    await resource_service.get_ancestors_by_id(resource_model.id, max_count=1)
+                )
+                if len(parent_models) != 1:
+                    raise NotFoundError(
+                        f"There is no parent for resource {resource_model.id.hex()}"
+                    )
+                parent_model = parent_models[0]
+
+                parent_data_id = parent_model.data_id
+                if parent_data_id is None:
+                    data_range = Range(0, 0)
+                else:
+                    try:
+                        data_range = await data_service.get_range_within_other(
+                            resource_model.data_id, parent_data_id
+                        )
+                    except ValueError:
+                        data_range = Range(0, 0)
             return resource_id, [data_range.start, data_range.end]
 
         return json_response(
@@ -428,6 +458,14 @@ class AiohttpOFRAKServer:
             self.component_context,
         )
         return resource
+
+    async def _get_resource_model_by_id(self, resource_id: bytes, job_id: bytes) -> ResourceModel:
+        resource_m = self.resource_context.resource_models.get(resource_id)
+        if resource_m is None:
+            resource_m = await self._ofrak_context.resource_factory._resource_service.get_by_id(
+                resource_id
+            )
+        return resource_m
 
     async def _serialize_component_result(self, result: ComponentRunResult) -> PJSONType:
         async def get_and_serialize(resource_id) -> PJSONType:
