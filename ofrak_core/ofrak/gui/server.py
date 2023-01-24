@@ -1,7 +1,7 @@
 import asyncio
 import functools
-import json
 import logging
+import json
 import os
 import webbrowser
 from collections import defaultdict
@@ -16,7 +16,10 @@ from typing import (
     Type,
     Callable,
     TypeVar,
+    Any,
 )
+
+import orjson
 
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPBadRequest
@@ -197,17 +200,17 @@ class AiohttpOFRAKServer:
         root_resource = await self._ofrak_context.create_root_resource(name, resource_data, (File,))
         if request.remote is not None:
             self._job_ids[request.remote] = root_resource.get_job_id()
-        return web.json_response(self._serialize_resource(root_resource))
+        return json_response(self._serialize_resource(root_resource))
 
     @exceptions_to_http(SerializedError)
     async def get_root_resources(self, request: Request) -> Response:
         roots = await self._ofrak_context.resource_service.get_root_resources()
-        return web.json_response(list(map(self._serialize_resource_model, roots)))
+        return json_response(list(map(self._serialize_resource_model, roots)))
 
     @exceptions_to_http(SerializedError)
     async def get_resource(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
-        return web.json_response(self._serialize_resource(resource))
+        return json_response(self._serialize_resource(resource))
 
     @exceptions_to_http(SerializedError)
     async def get_data(self, request: Request) -> Response:
@@ -237,13 +240,10 @@ class AiohttpOFRAKServer:
         async def get_resource_range(resource_id):
             resource = await self._get_resource_by_id(bytes.fromhex(resource_id), job_id)
             data_range = await resource.get_data_range_within_parent()
-            return self._serializer.to_pjson(data_range, Range)
+            return resource_id, [data_range.start, data_range.end]
 
-        return web.json_response(
-            {
-                resource_id: await get_resource_range(resource_id)
-                for resource_id in await request.json()
-            }
+        return json_response(
+            dict(await asyncio.gather(*map(get_resource_range, await request.json())))
         )
 
     @exceptions_to_http(SerializedError)
@@ -251,62 +251,62 @@ class AiohttpOFRAKServer:
         resource = await self._get_resource_for_request(request)
         result = await resource.unpack()
         response_pjson = await self._serialize_component_result(result)
-        return web.json_response(response_pjson)
+        return json_response(response_pjson)
 
     @exceptions_to_http(SerializedError)
     async def unpack_recursively(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         result = await resource.unpack_recursively()
         response_pjson = await self._serialize_component_result(result)
-        return web.json_response(response_pjson)
+        return json_response(response_pjson)
 
     @exceptions_to_http(SerializedError)
     async def pack(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         result = await resource.pack()
         response_pjson = await self._serialize_component_result(result)
-        return web.json_response(response_pjson)
+        return json_response(response_pjson)
 
     @exceptions_to_http(SerializedError)
     async def pack_recursively(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         result = await resource.pack_recursively()
         response_pjson = await self._serialize_component_result(result)
-        return web.json_response(response_pjson)
+        return json_response(response_pjson)
 
     @exceptions_to_http(SerializedError)
     async def identify(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         result = await resource.identify()
         response_pjson = await self._serialize_component_result(result)
-        return web.json_response(response_pjson)
+        return json_response(response_pjson)
 
     @exceptions_to_http(SerializedError)
     async def data_summary(self, request: Request) -> Response:
         resource = cast(Resource, await self._get_resource_for_request(request))
         result = await resource.run(DataSummaryAnalyzer)
         response_pjson = await self._serialize_component_result(result)
-        return web.json_response(response_pjson)
+        return json_response(response_pjson)
 
     @exceptions_to_http(SerializedError)
     async def analyze(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         result = await resource.auto_run(all_analyzers=True)
         response_pjson = await self._serialize_component_result(result)
-        return web.json_response(response_pjson)
+        return json_response(response_pjson)
 
     @exceptions_to_http(SerializedError)
     async def get_parent(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         parent = await resource.get_parent()
-        return web.json_response(self._serialize_resource(parent))
+        return json_response(self._serialize_resource(parent))
 
     @exceptions_to_http(SerializedError)
     async def get_ancestors(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         # TODO: filter argument
         ancestors = await resource.get_ancestors()
-        return web.json_response(self._serialize_multi_resource(ancestors))
+        return json_response(self._serialize_multi_resource(ancestors))
 
     @exceptions_to_http(SerializedError)
     async def batch_get_children(self, request: Request) -> Response:
@@ -317,21 +317,21 @@ class AiohttpOFRAKServer:
 
         async def get_resource_children(resource_id):
             resource = await self._get_resource_by_id(bytes.fromhex(resource_id), job_id)
-            children = await resource.get_children()
-            return self._serialize_multi_resource(children)
+            child_models = await resource._resource_service.get_descendants_by_id(
+                resource._resource.id,
+                max_depth=1,
+            )
+            return resource_id, list(map(self._serialize_resource_model, child_models))
 
-        return web.json_response(
-            {
-                resource_id: await get_resource_children(resource_id)
-                for resource_id in await request.json()
-            }
+        return json_response(
+            dict(await asyncio.gather(*map(get_resource_children, await request.json())))
         )
 
     @exceptions_to_http(SerializedError)
     async def get_children(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         children = await resource.get_children()
-        return web.json_response(self._serialize_multi_resource(children))
+        return json_response(self._serialize_multi_resource(children))
 
     @exceptions_to_http(SerializedError)
     async def get_root_resource_from_child(self, request: Request) -> Response:
@@ -343,7 +343,7 @@ class AiohttpOFRAKServer:
                 pass
         except NotFoundError:
             pass
-        return web.json_response(self._serialize_resource(parent))
+        return json_response(self._serialize_resource(parent))
 
     @exceptions_to_http(SerializedError)
     async def queue_patch(self, request: Request) -> Response:
@@ -357,14 +357,14 @@ class AiohttpOFRAKServer:
 
         resource.queue_patch(Range(start, end), new_data)
         await resource.save()
-        return web.json_response(self._serialize_resource(resource))
+        return json_response(self._serialize_resource(resource))
 
     @exceptions_to_http(SerializedError)
     async def create_mapped_child(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         _range = self._serializer.from_pjson(await request.json(), Optional[Range])
         child = await resource.create_child(tags=(GenericBinary,), data_range=_range)
-        return web.json_response(self._serialize_resource(child))
+        return json_response(self._serialize_resource(child))
 
     @exceptions_to_http(SerializedError)
     async def find_and_replace(self, request: Request) -> Response:
@@ -372,7 +372,7 @@ class AiohttpOFRAKServer:
         config = self._serializer.from_pjson(await request.json(), StringFindReplaceConfig)
         result = await resource.run(StringFindReplaceModifier, config=config)
         response_pjson = await self._serialize_component_result(result)
-        return web.json_response(response_pjson)
+        return json_response(response_pjson)
 
     async def add_comment(self, request: Request) -> Response:
         """
@@ -381,7 +381,7 @@ class AiohttpOFRAKServer:
         resource = await self._get_resource_for_request(request)
         comment = self._serializer.from_pjson(await request.json(), Tuple[Optional[Range], str])
         result = await resource.run(AddCommentModifier, AddCommentModifierConfig(comment))
-        return web.json_response(await self._serialize_component_result(result))
+        return json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
     async def delete_comment(self, request: Request) -> Response:
@@ -390,7 +390,7 @@ class AiohttpOFRAKServer:
         result = await resource.run(
             DeleteCommentModifier, DeleteCommentModifierConfig(comment_range)
         )
-        return web.json_response(await self._serialize_component_result(result))
+        return json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
     async def search_for_vaddr(self, request: Request) -> Response:
@@ -410,10 +410,10 @@ class AiohttpOFRAKServer:
                 r_filter=ResourceFilter(attribute_filters=(vaddr_filter,)),
                 r_sort=ResourceSort(Addressable.VirtualAddress),
             )
-            return web.json_response(list(map(self._serialize_resource, matching_resources)))
+            return json_response(list(map(self._serialize_resource, matching_resources)))
 
         except NotFoundError:
-            return web.json_response([])
+            return json_response([])
 
     @exceptions_to_http(SerializedError)
     async def get_static_files(self, request: Request) -> FileResponse:
@@ -458,9 +458,15 @@ class AiohttpOFRAKServer:
         """
         Serialize the resource model, stripped of information irrelevant to the frontend.
         """
-        resource_model_pjson = self._serializer.to_pjson(resource_model, ResourceModel)
-        self._strip_resource_model_pjson(resource_model_pjson)
-        return resource_model_pjson
+        result = {
+            "id": resource_model.id.hex(),
+            "data_id": resource_model.data_id.hex() if resource_model.data_id else None,
+            "parent_id": resource_model.parent_id.hex() if resource_model.parent_id else None,
+            "tags": [str(tag.__name__) for tag in resource_model.tags],
+            "attributes": [],  # TODO
+            "caption": resource_model.caption,
+        }
+        return result
 
     def _serialize_resource(self, resource: Resource) -> PJSONType:
         """
@@ -545,3 +551,29 @@ async def open_gui(
     server = await start_server(ofrak_context, host, port)
     server.open_resource_in_browser(focus_resource)
     return server
+
+
+def json_response(
+    data: Any = None,
+    *,
+    text: Optional[str] = None,
+    body: Optional[bytes] = None,
+    status: int = 200,
+    reason: Optional[str] = None,
+    headers=None,
+    content_type: str = "application/json",
+    dumps=orjson.dumps,
+) -> Response:
+    if data is not None:
+        if text or body:
+            raise ValueError("only one of data, text, or body should be specified")
+        else:
+            body = dumps(data)
+    return Response(
+        text=text,
+        body=body,
+        status=status,
+        reason=reason,
+        headers=headers,
+        content_type=content_type,
+    )
