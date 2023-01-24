@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [2.1.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.0.0...ofrak-v2.1.0) - 2023-01-20
 ### Added
+- `LiefAddSegmentConfig` now has an optional `physical_address` argument.
 - New `identify` and `unpack` subcommands to CLI [#164](https://github.com/redballoonsecurity/ofrak/pull/164)
 - Move GUI server to `ofrak_core`, startup GUI through CLI, add testing for server, make GUI pip installable. [#168](https://github.com/redballoonsecurity/ofrak/pull/168)
   - `python -m ofrak gui` starts the OFRAK GUI server.
@@ -22,6 +23,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Fixed
 - Remove unneeded and slow `.save()` when unpacking filesystems [#171](https://github.com/redballoonsecurity/ofrak/pull/171)
+- Fixed null pointer bug in Ghidra scripts.
+- `SegmentInjectorModifier` deletes all descendants of the modified section, fixing a bug that would arrise when applying more than one segment modification.
 - Added missing elf section types to ElfSectionType [#178](https://github.com/redballoonsecurity/ofrak/pull/178)
 - Handled .rela placeholder segments in the same fashion as .got [#185](https://github.com/redballoonsecurity/ofrak/pull/185)
 

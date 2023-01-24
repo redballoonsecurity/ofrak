@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import tempfile
@@ -175,7 +176,7 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
             )
         )
 
-        injection_tasks = []
+        injection_tasks: List[Tuple[Resource, BinaryInjectorModifierConfig]] = []
 
         for segment, segment_data in config.segments_and_data:
             if segment.length == 0 or segment.vm_address == 0:
@@ -208,8 +209,16 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
 
             injection_tasks.append((region.resource, BinaryInjectorModifierConfig(patches)))
 
+        all_decendants = await resource.get_descendants()
         for injected_resource, injection_config in injection_tasks:
-            await injected_resource.run(BinaryInjectorModifier, injection_config)
+            result = await injected_resource.run(BinaryInjectorModifier, injection_config)
+            parents_to_delete = list(
+                filter(lambda r: r.get_id() in result.resources_modified, all_decendants)
+            )
+            to_delete = []
+            for parent in parents_to_delete:
+                to_delete.extend(list(await parent.get_descendants()))
+            await asyncio.gather(*(r.delete() for r in to_delete))
 
 
 @dataclass

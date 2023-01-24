@@ -67,7 +67,7 @@ public class GetInstructions extends HeadlessScript {
             Instruction instruction = getInstructionAt(startAddr);
 
             if (instruction == null) {
-                instruction = instruction.getNext();
+                instruction = getInstructionAfter(startAddr);
             }
 
             this.instructions = new ArrayList<>();
