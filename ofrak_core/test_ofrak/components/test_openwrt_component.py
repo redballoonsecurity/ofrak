@@ -6,7 +6,9 @@ from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 from ofrak_type.range import Range
-from ofrak.core.openwrt import OpenWrtTrxKernel, openwrt_crc32
+from ofrak.core.openwrt import openwrt_crc32
+from ofrak.core.ubi import Ubi
+from ofrak.core.binary import GenericBinary
 from test_ofrak.components import ASSETS_DIR
 
 
@@ -30,12 +32,15 @@ class TestOpenWrtTrxUnpackModifyPack(UnpackModifyPackPattern):
         The modification for the OpenWrtTrx test is to replace the entirety of the kernel
         with 4 null bytes
         """
-        kernel = await resource.get_only_child_as_view(
-            OpenWrtTrxKernel, ResourceFilter.with_tags(OpenWrtTrxKernel)
+        partitions = await resource.get_descendants_as_view(
+            GenericBinary, max_depth=1, r_filter=ResourceFilter(tags=(GenericBinary,))
         )
-        original_size = await kernel.resource.get_data_length()
-        kernel.resource.queue_patch(Range(0, original_size), b"\x00\x00\x00\x00")
-        await kernel.resource.save()
+        partition = partitions[0]
+
+        original_size = await partition.resource.get_data_length()
+        partition.resource.queue_patch(Range(0, original_size), b"\x00\x00\x00\x00")
+
+        await partition.resource.save()
 
     async def repack(self, resource: Resource) -> None:
         await resource.pack_recursively()
@@ -87,12 +92,14 @@ class TestOpenWrtTrxUnpackRepackNullRootfs(TestOpenWrtTrxUnpackModifyPack):
         return resource
 
     async def unpack(self, resource: Resource) -> None:
-        await resource.unpack()
-        kernel = await resource.get_only_descendant_as_view(
-            OpenWrtTrxKernel, r_filter=ResourceFilter(tags=(OpenWrtTrxKernel,))
+        await super().unpack(resource)
+
+        flash = await resource.get_only_descendant_as_view(
+            Ubi, r_filter=ResourceFilter(tags=(Ubi,))
         )
-        kernel_data = await kernel.resource.get_data()
-        assert kernel_data.startswith(b"UBI#")
+
+        flash_data = await flash.resource.get_data()
+        assert flash_data.startswith(b"UBI#")
 
     async def verify(self, resource: Resource) -> None:
         resource_data = await resource.get_data()
