@@ -187,6 +187,8 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
                 )
             if segment.segment_name.startswith(".bss"):
                 continue
+            if segment.segment_name.startswith(".rela"):
+                continue
             if segment.segment_name.startswith(".got"):
                 # Create new .got and .plt in the exec format here here once we begin supporting
                 # the addition of new dynamic references in our patches.
