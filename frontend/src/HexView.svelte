@@ -167,22 +167,33 @@
   }
   $: childRangesPromise = calculateRanges($selectedResource, dataPromise);
 
-  function getRangeInfo(index, childRanges) {
+  function getRangeInfo(T, childRanges) {
     if (childRanges === undefined) {
       return null;
     }
 
-    for (let i = 0; i < childRanges.length; i++) {
-      let range = childRanges[i];
-      if (range.start <= index && index < range.end) {
+    // Perform binary search using range start offsets.
+    // https://en.wikipedia.org/wiki/Binary_search_algorithm#Algorithm
+    let L = 0,
+      R = childRanges.length - 1;
+    while (true) {
+      if (L > R) {
+        break;
+      }
+
+      let m = Math.floor((L + R) / 2);
+      let range = childRanges[m];
+      if (range.start <= T && T < range.end) {
         let result = {
           foreground: "var(--main-bg-color)",
           background: range.color,
           resource_id: range.resource_id,
         };
         return result;
-      } else if (index < range.start) {
-        break;
+      } else if (range.start < T) {
+        L = m + 1;
+      } else if (range.start > T) {
+        R = m - 1;
       }
     }
 
