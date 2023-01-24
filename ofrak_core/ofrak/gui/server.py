@@ -57,6 +57,7 @@ from ofrak.model.resource_model import (
     ResourceContext,
     ClientResourceContext,
     ResourceModel,
+    ResourceAttributes,
 )
 from ofrak.model.viewable_tag_model import ResourceViewContext
 from ofrak.resource import Resource
@@ -501,7 +502,9 @@ class AiohttpOFRAKServer:
             "data_id": resource_model.data_id.hex() if resource_model.data_id else None,
             "parent_id": resource_model.parent_id.hex() if resource_model.parent_id else None,
             "tags": [str(tag.__name__) for tag in resource_model.tags],
-            "attributes": [],  # TODO
+            "attributes": self._serializer.to_pjson(
+                resource_model.attributes, Dict[Type[ResourceAttributes], ResourceAttributes]
+            ),
             "caption": resource_model.caption,
         }
         return result
