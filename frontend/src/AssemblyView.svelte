@@ -45,11 +45,11 @@
       // Sort basic blocks in order of the virtual address of the first instruction
       blocks.sort((a, b) => {
         const aAddress =
-          a[0]?.model?.attributes[
+          a[0]?.attributes[
             "ofrak.model._auto_attributes.AttributesType[Addressable]"
           ]?.virtual_address;
         const bAddress =
-          b[0]?.model?.attributes[
+          b[0]?.attributes[
             "ofrak.model._auto_attributes.AttributesType[Addressable]"
           ]?.virtual_address;
         return aAddress - bAddress;

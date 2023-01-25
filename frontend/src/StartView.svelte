@@ -63,14 +63,14 @@
   import LoadingText from "./LoadingText.svelte";
 
   import { animals } from "./animals.js";
-  import { RemoteResourceFactory } from "./ofrak/remote_resource.js";
   import { selected } from "./stores.js";
+  import { remote_model_to_resource } from "./ofrak/remote_resource";
 
   import { onMount } from "svelte";
 
   export let rootResourceLoadPromise,
     showRootResource,
-    resourceFactory,
+    resources,
     rootResource,
     resourceNodeDataMap;
   let dragging = false,
@@ -79,21 +79,14 @@
     tryHash = !!window.location.hash;
   let mouseX, selectedAnimal;
 
-  function setBackend(_selectedRootID, _resourceFactory) {
-    resourceFactory = _resourceFactory;
-    rootResource = resourceFactory.create(_selectedRootID);
-    $selected = _selectedRootID;
-  }
-
   async function createRootResource(f) {
     const rootModel = await fetch(`/create_root_resource?name=${f.name}`, {
       method: "POST",
       body: await f.arrayBuffer(),
     }).then((r) => r.json());
 
-    const _resourceFactory = new RemoteResourceFactory();
-    _resourceFactory.add_to_cache(rootModel);
-    setBackend(rootModel.id, _resourceFactory);
+    rootResource = remote_model_to_resource(rootModel, resources);
+    $selected = rootModel.id;
   }
 
   function choosePreExistingRoot() {
@@ -101,9 +94,11 @@
       dragging = false;
       showRootResource = true;
 
-      const _resourceFactory = new RemoteResourceFactory();
-      _resourceFactory.add_to_cache(selectedPreExistingRoot);
-      setBackend(selectedPreExistingRoot.id, _resourceFactory);
+      rootResource = remote_model_to_resource(
+        selectedPreExistingRoot,
+        resources
+      );
+      $selected = selectedPreExistingRoot.id;
 
       rootResourceLoadPromise = Promise.resolve(undefined);
     }
@@ -127,9 +122,8 @@
       return r.json();
     });
 
-    const _resourceFactory = new RemoteResourceFactory();
-    _resourceFactory.add_to_cache(root);
-    setBackend(root.id, _resourceFactory);
+    rootResource = remote_model_to_resource(root, resources);
+    $selected = root.id;
 
     let resource = await fetch(`/${resourceId}/`).then((r) => {
       if (!r.ok) {
@@ -137,7 +131,7 @@
       }
       return r.json();
     });
-    _resourceFactory.add_to_cache(resource);
+    resources[resource.id] = remote_model_to_resource(resource, resources);
     while (resource.parent_id) {
       resource = await fetch(`/${resource.parent_id}/`).then((r) => {
         if (!r.ok) {
@@ -145,7 +139,7 @@
         }
         return r.json();
       });
-      _resourceFactory.add_to_cache(resource);
+      resources[resource.id] = remote_model_to_resource(resource, resources);
 
       if (resourceNodeDataMap[resource.id] === undefined) {
         resourceNodeDataMap[resource.id] = {};

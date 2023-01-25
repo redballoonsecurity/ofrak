@@ -1,4 +1,9 @@
-export class ResourceModel {
+function NotImplementedError(unimplementedMethodName) {
+  this.unimplementedMethodName = unimplementedMethodName;
+  this.toString = () => `${this.unimplementedMethodName} not implemented`;
+}
+
+export class Resource {
   constructor(resource_id, data_id, parent_id, tags, caption, attributes) {
     this.resource_id = resource_id;
     this.data_id = data_id;
@@ -7,20 +12,9 @@ export class ResourceModel {
     this.caption = caption;
     this.attributes = attributes;
   }
-}
-
-function NotImplementedError(unimplementedMethodName) {
-  this.unimplementedMethodName = unimplementedMethodName;
-  this.toString = () => `${this.unimplementedMethodName} not implemented`;
-}
-
-export class Resource {
-  constructor(model) {
-    this.model = model;
-  }
 
   get_id() {
-    return this.model.resource_id;
+    return this.resource_id;
   }
 
   async get_job_id() {
@@ -29,7 +23,7 @@ export class Resource {
   }
 
   get_data_id() {
-    return this.model.data_id;
+    return this.data_id;
   }
 
   async get_resource_context() {
@@ -203,11 +197,11 @@ export class Resource {
   }
 
   get_tags(inherit) {
-    return this.model.tags;
+    return this.tags;
   }
 
   get_caption(inherit) {
-    return this.model.caption;
+    return this.caption;
   }
 
   async get_related_tags(tag) {
@@ -216,7 +210,7 @@ export class Resource {
   }
 
   has_tag(tag, inherit) {
-    return this.model.tags.includes(tag);
+    return this.tags.includes(tag);
   }
 
   async remove_tag(tag) {
@@ -231,7 +225,7 @@ export class Resource {
 
   get_attributes(attributes_type) {
     // Sync in ResourceInterface
-    return this.model.attributes;
+    return this.attributes;
   }
 
   async get_all_attributes() {
@@ -373,7 +367,7 @@ export class Resource {
 
   async get_comments() {
     let attributes = this.get_attributes();
-    if ("ofrak.core.comments.CommentsAttributes" in attributes) {
+    if (attributes["ofrak.core.comments.CommentsAttributes"] !== undefined) {
       return attributes["ofrak.core.comments.CommentsAttributes"]["comments"];
     } else {
       return [];
@@ -402,23 +396,5 @@ export class Resource {
       }
     }
     return range_prefix + comment[1];
-  }
-}
-
-export class ResourceFactory {
-  create(resource_id) {}
-}
-
-export class RemoteResourceFactory extends ResourceFactory {
-  // Incomplete class, placeholder for later
-  constructor(resource_service) {
-    super();
-    this.resource_service = resource_service;
-  }
-
-  create(resource_id) {
-    // TODO: Fetch the resource model from this.resource_service
-    const resource_model = null;
-    return new Resource(resource_model);
   }
 }
