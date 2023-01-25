@@ -5,25 +5,18 @@ let batchQueues = {};
 function createQueue(route, maxlen) {
   batchQueues[route] = {
     maxlen: maxlen != undefined ? maxlen : 1024,
-    flushCache: false,
     requests: [],
     responses: {},
     timeout: null,
-    getResults: async (requests, flushCache) => {
+    getResults: async (requests) => {
       const queue = batchQueues[route];
       if (!requests) {
         requests = queue.requests;
-        flushCache = queue.flushCache;
         queue.requests = [];
-        queue.flushCache = false;
       }
-
-      // TODO: Remove
-      console.warn("Fetching", flushCache ? "no-cache" : "force-cache");
 
       const result_models = await fetch(`/batch/${route}`, {
         method: "POST",
-        cache: flushCache ? "no-cache" : "force-cache",
         headers: {
           "Content-Type": "application/json",
         },
@@ -58,7 +51,6 @@ async function batchedCall(resource, route, maxlen) {
 
   clearTimeout(queue.timeout);
   queue.requests.push(resource.model.resource_id);
-  queue.flushCache ||= resource.dirty[route];
   if (!queue.responses[resource.model.resource_id]) {
     queue.responses[resource.model.resource_id] = [];
   }
@@ -68,10 +60,8 @@ async function batchedCall(resource, route, maxlen) {
 
   if (queue.requests.length > queue.maxlen) {
     const requestsCopy = queue.requests;
-    const flushCacheCopy = queue.flushCache;
     queue.requests = [];
-    queue.flushCache = false;
-    await queue.getResults(requestsCopy, flushCacheCopy);
+    await queue.getResults(requestsCopy);
   } else {
     queue.timeout = setTimeout(queue.getResults, 100);
   }
@@ -84,22 +74,36 @@ export class RemoteResource extends Resource {
     super(resource_model);
     this.factory = factory;
     this.uri = `/${this.model.resource_id}`;
-    this.dirty = {
-      get_children: false,
-      get_data_range_within_parent: false,
-      get_data: false,
+    this.cache = {
+      get_children: undefined,
+      get_data_range_within_parent: undefined,
+      get_data: undefined,
     };
   }
 
-  async set_dirty() {
-    Object.keys(this.dirty).forEach((k) => {
-      this.dirty[k] = true;
+  async flush_cache() {
+    Object.keys(this.cache).forEach((k) => {
+      this.cache[k] = undefined;
     });
   }
 
   async get_children(r_filter, r_sort) {
+    if (this.cache["get_children"]) {
+      // TODO: Remove
+      console.log("Getting children from cache");
+
+      return this._remote_models_to_resources(this.cache["get_children"]);
+    }
+
+    // TODO: Remove
+    console.log("Cache miss for children getting", this.cache);
+
     const model = await batchedCall(this, "get_children");
-    this.dirty["get_children"] = false;
+    this.cache["get_children"] = model;
+
+    // TODO: Remove
+    console.log("Adding get_children to the cache", this.cache);
+
     return this._remote_models_to_resources(model);
   }
 
@@ -107,19 +111,28 @@ export class RemoteResource extends Resource {
     if (this.get_data_id() === null) {
       return [];
     }
-    return await fetch(`${this.uri}/get_data`, {
-      cache: this.dirty["get_data"] ? "no-cache" : "force-cache",
-    })
+
+    if (this.cache["get_data"]) {
+      return this.cache["get_children"];
+    }
+    let result = await fetch(`${this.uri}/get_data`)
       .then((r) => r.blob())
       .then((b) => b.arrayBuffer());
+    this.cache["get_data"] = result;
+    return result;
   }
 
   async get_data_range_within_parent() {
     if (this.model.data_id === null) {
       return null;
     }
-    const rj = await batchedCall(this, "get_data_range_within_parent", 8192);
-    this.dirty["get_data_range_within_parent"] = false;
+    let rj;
+    if (this.cache["get_data_range_within_parent"]) {
+      rj = this.cache["get_data_range_within_parent"];
+    } else {
+      rj = await batchedCall(this, "get_data_range_within_parent", 8192);
+      this.cache["get_data_range_within_parent"] = rj;
+    }
     if (rj.length !== 2 || (0 === rj[0] && 0 === rj[1])) {
       return null;
     }
@@ -136,7 +149,7 @@ export class RemoteResource extends Resource {
       return r.json();
     });
     this.factory.ingest_component_results(unpack_results);
-    this.set_dirty();
+    this.flush_cache();
   }
 
   async identify() {
@@ -162,7 +175,7 @@ export class RemoteResource extends Resource {
       return r.json();
     });
     this.factory.ingest_component_results(unpack_recursively_results);
-    this.set_dirty();
+    this.flush_cache();
   }
 
   async pack() {
@@ -175,7 +188,7 @@ export class RemoteResource extends Resource {
       return r.json();
     });
     this.factory.ingest_component_results(pack_results);
-    this.set_dirty();
+    this.flush_cache();
   }
 
   async pack_recursively() {
@@ -188,7 +201,7 @@ export class RemoteResource extends Resource {
       return r.json();
     });
     this.factory.ingest_component_results(pack_results);
-    this.set_dirty();
+    this.flush_cache();
   }
 
   async data_summary() {
@@ -213,7 +226,7 @@ export class RemoteResource extends Resource {
       return r.json();
     });
     this.factory.ingest_component_results(analyze_results);
-    this.set_dirty();
+    this.flush_cache();
   }
 
   async get_parent() {
@@ -257,7 +270,7 @@ export class RemoteResource extends Resource {
       }
       return r.json();
     });
-    this.set_dirty();
+    this.flush_cache();
   }
 
   async create_child(
@@ -282,7 +295,7 @@ export class RemoteResource extends Resource {
       }
       return await r.json();
     });
-    this.dirty["get_children"] = true;
+    this.cache["get_children"] = undefined;
   }
 
   async find_and_replace(
@@ -313,7 +326,7 @@ export class RemoteResource extends Resource {
     });
 
     this.factory.ingest_component_results(find_replace_results);
-    this.set_dirty();
+    this.flush_cache();
   }
 
   async add_comment(optional_range, comment) {
@@ -330,7 +343,7 @@ export class RemoteResource extends Resource {
       const add_comment_results = await r.json();
       this.factory.ingest_component_results(add_comment_results);
     });
-    this.set_dirty();
+    this.flush_cache();
   }
 
   async delete_comment(optional_range) {
@@ -347,7 +360,7 @@ export class RemoteResource extends Resource {
       const delete_comment_results = await r.json();
       this.factory.ingest_component_results(delete_comment_results);
     });
-    this.set_dirty();
+    this.flush_cache();
   }
 
   async search_for_vaddr(vaddr_start, vaddr_end) {
