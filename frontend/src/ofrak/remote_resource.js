@@ -5,18 +5,25 @@ let batchQueues = {};
 function createQueue(route, maxlen) {
   batchQueues[route] = {
     maxlen: maxlen != undefined ? maxlen : 1024,
+    flushCache: false,
     requests: [],
     responses: {},
     timeout: null,
-    getResults: async (requests) => {
+    getResults: async (requests, flushCache) => {
       const queue = batchQueues[route];
       if (!requests) {
         requests = queue.requests;
+        flushCache = queue.flushCache;
         queue.requests = [];
+        queue.flushCache = false;
       }
+
+      // TODO: Remove
+      console.warn("Fetching", flushCache ? "no-cache" : "force-cache");
 
       const result_models = await fetch(`/batch/${route}`, {
         method: "POST",
+        cache: flushCache ? "no-cache" : "force-cache",
         headers: {
           "Content-Type": "application/json",
         },
@@ -51,6 +58,7 @@ async function batchedCall(resource, route, maxlen) {
 
   clearTimeout(queue.timeout);
   queue.requests.push(resource.model.resource_id);
+  queue.flushCache ||= resource.dirty[route];
   if (!queue.responses[resource.model.resource_id]) {
     queue.responses[resource.model.resource_id] = [];
   }
@@ -60,9 +68,10 @@ async function batchedCall(resource, route, maxlen) {
 
   if (queue.requests.length > queue.maxlen) {
     const requestsCopy = queue.requests;
+    const flushCacheCopy = queue.flushCache;
     queue.requests = [];
-
-    await queue.getResults(requestsCopy);
+    queue.flushCache = false;
+    await queue.getResults(requestsCopy, flushCacheCopy);
   } else {
     queue.timeout = setTimeout(queue.getResults, 100);
   }
@@ -75,10 +84,22 @@ export class RemoteResource extends Resource {
     super(resource_model);
     this.factory = factory;
     this.uri = `/${this.model.resource_id}`;
+    this.dirty = {
+      get_children: false,
+      get_data_range_within_parent: false,
+      get_data: false,
+    };
+  }
+
+  async set_dirty() {
+    Object.keys(this.dirty).forEach((k) => {
+      this.dirty[k] = true;
+    });
   }
 
   async get_children(r_filter, r_sort) {
     const model = await batchedCall(this, "get_children");
+    this.dirty["get_children"] = false;
     return this._remote_models_to_resources(model);
   }
 
@@ -86,7 +107,9 @@ export class RemoteResource extends Resource {
     if (this.get_data_id() === null) {
       return [];
     }
-    return await fetch(`${this.uri}/get_data`)
+    return await fetch(`${this.uri}/get_data`, {
+      cache: this.dirty["get_data"] ? "no-cache" : "force-cache",
+    })
       .then((r) => r.blob())
       .then((b) => b.arrayBuffer());
   }
@@ -96,6 +119,7 @@ export class RemoteResource extends Resource {
       return null;
     }
     const rj = await batchedCall(this, "get_data_range_within_parent", 8192);
+    this.dirty["get_data_range_within_parent"] = false;
     if (rj.length !== 2 || (0 === rj[0] && 0 === rj[1])) {
       return null;
     }
@@ -112,6 +136,7 @@ export class RemoteResource extends Resource {
       return r.json();
     });
     this.factory.ingest_component_results(unpack_results);
+    this.set_dirty();
   }
 
   async identify() {
@@ -137,6 +162,7 @@ export class RemoteResource extends Resource {
       return r.json();
     });
     this.factory.ingest_component_results(unpack_recursively_results);
+    this.set_dirty();
   }
 
   async pack() {
@@ -149,6 +175,7 @@ export class RemoteResource extends Resource {
       return r.json();
     });
     this.factory.ingest_component_results(pack_results);
+    this.set_dirty();
   }
 
   async pack_recursively() {
@@ -161,6 +188,7 @@ export class RemoteResource extends Resource {
       return r.json();
     });
     this.factory.ingest_component_results(pack_results);
+    this.set_dirty();
   }
 
   async data_summary() {
@@ -185,6 +213,7 @@ export class RemoteResource extends Resource {
       return r.json();
     });
     this.factory.ingest_component_results(analyze_results);
+    this.set_dirty();
   }
 
   async get_parent() {
@@ -228,6 +257,7 @@ export class RemoteResource extends Resource {
       }
       return r.json();
     });
+    this.set_dirty();
   }
 
   async create_child(
@@ -252,6 +282,7 @@ export class RemoteResource extends Resource {
       }
       return await r.json();
     });
+    this.dirty["get_children"] = true;
   }
 
   async find_and_replace(
@@ -282,6 +313,7 @@ export class RemoteResource extends Resource {
     });
 
     this.factory.ingest_component_results(find_replace_results);
+    this.set_dirty();
   }
 
   async add_comment(optional_range, comment) {
@@ -298,6 +330,7 @@ export class RemoteResource extends Resource {
       const add_comment_results = await r.json();
       this.factory.ingest_component_results(add_comment_results);
     });
+    this.set_dirty();
   }
 
   async delete_comment(optional_range) {
@@ -314,6 +347,7 @@ export class RemoteResource extends Resource {
       const delete_comment_results = await r.json();
       this.factory.ingest_component_results(delete_comment_results);
     });
+    this.set_dirty();
   }
 
   async search_for_vaddr(vaddr_start, vaddr_end) {
