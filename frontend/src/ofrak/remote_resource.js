@@ -98,23 +98,14 @@ export class RemoteResource extends Resource {
 
   async get_children(r_filter, r_sort) {
     if (this.cache["get_children"]) {
-      // TODO: Remove
-      console.log("Getting children from cache");
-
       return remote_models_to_resources(
         this.cache["get_children"],
         this.resource_list
       );
     }
 
-    // TODO: Remove
-    console.log("Cache miss for children getting", this.cache);
-
     const model = await batchedCall(this, "get_children");
     this.cache["get_children"] = model;
-
-    // TODO: Remove
-    console.log("Adding get_children to the cache", this.cache);
 
     return remote_models_to_resources(model, this.resource_list);
   }
@@ -225,7 +216,7 @@ export class RemoteResource extends Resource {
       }
       return r.json();
     });
-    ingest_component_results(data_summary_results, this.resource_list);
+    ingest_component_results(data_summary_results);
   }
 
   async analyze() {
@@ -250,7 +241,7 @@ export class RemoteResource extends Resource {
         return r.json();
       }
     );
-    return remote_model_to_resource(parent_model, this.resource_list);
+    return remote_model_to_resource(parent_model);
   }
 
   async get_ancestors(r_filter) {
@@ -262,7 +253,7 @@ export class RemoteResource extends Resource {
         return r.json();
       }
     );
-    return remote_models_to_resources(ancestor_models, this.resource_list);
+    return remote_models_to_resources(ancestor_models);
   }
 
   async queue_patch(data, start, end, after, before) {
@@ -388,7 +379,7 @@ export class RemoteResource extends Resource {
       }
       return await r.json();
     });
-    return remote_models_to_resources(matching_models, this.resource_list);
+    return remote_models_to_resources(matching_models);
   }
 }
 
