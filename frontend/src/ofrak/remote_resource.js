@@ -2,9 +2,9 @@ import { Resource, ResourceModel, ResourceFactory } from "./resource";
 
 let batchQueues = {};
 
-function createQueue(route) {
+function createQueue(route, maxlen) {
   batchQueues[route] = {
-    maxlen: 1024,
+    maxlen: maxlen != undefined ? maxlen : 1024,
     requests: [],
     responses: {},
     timeout: null,
@@ -43,9 +43,9 @@ function createQueue(route) {
   };
 }
 
-async function batchedCall(resource, route) {
+async function batchedCall(resource, route, maxlen) {
   if (!batchQueues[route]) {
-    createQueue(route);
+    createQueue(route, maxlen);
   }
   const queue = batchQueues[route];
 
@@ -95,7 +95,7 @@ export class RemoteResource extends Resource {
     if (this.model.data_id === null) {
       return null;
     }
-    const rj = await batchedCall(this, "get_data_range_within_parent");
+    const rj = await batchedCall(this, "get_data_range_within_parent", 8192);
     if (rj.length !== 2 || (0 === rj[0] && 0 === rj[1])) {
       return null;
     }
