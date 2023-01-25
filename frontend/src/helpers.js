@@ -39,7 +39,8 @@ export function hexToByteArray(hex) {
  */
 export function cleanOfrakType(t) {
   const elements = t.split(".");
-  return elements[elements.length - 1];
+  const last = elements[elements.length - 1];
+  return last.replace(/AttributesType\[(.*)\]/, "$1");
 }
 
 /***
