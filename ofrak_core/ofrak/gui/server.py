@@ -501,7 +501,7 @@ class AiohttpOFRAKServer:
             "id": resource_model.id.hex(),
             "data_id": resource_model.data_id.hex() if resource_model.data_id else None,
             "parent_id": resource_model.parent_id.hex() if resource_model.parent_id else None,
-            "tags": [str(tag.__name__) for tag in resource_model.tags],
+            "tags": [tag.__module__ + "." + tag.__qualname__ for tag in resource_model.tags],
             "attributes": self._serializer.to_pjson(
                 resource_model.attributes, Dict[Type[ResourceAttributes], ResourceAttributes]
             ),
