@@ -20,8 +20,8 @@ with open("README.md") as f:
 
 setuptools.setup(
     name="ofrak_capstone",
-    version="0.1.1",
-    packages=setuptools.find_packages(),
+    version="1.0.0",
+    packages=setuptools.find_packages(exclude=["ofrak_capstone_test", "ofrak_capstone_test.*"]),
     package_data={"ofrak_capstone": ["py.typed"]},
     install_requires=["capstone==4.0.2", "ofrak"],
     extras_require={
