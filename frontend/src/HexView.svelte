@@ -105,14 +105,7 @@
       return [];
     }
     const data = await dataPromise;
-    const childRanges = (
-      await Promise.all(
-        children.map(async (child) => [
-          child,
-          await child.get_data_range_within_parent(),
-        ])
-      )
-    )
+    const childRanges = Object.entries(await resource.get_child_data_ranges())
       .filter(
         ([_, rangeInParent]) =>
           rangeInParent !== null && rangeInParent !== undefined
@@ -125,7 +118,7 @@
         const [start, end] = rangeInParent;
         return {
           color: otherColors[i % otherColors.length],
-          resource_id: child.get_id(),
+          resource_id: child,
           start: start,
           end: end,
         };

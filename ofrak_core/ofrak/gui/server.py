@@ -132,6 +132,10 @@ class AiohttpOFRAKServer:
                 #     "/{resource_id}/get_data_range_within_parent",
                 #     self.get_data_range_within_parent,
                 # ),
+                web.get(
+                    "/{resource_id}/get_child_data_ranges",
+                    self.get_child_data_ranges,
+                ),
                 web.get("/{resource_id}/get_root", self.get_root_resource_from_child),
                 web.post("/{resource_id}/unpack", self.unpack),
                 web.post("/{resource_id}/unpack_recursively", self.unpack_recursively),
@@ -230,6 +234,24 @@ class AiohttpOFRAKServer:
             content_type="application/json",
             body=self._serializer.to_json(data_range, Range),
         )
+
+    @exceptions_to_http(SerializedError)
+    async def get_child_data_ranges(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
+        resource_service = self._ofrak_context.resource_factory._resource_service
+        data_service = self._ofrak_context.resource_factory._data_service
+        children = await resource_service.get_descendants_by_id(
+            resource.get_id(),
+            max_depth=1,
+        )
+
+        async def get_range(child):
+            data_range = await data_service.get_range_within_other(
+                child.data_id, resource.get_data_id()
+            )
+            return child.id.hex(), (data_range.start, data_range.end)
+
+        return json_response(dict(await asyncio.gather(*map(get_range, children))))
 
     @exceptions_to_http(SerializedError)
     async def batch_get_range(self, request: Request) -> Response:

@@ -133,13 +133,25 @@ export class RemoteResource extends Resource {
     if (this.cache["get_data_range_within_parent"]) {
       rj = this.cache["get_data_range_within_parent"];
     } else {
-      rj = await batchedCall(this, "get_data_range_within_parent", 8192);
+      rj = await batchedCall(this, "get_data_range_within_parent", 1024);
       this.cache["get_data_range_within_parent"] = rj;
     }
     if (rj.length !== 2 || (0 === rj[0] && 0 === rj[1])) {
       return null;
     }
     return rj;
+  }
+
+  async get_child_data_ranges() {
+    if (this.cache["get_data_range_within_parent"]) {
+      return this.cache["get_data_range_within_parent"];
+    }
+
+    let result = await fetch(`${this.uri}/get_child_data_ranges`).then((r) =>
+      r.json()
+    );
+    this.cache["get_data_range_within_parent"] = result;
+    return result;
   }
 
   async unpack() {

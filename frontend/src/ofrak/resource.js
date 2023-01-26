@@ -76,6 +76,10 @@ export class Resource {
     throw new NotImplementedError("get_data_range_within_parent");
   }
 
+  async get_child_data_ranges() {
+    throw new NotImplementedError("get_child_data_ranges");
+  }
+
   async get_data_range_within_root() {
     throw new NotImplementedError("get_data_range_within_root");
   }
