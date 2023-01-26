@@ -56,7 +56,7 @@
   $: childRangesPromise.then((r) => {
     childRanges = r;
   });
-  $: Promise.all([dataPromise, childRangesPromise]).then((_) => {
+  $: Promise.any([dataPromise, childRangesPromise]).then((_) => {
     // Hacky solution to minimap view box rectangle only updating on scroll
     // after data has loaded -- force a scroll to reload the rectangle after a
     // timeout

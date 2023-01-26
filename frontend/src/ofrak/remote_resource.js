@@ -111,12 +111,12 @@ export class RemoteResource extends Resource {
   }
 
   async get_data(range) {
-    if (this.get_data_id() === null) {
+    if (this.data_id === null) {
       return [];
     }
 
     if (this.cache["get_data"]) {
-      return this.cache["get_children"];
+      return this.cache["get_data"];
     }
     let result = await fetch(`${this.uri}/get_data`)
       .then((r) => r.blob())
@@ -216,7 +216,7 @@ export class RemoteResource extends Resource {
       }
       return r.json();
     });
-    ingest_component_results(data_summary_results);
+    ingest_component_results(data_summary_results, this.resource_list);
   }
 
   async analyze() {
