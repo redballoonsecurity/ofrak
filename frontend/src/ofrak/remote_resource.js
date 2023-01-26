@@ -98,6 +98,9 @@ export class RemoteResource extends Resource {
 
   update() {
     const newer = this.resource_list[this.resource_id];
+    if (!newer) {
+      return;
+    }
     this.tags = newer.tags;
     this.caption = newer.caption;
     this.attributes = newer.attributes;

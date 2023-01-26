@@ -246,12 +246,19 @@ class AiohttpOFRAKServer:
         )
 
         async def get_range(child):
-            data_range = await data_service.get_range_within_other(
-                child.data_id, resource.get_data_id()
-            )
-            return child.id.hex(), (data_range.start, data_range.end)
+            try:
+                if child.data_id is None:
+                    return
+                data_range = await data_service.get_range_within_other(
+                    child.data_id, resource.get_data_id()
+                )
+                return child.id.hex(), (data_range.start, data_range.end)
+            except ValueError:
+                pass
 
-        return json_response(dict(await asyncio.gather(*map(get_range, children))))
+        return json_response(
+            dict(filter(lambda x: x is not None, await asyncio.gather(*map(get_range, children))))
+        )
 
     @exceptions_to_http(SerializedError)
     async def batch_get_range(self, request: Request) -> Response:
