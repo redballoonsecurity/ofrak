@@ -1,6 +1,7 @@
 import logging
 from typing import Iterable, Tuple
 from typing import Optional
+from warnings import warn
 
 from angr.knowledge_plugins.functions.function import Function as AngrFunction
 from archinfo.arch_arm import get_real_address_if_arm
@@ -149,6 +150,15 @@ class AngrComplexBlockUnpacker(ComplexBlockUnpacker):
                 bb_exit_addr = get_real_address_if_arm(
                     angr_analysis.project.arch, angr_cb_basic_blocks[(idx + 1)].addr
                 )
+
+            if (bb_addr + bb.size) > cb_vaddr_range.end or bb_addr < cb_vaddr_range.start:
+                warning_string = (
+                    f"Basic block {bb_addr:#x} does not fall within "
+                    f"complex block {cb_vaddr_range.start:#x} at "
+                    f"addresses {cb_vaddr_range.start:#x}-{cb_vaddr_range.end:#x}"
+                )
+                warn(RuntimeWarning(warning_string))
+                continue
 
             yield BasicBlock(
                 bb_addr,
