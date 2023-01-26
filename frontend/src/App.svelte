@@ -179,5 +179,5 @@
 {/if}
 
 <div class="bottomright">
-  <p><a href="https://ofrak.com" target="_blank" rel="noreferrer">v0.6.0</a></p>
+  <p><a href="https://ofrak.com" target="_blank" rel="noreferrer">v2.1.1</a></p>
 </div>
