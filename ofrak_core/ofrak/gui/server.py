@@ -58,6 +58,7 @@ from ofrak.model.resource_model import (
     ClientResourceContext,
     ResourceModel,
     ResourceAttributes,
+    MutableResourceModel,
 )
 from ofrak.model.viewable_tag_model import ResourceViewContext
 from ofrak.resource import Resource
@@ -489,7 +490,10 @@ class AiohttpOFRAKServer:
         )
         return resource
 
-    async def _get_resource_model_by_id(self, resource_id: bytes, job_id: bytes) -> ResourceModel:
+    async def _get_resource_model_by_id(
+        self, resource_id: bytes, job_id: bytes
+    ) -> Optional[Union[ResourceModel, MutableResourceModel]]:
+        resource_m: Optional[Union[ResourceModel, MutableResourceModel]] = None
         resource_m = self.resource_context.resource_models.get(resource_id)
         if resource_m is None:
             resource_m = await self._ofrak_context.resource_factory._resource_service.get_by_id(
