@@ -86,7 +86,9 @@ export class RemoteResource extends Resource {
     this.cache = {
       get_children: undefined,
       get_data_range_within_parent: undefined,
+      get_child_data_ranges: undefined,
       get_data: undefined,
+      get_ancestors: undefined,
     };
   }
 
@@ -153,14 +155,14 @@ export class RemoteResource extends Resource {
   }
 
   async get_child_data_ranges() {
-    if (this.cache["get_data_range_within_parent"]) {
-      return this.cache["get_data_range_within_parent"];
+    if (this.cache["get_child_data_ranges"]) {
+      return this.cache["get_child_data_ranges"];
     }
 
     let result = await fetch(`${this.uri}/get_child_data_ranges`).then((r) =>
       r.json()
     );
-    this.cache["get_data_range_within_parent"] = result;
+    this.cache["get_child_data_ranges"] = result;
     return result;
   }
 
@@ -274,6 +276,13 @@ export class RemoteResource extends Resource {
   }
 
   async get_ancestors(r_filter) {
+    if (this.cache["get_ancestors"]) {
+      return remote_models_to_resources(
+        this.cache["get_ancestors"],
+        this.resource_list
+      );
+    }
+
     const ancestor_models = await fetch(`${this.uri}/get_ancestors`).then(
       async (r) => {
         if (!r.ok) {
@@ -282,6 +291,7 @@ export class RemoteResource extends Resource {
         return r.json();
       }
     );
+    this.cache["get_ancestors"] = ancestor_models;
     return remote_models_to_resources(ancestor_models);
   }
 
@@ -328,6 +338,7 @@ export class RemoteResource extends Resource {
       return await r.json();
     });
     this.cache["get_children"] = undefined;
+    this.cache["get_child_data_ranges"] = undefined;
   }
 
   async find_and_replace(
