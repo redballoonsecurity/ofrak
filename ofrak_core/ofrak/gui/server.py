@@ -129,10 +129,6 @@ class AiohttpOFRAKServer:
                     "/batch/get_data_range_within_parent",
                     self.batch_get_range,
                 ),
-                # web.get(
-                #     "/{resource_id}/get_data_range_within_parent",
-                #     self.get_data_range_within_parent,
-                # ),
                 web.get(
                     "/{resource_id}/get_child_data_ranges",
                     self.get_child_data_ranges,
@@ -148,7 +144,6 @@ class AiohttpOFRAKServer:
                 web.get("/{resource_id}/get_parent", self.get_parent),
                 web.get("/{resource_id}/get_ancestors", self.get_ancestors),
                 web.post("/batch/get_children", self.batch_get_children),
-                # web.get("/{resource_id}/get_children", self.get_children),
                 web.post("/{resource_id}/queue_patch", self.queue_patch),
                 web.post("/{resource_id}/create_mapped_child", self.create_mapped_child),
                 web.post("/{resource_id}/find_and_replace", self.find_and_replace),
@@ -226,15 +221,6 @@ class AiohttpOFRAKServer:
         )
         data = await resource.get_data(_range)
         return Response(body=data)
-
-    @exceptions_to_http(SerializedError)
-    async def get_data_range_within_parent(self, request: Request) -> Response:
-        resource = await self._get_resource_for_request(request)
-        data_range = await resource.get_data_range_within_parent()
-        return Response(
-            content_type="application/json",
-            body=self._serializer.to_json(data_range, Range),
-        )
 
     @exceptions_to_http(SerializedError)
     async def get_child_data_ranges(self, request: Request) -> Response:
@@ -387,12 +373,6 @@ class AiohttpOFRAKServer:
         return json_response(
             dict(await asyncio.gather(*map(get_resource_children, await request.json())))
         )
-
-    @exceptions_to_http(SerializedError)
-    async def get_children(self, request: Request) -> Response:
-        resource = await self._get_resource_for_request(request)
-        children = await resource.get_children()
-        return json_response(self._serialize_multi_resource(children))
 
     @exceptions_to_http(SerializedError)
     async def get_root_resource_from_child(self, request: Request) -> Response:
