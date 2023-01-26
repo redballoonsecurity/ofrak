@@ -1,14 +1,12 @@
 import os
 import struct
 
-from ofrak import OFRAKContext
-from ofrak.resource import Resource
-from ofrak.service.resource_service_i import ResourceFilter
-from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 from ofrak_type.range import Range
-from ofrak.core.openwrt import openwrt_crc32
-from ofrak.core.ubi import Ubi
-from ofrak.core.binary import GenericBinary
+
+from ofrak import OFRAKContext
+from ofrak.core.openwrt import openwrt_crc32, OpenWrtTrxHeader
+from ofrak.resource import Resource
+from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 from test_ofrak.components import ASSETS_DIR
 
 
@@ -25,25 +23,30 @@ class TestOpenWrtTrxUnpackModifyPack(UnpackModifyPackPattern):
         return resource
 
     async def unpack(self, resource: Resource) -> None:
-        await resource.unpack_recursively()
+        await resource.unpack()
 
     async def modify(self, resource: Resource) -> None:
         """
-        The modification for the OpenWrtTrx test is to replace the entirety of the kernel
+        The modification for the OpenWrtTrx test is to replace the entirety of the first partition
         with 4 null bytes
         """
-        partitions = await resource.get_descendants_as_view(
-            GenericBinary, max_depth=1, r_filter=ResourceFilter(tags=(GenericBinary,))
+        children_by_offest = sorted(
+            [
+                (await child.get_data_range_within_root(), child)
+                for child in await resource.get_children()
+                if not child.has_tag(OpenWrtTrxHeader)
+            ],
+            key=lambda x: x[0].start,
         )
-        partition = partitions[0]
-
-        original_size = await partition.resource.get_data_length()
-        partition.resource.queue_patch(Range(0, original_size), b"\x00\x00\x00\x00")
-
-        await partition.resource.save()
+        partition = children_by_offest[0][1]
+        original_size = await partition.get_data_length()
+        partition.queue_patch(Range(0, original_size), b"\x00\x00\x00\x00")
+        await partition.save()
 
     async def repack(self, resource: Resource) -> None:
         await resource.pack_recursively()
+        with open("/tmp/repacked", "wb") as f:
+            f.write(await resource.get_data())
 
     async def verify(self, resource: Resource) -> None:
         resource_data = await resource.get_data()
@@ -93,17 +96,14 @@ class TestOpenWrtTrxUnpackRepackNullRootfs(TestOpenWrtTrxUnpackModifyPack):
 
     async def unpack(self, resource: Resource) -> None:
         await super().unpack(resource)
-
-        flash = await resource.get_only_descendant_as_view(
-            Ubi, r_filter=ResourceFilter(tags=(Ubi,))
-        )
-
-        flash_data = await flash.resource.get_data()
-        assert flash_data.startswith(b"UBI#")
+        children_start = {
+            await child.get_data(Range(0, 4)) for child in await resource.get_children()
+        }
+        assert b"UBI#" in children_start
 
     async def verify(self, resource: Resource) -> None:
         resource_data = await resource.get_data()
         assert resource_data.startswith(b"HDR0")
         trx_crc = struct.unpack("<I", resource_data[8:12])[0]
         assert trx_crc == openwrt_crc32(resource_data[12:])
-        assert trx_crc == 0x6B550F3C
+        assert trx_crc == 0x36858182
