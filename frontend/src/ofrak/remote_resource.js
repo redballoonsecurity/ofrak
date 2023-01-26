@@ -96,6 +96,13 @@ export class RemoteResource extends Resource {
     });
   }
 
+  update() {
+    const newer = this.resource_list[this.resource_id];
+    this.tags = newer.tags;
+    this.caption = newer.caption;
+    this.attributes = newer.attributes;
+  }
+
   async get_children(r_filter, r_sort) {
     if (this.cache["get_children"]) {
       return remote_models_to_resources(
@@ -165,6 +172,7 @@ export class RemoteResource extends Resource {
     });
     ingest_component_results(unpack_results, this.resource_list);
     this.flush_cache();
+    this.update();
   }
 
   async identify() {
@@ -177,6 +185,7 @@ export class RemoteResource extends Resource {
       return r.json();
     });
     ingest_component_results(identify_results, this.resource_list);
+    this.update();
   }
 
   async unpack_recursively() {
@@ -191,6 +200,7 @@ export class RemoteResource extends Resource {
     });
     ingest_component_results(unpack_recursively_results, this.resource_list);
     this.flush_cache();
+    this.update();
   }
 
   async pack() {
@@ -204,6 +214,7 @@ export class RemoteResource extends Resource {
     });
     ingest_component_results(pack_results, this.resource_list);
     this.flush_cache();
+    this.update();
   }
 
   async pack_recursively() {
@@ -217,6 +228,7 @@ export class RemoteResource extends Resource {
     });
     ingest_component_results(pack_results, this.resource_list);
     this.flush_cache();
+    this.update();
   }
 
   async data_summary() {
@@ -229,6 +241,7 @@ export class RemoteResource extends Resource {
       return r.json();
     });
     ingest_component_results(data_summary_results, this.resource_list);
+    this.update();
   }
 
   async analyze() {
@@ -242,6 +255,7 @@ export class RemoteResource extends Resource {
     });
     ingest_component_results(analyze_results, this.resource_list);
     this.flush_cache();
+    this.update();
   }
 
   async get_parent() {
@@ -342,6 +356,7 @@ export class RemoteResource extends Resource {
 
     ingest_component_results(find_replace_results, this.resource_list);
     this.flush_cache();
+    this.update();
   }
 
   async add_comment(optional_range, comment) {
@@ -359,6 +374,7 @@ export class RemoteResource extends Resource {
       ingest_component_results(add_comment_results, this.resource_list);
     });
     this.flush_cache();
+    this.update();
   }
 
   async delete_comment(optional_range) {
@@ -376,6 +392,7 @@ export class RemoteResource extends Resource {
       ingest_component_results(delete_comment_results, this.resource_list);
     });
     this.flush_cache();
+    this.update();
   }
 
   async search_for_vaddr(vaddr_start, vaddr_end) {
