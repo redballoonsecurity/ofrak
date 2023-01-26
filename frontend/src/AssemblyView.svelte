@@ -150,7 +150,7 @@
           <!--        unpacked data word value not yet available as attribute -->
           <!--          0x{dataWord-->
           <!--            .get_attributes()-->
-          <!--            .DataWordAutoAttributes.unpacked.toString(16)}-->
+          <!--            .AttributesType[DataWord].unpacked.toString(16)}-->
           [literal]
         </div>
       {/each}

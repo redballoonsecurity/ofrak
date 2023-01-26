@@ -4,7 +4,10 @@ All notable changes to `ofrak-patch-maker` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+
+## [3.0.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-patch-maker-v.2.0.0...ofrak-patch-maker-v.3.0.0) - 2023-01-20
 ### Added
+- `-fno-optimize-sibling-calls` flag added to AVR toolchain.
 - Optional permission map parameter to `Allocatable.allocate_bom`, which enables developers to express where 
 segments of one set of permissions may be placed in the destination binary. For example, a developer may specify
 to place `MemoryPermissions.R` `Segments` in destination program `MemoryRegions` of `MemoryPermissions.R` 
@@ -15,6 +18,11 @@ or `MemoryPermissions.RX`.
 - Make toolchain names in `toolchain.conf` more specific:
   - `GNU_ARM_NONE` changed to `GNU_ARM_NONE_EABI_10_2_1`.
   - `GNU_X86_64_LINUX` changed to `GNU_X86_64_LINUX_EABI_10_3_0`.
+- Pass `-mmcu` value to the AVR preprocessor.
+- Raise a more descriptive error on toolchain failure.
+
+### Fixed
+- Toolchain `preprocess()` method now returns the path to the preprocessed file.
 
 ### Removed
 - Removed `ToolchainVersion`.

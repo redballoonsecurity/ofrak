@@ -21,7 +21,7 @@ with open("README.md") as f:
 
 setuptools.setup(
     name="ofrak_type",
-    version="2.0.0",
+    version="2.1.0",
     description="Custom classes and types used in OFRAK",
     package_data={
         "ofrak_type": ["py.typed"],
