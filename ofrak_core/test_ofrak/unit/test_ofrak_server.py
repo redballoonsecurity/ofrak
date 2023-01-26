@@ -160,6 +160,14 @@ async def test_get_data_range(ofrak_client: TestClient, hello_world_elf):
     child_ranges = await children_resp.json()
     assert [0, 16] in child_ranges.values()
 
+    batch_range_resp = await ofrak_client.post(
+        f"/batch/get_data_range_within_parent", json=list(child_ranges.keys())
+    )
+    batch_ranges = await batch_range_resp.json()
+    assert all(
+        batch_ranges[child_id] == child_range for child_id, child_range in child_ranges.items()
+    )
+
 
 # Cannot find manual example to compare against
 async def test_get_root(ofrak_client: TestClient, hello_world_elf):

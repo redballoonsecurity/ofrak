@@ -536,13 +536,6 @@ class AiohttpOFRAKServer:
         """
         return list(map(self._serialize_resource, resources))
 
-    def _strip_resource_model_pjson(self, resource_model_pjson: PJSONType):
-        resource_model_fields: Dict = cast(Dict, resource_model_pjson)
-        del resource_model_fields["data_dependencies"]
-        del resource_model_fields["attribute_dependencies"]
-        del resource_model_fields["component_versions"]
-        del resource_model_fields["components_by_attributes"]
-
     def open_resource_in_browser(self, resource: Optional[Resource]):  # pragma: no cover
         if resource is None:
             url = f"http://{self._host}:{self._port}/"
