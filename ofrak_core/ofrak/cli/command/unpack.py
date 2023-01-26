@@ -10,6 +10,7 @@ import sys
 
 from ofrak.cli.ofrak_cli import OfrakCommandRunsScript
 from ofrak.core import FilesystemEntry
+from ofrak.gui.server import open_gui
 
 
 class UnpackCommand(OfrakCommandRunsScript):
@@ -33,7 +34,39 @@ class UnpackCommand(OfrakCommandRunsScript):
             help="Directory to write unpacked resource tree to. If no directory is given, a new one"
             " will be created in the same directory as the file being unpacked.",
         )
+        subparser.add_argument(
+            "--recursive",
+            "-r",
+            action="store_true",
+            default=False,
+            help="Unpack recursively: all resources unpacked from the root will be unpack, as "
+            "well as all resources unpacked from those, and so.",
+        )
         subparser.add_argument("filename", help="File to unpack")
+
+        # GUI args
+        subparser.add_argument(
+            "--gui",
+            action="store_true",
+            help="Open the OFRAK GUI after unpacking",
+            default=False,
+        )
+        subparser.add_argument(
+            "-gH",
+            "--gui-hostname",
+            action="store",
+            help="Set GUI server host address.",
+            default="127.0.0.1",
+        )
+        subparser.add_argument(
+            "-gp",
+            "--gui-port",
+            action="store",
+            type=int,
+            help="Set GUI server host port.",
+            default=8080,
+        )
+
         self.add_ofrak_arguments(subparser)
 
         return subparser
@@ -42,7 +75,10 @@ class UnpackCommand(OfrakCommandRunsScript):
         print(f"Unpacking file: {args.filename}\n")
         root_resource = await ofrak_context.create_root_resource_from_file(args.filename)
 
-        await root_resource.unpack()
+        if args.recursive:
+            await root_resource.unpack_recursively()
+        else:
+            await root_resource.unpack()
 
         if args.output_directory:
             extraction_dir = Path(args.output_directory)
@@ -82,6 +118,10 @@ class UnpackCommand(OfrakCommandRunsScript):
             f.write(info_dump)
 
         print(info_dump)
+
+        if args.gui:
+            server = await open_gui(args.gui_hostname, args.gui_port, focus_resource=root_resource)
+            await server.run_until_cancelled()
 
     async def resource_tree_to_files(self, resource: Resource, path):
         children_dir = path + ".ofrak_children"

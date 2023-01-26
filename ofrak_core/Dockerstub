@@ -1,6 +1,4 @@
 # - u-boot-tools: for mkimage, to test the UImage packer/unpacker
-
-# - u-boot-tools: for mkimage, to test the UImage packer/unpacker
 RUN apt-get -y update && \
     apt-get -y install --no-install-recommends \
       build-essential \
@@ -19,6 +17,9 @@ RUN apt-get -y update && \
       u-boot-tools \
       unar \
       zstd
+
+# python-lzo needed by ubireader
+RUN python3 -m pip install python-lzo
 
 # Install apktool and uber-apk-signer
 RUN apt-get -y update && apt-get -y install openjdk-11-jdk

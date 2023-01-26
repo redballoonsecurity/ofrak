@@ -3,6 +3,8 @@ import functools
 import json
 import logging
 import os
+import webbrowser
+from collections import defaultdict
 from typing import (
     Iterable,
     Optional,
@@ -21,6 +23,8 @@ from aiohttp.web_exceptions import HTTPBadRequest
 from aiohttp.web_request import Request
 from aiohttp.web_response import Response
 from aiohttp.web_fileresponse import FileResponse
+
+from ofrak.ofrak_context import get_current_ofrak_context
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 
@@ -146,7 +150,9 @@ class AiohttpOFRAKServer:
             ]
         )
 
-        self._job_ids: Dict[str, bytes] = dict()
+        self._job_ids: Dict[str, bytes] = defaultdict(
+            lambda: ofrak_context.id_service.generate_id()
+        )
 
     async def start(self):  # pragma: no cover
         """
@@ -156,6 +162,13 @@ class AiohttpOFRAKServer:
         await self.runner.setup()
         server = web.TCPSite(self.runner, host=self._host, port=self._port)
         await server.start()
+
+    async def stop(self):  # pragma: no cover
+        """
+        Stop the server.
+        """
+        await self.runner.server.shutdown()
+        await self.runner.cleanup()
 
     async def run_until_cancelled(self):  # pragma: no cover
         """
@@ -427,8 +440,18 @@ class AiohttpOFRAKServer:
         del resource_model_fields["component_versions"]
         del resource_model_fields["components_by_attributes"]
 
+    def open_resource_in_browser(self, resource: Optional[Resource]):  # pragma: no cover
+        if resource is None:
+            url = f"http://{self._host}:{self._port}/"
+        else:
+            url = f"http://{self._host}:{self._port}/#{resource.get_id().hex()}"
+        print(f"GUI is being served on {url}")
+        webbrowser.open(url)
 
-async def start_server(ofrak_context: OFRAKContext, host: str, port: int):  # pragma: no cover
+
+async def start_server(
+    ofrak_context: OFRAKContext, host: str, port: int
+) -> AiohttpOFRAKServer:  # pragma: no cover
     # Force using the correct PJSON serialization with the expected structure. Otherwise the
     # dependency injector may accidentally use the Stashed PJSON serialization service,
     # which returns PJSON that has a different, problematic structure.
@@ -443,7 +466,7 @@ async def start_server(ofrak_context: OFRAKContext, host: str, port: int):  # pr
     server = await ofrak_context.injector.get_instance(AiohttpOFRAKServer)
     await server.start()
 
-    await server.run_until_cancelled()
+    return server
 
 
 def respond_with_error(error: Exception, error_cls: Type[SerializedError]) -> Response:
@@ -465,3 +488,17 @@ def get_query_string_as_pjson(request: Request) -> Dict[str, PJSONType]:
     or 1 as '1', which isn't valid PJSON. We fix this by applying `json.loads` on each parameter.
     """
     return {key: json.loads(value) for key, value in request.query.items()}
+
+
+async def open_gui(
+    host: str,
+    port: int,
+    focus_resource: Optional[Resource] = None,
+    ofrak_context: Optional[OFRAKContext] = None,
+) -> AiohttpOFRAKServer:  # pragma: no cover
+    if ofrak_context is None:
+        ofrak_context = get_current_ofrak_context()
+
+    server = await start_server(ofrak_context, host, port)
+    server.open_resource_in_browser(focus_resource)
+    return server

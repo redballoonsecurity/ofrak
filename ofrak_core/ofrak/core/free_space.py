@@ -1,7 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from itertools import chain
-from typing import List, Tuple, Dict, Optional, Iterable
+from typing import List, Tuple, Dict, Optional, Iterable, Mapping
 
 from immutabledict import immutabledict
 
@@ -114,12 +114,16 @@ class Allocatable(ResourceView):
     async def allocate_bom(
         self,
         bom: BOM,
+        permission_map: Optional[Mapping[MemoryPermissions, Iterable[MemoryPermissions]]] = None,
     ) -> PatchRegionConfig:
         """
         Responsible for allocating the patches if free memory is required and
         providing details about where space was made.
 
         :param bom:
+        :param permission_map: a map that assigns patch segment-local permissions to possible
+        destination permissions. available memory pool is evaluated in order!
+        Ex: a developer wants to enable allocation of RO strings from .rodata in an RX .text section.
 
         :return: information required to generate the linker directive script
         """
@@ -133,17 +137,31 @@ class Allocatable(ResourceView):
         segments_by_object: Dict[str, List[Segment]] = defaultdict(list)
         for obj, segment in segments_to_allocate:
             vaddr, final_size = 0, 0
-            if segment.length > 0:
-                allocs = await self.allocate(
-                    segment.access_perms,
-                    segment.length,
-                    min_fragment_size=segment.length,
-                    alignment=bom.segment_alignment,
+            if segment.length == 0:
+                continue
+            if permission_map is not None:
+                possible_perms = permission_map[segment.access_perms]
+            else:
+                possible_perms = (segment.access_perms,)
+            for candidate_permissions in possible_perms:
+                try:
+                    allocs = await self.allocate(
+                        candidate_permissions,
+                        segment.length,
+                        min_fragment_size=segment.length,
+                        alignment=bom.segment_alignment,
+                    )
+                    allocation = next(iter(allocs))
+                    vaddr = allocation.start
+                    final_size = allocation.length()
+                    break
+                except FreeSpaceAllocationError:
+                    continue
+            if vaddr == 0 or final_size == 0:
+                raise FreeSpaceAllocationError(
+                    f"Could not find enough free space for access perms {possible_perms} and "
+                    f"length {segment.length}"
                 )
-                allocation = next(iter(allocs))
-                vaddr = allocation.start
-                final_size = allocation.length()
-
             segments_by_object[obj.path].append(
                 Segment(
                     segment_name=segment.segment_name,

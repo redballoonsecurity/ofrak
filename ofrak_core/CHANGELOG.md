@@ -4,11 +4,20 @@ All notable changes to `ofrak` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+
+## [2.1.1](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.1.0...ofrak-v2.1.1) - 2023-01-25
+### Fixed
+- GUI uses correct attribute class names again (not *AutoAttributes)
+
+## [2.1.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.0.0...ofrak-v2.1.0) - 2023-01-20
 ### Added
+- `LiefAddSegmentConfig` now has an optional `physical_address` argument.
 - New `identify` and `unpack` subcommands to CLI [#164](https://github.com/redballoonsecurity/ofrak/pull/164)
 - Move GUI server to `ofrak_core`, startup GUI through CLI, add testing for server, make GUI pip installable. [#168](https://github.com/redballoonsecurity/ofrak/pull/168)
   - `python -m ofrak gui` starts the OFRAK GUI server.
 - UBI and UBIFS filesystem analyzers / unpackers / packers added. [#173](https://github.com/redballoonsecurity/ofrak/pull/173), [#177](https://github.com/redballoonsecurity/ofrak/pull/177)
+- Add APIs to open GUI in a script or after CLI commands complete. [#181](https://github.com/redballoonsecurity/ofrak/pull/181)
+- Installing ofrak also installs it as a console tool, so for example `ofrak unpack ...` works, instead of requiring `python -m ofrak unpack...` [#181](https://github.com/redballoonsecurity/ofrak/pull/181)
 
 ### Changed
 - Refactored `DataService` internals to more efficiently find resources affected by patches [#140](https://github.com/redballoonsecurity/ofrak/pull/140)
@@ -18,7 +27,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Fixed
 - Remove unneeded and slow `.save()` when unpacking filesystems [#171](https://github.com/redballoonsecurity/ofrak/pull/171)
+- Fixed null pointer bug in Ghidra scripts.
+- `SegmentInjectorModifier` deletes all descendants of the modified section, fixing a bug that would arrise when applying more than one segment modification.
 - Added missing elf section types to ElfSectionType [#178](https://github.com/redballoonsecurity/ofrak/pull/178)
+- Handled .rela placeholder segments in the same fashion as .got [#185](https://github.com/redballoonsecurity/ofrak/pull/185)
 
 ## [2.0.0](https://github.com/redballoonsecurity/ofrak/releases/tag/ofrak-v2.0.0) - 2023-01-03
 ### Added

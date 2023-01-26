@@ -46,11 +46,11 @@
       blocks.sort((a, b) => {
         const aAddress =
           a[0]?.model?.attributes[
-            "ofrak.model._auto_attributes.AddressableAutoAttributes"
+            "ofrak.model._auto_attributes.AttributesType[Addressable]"
           ]?.virtual_address;
         const bAddress =
           b[0]?.model?.attributes[
-            "ofrak.model._auto_attributes.AddressableAutoAttributes"
+            "ofrak.model._auto_attributes.AttributesType[Addressable]"
           ]?.virtual_address;
         return aAddress - bAddress;
       });
@@ -97,7 +97,7 @@
             {instructionOrDataWord
               .get_attributes()
               [
-                "ofrak.model._auto_attributes.AddressableAutoAttributes"
+                "ofrak.model._auto_attributes.AttributesType[Addressable]"
               ].virtual_address.toString(16)
               .padStart(8, "0") + ":"}
           </div>
@@ -130,11 +130,11 @@
         {#each block as instruction}
           <div>
             {instruction.get_attributes()[
-              "ofrak.model._auto_attributes.InstructionAutoAttributes"
+              "ofrak.model._auto_attributes.AttributesType[Instruction]"
             ].mnemonic +
               " " +
               instruction.get_attributes()[
-                "ofrak.model._auto_attributes.InstructionAutoAttributes"
+                "ofrak.model._auto_attributes.AttributesType[Instruction]"
               ].operands}
           </div>
         {/each}
@@ -150,7 +150,7 @@
           <!--        unpacked data word value not yet available as attribute -->
           <!--          0x{dataWord-->
           <!--            .get_attributes()-->
-          <!--            .DataWordAutoAttributes.unpacked.toString(16)}-->
+          <!--            .AttributesType[DataWord].unpacked.toString(16)}-->
           [literal]
         </div>
       {/each}

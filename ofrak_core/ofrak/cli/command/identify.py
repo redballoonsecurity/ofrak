@@ -3,6 +3,7 @@ import argparse
 from ofrak import OFRAKContext
 from ofrak.cli.ofrak_cli import OfrakCommandRunsScript
 from ofrak.core.magic import Magic
+from ofrak.gui.server import open_gui
 from ofrak.resource import Resource
 
 
@@ -17,6 +18,29 @@ class IdentifyCommand(OfrakCommandRunsScript):
         subparser.add_argument("filename", help="File to identify")
         self.add_ofrak_arguments(subparser)
 
+        # GUI args
+        subparser.add_argument(
+            "--gui",
+            action="store_true",
+            help="Open the OFRAK GUI after unpacking",
+            default=False,
+        )
+        subparser.add_argument(
+            "-gH",
+            "--gui-hostname",
+            action="store",
+            help="Set GUI server host address.",
+            default="127.0.0.1",
+        )
+        subparser.add_argument(
+            "-gp",
+            "--gui-port",
+            action="store",
+            type=int,
+            help="Set GUI server host port.",
+            default=8080,
+        )
+
         return subparser
 
     async def ofrak_func(self, ofrak_context: OFRAKContext, args: argparse.Namespace):
@@ -25,6 +49,10 @@ class IdentifyCommand(OfrakCommandRunsScript):
 
         await root_resource.identify()
         print(await IdentifyCommand.print_info(root_resource))
+
+        if args.gui:
+            server = await open_gui(args.gui_hostname, args.gui_port, focus_resource=root_resource)
+            await server.run_until_cancelled()
 
     @staticmethod
     async def print_info(resource: Resource) -> str:
