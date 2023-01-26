@@ -110,16 +110,15 @@ export class RemoteResource extends Resource {
 
   async get_children(r_filter, r_sort) {
     if (this.cache["get_children"]) {
-      return remote_models_to_resources(
-        this.cache["get_children"],
-        this.resource_list
-      );
+      return this.cache["get_children"];
     }
 
     const model = await batchedCall(this, "get_children");
-    this.cache["get_children"] = model;
-
-    return remote_models_to_resources(model, this.resource_list);
+    this.cache["get_children"] = remote_models_to_resources(
+      model,
+      this.resource_list
+    );
+    return this.cache["get_children"];
   }
 
   async get_data(range) {
@@ -277,10 +276,7 @@ export class RemoteResource extends Resource {
 
   async get_ancestors(r_filter) {
     if (this.cache["get_ancestors"]) {
-      return remote_models_to_resources(
-        this.cache["get_ancestors"],
-        this.resource_list
-      );
+      return this.cache["get_ancestors"];
     }
 
     const ancestor_models = await fetch(`${this.uri}/get_ancestors`).then(
@@ -291,8 +287,8 @@ export class RemoteResource extends Resource {
         return r.json();
       }
     );
-    this.cache["get_ancestors"] = ancestor_models;
-    return remote_models_to_resources(ancestor_models);
+    this.cache["get_ancestors"] = remote_models_to_resources(ancestor_models);
+    return this.cache["get_ancestors"];
   }
 
   async queue_patch(data, start, end, after, before) {
