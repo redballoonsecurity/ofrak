@@ -128,11 +128,11 @@ docker exec \
 - To manually stop it, run `python -m ofrak_ghidra.server stop`. 
 - Ghidra logs can be found here: `/root/.ghidra/.ghidra_10.1.2_PUBLIC/application.log`.
 
-See [the Ghidra user guide](https://ofrak.com/docs/user-guide/ghidra.html) for more information about using Ghidra with OFRAK.
+See [the Ghidra user guide](./user-guide/ghidra.md) for more information about using Ghidra with OFRAK.
 
 ### Binary Ninja
 
-Note that Binary Ninja is not distributed with OFRAK. Instead, if a license is present, the Docker build step will run the official headless installer using the provided license. **You need to have a valid BinaryNinja license to build and run the image.** For more details, [read the script that is run](https://github.com/redballoonsecurity/ofrak/blob/master/disassemblers/ofrak_binary_ninja/install_binary_ninja_headless_linux.sh).
+Note that Binary Ninja is not distributed with OFRAK. **You need to have a valid headless BinaryNinja license to build and run the image.** For more details, see the [Docker commands that are run](https://github.com/redballoonsecurity/ofrak/blob/master/disassemblers/ofrak_binary_ninja/Dockerstub).
 
 To build the image, the license should be placed in the project's root directory and named `license.dat`. The serial number needs to be extracted from that file into a file named `serial.txt`. This can be done with the following command:
 
@@ -145,7 +145,7 @@ python3 \
 
 The command `python3 build_image.py --config ofrak-binary-ninja.yml --base --finish` will build an image using Docker BuildKit secrets so that neither the license nor serial number are exposed in the built Docker image. (If [Docker BuildKit](https://docs.docker.com/develop/develop-images/build_enhancements/) is not enabled in your environment, precede the `python3 build_image.py` command with `DOCKER_BUILDKIT=1`.)
 
-See [the Binary Ninja user guide](https://ofrak.com/docs/user-guide/binary_ninja.html) for more information about using Binary Ninja wiht OFRAK.
+See the [Binary Ninja user guide](./user-guide/binary_ninja.md) for more information about using Binary Ninja with OFRAK.
 
 ### Useful Docker Commands
 
