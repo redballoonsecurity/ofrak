@@ -1,6 +1,5 @@
 # Download & install java
-RUN apt update
-RUN apt install openjdk-11-jdk -y
+RUN apt-get install openjdk-11-jdk -y
 
 # Download & install ghidra
 RUN mkdir -p /opt/rbs
