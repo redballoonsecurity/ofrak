@@ -2,7 +2,7 @@ import logging
 from argparse import ArgumentDefaultsHelpFormatter, Namespace
 
 from ofrak.cli.ofrak_cli import OfrakCommandRunsScript
-from ofrak.gui.server import open_gui
+from ofrak.gui.server import open_gui, start_server
 from ofrak.ofrak_context import OFRAKContext
 
 LOGGER = logging.getLogger(__name__)
@@ -31,9 +31,17 @@ class GUICommand(OfrakCommandRunsScript):
             help="Set GUI server host port.",
             default=8080,
         )
+        gui_parser.add_argument(
+            "--no-browser",
+            action="store_true",
+            help="Don't open the browser to the OFRAK GUI",
+        )
         self.add_ofrak_arguments(gui_parser)
         return gui_parser
 
     async def ofrak_func(self, ofrak_context: OFRAKContext, args: Namespace):  # pragma: no cover
-        server = await open_gui(args.hostname, args.port)
+        if not args.no_browser:
+            server = await open_gui(args.hostname, args.port)
+        else:
+            server = await start_server(ofrak_context, args.hostname, args.port)
         await server.run_until_cancelled()
