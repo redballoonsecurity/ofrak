@@ -421,7 +421,6 @@ class FlashOobResourceUnpacker(Unpacker[None]):
             raise UnpackerError("Tried unpacking without FlashAttributes")
         ecc_attr: Optional[FlashEccAttributes] = flash_attr.ecc_attributes
 
-        # oob_resource = _create_oob_resource(resource=resource)
         oob_resource = resource
         # Parent FlashEccResource is created, redefine data to limited scope
         data = await oob_resource.get_data()
@@ -439,33 +438,40 @@ class FlashOobResourceUnpacker(Unpacker[None]):
             block_range = Range(offset, block_end_offset)
             block_data = await oob_resource.get_data(range=block_range)
 
-            block_ecc_range = flash_attr.get_field_range_in_block(c, FlashFieldType.ECC)
-            if block_ecc_range is not None:
-                cur_block_ecc = block_data[block_ecc_range.start : block_ecc_range.end]
-                only_ecc += cur_block_ecc
-                # Add hash of everything up to the ECC to our dict for faster packing
-                block_data_hash = md5(block_data[: block_ecc_range.start]).digest()
-                DATA_HASHES[block_data_hash] = cur_block_ecc
-
-            # Check if there is data in the block
-            block_data_range = flash_attr.get_field_range_in_block(c, FlashFieldType.DATA)
-            if block_data_range is not None:
-                if block_ecc_range is not None:
-                    # Try decoding/correcting with ECC, otherwise just add the data anyway
-                    try:
-                        # Assumes that data comes before ECC
-                        if ecc_attr is not None and ecc_attr.ecc_class is not None:
-                            only_data += ecc_attr.ecc_class.decode(
-                                block_data[: block_ecc_range.end]
-                            )[block_data_range.start : block_data_range.end]
-                        else:
-                            raise UnpackerError(
-                                "Tried to correct with ECC without providing an ecc_class in FlashEccAttributes"
-                            )
-                    except EccError:
+            # Iterate through every field in block, dealing with ECC and DATA
+            field_offset = 0
+            for field in c:
+                field_range = Range(field_offset, field_offset + field.size)
+                block_ecc_range = None
+                block_data_range = None
+                if field.field_type == FlashFieldType.ECC:
+                    block_ecc_range = field_range
+                    cur_block_ecc = block_data[block_ecc_range.start : block_ecc_range.end]
+                    only_ecc += cur_block_ecc
+                    # Add hash of everything up to the ECC to our dict for faster packing
+                    block_data_hash = md5(block_data[: block_ecc_range.start]).digest()
+                    DATA_HASHES[block_data_hash] = cur_block_ecc
+                elif field.field_type == FlashFieldType.DATA:
+                    block_data_range = field_range
+                    # Check if there is data in the block
+                    if block_ecc_range is not None:
+                        # Try decoding/correcting with ECC, otherwise just add the data anyway
+                        try:
+                            # Assumes that data comes before ECC
+                            if ecc_attr is not None and ecc_attr.ecc_class is not None:
+                                only_data += ecc_attr.ecc_class.decode(
+                                    block_data[: block_ecc_range.end]
+                                )[block_data_range.start : block_data_range.end]
+                            else:
+                                raise UnpackerError(
+                                    "Tried to correct with ECC without providing an ecc_class in FlashEccAttributes"
+                                )
+                        except EccError:
+                            only_data += block_data[block_data_range.start : block_data_range.end]
+                    else:
+                        # No ECC, just add the data directly
                         only_data += block_data[block_data_range.start : block_data_range.end]
-                else:
-                    only_data += block_data[block_data_range.start : block_data_range.end]
+                field_offset += field.size
             offset += block_size
 
         # Add all block data to logical resource for recursive unpacking
