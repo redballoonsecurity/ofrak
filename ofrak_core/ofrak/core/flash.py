@@ -439,11 +439,11 @@ class FlashOobResourceUnpacker(Unpacker[None]):
             block_data = await oob_resource.get_data(range=block_range)
 
             # Iterate through every field in block, dealing with ECC and DATA
+            block_ecc_range = None
+            block_data_range = None
             field_offset = 0
             for field in c:
                 field_range = Range(field_offset, field_offset + field.size)
-                block_ecc_range = None
-                block_data_range = None
                 if field.field_type == FlashFieldType.ECC:
                     block_ecc_range = field_range
                     cur_block_ecc = block_data[block_ecc_range.start : block_ecc_range.end]
