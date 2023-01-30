@@ -132,7 +132,7 @@ See [the Ghidra user guide](./user-guide/ghidra.md) for more information about u
 
 ### Binary Ninja
 
-Note that Binary Ninja is not distributed with OFRAK. **You need to have a valid headless BinaryNinja license to build and run the image.** For more details, see the [Docker commands that are run](https://github.com/redballoonsecurity/ofrak/blob/master/disassemblers/ofrak_binary_ninja/Dockerstub).
+Note that Binary Ninja is not distributed with OFRAK. **You need to have a valid headless BinaryNinja license to build and run the image.** The `license.dat` file should be placed in a `.binaryninja` directory, under the user's home directory. For more details, see the [Docker commands that are run](https://github.com/redballoonsecurity/ofrak/blob/master/disassemblers/ofrak_binary_ninja/Dockerstub).
 
 To build the image, the license should be placed in the project's root directory and named `license.dat`. The serial number needs to be extracted from that file into a file named `serial.txt`. This can be done with the following command:
 
