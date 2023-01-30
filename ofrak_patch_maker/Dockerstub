@@ -15,11 +15,12 @@ RUN cd /tmp && \
     rm -rf gcc-arm-none-eabi-10-2020-q4-major-x86_64-linux.tar.bz2
 
 # LINUX GNU + BINUTILS
-RUN apt-get -y install software-properties-common gcc-10
+RUN cd /tmp && \
+    apt-get -y update  && apt-get -y install software-properties-common gcc-10
 
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
     cd /tmp && \
-    apt-get install -y texinfo && \
+    apt-get update && apt-get install -y texinfo && \
     wget http://archive.ubuntu.com/ubuntu/pool/main/b/binutils/binutils_2.34.orig.tar.xz --show-progress --progress=bar:force:noscroll && \
     tar xvf binutils_2.34.orig.tar.xz -C /opt/rbs/toolchain && \
     rm -rf binutils_2.34.orig.tar.xz && \
@@ -30,7 +31,7 @@ fi;
 
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
     cd /tmp && \
-    apt-get install -y texinfo && \
+    apt-get update && apt-get install -y texinfo && \
     wget http://archive.ubuntu.com/ubuntu/pool/main/b/binutils/binutils_2.34.orig.tar.xz --show-progress --progress=bar:force:noscroll && \
     tar xvf binutils_2.34.orig.tar.xz -C /opt/rbs/toolchain && \
     rm -rf binutils_2.34.orig.tar.xz && \
@@ -42,7 +43,7 @@ fi;
 #M68k GNU 10 Linux
 #Only exists for x86
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
-    apt-get install -y gcc-10-m68k-linux-gnu; \
+    apt-get update && apt-get install -y gcc-10-m68k-linux-gnu; \
 fi;
 
 #M68k VBCC
@@ -65,8 +66,8 @@ RUN cd /tmp/vbcc && cp ./bin/* /opt/rbs/toolchain/vbcc_0_9/bin/ && \
 
 #AARCH64 GNU 10 Linux
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
-    apt-get install -y gcc-10-aarch64-linux-gnu; \
+    apt-get update && apt-get install -y gcc-10-aarch64-linux-gnu; \
 fi;
 
 #AVR GCC
-RUN apt-get install -y gcc-avr binutils-avr avr-libc
+RUN apt-get update && apt-get install -y gcc-avr binutils-avr avr-libc
