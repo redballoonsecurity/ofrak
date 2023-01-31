@@ -191,6 +191,9 @@ class TestDataServiceInterface:
         modified_ranges = {res.data_id: res.patches for res in results}
         assert modified_ranges == {DATA_0: [Range(0xE, 0xE)], DATA_2: [Range(0x4, 0x4)]}
 
+        data_3 = await populated_data_service.get_data(DATA_3)
+        assert data_3 == b"\x00\x00\x01\x01"
+
     async def test_patches_trailing_children(self, populated_data_service: DataServiceInterface):
         results = await populated_data_service.apply_patches(
             [
