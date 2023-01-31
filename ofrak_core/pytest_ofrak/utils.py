@@ -10,7 +10,7 @@ def auto_validate_state(validator_function):
     Public methods are detected as any callable whose name does not start with an underscore ("_").
 
     Example usage:
-    def validator_function(clasS_instance):
+    def validator_function(class_instance):
         # validation logic
         ...
 
@@ -27,35 +27,35 @@ def auto_validate_state(validator_function):
     :return:
     """
 
+    def transform_method_to_validate_state(method):
+        if inspect.iscoroutinefunction(method):
+
+            @functools.wraps(method)
+            async def wrapped_method(self, *args, **kwargs):
+                result = await method(self, *args, **kwargs)
+                validator_function(self)
+
+                return result
+
+        else:
+
+            @functools.wraps(method)
+            def wrapped_method(self, *args, **kwargs):
+                result = method(self, *args, **kwargs)
+                validator_function(self)
+
+                return result
+
+        return wrapped_method
+
     def decorator(cls):
-        def factory(method):
-            if inspect.iscoroutinefunction(method):
-
-                @functools.wraps(method)
-                async def wrapped_method(self, *args, **kwargs):
-                    result = await method(self, *args, **kwargs)
-                    validator_function(self)
-
-                    return result
-
-            else:
-
-                @functools.wraps(method)
-                def wrapped_method(self, *args, **kwargs):
-                    result = method(self, *args, **kwargs)
-                    validator_function(self)
-
-                    return result
-
-            return wrapped_method
-
         methods = [
             (attr_name, getattr(cls, attr_name))
             for attr_name in dir(cls)
             if not attr_name.startswith("_") and callable(getattr(cls, attr_name))
         ]
         for method_name, method in methods:
-            setattr(cls, method_name, factory(method))
+            setattr(cls, method_name, transform_method_to_validate_state(method))
 
         return cls
 
