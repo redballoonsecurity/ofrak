@@ -430,8 +430,8 @@ class FlashOobResourceUnpacker(Unpacker[None]):
         offset = 0
         only_data = b""
         only_ecc = b""
-        for c in flash_attr.iterate_through_all_blocks(data_len, True):
-            block_size = flash_attr.get_block_size(c)
+        for block in flash_attr.iterate_through_all_blocks(data_len, True):
+            block_size = flash_attr.get_block_size(block)
             block_end_offset = offset + block_size
             if block_end_offset > data_len:
                 raise UnpackerError("Expected complete block and received less than expected")
@@ -442,7 +442,7 @@ class FlashOobResourceUnpacker(Unpacker[None]):
             block_ecc_range = None
             block_data_range = None
             field_offset = 0
-            for field in c:
+            for field_index, field in enumerate(block):
                 field_range = Range(field_offset, field_offset + field.size)
                 if field.field_type == FlashFieldType.ECC:
                     block_ecc_range = field_range
@@ -451,14 +451,22 @@ class FlashOobResourceUnpacker(Unpacker[None]):
                     # Add hash of everything up to the ECC to our dict for faster packing
                     block_data_hash = md5(block_data[: block_ecc_range.start]).digest()
                     DATA_HASHES[block_data_hash] = cur_block_ecc
-                elif field.field_type == FlashFieldType.DATA:
+                if field.field_type == FlashFieldType.DATA:
                     block_data_range = field_range
-                    # Check if there is data in the block
+                    # Get next ECC range
+                    future_offset = field_offset
+                    for future_field in block[field_index:]:
+                        if future_field.field_type == FlashFieldType.ECC:
+                            block_ecc_range = Range(
+                                future_offset, future_offset + future_field.size
+                            )
+                        future_offset += future_field.size
+
                     if block_ecc_range is not None:
                         # Try decoding/correcting with ECC, otherwise just add the data anyway
                         try:
                             # Assumes that data comes before ECC
-                            if ecc_attr is not None and ecc_attr.ecc_class is not None:
+                            if (ecc_attr is not None) and (ecc_attr.ecc_class is not None):
                                 only_data += ecc_attr.ecc_class.decode(
                                     block_data[: block_ecc_range.end]
                                 )[block_data_range.start : block_data_range.end]
@@ -467,7 +475,7 @@ class FlashOobResourceUnpacker(Unpacker[None]):
                                     "Tried to correct with ECC without providing an ecc_class in FlashEccAttributes"
                                 )
                         except EccError:
-                            only_data += block_data[block_data_range.start : block_data_range.end]
+                            raise UnpackerError("ECC correction failed")
                     else:
                         # No ECC, just add the data directly
                         only_data += block_data[block_data_range.start : block_data_range.end]
