@@ -444,6 +444,8 @@ class FlashOobResourceUnpacker(Unpacker[None]):
             field_offset = 0
             for field_index, field in enumerate(block):
                 field_range = Range(field_offset, field_offset + field.size)
+
+                # We must check all blocks anyway so deal with ECC here
                 if field.field_type == FlashFieldType.ECC:
                     block_ecc_range = field_range
                     cur_block_ecc = block_data[block_ecc_range.start : block_ecc_range.end]
@@ -451,6 +453,7 @@ class FlashOobResourceUnpacker(Unpacker[None]):
                     # Add hash of everything up to the ECC to our dict for faster packing
                     block_data_hash = md5(block_data[: block_ecc_range.start]).digest()
                     DATA_HASHES[block_data_hash] = cur_block_ecc
+
                 if field.field_type == FlashFieldType.DATA:
                     block_data_range = field_range
                     # Get next ECC range
@@ -463,7 +466,7 @@ class FlashOobResourceUnpacker(Unpacker[None]):
                         future_offset += future_field.size
 
                     if block_ecc_range is not None:
-                        # Try decoding/correcting with ECC, otherwise just add the data anyway
+                        # Try decoding/correcting with ECC, report any error
                         try:
                             # Assumes that data comes before ECC
                             if (ecc_attr is not None) and (ecc_attr.ecc_class is not None):
@@ -477,7 +480,7 @@ class FlashOobResourceUnpacker(Unpacker[None]):
                         except EccError:
                             raise UnpackerError("ECC correction failed")
                     else:
-                        # No ECC, just add the data directly
+                        # No ECC found in block, just add the data directly
                         only_data += block_data[block_data_range.start : block_data_range.end]
                 field_offset += field.size
             offset += block_size
