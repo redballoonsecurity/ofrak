@@ -423,7 +423,7 @@ class _DataRoot:
                     yield from vals
         elif end_range != (None, None):
             ends_iter = self._iter_grid_axis(
-                self._grid_starts_first, end_min, end_max, end_inclusivity
+                self._grid_ends_first, end_min, end_max, end_inclusivity
             )
             for _, starts in ends_iter:
                 starts_iter = self._iter_grid_axis(starts, start_min, start_max, start_inclusivity)
@@ -437,26 +437,46 @@ class _DataRoot:
     def _resize_range(
         self, resized_range: Range, size_diff: int
     ) -> Iterable[Tuple[DataId, Tuple[int, int]]]:
+        only_ends_shifted = set()
+        start_and_end_shifted = set()
+
+        # Bug here: Sometimes we don't want to move the whole axis, just a single point
+        # Because that point is getting its whole
         for ids_ending_after_range in self._shift_grid_axis(
             self._grid_ends_first,
             size_diff,
             merge_func=self._merge_columns,
             minimum=resized_range.end,
+            inclusive=(False, False) if resized_range.length() == 0 else (True, False),
         ):
-            for _, ids_starting_before_range in self._iter_grid_axis(
+            for range_start, ids_starting_before_range in self._iter_grid_axis(
                 ids_ending_after_range,
                 maximum=resized_range.end,
             ):
                 for model_id in ids_starting_before_range:
                     yield model_id, (0, size_diff)
+                    only_ends_shifted.add(model_id)
             for ids_entirely_after_range in self._shift_grid_axis(
                 ids_ending_after_range,
                 size_diff,
-                merge_func=set.union,
+                merge_func=set.union,  # could this be a problem? the point sets are combined before the grid_ends_first stuff gets merged...
                 minimum=resized_range.end,
             ):
                 for model_id in ids_entirely_after_range:
                     yield model_id, (size_diff, size_diff)
+                    start_and_end_shifted.add(model_id)
+
+        for range_start, ids_starting_before_range in self._iter_grid_axis(
+            self._grid_starts_first, maximum=resized_range.start, inclusive=(True, True)
+        ):
+            for _ in self._shift_grid_axis(
+                ids_starting_before_range,
+                size_diff,
+                merge_func=set.union,
+                minimum=resized_range.start,
+                inclusive=(True, False) if resized_range.length() == 0 else (False, False),
+            ):
+                pass
 
         for ends in self._shift_grid_axis(
             self._grid_starts_first,
@@ -464,7 +484,8 @@ class _DataRoot:
             merge_func=self._merge_columns,
             minimum=resized_range.end,
         ):
-            self._shift_grid_axis(ends, size_diff, merge_func=set.union)
+            for _ in self._shift_grid_axis(ends, size_diff, merge_func=set.union):
+                pass
 
     @staticmethod
     def _add_to_grid(
@@ -537,6 +558,7 @@ class _DataRoot:
         merge_func: Callable[[T, T], T],
         minimum: Optional[int] = None,
         maximum: Optional[int] = None,
+        inclusive: Tuple[bool, bool] = (True, False),
     ) -> Iterable[T]:
         """
         Shift a range of values in an axis, without affecting the sorted order of the points in
@@ -554,7 +576,10 @@ class _DataRoot:
         post_yield = None
 
         if minimum is not None:
-            min_i = _CompareFirstTuple.bisect_left(axis, minimum)
+            if inclusive[0]:
+                min_i = _CompareFirstTuple.bisect_left(axis, minimum)
+            else:
+                min_i = _CompareFirstTuple.bisect_right(axis, minimum)
         else:
             min_i = 0
 
@@ -571,7 +596,10 @@ class _DataRoot:
                 axis[min_i - 1] = _CompareFirstTuple(post_shift_min, merge_func(val1, pre_yield))
 
         if maximum is not None:
-            max_i = _CompareFirstTuple.bisect_right(axis, maximum)
+            if inclusive[1]:
+                max_i = _CompareFirstTuple.bisect_left(axis, maximum)
+            else:
+                max_i = _CompareFirstTuple.bisect_right(axis, maximum)
         else:
             max_i = len(axis)
 
