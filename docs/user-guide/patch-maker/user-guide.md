@@ -256,7 +256,7 @@ dataclass ToolchainConfig:
 Check out the [ToolchainConfig][ofrak_patch_maker.toolchain.model.ToolchainConfig] for the full suite
 of tunables (they are likely to get updated frequently while OFRAK is developed).
 
-Together, [ArchInfo][ofrak_type.architecture.ArchInfo] and [ToolchainConfig][ofrak_patch_maker.toolchain.model.ToolchainConfig] can be used to instantiate a [Toolchain][ofrak_patch_maker.abstract.Toolchain].
+Together, [ArchInfo][ofrak_type.architecture.ArchInfo] and [ToolchainConfig][ofrak_patch_maker.toolchain.model.ToolchainConfig] can be used to instantiate a [Toolchain][ofrak_patch_maker.toolchain.abstract.Toolchain].
 
 
 #### PatchMaker Instantiation
