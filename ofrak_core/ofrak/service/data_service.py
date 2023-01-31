@@ -380,6 +380,8 @@ class _DataRoot:
             children_overlapping_ranges[patch_range] = self._get_ids_in_range(
                 start_range=(None, patch_range.end),
                 end_range=(patch_range.start, None),
+                start_inclusivity=(False, False),
+                end_inclusivity=(False, False),
             )
 
         for patched_range, overlapping_data_ids in children_overlapping_ranges.items():
@@ -437,55 +439,111 @@ class _DataRoot:
     def _resize_range(
         self, resized_range: Range, size_diff: int
     ) -> Iterable[Tuple[DataId, Tuple[int, int]]]:
-        only_ends_shifted = set()
-        start_and_end_shifted = set()
 
-        # Bug here: Sometimes we don't want to move the whole axis, just a single point
-        # Because that point is getting its whole
-        for ids_ending_after_range in self._shift_grid_axis(
-            self._grid_ends_first,
-            size_diff,
-            merge_func=self._merge_columns,
-            minimum=resized_range.end,
-            inclusive=(False, False) if resized_range.length() == 0 else (True, False),
-        ):
-            for range_start, ids_starting_before_range in self._iter_grid_axis(
-                ids_ending_after_range,
-                maximum=resized_range.end,
-            ):
-                for model_id in ids_starting_before_range:
-                    yield model_id, (0, size_diff)
-                    only_ends_shifted.add(model_id)
-            for ids_entirely_after_range in self._shift_grid_axis(
-                ids_ending_after_range,
+        if resized_range.length() == 0:
+            insertion_point = resized_range.start
+
+            for ids_ending_after_point in self._shift_grid_axis(
+                self._grid_ends_first,
                 size_diff,
-                merge_func=set.union,  # could this be a problem? the point sets are combined before the grid_ends_first stuff gets merged...
+                merge_func=self._merge_columns,
+                minimum=insertion_point,
+                inclusive=(False, False),
+            ):
+                for range_start, ids_starting_before_point in self._iter_grid_axis(
+                    ids_ending_after_point,
+                    maximum=insertion_point,
+                ):
+                    for model_id in ids_starting_before_point:
+                        yield model_id, (0, size_diff)
+                for ids_entirely_after_point in self._shift_grid_axis(
+                    ids_ending_after_point,
+                    size_diff,
+                    merge_func=set.union,
+                    minimum=insertion_point,
+                ):
+                    for model_id in ids_entirely_after_point:
+                        yield model_id, (size_diff, size_diff)
+
+            for range_start, ids_starting_before_point in self._iter_grid_axis(
+                self._grid_starts_first, maximum=insertion_point, inclusive=(True, False)
+            ):
+                for _ in self._shift_grid_axis(
+                    ids_starting_before_point,
+                    size_diff,
+                    merge_func=set.union,
+                    minimum=insertion_point,
+                    inclusive=(False, False),
+                ):
+                    # Only end shifted
+                    pass
+
+            for ends in self._shift_grid_axis(
+                self._grid_starts_first,
+                size_diff,
+                merge_func=self._merge_columns,
+                minimum=insertion_point,
+                inclusive=(True, False),
+            ):
+                for _ in self._shift_grid_axis(
+                    ends,
+                    size_diff,
+                    merge_func=set.union,
+                    inclusive=(True, True),
+                ):
+                    # Both start and end shifted
+                    pass
+
+        else:
+            for ids_ending_after_range in self._shift_grid_axis(
+                self._grid_ends_first,
+                size_diff,
+                merge_func=self._merge_columns,
                 minimum=resized_range.end,
+                inclusive=(True, False),
             ):
-                for model_id in ids_entirely_after_range:
-                    yield model_id, (size_diff, size_diff)
-                    start_and_end_shifted.add(model_id)
+                for range_start, ids_starting_before_range in self._iter_grid_axis(
+                    ids_ending_after_range,
+                    maximum=resized_range.end,
+                ):
+                    for model_id in ids_starting_before_range:
+                        yield model_id, (0, size_diff)
+                for ids_entirely_after_range in self._shift_grid_axis(
+                    ids_ending_after_range,
+                    size_diff,
+                    merge_func=set.union,
+                    minimum=resized_range.end,
+                ):
+                    for model_id in ids_entirely_after_range:
+                        yield model_id, (size_diff, size_diff)
 
-        for range_start, ids_starting_before_range in self._iter_grid_axis(
-            self._grid_starts_first, maximum=resized_range.start, inclusive=(True, True)
-        ):
-            for _ in self._shift_grid_axis(
-                ids_starting_before_range,
+            for range_start, ids_starting_before_range in self._iter_grid_axis(
+                self._grid_starts_first, maximum=resized_range.start, inclusive=(True, True)
+            ):
+                for _ in self._shift_grid_axis(
+                    ids_starting_before_range,
+                    size_diff,
+                    merge_func=set.union,
+                    minimum=resized_range.start,
+                    inclusive=(False, False),
+                ):
+                    # Only end shifted
+                    pass
+
+            for ends in self._shift_grid_axis(
+                self._grid_starts_first,
                 size_diff,
-                merge_func=set.union,
-                minimum=resized_range.start,
-                inclusive=(True, False) if resized_range.length() == 0 else (False, False),
+                merge_func=self._merge_columns,
+                minimum=resized_range.end,
+                inclusive=(True, False),
             ):
-                pass
-
-        for ends in self._shift_grid_axis(
-            self._grid_starts_first,
-            size_diff,
-            merge_func=self._merge_columns,
-            minimum=resized_range.end,
-        ):
-            for _ in self._shift_grid_axis(ends, size_diff, merge_func=set.union):
-                pass
+                for _ in self._shift_grid_axis(
+                    ends,
+                    size_diff,
+                    merge_func=set.union,
+                ):
+                    # Both start and end shifted
+                    pass
 
     @staticmethod
     def _add_to_grid(
@@ -590,10 +648,9 @@ class _DataRoot:
                     f"shifting {minimum} to {maximum} by {shift} would collide at the lower range!"
                 )
             elif post_shift_min == axis[min_i - 1][0]:
-                # merge the lowest val in shifted range into previous
+                # will merge the lowest val in shifted range into previous
                 val1 = axis[min_i - 1][1]
                 _, pre_yield = axis.pop(min_i)
-                axis[min_i - 1] = _CompareFirstTuple(post_shift_min, merge_func(val1, pre_yield))
 
         if maximum is not None:
             if inclusive[1]:
@@ -610,15 +667,15 @@ class _DataRoot:
                     f"shifting {minimum} to {maximum} by {shift} would collide at the upper range!"
                 )
             elif post_shift_max == axis[max_i + 1][0]:
-                # merge the highest val in shifted range into next
+                # will merge the highest val in shifted range into next
                 val1 = axis[max_i + 1][1]
                 _, post_yield = axis.pop(max_i)
-                axis[max_i + 1] = _CompareFirstTuple(post_shift_max, merge_func(val1, post_yield))
 
                 max_i -= 1
 
         if pre_yield is not None:
             yield pre_yield
+            axis[min_i - 1] = _CompareFirstTuple(post_shift_min, merge_func(val1, pre_yield))
 
         i = min_i
         while i < max_i:
@@ -629,6 +686,7 @@ class _DataRoot:
 
         if post_yield is not None:
             yield post_yield
+            axis[max_i + 2] = _CompareFirstTuple(post_shift_max, merge_func(val1, post_yield))
 
     @staticmethod
     def _merge_columns(
@@ -640,10 +698,8 @@ class _DataRoot:
             vals = tuple(v for _, v in _vals)
             if len(vals) == 1:
                 val: Set[DataId] = vals[0]
-            elif len(vals) == 2:
-                val = set.union(*vals)
             else:
-                raise NotImplementedError()
+                val = set.union(*vals)
 
             merged_columns.append(_CompareFirstTuple(key, val))
 
