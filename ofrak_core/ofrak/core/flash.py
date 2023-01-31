@@ -458,7 +458,8 @@ class FlashOobResourceUnpacker(Unpacker[None]):
                     block_data_range = field_range
                     # Get next ECC range
                     future_offset = field_offset
-                    for future_field in block[field_index:]:
+                    block_list = list(block)
+                    for future_field in block_list[field_index:]:
                         if future_field.field_type == FlashFieldType.ECC:
                             block_ecc_range = Range(
                                 future_offset, future_offset + future_field.size
