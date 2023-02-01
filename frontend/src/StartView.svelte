@@ -4,6 +4,8 @@
     font-weight: bold;
     color: inherit;
     font-size: xxx-large;
+    line-height: 1;
+    margin: 0;
   }
 
   .center {
@@ -55,6 +57,12 @@
     width: calc(100% - 6em);
     height: calc(100% - 6em);
   }
+
+  .maxwidth {
+    max-width: 50%;
+    width: 50%;
+    margin: 1em 0;
+  }
 </style>
 
 <script>
@@ -67,6 +75,7 @@
   import { remote_model_to_resource } from "./ofrak/remote_resource";
 
   import { onMount } from "svelte";
+  import TextDivider from "./TextDivider.svelte";
 
   export let rootResourceLoadPromise,
     showRootResource,
@@ -187,6 +196,26 @@
     {:else}
       <h1>Drop the file!</h1>
     {/if}
+
+    <div class="maxwidth">
+      <TextDivider
+        color="{animals[selectedAnimal]?.color || 'var(--main-fg-color)'}"
+      >
+        OR
+      </TextDivider>
+    </div>
+
+    <div class="maxwidth">
+      <p>TODO: File browser</p>
+    </div>
+
+    <div class="maxwidth">
+      <TextDivider
+        color="{animals[selectedAnimal]?.color || 'var(--main-fg-color)'}"
+      >
+        OR
+      </TextDivider>
+    </div>
 
     {#await preExistingRootsPromise}
       <LoadingText />
