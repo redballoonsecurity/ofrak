@@ -18,6 +18,18 @@ class egg_info_ex(egg_info):
 with open("LICENSE") as f:
     license = "".join(["\n", f.read()])
 
+
+# Should be the same as in build_image.py
+def read_requirements(requirements_path):
+    python_deps = []
+    with open(requirements_path) as file_handle:
+        for line in file_handle:
+            line = line.strip()
+            if line and line[0] != "#":
+                python_deps.append(line)
+    return python_deps
+
+
 setuptools.setup(
     name="ofrak_tutorial",
     version="0.1.0",
@@ -28,15 +40,9 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="",
     packages=["ofrak_tutorial"],
-    install_requires=[
-        "notebook~=6.4.10",
-    ],
+    install_requires=read_requirements("requirements.txt"),
     extras_require={
-        "test": [
-            "fun-coverage==0.2.0",
-            "nbval~=0.9.6",
-            "pytest~=7.1.1",
-        ]
+        "test": read_requirements("requirements-test.txt"),
     },
     python_requires=">=3.7",
     license=license,

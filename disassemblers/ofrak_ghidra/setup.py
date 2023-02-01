@@ -18,6 +18,18 @@ class egg_info_ex(egg_info):
 with open("LICENSE") as f:
     license = "".join(["\n", f.read()])
 
+
+# Should be the same as in build_image.py
+def read_requirements(requirements_path):
+    python_deps = []
+    with open(requirements_path) as file_handle:
+        for line in file_handle:
+            line = line.strip()
+            if line and line[0] != "#":
+                python_deps.append(line)
+    return python_deps
+
+
 setuptools.setup(
     name="ofrak_ghidra",
     version="0.1.0",
@@ -30,10 +42,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    install_requires=[
-        "PyYAML~=6.0,>=5.4",
-        "aiohttp~=3.8.1",
-    ],
+    install_requires=read_requirements("requirements.txt"),
     extras_require={
         "test": [
             "fun-coverage==0.2.0",

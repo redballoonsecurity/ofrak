@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional
 
+
 import argparse
 import os
 import subprocess
@@ -186,25 +187,53 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
 
     # Support multi-stage builds
     for package_path in config.packages_paths:
-        if not os.path.exists(os.path.join(package_path, "Dockerstage")):
+        dockerstage_path = os.path.join(package_path, "Dockerstage")
+        if not os.path.exists(dockerstage_path):
             continue
-        with open(os.path.join(package_path, "Dockerstage")) as file_handle:
+        with open(dockerstage_path) as file_handle:
             dockerstub = file_handle.read()
-        dockerfile_base_parts.append(dockerstub)
+        dockerfile_base_parts += [f"### {dockerstage_path}", dockerstub]
 
     dockerfile_base_parts += [
         "FROM python:3.7-bullseye@sha256:338ead05c1a0aa8bd8fcba8e4dbbe2afd0283b4732fd30cf9b3bfcfcbc4affab",
+        "",
     ]
+
+    requirement_suffixes = [""]
+    if config.install_target == InstallTarget.DEVELOP:
+        requirement_suffixes += ["-docs", "-test"]
+
     for package_path in config.packages_paths:
-        with open(os.path.join(package_path, "Dockerstub")) as file_handle:
+        dockerstub_path = os.path.join(package_path, "Dockerstub")
+        with open(dockerstub_path) as file_handle:
             dockerstub = file_handle.read()
-        dockerfile_base_parts.append(dockerstub)
+        dockerfile_base_parts += [f"### {dockerstub_path}", dockerstub]
+        # Collect python dependencies
+        python_deps = []
+        for suff in requirement_suffixes:
+            requirements_path = os.path.join(package_path, f"requirements{suff}.txt")
+            if not os.path.exists(requirements_path):
+                continue
+            with open(requirements_path) as file_handle:
+                for line in file_handle:
+                    line = line.strip()
+                    if line and line[0] != "#":
+                        python_deps.append(line)
+        if python_deps:
+            dockerfile_base_parts += [
+                f"### Python dependencies from the {package_path} requirements file[s]",
+                "RUN python3 -m pip install --upgrade pip &&\\",
+                '   python3 -m pip install "' + '" "'.join(python_deps) + '"',
+                "",
+            ]
+
     return "\n".join(dockerfile_base_parts)
 
 
 def create_dockerfile_finish(config: OfrakImageConfig) -> str:
     full_base_image_name = "/".join((config.registry, config.base_image_name))
     dockerfile_finish_parts = [
+        "# syntax = docker/dockerfile:1.3\n\n",
         f"FROM {full_base_image_name}:{GIT_COMMIT_HASH}\n\n",
         f"ARG OFRAK_SRC_DIR=/\n",
     ]
@@ -224,8 +253,11 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
             "\\n",
         ]
     )
-    dockerfile_finish_parts.append(f'RUN printf "{develop_makefile}" >> Makefile\n')
-    dockerfile_finish_parts.append("RUN make $INSTALL_TARGET\n\n")
+    dockerfile_finish_parts += [
+        f'RUN printf "{develop_makefile}" >> Makefile\n\n',
+        '# We use --network="none" to ensure all dependencies were installed in base.Dockerfile\n',
+        'RUN --network="none" make $INSTALL_TARGET\n\n',
+    ]
     finish_makefile = "\\n\\\n".join(
         [
             "test:",

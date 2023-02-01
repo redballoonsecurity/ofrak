@@ -1,5 +1,4 @@
 RUN apt-get update && apt-get install --yes nginx
-RUN python3 -m pip install --upgrade aiohttp
 
 COPY --from=svelte --chown=root:root /home/node/frontend/public /ofrak_gui
 

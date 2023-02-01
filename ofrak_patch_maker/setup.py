@@ -19,6 +19,17 @@ with open("README.md") as f:
     long_description = f.read()
 
 
+# Should be the same as in build_image.py
+def read_requirements(requirements_path):
+    python_deps = []
+    with open(requirements_path) as file_handle:
+        for line in file_handle:
+            line = line.strip()
+            if line and line[0] != "#":
+                python_deps.append(line)
+    return python_deps
+
+
 setuptools.setup(
     name="ofrak_patch_maker",
     version="3.0.0",
@@ -27,9 +38,8 @@ setuptools.setup(
     package_data={"ofrak_patch_maker": ["py.typed"]},
     install_requires=[
         "ofrak_type~=2.0",
-        "immutabledict==2.2.0",
-        "python-magic",
-    ],
+    ]
+    + read_requirements("requirements.txt"),
     extras_require={
         "test": [
             "fun-coverage==0.2.0",
