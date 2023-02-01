@@ -86,7 +86,8 @@
     showRootResource,
     resources,
     rootResource,
-    resourceNodeDataMap;
+    resourceNodeDataMap,
+    browsedFiles;
   let dragging = false,
     selectedPreExistingRoot = null,
     preExistingRootsPromise = new Promise(() => {}),
@@ -94,6 +95,14 @@
   let mouseX, selectedAnimal;
 
   async function createRootResource(f) {
+    if (
+      f.size > 1024 * 1024 * 250 &&
+      !window.confirm("Loading a large file may be slow. Are you sure?")
+    ) {
+      showRootResource = false;
+      return;
+    }
+
     const rootModel = await fetch(`/create_root_resource?name=${f.name}`, {
       method: "POST",
       body: await f.arrayBuffer(),
@@ -126,6 +135,12 @@
       rootResourceLoadPromise = createRootResource(f);
       await rootResourceLoadPromise;
     }
+  }
+
+  $: if (browsedFiles && browsedFiles.length > 0) {
+    showRootResource = true;
+    const f = browsedFiles[0];
+    createRootResource(f);
   }
 
   async function getResourcesFromHash(resourceId) {
@@ -211,7 +226,7 @@
     </div>
 
     <div class="maxwidth">
-      <FileBrowser />
+      <FileBrowser bind:files="{browsedFiles}" />
     </div>
 
     <div class="maxwidth">
