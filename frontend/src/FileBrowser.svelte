@@ -60,7 +60,10 @@
 <div
   on:dragover|preventDefault="{() => (dragging = true)}"
   on:dragleave|preventDefault="{() => (dragging = false)}"
-  on:drop|preventDefault="{(e) => (files = e.dataTransfer.files)}"
+  on:drop|preventDefault="{(e) => {
+    files = e.dataTransfer.files;
+    dragging = false;
+  }}"
 >
   {#if !dragging}
     <label class="filelabel">
