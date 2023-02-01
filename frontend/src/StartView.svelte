@@ -62,6 +62,10 @@
     max-width: 50%;
     width: 50%;
     margin: 1em 0;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
   }
 </style>
 
@@ -76,6 +80,7 @@
 
   import { onMount } from "svelte";
   import TextDivider from "./TextDivider.svelte";
+  import FileBrowser from "./FileBrowser.svelte";
 
   export let rootResourceLoadPromise,
     showRootResource,
@@ -206,7 +211,7 @@
     </div>
 
     <div class="maxwidth">
-      <p>TODO: File browser</p>
+      <FileBrowser />
     </div>
 
     <div class="maxwidth">
@@ -220,23 +225,29 @@
     {#await preExistingRootsPromise}
       <LoadingText />
     {:then preExistingRootResources}
-      <form on:submit|preventDefault="{choosePreExistingRoot}">
-        <select bind:value="{selectedPreExistingRoot}">
-          <option value="{null}">None</option>
-          {#each preExistingRootResources as preExistingRoot}
-            <option value="{preExistingRoot}">
-              {preExistingRoot.id} &ndash;
-              {#if preExistingRoot.caption}
-                {preExistingRoot.caption}
-              {:else}
-                Untagged
-              {/if}
-            </option>
-          {/each}
-        </select>
+      {#if preExistingRootsPromise && preExistingRootsPromise.length > 0}
+        <form on:submit|preventDefault="{choosePreExistingRoot}">
+          <select bind:value="{selectedPreExistingRoot}">
+            <option value="{null}">Open existing resource</option>
+            {#each preExistingRootResources as preExistingRoot}
+              <option value="{preExistingRoot}">
+                {preExistingRoot.id} &ndash;
+                {#if preExistingRoot.caption}
+                  {preExistingRoot.caption}
+                {:else}
+                  Untagged
+                {/if}
+              </option>
+            {/each}
+          </select>
 
-        <button disabled="{!selectedPreExistingRoot}" type="submit">Go!</button>
-      </form>
+          <button disabled="{!selectedPreExistingRoot}" type="submit"
+            >Go!</button
+          >
+        </form>
+      {:else}
+        No resources loaded yet.
+      {/if}
     {:catch}
       <p>Failed to get any pre-existing root resources!</p>
       <p>The back end server may be down.</p>
