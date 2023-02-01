@@ -2,7 +2,7 @@ import logging
 from argparse import ArgumentDefaultsHelpFormatter, Namespace
 
 from ofrak.cli.ofrak_cli import OfrakCommandRunsScript
-from ofrak.gui.server import open_gui, start_server
+from ofrak.gui.server import open_gui
 from ofrak.ofrak_context import OFRAKContext
 
 LOGGER = logging.getLogger(__name__)
@@ -40,8 +40,5 @@ class GUICommand(OfrakCommandRunsScript):
         return gui_parser
 
     async def ofrak_func(self, ofrak_context: OFRAKContext, args: Namespace):  # pragma: no cover
-        if not args.no_browser:
-            server = await open_gui(args.hostname, args.port)
-        else:
-            server = await start_server(ofrak_context, args.hostname, args.port)
+        server = await open_gui(args.hostname, args.port, open_in_browser=(not args.no_browser))
         await server.run_until_cancelled()

@@ -495,10 +495,12 @@ async def open_gui(
     port: int,
     focus_resource: Optional[Resource] = None,
     ofrak_context: Optional[OFRAKContext] = None,
+    open_in_browser: bool = True,
 ) -> AiohttpOFRAKServer:  # pragma: no cover
     if ofrak_context is None:
         ofrak_context = get_current_ofrak_context()
 
     server = await start_server(ofrak_context, host, port)
-    server.open_resource_in_browser(focus_resource)
+    if open_in_browser:
+        server.open_resource_in_browser(focus_resource)
     return server
