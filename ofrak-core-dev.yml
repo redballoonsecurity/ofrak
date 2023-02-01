@@ -7,4 +7,5 @@ packages_paths:
     "ofrak_io",
     "ofrak_patch_maker",
     "ofrak_core",
+    "frontend",
   ]
