@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Fixed
 - Fix long-broken `OFRAK.set_id_service` [#198](https://github.com/redballoonsecurity/ofrak/pull/198)
 
+### Changed
+- GUI is much faster, especially for resources with hundreds of thousands of children [#191](https://github.com/redballoonsecurity/ofrak/pull/191)
+
+
 ## [2.1.1](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.1.0...ofrak-v2.1.1) - 2023-01-25
 ### Fixed
 - GUI uses correct attribute class names again (not *AutoAttributes)
