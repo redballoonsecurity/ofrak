@@ -422,17 +422,11 @@ class ResourceModel:
         return tags
 
     def get_most_specific_tags(self) -> Iterable[ResourceTag]:
-        tiered_tags = ResourceTag.sort_tags_into_tiers(self.tags)
-        if len(tiered_tags) == 0:
-            return ()
-        tags_not_most_specific: Set[ResourceTag] = set()
-        most_specific_tags = set()
-        for tag_tier in tiered_tags:
-            most_specific_tags_in_tier = set(tag_tier).difference(tags_not_most_specific)
-            most_specific_tags.update(most_specific_tags_in_tier)
-            for tag in tag_tier:
-                tags_not_most_specific.update(set(cast(Iterable[ResourceTag], tag.__bases__)))
-
+        most_specific_tags = set(self.tags)
+        for tag in [
+            base for tag in self.tags for base in cast(Iterable[ResourceTag], tag.__bases__)
+        ]:
+            most_specific_tags.discard(tag)
         return most_specific_tags
 
     @property

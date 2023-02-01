@@ -52,6 +52,13 @@ export function buf2hex(buffer, joinchar) {
     .join(joinchar ? joinchar : "");
 }
 
+/**
+ * Asynchronously sleep for a certain number of milliseconds.
+ */
+export async function sleep(ms) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /***
  * Evaluate an input arithmetic string consisting of (possibly hex) numbers
  * and the given binary operators using the Shunting Yard algorithm
