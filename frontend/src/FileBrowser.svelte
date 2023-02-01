@@ -54,19 +54,30 @@
 
 <script>
   export let files, input;
+  let dragging = false;
 </script>
 
-<label class="filelabel">
-  <slot />
-  <input type="file" bind:this="{input}" bind:files="{files}" />
-  <span>
-    <button on:click="{() => input.click()}"> Browse... </button>
-    {#if files}
-      {Array.from(files)
-        .map((f) => f?.name)
-        .join(", ")}
-    {:else}
-      No file selected.
-    {/if}
-  </span>
-</label>
+<div
+  on:dragover|preventDefault="{() => (dragging = true)}"
+  on:dragleave|preventDefault="{() => (dragging = false)}"
+  on:drop|preventDefault="{(e) => (files = e.dataTransfer.files)}"
+>
+  {#if !dragging}
+    <label class="filelabel">
+      <slot />
+      <input type="file" bind:this="{input}" bind:files="{files}" />
+      <span>
+        <button on:click="{() => input.click()}"> Browse... </button>
+        {#if files}
+          {Array.from(files)
+            .map((f) => f?.name)
+            .join(", ")}
+        {:else}
+          No file selected.
+        {/if}
+      </span>
+    </label>
+  {:else}
+    Drop the files to upload.
+  {/if}
+</div>

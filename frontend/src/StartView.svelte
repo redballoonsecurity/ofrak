@@ -140,7 +140,7 @@
   $: if (browsedFiles && browsedFiles.length > 0) {
     showRootResource = true;
     const f = browsedFiles[0];
-    createRootResource(f);
+    rootResourceLoadPromise = createRootResource(f);
   }
 
   async function getResourcesFromHash(resourceId) {
