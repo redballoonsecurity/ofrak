@@ -160,12 +160,6 @@
     resourceNodeDataMap[$selected].commentsPromise =
       rootResource.get_comments();
   }
-
-  /*
-  $: if ($selected !== undefined && $selected === self?.id) {
-    self?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
-  */
 </script>
 
 {#await childrenPromise then children}
@@ -225,25 +219,12 @@
           </div>
         </li>
       {/each}
-      {#if children.length > kiddoChunksize * 2}
+      {#if children.length > kiddoChunksize}
         <div class="morebutton">
           <button on:click="{() => (kiddoChunksize += 512)}">
             Show 512 more children...
           </button>
         </div>
-      {/if}
-      {#if children.length > kiddoChunksize}
-        {#each children.slice(-kiddoChunksize) as child}
-          <li>
-            <div>
-              <svelte:self
-                rootResource="{child}"
-                collapsed="{childrenCollapsed}"
-                bind:resourceNodeDataMap="{resourceNodeDataMap}"
-              />
-            </div>
-          </li>
-        {/each}
       {/if}
     </ul>
   {/if}

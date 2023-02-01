@@ -111,14 +111,14 @@
           rangeInParent !== null && rangeInParent !== undefined
       )
       .sort((first, second) => first[1][0] - second[1][0])
-      .map(([child, rangeInParent], i) => {
+      .map(([child_id, rangeInParent], i) => {
         // Important to sort before mapping so that the colors don't get mixed up.
         // If that were to happen, multiple ranges with the same color could be
         // adjacent.
         const [start, end] = rangeInParent;
         return {
           color: otherColors[i % otherColors.length],
-          resource_id: child,
+          resource_id: child_id,
           start: start,
           end: end,
         };
