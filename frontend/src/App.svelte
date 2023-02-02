@@ -93,6 +93,11 @@
       $selected = window.location.hash.slice(1);
     }
   }
+
+  function isAprilFirst() {
+    const date = new Date();
+    return date.getMonth() + 1 === 4 && date.getDate() === 1;
+  }
 </script>
 
 <svelte:window on:popstate="{backButton}" />
@@ -162,9 +167,11 @@
     </Split>
   {/await}
 
-  <div class="bottomleft">
-    <AudioPlayer />
-  </div>
+  {#if isAprilFirst()}
+    <div class="bottomleft">
+      <AudioPlayer />
+    </div>
+  {/if}
 {:else}
   <StartView
     bind:rootResourceLoadPromise="{rootResourceLoadPromise}"

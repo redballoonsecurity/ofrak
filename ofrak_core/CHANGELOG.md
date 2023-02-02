@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Changed
 - GUI is much faster, especially for resources with hundreds of thousands of children [#191](https://github.com/redballoonsecurity/ofrak/pull/191)
 
+### Added
+- Replace unofficial p7zip with official 7zip package. 
+
 
 ## [2.1.1](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.1.0...ofrak-v2.1.1) - 2023-01-25
 ### Fixed
