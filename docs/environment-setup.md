@@ -180,7 +180,7 @@ source ofrak-venv/bin/activate
       libmagic \
       lzop \
       pigz \
-      p7zip \
+      sevenzip \
       qemu \
       squashfs \
       rar \
