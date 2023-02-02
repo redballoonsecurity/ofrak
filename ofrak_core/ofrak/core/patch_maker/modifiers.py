@@ -211,11 +211,16 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
 
         for injected_resource, injection_config in injection_tasks:
             result = await injected_resource.run(BinaryInjectorModifier, injection_config)
+            allowed_to_delete = result.resources_modified.difference(
+                {
+                    r.get_id()
+                    for r in await injected_resource.get_ancestors(
+                        ResourceFilter(include_self=True)
+                    )
+                }
+            )
             to_delete = [
-                r
-                for r in await resource.get_descendants()
-                if r.get_id() in result.resources_modified
-                and r.get_id() != injected_resource.get_id()
+                r for r in await resource.get_descendants() if r.get_id() in allowed_to_delete
             ]
             await asyncio.gather(*(r.delete() for r in to_delete))
 

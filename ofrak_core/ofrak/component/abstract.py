@@ -149,6 +149,15 @@ class AbstractComponent(ComponentInterface[CC], ABC):
                     f"the resource context"
                 )
 
+        # Get resources modified by data patches
+        data_ids_to_models = await dependency_handler.map_data_ids_to_resources(
+            patch_result.data_id for patch_result in patch_results
+        )
+        for m in data_ids_to_models.values():
+            modified_resource_ids.add(m.id)
+
+        modified_resource_ids.difference_update(component_context.resources_deleted)
+
         # Save modified resources
         await self._save_resources(
             job_id,

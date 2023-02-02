@@ -1,3 +1,4 @@
+import functools
 import logging
 from typing import Set, List, Iterable, Dict, cast
 
@@ -33,7 +34,8 @@ class DependencyHandler:
         self._component_context = component_context
         self._resource_context = resource_context
 
-    async def _map_data_ids_to_resources(
+    @functools.lru_cache(None)
+    async def map_data_ids_to_resources(
         self, data_ids: Iterable[bytes]
     ) -> Dict[bytes, MutableResourceModel]:
         resources_by_data_id = dict()
@@ -59,7 +61,7 @@ class DependencyHandler:
 
     async def handle_post_patch_dependencies(self, patch_results: List[DataPatchesResult]):
         # Create look up maps for resources and dependencies
-        resources_by_data_id = await self._map_data_ids_to_resources(
+        resources_by_data_id = await self.map_data_ids_to_resources(
             patch_result.data_id for patch_result in patch_results
         )
 
