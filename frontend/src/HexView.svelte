@@ -56,7 +56,7 @@
   $: childRangesPromise.then((r) => {
     childRanges = r;
   });
-  $: Promise.all([dataPromise, childRangesPromise]).then((_) => {
+  $: Promise.any([dataPromise, childRangesPromise]).then((_) => {
     // Hacky solution to minimap view box rectangle only updating on scroll
     // after data has loaded -- force a scroll to reload the rectangle after a
     // timeout
@@ -105,27 +105,20 @@
       return [];
     }
     const data = await dataPromise;
-    const childRanges = (
-      await Promise.all(
-        children.map(async (child) => [
-          child,
-          await child.get_data_range_within_parent(),
-        ])
-      )
-    )
+    const childRanges = Object.entries(await resource.get_child_data_ranges())
       .filter(
         ([_, rangeInParent]) =>
           rangeInParent !== null && rangeInParent !== undefined
       )
       .sort((first, second) => first[1][0] - second[1][0])
-      .map(([child, rangeInParent], i) => {
+      .map(([child_id, rangeInParent], i) => {
         // Important to sort before mapping so that the colors don't get mixed up.
         // If that were to happen, multiple ranges with the same color could be
         // adjacent.
         const [start, end] = rangeInParent;
         return {
           color: otherColors[i % otherColors.length],
-          resource_id: child.get_id(),
+          resource_id: child_id,
           start: start,
           end: end,
         };
@@ -167,22 +160,33 @@
   }
   $: childRangesPromise = calculateRanges($selectedResource, dataPromise);
 
-  function getRangeInfo(index, childRanges) {
+  function getRangeInfo(T, childRanges) {
     if (childRanges === undefined) {
       return null;
     }
 
-    for (let i = 0; i < childRanges.length; i++) {
-      let range = childRanges[i];
-      if (range.start <= index && index < range.end) {
+    // Perform binary search using range start offsets.
+    // https://en.wikipedia.org/wiki/Binary_search_algorithm#Algorithm
+    let L = 0,
+      R = childRanges.length - 1;
+    while (true) {
+      if (L > R) {
+        break;
+      }
+
+      let m = Math.floor((L + R) / 2);
+      let range = childRanges[m];
+      if (range.start <= T && T < range.end) {
         let result = {
           foreground: "var(--main-bg-color)",
           background: range.color,
           resource_id: range.resource_id,
         };
         return result;
-      } else if (index < range.start) {
-        break;
+      } else if (range.start < T) {
+        L = m + 1;
+      } else if (range.start > T) {
+        R = m - 1;
       }
     }
 
@@ -190,9 +194,9 @@
   }
 </script>
 
-{#await Promise.all([dataPromise, childRangesPromise])}
+{#await dataPromise}
   <LoadingAnimation />
-{:then [dataResult, childRangesResult]}
+{:then dataResult}
   {#if dataResult !== undefined && dataResult.byteLength > 0}
     <!-- 
       The magic number below is the largest height that Firefox will support with
@@ -221,37 +225,49 @@
 
           <span class="spacer"> </span>
 
-          <div>
-            {#each chunks as hexes, chunkIndex}
-              <div>
-                {#each hexes as byte, byteIndex}
-                  {@const rangeInfo = getRangeInfo(
-                    chunkIndex * alignment + byteIndex + start,
-                    childRangesResult,
-                    byte
-                  )}
-                  {#if rangeInfo?.resource_id === null || rangeInfo?.resource_id === undefined}
+          {#await childRangesPromise}
+            <div>
+              {#each chunks as hexes}
+                <div>
+                  {#each hexes as byte}
                     <span class="byte">{byte}</span>
-                  {:else}
-                    <span
-                      class="byte"
-                      style:background-color="{rangeInfo.background}"
-                      style:color="{rangeInfo.foreground}"
-                      style:cursor="pointer"
-                      style:user-select="none"
-                      title="{rangeInfo.resource_id !== null
-                        ? rangeInfo.resource_id
-                        : ''}"
-                      on:dblclick="{() => {
-                        resourceNodeDataMap[$selected].collapsed = false;
-                        $selected = rangeInfo.resource_id;
-                      }}">{byte}</span
-                    >
-                  {/if}
-                {/each}
-              </div>
-            {/each}
-          </div>
+                  {/each}
+                </div>
+              {/each}
+            </div>
+          {:then childRangesResult}
+            <div>
+              {#each chunks as hexes, chunkIndex}
+                <div>
+                  {#each hexes as byte, byteIndex}
+                    {@const rangeInfo = getRangeInfo(
+                      chunkIndex * alignment + byteIndex + start,
+                      childRangesResult,
+                      byte
+                    )}
+                    {#if rangeInfo?.resource_id === null || rangeInfo?.resource_id === undefined}
+                      <span class="byte">{byte}</span>
+                    {:else}
+                      <span
+                        class="byte"
+                        style:background-color="{rangeInfo.background}"
+                        style:color="{rangeInfo.foreground}"
+                        style:cursor="pointer"
+                        style:user-select="none"
+                        title="{rangeInfo.resource_id !== null
+                          ? rangeInfo.resource_id
+                          : ''}"
+                        on:dblclick="{() => {
+                          resourceNodeDataMap[$selected].collapsed = false;
+                          $selected = rangeInfo.resource_id;
+                        }}">{byte}</span
+                      >
+                    {/if}
+                  {/each}
+                </div>
+              {/each}
+            </div>
+          {/await}
 
           <span class="spacer"></span>
 

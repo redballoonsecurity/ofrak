@@ -2,7 +2,9 @@
 
 ## Install
 
-Binary Ninja is not distributed with OFRAK. Instead, if a license is present, the Docker build step will run the official headless installer using the provided license. **You need to have a valid BinaryNinja license to build and run the image.** For more details, [read about the environment setup](https://ofrak.com/docs/environment-setup.html).
+Binary Ninja is not distributed with OFRAK. **You need to have a valid headless BinaryNinja license to build and run the image.** For more details, [read about the environment setup](../environment-setup.md#binary-ninja).
+
+The recommended BinaryNinja version to use with OFRAK is 3.2.3814. If you are running OFRAK outside of the Docker image, you can switch to this version of BinaryNinja using the [BinaryNinja version switcher](https://github.com/Vector35/binaryninja-api/blob/dev/python/examples/version_switcher.py).
 
 To make this backend available to OFRAK, the Docker container should be run with the same license file from the installation step. The license can then be mounted into the Docker container at location `/root/.binaryninja/license.dat` by adding the following arguments to the `docker run` command:
 
