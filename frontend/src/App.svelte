@@ -58,9 +58,13 @@
     useTextView = false,
     rootResourceLoadPromise = new Promise((resolve) => {}),
     resourceNodeDataMap = {},
-    resources = {},
-    riddleAnswered = false;
+    resources = {};
   let carouselSelection, currentResource, rootResource, modifierView;
+
+  let riddleAnswered = JSON.parse(window.localStorage.getItem("riddleSolved"));
+  if (riddleAnswered === null || riddleAnswered === undefined) {
+    riddleAnswered = false;
+  }
 
   $: if ($selected !== undefined) {
     currentResource = resources[$selected];
@@ -110,6 +114,10 @@ Answer by running riddle.answer('your answer here') from the console.`);
     answer: (s) => {
       if (s.toLocaleLowerCase().endsWith(atob("a2V5Ym9hcmQ="))) {
         riddleAnswered = true;
+        window.localStorage.setItem(
+          "riddleSolved",
+          JSON.stringify(riddleAnswered)
+        );
       }
     },
   };
