@@ -380,6 +380,8 @@ class _DataRoot:
             children_overlapping_ranges[patch_range] = self._get_ids_in_range(
                 start_range=(None, patch_range.end),
                 end_range=(patch_range.start, None),
+                start_inclusivity=(False, False),
+                end_inclusivity=(False, False),
             )
 
         for patched_range, overlapping_data_ids in children_overlapping_ranges.items():
@@ -423,7 +425,7 @@ class _DataRoot:
                     yield from vals
         elif end_range != (None, None):
             ends_iter = self._iter_grid_axis(
-                self._grid_starts_first, end_min, end_max, end_inclusivity
+                self._grid_ends_first, end_min, end_max, end_inclusivity
             )
             for _, starts in ends_iter:
                 starts_iter = self._iter_grid_axis(starts, start_min, start_max, start_inclusivity)
@@ -437,17 +439,20 @@ class _DataRoot:
     def _resize_range(
         self, resized_range: Range, size_diff: int
     ) -> Iterable[Tuple[DataId, Tuple[int, int]]]:
+        # Update the _grid_ends_first
         for ids_ending_after_range in self._shift_grid_axis(
             self._grid_ends_first,
             size_diff,
             merge_func=self._merge_columns,
             minimum=resized_range.end,
+            inclusive=(True, False) if resized_range.length() != 0 else (False, False),
         ):
             for _, ids_starting_before_range in self._iter_grid_axis(
                 ids_ending_after_range,
                 maximum=resized_range.end,
             ):
                 for model_id in ids_starting_before_range:
+                    # Only end shifted
                     yield model_id, (0, size_diff)
             for ids_entirely_after_range in self._shift_grid_axis(
                 ids_ending_after_range,
@@ -456,15 +461,39 @@ class _DataRoot:
                 minimum=resized_range.end,
             ):
                 for model_id in ids_entirely_after_range:
+                    # Both start and end shifted
                     yield model_id, (size_diff, size_diff)
+
+        # Update the _grid_starts_first
+        for _, ids_starting_before_range in self._iter_grid_axis(
+            self._grid_starts_first,
+            maximum=resized_range.start,
+            inclusive=(True, True) if resized_range.length() != 0 else (True, False),
+        ):
+            for _ in self._shift_grid_axis(
+                ids_starting_before_range,
+                size_diff,
+                merge_func=set.union,
+                minimum=resized_range.start,
+                inclusive=(False, False),
+            ):
+                # Only end shifted
+                pass
 
         for ends in self._shift_grid_axis(
             self._grid_starts_first,
             size_diff,
             merge_func=self._merge_columns,
             minimum=resized_range.end,
+            inclusive=(True, False),
         ):
-            self._shift_grid_axis(ends, size_diff, merge_func=set.union)
+            for _ in self._shift_grid_axis(
+                ends,
+                size_diff,
+                merge_func=set.union,
+            ):
+                # Both start and end shifted
+                pass
 
     @staticmethod
     def _add_to_grid(
@@ -537,6 +566,7 @@ class _DataRoot:
         merge_func: Callable[[T, T], T],
         minimum: Optional[int] = None,
         maximum: Optional[int] = None,
+        inclusive: Tuple[bool, bool] = (True, False),
     ) -> Iterable[T]:
         """
         Shift a range of values in an axis, without affecting the sorted order of the points in
@@ -554,7 +584,10 @@ class _DataRoot:
         post_yield = None
 
         if minimum is not None:
-            min_i = _CompareFirstTuple.bisect_left(axis, minimum)
+            if inclusive[0]:
+                min_i = _CompareFirstTuple.bisect_left(axis, minimum)
+            else:
+                min_i = _CompareFirstTuple.bisect_right(axis, minimum)
         else:
             min_i = 0
 
@@ -565,13 +598,15 @@ class _DataRoot:
                     f"shifting {minimum} to {maximum} by {shift} would collide at the lower range!"
                 )
             elif post_shift_min == axis[min_i - 1][0]:
-                # merge the lowest val in shifted range into previous
+                # will merge the lowest val in shifted range into previous
                 val1 = axis[min_i - 1][1]
                 _, pre_yield = axis.pop(min_i)
-                axis[min_i - 1] = _CompareFirstTuple(post_shift_min, merge_func(val1, pre_yield))
 
         if maximum is not None:
-            max_i = _CompareFirstTuple.bisect_right(axis, maximum)
+            if inclusive[1]:
+                max_i = _CompareFirstTuple.bisect_left(axis, maximum)
+            else:
+                max_i = _CompareFirstTuple.bisect_right(axis, maximum)
         else:
             max_i = len(axis)
 
@@ -582,15 +617,15 @@ class _DataRoot:
                     f"shifting {minimum} to {maximum} by {shift} would collide at the upper range!"
                 )
             elif post_shift_max == axis[max_i + 1][0]:
-                # merge the highest val in shifted range into next
+                # will merge the highest val in shifted range into next
                 val1 = axis[max_i + 1][1]
                 _, post_yield = axis.pop(max_i)
-                axis[max_i + 1] = _CompareFirstTuple(post_shift_max, merge_func(val1, post_yield))
 
                 max_i -= 1
 
         if pre_yield is not None:
             yield pre_yield
+            axis[min_i - 1] = _CompareFirstTuple(post_shift_min, merge_func(val1, pre_yield))
 
         i = min_i
         while i < max_i:
@@ -601,6 +636,7 @@ class _DataRoot:
 
         if post_yield is not None:
             yield post_yield
+            axis[max_i + 2] = _CompareFirstTuple(post_shift_max, merge_func(val1, post_yield))
 
     @staticmethod
     def _merge_columns(
@@ -612,10 +648,8 @@ class _DataRoot:
             vals = tuple(v for _, v in _vals)
             if len(vals) == 1:
                 val: Set[DataId] = vals[0]
-            elif len(vals) == 2:
-                val = set.union(*vals)
             else:
-                raise NotImplementedError()
+                val = set.union(*vals)
 
             merged_columns.append(_CompareFirstTuple(key, val))
 
