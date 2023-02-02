@@ -93,11 +93,14 @@
     preExistingRootsPromise = new Promise(() => {}),
     tryHash = !!window.location.hash;
   let mouseX, selectedAnimal;
+  const warnFileSizeMb = 250;
 
   async function createRootResource(f) {
     if (
-      f.size > 1024 * 1024 * 250 &&
-      !window.confirm("Loading a large file may be slow. Are you sure?")
+      f.size > 1024 * 1024 * warnFileSizeMb &&
+      !window.confirm(
+        `Loading a large file (>${warnFileSizeMb}MB) may be slow. Are you sure?`
+      )
     ) {
       showRootResource = false;
       return;
