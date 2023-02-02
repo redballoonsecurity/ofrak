@@ -248,7 +248,10 @@
     {:then preExistingRootResources}
       {#if preExistingRootsPromise && preExistingRootsPromise.length > 0}
         <form on:submit|preventDefault="{choosePreExistingRoot}">
-          <select bind:value="{selectedPreExistingRoot}">
+          <select
+            on:click|stopPropagation="{() => undefined}"
+            bind:value="{selectedPreExistingRoot}"
+          >
             <option value="{null}">Open existing resource</option>
             {#each preExistingRootResources as preExistingRoot}
               <option value="{preExistingRoot}">
@@ -262,8 +265,10 @@
             {/each}
           </select>
 
-          <button disabled="{!selectedPreExistingRoot}" type="submit"
-            >Go!</button
+          <button
+            on:click|stopPropagation="{() => undefined}"
+            disabled="{!selectedPreExistingRoot}"
+            type="submit">Go!</button
           >
         </form>
       {:else}
