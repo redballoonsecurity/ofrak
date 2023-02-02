@@ -81,6 +81,7 @@
   import { onMount } from "svelte";
   import TextDivider from "./TextDivider.svelte";
   import FileBrowser from "./FileBrowser.svelte";
+  import { numBytesToQuantity } from "./helpers";
 
   export let rootResourceLoadPromise,
     showRootResource,
@@ -93,13 +94,15 @@
     preExistingRootsPromise = new Promise(() => {}),
     tryHash = !!window.location.hash;
   let mouseX, selectedAnimal;
-  const warnFileSizeMb = 250;
+  const warnFileSize = 250 * 1024 * 1024;
 
   async function createRootResource(f) {
     if (
-      f.size > 1024 * 1024 * warnFileSizeMb &&
+      f.size > warnFileSize &&
       !window.confirm(
-        `Loading a large file (>${warnFileSizeMb}MB) may be slow. Are you sure?`
+        `Loading a large file (${numBytesToQuantity(
+          f.size
+        )} > ${numBytesToQuantity(warnFileSize)}) may be slow. Are you sure?`
       )
     ) {
       showRootResource = false;
