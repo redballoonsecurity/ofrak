@@ -39,7 +39,8 @@ export function hexToByteArray(hex) {
  */
 export function cleanOfrakType(t) {
   const elements = t.split(".");
-  return elements[elements.length - 1];
+  const last = elements[elements.length - 1];
+  return last.replace(/AttributesType\[(.*)\]/, "$1");
 }
 
 /***
@@ -49,6 +50,13 @@ export function buf2hex(buffer, joinchar) {
   return Array.from(new Uint8Array(buffer))
     .map((x) => x.toString(16).padStart(2, "0"))
     .join(joinchar ? joinchar : "");
+}
+
+/**
+ * Asynchronously sleep for a certain number of milliseconds.
+ */
+export async function sleep(ms) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /***

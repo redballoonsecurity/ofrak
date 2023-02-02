@@ -8,10 +8,10 @@ from types import ModuleType
 from typing import Dict, Iterable, List, Optional, Sequence, Type
 
 from importlib_metadata import entry_points
-from ofrak.ofrak_context import OFRAKContext, OFRAK
 
 from ofrak.component.interface import ComponentInterface
 from ofrak.model.component_model import ComponentExternalTool
+from ofrak.ofrak_context import OFRAKContext, OFRAK
 from synthol.injector import DependencyInjector
 
 
@@ -125,6 +125,13 @@ class OfrakCommandRunsScript(OfrakCommand, ABC):
             "components missing some dependencies",
             action="store_true",
         )
+        command_subparser.add_argument(
+            "-b",
+            "--backend",
+            action="store",
+            help="Set GUI server backend.",
+            default=None,
+        )
 
     def run(self, ofrak_env: OFRAKEnvironment, args: Namespace):
         if type(args.logging_level) is int:
@@ -135,6 +142,31 @@ class OfrakCommandRunsScript(OfrakCommand, ABC):
             logging_level=logging_level,
             exclude_components_missing_dependencies=args.exclude_components_missing_dependencies,
         )
+
+        if args.backend is not None:
+            if args.backend.lower() == "binary-ninja":
+                import ofrak_capstone  # type: ignore
+                import ofrak_binary_ninja  # type: ignore
+
+                ofrak.discover(ofrak_capstone)
+                ofrak.discover(ofrak_binary_ninja)
+
+            elif args.backend.lower() == "ghidra":
+                import ofrak_ghidra  # type: ignore
+
+                ofrak.discover(ofrak_ghidra)
+
+            elif args.backend.lower() == "angr":
+                import ofrak_capstone  # type: ignore
+                import ofrak_angr  # type: ignore
+
+                ofrak.discover(ofrak_capstone)
+                ofrak.discover(ofrak_angr)
+            else:
+                logging.warning(
+                    "No disassembler backend specified, so no disassembly will be possible"
+                )
+
         ofrak.run(self.ofrak_func, args)
 
     @abstractmethod

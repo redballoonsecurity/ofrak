@@ -3,8 +3,9 @@ import logging
 import os
 import time
 from types import ModuleType
-from typing import Type, Any, Awaitable, Callable, List, Iterable
+from typing import Type, Any, Awaitable, Callable, List, Iterable, Optional
 
+from ofrak_type import InvalidStateError
 from synthol.injector import DependencyInjector
 
 from ofrak.component.interface import ComponentInterface
@@ -85,9 +86,16 @@ class OFRAKContext:
         return root_resource
 
     async def start_context(self):
+        if "_ofrak_context" in globals():
+            raise InvalidStateError(
+                "Cannot start OFRAK context as a context has already been started in this process!"
+            )
+        globals()["_ofrak_context"] = self
         await asyncio.gather(*(service.run() for service in self._all_ofrak_services))
 
     async def shutdown_context(self):
+        if "_ofrak_context" in globals():
+            del globals()["_ofrak_context"]
         await asyncio.gather(*(service.shutdown() for service in self._all_ofrak_services))
         logging.shutdown()
 
@@ -114,6 +122,7 @@ class OFRAK:
         self.injector = DependencyInjector()
         self._discovered_modules: List[ModuleType] = []
         self._exclude_components_missing_dependencies = exclude_components_missing_dependencies
+        self._id_service: Optional[IDServiceInterface] = None
 
     def discover(
         self,
@@ -125,7 +134,7 @@ class OFRAK:
         self._discovered_modules.append(module)
 
     def set_id_service(self, service: IDServiceInterface):
-        self.injector.bind_instance(service)
+        self._id_service = service
 
     async def create_ofrak_context(self) -> OFRAKContext:
         """
@@ -177,6 +186,9 @@ class OFRAK:
 
         self.discover(ofrak)
 
+        if self._id_service:
+            self.injector.bind_instance(self._id_service)
+
     async def _get_discovered_components(self) -> List[ComponentInterface]:
         all_discovered_components = await self.injector.get_instance(List[ComponentInterface])
         if not self._exclude_components_missing_dependencies:
@@ -200,3 +212,13 @@ class OFRAK:
         )
 
         return audited_components
+
+
+def get_current_ofrak_context() -> OFRAKContext:
+    # TODO: This is a brittle MVP, creating multiple simultaneous contexts in a single process
+    #  will probably break it!
+    ctx = globals().get("_ofrak_context")
+    if ctx is None:
+        raise InvalidStateError("Not in an OFRAK context!")
+    else:
+        return ctx
