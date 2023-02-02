@@ -11,7 +11,7 @@ def auto_validate_state(validator_function):
 
     Example usage:
     def validator_function(class_instance):
-        # validation logic
+        # validation logic, raising an error if the internal state is invalid
         ...
 
 
@@ -22,7 +22,8 @@ def auto_validate_state(validator_function):
     An instance of AutoValidatingImplementation now runs validator_function on itself after every
     method call.
 
-    :param validator_function:
+    :param validator_function: Function to check internal state of the decorated class, and should
+    raise a descriptive error if the state is invalid
 
     :return:
     """
