@@ -58,7 +58,8 @@
     useTextView = false,
     rootResourceLoadPromise = new Promise((resolve) => {}),
     resourceNodeDataMap = {},
-    resources = {};
+    resources = {},
+    riddleAnswered = false;
   let carouselSelection, currentResource, rootResource, modifierView;
 
   $: if ($selected !== undefined) {
@@ -94,10 +95,25 @@
     }
   }
 
-  function isAprilFirst() {
-    const date = new Date();
-    return date.getMonth() + 1 === 4 && date.getDate() === 1;
-  }
+  window.riddle = {
+    ask: () => {
+      console.log(`Answer the following riddle for a special Easter egg surprise:
+
+I have keys, but no locks.
+I have a space, but no room.
+You can enter, but you can't exit.
+
+What am I?
+
+Answer by running riddle.answer('your answer here') from the console.`);
+    },
+    answer: (s) => {
+      if (s.toLocaleLowerCase().endsWith("keyboard")) {
+        riddleAnswered = true;
+      }
+    },
+  };
+  window.riddle.ask();
 </script>
 
 <svelte:window on:popstate="{backButton}" />
@@ -167,7 +183,7 @@
     </Split>
   {/await}
 
-  {#if isAprilFirst()}
+  {#if riddleAnswered}
     <div class="bottomleft">
       <AudioPlayer />
     </div>
