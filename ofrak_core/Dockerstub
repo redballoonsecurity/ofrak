@@ -1,3 +1,4 @@
+ARG TARGETARCH
 # - u-boot-tools: for mkimage, to test the UImage packer/unpacker
 RUN apt-get -y update && \
     apt-get -y install --no-install-recommends \
@@ -10,7 +11,6 @@ RUN apt-get -y update && \
       lzop \
       mtd-utils \
       pigz \
-      p7zip-full \
       zip \
       qemu \
       qemu-user-static \
@@ -27,6 +27,23 @@ RUN wget https://raw.githubusercontent.com/iBotPeaches/Apktool/v2.3.3/scripts/li
   wget https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.3.3.jar -O /usr/local/bin/apktool.jar && \
   wget https://github.com/patrickfav/uber-apk-signer/releases/download/v1.0.0/uber-apk-signer-1.0.0.jar -O /usr/local/bin/uber-apk-signer.jar && \
   chmod +x /usr/local/bin/apktool*
+
+# Install official 7-zip
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+  cd tmp && \
+  wget https://www.7-zip.org/a/7z2201-linux-arm64.tar.xz && \
+  tar -xf 7z2201-linux-arm64.tar.xz && \
+  mv 7zz /usr/local/bin && \
+  rm 7z2201-linux-arm64.tar.xz 7zzs; \
+fi;
+
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+  cd tmp && \
+  wget https://www.7-zip.org/a/7z2201-linux-x64.tar.xz && \
+  tar -xf 7z2201-linux-x64.tar.xz && \
+  mv 7zz /usr/local/bin && \
+  rm 7z2201-linux-x64.tar.xz 7zzs; \
+fi;
 
 # Install the correct version of squashfs-tools. We specifically need the
 # "-no-exit" argument, which is only available in version 4.5+
