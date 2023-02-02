@@ -213,7 +213,7 @@
 
 {#if !tryHash}
   <div
-    class="center {dragging ? 'dragging' : ''}"
+    class="center clickable {dragging ? 'dragging' : ''}"
     on:dragover|preventDefault="{(e) => {
       dragging = true;
       mouseX = e.clientX;
@@ -222,14 +222,13 @@
     on:drop|preventDefault="{handleDrop}"
     on:mousemove="{(e) => (mouseX = e.clientX)}"
     on:mouseleave="{() => (mouseX = undefined)}"
+    on:click="{() => fileinput.click()}"
     style:border-color="{animals[selectedAnimal]?.color ||
       "var(--main-fg-color)"}"
     style:color="{animals[selectedAnimal]?.color || "var(--main-fg-color)"}"
   >
     {#if !dragging}
-      <h1 class="clickable" on:click="{() => fileinput.click()}">
-        Drag in a file to analyze
-      </h1>
+      <h1>Drag in a file to analyze</h1>
     {:else}
       <h1>Drop the file!</h1>
     {/if}
