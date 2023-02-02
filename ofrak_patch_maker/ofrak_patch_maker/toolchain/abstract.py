@@ -81,7 +81,7 @@ class Toolchain(ABC):
         # The keep_list should only contain FUNCTIONALLY important sections
         # (not empty .got.plt, for instance).
         # TODO: Come up with a better system to handle this...
-        self._linker_keep_list = [".data", ".rodata", ".text"]
+        self._linker_keep_list = [".data", ".rodata", ".text", ".rel"]
         self._linker_discard_list = [
             ".gnu.hash",
             ".comment",
