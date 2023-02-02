@@ -108,7 +108,7 @@ What am I?
 Answer by running riddle.answer('your answer here') from the console.`);
     },
     answer: (s) => {
-      if (s.toLocaleLowerCase().endsWith("keyboard")) {
+      if (s.toLocaleLowerCase().endsWith(atob("a2V5Ym9hcmQ="))) {
         riddleAnswered = true;
       }
     },
