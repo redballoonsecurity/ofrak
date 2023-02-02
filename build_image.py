@@ -255,8 +255,17 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
     )
     dockerfile_finish_parts += [
         f'RUN printf "{develop_makefile}" >> Makefile\n\n',
-        '# We use --network="none" to ensure all dependencies were installed in base.Dockerfile\n',
-        'RUN --network="none" make $INSTALL_TARGET\n\n',
+        ### The --network="none" is very helpful in catching all kinds of issues,
+        ### and should probably be enabled eventually.
+        ### Unfortunately it cases problems when a package has a pyproject.toml -
+        ### see https://github.com/pypa/pip/issues/6482#issuecomment-1414208986
+        ### A workaround is to use `pip install --no-build-isolation` or
+        ### `pip install --no-use-pep517` but that starts getting messy.
+        ### Leaving it as commented code here to make it easier for people
+        ### to temporarily enable it.
+        #'# We use --network="none" to ensure all dependencies were installed in base.Dockerfile\n',
+        #'RUN --network="none" make $INSTALL_TARGET\n\n',
+        "RUN make $INSTALL_TARGET\n\n",
     ]
     finish_makefile = "\\n\\\n".join(
         [
