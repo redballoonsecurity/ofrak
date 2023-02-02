@@ -58,6 +58,10 @@
     height: calc(100% - 6em);
   }
 
+  input[type="file"] {
+    display: none;
+  }
+
   .maxwidth {
     max-width: 50%;
     width: 50%;
@@ -66,6 +70,10 @@
     flex-direction: row;
     justify-content: center;
     align-items: center;
+  }
+
+  .clickable {
+    cursor: pointer;
   }
 </style>
 
@@ -88,7 +96,8 @@
     resources,
     rootResource,
     resourceNodeDataMap,
-    browsedFiles;
+    browsedFiles,
+    fileinput;
   let dragging = false,
     selectedPreExistingRoot = null,
     preExistingRootsPromise = new Promise(() => {}),
@@ -218,22 +227,14 @@
     style:color="{animals[selectedAnimal]?.color || "var(--main-fg-color)"}"
   >
     {#if !dragging}
-      <h1>Drag in a file to analyze</h1>
+      <h1 class="clickable" on:click="{() => fileinput.click()}">
+        Drag in a file to analyze
+      </h1>
     {:else}
       <h1>Drop the file!</h1>
     {/if}
 
-    <div class="maxwidth">
-      <TextDivider
-        color="{animals[selectedAnimal]?.color || 'var(--main-fg-color)'}"
-      >
-        OR
-      </TextDivider>
-    </div>
-
-    <div class="maxwidth">
-      <FileBrowser bind:files="{browsedFiles}" />
-    </div>
+    <input type="file" bind:this="{fileinput}" bind:files="{browsedFiles}" />
 
     <div class="maxwidth">
       <TextDivider
