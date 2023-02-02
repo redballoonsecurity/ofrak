@@ -51,7 +51,7 @@ HIGH_VALUE = HighValue()
 class ResourceNode:
     model: ResourceModel
     parent: Optional["ResourceNode"]
-    _children: List["ResourceNode"]
+    _children: Set["ResourceNode"]
     _ancestor_ids: Dict[bytes, int]
     _descendant_count: int
     _depth: int
@@ -59,8 +59,8 @@ class ResourceNode:
     def __init__(self, model: ResourceModel, parent: Optional["ResourceNode"]):
         self.model = model
         self.parent = parent
-        self._children = []
-        self._ancestor_ids = dict()
+        self._children: Set[ResourceNode] = set()
+        self._ancestor_ids: Dict[bytes, int] = dict()
         self._descendant_count = 0
         self._depth = 0
         if self.parent is not None:
@@ -82,7 +82,7 @@ class ResourceNode:
             parent._descendant_count += child._descendant_count + 1
             parent = parent.parent
 
-        self._children.append(child)
+        self._children.add(child)
 
     def remove_child(self, child: "ResourceNode"):
         self._children.remove(child)

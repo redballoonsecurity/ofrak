@@ -75,10 +75,10 @@ class ResourceServiceSerializer(SerializerInterface):
                 parent = resource_service._resource_store[parent_id]
             resource_node.parent = parent
             # Update `_children`
-            resource_node._children = [
+            resource_node._children = {
                 resource_service._resource_store[child_id]
                 for child_id in getattr(resource_node, "_pjson_children_ids")
-            ]
+            }
             delattr(resource_node, "_pjson_children_ids")
 
         # convert ID shorthand in _root_resources to actual nodes
