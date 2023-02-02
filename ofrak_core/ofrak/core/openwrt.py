@@ -14,6 +14,7 @@ from ofrak.core.binary import GenericBinary
 from ofrak.core.filesystem import File
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributes
+from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import ResourceFilter
@@ -279,7 +280,7 @@ class OpenWrtTrxHeaderModifier(Modifier[OpenWrtTrxHeaderModifierConfig]):
     targets = (OpenWrtTrxHeader,)
 
     async def modify(self, resource: Resource, config: OpenWrtTrxHeaderModifierConfig) -> None:
-        original_attributes = await resource.analyze(OpenWrtTrxHeader.attributes_type)
+        original_attributes = await resource.analyze(AttributesType[OpenWrtTrxHeader])
         new_attributes = ResourceAttributes.replace_updated(original_attributes, config)
         serialized_header = await OpenWrtTrxHeaderModifier.serialize(new_attributes)
         header_v = await resource.view_as(OpenWrtTrxHeader)
@@ -291,7 +292,7 @@ class OpenWrtTrxHeaderModifier(Modifier[OpenWrtTrxHeaderModifierConfig]):
 
     @staticmethod
     async def serialize(
-        updated_attributes: OpenWrtTrxHeader.attributes_type,  # type: ignore
+        updated_attributes: AttributesType[OpenWrtTrxHeader],
     ) -> bytes:
         """
         Serialize `updated_attributes` into bytes. This method doesn't perform any check or compute

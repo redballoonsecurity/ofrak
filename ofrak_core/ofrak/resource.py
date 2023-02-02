@@ -15,6 +15,7 @@ from typing import (
     Union,
     Awaitable,
     Sequence,
+    Callable,
 )
 
 from ofrak.component.interface import ComponentInterface
@@ -206,8 +207,15 @@ class Resource:
             )
         if self._resource.parent_id is None:
             return Range(0, 0)
-        parent_resource = await self.get_parent()
-        parent_data_id = parent_resource.get_data_id()
+
+        parent_models = list(
+            await self._resource_service.get_ancestors_by_id(self._resource.id, max_count=1)
+        )
+        if len(parent_models) != 1:
+            raise NotFoundError(f"There is no parent for resource {self._resource.id.hex()}")
+        parent_model = parent_models[0]
+
+        parent_data_id = parent_model.data_id
         if parent_data_id is None:
             return Range(0, 0)
 
@@ -1396,41 +1404,14 @@ class Resource:
         included, and only the types of attributes are included, not their values. It is a
         summary which gives a high level overview of the resource.
         """
-        attributes_info = ", ".join(attrs_type.__name__ for attrs_type in self._resource.attributes)
-
-        if self._resource.data_id:
-            root_data_range = await self.get_data_range_within_root()
-            parent_data_range = await self.get_data_range_within_parent()
-            data = await self.get_data()
-            if len(data) <= 128:
-                # Convert bytes to string to check .isprintable without doing .decode. Note that
-                # not all ASCII is printable, so we have to check both decodable and printable
-                raw_data_str = "".join(map(chr, data))
-                if raw_data_str.isascii() and raw_data_str.isprintable():
-                    data_string = f'data_ascii="{data.decode("ascii")}"'
-                else:
-                    data_string = f"data_hex={data.hex()}"
-            else:
-                sha256 = hashlib.sha256()
-                sha256.update(data)
-                data_string = f"data_hash={sha256.hexdigest()[:8]}"
-            data_info = (
-                f", global_offset=({hex(root_data_range.start)}-{hex(root_data_range.end)})"
-                f", parent_offset=({hex(parent_data_range.start)}-{hex(parent_data_range.end)})"
-                f", {data_string}"
-            )
-        else:
-            data_info = ""
-        return (
-            f"{self.get_id().hex()}: [caption=({self.get_caption()}), "
-            f"attributes=({attributes_info}){data_info}]"
-        )
+        return await _default_summarize_resource(self)
 
     async def summarize_tree(
         self,
         r_filter: ResourceFilter = None,
         r_sort: ResourceSort = None,
         indent: str = "",
+        summarize_resource_callback: Optional[Callable[["Resource"], Awaitable[str]]] = None,
     ) -> str:
         """
         Create a string summary of this resource and its (optionally filtered and/or sorted)
@@ -1449,6 +1430,9 @@ class Resource:
         SPACER_BLANK = "   "
         SPACER_LINE = "───"
 
+        if summarize_resource_callback is None:
+            summarize_resource_callback = _default_summarize_resource
+
         children = cast(
             List[Resource], list(await self.get_children(r_filter=r_filter, r_sort=r_sort))
         )
@@ -1461,7 +1445,7 @@ class Resource:
         else:
             tree_string = "─"
 
-        tree_string += f"{await self.summarize()}\n"
+        tree_string += f"{await summarize_resource_callback(self)}\n"
 
         # All children but the last should display as a "fork" in the drop-down tree
         # After the last child, a vertical line should not be drawn as part of the indent
@@ -1473,7 +1457,10 @@ class Resource:
 
         for child, (branch_symbol, child_indent) in zip(children, child_formatting):
             child_tree_string = await child.summarize_tree(
-                r_filter=r_filter, r_sort=r_sort, indent=child_indent
+                r_filter=r_filter,
+                r_sort=r_sort,
+                indent=child_indent,
+                summarize_resource_callback=summarize_resource_callback,
             )
             tree_string += f"{indent}{branch_symbol}{SPACER_LINE}{child_tree_string}"
         return tree_string
@@ -1652,3 +1639,35 @@ class ResourceFactory:
                 self._resource_service,
                 self._job_service,
             )
+
+
+async def _default_summarize_resource(resource: Resource) -> str:
+    attributes_info = ", ".join(attrs_type.__name__ for attrs_type in resource._resource.attributes)
+
+    if resource._resource.data_id:
+        root_data_range = await resource.get_data_range_within_root()
+        parent_data_range = await resource.get_data_range_within_parent()
+        data = await resource.get_data()
+        if len(data) <= 128:
+            # Convert bytes to string to check .isprintable without doing .decode. Note that
+            # not all ASCII is printable, so we have to check both decodable and printable
+            raw_data_str = "".join(map(chr, data))
+            if raw_data_str.isascii() and raw_data_str.isprintable():
+                data_string = f'data_ascii="{data.decode("ascii")}"'
+            else:
+                data_string = f"data_hex={data.hex()}"
+        else:
+            sha256 = hashlib.sha256()
+            sha256.update(data)
+            data_string = f"data_hash={sha256.hexdigest()[:8]}"
+        data_info = (
+            f", global_offset=({hex(root_data_range.start)}-{hex(root_data_range.end)})"
+            f", parent_offset=({hex(parent_data_range.start)}-{hex(parent_data_range.end)})"
+            f", {data_string}"
+        )
+    else:
+        data_info = ""
+    return (
+        f"{resource.get_id().hex()}: [caption=({resource.get_caption()}), "
+        f"attributes=({attributes_info}){data_info}]"
+    )

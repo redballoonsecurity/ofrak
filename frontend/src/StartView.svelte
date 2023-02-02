@@ -63,14 +63,14 @@
   import LoadingText from "./LoadingText.svelte";
 
   import { animals } from "./animals.js";
-  import { RemoteResourceFactory } from "./ofrak/remote_resource.js";
   import { selected } from "./stores.js";
+  import { remote_model_to_resource } from "./ofrak/remote_resource";
 
   import { onMount } from "svelte";
 
   export let rootResourceLoadPromise,
     showRootResource,
-    resourceFactory,
+    resources,
     rootResource,
     resourceNodeDataMap;
   let dragging = false,
@@ -79,21 +79,14 @@
     tryHash = !!window.location.hash;
   let mouseX, selectedAnimal;
 
-  function setBackend(_selectedRootID, _resourceFactory) {
-    resourceFactory = _resourceFactory;
-    rootResource = resourceFactory.create(_selectedRootID);
-    $selected = _selectedRootID;
-  }
-
   async function createRootResource(f) {
-    const rootModel = await fetch(`/api/create_root_resource?name=${f.name}`, {
+    const rootModel = await fetch(`/create_root_resource?name=${f.name}`, {
       method: "POST",
       body: await f.arrayBuffer(),
     }).then((r) => r.json());
 
-    const _resourceFactory = new RemoteResourceFactory();
-    _resourceFactory.add_to_cache(rootModel);
-    setBackend(rootModel.id, _resourceFactory);
+    rootResource = remote_model_to_resource(rootModel, resources);
+    $selected = rootModel.id;
   }
 
   function choosePreExistingRoot() {
@@ -101,9 +94,11 @@
       dragging = false;
       showRootResource = true;
 
-      const _resourceFactory = new RemoteResourceFactory();
-      _resourceFactory.add_to_cache(selectedPreExistingRoot);
-      setBackend(selectedPreExistingRoot.id, _resourceFactory);
+      rootResource = remote_model_to_resource(
+        selectedPreExistingRoot,
+        resources
+      );
+      $selected = selectedPreExistingRoot.id;
 
       rootResourceLoadPromise = Promise.resolve(undefined);
     }
@@ -120,32 +115,31 @@
   }
 
   async function getResourcesFromHash(resourceId) {
-    const root = await fetch(`/api/${resourceId}/get_root`).then((r) => {
+    const root = await fetch(`/${resourceId}/get_root`).then((r) => {
       if (!r.ok) {
         throw Error(r.statusText);
       }
       return r.json();
     });
 
-    const _resourceFactory = new RemoteResourceFactory();
-    _resourceFactory.add_to_cache(root);
-    setBackend(root.id, _resourceFactory);
+    rootResource = remote_model_to_resource(root, resources);
+    $selected = root.id;
 
-    let resource = await fetch(`/api/${resourceId}/`).then((r) => {
+    let resource = await fetch(`/${resourceId}/`).then((r) => {
       if (!r.ok) {
         throw Error(r.statusText);
       }
       return r.json();
     });
-    _resourceFactory.add_to_cache(resource);
+    resources[resource.id] = remote_model_to_resource(resource, resources);
     while (resource.parent_id) {
-      resource = await fetch(`/api/${resource.parent_id}/`).then((r) => {
+      resource = await fetch(`/${resource.parent_id}/`).then((r) => {
         if (!r.ok) {
           throw Error(r.statusText);
         }
         return r.json();
       });
-      _resourceFactory.add_to_cache(resource);
+      resources[resource.id] = remote_model_to_resource(resource, resources);
 
       if (resourceNodeDataMap[resource.id] === undefined) {
         resourceNodeDataMap[resource.id] = {};
@@ -167,7 +161,7 @@
   }
 
   onMount(async () => {
-    preExistingRootsPromise = await fetch(`/api/get_root_resources`).then((r) =>
+    preExistingRootsPromise = await fetch(`/get_root_resources`).then((r) =>
       r.json()
     );
   });

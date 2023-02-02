@@ -35,8 +35,12 @@ class GNU_AVR_5_Toolchain(Abstract_GNU_Toolchain):
             self._assembler_flags.append(
                 f"-mmcu={self._config.assembler_cpu or processor.sub_isa.value}"
             )
+            self._preprocessor_flags.append(
+                f"-mmcu={self._config.compiler_cpu or processor.sub_isa.value}"
+            )
         else:
             raise ValueError("sub_isa is required for AVR linking")
+        self._compiler_flags.append("-fno-optimize-sibling-calls")
 
     @property
     def name(self) -> str:

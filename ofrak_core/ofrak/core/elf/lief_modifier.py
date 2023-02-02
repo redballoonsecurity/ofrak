@@ -1,6 +1,6 @@
 import tempfile
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 import lief
 
@@ -22,6 +22,7 @@ class LiefAddSegmentConfig(ComponentConfig):
     :ivar rwx_flags: string representation of the new segment's R/W/X permissions
     :ivar replace_note: replace the unused NOTE segment with the new segment, rather than adding a
     new segment. defaults to `True`, as adding a new segment may corrupt the ELF due to a LIEF bug.
+    :ivar physical_address: overwrite the default physical address (defaults to the virtual address)
     """
 
     virtual_address: int
@@ -29,6 +30,7 @@ class LiefAddSegmentConfig(ComponentConfig):
     content: List[int]
     rwx_flags: str
     replace_note: bool = True
+    physical_address: Optional[int] = None
 
 
 class LiefAddSegmentModifier(Modifier[LiefAddSegmentConfig]):
@@ -43,6 +45,8 @@ class LiefAddSegmentModifier(Modifier[LiefAddSegmentConfig]):
         segment.content = config.content
         segment.alignment = config.alignment
         segment.virtual_address = config.virtual_address
+        if config.physical_address is not None:
+            segment.physical_address = config.physical_address
         if "r" in config.rwx_flags:
             segment.add(lief.ELF.SEGMENT_FLAGS.R)
         if "w" in config.rwx_flags:
@@ -56,7 +60,9 @@ class LiefAddSegmentModifier(Modifier[LiefAddSegmentConfig]):
             #   and https://github.com/lief-project/LIEF/issues/143
             if not binary.has(lief.ELF.SEGMENT_TYPES.NOTE):
                 raise ValueError("Binary must have a NOTE section to add a new section")
-            _ = binary.replace(segment, binary[lief.ELF.SEGMENT_TYPES.NOTE])
+            segment = binary.replace(segment, binary[lief.ELF.SEGMENT_TYPES.NOTE])
+            if config.physical_address is not None:
+                segment.physical_address = config.physical_address
         else:
             _ = binary.add(segment)
 

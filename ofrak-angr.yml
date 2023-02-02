@@ -9,4 +9,5 @@ packages_paths:
     "ofrak_core",
     "disassemblers/ofrak_angr",
     "disassemblers/ofrak_capstone",
+    "frontend",
   ]

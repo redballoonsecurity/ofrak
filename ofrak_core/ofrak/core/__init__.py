@@ -41,7 +41,7 @@ from ofrak.core.lzo import *
 from ofrak.core.magic import *
 from ofrak.core.memory_region import *
 from ofrak.core.openwrt import *
-from ofrak.core.p7zip import *
+from ofrak.core.seven_zip import *
 from ofrak.core.program import *
 from ofrak.core.program_section import *
 from ofrak.core.rar import *
@@ -49,6 +49,8 @@ from ofrak.core.squashfs import *
 from ofrak.core.strings import *
 from ofrak.core.strings_analyzer import *
 from ofrak.core.tar import *
+from ofrak.core.ubi import *
+from ofrak.core.ubifs import *
 from ofrak.core.uf2 import *
 from ofrak.core.uimage import *
 from ofrak.core.zip import *

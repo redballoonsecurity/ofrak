@@ -110,7 +110,7 @@
             a.target = "_blank";
             a.download =
               rootResource.get_attributes()[
-                "ofrak.model._auto_attributes.FilesystemEntryAutoAttributes"
+                "ofrak.model._auto_attributes.AttributesType[FilesystemEntry]"
               ]?.name || "";
             a.click();
 

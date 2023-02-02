@@ -1,39 +1,168 @@
-import { Resource, ResourceModel, ResourceFactory } from "./resource";
+import { Resource } from "./resource";
 
-export class RemoteResource extends Resource {
-  constructor(resource_model, factory) {
-    super(resource_model);
-    this.factory = factory;
-    this.uri = `/api/${this.model.resource_id}`;
-  }
+let batchQueues = {};
 
-  async get_data(range) {
-    if (this.get_data_id() === null) {
-      return [];
-    }
-    return await fetch(`${this.uri}/get_data`)
-      .then((r) => r.blob())
-      .then((b) => b.arrayBuffer());
-  }
+function createQueue(route, maxlen) {
+  batchQueues[route] = {
+    maxlen: maxlen != undefined ? maxlen : 1024,
+    requests: [],
+    responses: {},
+    timeout: null,
+    getResults: async (requests) => {
+      const queue = batchQueues[route];
+      if (!requests) {
+        requests = queue.requests;
+        queue.requests = [];
+      }
 
-  async get_data_range_within_parent() {
-    if (this.model.data_id === null) {
-      return null;
-    }
-    const rj = await fetch(`${this.uri}/get_data_range_within_parent`).then(
-      async (r) => {
+      const result_models = await fetch(`/batch/${route}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requests),
+      }).then(async (r) => {
         if (!r.ok) {
           throw Error(JSON.stringify(await r.json(), undefined, 2));
         }
-        return r.json();
-      }
-    );
+        return await r.json();
+      });
 
+      for (const [child_id, result_model] of Object.entries(result_models)) {
+        if (!queue.responses[child_id]) {
+          // This should only happen in two cases:
+          // 1. The server responds with IDs we didn't ask for
+          // 2. batchedCall was called with this ID twice, and an earlier batch
+          //    resolved all of the responses for this ID already
+          continue;
+        }
+        queue.responses[child_id].forEach((callback) => callback(result_model));
+        delete queue.responses[child_id];
+      }
+    },
+  };
+}
+
+async function batchedCall(resource, route, maxlen) {
+  if (!batchQueues[route]) {
+    createQueue(route, maxlen);
+  }
+  const queue = batchQueues[route];
+
+  clearTimeout(queue.timeout);
+  queue.requests.push(resource.resource_id);
+  if (!queue.responses[resource.resource_id]) {
+    queue.responses[resource.resource_id] = [];
+  }
+  let result = new Promise((resolve) => {
+    queue.responses[resource.resource_id].push(resolve);
+  });
+
+  if (queue.requests.length > queue.maxlen) {
+    const requestsCopy = queue.requests;
+    queue.requests = [];
+    await queue.getResults(requestsCopy);
+  } else {
+    queue.timeout = setTimeout(queue.getResults, 100);
+  }
+
+  return await result;
+}
+
+export class RemoteResource extends Resource {
+  constructor(
+    resource_id,
+    data_id,
+    parent_id,
+    tags,
+    caption,
+    attributes,
+    resource_list
+  ) {
+    super(resource_id, data_id, parent_id, tags, caption, attributes);
+
+    this.resource_list = resource_list;
+    this.uri = `/${this.resource_id}`;
+    this.cache = {
+      get_children: undefined,
+      get_data_range_within_parent: undefined,
+      get_child_data_ranges: undefined,
+      get_data: undefined,
+      get_ancestors: undefined,
+    };
+  }
+
+  async flush_cache() {
+    Object.keys(this.cache).forEach((k) => {
+      this.cache[k] = undefined;
+    });
+  }
+
+  update() {
+    const newer = this.resource_list[this.resource_id];
+    if (!newer) {
+      return;
+    }
+    this.tags = newer.tags;
+    this.caption = newer.caption;
+    this.attributes = newer.attributes;
+  }
+
+  async get_children(r_filter, r_sort) {
+    if (this.cache["get_children"]) {
+      return this.cache["get_children"];
+    }
+
+    const model = await batchedCall(this, "get_children");
+    this.cache["get_children"] = remote_models_to_resources(
+      model,
+      this.resource_list
+    );
+    return this.cache["get_children"];
+  }
+
+  async get_data(range) {
+    if (this.data_id === null) {
+      return [];
+    }
+
+    if (this.cache["get_data"]) {
+      return this.cache["get_data"];
+    }
+    let result = await fetch(`${this.uri}/get_data`)
+      .then((r) => r.blob())
+      .then((b) => b.arrayBuffer());
+    this.cache["get_data"] = result;
+    return result;
+  }
+
+  async get_data_range_within_parent() {
+    if (this.data_id === null) {
+      return null;
+    }
+    let rj;
+    if (this.cache["get_data_range_within_parent"]) {
+      rj = this.cache["get_data_range_within_parent"];
+    } else {
+      rj = await batchedCall(this, "get_data_range_within_parent", 1024);
+      this.cache["get_data_range_within_parent"] = rj;
+    }
     if (rj.length !== 2 || (0 === rj[0] && 0 === rj[1])) {
       return null;
     }
-
     return rj;
+  }
+
+  async get_child_data_ranges() {
+    if (this.cache["get_child_data_ranges"]) {
+      return this.cache["get_child_data_ranges"];
+    }
+
+    let result = await fetch(`${this.uri}/get_child_data_ranges`).then((r) =>
+      r.json()
+    );
+    this.cache["get_child_data_ranges"] = result;
+    return result;
   }
 
   async unpack() {
@@ -45,7 +174,9 @@ export class RemoteResource extends Resource {
       }
       return r.json();
     });
-    this.factory.ingest_component_results(unpack_results);
+    ingest_component_results(unpack_results, this.resource_list);
+    this.flush_cache();
+    this.update();
   }
 
   async identify() {
@@ -57,7 +188,8 @@ export class RemoteResource extends Resource {
       }
       return r.json();
     });
-    this.factory.ingest_component_results(identify_results);
+    ingest_component_results(identify_results, this.resource_list);
+    this.update();
   }
 
   async unpack_recursively() {
@@ -70,7 +202,9 @@ export class RemoteResource extends Resource {
       }
       return r.json();
     });
-    this.factory.ingest_component_results(unpack_recursively_results);
+    ingest_component_results(unpack_recursively_results, this.resource_list);
+    this.flush_cache();
+    this.update();
   }
 
   async pack() {
@@ -82,7 +216,9 @@ export class RemoteResource extends Resource {
       }
       return r.json();
     });
-    this.factory.ingest_component_results(pack_results);
+    ingest_component_results(pack_results, this.resource_list);
+    this.flush_cache();
+    this.update();
   }
 
   async pack_recursively() {
@@ -94,7 +230,9 @@ export class RemoteResource extends Resource {
       }
       return r.json();
     });
-    this.factory.ingest_component_results(pack_results);
+    ingest_component_results(pack_results, this.resource_list);
+    this.flush_cache();
+    this.update();
   }
 
   async data_summary() {
@@ -106,7 +244,8 @@ export class RemoteResource extends Resource {
       }
       return r.json();
     });
-    this.factory.ingest_component_results(data_summary_results);
+    ingest_component_results(data_summary_results, this.resource_list);
+    this.update();
   }
 
   async analyze() {
@@ -118,7 +257,9 @@ export class RemoteResource extends Resource {
       }
       return r.json();
     });
-    this.factory.ingest_component_results(analyze_results);
+    ingest_component_results(analyze_results, this.resource_list);
+    this.flush_cache();
+    this.update();
   }
 
   async get_parent() {
@@ -130,10 +271,14 @@ export class RemoteResource extends Resource {
         return r.json();
       }
     );
-    return this._remote_models_to_resources([parent_model])[0];
+    return remote_model_to_resource(parent_model);
   }
 
   async get_ancestors(r_filter) {
+    if (this.cache["get_ancestors"]) {
+      return this.cache["get_ancestors"];
+    }
+
     const ancestor_models = await fetch(`${this.uri}/get_ancestors`).then(
       async (r) => {
         if (!r.ok) {
@@ -142,19 +287,8 @@ export class RemoteResource extends Resource {
         return r.json();
       }
     );
-    return this._remote_models_to_resources(ancestor_models);
-  }
-
-  async get_children(r_filter, r_sort) {
-    const child_models = await fetch(`${this.uri}/get_children`).then(
-      async (r) => {
-        if (!r.ok) {
-          throw Error(JSON.stringify(await r.json(), undefined, 2));
-        }
-        return r.json();
-      }
-    );
-    return this._remote_models_to_resources(child_models);
+    this.cache["get_ancestors"] = remote_models_to_resources(ancestor_models);
+    return this.cache["get_ancestors"];
   }
 
   async queue_patch(data, start, end, after, before) {
@@ -174,6 +308,7 @@ export class RemoteResource extends Resource {
       }
       return r.json();
     });
+    this.flush_cache();
   }
 
   async create_child(
@@ -198,6 +333,8 @@ export class RemoteResource extends Resource {
       }
       return await r.json();
     });
+    this.cache["get_children"] = undefined;
+    this.cache["get_child_data_ranges"] = undefined;
   }
 
   async find_and_replace(
@@ -227,7 +364,9 @@ export class RemoteResource extends Resource {
       return await r.json();
     });
 
-    this.factory.ingest_component_results(find_replace_results);
+    ingest_component_results(find_replace_results, this.resource_list);
+    this.flush_cache();
+    this.update();
   }
 
   async add_comment(optional_range, comment) {
@@ -242,8 +381,10 @@ export class RemoteResource extends Resource {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }
       const add_comment_results = await r.json();
-      this.factory.ingest_component_results(add_comment_results);
+      ingest_component_results(add_comment_results, this.resource_list);
     });
+    this.flush_cache();
+    this.update();
   }
 
   async delete_comment(optional_range) {
@@ -258,8 +399,10 @@ export class RemoteResource extends Resource {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }
       const delete_comment_results = await r.json();
-      this.factory.ingest_component_results(delete_comment_results);
+      ingest_component_results(delete_comment_results, this.resource_list);
     });
+    this.flush_cache();
+    this.update();
   }
 
   async search_for_vaddr(vaddr_start, vaddr_end) {
@@ -275,81 +418,42 @@ export class RemoteResource extends Resource {
       }
       return await r.json();
     });
-    return this._remote_models_to_resources(matching_models);
-  }
-
-  _remote_models_to_resources(remote_models) {
-    if (remote_models.length === 0) {
-      return [];
-    }
-
-    const resources = [];
-    for (const model of remote_models) {
-      if (this.factory.model_cache[model.resource_id] === undefined) {
-        this.factory.add_to_cache(model);
-      }
-      resources.push(this.factory.create(model.id));
-    }
-    return resources;
+    return remote_models_to_resources(matching_models);
   }
 }
 
-function remote_model_to_js_model(remote_model) {
-  const attrs = {};
+export function remote_models_to_resources(remote_models, resources) {
+  return Array.from(remote_models).map((m) =>
+    remote_model_to_resource(m, resources)
+  );
+}
 
+export function remote_model_to_resource(remote_model, resources) {
+  const attrs = {};
   for (const [attr_t, info] of remote_model.attributes) {
     attrs[attr_t] = info[1];
   }
-
-  return new ResourceModel(
+  const result = new RemoteResource(
     remote_model.id,
     remote_model.data_id,
     remote_model.parent_id,
     remote_model.tags,
     remote_model.caption,
-    attrs
+    attrs,
+    resources
   );
+
+  if (resources) {
+    resources[remote_model.id] = result;
+  }
+
+  return result;
 }
 
-export class RemoteResourceFactory extends ResourceFactory {
-  constructor() {
-    super();
-
-    this.model_cache = {};
-  }
-
-  create(resource_id) {
-    return new RemoteResource(this.model_cache[resource_id], this);
-  }
-
-  add_to_cache(remote_model) {
-    this.model_cache[remote_model.id] = remote_model_to_js_model(remote_model);
-  }
-
-  update_in_cache(remote_model) {
-    const existing_model = this.model_cache[remote_model.id];
-    const new_attrs = {};
-
-    for (const [attr_t, info] of remote_model.attributes) {
-      new_attrs[attr_t] = info[1];
-    }
-    existing_model.resource_id = remote_model.id;
-    existing_model.data_id = remote_model.data_id;
-    existing_model.parent_id = remote_model.parent_id;
-    existing_model.tags = remote_model.tags;
-    existing_model.caption = remote_model.caption;
-    existing_model.attributes = new_attrs;
-  }
-
-  ingest_component_results(results) {
-    for (const new_model of results["created"]) {
-      this.add_to_cache(new_model);
-    }
-    for (const modified_model of results["modified"]) {
-      this.update_in_cache(modified_model);
-    }
-    for (const deleted_id of results["deleted"]) {
-      delete this.model_cache[deleted_id];
-    }
+function ingest_component_results(results, resources) {
+  remote_models_to_resources(results["created"], resources);
+  remote_models_to_resources(results["modified"], resources);
+  for (const deleted_id of results["deleted"]) {
+    delete resources[deleted_id];
   }
 }

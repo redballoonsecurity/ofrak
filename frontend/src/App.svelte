@@ -57,15 +57,12 @@
     useAssemblyView = false,
     useTextView = false,
     rootResourceLoadPromise = new Promise((resolve) => {}),
-    resourceNodeDataMap = {};
-  let carouselSelection,
-    currentResource,
-    resourceFactory,
-    rootResource,
-    modifierView;
+    resourceNodeDataMap = {},
+    resources = {};
+  let carouselSelection, currentResource, rootResource, modifierView;
 
   $: if ($selected !== undefined) {
-    currentResource = resourceFactory.create($selected);
+    currentResource = resources[$selected];
     if (currentResource === undefined) {
       console.error("Couldn't get the resource for ID " + $selected);
     } else {
@@ -90,11 +87,16 @@
   function backButton() {
     if (
       window.location.hash &&
-      resourceFactory &&
-      resourceFactory.model_cache[window.location.hash.slice(1)]
+      resources &&
+      resources[window.location.hash.slice(1)]
     ) {
       $selected = window.location.hash.slice(1);
     }
+  }
+
+  function isAprilFirst() {
+    const date = new Date();
+    return date.getMonth() + 1 === 4 && date.getDate() === 1;
   }
 </script>
 
@@ -165,19 +167,21 @@
     </Split>
   {/await}
 
-  <div class="bottomleft">
-    <AudioPlayer />
-  </div>
+  {#if isAprilFirst()}
+    <div class="bottomleft">
+      <AudioPlayer />
+    </div>
+  {/if}
 {:else}
   <StartView
     bind:rootResourceLoadPromise="{rootResourceLoadPromise}"
     bind:showRootResource="{showRootResource}"
-    bind:resourceFactory="{resourceFactory}"
+    bind:resources="{resources}"
     bind:rootResource="{rootResource}"
     bind:resourceNodeDataMap="{resourceNodeDataMap}"
   />
 {/if}
 
 <div class="bottomright">
-  <p><a href="https://ofrak.com" target="_blank" rel="noreferrer">v0.6.0</a></p>
+  <p><a href="https://ofrak.com" target="_blank" rel="noreferrer">v2.1.1</a></p>
 </div>

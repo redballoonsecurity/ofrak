@@ -6,6 +6,7 @@ from ofrak.model.tag_model import ResourceTag
 from ofrak.component.unpacker import Unpacker
 from ofrak.core.code_region import CodeRegion
 from ofrak.model.resource_model import ResourceAttributes
+from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter
 from ofrak.core.elf.model import (
@@ -115,7 +116,7 @@ class ElfUnpacker(Unpacker[None]):
             e_section_header_r = await resource.create_child(
                 tags=(ElfSectionHeader,),
                 data_range=e_section_header_range,
-                attributes=(ElfSectionStructure.attributes_type(index),),  # type: ignore
+                attributes=(AttributesType[ElfSectionStructure](index),),
             )
             e_section_header = await e_section_header_r.view_as(ElfSectionHeader)
 
@@ -131,7 +132,7 @@ class ElfUnpacker(Unpacker[None]):
             e_section_r = await resource.create_child(
                 tags=(ElfSection,),
                 data_range=opt_e_section_range,
-                attributes=(ElfSectionStructure.attributes_type(index),),  # type: ignore
+                attributes=(AttributesType[ElfSectionStructure](index),),
             )
             sections_by_range_start[e_section_offset] = e_section_r
             if e_section_header.get_type() is ElfSectionType.FINI_ARRAY:
@@ -167,7 +168,7 @@ class ElfUnpacker(Unpacker[None]):
             e_program_header_r = await resource.create_child(
                 tags=(ElfProgramHeader,),
                 data_range=e_program_header_range,
-                attributes=(ElfSegmentStructure.attributes_type(index),),  # type: ignore
+                attributes=(AttributesType[ElfSegmentStructure](index),),
             )
 
             e_program_header = await e_program_header_r.view_as(ElfProgramHeader)
@@ -192,7 +193,7 @@ class ElfUnpacker(Unpacker[None]):
                 e_segment_r = await resource.create_child(
                     tags=(ElfSegment,),
                     data_range=opt_e_segment_range,
-                    attributes=(ElfSegmentStructure.attributes_type(index),),  # type: ignore
+                    attributes=(AttributesType[ElfSegmentStructure](index),),
                 )
 
                 # Tag the segment as a CodeRegion if the loaded segment is executable
@@ -239,7 +240,7 @@ class ElfSymbolUnpacker(Unpacker[None]):
         e_basic_header = await elf_r.get_basic_header()
         symbol_size = 16 if e_basic_header.get_bitwidth() is BitWidth.BIT_32 else 24
         await make_children_helper(
-            resource, ElfSymbol, symbol_size, ElfSymbolStructure.attributes_type
+            resource, ElfSymbol, symbol_size, AttributesType[ElfSymbolStructure]
         )
 
 

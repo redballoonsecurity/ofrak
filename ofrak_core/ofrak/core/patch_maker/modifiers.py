@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import tempfile
@@ -47,13 +48,7 @@ class PatchFromSourceModifierConfig(ComponentConfig):
 
 class PatchFromSourceModifier(Modifier):
     """
-    Modifier exposing some basic source code patching capabilities. Requires a SourceBundle,
-    a list of source files in that bundle to build patches from, a dictionary mapping those
-    source file paths to definitions for all the Segments to extract & inject from the built
-    translation unit.
-
-    Also requires: Defined ToolchainConfig and ToolchainVersion to use, as well as symbols to
-    link against.
+    Modifier exposing some basic source code patching capabilities.
     """
 
     targets = (Program,)
@@ -181,7 +176,7 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
             )
         )
 
-        injection_tasks = []
+        injection_tasks: List[Tuple[Resource, BinaryInjectorModifierConfig]] = []
 
         for segment, segment_data in config.segments_and_data:
             if segment.length == 0 or segment.vm_address == 0:
@@ -192,6 +187,8 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
                     f"bytes @ {hex(segment.vm_address)}",
                 )
             if segment.segment_name.startswith(".bss"):
+                continue
+            if segment.segment_name.startswith(".rela"):
                 continue
             if segment.segment_name.startswith(".got"):
                 # Create new .got and .plt in the exec format here here once we begin supporting
@@ -212,8 +209,16 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
 
             injection_tasks.append((region.resource, BinaryInjectorModifierConfig(patches)))
 
+        all_decendants = await resource.get_descendants()
         for injected_resource, injection_config in injection_tasks:
-            await injected_resource.run(BinaryInjectorModifier, injection_config)
+            result = await injected_resource.run(BinaryInjectorModifier, injection_config)
+            parents_to_delete = list(
+                filter(lambda r: r.get_id() in result.resources_modified, all_decendants)
+            )
+            to_delete = []
+            for parent in parents_to_delete:
+                to_delete.extend(list(await parent.get_descendants()))
+            await asyncio.gather(*(r.delete() for r in to_delete))
 
 
 @dataclass
