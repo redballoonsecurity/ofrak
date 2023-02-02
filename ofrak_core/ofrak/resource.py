@@ -207,8 +207,15 @@ class Resource:
             )
         if self._resource.parent_id is None:
             return Range(0, 0)
-        parent_resource = await self.get_parent()
-        parent_data_id = parent_resource.get_data_id()
+
+        parent_models = list(
+            await self._resource_service.get_ancestors_by_id(self._resource.id, max_count=1)
+        )
+        if len(parent_models) != 1:
+            raise NotFoundError(f"There is no parent for resource {self._resource.id.hex()}")
+        parent_model = parent_models[0]
+
+        parent_data_id = parent_model.data_id
         if parent_data_id is None:
             return Range(0, 0)
 
