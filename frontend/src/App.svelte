@@ -61,6 +61,11 @@
     resources = {};
   let carouselSelection, currentResource, rootResource, modifierView;
 
+  let riddleAnswered = JSON.parse(window.localStorage.getItem("riddleSolved"));
+  if (riddleAnswered === null || riddleAnswered === undefined) {
+    riddleAnswered = false;
+  }
+
   $: if ($selected !== undefined) {
     currentResource = resources[$selected];
     if (currentResource === undefined) {
@@ -94,10 +99,29 @@
     }
   }
 
-  function isAprilFirst() {
-    const date = new Date();
-    return date.getMonth() + 1 === 4 && date.getDate() === 1;
-  }
+  window.riddle = {
+    ask: () => {
+      console.log(`Answer the following riddle for a special Easter egg surprise:
+
+I have keys, but no locks.
+I have a space, but no room.
+You can enter, but you can't exit, though you can escape.
+
+What am I?
+
+Answer by running riddle.answer('your answer here') from the console.`);
+    },
+    answer: (s) => {
+      if (s.toLocaleLowerCase().endsWith(atob("a2V5Ym9hcmQ="))) {
+        riddleAnswered = true;
+        window.localStorage.setItem(
+          "riddleSolved",
+          JSON.stringify(riddleAnswered)
+        );
+      }
+    },
+  };
+  window.riddle.ask();
 </script>
 
 <svelte:window on:popstate="{backButton}" />
@@ -167,7 +191,7 @@
     </Split>
   {/await}
 
-  {#if isAprilFirst()}
+  {#if riddleAnswered}
     <div class="bottomleft">
       <AudioPlayer />
     </div>
