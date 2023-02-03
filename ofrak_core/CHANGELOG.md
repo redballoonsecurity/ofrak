@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Added
 - Replace unofficial p7zip with official 7zip package. 
+- Area in the GUI to jump to a given data offset
 
 ### Changed
 - GUI is much faster, especially for resources with hundreds of thousands of children [#191](https://github.com/redballoonsecurity/ofrak/pull/191)
