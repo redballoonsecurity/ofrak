@@ -31,9 +31,14 @@ class GUICommand(OfrakCommandRunsScript):
             help="Set GUI server host port.",
             default=8080,
         )
+        gui_parser.add_argument(
+            "--no-browser",
+            action="store_true",
+            help="Don't open the browser to the OFRAK GUI",
+        )
         self.add_ofrak_arguments(gui_parser)
         return gui_parser
 
     async def ofrak_func(self, ofrak_context: OFRAKContext, args: Namespace):  # pragma: no cover
-        server = await open_gui(args.hostname, args.port)
+        server = await open_gui(args.hostname, args.port, open_in_browser=(not args.no_browser))
         await server.run_until_cancelled()

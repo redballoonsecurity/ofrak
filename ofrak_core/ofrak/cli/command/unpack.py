@@ -66,6 +66,11 @@ class UnpackCommand(OfrakCommandRunsScript):
             help="Set GUI server host port.",
             default=8080,
         )
+        subparser.add_argument(
+            "--gui-no-browser",
+            action="store_true",
+            help="Don't open the browser to the OFRAK GUI",
+        )
 
         self.add_ofrak_arguments(subparser)
 
@@ -120,7 +125,12 @@ class UnpackCommand(OfrakCommandRunsScript):
         print(info_dump)
 
         if args.gui:
-            server = await open_gui(args.gui_hostname, args.gui_port, focus_resource=root_resource)
+            server = await open_gui(
+                args.gui_hostname,
+                args.gui_port,
+                focus_resource=root_resource,
+                open_in_browser=(not args.gui_no_browser),
+            )
             await server.run_until_cancelled()
 
     async def resource_tree_to_files(self, resource: Resource, path):

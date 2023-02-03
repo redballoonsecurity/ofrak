@@ -16,6 +16,7 @@ from typing import (
     Awaitable,
     Sequence,
     Callable,
+    Set,
 )
 
 from ofrak.component.interface import ComponentInterface
@@ -292,7 +293,8 @@ class Resource:
         try:
             fetched_resource = await self._resource_service.get_by_id(resource.id)
         except NotFoundError:
-            del self._resource_context.resource_models[resource.id]
+            if resource.id in self._component_context.modification_trackers:
+                del self._resource_context.resource_models[resource.id]
             return
 
         resource.reset(fetched_resource)
@@ -305,10 +307,12 @@ class Resource:
                 tasks.append(self._fetch(context_resource))
         await asyncio.gather(*tasks)
 
-    async def _update_views(self, modified: Iterable[bytes], deleted: Iterable[bytes]):
+    async def _update_views(self, modified: Set[bytes], deleted: Set[bytes]):
         for resource_id in modified:
             views_in_context = self._resource_view_context.views_by_resource[resource_id]
             for view in views_in_context.values():
+                if resource_id not in self._resource_context.resource_models:
+                    await self._fetch(view.resource.get_model())  # type: ignore
                 updated_model = self._resource_context.resource_models[resource_id]
                 fresh_view = view.create(updated_model)
                 for field in dataclasses.fields(fresh_view):
@@ -344,6 +348,9 @@ class Resource:
             ),
             job_context,
         )
+        for deleted_id in component_result.resources_deleted:
+            if deleted_id in self._component_context.modification_trackers:
+                del self._component_context.modification_trackers[deleted_id]
         await self._fetch_resources(component_result.resources_modified)
         await self._update_views(
             component_result.resources_modified, component_result.resources_deleted
@@ -386,6 +393,9 @@ class Resource:
                 all_packers=all_packers,
             )
         )
+        for deleted_id in components_result.resources_deleted:
+            if deleted_id in self._component_context.modification_trackers:
+                del self._component_context.modification_trackers[deleted_id]
         await self._fetch_resources(components_result.resources_modified)
         await self._update_views(
             components_result.resources_modified, components_result.resources_deleted

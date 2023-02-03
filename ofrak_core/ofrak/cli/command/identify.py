@@ -40,6 +40,11 @@ class IdentifyCommand(OfrakCommandRunsScript):
             help="Set GUI server host port.",
             default=8080,
         )
+        subparser.add_argument(
+            "--gui-no-browser",
+            action="store_true",
+            help="Don't open the browser to the OFRAK GUI",
+        )
 
         return subparser
 
@@ -51,7 +56,12 @@ class IdentifyCommand(OfrakCommandRunsScript):
         print(await IdentifyCommand.print_info(root_resource))
 
         if args.gui:
-            server = await open_gui(args.gui_hostname, args.gui_port, focus_resource=root_resource)
+            server = await open_gui(
+                args.gui_hostname,
+                args.gui_port,
+                focus_resource=root_resource,
+                open_in_browser=(not args.gui_no_browser),
+            )
             await server.run_until_cancelled()
 
     @staticmethod
