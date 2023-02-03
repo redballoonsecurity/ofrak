@@ -536,14 +536,6 @@ class AiohttpOFRAKServer:
         """
         return list(map(self._serialize_resource, resources))
 
-    def open_resource_in_browser(self, resource: Optional[Resource]):  # pragma: no cover
-        if resource is None:
-            url = f"http://{self._host}:{self._port}/"
-        else:
-            url = f"http://{self._host}:{self._port}/#{resource.get_id().hex()}"
-        print(f"GUI is being served on {url}")
-        webbrowser.open(url)
-
 
 async def start_server(
     ofrak_context: OFRAKContext, host: str, port: int
@@ -591,12 +583,22 @@ async def open_gui(
     port: int,
     focus_resource: Optional[Resource] = None,
     ofrak_context: Optional[OFRAKContext] = None,
+    open_in_browser: bool = True,
 ) -> AiohttpOFRAKServer:  # pragma: no cover
     if ofrak_context is None:
         ofrak_context = get_current_ofrak_context()
 
     server = await start_server(ofrak_context, host, port)
-    server.open_resource_in_browser(focus_resource)
+
+    if focus_resource is None:
+        url = f"http://{server._host}:{server._port}/"
+    else:
+        url = f"http://{server._host}:{server._port}/#{focus_resource.get_id().hex()}"
+    print(f"GUI is being served on {url}")
+
+    if open_in_browser:
+        webbrowser.open(url)
+
     return server
 
 

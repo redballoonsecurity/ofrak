@@ -19,11 +19,11 @@
     http://www.nihilore.com/license
   */
   const sources = [
-    "/sounds/Bush+Week.mp3",
-    "/sounds/Glimmer.mp3",
-    "/sounds/Motion+Blur.mp3",
-    "/sounds/Panthalassa.mp3",
-    "/sounds/Dream+Sunlight.mp3",
+    "https://static1.squarespace.com/static/57e83f709de4bbd550a2fdba/58e6e631579fb3bb25ed2822/606d59d50726d2518e6c8725/1617779204095/Dream+Sunlight.mp3",
+    "https://static1.squarespace.com/static/57e83f709de4bbd550a2fdba/58e6e631579fb3bb25ed2822/5b9332214d7a9cece566be20/1536373390381/Glimmer.mp3",
+    "https://static1.squarespace.com/static/57e83f709de4bbd550a2fdba/58e6e631579fb3bb25ed2822/6323fd85ebe8f81bc36cd975/1663303114116/Eternal+Light.mp3",
+    "https://static1.squarespace.com/static/57e83f709de4bbd550a2fdba/58e6e631579fb3bb25ed2822/5a7e6ee1ec212d8118ae4857/1518235615625/Panthalassa.mp3",
+    "https://static1.squarespace.com/static/57e83f709de4bbd550a2fdba/58e6e631579fb3bb25ed2822/5ab591b7562fa77d176c3f72/1521848881258/Motion+Blur.mp3",
   ];
   let currentSound = Math.floor(Math.random() * sources.length);
 
