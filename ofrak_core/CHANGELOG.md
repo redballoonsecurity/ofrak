@@ -9,8 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Fix long-broken `OFRAK.set_id_service` [#198](https://github.com/redballoonsecurity/ofrak/pull/198)
 
 ### Added
-- Replace unofficial p7zip with official 7zip package. 
+- Replace unofficial p7zip with official 7zip package
 - File browser dialog in the GUI
+- Area in the GUI to jump to a given data offset
 - GUI command line now has a flag to not automatically open the browser
 
 ### Changed

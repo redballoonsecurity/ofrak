@@ -48,6 +48,7 @@
   import { selected, selectedResource } from "./stores.js";
 
   import { writable } from "svelte/store";
+  import JumpToOffset from "./JumpToOffset.svelte";
 
   printConsoleArt();
 
@@ -173,6 +174,10 @@ Answer by running riddle.answer('your answer here') from the console.`);
           https://github.com/sveltejs/svelte/issues/5604 
         -->
         <svelte:fragment slot="minimap">
+          <JumpToOffset
+            dataPromise="{displayDataPromise}"
+            scrollY="{hexScrollY}"
+          />
           {#if carouselSelection === "Entropy"}
             <EntropyView scrollY="{hexScrollY}" />
           {:else if carouselSelection === "Byteclass"}
