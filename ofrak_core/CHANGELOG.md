@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 ### Fixed
 - Fix long-broken `OFRAK.set_id_service` [#198](https://github.com/redballoonsecurity/ofrak/pull/198)
-- Delete narrower list of resources when using `SegmentInjectorModifier` [#200](https://github.com/redballoonsecurity/ofrak/pull/200)
+- Fix bug in `SegmentInjectorModifier` that resulted in deleting more resources than necessary [#200](https://github.com/redballoonsecurity/ofrak/pull/200)
 
 ### Changed
 - GUI is much faster, especially for resources with hundreds of thousands of children [#191](https://github.com/redballoonsecurity/ofrak/pull/191)
