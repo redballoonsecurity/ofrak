@@ -159,6 +159,14 @@ class TestDataServiceInterface:
                 DataPatch(Range(0x0, 0x8), DATA_1, b"\xaa" * 0xA)
             ]
         )
+        """
+        DATA_0 (0x0, 0x1A)  | [-----------------------)
+        DATA_1 (0x0, 0xA)   | [---------)
+        DATA_2 (0xA, 0x12)  |           [-------)
+        DATA_3 (0xA, 0xE)   |           [---)
+        DATA_4 (0xE, 0x12)  |               [---)
+        DATA_5 (0x12, 0x1A) |                   [-------)
+        """
         patched_data = await populated_data_service.get_data(DATA_1)
         assert patched_data == b"\xaa" * 0xA
         modified_ranges = {res.data_id: res.patches for res in results}
@@ -170,6 +178,14 @@ class TestDataServiceInterface:
                 DataPatch(Range(0x2, 0x6), DATA_2, b"\x01" * 4),
             ]
         )
+        """
+        DATA_0 (0x0, 0x1A)  | [-----------------------)
+        DATA_1 (0x0, 0xA)   | [---------)
+        DATA_2 (0xA, 0x12)  |           [-------)
+        DATA_3 (0xA, 0xE)   |           [---)
+        DATA_4 (0xE, 0x12)  |               [---)
+        DATA_5 (0x12, 0x1A) |                   [-------)
+        """
         patched_data = await populated_data_service.get_data(DATA_2)
         assert patched_data == b"\x00\x00\x01\x01\x01\x01\x00\x00"
         modified_ranges = {res.data_id: res.patches for res in results}
@@ -182,14 +198,25 @@ class TestDataServiceInterface:
 
         results = await populated_data_service.apply_patches(
             [
-                # Insert some on boundary between DATA_3 and DATA_4
+                # Insert some data on boundary between DATA_3 and DATA_4
                 DataPatch(Range(0x4, 0x4), DATA_2, b"\x02" * 4),
             ]
         )
+        """
+        DATA_0 (0x0, 0x1E)  | [---------------------------)
+        DATA_1 (0x0, 0xA)   | [---------)
+        DATA_2 (0xA, 0x16)  |           [-----------)
+        DATA_3 (0xA, 0xE)   |           [---)
+        DATA_4 (0x12, 0x16) |                   [---)
+        DATA_5 (0x16, 0x1E) |                       [-------)
+        """
         patched_data = await populated_data_service.get_data(DATA_2)
         assert patched_data == b"\x00\x00\x01\x01\x02\x02\x02\x02\x01\x01\x00\x00"
         modified_ranges = {res.data_id: res.patches for res in results}
         assert modified_ranges == {DATA_0: [Range(0xE, 0xE)], DATA_2: [Range(0x4, 0x4)]}
+
+        data_3 = await populated_data_service.get_data(DATA_3)
+        assert data_3 == b"\x00\x00\x01\x01"
 
     async def test_patches_trailing_children(self, populated_data_service: DataServiceInterface):
         results = await populated_data_service.apply_patches(
@@ -232,6 +259,14 @@ class TestDataServiceInterface:
                 DataPatch(Range(0x0, 0x4), DATA_4, b""),
             ]
         )
+        """
+        DATA_0 (0x0, 0x14)  | [-------------------)
+        DATA_1 (0x0, 0x8)   | [-------)
+        DATA_2 (0x8, 0xC)   |         [---)
+        DATA_3 (0x8, 0xC)   |         [---)
+        DATA_4 (0xC, 0xC)   |             )
+        DATA_5 (0xC, 0x14)  |             [-------)
+        """
         model_0, model_2, model_3, model_4, model_5 = await populated_data_service.get_by_ids(
             (DATA_0, DATA_2, DATA_3, DATA_4, DATA_5)
         )
@@ -247,6 +282,14 @@ class TestDataServiceInterface:
                 DataPatch(Range(0x0, 0x4), DATA_3, b""),
             ]
         )
+        """
+        DATA_0 (0x0, 0x14)  | [-------------------)
+        DATA_1 (0x0, 0x8)   | [-------)
+        DATA_2 (0x8, 0xC)   |         [---)
+        DATA_3 (0x8, 0x8)   |         )
+        DATA_4 (0x8, 0x8)   |         )
+        DATA_5 (0x8, 0x10)  |         [-------)
+        """
 
         model_0, model_2, model_3, model_4, model_5 = await populated_data_service.get_by_ids(
             (DATA_0, DATA_2, DATA_3, DATA_4, DATA_5)
