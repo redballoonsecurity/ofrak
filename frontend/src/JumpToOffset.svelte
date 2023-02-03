@@ -25,7 +25,7 @@
   const alignment = 16;
 
   let dataLength = 0;
-  dataPromise.then((data) => {
+  $: dataPromise.then((data) => {
     dataLength = data.byteLength;
   });
 
