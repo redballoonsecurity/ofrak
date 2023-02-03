@@ -6,6 +6,12 @@
     font-size: xxx-large;
     line-height: 1;
     margin: 0;
+    max-width: 50%;
+    text-align: center;
+  }
+
+  form {
+    max-width: 50%;
   }
 
   .center {
@@ -75,20 +81,23 @@
   .clickable {
     cursor: pointer;
   }
+
+  .underline {
+    text-decoration: underline;
+  }
 </style>
 
 <script>
   import Animals from "./Animals.svelte";
   import LoadingAnimation from "./LoadingAnimation.svelte";
   import LoadingText from "./LoadingText.svelte";
+  import TextDivider from "./TextDivider.svelte";
 
   import { animals } from "./animals.js";
   import { selected } from "./stores.js";
   import { remote_model_to_resource } from "./ofrak/remote_resource";
 
   import { onMount } from "svelte";
-  import TextDivider from "./TextDivider.svelte";
-  import FileBrowser from "./FileBrowser.svelte";
   import { numBytesToQuantity } from "./helpers";
 
   export let rootResourceLoadPromise,
@@ -212,6 +221,7 @@
 </script>
 
 {#if !tryHash}
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div
     class="center clickable {dragging ? 'dragging' : ''}"
     on:dragover|preventDefault="{(e) => {
@@ -229,6 +239,7 @@
   >
     {#if !dragging}
       <h1>Drag in a file to analyze</h1>
+      <p>Click anwyhere to browse your computer</p>
     {:else}
       <h1>Drop the file!</h1>
     {/if}
