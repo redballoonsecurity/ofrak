@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Added
 - Replace unofficial p7zip with official 7zip package. 
 - File browser dialog in the GUI
+- GUI command line now has a flag to not automatically open the browser
 
 ### Changed
 - GUI is much faster, especially for resources with hundreds of thousands of children [#191](https://github.com/redballoonsecurity/ofrak/pull/191)
