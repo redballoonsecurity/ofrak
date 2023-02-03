@@ -105,7 +105,7 @@
 
 I have keys, but no locks.
 I have a space, but no room.
-You can enter, but you can't exit.
+You can enter, but you can't exit, though you can escape.
 
 What am I?
 
