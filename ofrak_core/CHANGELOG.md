@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Added
 - Replace unofficial p7zip with official 7zip package. 
+- Area in the GUI to jump to a given data offset
 - GUI command line now has a flag to not automatically open the browser
 
 ### Changed
