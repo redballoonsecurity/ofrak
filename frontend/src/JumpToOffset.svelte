@@ -44,17 +44,15 @@
 
 <input
   type="text"
-  on:focusout="{() => {
-    try {
-      let result = calculator.calculate(input.value);
-      $scrollY.top = result / dataLength;
-    } catch (_) {
-      input.value = `0x${startOffset.toString(16)}`;
-    }
-  }}"
   on:keyup="{(e) => {
     if (e.key === 'Enter') {
       input.blur();
+      try {
+        let result = calculator.calculate(input.value);
+        $scrollY.top = result / dataLength;
+      } catch (_) {
+        input.value = `0x${startOffset.toString(16)}`;
+      }
     }
   }}"
   on:input="{async () => {
