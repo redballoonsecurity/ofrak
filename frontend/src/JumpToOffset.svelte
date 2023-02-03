@@ -1,7 +1,7 @@
 <style>
   input {
     margin-bottom: 1em;
-    max-width: 100%;
+    width: 125%;
     background: inherit;
     color: inherit;
     border: none;
