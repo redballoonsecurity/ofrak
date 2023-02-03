@@ -55,12 +55,5 @@
       }
     }
   }}"
-  on:input="{async () => {
-    let { value, selectionStart, selectionEnd } = input;
-    input.value = value.replace(/\n/g, '');
-    await tick();
-    input.selectionStart = selectionStart;
-    input.selectionEnd = selectionEnd;
-  }}"
   bind:this="{input}"
 />
