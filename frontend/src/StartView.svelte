@@ -239,7 +239,7 @@
   >
     {#if !dragging}
       <h1>Drag in a file to analyze</h1>
-      <p>Click anwyhere to browse your computer</p>
+      <p style:margin-bottom="0">Click anwyhere to browse your computer</p>
     {:else}
       <h1>Drop the file!</h1>
     {/if}
