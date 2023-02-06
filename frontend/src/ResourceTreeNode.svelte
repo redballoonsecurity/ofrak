@@ -101,6 +101,7 @@
 
   import { selected } from "./stores.js";
   import { chunkList, sleep } from "./helpers";
+  import { shortcuts } from "./keyboard";
 
   export let rootResource,
     resourceNodeDataMap,
@@ -129,6 +130,15 @@
     childrenPromise = resourceNodeDataMap[self?.id].childrenPromise;
     commentsPromise = resourceNodeDataMap[self?.id].commentsPromise;
     collapsed = resourceNodeDataMap[self?.id].collapsed;
+  }
+
+  $: if ($selected === self?.id) {
+    shortcuts["h"] = () => {
+      resourceNodeDataMap[self?.id].collapsed = true;
+    };
+    shortcuts["l"] = () => {
+      resourceNodeDataMap[self?.id].collapsed = false;
+    };
   }
 
   async function onClick(e) {
