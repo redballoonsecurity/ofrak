@@ -36,6 +36,7 @@
   import CarouselSelector from "./CarouselSelector.svelte";
   import EntropyView from "./EntropyView.svelte";
   import HexView from "./HexView.svelte";
+  import JumpToOffset from "./JumpToOffset.svelte";
   import LoadingAnimation from "./LoadingAnimation.svelte";
   import MagnitudeView from "./MagnitudeView.svelte";
   import Pane from "./Pane.svelte";
@@ -46,9 +47,11 @@
 
   import { printConsoleArt } from "./console-art.js";
   import { selected, selectedResource } from "./stores.js";
+  import { keyEventToString } from "./helpers.js";
+  import { shortcuts } from "./keyboard.js";
 
   import { writable } from "svelte/store";
-  import JumpToOffset from "./JumpToOffset.svelte";
+  import { tick } from "svelte";
 
   printConsoleArt();
 
@@ -100,6 +103,17 @@
     }
   }
 
+  function handleShortcut(e) {
+    const keyString = keyEventToString(e);
+    const callback = shortcuts[keyString];
+    if (callback) {
+      callback(resourceNodeDataMap, modifierView).then(async () => {
+        resourceNodeDataMap = resourceNodeDataMap;
+        $selected = $selected;
+      });
+    }
+  }
+
   window.riddle = {
     ask: () => {
       console.log(`Answer the following riddle for a special Easter egg surprise:
@@ -125,7 +139,7 @@ Answer by running riddle.answer('your answer here') from the console.`);
   window.riddle.ask();
 </script>
 
-<svelte:window on:popstate="{backButton}" />
+<svelte:window on:popstate="{backButton}" on:keyup="{handleShortcut}" />
 
 {#if showRootResource}
   {#await rootResourceLoadPromise}

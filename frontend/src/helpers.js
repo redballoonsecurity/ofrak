@@ -59,6 +59,28 @@ export async function sleep(ms) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/***
+ * Turn a keyboard event into a canonicalized string.
+ */
+export function keyEventToString(e) {
+  const { key, altKey, ctrlKey, metaKey, shiftKey } = e;
+  let modifiers = [];
+  if (altKey) {
+    modifiers.push("Alt");
+  }
+  if (ctrlKey) {
+    modifiers.push("Ctrl");
+  }
+  if (metaKey) {
+    modifiers.push("Meta");
+  }
+  if (shiftKey) {
+    modifiers.push("Shift");
+  }
+  const modifierString = modifiers.sort().join("+");
+  return key.toLocaleLowerCase() + (modifierString ? "+" + modifierString : "");
+}
+
 /**
  * Turn a number of bytes into a text-based file size
  */

@@ -10,12 +10,12 @@
   export let resourceNodeDataMap, modifierView;
   $: rootResource = $selectedResource;
 
-  function refreshResource() {
+  $: refreshResource = () => {
     // Force hex view refresh with colors
     const originalSelected = $selected;
     $selected = undefined;
     $selected = originalSelected;
-  }
+  };
 
   let toolbarButtons;
   const neverResolves = new Promise(() => {});
