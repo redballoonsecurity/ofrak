@@ -77,7 +77,15 @@
 
 <div class="vbox">
   {#each toolbarButtons as button}
-    <button on:click="{wrapOnCick(button)}">
+    <button
+      on:click="{wrapOnCick(button)}"
+      title="{button.text +
+        (button.shortcut
+          ? ' (Shortcut key: ' +
+            button.shortcut.split('+').reverse().join(' + ') +
+            ')'
+          : '')}"
+    >
       {#if button.iconUrl}
         <Icon url="{button.iconUrl}" />
       {/if}
