@@ -42,11 +42,8 @@
 
   export let toolbarButtons;
 
-  $: Array.from(toolbarButtons).forEach((button) => {
-    if (!button.shortcut) {
-      return;
-    }
-    shortcuts[button.shortcut] = async (e) => {
+  function wrapOnCick(button) {
+    return async (e) => {
       const oldIcon = button.iconUrl;
       button.iconUrl = "/icons/loading.svg";
       toolbarButtons = toolbarButtons;
@@ -68,32 +65,19 @@
           console.error(e);
         });
     };
+  }
+
+  $: Array.from(toolbarButtons).forEach((button) => {
+    if (!button.shortcut) {
+      return;
+    }
+    shortcuts[button.shortcut] = wrapOnCick(button);
   });
 </script>
 
 <div class="vbox">
   {#each toolbarButtons as button}
-    <button
-      on:click="{async (e) => {
-        const oldIcon = button.iconUrl;
-        button.iconUrl = '/icons/loading.svg';
-        await button
-          .onclick(e)
-          .then((_) => {
-            button.iconUrl = oldIcon;
-          })
-          .catch((e) => {
-            button.iconUrl = '/icons/error.svg';
-            try {
-              let errorObject = JSON.parse(e.message);
-              alert(`${errorObject.type}: ${errorObject.message}`);
-            } catch {
-              alert(e);
-            }
-            console.error(e);
-          });
-      }}"
-    >
+    <button on:click="{wrapOnCick(button)}">
       {#if button.iconUrl}
         <Icon url="{button.iconUrl}" />
       {/if}
