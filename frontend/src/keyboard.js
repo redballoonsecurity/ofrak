@@ -1,7 +1,8 @@
 export const shortcuts = {};
 
 /***
- * Turn a keyboard event into a canonicalized string.
+ * Turn a keyboard event into a canonicalized string. This is necessary for
+ * using key events as object property names.
  */
 export function keyEventToString(e) {
   const { key, altKey, ctrlKey, metaKey, shiftKey } = e;

@@ -42,6 +42,9 @@
 
   export let toolbarButtons;
 
+  /***
+   * Show the loading spinner while an async onclick function does its thing.
+   */
   function wrapOnCick(button) {
     return async (e) => {
       const oldIcon = button.iconUrl;
