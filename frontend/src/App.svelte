@@ -103,7 +103,10 @@
 
   function handleShortcut(e) {
     // Don't handle keypresses from within text inputs.
-    if (e.target?.type === "input") {
+    if (
+      ["input", "textarea"].includes(e.target?.tagName.toLocaleLowerCase()) ||
+      e.target.isContentEditable
+    ) {
       return;
     }
     const keyString = keyEventToString(e);
