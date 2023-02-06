@@ -17,6 +17,7 @@
 <script>
   import { calculator } from "./helpers";
   import { onMount, tick } from "svelte";
+  import { shortcuts } from "./keyboard";
 
   export let dataPromise, scrollY;
   let startOffset,
@@ -32,6 +33,12 @@
   onMount(() => {
     mounted = true;
   });
+
+  shortcuts["g"] = () => {
+    if (input) {
+      input.focus();
+    }
+  };
 
   $: if (mounted) {
     startOffset = Math.max(
