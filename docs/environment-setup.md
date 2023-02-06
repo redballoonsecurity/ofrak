@@ -285,71 +285,10 @@ Outside of the OFRAK Docker build, OFRAK will not attempt to install these.
 The `Dockerstub` files can provide a good reference for how to install something, but they are specific to the Linux environment the Docker build constructs.
 You are encouraged to visit each dependency's home page (listed by the `ofrak deps` command) for the developers' recommended installation steps for your specific platform.
 
-### macOS
 
-Core OFRAK can be run locally on macOS. These are specific instructions to install some of OFRAK's dependencies on macOS.
+## Setting up to contribute
 
-It is recommended that you create a virtual environment in which to install the code:
-
-```bash
-python3 -m venv ofrak-venv
-source ofrak-venv/bin/activate
-```
-
-1. Use homebrew to install required libraries and executables:
-
-    ```bash
-    brew install \
-      apktool \
-      java \
-      libmagic \
-      lzop \
-      pigz \
-      sevenzip \
-      qemu \
-      squashfs \
-      rar \
-      unar \
-      wget
-    ```
-
-    - OFRAK uses `apktool`, `java`, and `wget` to install `uber-apk-signer` for unpacking and packing APK files.
-    - OFRAK uses the `libmagic` library for `python-magic`, which automatically determines which packers/unpackers to use with binaries.
-    - OFRAK uses the `lzop` command line utility for packing/unpacking LZO archives
-    - OFRAK uses the 7-zip command line utility for packing/unpacking 7z archives
-    - OFRAK uses the `qemu-system-i386` command line utility (and other `qemu` commands) for testing the `BzImage` packer and unpacker
-    - OFRAK uses the `mksquashfs` command line utility for packing/unpacking SquashFS filesystems.
-    - OFRAK uses the `rar` and `unar` command line utilities for packing/unpacking RAR archives
-
-    If not all of the dependencies are installed, core OFRAK will still work, but most of the components will not.
-
-2. OFRAK uses `binwalk` for analyzing packed binary files. It can be installed with the following script:
-   ```bash
-   set -e
-   pushd /tmp
-   git clone https://github.com/ReFirmLabs/binwalk
-   cd binwalk
-   python3 setup.py install
-   popd
-   ```
-3. The `uber-apk-signer` for unpacking and packing APK files can be installed using the following script:
-
-    ```bash
-    brew install wget apktool java
-    echo 'export PATH="/usr/local/opt/openjdk/bin:$PATH"' >> ~/.zshrc
-    wget https://github.com/patrickfav/uber-apk-signer/releases/download/v1.0.0/uber-apk-signer-1.0.0.jar -O /usr/local/bin/uber-apk-signer.jar
-    ```
-4. Install core OFRAK and its dependencies:
-
-    ```bash
-    for d in ofrak_io ofrak_type ofrak_patch_maker ofrak_core; do make -C "${d}" develop; done 
-    ```
-5. If you are planning to contribute to OFRAK, install the pre-commit hooks. For more information, see the [contributor guide](contributor-guide/getting-started.md).
-
-    ```bash
-    pip install --user pre-commit
-    pre-commit install
-    ```
+If you are interested in contributing to OFRAK, check out the [contributor guide](contributor-guide/getting-started.md) for information on what tools you should or may want to install (such as git pre-commit hooks).
 
 <div align="right">
 <img src="./assets/square_05.png" width="125" height="125">
