@@ -6,15 +6,33 @@
 
   import { selectedResource, selected } from "./stores.js";
   import SearchView from "./SearchView.svelte";
+  import { shortcuts } from "./keyboard";
 
   export let resourceNodeDataMap, modifierView;
   $: rootResource = $selectedResource;
 
-  $: refreshResource = () => {
+  function refreshResource() {
     // Force hex view refresh with colors
     const originalSelected = $selected;
     $selected = undefined;
     $selected = originalSelected;
+  }
+
+  $: shortcuts["u"] = async () => {
+    await rootResource.unpack();
+    resourceNodeDataMap[$selected] = {
+      collapsed: false,
+      childrenPromise: rootResource.get_children(),
+    };
+    refreshResource();
+  };
+  $: shortcuts["u+Shift"] = async () => {
+    await rootResource.unpack_recursively();
+    resourceNodeDataMap[$selected] = {
+      collapsed: false,
+      childrenPromise: rootResource.get_children(),
+    };
+    refreshResource();
   };
 
   let toolbarButtons;

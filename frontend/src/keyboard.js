@@ -1,18 +1,23 @@
-import { selected, selectedResource } from "./stores.js";
-import { get } from "svelte/store";
+export const shortcuts = {};
 
-export const shortcuts = {
-  u: async (resourceNodeDataMap, modifierView) => {
-    if (
-      !(selected && get(selected) && selectedResource && get(selectedResource))
-    ) {
-      return;
-    }
-
-    await get(selectedResource).unpack();
-    resourceNodeDataMap[get(selected)] = {
-      collapsed: false,
-      childrenPromise: get(selectedResource).get_children(),
-    };
-  },
-};
+/***
+ * Turn a keyboard event into a canonicalized string.
+ */
+export function keyEventToString(e) {
+  const { key, altKey, ctrlKey, metaKey, shiftKey } = e;
+  let modifiers = [];
+  if (altKey) {
+    modifiers.push("Alt");
+  }
+  if (ctrlKey) {
+    modifiers.push("Ctrl");
+  }
+  if (metaKey) {
+    modifiers.push("Meta");
+  }
+  if (shiftKey) {
+    modifiers.push("Shift");
+  }
+  const modifierString = modifiers.sort().join("+");
+  return key.toLocaleLowerCase() + (modifierString ? "+" + modifierString : "");
+}

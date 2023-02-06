@@ -47,11 +47,9 @@
 
   import { printConsoleArt } from "./console-art.js";
   import { selected, selectedResource } from "./stores.js";
-  import { keyEventToString } from "./helpers.js";
-  import { shortcuts } from "./keyboard.js";
+  import { keyEventToString, shortcuts } from "./keyboard.js";
 
   import { writable } from "svelte/store";
-  import { tick } from "svelte";
 
   printConsoleArt();
 
@@ -107,10 +105,7 @@
     const keyString = keyEventToString(e);
     const callback = shortcuts[keyString];
     if (callback) {
-      callback(resourceNodeDataMap, modifierView).then(async () => {
-        resourceNodeDataMap = resourceNodeDataMap;
-        $selected = $selected;
-      });
+      callback();
     }
   }
 
