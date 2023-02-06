@@ -38,7 +38,37 @@
 <script>
   import Icon from "./Icon.svelte";
 
+  import { shortcuts } from "./keyboard.js";
+
   export let toolbarButtons;
+
+  $: Array.from(toolbarButtons).forEach((button) => {
+    if (!button.shortcut) {
+      return;
+    }
+    shortcuts[button.shortcut] = async (e) => {
+      const oldIcon = button.iconUrl;
+      button.iconUrl = "/icons/loading.svg";
+      toolbarButtons = toolbarButtons;
+      await button
+        .onclick(e)
+        .then((_) => {
+          button.iconUrl = oldIcon;
+          toolbarButtons = toolbarButtons;
+        })
+        .catch((e) => {
+          button.iconUrl = "/icons/error.svg";
+          toolbarButtons = toolbarButtons;
+          try {
+            let errorObject = JSON.parse(e.message);
+            alert(`${errorObject.type}: ${errorObject.message}`);
+          } catch {
+            alert(e);
+          }
+          console.error(e);
+        });
+    };
+  });
 </script>
 
 <div class="vbox">

@@ -102,6 +102,10 @@
   }
 
   function handleShortcut(e) {
+    // Don't handle keypresses from within text inputs.
+    if (e.target?.type === "input") {
+      return;
+    }
     const keyString = keyEventToString(e);
     const callback = shortcuts[keyString];
     if (callback) {
