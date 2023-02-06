@@ -1,13 +1,12 @@
-import functools
-
 import ofrak.service.serialization
 import pytest
 from ofrak.ofrak_context import OFRAK
 
-from ofrak.service.data_service import DataService
+from ofrak.service.data_service import DataService, _DataRoot
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.serialization.pjson import PJSONSerializationService
 from ofrak_type.range import Range
+from pytest_ofrak.utils import auto_validate_state
 
 DATA_0 = b"\x00"
 DATA_1 = b"\x01"
@@ -36,28 +35,54 @@ async def _serialize_deserialize_data_service(data_service: DataService):
     return deserialized_data_service
 
 
+def _validate_grid_state(data_service: DataService):
+    for data_root in data_service._roots.values():
+        for start, column in _DataRoot._iter_grid_axis(data_root._grid_starts_first):
+            for end, ids in _DataRoot._iter_grid_axis(column):
+                for model_id in ids:
+                    model = data_root._children[model_id]
+                    expected_range = Range(start, end)
+                    if model.range != expected_range:
+                        raise AssertionError(
+                            f"_grid_starts_first state shows {model_id.hex()} has bounds "
+                            f"{expected_range} but model has range {model.range}"
+                        )
+
+        for end, column in _DataRoot._iter_grid_axis(data_root._grid_ends_first):
+            for start, ids in _DataRoot._iter_grid_axis(column):
+                for model_id in ids:
+                    model = data_root._children[model_id]
+                    expected_range = Range(start, end)
+                    if model.range != expected_range:
+                        raise AssertionError(
+                            f"_grid_ends_first state shows {model_id.hex()} has bounds "
+                            f"{expected_range} but model has range {model.range}"
+                        )
+
+
+@auto_validate_state(_validate_grid_state)
+class SelfValidatingDataService(DataService):
+    pass
+
+
 DATA_SERVICE_IMPLEMENTATIONS = [
-    ("DataService", functools.partial(DataService), None),
+    ("DataService", DataService, None),
     (
         "de/serialized DataService",
-        functools.partial(DataService),
+        DataService,
         _serialize_deserialize_data_service,
     ),
+    ("SelfValidatingDataService", SelfValidatingDataService, None),
 ]
 
 
 @pytest.fixture(params=DATA_SERVICE_IMPLEMENTATIONS, ids=lambda r: r[0], scope="function")
-async def data_service(request):
+async def populated_data_service(request):
     _, data_service_factory, postprocessing = request.param
     data_service = data_service_factory()
     await populate_data_service(data_service)
     if postprocessing:
         data_service = await postprocessing(data_service)
-    return data_service
-
-
-@pytest.fixture
-async def populated_data_service(data_service: DataServiceInterface):
     return data_service
 
 

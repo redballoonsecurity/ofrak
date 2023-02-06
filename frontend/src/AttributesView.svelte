@@ -43,7 +43,8 @@
         tag.split('.').slice(0, -1).join('/') +
         '.html#' +
         tag}"
-      target="_blank">{cleanOfrakType(tag)}</a
+      target="_blank"
+      rel="noreferrer">{cleanOfrakType(tag)}</a
     >{i !== resource.get_tags().length - 1 ? ", " : ""}
   {/each}
 

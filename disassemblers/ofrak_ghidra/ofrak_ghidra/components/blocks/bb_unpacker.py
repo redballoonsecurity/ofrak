@@ -151,6 +151,7 @@ def _asm_fixups(
         operands = operands.replace("sp", "%SP")
         operands = operands.replace("sr", "%SR")
         operands = operands.replace(" 0x", " #0x")
+        operands = operands.replace(" -0x", " #-0x")
         for mnem in [
             "moveq",
             "mov3q",

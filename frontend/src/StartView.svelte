@@ -4,6 +4,14 @@
     font-weight: bold;
     color: inherit;
     font-size: xxx-large;
+    line-height: 1;
+    margin: 0;
+    max-width: 50%;
+    text-align: center;
+  }
+
+  form {
+    max-width: 50%;
   }
 
   .center {
@@ -55,45 +63,77 @@
     width: calc(100% - 6em);
     height: calc(100% - 6em);
   }
+
+  input[type="file"] {
+    display: none;
+  }
+
+  .maxwidth {
+    max-width: 50%;
+    width: 50%;
+    margin: 1em 0;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .clickable {
+    cursor: pointer;
+  }
+
+  .underline {
+    text-decoration: underline;
+  }
 </style>
 
 <script>
   import Animals from "./Animals.svelte";
   import LoadingAnimation from "./LoadingAnimation.svelte";
   import LoadingText from "./LoadingText.svelte";
+  import TextDivider from "./TextDivider.svelte";
 
   import { animals } from "./animals.js";
-  import { RemoteResourceFactory } from "./ofrak/remote_resource.js";
   import { selected } from "./stores.js";
+  import { remote_model_to_resource } from "./ofrak/remote_resource";
 
   import { onMount } from "svelte";
+  import { numBytesToQuantity } from "./helpers";
 
   export let rootResourceLoadPromise,
     showRootResource,
-    resourceFactory,
+    resources,
     rootResource,
-    resourceNodeDataMap;
+    resourceNodeDataMap,
+    browsedFiles,
+    fileinput;
   let dragging = false,
     selectedPreExistingRoot = null,
     preExistingRootsPromise = new Promise(() => {}),
     tryHash = !!window.location.hash;
   let mouseX, selectedAnimal;
-
-  function setBackend(_selectedRootID, _resourceFactory) {
-    resourceFactory = _resourceFactory;
-    rootResource = resourceFactory.create(_selectedRootID);
-    $selected = _selectedRootID;
-  }
+  const warnFileSize = 250 * 1024 * 1024;
 
   async function createRootResource(f) {
+    if (
+      f.size > warnFileSize &&
+      !window.confirm(
+        `Loading a large file (${numBytesToQuantity(
+          f.size
+        )} > ${numBytesToQuantity(warnFileSize)}) may be slow. Are you sure?`
+      )
+    ) {
+      showRootResource = false;
+      return;
+    }
+
     const rootModel = await fetch(`/create_root_resource?name=${f.name}`, {
       method: "POST",
       body: await f.arrayBuffer(),
     }).then((r) => r.json());
 
-    const _resourceFactory = new RemoteResourceFactory();
-    _resourceFactory.add_to_cache(rootModel);
-    setBackend(rootModel.id, _resourceFactory);
+    rootResource = remote_model_to_resource(rootModel, resources);
+    $selected = rootModel.id;
   }
 
   function choosePreExistingRoot() {
@@ -101,9 +141,11 @@
       dragging = false;
       showRootResource = true;
 
-      const _resourceFactory = new RemoteResourceFactory();
-      _resourceFactory.add_to_cache(selectedPreExistingRoot);
-      setBackend(selectedPreExistingRoot.id, _resourceFactory);
+      rootResource = remote_model_to_resource(
+        selectedPreExistingRoot,
+        resources
+      );
+      $selected = selectedPreExistingRoot.id;
 
       rootResourceLoadPromise = Promise.resolve(undefined);
     }
@@ -119,6 +161,12 @@
     }
   }
 
+  $: if (browsedFiles && browsedFiles.length > 0) {
+    showRootResource = true;
+    const f = browsedFiles[0];
+    rootResourceLoadPromise = createRootResource(f);
+  }
+
   async function getResourcesFromHash(resourceId) {
     const root = await fetch(`/${resourceId}/get_root`).then((r) => {
       if (!r.ok) {
@@ -127,9 +175,8 @@
       return r.json();
     });
 
-    const _resourceFactory = new RemoteResourceFactory();
-    _resourceFactory.add_to_cache(root);
-    setBackend(root.id, _resourceFactory);
+    rootResource = remote_model_to_resource(root, resources);
+    $selected = root.id;
 
     let resource = await fetch(`/${resourceId}/`).then((r) => {
       if (!r.ok) {
@@ -137,7 +184,7 @@
       }
       return r.json();
     });
-    _resourceFactory.add_to_cache(resource);
+    resources[resource.id] = remote_model_to_resource(resource, resources);
     while (resource.parent_id) {
       resource = await fetch(`/${resource.parent_id}/`).then((r) => {
         if (!r.ok) {
@@ -145,7 +192,7 @@
         }
         return r.json();
       });
-      _resourceFactory.add_to_cache(resource);
+      resources[resource.id] = remote_model_to_resource(resource, resources);
 
       if (resourceNodeDataMap[resource.id] === undefined) {
         resourceNodeDataMap[resource.id] = {};
@@ -174,8 +221,9 @@
 </script>
 
 {#if !tryHash}
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div
-    class="center {dragging ? 'dragging' : ''}"
+    class="center clickable {dragging ? 'dragging' : ''}"
     on:dragover|preventDefault="{(e) => {
       dragging = true;
       mouseX = e.clientX;
@@ -184,36 +232,59 @@
     on:drop|preventDefault="{handleDrop}"
     on:mousemove="{(e) => (mouseX = e.clientX)}"
     on:mouseleave="{() => (mouseX = undefined)}"
+    on:click="{() => fileinput.click()}"
     style:border-color="{animals[selectedAnimal]?.color ||
       "var(--main-fg-color)"}"
     style:color="{animals[selectedAnimal]?.color || "var(--main-fg-color)"}"
   >
     {#if !dragging}
       <h1>Drag in a file to analyze</h1>
+      <p style:margin-bottom="0">Click anwyhere to browse your computer</p>
     {:else}
       <h1>Drop the file!</h1>
     {/if}
 
+    <input type="file" bind:this="{fileinput}" bind:files="{browsedFiles}" />
+
+    <div class="maxwidth">
+      <TextDivider
+        color="{animals[selectedAnimal]?.color || 'var(--main-fg-color)'}"
+      >
+        OR
+      </TextDivider>
+    </div>
+
     {#await preExistingRootsPromise}
       <LoadingText />
     {:then preExistingRootResources}
-      <form on:submit|preventDefault="{choosePreExistingRoot}">
-        <select bind:value="{selectedPreExistingRoot}">
-          <option value="{null}">None</option>
-          {#each preExistingRootResources as preExistingRoot}
-            <option value="{preExistingRoot}">
-              {preExistingRoot.id} &ndash;
-              {#if preExistingRoot.caption}
-                {preExistingRoot.caption}
-              {:else}
-                Untagged
-              {/if}
-            </option>
-          {/each}
-        </select>
+      {#if preExistingRootsPromise && preExistingRootsPromise.length > 0}
+        <form on:submit|preventDefault="{choosePreExistingRoot}">
+          <select
+            on:click|stopPropagation="{() => undefined}"
+            bind:value="{selectedPreExistingRoot}"
+          >
+            <option value="{null}">Open existing resource</option>
+            {#each preExistingRootResources as preExistingRoot}
+              <option value="{preExistingRoot}">
+                {preExistingRoot.id} &ndash;
+                {#if preExistingRoot.caption}
+                  {preExistingRoot.caption}
+                {:else}
+                  Untagged
+                {/if}
+              </option>
+            {/each}
+          </select>
 
-        <button disabled="{!selectedPreExistingRoot}" type="submit">Go!</button>
-      </form>
+          <button
+            on:click|stopPropagation="{() => undefined}"
+            disabled="{!selectedPreExistingRoot}"
+            type="submit">Go!</button
+          >
+        </form>
+      {:else}
+        No resources loaded yet.
+      {/if}
     {:catch}
       <p>Failed to get any pre-existing root resources!</p>
       <p>The back end server may be down.</p>
