@@ -34,7 +34,7 @@
     mounted = true;
   });
 
-  shortcuts["g"] = () => {
+  $: shortcuts["g"] = () => {
     if (input) {
       input.focus();
     }

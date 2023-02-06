@@ -136,7 +136,13 @@
     shortcuts["h"] = () => {
       resourceNodeDataMap[self?.id].collapsed = true;
     };
+    shortcuts["arrowleft"] = () => {
+      resourceNodeDataMap[self?.id].collapsed = true;
+    };
     shortcuts["l"] = () => {
+      resourceNodeDataMap[self?.id].collapsed = false;
+    };
+    shortcuts["arrowright"] = () => {
       resourceNodeDataMap[self?.id].collapsed = false;
     };
   }
