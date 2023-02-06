@@ -1,5 +1,5 @@
 # Writing Packers
-To write an OFRAK [Packer](../../user-guide/component/packer.md), an OFRAK contributor needs to:
+To write an OFRAK [Packer](../../user-guide/key-concepts/component/packer.md), an OFRAK contributor needs to:
 
 1. Create a class that inherits from `ofrak.component.component_packer.Packer` with a defined component config (`ofrak.model.component_model.CC` -- this will typically be `None`);
 2. Implement the `targets` to indicate what resource tags the packer targets;

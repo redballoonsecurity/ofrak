@@ -1,8 +1,64 @@
 # Getting Started
 
+## Quick Start - Unpack a firmware file and display it in the GUI
+
+```bash
+pip install ofrak
+ofrak unpack -x -r --gui <path-to-file>
+
+```
+
+This will install OFRAK, run OFRAK to unpack a target file, then open it in the GUI.
+
+- The `-x` flag tells OFRAK to exclude components which are missing dependencies, which makes installation much easier at the price of missing out on support for some file types.
+See [Environment Setup](environment-setup.md#handling-non-python-dependencies) for more information.
+
+- The `--gui` flag starts up an OFRAK GUI server after file is unpacked, and tries to open it in your browser.
+The GUI will display the unpacked structure of the file, as OFRAK understands it.
+
+- The `-r` flag tells OFRAK to "recursively" unpack the target, until OFRAK can't subdivide its components any further.
+See `ofrak unpack --help` for other options and more information on each flag.
+
+### Including disassembly
+
+OFRAK does not do its own disassembly, and instead re-uses several existing, capable tools.
+To quickly start disassembling using OFRAK, we recommend installing two more OFRAK Python packages:
+
+```bash
+pip install ofrak_angr ofrak_capstone
+```
+
+These packages leverage [angr]() and [capstone]() to disassemble machine code. 
+After running the above `pip install` command, modify the `ofrak unpack` command from earlier to include the option `--backend angr`:
+
+```shell
+ofrak unpack -x --gui -r --backend angr <path-to-file>
+
+```
+
+This will get OFRAK to disassemble any code it recognizes in the files it unpacks.
+A word of warning though - binaries don't have to get very large before disassembling starts to take a long time!
+This problem gets exponentially worse if you are unpacking a packed filesystem with potentially many executables.
+If that is the case, consider removing the `-r` flag so that OFRAK only unpacks the top level; once the resource is opened in the GUI, you can select specific children to unpack.
+
+
+## GUI
+
+OFRAK comes with a web-based GUI frontend for visualizing and manipulating binary targets. The OFRAK GUI runs by default in most of the OFRAK images, including the tutorial image. (Note that for now, the frontend is only built in the `ofrak_ghidra` and `ofrak_binary_ninja` analyzer backend configurations.)
+
+To access the GUI, navigate to <http://localhost> and start by dropping anything you'd like into it!
+
+
+## Building from Docker
+
+OFRAK also has a Docker build system. 
+This has the advantage of producing a consistent environment with all dependencies installed, but requires a Docker installation and running the build procedure.
+Check out the [Docker build documentation](environment-setup.md#docker) if you are interested.
+
+
 ## Tutorial
 
-The best way to get started with OFRAK is to go through the interactive tutorial.
+A great way to get started with OFRAK is to go through the interactive tutorial.
 
 Run it with the following commands:
 
@@ -13,11 +69,6 @@ make tutorial-run
 
 It takes a minute for the notebook to start up. Once running, you can access the tutorial from [localhost:8888](http://localhost:8888) with your web browser. Have fun!
 
-## GUI
-
-OFRAK comes with a web-based GUI frontend for visualizing and manipulating binary targets. The OFRAK GUI runs by default in most of the OFRAK images, including the tutorial image. (Note that for now, the frontend is only built in the `ofrak_ghidra` and `ofrak_binary_ninja` analyzer backend configurations.)
-
-To access the GUI, navigate to <http://localhost> and start by dropping anything you'd like into it!
 
 ## Docs
 
@@ -38,7 +89,7 @@ _Why do my CodeRegions not have any code?_
 
 - You probably forgot to discover the analysis/disassembler backend you intended to use.
 - When **not** using the Ghidra analysis backend you will also need to discover the capstone components.
-- Check out the [Ghidra Backend User Guide](./user-guide/ghidra.md) and [Binary Ninja Backend User Guides](./user-guide/binary_ninja.md).
+- Check out the [Ghidra Backend User Guide](user-guide/disassembler-backends/ghidra.md) and [Binary Ninja Backend User Guides](user-guide/disassembler-backends/binary_ninja.md).
 
 _I ran a modifier and flushed the resource. The bytes did change, but my view is reporting the same values. Why?_
 
