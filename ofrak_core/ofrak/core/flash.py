@@ -428,8 +428,8 @@ class FlashOobResourceUnpacker(Unpacker[None]):
 
         # Now add children blocks until we reach the tail block
         offset = 0
-        only_data = b""
-        only_ecc = b""
+        only_data = list()
+        only_ecc = list()
         for block in flash_attr.iterate_through_all_blocks(data_len, True):
             block_size = flash_attr.get_block_size(block)
             block_end_offset = offset + block_size
@@ -449,7 +449,7 @@ class FlashOobResourceUnpacker(Unpacker[None]):
                 if field.field_type == FlashFieldType.ECC:
                     block_ecc_range = field_range
                     cur_block_ecc = block_data[block_ecc_range.start : block_ecc_range.end]
-                    only_ecc += cur_block_ecc
+                    only_ecc.append(cur_block_ecc)
                     # Add hash of everything up to the ECC to our dict for faster packing
                     block_data_hash = md5(block_data[: block_ecc_range.start]).digest()
                     DATA_HASHES[block_data_hash] = cur_block_ecc
@@ -471,9 +471,11 @@ class FlashOobResourceUnpacker(Unpacker[None]):
                         try:
                             # Assumes that data comes before ECC
                             if (ecc_attr is not None) and (ecc_attr.ecc_class is not None):
-                                only_data += ecc_attr.ecc_class.decode(
-                                    block_data[: block_ecc_range.end]
-                                )[block_data_range.start : block_data_range.end]
+                                only_data.append(
+                                    ecc_attr.ecc_class.decode(block_data[: block_ecc_range.end])[
+                                        block_data_range.start : block_data_range.end
+                                    ]
+                                )
                             else:
                                 raise UnpackerError(
                                     "Tried to correct with ECC without providing an ecc_class in FlashEccAttributes"
@@ -482,14 +484,14 @@ class FlashOobResourceUnpacker(Unpacker[None]):
                             raise UnpackerError("ECC correction failed")
                     else:
                         # No ECC found in block, just add the data directly
-                        only_data += block_data[block_data_range.start : block_data_range.end]
+                        only_data.append(block_data[block_data_range.start : block_data_range.end])
                 field_offset += field.size
             offset += block_size
 
         # Add all block data to logical resource for recursive unpacking
         await oob_resource.create_child(
             tags=(FlashLogicalDataResource,),
-            data=only_data,
+            data=b"".join(only_data),
             attributes=[
                 flash_attr,
             ],
@@ -497,7 +499,7 @@ class FlashOobResourceUnpacker(Unpacker[None]):
         if ecc_attr is not None:
             await oob_resource.create_child(
                 tags=(FlashLogicalEccResource,),
-                data=only_ecc,
+                data=b"".join(only_ecc),
                 attributes=[
                     ecc_attr,
                 ],
