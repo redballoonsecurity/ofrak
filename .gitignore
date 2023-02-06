@@ -14,3 +14,7 @@ finish.Dockerfile
 license.dat
 serial.txt
 ofrak_core/ofrak/core/entropy/entropy.so.1
+frontend/public/build
+ofrak_core/ofrak/core/entropy/entropy_c.cpython*
+ofrak_core/ofrak/gui/public
+ofrak_core/build

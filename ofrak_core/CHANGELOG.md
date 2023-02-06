@@ -5,6 +5,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 
+## [2.2.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.1.1...ofrak-v2.2.0))
+### Fixed
+- Fix bug in data service that can cause mangled internal state [#197](https://github.com/redballoonsecurity/ofrak/pull/197)
+- Fix long-broken `OFRAK.set_id_service` [#198](https://github.com/redballoonsecurity/ofrak/pull/198)
+- Fix bug in `SegmentInjectorModifier` that resulted in deleting more resources than necessary [#200](https://github.com/redballoonsecurity/ofrak/pull/200)
+
+### Added
+- Replace unofficial p7zip with official 7zip package
+- File browser dialog in the GUI
+- Area in the GUI to jump to a given data offset
+- GUI command line now has a flag to not automatically open the browser
+
+### Changed
+- GUI is much faster, especially for resources with hundreds of thousands of children [#191](https://github.com/redballoonsecurity/ofrak/pull/191)
+- Resources whose data gets modified are now listed in the `resource_modified` field of component results [#200](https://github.com/redballoonsecurity/ofrak/pull/200)
+
 ## [2.1.1](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.1.0...ofrak-v2.1.1) - 2023-01-25
 ### Fixed
 - GUI uses correct attribute class names again (not *AutoAttributes)

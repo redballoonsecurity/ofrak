@@ -39,6 +39,37 @@
     height: 1em;
   }
 
+  div.morebutton {
+    padding-left: 1.25em;
+    margin: 2em 0;
+  }
+
+  div.morebutton button {
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+    padding-left: 1em;
+    padding-right: 1em;
+    background-color: var(--main-bg-color);
+    color: var(--main-fg-color);
+    border: 1px solid var(--main-fg-color);
+    border-radius: 0;
+    font-size: smaller;
+    overflow: hidden;
+    box-shadow: none;
+  }
+
+  div.morebutton button:hover,
+  div.morebutton button:focus {
+    outline: none;
+    box-shadow: inset 1px 1px 0 var(--main-fg-color),
+      inset -1px -1px 0 var(--main-fg-color);
+  }
+
+  div.morebutton button:active {
+    box-shadow: inset 2px 2px 0 var(--main-fg-color),
+      inset -2px -2px 0 var(--main-fg-color);
+  }
+
   .selected {
     background-color: var(--selected-bg-color);
     background-clip: border-box;
@@ -69,6 +100,7 @@
   import LoadingText from "./LoadingText.svelte";
 
   import { selected } from "./stores.js";
+  import { chunkList, sleep } from "./helpers";
 
   export let rootResource,
     resourceNodeDataMap,
@@ -76,7 +108,9 @@
   let self,
     childrenPromise,
     commentsPromise,
-    childrenCollapsed = false;
+    childrenCollapsed = false,
+    kiddoChunksize = 512;
+
   $: {
     if (resourceNodeDataMap[self?.id] === undefined) {
       resourceNodeDataMap[self?.id] = {};
@@ -126,10 +160,6 @@
     resourceNodeDataMap[$selected].commentsPromise =
       rootResource.get_comments();
   }
-
-  $: if ($selected !== undefined && $selected === self?.id) {
-    self?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
 </script>
 
 {#await childrenPromise then children}
@@ -157,21 +187,19 @@
 </button>
 {#await commentsPromise then comments}
   {#each comments as comment}
-    {#await rootResource.prettify_comment(comment) then comment_pretty}
-      <div class="comment">
-        <Hoverable let:hovering>
-          <button
-            title="Delete this comment"
-            on:click="{onDeleteClick(comment[0])}"
-          >
-            <Icon
-              class="comment_icon"
-              url="{hovering ? '/icons/trash_can.svg' : '/icons/comment.svg'}"
-            />
-          </button></Hoverable
-        >{comment_pretty}
-      </div>
-    {/await}
+    <div class="comment">
+      <Hoverable let:hovering>
+        <button
+          title="Delete this comment"
+          on:click="{onDeleteClick(comment[0])}"
+        >
+          <Icon
+            class="comment_icon"
+            url="{hovering ? '/icons/trash_can.svg' : '/icons/comment.svg'}"
+          />
+        </button></Hoverable
+      >{comment[1]}
+    </div>
   {/each}
 {/await}
 
@@ -180,7 +208,7 @@
 {:then children}
   {#if !collapsed && children.length > 0}
     <ul>
-      {#each children as child}
+      {#each children.slice(0, kiddoChunksize) as child}
         <li>
           <div>
             <svelte:self
@@ -191,6 +219,13 @@
           </div>
         </li>
       {/each}
+      {#if children.length > kiddoChunksize}
+        <div class="morebutton">
+          <button on:click="{() => (kiddoChunksize += 512)}">
+            Show 512 more children...
+          </button>
+        </div>
+      {/if}
     </ul>
   {/if}
 {/await}
