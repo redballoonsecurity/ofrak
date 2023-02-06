@@ -1,5 +1,8 @@
 # Environment Setup & Installing OFRAK
 
+!!! warning
+    OFRAK is a Python library supporting Python3.7 and up. First and foremost, make sure your Python and pip installations are for Python3.7+!
+
 There are three main ways one can set up an environment to use OFRAK:
 
 1. From [PyPI](https://pypi.org/project/ofrak/) via `pip`. 
@@ -49,6 +52,7 @@ You can install Git LFS before or after you clone OFRAK, but if you clone the OF
 Once cloned, go into each directory in the top level and run the installation command `make develop` 
 (if you do not have and do not wish to have `make` installed, try inspecting the `Makefile` in each directory to see what commands it tries to run, usually something like `pip install -e .`).
 The best order to install each directory is as follows:
+
 1. `ofrak_type`
 2. `ofrak_io`
 3. `ofrak_patch_maker`
@@ -56,7 +60,7 @@ The best order to install each directory is as follows:
 5. Any/all others: `frontend`, `ofrak_tutorial`, `disassemblers/ofrak_angr`, `disassemblers/ofrak_binary_ninja`, `disassemblers/ofrak_capstone`, `disassemblers/ofrak_ghidra`
 
 You *can* skip the installation step for any of the packages above. 
-Any subsequent OFRAK packages which require a non-installed package should be able to simply install it from `PyPI`. 
+Any subsequent OFRAK packages which require a non-installed package should be able to simply install it from PyPI. 
 However, this will result in a somewhat confusing environment where some of the OFRAK code in your local repo is actively used by your system, and the rest is not.
 
 Installing OFRAK from source code will not install all of OFRAK's non-Python dependencies (for same reason as when installing OFRAK from PyPI - not all of its dependencies are pip-installable).

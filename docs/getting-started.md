@@ -2,6 +2,9 @@
 
 ## Quick Start - Unpack a firmware file and display it in the GUI
 
+!!! warning
+    OFRAK is a Python library supporting Python3.7 and up. First and foremost, make sure your Python and pip installations are for Python3.7+!
+
 ```bash
 pip install ofrak
 ofrak unpack -x -r --gui <path-to-file>
@@ -10,16 +13,17 @@ ofrak unpack -x -r --gui <path-to-file>
 
 This will install OFRAK, run OFRAK to unpack a target file, then open it in the GUI.
 
-- The `-x` flag tells OFRAK to exclude components which are missing dependencies, which makes installation much easier at the price of missing out on support for some file types.
+- The `-x` (`--exclude-components-missing-dependencies`) flag tells OFRAK to exclude components which are missing dependencies, which makes installation much easier at the price of missing out on support for some file types.
 See [Environment Setup](environment-setup.md#handling-non-python-dependencies) for more information.
 
 - The `--gui` flag starts up an OFRAK GUI server after file is unpacked, and tries to open it in your browser.
 The GUI will display the unpacked structure of the file, as OFRAK understands it.
 
-- The `-r` flag tells OFRAK to "recursively" unpack the target, until OFRAK can't subdivide its components any further.
+- The `-r` (`--recursive`) flag tells OFRAK to "recursively" unpack the target, until OFRAK can't subdivide its components any further.
+
 See `ofrak unpack --help` for other options and more information on each flag.
 
-### Including disassembly
+### Disassembling with OFRAK
 
 OFRAK does not do its own disassembly, and instead re-uses several existing, capable tools.
 To quickly start disassembling using OFRAK, we recommend installing two more OFRAK Python packages:
@@ -28,7 +32,8 @@ To quickly start disassembling using OFRAK, we recommend installing two more OFR
 pip install ofrak_angr ofrak_capstone
 ```
 
-These packages leverage [angr]() and [capstone]() to disassemble machine code. 
+These packages leverage [angr](https://angr.io/) and [capstone](https://www.capstone-engine.org/) to disassemble machine code. 
+Both are needed, as they work together - angr tells OFRAK information about the higher-level structures (such as where functions are) and capstone disassembles individual chunks of machine code.
 After running the above `pip install` command, modify the `ofrak unpack` command from earlier to include the option `--backend angr`:
 
 ```shell
@@ -46,7 +51,7 @@ If that is the case, consider removing the `-r` flag so that OFRAK only unpacks 
 
 OFRAK comes with a web-based GUI frontend for visualizing and manipulating binary targets. The OFRAK GUI runs by default in most of the OFRAK images, including the tutorial image. (Note that for now, the frontend is only built in the `ofrak_ghidra` and `ofrak_binary_ninja` analyzer backend configurations.)
 
-To access the GUI, navigate to <http://localhost> and start by dropping anything you'd like into it!
+To access the GUI, navigate to <http://localhost:8080> and start by dropping anything you'd like into it!
 
 
 ## Building from Docker
