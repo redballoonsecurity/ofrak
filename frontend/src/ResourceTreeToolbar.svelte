@@ -6,7 +6,6 @@
 
   import { selectedResource, selected } from "./stores.js";
   import SearchView from "./SearchView.svelte";
-  import { shortcuts } from "./keyboard";
 
   export let resourceNodeDataMap, modifierView;
   $: rootResource = $selectedResource;
