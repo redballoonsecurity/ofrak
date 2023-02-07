@@ -185,6 +185,10 @@
       return r.json();
     });
     resources[resource.id] = remote_model_to_resource(resource, resources);
+    if (resourceNodeDataMap[resource.id] === undefined) {
+      resourceNodeDataMap[resource.id] = {};
+    }
+    resourceNodeDataMap[resource.id].collapsed = false;
     while (resource.parent_id) {
       resource = await fetch(`/${resource.parent_id}/`).then((r) => {
         if (!r.ok) {
@@ -239,7 +243,9 @@
   >
     {#if !dragging}
       <h1>Drag in a file to analyze</h1>
-      <p style:margin-bottom="0">Click anwyhere to browse your computer</p>
+      <p style:margin-bottom="0">
+        Click anwyhere to browse for a file to analyze
+      </p>
     {:else}
       <h1>Drop the file!</h1>
     {/if}

@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Added
 - Add keyboard shortcuts to the GUI
 
+### Fixed
+- Fix bug where initially loaded GUI resource has collapsed children
+
 ## [2.2.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.1.1...ofrak-v2.2.0))
 ### Fixed
 - Fix bug in data service that can cause mangled internal state [#197](https://github.com/redballoonsecurity/ofrak/pull/197)
