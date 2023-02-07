@@ -100,7 +100,6 @@
   import LoadingText from "./LoadingText.svelte";
 
   import { selected } from "./stores.js";
-  import { chunkList, sleep } from "./helpers";
 
   export let rootResource,
     resourceNodeDataMap,
