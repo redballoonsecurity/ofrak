@@ -10,7 +10,7 @@ There are several dataclasses that categorize the sections of the dump:
         - `FlashLogicalDataResource` is the extracted data only with all of the OOB data removed. This will become a `FlashOobResource` when packed.
         - `FlashLogicalEccResource` is the extracted ECC only. No other OOB data is included.
 """
-
+import logging
 from dataclasses import dataclass
 from enum import Enum
 from hashlib import md5
@@ -25,6 +25,8 @@ from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
+
+LOGGER = logging.getLogger()
 
 # Dict of data mapping MD5 checksum to ECC bytes, used to check for updates
 DATA_HASHES: Dict[bytes, bytes] = dict()
@@ -434,7 +436,12 @@ class FlashOobResourceUnpacker(Unpacker[None]):
             block_size = flash_attr.get_block_size(block)
             block_end_offset = offset + block_size
             if block_end_offset > data_len:
-                raise UnpackerError("Expected complete block and received less than expected")
+                LOGGER.info(
+                    f"Block offset {block_end_offset} is {block_end_offset - data_len} larger "
+                    f"than {data_len}. In this case unpacking is best effort and end of unpacked "
+                    f"child might not be accurate."
+                )
+                break
             block_range = Range(offset, block_end_offset)
             block_data = await oob_resource.get_data(range=block_range)
 
@@ -491,7 +498,7 @@ class FlashOobResourceUnpacker(Unpacker[None]):
         # Add all block data to logical resource for recursive unpacking
         await oob_resource.create_child(
             tags=(FlashLogicalDataResource,),
-            data=b"".join(only_data),
+            data=b"".join(only_data) if only_data else data,
             attributes=[
                 flash_attr,
             ],
