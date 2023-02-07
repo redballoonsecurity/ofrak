@@ -1,4 +1,5 @@
 import setuptools
+import pkg_resources
 from setuptools.command.egg_info import egg_info
 
 
@@ -30,13 +31,12 @@ entropy_so = setuptools.Extension(
 
 # Should be the same as in build_image.py
 def read_requirements(requirements_path):
-    python_deps = []
-    with open(requirements_path) as file_handle:
-        for line in file_handle:
-            line = line.strip()
-            if line and line[0] != "#":
-                python_deps.append(line)
-    return python_deps
+    with open(requirements_path) as requirements_handle:
+        return [
+            str(requirement)
+            for requirement
+            in pkg_resources.parse_requirements(requirements_handle)
+        ]
 
 
 setuptools.setup(

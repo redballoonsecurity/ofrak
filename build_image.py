@@ -7,6 +7,7 @@ import argparse
 import os
 import subprocess
 import sys
+import pkg_resources
 import yaml
 
 BASE_DOCKERFILE = "base.Dockerfile"
@@ -31,6 +32,7 @@ class OfrakImageConfig:
     build_finish: bool
     # Whether to supply --no-cache to docker build commands
     no_cache: bool
+    check_python_reqs: bool
     extra_build_args: Optional[List[str]]
     install_target: InstallTarget
     cache_from: List[str]
@@ -140,6 +142,7 @@ def parse_args() -> OfrakImageConfig:
     parser.add_argument("--base", action="store_true")
     parser.add_argument("--finish", action="store_true")
     parser.add_argument("--no-cache", action="store_true")
+    parser.add_argument("--check-python-reqs", action="store_true")
     parser.add_argument(
         "--target",
         choices=[InstallTarget.DEVELOP.value, InstallTarget.INSTALL.value],
@@ -157,6 +160,7 @@ def parse_args() -> OfrakImageConfig:
         args.base,
         args.finish,
         args.no_cache,
+        args.check_python_reqs,
         config_dict.get("extra_build_args"),
         InstallTarget(args.target),
         args.cache_from,
@@ -200,7 +204,7 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
     ]
 
     requirement_suffixes = [""]
-    if config.install_target == InstallTarget.DEVELOP:
+    if config.install_target is InstallTarget.DEVELOP:
         requirement_suffixes += ["-docs", "-test"]
 
     for package_path in config.packages_paths:
@@ -209,21 +213,22 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
             dockerstub = file_handle.read()
         dockerfile_base_parts += [f"### {dockerstub_path}", dockerstub]
         # Collect python dependencies
-        python_deps = []
+        python_reqs = []
         for suff in requirement_suffixes:
             requirements_path = os.path.join(package_path, f"requirements{suff}.txt")
             if not os.path.exists(requirements_path):
                 continue
-            with open(requirements_path) as file_handle:
-                for line in file_handle:
-                    line = line.strip()
-                    if line and line[0] != "#":
-                        python_deps.append(line)
-        if python_deps:
+            with open(requirements_path) as requirements_handle:
+                 python_reqs += [
+                    str(requirement)
+                    for requirement
+                    in pkg_resources.parse_requirements(requirements_handle)
+                ]
+        if python_reqs:
             dockerfile_base_parts += [
                 f"### Python dependencies from the {package_path} requirements file[s]",
                 "RUN python3 -m pip install --upgrade pip &&\\",
-                '   python3 -m pip install "' + '" "'.join(python_deps) + '"',
+                '   python3 -m pip install "' + '" "'.join(python_reqs) + '"',
                 "",
             ]
 
@@ -255,18 +260,17 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
     )
     dockerfile_finish_parts += [
         f'RUN printf "{develop_makefile}" >> Makefile\n\n',
-        ### The --network="none" is very helpful in catching all kinds of issues,
-        ### and should probably be enabled eventually.
-        ### Unfortunately it cases problems when a package has a pyproject.toml -
-        ### see https://github.com/pypa/pip/issues/6482#issuecomment-1414208986
-        ### A workaround is to use `pip install --no-build-isolation` or
-        ### `pip install --no-use-pep517` but that starts getting messy.
-        ### Leaving it as commented code here to make it easier for people
-        ### to temporarily enable it.
-        #'# We use --network="none" to ensure all dependencies were installed in base.Dockerfile\n',
-        #'RUN --network="none" make $INSTALL_TARGET\n\n',
-        "RUN make $INSTALL_TARGET\n\n",
     ]
+    if config.check_python_reqs:
+        dockerfile_finish_parts += [
+            '# We use --network="none" to ensure all dependencies were installed in base.Dockerfile\n',
+            'RUN --network="none" make $INSTALL_TARGET\n',
+            "RUN python3 -m pip check\n\n",
+        ]
+    else:
+        dockerfile_finish_parts += [
+            "RUN make $INSTALL_TARGET\n\n",
+        ]
     finish_makefile = "\\n\\\n".join(
         [
             "test:",
