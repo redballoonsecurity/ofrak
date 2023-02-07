@@ -4,6 +4,12 @@ All notable changes to `ofrak` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+
+### Added
+- Updates to Flash components: [#195](https://github.com/redballoonsecurity/ofrak/pull/195)
+  - Flash components now support more than one occurrence of the same field type in `FlashAttributes`.
+  - `FlashOobResourceUnpacker` continues to unpack even it blocks do not perfectly align at end of the `FlashOobResource` (this is useful for real-world flash dumps).
+
 ### Fixed
 - Fix bug where initially loaded GUI resource has collapsed children
 
