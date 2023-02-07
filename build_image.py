@@ -227,7 +227,7 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
             dockerfile_base_parts += [
                 f"### Python dependencies from the {package_path} requirements file[s]",
                 "RUN python3 -m pip install --upgrade pip &&\\",
-                '   python3 -m pip install "' + '" "'.join(python_reqs) + '"',
+                "   python3 -m pip install '" + "' '".join(python_reqs) + "'",
                 "",
             ]
 
