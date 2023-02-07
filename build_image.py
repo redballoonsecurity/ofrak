@@ -219,10 +219,9 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
             if not os.path.exists(requirements_path):
                 continue
             with open(requirements_path) as requirements_handle:
-                 python_reqs += [
+                python_reqs += [
                     str(requirement)
-                    for requirement
-                    in pkg_resources.parse_requirements(requirements_handle)
+                    for requirement in pkg_resources.parse_requirements(requirements_handle)
                 ]
         if python_reqs:
             dockerfile_base_parts += [

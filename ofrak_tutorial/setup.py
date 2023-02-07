@@ -25,8 +25,7 @@ def read_requirements(requirements_path):
     with open(requirements_path) as requirements_handle:
         return [
             str(requirement)
-            for requirement
-            in pkg_resources.parse_requirements(requirements_handle)
+            for requirement in pkg_resources.parse_requirements(requirements_handle)
         ]
 
 
