@@ -109,6 +109,9 @@
     ) {
       return;
     }
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
     const keyString = keyEventToString(e);
     const callback = shortcuts[keyString];
     if (callback) {
