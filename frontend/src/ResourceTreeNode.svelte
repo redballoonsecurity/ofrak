@@ -101,49 +101,72 @@
 
   import { selected } from "./stores.js";
   import { shortcuts } from "./keyboard";
+  import { children } from "svelte/internal";
 
   export let rootResource,
     resourceNodeDataMap,
+    selectNextSibling = () => {},
+    selectPreviousSibling = () => {},
     collapsed = true;
   let self,
+    firstChild,
     childrenPromise,
     commentsPromise,
     childrenCollapsed = false,
     kiddoChunksize = 512;
 
   $: {
-    if (resourceNodeDataMap[self?.id] === undefined) {
-      resourceNodeDataMap[self?.id] = {};
+    if (resourceNodeDataMap[rootResource.get_id()] === undefined) {
+      resourceNodeDataMap[rootResource.get_id()] = {};
     }
-    if (resourceNodeDataMap[self?.id].collapsed === undefined) {
-      resourceNodeDataMap[self?.id].collapsed = collapsed;
+    if (resourceNodeDataMap[rootResource.get_id()].collapsed === undefined) {
+      resourceNodeDataMap[rootResource.get_id()].collapsed = collapsed;
     }
-    if (resourceNodeDataMap[self?.id].childrenPromise === undefined) {
-      resourceNodeDataMap[self?.id].childrenPromise =
+    if (
+      resourceNodeDataMap[rootResource.get_id()].childrenPromise === undefined
+    ) {
+      resourceNodeDataMap[rootResource.get_id()].childrenPromise =
         rootResource.get_children();
     }
-    if (resourceNodeDataMap[self?.id].commentsPromise === undefined) {
-      resourceNodeDataMap[self?.id].commentsPromise =
+    if (
+      resourceNodeDataMap[rootResource.get_id()].commentsPromise === undefined
+    ) {
+      resourceNodeDataMap[rootResource.get_id()].commentsPromise =
         rootResource.get_comments();
     }
-    childrenPromise = resourceNodeDataMap[self?.id].childrenPromise;
-    commentsPromise = resourceNodeDataMap[self?.id].commentsPromise;
-    collapsed = resourceNodeDataMap[self?.id].collapsed;
+    childrenPromise =
+      resourceNodeDataMap[rootResource.get_id()].childrenPromise;
+    commentsPromise =
+      resourceNodeDataMap[rootResource.get_id()].commentsPromise;
+    collapsed = resourceNodeDataMap[rootResource.get_id()].collapsed;
   }
+
+  $: childrenPromise?.then((children) => {
+    if (children?.length > 0) {
+      firstChild = children[0];
+    }
+  });
 
   $: if ($selected === self?.id) {
     shortcuts["h"] = () => {
       resourceNodeDataMap[self?.id].collapsed = true;
     };
-    shortcuts["arrowleft"] = () => {
-      resourceNodeDataMap[self?.id].collapsed = true;
-    };
     shortcuts["l"] = () => {
       resourceNodeDataMap[self?.id].collapsed = false;
     };
-    shortcuts["arrowright"] = () => {
-      resourceNodeDataMap[self?.id].collapsed = false;
+    shortcuts["j"] = () => {
+      if (!collapsed && firstChild) {
+        $selected = firstChild?.resource_id;
+      } else {
+        selectNextSibling();
+      }
     };
+    shortcuts["k"] = selectPreviousSibling;
+
+    shortcuts["arrowleft"] = shortcuts["h"];
+    shortcuts["arrowdown"] = shortcuts["j"];
+    shortcuts["arrowup"] = shortcuts["k"];
+    shortcuts["arrowright"] = shortcuts["l"];
   }
 
   async function onClick(e) {
@@ -223,12 +246,25 @@
 {:then children}
   {#if !collapsed && children.length > 0}
     <ul>
-      {#each children.slice(0, kiddoChunksize) as child}
+      {#each children.slice(0, kiddoChunksize) as child, i}
         <li>
           <div>
             <svelte:self
               rootResource="{child}"
               collapsed="{childrenCollapsed}"
+              selectNextSibling="{i ===
+              Math.min(kiddoChunksize, children.length) - 1
+                ? selectNextSibling
+                : () => {
+                    $selected = children[i + 1]?.resource_id;
+                  }}"
+              selectPreviousSibling="{i === 0
+                ? () => {
+                    $selected = self?.id;
+                  }
+                : () => {
+                    $selected = children[i - 1]?.resource_id;
+                  }}"
               bind:resourceNodeDataMap="{resourceNodeDataMap}"
             />
           </div>
