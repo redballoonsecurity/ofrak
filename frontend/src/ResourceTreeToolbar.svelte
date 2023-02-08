@@ -91,6 +91,14 @@
       },
 
       {
+        text: "Add tag",
+        iconUrl: "/icons/tag.svg",
+        onclick: async (e) => {
+          modifierView = AddTagView;
+        },
+      },
+
+      {
         text: "Download",
         iconUrl: "/icons/download.svg",
         onclick: async (e) => {
@@ -195,13 +203,6 @@
         iconUrl: "/icons/identify.svg",
         onclick: async (e) => {
           modifierView = SearchView;
-        },
-      },
-      {
-        text: "Add tag",
-        iconUrl: "/icons/tag.svg",
-        onclick: async (e) => {
-          modifierView = AddTagView;
         },
       },
     ];
