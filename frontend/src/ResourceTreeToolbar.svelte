@@ -199,7 +199,7 @@
       },
       {
         text: "Add tag",
-        iconUrl: "/icons/carve.svg",
+        iconUrl: "/icons/tag.svg",
         onclick: async (e) => {
           modifierView = AddTagView;
         },
