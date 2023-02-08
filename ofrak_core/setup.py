@@ -30,7 +30,7 @@ entropy_so = setuptools.Extension(
 
 setuptools.setup(
     name="ofrak",
-    version="2.1.1",
+    version="2.2.0",
     description="A binary analysis and modification platform",
     packages=setuptools.find_packages(exclude=["test_ofrak", "test_ofrak.*"]),
     package_data={

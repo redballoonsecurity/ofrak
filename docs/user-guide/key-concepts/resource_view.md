@@ -138,5 +138,5 @@ when you either need to access functionality that a view provides through one of
 when you are going to be reading several attributes from a resource.
 
 <div align="right">
-<img src="../assets/square_03.png" width="125" height="125">
+<img src="../../assets/square_03.png" width="125" height="125">
 </div>
