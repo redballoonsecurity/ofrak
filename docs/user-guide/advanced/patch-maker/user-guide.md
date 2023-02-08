@@ -403,8 +403,8 @@ These include:
 - Linker-generated map files, that include section placement in memory during/after link
 - The resulting executable wrapped in the FEM, should link succeed
 
-For more information please refer to the [PatchMaker troubleshooting guide](./troubleshooting.md).
+For more information please refer to the [PatchMaker troubleshooting guide](troubleshooting.md).
 
 <div align="right">
-<img src="../../assets/square_03.png" width="125" height="125">
+<img src="../../../assets/square_03.png" width="125" height="125">
 </div>

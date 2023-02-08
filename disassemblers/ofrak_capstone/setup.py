@@ -1,4 +1,5 @@
 import setuptools
+import pkg_resources
 from setuptools.command.egg_info import egg_info
 
 
@@ -18,12 +19,22 @@ class egg_info_ex(egg_info):
 with open("README.md") as f:
     long_description = f.read()
 
+
+# Should be the same as in build_image.py
+def read_requirements(requirements_path):
+    with open(requirements_path) as requirements_handle:
+        return [
+            str(requirement)
+            for requirement in pkg_resources.parse_requirements(requirements_handle)
+        ]
+
+
 setuptools.setup(
     name="ofrak_capstone",
     version="1.0.0",
     packages=setuptools.find_packages(exclude=["ofrak_capstone_test", "ofrak_capstone_test.*"]),
     package_data={"ofrak_capstone": ["py.typed"]},
-    install_requires=["capstone==4.0.2", "ofrak"],
+    install_requires=["ofrak"] + read_requirements("requirements.txt"),
     extras_require={
         "test": [
             "fun-coverage==0.2.0",

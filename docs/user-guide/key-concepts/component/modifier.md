@@ -36,5 +36,5 @@ await resource.run(BinaryPatchModifier, patch_config)
 ```
 
 <div align="right">
-<img src="../../assets/square_03.png" width="125" height="125">
+<img src="../../../assets/square_03.png" width="125" height="125">
 </div>

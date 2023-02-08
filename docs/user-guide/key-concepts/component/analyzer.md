@@ -69,5 +69,5 @@ This manner of running analyzers can be used if the analysis results are not nee
 It is also possible to recursively analyzers against a resource and its descendants with the `Resource.analyze_recursively` method. See [Resource](../resource.md) for more details.
 
 <div align="right">
-<img src="../../assets/square_02.png" width="125" height="125">
+<img src="../../../assets/square_02.png" width="125" height="125">
 </div>

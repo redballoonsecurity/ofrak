@@ -5,12 +5,12 @@ The base interface of OFRAK components is [ComponentInterface][ofrak.component.i
 
 OFRAK components are grouped together by the following abstract interfaces:
 
-- [Identifier](./identifier.md)
-- [Unpacker](./unpacker.md)
-- [Analyzer](./analyzer.md)
-- [Modifier](./modifier.md)
-- [Packer](./packer.md)
+- [Identifier](identifier.md)
+- [Unpacker](unpacker.md)
+- [Analyzer](analyzer.md)
+- [Modifier](modifier.md)
+- [Packer](packer.md)
 
 <div align="right">
-<img src="../../assets/square_04.png" width="125" height="125">
+<img src="../../../assets/square_04.png" width="125" height="125">
 </div>
