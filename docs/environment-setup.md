@@ -1,15 +1,86 @@
 # Environment Setup & Installing OFRAK
 
-OFRAK is best run in a [Docker](https://www.docker.com/get-started) image. Some OFRAK features can also be run natively on macOS, but the docs typically assume OFRAK is running in Docker.
+!!! warning
+    OFRAK is a Python library supporting Python3.7 and up. First and foremost, make sure your Python and pip installations are for Python3.7+!
 
-**OFRAK uses Git LFS. This means that you must have Git LFS installed before you clone the repository!** Install Git LFS by following [the instructions here](https://git-lfs.github.com/). If you accidentally cloned the repository before installing Git LFS, `cd` into the repository and run `git lfs pull`.
+There are three main ways one can set up an environment to use OFRAK:
+
+1. From [PyPI](https://pypi.org/project/ofrak/) via `pip`. 
+**This is the simplest setup and generally recommended. Use this!**
+2. From the [source code](https://github.com/redballoonsecurity/ofrak) via `pip` or the `setup.py`. 
+This is a little more complicated, but allows one to keep with and contribute to OFRAK development.
+3. By building the appropriate OFRAK [Docker](https://www.docker.com/get-started) image. 
+This has the most overhead as it requires installing Docker, but provides the most consistent and comprehensive environment.
+
+
+## From PyPI
+
+As simple as running:
+
+```shell
+pip install ofrak
+```
+
+This will install the core `ofrak` package, as well as `ofrak_patch_maker`, and all of their Python dependencies.
+You can verify a successful installation (listing all installed OFRAK modules and components) with the following command:
+
+```shell
+ofrak list
+```
+
+However, not all of OFRAK's dependencies can be installed via `pip install`. 
+These dependencies are, however, optional, and the OFRAK code that requires them can be disabled in order avoid runtime errors.
+OFRAK has a system for inspecting and installing such dependencies. See [the section on external dependencies](handling-non-python-dependencies) for more info on that.
+
+
+## From Source Code
+
+The OFRAK source code can be pulled from [the github page](https://github.com/redballoonsecurity/ofrak):
+
+```shell
+git clone https://github.com/redballoonsecurity/ofrak.git
+cd ofrak
+
+```
+
+**OFRAK uses Git LFS. 
+This means that you must have Git LFS installed to completely clone the repository!** 
+Install Git LFS by following [the instructions here](https://git-lfs.github.com/). 
+You can install Git LFS before or after you clone OFRAK, but if you clone the OFRAK repo first, you will need to `cd` into the repository and run `git lfs install && git lfs pull`.
+
+
+Once cloned, go into each directory in the top level and run the installation command `make develop` 
+(if you do not have and do not wish to have `make` installed, try inspecting the `Makefile` in each directory to see what commands it tries to run, usually something like `pip install -e .`).
+The best order to install each directory is as follows:
+
+1. `ofrak_type`
+2. `ofrak_io`
+3. `ofrak_patch_maker`
+4. `ofrak_core`
+5. Any/all others: `frontend`, `ofrak_tutorial`, `disassemblers/ofrak_angr`, `disassemblers/ofrak_binary_ninja`, `disassemblers/ofrak_capstone`, `disassemblers/ofrak_ghidra`
+
+You *can* skip the installation step for any of the packages above. 
+Any subsequent OFRAK packages which require a non-installed package should be able to simply install it from PyPI. 
+However, this will result in a somewhat confusing environment where some of the OFRAK code in your local repo is actively used by your system, and the rest is not.
+
+Installing OFRAK from source code will not install all of OFRAK's non-Python dependencies (for same reason as when installing OFRAK from PyPI - not all of its dependencies are pip-installable).
+These dependencies are, however, optional, and the OFRAK code that requires them can be disabled in order avoid runtime errors.
+OFRAK has a system for inspecting and installing dependencies. See [the section on external dependencies](handling-non-python-dependencies) for more info on that.
+
+
+### Modifying OFRAK Source Code
+
+The main advantage of installing OFRAK from source is in order to modify or add to the OFRAK code.
+See the [Contributor Guide](contributor-guide/getting-started.md) for best practices and requirements (if you want to upstream your changes) and information on how to write your own OFRAK components.
 
 ## Docker
 
-To build any of the Docker images, use the `build_image.py` utility, which requires the PyYAML package. For example, these commands will build a Ghidra-based Docker image using the `ofrak-ghidra.yml` configuration: 
+Building an OFRAK Docker image will mean you have a full environment, with all of OFRAK's dependencies fully installed.
+To build any of the Docker images, use the `build_image.py` utility, which requires the PyYAML package. 
+For example, these commands will build a Ghidra-based Docker image using the `ofrak-ghidra.yml` configuration: 
 
 ```bash
-python3 -m pip install PyYAML
+pip install PyYAML
 python3 build_image.py --config ofrak-ghidra.yml --base --finish
 ```
 
@@ -18,7 +89,8 @@ Each image consists of a "base" image and a "finish" image. The base image inclu
 This environment setup guide uses the `redballoonsecurity/ofrak/ghidra` image as an example image throughout, but there are several possible base image configurations:
 
 - `ofrak-dev.yml` builds the most complete OFRAK Docker image, including the core OFRAK, a Ghidra install, Ghidra OFRAK components, a Binary Ninja install, and Binary Ninja OFRAK components. 
-    - Binary Ninja will fail to install without a valid license. Follow the instructions below for adding a valid Binary Ninja license.
+!!! warning 
+    Binary Ninja will fail to install without a valid license. Follow the instructions [here](user-guide/disassembler-backends/binary_ninja.md) for adding a Binary Ninja license.
 - `ofrak-ghidra.yml` builds an image that includes core OFRAK, a Ghidra install, and Ghidra OFRAK components. 
 - `ofrak-binary-ninja.yml` is a configuration to build an image with core OFRAK, a Binary Ninja install, and Binary Ninja OFRAK components. **You need to have a valid BinaryNinja license to build and run the image.** 
 - `ofrak-tutorial.yml` builds an image including core OFRAK, Ghidra, the Ghidra components, and the tutorial Jupyter Notebooks that use Ghidra.
@@ -121,32 +193,6 @@ docker exec \
 ./examples/assets/example_program
 ```
 
-### Ghidra
-
-- By default, in containers with Ghidra, the Ghidra server should start automatically when the container starts up.
-- To manually start the Ghidra server in a container started from this image, users should run `python -m ofrak_ghidra.server start`. 
-- To manually stop it, run `python -m ofrak_ghidra.server stop`. 
-- Ghidra logs can be found here: `/root/.ghidra/.ghidra_10.1.2_PUBLIC/application.log`.
-
-See [the Ghidra user guide](./user-guide/ghidra.md) for more information about using Ghidra with OFRAK.
-
-### Binary Ninja
-
-Note that Binary Ninja is not distributed with OFRAK. **You need to have a valid headless BinaryNinja license to build and run the image.** The `license.dat` file should be placed in a `.binaryninja` directory, under the user's home directory. For more details, see the [Docker commands that are run](https://github.com/redballoonsecurity/ofrak/blob/master/disassemblers/ofrak_binary_ninja/Dockerstub).
-
-To build the image, the license should be placed in the project's root directory and named `license.dat`. The serial number needs to be extracted from that file into a file named `serial.txt`. This can be done with the following command:
-
-```bash
-python3 \
-  -c 'import json, sys; print(json.load(sys.stdin)[0]["serial"])' \
-  < license.dat \
-  > serial.txt
-```
-
-The command `python3 build_image.py --config ofrak-binary-ninja.yml --base --finish` will build an image using Docker BuildKit secrets so that neither the license nor serial number are exposed in the built Docker image. (If [Docker BuildKit](https://docs.docker.com/develop/develop-images/build_enhancements/) is not enabled in your environment, precede the `python3 build_image.py` command with `DOCKER_BUILDKIT=1`.)
-
-See the [Binary Ninja user guide](./user-guide/binary_ninja.md) for more information about using Binary Ninja with OFRAK.
-
 ### Useful Docker Commands
 
 Docker provides very extensive [documentation](https://docs.docker.com/) for getting started, as well as a [detailed reference](https://docs.docker.com/engine/reference/commandline/cli/) for the Docker command line interface (CLI).
@@ -160,71 +206,93 @@ Of the many Docker CLI commands, some of the most important for running containe
 - [`docker stop`](https://docs.docker.com/engine/reference/commandline/stop/) gracefully stops a running container
 - [`docker kill`](https://docs.docker.com/engine/reference/commandline/kill/) aborts a running container
 
-## macOS
 
-Core OFRAK can be run locally on macOS.
+## Handling Non-Python Dependencies
 
-It is recommended that you create a virtual environment in which to install the code:
+Since OFRAK integrates many existing tools, it has many dependencies. 
 
-```bash
-python3 -m venv ofrak-venv
-source ofrak-venv/bin/activate
+### Ignore components with missing dependencies
+
+Since OFRAK is modular, these components are optional. 
+To quickly get started with a fresh OFRAK install, you can safely skip installing a number of dependencies by telling OFRAK not to use any components with missing dependencies.
+Use the `-x` or `--exclude-components-missing-dependencies` flag for any OFRAK command-line invocations, and `exclude_components_missing_dependencies` set to `True` when setting up OFRAK in a Python script:
+
+```python
+ofrak = OFRAK(
+    # other arguments...
+    exclude_components_missing_dependencies=True,
+)
+
+# rest of script
 ```
 
-1. Use homebrew to install required libraries and executables:
+**Keep in mind that this means OFRAK will not be able to use those components!**
+For example, if you do not have `pigz` installed, the `GzipUnpacker` and `GzipPacker` will not be able to run.
+The `-x` CLI flag and `exclude_components_missing_dependencies` Python flag will ensure that OFRAK won't try to run them and raise a runtime error, but OFRAK still won't be able to unpack or repack gzip data.
 
-    ```bash
-    brew install \
-      apktool \
-      java \
-      libmagic \
-      lzop \
-      pigz \
-      p7zip \
-      qemu \
-      squashfs \
-      rar \
-      unar \
-      wget
-    ```
+### Installing missing dependencies
 
-    - OFRAK uses `apktool`, `java`, and `wget` to install `uber-apk-signer` for unpacking and packing APK files.
-    - OFRAK uses the `libmagic` library for `python-magic`, which automatically determines which packers/unpackers to use with binaries.
-    - OFRAK uses the `lzop` command line utility for packing/unpacking LZO archives
-    - OFRAK uses the 7-zip command line utility for packing/unpacking 7z archives
-    - OFRAK uses the `qemu-system-i386` command line utility (and other `qemu` commands) for testing the `BzImage` packer and unpacker
-    - OFRAK uses the `mksquashfs` command line utility for packing/unpacking SquashFS filesystems.
-    - OFRAK uses the `rar` and `unar` command line utilities for packing/unpacking RAR archives
+OFRAK dependencies come in three "tiers":
 
-    If not all of the dependencies are installed, core OFRAK will still work, but most of the components will not.
+1. Python packages which can be installed from PyPI.
+2. Packages available through standard package managers like `apt` or `brew`.
+3. Everything else. These tools have non-standard installation steps.
 
-2. OFRAK uses `binwalk` for analyzing packed binary files. It can be installed with the following script:
-   ```bash
-   set -e
-   pushd /tmp
-   git clone https://github.com/ReFirmLabs/binwalk
-   cd binwalk
-   python3 setup.py install
-   popd
-   ```
-3. The `uber-apk-signer` for unpacking and packing APK files can be installed using the following script:
+The easiest dependencies are those which can be installed from PyPI. These are simply included in the requirements for the OFRAK Python packages which require them. 
+Simply by installing an OFRAK Python package, these dependencies will also be installed with no further effort required.
+The rest of this section deals with dependencies in the second two tiers.
 
-    ```bash
-    brew install wget apktool java
-    echo 'export PATH="/usr/local/opt/openjdk/bin:$PATH"' >> ~/.zshrc
-    wget https://github.com/patrickfav/uber-apk-signer/releases/download/v1.0.0/uber-apk-signer-1.0.0.jar -O /usr/local/bin/uber-apk-signer.jar
-    ```
-4. Install core OFRAK and its dependencies:
+The second two types of dependencies can be listed with the `deps` command:
 
-    ```bash
-    for d in ofrak_io ofrak_type ofrak_patch_maker ofrak_core; do make -C "${d}" develop; done 
-    ```
-5. If you are planning to contribute to OFRAK, install the pre-commit hooks. For more information, see the [contributor guide](docs/contributor-guide/getting-started.md).
+```shell
+ofrak deps --missing-only
 
-    ```bash
-    python3 -m pip install --user pre-commit
-    pre-commit install
-    ```
+```
+
+This will give a printout listing each missing dependency (very often a tool required for packing or unpacking some type of file) and some basic info about it, including:
+
+- Name
+
+- Website
+
+- Which component(s) depend on it
+
+This is helpful in determining whether you want to skip installing one or more dependencies, since if you don't expect to need the component(s) requiring a dependency, you can skip it.
+
+#### Dependencies available through other package managers
+
+Some dependencies cannot be installed as part of the `pip install` procedure, but there are packages available for them through common package managers like `apt` or `brew`.
+OFRAK can report these packages and list their `apt` or `brew` packages, so you can easily install those packages.
+
+On a Ubuntu system, you can usually do:
+
+```shell
+ofrak deps --packages-for apt | xargs apt install -y
+
+```
+
+Or on a Mac, you can run:
+
+```shell
+ofrak deps --packages-for brew | xargs brew install -y
+
+```
+
+Each of these commands will collect all OFRAK dependencies with packages installable through the respective package manager, then pipe all those packages names to the package manager's install command.
+In this, way a good chunk of OFRAK's dependencies can be installed quickly.
+
+#### Dependencies with non-standard installation
+
+Some dependencies don't have a standard installation package (on PyPI, `apt`, or `brew`). 
+These may still be simple - for example, downloading a `.jar` file - but they can also be complicated. 
+Outside of the OFRAK Docker build, OFRAK will not attempt to install these.
+The `Dockerstub` files can provide a good reference for how to install something, but they are specific to the Linux environment the Docker build constructs.
+You are encouraged to visit each dependency's home page (listed by the `ofrak deps` command) for the developers' recommended installation steps for your specific platform.
+
+
+## Setting up to contribute
+
+If you are interested in contributing to OFRAK, check out the [contributor guide](contributor-guide/getting-started.md) for information on what tools you should or may want to install (such as git pre-commit hooks).
 
 <div align="right">
 <img src="./assets/square_05.png" width="125" height="125">

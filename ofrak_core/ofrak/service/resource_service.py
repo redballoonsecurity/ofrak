@@ -966,6 +966,7 @@ class ResourceService(ResourceServiceInterface):
             former_parent_resource_node.remove_child(resource_node)
 
         deleted_models = self._delete_resource_helper(resource_node)
+        LOGGER.debug(f"Deleted {resource_id.hex()}")
         return deleted_models
 
     async def delete_resources(self, resource_ids: Iterable[bytes]):
@@ -981,6 +982,8 @@ class ResourceService(ResourceServiceInterface):
                 former_parent_resource_node.remove_child(resource_node)
 
             deleted_models.extend(self._delete_resource_helper(resource_node))
+        if resource_ids:
+            LOGGER.debug(f"Deleted {', '.join(resource_id.hex() for resource_id in resource_ids)}")
         return deleted_models
 
     def _delete_resource_helper(self, _resource_node: ResourceNode):
