@@ -6,6 +6,7 @@ import argparse
 import os
 import subprocess
 import sys
+import pkg_resources
 import yaml
 
 BASE_DOCKERFILE = "base.Dockerfile"
@@ -186,19 +187,46 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
 
     # Support multi-stage builds
     for package_path in config.packages_paths:
-        if not os.path.exists(os.path.join(package_path, "Dockerstage")):
+        dockerstage_path = os.path.join(package_path, "Dockerstage")
+        if not os.path.exists(dockerstage_path):
             continue
-        with open(os.path.join(package_path, "Dockerstage")) as file_handle:
+        with open(dockerstage_path) as file_handle:
             dockerstub = file_handle.read()
-        dockerfile_base_parts.append(dockerstub)
+        dockerfile_base_parts += [f"### {dockerstage_path}", dockerstub]
 
     dockerfile_base_parts += [
         "FROM python:3.7-bullseye@sha256:338ead05c1a0aa8bd8fcba8e4dbbe2afd0283b4732fd30cf9b3bfcfcbc4affab",
+        "",
     ]
+
+    requirement_suffixes = [""]
+    if config.install_target is InstallTarget.DEVELOP:
+        requirement_suffixes += ["-docs", "-test"]
+
     for package_path in config.packages_paths:
-        with open(os.path.join(package_path, "Dockerstub")) as file_handle:
+        dockerstub_path = os.path.join(package_path, "Dockerstub")
+        with open(dockerstub_path) as file_handle:
             dockerstub = file_handle.read()
-        dockerfile_base_parts.append(dockerstub)
+        dockerfile_base_parts += [f"### {dockerstub_path}", dockerstub]
+        # Collect python dependencies
+        python_reqs = []
+        for suff in requirement_suffixes:
+            requirements_path = os.path.join(package_path, f"requirements{suff}.txt")
+            if not os.path.exists(requirements_path):
+                continue
+            with open(requirements_path) as requirements_handle:
+                python_reqs += [
+                    str(requirement)
+                    for requirement in pkg_resources.parse_requirements(requirements_handle)
+                ]
+        if python_reqs:
+            dockerfile_base_parts += [
+                f"### Python dependencies from the {package_path} requirements file[s]",
+                "RUN python3 -m pip install --upgrade pip &&\\",
+                "   python3 -m pip install '" + "' '".join(python_reqs) + "'",
+                "",
+            ]
+
     return "\n".join(dockerfile_base_parts)
 
 

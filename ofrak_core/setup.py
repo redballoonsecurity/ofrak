@@ -1,4 +1,5 @@
 import setuptools
+import pkg_resources
 from setuptools.command.egg_info import egg_info
 
 
@@ -28,6 +29,15 @@ entropy_so = setuptools.Extension(
 )
 
 
+# Should be the same as in build_image.py
+def read_requirements(requirements_path):
+    with open(requirements_path) as requirements_handle:
+        return [
+            str(requirement)
+            for requirement in pkg_resources.parse_requirements(requirements_handle)
+        ]
+
+
 setuptools.setup(
     name="ofrak",
     version="2.2.0",
@@ -37,58 +47,14 @@ setuptools.setup(
         "ofrak": ["py.typed"],
     },
     install_requires=[
-        "aiohttp~=3.8.1",
-        "beartype~=0.10.2",
-        "fdt==0.3.2",
-        "importlib-metadata>=1.4",
-        "intervaltree==3.1.0",
-        "keystone-engine==0.9.2",
-        "lief==0.12.2",
         "ofrak_io~=1.0",
         "ofrak_type~=2.0",
         "ofrak_patch_maker~=3.0",
-        "orjson~=3.6.7",
-        "pefile==2022.5.30",
-        "pycdlib==1.12.0",
-        "python-magic",
-        "reedsolo==1.5.4",
-        "sortedcontainers==2.2.2",
-        "synthol~=0.1.1",
-        "typeguard~=2.13.3",
-        "ubi-reader==0.8.5",
-        "xattr==0.9.7",
-    ],
+    ]
+    + read_requirements("requirements.txt"),
     extras_require={
-        "docs": [
-            "mkdocs==1.2.3",
-            "mkdocs-autorefs==0.3.0",
-            "mkdocstrings==0.16.2",
-            "mkdocs-literate-nav==0.4.0",
-            "mkdocs-material==7.3.3",
-            "mkdocs_gen_files==0.3.3",
-            "jinja2==3.0.0",
-            "pytkdocs>=0.12.0",
-            "PyYAML~=6.0,>=5.4",
-        ],
-        "test": [
-            "autoflake==1.4",
-            "black==22.3.0",
-            "pytest",
-            "hypothesis~=6.39.3",
-            "hypothesis-trio",
-            "trio-asyncio",
-            "mypy==0.942",
-            "psutil~=5.9",
-            "pyelftools==0.29",
-            "pytest-aiohttp",
-            "pytest-asyncio==0.19.0",
-            "pytest-lazy-fixture",
-            "pytest-cov",
-            "pytest-xdist",
-            "beartype~=0.10.2",
-            "requests",
-            "fun-coverage==0.2.0",
-        ],
+        "docs": read_requirements("requirements-docs.txt"),
+        "test": read_requirements("requirements-test.txt"),
     },
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",
