@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 ### Fixed
 - Fix bug where initially loaded GUI resource has collapsed children
+- Support more OpenWRT TRX files by making fewer assumptions about the partitions
 
 ## [2.2.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.1.1...ofrak-v2.2.0))
 ### Fixed
