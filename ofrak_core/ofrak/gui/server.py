@@ -461,9 +461,6 @@ class AiohttpOFRAKServer:
 
     @exceptions_to_http(SerializedError)
     async def add_tag(self, request: Request) -> Response:
-        """
-        Expected POST body is a comment in the form Tuple[Optional[Range], str] (serialized to JSON).
-        """
         resource = await self._get_resource_for_request(request)
         tag = self._serializer.from_pjson(await request.json(), ResourceTag)
         resource.add_tag(tag)

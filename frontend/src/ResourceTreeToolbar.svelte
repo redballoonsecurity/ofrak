@@ -91,7 +91,7 @@
       },
 
       {
-        text: "Add tag",
+        text: "Add Tag",
         iconUrl: "/icons/tag.svg",
         onclick: async (e) => {
           modifierView = AddTagView;

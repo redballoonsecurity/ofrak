@@ -171,7 +171,7 @@
     {#await ofrakTagsPromise}
       <LoadingText />
     {:then ofrakTags}
-      {#if ofrakTagsPromise && ofrakTagsPromise.length > 0}
+      {#if ofrakTags && ofrakTags.length > 0}
         <form on:submit|preventDefault="{chooseTag}">
           <select
             on:click|stopPropagation="{() => undefined}"
@@ -192,7 +192,7 @@
           >
         </form>
       {:else}
-        Failed to get the list of OFRAK tags!
+        No tags found!
       {/if}
     {:catch}
       <p>Failed to get the list of OFRAK tags!</p>
