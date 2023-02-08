@@ -31,6 +31,7 @@ class OfrakImageConfig:
     build_finish: bool
     # Whether to supply --no-cache to docker build commands
     no_cache: bool
+    check_python_reqs: bool
     extra_build_args: Optional[List[str]]
     install_target: InstallTarget
     cache_from: List[str]
@@ -140,6 +141,7 @@ def parse_args() -> OfrakImageConfig:
     parser.add_argument("--base", action="store_true")
     parser.add_argument("--finish", action="store_true")
     parser.add_argument("--no-cache", action="store_true")
+    parser.add_argument("--check-python-reqs", action="store_true")
     parser.add_argument(
         "--target",
         choices=[InstallTarget.DEVELOP.value, InstallTarget.INSTALL.value],
@@ -157,6 +159,7 @@ def parse_args() -> OfrakImageConfig:
         args.base,
         args.finish,
         args.no_cache,
+        args.check_python_reqs,
         config_dict.get("extra_build_args"),
         InstallTarget(args.target),
         args.cache_from,
@@ -233,6 +236,7 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
 def create_dockerfile_finish(config: OfrakImageConfig) -> str:
     full_base_image_name = "/".join((config.registry, config.base_image_name))
     dockerfile_finish_parts = [
+        "# syntax = docker/dockerfile:1.3\n\n",
         f"FROM {full_base_image_name}:{GIT_COMMIT_HASH}\n\n",
         f"ARG OFRAK_SRC_DIR=/\n",
     ]
@@ -252,8 +256,19 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
             "\\n",
         ]
     )
-    dockerfile_finish_parts.append(f'RUN printf "{develop_makefile}" >> Makefile\n')
-    dockerfile_finish_parts.append("RUN make $INSTALL_TARGET\n\n")
+    dockerfile_finish_parts += [
+        f'RUN printf "{develop_makefile}" >> Makefile\n\n',
+    ]
+    if config.check_python_reqs:
+        dockerfile_finish_parts += [
+            '# We use --network="none" to ensure all dependencies were installed in base.Dockerfile\n',
+            'RUN --network="none" make $INSTALL_TARGET\n',
+            "RUN python3 -m pip check\n\n",
+        ]
+    else:
+        dockerfile_finish_parts += [
+            "RUN make $INSTALL_TARGET\n\n",
+        ]
     finish_makefile = "\\n\\\n".join(
         [
             "test:",
