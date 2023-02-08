@@ -115,30 +115,25 @@
     childrenCollapsed = false,
     kiddoChunksize = 512;
 
+  $: self_id = rootResource.get_id();
   $: {
-    if (resourceNodeDataMap[rootResource.get_id()] === undefined) {
-      resourceNodeDataMap[rootResource.get_id()] = {};
+    if (resourceNodeDataMap[self_id] === undefined) {
+      resourceNodeDataMap[self_id] = {};
     }
-    if (resourceNodeDataMap[rootResource.get_id()].collapsed === undefined) {
-      resourceNodeDataMap[rootResource.get_id()].collapsed = collapsed;
+    if (resourceNodeDataMap[self_id].collapsed === undefined) {
+      resourceNodeDataMap[self_id].collapsed = collapsed;
     }
-    if (
-      resourceNodeDataMap[rootResource.get_id()].childrenPromise === undefined
-    ) {
-      resourceNodeDataMap[rootResource.get_id()].childrenPromise =
+    if (resourceNodeDataMap[self_id].childrenPromise === undefined) {
+      resourceNodeDataMap[self_id].childrenPromise =
         rootResource.get_children();
     }
-    if (
-      resourceNodeDataMap[rootResource.get_id()].commentsPromise === undefined
-    ) {
-      resourceNodeDataMap[rootResource.get_id()].commentsPromise =
+    if (resourceNodeDataMap[self_id].commentsPromise === undefined) {
+      resourceNodeDataMap[self_id].commentsPromise =
         rootResource.get_comments();
     }
-    childrenPromise =
-      resourceNodeDataMap[rootResource.get_id()].childrenPromise;
-    commentsPromise =
-      resourceNodeDataMap[rootResource.get_id()].commentsPromise;
-    collapsed = resourceNodeDataMap[rootResource.get_id()].collapsed;
+    childrenPromise = resourceNodeDataMap[self_id].childrenPromise;
+    commentsPromise = resourceNodeDataMap[self_id].commentsPromise;
+    collapsed = resourceNodeDataMap[self_id].collapsed;
   }
 
   $: childrenPromise?.then((children) => {
@@ -147,12 +142,12 @@
     }
   });
 
-  $: if ($selected === self?.id) {
+  $: if ($selected === self_id) {
     shortcuts["h"] = () => {
-      resourceNodeDataMap[self?.id].collapsed = true;
+      resourceNodeDataMap[self_id].collapsed = true;
     };
     shortcuts["l"] = () => {
-      resourceNodeDataMap[self?.id].collapsed = false;
+      resourceNodeDataMap[self_id].collapsed = false;
     };
     shortcuts["j"] = () => {
       if (!collapsed && firstChild) {
@@ -174,26 +169,26 @@
     if (e.detail > 1) {
       return;
     }
-    if ($selected === self?.id) {
+    if ($selected === self_id) {
       $selected = undefined;
     } else {
-      $selected = self?.id;
+      $selected = self_id;
     }
   }
 
   function onDoubleClick(e) {
-    resourceNodeDataMap[self?.id].collapsed = !collapsed;
+    resourceNodeDataMap[self_id].collapsed = !collapsed;
     // Expand children recursively on double click
     if (!collapsed) {
       childrenCollapsed = false;
     }
-    $selected = self?.id;
+    $selected = self_id;
   }
 
   async function onDeleteClick(optional_range) {
     // Delete the selected comment.
     // As a side effect, the corresponding resource gets selected.
-    $selected = self?.id;
+    $selected = self_id;
     await rootResource.delete_comment(optional_range);
     resourceNodeDataMap[$selected].commentsPromise =
       rootResource.get_comments();
@@ -204,7 +199,7 @@
   {#if children?.length > 0}
     <button
       on:click="{() => {
-        resourceNodeDataMap[self?.id].collapsed = !collapsed;
+        resourceNodeDataMap[self_id].collapsed = !collapsed;
         childrenCollapsed = !collapsed;
       }}"
     >
@@ -218,8 +213,8 @@
   on:click="{onClick}"
   on:dblclick="{onDoubleClick}"
   bind:this="{self}"
-  class:selected="{$selected === self?.id}"
-  id="{rootResource.get_id()}"
+  class:selected="{$selected === self_id}"
+  id="{self_id}"
 >
   {rootResource.get_caption()}
 </button>
@@ -260,7 +255,7 @@
                   }}"
               selectPreviousSibling="{i === 0
                 ? () => {
-                    $selected = self?.id;
+                    $selected = self_id;
                   }
                 : () => {
                     $selected = children[i - 1]?.resource_id;
