@@ -1,8 +1,33 @@
 # Ghidra Backend
-## Install
-The Ghidra backend comes pre-installed in the OFRAK Docker image.
 
-## Start/Stop
+## Install
+
+### Docker
+If building an OFRAK Docker image, Ghidra will be automatically installed if the `disassemblers/ofrak_ghidra` package is included in the Docker build's config file.
+For example, `ofrak-ghidra.yml`:
+
+```yaml
+registry: "redballoonsecurity/ofrak"
+base_image_name: "ghidra-base"
+image_name: "ghidra"
+packages_paths:
+  [
+    "ofrak_type",
+    "ofrak_io",
+    "ofrak_patch_maker",
+    "ofrak_core",
+    "disassemblers/ofrak_ghidra",
+    "frontend",
+  ]
+entrypoint: |
+    nginx \
+      & python3 -m ofrak_ghidra.server start \
+      & python3 -m ofrak gui -H 0.0.0.0 -p 8877
+
+
+```
+
+## Start/Stop the Ghidra Server
 
 The Ghidra server must be running before OFRAK can use Ghidra analysis.
 
@@ -18,7 +43,7 @@ ofrak.injector.discover(ofrak_ghidra)
 ```
 
 !!! warning
-    You can only use one of these analysis backends at a time (Ghidra OR Binary Ninja OR IDA) 
+    You can only use one analysis backends at a time (angr OR Binary Ninja OR Ghidra) 
 
 ### Ghidra auto-analysis
 Using Ghidra auto-analysis is transparent after the components are discovered, you don't have to do 

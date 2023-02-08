@@ -60,11 +60,11 @@ resource: Resource
 await resource.unpack()
 ```
 
-If `resource` is an ELF, OFRAK will run the `IElfUnpacker` when this code is run. The reason for this is that `Resource.unpack` first runs all registered [identifiers](./identifier.md). Since the file is an ELF, it will be given the `Elf` tag, and OFRAK will then run the `IElfUnpacker`.
+If `resource` is an ELF, OFRAK will run the `IElfUnpacker` when this code is run. The reason for this is that `Resource.unpack` first runs all registered [identifiers](identifier.md). Since the file is an ELF, it will be given the `Elf` tag, and OFRAK will then run the `IElfUnpacker`.
 
 ### Recursive Unpacking
 It is also possible to chain `unpack` calls together recursively using the `Resource.unpack_recursively` method. See [Resource](../resource.md) for more details.
 
 <div align="right">
-<img src="../../assets/square_01.png" width="125" height="125">
+<img src="../../../assets/square_01.png" width="125" height="125">
 </div>

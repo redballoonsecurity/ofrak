@@ -72,5 +72,5 @@ Since the resource has the `ZipArchive` tag, OFRAK will run the `ZipPacker`.
 It is also possible to chain `pack` calls together recursively using the `Resource.pack_recursively` method. See [Resource](../resource.md) for more details.
 
 <div align="right">
-<img src="../../assets/square_04.png" width="125" height="125">
+<img src="../../../assets/square_04.png" width="125" height="125">
 </div>

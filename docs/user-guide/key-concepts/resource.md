@@ -37,5 +37,5 @@ Data and attribute dependencies are invalidated whenever an OFRAK patcher is cal
 Dependency invalidation means that the `ResourceAttributeDependency.component_id` is removed from `ResourceModel.components_by_attributes` and `ResourceModel.component_versions`. This means that the next time `Resource.analyze_attributes` is called to get that `ResourceAttributes type, the component ID called to analyze those attributes will not be found, triggering a search for the analyzer to produce those attributes and running it. Note that the attributes are **not** actually removed from the resource, which means get_attributes will still return the existing value.
 
 <div align="right">
-<img src="../assets/square_02.png" width="125" height="125">
+<img src="../../assets/square_02.png" width="125" height="125">
 </div>
