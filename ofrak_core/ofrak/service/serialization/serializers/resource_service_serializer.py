@@ -76,7 +76,7 @@ class ResourceServiceSerializer(SerializerInterface):
             resource_node.parent = parent
             # Update `_children`
             resource_node._children = {
-                resource_service._resource_store[child_id]
+                resource_service._resource_store[child_id]: None
                 for child_id in getattr(resource_node, "_pjson_children_ids")
             }
             delattr(resource_node, "_pjson_children_ids")
@@ -164,7 +164,7 @@ class ResourceNodeSerializer(SerializerInterface):
         result = {}
         for attr_name, type_hint in self.serialized_annotations.items():
             result[attr_name] = self._service.to_pjson(getattr(obj, attr_name), type_hint)
-        children_ids = [child.model.id for child in obj._children]
+        children_ids = [child.model.id for child in obj._children.keys()]
         result["_pjson_children_ids"] = self._service.to_pjson(children_ids, List[bytes])
         return result
 
