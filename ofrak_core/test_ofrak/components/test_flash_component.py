@@ -24,6 +24,9 @@ DEFAULT_VERIFY_FILE = os.path.join(
 DEFAULT_UNPACKED_VERIFY_FILE = os.path.join(
     test_ofrak.components.ASSETS_DIR, "flash_test_default_unpacked_verify.bin"
 )
+DEFAULT_UNPACKED_MODIFIED_VERIFY_FILE = os.path.join(
+    test_ofrak.components.ASSETS_DIR, "flash_test_default_unpacked_modified_verify.bin"
+)
 DEFAULT_TEST_ATTR = FlashAttributes(
     header_block_format=[
         FlashField(FlashFieldType.MAGIC, 7),
@@ -196,6 +199,12 @@ class TestFlashUnpackModifyPackUnpackVerify(TestFlashUnpackModifyPack):
         root_resource.add_attributes(DEFAULT_TEST_ATTR)
         await root_resource.save()
         await self.unpack(root_resource)
+        logical_data_resource = await root_resource.get_only_descendant(
+            r_filter=ResourceFilter.with_tags(
+                FlashLogicalDataResource,
+            ),
+        )
+        await self.verify(logical_data_resource, DEFAULT_UNPACKED_VERIFY_FILE)
         await self.modify(root_resource)
         await self.repack(root_resource)
         await self.unpack(root_resource)
@@ -204,4 +213,4 @@ class TestFlashUnpackModifyPackUnpackVerify(TestFlashUnpackModifyPack):
                 FlashLogicalDataResource,
             ),
         )
-        await self.verify(logical_data_resource, DEFAULT_UNPACKED_VERIFY_FILE)
+        await self.verify(logical_data_resource, DEFAULT_UNPACKED_MODIFIED_VERIFY_FILE)
