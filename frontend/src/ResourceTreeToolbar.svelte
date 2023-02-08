@@ -6,6 +6,7 @@
 
   import { selectedResource, selected } from "./stores.js";
   import SearchView from "./SearchView.svelte";
+  import AddTagView from "./AddTagView.svelte";
 
   export let resourceNodeDataMap, modifierView;
   $: rootResource = $selectedResource;
@@ -194,6 +195,13 @@
         iconUrl: "/icons/identify.svg",
         onclick: async (e) => {
           modifierView = SearchView;
+        },
+      },
+      {
+        text: "Add tag",
+        iconUrl: "/icons/carve.svg",
+        onclick: async (e) => {
+          modifierView = AddTagView;
         },
       },
     ];
