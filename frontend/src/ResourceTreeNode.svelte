@@ -101,21 +101,20 @@
 
   import { selected } from "./stores.js";
   import { shortcuts } from "./keyboard";
-  import { children } from "svelte/internal";
 
   export let rootResource,
     resourceNodeDataMap,
     selectNextSibling = () => {},
     selectPreviousSibling = () => {},
-    collapsed = true;
+    collapsed = true,
+    childrenCollapsed = true;
   let self,
     firstChild,
     childrenPromise,
     commentsPromise,
-    childrenCollapsed = false,
+    self_id = rootResource.get_id(),
     kiddoChunksize = 512;
 
-  $: self_id = rootResource.get_id();
   $: {
     if (resourceNodeDataMap[self_id] === undefined) {
       resourceNodeDataMap[self_id] = {};
@@ -200,7 +199,6 @@
     <button
       on:click="{() => {
         resourceNodeDataMap[self_id].collapsed = !collapsed;
-        childrenCollapsed = !collapsed;
       }}"
     >
       {#if collapsed}
@@ -247,6 +245,7 @@
             <svelte:self
               rootResource="{child}"
               collapsed="{childrenCollapsed}"
+              childrenCollapsed="{childrenCollapsed}"
               selectNextSibling="{i ===
               Math.min(kiddoChunksize, children.length) - 1
                 ? selectNextSibling
