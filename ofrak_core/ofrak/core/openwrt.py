@@ -336,7 +336,7 @@ class OpenWrtTrxPacker(Packer[None]):
     async def pack(self, resource: Resource, config=None):
         openwrt_v = await resource.view_as(OpenWrtTrx)
         header = await openwrt_v.get_header()
-        children_by_offest = sorted(
+        children_by_offset = sorted(
             [
                 (await child.get_data_range_within_root(), child)
                 for child in await resource.get_children()
@@ -344,7 +344,7 @@ class OpenWrtTrxPacker(Packer[None]):
             ],
             key=lambda x: x[0].start,
         )
-        repacked_data_l = [await child.get_data() for _, child in children_by_offest]
+        repacked_data_l = [await child.get_data() for _, child in children_by_offset]
         repacked_data_b = b"".join(repacked_data_l)
         trx_length = header.get_header_length() + len(repacked_data_b)
 

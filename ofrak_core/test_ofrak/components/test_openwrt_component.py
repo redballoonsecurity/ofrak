@@ -30,7 +30,7 @@ class TestOpenWrtTrxUnpackModifyPack(UnpackModifyPackPattern):
         The modification for the OpenWrtTrx test is to replace the entirety of the first partition
         with 4 null bytes
         """
-        children_by_offest = sorted(
+        children_by_offset = sorted(
             [
                 (await child.get_data_range_within_root(), child)
                 for child in await resource.get_children()
@@ -38,7 +38,7 @@ class TestOpenWrtTrxUnpackModifyPack(UnpackModifyPackPattern):
             ],
             key=lambda x: x[0].start,
         )
-        partition = children_by_offest[0][1]
+        partition = children_by_offset[0][1]
         original_size = await partition.get_data_length()
         partition.queue_patch(Range(0, original_size), b"\x00\x00\x00\x00")
         await partition.save()
