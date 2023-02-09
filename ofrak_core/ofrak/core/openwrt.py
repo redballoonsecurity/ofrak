@@ -348,7 +348,7 @@ class OpenWrtTrxPacker(Packer[None]):
         repacked_data_b = b"".join(repacked_data_l)
         trx_length = header.get_header_length() + len(repacked_data_b)
 
-        offsets = [r.start for r, _ in children_by_offest]
+        offsets = [r.start for r, _ in children_by_offset]
         header_config = OpenWrtTrxHeaderModifierConfig(
             trx_length=trx_length, trx_partition_offsets=offsets
         )
