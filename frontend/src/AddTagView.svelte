@@ -1,4 +1,12 @@
 <style>
+  form {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+  }
+
   button {
     padding-top: 0.5em;
     padding-bottom: 0.5em;
@@ -67,6 +75,11 @@
     font-size: inherit;
     font-family: var(--font);
     box-shadow: none;
+  }
+
+  select {
+    flex-grow: 1;
+    margin: 0 2ch;
   }
 
   option {
