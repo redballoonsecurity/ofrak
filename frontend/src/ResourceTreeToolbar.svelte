@@ -6,6 +6,7 @@
 
   import { selectedResource, selected } from "./stores.js";
   import SearchView from "./SearchView.svelte";
+  import AddTagView from "./AddTagView.svelte";
 
   export let resourceNodeDataMap, modifierView;
   $: rootResource = $selectedResource;
@@ -90,6 +91,14 @@
             childrenPromise: rootResource.get_children(),
           };
           refreshResource();
+        },
+      },
+
+      {
+        text: "Add Tag",
+        iconUrl: "/icons/tag.svg",
+        onclick: async (e) => {
+          modifierView = AddTagView;
         },
       },
 

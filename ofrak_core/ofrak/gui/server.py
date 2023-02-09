@@ -37,6 +37,7 @@ from ofrak import (
     ResourceAttributeRangeFilter,
     ResourceAttributeValueFilter,
     ResourceSort,
+    ResourceTag,
 )
 from ofrak.core import Addressable, File
 from ofrak.core import (
@@ -150,6 +151,8 @@ class AiohttpOFRAKServer:
                 web.post("/{resource_id}/add_comment", self.add_comment),
                 web.post("/{resource_id}/delete_comment", self.delete_comment),
                 web.post("/{resource_id}/search_for_vaddr", self.search_for_vaddr),
+                web.post("/{resource_id}/add_tag", self.add_tag),
+                web.get("/get_all_tags", self.get_all_tags),
                 web.get("/", self.get_static_files),
                 web.static(
                     "/",
@@ -455,6 +458,20 @@ class AiohttpOFRAKServer:
 
         except NotFoundError:
             return json_response([])
+
+    @exceptions_to_http(SerializedError)
+    async def add_tag(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
+        tag = self._serializer.from_pjson(await request.json(), ResourceTag)
+        resource.add_tag(tag)
+        await resource.save()
+        return json_response(self._serialize_resource(resource))
+
+    @exceptions_to_http(SerializedError)
+    async def get_all_tags(self, request: Request) -> Response:
+        return json_response(
+            self._serializer.to_pjson(self._ofrak_context.get_all_tags(), Set[ResourceTag])
+        )
 
     @exceptions_to_http(SerializedError)
     async def get_static_files(self, request: Request) -> FileResponse:
