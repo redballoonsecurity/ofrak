@@ -149,18 +149,29 @@
   }
 
   onMount(async () => {
-    await fetch(`/get_all_tags`).then((r) => {
-      r.json().then((ofrakTags) => {
-        ofrakTags.sort(function (a, b) {
-          if (cleanOfrakType(a) > cleanOfrakType(b)) {
-            return 1;
-          } else {
-            return -1;
-          }
+    try {
+      await fetch(`/get_all_tags`).then(async (r) => {
+        if (!r.ok) {
+          throw Error(JSON.stringify(await r.json(), undefined, 2));
+        }
+        r.json().then((ofrakTags) => {
+          ofrakTags.sort(function (a, b) {
+            if (cleanOfrakType(a) > cleanOfrakType(b)) {
+              return 1;
+            } else {
+              return -1;
+            }
+          });
+          ofrakTagsPromise = ofrakTags;
         });
-        ofrakTagsPromise = ofrakTags;
       });
-    });
+    } catch (err) {
+      try {
+        errorMessage = JSON.parse(err.message).message;
+      } catch (_) {
+        errorMessage = err.message;
+      }
+    }
   });
 </script>
 
