@@ -46,48 +46,8 @@
     align-content: center;
   }
 
-  label {
-    margin-bottom: 1em;
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    justify-content: space-evenly;
-    align-items: baseline;
-    align-content: center;
-    white-space: nowrap;
-  }
-
-  .nowrap {
-    white-space: nowrap;
-  }
-
   .error {
     margin-top: 2em;
-  }
-
-  h1 {
-    text-transform: uppercase;
-    font-weight: bold;
-    color: inherit;
-    font-size: xxx-large;
-    line-height: 1;
-    margin: 0;
-    max-width: 50%;
-    text-align: center;
-  }
-
-  form {
-    max-width: 50%;
-  }
-
-  .center {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    height: 100%;
-    color: var(--main-fg-color);
   }
 
   button,
@@ -111,10 +71,6 @@
 
   option {
     font-family: monospace;
-  }
-
-  input[type="file"] {
-    display: none;
   }
 </style>
 
@@ -178,13 +134,12 @@
 <div class="container">
   <div class="inputs">
     <p>Select tag to add to resource.</p>
-    New tag:
     {#await ofrakTagsPromise}
       <LoadingText />
     {:then ofrakTags}
       {#if ofrakTags && ofrakTags.length > 0}
         <form on:submit|preventDefault="{chooseTag}">
-          <select
+          New Tag: <select
             on:click|stopPropagation="{() => undefined}"
             bind:value="{selectedTag}"
           >
