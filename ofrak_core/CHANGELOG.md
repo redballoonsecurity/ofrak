@@ -4,14 +4,17 @@ All notable changes to `ofrak` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+### Fixed
+- Fix bug where initially loaded GUI resource has collapsed children
+
 ### Added
 - Add keyboard shortcuts to the GUI
 - Updates to Flash components: [#195](https://github.com/redballoonsecurity/ofrak/pull/195)
   - Flash components now support more than one occurrence of the same field type in `FlashAttributes`.
   - `FlashOobResourceUnpacker` continues to unpack even if blocks do not perfectly align at end of the `FlashOobResource` (this is useful for real-world flash dumps).
 
-### Fixed
-- Fix bug where initially loaded GUI resource has collapsed children
+### Changed
+- Tweak how errors are raised when auto-running components, so the actual root cause is not buried [#219](https://github.com/redballoonsecurity/ofrak/pull/219)
 
 ## [2.2.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.1.1...ofrak-v2.2.0))
 ### Fixed

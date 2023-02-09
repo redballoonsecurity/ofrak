@@ -453,11 +453,11 @@ class JobService(JobServiceInterface):
                 else:
                     component_run_error = cast(BaseException, component_run_result)
                     request_causing_run, component_name = component_run_metadata
-                    raise ComponentAutoRunFailure(
+                    raise component_run_error from ComponentAutoRunFailure(
                         request_causing_run.target_resource_id,
                         request_causing_run.component_filter,
                         component_name.encode(),
-                    ) from component_run_error
+                    )
 
             concurrent_run_tasks = list(pending)
             n_tasks_to_add = min(len(completed), len(queue))
