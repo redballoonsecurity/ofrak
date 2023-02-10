@@ -4,6 +4,8 @@ from typing import Tuple, Iterable, Dict, List, Set, Type, Optional
 
 import pytest
 
+from ofrak import OFRAKContext
+from ofrak.core.magic import Magic
 from ofrak.model.component_model import ComponentContext, ClientComponentContext
 from ofrak.model.data_model import DataPatchesResult
 from ofrak.model.resource_model import (
@@ -16,11 +18,9 @@ from ofrak.model.resource_model import (
     ModelAttributeDependenciesType,
     ModelDataDependenciesType,
 )
-from ofrak.service.data_service import DataService
+from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.dependency_handler import DependencyHandler
-from ofrak.service.resource_service import ResourceService
 from ofrak.service.resource_service_i import ResourceServiceInterface
-from ofrak.core.magic import Magic
 from ofrak_type.range import Range
 
 
@@ -30,17 +30,23 @@ def resource_context():
 
 
 @pytest.fixture
-def resource_service():
-    return ResourceService()
+def resource_service(ofrak_context: OFRAKContext) -> ResourceServiceInterface:
+    return ofrak_context.resource_service
+
+
+@pytest.fixture
+def data_service(ofrak_context: OFRAKContext) -> DataServiceInterface:
+    return ofrak_context.data_service
 
 
 @pytest.fixture
 def dependency_handler(
     resource_context: ResourceContext,
     resource_service: ResourceServiceInterface,
+    data_service: DataServiceInterface,
 ):
     return DependencyHandler(
-        resource_service, DataService(), ClientComponentContext(), resource_context
+        resource_service, data_service, ClientComponentContext(), resource_context
     )
 
 
@@ -62,6 +68,7 @@ class DependencyInvalidationTestCase:
         self,
         resource_context: ResourceContext,
         resource_service: ResourceServiceInterface,
+        data_service: DataServiceInterface,
     ):
         models: Dict[bytes, ResourceModel] = dict()
         for dependant_id, depends_on_id in itertools.chain(
@@ -98,6 +105,8 @@ class DependencyInvalidationTestCase:
 
             if resource_id in self.resource_ids_to_delete:
                 await resource_service.delete_resource(resource_id)
+
+        await data_service.create_root(data_id=b"root resource", data=b"e" * 0x20)
 
     def get_all_ids_with_attributes(self) -> Set[bytes]:
         all_ids = set()
@@ -242,10 +251,11 @@ DEPENDENCY_INVALIDATION_TEST_CASES = [
 async def test_dependency_invalidation(
     dependency_handler: DependencyHandler,
     resource_context: ResourceContext,
-    resource_service: ResourceServiceInterface,
     test_case: DependencyInvalidationTestCase,
 ):
-    await test_case.set_up_test_case(resource_context, resource_service)
+    await test_case.set_up_test_case(
+        resource_context, dependency_handler._resource_service, dependency_handler._data_service
+    )
     await dependency_handler.handle_post_patch_dependencies(test_case.patch_results)
 
     resource_ids_with_valid_dependencies = test_case.get_all_ids_with_attributes().difference(
