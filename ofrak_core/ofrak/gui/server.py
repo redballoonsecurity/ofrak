@@ -60,6 +60,7 @@ from ofrak.model.resource_model import (
     ResourceModel,
     ResourceAttributes,
     MutableResourceModel,
+    RootOffset,
 )
 from ofrak.model.viewable_tag_model import ResourceViewContext
 from ofrak.resource import Resource
@@ -370,6 +371,7 @@ class AiohttpOFRAKServer:
             child_models = await resource._resource_service.get_descendants_by_id(
                 resource._resource.id,
                 max_depth=1,
+                r_sort=ResourceSort(RootOffset),
             )
             return resource_id, list(map(self._serialize_resource_model, child_models))
 

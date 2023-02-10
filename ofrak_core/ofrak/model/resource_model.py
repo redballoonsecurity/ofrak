@@ -894,3 +894,26 @@ def _validate_indexed_type(getter_func: Callable[[Any], X]):
             f"Type of index {getter_func.__name__} is {index_type}, which is not "
             f"one of {_INDEXABLE_TYPES.values()}; cannot index by this value!"
         )
+
+
+@dataclasses.dataclass(**ResourceAttributes.DATACLASS_PARAMS)
+class _DataAttributes(ResourceAttributes):
+    """
+    Special attributes class for accessing info about a resource's binary data.
+    SHOULD NEVER BE USED OUTSIDE OF INTERNAL OFRAK MECHANISMS.
+    """
+
+    root_offset: int
+    length: int
+
+    @index
+    def RootOffset(self) -> int:
+        return self.root_offset
+
+    @index
+    def Length(self) -> int:
+        return self.length
+
+
+RootOffset = _DataAttributes.RootOffset
+Length = _DataAttributes.Length
