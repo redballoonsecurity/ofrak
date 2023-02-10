@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Added
 - Add a button to the GUI to add a new tag to a resource [#215](https://github.com/redballoonsecurity/ofrak/pull/215)
+- Add a way to sort and filter by data length or offset [#220](https://github.com/redballoonsecurity/ofrak/pull/220)
 
 ### Added
 - Add keyboard shortcuts to the GUI
