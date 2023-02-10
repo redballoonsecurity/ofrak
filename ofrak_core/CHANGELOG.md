@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 ### Fixed
 - Fix bug where initially loaded GUI resource has collapsed children [#209](https://github.com/redballoonsecurity/ofrak/pull/209)
+- Support more OpenWRT TRX files by making fewer assumptions about the partitions [#216](https://github.com/redballoonsecurity/ofrak/pull/216)
 
 ### Added
 - Add a button to the GUI to add a new tag to a resource [#215](https://github.com/redballoonsecurity/ofrak/pull/215)
