@@ -9,16 +9,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Support more OpenWRT TRX files by making fewer assumptions about the partitions [#216](https://github.com/redballoonsecurity/ofrak/pull/216)
 
 ### Added
-- Add a button to the GUI to add a new tag to a resource [#215](https://github.com/redballoonsecurity/ofrak/pull/215)
-
-### Added
 - Add keyboard shortcuts to the GUI
 - Updates to Flash components: [#195](https://github.com/redballoonsecurity/ofrak/pull/195)
   - Flash components now support more than one occurrence of the same field type in `FlashAttributes`.
   - `FlashOobResourceUnpacker` continues to unpack even if blocks do not perfectly align at end of the `FlashOobResource` (this is useful for real-world flash dumps).
+- Add a button to the GUI to add a new tag to a resource [#215](https://github.com/redballoonsecurity/ofrak/pull/215)
 
 ### Changed
 - Tweak how errors are raised when auto-running components, so the actual root cause is not buried [#219](https://github.com/redballoonsecurity/ofrak/pull/219)
+- Show mapped resource captions on hover in the hex view [#221](https://github.com/redballoonsecurity/ofrak/pull/221)
 
 ## [2.2.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.1.1...ofrak-v2.2.0))
 ### Fixed
