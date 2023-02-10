@@ -59,6 +59,7 @@ class ResourceNode:
     def __init__(self, model: ResourceModel, parent: Optional["ResourceNode"]):
         self.model = model
         self.parent = parent
+        # Dict serves as an ordered set to preserve children insertion order
         self._children: Dict[ResourceNode, None] = dict()
         self._ancestor_ids: Dict[bytes, int] = dict()
         self._descendant_count = 0
