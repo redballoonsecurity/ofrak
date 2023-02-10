@@ -897,23 +897,19 @@ def _validate_indexed_type(getter_func: Callable[[Any], X]):
 
 
 @dataclasses.dataclass(**ResourceAttributes.DATACLASS_PARAMS)
-class _DataAttributes(ResourceAttributes):
+class DataBytes(ResourceAttributes):
     """
     Special attributes class for accessing info about a resource's binary data.
     SHOULD NEVER BE USED OUTSIDE OF INTERNAL OFRAK MECHANISMS.
     """
 
-    root_offset: int
-    length: int
+    _offset: int
+    _length: int
 
     @index
-    def RootOffset(self) -> int:
-        return self.root_offset
+    def Offset(self) -> int:
+        return self._offset
 
     @index
     def Length(self) -> int:
-        return self.length
-
-
-RootOffset = _DataAttributes.RootOffset
-Length = _DataAttributes.Length
+        return self._length

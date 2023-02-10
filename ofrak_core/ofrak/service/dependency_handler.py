@@ -8,7 +8,7 @@ from ofrak.model.resource_model import (
     ResourceContext,
     ResourceAttributeDependency,
     MutableResourceModel,
-    _DataAttributes,
+    DataBytes,
 )
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceServiceInterface
@@ -73,11 +73,11 @@ class DependencyHandler:
                 all_data_ids, await self._data_service.get_by_ids(all_data_ids)
             )
         }
-        # First go through and update all models' DataAttributes
+        # First go through and update all models' DataBytes
         for data_patch_result in patch_results:
             resource_m = resources_by_data_id[data_patch_result.data_id]
             data_m = models_by_data_id[data_patch_result.data_id]
-            resource_m.add_attributes(_DataAttributes(data_m.range.start, data_m.range.length()))
+            resource_m.add_attributes(DataBytes(data_m.range.start, data_m.range.length()))
 
         unhandled_dependencies: Set[ResourceAttributeDependency] = set()
         # Figure out which components results must be invalidated based on data changes
