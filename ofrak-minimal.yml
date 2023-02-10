@@ -5,6 +5,6 @@ packages_paths:
   [
     "ofrak_type",
     "ofrak_io",
-    "ofrak_core",
     "ofrak_patch_maker",
+    "ofrak_core",
   ]

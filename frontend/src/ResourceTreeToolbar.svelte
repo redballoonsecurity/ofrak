@@ -6,6 +6,7 @@
 
   import { selectedResource, selected } from "./stores.js";
   import SearchView from "./SearchView.svelte";
+  import AddTagView from "./AddTagView.svelte";
 
   export let resourceNodeDataMap, modifierView;
   $: rootResource = $selectedResource;
@@ -24,6 +25,7 @@
       {
         text: "Identify",
         iconUrl: "/icons/identify.svg",
+        shortcut: "i",
         onclick: async (e) => {
           await rootResource.identify();
           resourceNodeDataMap[$selected] = {
@@ -37,6 +39,7 @@
       {
         text: "Unpack",
         iconUrl: "/icons/unpack.svg",
+        shortcut: "u",
         onclick: async (e) => {
           await rootResource.unpack();
           resourceNodeDataMap[$selected] = {
@@ -58,6 +61,7 @@
       {
         text: "Analyze",
         iconUrl: "/icons/analyze.svg",
+        shortcut: "a",
         onclick: async (e) => {
           await rootResource.analyze();
           resourceNodeDataMap[$selected] = {
@@ -79,6 +83,7 @@
       {
         text: "Pack",
         iconUrl: "/icons/pack.svg",
+        shortcut: "p",
         onclick: async (e) => {
           await rootResource.pack();
           resourceNodeDataMap[$selected] = {
@@ -86,6 +91,14 @@
             childrenPromise: rootResource.get_children(),
           };
           refreshResource();
+        },
+      },
+
+      {
+        text: "Add Tag",
+        iconUrl: "/icons/tag.svg",
+        onclick: async (e) => {
+          modifierView = AddTagView;
         },
       },
 
@@ -149,6 +162,7 @@
       {
         text: "New",
         iconUrl: "/icons/new.svg",
+        shortcut: "n",
         onclick: (e) => {
           // Clear the URL fragment
           window.location.replace("/");
@@ -158,6 +172,7 @@
       {
         text: "Unpack Recursively",
         iconUrl: "/icons/unpack_r.svg",
+        shortcut: "u+Shift",
         onclick: async (e) => {
           await rootResource.unpack_recursively();
           resourceNodeDataMap[$selected] = {
@@ -171,6 +186,7 @@
       {
         text: "Pack Recursively",
         iconUrl: "/icons/pack_r.svg",
+        shortcut: "p+Shift",
         onclick: async (e) => {
           await rootResource.pack_recursively();
           resourceNodeDataMap[$selected] = {

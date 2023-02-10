@@ -100,34 +100,67 @@
   import LoadingText from "./LoadingText.svelte";
 
   import { selected } from "./stores.js";
+  import { shortcuts } from "./keyboard";
 
   export let rootResource,
     resourceNodeDataMap,
-    collapsed = true;
+    selectNextSibling = () => {},
+    selectPreviousSibling = () => {},
+    collapsed = true,
+    childrenCollapsed = true;
   let self,
+    firstChild,
     childrenPromise,
     commentsPromise,
-    childrenCollapsed = false,
+    self_id = rootResource.get_id(),
     kiddoChunksize = 512;
 
   $: {
-    if (resourceNodeDataMap[self?.id] === undefined) {
-      resourceNodeDataMap[self?.id] = {};
+    if (resourceNodeDataMap[self_id] === undefined) {
+      resourceNodeDataMap[self_id] = {};
     }
-    if (resourceNodeDataMap[self?.id].collapsed === undefined) {
-      resourceNodeDataMap[self?.id].collapsed = collapsed;
+    if (resourceNodeDataMap[self_id].collapsed === undefined) {
+      resourceNodeDataMap[self_id].collapsed = collapsed;
     }
-    if (resourceNodeDataMap[self?.id].childrenPromise === undefined) {
-      resourceNodeDataMap[self?.id].childrenPromise =
+    if (resourceNodeDataMap[self_id].childrenPromise === undefined) {
+      resourceNodeDataMap[self_id].childrenPromise =
         rootResource.get_children();
     }
-    if (resourceNodeDataMap[self?.id].commentsPromise === undefined) {
-      resourceNodeDataMap[self?.id].commentsPromise =
+    if (resourceNodeDataMap[self_id].commentsPromise === undefined) {
+      resourceNodeDataMap[self_id].commentsPromise =
         rootResource.get_comments();
     }
-    childrenPromise = resourceNodeDataMap[self?.id].childrenPromise;
-    commentsPromise = resourceNodeDataMap[self?.id].commentsPromise;
-    collapsed = resourceNodeDataMap[self?.id].collapsed;
+    childrenPromise = resourceNodeDataMap[self_id].childrenPromise;
+    commentsPromise = resourceNodeDataMap[self_id].commentsPromise;
+    collapsed = resourceNodeDataMap[self_id].collapsed;
+  }
+
+  $: childrenPromise?.then((children) => {
+    if (children?.length > 0) {
+      firstChild = children[0];
+    }
+  });
+
+  $: if ($selected === self_id) {
+    shortcuts["h"] = () => {
+      resourceNodeDataMap[self_id].collapsed = true;
+    };
+    shortcuts["l"] = () => {
+      resourceNodeDataMap[self_id].collapsed = false;
+    };
+    shortcuts["j"] = () => {
+      if (!collapsed && firstChild) {
+        $selected = firstChild?.resource_id;
+      } else {
+        selectNextSibling();
+      }
+    };
+    shortcuts["k"] = selectPreviousSibling;
+
+    shortcuts["arrowleft"] = shortcuts["h"];
+    shortcuts["arrowdown"] = shortcuts["j"];
+    shortcuts["arrowup"] = shortcuts["k"];
+    shortcuts["arrowright"] = shortcuts["l"];
   }
 
   async function onClick(e) {
@@ -135,26 +168,26 @@
     if (e.detail > 1) {
       return;
     }
-    if ($selected === self?.id) {
+    if ($selected === self_id) {
       $selected = undefined;
     } else {
-      $selected = self?.id;
+      $selected = self_id;
     }
   }
 
   function onDoubleClick(e) {
-    resourceNodeDataMap[self?.id].collapsed = !collapsed;
+    resourceNodeDataMap[self_id].collapsed = !collapsed;
     // Expand children recursively on double click
     if (!collapsed) {
       childrenCollapsed = false;
     }
-    $selected = self?.id;
+    $selected = self_id;
   }
 
   async function onDeleteClick(optional_range) {
     // Delete the selected comment.
     // As a side effect, the corresponding resource gets selected.
-    $selected = self?.id;
+    $selected = self_id;
     await rootResource.delete_comment(optional_range);
     resourceNodeDataMap[$selected].commentsPromise =
       rootResource.get_comments();
@@ -165,8 +198,7 @@
   {#if children?.length > 0}
     <button
       on:click="{() => {
-        resourceNodeDataMap[self?.id].collapsed = !collapsed;
-        childrenCollapsed = !collapsed;
+        resourceNodeDataMap[self_id].collapsed = !collapsed;
       }}"
     >
       {#if collapsed}
@@ -179,8 +211,8 @@
   on:click="{onClick}"
   on:dblclick="{onDoubleClick}"
   bind:this="{self}"
-  class:selected="{$selected === self?.id}"
-  id="{rootResource.get_id()}"
+  class:selected="{$selected === self_id}"
+  id="{self_id}"
 >
   {rootResource.get_caption()}
 </button>
@@ -207,12 +239,26 @@
 {:then children}
   {#if !collapsed && children.length > 0}
     <ul>
-      {#each children.slice(0, kiddoChunksize) as child}
+      {#each children.slice(0, kiddoChunksize) as child, i}
         <li>
           <div>
             <svelte:self
               rootResource="{child}"
               collapsed="{childrenCollapsed}"
+              childrenCollapsed="{childrenCollapsed}"
+              selectNextSibling="{i ===
+              Math.min(kiddoChunksize, children.length) - 1
+                ? selectNextSibling
+                : () => {
+                    $selected = children[i + 1]?.resource_id;
+                  }}"
+              selectPreviousSibling="{i === 0
+                ? () => {
+                    $selected = self_id;
+                  }
+                : () => {
+                    $selected = children[i - 1]?.resource_id;
+                  }}"
               bind:resourceNodeDataMap="{resourceNodeDataMap}"
             />
           </div>

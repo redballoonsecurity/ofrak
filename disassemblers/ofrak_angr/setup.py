@@ -1,4 +1,5 @@
 import setuptools
+import pkg_resources
 from setuptools.command.egg_info import egg_info
 
 
@@ -18,6 +19,16 @@ class egg_info_ex(egg_info):
 with open("README.md") as f:
     long_description = f.read()
 
+
+# Should be the same as in build_image.py
+def read_requirements(requirements_path):
+    with open(requirements_path) as requirements_handle:
+        return [
+            str(requirement)
+            for requirement in pkg_resources.parse_requirements(requirements_handle)
+        ]
+
+
 setuptools.setup(
     name="ofrak_angr",
     version="1.0.0",
@@ -25,9 +36,9 @@ setuptools.setup(
     packages=setuptools.find_packages(exclude=["ofrak_angr_test", "ofrak_angr_test.*"]),
     package_data={"ofrak_angr": ["py.typed"]},
     install_requires=[
-        "angr==9.2.6",
         "ofrak",
-    ],
+    ]
+    + read_requirements("requirements.txt"),
     extras_require={
         "test": [
             "fun-coverage==0.2.0",
