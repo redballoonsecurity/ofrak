@@ -184,6 +184,7 @@ Answer by running riddle.answer('your answer here') from the console.`);
         {:else}
           <HexView
             dataPromise="{displayDataPromise}"
+            resources="{resources}"
             scrollY="{hexScrollY}"
             bind:resourceNodeDataMap="{resourceNodeDataMap}"
           />
