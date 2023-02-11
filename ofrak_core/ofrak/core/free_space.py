@@ -382,7 +382,6 @@ class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
         allocatable.remove_allocation_from_cached_free_ranges(
             config.allocations, config.permissions
         )
-        resource.add_view(allocatable)
 
     @staticmethod
     async def _get_partially_overlapping_resources(

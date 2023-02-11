@@ -137,17 +137,7 @@ class AbstractComponent(ComponentInterface[CC], ABC):
         dependency_handler.create_resource_dependencies(self.get_id())
 
         # Get modified resources
-        modified_resource_models: Dict[bytes, MutableResourceModel] = dict()
         modified_resource_ids = component_context.get_modified_resource_ids()
-        for modified_r_id in modified_resource_ids:
-            mutable_resource_model = resource_context.resource_models.get(modified_r_id)
-            if mutable_resource_model:
-                modified_resource_models[modified_r_id] = mutable_resource_model
-            else:
-                raise NotFoundError(
-                    f"The resource {modified_r_id.hex()} was modified but not in "
-                    f"the resource context"
-                )
 
         # Include resources modified by data patches in `modified_resource_ids`
         data_ids_to_models = await dependency_handler.map_data_ids_to_resources(
@@ -159,6 +149,16 @@ class AbstractComponent(ComponentInterface[CC], ABC):
         # Exclude deleted resources from `modified_resource_ids`
         # (deleting and modifying are handled separately)
         modified_resource_ids.difference_update(component_context.resources_deleted)
+
+        modified_resource_models: Dict[bytes, MutableResourceModel] = dict()
+        for modified_r_id in modified_resource_ids:
+            mutable_resource_model = resource_context.resource_models.get(modified_r_id)
+            if mutable_resource_model is None:
+                raise NotFoundError(
+                    f"The resource {modified_r_id.hex()} was modified but not in "
+                    f"the resource context"
+                )
+            modified_resource_models[modified_r_id] = mutable_resource_model
 
         # Save modified resources
         await self._save_resources(
@@ -172,7 +172,7 @@ class AbstractComponent(ComponentInterface[CC], ABC):
 
         component_result = ComponentRunResult(
             {self.get_id()},
-            modified_resource_ids,
+            set(modified_resource_models.keys()),
             component_context.resources_deleted,
             component_context.resources_created,
         )
