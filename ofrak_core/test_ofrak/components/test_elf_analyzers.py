@@ -14,7 +14,6 @@ from ofrak.core.architecture import ProgramAttributes
 from ofrak.model.viewable_tag_model import ViewableResourceTag, AttributesType
 from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
-from ofrak.service.job_service_i import ComponentAutoRunFailure
 from ofrak.service.resource_service_i import ResourceFilter
 from ofrak.core.elf.analyzer import (
     ElfRelaAnalyzer,
@@ -460,7 +459,7 @@ ELF_BASIC_HEADER_ANALYZER_TEST_CASES = [
     ElfBasicHeaderTestCase(
         "invalid magic",
         struct.pack("4sBBBBB7s", b"\x7fLOL", 0, 0, 0, 0, 0, b"\x00" * 7),
-        ComponentAutoRunFailure,
+        AssertionError,
     ),
     ElfBasicHeaderTestCase(
         "little endian, 32-bit",
@@ -583,7 +582,7 @@ async def test_elf_program_attributes_analyzer_unknown_isa(ofrak_context: OFRAKC
         e_machine=0xFF,
     )
 
-    with pytest.raises(ComponentAutoRunFailure):
+    with pytest.raises(KeyError):
         _ = await elf_r.analyze(ProgramAttributes)
 
 

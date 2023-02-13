@@ -6,14 +6,16 @@ import pytest
 import re
 import subprocess
 
+from ofrak.core import MemoryRegion
 from ofrak_patch_maker.toolchain.gnu_x64 import GNU_X86_64_LINUX_EABI_10_3_0_Toolchain
 
 from ofrak_patch_maker.toolchain.gnu_arm import GNU_ARM_NONE_EABI_10_2_1_Toolchain
 from ofrak_patch_maker.toolchain.llvm_12 import LLVM_12_0_1_Toolchain
 from ofrak_patch_maker.toolchain.abstract import Toolchain
 
-from ofrak import OFRAKContext
+from ofrak import OFRAKContext, ResourceFilter, ResourceAttributeRangeFilter
 from ofrak.core.architecture import ProgramAttributes
+from ofrak_type import MemoryPermissions
 from ofrak_type.architecture import (
     InstructionSet,
     SubInstructionSet,
@@ -27,11 +29,14 @@ from ofrak.core.patch_maker.model import SourceBundle
 from ofrak.core.patch_maker.modifiers import (
     FunctionReplacementModifierConfig,
     FunctionReplacementModifier,
+    SegmentInjectorModifierConfig,
+    SegmentInjectorModifier,
 )
 from ofrak_patch_maker.toolchain.model import (
     CompilerOptimizationLevel,
     BinFileType,
     ToolchainConfig,
+    Segment,
 )
 from ofrak_patch_maker.toolchain.utils import get_repository_config
 from ofrak_type.bit_width import BitWidth
@@ -236,3 +241,60 @@ async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config
     expected_objdump_output_str = "\n".join(config.expected_objdump_output)
 
     assert normalize_assembly(expected_objdump_output_str) in normalize_assembly(readobj_output)
+
+
+async def test_segment_injector_deletes_patched_descendants(ofrak_context: OFRAKContext):
+    # unpack_recursively an ELF
+    root_resource = await ofrak_context.create_root_resource_from_file(ARM32_PROGRAM_PATH)
+    await root_resource.unpack_recursively()
+
+    main_start = 0x8068
+    main_end = main_start + 40
+
+    function_cb = ComplexBlock(
+        virtual_address=main_start,
+        size=main_end - main_start,
+        name="main",
+    )
+
+    target_program = await root_resource.view_as(Program)
+
+    function_cb_parent_code_region = await target_program.get_code_region_for_vaddr(main_start)
+
+    function_cb.resource = await function_cb_parent_code_region.create_child_region(function_cb)
+
+    # Create a dummy basic block in the complex block, so its `get_mode` method won't fail.
+    dummy_bb = BasicBlock(0x8068, 8, InstructionSetMode.NONE, False, None)
+    await function_cb.create_child_region(dummy_bb)
+
+    # get IDs of resources in a vaddr range
+    expected_deleted_ids = set()
+    for r in await root_resource.get_descendants(
+        r_filter=ResourceFilter(
+            attribute_filters=(
+                ResourceAttributeRangeFilter(MemoryRegion.VirtualAddress, min=main_start),
+                ResourceAttributeRangeFilter(MemoryRegion.EndVaddr, max=main_end + 1),
+            )
+        )
+    ):
+        expected_deleted_ids.add(r.get_id())
+        for r in await r.get_descendants():
+            expected_deleted_ids.add(r.get_id())
+
+    assert len(expected_deleted_ids) > 0
+
+    # create a SegmentInjectorModifierConfig
+    cfg = SegmentInjectorModifierConfig(
+        (
+            (
+                Segment(".text", main_start, 0, False, main_end - main_start, MemoryPermissions.RX),
+                b"\x00" * (main_end - main_start),
+            ),
+        )
+    )
+
+    # run SegmentInjectorModifier
+    results = await root_resource.run(SegmentInjectorModifier, cfg)
+
+    # check that resources have been deleted
+    assert results.resources_deleted == expected_deleted_ids

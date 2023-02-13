@@ -15,7 +15,9 @@ packages_paths:
   ]
 extra_build_args:
   ["--secret",
-   "id=serial,src=serial.txt"
+   "id=serial,src=serial.txt",
+   "--secret",
+   "id=license.dat,src=license.dat"
   ]
 entrypoint: |
     nginx \

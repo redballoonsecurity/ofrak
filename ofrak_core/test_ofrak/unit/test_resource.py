@@ -16,7 +16,6 @@ from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import ResourceFilter
-from ofrak.service.job_service_i import ComponentAutoRunFailure
 from ofrak_type.range import Range
 
 from test_ofrak.unit.component import mock_component
@@ -204,17 +203,15 @@ async def test_flush_to_disk_pack(ofrak_context: OFRAKContext):
 
     with BytesIO() as buffer:
         # should fail because write_to runs pack_recursively and MockFailFile will fail on packing
-        with pytest.raises(ComponentAutoRunFailure) as exc_info:
+        with pytest.raises(MockFailException):
             await root_resource.write_to(buffer)
-
-        assert isinstance(exc_info.value.__cause__, MockFailException)
 
         # this should not fail because pack_recursively was suppressed
         await root_resource.write_to(buffer, pack=False)
 
     with tempfile.NamedTemporaryFile() as t:
         # again, should fail because the packer is run automatically
-        with pytest.raises(ComponentAutoRunFailure):
+        with pytest.raises(MockFailException):
             await root_resource.flush_to_disk(t.name)
 
         await root_resource.flush_to_disk(t.name, pack=False)

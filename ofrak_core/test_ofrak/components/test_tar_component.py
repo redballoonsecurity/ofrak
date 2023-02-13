@@ -5,8 +5,8 @@ import tempfile
 import pytest
 
 from ofrak import OFRAKContext
+from ofrak.component.unpacker import UnpackerError
 from ofrak.resource import Resource
-from ofrak.service.job_service_i import ComponentAutoRunFailure
 from ofrak.core.strings import StringPatchingConfig, StringPatchingModifier
 from ofrak.core.tar import TarArchive
 from pytest_ofrak.patterns.pack_unpack_filesystem import (
@@ -101,7 +101,7 @@ class TestTarUnpackerDirectoryTraversalFailure:
 
             root_resource = await ofrak_context.create_root_resource_from_file(archive_path)
 
-        with pytest.raises(ComponentAutoRunFailure) as err_info:
+        with pytest.raises(UnpackerError):
             await root_resource.unpack_recursively()
 
 

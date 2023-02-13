@@ -3,7 +3,7 @@ import logging
 import os
 import time
 from types import ModuleType
-from typing import Type, Any, Awaitable, Callable, List, Iterable
+from typing import Type, Any, Awaitable, Callable, List, Iterable, Optional
 
 from ofrak_type import InvalidStateError
 from synthol.injector import DependencyInjector
@@ -99,6 +99,10 @@ class OFRAKContext:
         await asyncio.gather(*(service.shutdown() for service in self._all_ofrak_services))
         logging.shutdown()
 
+    def get_all_tags(self) -> Iterable[ResourceTag]:
+        all_tags = ResourceTag.all_tags
+        return all_tags
+
 
 class OFRAK:
     DEFAULT_LOG_LEVEL = logging.WARNING
@@ -122,6 +126,7 @@ class OFRAK:
         self.injector = DependencyInjector()
         self._discovered_modules: List[ModuleType] = []
         self._exclude_components_missing_dependencies = exclude_components_missing_dependencies
+        self._id_service: Optional[IDServiceInterface] = None
 
     def discover(
         self,
@@ -133,7 +138,7 @@ class OFRAK:
         self._discovered_modules.append(module)
 
     def set_id_service(self, service: IDServiceInterface):
-        self.injector.bind_instance(service)
+        self._id_service = service
 
     async def create_ofrak_context(self) -> OFRAKContext:
         """
@@ -184,6 +189,9 @@ class OFRAK:
         import ofrak
 
         self.discover(ofrak)
+
+        if self._id_service:
+            self.injector.bind_instance(self._id_service)
 
     async def _get_discovered_components(self) -> List[ComponentInterface]:
         all_discovered_components = await self.injector.get_instance(List[ComponentInterface])

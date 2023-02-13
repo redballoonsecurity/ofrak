@@ -53,6 +53,31 @@ export function buf2hex(buffer, joinchar) {
 }
 
 /***
+ * Asynchronously sleep for a certain number of milliseconds.
+ */
+export async function sleep(ms) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Turn a number of bytes into a text-based file size
+ */
+export function numBytesToQuantity(bytes) {
+  if (bytes < 1024) {
+    return `${bytes}B`;
+  } else if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(2)}KB`;
+  } else if (bytes < 1024 * 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(2)}MB`;
+  } else if (bytes < 1024 * 1024 * 1024 * 1024) {
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)}GB`;
+  } else {
+    // TODO if necessary
+    return `${bytes}B`;
+  }
+}
+
+/***
  * Evaluate an input arithmetic string consisting of (possibly hex) numbers
  * and the given binary operators using the Shunting Yard algorithm
  */

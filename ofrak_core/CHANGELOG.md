@@ -4,6 +4,39 @@ All notable changes to `ofrak` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+### Fixed
+- Fix bug where initially loaded GUI resource has collapsed children [#209](https://github.com/redballoonsecurity/ofrak/pull/209)
+- Support more OpenWRT TRX files by making fewer assumptions about the partitions [#216](https://github.com/redballoonsecurity/ofrak/pull/216)
+
+### Added
+- Add keyboard shortcuts to the GUI
+- Updates to Flash components: [#195](https://github.com/redballoonsecurity/ofrak/pull/195)
+  - Flash components now support more than one occurrence of the same field type in `FlashAttributes`.
+  - `FlashOobResourceUnpacker` continues to unpack even if blocks do not perfectly align at end of the `FlashOobResource` (this is useful for real-world flash dumps).
+- Add a button to the GUI to add a new tag to a resource [#215](https://github.com/redballoonsecurity/ofrak/pull/215)
+
+### Changed
+- Tweak how errors are raised when auto-running components, so the actual root cause is not buried [#219](https://github.com/redballoonsecurity/ofrak/pull/219)
+- Show mapped resource captions on hover in the hex view [#221](https://github.com/redballoonsecurity/ofrak/pull/221)
+
+### Changed
+- Change how resources are stored to making deleting (and thus packing) much faster [#201](https://github.com/redballoonsecurity/ofrak/pull/201)
+
+## [2.2.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.1.1...ofrak-v2.2.0))
+### Fixed
+- Fix bug in data service that can cause mangled internal state [#197](https://github.com/redballoonsecurity/ofrak/pull/197)
+- Fix long-broken `OFRAK.set_id_service` [#198](https://github.com/redballoonsecurity/ofrak/pull/198)
+- Fix bug in `SegmentInjectorModifier` that resulted in deleting more resources than necessary [#200](https://github.com/redballoonsecurity/ofrak/pull/200)
+
+### Added
+- Replace unofficial p7zip with official 7zip package
+- File browser dialog in the GUI
+- Area in the GUI to jump to a given data offset
+- GUI command line now has a flag to not automatically open the browser
+
+### Changed
+- GUI is much faster, especially for resources with hundreds of thousands of children [#191](https://github.com/redballoonsecurity/ofrak/pull/191)
+- Resources whose data gets modified are now listed in the `resource_modified` field of component results [#200](https://github.com/redballoonsecurity/ofrak/pull/200)
 
 ## [2.1.1](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.1.0...ofrak-v2.1.1) - 2023-01-25
 ### Fixed
