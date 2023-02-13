@@ -900,7 +900,9 @@ def _validate_indexed_type(getter_func: Callable[[Any], X]):
 class DataBytes(ResourceAttributes):
     """
     Special attributes class for accessing info about a resource's binary data.
-    SHOULD NEVER BE USED OUTSIDE OF INTERNAL OFRAK MECHANISMS.
+    Users should never access or modify this directly! Changing the fields of this data structure
+    will not change any about the resource's data! At best, it will do nothing, and at worst it
+    will screw up sorting/filtering.
     """
 
     _offset: int
