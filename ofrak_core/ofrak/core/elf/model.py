@@ -233,6 +233,10 @@ class ElfSegmentStructure(ResourceView):
 
 
 class ElfProgramHeaderType(Enum):
+    """
+    See <https://elixir.bootlin.com/linux/latest/source/include/uapi/linux/elf.h#L25> for details.
+    """
+
     UNKNOWN = -1
     NULL = 0
     LOAD = 1
