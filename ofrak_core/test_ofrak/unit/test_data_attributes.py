@@ -8,7 +8,7 @@ async def test_data_attributes(ofrak_context: OFRAKContext, elf_object_file):
     await root.unpack()
 
     unordered_children = list(await root.get_children())
-    ordered_children = list(await root.get_children(r_sort=ResourceSort(RootOffset)))
+    ordered_children = list(await root.get_children(r_sort=ResourceSort(DataBytes.Offset)))
 
     print(ordered_children)
 
