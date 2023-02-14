@@ -108,7 +108,7 @@
     selectPreviousSibling = () => {},
     collapsed = true,
     childrenCollapsed = true;
-  let self,
+  let caption,
     firstChild,
     childrenPromise,
     commentsPromise,
@@ -134,6 +134,13 @@
     commentsPromise = resourceNodeDataMap[self_id].commentsPromise;
     collapsed = resourceNodeDataMap[self_id].collapsed;
   }
+
+  function updateCaption() {
+    rootResource.get_latest_model().then(() => {
+      caption = rootResource.get_caption();
+    });
+  }
+  $: updateCaption(childrenPromise);
 
   $: childrenPromise?.then((children) => {
     if (children?.length > 0) {
@@ -210,11 +217,10 @@
     </button>{/if}{/await}<button
   on:click="{onClick}"
   on:dblclick="{onDoubleClick}"
-  bind:this="{self}"
   class:selected="{$selected === self_id}"
   id="{self_id}"
 >
-  {rootResource.get_caption()}
+  {caption}
 </button>
 {#await commentsPromise then comments}
   {#each comments as comment}
