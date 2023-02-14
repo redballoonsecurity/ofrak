@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Iterable, Optional
 
+from ofrak.model.viewable_tag_model import AttributesType
+
 from ofrak_type.architecture import InstructionSet
 from ofrak.core.program import Program
 from ofrak.core.program_section import NamedProgramSection, ProgramSegment
@@ -231,6 +233,10 @@ class ElfSegmentStructure(ResourceView):
 
 
 class ElfProgramHeaderType(Enum):
+    """
+    See <https://elixir.bootlin.com/linux/latest/source/include/uapi/linux/elf.h#L25> for details.
+    """
+
     UNKNOWN = -1
     NULL = 0
     LOAD = 1
@@ -240,6 +246,9 @@ class ElfProgramHeaderType(Enum):
     SHLIB = 5
     PHDR = 6
     TLS = 7
+    GNU_EH_FRAME = 0x6474E550
+    GNU_STACK = 0x6474E551
+    GNU_RELRO = 0x6474E552
 
 
 @dataclass
@@ -263,6 +272,20 @@ class ElfProgramHeader(ElfSegmentStructure):
         Get the MemoryPermission for the ElfProgramHeader.
         """
         return MemoryPermissions(self.p_flags)
+
+    @classmethod
+    def caption(cls, all_attributes) -> str:
+        try:
+            elf_program_header = all_attributes[AttributesType[ElfProgramHeader]]
+            try:
+                p_type = ElfProgramHeaderType(elf_program_header.p_type).name
+            except ValueError:
+                p_type = f"p_type={hex(elf_program_header.p_type)}"
+            return (
+                f"ElfProgramHeader: {p_type}, {MemoryPermissions(elf_program_header.p_flags).name}"
+            )
+        except ValueError:
+            return super().caption(all_attributes)
 
 
 ##################################################################################
