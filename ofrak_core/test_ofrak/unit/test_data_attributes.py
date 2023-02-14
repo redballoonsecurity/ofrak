@@ -1,5 +1,5 @@
 from ofrak import OFRAKContext, ResourceSort
-from ofrak.model.resource_model import DataBytes
+from ofrak.model.resource_model import Data
 from ofrak_type import Range
 
 
@@ -8,7 +8,7 @@ async def test_data_attributes(ofrak_context: OFRAKContext, elf_object_file):
     await root.unpack()
 
     unordered_children = list(await root.get_children())
-    ordered_children = list(await root.get_children(r_sort=ResourceSort(DataBytes.Offset)))
+    ordered_children = list(await root.get_children(r_sort=ResourceSort(Data.Offset)))
 
     print(ordered_children)
 
@@ -30,21 +30,21 @@ async def test_data_attributes_update(ofrak_context: OFRAKContext, elf_object_fi
     assert l2 > 0
 
     # patch away of the arbitrary children's data
-    original_data_attrs = arbitrary_child1.get_attributes(DataBytes)
+    original_data_attrs = arbitrary_child1.get_attributes(Data)
     assert original_data_attrs._length == l1
 
     arbitrary_child1.queue_patch(Range(0, l1), b"")
     await arbitrary_child1.save()
 
     # manually check the data attributes are updated
-    data_attrs = arbitrary_child1.get_attributes(DataBytes)
+    data_attrs = arbitrary_child1.get_attributes(Data)
     assert data_attrs._length == 0
     assert data_attrs._offset == original_data_attrs._offset
 
     # check that sorting by length works
     # the child whose data was patched should definitely be before the one which wasn't patched
     arbitrary_child1_found = False
-    for child in await root.get_children(r_sort=ResourceSort(DataBytes.Length)):
+    for child in await root.get_children(r_sort=ResourceSort(Data.Length)):
         if child == arbitrary_child1:
             arbitrary_child1_found = True
         elif child == arbitrary_child2:

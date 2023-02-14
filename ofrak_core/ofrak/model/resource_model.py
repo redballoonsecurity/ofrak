@@ -897,7 +897,7 @@ def _validate_indexed_type(getter_func: Callable[[Any], X]):
 
 
 @dataclasses.dataclass(**ResourceAttributes.DATACLASS_PARAMS)
-class DataBytes(ResourceAttributes):
+class Data(ResourceAttributes):
     """
     Special attributes class for accessing info about a resource's binary data.
     Users should never access or modify this directly! Changing the fields of this data structure
