@@ -73,7 +73,7 @@ class DependencyHandler:
                 all_data_ids, await self._data_service.get_by_ids(all_data_ids)
             )
         }
-        # First go through and update all models' Data
+        # Go through and update all models' Data
         for data_patch_result in patch_results:
             resource_m = resources_by_data_id[data_patch_result.data_id]
             data_m = models_by_data_id[data_patch_result.data_id]
