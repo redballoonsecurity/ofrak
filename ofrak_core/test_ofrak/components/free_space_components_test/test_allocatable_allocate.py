@@ -1,3 +1,4 @@
+import inspect
 import logging
 import os
 import sys
@@ -6,7 +7,6 @@ from typing import Optional, List
 
 from ofrak_patch_maker.toolchain.llvm_12 import LLVM_12_0_1_Toolchain
 
-import ofrak_patch_maker_test
 import pytest
 
 from ofrak import OFRAKContext
@@ -180,8 +180,40 @@ async def test_allocate(ofrak_context: OFRAKContext, test_case: AllocateTestCase
 
 
 async def test_allocate_bom(ofrak_context: OFRAKContext, tmpdir):
-    source_dir = os.path.join(os.path.dirname(ofrak_patch_maker_test.__file__), "example_1")
-    source_path = os.path.join(source_dir, "hello_world.c")
+    source_path = os.path.join(tmpdir, "test_source.c")
+    with open(source_path, "w") as f:
+        f.write(
+            inspect.cleandoc(
+                """
+            static int global_arr[256] = {0};
+            
+            int main_supplement(int a, int b)
+            {
+                if (a*b > 49) {
+                    global_arr[3] = 1;
+                }
+                return a*b;
+            }
+            
+            int foo(int* arr) {
+                return arr[48];
+            }
+            
+            #ifdef __GNUC__
+            __attribute__((section(".text")))
+            #endif // __GNUC__
+            int main(void) {
+               int a = 49;
+               int b = 29;
+               int c = -38;
+               int d = main_supplement(a, b) * c;
+               (void) d;
+               return foo(global_arr);
+            }
+
+            """
+            )
+        )
 
     proc = ArchInfo(
         InstructionSet.ARM,
@@ -215,7 +247,7 @@ async def test_allocate_bom(ofrak_context: OFRAKContext, tmpdir):
         name="example_3",
         source_list=[source_path],
         object_list=[],
-        header_dirs=[source_dir],
+        header_dirs=[],
     )
 
     resource = await ofrak_context.create_root_resource("test_allocate_bom", b"\x00")

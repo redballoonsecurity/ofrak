@@ -108,6 +108,17 @@ export class RemoteResource extends Resource {
     this.attributes = newer.attributes;
   }
 
+  async get_latest_model() {
+    const result = await fetch(`${this.uri}/`).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return r.json();
+    });
+    remote_model_to_resource(result, this.resource_list);
+    this.update();
+  }
+
   async get_children(r_filter, r_sort) {
     if (this.cache["get_children"]) {
       return this.cache["get_children"];

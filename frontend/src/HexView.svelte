@@ -46,7 +46,7 @@
   import { chunkList, buf2hex, hexToChar } from "./helpers.js";
   import { selectedResource, selected } from "./stores.js";
 
-  export let dataPromise, scrollY, resourceNodeDataMap;
+  export let dataPromise, scrollY, resourceNodeDataMap, resources;
   let childRangesPromise = Promise.resolve(undefined);
   let childRanges,
     data = [];
@@ -255,7 +255,8 @@
                         style:cursor="pointer"
                         style:user-select="none"
                         title="{rangeInfo.resource_id !== null
-                          ? rangeInfo.resource_id
+                          ? resources[rangeInfo.resource_id]?.get_caption() ||
+                            rangeInfo.resource_id
                           : ''}"
                         on:dblclick="{() => {
                           resourceNodeDataMap[$selected].collapsed = false;
