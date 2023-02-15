@@ -17,3 +17,7 @@ class AbstractBinaryFileParser(ABC):
     @abstractmethod
     def parse_sections(self, tool_output: str) -> Tuple[Segment, ...]:
         raise NotImplementedError()
+
+    @abstractmethod
+    def parse_relocations(self, tool_output: str) -> Dict[str, int]:
+        raise NotImplementedError()

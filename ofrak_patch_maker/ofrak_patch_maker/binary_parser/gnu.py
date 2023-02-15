@@ -32,19 +32,10 @@ class GNU_ELF_Parser(AbstractBinaryFileParser):
 
     def parse_symbols(self, output: str) -> Dict[str, int]:
         """
-        Use `objdump` with the `--syms` flag to get info on all symbols in a file. Parses columns
-        based on: <https://stackoverflow.com/a/16471895/16690095>.
+        Use `objdump` with the `--syms` flag to get info on all defined symbols in a file. Parses
+        columns based on: <https://stackoverflow.com/a/16471895/16690095>.
         """
-        result = {}
-        for symbol_data in self._re_symbol_prog.finditer(output):
-            name = symbol_data.group("name")
-            addr = symbol_data.group("address")
-            symbol_section = symbol_data.group("section")
-
-            if name and addr:
-                if symbol_section and symbol_section != "*UND*":
-                    result[name] = int(addr, 16)
-        return result
+        return self._get_all_symbols(output, True)
 
     def parse_sections(self, output: str) -> Tuple[Segment, ...]:
         """
@@ -71,6 +62,29 @@ class GNU_ELF_Parser(AbstractBinaryFileParser):
             )
             segments.append(seg)
         return tuple(segments)
+
+    def parse_relocations(self, output: str) -> Dict[str, int]:
+        """
+        Use `objdump` with the `--syms` flag to get info on all undefined symbols in a file. Parses
+        columns based on: <https://stackoverflow.com/a/16471895/16690095>.
+        """
+        return self._get_all_symbols(output, False)
+
+    def _get_all_symbols(self, output: str, get_defined: bool) -> Dict[str, int]:
+        result = {}
+        for symbol_data in self._re_symbol_prog.finditer(output):
+            name = symbol_data.group("name")
+            addr = symbol_data.group("address")
+            symbol_section = symbol_data.group("section")
+
+            if name and addr:
+                if get_defined is True:
+                    if symbol_section and symbol_section != "*UND*":
+                        result[name] = int(addr, 16)
+                else:
+                    if symbol_section and symbol_section == "*UND*":
+                        result[name] = int(addr, 16)
+        return result
 
 
 class GNU_V10_ELF_Parser(GNU_ELF_Parser):

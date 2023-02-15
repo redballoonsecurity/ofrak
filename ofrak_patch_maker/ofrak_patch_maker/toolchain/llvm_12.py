@@ -317,3 +317,10 @@ class LLVM_12_0_1_Toolchain(Toolchain):
         )
 
         return self._parser.parse_sections(readobj_output)
+
+    def get_bin_file_rel_symbols(self, executable_path: str) -> Dict[str, int]:
+        readobj_output = self._execute_tool(
+            self._readobj_path, ["--symbols"], [executable_path], out_file=None
+        )
+
+        return self._parser.parse_relocations(readobj_output)

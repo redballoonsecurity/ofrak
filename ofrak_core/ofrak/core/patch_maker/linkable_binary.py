@@ -2,7 +2,7 @@ import dataclasses
 import logging
 import os
 from dataclasses import dataclass
-from typing import Dict, Iterable, Optional, Tuple
+from typing import Dict, Iterable, Optional, Set, Tuple
 
 from ofrak.component.modifier import Modifier
 from ofrak.core.addressable import Addressable
@@ -149,7 +149,8 @@ class LinkableBinary(GenericBinary):
         self,
         patch_maker: "PatchMaker",  # type: ignore
         build_tmp_dir: str,
-    ) -> Tuple[BOM, PatchRegionConfig]:
+        unresolved_symbols: Optional[Set[str]] = None,
+    ) -> Optional[Tuple[BOM, PatchRegionConfig]]:
         """
         Build a BOM with all the symbols known to SymbolizedBinary. This BOM can be used to build
         the FEM so that it has access to all those symbols as weak symbols. This BOM in practice
@@ -166,6 +167,8 @@ class LinkableBinary(GenericBinary):
 
         :param patch_maker: PatchMaker instance to use to build the BOM.
         :param build_tmp_dir: A temporary directory to use for the BOM files.
+        :param unresolved_symbols: All symbols used in a patch BOM but defined elsewhere, may be
+        defined in target binary or in an earlier patch.
 
         :return: Tuple consisting of a BOM and PatchConfig representing the weak symbol
         definitions for all LinkableSymbols in the binary, ready to be passed in the `boms`
@@ -175,28 +178,36 @@ class LinkableBinary(GenericBinary):
         for symbol in await self.get_symbols():
             # if symbol.name in excluded_symbols:
             #     continue
-            stubs_file = os.path.join(build_tmp_dir, f"stub_{symbol.name}.as")
-            stub_info = symbol.get_stub_info()
-            stub_body = "\n".join(
-                stub_info.asm_prefixes
-                + [f".global {symbol.name}", f".weak {symbol.name}", f"{symbol.name}:", ""]
+            if unresolved_symbols and symbol.name in unresolved_symbols:
+                stubs_file = os.path.join(build_tmp_dir, f"stub_{symbol.name}.as")
+                stub_info = symbol.get_stub_info()
+                stub_body = "\n".join(
+                    stub_info.asm_prefixes
+                    + [f".global {symbol.name}", f".weak {symbol.name}", f"{symbol.name}:", ""]
+                )
+
+                with open(stubs_file, "w+") as f:
+                    f.write(stub_body)
+                stubs[stubs_file] = stub_info.segments
+
+        # Need to check if a BOM for the target binary is required for the current patch. Cannot
+        # determine this earlier because unresolved symbols from a patch BOM may be either defined
+        # in a previous patch - which can be determined before calling make_linkable_bom() - or
+        # defined in the target binary - which cannot.
+        if stubs:
+            stubs_bom = patch_maker.make_bom(
+                name="stubs",
+                source_list=list(stubs.keys()),
+                object_list=[],
+                header_dirs=[],
             )
-
-            with open(stubs_file, "w+") as f:
-                f.write(stub_body)
-            stubs[stubs_file] = stub_info.segments
-
-        stubs_bom = patch_maker.make_bom(
-            name="stubs",
-            source_list=list(stubs.keys()),
-            object_list=[],
-            header_dirs=[],
-        )
-        stubs_object_segments = {
-            stubs_bom.object_map[stubs_file].path: stub_segments
-            for stubs_file, stub_segments in stubs.items()
-        }
-        return stubs_bom, PatchRegionConfig("stubs_segments", stubs_object_segments)
+            stubs_object_segments = {
+                stubs_bom.object_map[stubs_file].path: stub_segments
+                for stubs_file, stub_segments in stubs.items()
+            }
+            return stubs_bom, PatchRegionConfig("stubs_segments", stubs_object_segments)
+        else:
+            return None
 
 
 @dataclass

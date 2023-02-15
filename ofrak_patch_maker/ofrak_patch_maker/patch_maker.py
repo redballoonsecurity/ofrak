@@ -31,12 +31,15 @@ await ofrak_fw_resource.run(SegmentInjectorModifier, SegmentInjectorModifierConf
 ```
 """
 import logging
+import itertools
+import math
 import os
 import tempfile
-from typing import Dict, Iterable, List, Mapping, Optional, Tuple
+from typing import Callable, Dict, Iterable, List, Mapping, Optional, Set, Tuple
 from warnings import warn
 
 from immutabledict import immutabledict
+from multiprocessing import cpu_count, get_context, set_start_method
 
 from ofrak_patch_maker.model import (
     AssembledObject,
@@ -131,6 +134,7 @@ class PatchMaker:
             executable_path, self._toolchain.file_format, segments, symbols, relocatable=False
         )
 
+    @staticmethod
     def prepare_object(self, object_path: str) -> AssembledObject:
         """
         This API is exposed to add existing (perhaps client-provided) `.o` files to a desired BOM.
@@ -145,6 +149,9 @@ class PatchMaker:
 
         segments = self._toolchain.get_bin_file_segments(object_path)
         symbols = self._toolchain.get_bin_file_symbols(object_path)
+        # Symbols defined in another file which may or may not be another patch source file or the target binary.
+        relocation_symbols = self._toolchain.get_bin_file_rel_symbols(object_path)
+
         bss_size_required = 0
         segment_map = {}
         for s in segments:
@@ -156,12 +163,12 @@ class PatchMaker:
                         f"{s.segment_name} found but `no_bss_section` is set in the provided ToolchainConfig!"
                     )
                 bss_size_required += s.length
-
         return AssembledObject(
             object_path,
             self._toolchain.file_format,
             immutabledict(segment_map),
             immutabledict(symbols),
+            immutabledict(relocation_symbols),
             bss_size_required,
         )
 
@@ -229,12 +236,14 @@ class PatchMaker:
         :raises PatchMakerException: if user inputs are invalid.
         :return: an immutable object containing section info
         """
+        set_start_method("spawn", force=True)
+
         if self._platform_includes:
             header_dirs.extend(self._platform_includes)
         self._validate_bom_input(name, source_list, object_list, header_dirs)
         object_map = {}
         for o_file in object_list:
-            assembled_object = self.prepare_object(o_file)
+            assembled_object = self.prepare_object(self, o_file)
             object_map.update({o_file: assembled_object})
 
         out_dir = os.path.join(self.build_dir, name + "_bom_files")
@@ -242,23 +251,43 @@ class PatchMaker:
 
         for c_file in list(filter(lambda x: x.endswith(".c"), source_list)):
             assembled_object_path = self._toolchain.compile(c_file, header_dirs, out_dir=out_dir)
-            assembled_object = self.prepare_object(assembled_object_path)
+            assembled_object = self.prepare_object(self, assembled_object_path)
             object_map.update({c_file: assembled_object})
 
-        for asm_file in list(filter(lambda x: x.endswith(".as") or x.endswith(".S"), source_list)):
-            original_asm_file = asm_file
-            if asm_file.endswith(".S"):
-                asm_file = self._toolchain.preprocess(asm_file, header_dirs, out_dir=out_dir)
-            assembled_object_path = self._toolchain.assemble(asm_file, header_dirs, out_dir=out_dir)
-            assembled_object = self.prepare_object(assembled_object_path)
-            object_map.update({original_asm_file: assembled_object})
+        # Call global function which runs parallel assembly
+        asm_files = list(filter(lambda x: x.endswith(".as") or x.endswith(".S"), source_list))
+        args = zip(
+            asm_files,
+            itertools.repeat(header_dirs),
+            itertools.repeat(out_dir),
+            itertools.repeat(self._toolchain),
+            itertools.repeat(self.prepare_object),
+            itertools.repeat(self),
+        )
+        workers = math.ceil(cpu_count())
+        with get_context("spawn").Pool(processes=workers) as pool:
+            result = pool.starmap(
+                _assemble_source_files, args, chunksize=math.ceil(len(asm_files) / workers)
+            )
+        for r in result:
+            object_map.update(r)
 
         # Compute the required size for the .bss segment
         bss_size_required = 0
         symbols: Dict[str, int] = {}
+        unresolved_symbols: Set[str] = set()
         for o in object_map.values():
             bss_size_required += o.bss_size_required
             symbols.update(o.symbols)
+            # Resolve symbols defined within different patch files within the same patch BOM
+            for sym in o.rel_symbols.keys():
+                # Have already seen this symbol in a previous patch object
+                if sym in symbols.keys():
+                    continue
+                elif sym in unresolved_symbols:
+                    unresolved_symbols.remove(sym)
+                else:
+                    unresolved_symbols.add(sym)
 
         if entry_point_name and entry_point_name not in symbols:
             raise PatchMakerException(f"Entry point {entry_point_name} not found in object files")
@@ -266,6 +295,7 @@ class PatchMaker:
         return BOM(
             name,
             immutabledict(object_map),
+            unresolved_symbols,
             bss_size_required,
             entry_point_name,
             self._toolchain.segment_alignment,
@@ -457,3 +487,20 @@ class PatchMaker:
             category=DeprecationWarning,
         )
         return await allocatable.allocate_bom(bom)
+
+
+# Helper function excluded from function coverage results since it runs in a process pool.
+def _assemble_source_files(  # pragma: no cover
+    asm_file: str,
+    header_dirs: List[str],
+    out_dir: str,
+    toolchain: Toolchain,
+    prepare_object: Callable,
+    patchmaker: PatchMaker,
+) -> Mapping[str, AssembledObject]:
+    original_asm_file = asm_file
+    if asm_file.endswith(".S"):
+        asm_file = toolchain.preprocess(asm_file, header_dirs, out_dir=out_dir)
+    assembled_object_path = toolchain.assemble(asm_file, header_dirs, out_dir=out_dir)
+    assembled_object = prepare_object(patchmaker, assembled_object_path)
+    return {original_asm_file: assembled_object}

@@ -4,7 +4,7 @@ These classes must only ever contain "immutable" data.
 We never want to worry about the state of these objects at any point during a patch injection.
 """
 from dataclasses import dataclass
-from typing import Mapping, Optional, Tuple
+from typing import Mapping, Optional, Set, Tuple
 
 from ofrak_patch_maker.toolchain.model import Segment, BinFileType
 
@@ -30,12 +30,16 @@ class AssembledObject:
     :var path: .o file path
     :var file_format: .elf, .coff, etc.
     :var segment_map: e.g. `{".text", Segment(...)}`
+    :var symbols:
+    :var rel_symbols: {symbol name: address}
+    :var bss_size_required:
     """
 
     path: str
     file_format: BinFileType
     segment_map: Mapping[str, Segment]  # segment name to Segment
     symbols: Mapping[str, int]
+    rel_symbols: Mapping[str, int]
     bss_size_required: int
 
 
@@ -108,12 +112,14 @@ class BOM:
 
     :var name: a name
     :var object_map: {source file path: AssembledObject}
+    :var unresolved_symbols: symbols used but undefined within the BOM source files
     :var bss_size_required:
     :var entry_point_symbol: symbol of the patch entrypoint, when relevant
     """
 
     name: str
     object_map: Mapping[str, AssembledObject]
+    unresolved_symbols: Set[str]
     bss_size_required: int
     entry_point_symbol: Optional[str]
     segment_alignment: int

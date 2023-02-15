@@ -106,6 +106,12 @@ class LLVM_ELF_Parser(Abstract_LLVM_Readobj_Parser):
         return self._parse_readobj_sections(output, section_keys, "Flags")
 
     def parse_symbols(self, readobj_out: str) -> Dict[str, int]:
+        return self._get_all_symbols(readobj_out, True)
+
+    def parse_relocations(self, readobj_out: str) -> Dict[str, int]:
+        return self._get_all_symbols(readobj_out, False)
+
+    def _get_all_symbols(self, readobj_out: str, get_defined: bool) -> Dict[str, int]:
         result = {}
         symbol_data = [x[0] for x in self._re_symbol_prog.findall(readobj_out)]
         for s in symbol_data:
@@ -113,6 +119,10 @@ class LLVM_ELF_Parser(Abstract_LLVM_Readobj_Parser):
             addr_value = self._re_value_prog.search(s)
             symbol_section = self._re_sym_section_prog.search(s)
             if name and addr_value:
-                if symbol_section and symbol_section.group(0) != "Undefined":
-                    result.update({name.group(0): int(addr_value.group(0), 16)})
+                if get_defined:
+                    if symbol_section and symbol_section.group(0) != "Undefined":
+                        result.update({name.group(0): int(addr_value.group(0), 16)})
+                else:
+                    if symbol_section and symbol_section.group(0) == "Undefined":
+                        result.update({name.group(0): int(addr_value.group(0), 16)})
         return result
