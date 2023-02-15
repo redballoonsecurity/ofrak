@@ -660,6 +660,24 @@ class ResourceModelDiff:
 
         return updated_model
 
+    def modified(self) -> bool:
+        return any(
+            (
+                self.tags_added,
+                self.tags_removed,
+                self.attributes_added,
+                self.attributes_removed,
+                self.attribute_dependencies_added,
+                self.attribute_dependencies_removed,
+                self.data_dependencies_added,
+                self.data_dependencies_removed,
+                self.component_versions_added,
+                self.component_versions_removed,
+                self.attributes_component_added,
+                self.attributes_component_removed,
+            )
+        )
+
 
 class MutableResourceModel(ResourceModel):
     __slots__ = "is_modified", "diff", "is_deleted"

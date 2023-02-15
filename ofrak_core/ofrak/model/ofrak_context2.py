@@ -1,22 +1,20 @@
-import functools
 import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Dict, Set, MutableMapping, List, Optional, Iterable, cast
-from weakref import WeakValueDictionary
+from typing import Dict, List, MutableMapping, Optional, Sequence, Set, Tuple, Type
 
-from ofrak.model.component_model import (
-    ComponentResourceAccessTracker,
-    ComponentResourceModificationTracker,
-    ComponentRunResult,
+from ofrak.model.data_model import DataModel, DataPatch
+from ofrak.model.resource_model import (
+    MutableResourceModel,
+    ResourceAttributeDependency,
+    ResourceAttributes,
+    Data,
 )
-from ofrak.model.data_model import DataPatch, DataPatchesResult
-from ofrak.model.resource_model import MutableResourceModel, ResourceAttributeDependency
 from ofrak.model.tag_model import ResourceTag
 from ofrak.model.viewable_tag_model import ViewableResourceTag, ResourceViewInterface
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceServiceInterface
-from ofrak_type import Range
+from ofrak_type import Range, InvalidStateError
 
 LOGGER = logging.getLogger(__file__)
 
@@ -30,6 +28,23 @@ class ComponentResourceModificationTracker2:
 ViewByTag = MutableMapping[ViewableResourceTag, ResourceViewInterface]
 
 
+class ResourceTracker:
+    def __init__(self, model: MutableResourceModel):
+        self.model: MutableResourceModel = model
+        self.attribute_reads: Set[Type[ResourceAttributes]] = set()
+        self.data_reads: Set[Range] = set()
+        self.data_writes: List[Tuple[Range, bytes]] = list()
+
+    def model_modified(self) -> bool:
+        return self.model.diff.modified()
+
+    def data_modified(self) -> bool:
+        return len(self.data_writes) > 0
+
+    def modified(self) -> bool:
+        return self.model_modified() or self.data_modified()
+
+
 @dataclass
 class OFRAKContext2:
     """
@@ -39,7 +54,7 @@ class OFRAKContext2:
     1. Cache and update resource models appropriately
     2. Cache and update resource views appropriately
     3. Track modifications
-        - Tags added
+        - NOT Tags added - but will need to work out what tags were added when flushing
         - Data patches
         - Any modification (is_modified)
            Currently the root "truth" for this lives in ResourceModel.is_modified
@@ -86,29 +101,37 @@ class OFRAKContext2:
         self.current_component_id: bytes = component_id
         self.current_component_version: int = component_version
 
-        self.resource_models: MutableMapping[bytes, MutableResourceModel] = WeakValueDictionary()
-        self.views_by_resource: MutableMapping[bytes, ViewByTag] = defaultdict(WeakValueDictionary)
+        # TODO: Maybe it would make sense to use ResourceModels as keys to a WeakKeyDictionary, so we forget about the views once there is no reference to them
+        # Only problem with that brilliant plan is the circular reference created by Key[Model] -> View -> Resource -> Model
+        # However that can be solved by excluding the underlying Resource from cached views, easily
+        self.cached_resource_views: MutableMapping[bytes, ViewByTag] = defaultdict(dict)
+        self.trackers: MutableMapping[bytes, ResourceTracker] = dict()
 
-        self.access_trackers: Dict[bytes, ComponentResourceAccessTracker] = field(
-            default_factory=lambda: defaultdict(ComponentResourceAccessTracker)
-        )
-        self.modification_trackers: Dict[bytes, ComponentResourceModificationTracker] = field(
-            default_factory=lambda: defaultdict(ComponentResourceModificationTracker)
-        )
+        # TODO: You know, it is weird that creation is always "instant" and deletion isn't...
         self.resources_created: Set[bytes] = field(default_factory=set)
-        self.resources_deleted: Set[bytes] = field(default_factory=set)
+        self.resources_to_delete: Set[bytes] = field(default_factory=set)
 
-        self.history: List[ComponentRunResult] = list()
+        # TODO: What data structure?
+        # self.history: List[ResourceRecord] = list()
 
-    def mark_resource_modified(self, r_id: bytes):
-        # Creates a new tracker if none exists, and leaves tracker untouched if it already exists
-        _ = self.modification_trackers[r_id]
+    async def get_model(self, resource_id: bytes) -> MutableResourceModel:
+        (tracker,) = await self.get_trackers(resource_id)
+        return tracker.model
 
-    def get_modified_resource_ids(self, include_deleted=False) -> Set[bytes]:
-        modified_resource_ids = set(self.modification_trackers.keys())
-        if not include_deleted:
-            modified_resource_ids = modified_resource_ids.difference(self.resources_deleted)
-        return modified_resource_ids
+    async def get_models(self, resource_ids: Sequence[bytes]) -> Sequence[MutableResourceModel]:
+        return [tracker.model for tracker in await self.get_trackers(resource_ids)]
+
+    async def get_trackers(self, resource_ids: Sequence[bytes]) -> Sequence[ResourceTracker]:
+        missing_ids = [
+            resource_id for resource_id in resource_ids if resource_id not in self.trackers
+        ]
+        if missing_ids:
+            models = await self.resource_service.get_by_ids(missing_ids)
+
+            for model in models:
+                self.trackers[model.id] = ResourceTracker(MutableResourceModel.from_model(model))
+
+        return [self.trackers[resource_id] for resource_id in resource_ids]
 
     def fork(
         self,
@@ -122,6 +145,213 @@ class OFRAKContext2:
             component_version if component_version else self.current_component_version,
         )
 
+    async def _push_deletions(self):
+        """
+        Handle deletions... somehow
+
+        Q: self.resources_to_delete is a record of already-deleted resources, or a queue of resources to delete?
+        So far as it's used, it's a queue, but it seems very useful to have a record
+        A: Store the running total of resources deleted separately, in the self._records probably,
+            using the return values of this function. I think that resolves that.
+
+        :return: deleted Resource IDs, deleted data model IDs
+        """
+        deleted_descendants = await self.resource_service.delete_resources(self.resources_to_delete)
+        all_deleted_resources: Set[bytes] = set(self.resources_to_delete)
+        data_ids_to_delete = []
+        for deleted_m in deleted_descendants:
+            if deleted_m.id in self.trackers:
+                deleted_tracker = self.trackers.pop(deleted_m.id)
+            if deleted_m.data_id:
+                data_ids_to_delete.append(deleted_m.data_id)
+            all_deleted_resources.add(deleted_m.id)
+
+        await self.data_service.delete_models(data_ids_to_delete)
+
+        self.resources_to_delete.clear()
+
+        # TODO: Views??
+
+        return all_deleted_resources, data_ids_to_delete
+
+    async def _push_data_modifications(self):
+        # Collect all the queued data patches
+        data_patches = []
+        for tracker in self.trackers.values():
+            for patch_range, patch_contents in tracker.data_writes:
+                data_patches.append(
+                    DataPatch(
+                        patch_range,
+                        tracker.model.data_id,
+                        patch_contents,
+                    )
+                )
+            tracker.data_writes.clear()
+
+        # Apply patches in data service
+        patch_results = await self.data_service.apply_patches(data_patches)
+
+        # Map each patched data ID to tracker and data model
+        patched_data_ids = {result.data_id for result in patch_results}
+        data_models_by_data_id: Dict[bytes, DataModel] = {
+            data_id: data_m
+            for data_id, data_m in zip(
+                patched_data_ids,
+            )
+        }
+        trackers_by_data_id: Dict[bytes, Tuple[ResourceTracker, DataModel]] = {
+            data_id: (tracker, data_m)
+            for data_id, tracker, data_m in zip(
+                patched_data_ids,
+                await self.get_trackers(
+                    [
+                        model.id
+                        # TODO: A little more efficient to not fetch data IDs already in trackers
+                        for model in await self.resource_service.get_by_data_ids(patched_data_ids)
+                    ]
+                ),
+                await self.data_service.get_by_ids(patched_data_ids),
+            )
+        }
+
+        # Go through and update all models' Data
+        for data_patch_result in patch_results:
+            tracker, data_m = trackers_by_data_id[data_patch_result.data_id]
+            tracker.model.add_attributes(Data(data_m.range.start, data_m.range.length()))
+
+        # Then handle post-patch dependencies
+        await self.handle_post_patch_dependencies(
+            [
+                (
+                    trackers_by_data_id[specific_model_patches.data_id][0].model,
+                    specific_model_patches.patches,
+                )
+                for specific_model_patches in patch_results
+            ]
+        )
+
+    async def _push_model_modifications(self):
+        # TODO: Flush data and attribute reads down to dependencies in model here?
+        """
+        Consequence:
+
+        a.get_data()
+        a.save()
+        a.add_attributes(X)
+
+        Because the data read was already flushed away, no dependency is created for X
+
+        Now this could be desirable and useful sometimes... but, it would be nice to have as a separate function
+            _flush_accesses_into_dependencies
+        :return:
+        """
+
+        diffs = []
+        updated_ids = []
+        for tracker in self.trackers.values():
+            resource_m = tracker.model
+            diffs.append(resource_m.save())
+            updated_ids.append(resource_m.id)
+
+        await self.resource_service.update_many(diffs)
+
+    async def _flush_accesses_into_dependencies(self):
+        """
+        Take all the tracked data_reads and attribute_reads, plus attributes_added, and
+        synthesize the appropriate dependencies. After completing, all data_reads and data_writes
+        are cleared, and resource models have new dependencies as appropriate.
+
+        OFRAK Dependency Tracking:
+        When a component adds attributes to a resource, OFRAK also records how other Resources were
+        accessed in the component. This allows OFRAK to track that the modified resources
+        'depend on' the accessed resources, and appropriately update the modified resources if the
+        accessed resource is later changed.
+
+        OFRAK tracks only two specific types of dependencies:
+        1. Resource A's attributes X 'depend on' an attribute Y of resources B. Resource A's
+        attributes X will be invalidated when resource B's attributes Y changes.
+        2. Resource A's attributes X 'depend on' a range (Y,Z) of resource B's data. Resource A's
+        attributes X will be invalidated when resource B's has a data patch overlapping with (Y,Z)
+        applied to it.
+
+        Attributes being invalidated simply means that when requested through a `Resource.analyze`
+        or `Resource.view_as`, an Analyzer will be run to refresh the attributes, even if the
+        attributes already exist.
+
+        TODO: Validate the below and what it is saying??
+        Whenever a [Modifier][ofrak.component.modifier.Modifier] is run, these resource attribute
+        dependencies are invalidated so as to force analysis to be rerun.
+
+        All of this is facilitated by storing data structures on the dependant resources about
+        which other resources depend on them and how. To use the terminology of the examples above,
+        resource B stores the information that resource A's attributes X depend on its
+        (resource B's) attributes Y, or data range (Y,Z), or even both.
+
+        TODO: Note that tracked attributes_added are NOT cleared. THIS FUNCTION CAN ONLY BE CALLED WHEN NO MORE DATA/ATTRIBUTES CAN BE ACCESSED
+        Consequence: Attributes added earlier would be marked as dependencies of data/attributes accessed later. CLEARLY WRONG BEHAVIOR.
+        THEREFORE, EITHER THIS CAN ONLY BE CALLED WHEN NO MORE DATA/ATTRIBUTES CAN BE ACCESSED, OR WE NEED TO TRACK MODIFICATIONS FOR DEPENDENCY TRACKING SEPARATELY FROM GENERAL TRACKING OF CHANGES
+        Solution? New data structure obviously and strictly for dependency tracking
+        Dictionary indexed by ... does it matter what it's indexed by?
+        We want to keep track of previously accessed stuff so that when there is an attributes added, we can also add dependencies to the accessed stuff
+        self._dependencies: Dict[ResourceID, Tuple[ResourceAttributeDependency, Union[Range, Type[ResourceAttributes]]]}
+        A record of "dependency events" could also work well
+
+        :return: None
+        """
+
+        all_data_reads: List[Tuple[bytes, Range]] = []
+        all_attribute_reads: List[Tuple[bytes, Type[ResourceAttributes]]] = []
+        all_added_attributes: List[ResourceAttributeDependency] = []
+        for tracker in self.trackers.values():
+            # Collect the accessed data of this Resource
+            all_data_reads.extend(
+                (tracker.model.id, read_range) for read_range in tracker.data_reads
+            )
+            tracker.data_reads.clear()
+
+            # Collect the accessed attributes of this Resource
+            all_attribute_reads.extend(
+                (tracker.model.id, read_attrs) for read_attrs in tracker.attribute_reads
+            )
+            tracker.attribute_reads.clear()
+
+            # Collect each dependency for any new attributes of this Resource
+            all_added_attributes.extend(
+                ResourceAttributeDependency(
+                    tracker.model.id,
+                    self.current_component_id,
+                    attrs_added,
+                )
+                for attrs_added in tracker.model.diff.attributes_added
+            )
+
+        # Mark all the resources that were accessed in order to create each new attributes
+        for dependency in all_added_attributes:
+            # Mark read_resource_id that there is a dependency on its data contained in read_range
+            for read_resource_id, read_range in all_data_reads:
+                tracker = self.trackers.get(read_resource_id)
+                if not tracker:
+                    raise InvalidStateError(
+                        f"Tracker for ID {read_resource_id.hex()} disappeared between when all "
+                        f"data reads were collected and when attempting to actually add dependency!"
+                    )
+                tracker.model.add_data_dependency(
+                    dependency,
+                    read_range,
+                )
+            # Mark read_resource_id that there is a dependency on its attributes read_attributes
+            for read_resource_id, read_attributes in all_attribute_reads:
+                tracker = self.trackers.get(read_resource_id)
+                if not tracker:
+                    raise InvalidStateError(
+                        f"Tracker for ID {read_resource_id.hex()} disappeared between when all "
+                        f"data reads were collected and when attempting to actually add dependency!"
+                    )
+                tracker.model.add_attribute_dependency(
+                    read_attributes,
+                    dependency,
+                )
+
     async def push(self):
         """
         Push pending changes to global state
@@ -134,6 +364,7 @@ class OFRAKContext2:
         5. Push updated resource models
         :return:
         """
+        raise NotImplementedError()
 
     async def pull(self):
         """
@@ -146,6 +377,7 @@ class OFRAKContext2:
         2. Update resource views
         :return:
         """
+        raise NotImplementedError()
 
     async def finish_context(self):
         """
@@ -161,79 +393,17 @@ class OFRAKContext2:
         """
         await self.push()
 
-    async def flush(self) -> ComponentRunResult:
-        resources_to_delete: Set[bytes] = self.resources_deleted
-        resources_to_update: Set[bytes] = set(self.modification_trackers.keys())
-
-        data_ids_to_delete = []
-        for deleted_r_m in await self.resource_service.delete_resources(resources_to_delete):
-            resources_to_update.discard(deleted_r_m.id)
-            if deleted_r_m.data_id is not None:
-                data_ids_to_delete.append(deleted_r_m.data_id)
-
-        patches_to_apply: List[DataPatch] = list()
-        for modified_r_id in resources_to_update:
-            modification_tracker = self.modification_trackers.get(modified_r_id)
-            assert modification_tracker is not None, (
-                f"Resource {modified_r_id} was " f"marked as modified but is missing a tracker!"
-            )
-            patches_to_apply.extend(modification_tracker.data_patches)
-
-            modification_tracker.data_patches.clear()
-
-        await self.data_service.delete_models(data_ids_to_delete)
-        patch_results = await self.data_service.apply_patches(patches_to_apply)
-
-        await self.handle_post_patch_dependencies(patch_results)
-
-        diffs = []
-        updated_ids = []
-        for resource_id in resources_to_update:
-            resource_m = self.resource_models
-            diffs.append(resource_m.save())
-            updated_ids.append(resource_m.id)
-        await self.resource_service.update_many(diffs)
-        self.update_views(updated_ids, resources_to_delete)
-
     ###########################################
     # DEPENDENCY HANDLER
     ###########################################
-    @functools.lru_cache(None)
-    async def map_data_ids_to_resources(
-        self, data_ids: Iterable[bytes]
-    ) -> Dict[bytes, MutableResourceModel]:
-        resources_by_data_id = dict()
-        for resource_id, resource_m in self.resource_models.items():
-            if resource_m.data_id is not None:
-                resources_by_data_id[resource_m.data_id] = resource_m
 
-        missing_data_ids = set()
-        for data_id in data_ids:
-            if data_id not in resources_by_data_id:
-                missing_data_ids.add(data_id)
-
-        missing_resources = await self.resource_service.get_by_data_ids(missing_data_ids)
-        for missing_resource in missing_resources:
-            missing_resource_data_id = cast(bytes, missing_resource.data_id)
-            if missing_resource_data_id in resources_by_data_id:
-                raise ValueError("Something is wrong in the implementation")
-            mutable_resource = MutableResourceModel.from_model(missing_resource)
-            resources_by_data_id[missing_resource_data_id] = mutable_resource
-            self.resource_models[missing_resource.id] = mutable_resource
-
-        return resources_by_data_id
-
-    async def handle_post_patch_dependencies(self, patch_results: List[DataPatchesResult]):
-        # Create look up maps for resources and dependencies
-        resources_by_data_id = await self.map_data_ids_to_resources(
-            patch_result.data_id for patch_result in patch_results
-        )
-
+    async def handle_post_patch_dependencies(
+        self, patched_models: List[Tuple[MutableResourceModel, List[Range]]]
+    ):
         unhandled_dependencies: Set[ResourceAttributeDependency] = set()
         # Figure out which components results must be invalidated based on data changes
 
-        for data_patch_result in patch_results:
-            resource_m = resources_by_data_id[data_patch_result.data_id]
+        for resource_m, patched_ranges in patched_models:
             removed_data_dependencies = set()
             # Iterate over the resource's data dependencies to find one that's affected by one of
             # the patch range
@@ -241,7 +411,7 @@ class OFRAKContext2:
                 # Iterate over the resource's data dependency ranges to find a range that overlaps
                 # the patch range
                 for dependency_range in dependency_ranges:
-                    for patch_range in data_patch_result.patches:
+                    for patch_range in patched_ranges:
                         if not dependency_range.overlaps(patch_range):
                             continue
                         LOGGER.debug(
@@ -268,107 +438,18 @@ class OFRAKContext2:
             unhandled_dependencies,
         )
 
-    def create_component_dependencies(
-        self,
-        component_id: bytes,
-        component_version: int,
-    ):
+    def _create_component_dependencies(self):
         """
         Register dependencies between the component and the resources it interacts with.
 
-        This may not even be necessary since Resource.add_attributes does this anyway...
+        This will REPLACE what Resource.add_attributes currently does. In order to do that, this
+        needs to be called when flushing - either final flush or intermediate flush
         """
-        self._validate_resource_context_complete()
-
-        for resource_id in self.resources_created:
-            new_resource_m = self.resource_models[resource_id]
-            for attributes in new_resource_m.attributes.keys():
-                new_resource_m.add_component_for_attributes(
-                    component_id, component_version, attributes
+        for tracker in self.trackers.values():
+            for attrs_added in tracker.model.diff.attributes_added.keys():
+                tracker.model.add_component_for_attributes(
+                    self.current_component_id, self.current_component_version, attrs_added
                 )
-
-    def create_resource_dependencies(
-        self,
-        component_id: bytes,
-    ):
-        """
-        Register dependencies between a resource with some attributes and the resources which
-        were accessed in the context where these attributes were added.
-
-        When a component runs, this method is called to record what data was accessed by the
-        component and what resource attributes from other resources were accessed within that
-        component. These registered dependencies allow for OFRAK to not rerun analyzers when the
-        resource and its dependencies have not changed.
-
-        Whenever a [Modifier][ofrak.component.modifier.Modifier] is run, these resource attribute
-        dependencies are invalidated so as to force analysis to be rerun.
-
-        :param bytes component_id:
-        """
-        self._validate_resource_context_complete()
-        resource_dependencies = []
-
-        # Create dependency for each attribute on newly created resources
-        for resource_id in self.resources_created:
-            new_resource_m = self.resource_models[resource_id]
-            for attributes in new_resource_m.attributes.keys():
-                resource_dependencies.append(
-                    ResourceAttributeDependency(
-                        resource_id,
-                        component_id,
-                        attributes,
-                    )
-                )
-
-        # Create dependency for each new attribute on modified resources
-        for resource_id in self.modification_trackers.keys():
-            modified_resource_m = self.resource_models[resource_id]
-            for attrs_added in modified_resource_m.diff.attributes_added.keys():
-                resource_dependencies.append(
-                    ResourceAttributeDependency(
-                        resource_id,
-                        component_id,
-                        attrs_added,
-                    )
-                )
-
-        # Add dependencies to all resources which were accessed
-        for resource_id, access_tracker in self.access_trackers.items():
-            if resource_id in self.resources_created:
-                # Avoid all the newly created components depending on each other
-                continue
-            accessed_resource_m = self.resource_models[resource_id]
-            merged_accessed_ranges = Range.merge_ranges(access_tracker.data_accessed)
-            # Add attributes dependency on all accessed attributes
-            for attributes_accessed in access_tracker.attributes_accessed:
-                for resource_dependency in resource_dependencies:
-                    accessed_resource_m.add_attribute_dependency(
-                        attributes_accessed, resource_dependency
-                    )
-            # Add data dependency on all accessed data
-            for accessed_range in merged_accessed_ranges:
-                for resource_dependency in resource_dependencies:
-                    accessed_resource_m.add_data_dependency(resource_dependency, accessed_range)
-
-    def _validate_resource_context_complete(self):
-        for resource_id in self.resources_created:
-            if resource_id not in self.resource_models:
-                raise ValueError(
-                    f"The resource model {resource_id.hex()} was created but it's not in the "
-                    f"resource context"
-                )
-
-    async def _fetch_missing_resources(self, resource_ids: Iterable[bytes]):
-        missing_resource_ids = set()
-        # Fetch all the resources referred to by the unhandled dependencies
-        for resource_id in resource_ids:
-            if resource_id not in self.resource_models:
-                missing_resource_ids.add(resource_id)
-        missing_resources = await self.get_by_ids(missing_resource_ids)
-        for missing_resource in missing_resources:
-            self.resource_models[missing_resource.id] = MutableResourceModel.from_model(
-                missing_resource
-            )
 
     async def _invalidate_dependencies(
         self,
@@ -415,7 +496,7 @@ class OFRAKContext2:
                 continue
 
             try:
-                resource_m = self.resource_models[dependency.dependent_resource_id]
+                resource_m = self.cached_resource_models[dependency.dependent_resource_id]
             except KeyError as e:
                 missing_model = await self.get_by_id(dependency.dependent_resource_id)
                 resource_m = MutableResourceModel.from_model(missing_model)
