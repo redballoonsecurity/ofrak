@@ -174,7 +174,7 @@ async def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: st
         )
 
     new_segment = await add_and_return_segment(root_resource, 0x108000, 0x2000)
-    source_dir = os.path.join(os.path.dirname(__file__), "src/example_7")
+    source_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "src/example_7"))
     fs_resource = await ofrak_context.create_root_resource(name="", data=b"", tags=(SourceBundle,))
     await patch_uppercase(root_resource, source_dir, new_segment, fs_resource)
     await call_new_segment_instead(root_resource, new_segment)
