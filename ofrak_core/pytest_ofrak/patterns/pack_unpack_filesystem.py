@@ -4,8 +4,6 @@ import tempfile
 from abc import ABC, abstractmethod
 from subprocess import CalledProcessError
 
-import xattr
-
 from ofrak import OFRAKContext
 from ofrak.component.abstract import ComponentSubprocessError
 from ofrak.resource import Resource
@@ -20,9 +18,8 @@ class FilesystemPackUnpackVerifyPattern(ABC):
     def setup(self):
         """
         Override to set values before the test is run. For example use this to change the value of
-        self.check_xattrs in a subclass.
+        self.check_stat in a subclass.
         """
-        self.check_xattrs = True
         self.check_stat = True
 
     async def test_pack_unpack_verify(self, ofrak_context: OFRAKContext):
@@ -57,8 +54,8 @@ class FilesystemPackUnpackVerifyPattern(ABC):
     def create_local_file_structure(self, root: str):
         """
         Create a local file structure with multiple folders and files, many with different
-        permissions and xattrs. Return the path to the root directory. Override this method to
-        test with a different directory structure, or to add xattrs or stat values.
+        permissions. Return the path to the root directory. Override this method to
+        test with a different directory structure or to add stat values.
         """
         self._dirs_from_list(root, ["a", "b", "c", "d"], 3)
 
@@ -95,8 +92,6 @@ class FilesystemPackUnpackVerifyPattern(ABC):
     def verify_filesystem_equality(self, old_path: str, new_path: str):
         if self.check_stat:
             self._validate_stat_equality(old_path, new_path)
-        if self.check_xattrs:
-            self._validate_xattrs_equality(old_path, new_path)
         self._validate_type_equality(old_path, new_path)
         if os.path.islink(old_path):
             self._validate_link_equality(old_path, new_path)
@@ -113,17 +108,6 @@ class FilesystemPackUnpackVerifyPattern(ABC):
         assert (
             old_stat == new_stat
         ), f"{old_path} and {new_path} have different stat values\nold: {old_stat}\nnew: {new_stat}"
-
-    def _validate_xattrs_equality(self, old_path: str, new_path: str):
-        old_xattrs = dict()
-        for attr in xattr.listxattr(old_path, symlink=True):
-            old_xattrs[attr] = xattr.getxattr(old_path, attr, symlink=True)
-        new_xattrs = dict()
-        for attr in xattr.listxattr(new_path, symlink=True):
-            new_xattrs[attr] = xattr.getxattr(new_path, attr, symlink=True)
-        assert (
-            old_xattrs == new_xattrs
-        ), f"{old_path} and {new_path} have different xattrs\nold: {old_xattrs}\nnew: {new_xattrs}"
 
     def _validate_type_equality(self, old_path: str, new_path: str):
         assert (

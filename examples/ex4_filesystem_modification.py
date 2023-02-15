@@ -48,15 +48,12 @@ async def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: st
     new_string_config = BinaryPatchConfig(hello_world_offset, b"More meow!\0")
     await hello_world_program.resource.run(BinaryPatchModifier, new_string_config)
 
-    # Modify the program permission bits and xattrs before repacking
+    # Modify the program permission bits before repacking
     print(f"Initial st_mode: {hello_world_program.stat.st_mode:o}")
-    print(f"Initial xattrs: {hello_world_program.xattrs}")
 
     await hello_world_program.modify_stat_attribute(stat.ST_MODE, 0o100755)
-    await hello_world_program.modify_xattr_attribute("user.foo", b"bar")
 
     print(f"Modified st_mode: {hello_world_program.stat.st_mode:o}")
-    print(f"Modified xattrs: {hello_world_program.xattrs}")
 
     # Dump the repacked file to the disk
     await root_resource.pack()

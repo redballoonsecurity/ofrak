@@ -179,15 +179,6 @@ class TestFilesystemEntry:
         await child_textfile.modify_stat_attribute(stat.ST_MODE, new_stat_mode)
         assert new_stat_mode == child_textfile.stat.st_mode
 
-    async def test_modify_xattr_attribute(self, filesystem_root: FilesystemRoot):
-        """
-        Test that FilesystemEntry.modify_xattr_attribute modifies the entry's xattr attributes.
-        """
-        child_textfile = await filesystem_root.get_entry(CHILD_TEXTFILE_NAME)
-        assert child_textfile.xattrs == {}
-        await child_textfile.modify_xattr_attribute("user.foo", b"bar")
-        assert child_textfile.xattrs == {"user.foo": b"bar"}
-
 
 class TestFolder:
     async def test_get_entry(self, filesystem_root: FilesystemRoot):
@@ -317,7 +308,7 @@ class TestSymbolicLinkUnpackPack(FilesystemPackUnpackVerifyPattern):
     async def create_root_resource(self, ofrak_context: OFRAKContext, directory: str) -> Resource:
         # Pack with command line `tar` because it supports symbolic links
         with tempfile.NamedTemporaryFile(suffix=".tar") as archive:
-            command = ["tar", "--xattrs", "-C", directory, "-cf", archive.name, "."]
+            command = ["tar", "-C", directory, "-cf", archive.name, "."]
             subprocess.run(command, check=True, capture_output=True)
 
             return await ofrak_context.create_root_resource_from_file(archive.name)
@@ -334,7 +325,7 @@ class TestSymbolicLinkUnpackPack(FilesystemPackUnpackVerifyPattern):
             tar.write(data)
             tar.flush()
 
-            command = ["tar", "--xattrs", "-C", extract_dir, "-xf", tar.name]
+            command = ["tar", "-C", extract_dir, "-xf", tar.name]
             subprocess.run(command, check=True, capture_output=True)
 
 
@@ -342,7 +333,7 @@ class TestLoadInMemoryFilesystem(TestSymbolicLinkUnpackPack):
     async def create_root_resource(self, ofrak_context: OFRAKContext, directory: str) -> Resource:
         with tempfile.TemporaryDirectory() as archive_dir:
             archive_name = os.path.join(archive_dir, "archive.tar")
-            command = ["tar", "--xattrs", "-C", directory, "-cf", archive_name, "."]
+            command = ["tar", "-C", directory, "-cf", archive_name, "."]
             subprocess.run(command, check=True, capture_output=True)
 
             with open(archive_name, "rb") as f:

@@ -2,7 +2,6 @@ import os
 import subprocess
 
 import pytest
-import xattr
 
 from examples.ex5_binary_extension import SEVEN_KITTEH
 from examples.ex8_recursive_unpacking import KITTEH as KITTEH_ASCII
@@ -76,7 +75,6 @@ def test_example_4(tmp_path):
     Test that the executable built by ex4_filesystem_modification.py changes
      * string
      * permissions
-     * xattrs
     """
     file = tmp_path / "example_4.out"
     command = ["python3", "ex4_filesystem_modification.py", "--output-file-name", str(file)]
@@ -86,7 +84,6 @@ def test_example_4(tmp_path):
     target_file = tmp_path / "squashfs-root" / "src" / "program"
     stat = os.lstat(target_file)
     assert stat.st_mode == 0o100755
-    assert xattr.getxattr(target_file, "user.foo") == b"bar"
     os.chmod(str(target_file), 0o755)
     stdout = subprocess.run(str(target_file), capture_output=True).stdout
     assert stdout == b"More meow!\n"

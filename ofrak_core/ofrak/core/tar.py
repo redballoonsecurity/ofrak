@@ -53,7 +53,7 @@ class TarUnpacker(Unpacker[None]):
 
             # Unpack into a temporary directory using the temporary file
             with tempfile.TemporaryDirectory() as temp_dir:
-                command = ["tar", "--xattrs", "-C", temp_dir, "-xf", temp_archive.name]
+                command = ["tar", "-C", temp_dir, "-xf", temp_archive.name]
                 subprocess.run(command, check=True, capture_output=True)
 
                 # Initialize a filesystem from the unpacked/untarred temporary folder
@@ -76,7 +76,7 @@ class TarPacker(Packer[None]):
 
         # Pack it back into a temporary archive
         with tempfile.NamedTemporaryFile(suffix=".tar") as temp_archive:
-            command = ["tar", "--xattrs", "-C", flush_dir, "-cf", temp_archive.name, "."]
+            command = ["tar", "-C", flush_dir, "-cf", temp_archive.name, "."]
             subprocess.run(command, check=True, capture_output=True)
 
             # Replace the original archive data

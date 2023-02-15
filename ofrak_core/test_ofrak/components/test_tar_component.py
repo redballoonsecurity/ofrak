@@ -114,7 +114,7 @@ class TestTarFilesystemUnpackRepack(FilesystemPackUnpackVerifyPattern):
 
     async def create_root_resource(self, ofrak_context: OFRAKContext, directory: str) -> Resource:
         with tempfile.NamedTemporaryFile(suffix=".tar") as archive:
-            command = ["tar", "--xattrs", "-C", directory, "-cf", archive.name, "."]
+            command = ["tar", "-C", directory, "-cf", archive.name, "."]
             subprocess.run(command, check=True, capture_output=True)
 
             return await ofrak_context.create_root_resource_from_file(archive.name)
@@ -131,7 +131,7 @@ class TestTarFilesystemUnpackRepack(FilesystemPackUnpackVerifyPattern):
             tar.write(data)
             tar.flush()
 
-            command = ["tar", "--xattrs", "-C", extract_dir, "-xf", tar.name]
+            command = ["tar", "-C", extract_dir, "-xf", tar.name]
             subprocess.run(command, check=True, capture_output=True)
 
 
@@ -211,7 +211,7 @@ class TestComplexTarWithSpecialFiles(FilesystemPackUnpackVerifyPattern):
         return await ofrak_context.create_root_resource_from_file(self.testtar_path)
 
     def create_local_file_structure(self, root: str):
-        command = ["tar", "--xattrs", "-C", root, "-xf", self.testtar_path]
+        command = ["tar", "-C", root, "-xf", self.testtar_path]
         subprocess.run(command, check=True, capture_output=True)
 
     async def unpack(self, root_resource: Resource):
@@ -226,5 +226,5 @@ class TestComplexTarWithSpecialFiles(FilesystemPackUnpackVerifyPattern):
             tar.write(data)
             tar.flush()
 
-            command = ["tar", "--xattrs", "-C", extract_dir, "-xf", tar.name]
+            command = ["tar", "-C", extract_dir, "-xf", tar.name]
             subprocess.run(command, check=True, capture_output=True)

@@ -10,7 +10,7 @@ from synthol.injector import DependencyInjector
 
 from ofrak.component.interface import ComponentInterface
 from ofrak.core.binary import GenericBinary
-from ofrak.core.filesystem import File, FilesystemRoot
+from ofrak.core.filesystem import File
 from ofrak.model.component_model import ClientComponentContext
 from ofrak.model.resource_model import ResourceModel, ClientResourceContextFactory
 from ofrak.model.tag_model import ResourceTag
@@ -79,7 +79,6 @@ class OFRAKContext:
             File(
                 os.path.basename(full_file_path),
                 os.lstat(full_file_path),
-                FilesystemRoot._get_xattr_map(full_file_path),
             )
         )
         await root_resource.save()
