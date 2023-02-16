@@ -2,7 +2,11 @@ import os
 import subprocess
 
 import pytest
-import xattr
+
+try:
+    import xattr
+except ImportError:
+    import ofrak_core.ofrak.core.xattr_stub as xattr
 
 from examples.ex5_binary_extension import SEVEN_KITTEH
 from examples.ex8_recursive_unpacking import KITTEH as KITTEH_ASCII

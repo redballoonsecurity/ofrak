@@ -4,7 +4,10 @@ import tempfile
 from dataclasses import dataclass
 from typing import Dict, Iterable, Optional, Type, Union
 
-import xattr
+try:
+    import xattr
+except ImportError:
+    import ofrak.core.xattr_stub as xattr
 
 from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
