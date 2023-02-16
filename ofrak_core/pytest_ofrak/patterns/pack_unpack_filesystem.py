@@ -7,7 +7,7 @@ from subprocess import CalledProcessError
 try:
     import xattr
 except ImportError:
-    import ofrak.core.xattr_stub as xattr
+    import ofrak.core.xattr_stub as xattr  # type: ignore[no-redef]
 
 from ofrak import OFRAKContext
 from ofrak.component.abstract import ComponentSubprocessError

@@ -7,7 +7,7 @@ from typing import Dict, Iterable, Optional, Type, Union
 try:
     import xattr
 except ImportError:
-    import ofrak.core.xattr_stub as xattr
+    import ofrak.core.xattr_stub as xattr  # type: ignore[no-redef]
 
 from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource

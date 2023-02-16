@@ -6,7 +6,7 @@ import pytest
 try:
     import xattr
 except ImportError:
-    import ofrak_core.ofrak.core.xattr_stub as xattr
+    import ofrak_core.ofrak.core.xattr_stub as xattr  # type: ignore[no-redef]
 
 from examples.ex5_binary_extension import SEVEN_KITTEH
 from examples.ex8_recursive_unpacking import KITTEH as KITTEH_ASCII
