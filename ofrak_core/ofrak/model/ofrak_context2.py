@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass, field, fields
-from typing import Dict, List, MutableMapping, Optional, Sequence, Set, Tuple, Type, Iterable
+from typing import Dict, List, MutableMapping, Optional, Sequence, Set, Tuple, Type, Iterable, cast
 
 from ofrak.model.data_model import DataModel, DataPatch
 from ofrak.model.resource_model import (
@@ -140,6 +140,7 @@ class OFRAKContext2:
         # TODO: What data structure? Well, what are the use cases for this?
         # Peek back through history and see tags added? Or, just include that in ComponentRunResults
         # Undo queue? Potentially... But doesn't have the 'before' to actually undo anything
+        # Could be used to find all the attributes added etc.
         # self.history: List[ResourceRecord] = list()
 
     def fork(
@@ -169,7 +170,10 @@ class OFRAKContext2:
         """
         deleted_ids, deleted_data_ids = await self._push_deletions()
         self._update_deleted_resource(deleted_ids)
-        await self._push_data_modifications()  # Also handles dependencies, but I'd like to pull that out and separate it
+        patched_model_ranges = await self._push_data_modifications()
+        # Remove dependencies on the patched data - full dependency tracking/invalidate happens later
+        self._invalidate_patch_dependencies(patched_model_ranges)
+        self._create_component_dependencies()
         await self._push_model_modifications()
 
     async def pull(
@@ -208,7 +212,7 @@ class OFRAKContext2:
         await self.push()
 
     async def get_model(self, resource_id: bytes) -> MutableResourceModel:
-        (tracker,) = await self._get_trackers(resource_id)
+        (tracker,) = await self._get_trackers((resource_id,))
         return tracker.model
 
     async def get_models(self, resource_ids: Sequence[bytes]) -> Sequence[MutableResourceModel]:
@@ -261,7 +265,11 @@ class OFRAKContext2:
 
         return all_deleted_resources, data_ids_to_delete
 
-    async def _push_data_modifications(self):
+    async def _push_data_modifications(self) -> List[Tuple[MutableResourceModel, List[Range]]]:
+        """
+
+        :return: List of resources modified by patches, alongside which ranges were modified
+        """
         # Collect all the queued data patches
         data_patches = []
         for tracker in self.trackers.values():
@@ -269,7 +277,7 @@ class OFRAKContext2:
                 data_patches.append(
                     DataPatch(
                         patch_range,
-                        tracker.model.data_id,
+                        cast(bytes, tracker.model.data_id),
                         patch_contents,
                     )
                 )
@@ -300,16 +308,13 @@ class OFRAKContext2:
             tracker, data_m = trackers_by_data_id[data_patch_result.data_id]
             tracker.model.add_attributes(Data(data_m.range.start, data_m.range.length()))
 
-        # Remove dependencies on the patched data - full dependency tracking/invalidate happens later
-        self._invalidate_patch_dependencies(
-            [
-                (
-                    trackers_by_data_id[specific_model_patches.data_id][0].model,
-                    specific_model_patches.patches,
-                )
-                for specific_model_patches in patch_results
-            ]
-        )
+        return [
+            (
+                trackers_by_data_id[specific_model_patches.data_id][0].model,
+                specific_model_patches.patches,
+            )
+            for specific_model_patches in patch_results
+        ]
 
     async def _push_model_modifications(self):
         """
@@ -328,7 +333,7 @@ class OFRAKContext2:
 
         await self.resource_service.update_many(diffs)
 
-    async def _pull_models(self, modified_resource_ids: Optional[Iterable[bytes]]):
+    async def _pull_models(self, modified_resource_ids: Iterable[bytes]):
         """
         Update local cached resource models
         :return:
@@ -416,6 +421,7 @@ class OFRAKContext2:
         :return: None
         """
 
+        # TODO: intermediate pushes will clear out the tracking of attributes added/removed, so this won't get the full list of modified attributes
         # Check each resource with modified attributes for dependencies on those attributes
         for tracker in self.trackers.values():
             model = tracker.model
@@ -482,6 +488,7 @@ class OFRAKContext2:
                     dependency,
                 )
 
+        # TODO: intermediate pushes will clear the set of dependencies added, so this won't get the full set of unhandled dependencies
         # Collect all of the dependencies that have been affected
         unhandled_dependencies = set()
         for tracker in self.trackers.values():
