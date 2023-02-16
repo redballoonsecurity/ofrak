@@ -199,7 +199,7 @@ class ISO9660Unpacker(Unpacker[None]):
                     iso_version=-1,
                 )
                 await iso_resource.add_folder(
-                    path, None, folder_tags, entry.get_attributes_instances().values()
+                    path, None, None, folder_tags, entry.get_attributes_instances().values()
                 )
             for f in files:
                 path = os.path.join(root, f)
@@ -233,6 +233,7 @@ class ISO9660Unpacker(Unpacker[None]):
                 await iso_resource.add_file(
                     path,
                     file_data,
+                    None,
                     None,
                     file_tags,
                     entry.get_attributes_instances().values(),
