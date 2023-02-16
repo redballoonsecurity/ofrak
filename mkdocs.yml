@@ -51,27 +51,31 @@ nav:
   - Home: "index.md"
   - Environment Setup: "environment-setup.md"
   - Getting Started: "getting-started.md"
-  - GUI: 
-    - Minimap View: "user-guide/gui/minimap.md"
   - Examples: examples/
   - User Guide:
-      - Resource: "user-guide/resource.md"
-      - ResourceView: "user-guide/resource_view.md"
-      - Components:
-        - ComponentInterface: "user-guide/component/component.md"
-        - Identifier: "user-guide/component/identifier.md"
-        - Unpacker: "user-guide/component/unpacker.md"
-        - Analyzer: "user-guide/component/analyzer.md"
-        - Modifier: "user-guide/component/modifier.md"
-        - Packer: "user-guide/component/packer.md"
-      - Ghidra Backend: "user-guide/ghidra.md"
-      - Binary Ninja Backend: "user-guide/binary_ninja.md"
-      - Angr Backend: "user-guide/angr.md"
-      - PatchMaker:
-        - User Guide: "user-guide/patch-maker/user-guide.md"
-        - Troubleshooting: "user-guide/patch-maker/troubleshooting.md"
-      - NAND Flash Component: "user-guide/flash_component.md"
-      - Gotchas: "user-guide/gotchas.md"
+      - Key Concepts:
+        - Resource: "user-guide/key-concepts/resource.md"
+        - ResourceView: "user-guide/key-concepts/resource_view.md"
+        - Components:
+          - ComponentInterface: "user-guide/key-concepts/component/component.md"
+          - Identifier: "user-guide/key-concepts/component/identifier.md"
+          - Unpacker: "user-guide/key-concepts/component/unpacker.md"
+          - Analyzer: "user-guide/key-concepts/component/analyzer.md"
+          - Modifier: "user-guide/key-concepts/component/modifier.md"
+          - Packer: "user-guide/key-concepts/component/packer.md"
+        - GUI:
+          - Minimap View: "user-guide/key-concepts/gui/minimap.md"
+          - Keybindings: "user-guide/gui/keybindings.md"
+      - Disassembler Backends:
+        - Ghidra Backend: "user-guide/disassembler-backends/ghidra.md"
+        - Binary Ninja Backend: "user-guide/disassembler-backends/binary_ninja.md"
+        - Angr Backend: "user-guide/disassembler-backends/angr.md"
+        - Gotchas: "user-guide/disassembler-backends/gotchas.md"
+      - Advanced:
+        - PatchMaker:
+          - User Guide: "user-guide/advanced/patch-maker/user-guide.md"
+          - Troubleshooting: "user-guide/advanced/patch-maker/troubleshooting.md"
+        - NAND Flash Component: "user-guide/advanced/flash_component.md"
   - Contributor Guide:
       - Getting Started: "contributor-guide/getting-started.md"
       - Writing Components:

@@ -37,6 +37,7 @@ from ofrak import (
     ResourceAttributeRangeFilter,
     ResourceAttributeValueFilter,
     ResourceSort,
+    ResourceTag,
 )
 from ofrak.core import Addressable, File
 from ofrak.core import (
@@ -59,6 +60,7 @@ from ofrak.model.resource_model import (
     ResourceModel,
     ResourceAttributes,
     MutableResourceModel,
+    Data,
 )
 from ofrak.model.viewable_tag_model import ResourceViewContext
 from ofrak.resource import Resource
@@ -150,6 +152,8 @@ class AiohttpOFRAKServer:
                 web.post("/{resource_id}/add_comment", self.add_comment),
                 web.post("/{resource_id}/delete_comment", self.delete_comment),
                 web.post("/{resource_id}/search_for_vaddr", self.search_for_vaddr),
+                web.post("/{resource_id}/add_tag", self.add_tag),
+                web.get("/get_all_tags", self.get_all_tags),
                 web.get("/", self.get_static_files),
                 web.static(
                     "/",
@@ -367,6 +371,7 @@ class AiohttpOFRAKServer:
             child_models = await resource._resource_service.get_descendants_by_id(
                 resource._resource.id,
                 max_depth=1,
+                r_sort=ResourceSort(Data.Offset),
             )
             return resource_id, list(map(self._serialize_resource_model, child_models))
 
@@ -457,6 +462,20 @@ class AiohttpOFRAKServer:
             return json_response([])
 
     @exceptions_to_http(SerializedError)
+    async def add_tag(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
+        tag = self._serializer.from_pjson(await request.json(), ResourceTag)
+        resource.add_tag(tag)
+        await resource.save()
+        return json_response(self._serialize_resource(resource))
+
+    @exceptions_to_http(SerializedError)
+    async def get_all_tags(self, request: Request) -> Response:
+        return json_response(
+            self._serializer.to_pjson(self._ofrak_context.get_all_tags(), Set[ResourceTag])
+        )
+
+    @exceptions_to_http(SerializedError)
     async def get_static_files(self, request: Request) -> FileResponse:
         return FileResponse(os.path.join(os.path.dirname(__file__), "./public/index.html"))
 
@@ -536,14 +555,6 @@ class AiohttpOFRAKServer:
         """
         return list(map(self._serialize_resource, resources))
 
-    def open_resource_in_browser(self, resource: Optional[Resource]):  # pragma: no cover
-        if resource is None:
-            url = f"http://{self._host}:{self._port}/"
-        else:
-            url = f"http://{self._host}:{self._port}/#{resource.get_id().hex()}"
-        print(f"GUI is being served on {url}")
-        webbrowser.open(url)
-
 
 async def start_server(
     ofrak_context: OFRAKContext, host: str, port: int
@@ -591,12 +602,22 @@ async def open_gui(
     port: int,
     focus_resource: Optional[Resource] = None,
     ofrak_context: Optional[OFRAKContext] = None,
+    open_in_browser: bool = True,
 ) -> AiohttpOFRAKServer:  # pragma: no cover
     if ofrak_context is None:
         ofrak_context = get_current_ofrak_context()
 
     server = await start_server(ofrak_context, host, port)
-    server.open_resource_in_browser(focus_resource)
+
+    if focus_resource is None:
+        url = f"http://{server._host}:{server._port}/"
+    else:
+        url = f"http://{server._host}:{server._port}/#{focus_resource.get_id().hex()}"
+    print(f"GUI is being served on {url}")
+
+    if open_in_browser:
+        webbrowser.open(url)
+
     return server
 
 

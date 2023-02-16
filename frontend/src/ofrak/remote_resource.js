@@ -108,6 +108,17 @@ export class RemoteResource extends Resource {
     this.attributes = newer.attributes;
   }
 
+  async get_latest_model() {
+    const result = await fetch(`${this.uri}/`).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return r.json();
+    });
+    remote_model_to_resource(result, this.resource_list);
+    this.update();
+  }
+
   async get_children(r_filter, r_sort) {
     if (this.cache["get_children"]) {
       return this.cache["get_children"];
@@ -382,6 +393,24 @@ export class RemoteResource extends Resource {
       }
       const add_comment_results = await r.json();
       ingest_component_results(add_comment_results, this.resource_list);
+    });
+    this.flush_cache();
+    this.update();
+  }
+
+  async add_tag(tag) {
+    await fetch(`${this.uri}/add_tag`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(tag),
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      const updated_model = await r.json();
+      remote_model_to_resource(updated_model, this.resource_list);
     });
     this.flush_cache();
     this.update();

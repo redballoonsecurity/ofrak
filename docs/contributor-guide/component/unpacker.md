@@ -1,6 +1,6 @@
 # Writing Unpackers
 
-To write an OFRAK [Unpacker](../../user-guide/component/unpacker.md), an OFRAK contributor needs to:
+To write an OFRAK [Unpacker](../../user-guide/key-concepts/component/unpacker.md), an OFRAK contributor needs to:
 
 1. Create a class that inherits from `ofrak.component.component_unpacker.Unpacker` with a defined component config (`ofrak.model.component_model.CC`);
 2. Implement the `targets` to indicate what resource tags the unpacker targets (if necessary, [register a new identifier pattern](./identifier.md));

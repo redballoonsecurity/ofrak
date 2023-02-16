@@ -50,11 +50,22 @@ class LzmaUnpacker(Unpacker[None]):
         elif resource.has_tag(LzmaData):
             format = lzma.FORMAT_ALONE
 
-        lzma_entry_data = lzma.decompress(file_data.read(), format)
-        await resource.create_child(
-            tags=(GenericBinary,),
-            data=lzma_entry_data,
-        )
+        lzma_entry_data = None
+        compressed_data = file_data.read()
+
+        try:
+            lzma_entry_data = lzma.decompress(compressed_data, format)
+        except lzma.LZMAError:
+            LOGGER.info("Initial LZMA decompression failed. Trying with null bytes stripped")
+            lzma_entry_data = lzma.decompress(compressed_data.rstrip(b"\x00"), format)
+
+        if lzma_entry_data is not None:
+            await resource.create_child(
+                tags=(GenericBinary,),
+                data=lzma_entry_data,
+            )
+        else:
+            raise lzma.LZMAError("Decompressed LZMA data is null")
 
 
 class LzmaPacker(Packer[None]):

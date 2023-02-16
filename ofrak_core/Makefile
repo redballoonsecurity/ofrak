@@ -24,9 +24,9 @@ dependencies:
 ofrak/gui/public:
 	if [ -d /ofrak_gui ] ; then \
 		cp -r /ofrak_gui ofrak/gui/public ; \
-	else \
-		pushd ../frontend ; \
-		npm run build ; \
-		popd ; \
+	elif [ -d ../frontend ]; then \
+		cd ../frontend && \
+		npm run build && \
+		cd ../ofrak_core && \
 		cp -r ../frontend/public ofrak/gui/public ; \
 	fi

@@ -15,8 +15,7 @@ RUN cd /tmp && \
     rm -rf gcc-arm-none-eabi-10-2020-q4-major-x86_64-linux.tar.bz2
 
 # LINUX GNU + BINUTILS
-RUN cd /tmp && \
-    apt-get -y update  && apt-get -y install software-properties-common gcc-10
+RUN apt-get -y update  && apt-get -y install software-properties-common gcc-10
 
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
     cd /tmp && \

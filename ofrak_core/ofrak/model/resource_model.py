@@ -894,3 +894,24 @@ def _validate_indexed_type(getter_func: Callable[[Any], X]):
             f"Type of index {getter_func.__name__} is {index_type}, which is not "
             f"one of {_INDEXABLE_TYPES.values()}; cannot index by this value!"
         )
+
+
+@dataclasses.dataclass(**ResourceAttributes.DATACLASS_PARAMS)
+class Data(ResourceAttributes):
+    """
+    Special attributes class for accessing info about a resource's binary data.
+    Users should never access or modify this directly! Changing the fields of this data structure
+    will not change any about the resource's data! At best, it will do nothing, and at worst it
+    will screw up sorting/filtering.
+    """
+
+    _offset: int
+    _length: int
+
+    @index
+    def Offset(self) -> int:
+        return self._offset
+
+    @index
+    def Length(self) -> int:
+        return self._length

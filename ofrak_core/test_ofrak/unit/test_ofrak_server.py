@@ -359,3 +359,23 @@ async def test_search_for_vaddr(ofrak_client: TestClient, hello_world_elf):
     assert resp.status == 200
     resp_body = await resp.json()
     assert resp_body[0] is not None
+
+
+async def test_get_all_tags(ofrak_client: TestClient):
+    resp = await ofrak_client.get(f"/get_all_tags")
+    assert resp.status == 200
+    resp_body = await resp.json()
+    assert "ofrak.core.basic_block.BasicBlock" in resp_body
+
+
+async def test_add_tag(ofrak_client: TestClient, hello_world_elf):
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+    )
+    create_body = await create_resp.json()
+    resource_id = create_body["id"]
+    resp = await ofrak_client.post(
+        f"/{resource_id}/add_tag",
+        json="ofrak.core.apk.Apk",
+    )
+    assert resp.status == 200

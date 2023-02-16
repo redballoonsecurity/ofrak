@@ -16,6 +16,7 @@ from typing import (
     Awaitable,
     Sequence,
     Callable,
+    Set,
 )
 
 from ofrak.component.interface import ComponentInterface
@@ -34,6 +35,7 @@ from ofrak.model.resource_model import (
     ResourceModel,
     MutableResourceModel,
     ResourceContext,
+    Data,
 )
 from ofrak.model.tag_model import ResourceTag
 from ofrak.model.viewable_tag_model import (
@@ -292,7 +294,8 @@ class Resource:
         try:
             fetched_resource = await self._resource_service.get_by_id(resource.id)
         except NotFoundError:
-            del self._resource_context.resource_models[resource.id]
+            if resource.id in self._component_context.modification_trackers:
+                del self._resource_context.resource_models[resource.id]
             return
 
         resource.reset(fetched_resource)
@@ -305,10 +308,12 @@ class Resource:
                 tasks.append(self._fetch(context_resource))
         await asyncio.gather(*tasks)
 
-    async def _update_views(self, modified: Iterable[bytes], deleted: Iterable[bytes]):
+    async def _update_views(self, modified: Set[bytes], deleted: Set[bytes]):
         for resource_id in modified:
             views_in_context = self._resource_view_context.views_by_resource[resource_id]
             for view in views_in_context.values():
+                if resource_id not in self._resource_context.resource_models:
+                    await self._fetch(view.resource.get_model())  # type: ignore
                 updated_model = self._resource_context.resource_models[resource_id]
                 fresh_view = view.create(updated_model)
                 for field in dataclasses.fields(fresh_view):
@@ -344,6 +349,9 @@ class Resource:
             ),
             job_context,
         )
+        for deleted_id in component_result.resources_deleted:
+            if deleted_id in self._component_context.modification_trackers:
+                del self._component_context.modification_trackers[deleted_id]
         await self._fetch_resources(component_result.resources_modified)
         await self._update_views(
             component_result.resources_modified, component_result.resources_deleted
@@ -386,6 +394,9 @@ class Resource:
                 all_packers=all_packers,
             )
         )
+        for deleted_id in components_result.resources_deleted:
+            if deleted_id in self._component_context.modification_trackers:
+                del self._component_context.modification_trackers[deleted_id]
         await self._fetch_resources(components_result.resources_modified)
         await self._update_views(
             components_result.resources_modified, components_result.resources_deleted
@@ -624,6 +635,8 @@ class Resource:
                 self._resource.data_id,
                 data_range,
             )
+            data_attrs = Data(data_range.start, data_range.length())
+            attributes = [data_attrs, *attributes] if attributes else [data_attrs]
         elif data is not None:
             if self._resource.data_id is None:
                 raise ValueError(
@@ -631,6 +644,8 @@ class Resource:
                 )
             data_model_id = resource_id
             await self._data_service.create_root(data_model_id, data)
+            data_attrs = Data(0, len(data))
+            attributes = [data_attrs, *attributes] if attributes else [data_attrs]
         else:
             data_model_id = None
         resource_model = ResourceModel.create(

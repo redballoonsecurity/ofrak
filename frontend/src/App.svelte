@@ -36,6 +36,7 @@
   import CarouselSelector from "./CarouselSelector.svelte";
   import EntropyView from "./EntropyView.svelte";
   import HexView from "./HexView.svelte";
+  import JumpToOffset from "./JumpToOffset.svelte";
   import LoadingAnimation from "./LoadingAnimation.svelte";
   import MagnitudeView from "./MagnitudeView.svelte";
   import Pane from "./Pane.svelte";
@@ -46,6 +47,7 @@
 
   import { printConsoleArt } from "./console-art.js";
   import { selected, selectedResource } from "./stores.js";
+  import { keyEventToString, shortcuts } from "./keyboard.js";
 
   import { writable } from "svelte/store";
 
@@ -60,6 +62,11 @@
     resourceNodeDataMap = {},
     resources = {};
   let carouselSelection, currentResource, rootResource, modifierView;
+
+  let riddleAnswered = JSON.parse(window.localStorage.getItem("riddleSolved"));
+  if (riddleAnswered === null || riddleAnswered === undefined) {
+    riddleAnswered = false;
+  }
 
   $: if ($selected !== undefined) {
     currentResource = resources[$selected];
@@ -93,9 +100,51 @@
       $selected = window.location.hash.slice(1);
     }
   }
+
+  function handleShortcut(e) {
+    // Don't handle keypresses from within text inputs.
+    if (
+      ["input", "textarea"].includes(e.target?.tagName.toLocaleLowerCase()) ||
+      e.target.isContentEditable
+    ) {
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    const keyString = keyEventToString(e);
+    const callback = shortcuts[keyString];
+    if (callback) {
+      callback();
+    }
+  }
+
+  window.riddle = {
+    ask: () => {
+      console.log(`Answer the following riddle for a special Easter egg surprise:
+
+I have keys, but no locks.
+I have a space, but no room.
+You can enter, but you can't exit, though you can escape.
+
+What am I?
+
+Answer by running riddle.answer('your answer here') from the console.`);
+    },
+    answer: (s) => {
+      if (s.toLocaleLowerCase().endsWith(atob("a2V5Ym9hcmQ="))) {
+        riddleAnswered = true;
+        window.localStorage.setItem(
+          "riddleSolved",
+          JSON.stringify(riddleAnswered)
+        );
+      }
+    },
+  };
+  window.riddle.ask();
 </script>
 
-<svelte:window on:popstate="{backButton}" />
+<svelte:window on:popstate="{backButton}" on:keyup="{handleShortcut}" />
 
 {#if showRootResource}
   {#await rootResourceLoadPromise}
@@ -135,6 +184,7 @@
         {:else}
           <HexView
             dataPromise="{displayDataPromise}"
+            resources="{resources}"
             scrollY="{hexScrollY}"
             bind:resourceNodeDataMap="{resourceNodeDataMap}"
           />
@@ -144,6 +194,10 @@
           https://github.com/sveltejs/svelte/issues/5604 
         -->
         <svelte:fragment slot="minimap">
+          <JumpToOffset
+            dataPromise="{displayDataPromise}"
+            scrollY="{hexScrollY}"
+          />
           {#if carouselSelection === "Entropy"}
             <EntropyView scrollY="{hexScrollY}" />
           {:else if carouselSelection === "Byteclass"}
@@ -162,9 +216,11 @@
     </Split>
   {/await}
 
-  <div class="bottomleft">
-    <AudioPlayer />
-  </div>
+  {#if riddleAnswered}
+    <div class="bottomleft">
+      <AudioPlayer />
+    </div>
+  {/if}
 {:else}
   <StartView
     bind:rootResourceLoadPromise="{rootResourceLoadPromise}"
@@ -176,5 +232,5 @@
 {/if}
 
 <div class="bottomright">
-  <p><a href="https://ofrak.com" target="_blank" rel="noreferrer">v2.1.1</a></p>
+  <p><a href="https://ofrak.com" target="_blank" rel="noreferrer">v2.2.0</a></p>
 </div>

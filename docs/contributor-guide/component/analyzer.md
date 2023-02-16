@@ -1,5 +1,5 @@
 # Writing Analyzers
-To write an OFRAK [Analyzer](../../user-guide/component/analyzer.md), a contributor needs to:
+To write an OFRAK [Analyzer](../../user-guide/key-concepts/component/analyzer.md), a contributor needs to:
 
 1. Create a class that inherits from `ofrak.component.component_analyzer.Analyzer` with a defined `ofrak.model.component_model.CC` and `ofrak.component.component_analyzer.AnalyzerReturnType`;
 2. Implement the `targets` and `outputs` to indicate what resource tags the analyzer targets and what attributes it returns (the idiomatic OFRAK way to do this is to use a field);
