@@ -4,6 +4,8 @@ import tempfile
 from dataclasses import dataclass
 from typing import Dict, Iterable, Optional, Type, Union
 
+import xattr
+
 from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
 
@@ -25,6 +27,7 @@ class FilesystemEntry(ResourceView):
 
     name: str
     stat: Optional[os.stat_result]
+    xattrs: Optional[Dict[str, bytes]]
 
     @index
     def Name(self) -> str:
@@ -84,6 +87,20 @@ class FilesystemEntry(ResourceView):
         filesystem_stat_attributes = os.stat_result(tuple(stat_attributes))
         await self.set_stat(filesystem_stat_attributes)
 
+    async def modify_xattr_attribute(self, attribute: str, value: bytes):
+        """
+        Modify the extended file attributes ("xattrs") for the filesystem entry.
+
+        :param attribute:
+        :param value:
+        """
+        if self.xattrs is None:
+            self.xattrs = dict()
+        self.xattrs[attribute] = value
+        if self.resource is None:
+            return
+        await self.resource.save()
+
     async def get_path(self) -> str:
         """
         Get a folder's path, with the `FilesystemRoot` as the path root.
@@ -117,6 +134,9 @@ class FilesystemEntry(ResourceView):
             os.chown(path, self.stat.st_uid, self.stat.st_gid)
             os.chmod(path, self.stat.st_mode)
             os.utime(path, (self.stat.st_atime, self.stat.st_mtime))
+        if self.xattrs:
+            for attr, value in self.xattrs.items():
+                xattr.setxattr(path, attr, value)
 
     def is_file(self) -> bool:
         return self.resource.has_tag(File)
@@ -280,12 +300,14 @@ class FilesystemRoot(ResourceView):
                             f"{stat.S_IFMT(mode):o}. {mode_test.__name__} should be false."
                         )
 
+                folder_attributes_xattr = self._get_xattr_map(absolute_path)
                 if os.path.islink(absolute_path):
                     await self.add_special_file_entry(
                         relative_path,
                         SymbolicLink(
                             relative_path,
                             folder_attributes_stat,
+                            folder_attributes_xattr,
                             os.readlink(absolute_path),
                         ),
                     )
@@ -293,6 +315,7 @@ class FilesystemRoot(ResourceView):
                     await self.add_folder(
                         relative_path,
                         folder_attributes_stat,
+                        folder_attributes_xattr,
                     )
             for f in sorted(files):
                 absolute_path = os.path.join(root, f)
@@ -314,12 +337,14 @@ class FilesystemRoot(ResourceView):
                             f"{stat.S_IFMT(mode):o}. {mode_test.__name__} should be false."
                         )
 
+                file_attributes_xattr = self._get_xattr_map(absolute_path)
                 if os.path.islink(absolute_path):
                     await self.add_special_file_entry(
                         relative_path,
                         SymbolicLink(
                             relative_path,
                             file_attributes_stat,
+                            file_attributes_xattr,
                             os.readlink(absolute_path),
                         ),
                     )
@@ -329,21 +354,22 @@ class FilesystemRoot(ResourceView):
                             relative_path,
                             fh.read(),
                             file_attributes_stat,
+                            file_attributes_xattr,
                         )
                 elif stat.S_ISFIFO(mode):
                     await self.add_special_file_entry(
                         relative_path,
-                        FIFOPipe(relative_path, file_attributes_stat),
+                        FIFOPipe(relative_path, file_attributes_stat, file_attributes_xattr),
                     )
                 elif stat.S_ISBLK(mode):
                     await self.add_special_file_entry(
                         relative_path,
-                        BlockDevice(relative_path, file_attributes_stat),
+                        BlockDevice(relative_path, file_attributes_stat, file_attributes_xattr),
                     )
                 elif stat.S_ISCHR(mode):
                     await self.add_special_file_entry(
                         relative_path,
-                        CharacterDevice(relative_path, file_attributes_stat),
+                        CharacterDevice(relative_path, file_attributes_stat, file_attributes_xattr),
                     )
                 else:
                     raise NotImplementedError(
@@ -396,6 +422,9 @@ class FilesystemRoot(ResourceView):
                             (entry.stat.st_atime, entry.stat.st_mtime),
                             follow_symlinks=False,
                         )
+                if entry.xattrs:
+                    for attr, value in entry.xattrs.items():
+                        xattr.setxattr(link_name, attr, value, symlink=True)  # Don't follow links
             elif entry.is_folder():
                 folder_name = os.path.join(root_path, entry_path)
                 if not os.path.exists(folder_name):
@@ -476,6 +505,7 @@ class FilesystemRoot(ResourceView):
         self,
         path: str,
         folder_stat_result: Optional[os.stat_result] = None,
+        folder_xattrs: Optional[Dict[str, bytes]] = None,
         tags: Iterable[ResourceTag] = (),
         attributes: Iterable[ResourceAttributes] = (),
     ) -> Folder:
@@ -485,6 +515,7 @@ class FilesystemRoot(ResourceView):
 
         :param path: the path that will contain the folder to be added
         :param folder_stat_result: the filesystem attributes associated with the folder
+        :param folder_xattrs: xattrs for the folder
         :param tags: the list of tags to be added to the new resource. The `Folder` tag is added by
         default
         :param attributes: the list of additional attributes to be added to the new folder, the
@@ -504,7 +535,7 @@ class FilesystemRoot(ResourceView):
 
             if directory not in folder_entries.keys():
                 new_missing_folder = await parent.resource.create_child_from_view(
-                    Folder(directory, folder_stat_result),
+                    Folder(directory, folder_stat_result, folder_xattrs),
                     data=b"",
                     additional_tags=tags,
                     additional_attributes=attributes,
@@ -529,6 +560,7 @@ class FilesystemRoot(ResourceView):
         path: str,
         data: bytes,
         file_stat_result: Optional[os.stat_result] = None,
+        file_xattrs: Optional[Dict[str, bytes]] = None,
         tags: Iterable[ResourceTag] = (),
         attributes: Iterable[ResourceAttributes] = (),
     ) -> Resource:
@@ -539,6 +571,7 @@ class FilesystemRoot(ResourceView):
         :param path: the path that will contain the `File` to be added
         :param data: contents of the file being added
         :param file_stat_result: the filesystem attributes associated with the file
+        :param file_xattrs: xattrs for the file
         :param tags: the list of tags to be added to the new resource, the File tag is added by
         default
         :param attributes: the list of additional attributes to be added to the new Folder,
@@ -557,7 +590,7 @@ class FilesystemRoot(ResourceView):
                 parent_folder = await self.add_folder(dirname)
 
         new_file = await parent_folder.resource.create_child_from_view(
-            File(filename, file_stat_result),
+            File(filename, file_stat_result, file_xattrs),
             data=data,
             additional_tags=tags,
             additional_attributes=attributes,
@@ -616,3 +649,10 @@ class FilesystemRoot(ResourceView):
             additional_attributes=attributes,
         )
         return new_entry
+
+    @classmethod
+    def _get_xattr_map(cls, path):
+        xattr_dict = {}
+        for attr in xattr.listxattr(path, symlink=True):  # Don't follow links
+            xattr_dict[attr] = xattr.getxattr(path, attr)
+        return xattr_dict
