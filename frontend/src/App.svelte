@@ -85,6 +85,7 @@
         currentResource.has_tag(tag)
       );
       $hexScrollY.top = 0;
+      document.title = "OFRAK App – " + currentResource.get_caption();
     }
     if ($selected !== window.location.hash.slice(1)) {
       window.history.pushState(null, "", `#${$selected}`);
