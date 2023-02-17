@@ -1,6 +1,8 @@
 import inspect
 import logging
 
+from typing import Iterator
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -16,6 +18,7 @@ class xattr:
     def __repr__(self):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
+        return ""
 
     def _call(self, name_func, fd_func, *args):
         frame = inspect.currentframe()
@@ -24,78 +27,97 @@ class xattr:
     def get(self, name, options=0):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
+        return ""
 
     def set(self, name, value, options=0):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
+        return None
 
     def remove(self, name, options=0):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
+        return None
 
     def list(self, options=0):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
+        return []
 
     def __len__(self):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
+        return 0
 
     def __delitem__(self, item):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
+        return None
 
     def __setitem__(self, item, value):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
+        return None
 
     def __getitem__(self, item):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
+        return ""
 
     def iterkeys(self):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
+        return Iterator
 
     def has_key(self, item):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
+        return False
 
     def clear(self):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
+        return None
 
     def update(self, seq):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
+        return None
 
     def copy(self):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
+        return dict()
 
     def setdefault(self, k, d=""):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
+        return ""
 
     def keys(self):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
+        return []
 
     def itervalues(self):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
+        return ""
 
     def values(self):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
+        return []
 
     def iteritems(self):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
+        return tuple()
 
     def items(self):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
+        return []
 
 
 def listxattr(f, symlink=False):
@@ -113,11 +135,13 @@ def getxattr(f, attr, symlink=False):
 def setxattr(f, attr, value, options=0, symlink=False):
     frame = inspect.currentframe()
     _warn_user_no_xattr(inspect.getframeinfo(frame).function)
+    return None
 
 
 def removexattr(f, attr, symlink=False):
     frame = inspect.currentframe()
     _warn_user_no_xattr(inspect.getframeinfo(frame).function)
+    return None
 
 
 def _warn_user_no_xattr(function_name: str) -> None:
