@@ -42,13 +42,10 @@ class LLVM_12_0_1_Toolchain(Toolchain):
             self._assembler_flags.append(f"-mcpu={self._config.assembler_cpu}")
         self._compiler_flags.extend(
             [
-                "-cc1",
-                "-triple",
+                "-c",
+                "-target",
                 self._compiler_target,  # type: ignore
-                "-emit-obj",
-                "-msoft-float",
-                "-mfloat-abi",
-                "soft",
+                "-mfloat-abi=soft",
                 "-Wall",
             ]
         )
@@ -75,7 +72,7 @@ class LLVM_12_0_1_Toolchain(Toolchain):
             self._compiler_flags.append("-finline-hint-functions")
 
         if self._config.relocatable:
-            self._compiler_flags.extend(["-fno-direct-access-external-data", "-pic-is-pie"])
+            self._compiler_flags.extend(["-fno-direct-access-external-data", "-fPIE"])
             self._linker_flags.append("--pie")
         else:
             self._linker_flags.append("--no-pie")
