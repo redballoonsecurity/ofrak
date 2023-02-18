@@ -178,8 +178,7 @@ class LinkableBinary(GenericBinary):
             stubs_file = os.path.join(build_tmp_dir, f"stub_{symbol.name}.as")
             stub_info = symbol.get_stub_info()
             stub_body = "\n".join(
-                stub_info.asm_prefixes
-                + [f".global {symbol.name}", f".weak {symbol.name}", f"{symbol.name}:", ""]
+                stub_info.asm_prefixes + [f".global {symbol.name}", f"{symbol.name}:", ""]
             )
 
             with open(stubs_file, "w+") as f:
