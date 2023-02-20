@@ -1,7 +1,6 @@
 import inspect
 import logging
 
-from typing import Iterator
 
 LOGGER = logging.getLogger(__name__)
 
@@ -27,7 +26,7 @@ class xattr:
     def get(self, name, options=0):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
-        return ""
+        return b""
 
     def set(self, name, value, options=0):
         frame = inspect.currentframe()
@@ -62,12 +61,12 @@ class xattr:
     def __getitem__(self, item):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
-        return ""
+        return b""
 
     def iterkeys(self):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
-        return Iterator
+        return iter(list())
 
     def has_key(self, item):
         frame = inspect.currentframe()
@@ -92,7 +91,7 @@ class xattr:
     def setdefault(self, k, d=""):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
-        return ""
+        return b""
 
     def keys(self):
         frame = inspect.currentframe()
@@ -102,7 +101,7 @@ class xattr:
     def itervalues(self):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
-        return ""
+        yield b""
 
     def values(self):
         frame = inspect.currentframe()
@@ -112,7 +111,7 @@ class xattr:
     def iteritems(self):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
-        return tuple()
+        yield tuple()
 
     def items(self):
         frame = inspect.currentframe()
@@ -129,7 +128,7 @@ def listxattr(f, symlink=False):
 def getxattr(f, attr, symlink=False):
     frame = inspect.currentframe()
     _warn_user_no_xattr(inspect.getframeinfo(frame).function)
-    return ""
+    return b""
 
 
 def setxattr(f, attr, value, options=0, symlink=False):
