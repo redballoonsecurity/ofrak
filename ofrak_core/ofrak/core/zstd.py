@@ -1,4 +1,4 @@
-import subprocess
+import asyncio
 import tempfile
 from dataclasses import dataclass
 from typing import Optional
@@ -46,8 +46,18 @@ class ZstdUnpacker(Unpacker[None]):
             compressed_file.flush()
             output_filename = tempfile.mktemp()
 
-            command = ["zstd", "-d", "-k", compressed_file.name, "-o", output_filename]
-            subprocess.run(command, check=True)
+            proc = await asyncio.create_subprocess_exec(
+                "zstd",
+                "-d",
+                "-k",
+                compressed_file.name,
+                "-o",
+                output_filename,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate()
+            if proc.returncode and proc.returncode < 0:
+                raise Exception(stderr.decode())
             with open(output_filename, "rb") as f:
                 result = f.read()
 
@@ -78,7 +88,13 @@ class ZstdPacker(Packer[ZstdPackerConfig]):
             if config.compression_level > 19:
                 command.append("--ultra")
             command.extend([uncompressed_file.name, "-o", output_filename])
-            subprocess.run(command, check=True)
+            proc = await asyncio.create_subprocess_exec(
+                *command,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate()
+            if proc.returncode and proc.returncode < 0:
+                raise Exception(stderr.decode())
             with open(output_filename, "rb") as f:
                 result = f.read()
 

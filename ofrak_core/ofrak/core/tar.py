@@ -1,3 +1,4 @@
+import asyncio
 import os.path
 import subprocess
 import tempfile
@@ -40,9 +41,18 @@ class TarUnpacker(Unpacker[None]):
             temp_archive.flush()
 
             # Check the archive member files to ensure none unpack to a parent directory
-            command = ["tar", "-P", "-tf", temp_archive.name]
-            output = subprocess.run(command, check=True, capture_output=True)
-            for filename in output.stdout.decode().splitlines():
+            proc = await asyncio.create_subprocess_exec(
+                "tar",
+                "-P",
+                "-tf",
+                temp_archive.name,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate()
+            if proc.returncode and proc.returncode < 0:
+                raise Exception(stderr.decode())
+            for filename in stdout.decode().splitlines():
                 # Handles relative parent paths and rooted paths, and normalizes paths like "./../"
                 rel_filename = os.path.relpath(filename)
                 if rel_filename.startswith("../"):
@@ -76,8 +86,19 @@ class TarPacker(Packer[None]):
 
         # Pack it back into a temporary archive
         with tempfile.NamedTemporaryFile(suffix=".tar") as temp_archive:
-            command = ["tar", "--xattrs", "-C", flush_dir, "-cf", temp_archive.name, "."]
-            subprocess.run(command, check=True, capture_output=True)
+            proc = await asyncio.create_subprocess_exec(
+                "tar",
+                "--xattrs",
+                "-C",
+                flush_dir,
+                "-cf",
+                temp_archive.name,
+                ".",
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate()
+            if proc.returncode and proc.returncode < 0:
+                raise Exception(stderr.decode())
 
             # Replace the original archive data
             resource.queue_patch(Range(0, await resource.get_data_length()), temp_archive.read())

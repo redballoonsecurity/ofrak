@@ -1,4 +1,4 @@
-import subprocess
+import asyncio
 import tempfile
 from dataclasses import dataclass
 import logging
@@ -196,13 +196,16 @@ class UbiUnpacker(Unpacker[None]):
                 temp_file.flush()
 
             # extract temp_file to temp_flush_dir
-            command = [
+            proc = await asyncio.create_subprocess_exec(
                 "ubireader_extract_images",
                 "-o",
                 f"{temp_flush_dir}/output",
                 temp_file.name,
-            ]
-            subprocess.run(command, check=True, capture_output=True)
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate()
+            if proc.returncode and proc.returncode < 0:
+                raise Exception(stderr.decode())
 
             ubi_view = await resource.view_as(Ubi)
 
@@ -238,16 +241,6 @@ class UbiPacker(Packer[None]):
         # with tempfile.NamedTemporaryFile(mode="rb") as temp:
         with tempfile.TemporaryDirectory() as temp_flush_dir:
             ubi_volumes = await resource.get_children()
-            command = [
-                "ubinize",
-                "-p",
-                str(ubi_view.peb_size),
-                "-m",
-                str(ubi_view.min_io_size),
-                "-o",
-                f"{temp_flush_dir}/output.ubi",
-                f"{temp_flush_dir}/config.ini",
-            ]
             ubinize_ini_entries = []
 
             for volume in ubi_volumes:
@@ -282,7 +275,20 @@ vol_name={volume_view.name}
             with open(f"{temp_flush_dir}/config.ini", "w") as config_ini_file:
                 config_ini_file.write("\n".join(ubinize_ini_entries))
 
-            subprocess.run(command, check=True, capture_output=True)
+            proc = await asyncio.create_subprocess_exec(
+                "ubinize",
+                "-p",
+                str(ubi_view.peb_size),
+                "-m",
+                str(ubi_view.min_io_size),
+                "-o",
+                f"{temp_flush_dir}/output.ubi",
+                f"{temp_flush_dir}/config.ini",
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate()
+            if proc.returncode and proc.returncode < 0:
+                raise Exception(stderr.decode())
 
             with open(f"{temp_flush_dir}/output.ubi", "rb") as output_f:
                 packed_blob_data = output_f.read()

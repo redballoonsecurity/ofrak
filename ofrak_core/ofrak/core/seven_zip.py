@@ -1,6 +1,6 @@
+import asyncio
 import logging
 import os
-import subprocess
 import tempfile
 from dataclasses import dataclass
 
@@ -42,8 +42,16 @@ class SevenZUnpacker(Unpacker[None]):
             temp_file.write(resource_data)
             temp_file.flush()
             with tempfile.TemporaryDirectory() as temp_flush_dir:
-                command = ["7zz", "x", f"-o{temp_flush_dir}", temp_file.name]
-                subprocess.run(command, check=True, capture_output=True)
+                proc = await asyncio.create_subprocess_exec(
+                    "7zz",
+                    "x",
+                    f"-o{temp_flush_dir}",
+                    temp_file.name,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                stdout, stderr = await proc.communicate()
+                if proc.returncode and proc.returncode < 0:
+                    raise Exception(stderr.decode())
                 await seven_zip_v.initialize_from_disk(temp_flush_dir)
 
 
@@ -61,8 +69,16 @@ class SevenzPacker(Packer[None]):
         temp_flush_dir = os.path.join(temp_flush_dir, ".")
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_name = os.path.join(temp_dir, "temp.7z")
-            command = ["7zz", "a", temp_name, temp_flush_dir]
-            subprocess.run(command, check=True, capture_output=True)
+            proc = await asyncio.create_subprocess_exec(
+                "7zz",
+                "a",
+                temp_name,
+                temp_flush_dir,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate()
+            if proc.returncode and proc.returncode < 0:
+                raise Exception(stderr.decode())
             with open(temp_name, "rb") as f:
                 new_data = f.read()
             # Passing in the original range effectively replaces the original data with the new data

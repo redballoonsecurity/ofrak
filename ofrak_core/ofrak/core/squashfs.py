@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import subprocess
 import tempfile
@@ -69,15 +70,18 @@ class SquashfsUnpacker(Unpacker[None]):
             temp_file.flush()
 
             with tempfile.TemporaryDirectory() as temp_flush_dir:
-                command = [
+                proc = await asyncio.create_subprocess_exec(
                     "unsquashfs",
-                    "-no-exit-code",  # Don't return failure status code on warnings
-                    "-force",  # Overwrite files that already exist
+                    "-no-exit-code",
+                    "-force",
                     "-dest",
                     temp_flush_dir,
                     temp_file.name,
-                ]
-                subprocess.run(command, check=True, capture_output=True)
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                stdout, stderr = await proc.communicate()
+                if proc.returncode and proc.returncode < 0:
+                    raise Exception(stderr.decode())
 
                 squashfs_view = await resource.view_as(SquashfsFilesystem)
                 await squashfs_view.initialize_from_disk(temp_flush_dir)
@@ -95,8 +99,16 @@ class SquashfsPacker(Packer[None]):
         squashfs_view: SquashfsFilesystem = await resource.view_as(SquashfsFilesystem)
         temp_flush_dir = await squashfs_view.flush_to_disk()
         with tempfile.NamedTemporaryFile(suffix=".sqsh", mode="rb") as temp:
-            command = ["mksquashfs", temp_flush_dir, temp.name, "-noappend"]
-            subprocess.run(command, check=True, capture_output=True)
+            proc = await asyncio.create_subprocess_exec(
+                "mksquashfs",
+                temp_flush_dir,
+                temp.name,
+                "-noappend",
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate()
+            if proc.returncode and proc.returncode < 0:
+                raise Exception(stderr.decode())
             new_data = temp.read()
             # Passing in the original range effectively replaces the original data with the new data
             resource.queue_patch(Range(0, await resource.get_data_length()), new_data)

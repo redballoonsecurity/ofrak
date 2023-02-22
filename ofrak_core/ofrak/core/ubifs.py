@@ -1,4 +1,4 @@
-import subprocess
+import asyncio
 import tempfile
 from dataclasses import dataclass
 import logging
@@ -141,14 +141,17 @@ class UbifsUnpacker(Unpacker[None]):
                 temp_file.write(resource_data)
                 temp_file.flush()
 
-            command = [
+            proc = await asyncio.create_subprocess_exec(
                 "ubireader_extract_files",
                 "-k",
                 "-o",
                 f"{temp_flush_dir}/output",
                 temp_file.name,
-            ]
-            subprocess.run(command, check=True, capture_output=True)
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate()
+            if proc.returncode and proc.returncode < 0:
+                raise Exception(stderr.decode())
 
             ubifs_view = await resource.view_as(Ubifs)
             await ubifs_view.initialize_from_disk(f"{temp_flush_dir}/output")
@@ -167,7 +170,7 @@ class UbifsPacker(Packer[None]):
         flush_dir = await ubifs_view.flush_to_disk()
 
         with tempfile.NamedTemporaryFile(mode="rb") as temp:
-            command = [
+            proc = await asyncio.create_subprocess_exec(
                 "mkfs.ubifs",
                 "-m",
                 f"{ubifs_view.min_io_size}",
@@ -189,8 +192,11 @@ class UbifsPacker(Packer[None]):
                 "-r",
                 flush_dir,
                 temp.name,
-            ]
-            subprocess.run(command, check=True, capture_output=True)
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate()
+            if proc.returncode and proc.returncode < 0:
+                raise Exception(stderr.decode())
             new_data = temp.read()
 
             resource.queue_patch(Range(0, await resource.get_data_length()), new_data)

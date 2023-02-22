@@ -1,3 +1,4 @@
+import asyncio
 import os
 import subprocess
 import tempfile
@@ -81,15 +82,18 @@ class ApkUnpacker(Unpacker[None]):
             temp_file.write(data)
             temp_file.flush()
             with tempfile.TemporaryDirectory() as temp_flush_dir:
-                command = [
+                proc = await asyncio.create_subprocess_exec(
                     "apktool",
                     "decode",
                     "--output",
                     temp_flush_dir,
                     "--force",
                     temp_file.name,
-                ]
-                subprocess.run(command, check=True, capture_output=True)
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                stdout, stderr = await proc.communicate()
+                if proc.returncode and proc.returncode < 0:
+                    raise Exception(stderr.decode())
                 await apk.initialize_from_disk(temp_flush_dir)
 
 
@@ -127,8 +131,19 @@ class ApkPacker(Packer[ApkPackerConfig]):
         temp_flush_dir = await apk.flush_to_disk()
         apk_suffix = ".apk"
         with tempfile.NamedTemporaryFile(suffix=apk_suffix) as temp_apk:
-            command = ["apktool", "build", "--force-all", temp_flush_dir, "--output", temp_apk.name]
-            subprocess.run(command, check=True, capture_output=True)
+            # command = ["apktool", "build", "--force-all", temp_flush_dir, "--output", temp_apk.name]
+            apk_proc = await asyncio.create_subprocess_exec(
+                "apktool",
+                "build",
+                "--force-all",
+                temp_flush_dir,
+                "--output",
+                temp_apk.name,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await apk_proc.communicate()
+            if apk_proc.returncode and apk_proc.returncode < 0:
+                raise Exception(stderr.decode())
             if not config.sign_apk:
                 # Close the file handle and reopen, to avoid observed situations where temp.read()
                 # was not returning data
@@ -136,7 +151,7 @@ class ApkPacker(Packer[ApkPackerConfig]):
                     new_data = file_handle.read()
             else:
                 with tempfile.TemporaryDirectory() as signed_apk_temp_dir:
-                    command = [
+                    java_proc = await asyncio.create_subprocess_exec(
                         "java",
                         "-jar",
                         "/usr/local/bin/uber-apk-signer.jar",
@@ -145,8 +160,11 @@ class ApkPacker(Packer[ApkPackerConfig]):
                         "--out",
                         signed_apk_temp_dir,
                         "--allowResign",
-                    ]
-                    subprocess.run(command, check=True, capture_output=True)
+                        stderr=asyncio.subprocess.PIPE,
+                    )
+                    stdout, stderr = await java_proc.communicate()
+                    if java_proc.returncode and java_proc.returncode < 0:
+                        raise Exception(stderr.decode())
                     signed_apk_filename = (
                         os.path.basename(temp_apk.name)[: -len(apk_suffix)]
                         + "-aligned-debugSigned.apk"
@@ -173,8 +191,16 @@ class ApkIdentifier(Identifier):
                 temp_file.write(await resource.get_data())
                 temp_file.flush()
 
-                command = ["unzip", "-l", temp_file.name]
-                filenames = subprocess.run(command, check=True, capture_output=True).stdout
+                unzip_proc = await asyncio.create_subprocess_exec(
+                    "unzip",
+                    "-l",
+                    temp_file.name,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                stdout, stderr = await unzip_proc.communicate()
+                if unzip_proc.returncode and unzip_proc.returncode < 0:
+                    raise Exception(stderr.decode())
 
-                if b"androidmanifest.xml" in filenames.lower():
+                if b"androidmanifest.xml" in stdout.lower():
                     resource.add_tag(Apk)

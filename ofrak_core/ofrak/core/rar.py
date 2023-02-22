@@ -1,4 +1,4 @@
-import subprocess
+import asyncio
 import tempfile
 from dataclasses import dataclass
 
@@ -42,8 +42,18 @@ class RarUnpacker(Unpacker[None]):
             temp_archive.write(await resource.get_data())
             temp_archive.flush()
 
-            command = ["unar", "-no-directory", "-no-recursion", temp_archive.name]
-            subprocess.run(command, cwd=temp_dir, check=True, capture_output=True)
+            proc = await asyncio.create_subprocess_exec(
+                "unar",
+                "-no-directory",
+                "-no-recursion",
+                temp_archive.name,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                cwd=temp_dir,
+            )
+            stdout, stderr = await proc.communicate()
+            if proc.returncode and proc.returncode < 0:
+                raise Exception(stderr.decode())
 
             rar_view = await resource.view_as(RarArchive)
             await rar_view.initialize_from_disk(temp_dir)
