@@ -42,3 +42,25 @@ class GNU_PPC_LINUX_10_Toolchain(GNU_10_Toolchain):
         # PPC GNU 10 does not implement -march. See:
         # https://gcc.gnu.org/onlinedocs/gcc-10.4.0/gcc/RS_002f6000-and-PowerPC-Options.html#RS_002f6000-and-PowerPC-Options
         return None
+
+    @staticmethod
+    def _ld_generate_rel_dyn_section(
+        memory_region_name: str,
+    ) -> str:
+        rel_dyn_section_name = ".rela.dyn"
+        return (
+            f"    {rel_dyn_section_name} : {{\n"
+            f"        *.o({rel_dyn_section_name})\n"
+            f"    }} > {memory_region_name}"
+        )
+
+    @staticmethod
+    def _ld_generate_got_plt_section(
+        memory_region_name: str,
+    ) -> str:
+        got_plt_section_name = ".got2"
+        return (
+            f"    {got_plt_section_name} : {{\n"
+            f"        *.o({got_plt_section_name})\n"
+            f"    }} > {memory_region_name}"
+        )
