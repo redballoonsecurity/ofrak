@@ -3,6 +3,7 @@ import os.path
 import subprocess
 import tempfile
 from dataclasses import dataclass
+from subprocess import CalledProcessError
 
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker, UnpackerError
@@ -41,17 +42,20 @@ class TarUnpacker(Unpacker[None]):
             temp_archive.flush()
 
             # Check the archive member files to ensure none unpack to a parent directory
-            proc = await asyncio.create_subprocess_exec(
+            cmd = [
                 "tar",
                 "-P",
                 "-tf",
                 temp_archive.name,
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
             stdout, stderr = await proc.communicate()
-            if proc.returncode and proc.returncode < 0:
-                raise Exception(stderr.decode())
+            if proc.returncode:
+                raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
             for filename in stdout.decode().splitlines():
                 # Handles relative parent paths and rooted paths, and normalizes paths like "./../"
                 rel_filename = os.path.relpath(filename)
@@ -86,7 +90,7 @@ class TarPacker(Packer[None]):
 
         # Pack it back into a temporary archive
         with tempfile.NamedTemporaryFile(suffix=".tar") as temp_archive:
-            proc = await asyncio.create_subprocess_exec(
+            cmd = [
                 "tar",
                 "--xattrs",
                 "-C",
@@ -94,11 +98,13 @@ class TarPacker(Packer[None]):
                 "-cf",
                 temp_archive.name,
                 ".",
-                stderr=asyncio.subprocess.PIPE,
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
             )
-            stdout, stderr = await proc.communicate()
-            if proc.returncode and proc.returncode < 0:
-                raise Exception(stderr.decode())
+            returncode = await proc.wait()
+            if proc.returncode:
+                raise CalledProcessError(returncode=returncode, cmd=cmd)
 
             # Replace the original archive data
             resource.queue_patch(Range(0, await resource.get_data_length()), temp_archive.read())

@@ -2,6 +2,7 @@ import asyncio
 import tempfile
 from dataclasses import dataclass
 import logging
+from subprocess import CalledProcessError
 
 from ofrak import Identifier, Analyzer
 from ofrak.component.packer import Packer
@@ -141,17 +142,19 @@ class UbifsUnpacker(Unpacker[None]):
                 temp_file.write(resource_data)
                 temp_file.flush()
 
-            proc = await asyncio.create_subprocess_exec(
+            cmd = [
                 "ubireader_extract_files",
                 "-k",
                 "-o",
                 f"{temp_flush_dir}/output",
                 temp_file.name,
-                stderr=asyncio.subprocess.PIPE,
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
             )
-            stdout, stderr = await proc.communicate()
-            if proc.returncode and proc.returncode < 0:
-                raise Exception(stderr.decode())
+            returncode = await proc.wait()
+            if proc.returncode:
+                raise CalledProcessError(returncode=returncode, cmd=cmd)
 
             ubifs_view = await resource.view_as(Ubifs)
             await ubifs_view.initialize_from_disk(f"{temp_flush_dir}/output")
@@ -170,7 +173,7 @@ class UbifsPacker(Packer[None]):
         flush_dir = await ubifs_view.flush_to_disk()
 
         with tempfile.NamedTemporaryFile(mode="rb") as temp:
-            proc = await asyncio.create_subprocess_exec(
+            cmd = [
                 "mkfs.ubifs",
                 "-m",
                 f"{ubifs_view.min_io_size}",
@@ -192,11 +195,13 @@ class UbifsPacker(Packer[None]):
                 "-r",
                 flush_dir,
                 temp.name,
-                stderr=asyncio.subprocess.PIPE,
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
             )
-            stdout, stderr = await proc.communicate()
-            if proc.returncode and proc.returncode < 0:
-                raise Exception(stderr.decode())
+            returncode = await proc.wait()
+            if proc.returncode:
+                raise CalledProcessError(returncode=returncode, cmd=cmd)
             new_data = temp.read()
 
             resource.queue_patch(Range(0, await resource.get_data_length()), new_data)

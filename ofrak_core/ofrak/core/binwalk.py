@@ -33,7 +33,7 @@ class _BinwalkExternalTool(ComponentExternalTool):
             install_check_arg="",
         )
 
-    def is_tool_installed(self) -> bool:
+    async def is_tool_installed(self) -> bool:
         return BINWALK_INSTALLED
 
 

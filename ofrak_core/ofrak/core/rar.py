@@ -1,6 +1,7 @@
 import asyncio
 import tempfile
 from dataclasses import dataclass
+from subprocess import CalledProcessError
 
 from ofrak.component.unpacker import Unpacker
 from ofrak.core.binary import GenericBinary
@@ -42,18 +43,19 @@ class RarUnpacker(Unpacker[None]):
             temp_archive.write(await resource.get_data())
             temp_archive.flush()
 
-            proc = await asyncio.create_subprocess_exec(
+            cmd = [
                 "unar",
                 "-no-directory",
                 "-no-recursion",
                 temp_archive.name,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
                 cwd=temp_dir,
             )
-            stdout, stderr = await proc.communicate()
-            if proc.returncode and proc.returncode < 0:
-                raise Exception(stderr.decode())
+            returncode = await proc.wait()
+            if proc.returncode:
+                raise CalledProcessError(returncode=returncode, cmd=cmd)
 
             rar_view = await resource.view_as(RarArchive)
             await rar_view.initialize_from_disk(temp_dir)

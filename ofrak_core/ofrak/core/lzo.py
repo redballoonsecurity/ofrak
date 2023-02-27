@@ -1,5 +1,6 @@
 import asyncio
 import tempfile
+from subprocess import CalledProcessError
 
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
@@ -39,18 +40,21 @@ class LzoUnpacker(Unpacker[None]):
             compressed_file.write(await resource.get_data())
             compressed_file.flush()
 
-            proc = await asyncio.create_subprocess_exec(
+            cmd = [
                 "lzop",
                 "-d",
                 "-f",
                 "-c",
                 compressed_file.name,
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
             stdout, stderr = await proc.communicate()
-            if proc.returncode and proc.returncode < 0:
-                raise Exception(stderr.decode())
+            if proc.returncode:
+                raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
 
             await resource.create_child(tags=(GenericBinary,), data=stdout)
 
@@ -72,17 +76,20 @@ class LzoPacker(Packer[None]):
             uncompressed_file.write(uncompressed_data)
             uncompressed_file.flush()
 
-            proc = await asyncio.create_subprocess_exec(
+            cmd = [
                 "lzop",
                 "-f",
                 "-c",
                 uncompressed_file.name,
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
             stdout, stderr = await proc.communicate()
-            if proc.returncode and proc.returncode < 0:
-                raise Exception(stderr.decode())
+            if proc.returncode:
+                raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
 
             compressed_data = stdout
             original_size = await lzo_view.resource.get_data_length()

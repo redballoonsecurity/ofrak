@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import logging
 from typing import List, Tuple
 import os
+from subprocess import CalledProcessError
 
 from ofrak.model.tag_model import ResourceTag
 
@@ -47,7 +48,7 @@ class _PyLzoTool(ComponentExternalTool):
             install_check_arg="",
         )
 
-    def is_tool_installed(self) -> bool:
+    async def is_tool_installed(self) -> bool:
         try:
             import lzo  # type: ignore
 
@@ -196,16 +197,18 @@ class UbiUnpacker(Unpacker[None]):
                 temp_file.flush()
 
             # extract temp_file to temp_flush_dir
-            proc = await asyncio.create_subprocess_exec(
+            cmd = [
                 "ubireader_extract_images",
                 "-o",
                 f"{temp_flush_dir}/output",
                 temp_file.name,
-                stderr=asyncio.subprocess.PIPE,
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
             )
-            stdout, stderr = await proc.communicate()
-            if proc.returncode and proc.returncode < 0:
-                raise Exception(stderr.decode())
+            returncode = await proc.wait()
+            if proc.returncode:
+                raise CalledProcessError(returncode=returncode, cmd=cmd)
 
             ubi_view = await resource.view_as(Ubi)
 
@@ -275,7 +278,7 @@ vol_name={volume_view.name}
             with open(f"{temp_flush_dir}/config.ini", "w") as config_ini_file:
                 config_ini_file.write("\n".join(ubinize_ini_entries))
 
-            proc = await asyncio.create_subprocess_exec(
+            cmd = [
                 "ubinize",
                 "-p",
                 str(ubi_view.peb_size),
@@ -284,11 +287,13 @@ vol_name={volume_view.name}
                 "-o",
                 f"{temp_flush_dir}/output.ubi",
                 f"{temp_flush_dir}/config.ini",
-                stderr=asyncio.subprocess.PIPE,
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
             )
-            stdout, stderr = await proc.communicate()
-            if proc.returncode and proc.returncode < 0:
-                raise Exception(stderr.decode())
+            returncode = await proc.wait()
+            if proc.returncode:
+                raise CalledProcessError(returncode=returncode, cmd=cmd)
 
             with open(f"{temp_flush_dir}/output.ubi", "rb") as output_f:
                 packed_blob_data = output_f.read()

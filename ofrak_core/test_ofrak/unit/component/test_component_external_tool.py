@@ -98,7 +98,7 @@ async def test_external_tool_runtime_error_caught(ofrak_context: OFRAKContext, t
 
 
 async def test_tool_install_check(mock_dependency):
-    assert not mock_dependency.is_tool_installed()
+    assert not await mock_dependency.is_tool_installed()
 
     echo_tool = ComponentExternalTool("echo", "", install_check_arg=".")
-    assert echo_tool.is_tool_installed()
+    assert await echo_tool.is_tool_installed()
