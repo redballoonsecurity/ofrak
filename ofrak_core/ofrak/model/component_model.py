@@ -71,7 +71,7 @@ class ComponentExternalTool:
         except FileNotFoundError:
             return False
 
-        return 0 == returncode
+        return True
 
 
 CC = TypeVar("CC", bound=Optional[ComponentConfig])

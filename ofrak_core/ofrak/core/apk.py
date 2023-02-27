@@ -57,7 +57,7 @@ class _UberApkSignerTool(ComponentExternalTool):
         except FileNotFoundError:
             return False
 
-        return 0 == returncode
+        return True
 
 
 UBER_APK_SIGNER = _UberApkSignerTool()
