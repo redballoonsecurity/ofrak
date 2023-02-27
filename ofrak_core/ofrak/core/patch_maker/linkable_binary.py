@@ -175,20 +175,19 @@ class LinkableBinary(GenericBinary):
         argument to PatchMaker.make_fem(...).
         """
         stubs: Dict[str, Tuple[Segment, ...]] = dict()
-        for symbol in await self.get_symbols():
-            # if symbol.name in excluded_symbols:
-            #     continue
-            if unresolved_symbols and symbol.name in unresolved_symbols:
-                stubs_file = os.path.join(build_tmp_dir, f"stub_{symbol.name}.as")
-                stub_info = symbol.get_stub_info()
-                stub_body = "\n".join(
-                    stub_info.asm_prefixes
-                    + [f".global {symbol.name}", f".weak {symbol.name}", f"{symbol.name}:", ""]
-                )
+        if unresolved_symbols:
+            for symbol in await self.get_symbols():
+                if symbol.name in unresolved_symbols:
+                    stubs_file = os.path.join(build_tmp_dir, f"stub_{symbol.name}.as")
+                    stub_info = symbol.get_stub_info()
+                    stub_body = "\n".join(
+                        stub_info.asm_prefixes
+                        + [f".global {symbol.name}", f".weak {symbol.name}", f"{symbol.name}:", ""]
+                    )
 
-                with open(stubs_file, "w+") as f:
-                    f.write(stub_body)
-                stubs[stubs_file] = stub_info.segments
+                    with open(stubs_file, "w+") as f:
+                        f.write(stub_body)
+                    stubs[stubs_file] = stub_info.segments
 
         # Need to check if a BOM for the target binary is required for the current patch. Cannot
         # determine this earlier because unresolved symbols from a patch BOM may be either defined

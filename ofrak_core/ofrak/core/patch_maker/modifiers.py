@@ -124,15 +124,14 @@ class PatchFromSourceModifier(Modifier):
             patch_bom.unresolved_symbols,
         )
 
+        # To support multi-stage patching, we must pass references to linkabled symbols defined in
+        # previous patches that won't show up in the target BOM.
         try:
+            # Case 1: We have applied a prior patch and there are linkable symbols defined there.
             patched_symbols = resource.get_attributes(LinkableBinaryAttributes).patched_symbols
         except NotFoundError:
+            # Case 2: We haven't applied a prior patch or there are no symbols defined there.
             patched_symbols = {}
-
-        # Refresh patched_symbols with those defined in this patch
-        for assembled_object in patch_bom.object_map.values():
-            lba_config = LinkableBinaryAnalyzerConfig(dict(assembled_object.symbols))
-            await resource.run(LinkableBinaryAnalyzer, lba_config)
 
         # To support additional dynamic references in user space executables
         # Create and use a modifier that will:
@@ -160,6 +159,11 @@ class PatchFromSourceModifier(Modifier):
             SegmentInjectorModifier,
             SegmentInjectorModifierConfig.from_fem(fem),
         )
+
+        # Refresh patched_symbols with those defined in this patch
+        for assembled_object in patch_bom.object_map.values():
+            lba_config = LinkableBinaryAnalyzerConfig(dict(assembled_object.symbols))
+            await resource.run(LinkableBinaryAnalyzer, lba_config)
 
 
 @dataclass
