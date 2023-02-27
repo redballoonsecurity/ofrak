@@ -48,6 +48,7 @@ from ofrak_patch_maker.model import (
     PatchRegionConfig,
     LinkedExecutable,
     PatchMakerException,
+    SourceFileType,
 )
 from ofrak_patch_maker.toolchain.abstract import Toolchain
 from ofrak_patch_maker.toolchain.model import (
@@ -249,25 +250,40 @@ class PatchMaker:
         out_dir = os.path.join(self.build_dir, name + "_bom_files")
         os.mkdir(out_dir)
 
-        for c_file in list(filter(lambda x: x.endswith(".c"), source_list)):
-            assembled_object_path = self._toolchain.compile(c_file, header_dirs, out_dir=out_dir)
-            assembled_object = self.prepare_object(self, assembled_object_path)
-            object_map.update({c_file: assembled_object})
+        # Compile .c files in parallel
+        c_files = list(filter(lambda x: x.endswith(".c"), source_list))
+        c_args = zip(
+            c_files,
+            itertools.repeat(header_dirs),
+            itertools.repeat(out_dir),
+            itertools.repeat(self._toolchain),
+            itertools.repeat(self.prepare_object),
+            itertools.repeat(self),
+            itertools.repeat(SourceFileType.C),
+        )
+        workers = math.ceil(cpu_count())
+        with get_context("spawn").Pool(processes=workers) as pool:
+            result = pool.starmap(
+                _create_object_file, c_args, chunksize=math.ceil(len(c_files) / workers)
+            )
+        for r in result:
+            object_map.update(r)
 
-        # Call global function which runs parallel assembly
+        # Assemble .asm files in parallel
         asm_files = list(filter(lambda x: x.endswith(".as") or x.endswith(".S"), source_list))
-        args = zip(
+        asm_args = zip(
             asm_files,
             itertools.repeat(header_dirs),
             itertools.repeat(out_dir),
             itertools.repeat(self._toolchain),
             itertools.repeat(self.prepare_object),
             itertools.repeat(self),
+            itertools.repeat(SourceFileType.ASM),
         )
         workers = math.ceil(cpu_count())
         with get_context("spawn").Pool(processes=workers) as pool:
             result = pool.starmap(
-                _assemble_source_files, args, chunksize=math.ceil(len(asm_files) / workers)
+                _create_object_file, asm_args, chunksize=math.ceil(len(asm_files) / workers)
             )
         for r in result:
             object_map.update(r)
@@ -490,17 +506,25 @@ class PatchMaker:
 
 
 # Helper function excluded from function coverage results since it runs in a process pool.
-def _assemble_source_files(  # pragma: no cover
-    asm_file: str,
+def _create_object_file(  # pragma: no cover
+    file: str,
     header_dirs: List[str],
     out_dir: str,
     toolchain: Toolchain,
     prepare_object: Callable,
     patchmaker: PatchMaker,
+    file_type: SourceFileType,
 ) -> Mapping[str, AssembledObject]:
-    original_asm_file = asm_file
-    if asm_file.endswith(".S"):
-        asm_file = toolchain.preprocess(asm_file, header_dirs, out_dir=out_dir)
-    assembled_object_path = toolchain.assemble(asm_file, header_dirs, out_dir=out_dir)
-    assembled_object = prepare_object(patchmaker, assembled_object_path)
-    return {original_asm_file: assembled_object}
+    original_file = file
+    if file.endswith(".S"):
+        file = toolchain.preprocess(file, header_dirs, out_dir=out_dir)
+    if file_type is SourceFileType.C:
+        object_path = toolchain.compile(file, header_dirs, out_dir=out_dir)
+    elif file_type is SourceFileType.ASM:
+        object_path = toolchain.assemble(file, header_dirs, out_dir=out_dir)
+    else:
+        patchmaker.logger.error(
+            f"Source file type '{file_type}' invalid, unable to prepare object."
+        )
+    obj = prepare_object(patchmaker, object_path)
+    return {original_file: obj}

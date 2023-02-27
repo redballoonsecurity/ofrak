@@ -4,6 +4,7 @@ These classes must only ever contain "immutable" data.
 We never want to worry about the state of these objects at any point during a patch injection.
 """
 from dataclasses import dataclass
+from enum import Enum
 from typing import Mapping, Optional, Set, Tuple
 
 from ofrak_patch_maker.toolchain.model import Segment, BinFileType
@@ -123,3 +124,9 @@ class BOM:
     bss_size_required: int
     entry_point_symbol: Optional[str]
     segment_alignment: int
+
+
+class SourceFileType(Enum):
+    DEFAULT = 0
+    C = 1
+    ASM = 2
