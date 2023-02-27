@@ -1,6 +1,5 @@
 import asyncio
 import os.path
-import subprocess
 import tempfile
 from dataclasses import dataclass
 from subprocess import CalledProcessError
@@ -68,7 +67,12 @@ class TarUnpacker(Unpacker[None]):
             # Unpack into a temporary directory using the temporary file
             with tempfile.TemporaryDirectory() as temp_dir:
                 command = ["tar", "--xattrs", "-C", temp_dir, "-xf", temp_archive.name]
-                subprocess.run(command, check=True, capture_output=True)
+                proc = await asyncio.create_subprocess_exec(
+                    *command,
+                )
+                returncode = await proc.wait()
+                if returncode:
+                    raise CalledProcessError(returncode=returncode, cmd=command)
 
                 # Initialize a filesystem from the unpacked/untarred temporary folder
                 tar_view = await resource.view_as(TarArchive)
