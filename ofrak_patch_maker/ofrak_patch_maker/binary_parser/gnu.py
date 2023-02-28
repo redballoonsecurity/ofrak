@@ -1,5 +1,5 @@
 import re
-from typing import Tuple, Dict
+from typing import Set, Tuple, Dict
 
 from ofrak_patch_maker.binary_parser.abstract import AbstractBinaryFileParser
 from ofrak_patch_maker.toolchain.model import BinFileType, Segment
@@ -35,7 +35,12 @@ class GNU_ELF_Parser(AbstractBinaryFileParser):
         Use `objdump` with the `--syms` flag to get info on all defined symbols in a file. Parses
         columns based on: <https://stackoverflow.com/a/16471895/16690095>.
         """
-        return self._get_all_symbols(output, True)
+        result = {}
+        symbols = self._get_all_symbols(output)
+        for symbol in symbols:
+            if symbol[2] != "*UND*":
+                result[symbol[0]] = symbol[1]
+        return result
 
     def parse_sections(self, output: str) -> Tuple[Segment, ...]:
         """
@@ -68,22 +73,22 @@ class GNU_ELF_Parser(AbstractBinaryFileParser):
         Use `objdump` with the `--syms` flag to get info on all undefined symbols in a file. Parses
         columns based on: <https://stackoverflow.com/a/16471895/16690095>.
         """
-        return self._get_all_symbols(output, False)
-
-    def _get_all_symbols(self, output: str, get_defined: bool) -> Dict[str, int]:
         result = {}
+        symbols = self._get_all_symbols(output)
+        for symbol in symbols:
+            if symbol[2] == "*UND*":
+                result[symbol[0]] = symbol[1]
+        return result
+
+    def _get_all_symbols(self, output: str) -> Set[Tuple[str, int, str]]:
+        result = set()
         for symbol_data in self._re_symbol_prog.finditer(output):
             name = symbol_data.group("name")
             addr = symbol_data.group("address")
             symbol_section = symbol_data.group("section")
 
             if name and addr:
-                if get_defined is True:
-                    if symbol_section and symbol_section != "*UND*":
-                        result[name] = int(addr, 16)
-                else:
-                    if symbol_section and symbol_section == "*UND*":
-                        result[name] = int(addr, 16)
+                result.add((name, int(addr, 16), symbol_section))
         return result
 
 

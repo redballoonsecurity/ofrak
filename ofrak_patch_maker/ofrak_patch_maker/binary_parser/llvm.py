@@ -1,6 +1,6 @@
 import re
 from abc import ABC
-from typing import Tuple, Dict, List, Union
+from typing import Set, Tuple, Dict, List, Union
 
 from ofrak_patch_maker.binary_parser.abstract import AbstractBinaryFileParser
 from ofrak_patch_maker.toolchain.model import BinFileType, Segment, ToolchainException
@@ -106,23 +106,28 @@ class LLVM_ELF_Parser(Abstract_LLVM_Readobj_Parser):
         return self._parse_readobj_sections(output, section_keys, "Flags")
 
     def parse_symbols(self, readobj_out: str) -> Dict[str, int]:
-        return self._get_all_symbols(readobj_out, True)
+        result = {}
+        symbols = self._get_all_symbols(readobj_out)
+        for symbol in symbols:
+            if symbol[2] != "Undefined":
+                result[symbol[0]] = symbol[1]
+        return result
 
     def parse_relocations(self, readobj_out: str) -> Dict[str, int]:
-        return self._get_all_symbols(readobj_out, False)
-
-    def _get_all_symbols(self, readobj_out: str, get_defined: bool) -> Dict[str, int]:
         result = {}
+        symbols = self._get_all_symbols(readobj_out)
+        for symbol in symbols:
+            if symbol[2] == "Undefined":
+                result[symbol[0]] = symbol[1]
+        return result
+
+    def _get_all_symbols(self, readobj_out: str) -> Set[Tuple[str, int, str]]:
+        result = set()
         symbol_data = [x[0] for x in self._re_symbol_prog.findall(readobj_out)]
         for s in symbol_data:
             name = self._re_name_prog.search(s)
             addr_value = self._re_value_prog.search(s)
             symbol_section = self._re_sym_section_prog.search(s)
-            if name and addr_value:
-                if get_defined:
-                    if symbol_section and symbol_section.group(0) != "Undefined":
-                        result.update({name.group(0): int(addr_value.group(0), 16)})
-                else:
-                    if symbol_section and symbol_section.group(0) == "Undefined":
-                        result.update({name.group(0): int(addr_value.group(0), 16)})
+            if name and addr_value and symbol_section:
+                result.add((name.group(0), int(addr_value.group(0), 16), symbol_section.group(0)))
         return result
