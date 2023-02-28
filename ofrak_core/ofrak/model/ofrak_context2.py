@@ -131,6 +131,7 @@ class OFRAKContext2:
         self.current_component_version: int = component_version
 
         self.trackers: MutableMapping[bytes, ResourceTracker] = dict()
+        self.dependency_events: List = []
 
         self.resources_to_delete: Set[bytes] = field(default_factory=set)
 
@@ -171,9 +172,7 @@ class OFRAKContext2:
         deleted_ids, deleted_data_ids = await self._push_deletions()
         self._update_deleted_resource(deleted_ids)
         patched_model_ranges = await self._push_data_modifications()
-        # Remove dependencies on the patched data - full dependency tracking/invalidate happens later
-        self._invalidate_patch_dependencies(patched_model_ranges)
-        self._create_component_dependencies()
+        await self._flush_dependencies(patched_model_ranges)
         await self._push_model_modifications()
 
     async def pull(
@@ -195,21 +194,6 @@ class OFRAKContext2:
         self._update_deleted_resource(deleted_resource_ids)
 
         self._update_modified_views(modified_resource_ids)
-
-    async def end_context(self):
-        """
-        Called when exiting a context
-        For example, when component finishes
-
-        May not be necessary, we can just always call push
-
-        But if we want to strictly only handle dependencies at the end, can do dependency handling
-        here.
-
-        :return:
-        """
-        await self._flush_dependencies()
-        await self.push()
 
     async def get_model(self, resource_id: bytes) -> MutableResourceModel:
         (tracker,) = await self._get_trackers((resource_id,))
@@ -267,6 +251,8 @@ class OFRAKContext2:
 
     async def _push_data_modifications(self) -> List[Tuple[MutableResourceModel, List[Range]]]:
         """
+        Apply queued data patches to resources via data service, returning the affected resources.
+        Resources' special Data attributes are also updated.
 
         :return: List of resources modified by patches, alongside which ranges were modified
         """
@@ -377,89 +363,46 @@ class OFRAKContext2:
                 for view in deleted_tracker.views.values():
                     view.set_deleted()
 
-    async def _flush_dependencies(self):
+    def _create_dependencies(self):
         """
-        Take all the tracked data_reads and attribute_reads, plus attributes_added, and
-        synthesize the appropriate dependencies. After completing, all data_reads and data_writes
-        are cleared, and resource models have new dependencies as appropriate.
+        Create dependencies linking the creation of pending attributes-added and previously
+        accessed data and attributes. These dependencies are added to the models of the resources
+        which were read.
 
-        OFRAK Dependency Tracking:
-        When a component adds attributes to a resource, OFRAK also records how other Resources were
-        accessed in the component. This allows OFRAK to track that the modified resources
-        'depend on' the accessed resources, and appropriately update the modified resources if the
-        accessed resource is later changed.
+        This method is idempotent, that is, calling it multiple times without pushing the
+        modified models (and therefore clearing the set of attributes-added) will result in
+        duplicated work, but will not result in duplicate dependencies in the accessed resource's
+        models.
 
-        OFRAK tracks only two specific types of dependencies:
-        1. Resource A's attributes X 'depend on' an attribute Y of resources B. Resource A's
-        attributes X will be invalidated when resource B's attributes Y changes.
-        2. Resource A's attributes X 'depend on' a range (Y,Z) of resource B's data. Resource A's
-        attributes X will be invalidated when resource B's has a data patch overlapping with (Y,Z)
-        applied to it.
-
-        Attributes being invalidated simply means that when requested through a `Resource.analyze`
-        or `Resource.view_as`, an Analyzer will be run to refresh the attributes, even if the
-        attributes already exist.
-
-        TODO: Validate the below and what it is saying??
-        Whenever a [Modifier][ofrak.component.modifier.Modifier] is run, these resource attribute
-        dependencies are invalidated so as to force analysis to be rerun.
-
-        All of this is facilitated by storing data structures on the dependant resources about
-        which other resources depend on them and how. To use the terminology of the examples above,
-        resource B stores the information that resource A's attributes X depend on its
-        (resource B's) attributes Y, or data range (Y,Z), or even both.
-
-        TODO: Note that tracked attributes_added are NOT cleared. THIS FUNCTION CAN ONLY BE CALLED WHEN NO MORE DATA/ATTRIBUTES CAN BE ACCESSED
-        Consequence: Attributes added earlier would be marked as dependencies of data/attributes accessed later. CLEARLY WRONG BEHAVIOR.
-        THEREFORE, EITHER THIS CAN ONLY BE CALLED WHEN NO MORE DATA/ATTRIBUTES CAN BE ACCESSED, OR WE NEED TO TRACK MODIFICATIONS FOR DEPENDENCY TRACKING SEPARATELY FROM GENERAL TRACKING OF CHANGES
-        Solution? New data structure obviously and strictly for dependency tracking
-        Dictionary indexed by ... does it matter what it's indexed by?
-        We want to keep track of previously accessed stuff so that when there is an attributes added, we can also add dependencies to the accessed stuff
-        self._dependencies: Dict[ResourceID, Tuple[ResourceAttributeDependency, Union[Range, Type[ResourceAttributes]]]}
-        A record of "dependency events" could also work well
-
-        :return: None
+        :return:
         """
-
-        # TODO: intermediate pushes will clear out the tracking of attributes added/removed, so this won't get the full list of modified attributes
-        # Check each resource with modified attributes for dependencies on those attributes
-        for tracker in self.trackers.values():
-            model = tracker.model
-            attributes_modified = model.diff.attributes_removed.union(
-                model.diff.attributes_added.keys()
+        # Collect all the attributes added
+        all_added_attributes: List[ResourceAttributeDependency] = [
+            ResourceAttributeDependency(
+                tracker.model.id,
+                self.current_component_id,
+                attrs_added,
             )
-            # Remove any dependencies on modified attributes
-            for attributes_type_altered in attributes_modified:
-                dependencies = model.attribute_dependencies.get(type(attributes_type_altered), ())
-                for dependency in dependencies:
-                    model.remove_dependency(dependency)
+            for tracker in self.trackers.values()
+            for attrs_added in tracker.model.diff.attributes_added
+        ]
 
-        # Create new dependencies for accessed data and attributes
-        all_data_reads: List[Tuple[bytes, Range]] = []
-        all_attribute_reads: List[Tuple[bytes, Type[ResourceAttributes]]] = []
-        all_added_attributes: List[ResourceAttributeDependency] = []
-        for tracker in self.trackers.values():
-            # Collect the accessed data of this Resource
-            all_data_reads.extend(
-                (tracker.model.id, read_range) for read_range in tracker.data_reads
-            )
-            tracker.data_reads.clear()
+        # Collect all the data read
+        all_data_reads: List[Tuple[bytes, Range]] = [
+            (tracker.model.id, read_range)
+            for tracker in self.trackers.values()
+            for read_range in tracker.data_reads
+        ]
+        # Collect all the attributes read
+        all_attribute_reads: List[Tuple[bytes, Type[ResourceAttributes]]] = [
+            (tracker.model.id, read_attrs)
+            for tracker in self.trackers.values()
+            for read_attrs in tracker.attribute_reads
+        ]
 
-            # Collect the accessed attributes of this Resource
-            all_attribute_reads.extend(
-                (tracker.model.id, read_attrs) for read_attrs in tracker.attribute_reads
-            )
-            tracker.attribute_reads.clear()
-
-            # Collect each dependency for any new attributes of this Resource
-            all_added_attributes.extend(
-                ResourceAttributeDependency(
-                    tracker.model.id,
-                    self.current_component_id,
-                    attrs_added,
-                )
-                for attrs_added in tracker.model.diff.attributes_added
-            )
+        # The record of data reads and attribute reads is NOT cleared, so that creating new
+        # attributes after calling .push() will still add the dependencies for those new attributes
+        # data and attributes read previously
 
         # Mark all the resources that were accessed in order to create each new attributes
         for dependency in all_added_attributes:
@@ -488,22 +431,51 @@ class OFRAKContext2:
                     dependency,
                 )
 
-        # TODO: intermediate pushes will clear the set of dependencies added, so this won't get the full set of unhandled dependencies
-        # Collect all of the dependencies that have been affected
+    async def _apply_dependency_invalidations(self):
+        """
+        As attributes are modified, the attributes (possibly of other resources) which depended on
+        those are queued to be marked as invalid. This method applies those invalidations to the
+        dependent resources, fetching them if they are not already tracked, so that trying to
+        analyze those attributes in the future will trigger re-analysis.
+        """
         unhandled_dependencies = set()
         for tracker in self.trackers.values():
             unhandled_dependencies.update(tracker.model.diff.data_dependencies_removed)
             unhandled_dependencies.update(tracker.model.diff.attribute_dependencies_removed)
 
         # Invalidate attributes of all resources that depend on modified attributes or data
-        await self._invalidate_dependencies(
+        await self._invalidate_dependencies_recursively(
             set(),
             unhandled_dependencies,
         )
 
-    def _invalidate_patch_dependencies(
+    async def _flush_dependencies(
+        self, patched_model_ranges: List[Tuple[MutableResourceModel, List[Range]]]
+    ):
+        """
+        Take all the tracked data_reads and attribute_reads, plus attributes_added, and
+        synthesize the appropriate dependencies. After completing, all data_reads and data_writes
+        are cleared, and resource models have new dependencies as appropriate.
+
+        Note that **neither tracked attributes_added nor the attributes_reads and data_reads are
+        cleared.** This means that calling it multiple times will result in more and more
+        dependencies being added, since every attribute is assumed to depend on every
+
+        This function should only be called
+        right before pushing the context state and therefore clearing the attributes read. Otherwise, attributes added earlier would be marked
+        as dependencies of data/attributes accessed later.
+
+        :return: None
+        """
+
+        self._queue_dependencies_to_invalidate(patched_model_ranges)
+        self._create_dependencies()
+        self._create_component_dependencies()
+        await self._apply_dependency_invalidations()
+
+    def _queue_dependencies_to_invalidate(
         self, patched_models: List[Tuple[MutableResourceModel, List[Range]]]
-    ) -> Set[ResourceAttributeDependency]:
+    ):
         """
         Given a number of resource models and the patched ranges of each model, invalidate any
         attributes of other resources that depend on that patched data.
@@ -511,9 +483,7 @@ class OFRAKContext2:
         :param patched_models:
         :return:
         """
-        unhandled_dependencies: Set[ResourceAttributeDependency] = set()
-        # Figure out which components results must be invalidated based on data changes
-
+        # Figure out which components' results must be invalidated based on data changes
         for resource_m, patched_ranges in patched_models:
             removed_data_dependencies = set()
             # Iterate over the resource's data dependencies to find one that's affected by one of
@@ -535,16 +505,25 @@ class OFRAKContext2:
                     removed_data_dependencies.add(dependency)
             for removed_data_dependency in removed_data_dependencies:
                 resource_m.remove_dependency(removed_data_dependency)
-            unhandled_dependencies.update(removed_data_dependencies)
 
-        return unhandled_dependencies
+        # Figure out which components' results must be invalidated based on attribute changes
+        # Check each resource with modified attributes for dependencies on those attributes
+        for tracker in self.trackers.values():
+            model = tracker.model
+            attributes_modified = model.diff.attributes_removed.union(
+                model.diff.attributes_added.keys()
+            )
+            # Remove any dependencies on modified attributes
+            for attributes_type_altered in attributes_modified:
+                dependencies = model.attribute_dependencies.get(type(attributes_type_altered), ())
+                for dependency in dependencies:
+                    model.remove_dependency(dependency)
 
     def _create_component_dependencies(self):
         """
         Register dependencies between the component and the resources it interacts with.
 
-        This will REPLACE what Resource.add_attributes currently does. In order to do that, this
-        needs to be called when flushing - either final flush or intermediate flush
+        TODO This will REPLACE what Resource.add_attributes currently does.
         """
         for tracker in self.trackers.values():
             for attrs_added in tracker.model.diff.attributes_added.keys():
@@ -552,7 +531,7 @@ class OFRAKContext2:
                     self.current_component_id, self.current_component_version, attrs_added
                 )
 
-    async def _invalidate_dependencies(
+    async def _invalidate_dependencies_recursively(
         self,
         handled_dependencies: Set[ResourceAttributeDependency],
         unhandled_dependencies: Set[ResourceAttributeDependency],
@@ -618,7 +597,7 @@ class OFRAKContext2:
                 resource_m.remove_dependency(invalidated_dependency)
             next_unhandled_dependencies.update(invalidated_dependencies)
 
-        await self._invalidate_dependencies(
+        await self._invalidate_dependencies_recursively(
             handled_dependencies,
             next_unhandled_dependencies,
         )
