@@ -3,6 +3,8 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Type, TypeVar
 
+from ofrak.model.tag_model import ResourceTag
+
 from ofrak.model.data_model import DataPatch
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak_type.range import Range
@@ -79,12 +81,18 @@ class ComponentRunResult:
     resources_modified: Set[bytes] = field(default_factory=set)
     resources_deleted: Set[bytes] = field(default_factory=set)
     resources_created: Set[bytes] = field(default_factory=set)
+    tags_added: Dict[bytes, Set[ResourceTag]] = field(default_factory=dict)
 
     def update(self, other_results: "ComponentRunResult"):
         self.components_run.update(other_results.components_run)
         self.resources_modified.update(other_results.resources_modified)
         self.resources_created.update(other_results.resources_created)
         self.resources_deleted.update(other_results.resources_deleted)
+        for r_id, tags_added_to_r in other_results.tags_added.items():
+            if r_id in self.tags_added:
+                self.tags_added[r_id].update(tags_added_to_r)
+            else:
+                self.tags_added[r_id] = set(tags_added_to_r)
 
 
 @dataclass

@@ -271,8 +271,7 @@ class JobService(JobServiceInterface):
             )
 
             components_result.update(individual_component_results)
-            resource_tracker = job_context.trackers[request.resource_id]
-            tags_added = resource_tracker.tags_added
+            tags_added = individual_component_results.tags_added
             tags_to_target = tuple(tags_added)
 
         return components_result
@@ -287,26 +286,24 @@ class JobService(JobServiceInterface):
             request.resource_id, component_filter
         )
 
-        # Create a mock context to match all existing tags
-        previous_job_context: JobRunContext = self._job_context_factory.create()
-        for existing_resource_model in initial_target_resource_models:
-            previous_job_context.trackers[existing_resource_model.id].tags_added.update(
-                existing_resource_model.tags
-            )
+        tags_previously_added = {
+            existing_resource_model.id: existing_resource_model.tags
+            for existing_resource_model in initial_target_resource_models
+        }
         iterations = 0
         tags_added_count = 1  # initialize just so loop starts
 
         while tags_added_count > 0:
             job_context = self._job_context_factory.create()
             _run_components_requests = []
-            for resource_id, previous_tracker in previous_job_context.trackers.items():
+            for r_id, tags_added_to_r in tags_previously_added:
                 final_filter = ComponentAndMetaFilter(
                     component_filter,
-                    _build_tag_filter(tuple(previous_tracker.tags_added)),
+                    _build_tag_filter(tuple(tags_added_to_r)),
                 )
                 _run_components_requests.append(
                     _ComponentAutoRunRequest(
-                        resource_id,
+                        r_id,
                         final_filter,
                     )
                 )
@@ -317,12 +314,11 @@ class JobService(JobServiceInterface):
                 job_context,
             )
             components_result.update(iteration_components_result)
+            tags_previously_added = iteration_components_result.tags_added
 
             tags_added_count = 0
-            for resource_id, tracker in job_context.trackers.items():
-                if len(tracker.tags_added) > 0:
-                    tags_added_count += len(tracker.tags_added)
-            previous_job_context = job_context
+            for tags_added in tags_previously_added.values():
+                tags_added_count += len(tags_added)
             LOGGER.info(
                 f"Completed iteration {iterations} of run_components_recursively on "
                 f"{request.resource_id.hex()}. {len(components_result.resources_modified)} "

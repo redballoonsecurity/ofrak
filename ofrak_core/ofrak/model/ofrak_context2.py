@@ -2,6 +2,8 @@ import logging
 from dataclasses import dataclass, field, fields
 from typing import Dict, List, MutableMapping, Optional, Sequence, Set, Tuple, Type, Iterable, cast
 
+from ofrak.model.tag_model import ResourceTag
+
 from ofrak.model.component_model import ComponentRunResult
 from ofrak.model.data_model import DataModel, DataPatch
 from ofrak.model.resource_model import (
@@ -170,7 +172,7 @@ class OFRAKContext2:
         self._update_deleted_resource(deleted_ids)
         patched_model_ranges = await self._push_data_modifications()
         await self._flush_dependencies(patched_model_ranges)
-        resource_models_modified = await self._push_model_modifications()
+        resource_models_modified, tags_added = await self._push_model_modifications()
         data_models_modified = {model.id for model, _ in patched_model_ranges}
 
         self.history.append(
@@ -181,6 +183,7 @@ class OFRAKContext2:
                 resources_modified=resource_models_modified.union(data_models_modified),
                 resources_deleted=set(deleted_data_ids),
                 resources_created=set(self.resources_created),
+                tags_added=tags_added,
             )
         )
         self.resources_created.clear()
@@ -319,7 +322,7 @@ class OFRAKContext2:
             for specific_model_patches in patch_results
         ]
 
-    async def _push_model_modifications(self) -> Set[bytes]:
+    async def _push_model_modifications(self) -> Tuple[Set[bytes], Dict[bytes, Set[ResourceTag]]]:
         """
         Save changes to the model in remote.
 
@@ -330,14 +333,18 @@ class OFRAKContext2:
 
         diffs = []
         updated_ids = set()
+        tags_added = dict()
         for tracker in self.trackers.values():
             if tracker.model_modified():
                 resource_m = tracker.model
-                diffs.append(resource_m.save())
+                diff = resource_m.save()
+                diffs.append(diff)
                 updated_ids.add(resource_m.id)
+                if diff.tags_added:
+                    tags_added[resource_m.id] = diff.tags_added
 
         await self.resource_service.update_many(diffs)
-        return updated_ids
+        return updated_ids, tags_added
 
     async def _pull_models(self, modified_resource_ids: Iterable[bytes]):
         """
