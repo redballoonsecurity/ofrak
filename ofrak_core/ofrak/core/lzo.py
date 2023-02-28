@@ -1,5 +1,6 @@
-import subprocess
+import asyncio
 import tempfile
+from subprocess import CalledProcessError
 
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
@@ -39,10 +40,23 @@ class LzoUnpacker(Unpacker[None]):
             compressed_file.write(await resource.get_data())
             compressed_file.flush()
 
-            command = ["lzop", "-d", "-f", "-c", compressed_file.name]
-            result = subprocess.run(command, check=True, capture_output=True)
+            cmd = [
+                "lzop",
+                "-d",
+                "-f",
+                "-c",
+                compressed_file.name,
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate()
+            if proc.returncode:
+                raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
 
-            await resource.create_child(tags=(GenericBinary,), data=result.stdout)
+            await resource.create_child(tags=(GenericBinary,), data=stdout)
 
 
 class LzoPacker(Packer[None]):
@@ -62,10 +76,22 @@ class LzoPacker(Packer[None]):
             uncompressed_file.write(uncompressed_data)
             uncompressed_file.flush()
 
-            command = ["lzop", "-f", "-c", uncompressed_file.name]
-            result = subprocess.run(command, check=True, capture_output=True)
+            cmd = [
+                "lzop",
+                "-f",
+                "-c",
+                uncompressed_file.name,
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate()
+            if proc.returncode:
+                raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
 
-            compressed_data = result.stdout
+            compressed_data = stdout
             original_size = await lzo_view.resource.get_data_length()
             resource.queue_patch(Range(0, original_size), compressed_data)
 

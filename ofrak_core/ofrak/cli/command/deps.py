@@ -1,3 +1,4 @@
+import asyncio
 from argparse import RawDescriptionHelpFormatter, Namespace
 from types import ModuleType
 from typing import Iterable, Set, Dict
@@ -96,7 +97,7 @@ class DepsCommand(OfrakCommand):
 
         for dep in dependencies:
             if check_deps:
-                is_installed = dep.is_tool_installed()
+                is_installed = asyncio.run(dep.is_tool_installed())
             else:
                 is_installed = None
 

@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Tweak how errors are raised when auto-running components, so the actual root cause is not buried [#219](https://github.com/redballoonsecurity/ofrak/pull/219)
 - Show mapped resource captions on hover in the hex view [#221](https://github.com/redballoonsecurity/ofrak/pull/221)
 - Change how resources are stored to making deleting (and thus packing) much faster [#201](https://github.com/redballoonsecurity/ofrak/pull/201)
+- Use non-blocking `asyncio.create_subprocess_exec` calls in components [#53](https://github.com/redballoonsecurity/ofrak/issues/53)
 
 ## [2.2.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.1.1...ofrak-v2.2.0))
 ### Fixed

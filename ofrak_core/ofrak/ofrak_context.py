@@ -204,7 +204,11 @@ class OFRAK:
         components_missing_deps = []
         audited_components = []
         for component in all_discovered_components:
-            if all(dep.is_tool_installed() for dep in component.external_dependencies):
+            if all(
+                await asyncio.gather(
+                    *[dep.is_tool_installed() for dep in component.external_dependencies]
+                )
+            ):
                 audited_components.append(component)
             else:
                 components_missing_deps.append(component)
