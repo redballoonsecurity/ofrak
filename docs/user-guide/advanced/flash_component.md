@@ -74,7 +74,7 @@ This class can be overridden or augmented if other field types are encountered.
 A [FlashAttributes][ofrak.core.flash.FlashAttributes] must be provided in order to use the flash component. As with other aspects of OFRAK, this can be modified and overridden if it does not work specifically for your use case.
 
 ### `FlashAttributes`
-The FlashAttributes][ofrak.core.flash.FlashAttributes] is necessary for communicating the information necessary to understand your specific flash format.
+The [FlashAttributes][ofrak.core.flash.FlashAttributes] is necessary for communicating the information necessary to understand your specific flash format.
 
 The only required field is the `data_block_format`. These block formats are specified using an *ordered* `Iterable[FlashField]` to describe the block.
 
