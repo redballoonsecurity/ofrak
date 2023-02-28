@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Fixed
 - Fix bug where initially loaded GUI resource has collapsed children [#209](https://github.com/redballoonsecurity/ofrak/pull/209)
 - Support more OpenWRT TRX files by making fewer assumptions about the partitions [#216](https://github.com/redballoonsecurity/ofrak/pull/216)
+- Fixed some OS-specific problems (libmagic install, log file path) preventing OFRAK install on Windows [#239](https://github.com/redballoonsecurity/ofrak/pull/239)
 
 ### Added
 - Add keyboard shortcuts to the GUI
