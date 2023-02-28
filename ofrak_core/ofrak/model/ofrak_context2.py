@@ -2,6 +2,7 @@ import logging
 from dataclasses import dataclass, field, fields
 from typing import Dict, List, MutableMapping, Optional, Sequence, Set, Tuple, Type, Iterable, cast
 
+from ofrak.model.component_model import ComponentRunResult
 from ofrak.model.data_model import DataModel, DataPatch
 from ofrak.model.resource_model import (
     MutableResourceModel,
@@ -138,11 +139,7 @@ class OFRAKContext2:
         # TODO: Do we need this? BTW, it is weird that creation is always "instant" and deletion isn't...
         self.resources_created: Set[bytes] = field(default_factory=set)
 
-        # TODO: What data structure? Well, what are the use cases for this?
-        # Peek back through history and see tags added? Or, just include that in ComponentRunResults
-        # Undo queue? Potentially... But doesn't have the 'before' to actually undo anything
-        # Could be used to find all the attributes added etc.
-        # self.history: List[ResourceRecord] = list()
+        self.history: List[ComponentRunResult] = []
 
     def fork(
         self,
@@ -173,7 +170,20 @@ class OFRAKContext2:
         self._update_deleted_resource(deleted_ids)
         patched_model_ranges = await self._push_data_modifications()
         await self._flush_dependencies(patched_model_ranges)
-        await self._push_model_modifications()
+        resource_models_modified = await self._push_model_modifications()
+        data_models_modified = {model.id for model, _ in patched_model_ranges}
+
+        self.history.append(
+            ComponentRunResult(
+                {
+                    self.current_component_id,
+                },
+                resources_modified=resource_models_modified.union(data_models_modified),
+                resources_deleted=set(deleted_data_ids),
+                resources_created=set(self.resources_created),
+            )
+        )
+        self.resources_created.clear()
 
     async def pull(
         self,
@@ -194,6 +204,13 @@ class OFRAKContext2:
         self._update_deleted_resource(deleted_resource_ids)
 
         self._update_modified_views(modified_resource_ids)
+
+    def get_cumulative_result(self) -> ComponentRunResult:
+        result = ComponentRunResult()
+        for intermediate_result in self.history:
+            result.update(intermediate_result)
+
+        return result
 
     async def get_model(self, resource_id: bytes) -> MutableResourceModel:
         (tracker,) = await self._get_trackers((resource_id,))
@@ -302,22 +319,25 @@ class OFRAKContext2:
             for specific_model_patches in patch_results
         ]
 
-    async def _push_model_modifications(self):
+    async def _push_model_modifications(self) -> Set[bytes]:
         """
         Save changes to the model in remote.
 
         Does NOT update dependencies. See _flush_dependencies for that.
-        :return:
+
+        :return: Set of all IDs whose models were modified
         """
 
         diffs = []
-        updated_ids = []
+        updated_ids = set()
         for tracker in self.trackers.values():
-            resource_m = tracker.model
-            diffs.append(resource_m.save())
-            updated_ids.append(resource_m.id)
+            if tracker.model_modified():
+                resource_m = tracker.model
+                diffs.append(resource_m.save())
+                updated_ids.add(resource_m.id)
 
         await self.resource_service.update_many(diffs)
+        return updated_ids
 
     async def _pull_models(self, modified_resource_ids: Iterable[bytes]):
         """
