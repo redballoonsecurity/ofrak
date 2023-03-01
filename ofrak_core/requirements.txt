@@ -9,6 +9,7 @@ orjson~=3.6.7
 pefile==2022.5.30
 pycdlib==1.12.0
 python-magic
+python-magic-bin;platform_system=="Windows"
 reedsolo==1.5.4
 sortedcontainers==2.2.2
 synthol~=0.1.1
