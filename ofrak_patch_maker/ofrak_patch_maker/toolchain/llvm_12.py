@@ -6,6 +6,7 @@ from typing import List, Mapping, Optional, Tuple, Dict
 from ofrak_type import ArchInfo
 from ofrak_type.architecture import InstructionSet
 from ofrak_type.memory_permissions import MemoryPermissions
+from ofrak_type.symbol_type import LinkableSymbolType
 
 from ofrak_patch_maker.binary_parser.llvm import LLVM_ELF_Parser
 from ofrak_patch_maker.toolchain.abstract import Toolchain, RBS_AUTOGEN_WARNING
@@ -296,7 +297,9 @@ class LLVM_12_0_1_Toolchain(Toolchain):
             return 16
         return 1
 
-    def get_bin_file_symbols(self, executable_path: str) -> Dict[str, int]:
+    def get_bin_file_symbols(
+        self, executable_path: str
+    ) -> Dict[str, Tuple[int, LinkableSymbolType]]:
         readobj_output = self._execute_tool(
             self._readobj_path, ["--symbols"], [executable_path], out_file=None
         )

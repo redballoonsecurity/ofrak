@@ -5,6 +5,7 @@ from typing import Set, Tuple, Dict, List, Union
 from ofrak_patch_maker.binary_parser.abstract import AbstractBinaryFileParser
 from ofrak_patch_maker.toolchain.model import BinFileType, Segment, ToolchainException
 from ofrak_type.memory_permissions import MemoryPermissions
+from ofrak_type.symbol_type import LinkableSymbolType
 
 
 class Abstract_LLVM_Readobj_Parser(AbstractBinaryFileParser, ABC):
@@ -93,6 +94,7 @@ class LLVM_ELF_Parser(Abstract_LLVM_Readobj_Parser):
     _re_name_prog = re.compile(r"(?<=Name: )(\S+)")
     _re_value_prog = re.compile(r"(?<=Value: 0x)(\S+)")
     _re_sym_section_prog = re.compile(r"(?<=Section: )(\S+)")
+    _re_sym_type_prog = re.compile(r"(?<=Type: )(\S+)")
 
     def parse_sections(self, output: str) -> Tuple[Segment, ...]:
         section_keys = {
@@ -105,12 +107,15 @@ class LLVM_ELF_Parser(Abstract_LLVM_Readobj_Parser):
 
         return self._parse_readobj_sections(output, section_keys, "Flags")
 
-    def parse_symbols(self, readobj_out: str) -> Dict[str, int]:
+    def parse_symbols(self, readobj_out: str) -> Dict[str, Tuple[int, LinkableSymbolType]]:
         result = {}
         symbols = self._get_all_symbols(readobj_out)
         for symbol in symbols:
             if symbol[2] != "Undefined":
-                result[symbol[0]] = symbol[1]
+                if symbol[3] == "Function":
+                    result[symbol[0]] = (symbol[1], LinkableSymbolType.FUNC)
+                else:
+                    result[symbol[0]] = (symbol[1], LinkableSymbolType.UNDEF)
         return result
 
     def parse_relocations(self, readobj_out: str) -> Dict[str, int]:
@@ -121,13 +126,21 @@ class LLVM_ELF_Parser(Abstract_LLVM_Readobj_Parser):
                 result[symbol[0]] = symbol[1]
         return result
 
-    def _get_all_symbols(self, readobj_out: str) -> Set[Tuple[str, int, str]]:
+    def _get_all_symbols(self, readobj_out: str) -> Set[Tuple[str, int, str, str]]:
         result = set()
         symbol_data = [x[0] for x in self._re_symbol_prog.findall(readobj_out)]
         for s in symbol_data:
             name = self._re_name_prog.search(s)
             addr_value = self._re_value_prog.search(s)
             symbol_section = self._re_sym_section_prog.search(s)
-            if name and addr_value and symbol_section:
-                result.add((name.group(0), int(addr_value.group(0), 16), symbol_section.group(0)))
+            symbol_type = self._re_sym_type_prog.search(s)
+            if name and addr_value and symbol_section and symbol_type:
+                result.add(
+                    (
+                        name.group(0),
+                        int(addr_value.group(0), 16),
+                        symbol_section.group(0),
+                        symbol_type.group(0),
+                    )
+                )
         return result

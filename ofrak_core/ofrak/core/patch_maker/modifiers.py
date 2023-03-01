@@ -5,9 +5,9 @@ import tempfile
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Type
 
-from ofrak.core import ProgramAttributes
 from ofrak_patch_maker.toolchain.abstract import Toolchain
 from ofrak.component.modifier import Modifier
+from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.core.program import Program
@@ -15,16 +15,11 @@ from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort, ResourceSortDirection
 from ofrak.core.injector import BinaryInjectorModifier, BinaryInjectorModifierConfig
-from ofrak.core.patch_maker.analyzers import (
-    LinkableBinaryAnalyzer,
-    LinkableBinaryAnalyzerConfig,
-    LinkableBinaryAttributes,
-)
+from ofrak.core.patch_maker.linkable_binary import LinkableBinary
 from ofrak.core.patch_maker.model import SourceBundle
 from ofrak_patch_maker.model import PatchRegionConfig, FEM
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.model import Segment, ToolchainConfig
-from ofrak_type.error import NotFoundError
 from ofrak_type.memory_permissions import MemoryPermissions
 
 LOGGER = logging.getLogger(__file__)
@@ -124,46 +119,31 @@ class PatchFromSourceModifier(Modifier):
             patch_bom.unresolved_symbols,
         )
 
-        # To support multi-stage patching, we must pass references to linkabled symbols defined in
-        # previous patches that won't show up in the target BOM.
-        try:
-            # Case 1: We have applied a prior patch and there are linkable symbols defined there.
-            patched_symbols = resource.get_attributes(LinkableBinaryAttributes).patched_symbols
-        except NotFoundError:
-            # Case 2: We haven't applied a prior patch or there are no symbols defined there.
-            patched_symbols = {}
-
         # To support additional dynamic references in user space executables
         # Create and use a modifier that will:
         # 1. Extend .got, add new entry
         # 2. Extend .got.plt, add new stub code
         # 3. If the DSO is not already listed in the load list for executable it must be extended and added.
         # 4. Provide the additional .got and .got.plt symbols to make_fem now that we have the locations
-        # NOTE: These external functions will probably be UND*
+        # NOTE: These external functions will probably be *UND*
         p = PatchRegionConfig(patch_bom.name + "_patch", patch_bom_segment_mapping)
         exec_path = os.path.join(build_tmp_dir, "output_exec")
-        # target_linkable_bom_info would be None if all unresolved_symbols in the patch can be
-        # linked against solely using additional_symbols from previous patches.
-        if target_linkable_bom_info is not None:
-            fem = patch_maker.make_fem(
-                [(patch_bom, p), target_linkable_bom_info],
-                exec_path,
-                additional_symbols=patched_symbols,
-            )
-        else:
-            fem = patch_maker.make_fem(
-                [(patch_bom, p)], exec_path, additional_symbols=patched_symbols
-            )
+        fem = patch_maker.make_fem(
+            [(patch_bom, p), target_linkable_bom_info],
+            exec_path,
+        )
 
         await resource.run(
             SegmentInjectorModifier,
             SegmentInjectorModifierConfig.from_fem(fem),
         )
 
-        # Refresh patched_symbols with those defined in this patch
+        # Refresh LinkableBinary with the LinkableSymbols defined in this patch
+        target_binary = await resource.view_as(LinkableBinary)
         for assembled_object in patch_bom.object_map.values():
-            lba_config = LinkableBinaryAnalyzerConfig(dict(assembled_object.symbols))
-            await resource.run(LinkableBinaryAnalyzer, lba_config)
+            await target_binary.define_linkable_symbols_from_patch(
+                assembled_object.symbols, program_attributes
+            )
 
 
 @dataclass

@@ -55,6 +55,7 @@ from ofrak_patch_maker.toolchain.model import (
     Segment,
 )
 from ofrak_type.memory_permissions import MemoryPermissions
+from ofrak_type.symbol_type import LinkableSymbolType
 
 
 class PatchMaker:
@@ -113,7 +114,7 @@ class PatchMaker:
 
         self.logger = logger
 
-    def _extract_symbols(self, path: str) -> Dict[str, int]:
+    def _extract_symbols(self, path: str) -> Dict[str, Tuple[int, LinkableSymbolType]]:
         """
         :param path: path to a program or library binary with symbols
 
@@ -290,19 +291,15 @@ class PatchMaker:
 
         # Compute the required size for the .bss segment
         bss_size_required = 0
-        symbols: Dict[str, int] = {}
+        symbols: Dict[str, Tuple[int, LinkableSymbolType]] = {}
         unresolved_symbols: Set[str] = set()
         for o in object_map.values():
             bss_size_required += o.bss_size_required
             symbols.update(o.symbols)
             # Resolve symbols defined within different patch files within the same patch BOM
             for sym in o.rel_symbols.keys():
-                # Have already seen this symbol in a previous patch object
-                if sym in symbols.keys():
-                    continue
-                elif sym in unresolved_symbols:
-                    unresolved_symbols.remove(sym)
-                else:
+                # Have not already seen this symbol in a previous patch object
+                if sym not in symbols.keys():
                     unresolved_symbols.add(sym)
 
         if entry_point_name and entry_point_name not in symbols:

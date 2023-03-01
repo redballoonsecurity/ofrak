@@ -2,14 +2,15 @@ import dataclasses
 import logging
 import os
 from dataclasses import dataclass
-from typing import Dict, Iterable, Optional, Set, Tuple
+from typing import Dict, Iterable, Mapping, Optional, Set, Tuple
 
 from ofrak.component.modifier import Modifier
 from ofrak.core.addressable import Addressable
-from ofrak_type.architecture import InstructionSetMode
+from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.binary import GenericBinary
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.core.label import LabeledAddress
+from ofrak.core.patch_maker.linkable_symbol import LinkableSymbol
 from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import (
@@ -17,10 +18,9 @@ from ofrak.service.resource_service_i import (
     ResourceAttributeValueFilter,
     ResourceAttributeValuesFilter,
 )
-from ofrak.core.patch_maker.linkable_symbol import LinkableSymbol, LinkableSymbolType
 from ofrak_patch_maker.model import BOM, PatchRegionConfig
 from ofrak_patch_maker.toolchain.model import Segment
-from ofrak_type.error import NotFoundError
+from ofrak_type import InstructionSet, InstructionSetMode, LinkableSymbolType, NotFoundError
 
 LOGGER = logging.getLogger()
 
@@ -144,13 +144,42 @@ class LinkableBinary(GenericBinary):
             UpdateLinkableSymbolsModifierConfig(tuple(symbols)),
         )
 
+    async def define_linkable_symbols_from_patch(
+        self,
+        proto_symbols: Mapping[str, Tuple[int, LinkableSymbolType]],
+        program_attributes: ProgramAttributes,
+    ):
+        """
+        From some basic info about symbols returned from
+        [get_bin_file_symbols][ofrak_patch_maker.toolchain.abstract.get_bin_file_symbols],
+        create a LinkableSymbol resource for each one. Usage is to pass a dictionary that defines
+        each symbol like so:
+        "symbol_name": (symbol_vaddr, symbol_type)
+
+        :param proto_symbols: Mapping of each symbol name to its known vaddr and symbol type.
+        :param program_attributes: Attributes of the program being patched, assumed to be the same
+        ISA as the patch files.
+        """
+        symbols = []
+        for sym_name, (sym_vaddr, sym_type) in proto_symbols.items():
+            mode = InstructionSetMode.NONE
+            if sym_type is LinkableSymbolType.FUNC:
+                if program_attributes.isa == InstructionSet.ARM and sym_vaddr & 0x01 == 1:
+                    mode = InstructionSetMode.THUMB
+                symbols.append(LinkableSymbol(sym_vaddr, sym_name, sym_type, mode))
+
+        await self.resource.run(
+            UpdateLinkableSymbolsModifier,
+            UpdateLinkableSymbolsModifierConfig(tuple(symbols)),
+        )
+
     # TODO: Un-stringify PatchMaker; OFRAK imports in PatchMaker results in circular Program imports
     async def make_linkable_bom(
         self,
         patch_maker: "PatchMaker",  # type: ignore
         build_tmp_dir: str,
-        unresolved_symbols: Optional[Set[str]] = None,
-    ) -> Optional[Tuple[BOM, PatchRegionConfig]]:
+        unresolved_symbols: Set[str],
+    ) -> Tuple[BOM, PatchRegionConfig]:
         """
         Build a BOM with all the symbols known to SymbolizedBinary. This BOM can be used to build
         the FEM so that it has access to all those symbols as weak symbols. This BOM in practice
@@ -167,7 +196,7 @@ class LinkableBinary(GenericBinary):
 
         :param patch_maker: PatchMaker instance to use to build the BOM.
         :param build_tmp_dir: A temporary directory to use for the BOM files.
-        :param unresolved_symbols: All symbols used in a patch BOM but defined elsewhere, may be
+        :param unresolved_symbols: All symbols used in a patch BOM but defined elsewhere. May be
         defined in target binary or in an earlier patch.
 
         :return: Tuple consisting of a BOM and PatchConfig representing the weak symbol
@@ -175,24 +204,19 @@ class LinkableBinary(GenericBinary):
         argument to PatchMaker.make_fem(...).
         """
         stubs: Dict[str, Tuple[Segment, ...]] = dict()
-        if unresolved_symbols:
-            for symbol in await self.get_symbols():
-                if symbol.name in unresolved_symbols:
-                    stubs_file = os.path.join(build_tmp_dir, f"stub_{symbol.name}.as")
-                    stub_info = symbol.get_stub_info()
-                    stub_body = "\n".join(
-                        stub_info.asm_prefixes
-                        + [f".global {symbol.name}", f".weak {symbol.name}", f"{symbol.name}:", ""]
-                    )
+        for symbol in await self.get_symbols():
+            if symbol.name in unresolved_symbols:
+                stubs_file = os.path.join(build_tmp_dir, f"stub_{symbol.name}.as")
+                stub_info = symbol.get_stub_info()
+                stub_body = "\n".join(
+                    stub_info.asm_prefixes
+                    + [f".global {symbol.name}", f".weak {symbol.name}", f"{symbol.name}:", ""]
+                )
 
-                    with open(stubs_file, "w+") as f:
-                        f.write(stub_body)
-                    stubs[stubs_file] = stub_info.segments
+                with open(stubs_file, "w+") as f:
+                    f.write(stub_body)
+                stubs[stubs_file] = stub_info.segments
 
-        # Need to check if a BOM for the target binary is required for the current patch. Cannot
-        # determine this earlier because unresolved symbols from a patch BOM may be either defined
-        # in a previous patch - which can be determined before calling make_linkable_bom() - or
-        # defined in the target binary - which cannot.
         if stubs:
             stubs_bom = patch_maker.make_bom(
                 name="stubs",
@@ -204,9 +228,19 @@ class LinkableBinary(GenericBinary):
                 stubs_bom.object_map[stubs_file].path: stub_segments
                 for stubs_file, stub_segments in stubs.items()
             }
-            return stubs_bom, PatchRegionConfig("stubs_segments", stubs_object_segments)
+
         else:
-            return None
+            stubs_bom = BOM(
+                "stubs",
+                {},
+                set(),
+                0,
+                None,
+                0,
+            )
+            stubs_object_segments = {}
+
+        return stubs_bom, PatchRegionConfig("stubs_segments", stubs_object_segments)
 
 
 @dataclass

@@ -1,18 +1,10 @@
 from dataclasses import dataclass
-from enum import Enum
 from typing import List, Tuple
 
-from ofrak_type.architecture import InstructionSetMode
+from ofrak_type import LinkableSymbolType, MemoryPermissions, InstructionSetMode
 from ofrak.core.label import LabeledAddress
 from ofrak_patch_maker.toolchain.model import Segment
 from ofrak_type.memory_permissions import MemoryPermissions
-
-
-class LinkableSymbolType(Enum):
-    FUNC = 0
-    RW_DATA = 1
-    RO_DATA = 2
-    UNDEF = -1
 
 
 @dataclass

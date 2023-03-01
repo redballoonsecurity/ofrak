@@ -8,6 +8,7 @@ from enum import Enum
 from typing import Mapping, Optional, Set, Tuple
 
 from ofrak_patch_maker.toolchain.model import Segment, BinFileType
+from ofrak_type.symbol_type import LinkableSymbolType
 
 AUTOGENERATE_WARNING = """/*
 *
@@ -39,7 +40,7 @@ class AssembledObject:
     path: str
     file_format: BinFileType
     segment_map: Mapping[str, Segment]  # segment name to Segment
-    symbols: Mapping[str, int]
+    symbols: Mapping[str, Tuple[int, LinkableSymbolType]]
     rel_symbols: Mapping[str, int]
     bss_size_required: int
 
@@ -59,7 +60,7 @@ class LinkedExecutable:
     path: str
     file_format: BinFileType
     segments: Tuple[Segment, ...]
-    symbols: Mapping[str, int]
+    symbols: Mapping[str, Tuple[int, LinkableSymbolType]]
     relocatable: bool
 
 

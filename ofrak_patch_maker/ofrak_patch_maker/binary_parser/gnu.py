@@ -4,6 +4,7 @@ from typing import Set, Tuple, Dict
 from ofrak_patch_maker.binary_parser.abstract import AbstractBinaryFileParser
 from ofrak_patch_maker.toolchain.model import BinFileType, Segment
 from ofrak_type.memory_permissions import MemoryPermissions
+from ofrak_type.symbol_type import LinkableSymbolType
 
 
 class GNU_ELF_Parser(AbstractBinaryFileParser):
@@ -30,7 +31,7 @@ class GNU_ELF_Parser(AbstractBinaryFileParser):
         flags=re.MULTILINE,
     )
 
-    def parse_symbols(self, output: str) -> Dict[str, int]:
+    def parse_symbols(self, output: str) -> Dict[str, Tuple[int, LinkableSymbolType]]:
         """
         Use `objdump` with the `--syms` flag to get info on all defined symbols in a file. Parses
         columns based on: <https://stackoverflow.com/a/16471895/16690095>.
@@ -39,7 +40,10 @@ class GNU_ELF_Parser(AbstractBinaryFileParser):
         symbols = self._get_all_symbols(output)
         for symbol in symbols:
             if symbol[2] != "*UND*":
-                result[symbol[0]] = symbol[1]
+                if "F" in symbol[3]:
+                    result[symbol[0]] = (symbol[1], LinkableSymbolType.FUNC)
+                else:
+                    result[symbol[0]] = (symbol[1], LinkableSymbolType.UNDEF)
         return result
 
     def parse_sections(self, output: str) -> Tuple[Segment, ...]:
@@ -80,26 +84,27 @@ class GNU_ELF_Parser(AbstractBinaryFileParser):
                 result[symbol[0]] = symbol[1]
         return result
 
-    def _get_all_symbols(self, output: str) -> Set[Tuple[str, int, str]]:
+    def _get_all_symbols(self, output: str) -> Set[Tuple[str, int, str, str]]:
         result = set()
         for symbol_data in self._re_symbol_prog.finditer(output):
             name = symbol_data.group("name")
             addr = symbol_data.group("address")
             symbol_section = symbol_data.group("section")
+            symbol_type = symbol_data.group("flags")
 
             if name and addr:
-                result.add((name, int(addr, 16), symbol_section))
+                result.add((name, int(addr, 16), symbol_section, symbol_type))
         return result
 
 
 class GNU_V10_ELF_Parser(GNU_ELF_Parser):
     file_format = BinFileType.ELF
 
-    def parse_symbols(self, tool_output: str) -> Dict[str, int]:
+    def parse_symbols(self, tool_output: str) -> Dict[str, Tuple[int, LinkableSymbolType]]:
         symbols = {}
         lines = tool_output.split("\n")
         for l in lines:
             tokens = l.split()
             if "O" in tokens or "F" in tokens:
-                symbols.update({tokens[-1]: int(tokens[0], 16)})
+                symbols.update({tokens[-1]: (int(tokens[0], 16), LinkableSymbolType.FUNC)})
         return symbols

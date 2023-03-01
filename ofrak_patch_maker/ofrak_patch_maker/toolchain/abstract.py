@@ -16,6 +16,7 @@ from ofrak_patch_maker.toolchain.utils import get_repository_config
 from ofrak_type.architecture import InstructionSet
 from ofrak_type.bit_width import BitWidth
 from ofrak_type.memory_permissions import MemoryPermissions
+from ofrak_type.symbol_type import LinkableSymbolType
 
 RBS_AUTOGEN_WARNING = (
     "/*\n"
@@ -479,7 +480,9 @@ class Toolchain(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_bin_file_symbols(self, executable_path: str) -> Dict[str, int]:
+    def get_bin_file_symbols(
+        self, executable_path: str
+    ) -> Dict[str, Tuple[int, LinkableSymbolType]]:
         """
         For now, this utility only searches for global function and data symbols which are
         actually contained in a section in the file, as opposed to symbols which are referenced

@@ -16,6 +16,7 @@ from ofrak_patch_maker.toolchain.model import (
 )
 from ofrak_patch_maker.toolchain.utils import get_file_format
 from ofrak_type.memory_permissions import MemoryPermissions
+from ofrak_type.symbol_type import LinkableSymbolType
 
 
 class Abstract_GNU_Toolchain(Toolchain, ABC):
@@ -328,7 +329,9 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
     def segment_alignment(self) -> int:
         raise NotImplementedError()
 
-    def get_bin_file_symbols(self, executable_path: str) -> Dict[str, int]:
+    def get_bin_file_symbols(
+        self, executable_path: str
+    ) -> Dict[str, Tuple[int, LinkableSymbolType]]:
         # This happens to be the same as LLVM but it really doesn't belong in Parent code.
         # Note: readobj for gcc is objdump
         readobj_output = self._execute_tool(self._readobj_path, ["--syms"], [executable_path])
