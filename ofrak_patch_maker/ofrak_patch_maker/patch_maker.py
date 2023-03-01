@@ -267,6 +267,10 @@ class PatchMaker:
             result = pool.starmap(
                 _create_object_file, c_args, chunksize=math.ceil(len(c_files) / workers)
             )
+            # Close and join pool to give pytest-cov workers time to save coverage results
+            #  https://pytest-cov.readthedocs.io/en/latest/subprocess-support.html
+            pool.close()
+            pool.join()
         for r in result:
             object_map.update(r)
 
@@ -286,6 +290,10 @@ class PatchMaker:
             result = pool.starmap(
                 _create_object_file, asm_args, chunksize=math.ceil(len(asm_files) / workers)
             )
+            # Close and join pool to give pytest-cov workers time to save coverage results
+            #  https://pytest-cov.readthedocs.io/en/latest/subprocess-support.html
+            pool.close()
+            pool.join()
         for r in result:
             object_map.update(r)
 
