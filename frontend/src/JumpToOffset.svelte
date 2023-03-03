@@ -42,7 +42,7 @@
 
   $: if (mounted) {
     startOffset = Math.max(
-      Math.ceil((dataLength * $scrollY.top) / alignment) * alignment,
+      Math.floor((dataLength * $scrollY.top) / alignment) * alignment,
       0
     );
     input.value = `0x${startOffset.toString(16)}`;
