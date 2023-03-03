@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 
+### Added
+- Add methods to parse relocation symbols from object files.
+- Extended parsed symbol dictionary to include LinkableSymbolType.
+- Extended AssembledObject and BOM types to include relocation and unresolved symbols.
+
 ## [3.0.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-patch-maker-v.2.0.0...ofrak-patch-maker-v.3.0.0) - 2023-01-20
 ### Added
 - `-fno-optimize-sibling-calls` flag added to AVR toolchain.
