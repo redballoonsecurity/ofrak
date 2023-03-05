@@ -110,20 +110,21 @@ class LLVM_ELF_Parser(Abstract_LLVM_Readobj_Parser):
     def parse_symbols(self, readobj_out: str) -> Dict[str, Tuple[int, LinkableSymbolType]]:
         result = {}
         symbols = self._get_all_symbols(readobj_out)
-        for symbol in symbols:
-            if symbol[2] != "Undefined":
-                if symbol[3] == "Function":
-                    result[symbol[0]] = (symbol[1], LinkableSymbolType.FUNC)
+        for sym_name, sym_vaddr, sym_section, sym_type in symbols:
+            if sym_section != "Undefined":
+                if sym_type == "Function":
+                    result[sym_name] = (sym_vaddr, LinkableSymbolType.FUNC)
                 else:
-                    result[symbol[0]] = (symbol[1], LinkableSymbolType.UNDEF)
+                    # TODO: handle data symbols and distinguish between RO and RW symbols with section info
+                    result[sym_name] = (sym_vaddr, LinkableSymbolType.UNDEF)
         return result
 
     def parse_relocations(self, readobj_out: str) -> Dict[str, int]:
         result = {}
         symbols = self._get_all_symbols(readobj_out)
-        for symbol in symbols:
-            if symbol[2] == "Undefined":
-                result[symbol[0]] = symbol[1]
+        for sym_name, sym_vaddr, sym_section, sym_type in symbols:
+            if sym_section == "Undefined":
+                result[sym_name] = sym_vaddr
         return result
 
     def _get_all_symbols(self, readobj_out: str) -> Set[Tuple[str, int, str, str]]:

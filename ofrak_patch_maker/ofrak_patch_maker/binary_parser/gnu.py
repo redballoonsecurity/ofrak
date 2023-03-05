@@ -38,12 +38,13 @@ class GNU_ELF_Parser(AbstractBinaryFileParser):
         """
         result = {}
         symbols = self._get_all_symbols(output)
-        for symbol in symbols:
-            if symbol[2] != "*UND*":
-                if "F" in symbol[3]:
-                    result[symbol[0]] = (symbol[1], LinkableSymbolType.FUNC)
+        for sym_name, sym_vaddr, sym_section, sym_type in symbols:
+            if sym_section != "*UND*":
+                if "F" in sym_type:
+                    result[sym_name] = (sym_vaddr, LinkableSymbolType.FUNC)
                 else:
-                    result[symbol[0]] = (symbol[1], LinkableSymbolType.UNDEF)
+                    # TODO: handle data symbols and distinguish between RO and RW symbols with section info
+                    result[sym_name] = (sym_vaddr, LinkableSymbolType.UNDEF)
         return result
 
     def parse_sections(self, output: str) -> Tuple[Segment, ...]:
@@ -79,9 +80,9 @@ class GNU_ELF_Parser(AbstractBinaryFileParser):
         """
         result = {}
         symbols = self._get_all_symbols(output)
-        for symbol in symbols:
-            if symbol[2] == "*UND*":
-                result[symbol[0]] = symbol[1]
+        for sym_name, sym_vaddr, sym_section, sym_type in symbols:
+            if sym_section == "*UND*":
+                result[sym_name] = sym_vaddr
         return result
 
     def _get_all_symbols(self, output: str) -> Set[Tuple[str, int, str, str]]:
