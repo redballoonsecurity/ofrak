@@ -25,7 +25,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Added
 - Add stub `xattr` module to use on platforms without `xattr` support (e.g., Windows) [#228](https://github.com/redballoonsecurity/ofrak/pull/228)
-- Test stub `xattr` module [#228](https://github.com/redballoonsecurity/ofrak/pull/228)
 
 ## [2.2.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.1.1...ofrak-v2.2.0))
 ### Fixed
