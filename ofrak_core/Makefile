@@ -12,15 +12,10 @@ develop: ofrak/gui/public
 .PHONY: inspect
 inspect:
 	mypy
-	
-.PHONY: serial
-serial:
-	$(PYTHON) -m pytest -n0 -m "serial" test_ofrak --cov=ofrak --cov-report=term-missing
-	fun-coverage 
 
 .PHONY: test
-test: inspect serial
-	$(PYTHON) -m pytest -n auto -m "not serial" test_ofrak --cov=ofrak --cov-report=term-missing --cov-append
+test: inspect
+	$(PYTHON) -m pytest -n auto test_ofrak --cov=ofrak --cov-report=term-missing
 	fun-coverage --cov-fail-under=100
 
 .PHONY: dependencies
