@@ -19,10 +19,6 @@ class xattr:
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
         return ""
 
-    def _call(self, name_func, fd_func, *args):
-        frame = inspect.currentframe()
-        _warn_user_no_xattr(inspect.getframeinfo(frame).function)
-
     def get(self, name, options=0):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
