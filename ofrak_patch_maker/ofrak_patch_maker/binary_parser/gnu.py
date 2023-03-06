@@ -73,7 +73,7 @@ class GNU_ELF_Parser(AbstractBinaryFileParser):
             segments.append(seg)
         return tuple(segments)
 
-    def parse_relocations(self, output: str) -> Dict[str, int]:
+    def parse_relocations(self, output: str) -> Dict[str, Tuple[int, LinkableSymbolType]]:
         """
         Use `objdump` with the `--syms` flag to get info on all undefined symbols in a file. Parses
         columns based on: <https://stackoverflow.com/a/16471895/16690095>.
@@ -82,7 +82,7 @@ class GNU_ELF_Parser(AbstractBinaryFileParser):
         symbols = self._get_all_symbols(output)
         for sym_name, sym_vaddr, sym_section, sym_type in symbols:
             if sym_section == "*UND*":
-                result[sym_name] = sym_vaddr
+                result[sym_name] = (sym_vaddr, LinkableSymbolType.UNDEF)
         return result
 
     def _get_all_symbols(self, output: str) -> Set[Tuple[str, int, str, str]]:

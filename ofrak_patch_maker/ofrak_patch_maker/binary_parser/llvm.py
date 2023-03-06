@@ -119,12 +119,12 @@ class LLVM_ELF_Parser(Abstract_LLVM_Readobj_Parser):
                     result[sym_name] = (sym_vaddr, LinkableSymbolType.UNDEF)
         return result
 
-    def parse_relocations(self, readobj_out: str) -> Dict[str, int]:
+    def parse_relocations(self, readobj_out: str) -> Dict[str, Tuple[int, LinkableSymbolType]]:
         result = {}
         symbols = self._get_all_symbols(readobj_out)
         for sym_name, sym_vaddr, sym_section, sym_type in symbols:
             if sym_section == "Undefined":
-                result[sym_name] = sym_vaddr
+                result[sym_name] = (sym_vaddr, LinkableSymbolType.UNDEF)
         return result
 
     def _get_all_symbols(self, readobj_out: str) -> Set[Tuple[str, int, str, str]]:

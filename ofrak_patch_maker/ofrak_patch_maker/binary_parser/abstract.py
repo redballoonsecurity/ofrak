@@ -20,5 +20,5 @@ class AbstractBinaryFileParser(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def parse_relocations(self, tool_output: str) -> Dict[str, int]:
+    def parse_relocations(self, tool_output: str) -> Dict[str, Tuple[int, LinkableSymbolType]]:
         raise NotImplementedError()

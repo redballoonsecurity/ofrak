@@ -5,7 +5,7 @@ We never want to worry about the state of these objects at any point during a pa
 """
 from dataclasses import dataclass
 from enum import Enum
-from typing import Mapping, Optional, Set, Tuple
+from typing import Mapping, Optional, Tuple
 
 from ofrak_patch_maker.toolchain.model import Segment, BinFileType
 from ofrak_type.symbol_type import LinkableSymbolType
@@ -33,7 +33,7 @@ class AssembledObject:
     :var file_format: .elf, .coff, etc.
     :var segment_map: e.g. `{".text", Segment(...)}`
     :var symbols:
-    :var rel_symbols: {symbol name: address}
+    :var rel_symbols: {symbol name: (address, symbol type)}
     :var bss_size_required:
     """
 
@@ -41,7 +41,7 @@ class AssembledObject:
     file_format: BinFileType
     segment_map: Mapping[str, Segment]  # segment name to Segment
     symbols: Mapping[str, Tuple[int, LinkableSymbolType]]
-    rel_symbols: Mapping[str, int]
+    rel_symbols: Mapping[str, Tuple[int, LinkableSymbolType]]
     bss_size_required: int
 
 
@@ -121,7 +121,7 @@ class BOM:
 
     name: str
     object_map: Mapping[str, AssembledObject]
-    unresolved_symbols: Set[str]
+    unresolved_symbols: Mapping[str, Tuple[int, LinkableSymbolType]]
     bss_size_required: int
     entry_point_symbol: Optional[str]
     segment_alignment: int

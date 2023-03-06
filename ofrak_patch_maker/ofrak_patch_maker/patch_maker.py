@@ -35,7 +35,7 @@ import itertools
 import math
 import os
 import tempfile
-from typing import Callable, Dict, Iterable, List, Mapping, Optional, Set, Tuple
+from typing import Callable, Dict, Iterable, List, Mapping, Optional, Tuple
 from warnings import warn
 
 from immutabledict import immutabledict
@@ -300,15 +300,19 @@ class PatchMaker:
         # Compute the required size for the .bss segment
         bss_size_required = 0
         symbols: Dict[str, Tuple[int, LinkableSymbolType]] = {}
-        unresolved_symbols: Set[str] = set()
+        unresolved_symbols: Dict[str, Tuple[int, LinkableSymbolType]] = {}
         for o in object_map.values():
             bss_size_required += o.bss_size_required
             symbols.update(o.symbols)
             # Resolve symbols defined within different patch files within the same patch BOM
-            for sym in o.rel_symbols.keys():
+            for sym, values in o.rel_symbols.items():
                 # Have not already seen this symbol in a previous patch object
                 if sym not in symbols.keys():
-                    unresolved_symbols.add(sym)
+                    unresolved_symbols.update({sym: values})
+
+        resolved_sym_set = set(symbols.items())
+        unresolved_sym_set = set(unresolved_symbols.items())
+        unresolved_symbols = dict(unresolved_sym_set - resolved_sym_set)
 
         if entry_point_name and entry_point_name not in symbols:
             raise PatchMakerException(f"Entry point {entry_point_name} not found in object files")
@@ -316,7 +320,7 @@ class PatchMaker:
         return BOM(
             name,
             immutabledict(object_map),
-            unresolved_symbols,
+            immutabledict(unresolved_symbols),
             bss_size_required,
             entry_point_name,
             self._toolchain.segment_alignment,

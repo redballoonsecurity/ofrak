@@ -348,7 +348,9 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
 
         return self._parser.parse_sections(readobj_output)
 
-    def get_bin_file_rel_symbols(self, executable_path: str) -> Dict[str, int]:
+    def get_bin_file_rel_symbols(
+        self, executable_path: str
+    ) -> Dict[str, Tuple[int, LinkableSymbolType]]:
         readobj_output = self._execute_tool(self._readobj_path, ["--syms"], [executable_path])
 
         return self._parser.parse_relocations(readobj_output)
