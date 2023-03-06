@@ -374,3 +374,4 @@ class GNU_10_Toolchain(Abstract_GNU_Toolchain):
             self._linker_flags.append("--pic-executable")
         else:
             self._compiler_flags.append("-fno-plt")
+	    self._compiler_flags.append("-fno-pic")
