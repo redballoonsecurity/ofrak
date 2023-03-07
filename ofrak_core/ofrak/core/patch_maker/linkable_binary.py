@@ -2,7 +2,7 @@ import dataclasses
 import logging
 import os
 from dataclasses import dataclass
-from typing import Dict, Iterable, Mapping, Optional, Tuple
+from typing import Dict, Iterable, Mapping, Optional, Set, Tuple
 
 from ofrak.component.modifier import Modifier
 from ofrak.core.addressable import Addressable
@@ -178,7 +178,7 @@ class LinkableBinary(GenericBinary):
         self,
         patch_maker: "PatchMaker",  # type: ignore
         build_tmp_dir: str,
-        unresolved_symbols: Mapping[str, Tuple[int, LinkableSymbolType]],
+        unresolved_symbols: Set[str],
     ) -> Tuple[BOM, PatchRegionConfig]:
         """
         Build a BOM with all the symbols known to SymbolizedBinary. This BOM can be used to build
@@ -205,7 +205,7 @@ class LinkableBinary(GenericBinary):
         """
         stubs: Dict[str, Tuple[Segment, ...]] = dict()
         for symbol in await self.get_symbols():
-            if symbol.name in unresolved_symbols.keys():
+            if symbol.name in unresolved_symbols:
                 stubs_file = os.path.join(build_tmp_dir, f"stub_{symbol.name}.as")
                 stub_info = symbol.get_stub_info()
                 stub_body = "\n".join(

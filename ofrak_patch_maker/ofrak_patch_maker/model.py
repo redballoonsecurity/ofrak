@@ -5,7 +5,7 @@ We never want to worry about the state of these objects at any point during a pa
 """
 from dataclasses import dataclass
 from enum import Enum
-from typing import Mapping, Optional, Tuple
+from typing import Mapping, Optional, Set, Tuple
 
 from ofrak_patch_maker.toolchain.model import Segment, BinFileType
 from ofrak_type.symbol_type import LinkableSymbolType
@@ -121,7 +121,7 @@ class BOM:
 
     name: str
     object_map: Mapping[str, AssembledObject]
-    unresolved_symbols: Mapping[str, Tuple[int, LinkableSymbolType]]
+    unresolved_symbols: Set[str]
     bss_size_required: int
     entry_point_symbol: Optional[str]
     segment_alignment: int

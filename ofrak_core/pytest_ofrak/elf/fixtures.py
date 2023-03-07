@@ -50,8 +50,6 @@ int bar() {
 """
 
 LARGE_SOURCE_CONTENTS_HEADER = """
-#include <stdio.h>
-
 int foo();
 int bar();
 
@@ -139,6 +137,11 @@ def elf_executable_file(elf_test_directory):
 def elf_no_pie_executable_file(elf_test_directory):
     subprocess.run(["make", "-C", elf_test_directory, "program_no_reloc"])
     return os.path.join(elf_test_directory, "program_no_reloc")
+
+
+@pytest.fixture
+def large_elf_source_file(elf_test_directory):
+    return os.path.join(elf_test_directory, "large_elf.c")
 
 
 @pytest.fixture

@@ -35,7 +35,7 @@ import itertools
 import math
 import os
 import tempfile
-from typing import Callable, Dict, Iterable, List, Mapping, Optional, Tuple
+from typing import Callable, Dict, Iterable, List, Mapping, Optional, Set, Tuple
 from warnings import warn
 
 from immutabledict import immutabledict
@@ -310,9 +310,8 @@ class PatchMaker:
                 if sym not in symbols.keys():
                     unresolved_symbols.update({sym: values})
 
-        resolved_sym_set = set(symbols.items())
-        unresolved_sym_set = set(unresolved_symbols.items())
-        unresolved_symbols = dict(unresolved_sym_set - resolved_sym_set)
+        unresolved_sym_set: Set[str]
+        unresolved_sym_set = set(unresolved_symbols.keys()) - set(symbols.keys())
 
         if entry_point_name and entry_point_name not in symbols:
             raise PatchMakerException(f"Entry point {entry_point_name} not found in object files")
@@ -320,7 +319,7 @@ class PatchMaker:
         return BOM(
             name,
             immutabledict(object_map),
-            immutabledict(unresolved_symbols),
+            unresolved_sym_set,
             bss_size_required,
             entry_point_name,
             self._toolchain.segment_alignment,
