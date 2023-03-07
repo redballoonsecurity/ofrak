@@ -1,5 +1,7 @@
 import asyncio
 import os
+import pathlib
+import sys
 import tempfile
 from subprocess import CalledProcessError
 from dataclasses import dataclass
@@ -31,19 +33,34 @@ JAVA = ComponentExternalTool(
 
 
 class _UberApkSignerTool(ComponentExternalTool):
+    if sys.platform.startswith("win32"):
+        # Windows: look in Program Files (x86)
+        JAR_PATH = os.path.join(
+            "C:", "Program Files (x86)", "uber-apk-signer", "uber-apk-signer.jar"
+        )
+    elif sys.platform.startswith("linux") or sys.platform.startswith("darwin"):
+        # Linux, Mac OSX: look in usr/local/bin
+        JAR_PATH = os.path.join(os.path.sep, "usr", "local", "bin", "uber-apk-signer.jar")
+    else:
+        # All other platforms: look in home dir
+        JAR_PATH = os.path.join(pathlib.Path.home(), "uber-apk-signer.jar")
+
     def __init__(self):
         super().__init__(
-            "/usr/local/bin/uber-apk-signer.jar",
+            _UberApkSignerTool.JAR_PATH,
             "https://github.com/patrickfav/uber-apk-signer",
             install_check_arg="",
         )
 
     async def is_tool_installed(self) -> bool:
+        if not os.path.exists(_UberApkSignerTool.JAR_PATH):
+            return False
+
         try:
             cmd = [
                 "java",
                 "-jar",
-                "/usr/local/bin/uber-apk-signer.jar",
+                _UberApkSignerTool.JAR_PATH,
                 "--help",
             ]
             proc = await asyncio.create_subprocess_exec(
@@ -166,7 +183,7 @@ class ApkPacker(Packer[ApkPackerConfig]):
                     java_cmd = [
                         "java",
                         "-jar",
-                        "/usr/local/bin/uber-apk-signer.jar",
+                        _UberApkSignerTool.JAR_PATH,
                         "--apks",
                         temp_apk.name,
                         "--out",
