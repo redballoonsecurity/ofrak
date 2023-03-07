@@ -1,6 +1,6 @@
 import re
 from abc import ABC
-from typing import Set, Tuple, Dict, List, Union
+from typing import Dict, List, Tuple, Union
 
 from ofrak_patch_maker.binary_parser.abstract import AbstractBinaryFileParser
 from ofrak_patch_maker.toolchain.model import BinFileType, Segment, ToolchainException
@@ -127,8 +127,8 @@ class LLVM_ELF_Parser(Abstract_LLVM_Readobj_Parser):
                 result[sym_name] = (sym_vaddr, LinkableSymbolType.UNDEF)
         return result
 
-    def _get_all_symbols(self, readobj_out: str) -> Set[Tuple[str, int, str, str]]:
-        result = set()
+    def _get_all_symbols(self, readobj_out: str) -> List[Tuple[str, int, str, str]]:
+        result = []
         symbol_data = [x[0] for x in self._re_symbol_prog.findall(readobj_out)]
         for s in symbol_data:
             name = self._re_name_prog.search(s)
@@ -136,7 +136,7 @@ class LLVM_ELF_Parser(Abstract_LLVM_Readobj_Parser):
             symbol_section = self._re_sym_section_prog.search(s)
             symbol_type = self._re_sym_type_prog.search(s)
             if name and addr_value and symbol_section and symbol_type:
-                result.add(
+                result.append(
                     (
                         name.group(0),
                         int(addr_value.group(0), 16),

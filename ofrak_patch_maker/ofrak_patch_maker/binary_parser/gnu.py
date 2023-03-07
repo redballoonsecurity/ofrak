@@ -1,5 +1,5 @@
 import re
-from typing import Set, Tuple, Dict
+from typing import Dict, List, Tuple
 
 from ofrak_patch_maker.binary_parser.abstract import AbstractBinaryFileParser
 from ofrak_patch_maker.toolchain.model import BinFileType, Segment
@@ -85,8 +85,8 @@ class GNU_ELF_Parser(AbstractBinaryFileParser):
                 result[sym_name] = (sym_vaddr, LinkableSymbolType.UNDEF)
         return result
 
-    def _get_all_symbols(self, output: str) -> Set[Tuple[str, int, str, str]]:
-        result = set()
+    def _get_all_symbols(self, output: str) -> List[Tuple[str, int, str, str]]:
+        result = []
         for symbol_data in self._re_symbol_prog.finditer(output):
             name = symbol_data.group("name")
             addr = symbol_data.group("address")
@@ -94,7 +94,7 @@ class GNU_ELF_Parser(AbstractBinaryFileParser):
             symbol_type = symbol_data.group("flags")
 
             if name and addr:
-                result.add((name, int(addr, 16), symbol_section, symbol_type))
+                result.append((name, int(addr, 16), symbol_section, symbol_type))
         return result
 
 
