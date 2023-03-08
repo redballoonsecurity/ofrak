@@ -25,7 +25,6 @@ from ofrak.core.basic_block import BasicBlock
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.core.program import Program
 from ofrak.core.patch_maker.linkable_symbol import LinkableSymbolType
-from ofrak.core.patch_maker.model import SourceBundle
 from ofrak.core.patch_maker.modifiers import (
     FunctionReplacementModifierConfig,
     FunctionReplacementModifier,
@@ -178,10 +177,6 @@ async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config
     await root_resource.unpack_recursively()
     target_program = await root_resource.view_as(Program)
 
-    source_bundle_r = await target_program.resource.create_child(data=b"", tags=(SourceBundle,))
-    source_bundle = await source_bundle_r.view_as(SourceBundle)
-    await source_bundle.initialize_from_disk(PATCH_DIRECTORY)
-
     function_cb = ComplexBlock(
         virtual_address=config.program.function_vaddr,
         size=config.program.function_size,
@@ -207,7 +202,7 @@ async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config
     await target_program.resource.save()
 
     function_replacement_config = FunctionReplacementModifierConfig(
-        source_bundle.resource.get_id(),
+        PATCH_DIRECTORY,
         {config.program.function_name: config.replacement_patch},
         ToolchainConfig(
             file_format=BinFileType.ELF,
