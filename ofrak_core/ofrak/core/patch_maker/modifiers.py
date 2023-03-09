@@ -3,7 +3,7 @@ import logging
 import os
 import tempfile
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple, Type, Union
+from typing import Dict, List, Optional, Tuple, Type, Union, cast, Any
 
 from ofrak.core import ProgramAttributes
 from ofrak_patch_maker.toolchain.abstract import Toolchain
@@ -22,7 +22,7 @@ from ofrak_type.memory_permissions import MemoryPermissions
 
 LOGGER = logging.getLogger(__file__)
 
-SourceDirType = Dict[str, Union[str, "SourceDirType"]]
+SourceDirType = Dict[str, Union[str, Any]]  # Recursive types not supported by this version of mypy
 
 
 @dataclass
@@ -64,7 +64,7 @@ class PatchFromSourceModifierConfig(ComponentConfig):
 
     @staticmethod
     def slurp_source_directory(path: str) -> SourceDirType:
-        res = {}
+        res: SourceDirType = {}
         root, dirs, files = next(os.walk(path, topdown=True))
         for file_name in files:
             file_path = os.path.join(root, file_name)
@@ -90,7 +90,9 @@ class PatchFromSourceModifierConfig(ComponentConfig):
                     f.write(item_contents)
             else:
                 # item is a directory
-                PatchFromSourceModifierConfig.dump_source_directory(item_path, item_contents)
+                PatchFromSourceModifierConfig.dump_source_directory(
+                    item_path, cast(SourceDirType, item_contents)
+                )
 
 
 class PatchFromSourceModifier(Modifier):
