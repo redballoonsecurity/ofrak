@@ -70,3 +70,8 @@ fi;
 
 #AVR GCC
 RUN apt-get update && apt-get install -y gcc-avr binutils-avr avr-libc
+
+#PPC GNU 10 Linux
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+    apt-get update && apt-get install -y gcc-10-powerpc-linux-gnu; \
+fi;

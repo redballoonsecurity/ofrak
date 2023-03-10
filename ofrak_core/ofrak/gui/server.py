@@ -3,6 +3,7 @@ import functools
 import logging
 import json
 import os
+import sys
 import webbrowser
 from collections import defaultdict
 from typing import (
@@ -60,7 +61,6 @@ from ofrak.model.resource_model import (
     ResourceModel,
     ResourceAttributes,
     MutableResourceModel,
-    Data,
 )
 from ofrak.model.viewable_tag_model import ResourceViewContext
 from ofrak.resource import Resource
@@ -371,9 +371,19 @@ class AiohttpOFRAKServer:
             child_models = await resource._resource_service.get_descendants_by_id(
                 resource._resource.id,
                 max_depth=1,
-                r_sort=ResourceSort(Data.Offset),
             )
-            return resource_id, list(map(self._serialize_resource_model, child_models))
+            serialized_children = list(map(self._serialize_resource_model, child_models))
+            serialized_children.sort(key=get_child_sort_key)
+
+            return resource_id, serialized_children
+
+        def get_child_sort_key(child):
+            attrs = dict(child.get("attributes"))
+            data_attr = attrs.get("ofrak.model.resource_model.Data")
+            if data_attr is not None:
+                return data_attr[1]["_offset"]
+            else:
+                return sys.maxsize
 
         return json_response(
             dict(await asyncio.gather(*map(get_resource_children, await request.json())))

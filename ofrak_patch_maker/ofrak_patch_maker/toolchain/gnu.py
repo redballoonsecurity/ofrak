@@ -370,7 +370,8 @@ class GNU_10_Toolchain(Abstract_GNU_Toolchain):
         if self._config.compiler_cpu:
             self._compiler_flags.append(f"-mcpu={self._config.compiler_cpu}")
 
-        self._assembler_flags.append(f"-march={self._get_assembler_target(processor)}")
+        if self._assembler_target is not None:
+            self._assembler_flags.append(f"-march={self._assembler_target}")
         if self._config.assembler_cpu:
             self._assembler_flags.append(f"-mcpu={self._config.assembler_cpu}")
 

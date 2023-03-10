@@ -107,7 +107,7 @@ class Toolchain(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def _get_assembler_target(self, processor: ArchInfo) -> str:
+    def _get_assembler_target(self, processor: ArchInfo) -> Optional[str]:
         """
         Red Balloon Security strongly recommends all users provide their specific hardware target
         for best results.
