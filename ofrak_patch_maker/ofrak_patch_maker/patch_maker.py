@@ -298,6 +298,22 @@ class PatchMaker:
             object_map.update(r)
 
         # Compute the required size for the .bss segment
+        bss_size_required, unresolved_sym_set = self._resolve_symbols_within_BOM(
+            object_map, entry_point_name
+        )
+
+        return BOM(
+            name,
+            immutabledict(object_map),
+            unresolved_sym_set,
+            bss_size_required,
+            entry_point_name,
+            self._toolchain.segment_alignment,
+        )
+
+    def _resolve_symbols_within_BOM(
+        self, object_map: Dict[str, AssembledObject], entry_point_name: Optional[str]
+    ) -> Tuple[int, Set[str]]:
         bss_size_required = 0
         symbols: Dict[str, Tuple[int, LinkableSymbolType]] = {}
         unresolved_symbols: Dict[str, Tuple[int, LinkableSymbolType]] = {}
@@ -316,14 +332,7 @@ class PatchMaker:
         if entry_point_name and entry_point_name not in symbols:
             raise PatchMakerException(f"Entry point {entry_point_name} not found in object files")
 
-        return BOM(
-            name,
-            immutabledict(object_map),
-            unresolved_sym_set,
-            bss_size_required,
-            entry_point_name,
-            self._toolchain.segment_alignment,
-        )
+        return bss_size_required, unresolved_sym_set
 
     def create_unsafe_bss_segment(self, vm_address: int, size: int) -> Segment:
         """

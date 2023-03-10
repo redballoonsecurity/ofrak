@@ -10,7 +10,6 @@ from ofrak import OFRAKContext, Resource, ResourceAttributeValueFilter, Resource
 from ofrak.core import (
     Allocatable,
     CodeRegion,
-    FreeSpace,
     ComplexBlock,
     Instruction,
     LiefAddSegmentConfig,
@@ -63,12 +62,6 @@ async def test_patch_from_source_modifier(
         code_region.resource = await resource.create_child_from_view(
             code_region, data_range=Range(segment.p_offset, segment.p_offset + segment.p_filesz)
         )
-        free_code_space = FreeSpace(
-            size=segment.p_filesz,
-            virtual_address=segment.p_vaddr,
-            permissions=MemoryPermissions.RX,
-        )
-        await code_region.create_child_region(free_code_space)
         resource.add_tag(Allocatable)
         await resource.save()
 
