@@ -26,7 +26,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add Identifier to tag `ComplexBlocks` as `LinkableSymbols` and Analyzer to copy attributes from a `ComplexBlock` to its `LinkableSymbol`.
 - Add method to create new `LinkableSymbols` from symbols defined in a patch file.
 - Limit stub file creation for linkable BOMs to only those required by a patch.
-- Add tests of automatic tagging of `LinkableSymbols` using PatchFromSourceModifier.
 
 ## [2.2.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.1.1...ofrak-v2.2.0))
 ### Fixed

@@ -138,12 +138,11 @@ class PatchFromSourceModifier(Modifier):
             SegmentInjectorModifierConfig.from_fem(fem),
         )
 
-        # Refresh LinkableBinary with the LinkableSymbols defined in this patch
+        # Refresh LinkableBinary with the LinkableSymbols used in this patch
         target_binary = await resource.view_as(LinkableBinary)
-        for assembled_object in patch_bom.object_map.values():
-            await target_binary.define_linkable_symbols_from_patch(
-                assembled_object.symbols, program_attributes
-            )
+        await target_binary.define_linkable_symbols_from_patch(
+            fem.executable.symbols, program_attributes
+        )
 
 
 @dataclass
