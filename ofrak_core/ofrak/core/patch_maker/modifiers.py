@@ -39,27 +39,35 @@ class PatchFromSourceModifierConfig(ComponentConfig):
     :var header_directories: (Optional) paths to directories to search for header files in
     """
 
-    source_code: str
+    source_code_slurped: SourceDirType
     source_patches: Dict[str, Tuple[Segment, ...]]
     toolchain_config: ToolchainConfig
     toolchain: Type[Toolchain]
+    header_directories_slurped: Tuple[SourceDirType, ...]
     patch_name: Optional[str] = None
-    header_directories: Tuple[str, ...] = ()
 
-    # Populated by post init, slurping up source and header directories "client-side"
-    source_code_slurped: SourceDirType = field(init=False, repr=False)
-    header_directories_slurped: Tuple[SourceDirType, ...] = field(init=False, repr=False)
-
-    def __post_init__(self):
-        if self.source_code:
-            self.source_code_slurped = PatchFromSourceModifierConfig.slurp_source_directory(
-                self.source_code
-            )
-        else:
-            self.source_code_slurped = {}
-        self.header_directories_slurped = tuple(
+    @classmethod
+    def from_directories(
+        cls,
+        source_code: str,
+        source_patches: Dict[str, Tuple[Segment, ...]],
+        toolchain_config: ToolchainConfig,
+        toolchain: Type[Toolchain],
+        patch_name: Optional[str] = None,
+        header_directories: Tuple[str, ...] = (),
+    ) -> "PatchFromSourceModifierConfig":
+        source_code_slurped = PatchFromSourceModifierConfig.slurp_source_directory(source_code)
+        header_directories_slurped = tuple(
             PatchFromSourceModifierConfig.slurp_source_directory(header_dir)
-            for header_dir in self.header_directories
+            for header_dir in header_directories
+        )
+        return PatchFromSourceModifierConfig(
+            source_code_slurped,
+            source_patches,
+            toolchain_config,
+            toolchain,
+            header_directories_slurped,
+            patch_name,
         )
 
     @staticmethod

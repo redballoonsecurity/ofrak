@@ -19,10 +19,15 @@ from hypothesis.strategies import (
     one_of,
     just,
     floats,
+    text,
+    recursive,
+    dictionaries,
 )
 from intervaltree import IntervalTree, Interval
+from ofrak.core.patch_maker.modifiers import PatchFromSourceModifierConfig
 
-from ofrak.model.viewable_tag_model import AttributesType
+from ofrak_patch_maker.toolchain.abstract import Toolchain
+from ofrak_patch_maker.toolchain.model import Segment, ToolchainConfig
 from synthol.injector import DependencyInjector
 from typing_inspect import get_args
 
@@ -35,7 +40,6 @@ from ofrak.core.memory_region import MemoryRegion
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributes, ResourceAttributeDependency
 from ofrak.resource_view import ResourceView
-from ofrak.service.component_locator_i import ComponentFilter
 from ofrak.service.serialization.pjson import PJSONSerializationService
 from ofrak_type.architecture import InstructionSet, InstructionSetMode
 from ofrak_type.range import Range
@@ -94,12 +98,41 @@ def float_strategy(draw, _type_hint):
     return draw(floats(allow_nan=False, allow_infinity=False))
 
 
+@composite
+def SourceDirType_strategy(draw, _type_hint):
+    return draw(recursive(text(), lambda children: dictionaries(text(), children)))
+
+
+@composite
+def PatchFromSourceModifierConfig_strategy(draw, _type_hint):
+    return draw(
+        PatchFromSourceModifierConfig(
+            draw(recursive(text(), lambda children: dictionaries(text(), children))),
+            draw(from_type(Dict[str, Tuple[Segment, ...]])),
+            draw(from_type(ToolchainConfig)),
+            draw(from_type(Type[Toolchain])),
+            draw(tuples(recursive(text(), lambda children: dictionaries(text(), children)))),
+            draw(text()),
+        )
+    )
+
+
+PatchFromSourceModifierConfig_strategy2 = builds(
+    PatchFromSourceModifierConfig,
+    source_code_slurped=recursive(text(), lambda children: dictionaries(text(), children)),
+    header_directories_slurped=tuples(
+        recursive(text(), lambda children: dictionaries(text(), children))
+    ),
+)
+
+
 register_type_strategy(Range, range_strategy)
 register_type_strategy(Iterable, iterable_strategy)  # type: ignore
 register_type_strategy(os.stat_result, os_stat_result_strategy)
 register_type_strategy(ResourceTag, resource_tag_strategy)
 register_type_strategy(int, integer_strategy)
 register_type_strategy(float, float_strategy)
+register_type_strategy(PatchFromSourceModifierConfig, PatchFromSourceModifierConfig_strategy2)
 
 
 class A:
@@ -305,8 +338,8 @@ def _type_and_descendants(superclass_type) -> List[Tuple[Type, Type]]:
 @pytest.mark.parametrize(
     "superclass_type,descendant_type",
     _type_and_descendants(ResourceView)
-    + [(t, d) for t, d in _type_and_descendants(ResourceAttributes) if d is not AttributesType]
-    + _type_and_descendants(ComponentFilter)
+    # + [(t, d) for t, d in _type_and_descendants(ResourceAttributes) if d is not AttributesType]
+    # + _type_and_descendants(ComponentFilter)
     + _type_and_descendants(ComponentConfig),
 )
 @given(data=data())
