@@ -3,6 +3,8 @@ import tempfile
 
 from dataclasses import dataclass
 from immutabledict import immutabledict
+from typing import Dict
+
 from ofrak_patch_maker.toolchain.llvm_12 import LLVM_12_0_1_Toolchain
 from ofrak.core.architecture import ProgramAttributes
 from ofrak_type.architecture import (
@@ -35,7 +37,7 @@ class TestCase:
 
 
 @pytest.fixture
-def patch_maker():
+def patch_maker() -> PatchMaker:
     # Set up PatchMaker
     proc = ProgramAttributes(
         isa=InstructionSet.X86,
@@ -69,7 +71,7 @@ def patch_maker():
 
 
 @pytest.fixture
-def target_object_map():
+def object_map() -> Dict[str, AssembledObject]:
     object_map = {}
     obj = AssembledObject(
         path="/tmp/stub_bom_files/stub_foo.as.o",
@@ -111,7 +113,7 @@ def target_object_map():
 
 
 @pytest.fixture(params=PARAMS)
-def symbol_test_case(request):
+def symbol_test_case(request) -> TestCase:
     return TestCase(
         AssembledObject(
             path=f"/tmp/patch_bom_files/patch.c.o",
@@ -139,10 +141,8 @@ def symbol_test_case(request):
 
 
 @pytest.mark.parametrize("symbol_test_case", PARAMS, indirect=["symbol_test_case"])
-def test_symbol_resolution(patch_maker, target_object_map, symbol_test_case):
-    target_object_map.update({"/tmp/patch_bom_files/patch.c.o": symbol_test_case.assembled_object})
-    bss_size_required, unresolved_sym_set = patch_maker._resolve_symbols_within_BOM(
-        target_object_map
-    )
+def test_symbol_resolution(patch_maker, object_map, symbol_test_case):
+    object_map.update({"/tmp/patch_bom_files/patch.c.o": symbol_test_case.assembled_object})
+    bss_size_required, unresolved_sym_set = patch_maker._resolve_symbols_within_BOM(object_map)
 
     assert len(unresolved_sym_set) == symbol_test_case.expected_value
