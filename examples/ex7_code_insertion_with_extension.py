@@ -44,7 +44,6 @@ from ofrak import OFRAK, OFRAKContext, Resource, ResourceFilter, ResourceAttribu
 from ofrak.core import (
     Allocatable,
     CodeRegion,
-    FreeSpace,
     ComplexBlock,
     Instruction,
     LiefAddSegmentConfig,
@@ -89,12 +88,6 @@ async def add_and_return_segment(elf_resource: Resource, vaddr: int, size: int) 
     code_region.resource = await elf_resource.create_child_from_view(
         code_region, data_range=Range(segment.p_offset, segment.p_offset + segment.p_filesz)
     )
-    free_code_space = FreeSpace(
-        size=segment.p_filesz,
-        virtual_address=segment.p_vaddr + GHIDRA_PIE_OFFSET,
-        permissions=MemoryPermissions.RX,
-    )
-    await code_region.create_child_region(free_code_space)
     elf_resource.add_tag(Allocatable)
     await elf_resource.save()
 
