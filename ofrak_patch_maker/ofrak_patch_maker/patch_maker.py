@@ -32,14 +32,12 @@ await ofrak_fw_resource.run(SegmentInjectorModifier, SegmentInjectorModifierConf
 """
 import logging
 import itertools
-import math
 import os
 import tempfile
 from typing import Callable, Dict, Iterable, List, Mapping, Optional, Set, Tuple
 from warnings import warn
 
 from immutabledict import immutabledict
-from multiprocessing import cpu_count, get_context, set_start_method
 
 from ofrak_patch_maker.model import (
     AssembledObject,
@@ -238,8 +236,6 @@ class PatchMaker:
         :raises PatchMakerException: if user inputs are invalid.
         :return: an immutable object containing section info
         """
-        set_start_method("spawn", force=True)
-
         if self._platform_includes:
             header_dirs.extend(self._platform_includes)
         self._validate_bom_input(name, source_list, object_list, header_dirs)
@@ -251,7 +247,6 @@ class PatchMaker:
         out_dir = os.path.join(self.build_dir, name + "_bom_files")
         os.mkdir(out_dir)
 
-        # Compile .c files in parallel
         c_files = list(filter(lambda x: x.endswith(".c"), source_list))
         c_args = zip(
             c_files,
@@ -262,19 +257,10 @@ class PatchMaker:
             itertools.repeat(self),
             itertools.repeat(SourceFileType.C),
         )
-        workers = math.ceil(cpu_count())
-        with get_context("spawn").Pool(processes=workers) as pool:
-            result = pool.starmap(
-                _create_object_file, c_args, chunksize=math.ceil(len(c_files) / workers)
-            )
-            # Close and join pool to give pytest-cov workers time to save coverage results
-            #  https://pytest-cov.readthedocs.io/en/latest/subprocess-support.html
-            pool.close()
-            pool.join()
+        result = itertools.starmap(_create_object_file, c_args)
         for r in result:
             object_map.update(r)
 
-        # Assemble .asm files in parallel
         asm_files = list(filter(lambda x: x.endswith(".as") or x.endswith(".S"), source_list))
         asm_args = zip(
             asm_files,
@@ -285,15 +271,7 @@ class PatchMaker:
             itertools.repeat(self),
             itertools.repeat(SourceFileType.ASM),
         )
-        workers = math.ceil(cpu_count())
-        with get_context("spawn").Pool(processes=workers) as pool:
-            result = pool.starmap(
-                _create_object_file, asm_args, chunksize=math.ceil(len(asm_files) / workers)
-            )
-            # Close and join pool to give pytest-cov workers time to save coverage results
-            #  https://pytest-cov.readthedocs.io/en/latest/subprocess-support.html
-            pool.close()
-            pool.join()
+        result = itertools.starmap(_create_object_file, asm_args)
         for r in result:
             object_map.update(r)
 
