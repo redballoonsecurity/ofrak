@@ -302,7 +302,7 @@ class PatchMaker:
         return {original_file: obj}
 
     def _resolve_symbols_within_BOM(
-        self, object_map: Dict[str, AssembledObject], entry_point_name: Optional[str]
+        self, object_map: Dict[str, AssembledObject], entry_point_name: Optional[str] = None
     ) -> Tuple[int, Set[str]]:
         bss_size_required = 0
         symbols: Dict[str, Tuple[int, LinkableSymbolType]] = {}
