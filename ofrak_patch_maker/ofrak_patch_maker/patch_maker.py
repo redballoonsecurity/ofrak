@@ -34,7 +34,7 @@ import logging
 import itertools
 import os
 import tempfile
-from typing import Callable, Dict, Iterable, List, Mapping, Optional, Set, Tuple
+from typing import Dict, Iterable, List, Mapping, Optional, Set, Tuple
 from warnings import warn
 
 from immutabledict import immutabledict
@@ -134,7 +134,6 @@ class PatchMaker:
             executable_path, self._toolchain.file_format, segments, symbols, relocatable=False
         )
 
-    @staticmethod
     def prepare_object(self, object_path: str) -> AssembledObject:
         """
         This API is exposed to add existing (perhaps client-provided) `.o` files to a desired BOM.
@@ -241,7 +240,7 @@ class PatchMaker:
         self._validate_bom_input(name, source_list, object_list, header_dirs)
         object_map = {}
         for o_file in object_list:
-            assembled_object = self.prepare_object(self, o_file)
+            assembled_object = self.prepare_object(o_file)
             object_map.update({o_file: assembled_object})
 
         out_dir = os.path.join(self.build_dir, name + "_bom_files")
@@ -252,12 +251,9 @@ class PatchMaker:
             c_files,
             itertools.repeat(header_dirs),
             itertools.repeat(out_dir),
-            itertools.repeat(self._toolchain),
-            itertools.repeat(self.prepare_object),
-            itertools.repeat(self),
             itertools.repeat(SourceFileType.C),
         )
-        result = itertools.starmap(_create_object_file, c_args)
+        result = itertools.starmap(self._create_object_file, c_args)
         for r in result:
             object_map.update(r)
 
@@ -266,12 +262,9 @@ class PatchMaker:
             asm_files,
             itertools.repeat(header_dirs),
             itertools.repeat(out_dir),
-            itertools.repeat(self._toolchain),
-            itertools.repeat(self.prepare_object),
-            itertools.repeat(self),
             itertools.repeat(SourceFileType.ASM),
         )
-        result = itertools.starmap(_create_object_file, asm_args)
+        result = itertools.starmap(self._create_object_file, asm_args)
         for r in result:
             object_map.update(r)
 
@@ -288,6 +281,25 @@ class PatchMaker:
             entry_point_name,
             self._toolchain.segment_alignment,
         )
+
+    def _create_object_file(
+        self,
+        file: str,
+        header_dirs: List[str],
+        out_dir: str,
+        file_type: SourceFileType,
+    ) -> Mapping[str, AssembledObject]:
+        original_file = file
+        if file.endswith(".S"):
+            file = self._toolchain.preprocess(file, header_dirs, out_dir=out_dir)
+        if file_type is SourceFileType.C:
+            object_path = self._toolchain.compile(file, header_dirs, out_dir=out_dir)
+        elif file_type is SourceFileType.ASM:
+            object_path = self._toolchain.assemble(file, header_dirs, out_dir=out_dir)
+        else:
+            self.logger.error(f"Source file type '{file_type}' invalid, unable to prepare object.")
+        obj = self.prepare_object(object_path)
+        return {original_file: obj}
 
     def _resolve_symbols_within_BOM(
         self, object_map: Dict[str, AssembledObject], entry_point_name: Optional[str]
@@ -498,28 +510,3 @@ class PatchMaker:
             category=DeprecationWarning,
         )
         return await allocatable.allocate_bom(bom)
-
-
-# Helper function excluded from function coverage results since it runs in a process pool.
-def _create_object_file(  # pragma: no cover
-    file: str,
-    header_dirs: List[str],
-    out_dir: str,
-    toolchain: Toolchain,
-    prepare_object: Callable,
-    patchmaker: PatchMaker,
-    file_type: SourceFileType,
-) -> Mapping[str, AssembledObject]:
-    original_file = file
-    if file.endswith(".S"):
-        file = toolchain.preprocess(file, header_dirs, out_dir=out_dir)
-    if file_type is SourceFileType.C:
-        object_path = toolchain.compile(file, header_dirs, out_dir=out_dir)
-    elif file_type is SourceFileType.ASM:
-        object_path = toolchain.assemble(file, header_dirs, out_dir=out_dir)
-    else:
-        patchmaker.logger.error(
-            f"Source file type '{file_type}' invalid, unable to prepare object."
-        )
-    obj = prepare_object(patchmaker, object_path)
-    return {original_file: obj}
