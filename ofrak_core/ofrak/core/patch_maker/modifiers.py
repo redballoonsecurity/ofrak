@@ -23,16 +23,16 @@ from ofrak_type.memory_permissions import MemoryPermissions
 LOGGER = logging.getLogger(__file__)
 
 
-class SourceDirType(Dict[str, Union[str, "SourceDirType"]]):
+class SourceBundle(Dict[str, Union[str, "SourceBundle"]]):
     """
     Class used to store filesystem trees of source code as serializable in-memory trees, for
     transfer between components.
     """
 
     @classmethod
-    def slurp(cls, path: str) -> "SourceDirType":
+    def slurp(cls, path: str) -> "SourceBundle":
         """
-        Slurp up a path into a SourceDirType, recursively getting all files and directories and
+        Slurp up a path into a SourceBundle, recursively getting all files and directories and
         storing them as a tree in memory.
 
         :param path:
@@ -40,7 +40,7 @@ class SourceDirType(Dict[str, Union[str, "SourceDirType"]]):
         """
         root, dirs, files = next(os.walk(path, topdown=True))
 
-        pairs: List[Tuple[str, Union[str, SourceDirType]]] = []
+        pairs: List[Tuple[str, Union[str, SourceBundle]]] = []
         for file_name in files:
             file_path = os.path.join(root, file_name)
             with open(file_path) as f:
@@ -50,13 +50,13 @@ class SourceDirType(Dict[str, Union[str, "SourceDirType"]]):
 
         for dir_name in dirs:
             dir_path = os.path.join(root, dir_name)
-            pairs.append((dir_name, SourceDirType.slurp(dir_path)))
+            pairs.append((dir_name, SourceBundle.slurp(dir_path)))
 
         return cls(pairs)
 
     def dump(self, target_path: str):
         """
-        Dump a SourceDirType tree back into the local filesystem, at the given target path.
+        Dump a SourceBundle tree back into the local filesystem, at the given target path.
         :param target_path:
         :return:
         """
@@ -69,7 +69,7 @@ class SourceDirType(Dict[str, Union[str, "SourceDirType"]]):
                     f.write(item_contents)
             else:
                 # item is a directory
-                cast(SourceDirType, item_contents).dump(item_path)
+                cast(SourceBundle, item_contents).dump(item_path)
 
 
 @dataclass
@@ -86,11 +86,11 @@ class PatchFromSourceModifierConfig(ComponentConfig):
     :var header_directories: (Optional) paths to directories to search for header files in
     """
 
-    source_code: SourceDirType
+    source_code: SourceBundle
     source_patches: Dict[str, Tuple[Segment, ...]]
     toolchain_config: ToolchainConfig
     toolchain: Type[Toolchain]
-    header_directories: Tuple[SourceDirType, ...]
+    header_directories: Tuple[SourceBundle, ...]
     patch_name: Optional[str] = None
 
 
@@ -271,12 +271,12 @@ class FunctionReplacementModifierConfig(ComponentConfig):
     :var header_directories: (Optional) paths to directories to search for header files in
     """
 
-    source_code: SourceDirType
+    source_code: SourceBundle
     new_function_sources: Dict[str, str]
     toolchain_config: ToolchainConfig
     toolchain: Type[Toolchain]
     patch_name: Optional[str] = None
-    header_directories: Tuple[SourceDirType, ...] = ()
+    header_directories: Tuple[SourceBundle, ...] = ()
 
 
 class FunctionReplacementModifier(Modifier[FunctionReplacementModifierConfig]):
