@@ -2,27 +2,74 @@ import asyncio
 import logging
 import os
 import tempfile
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple, Type, Union, cast, Any
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple, Type, Union, cast
 
-from ofrak.core import ProgramAttributes
-from ofrak_patch_maker.toolchain.abstract import Toolchain
 from ofrak.component.modifier import Modifier
+from ofrak.core import ProgramAttributes
 from ofrak.core.complex_block import ComplexBlock
+from ofrak.core.injector import BinaryInjectorModifier, BinaryInjectorModifierConfig
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.core.program import Program
 from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort, ResourceSortDirection
-from ofrak.core.injector import BinaryInjectorModifier, BinaryInjectorModifierConfig
 from ofrak_patch_maker.model import PatchRegionConfig, FEM
 from ofrak_patch_maker.patch_maker import PatchMaker
+from ofrak_patch_maker.toolchain.abstract import Toolchain
 from ofrak_patch_maker.toolchain.model import Segment, ToolchainConfig
 from ofrak_type.memory_permissions import MemoryPermissions
 
 LOGGER = logging.getLogger(__file__)
 
-SourceDirType = Dict[str, Union[str, Any]]  # Recursive types not supported by this version of mypy
+
+class SourceDirType(Dict[str, Union[str, "SourceDirType"]]):
+    """
+    Class used to store filesystem trees of source code as serializable in-memory trees, for
+    transfer between components.
+    """
+
+    @classmethod
+    def slurp(cls, path: str) -> "SourceDirType":
+        """
+        Slurp up a path into a SourceDirType, recursively getting all files and directories and
+        storing them as a tree in memory.
+
+        :param path:
+        :return:
+        """
+        root, dirs, files = next(os.walk(path, topdown=True))
+
+        pairs: List[Tuple[str, Union[str, SourceDirType]]] = []
+        for file_name in files:
+            file_path = os.path.join(root, file_name)
+            with open(file_path) as f:
+                file_contents = f.read()
+
+            pairs.append((file_name, file_contents))
+
+        for dir_name in dirs:
+            dir_path = os.path.join(root, dir_name)
+            pairs.append((dir_name, SourceDirType.slurp(dir_path)))
+
+        return cls(pairs)
+
+    def dump(self, target_path: str):
+        """
+        Dump a SourceDirType tree back into the local filesystem, at the given target path.
+        :param target_path:
+        :return:
+        """
+        os.makedirs(target_path, exist_ok=True)
+        for item_name, item_contents in self.items():
+            item_path = os.path.join(target_path, item_name)
+            if type(item_contents) is str:
+                # item is a file
+                with open(item_path, "w") as f:
+                    f.write(item_contents)
+            else:
+                # item is a directory
+                cast(SourceDirType, item_contents).dump(item_path)
 
 
 @dataclass
@@ -39,68 +86,12 @@ class PatchFromSourceModifierConfig(ComponentConfig):
     :var header_directories: (Optional) paths to directories to search for header files in
     """
 
-    source_code_slurped: SourceDirType
+    source_code: SourceDirType
     source_patches: Dict[str, Tuple[Segment, ...]]
     toolchain_config: ToolchainConfig
     toolchain: Type[Toolchain]
-    header_directories_slurped: Tuple[SourceDirType, ...]
+    header_directories: Tuple[SourceDirType, ...]
     patch_name: Optional[str] = None
-
-    @classmethod
-    def from_directories(
-        cls,
-        source_code: str,
-        source_patches: Dict[str, Tuple[Segment, ...]],
-        toolchain_config: ToolchainConfig,
-        toolchain: Type[Toolchain],
-        patch_name: Optional[str] = None,
-        header_directories: Tuple[str, ...] = (),
-    ) -> "PatchFromSourceModifierConfig":
-        source_code_slurped = PatchFromSourceModifierConfig.slurp_source_directory(source_code)
-        header_directories_slurped = tuple(
-            PatchFromSourceModifierConfig.slurp_source_directory(header_dir)
-            for header_dir in header_directories
-        )
-        return PatchFromSourceModifierConfig(
-            source_code_slurped,
-            source_patches,
-            toolchain_config,
-            toolchain,
-            header_directories_slurped,
-            patch_name,
-        )
-
-    @staticmethod
-    def slurp_source_directory(path: str) -> SourceDirType:
-        res: SourceDirType = {}
-        root, dirs, files = next(os.walk(path, topdown=True))
-        for file_name in files:
-            file_path = os.path.join(root, file_name)
-            with open(file_path) as f:
-                file_contents = f.read()
-
-            res[file_name] = file_contents
-
-        for dir_name in dirs:
-            dir_path = os.path.join(root, dir_name)
-            res[dir_name] = PatchFromSourceModifierConfig.slurp_source_directory(dir_path)
-
-        return res
-
-    @staticmethod
-    def dump_source_directory(target_path: str, sources: SourceDirType):
-        os.makedirs(target_path, exist_ok=True)
-        for item_name, item_contents in sources.items():
-            item_path = os.path.join(target_path, item_name)
-            if type(item_contents) is str:
-                # item is a file
-                with open(item_path, "w") as f:
-                    f.write(item_contents)
-            else:
-                # item is a directory
-                PatchFromSourceModifierConfig.dump_source_directory(
-                    item_path, cast(SourceDirType, item_contents)
-                )
 
 
 class PatchFromSourceModifier(Modifier):
@@ -113,21 +104,19 @@ class PatchFromSourceModifier(Modifier):
     async def modify(self, resource: Resource, config: PatchFromSourceModifierConfig) -> None:
 
         if config.patch_name is None:
-            patch_name = f"{resource.get_id().hex()}_patch_{os.path.basename(config.source_code)}"
+            patch_name = f"{resource.get_id().hex()}_patch"
         else:
             patch_name = config.patch_name
 
         build_tmp_dir = tempfile.mkdtemp()
 
         source_tmp_dir = tempfile.mkdtemp()
-        PatchFromSourceModifierConfig.dump_source_directory(
-            source_tmp_dir, config.source_code_slurped
-        )
+        config.source_code.dump(source_tmp_dir)
 
         header_dirs = []
-        for header_directory in config.header_directories_slurped:
+        for header_directory in config.header_directories:
             header_tmp_dir = tempfile.mkdtemp()
-            PatchFromSourceModifierConfig.dump_source_directory(header_tmp_dir, header_directory)
+            header_directory.dump(header_tmp_dir)
             header_dirs.append(header_tmp_dir)
 
         absolute_source_list = [
@@ -282,25 +271,12 @@ class FunctionReplacementModifierConfig(ComponentConfig):
     :var header_directories: (Optional) paths to directories to search for header files in
     """
 
-    source_code: str
+    source_code: SourceDirType
     new_function_sources: Dict[str, str]
     toolchain_config: ToolchainConfig
     toolchain: Type[Toolchain]
     patch_name: Optional[str] = None
-    header_directories: Tuple[str, ...] = ()
-
-    # Populated by post init, slurping up source and header directories "client-side"
-    source_code_slurped: SourceDirType = field(init=False, repr=False)
-    header_directories_slurped: Tuple[SourceDirType, ...] = field(init=False, repr=False)
-
-    def __post_init__(self):
-        self.source_code_slurped = PatchFromSourceModifierConfig.slurp_source_directory(
-            self.source_code
-        )
-        self.header_directories_slurped = tuple(
-            PatchFromSourceModifierConfig.slurp_source_directory(header_dir)
-            for header_dir in self.header_directories
-        )
+    header_directories: Tuple[SourceDirType, ...] = ()
 
 
 class FunctionReplacementModifier(Modifier[FunctionReplacementModifierConfig]):
@@ -326,17 +302,13 @@ class FunctionReplacementModifier(Modifier[FunctionReplacementModifierConfig]):
             for func_name, complex_block in function_to_replace_cbs.items()
         }
         patch_from_source_config = PatchFromSourceModifierConfig(
-            "",
+            config.source_code,
             source_patches,
             config.toolchain_config,
             config.toolchain,
+            config.header_directories,
             config.patch_name,
-            (),
         )
-        patch_from_source_config.source_code = config.source_code
-        patch_from_source_config.source_code_slurped = config.source_code_slurped
-        patch_from_source_config.header_directories = config.header_directories
-        patch_from_source_config.header_directories_slurped = config.header_directories_slurped
         await resource.run(PatchFromSourceModifier, patch_from_source_config)
 
     @staticmethod

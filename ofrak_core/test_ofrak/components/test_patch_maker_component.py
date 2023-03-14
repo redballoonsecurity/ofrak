@@ -30,6 +30,7 @@ from ofrak.core.patch_maker.modifiers import (
     FunctionReplacementModifier,
     SegmentInjectorModifierConfig,
     SegmentInjectorModifier,
+    SourceDirType,
 )
 from ofrak_patch_maker.toolchain.model import (
     CompilerOptimizationLevel,
@@ -202,7 +203,7 @@ async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config
     await target_program.resource.save()
 
     function_replacement_config = FunctionReplacementModifierConfig(
-        PATCH_DIRECTORY,
+        SourceDirType.slurp(PATCH_DIRECTORY),
         {config.program.function_name: config.replacement_patch},
         ToolchainConfig(
             file_format=BinFileType.ELF,
