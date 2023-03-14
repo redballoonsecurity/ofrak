@@ -3,7 +3,7 @@ import tempfile
 
 from dataclasses import dataclass
 from immutabledict import immutabledict
-from typing import Dict
+from typing import Dict, List, Set
 
 from ofrak_patch_maker.toolchain.llvm_12 import LLVM_12_0_1_Toolchain
 from ofrak.core.architecture import ProgramAttributes
@@ -23,17 +23,88 @@ from ofrak_type.endianness import Endianness
 from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.symbol_type import LinkableSymbolType
 
-PARAMS = [
-    {"rel_symbol": {}, "expected_value": 0},
-    {"rel_symbol": {"foo": (0, LinkableSymbolType.UNDEF)}, "expected_value": 0},
-    {"rel_symbol": {"bar": (0, LinkableSymbolType.UNDEF)}, "expected_value": 1},
-]
+
+@dataclass
+class TestSymbols:
+    label: str
+    objects: List[Dict[str, List[str]]]
+    expected_unresolved_symbols: Set[str]
 
 
 @dataclass
 class TestCase:
-    assembled_object: AssembledObject
-    expected_value: int
+    object_map: Dict[str, AssembledObject]
+    expected_unresolved_symbols: Set[str]
+
+
+PARAMS = [
+    TestSymbols(
+        "Symbol defined in one AssembledObject but not referenced in another",
+        [{"symbols_defined": ["foo", "bar"]}, {"symbols_referenced": []}],
+        set(),
+    ),
+    TestSymbols(
+        "Undefined symbol referenced in an AssembledObject",
+        [{"symbols_defined": []}, {"symbols_referenced": ["undefined_in_bom"]}],
+        {"undefined_in_bom"},
+    ),
+    TestSymbols(
+        "Symbol defined in one AssembledObject and referenced in another",
+        [{"symbols_defined": ["defined_in_bom"]}, {"symbols_referenced": ["defined_in_bom"]}],
+        set(),
+    ),
+    TestSymbols("label", [{"symbols_defined": [], "symbols_referenced": []}], set()),
+    # symbol defined and used within a single AssembledObject
+    TestSymbols(
+        "Symbol defined and used within a single AssembledObject",
+        [
+            {"symbols_defined": ["defined_in_self"], "symbols_referenced": ["defined_in_self"]},
+        ],
+        set(),
+    ),
+    TestSymbols(
+        "Symbol defined but not referenced within a single AssembledObject",
+        [{"symbols_defined": ["defined_in_self"], "symbols_referenced": []}],
+        set(),
+    ),
+    TestSymbols(
+        "Symbol defined in one AssembledObject and multiple other AssembledObjects reference it",
+        [
+            {"symbols_defined": ["defined_in_bom"]},
+            {"symbols_referenced": ["defined_in_bom"]},
+            {"symbols_referenced": ["defined_in_bom"]},
+        ],
+        set(),
+    ),
+    TestSymbols(
+        "Symbol defined in multiple AssembledObjects and referenced in another",
+        [
+            {"symbols_defined": ["defined_twice_in_bom"]},
+            {"symbols_defined": ["defined_twice_in_bom"]},
+            {"symbols_referenced": ["defined_twice_in_bom"]},
+        ],
+        set(),
+    ),
+    TestSymbols(
+        "Symbol defined in one AssembledObject, referenced in another, and multiple not using or defining",
+        [
+            {"symbols_defined": ["defined_in_bom"]},
+            {"symbols_referenced": ["defined_in_bom"]},
+            {},
+            {},
+        ],
+        set(),
+    ),
+    # not defined, multiple references
+    TestSymbols(
+        "Symbol not defined, referenced in multiple AssembledObjects",
+        [
+            {"symbols_referenced": ["undefined_in_bom"]},
+            {"symbols_referenced": ["undefined_in_bom"]},
+        ],
+        {"undefined_in_bom"},
+    ),
+]
 
 
 @pytest.fixture
@@ -61,7 +132,6 @@ def patch_maker() -> PatchMaker:
     )
 
     toolchain = LLVM_12_0_1_Toolchain(proc, tc_config)
-
     patch_maker = PatchMaker(
         toolchain=toolchain,
         build_dir=tempfile.mkdtemp(),
@@ -70,79 +140,59 @@ def patch_maker() -> PatchMaker:
     return patch_maker
 
 
-@pytest.fixture
-def object_map() -> Dict[str, AssembledObject]:
-    object_map = {}
-    obj = AssembledObject(
-        path="/tmp/stub_bom_files/stub_foo.as.o",
-        file_format=BinFileType.ELF,
-        segment_map=immutabledict(
-            {
-                ".text": Segment(
-                    segment_name=".text",
-                    vm_address=0,
-                    offset=64,
-                    is_entry=False,
-                    length=0,
-                    access_perms=MemoryPermissions.RX,
-                ),
-                ".data": Segment(
-                    segment_name=".data",
-                    vm_address=0,
-                    offset=64,
-                    is_entry=False,
-                    length=0,
-                    access_perms=MemoryPermissions.RW,
-                ),
-            }
-        ),
-        symbols=immutabledict(
-            {
-                ".text": (0, LinkableSymbolType.UNDEF),
-                ".data": (0, LinkableSymbolType.UNDEF),
-                ".bss": (0, LinkableSymbolType.UNDEF),
-                "foo": (0, LinkableSymbolType.FUNC),
-            }
-        ),
-        rel_symbols=immutabledict({}),
-        bss_size_required=0,
-    )
-    object_map.update({"/tmp/stub_bom_files/stub_foo.as.o": obj})
-
-    return object_map
-
-
 @pytest.fixture(params=PARAMS)
 def symbol_test_case(request) -> TestCase:
-    return TestCase(
-        AssembledObject(
-            path=f"/tmp/patch_bom_files/patch.c.o",
-            file_format=BinFileType.ELF,
-            segment_map=immutabledict(
-                {
-                    ".text": Segment(
-                        segment_name=".text",
-                        vm_address=0,
-                        offset=64,
-                        is_entry=False,
-                        length=0,
-                        access_perms=MemoryPermissions.RX,
+    object_map = {}
+    for idx, obj in enumerate(request.param.objects):
+        defined_symbols = obj.get("symbols_defined", [])
+        referenced_symbols = obj.get("symbols_referenced", [])
+        object_map.update(
+            {
+                str(idx): AssembledObject(
+                    path=f"/tmp/patch_bom_files/patch_{str(idx)}.c.o",
+                    file_format=BinFileType.ELF,
+                    segment_map=immutabledict(
+                        {
+                            ".text": Segment(
+                                segment_name=".text",
+                                vm_address=0,
+                                offset=64,
+                                is_entry=False,
+                                length=0,
+                                access_perms=MemoryPermissions.RX,
+                            ),
+                        }
                     ),
-                }
-            ),
-            symbols=immutabledict(
-                {"patch.c": (0, LinkableSymbolType.UNDEF), "baz": (0, LinkableSymbolType.FUNC)}
-            ),
-            rel_symbols=immutabledict(request.param["rel_symbol"]),
-            bss_size_required=0,
-        ),
-        request.param["expected_value"],
+                    symbols=immutabledict(
+                        {
+                            symbol: (0, LinkableSymbolType.FUNC)
+                            for symbol in defined_symbols
+                            if symbol != []
+                        }
+                    ),
+                    rel_symbols=immutabledict(
+                        {
+                            symbol: (0, LinkableSymbolType.FUNC)
+                            for symbol in referenced_symbols
+                            if symbol != []
+                        }
+                    ),
+                    bss_size_required=0,
+                ),
+            }
+        )
+
+    return TestCase(
+        object_map=object_map, expected_unresolved_symbols=request.param.expected_unresolved_symbols
     )
 
 
-@pytest.mark.parametrize("symbol_test_case", PARAMS, indirect=["symbol_test_case"])
-def test_symbol_resolution(patch_maker, object_map, symbol_test_case):
-    object_map.update({"/tmp/patch_bom_files/patch.c.o": symbol_test_case.assembled_object})
-    bss_size_required, unresolved_sym_set = patch_maker._resolve_symbols_within_BOM(object_map)
+@pytest.mark.parametrize(
+    "symbol_test_case", PARAMS, indirect=["symbol_test_case"], ids=lambda tc: tc.label
+)
+def test_symbol_resolution(patch_maker, symbol_test_case):
+    bss_size_required, unresolved_sym_set = patch_maker._resolve_symbols_within_BOM(
+        symbol_test_case.object_map
+    )
 
-    assert len(unresolved_sym_set) == symbol_test_case.expected_value
+    assert unresolved_sym_set == symbol_test_case.expected_unresolved_symbols
