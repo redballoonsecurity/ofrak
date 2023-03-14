@@ -50,8 +50,7 @@ from ofrak.core import (
     LiefAddSegmentModifier,
     ElfProgramHeader,
 )
-from ofrak.core.patch_maker.modifiers import PatchFromSourceModifier, PatchFromSourceModifierConfig
-from ofrak.core.patch_maker.model import SourceBundle
+from ofrak.core.patch_maker.modifiers import PatchFromSourceModifier, PatchFromSourceModifierConfig, SourceBundle
 from ofrak_patch_maker.toolchain.model import (
     ToolchainConfig,
     BinFileType,
@@ -114,7 +113,7 @@ async def call_new_segment_instead(resource: Resource, new_segment: ElfProgramHe
 
 
 async def patch_uppercase(
-    resource: Resource, source_dir: str, new_segment: ElfProgramHeader, fs_resource: Resource
+    resource: Resource, source_dir: str, new_segment: ElfProgramHeader, source_dir: str
 ):
     # The PatchMaker will need to know how to configure the build toolchain.
     tc_config = ToolchainConfig(
@@ -148,7 +147,7 @@ async def patch_uppercase(
 
     # Tell PatcherFromSourceModifier about the source files, toolchain, and patch name.
     patch_from_source_config = PatchFromSourceModifierConfig(
-        fs_resource.get_id(), segment_dict, tc_config, LLVM_12_0_1_Toolchain, "HELLO_WORLD"
+        SourceBundle.slurp(source_dir)), segment_dict, tc_config, LLVM_12_0_1_Toolchain, "HELLO_WORLD"
     )
 
     # Run PatchFromSourceModifier, which will analyze the target binary, run PatchMaker on our
@@ -167,9 +166,8 @@ async def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: st
         )
 
     new_segment = await add_and_return_segment(root_resource, 0x108000, 0x2000)
-    source_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "src/example_7"))
-    fs_resource = await ofrak_context.create_root_resource(name="", data=b"", tags=(SourceBundle,))
-    await patch_uppercase(root_resource, source_dir, new_segment, fs_resource)
+    source_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "src", "example_7"))
+    await patch_uppercase(root_resource, source_dir, new_segment, source_dir)
     await call_new_segment_instead(root_resource, new_segment)
 
     await root_resource.pack()
