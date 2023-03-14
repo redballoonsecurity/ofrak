@@ -82,8 +82,8 @@ class PatchFromSourceModifierConfig(ComponentConfig):
     [Toolchain][ofrak_patch_maker.toolchain.abstract.Toolchain] to use
     :var toolchain: the type of which [Toolchain][ofrak_patch_maker.toolchain.abstract.Toolchain]
       to use to build patch
-    :var patch_name: Optional name of patch
     :var header_directories: (Optional) paths to directories to search for header files in
+    :var patch_name: Optional name of patch
     """
 
     source_code: SourceBundle
