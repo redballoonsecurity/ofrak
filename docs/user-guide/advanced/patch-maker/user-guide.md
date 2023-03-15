@@ -218,6 +218,7 @@ Compile the patch source using OFRAK PatchMaker, after defining the arch info, t
 re-link to the target-under-analysis.
 
 This is composed of a few steps in itself, which are:
+
 - Define the `ArchInfo` dataclass, which specifies the target CPU, ISA, etc.;
 - Define the `ToolchainConfig` dataclass, which specifies toolchain configuration parameters, such as optimization flags, reloc flags, etc.;
 - Initialize a `Toolchain` with the arch info and toolchain config;

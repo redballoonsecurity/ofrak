@@ -4,7 +4,10 @@ import tempfile
 from abc import ABC, abstractmethod
 from subprocess import CalledProcessError
 
-import xattr
+try:
+    import xattr
+except ImportError:
+    import ofrak.core.xattr_stub as xattr  # type: ignore[no-redef]
 
 from ofrak import OFRAKContext
 from ofrak.component.abstract import ComponentSubprocessError

@@ -1,8 +1,9 @@
+import asyncio
 import logging
-import subprocess
 import tempfile
 from dataclasses import dataclass
 from enum import Enum
+from subprocess import CalledProcessError
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.packer import Packer
@@ -87,14 +88,20 @@ class CpioUnpacker(Unpacker[None]):
         cpio_v = await resource.view_as(CpioFilesystem)
         resource_data = await cpio_v.resource.get_data()
         with tempfile.TemporaryDirectory() as temp_flush_dir:
-            command = ["cpio", "-id"]
-            subprocess.run(
-                command,
-                check=True,
-                capture_output=True,
+            cmd = [
+                "cpio",
+                "-id",
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
                 cwd=temp_flush_dir,
-                input=resource_data,
             )
+            await proc.communicate(input=resource_data)
+            if proc.returncode:
+                raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
             await cpio_v.initialize_from_disk(temp_flush_dir)
 
 
@@ -110,22 +117,37 @@ class CpioPacker(Packer[None]):
         cpio_v: CpioFilesystem = await resource.view_as(CpioFilesystem)
         temp_flush_dir = await cpio_v.flush_to_disk()
         cpio_format = cpio_v.archive_type.value
-        list_files_output = subprocess.run(
-            ["find", ".", "-print"],
-            check=True,
-            capture_output=True,
+        list_files_cmd = [
+            "find",
+            "-print",
+        ]
+        list_files_proc = await asyncio.create_subprocess_exec(
+            *list_files_cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
             cwd=temp_flush_dir,
         )
-        cpio_pack_output = subprocess.run(
-            ["cpio", "-o", f"--format={cpio_format}"],
-            check=True,
-            capture_output=True,
+        list_files_list, stderr = await list_files_proc.communicate()
+        if list_files_proc.returncode:
+            raise CalledProcessError(returncode=list_files_proc.returncode, cmd=list_files_cmd)
+
+        cpio_pack_cmd = [
+            "cpio",
+            "-o",
+            f"--format={cpio_format}",
+        ]
+        cpio_pack_proc = await asyncio.create_subprocess_exec(
+            *cpio_pack_cmd,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
             cwd=temp_flush_dir,
-            input=list_files_output.stdout,
         )
-        new_data = cpio_pack_output.stdout
+        cpio_pack_output, stderr = await cpio_pack_proc.communicate(input=list_files_list)
+        if cpio_pack_proc.returncode:
+            raise CalledProcessError(returncode=cpio_pack_proc.returncode, cmd=cpio_pack_cmd)
         # Passing in the original range effectively replaces the original data with the new data
-        resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
+        resource.queue_patch(Range(0, await resource.get_data_length()), cpio_pack_output)
 
 
 MagicMimeIdentifier.register(CpioFilesystem, "application/x-cpio")

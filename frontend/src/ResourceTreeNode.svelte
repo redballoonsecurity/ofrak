@@ -108,8 +108,7 @@
     selectPreviousSibling = () => {},
     collapsed = true,
     childrenCollapsed = true;
-  let caption,
-    firstChild,
+  let firstChild,
     childrenPromise,
     commentsPromise,
     self_id = rootResource.get_id(),
@@ -135,12 +134,11 @@
     collapsed = resourceNodeDataMap[self_id].collapsed;
   }
 
-  function updateCaption() {
-    rootResource.get_latest_model().then(() => {
-      caption = rootResource.get_caption();
-    });
+  function updateRootModel() {
+    rootResource.update();
+    rootResource = rootResource;
   }
-  $: updateCaption(childrenPromise);
+  $: updateRootModel(childrenPromise);
 
   $: childrenPromise?.then((children) => {
     if (children?.length > 0) {
@@ -220,7 +218,7 @@
   class:selected="{$selected === self_id}"
   id="{self_id}"
 >
-  {caption}
+  {rootResource.get_caption()}
 </button>
 {#await commentsPromise then comments}
   {#each comments as comment}

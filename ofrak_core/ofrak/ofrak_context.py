@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import tempfile
 import time
 from types import ModuleType
 from typing import Type, Any, Awaitable, Callable, List, Iterable, Optional
@@ -24,6 +25,7 @@ from ofrak.service.job_service_i import JobServiceInterface
 from ofrak.service.resource_service_i import ResourceServiceInterface
 
 LOGGER = logging.getLogger("ofrak")
+DEFAULT_OFRAK_LOG_FILE = os.path.join(tempfile.gettempdir(), "ofrak.log")
 
 
 class OFRAKContext:
@@ -120,7 +122,7 @@ class OFRAK:
         not use any components missing some dependencies
         """
         logging.basicConfig(level=logging_level, format="[%(filename)15s:%(lineno)5s] %(message)s")
-        logging.getLogger().addHandler(logging.FileHandler("/tmp/ofrak.log"))
+        logging.getLogger().addHandler(logging.FileHandler(DEFAULT_OFRAK_LOG_FILE))
         logging.getLogger().setLevel(logging_level)
         logging.captureWarnings(True)
         self.injector = DependencyInjector()
@@ -204,7 +206,11 @@ class OFRAK:
         components_missing_deps = []
         audited_components = []
         for component in all_discovered_components:
-            if all(dep.is_tool_installed() for dep in component.external_dependencies):
+            if all(
+                await asyncio.gather(
+                    *[dep.is_tool_installed() for dep in component.external_dependencies]
+                )
+            ):
                 audited_components.append(component)
             else:
                 components_missing_deps.append(component)

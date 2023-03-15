@@ -1,1 +1,2 @@
 include ofrak_patch_maker/toolchain.conf
+include requirements*.txt

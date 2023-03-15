@@ -1,8 +1,9 @@
+import asyncio
 import logging
 import os
-import subprocess
 import tempfile
 from dataclasses import dataclass
+from subprocess import CalledProcessError
 
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
@@ -42,8 +43,18 @@ class SevenZUnpacker(Unpacker[None]):
             temp_file.write(resource_data)
             temp_file.flush()
             with tempfile.TemporaryDirectory() as temp_flush_dir:
-                command = ["7zz", "x", f"-o{temp_flush_dir}", temp_file.name]
-                subprocess.run(command, check=True, capture_output=True)
+                cmd = [
+                    "7zz",
+                    "x",
+                    f"-o{temp_flush_dir}",
+                    temp_file.name,
+                ]
+                proc = await asyncio.create_subprocess_exec(
+                    *cmd,
+                )
+                returncode = await proc.wait()
+                if proc.returncode:
+                    raise CalledProcessError(returncode=returncode, cmd=cmd)
                 await seven_zip_v.initialize_from_disk(temp_flush_dir)
 
 
@@ -61,8 +72,18 @@ class SevenzPacker(Packer[None]):
         temp_flush_dir = os.path.join(temp_flush_dir, ".")
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_name = os.path.join(temp_dir, "temp.7z")
-            command = ["7zz", "a", temp_name, temp_flush_dir]
-            subprocess.run(command, check=True, capture_output=True)
+            cmd = [
+                "7zz",
+                "a",
+                temp_name,
+                temp_flush_dir,
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+            )
+            returncode = await proc.wait()
+            if proc.returncode:
+                raise CalledProcessError(returncode=returncode, cmd=cmd)
             with open(temp_name, "rb") as f:
                 new_data = f.read()
             # Passing in the original range effectively replaces the original data with the new data

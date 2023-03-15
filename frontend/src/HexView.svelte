@@ -87,11 +87,11 @@
     end = 64;
   $: if (scrollY !== undefined && $scrollY !== undefined) {
     start = Math.max(
-      Math.ceil((data.byteLength * $scrollY.top) / alignment) * alignment,
+      Math.floor((data.byteLength * $scrollY.top) / alignment) * alignment,
       0
     );
     end = Math.min(
-      start + Math.ceil($scrollY.viewHeightPixels / lineHeight) * alignment,
+      start + Math.floor($scrollY.viewHeightPixels / lineHeight) * alignment,
       data.byteLength
     );
     chunks = chunkList(new Uint8Array(data.slice(start, end)), alignment).map(

@@ -85,6 +85,7 @@
         currentResource.has_tag(tag)
       );
       $hexScrollY.top = 0;
+      document.title = "OFRAK App – " + currentResource.get_caption();
     }
     if ($selected !== window.location.hash.slice(1)) {
       window.history.pushState(null, "", `#${$selected}`);
@@ -232,5 +233,5 @@ Answer by running riddle.answer('your answer here') from the console.`);
 {/if}
 
 <div class="bottomright">
-  <p><a href="https://ofrak.com" target="_blank" rel="noreferrer">v2.2.0</a></p>
+  <p><a href="https://ofrak.com" target="_blank" rel="noreferrer">v2.2.1</a></p>
 </div>
