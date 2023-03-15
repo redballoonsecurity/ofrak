@@ -205,9 +205,9 @@ class AiohttpOFRAKServer:
         if name is None:
             return HTTPBadRequest(reason="Missing root resource `name` from request")
 
-        script_str = """
-        resource_data = await request.read()
-        root_resource = await self._ofrak_context.create_root_resource(name, resource_data, (File,))
+        script_str = r"""
+        \tresource_data = await request.read()
+        \troot_resource = await self._ofrak_context.create_root_resource(name, resource_data, (File,))
         """
         resource_data = await request.read()
         root_resource = await self._ofrak_context.create_root_resource(name, resource_data, (File,))
@@ -221,8 +221,8 @@ class AiohttpOFRAKServer:
 
     @exceptions_to_http(SerializedError)
     async def get_root_resources(self, request: Request) -> Response:
-        script_str = """
-        roots = await self._ofrak_context.resource_service.get_root_resources()
+        script_str = r"""
+        \troots = await self._ofrak_context.resource_service.get_root_resources()
         """
         roots = await self._ofrak_context.resource_service.get_root_resources()
 
@@ -243,8 +243,8 @@ class AiohttpOFRAKServer:
     async def get_resource(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         # TODO: add result of method that returns uniquely identified resource
-        script_str = """
-        resource = 
+        script_str = r"""
+        \tresource = 
         """
 
         script = self.script_builder.update_script(script_str)
@@ -260,8 +260,8 @@ class AiohttpOFRAKServer:
         _range = self._serializer.from_pjson(
             get_query_string_as_pjson(request).get("range"), Optional[Range]
         )
-        script_str = f"""
-        data = await resource.get_data({_range})
+        script_str = rf"""
+        \tdata = await resource.get_data({_range})
         """
         data = await resource.get_data(_range)
         return Response(body=data)
@@ -269,7 +269,7 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def get_child_data_ranges(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
-        script_str = """
+        script_str = r"""
         resource_service = self._ofrak_context.resource_factory._resource_service
         data_service = self._ofrak_context.resource_factory._data_service
         children = await resource_service.get_descendants_by_id(
@@ -401,8 +401,8 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def unpack(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
-        script_str = """
-        result = await resource.unpack()
+        script_str = r"""
+        \tresult = await resource.unpack()
         """
         result = await resource.unpack()
 

@@ -15,8 +15,8 @@ class ScriptBuilder:
         self.boilerplate_footer = r"""
         \n
         if __name__ == "__main__":
-            ofrak = OFRAK()
-            ofrak.run(main)
+            \tofrak = OFRAK()
+            \tofrak.run(main)
         """
 
     def add_action(self, script_action: str):
