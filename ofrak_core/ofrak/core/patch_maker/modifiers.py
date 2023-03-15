@@ -23,7 +23,7 @@ from ofrak_type.memory_permissions import MemoryPermissions
 LOGGER = logging.getLogger(__file__)
 
 
-class SourceBundle(Dict[str, Union[str, "SourceBundle"]]):
+class SourceBundle(Dict[str, Union[bytes, "SourceBundle"]]):
     """
     Class used to store filesystem trees of source code as serializable in-memory trees, for
     transfer between components.
@@ -40,10 +40,10 @@ class SourceBundle(Dict[str, Union[str, "SourceBundle"]]):
         """
         root, dirs, files = next(os.walk(path, topdown=True))
 
-        pairs: List[Tuple[str, Union[str, SourceBundle]]] = []
+        pairs: List[Tuple[str, Union[bytes, SourceBundle]]] = []
         for file_name in files:
             file_path = os.path.join(root, file_name)
-            with open(file_path) as f:
+            with open(file_path, "rb") as f:
                 file_contents = f.read()
 
             pairs.append((file_name, file_contents))
@@ -63,9 +63,9 @@ class SourceBundle(Dict[str, Union[str, "SourceBundle"]]):
         os.makedirs(target_path, exist_ok=True)
         for item_name, item_contents in self.items():
             item_path = os.path.join(target_path, item_name)
-            if type(item_contents) is str:
+            if type(item_contents) is bytes:
                 # item is a file
-                with open(item_path, "w") as f:
+                with open(item_path, "wb") as f:
                     f.write(item_contents)
             else:
                 # item is a directory
@@ -75,7 +75,7 @@ class SourceBundle(Dict[str, Union[str, "SourceBundle"]]):
 @dataclass
 class PatchFromSourceModifierConfig(ComponentConfig):
     """
-    :var source_code: Path to directory containing source code
+    :var source_code: Path to directory containing source code (ideally ONLY source code)
     :var source_patches: path of each source file to build and inject, with one or more segments
     defining where to inject one or more of the .text, .data, and .rodata from the build file
     :var toolchain_config: configuration for the
@@ -261,7 +261,7 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
 @dataclass
 class FunctionReplacementModifierConfig(ComponentConfig):
     """
-    :var source_code: Path to directory containing source code
+    :var source_code: Path to directory containing source code (ideally ONLY source code)
     :var new_function_sources: a mapping from function names (to replace) to source code file paths (to use as
     replacements). The paths are relative paths within the source code FilesystemRoot.
     :var toolchain_config: configuration for the
