@@ -13,7 +13,7 @@ class ActionType(IntEnum):
 @dataclass
 class ScriptAction:
     action_type: ActionType
-    acion: str
+    action: str
 
 
 class ScriptBuilder:
@@ -45,13 +45,13 @@ class ScriptBuilder:
         self.hashed_actions[self.actions_counter] = ScriptAction(action_type, action)
         self.actions_counter += 1
 
-    def delete_action(self, script_action: str) -> None:
+    def delete_action(self, action: str) -> None:
         """
-        :param script_action:
+        :param action:
         """
         # TODO: do we really need to delete an action from the script?
-        for key, value in self.hashed_actions.items():
-            if value == script_action:
+        for key, script_action in self.hashed_actions.items():
+            if script_action.action == action:
                 del self.hashed_actions[key]
 
     def get_script(self) -> str:
@@ -59,8 +59,8 @@ class ScriptBuilder:
         :return script:
         """
         script = [self.boilerplate_header]
-        for action_type, action in self.hashed_actions.values():
-            script.append(f"\t{action}")
+        for script_action in self.hashed_actions.values():
+            script.append(f"\t{script_action.action}")
         script.append(self.boilerplate_footer)
         "\n".join(script)
 
@@ -72,9 +72,9 @@ class ScriptBuilder:
         :return script:
         """
         script = [self.boilerplate_header]
-        for action_type, action in self.hashed_actions.values():
-            if action_type == target_type:
-                script.append(f"\t{action}")
+        for script_action in self.hashed_actions.values():
+            if script_action.action_type == target_type:
+                script.append(f"\t{script_action.action}")
         script.append(self.boilerplate_footer)
         "\n".join(script)
 

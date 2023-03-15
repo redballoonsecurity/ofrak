@@ -264,6 +264,11 @@ class AiohttpOFRAKServer:
         data = await resource.get_data({_range})
         """
         data = await resource.get_data(_range)
+
+        script = self.script_builder.update_script(script_str, ActionType.MOD)
+        # print(pjson_response)
+
+        # TODO: How send this back on a json?
         return Response(body=data)
 
     @exceptions_to_http(SerializedError)
