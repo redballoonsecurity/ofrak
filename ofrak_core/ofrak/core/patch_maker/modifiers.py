@@ -90,7 +90,7 @@ class PatchFromSourceModifierConfig(ComponentConfig):
     source_patches: Dict[str, Tuple[Segment, ...]]
     toolchain_config: ToolchainConfig
     toolchain: Type[Toolchain]
-    header_directories: Tuple[SourceBundle, ...]
+    header_directories: Tuple[SourceBundle, ...] = ()
     patch_name: Optional[str] = None
 
 
