@@ -5,8 +5,9 @@ import tempfile
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Type, Union, cast
 
+from ofrak_patch_maker.toolchain.abstract import Toolchain
 from ofrak.component.modifier import Modifier
-from ofrak.core import ProgramAttributes
+from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.core.injector import BinaryInjectorModifier, BinaryInjectorModifierConfig
 from ofrak.core.memory_region import MemoryRegion
@@ -14,6 +15,7 @@ from ofrak.core.program import Program
 from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort, ResourceSortDirection
+from ofrak.core.patch_maker.linkable_binary import LinkableBinary
 from ofrak_patch_maker.model import PatchRegionConfig, FEM
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.abstract import Toolchain
@@ -145,21 +147,32 @@ class PatchFromSourceModifier(Modifier):
         target_linkable_bom_info = await target_program.make_linkable_bom(
             patch_maker,
             build_tmp_dir,
+            patch_bom.unresolved_symbols,
         )
+
         # To support additional dynamic references in user space executables
         # Create and use a modifier that will:
         # 1. Extend .got, add new entry
         # 2. Extend .got.plt, add new stub code
         # 3. If the DSO is not already listed in the load list for executable it must be extended and added.
         # 4. Provide the additional .got and .got.plt symbols to make_fem now that we have the locations
-        # NOTE: These external functions will probably be UND*
+        # NOTE: These external functions will probably be *UND*
         p = PatchRegionConfig(patch_bom.name + "_patch", patch_bom_segment_mapping)
         exec_path = os.path.join(build_tmp_dir, "output_exec")
-        fem = patch_maker.make_fem([(patch_bom, p), target_linkable_bom_info], exec_path)
+        fem = patch_maker.make_fem(
+            [(patch_bom, p), target_linkable_bom_info],
+            exec_path,
+        )
 
         await resource.run(
             SegmentInjectorModifier,
             SegmentInjectorModifierConfig.from_fem(fem),
+        )
+
+        # Refresh LinkableBinary with the LinkableSymbols used in this patch
+        target_binary = await resource.view_as(LinkableBinary)
+        await target_binary.define_linkable_symbols_from_patch(
+            fem.executable.symbols, program_attributes
         )
 
 

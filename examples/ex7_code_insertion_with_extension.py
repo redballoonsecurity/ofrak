@@ -35,27 +35,26 @@ void uppercase_and_print(char *text)
 KITTEH! 🙀
 """
 import argparse
-import logging
 import os
-import tempfile
 
 from ofrak_patch_maker.toolchain.llvm_12 import LLVM_12_0_1_Toolchain
 
 import ofrak_ghidra
 from ofrak import OFRAK, OFRAKContext, Resource, ResourceFilter, ResourceAttributeValueFilter
 from ofrak.core import (
-    ProgramAttributes,
-    InstructionSet,
-    BinaryPatchConfig,
-    BinaryPatchModifier,
+    Allocatable,
+    CodeRegion,
     ComplexBlock,
     Instruction,
     LiefAddSegmentConfig,
     LiefAddSegmentModifier,
     ElfProgramHeader,
 )
-from ofrak_patch_maker.model import PatchRegionConfig
-from ofrak_patch_maker.patch_maker import PatchMaker
+from ofrak.core.patch_maker.modifiers import (
+    PatchFromSourceModifier,
+    PatchFromSourceModifierConfig,
+    SourceBundle,
+)
 from ofrak_patch_maker.toolchain.model import (
     ToolchainConfig,
     BinFileType,
@@ -63,8 +62,7 @@ from ofrak_patch_maker.toolchain.model import (
     Segment,
 )
 from ofrak_patch_maker.toolchain.utils import get_file_format
-from ofrak_type.bit_width import BitWidth
-from ofrak_type.endianness import Endianness
+from ofrak_type import Range
 from ofrak_type.memory_permissions import MemoryPermissions
 
 ASSETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
@@ -86,7 +84,17 @@ async def add_and_return_segment(elf_resource: Resource, vaddr: int, size: int) 
     file_segments = await elf_resource.get_descendants_as_view(
         ElfProgramHeader, r_filter=ResourceFilter(tags=(ElfProgramHeader,))
     )
-    return [seg for seg in file_segments if seg.p_vaddr == vaddr].pop()
+    segment = [seg for seg in file_segments if seg.p_vaddr == vaddr].pop()
+
+    # Carve out a child of the new segment where we can store the code for our new function.
+    code_region = CodeRegion(segment.p_vaddr + GHIDRA_PIE_OFFSET, segment.p_filesz)
+    code_region.resource = await elf_resource.create_child_from_view(
+        code_region, data_range=Range(segment.p_offset, segment.p_offset + segment.p_filesz)
+    )
+    elf_resource.add_tag(Allocatable)
+    await elf_resource.save()
+
+    return segment
 
 
 async def call_new_segment_instead(resource: Resource, new_segment: ElfProgramHeader):
@@ -109,21 +117,11 @@ async def call_new_segment_instead(resource: Resource, new_segment: ElfProgramHe
 
 
 async def patch_uppercase(resource: Resource, source_dir: str, new_segment: ElfProgramHeader):
-    # The PatchMaker will need to know a bit about the target architecture
-    # since it will compile our C patch.
-    proc = ProgramAttributes(
-        isa=InstructionSet.X86,
-        sub_isa=None,
-        bit_width=BitWidth.BIT_64,
-        endianness=Endianness.BIG_ENDIAN,
-        processor=None,
-    )
-
-    # ... And also more details about how to configure the build toolchain.
+    # The PatchMaker will need to know how to configure the build toolchain.
     tc_config = ToolchainConfig(
         file_format=BinFileType.ELF,
         force_inlines=True,
-        relocatable=False,
+        relocatable=True,
         no_std_lib=True,
         no_jump_tables=True,
         no_bss_section=True,
@@ -133,90 +131,36 @@ async def patch_uppercase(resource: Resource, source_dir: str, new_segment: ElfP
         check_overlap=False,
     )
 
-    # Get the complex block containing the code for `puts`
-    puts_cb = await resource.get_only_descendant_as_view(
-        v_type=ComplexBlock,
-        r_filter=ResourceFilter(
-            attribute_filters=(ResourceAttributeValueFilter(ComplexBlock.Symbol, "puts"),)
-        ),
-    )
-    # Initialize the PatchMaker. This is where we tell it that our `_puts` will
-    # need to be linked to the address of the existing `puts`.
-    logger = logging.getLogger("ToolchainTest")
-    logger.setLevel("INFO")
-    build_dir = tempfile.mkdtemp()
-    toolchain = LLVM_12_0_1_Toolchain(proc, tc_config)
-    patch_maker = PatchMaker(
-        toolchain=toolchain,
-        logger=logger,
-        build_dir=build_dir,
-        base_symbols={"_puts": puts_cb.virtual_address - GHIDRA_PIE_OFFSET},
-    )
-
-    # Make a Batch of Objects and Metadata (BOM)
-    # This basically corresponds to the step of building the object files, before linking,
-    # but this gives us more fine-grained control if we wish to.
-    uppercase_source: str = os.path.join(source_dir, "uppercase.c")
-    source_list = [uppercase_source]
-    bom = patch_maker.make_bom(
-        name="hello_world_patch",
-        source_list=source_list,
-        object_list=[],
-        header_dirs=[],
-    )
-
-    # Get the resulting object paths and re-map them to the segments we chose for each source file.
-    uppercase_object = bom.object_map[uppercase_source]
-
     # Tell the PatchMaker about the segment we added in the binary...
     text_segment_uppercase = Segment(
         segment_name=".text",
-        vm_address=new_segment.p_vaddr,
+        vm_address=new_segment.p_vaddr + GHIDRA_PIE_OFFSET,
         offset=0,
         is_entry=False,
         length=new_segment.p_filesz,
         access_perms=MemoryPermissions.RX,
     )
+
     # ... And that we want to put the compiled C patch there.
+    uppercase_source: str = os.path.join(source_dir, "uppercase.c")
     segment_dict = {
-        uppercase_object.path: (text_segment_uppercase,),
+        uppercase_source: (text_segment_uppercase,),
     }
 
-    # Generate a PatchRegionConfig incorporating the previous information
-    p = PatchRegionConfig(bom.name + "_patch", segment_dict)
+    # Tell PatcherFromSourceModifier about the source files, toolchain, and patch name.
+    patch_from_source_config = PatchFromSourceModifierConfig(
+        SourceBundle.slurp(source_dir),
+        segment_dict,
+        tc_config,
+        LLVM_12_0_1_Toolchain,
+        patch_name="HELLO_WORLD",
+    )
 
-    # Tell the PatchMaker where to write the final executable
-    exec_path = os.path.join(build_dir, "hello_world_path_exec")
-
-    # Make the Final Executable and Metadata (FEM)
-    fem = patch_maker.make_fem([(bom, p)], exec_path)
-
-    assert os.path.exists(exec_path)
-    assert get_file_format(exec_path) == tc_config.file_format
-
-    # At this point, the PatchMaker has produced an executable containing our new segment.
-    # Let's read it, find the binary data of the segment, and finally patch that binary
-    # data into our resource.
-    with open(fem.executable.path, "rb") as f:
-        exe_data = f.read()
-
-    # Retrieve the binary data of our new segment
-    segment_data = b""
-    for segment in fem.executable.segments:
-        if segment.length == 0 or segment.vm_address == 0:
-            continue
-        if segment.length > 0:
-            logger.info(
-                f"    Segment {segment.segment_name} - {segment.length} "
-                f"bytes @ {hex(segment.vm_address)}"
-            )
-        segment_data = exe_data[segment.offset : segment.offset + segment.length]
-        break
-    assert len(segment_data) != 0
-
-    # Patch the compiled code in the new_segment
-    patch_config = BinaryPatchConfig(new_segment.p_offset, segment_data)
-    await resource.run(BinaryPatchModifier, patch_config)
+    # Run PatchFromSourceModifier, which will analyze the target binary, run PatchMaker on our
+    # patch, create a Batch of Objects and Metadata (BOM) for the patch, create a BOM from the
+    # target binary for all unresolved symbols in the patch, make a Final Executable and Metadata
+    # (FEM), and then inject our patch into the binary.
+    await resource.run(PatchFromSourceModifier, patch_from_source_config)
 
 
 async def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: str):
@@ -228,12 +172,16 @@ async def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: st
         )
 
     new_segment = await add_and_return_segment(root_resource, 0x108000, 0x2000)
-    source_dir = os.path.join(os.path.dirname(__file__), "src/example_7")
+    source_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "src", "example_7"))
     await patch_uppercase(root_resource, source_dir, new_segment)
     await call_new_segment_instead(root_resource, new_segment)
 
     await root_resource.pack()
     await root_resource.flush_to_disk(output_file_name)
+
+    assert os.path.exists(output_file_name)
+    assert get_file_format(output_file_name) == BinFileType.ELF
+
     print(f"Done! Output file written to {output_file_name}")
 
 

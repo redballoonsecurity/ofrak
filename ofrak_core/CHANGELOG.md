@@ -32,6 +32,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Support more OpenWRT TRX files by making fewer assumptions about the partitions ([#216](https://github.com/redballoonsecurity/ofrak/pull/216))
 - Fix some OS-specific problems (libmagic install, log file path) preventing OFRAK install on Windows ([#239](https://github.com/redballoonsecurity/ofrak/pull/239))
 
+### Added
+- Add Identifier to tag `ComplexBlocks` as `LinkableSymbols` and Analyzer to copy attributes from a `ComplexBlock` to its `LinkableSymbol`.
+- Add method to create new `LinkableSymbols` from symbols defined in a patch file.
+- Limit stub file creation for linkable BOMs to only those required by a patch.
+
 ## [2.2.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.1.1...ofrak-v2.2.0) - 2023-02-01
 ### Fixed
 - Fix bug in data service that can cause mangled internal state [#197](https://github.com/redballoonsecurity/ofrak/pull/197)
