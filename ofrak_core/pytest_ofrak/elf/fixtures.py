@@ -100,7 +100,11 @@ def elf_test_directory(tmpdir):
     makefile_path = os.path.join(tmpdir, "Makefile")
     c_source_path = os.path.join(tmpdir, "program.c")
     large_source_path = os.path.join(tmpdir, "large_elf.c")
-    patch_path = os.path.join(tmpdir, "patch.c")
+
+    patch_dir = os.path.join(tmpdir, "source_dir")
+    if not os.path.exists(patch_dir):
+        os.mkdir(patch_dir)
+    patch_path = os.path.join(patch_dir, "patch.c")
 
     noops = create_noops()
 
@@ -158,4 +162,4 @@ def large_elf_file(elf_test_directory):
 
 @pytest.fixture
 def patch_file(elf_test_directory):
-    return os.path.join(elf_test_directory, "patch.c")
+    return os.path.join(elf_test_directory, "source_dir", "patch.c")

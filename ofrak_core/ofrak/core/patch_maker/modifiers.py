@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Type, Union, cast
 
 from ofrak_patch_maker.toolchain.abstract import Toolchain
+from ofrak.component.modifier import Modifier
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.core.injector import BinaryInjectorModifier, BinaryInjectorModifierConfig

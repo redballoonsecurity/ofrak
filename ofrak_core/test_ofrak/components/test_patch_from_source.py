@@ -16,8 +16,11 @@ from ofrak.core import (
     LiefAddSegmentModifier,
     ElfProgramHeader,
 )
-from ofrak.core.patch_maker.modifiers import PatchFromSourceModifier, PatchFromSourceModifierConfig
-from ofrak.core.patch_maker.model import SourceBundle
+from ofrak.core.patch_maker.modifiers import (
+    PatchFromSourceModifier,
+    PatchFromSourceModifierConfig,
+    SourceBundle,
+)
 from ofrak_patch_maker.toolchain.model import (
     ToolchainConfig,
     BinFileType,
@@ -85,9 +88,7 @@ async def test_patch_from_source_modifier(
 
         await call_instruction.modify_assembly("call", f"0x{new_segment.p_vaddr:x}")
 
-    async def apply_patch(
-        resource: Resource, source_dir: str, new_segment: ElfProgramHeader, fs_resource: Resource
-    ):
+    async def apply_patch(resource: Resource, source_dir: str, new_segment: ElfProgramHeader):
         # The PatchMaker will need to know how to configure the build toolchain.
         tc_config = ToolchainConfig(
             file_format=BinFileType.ELF,
@@ -120,7 +121,11 @@ async def test_patch_from_source_modifier(
 
         # Tell PatcherFromSourceModifier about the source files, toolchain, and patch name.
         patch_from_source_config = PatchFromSourceModifierConfig(
-            fs_resource.get_id(), segment_dict, tc_config, LLVM_12_0_1_Toolchain, "test_patch"
+            SourceBundle.slurp(source_dir),
+            segment_dict,
+            tc_config,
+            LLVM_12_0_1_Toolchain,
+            patch_name="test_patch",
         )
 
         # Run PatchFromSourceModifier, which will analyze the target binary, run PatchMaker on our
@@ -135,9 +140,8 @@ async def test_patch_from_source_modifier(
     output_file_name = os.path.join(os.path.dirname(patch_file), "test_patch")
 
     source_dir = os.path.join(os.path.dirname(patch_file))
-    fs_resource = await ofrak_context.create_root_resource(name="", data=b"", tags=(SourceBundle,))
 
-    await apply_patch(resource, source_dir, new_segment, fs_resource)
+    await apply_patch(resource, source_dir, new_segment)
     await call_new_segment_instead(resource, new_segment)
 
     await resource.pack()
