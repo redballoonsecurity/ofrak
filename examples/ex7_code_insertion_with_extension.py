@@ -153,7 +153,7 @@ async def patch_uppercase(resource: Resource, source_dir: str, new_segment: ElfP
         segment_dict,
         tc_config,
         LLVM_12_0_1_Toolchain,
-        "HELLO_WORLD",
+        patch_name="HELLO_WORLD",
     )
 
     # Run PatchFromSourceModifier, which will analyze the target binary, run PatchMaker on our
