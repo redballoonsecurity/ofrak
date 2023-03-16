@@ -1,4 +1,5 @@
 import asyncio
+from dataclasses import dataclass
 import functools
 import logging
 import json
@@ -8,6 +9,7 @@ import webbrowser
 from collections import defaultdict
 from typing import (
     Iterable,
+    List,
     Optional,
     Dict,
     cast,
@@ -20,8 +22,8 @@ from typing import (
     Any,
 )
 
-import orjson
-
+import json
+import aiohttp_cors
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPBadRequest
 from aiohttp.web_request import Request
@@ -29,6 +31,8 @@ from aiohttp.web_response import Response
 from aiohttp.web_fileresponse import FileResponse
 
 from ofrak.ofrak_context import get_current_ofrak_context
+from ofrak.core.filesystem import FilesystemEntry
+from ofrak.model.resource_model import Data
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 
@@ -75,6 +79,83 @@ from ofrak.core.entropy import DataSummaryAnalyzer
 T = TypeVar("T")
 LOGGER = logging.getLogger(__name__)
 
+class SelectableAttributesError(Exception):
+    pass
+
+class ScriptBuilder:
+    def __init__(self):
+        self.var_names: Dict[bytes, str] = {}
+        self.lines: List[str] = []
+        self.selectable_attributes = [
+            Data.Offset,
+            FilesystemEntry.Name
+        ]
+        
+        
+    async def _get_selector(self, resource: Resource) -> str:
+        for ancestor in await resource.get_ancestors():
+            if ancestor.get_id() in self.var_names:
+                break
+        attribute, attribute_value = await self._get_selectable_attribute(resource)
+        # result = await ancestor.get_descendants(
+        #     r_filter=ResourceFilter(
+        #         tags=resource.get_most_specific_tags(),
+        #         attribute_filters=[
+        #             ResourceAttributeValueFilter(
+        #                 attribute=attribute, 
+        #                 value=attribute_value
+        #                 )
+        #         ]   
+        #     )
+        # )
+        # if len(list(result)) != 1:
+        #     raise ValueError("The Resource does not have a selectable attribute")
+        
+        return f"""
+        await {self.var_names[ancestor.get_id()]}.get_descendants(
+            r_filter=ResourceFilter(
+                tags=f{resource.get_most_specific_tags()},
+                attribute_filters=[
+                    ResourceAttributeValueFilter(
+                        attribute={attribute.__name__}, 
+                        value={attribute_value}
+                        )
+                ]   
+            )
+        )
+        """
+    
+    async def _get_selectable_attribute(self, resource:Resource) -> Tuple[ResourceAttributes, any]:
+        for attribute in self.selectable_attributes:
+            try:
+                await resource.analyze(attribute)
+                attribute_value = resource.get_attributes(attribute)
+            except:
+                continue
+            return attribute, attribute_value
+        return FilesystemEntry.Name, "BADDD"
+        # raise SelectableAttributesError(f"Resource with ID {resource.get_id()} does not have a selectable attribute.")
+    
+    async def _generate_name(self, resource: Resource) -> str:
+        # Find the most specific tag and use that with a number
+        most_specific_tag = list(resource.get_most_specific_tags())[0].__name__.lower()
+        _, selectable_attribute_value = await self._get_selectable_attribute(resource)
+        name = f"{most_specific_tag}_{selectable_attribute_value}"
+        return name
+    
+    async def get_name(self, resource: Resource) -> bytes:
+        if resource.get_id() in self.var_names:
+            return self.var_names[resource.get_id()]
+        if len(list(await resource.get_ancestors())) == 0:
+            self.var_names[resource.get_id()] = "root_resource"
+            self.lines.append("root_resource = await context.create_root_resource_from_file()")
+            return "root_resource"
+        selector = await self._get_selector(resource) # Selector based on resource from nearest named parent
+        name = await self._generate_name(resource) # Some process for generating name from attributes
+        self.lines.append(f"{name} = {selector}")
+        self.var_names[resource.get_id()] = name
+        return name
+
 
 def exceptions_to_http(error_class: Type[SerializedError]):
     """
@@ -92,6 +173,7 @@ def exceptions_to_http(error_class: Type[SerializedError]):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             try:
+                print(f"{func.__name__}: Request == {args[1]}")
                 return await func(*args, **kwargs)
             except Exception as error:
                 LOGGER.exception("Exception raised in aiohttp endpoint")
@@ -120,6 +202,7 @@ class AiohttpOFRAKServer:
         self.resource_context: ResourceContext = ClientResourceContext()
         self.resource_view_context: ResourceViewContext = ResourceViewContext()
         self.component_context: ComponentContext = ClientComponentContext()
+        self.script_builder = ScriptBuilder()
 
         self._app.add_routes(
             [
@@ -166,7 +249,28 @@ class AiohttpOFRAKServer:
         self._job_ids: Dict[str, bytes] = defaultdict(
             lambda: ofrak_context.id_service.generate_id()
         )
+        try:
+            import aiohttp_cors
 
+            # From: https://github.com/aio-libs/aiohttp-cors
+            # Configure default CORS settings.
+            cors = aiohttp_cors.setup(
+                self._app,
+                defaults={
+                    "*": aiohttp_cors.ResourceOptions(
+                        allow_credentials=True,
+                        expose_headers="*",
+                        allow_headers="*",
+                    )
+                },
+            )
+
+            # Configure CORS on all routes.
+            for route in list(self._app.router.routes()):
+                cors.add(route)
+        except ImportError:
+            pass
+        
     async def start(self):  # pragma: no cover
         """
         Start the server then return.
@@ -203,6 +307,7 @@ class AiohttpOFRAKServer:
             return HTTPBadRequest(reason="Missing root resource `name` from request")
         resource_data = await request.read()
         root_resource = await self._ofrak_context.create_root_resource(name, resource_data, (File,))
+        await self.script_builder.get_name(root_resource)
         if request.remote is not None:
             self._job_ids[request.remote] = root_resource.get_job_id()
         return json_response(self._serialize_resource(root_resource))
@@ -497,6 +602,8 @@ class AiohttpOFRAKServer:
             self.resource_view_context,
             self.component_context,
         )
+        await self.script_builder.get_name(resource)
+        print(self.script_builder.lines)
         return resource
 
     async def _get_resource_model_by_id(
@@ -640,7 +747,7 @@ def json_response(
     reason: Optional[str] = None,
     headers=None,
     content_type: str = "application/json",
-    dumps=orjson.dumps,
+    dumps=json.dumps,
 ) -> Response:
     if data is not None:
         if text or body:
