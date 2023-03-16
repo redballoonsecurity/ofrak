@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from dataclasses import dataclass
 from enum import IntEnum
+from typing import Optional
 
 
 class ActionType(IntEnum):
@@ -40,8 +41,8 @@ class ScriptBuilder:
         :param action_type:
         """
         # TODO: is this the best data structure and key to use?
-        # TODO: actions are duplicated if page is refreshed.
-        # TODO: script persists across resources, not desired.
+        # TODO: actions are duplicated if page is refreshed, is this reasonable?
+        # TODO: script persists across files, not desired. how fix?
         self.hashed_actions[self.actions_counter] = ScriptAction(action_type, action)
         self.actions_counter += 1
 
@@ -58,9 +59,13 @@ class ScriptBuilder:
         """
         :return script:
         """
+        return self._get_script()
+
+    def _get_script(self, target_type: Optional[ActionType] = None) -> str:
         script = [self.boilerplate_header]
         for script_action in self.hashed_actions.values():
-            script.append(f"\t{script_action.action}")
+            if target_type is None or target_type == script_action.action_type:
+                script.append(f"\t{script_action.action}")
         script.append(self.boilerplate_footer)
         "\n".join(script)
 
@@ -71,14 +76,7 @@ class ScriptBuilder:
         :param target_type:
         :return script:
         """
-        script = [self.boilerplate_header]
-        for script_action in self.hashed_actions.values():
-            if script_action.action_type == target_type:
-                script.append(f"\t{script_action.action}")
-        script.append(self.boilerplate_footer)
-        "\n".join(script)
-
-        return script
+        return self._get_script(target_type)
 
     def update_script(self, action: str, action_type: ActionType) -> str:
         """
