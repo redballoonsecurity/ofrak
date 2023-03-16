@@ -156,6 +156,7 @@ class AiohttpOFRAKServer:
                 web.post("/{resource_id}/search_for_vaddr", self.search_for_vaddr),
                 web.post("/{resource_id}/add_tag", self.add_tag),
                 web.get("/get_all_tags", self.get_all_tags),
+                web.get("/{resource_id}/get_script", self.get_script),
                 web.get("/", self.get_static_files),
                 web.static(
                     "/",
@@ -737,6 +738,10 @@ class AiohttpOFRAKServer:
         return json_response(
             self._serializer.to_pjson(self._ofrak_context.get_all_tags(), Set[ResourceTag])
         )
+
+    @exceptions_to_http(SerializedError)
+    async def get_script(self, request: Request) -> Response:
+        return json_response(self.script_builder.get_script())
 
     @exceptions_to_http(SerializedError)
     async def get_static_files(self, request: Request) -> FileResponse:
