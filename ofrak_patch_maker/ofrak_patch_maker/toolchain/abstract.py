@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from os.path import join, split
 from typing import Dict, Iterable, List, Optional, Tuple, Mapping
 
-from ofrak_type import ArchInfo
+from ofrak_type import ArchInfo, Endianness
 from ofrak_patch_maker.binary_parser.abstract import AbstractBinaryFileParser
 from ofrak_patch_maker.toolchain.model import Segment, ToolchainConfig
 from ofrak_patch_maker.toolchain.utils import get_repository_config
@@ -96,6 +96,16 @@ class Toolchain(ABC):
 
         self._assembler_target = self._get_assembler_target(processor)
         self._compiler_target = self._get_compiler_target(processor)
+        self._cross_compile_headers = self._get_cross_compile_headers(processor)
+
+        if self._cross_compile_headers:
+            self._compiler_flags.append(f"-I{self._cross_compile_headers}")
+        else:
+            self._logger.warning(
+                f"Could not automatically determine cross-compile headers from architecture "
+                f"{processor.isa.name}. It may be necessary to supply these manually for "
+                f"successful compilation."
+            )
 
     @property
     @abstractmethod
@@ -119,6 +129,97 @@ class Toolchain(ABC):
             in `self._config`.
         """
         raise NotImplementedError()
+
+    def _get_linux_header_path(self, processor: ArchInfo) -> Optional[str]:
+        x = {
+            (InstructionSet.ARM,): "arm-linux-gnueabihf"
+            if self._config.hard_float
+            else "arm-linux-gnueabi",
+            (InstructionSet.AARCH64,): "aarch64-linux-gnu",
+            (InstructionSet.X86, BitWidth.BIT_32): "i686-linux-gnu",
+            (InstructionSet.X86, BitWidth.BIT_64): "x86_64-linux-gnu",
+            (InstructionSet.MIPS, BitWidth.BIT_32): "mips-linux-gnu",
+            (
+                InstructionSet.MIPS,
+                BitWidth.BIT_64,
+                Endianness.LITTLE_ENDIAN,
+            ): "mips64el-linux-gnuabi64",
+            (InstructionSet.MIPS, BitWidth.BIT_64, Endianness.BIG_ENDIAN): "mips64-linux-gnuabi64",
+            (InstructionSet.PPC, BitWidth.BIT_32): "powerpc-linux-gnu",
+            (
+                InstructionSet.PPC,
+                BitWidth.BIT_64,
+                Endianness.LITTLE_ENDIAN,
+            ): "powerpc64le-linux-gnuabi64",
+            (
+                InstructionSet.PPC,
+                BitWidth.BIT_64,
+                Endianness.BIG_ENDIAN,
+            ): "powerpc64-linux-gnuabi64",
+            (InstructionSet.M68K,): "m68k-linux-gnu",
+        }
+
+        fields = [
+            processor.isa,
+            processor.bit_width,
+            processor.endianness,
+            processor.sub_isa,
+            processor.processor,
+        ]
+        while fields:
+            header_prefix = x.get(tuple(fields))
+            if header_prefix is not None:
+                return f"/usr/{header_prefix}/include"
+        return None
+
+        # Cross-compiling headers for things like linux/can.h, asm/types.h, etc.
+        if processor.isa is InstructionSet.ARM:
+            if self._config.hard_float:
+                header_prefix = "arm-linux-gnueabihf"
+            else:
+                header_prefix = "arm-linux-gnueabi"
+        elif processor.isa is InstructionSet.AARCH64:
+            header_prefix = "aarch64-linux-gnu"
+        elif processor.isa is InstructionSet.X86:
+            # TODO: There is apparently a "new" sort-of-32-bit x86 architecture which should
+            #  probably use x86_64-linux-gnux32. See the following link for more info:
+            #  https://stackoverflow.com/questions/36347063/difference-between-i386x64-32-vs-i386-vs-i386x86-64
+            if processor.bit_width is BitWidth.BIT_32:
+                header_prefix = "i686-linux-gnu"
+            elif processor.bit_width is BitWidth.BIT_64:
+                header_prefix = "x86_64-linux-gnu"
+            else:
+                return None
+        elif processor.isa is InstructionSet.MIPS:
+            if processor.bit_width is BitWidth.BIT_32:
+                header_prefix = "mips-linux-gnu"
+            elif processor.bit_width is BitWidth.BIT_64:
+                if processor.endianness is Endianness.LITTLE_ENDIAN:
+                    header_prefix = "mips64el-linux-gnuabi64"
+                else:
+                    header_prefix = "mips64-linux-gnuabi64"
+            else:
+                return None
+        elif processor.isa is InstructionSet.MSP430:
+            return None
+        elif processor.isa is InstructionSet.PPC:
+            if processor.bit_width is BitWidth.BIT_32:
+                header_prefix = "powerpc-linux-gnu"
+            elif processor.bit_width is BitWidth.BIT_64:
+                if processor.endianness is Endianness.LITTLE_ENDIAN:
+                    header_prefix = "powerpc64le-linux-gnu"
+                else:
+                    header_prefix = "powerpc64-linux-gnu"
+            else:
+                return None
+        elif processor.isa is InstructionSet.M68K:
+            header_prefix = "m68k-linux-gnu"
+        elif processor.isa is InstructionSet.AVR:
+            return None
+        else:
+            return None
+
+        return f"/usr/{header_prefix}/include"
 
     @abstractmethod
     def _get_compiler_target(self, processor: ArchInfo) -> Optional[str]:
