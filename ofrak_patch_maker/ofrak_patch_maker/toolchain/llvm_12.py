@@ -54,9 +54,9 @@ class LLVM_12_0_1_Toolchain(Toolchain):
         )
 
         if self._config.separate_data_sections:
-            self._compiler_flags.extend(["-Xclang", "-fdata-sections"])
+            self._compiler_flags.append("-fdata-sections")
         if self._config.compiler_cpu:
-            self._compiler_flags.append(f"-mcpu={self._config.compiler_cpu}")
+            self._logger.warning("compiler_cpu set, but has no meaning for LLVM toolchain")
 
         llvm12_compiler_optimization_map = {
             CompilerOptimizationLevel.NONE: "-O0",
@@ -69,29 +69,26 @@ class LLVM_12_0_1_Toolchain(Toolchain):
         )
 
         if not self.is_userspace():
-            self._compiler_flags.extend(["-Xclang", "-ffreestanding"])
+            self._compiler_flags.append("-ffreestanding")
 
         if self._config.force_inlines:
-            self._compiler_flags.extend(["-Xclang", "-finline-hint-functions"])
+            self._compiler_flags.append("-finline-hint-functions")
 
         if self._config.relocatable:
-            self._compiler_flags.extend(
-                ["-Xclang", "-fno-direct-access-external-data", "-Xclang", "-pic-is-pie"]
-            )
+            self._compiler_flags.extend(["-fno-direct-access-external-data", "-fPIE"])
             self._linker_flags.append("--pie")
         else:
             self._linker_flags.append("--no-pie")
 
         if self._config.no_bss_section:
-            self._compiler_flags.extend(["-Xclang", "-fno-zero-initialized-in-bss"])
+            self._compiler_flags.append("-fno-zero-initialized-in-bss")
 
         if self._config.no_jump_tables:
-            self._compiler_flags.extend(["-Xclang", "-fno-jump-tables"])
+            self._compiler_flags.append("-fno-jump-tables")
 
         if self._config.debug_info:
             self._compiler_flags.extend(
                 [
-                    "-Xclang",
                     "-fno-split-dwarf-inlining",
                     "-Xclang",
                     "-debug-info-kind=limited",
