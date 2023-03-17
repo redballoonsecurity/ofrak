@@ -94,6 +94,7 @@ class LLVM_ELF_Parser(Abstract_LLVM_Readobj_Parser):
     _re_name_prog = re.compile(r"(?<=Name: )(\S+)")
     _re_value_prog = re.compile(r"(?<=Value: 0x)(\S+)")
     _re_sym_section_prog = re.compile(r"(?<=Section: )(\S+)")
+    _re_sym_binding_prog = re.compile(r"(?<=Binding: )(\S+)")
     _re_sym_type_prog = re.compile(r"(?<=Type: )(\S+)")
 
     def parse_sections(self, output: str) -> Tuple[Segment, ...]:
@@ -110,8 +111,8 @@ class LLVM_ELF_Parser(Abstract_LLVM_Readobj_Parser):
     def parse_symbols(self, readobj_out: str) -> Dict[str, Tuple[int, LinkableSymbolType]]:
         result = {}
         symbols = self._get_all_symbols(readobj_out)
-        for sym_name, sym_vaddr, sym_section, sym_type in symbols:
-            if sym_section != "Undefined":
+        for sym_name, sym_vaddr, sym_section, sym_type, sym_bind in symbols:
+            if sym_section != "Undefined" and sym_bind != "Weak":
                 if sym_type == "Function":
                     result[sym_name] = (sym_vaddr, LinkableSymbolType.FUNC)
                 else:
@@ -122,12 +123,12 @@ class LLVM_ELF_Parser(Abstract_LLVM_Readobj_Parser):
     def parse_relocations(self, readobj_out: str) -> Dict[str, Tuple[int, LinkableSymbolType]]:
         result = {}
         symbols = self._get_all_symbols(readobj_out)
-        for sym_name, sym_vaddr, sym_section, sym_type in symbols:
-            if sym_section == "Undefined":
+        for sym_name, sym_vaddr, sym_section, sym_type, sym_bind in symbols:
+            if sym_section == "Undefined" or sym_bind == "Weak":
                 result[sym_name] = (sym_vaddr, LinkableSymbolType.UNDEF)
         return result
 
-    def _get_all_symbols(self, readobj_out: str) -> List[Tuple[str, int, str, str]]:
+    def _get_all_symbols(self, readobj_out: str) -> List[Tuple[str, int, str, str, str]]:
         result = []
         symbol_data = [x[0] for x in self._re_symbol_prog.findall(readobj_out)]
         for s in symbol_data:
@@ -135,6 +136,7 @@ class LLVM_ELF_Parser(Abstract_LLVM_Readobj_Parser):
             addr_value = self._re_value_prog.search(s)
             symbol_section = self._re_sym_section_prog.search(s)
             symbol_type = self._re_sym_type_prog.search(s)
+            symbol_binding = self._re_sym_binding_prog.search(s)
             if name and addr_value and symbol_section and symbol_type:
                 result.append(
                     (
@@ -142,6 +144,7 @@ class LLVM_ELF_Parser(Abstract_LLVM_Readobj_Parser):
                         int(addr_value.group(0), 16),
                         symbol_section.group(0),
                         symbol_type.group(0),
+                        symbol_binding.group(0),
                     )
                 )
         return result
