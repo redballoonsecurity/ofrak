@@ -48,16 +48,16 @@ class LLVM_12_0_1_Toolchain(Toolchain):
                 self._compiler_target,  # type: ignore
                 "-mfloat-abi=soft",
                 "-Wall",
-                # Should be a soft warning for all non-ARM targets, but is required for Clang to
-                # obey target("arm"/"thumb") attributes if we are targeting ARM-Thumb
-                "-marm",
             ]
         )
+        if processor.isa is InstructionSet.ARM:
+            # Without this option, Clang will ignore target("arm"/"thumb") attributes
+            self._compiler_flags.append("-marm")
 
         if self._config.separate_data_sections:
             self._compiler_flags.append("-fdata-sections")
         if self._config.compiler_cpu:
-            self._logger.warning("compiler_cpu set, but has no meaning for LLVM toolchain")
+            self._logger.warning("compiler_cpu option set, but has no meaning for LLVM toolchain")
 
         llvm12_compiler_optimization_map = {
             CompilerOptimizationLevel.NONE: "-O0",
@@ -122,7 +122,7 @@ class LLVM_12_0_1_Toolchain(Toolchain):
     def keep_section(self, section_name: str):
         if section_name in self._linker_keep_list:
             return True
-        if self._config.separate_data_sections:
+        if self._config.separate_data_sections or self._config.include_subsections:
             for keep_section in self._linker_keep_list:
                 if section_name.startswith(keep_section):
                     return True

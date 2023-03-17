@@ -116,7 +116,7 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
     def keep_section(self, section_name: str):
         if section_name in self._linker_keep_list:
             return True
-        if self._config.separate_data_sections:
+        if self._config.separate_data_sections or self._config.include_subsections:
             for keep_section in self._linker_keep_list:
                 if section_name.startswith(keep_section):
                     return True
