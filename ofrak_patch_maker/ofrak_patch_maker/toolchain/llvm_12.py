@@ -46,13 +46,19 @@ class LLVM_12_0_1_Toolchain(Toolchain):
                 "-c",
                 "-target",
                 self._compiler_target,  # type: ignore
-                "-mfloat-abi=soft",
+                "-Xclang",
+                "-emit-obj",
                 "-Wall",
             ]
         )
         if processor.isa is InstructionSet.ARM:
             # Without this option, Clang will ignore target("arm"/"thumb") attributes
             self._compiler_flags.append("-marm")
+
+        if self._config.hard_float:
+            self._compiler_flags.append("-mno-soft-float")
+        else:
+            self._compiler_flags.append("-msoft-float")
 
         if self._config.separate_data_sections:
             self._compiler_flags.append("-fdata-sections")
@@ -79,6 +85,7 @@ class LLVM_12_0_1_Toolchain(Toolchain):
             self._compiler_flags.extend(["-fno-direct-access-external-data", "-fPIE"])
             self._linker_flags.append("--pie")
         else:
+            self._compiler_flags.append("-fno-pic")
             self._linker_flags.append("--no-pie")
 
         if self._config.no_bss_section:
