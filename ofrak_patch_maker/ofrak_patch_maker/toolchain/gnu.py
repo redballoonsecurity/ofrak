@@ -113,17 +113,6 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
     def _get_linker_map_flag(exec_path: str) -> Iterable[str]:
         return "-Map", f"{exec_path}.map"
 
-    def keep_section(self, section_name: str):
-        if section_name in self._linker_keep_list:
-            return True
-        if self._config.separate_data_sections or self._config.include_subsections:
-            for keep_section in self._linker_keep_list:
-                if section_name.startswith(keep_section):
-                    return True
-            return False
-        else:
-            return False
-
     def add_linker_include_values(self, symbols: Mapping[str, int], path: str):
         with open(path, "a") as f:
             for name, addr in symbols.items():

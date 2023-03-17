@@ -137,7 +137,7 @@ class LLVM_ELF_Parser(Abstract_LLVM_Readobj_Parser):
             symbol_section = self._re_sym_section_prog.search(s)
             symbol_type = self._re_sym_type_prog.search(s)
             symbol_binding = self._re_sym_binding_prog.search(s)
-            if name and addr_value and symbol_section and symbol_type:
+            if name and addr_value and symbol_section and symbol_type and symbol_binding:
                 result.append(
                     (
                         name.group(0),

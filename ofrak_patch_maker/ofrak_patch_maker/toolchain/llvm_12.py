@@ -126,17 +126,6 @@ class LLVM_12_0_1_Toolchain(Toolchain):
     def name(self) -> str:
         return "LLVM_12_0_1"
 
-    def keep_section(self, section_name: str):
-        if section_name in self._linker_keep_list:
-            return True
-        if self._config.separate_data_sections or self._config.include_subsections:
-            for keep_section in self._linker_keep_list:
-                if section_name.startswith(keep_section):
-                    return True
-            return False
-        else:
-            return False
-
     def _get_assembler_target(self, processor: ArchInfo) -> str:
         arch = processor.isa.value
         if self._config.assembler_target:

@@ -333,9 +333,9 @@ class PatchMaker:
         unresolved_symbols: Dict[str, Tuple[int, LinkableSymbolType]] = {}
         for o in object_map.values():
             bss_size_required += o.bss_size_required
-            symbols.update(o.symbols)
+            symbols.update(o.strong_symbols)
             # Resolve symbols defined within different patch files within the same patch BOM
-            for sym, values in o.rel_symbols.items():
+            for sym, values in o.unresolved_symbols.items():
                 # Have not already seen this symbol in a previous patch object
                 if sym not in symbols.keys():
                     unresolved_symbols.update({sym: values})

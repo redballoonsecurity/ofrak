@@ -7,7 +7,7 @@ import os
 import subprocess
 from abc import ABC, abstractmethod
 from os.path import join, split
-from typing import Dict, Iterable, List, Optional, Tuple, Mapping
+from typing import Dict, Iterable, List, Optional, Tuple, Mapping, Any
 
 from ofrak_type import ArchInfo, Endianness
 from ofrak_patch_maker.binary_parser.abstract import AbstractBinaryFileParser
@@ -124,7 +124,7 @@ class Toolchain(ABC):
 
     def _get_linux_headers_path(self, processor: ArchInfo) -> Optional[str]:
         # Cross-compiling headers for things like linux/can.h, asm/types.h, etc.
-        header_prefix_table = {
+        header_prefix_table: Dict[Tuple[Any, ...], str] = {
             (InstructionSet.ARM,): "arm-linux-gnueabihf"
             if self._config.hard_float
             else "arm-linux-gnueabi",
@@ -402,11 +402,16 @@ class Toolchain(ABC):
     def linker_include_filter(symbol_name: str) -> bool:
         return "." in symbol_name or "_DYNAMIC" in symbol_name
 
-    def keep_section(self, section_name: str) -> bool:
-        if self._config.separate_data_sections:
-            raise NotImplementedError("you must override keep_section() in your Toolchain sublass")
+    def keep_section(self, section_name: str):
+        if section_name in self._linker_keep_list:
+            return True
+        if self._config.separate_data_sections or self._config.include_subsections:
+            for keep_section in self._linker_keep_list:
+                if section_name.startswith(keep_section):
+                    return True
+            return False
         else:
-            return section_name in self._linker_keep_list
+            return False
 
     @abstractmethod
     def generate_linker_include_file(self, symbols: Mapping[str, int], out_path: str) -> str:

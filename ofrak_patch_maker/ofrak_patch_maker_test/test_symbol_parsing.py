@@ -144,15 +144,15 @@ async def test_symbol_parsing(tc: TestCase, tmpdir):
     )
 
     for obj in bom.object_map.values():
-        if SYMBOL_NAME not in obj.symbols and SYMBOL_NAME not in obj.rel_symbols:
+        if SYMBOL_NAME not in obj.strong_symbols and SYMBOL_NAME not in obj.unresolved_symbols:
             continue
 
         if tc.expected_to_be_resolved:
-            assert SYMBOL_NAME in obj.symbols, "symbol erroneously un-resolved!"
+            assert SYMBOL_NAME in obj.strong_symbols, "symbol erroneously un-resolved!"
             return
 
         else:
-            assert SYMBOL_NAME in obj.rel_symbols, "symbol erroneously resolved!"
+            assert SYMBOL_NAME in obj.unresolved_symbols, "symbol erroneously resolved!"
             return
 
     pytest.fail(f"Expected symbol {SYMBOL_NAME} was not found in object file!")
