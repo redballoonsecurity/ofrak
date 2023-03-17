@@ -214,7 +214,7 @@ class AiohttpOFRAKServer:
         if request.remote is not None:
             self._job_ids[request.remote] = root_resource.get_job_id()
 
-        self.script_builder.add_action(script_str, ActionType.UNPACK)
+        self.script_builder.add_action(root_resource.get_id(), script_str, ActionType.UNPACK)
 
         return json_response(self._serialize_resource(root_resource))
 
@@ -225,7 +225,7 @@ class AiohttpOFRAKServer:
         """
         roots = await self._ofrak_context.resource_service.get_root_resources()
 
-        self.script_builder.add_action(script_str, ActionType.UNPACK)
+        # self.script_builder.add_action(script_str, ActionType.UNPACK)
 
         return json_response(list(map(self._serialize_resource_model, roots)))
 
@@ -237,7 +237,8 @@ class AiohttpOFRAKServer:
         resource = 
         """
 
-        self.script_builder.add_action(script_str, ActionType.UNPACK)
+        root = await self._get_root_resource_for_script(resource)
+        self.script_builder.add_action(resource.get_id(), script_str, ActionType.UNPACK)
 
         return json_response(self._serialize_resource(resource))
 
@@ -252,7 +253,8 @@ class AiohttpOFRAKServer:
         """
         data = await resource.get_data(_range)
 
-        self.script_builder.add_action(script_str, ActionType.MOD)
+        root = await self._get_root_resource_for_script(resource)
+        self.script_builder.add_action(root.get_id(), script_str, ActionType.MOD)
 
         return Response(body=data)
 
@@ -298,7 +300,8 @@ class AiohttpOFRAKServer:
             except ValueError:
                 pass
 
-        self.script_builder.add_action(script_str, ActionType.MOD)
+        root = await self._get_root_resource_for_script(resource)
+        self.script_builder.add_action(root.get_id(), script_str, ActionType.MOD)
 
         return json_response(
             dict(filter(lambda x: x is not None, await asyncio.gather(*map(get_range, children))))
@@ -386,7 +389,8 @@ class AiohttpOFRAKServer:
                         data_range = Range(0, 0)
             return resource_id, [data_range.start, data_range.end]
 
-        self.script_builder.add_action(script_str, ActionType.MOD)
+        # root = await self._get_root_resource_for_script(resource)
+        # self.script_builder.add_action(script_str, ActionType.MOD)
 
         return json_response(
             dict(await asyncio.gather(*map(get_resource_range, await request.json())))
@@ -400,7 +404,8 @@ class AiohttpOFRAKServer:
         """
         result = await resource.unpack()
 
-        self.script_builder.add_action(script_str, ActionType.UNPACK)
+        root = await self._get_root_resource_for_script(resource)
+        self.script_builder.add_action(root.get_id(), script_str, ActionType.UNPACK)
 
         return json_response(await self._serialize_component_result(result))
 
@@ -412,7 +417,8 @@ class AiohttpOFRAKServer:
         """
         result = await resource.unpack_recursively()
 
-        self.script_builder.add_action(script_str, ActionType.UNPACK)
+        root = await self._get_root_resource_for_script(resource)
+        self.script_builder.add_action(root.get_id(), script_str, ActionType.UNPACK)
 
         return json_response(await self._serialize_component_result(result))
 
@@ -424,7 +430,8 @@ class AiohttpOFRAKServer:
         """
         result = await resource.pack()
 
-        self.script_builder.add_action(script_str, ActionType.PACK)
+        root = await self._get_root_resource_for_script(resource)
+        self.script_builder.add_action(root.get_id(), script_str, ActionType.PACK)
 
         return json_response(await self._serialize_component_result(result))
 
@@ -436,7 +443,8 @@ class AiohttpOFRAKServer:
         """
         result = await resource.pack_recursively()
 
-        self.script_builder.add_action(script_str, ActionType.PACK)
+        root = await self._get_root_resource_for_script(resource)
+        self.script_builder.add_action(root.get_id(), script_str, ActionType.PACK)
 
         return json_response(await self._serialize_component_result(result))
 
@@ -448,7 +456,8 @@ class AiohttpOFRAKServer:
         """
         result = await resource.identify()
 
-        self.script_builder.add_action(script_str, ActionType.MOD)
+        root = await self._get_root_resource_for_script(resource)
+        self.script_builder.add_action(root.get_id(), script_str, ActionType.MOD)
 
         return json_response(await self._serialize_component_result(result))
 
@@ -460,7 +469,8 @@ class AiohttpOFRAKServer:
         """
         result = await resource.run(DataSummaryAnalyzer)
 
-        self.script_builder.add_action(script_str, ActionType.MOD)
+        root = await self._get_root_resource_for_script(resource)
+        self.script_builder.add_action(root.get_id(), script_str, ActionType.MOD)
 
         return json_response(await self._serialize_component_result(result))
 
@@ -472,7 +482,8 @@ class AiohttpOFRAKServer:
         """
         result = await resource.auto_run(all_analyzers=True)
 
-        self.script_builder.add_action(script_str, ActionType.MOD)
+        root = await self._get_root_resource_for_script(resource)
+        self.script_builder.add_action(root.get_id(), script_str, ActionType.MOD)
 
         return json_response(await self._serialize_component_result(result))
 
@@ -484,7 +495,8 @@ class AiohttpOFRAKServer:
         """
         parent = await resource.get_parent()
 
-        self.script_builder.add_action(script_str, ActionType.MOD)
+        root = await self._get_root_resource_for_script(resource)
+        self.script_builder.add_action(root.get_id(), script_str, ActionType.MOD)
 
         return json_response(self._serialize_resource(parent))
 
@@ -497,7 +509,8 @@ class AiohttpOFRAKServer:
         """
         ancestors = await resource.get_ancestors()
 
-        self.script_builder.add_action(script_str, ActionType.MOD)
+        root = await self._get_root_resource_for_script(resource)
+        self.script_builder.add_action(root.get_id(), script_str, ActionType.MOD)
 
         return json_response(self._serialize_multi_resource(ancestors))
 
@@ -551,7 +564,7 @@ class AiohttpOFRAKServer:
             else:
                 return sys.maxsize
 
-        self.script_builder.add_action(script_str, ActionType.MOD)
+        # self.script_builder.add_action(script_str, ActionType.MOD)
 
         return json_response(
             dict(await asyncio.gather(*map(get_resource_children, await request.json())))
@@ -578,7 +591,7 @@ class AiohttpOFRAKServer:
         except NotFoundError:
             pass
 
-        self.script_builder.add_action(script_str, ActionType.MOD)
+        self.script_builder.add_action(parent.get_id(), script_str, ActionType.MOD)
 
         return json_response(self._serialize_resource(parent))
 
@@ -606,7 +619,8 @@ class AiohttpOFRAKServer:
         resource.queue_patch(Range(start, end), new_data)
         await resource.save()
 
-        self.script_builder.add_action(script_str, ActionType.MOD)
+        root = await self._get_root_resource_for_script(resource)
+        self.script_builder.add_action(root.get_id(), script_str, ActionType.MOD)
 
         return json_response(self._serialize_resource(resource))
 
@@ -619,7 +633,8 @@ class AiohttpOFRAKServer:
         """
         child = await resource.create_child(tags=(GenericBinary,), data_range=_range)
 
-        self.script_builder.add_action(script_str, ActionType.MOD)
+        root = await self._get_root_resource_for_script(resource)
+        self.script_builder.add_action(root.get_id(), script_str, ActionType.MOD)
 
         return json_response(self._serialize_resource(child))
 
@@ -632,7 +647,8 @@ class AiohttpOFRAKServer:
         """
         result = await resource.run(StringFindReplaceModifier, config=config)
 
-        self.script_builder.add_action(script_str, ActionType.MOD)
+        root = await self._get_root_resource_for_script(resource)
+        self.script_builder.add_action(root.get_id(), script_str, ActionType.MOD)
 
         return json_response(await self._serialize_component_result(result))
 
@@ -647,7 +663,8 @@ class AiohttpOFRAKServer:
         """
         result = await resource.run(AddCommentModifier, AddCommentModifierConfig(comment))
 
-        self.script_builder.add_action(script_str, ActionType.MOD)
+        root = await self._get_root_resource_for_script(resource)
+        self.script_builder.add_action(root.get_id(), script_str, ActionType.MOD)
 
         return json_response(await self._serialize_component_result(result))
 
@@ -664,7 +681,8 @@ class AiohttpOFRAKServer:
             DeleteCommentModifier, DeleteCommentModifierConfig(comment_range)
         )
 
-        self.script_builder.add_action(script_str, ActionType.MOD)
+        root = await self._get_root_resource_for_script(resource)
+        self.script_builder.add_action(root.get_id(), script_str, ActionType.MOD)
 
         return json_response(await self._serialize_component_result(result))
 
@@ -692,7 +710,8 @@ class AiohttpOFRAKServer:
             matching_resources = []
         """
 
-        self.script_builder.add_action(script_str, ActionType.MOD)
+        root = await self._get_root_resource_for_script(resource)
+        self.script_builder.add_action(root.get_id(), script_str, ActionType.MOD)
 
         try:
             vaddr_filter: Union[ResourceAttributeRangeFilter, ResourceAttributeValueFilter]
@@ -723,7 +742,8 @@ class AiohttpOFRAKServer:
         resource.add_tag(tag)
         await resource.save()
 
-        self.script_builder.add_action(script_str, ActionType.MOD)
+        root = await self._get_root_resource_for_script(resource)
+        self.script_builder.add_action(root.get_id(), script_str, ActionType.MOD)
 
         return json_response(self._serialize_resource(resource))
 
@@ -733,7 +753,7 @@ class AiohttpOFRAKServer:
         self._ofrak_context.get_all_tags()
         """
 
-        self.script_builder.add_action(script_str, ActionType.MOD)
+        # self.script_builder.add_action(script_str, ActionType.MOD)
 
         return json_response(
             self._serializer.to_pjson(self._ofrak_context.get_all_tags(), Set[ResourceTag])
@@ -741,8 +761,9 @@ class AiohttpOFRAKServer:
 
     @exceptions_to_http(SerializedError)
     async def get_script(self, request: Request) -> Response:
-        print("getting script...")
-        return json_response(self.script_builder.get_script())
+        resource = await self._get_resource_for_request(request)
+        root = await self._get_root_resource_for_script(resource)
+        return json_response(self.script_builder.get_script(root.get_id()))
 
     @exceptions_to_http(SerializedError)
     async def get_static_files(self, request: Request) -> FileResponse:
@@ -757,6 +778,17 @@ class AiohttpOFRAKServer:
             self.component_context,
         )
         return resource
+
+    async def _get_root_resource_for_script(self, resource: Resource) -> Resource:
+        parent = resource
+        try:
+            # Assume get_ancestors returns an ordered list with the parent first and the root last
+            for parent in await resource.get_ancestors():
+                pass
+        except NotFoundError:
+            pass
+
+        return parent
 
     async def _get_resource_model_by_id(
         self, resource_id: bytes, job_id: bytes
