@@ -275,10 +275,11 @@ class UpdateLinkableSymbolsModifier(Modifier[UpdateLinkableSymbolsModifierConfig
             if symbol.virtual_address not in unhandled_vaddrs:
                 unhandled_vaddrs[symbol.virtual_address] = symbol
             else:
-                raise ValueError(
-                    f"Too many symbols supplied for address {symbol.virtual_address}! Need "
-                    f"exactly one."
-                )
+                # Multiple symbols defined for an address (which is valid)
+                # However it would be pointless to look for and rename an existing resource at that
+                # address multiple times
+                # So after the first one, create a new child for each symbol sharing an address
+                await resource.create_child_from_view(symbol)
 
         # Overwrite existing ComplexBlock with new LinkableSymbols
         filter_for_cb_by_vaddr = ResourceFilter(
