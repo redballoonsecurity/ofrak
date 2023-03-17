@@ -96,16 +96,7 @@ class Toolchain(ABC):
 
         self._assembler_target = self._get_assembler_target(processor)
         self._compiler_target = self._get_compiler_target(processor)
-        self._cross_compile_headers = self._get_cross_compile_headers(processor)
-
-        if self._cross_compile_headers:
-            self._compiler_flags.append(f"-I{self._cross_compile_headers}")
-        else:
-            self._logger.warning(
-                f"Could not automatically determine cross-compile headers from architecture "
-                f"{processor.isa.name}. It may be necessary to supply these manually for "
-                f"successful compilation."
-            )
+        self._linux_xcompile_headers = self._get_linux_headers_path(processor)
 
     @property
     @abstractmethod
@@ -130,7 +121,7 @@ class Toolchain(ABC):
         """
         raise NotImplementedError()
 
-    def _get_linux_header_path(self, processor: ArchInfo) -> Optional[str]:
+    def _get_linux_headers_path(self, processor: ArchInfo) -> Optional[str]:
         # Cross-compiling headers for things like linux/can.h, asm/types.h, etc.
         header_prefix_table = {
             (InstructionSet.ARM,): "arm-linux-gnueabihf"
@@ -160,17 +151,18 @@ class Toolchain(ABC):
             (InstructionSet.M68K,): "m68k-linux-gnu",
         }
 
-        fields = [
+        arch_info_parts = [
             processor.isa,
             processor.bit_width,
             processor.endianness,
             processor.sub_isa,
             processor.processor,
         ]
-        while fields:
-            header_prefix = header_prefix_table.get(tuple(fields))
+        while arch_info_parts:
+            header_prefix = header_prefix_table.get(tuple(arch_info_parts))
             if header_prefix is not None:
                 return f"/usr/{header_prefix}/include"
+            arch_info_parts.pop()
         return None
 
     @abstractmethod

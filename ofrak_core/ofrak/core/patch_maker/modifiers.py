@@ -126,6 +126,7 @@ class PatchFromSourceModifier(Modifier):
         patch_maker = PatchMaker(
             toolchain=config.toolchain(program_attributes, config.toolchain_config),
             build_dir=build_tmp_dir,
+            auto_add_linux_headers=True,
         )
 
         patch_bom = patch_maker.make_bom(
