@@ -188,6 +188,8 @@ export class RemoteResource extends Resource {
     ingest_component_results(unpack_results, this.resource_list);
     this.flush_cache();
     this.update();
+    
+    const script = await this.get_script();
   }
 
   async identify() {
@@ -201,6 +203,8 @@ export class RemoteResource extends Resource {
     });
     ingest_component_results(identify_results, this.resource_list);
     this.update();
+
+    const script = await this.get_script();   
   }
 
   async unpack_recursively() {
@@ -216,6 +220,8 @@ export class RemoteResource extends Resource {
     ingest_component_results(unpack_recursively_results, this.resource_list);
     this.flush_cache();
     this.update();
+
+    const script = await this.get_script();   
   }
 
   async pack() {
@@ -230,6 +236,8 @@ export class RemoteResource extends Resource {
     ingest_component_results(pack_results, this.resource_list);
     this.flush_cache();
     this.update();
+
+    const script = await this.get_script();   
   }
 
   async pack_recursively() {
@@ -244,6 +252,8 @@ export class RemoteResource extends Resource {
     ingest_component_results(pack_results, this.resource_list);
     this.flush_cache();
     this.update();
+
+    const script = await this.get_script();   
   }
 
   async data_summary() {
@@ -271,6 +281,8 @@ export class RemoteResource extends Resource {
     ingest_component_results(analyze_results, this.resource_list);
     this.flush_cache();
     this.update();
+      
+    const script = await this.get_script();   
   }
 
   async get_parent() {
@@ -378,6 +390,8 @@ export class RemoteResource extends Resource {
     ingest_component_results(find_replace_results, this.resource_list);
     this.flush_cache();
     this.update();
+
+    const script = await this.get_script();   
   }
 
   async add_comment(optional_range, comment) {
@@ -396,6 +410,8 @@ export class RemoteResource extends Resource {
     });
     this.flush_cache();
     this.update();
+
+    const script = await this.get_script();   
   }
 
   async add_tag(tag) {
@@ -451,8 +467,8 @@ export class RemoteResource extends Resource {
   }
 
     async get_script() {
-      const script = await this.fetch(`${this.uri}/get_script`, {
-        method: "POST",
+      const script = await fetch(`${this.uri}/get_script`, {
+        method: "GET",
         headers: {
           "Content-Type": "application/json",
           },

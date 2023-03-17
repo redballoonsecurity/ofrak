@@ -499,7 +499,7 @@ class AiohttpOFRAKServer:
 
         self.script_builder.add_action(script_str, ActionType.MOD)
 
-        return json_response(await self._serialize_multi_resource(ancestors))
+        return json_response(self._serialize_multi_resource(ancestors))
 
     @exceptions_to_http(SerializedError)
     async def batch_get_children(self, request: Request) -> Response:
@@ -741,6 +741,7 @@ class AiohttpOFRAKServer:
 
     @exceptions_to_http(SerializedError)
     async def get_script(self, request: Request) -> Response:
+        print("getting script...")
         return json_response(self.script_builder.get_script())
 
     @exceptions_to_http(SerializedError)
