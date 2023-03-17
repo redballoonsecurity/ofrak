@@ -88,7 +88,7 @@
 </style>
 
 <script>
-  import { selected, selectedResource } from "./stores.js";
+  import { selected, selectedResource, backendUrl } from "./stores.js";
   import { onMount } from "svelte";
   import LoadingText from "./LoadingText.svelte";
   import { cleanOfrakType } from "./helpers";
@@ -119,7 +119,7 @@
 
   onMount(async () => {
     try {
-      await fetch(`/get_all_tags`).then(async (r) => {
+      await fetch(`${backendUrl}/get_all_tags`).then(async (r) => {
         if (!r.ok) {
           throw Error(JSON.stringify(await r.json(), undefined, 2));
         }

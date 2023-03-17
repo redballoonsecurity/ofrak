@@ -1,4 +1,4 @@
-extern int _puts(char *str);
+extern int puts(char *str);
 
 void uppercase_and_print(char *text)
 {
@@ -10,5 +10,5 @@ void uppercase_and_print(char *text)
         else
             str[i] = text[i];
     }
-    _puts(str);
+    puts(str);
 }

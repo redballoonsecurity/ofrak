@@ -1,4 +1,5 @@
 import { Resource } from "./resource";
+import { backendUrl } from "../stores";
 
 let batchQueues = {};
 
@@ -15,7 +16,7 @@ function createQueue(route, maxlen) {
         queue.requests = [];
       }
 
-      const result_models = await fetch(`/batch/${route}`, {
+      const result_models = await fetch(`${backendUrl}/batch/${route}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -82,7 +83,7 @@ export class RemoteResource extends Resource {
     super(resource_id, data_id, parent_id, tags, caption, attributes);
 
     this.resource_list = resource_list;
-    this.uri = `/${this.resource_id}`;
+    this.uri = this.resource_id;
     this.cache = {
       get_children: undefined,
       get_data_range_within_parent: undefined,
@@ -109,7 +110,7 @@ export class RemoteResource extends Resource {
   }
 
   async get_latest_model() {
-    const result = await fetch(`${this.uri}/`).then(async (r) => {
+    const result = await fetch(`${backendUrl}/${this.uri}/`).then(async (r) => {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }
@@ -140,7 +141,7 @@ export class RemoteResource extends Resource {
     if (this.cache["get_data"]) {
       return this.cache["get_data"];
     }
-    let result = await fetch(`${this.uri}/get_data`)
+    let result = await fetch(`${backendUrl}/${this.uri}/get_data`)
       .then((r) => r.blob())
       .then((b) => b.arrayBuffer());
     this.cache["get_data"] = result;
@@ -169,15 +170,15 @@ export class RemoteResource extends Resource {
       return this.cache["get_child_data_ranges"];
     }
 
-    let result = await fetch(`${this.uri}/get_child_data_ranges`).then((r) =>
-      r.json()
-    );
+    let result = await fetch(
+      `${backendUrl}/${this.uri}/get_child_data_ranges`
+    ).then((r) => r.json());
     this.cache["get_child_data_ranges"] = result;
     return result;
   }
 
   async unpack() {
-    const unpack_results = await fetch(`${this.uri}/unpack`, {
+    const unpack_results = await fetch(`${backendUrl}/${this.uri}/unpack`, {
       method: "POST",
     }).then(async (r) => {
       if (!r.ok) {
@@ -191,7 +192,7 @@ export class RemoteResource extends Resource {
   }
 
   async identify() {
-    const identify_results = await fetch(`${this.uri}/identify`, {
+    const identify_results = await fetch(`${backendUrl}/${this.uri}/identify`, {
       method: "POST",
     }).then(async (r) => {
       if (!r.ok) {
@@ -219,7 +220,7 @@ export class RemoteResource extends Resource {
   }
 
   async pack() {
-    const pack_results = await fetch(`${this.uri}/pack`, {
+    const pack_results = await fetch(`${backendUrl}/${this.uri}/pack`, {
       method: "POST",
     }).then(async (r) => {
       if (!r.ok) {
@@ -233,9 +234,12 @@ export class RemoteResource extends Resource {
   }
 
   async pack_recursively() {
-    const pack_results = await fetch(`${this.uri}/pack_recursively`, {
-      method: "POST",
-    }).then(async (r) => {
+    const pack_results = await fetch(
+      `${backendUrl}/${this.uri}/pack_recursively`,
+      {
+        method: "POST",
+      }
+    ).then(async (r) => {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }
@@ -247,9 +251,12 @@ export class RemoteResource extends Resource {
   }
 
   async data_summary() {
-    const data_summary_results = await fetch(`${this.uri}/data_summary`, {
-      method: "POST",
-    }).then(async (r) => {
+    const data_summary_results = await fetch(
+      `${backendUrl}/${this.uri}/data_summary`,
+      {
+        method: "POST",
+      }
+    ).then(async (r) => {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }
@@ -260,7 +267,7 @@ export class RemoteResource extends Resource {
   }
 
   async analyze() {
-    const analyze_results = await fetch(`${this.uri}/analyze`, {
+    const analyze_results = await fetch(`${backendUrl}/${this.uri}/analyze`, {
       method: "POST",
     }).then(async (r) => {
       if (!r.ok) {
@@ -274,14 +281,14 @@ export class RemoteResource extends Resource {
   }
 
   async get_parent() {
-    const parent_model = await fetch(`${this.uri}/get_parent`).then(
-      async (r) => {
-        if (!r.ok) {
-          throw Error(JSON.stringify(await r.json(), undefined, 2));
-        }
-        return r.json();
+    const parent_model = await fetch(
+      `${backendUrl}/${this.uri}/get_parent`
+    ).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
       }
-    );
+      return r.json();
+    });
     return remote_model_to_resource(parent_model);
   }
 
@@ -290,14 +297,14 @@ export class RemoteResource extends Resource {
       return this.cache["get_ancestors"];
     }
 
-    const ancestor_models = await fetch(`${this.uri}/get_ancestors`).then(
-      async (r) => {
-        if (!r.ok) {
-          throw Error(JSON.stringify(await r.json(), undefined, 2));
-        }
-        return r.json();
+    const ancestor_models = await fetch(
+      `${backendUrl}/${this.uri}/get_ancestors`
+    ).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
       }
-    );
+      return r.json();
+    });
     this.cache["get_ancestors"] = remote_models_to_resources(ancestor_models);
     return this.cache["get_ancestors"];
   }
@@ -332,7 +339,7 @@ export class RemoteResource extends Resource {
   ) {
     // TODO: Implement tags, attributes, data, data_after, data_before
 
-    await fetch(`${this.uri}/create_mapped_child`, {
+    await fetch(`${backendUrl}/${this.uri}/create_mapped_child`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -354,21 +361,24 @@ export class RemoteResource extends Resource {
     null_terminate,
     allow_overflow
   ) {
-    const find_replace_results = await fetch(`${this.uri}/find_and_replace`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify([
-        "ofrak.core.strings.StringFindReplaceConfig",
-        {
-          to_find: to_find,
-          replace_with: replace_with,
-          null_terminate: null_terminate,
-          allow_overflow: allow_overflow,
+    const find_replace_results = await fetch(
+      `${backendUrl}/${this.uri}/find_and_replace`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      ]),
-    }).then(async (r) => {
+        body: JSON.stringify([
+          "ofrak.core.strings.StringFindReplaceConfig",
+          {
+            to_find: to_find,
+            replace_with: replace_with,
+            null_terminate: null_terminate,
+            allow_overflow: allow_overflow,
+          },
+        ]),
+      }
+    ).then(async (r) => {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }
@@ -381,7 +391,7 @@ export class RemoteResource extends Resource {
   }
 
   async add_comment(optional_range, comment) {
-    await fetch(`${this.uri}/add_comment`, {
+    await fetch(`${backendUrl}/${this.uri}/add_comment`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -399,7 +409,7 @@ export class RemoteResource extends Resource {
   }
 
   async add_tag(tag) {
-    await fetch(`${this.uri}/add_tag`, {
+    await fetch(`${backendUrl}/${this.uri}/add_tag`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -417,7 +427,7 @@ export class RemoteResource extends Resource {
   }
 
   async delete_comment(optional_range) {
-    await fetch(`${this.uri}/delete_comment`, {
+    await fetch(`${backendUrl}/${this.uri}/delete_comment`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -435,13 +445,16 @@ export class RemoteResource extends Resource {
   }
 
   async search_for_vaddr(vaddr_start, vaddr_end) {
-    const matching_models = await fetch(`${this.uri}/search_for_vaddr`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify([vaddr_start, vaddr_end]),
-    }).then(async (r) => {
+    const matching_models = await fetch(
+      `${backendUrl}/${this.uri}/search_for_vaddr`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify([vaddr_start, vaddr_end]),
+      }
+    ).then(async (r) => {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }

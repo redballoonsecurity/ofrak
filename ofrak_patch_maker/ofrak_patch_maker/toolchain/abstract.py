@@ -16,6 +16,7 @@ from ofrak_patch_maker.toolchain.utils import get_repository_config
 from ofrak_type.architecture import InstructionSet
 from ofrak_type.bit_width import BitWidth
 from ofrak_type.memory_permissions import MemoryPermissions
+from ofrak_type.symbol_type import LinkableSymbolType
 
 RBS_AUTOGEN_WARNING = (
     "/*\n"
@@ -524,7 +525,9 @@ class Toolchain(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_bin_file_symbols(self, executable_path: str) -> Dict[str, int]:
+    def get_bin_file_symbols(
+        self, executable_path: str
+    ) -> Dict[str, Tuple[int, LinkableSymbolType]]:
         """
         For now, this utility only searches for global function and data symbols which are
         actually contained in a section in the file, as opposed to symbols which are referenced
@@ -532,7 +535,8 @@ class Toolchain(ABC):
 
         :param executable_path: path to the program to be analyzed for symbols
 
-        :return Dict[str, int]: mapping of symbol string to effective address.
+        :return Dict[str, Tuple[int, LinkableSymbolType]]: mapping of symbol string to tuple of
+        effective address, symbol type.
         """
         raise NotImplementedError()
 
@@ -545,5 +549,20 @@ class Toolchain(ABC):
 
         :return Tuple[Segment, ...]: Tuple of [Segment][ofrak_patch_maker.toolchain.model.Segment]
         objects
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_bin_file_rel_symbols(
+        self, executable_path: str
+    ) -> Dict[str, Tuple[int, LinkableSymbolType]]:
+        """
+        This utility searches for global function and data symbols which are
+        referenced in a section in the file but are undefined.
+
+        :param executable_path: path to the program to be analyzed for symbols
+
+        :return Dict[str, Tuple[int, LinkableSymbolType]]: mapping of symbol string to tuple of
+        effective address, symbol type.
         """
         raise NotImplementedError()
