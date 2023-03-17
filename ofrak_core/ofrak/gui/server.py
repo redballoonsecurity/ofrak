@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import functools
 import logging
 import json
+import re
 import os
 import sys
 import webbrowser
@@ -33,6 +34,7 @@ from aiohttp.web_fileresponse import FileResponse
 from ofrak.ofrak_context import get_current_ofrak_context
 from ofrak.core.filesystem import FilesystemEntry
 from ofrak.model.resource_model import Data
+from ofrak.model.resource_model import ResourceIndexedAttribute
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 
@@ -86,61 +88,64 @@ class ScriptBuilder:
     def __init__(self):
         self.var_names: Dict[bytes, str] = {}
         self.lines: List[str] = []
-        self.selectable_attributes = [
-            Data.Offset,
-            FilesystemEntry.Name
-        ]
-        
+        self.selectable_indexes: List[ResourceIndexedAttribute] = [
+            FilesystemEntry.Name,
+            Data.Offset
+        ]  
         
     async def _get_selector(self, resource: Resource) -> str:
         for ancestor in await resource.get_ancestors():
             if ancestor.get_id() in self.var_names:
                 break
         attribute, attribute_value = await self._get_selectable_attribute(resource)
-        # result = await ancestor.get_descendants(
-        #     r_filter=ResourceFilter(
-        #         tags=resource.get_most_specific_tags(),
-        #         attribute_filters=[
-        #             ResourceAttributeValueFilter(
-        #                 attribute=attribute, 
-        #                 value=attribute_value
-        #                 )
-        #         ]   
-        #     )
-        # )
-        # if len(list(result)) != 1:
-        #     raise ValueError("The Resource does not have a selectable attribute")
-        
-        return f"""
-        await {self.var_names[ancestor.get_id()]}.get_descendants(
+        result = await ancestor.get_children(
             r_filter=ResourceFilter(
-                tags=f{resource.get_most_specific_tags()},
+                tags=resource.get_most_specific_tags(),
+                attribute_filters=[
+                    ResourceAttributeValueFilter(
+                        attribute=attribute, 
+                        value=attribute_value
+                        )
+                ]   
+            )
+        )
+        if len(list(result)) != 1:
+            raise SelectableAttributesError(f"Resource with ID {resource.get_id()} does not have a selectable attribute.")
+        if isinstance(attribute_value, str) or isinstance(attribute_value, bytes):
+            attribute_value = f"\"{attribute_value}\""
+        return f"""await {self.var_names[ancestor.get_id()]}.get_children(
+            r_filter=ResourceFilter(
+                tags={resource.get_most_specific_tags()},
                 attribute_filters=[
                     ResourceAttributeValueFilter(
                         attribute={attribute.__name__}, 
                         value={attribute_value}
-                        )
+                    )
                 ]   
             )
         )
         """
     
     async def _get_selectable_attribute(self, resource:Resource) -> Tuple[ResourceAttributes, any]:
-        for attribute in self.selectable_attributes:
+        for attribute in self.selectable_indexes:
             try:
-                await resource.analyze(attribute)
-                attribute_value = resource.get_attributes(attribute)
-            except:
+                await resource.analyze(attribute.attributes_owner)
+                attribute_value = attribute.get_value(resource.get_model())
+            except Exception as e:
+                print(e)
                 continue
             return attribute, attribute_value
-        return FilesystemEntry.Name, "BADDD"
-        # raise SelectableAttributesError(f"Resource with ID {resource.get_id()} does not have a selectable attribute.")
+        raise SelectableAttributesError(f"Resource with ID {resource.get_id()} does not have a selectable attribute.")
     
     async def _generate_name(self, resource: Resource) -> str:
         # Find the most specific tag and use that with a number
         most_specific_tag = list(resource.get_most_specific_tags())[0].__name__.lower()
         _, selectable_attribute_value = await self._get_selectable_attribute(resource)
         name = f"{most_specific_tag}_{selectable_attribute_value}"
+        name = re.sub("[-./\]", "_", name)
+        if name in self.var_names.values():
+            parent = await resource.get_parent()
+            return f"{self.var_names[parent.get_id()]}_{name}"
         return name
     
     async def get_name(self, resource: Resource) -> bytes:
@@ -148,10 +153,13 @@ class ScriptBuilder:
             return self.var_names[resource.get_id()]
         if len(list(await resource.get_ancestors())) == 0:
             self.var_names[resource.get_id()] = "root_resource"
-            self.lines.append("root_resource = await context.create_root_resource_from_file()")
+            self.lines.append("root_resource = await context.create_root_resource_from_file()\n")
             return "root_resource"
-        selector = await self._get_selector(resource) # Selector based on resource from nearest named parent
-        name = await self._generate_name(resource) # Some process for generating name from attributes
+        parent = await resource.get_parent()
+        if parent.get_id() not in self.var_names:
+            self.get_name(parent)
+        selector = await self._get_selector(resource)
+        name = await self._generate_name(resource)
         self.lines.append(f"{name} = {selector}")
         self.var_names[resource.get_id()] = name
         return name
@@ -334,6 +342,7 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def get_child_data_ranges(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
+        await self.script_builder.get_name(resource)
         resource_service = self._ofrak_context.resource_factory._resource_service
         data_service = self._ofrak_context.resource_factory._data_service
         children = await resource_service.get_descendants_by_id(
@@ -421,6 +430,9 @@ class AiohttpOFRAKServer:
         resource = await self._get_resource_for_request(request)
         result = await resource.pack()
         response_pjson = await self._serialize_component_result(result)
+        with open("/Users/dan/test-script.py", "w") as fh:
+            for line in self.script_builder.lines:
+                fh.write(line)
         return json_response(response_pjson)
 
     @exceptions_to_http(SerializedError)
@@ -602,8 +614,6 @@ class AiohttpOFRAKServer:
             self.resource_view_context,
             self.component_context,
         )
-        await self.script_builder.get_name(resource)
-        print(self.script_builder.lines)
         return resource
 
     async def _get_resource_model_by_id(
