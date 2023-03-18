@@ -55,7 +55,7 @@ class LLVM_12_0_1_Toolchain(Toolchain):
         )
 
         if self._config.separate_data_sections:
-            raise NotImplementedError("separate sections not supported by LLVM Toolchain yet")
+            self._compiler_flags.append("-fdata-sections")
         if self._config.compiler_cpu:
             self._compiler_flags.append(f"-mcpu={self._config.compiler_cpu}")
 
@@ -234,7 +234,7 @@ class LLVM_12_0_1_Toolchain(Toolchain):
         abs_path = os.path.abspath(object_path)
         return (
             f"    .rbs_{stripped_obj_name}_{stripped_seg_name} : {{\n"
-            f"        {abs_path}({segment_name})\n"
+            f"        {abs_path}({segment_name}*)\n"
             f"    }} > {memory_region_name}"
         )
 
