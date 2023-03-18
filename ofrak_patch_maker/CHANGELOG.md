@@ -6,11 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 ### Added
 - `-fno-pic` flag added to the GNU_10_Toolchain to omit GOTs in patches (FEMs) against binaries that aren't dynamically linked. (see [#245](https://github.com/redballoonsecurity/ofrak/pull/245))
-
-### Added
 - Add methods to parse relocation symbols from object files.
 - Extend parsed symbol dictionary to include LinkableSymbolType.
 - Extend AssembledObject and BOM types to include relocation and unresolved symbols.
+
+### Changed
+- Switch to standard GCC-like frontend for LLVM, which supports C attribute(weak)
+- Treat weak symbols as "undefined" in BOM, so alternative, strong definitions can be searched
 
 ## [3.0.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-patch-maker-v.2.0.0...ofrak-patch-maker-v.3.0.0) - 2023-01-20
 ### Added

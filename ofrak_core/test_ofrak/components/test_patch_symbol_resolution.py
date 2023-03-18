@@ -163,14 +163,14 @@ def symbol_test_case(request) -> TestCase:
                             ),
                         }
                     ),
-                    symbols=immutabledict(
+                    strong_symbols=immutabledict(
                         {
                             symbol: (0, LinkableSymbolType.FUNC)
                             for symbol in defined_symbols
                             if symbol != []
                         }
                     ),
-                    rel_symbols=immutabledict(
+                    unresolved_symbols=immutabledict(
                         {
                             symbol: (0, LinkableSymbolType.FUNC)
                             for symbol in referenced_symbols
