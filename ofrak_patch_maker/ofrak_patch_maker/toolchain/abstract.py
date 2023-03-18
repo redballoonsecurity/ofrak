@@ -7,9 +7,9 @@ import os
 import subprocess
 from abc import ABC, abstractmethod
 from os.path import join, split
-from typing import Dict, Iterable, List, Optional, Tuple, Mapping
+from typing import Dict, Iterable, List, Optional, Tuple, Mapping, Any
 
-from ofrak_type import ArchInfo
+from ofrak_type import ArchInfo, Endianness
 from ofrak_patch_maker.binary_parser.abstract import AbstractBinaryFileParser
 from ofrak_patch_maker.toolchain.model import Segment, ToolchainConfig
 from ofrak_patch_maker.toolchain.utils import get_repository_config
@@ -97,6 +97,7 @@ class Toolchain(ABC):
 
         self._assembler_target = self._get_assembler_target(processor)
         self._compiler_target = self._get_compiler_target(processor)
+        self._linux_xcompile_headers = self._get_linux_headers_path(processor)
 
     @property
     @abstractmethod
@@ -120,6 +121,50 @@ class Toolchain(ABC):
             in `self._config`.
         """
         raise NotImplementedError()
+
+    def _get_linux_headers_path(self, processor: ArchInfo) -> Optional[str]:
+        # Cross-compiling headers for things like linux/can.h, asm/types.h, etc.
+        header_prefix_table: Dict[Tuple[Any, ...], str] = {
+            (InstructionSet.ARM,): "arm-linux-gnueabihf"
+            if self._config.hard_float
+            else "arm-linux-gnueabi",
+            (InstructionSet.AARCH64,): "aarch64-linux-gnu",
+            (InstructionSet.X86, BitWidth.BIT_32): "i686-linux-gnu",
+            (InstructionSet.X86, BitWidth.BIT_64): "x86_64-linux-gnu",
+            (InstructionSet.MIPS, BitWidth.BIT_32): "mips-linux-gnu",
+            (
+                InstructionSet.MIPS,
+                BitWidth.BIT_64,
+                Endianness.LITTLE_ENDIAN,
+            ): "mips64el-linux-gnuabi64",
+            (InstructionSet.MIPS, BitWidth.BIT_64, Endianness.BIG_ENDIAN): "mips64-linux-gnuabi64",
+            (InstructionSet.PPC, BitWidth.BIT_32): "powerpc-linux-gnu",
+            (
+                InstructionSet.PPC,
+                BitWidth.BIT_64,
+                Endianness.LITTLE_ENDIAN,
+            ): "powerpc64le-linux-gnuabi64",
+            (
+                InstructionSet.PPC,
+                BitWidth.BIT_64,
+                Endianness.BIG_ENDIAN,
+            ): "powerpc64-linux-gnuabi64",
+            (InstructionSet.M68K,): "m68k-linux-gnu",
+        }
+
+        arch_info_parts = [
+            processor.isa,
+            processor.bit_width,
+            processor.endianness,
+            processor.sub_isa,
+            processor.processor,
+        ]
+        while arch_info_parts:
+            header_prefix = header_prefix_table.get(tuple(arch_info_parts))
+            if header_prefix is not None:
+                return f"/usr/{header_prefix}/include"
+            arch_info_parts.pop()
+        return None
 
     @abstractmethod
     def _get_compiler_target(self, processor: ArchInfo) -> Optional[str]:

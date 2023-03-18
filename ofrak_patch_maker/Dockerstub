@@ -75,3 +75,19 @@ RUN apt-get update && apt-get install -y gcc-avr binutils-avr avr-libc
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
     apt-get update && apt-get install -y gcc-10-powerpc-linux-gnu; \
 fi;
+
+
+# General cross-compile headers
+RUN apt-get update && apt-get install -y \
+    linux-libc-dev-amd64-cross \
+    linux-libc-dev-arm64-cross \
+    linux-libc-dev-armel-cross \
+    linux-libc-dev-armhf-cross \
+    linux-libc-dev-i386-cross \
+    linux-libc-dev-m68k-cross \
+    linux-libc-dev-mips-cross \
+    linux-libc-dev-mips64-cross \
+    linux-libc-dev-mips64el-cross \
+    linux-libc-dev-powerpc-cross \
+    linux-libc-dev-ppc64-cross \
+    linux-libc-dev-ppc64el-cross
