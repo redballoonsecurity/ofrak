@@ -238,7 +238,6 @@ class AiohttpOFRAKServer:
         """
         resource_data = await request.read()
         root_resource = await self._ofrak_context.create_root_resource(name, resource_data, (File,))
-        await self.script_builder.get_name(root_resource)
         if request.remote is not None:
             self._job_ids[request.remote] = root_resource.get_job_id()
 
@@ -308,7 +307,6 @@ class AiohttpOFRAKServer:
 
         dict(filter(lambda x: x is not None, await asyncio.gather(*map(get_range, children))))
         """
-        await self.script_builder.get_name(resource)
         resource_service = self._ofrak_context.resource_factory._resource_service
         data_service = self._ofrak_context.resource_factory._data_service
         children = await resource_service.get_descendants_by_id(

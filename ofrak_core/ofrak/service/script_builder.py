@@ -33,7 +33,7 @@ class ScriptAction:
 
 
 class ScriptSession:
-    hashed_actions: OrderedDict[int, ScriptAction] = OrderedDict()
+    hashed_actions = OrderedDict()
     variable_mapping: Dict[bytes, str] = {}
     actions_counter: int = 0
     boilerplate_header: str = r"""
@@ -113,20 +113,23 @@ class ScriptBuilder:
             return f"{self.var_names[parent.get_id()]}_{name}"
         return name
     
-    async def get_name(self, resource: Resource) -> bytes:
-        if resource.get_id() in self.var_names:
-            return self.var_names[resource.get_id()]
-        if len(list(await resource.get_ancestors())) == 0:
-            self.add_variable(resource.get_id(), resource, "root_resource")
+    async def add_variable(self, resource: Resource) -> bytes:
+        if self._var_exists(resource):
+            return await self._get_variable_from_session(resource)
+        
+        if resource == self._get_root_resource(resource):
+            await self._add_variable_to_session(resource.get_id(), resource, "root_resource")
             self.add_action(resource, r"""root_resource = await context.create_root_resource_from_file()""", ActionType.UNDEF)
             return "root_resource"
+
         parent = await resource.get_parent()
         if parent.get_id() not in self.var_names:
-            self.get_name(parent)
+            self.add_variable(parent)
+    
         selector = await self._get_selector(resource)
         name = await self._generate_name(resource)
         self.add_action(fr"""{name} = {selector}""")
-        self.add_variable(resource.get_id(), resource, name)
+        self._add_variable_to_session(resource.get_id(), resource, name)
         return name
     
     async def add_action(
@@ -141,7 +144,7 @@ class ScriptBuilder:
         """
         root_resource = await self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
-        var_name = await self._get_var_name(resource)
+        var_name = await self.add_variable(resource)
         qualified_action = action.replace("$resource", var_name)
 
         # TODO: actions are duplicated if page is refreshed, is this reasonable?
@@ -150,9 +153,17 @@ class ScriptBuilder:
         )
         session.actions_counter += 1
 
-    def add_variable(self, root_resource_id: bytes, resource: Resource, var_name: str):
-        # TODO: autogenerate variable name here instead of passing it in
-        self.script_sessions[root_resource_id].variable_mapping[resource.get_id()] = var_name
+    async def _add_variable_to_session(self, resource: Resource, var_name: str):
+        root_resource = await self._get_root_resource(resource)
+        self.script_sessions[root_resource.get_id()].variable_mapping[resource.get_id()] = var_name
+
+    async def _get_variable_from_session(self, resource: Resource):
+        root_resource = await self._get_root_resource(resource)
+        return self.script_sessions[root_resource.get_id()].variable_mapping[resource.get_id()]
+
+    async def _var_exists(self, resource: Resource):
+        root_resource = await self._get_root_resource(resource)
+        return resource.get_id() in self.script_sessions[root_resource.get_id()]
 
     def delete_action(self, resource_id: bytes, action: str) -> None:
         """
@@ -162,16 +173,6 @@ class ScriptBuilder:
         for key, script_action in self.script_sessions[resource_id].hashed_actions.items():
             if script_action.action == action:
                 del self.script_sessions[resource_id].hashed_actions[key]
-
-    async def _generate_name(self, resource) -> str:
-        root_resource = self._get_root_resource(resource)
-        most_specific_tag = resource.get_most_specific_tag()[0].lower()
-        num = 2
-        name = most_specific_tag
-        while name in self.script_sessions[root_resource.get_id()].variable_mapping.values():
-            name = f"{most_specific_tag}_{num}"
-            num += 1
-        return name
 
     def _get_session(self, resource_id: bytes) -> ScriptSession:
         session = self.script_sessions.get(resource_id, None)
@@ -207,27 +208,9 @@ class ScriptBuilder:
         return self._get_script(resource_id, target_type)
 
     async def _get_root_resource(self, resource: Resource) -> Resource:
-        parent = resource
-        try:
-            # Assume get_ancestors returns an ordered list with the parent first and the root last
-            for parent in await resource.get_ancestors():
-                pass
-        except NotFoundError:
-            pass
-
-        return parent
-
-    async def _get_var_name(self, resource: Resource) -> str:
-        root_resource = await self._get_root_resource(resource)
-        root_resource_id = root_resource.get_id()
-        resource_id = resource.get_id()
-        if resource_id in self.script_sessions[root_resource_id].variable_mapping.keys():
-            return self.script_sessions[root_resource_id].variable_mapping[resource_id]
-        selector = self.get_selector(resource)
-        name = self._generate_name(resource)
-        self.script_sessions[root_resource_id].variable_mapping[resource_id] = name
-        self.add_action(resource, f"{name} = {selector}", ActionType.MOD)
-        return name
+        while len(list(await resource.get_ancestors())) != 0:
+            resource = await resource.get_parent()
+        return resource
 
     def update_script(self, resource_id: bytes, action: str, action_type: ActionType) -> str:
         """
