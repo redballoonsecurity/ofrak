@@ -111,8 +111,8 @@ class ScriptBuilder:
         most_specific_tag = list(resource.get_most_specific_tags())[0].__name__.lower()
         _, selectable_attribute_value = await self._get_selectable_attribute(resource)
         name = f"{most_specific_tag}_{selectable_attribute_value}"
-        name = re.sub(r"[-./\]", "_", name)
-        if name in self.script_sessions[root_resource.get_id()].variable_mapping.values:
+        name = re.sub(r"[\-\.\/\\]", "_", name)
+        if name in self.script_sessions[root_resource.get_id()].variable_mapping.values():
             parent = await resource.get_parent()
             return f"{self.script_sessions[root_resource.get_id()].variable_mapping[parent.get_id()]}_{name}"
         return name
@@ -130,12 +130,12 @@ class ScriptBuilder:
             )
             return "root_resource"
         parent = await resource.get_parent()
-        if self._var_exists(parent.get_id()):
+        if not await self._var_exists(parent):
             await self.add_variable(parent)
 
         selector = await self._get_selector(resource)
         name = await self._generate_name(resource)
-        await self.add_action(fr"""{name} = {selector}""")
+        await self.add_action(resource, fr"""{name} = {selector}""", ActionType.UNDEF)
         await self._add_variable_to_session(resource, name)
         return name
 
