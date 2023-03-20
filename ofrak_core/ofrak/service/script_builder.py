@@ -6,8 +6,8 @@ from typing import Dict, List, Optional, Tuple
 from ofrak.model.resource_model import ResourceIndexedAttribute
 from ofrak.core.filesystem import FilesystemEntry
 from ofrak.model.resource_model import Data
-from ofrak_core.ofrak.model.resource_model import ResourceAttributes
-from ofrak_core.ofrak.service.resource_service_i import ResourceAttributeValueFilter, ResourceFilter
+from ofrak.model.resource_model import ResourceAttributes
+from ofrak.service.resource_service_i import ResourceAttributeValueFilter, ResourceFilter
 
 from ofrak_type.error import NotFoundError
 from ofrak.resource import Resource
@@ -57,7 +57,7 @@ class ScriptBuilder:
             FilesystemEntry.Name,
             Data.Offset
         ]  
-        
+
     async def _get_selector(self, resource: Resource) -> str:
         for ancestor in await resource.get_ancestors():
             if ancestor.get_id() in self.var_names:
