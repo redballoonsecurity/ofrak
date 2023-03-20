@@ -153,7 +153,7 @@ class ScriptBuilder:
         """
         var_name = await self.add_variable(resource)
         qualified_action = action.replace("$resource", var_name)
-        self._add_action_to_session(resource, qualified_action, action_type)
+        await self._add_action_to_session(resource, qualified_action, action_type)
 
     async def _add_action_to_session(self, resource, action, action_type):
         root_resource = await self._get_root_resource(resource)
@@ -175,7 +175,8 @@ class ScriptBuilder:
 
     async def _var_exists(self, resource: Resource):
         root_resource = await self._get_root_resource(resource)
-        return resource.get_id() in self.script_sessions[root_resource.get_id()].variable_mapping
+        session = self._get_session(root_resource)
+        return resource.get_id() in session.variable_mapping
 
     def delete_action(self, resource_id: bytes, action: str) -> None:
         """
