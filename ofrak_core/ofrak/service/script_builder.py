@@ -76,19 +76,19 @@ class ScriptBuilder:
                 f"Resource with ID {resource.get_id()} does not have a selectable attribute."
             )
         if isinstance(attribute_value, str) or isinstance(attribute_value, bytes):
-            attribute_value = f'"{attribute_value}"'
+            attribute_value = f'"{attribute_value}"'.rstrip()
         return f"""await {self.script_sessions[root_resource.get_id()].variable_mapping[ancestor.get_id()]}.get_children(
-            r_filter=ResourceFilter(
-                tags={resource.get_most_specific_tags()},
-                attribute_filters=[
-                    ResourceAttributeValueFilter(
-                        attribute={attribute.__name__}, 
-                        value={attribute_value}
+                    r_filter=ResourceFilter(
+                        tags={resource.get_most_specific_tags()},
+                        attribute_filters=[
+                            ResourceAttributeValueFilter(
+                                attribute={attribute.__name__}, 
+                                value={attribute_value}
+                            )
+                        ]   
                     )
-                ]   
-            )
-        )
-        """
+                )
+                """
 
     async def _get_selectable_attribute(
         self, resource: Resource
@@ -120,7 +120,7 @@ class ScriptBuilder:
     async def add_variable(self, resource: Resource) -> bytes:
         if await self._var_exists(resource):
             return await self._get_variable_from_session(resource)
-        
+
         root_resource = await self._get_root_resource(resource)
         if resource.get_id() == root_resource.get_id():
             await self._add_variable_to_session(resource, "root_resource")
@@ -130,14 +130,19 @@ class ScriptBuilder:
                 ActionType.UNDEF,
             )
             return "root_resource"
-        
+
         parent = await resource.get_parent()
         if not await self._var_exists(parent):
             await self.add_variable(parent)
 
         selector = await self._get_selector(resource)
         name = await self._generate_name(resource)
-        await self._add_action_to_session(resource, fr"""{name} = {selector}""", ActionType.UNDEF)
+        await self._add_action_to_session(
+            resource,
+            rf"""
+        {name} = {selector}""",
+            ActionType.UNDEF,
+        )
         await self._add_variable_to_session(resource, name)
         return name
 
@@ -159,9 +164,7 @@ class ScriptBuilder:
         root_resource = await self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
         # TODO: actions are duplicated if page is refreshed, is this reasonable?
-        session.hashed_actions[session.actions_counter] = ScriptAction(
-            action_type, action
-        )
+        session.hashed_actions[session.actions_counter] = ScriptAction(action_type, action)
         session.actions_counter += 1
 
     async def _add_variable_to_session(self, resource: Resource, var_name: str):
