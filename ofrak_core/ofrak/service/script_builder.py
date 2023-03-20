@@ -114,22 +114,22 @@ class ScriptBuilder:
         return name
     
     async def add_variable(self, resource: Resource) -> bytes:
-        if self._var_exists(resource):
+        if await self._var_exists(resource):
             return await self._get_variable_from_session(resource)
         
-        if resource == self._get_root_resource(resource):
-            await self._add_variable_to_session(resource.get_id(), resource, "root_resource")
+        if resource == await self._get_root_resource(resource):
+            await self._add_variable_to_session(resource, "root_resource")
             self.add_action(resource, r"""root_resource = await context.create_root_resource_from_file()""", ActionType.UNDEF)
             return "root_resource"
 
         parent = await resource.get_parent()
         if parent.get_id() not in self.var_names:
-            self.add_variable(parent)
+            await self.add_variable(parent)
     
         selector = await self._get_selector(resource)
         name = await self._generate_name(resource)
-        self.add_action(fr"""{name} = {selector}""")
-        self._add_variable_to_session(resource.get_id(), resource, name)
+        await self.add_action(fr"""{name} = {selector}""")
+        await self._add_variable_to_session(resource, name)
         return name
     
     async def add_action(
@@ -163,7 +163,7 @@ class ScriptBuilder:
 
     async def _var_exists(self, resource: Resource):
         root_resource = await self._get_root_resource(resource)
-        return resource.get_id() in self.script_sessions[root_resource.get_id()]
+        return resource.get_id() in self.script_sessions[root_resource.get_id()].variable_mapping
 
     def delete_action(self, resource_id: bytes, action: str) -> None:
         """
