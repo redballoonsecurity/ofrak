@@ -6,10 +6,8 @@ from typing import Dict, List, Optional, Tuple
 from ofrak.model.resource_model import ResourceIndexedAttribute
 from ofrak.core.filesystem import FilesystemEntry
 from ofrak.model.resource_model import Data
-from ofrak.model.resource_model import ResourceAttributes
-from ofrak.service.resource_service_i import ResourceAttributeValueFilter, ResourceFilter
+from service.resource_service_i import ResourceAttributeValueFilter, ResourceFilter
 
-from ofrak_type.error import NotFoundError
 from ofrak.resource import Resource
 
 
@@ -17,7 +15,7 @@ class SelectableAttributesError(Exception):
     """
     Prompt the user for an attribute to select with
     """
-    pass
+
 
 class ActionType(IntEnum):
     UNPACK = 0
@@ -33,7 +31,7 @@ class ScriptAction:
 
 
 class ScriptSession:
-    hashed_actions = OrderedDict()
+    hashed_actions: OrderedDict[int, ScriptAction] = OrderedDict()
     variable_mapping: Dict[bytes, str] = {}
     actions_counter: int = 0
     boilerplate_header: str = r"""
@@ -52,33 +50,34 @@ class ScriptBuilder:
     """ """
 
     def __init__(self):
+        self.root_cache: Dict[bytes, Resource] = {}
         self.script_sessions: Dict[bytes, ScriptSession] = {}
         self.selectable_indexes: List[ResourceIndexedAttribute] = [
             FilesystemEntry.Name,
-            Data.Offset
-        ]  
+            Data.Offset,
+        ]
 
     async def _get_selector(self, resource: Resource) -> str:
+        root_resource = await self._get_root_resource(resource)
         for ancestor in await resource.get_ancestors():
-            if ancestor.get_id() in self.var_names:
+            if ancestor.get_id() in self.script_sessions[root_resource.get_id()].variable_mapping:
                 break
         attribute, attribute_value = await self._get_selectable_attribute(resource)
         result = await ancestor.get_children(
             r_filter=ResourceFilter(
                 tags=resource.get_most_specific_tags(),
                 attribute_filters=[
-                    ResourceAttributeValueFilter(
-                        attribute=attribute, 
-                        value=attribute_value
-                        )
-                ]   
+                    ResourceAttributeValueFilter(attribute=attribute, value=attribute_value)
+                ],
             )
         )
         if len(list(result)) != 1:
-            raise SelectableAttributesError(f"Resource with ID {resource.get_id()} does not have a selectable attribute.")
+            raise SelectableAttributesError(
+                f"Resource with ID {resource.get_id()} does not have a selectable attribute."
+            )
         if isinstance(attribute_value, str) or isinstance(attribute_value, bytes):
-            attribute_value = f"\"{attribute_value}\""
-        return f"""await {self.var_names[ancestor.get_id()]}.get_children(
+            attribute_value = f'"{attribute_value}"'
+        return f"""await {self.script_sessions[root_resource.get_id()].variable_mapping[ancestor.get_id()]}.get_children(
             r_filter=ResourceFilter(
                 tags={resource.get_most_specific_tags()},
                 attribute_filters=[
@@ -90,8 +89,10 @@ class ScriptBuilder:
             )
         )
         """
-    
-    async def _get_selectable_attribute(self, resource:Resource) -> Tuple[ResourceIndexedAttribute, any]:
+
+    async def _get_selectable_attribute(
+        self, resource: Resource
+    ) -> Tuple[ResourceIndexedAttribute, any]:
         for attribute in self.selectable_indexes:
             try:
                 await resource.analyze(attribute.attributes_owner)
@@ -100,38 +101,44 @@ class ScriptBuilder:
                 print(e)
                 continue
             return attribute, attribute_value
-        raise SelectableAttributesError(f"Resource with ID {resource.get_id()} does not have a selectable attribute.")
-    
+        raise SelectableAttributesError(
+            f"Resource with ID {resource.get_id()} does not have a selectable attribute."
+        )
+
     async def _generate_name(self, resource: Resource) -> str:
+        root_resource = await self._get_root_resource(resource)
         # Find the most specific tag and use that with a number
         most_specific_tag = list(resource.get_most_specific_tags())[0].__name__.lower()
         _, selectable_attribute_value = await self._get_selectable_attribute(resource)
         name = f"{most_specific_tag}_{selectable_attribute_value}"
-        name = re.sub("[-./\]", "_", name)
-        if name in self.var_names.values():
+        name = re.sub(r"[-./\]", "_", name)
+        if name in self.script_sessions[root_resource.get_id()].variable_mapping.values:
             parent = await resource.get_parent()
-            return f"{self.var_names[parent.get_id()]}_{name}"
+            return f"{self.script_sessions[root_resource.get_id()].variable_mapping[parent.get_id()]}_{name}"
         return name
-    
+
     async def add_variable(self, resource: Resource) -> bytes:
         if await self._var_exists(resource):
             return await self._get_variable_from_session(resource)
-        
+
         if resource == await self._get_root_resource(resource):
             await self._add_variable_to_session(resource, "root_resource")
-            self.add_action(resource, r"""root_resource = await context.create_root_resource_from_file()""", ActionType.UNDEF)
+            self.add_action(
+                resource,
+                r"""root_resource = await context.create_root_resource_from_file()""",
+                ActionType.UNDEF,
+            )
             return "root_resource"
-
         parent = await resource.get_parent()
         if parent.get_id() not in self.var_names:
             await self.add_variable(parent)
-    
+
         selector = await self._get_selector(resource)
         name = await self._generate_name(resource)
-        await self.add_action(fr"""{name} = {selector}""")
+        await self.add_action(rf"""{name} = {selector}""")
         await self._add_variable_to_session(resource, name)
         return name
-    
+
     async def add_action(
         self,
         resource: Resource,
@@ -208,8 +215,11 @@ class ScriptBuilder:
         return self._get_script(resource_id, target_type)
 
     async def _get_root_resource(self, resource: Resource) -> Resource:
+        if resource.get_id() in self.root_cache:
+            return self.root_cache[resource.get_id()]
         while len(list(await resource.get_ancestors())) != 0:
             resource = await resource.get_parent()
+        self.root_cache[resource.get_id()] = resource
         return resource
 
     def update_script(self, resource_id: bytes, action: str, action_type: ActionType) -> str:
