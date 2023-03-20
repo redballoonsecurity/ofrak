@@ -53,8 +53,6 @@ class ScriptBuilder:
 
     def __init__(self):
         self.script_sessions: Dict[bytes, ScriptSession] = {}
-        self.var_names: Dict[bytes, str] = {}
-        self.lines: List[str] = []
         self.selectable_indexes: List[ResourceIndexedAttribute] = [
             FilesystemEntry.Name,
             Data.Offset
@@ -119,16 +117,16 @@ class ScriptBuilder:
         if resource.get_id() in self.var_names:
             return self.var_names[resource.get_id()]
         if len(list(await resource.get_ancestors())) == 0:
-            self.var_names[resource.get_id()] = "root_resource"
-            self.lines.append("root_resource = await context.create_root_resource_from_file()\n")
+            self.add_variable(resource.get_id(), resource, "root_resource")
+            self.add_action(resource, r"""root_resource = await context.create_root_resource_from_file()""", ActionType.UNDEF)
             return "root_resource"
         parent = await resource.get_parent()
         if parent.get_id() not in self.var_names:
             self.get_name(parent)
         selector = await self._get_selector(resource)
         name = await self._generate_name(resource)
-        self.lines.append(f"{name} = {selector}")
-        self.var_names[resource.get_id()] = name
+        self.add_action(fr"""{name} = {selector}""")
+        self.add_variable(resource.get_id(), resource, name)
         return name
     
     async def add_action(
