@@ -3,6 +3,9 @@ from dataclasses import dataclass
 from enum import IntEnum
 from typing import Dict, Optional
 
+from ofrak_type.error import NotFoundError
+from ofrak.resource import Resource
+
 
 class ActionType(IntEnum):
     UNPACK = 0
@@ -19,6 +22,7 @@ class ScriptAction:
 
 class ScriptSession:
     hashed_actions: OrderedDict[int, ScriptAction] = OrderedDict()
+    variable_mapping: Dict[bytes, str] = {}
     actions_counter: int = 0
     boilerplate_header: str = r"""
     from ofrak import OFRAK, OFRAKContext
@@ -38,16 +42,21 @@ class ScriptBuilder:
     def __init__(self):
         self.script_sessions: Dict[bytes, ScriptSession] = {}
 
-    def add_action(self, resource_id: bytes, action: str, action_type: ActionType) -> None:
+    async def add_action(self, resource: Resource, action: str, action_type: ActionType) -> None:
         """
         :param action:
         :param action_type:
         """
-        session = self._get_session(resource_id)
+        root_resource = await self._get_root_resource(resource)
+        session = self._get_session(root_resource.get_id())
 
         # TODO: actions are duplicated if page is refreshed, is this reasonable?
         session.hashed_actions[session.actions_counter] = ScriptAction(action_type, action)
         session.actions_counter += 1
+
+    def add_variable(self, root_resource_id: bytes, resource: Resource, var_name: str):
+        # TODO: autogenerate variable name here instead of passing it in
+        self.script_sessions[root_resource_id].variable_mapping[resource.get_id()] = var_name
 
     def delete_action(self, resource_id: bytes, action: str) -> None:
         """
@@ -58,6 +67,9 @@ class ScriptBuilder:
             if script_action.action == action:
                 del self.script_sessions[resource_id].hashed_actions[key]
 
+    async def _generate_name(self, resource) -> str:
+        pass
+
     def _get_session(self, resource_id: bytes) -> ScriptSession:
         session = self.script_sessions.get(resource_id, None)
         if session is None:
@@ -66,11 +78,12 @@ class ScriptBuilder:
 
         return session
 
-    def get_script(self, resource_id: bytes) -> str:
+    async def get_script(self, resource: Resource) -> str:
         """
         :return script:
         """
-        return self._get_script(resource_id)
+        root_resource = await self._get_root_resource(resource)
+        return self._get_script(root_resource.get_id())
 
     def _get_script(self, resource_id: bytes, target_type: Optional[ActionType] = None) -> str:
         script = []
@@ -89,6 +102,29 @@ class ScriptBuilder:
         :return script:
         """
         return self._get_script(resource_id, target_type)
+
+    async def _get_root_resource(self, resource: Resource) -> Resource:
+        parent = resource
+        try:
+            # Assume get_ancestors returns an ordered list with the parent first and the root last
+            for parent in await resource.get_ancestors():
+                pass
+        except NotFoundError:
+            pass
+
+        return parent
+
+    async def _get_var_name(self, resource: Resource) -> str:
+        root_resource = await self._get_root_resource(resource)
+        root_resource_id = root_resource.get_id()
+        resource_id = resource.get_id()
+        if resource_id in self.script_sessions[root_resource_id].variable_mapping.keys():
+            return self.script_sessions[root_resource_id].variable_mapping[resource_id]
+        selector = self.get_selector(resource)
+        name = self.generate_name(resource)
+        self.script_sessions[root_resource_id].variable_mapping[resource_id] = name
+        self.add_action(resource, f"{name} = {selector}", ActionType.MOD)
+        return name
 
     def update_script(self, resource_id: bytes, action: str, action_type: ActionType) -> str:
         """
