@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Tuple
 from ofrak.model.resource_model import ResourceIndexedAttribute
 from ofrak.core.filesystem import FilesystemEntry
 from ofrak.model.resource_model import Data
-from service.resource_service_i import ResourceAttributeValueFilter, ResourceFilter
+from ofrak.service.resource_service_i import ResourceAttributeValueFilter, ResourceFilter
 
 from ofrak.resource import Resource
 
@@ -123,19 +123,19 @@ class ScriptBuilder:
 
         if resource == await self._get_root_resource(resource):
             await self._add_variable_to_session(resource, "root_resource")
-            self.add_action(
+            await self.add_action(
                 resource,
                 r"""root_resource = await context.create_root_resource_from_file()""",
                 ActionType.UNDEF,
             )
             return "root_resource"
         parent = await resource.get_parent()
-        if parent.get_id() not in self.var_names:
+        if self._var_exists(parent.get_id()):
             await self.add_variable(parent)
 
         selector = await self._get_selector(resource)
         name = await self._generate_name(resource)
-        await self.add_action(rf"""{name} = {selector}""")
+        await self.add_action(fr"""{name} = {selector}""")
         await self._add_variable_to_session(resource, name)
         return name
 
