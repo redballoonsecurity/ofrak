@@ -77,7 +77,14 @@ class ScriptBuilder:
                 del self.script_sessions[resource_id].hashed_actions[key]
 
     async def _generate_name(self, resource) -> str:
-        pass
+        root_resource = self._get_root_resource(resource)
+        most_specific_tag = resource.get_most_specific_tag()[0].lower()
+        num = 2
+        name = most_specific_tag
+        while name in self.script_sessions[root_resource.get_id()].variable_mapping.values():
+            name = f"{most_specific_tag}_{num}"
+            num += 1
+        return name
 
     def _get_session(self, resource_id: bytes) -> ScriptSession:
         session = self.script_sessions.get(resource_id, None)
@@ -130,7 +137,7 @@ class ScriptBuilder:
         if resource_id in self.script_sessions[root_resource_id].variable_mapping.keys():
             return self.script_sessions[root_resource_id].variable_mapping[resource_id]
         selector = self.get_selector(resource)
-        name = self.generate_name(resource)
+        name = self._generate_name(resource)
         self.script_sessions[root_resource_id].variable_mapping[resource_id] = name
         self.add_action(resource, f"{name} = {selector}", ActionType.MOD)
         return name
