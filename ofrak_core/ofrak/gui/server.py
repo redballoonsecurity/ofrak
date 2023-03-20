@@ -1,16 +1,13 @@
 import asyncio
-from dataclasses import dataclass
 import functools
 import logging
 import json
-import re
 import os
 import sys
 import webbrowser
 from collections import defaultdict
 from typing import (
     Iterable,
-    List,
     Optional,
     Dict,
     cast,
@@ -24,7 +21,6 @@ from typing import (
 )
 
 import json
-import aiohttp_cors
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPBadRequest
 from aiohttp.web_request import Request
@@ -32,9 +28,6 @@ from aiohttp.web_response import Response
 from aiohttp.web_fileresponse import FileResponse
 
 from ofrak.ofrak_context import get_current_ofrak_context
-from ofrak.core.filesystem import FilesystemEntry
-from ofrak.model.resource_model import Data
-from ofrak.model.resource_model import ResourceIndexedAttribute
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 
@@ -196,7 +189,7 @@ class AiohttpOFRAKServer:
                 cors.add(route)
         except ImportError:
             pass
-        
+
     async def start(self):  # pragma: no cover
         """
         Start the server then return.
@@ -455,7 +448,7 @@ class AiohttpOFRAKServer:
         await self.script_builder.add_action(resource, script_str, ActionType.PACK)
 
         return json_response(await self._serialize_component_result(result))
-        
+
     @exceptions_to_http(SerializedError)
     async def pack_recursively(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
