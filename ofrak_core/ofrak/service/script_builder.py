@@ -120,8 +120,9 @@ class ScriptBuilder:
     async def add_variable(self, resource: Resource) -> bytes:
         if await self._var_exists(resource):
             return await self._get_variable_from_session(resource)
-
-        if resource == await self._get_root_resource(resource):
+        
+        root_resource = await self._get_root_resource(resource)
+        if resource.get_id() == root_resource.get_id():
             await self._add_variable_to_session(resource, "root_resource")
             await self.add_action(
                 resource,
@@ -129,13 +130,14 @@ class ScriptBuilder:
                 ActionType.UNDEF,
             )
             return "root_resource"
+        
         parent = await resource.get_parent()
         if not await self._var_exists(parent):
             await self.add_variable(parent)
 
         selector = await self._get_selector(resource)
         name = await self._generate_name(resource)
-        await self.add_action(resource, fr"""{name} = {selector}""", ActionType.UNDEF)
+        await self._add_action_to_session(resource, fr"""{name} = {selector}""", ActionType.UNDEF)
         await self._add_variable_to_session(resource, name)
         return name
 
@@ -149,20 +151,23 @@ class ScriptBuilder:
         :param action:
         :param action_type:
         """
-        root_resource = await self._get_root_resource(resource)
-        session = self._get_session(root_resource.get_id())
         var_name = await self.add_variable(resource)
         qualified_action = action.replace("$resource", var_name)
+        self._add_action_to_session(resource, qualified_action, action_type)
 
+    async def _add_action_to_session(self, resource, action, action_type):
+        root_resource = await self._get_root_resource(resource)
+        session = self._get_session(root_resource.get_id())
         # TODO: actions are duplicated if page is refreshed, is this reasonable?
         session.hashed_actions[session.actions_counter] = ScriptAction(
-            action_type, qualified_action
+            action_type, action
         )
         session.actions_counter += 1
 
     async def _add_variable_to_session(self, resource: Resource, var_name: str):
         root_resource = await self._get_root_resource(resource)
-        self.script_sessions[root_resource.get_id()].variable_mapping[resource.get_id()] = var_name
+        session = self._get_session(root_resource.get_id())
+        session.variable_mapping[resource.get_id()] = var_name
 
     async def _get_variable_from_session(self, resource: Resource):
         root_resource = await self._get_root_resource(resource)
