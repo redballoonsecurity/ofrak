@@ -205,16 +205,16 @@ class AiohttpOFRAKServer:
         if name is None:
             return HTTPBadRequest(reason="Missing root resource `name` from request")
 
-        script_str = r"""
-        resource_data = await request.read()
-        root_resource = await self._ofrak_context.create_root_resource(name, resource_data, (File,))
+        script_str = rf"""
+        resource_data = await $request.read()
+        root_resource = await self._ofrak_context.create_root_resource({name}, resource_data, (File,))
         """
         resource_data = await request.read()
         root_resource = await self._ofrak_context.create_root_resource(name, resource_data, (File,))
         if request.remote is not None:
             self._job_ids[request.remote] = root_resource.get_job_id()
 
-        await self.script_builder.add_action(root_resource.get_id(), script_str, ActionType.UNPACK)
+        await self.script_builder.add_action(root_resource, script_str, ActionType.UNPACK)
 
         return json_response(self._serialize_resource(root_resource))
 
@@ -248,7 +248,7 @@ class AiohttpOFRAKServer:
             get_query_string_as_pjson(request).get("range"), Optional[Range]
         )
         script_str = rf"""
-        data = await resource.get_data({_range})
+        data = await $resource.get_data({_range})
         """
         data = await resource.get_data(_range)
 
@@ -263,7 +263,7 @@ class AiohttpOFRAKServer:
         resource_service = self._ofrak_context.resource_factory._resource_service
         data_service = self._ofrak_context.resource_factory._data_service
         children = await resource_service.get_descendants_by_id(
-            resource.get_id(),
+            $resource.get_id(),
             max_depth=1,
         )
 
@@ -272,7 +272,7 @@ class AiohttpOFRAKServer:
                 if child.data_id is None:
                     return
                 data_range = await data_service.get_range_within_other(
-                    child.data_id, resource.get_data_id()
+                    child.data_id, $resource.get_data_id()
                 )
                 return child.id.hex(), (data_range.start, data_range.end)
             except ValueError:
@@ -396,8 +396,8 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def unpack(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
-        script_str = r"""
-        result = await resource.unpack()
+        script_str = """
+        result = await $resource.unpack()
         """
         result = await resource.unpack()
 
@@ -409,7 +409,7 @@ class AiohttpOFRAKServer:
     async def unpack_recursively(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         script_str = """
-        result = await resource.unpack_recursively()
+        result = await $resource.unpack_recursively()
         """
         result = await resource.unpack_recursively()
 
@@ -421,7 +421,7 @@ class AiohttpOFRAKServer:
     async def pack(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         script_str = """
-        result = await resource.pack()
+        result = await $resource.pack()
         """
         result = await resource.pack()
 
@@ -433,7 +433,7 @@ class AiohttpOFRAKServer:
     async def pack_recursively(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         script_str = """
-        result = await resource.pack_recursively()
+        result = await $resource.pack_recursively()
         """
         result = await resource.pack_recursively()
 
@@ -445,7 +445,7 @@ class AiohttpOFRAKServer:
     async def identify(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         script_str = """
-        result = await resource.identify()
+        result = await $resource.identify()
         """
         result = await resource.identify()
 
@@ -457,7 +457,7 @@ class AiohttpOFRAKServer:
     async def data_summary(self, request: Request) -> Response:
         resource = cast(Resource, await self._get_resource_for_request(request))
         script_str = """
-        result = await resource.run(DataSummaryAnalyzer)
+        result = await $resource.run(DataSummaryAnalyzer)
         """
         result = await resource.run(DataSummaryAnalyzer)
 
@@ -469,7 +469,7 @@ class AiohttpOFRAKServer:
     async def analyze(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         script_str = """
-        result = await resource.auto_run(all_analyzers=True)
+        result = await $resource.auto_run(all_analyzers=True)
         """
         result = await resource.auto_run(all_analyzers=True)
 
@@ -481,7 +481,7 @@ class AiohttpOFRAKServer:
     async def get_parent(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         script_str = """
-        parent = await resource.get_parent()
+        parent = await $resource.get_parent()
         """
         parent = await resource.get_parent()
 
@@ -494,7 +494,7 @@ class AiohttpOFRAKServer:
         resource = await self._get_resource_for_request(request)
         # TODO: filter argument
         script_str = """
-        ancestors = await resource.get_ancestors()
+        ancestors = await $resource.get_ancestors()
         """
         ancestors = await resource.get_ancestors()
 
@@ -564,7 +564,7 @@ class AiohttpOFRAKServer:
         parent = resource
         # TODO: replace resource with method that returns unqiely ID'd resource
         script_str = """
-        parent = resource
+        parent = $resource
         try:
             # Assume get_ancestors returns an ordered list with the parent first and the root last
             for parent in await resource.get_ancestors():
@@ -594,8 +594,8 @@ class AiohttpOFRAKServer:
         end_param = request.query.get("end")
         end = int(end_param) if end_param is not None else (await resource.get_data_length())
 
-        resource.queue_patch(Range(start, end), new_data)
-        await resource.save()
+        $resource.queue_patch(Range(start, end), new_data)
+        await $resource.save()
         """
         new_data = await request.read()
 
@@ -616,7 +616,7 @@ class AiohttpOFRAKServer:
         resource = await self._get_resource_for_request(request)
         _range = self._serializer.from_pjson(await request.json(), Optional[Range])
         script_str = f"""
-        child = await resource.create_child(tags=(GenericBinary,), data_range={_range})
+        child = await $resource.create_child(tags=(GenericBinary,), data_range={_range})
         """
         child = await resource.create_child(tags=(GenericBinary,), data_range=_range)
 
@@ -629,7 +629,7 @@ class AiohttpOFRAKServer:
         resource = await self._get_resource_for_request(request)
         config = self._serializer.from_pjson(await request.json(), StringFindReplaceConfig)
         script_str = f"""
-        result = await resource.run(StringFindReplaceModifier, config={config})
+        result = await $resource.run(StringFindReplaceModifier, config={config})
         """
         result = await resource.run(StringFindReplaceModifier, config=config)
 
@@ -643,8 +643,8 @@ class AiohttpOFRAKServer:
         """
         resource = await self._get_resource_for_request(request)
         comment = self._serializer.from_pjson(await request.json(), Tuple[Optional[Range], str])
-        script_str = """
-        result = await resource.run(AddCommentModifier, AddCommentModifierConfig(comment))
+        script_str = f"""
+        result = await $resource.run(AddCommentModifier, AddCommentModifierConfig({comment}))
         """
         result = await resource.run(AddCommentModifier, AddCommentModifierConfig(comment))
 
@@ -656,9 +656,9 @@ class AiohttpOFRAKServer:
     async def delete_comment(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         comment_range = self._serializer.from_pjson(await request.json(), Optional[Range])
-        script_str = """
-        result = await resource.run(
-            DeleteCommentModifier, DeleteCommentModifierConfig(comment_range)
+        script_str = f"""
+        result = await $resource.run(
+            DeleteCommentModifier, DeleteCommentModifierConfig({comment_range})
         )
         """
         result = await resource.run(
@@ -685,7 +685,7 @@ class AiohttpOFRAKServer:
                 )
             else:
                 vaddr_filter = ResourceAttributeValueFilter(Addressable.VirtualAddress, {vaddr_start})
-            matching_resources = await resource.get_descendants(
+            matching_resources = await $resource.get_descendants(
                 r_filter=ResourceFilter(attribute_filters=(vaddr_filter,)),
                 r_sort=ResourceSort(Addressable.VirtualAddress),
             )
@@ -718,8 +718,8 @@ class AiohttpOFRAKServer:
         resource = await self._get_resource_for_request(request)
         tag = self._serializer.from_pjson(await request.json(), ResourceTag)
         script_str = """
-        resource.add_tag(tag)
-        await resource.save()
+        $resource.add_tag(tag)
+        await $resource.save()
         """
         resource.add_tag(tag)
         await resource.save()

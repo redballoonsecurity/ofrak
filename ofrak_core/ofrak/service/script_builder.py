@@ -42,16 +42,25 @@ class ScriptBuilder:
     def __init__(self):
         self.script_sessions: Dict[bytes, ScriptSession] = {}
 
-    async def add_action(self, resource: Resource, action: str, action_type: ActionType) -> None:
+    async def add_action(
+        self,
+        resource: Resource,
+        action: str,
+        action_type: ActionType,
+    ) -> None:
         """
         :param action:
         :param action_type:
         """
         root_resource = await self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
+        var_name = await self._get_var_name(resource)
+        qualified_action = action.replace("$resource", var_name)
 
         # TODO: actions are duplicated if page is refreshed, is this reasonable?
-        session.hashed_actions[session.actions_counter] = ScriptAction(action_type, action)
+        session.hashed_actions[session.actions_counter] = ScriptAction(
+            action_type, qualified_action
+        )
         session.actions_counter += 1
 
     def add_variable(self, root_resource_id: bytes, resource: Resource, var_name: str):
