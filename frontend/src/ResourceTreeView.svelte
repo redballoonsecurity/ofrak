@@ -38,6 +38,7 @@
 
   export let rootResource,
     modifierView,
+    scriptView,
     resourceNodeDataMap = {};
 </script>
 
@@ -46,6 +47,7 @@
     <ResourceTreeToolbar
       bind:resourceNodeDataMap="{resourceNodeDataMap}"
       bind:modifierView="{modifierView}"
+      bind:scriptView="{scriptView}"
     />
   </div>
 

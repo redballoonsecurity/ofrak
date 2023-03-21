@@ -41,12 +41,13 @@
   import MagnitudeView from "./MagnitudeView.svelte";
   import Pane from "./Pane.svelte";
   import ResourceTreeView from "./ResourceTreeView.svelte";
+  import ScriptView from "./ScriptView.svelte";
   import Split from "./Split.svelte";
   import StartView from "./StartView.svelte";
   import TextView from "./TextView.svelte";
 
   import { printConsoleArt } from "./console-art.js";
-  import { selected, selectedResource } from "./stores.js";
+  import { selected, selectedResource, script } from "./stores.js";
   import { keyEventToString, shortcuts } from "./keyboard.js";
 
   import { writable } from "svelte/store";
@@ -61,7 +62,7 @@
     rootResourceLoadPromise = new Promise((resolve) => {}),
     resourceNodeDataMap = {},
     resources = {};
-  let carouselSelection, currentResource, rootResource, modifierView;
+  let carouselSelection, currentResource, rootResource, modifierView, scriptView;
 
   let riddleAnswered = JSON.parse(window.localStorage.getItem("riddleSolved"));
   if (riddleAnswered === null || riddleAnswered === undefined) {
@@ -164,13 +165,20 @@ Answer by running riddle.answer('your answer here') from the console.`);
           {:else}
             <ResourceTreeView
               rootResource="{rootResource}"
+              bind:scriptView="{scriptView}"
               bind:resourceNodeDataMap="{resourceNodeDataMap}"
               bind:modifierView="{modifierView}"
             />
           {/if}
         </Pane>
         <Pane slot="second" paddingVertical="{'1em'}">
-          <AttributesView resource="{currentResource}" />
+          {#if scriptView}
+            <ScriptView
+              bind:scriptView="{scriptView}"
+            /> 
+          {:else}
+            <AttributesView resource="{currentResource}" />
+          {/if}
         </Pane>
       </Split>
       <Pane
