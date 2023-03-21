@@ -229,8 +229,7 @@ class AiohttpOFRAKServer:
         script_str = rf"""
         with open("{name}", "rb") as fh:
             resource_data = fh.read()
-        root_resource = await ofrak_context.create_root_resource("{name}", resource_data, (File,))
-        """
+        root_resource = await ofrak_context.create_root_resource_from_file("{name}")"""
         resource_data = await request.read()
         root_resource = await self._ofrak_context.create_root_resource(name, resource_data, (File,))
         await self.script_builder.add_action(root_resource, script_str, ActionType.UNPACK)
@@ -335,8 +334,7 @@ class AiohttpOFRAKServer:
     async def unpack(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         script_str = """
-        await $resource.unpack()
-        """
+        await $resource.unpack()"""
         await self.script_builder.add_action(resource, script_str, ActionType.UNPACK)
         result = await resource.unpack()
         return json_response(await self._serialize_component_result(result))
@@ -345,8 +343,7 @@ class AiohttpOFRAKServer:
     async def unpack_recursively(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         script_str = """
-        await $resource.unpack_recursively()
-        """
+        await $resource.unpack_recursively()"""
         await self.script_builder.add_action(resource, script_str, ActionType.UNPACK)
         result = await resource.unpack_recursively()
         return json_response(await self._serialize_component_result(result))
@@ -356,8 +353,7 @@ class AiohttpOFRAKServer:
         resource = await self._get_resource_for_request(request)
         script_str = """
 
-        await $resource.pack()
-        """
+        await $resource.pack()"""
         await self.script_builder.add_action(resource, script_str, ActionType.PACK)
         result = await resource.pack()
         return json_response(await self._serialize_component_result(result))
@@ -366,8 +362,7 @@ class AiohttpOFRAKServer:
     async def pack_recursively(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         script_str = """
-        await $resource.pack_recursively()
-        """
+        await $resource.pack_recursively()"""
         await self.script_builder.add_action(resource, script_str, ActionType.PACK)
         result = await resource.pack_recursively()
         return json_response(await self._serialize_component_result(result))
@@ -376,8 +371,7 @@ class AiohttpOFRAKServer:
     async def identify(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         script_str = """
-        await $resource.identify()
-        """
+        await $resource.identify()"""
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         result = await resource.identify()
         return json_response(await self._serialize_component_result(result))
@@ -393,8 +387,7 @@ class AiohttpOFRAKServer:
     async def analyze(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         script_str = """
-        await $resource.auto_run(all_analyzers=True)
-        """
+        await $resource.auto_run(all_analyzers=True)"""
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         result = await resource.auto_run(all_analyzers=True)
         return json_response(await self._serialize_component_result(result))
@@ -459,29 +452,21 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def queue_patch(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
-        #TODO Eventually...
-        # script_str = """
-        # new_data = await request.read()
-
-        # start_param = request.query.get("start")
-        # start = int(start_param) if start_param is not None else 0
-        # end_param = request.query.get("end")
-        # end = int(end_param) if end_param is not None else (await resource.get_data_length())
-
-        # $resource.queue_patch(Range(start, end), new_data)
-        # await $resource.save()
-        # """
         new_data = await request.read()
 
         start_param = request.query.get("start")
         start = int(start_param) if start_param is not None else 0
         end_param = request.query.get("end")
         end = int(end_param) if end_param is not None else (await resource.get_data_length())
-
+        # TODO: There has to be a better way 
+        new_data_string = "/x"+"/x".join([new_data.hex()[i:i+2] for i in range(0, len(new_data.hex()), 2)])
+        script_str = fr"""
+        $resource.queue_patch(Range({start}, {end}), b"{new_data_string}")
+        await $resource.save()"""
+        await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         resource.queue_patch(Range(start, end), new_data)
         await resource.save()
 
-        # await self.script_builder.add_action(resource, script_str, ActionType.MOD)
 
         return json_response(self._serialize_resource(resource))
 
@@ -497,11 +482,16 @@ class AiohttpOFRAKServer:
     async def find_and_replace(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         config = self._serializer.from_pjson(await request.json(), StringFindReplaceConfig)
-        #TODO Eventually...
-        # script_str = f"""
-        # result = await $resource.run(StringFindReplaceModifier, config={config})
-        # """
-        # await self.script_builder.add_action(resource, script_str, ActionType.MOD)
+        script_str = fr"""
+        config = StringFindReplaceConfig(
+            to_find="{config.to_find}", 
+            replace_with="{config.replace_with}", 
+            null_terminate={config.null_terminate}, 
+            allow_overflow={config.allow_overflow}
+        )
+        result = await $resource.run(StringFindReplaceModifier, config)
+        """
+        await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         result = await resource.run(StringFindReplaceModifier, config=config)
         return json_response(await self._serialize_component_result(result))
 
@@ -525,8 +515,7 @@ class AiohttpOFRAKServer:
         script_str = f"""
         result = await $resource.run(
             DeleteCommentModifier, DeleteCommentModifierConfig({comment_range})
-        )
-        """
+        )"""
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         result = await resource.run(
             DeleteCommentModifier, DeleteCommentModifierConfig(comment_range)
@@ -564,8 +553,7 @@ class AiohttpOFRAKServer:
         tag = self._serializer.from_pjson(await request.json(), ResourceTag)
         script_str = """
         $resource.add_tag(tag)
-        await $resource.save()
-        """
+        await $resource.save()"""
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         resource.add_tag(tag)
         await resource.save()

@@ -36,7 +36,6 @@ class ScriptSession:
     variable_mapping: Dict[bytes, str] = {}
     actions_counter: int = 0
     boilerplate_header: str = r"""
-    from ofrak import OFRAK, OFRAKContext
     from ofrak import *
     from ofrak.core import *
 
@@ -91,8 +90,7 @@ class ScriptBuilder:
                             )
                         ]   
                     )
-                )
-                """
+                )"""
 
     async def _get_selectable_attribute(
         self, resource: Resource

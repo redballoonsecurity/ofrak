@@ -327,7 +327,7 @@ export class RemoteResource extends Resource {
     start = start || 0;
     end = end || 0;
     const patch_results = await fetch(
-      `${this.uri}/queue_patch?start=${start}&end=${end}`,
+      `${backendUrl}/${this.uri}/queue_patch?start=${start}&end=${end}`,
       {
         method: "POST",
         body: data,
