@@ -78,7 +78,7 @@ fi;
 
 
 # General cross-compile headers
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     linux-libc-dev-amd64-cross \
     linux-libc-dev-arm64-cross \
     linux-libc-dev-armel-cross \
@@ -90,4 +90,5 @@ RUN apt-get update && apt-get install -y \
     linux-libc-dev-mips64el-cross \
     linux-libc-dev-powerpc-cross \
     linux-libc-dev-ppc64-cross \
-    linux-libc-dev-ppc64el-cross
+    linux-libc-dev-ppc64el-cross \
+    libc6-dev-i386
