@@ -229,15 +229,13 @@ class AiohttpOFRAKServer:
         script_str = rf"""
         with open("{name}", "rb") as fh:
             resource_data = fh.read()
-        root_resource = await self._ofrak_context.create_root_resource({name}, resource_data, (File,))
+        root_resource = await ofrak_context.create_root_resource("{name}", resource_data, (File,))
         """
         resource_data = await request.read()
         root_resource = await self._ofrak_context.create_root_resource(name, resource_data, (File,))
+        await self.script_builder.add_action(root_resource, script_str, ActionType.UNPACK)
         if request.remote is not None:
             self._job_ids[request.remote] = root_resource.get_job_id()
-
-        await self.script_builder.add_action(root_resource, script_str, ActionType.UNPACK)
-
         return json_response(self._serialize_resource(root_resource))
 
     @exceptions_to_http(SerializedError)
@@ -339,10 +337,8 @@ class AiohttpOFRAKServer:
         script_str = """
         await $resource.unpack()
         """
-        result = await resource.unpack()
-
         await self.script_builder.add_action(resource, script_str, ActionType.UNPACK)
-
+        result = await resource.unpack()
         return json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
@@ -351,10 +347,8 @@ class AiohttpOFRAKServer:
         script_str = """
         await $resource.unpack_recursively()
         """
-        result = await resource.unpack_recursively()
-
         await self.script_builder.add_action(resource, script_str, ActionType.UNPACK)
-
+        result = await resource.unpack_recursively()
         return json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
@@ -364,10 +358,8 @@ class AiohttpOFRAKServer:
 
         await $resource.pack()
         """
-        result = await resource.pack()
-
         await self.script_builder.add_action(resource, script_str, ActionType.PACK)
-
+        result = await resource.pack()
         return json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
@@ -376,10 +368,8 @@ class AiohttpOFRAKServer:
         script_str = """
         await $resource.pack_recursively()
         """
-        result = await resource.pack_recursively()
-
         await self.script_builder.add_action(resource, script_str, ActionType.PACK)
-
+        result = await resource.pack_recursively()
         return json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
@@ -388,10 +378,8 @@ class AiohttpOFRAKServer:
         script_str = """
         await $resource.identify()
         """
-        result = await resource.identify()
-
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
-
+        result = await resource.identify()
         return json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
@@ -407,10 +395,8 @@ class AiohttpOFRAKServer:
         script_str = """
         await $resource.auto_run(all_analyzers=True)
         """
-        result = await resource.auto_run(all_analyzers=True)
-
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
-
+        result = await resource.auto_run(all_analyzers=True)
         return json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
@@ -515,10 +501,8 @@ class AiohttpOFRAKServer:
         # script_str = f"""
         # result = await $resource.run(StringFindReplaceModifier, config={config})
         # """
-        result = await resource.run(StringFindReplaceModifier, config=config)
-
         # await self.script_builder.add_action(resource, script_str, ActionType.MOD)
-
+        result = await resource.run(StringFindReplaceModifier, config=config)
         return json_response(await self._serialize_component_result(result))
 
     async def add_comment(self, request: Request) -> Response:
@@ -530,10 +514,8 @@ class AiohttpOFRAKServer:
         script_str = f"""
         result = await $resource.run(AddCommentModifier, AddCommentModifierConfig({comment}))
         """
-        result = await resource.run(AddCommentModifier, AddCommentModifierConfig(comment))
-
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
-
+        result = await resource.run(AddCommentModifier, AddCommentModifierConfig(comment))
         return json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
@@ -545,12 +527,10 @@ class AiohttpOFRAKServer:
             DeleteCommentModifier, DeleteCommentModifierConfig({comment_range})
         )
         """
+        await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         result = await resource.run(
             DeleteCommentModifier, DeleteCommentModifierConfig(comment_range)
         )
-
-        await self.script_builder.add_action(resource, script_str, ActionType.MOD)
-
         return json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
@@ -586,11 +566,9 @@ class AiohttpOFRAKServer:
         $resource.add_tag(tag)
         await $resource.save()
         """
+        await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         resource.add_tag(tag)
         await resource.save()
-
-        await self.script_builder.add_action(resource, script_str, ActionType.MOD)
-
         return json_response(self._serialize_resource(resource))
 
     @exceptions_to_http(SerializedError)

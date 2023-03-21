@@ -2,6 +2,7 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from enum import IntEnum
 import re
+import os
 from typing import Dict, List, Optional, Tuple
 from ofrak.model.resource_model import ResourceIndexedAttribute
 from ofrak.core.filesystem import FilesystemEntry
@@ -36,6 +37,8 @@ class ScriptSession:
     actions_counter: int = 0
     boilerplate_header: str = r"""
     from ofrak import OFRAK, OFRAKContext
+    from ofrak import *
+    from ofrak.core import *
 
     async def main(ofrak_context: OFRAKContext):
     """
@@ -63,21 +66,22 @@ class ScriptBuilder:
             if ancestor.get_id() in self.script_sessions[root_resource.get_id()].variable_mapping:
                 break
         attribute, attribute_value = await self._get_selectable_attribute(resource)
-        result = await ancestor.get_children(
-            r_filter=ResourceFilter(
-                tags=resource.get_most_specific_tags(),
-                attribute_filters=[
-                    ResourceAttributeValueFilter(attribute=attribute, value=attribute_value)
-                ],
+        try:
+            result = await ancestor.get_only_child(
+                r_filter=ResourceFilter(
+                    tags=resource.get_most_specific_tags(),
+                    attribute_filters=[
+                        ResourceAttributeValueFilter(attribute=attribute, value=attribute_value)
+                    ],
+                )
             )
-        )
-        if len(list(result)) != 1:
+        except:
             raise SelectableAttributesError(
                 f"Resource with ID {resource.get_id()} does not have a selectable attribute."
             )
         if isinstance(attribute_value, str) or isinstance(attribute_value, bytes):
             attribute_value = f'"{attribute_value}"'.rstrip()
-        return f"""await {self.script_sessions[root_resource.get_id()].variable_mapping[ancestor.get_id()]}.get_children(
+        return f"""await {self.script_sessions[root_resource.get_id()].variable_mapping[ancestor.get_id()]}.get_only_child(
                     r_filter=ResourceFilter(
                         tags={resource.get_most_specific_tags()},
                         attribute_filters=[
@@ -205,12 +209,24 @@ class ScriptBuilder:
         script.append(self.script_sessions[resource_id].boilerplate_header)
         for script_action in self.script_sessions[resource_id].hashed_actions.values():
             if target_type is None or target_type == script_action.action_type:
-                script.append(f"\t{script_action.action}")
+                script.append(f"{script_action.action}")
         script.append(self.script_sessions[resource_id].boilerplate_footer)
         script = "\n".join(script)
-
+        script = self._dedent(script)
         return script
 
+    def _dedent(self, s):
+        split = list(s.splitlines())
+        prefix = os.path.commonprefix([line for line in split if line != ""])
+        indent_matches = re.findall(r"^\s+", prefix)
+        if not indent_matches:
+            return s
+        indent_end_index = len(indent_matches[0])
+        return (
+            "\n".join(
+                [line[indent_end_index:] for line in split if line.startswith(prefix) and line != ""]
+            )
+        )
     def get_all_of_type(self, resource_id: bytes, target_type: ActionType) -> str:
         """
         :param target_type:
