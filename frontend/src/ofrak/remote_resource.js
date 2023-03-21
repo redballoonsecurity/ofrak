@@ -401,7 +401,6 @@ export class RemoteResource extends Resource {
     this.flush_cache();
     this.update();
 
-    const script = await this.get_script();   
   }
 
   async add_comment(optional_range, comment) {
@@ -440,6 +439,8 @@ export class RemoteResource extends Resource {
     });
     this.flush_cache();
     this.update();
+
+    const script = await this.get_script();
   }
 
   async delete_comment(optional_range) {
@@ -480,7 +481,7 @@ export class RemoteResource extends Resource {
   }
 
     async get_script() {
-      const script = await fetch(`${this.uri}/get_script`, {
+      const script = await fetch(`${backendUrl}/${this.uri}/get_script`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

@@ -124,11 +124,6 @@ class ScriptBuilder:
         root_resource = await self._get_root_resource(resource)
         if resource.get_id() == root_resource.get_id():
             await self._add_variable_to_session(resource, "root_resource")
-            await self.add_action(
-                resource,
-                r"""root_resource = await context.create_root_resource_from_file()""",
-                ActionType.UNDEF,
-            )
             return "root_resource"
 
         parent = await resource.get_parent()
@@ -212,7 +207,7 @@ class ScriptBuilder:
             if target_type is None or target_type == script_action.action_type:
                 script.append(f"\t{script_action.action}")
         script.append(self.script_sessions[resource_id].boilerplate_footer)
-        "\n".join(script)
+        script = "\n".join(script)
 
         return script
 
