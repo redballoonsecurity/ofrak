@@ -1,5 +1,5 @@
 import { Resource } from "./resource";
-import { backendUrl } from "../stores";
+import { backendUrl, script } from "../stores";
 
 let batchQueues = {};
 
@@ -190,7 +190,7 @@ export class RemoteResource extends Resource {
     this.flush_cache();
     this.update();
     
-    const script = await this.get_script();
+    await this.get_script();
   }
 
   async identify() {
@@ -205,7 +205,7 @@ export class RemoteResource extends Resource {
     ingest_component_results(identify_results, this.resource_list);
     this.update();
 
-    const script = await this.get_script();   
+    await this.get_script();   
   }
 
   async unpack_recursively() {
@@ -222,7 +222,7 @@ export class RemoteResource extends Resource {
     this.flush_cache();
     this.update();
 
-    const script = await this.get_script();   
+    await this.get_script();   
   }
 
   async pack() {
@@ -238,7 +238,7 @@ export class RemoteResource extends Resource {
     this.flush_cache();
     this.update();
 
-    const script = await this.get_script();   
+    await this.get_script();   
   }
 
   async pack_recursively() {
@@ -257,7 +257,7 @@ export class RemoteResource extends Resource {
     this.flush_cache();
     this.update();
 
-    const script = await this.get_script();   
+    await this.get_script();   
   }
 
   async data_summary() {
@@ -289,7 +289,7 @@ export class RemoteResource extends Resource {
     this.flush_cache();
     this.update();
       
-    const script = await this.get_script();   
+    await this.get_script();   
   }
 
   async get_parent() {
@@ -401,6 +401,7 @@ export class RemoteResource extends Resource {
     this.flush_cache();
     this.update();
 
+    await this.get_script();   
   }
 
   async add_comment(optional_range, comment) {
@@ -420,7 +421,7 @@ export class RemoteResource extends Resource {
     this.flush_cache();
     this.update();
 
-    const script = await this.get_script();   
+    await this.get_script();   
   }
 
   async add_tag(tag) {
@@ -440,7 +441,7 @@ export class RemoteResource extends Resource {
     this.flush_cache();
     this.update();
 
-    const script = await this.get_script();
+    await this.get_script();
   }
 
   async delete_comment(optional_range) {
@@ -481,7 +482,7 @@ export class RemoteResource extends Resource {
   }
 
     async get_script() {
-      const script = await fetch(`${backendUrl}/${this.uri}/get_script`, {
+      const new_script = await fetch(`${backendUrl}/${this.uri}/get_script`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -490,7 +491,7 @@ export class RemoteResource extends Resource {
         if (!r.ok) {
           throw Error(JSON.stringify(await r.json(), undefined, 2));
         }
-        return await r.json();    
+        script.set(await r.json());
       });
   }
 }
