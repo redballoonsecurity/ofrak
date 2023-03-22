@@ -212,8 +212,14 @@ class JobService(JobServiceInterface):
         target_resource_model = await self._resource_service.get_by_id(request.resource_id)
         component_filter: ComponentFilter = ComponentAndMetaFilter(
             ANALYZERS_FILTER,
-            AnalyzerOutputFilter(
-                request.attributes,
+            ComponentPrioritySelectingMetaFilter(
+                # There may be an analyzer that outputs ALL the requested attributes at once
+                # If there is (as is usually the case for views), only run that one
+                AnalyzerOutputFilter(*request.attributes),
+                # Otherwise, look for individual analyzers for each attributes type
+                ComponentOrMetaFilter(
+                    *(AnalyzerOutputFilter(attr_t) for attr_t in request.attributes)
+                ),
             ),
             _build_tag_filter(tuple(target_resource_model.get_tags())),
         )
@@ -232,7 +238,8 @@ class JobService(JobServiceInterface):
             return components_result
         else:
             raise NotFoundError(
-                f"Unable to find any analyzer for attributes {request.attributes.__name__}"
+                f"Unable to find any analyzer for attributes "
+                f"{','.join(attr_t.__name__ for attr_t in request.attributes)}"
                 f"\nFilter: {component_filter}"
             )
 
