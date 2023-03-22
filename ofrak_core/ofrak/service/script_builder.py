@@ -44,6 +44,23 @@ class ScriptSession:
     """
     boilerplate_footer: str = r"""
     if __name__ == "__main__":
+
+        # Use ANGR Backend
+        # import ofrak_angr
+        # import ofrak_capstone
+        # ofrak.discover(ofrak_capstone)
+        # ofrak.discover(ofrak_angr)
+
+        # Use Binary Ninja Backend
+        # import ofrak_binary_ninja
+        # import ofrak_capstone
+        # ofrak.discover(ofrak_capstone)
+        # ofrak.discover(ofrak_binary_ninja)
+
+        # Use Ghidra Backend
+        # import ofrak_ghidra
+        # ofrak.discover(ofrak_ghidra)
+
         ofrak = OFRAK()
         ofrak.run(main)
     """
