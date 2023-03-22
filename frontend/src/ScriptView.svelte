@@ -58,6 +58,10 @@
   .textarea {
     white-space: pre;
   }
+
+  .close button.download {
+    right: 2em
+  }
 </style>
 
 <script>
@@ -81,6 +85,24 @@
 <link rel="stylesheet" href="./code.css" />
 
 <div class="close">
+  <button
+    class="download"
+    on:click="{async (e) => {
+    const lines = $script.join("\n");
+    if (lines.length === 0) {
+      return;
+    }
+    const blob = new Blob([lines], {type: "application/x-python-code"});
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.target = "_blank";
+    a.download = "script.py";
+    a.click();
+    URL.revokeObjectURL(blobUrl);
+  }}">
+    <Icon url="/icons/download.svg" />
+  </button>
   <button on:click="{() => (scriptView = undefined)}">
     <Icon url="/icons/error.svg" />
   </button>

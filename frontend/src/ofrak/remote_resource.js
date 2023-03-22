@@ -210,7 +210,7 @@ export class RemoteResource extends Resource {
 
   async unpack_recursively() {
     const unpack_recursively_results = await fetch(
-      `${this.uri}/unpack_recursively`,
+      `${backendUrl}/${this.uri}/unpack_recursively`,
       { method: "POST" }
     ).then(async (r) => {
       if (!r.ok) {
