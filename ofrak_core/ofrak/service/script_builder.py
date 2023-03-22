@@ -8,6 +8,7 @@ from ofrak.model.resource_model import ResourceIndexedAttribute
 from ofrak.core.filesystem import FilesystemEntry
 from ofrak.model.resource_model import Data
 from ofrak.service.resource_service_i import ResourceAttributeValueFilter, ResourceFilter
+from black import format_str, FileMode
 
 from ofrak.resource import Resource
 
@@ -58,6 +59,7 @@ class ScriptBuilder:
             FilesystemEntry.Name,
             Data.Offset,
         ]
+
 
     async def _get_selector(self, resource: Resource) -> str:
         root_resource = await self._get_root_resource(resource)
@@ -211,6 +213,8 @@ class ScriptBuilder:
         script.append(self.script_sessions[resource_id].boilerplate_footer)
         script = "\n".join(script)
         script = self._dedent(script)
+        res = format_str("\n".join(script), mode=FileMode())
+        script = res.split("\n")
         return script
 
     def _dedent(self, s):

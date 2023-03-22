@@ -489,7 +489,7 @@ class AiohttpOFRAKServer:
             null_terminate={config.null_terminate}, 
             allow_overflow={config.allow_overflow}
         )
-        result = await $resource.run(StringFindReplaceModifier, config)
+        await $resource.run(StringFindReplaceModifier, config)
         """
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         result = await resource.run(StringFindReplaceModifier, config=config)
@@ -502,7 +502,7 @@ class AiohttpOFRAKServer:
         resource = await self._get_resource_for_request(request)
         comment = self._serializer.from_pjson(await request.json(), Tuple[Optional[Range], str])
         script_str = f"""
-        result = await $resource.run(AddCommentModifier, AddCommentModifierConfig({comment}))
+        await $resource.run(AddCommentModifier, AddCommentModifierConfig({comment}))
         """
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         result = await resource.run(AddCommentModifier, AddCommentModifierConfig(comment))
@@ -513,7 +513,7 @@ class AiohttpOFRAKServer:
         resource = await self._get_resource_for_request(request)
         comment_range = self._serializer.from_pjson(await request.json(), Optional[Range])
         script_str = f"""
-        result = await $resource.run(
+        await $resource.run(
             DeleteCommentModifier, DeleteCommentModifierConfig({comment_range})
         )"""
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
