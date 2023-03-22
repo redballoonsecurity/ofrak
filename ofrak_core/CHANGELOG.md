@@ -4,6 +4,9 @@ All notable changes to `ofrak` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+### Added
+- Add option to ofrak gui to pre-load some files into OFRAK before opening the GUI, so they can be explore right away ([#266](https://github.com/redballoonsecurity/ofrak/pull/266))
+
 ### Changed
 - Remove need to create Resources to pass source code and headers to `PatchFromSourceModifier` and `FunctionReplaceModifier` ([#249](https://github.com/redballoonsecurity/ofrak/pull/249))
 
