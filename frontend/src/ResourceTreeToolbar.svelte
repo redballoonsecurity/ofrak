@@ -215,7 +215,7 @@
       },
 
       {
-        text: "Get Script",
+        text: "Show Script",
         iconUrl: "/icons/identify.svg",
         onclick: async (e) => {
           scriptView = ScriptView;

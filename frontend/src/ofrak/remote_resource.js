@@ -189,7 +189,7 @@ export class RemoteResource extends Resource {
     ingest_component_results(unpack_results, this.resource_list);
     this.flush_cache();
     this.update();
-    
+
     await this.get_script();
   }
 
@@ -205,7 +205,7 @@ export class RemoteResource extends Resource {
     ingest_component_results(identify_results, this.resource_list);
     this.update();
 
-    await this.get_script();   
+    await this.get_script();
   }
 
   async unpack_recursively() {
@@ -222,7 +222,7 @@ export class RemoteResource extends Resource {
     this.flush_cache();
     this.update();
 
-    await this.get_script();   
+    await this.get_script();
   }
 
   async pack() {
@@ -238,7 +238,7 @@ export class RemoteResource extends Resource {
     this.flush_cache();
     this.update();
 
-    await this.get_script();   
+    await this.get_script();
   }
 
   async pack_recursively() {
@@ -257,7 +257,7 @@ export class RemoteResource extends Resource {
     this.flush_cache();
     this.update();
 
-    await this.get_script();   
+    await this.get_script();
   }
 
   async data_summary() {
@@ -288,8 +288,8 @@ export class RemoteResource extends Resource {
     ingest_component_results(analyze_results, this.resource_list);
     this.flush_cache();
     this.update();
-      
-    await this.get_script();   
+
+    await this.get_script();
   }
 
   async get_parent() {
@@ -401,7 +401,7 @@ export class RemoteResource extends Resource {
     this.flush_cache();
     this.update();
 
-    await this.get_script();   
+    await this.get_script();
   }
 
   async add_comment(optional_range, comment) {
@@ -421,7 +421,7 @@ export class RemoteResource extends Resource {
     this.flush_cache();
     this.update();
 
-    await this.get_script();   
+    await this.get_script();
   }
 
   async add_tag(tag) {
@@ -481,18 +481,18 @@ export class RemoteResource extends Resource {
     return remote_models_to_resources(matching_models);
   }
 
-    async get_script() {
-      const new_script = await fetch(`${backendUrl}/${this.uri}/get_script`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          },
-      }).then(async (r) => {
-        if (!r.ok) {
-          throw Error(JSON.stringify(await r.json(), undefined, 2));
-        }
-        script.set(await r.json());
-      });
+  async get_script() {
+    await fetch(`${backendUrl}/${this.uri}/get_script`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      script.set(await r.json());
+    });
   }
 }
 

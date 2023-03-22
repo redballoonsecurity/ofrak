@@ -1,5 +1,4 @@
 import asyncio
-import binascii
 import functools
 import logging
 import json
@@ -380,7 +379,7 @@ class AiohttpOFRAKServer:
     async def data_summary(self, request: Request) -> Response:
         resource = cast(Resource, await self._get_resource_for_request(request))
         result = await resource.run(DataSummaryAnalyzer)
-        
+
         return json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
@@ -458,15 +457,16 @@ class AiohttpOFRAKServer:
         start = int(start_param) if start_param is not None else 0
         end_param = request.query.get("end")
         end = int(end_param) if end_param is not None else (await resource.get_data_length())
-        # TODO: There has to be a better way 
-        new_data_string = "/x"+"/x".join([new_data.hex()[i:i+2] for i in range(0, len(new_data.hex()), 2)])
-        script_str = fr"""
+        # TODO: There has to be a better way
+        new_data_string = "/x" + "/x".join(
+            [new_data.hex()[i : i + 2] for i in range(0, len(new_data.hex()), 2)]
+        )
+        script_str = rf"""
         $resource.queue_patch(Range({start}, {end}), b"{new_data_string}")
         await $resource.save()"""
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         resource.queue_patch(Range(start, end), new_data)
         await resource.save()
-
 
         return json_response(self._serialize_resource(resource))
 
@@ -482,7 +482,7 @@ class AiohttpOFRAKServer:
     async def find_and_replace(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         config = self._serializer.from_pjson(await request.json(), StringFindReplaceConfig)
-        script_str = fr"""
+        script_str = rf"""
         config = StringFindReplaceConfig(
             to_find="{config.to_find}", 
             replace_with="{config.replace_with}", 
