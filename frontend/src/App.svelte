@@ -62,7 +62,11 @@
     rootResourceLoadPromise = new Promise((resolve) => {}),
     resourceNodeDataMap = {},
     resources = {};
-  let carouselSelection, currentResource, rootResource, modifierView, scriptView;
+  let carouselSelection,
+    currentResource,
+    rootResource,
+    modifierView,
+    scriptView;
 
   let riddleAnswered = JSON.parse(window.localStorage.getItem("riddleSolved"));
   if (riddleAnswered === null || riddleAnswered === undefined) {
@@ -173,9 +177,7 @@ Answer by running riddle.answer('your answer here') from the console.`);
         </Pane>
         <Pane slot="second" paddingVertical="{'1em'}">
           {#if scriptView}
-            <ScriptView
-              bind:scriptView="{scriptView}"
-            /> 
+            <ScriptView bind:scriptView="{scriptView}" />
           {:else}
             <AttributesView resource="{currentResource}" />
           {/if}
