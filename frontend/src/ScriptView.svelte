@@ -54,17 +54,30 @@
 </style>
 
 <script>
+  import hljs from "highlight.js/lib/core";
+  import python from "highlight.js/lib/languages/python";
+  hljs.registerLanguage("python", python);
+  hljs.configure({
+    cssSelector: "code",
+    // TODO: Unescaped HTML warning seems to be incorrect. If so and we can't prevent it from displaying by "correcting" the code, we can disable with this option.
+    // ignoreUnescapedHTML: true
+  });
+
   import Icon from "./Icon.svelte";
   import { script } from "./stores.js";
-  
+  import { afterUpdate } from "svelte";
+
   export let scriptView;
+  $: if ($script) {
+    hljs.highlightAll();
+  }
 </script>
+
+<link rel="stylesheet" href="./code.css" />
 
 <div class="xboxparent">
   <div class="xbox">
-    <button
-      on:click={() => scriptView = undefined}
-    >
+    <button on:click="{() => (scriptView = undefined)}">
       <Icon url="/icons/error.svg" />
     </button>
   </div>
@@ -83,7 +96,7 @@
 
   <div class="textarea">
     {#each $script as line}
-    <div>{line}</div>
+      <div><code id="apicode" class="language-python">{line}</code></div>
     {/each}
   </div>
 </div>
