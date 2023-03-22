@@ -18,15 +18,21 @@
       inset -2px -2px 0 var(--main-fg-color);
   }
 
-  .xboxparent {
-    position: relative;
-    align-items: flex-start;
+  .close {
+    position: sticky;
+    top: 0;
+    right: 0;
   }
 
-  .xbox {
+  .close button {
     position: absolute;
-    top: 0%;
-    right: 0%;
+    right: 0;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5em;
+    border: 0;
   }
 
   .hbox {
@@ -54,49 +60,43 @@
 </style>
 
 <script>
-  import hljs from "highlight.js/lib/core";
+  import hljs from "highlight.js";
   import python from "highlight.js/lib/languages/python";
-  hljs.registerLanguage("python", python);
-  hljs.configure({
-    cssSelector: "code",
-    // TODO: Unescaped HTML warning seems to be incorrect. If so and we can't prevent it from displaying by "correcting" the code, we can disable with this option.
-    // ignoreUnescapedHTML: true
-  });
 
   import Icon from "./Icon.svelte";
-  import { script } from "./stores.js";
-  import { afterUpdate } from "svelte";
+
+  import { script, selectedResource } from "./stores.js";
+  import { onMount } from "svelte";
+
+  hljs.registerLanguage("python", python);
 
   export let scriptView;
-  $: if ($script) {
-    hljs.highlightAll();
-  }
+
+  onMount(async () => {
+    await $selectedResource.get_script();
+  });
 </script>
 
 <link rel="stylesheet" href="./code.css" />
 
-<div class="xboxparent">
-  <div class="xbox">
-    <button on:click="{() => (scriptView = undefined)}">
-      <Icon url="/icons/error.svg" />
-    </button>
-  </div>
+<div class="close">
+  <button on:click="{() => (scriptView = undefined)}">
+    <Icon url="/icons/error.svg" />
+  </button>
 </div>
 
 <div class="hbox">
   <div class="line-numbers">
-    {#each Object.entries($script) as [index, _]}
-      {#if index !== "0"}
-        <div>{index}</div>
-      {/if}
+    {#each $script as _, index}
+      <div>{index + 1}</div>
     {/each}
   </div>
 
   <span class="spacer"></span>
 
   <div class="textarea">
-    {#each $script as line}
-      <div><code id="apicode" class="language-python">{line}</code></div>
-    {/each}
+    <code>
+      {@html hljs.highlight($script.join("\n"), { language: "python" }).value}
+    </code>
   </div>
 </div>

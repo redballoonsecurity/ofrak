@@ -384,7 +384,7 @@ export class Resource {
 
   async get_script() {
     throw new NotImplementedError("get_script");
-}
+  }
 
   /***
    * Return the string representation of a comment, which includes its range as prefix if it
