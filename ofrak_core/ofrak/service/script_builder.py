@@ -220,9 +220,8 @@ class ScriptBuilder:
         if not indent_matches:
             return s
         indent_end_index = len(indent_matches[0])
-        return (
-            [line[indent_end_index:] for line in split if line.startswith(prefix) and line != ""]
-        )
+        return [line[indent_end_index:] for line in split if line.startswith(prefix) and line != ""]
+
     def get_all_of_type(self, resource_id: bytes, target_type: ActionType) -> str:
         """
         :param target_type:

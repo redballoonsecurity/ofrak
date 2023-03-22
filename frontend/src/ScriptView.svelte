@@ -21,7 +21,7 @@
   .close {
     position: sticky;
     top: 0;
-    right: 0;
+    left: 0;
   }
 
   .close button {
@@ -33,6 +33,7 @@
     justify-content: center;
     padding: 0.5em;
     border: 0;
+    background: var(--main-bg-color);
   }
 
   .hbox {
