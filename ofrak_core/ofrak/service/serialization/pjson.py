@@ -1,6 +1,6 @@
 from typing import Any, List, Dict
 
-import orjson
+import json
 from inspect import isfunction
 
 from ofrak.service.serialization.pjson_types import PJSONType
@@ -95,11 +95,11 @@ class PJSONSerializationService(SerializationServiceInterface):
 
     def dumps(self, pjson_obj: PJSONType) -> str:
         """Wrapper around the dumping method of the JSON library used."""
-        return orjson.dumps(pjson_obj).decode("utf-8")
+        return json.dumps(pjson_obj).decode("utf-8")
 
     def loads(self, json_obj: str) -> PJSONType:
         """Wrapper around the loading method of the JSON library used."""
-        return orjson.loads(bytes(json_obj, "utf-8"))
+        return json.loads(bytes(json_obj, "utf-8"))
 
     def to_json(self, obj: Any, type_hint: Any) -> str:
         return self.dumps(self.to_pjson(obj, type_hint))

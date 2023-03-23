@@ -424,6 +424,7 @@ async def test_get_config_for_component(ofrak_client: TestClient, hello_world_el
     )
     assert resp.status == 200
     res = await resp.json()
+<<<<<<< Updated upstream
     import ipdb
 
     ipdb.set_trace()
@@ -431,3 +432,29 @@ async def test_get_config_for_component(ofrak_client: TestClient, hello_world_el
         "ElfRelocateSymbolsModifierConfig",
         {"new_symbol_vaddrs": "typing.Dict[int, int]"},
     ]
+=======
+    assert res == ['ElfRelocateSymbolsModifierConfig', {'new_symbol_vaddrs': 'typing.Dict[int, int]'}]
+
+async def test_run_component(ofrak_client: TestClient, hello_world_elf):
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+    )
+    create_body = await create_resp.json()
+    resource_id = create_body["id"]
+    resp = await ofrak_client.post(f"/{create_body['id']}/identify")
+    resp = await ofrak_client.post(
+        f"/{resource_id}/run_component",
+        params={"component": "StringFindReplaceModifier"},
+        json=[
+            "ofrak.core.strings.StringFindReplaceConfig",
+            {
+                "to_find": "hello",
+                "replace_with": "Hello",
+                "null_terminate": "true",
+                "allow_overflow": "false",
+            },
+        ],
+    )
+    res = await resp.json()
+    assert resp.status == 200
+>>>>>>> Stashed changes

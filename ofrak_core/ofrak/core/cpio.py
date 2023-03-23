@@ -119,7 +119,7 @@ class CpioPacker(Packer[None]):
         cpio_format = cpio_v.archive_type.value
         list_files_cmd = [
             "find",
-            "-print",
+            "."
         ]
         list_files_proc = await asyncio.create_subprocess_exec(
             *list_files_cmd,
