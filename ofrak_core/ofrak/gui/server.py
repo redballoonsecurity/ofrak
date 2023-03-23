@@ -68,7 +68,7 @@ from ofrak.service.serialization.pjson import (
     SerializationServiceInterface,
     PJSONSerializationService,
 )
-from ofrak.service.script_builder import ActionType, ScriptBuilder
+from gui.script_builder import ActionType, ScriptBuilder
 from ofrak.service.serialization.pjson_types import PJSONType
 from ofrak.core.entropy import DataSummaryAnalyzer
 
