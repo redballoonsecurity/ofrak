@@ -424,15 +424,6 @@ async def test_get_config_for_component(ofrak_client: TestClient, hello_world_el
     )
     assert resp.status == 200
     res = await resp.json()
-<<<<<<< Updated upstream
-    import ipdb
-
-    ipdb.set_trace()
-    assert res == [
-        "ElfRelocateSymbolsModifierConfig",
-        {"new_symbol_vaddrs": "typing.Dict[int, int]"},
-    ]
-=======
     assert res == ['ElfRelocateSymbolsModifierConfig', {'new_symbol_vaddrs': 'typing.Dict[int, int]'}]
 
 async def test_run_component(ofrak_client: TestClient, hello_world_elf):
@@ -457,4 +448,3 @@ async def test_run_component(ofrak_client: TestClient, hello_world_elf):
     )
     res = await resp.json()
     assert resp.status == 200
->>>>>>> Stashed changes
