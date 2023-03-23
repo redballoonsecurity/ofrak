@@ -455,7 +455,7 @@ class AiohttpOFRAKServer:
         end_param = request.query.get("end")
         end = int(end_param) if end_param is not None else (await resource.get_data_length())
         # TODO: There has to be a better way
-        new_data_string = "/x" + "/x".join(
+        new_data_string = "\\x" + "\\x".join(
             [new_data.hex()[i : i + 2] for i in range(0, len(new_data.hex()), 2)]
         )
         script_str = rf"""
