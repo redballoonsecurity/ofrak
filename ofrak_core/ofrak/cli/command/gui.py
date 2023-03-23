@@ -36,9 +36,28 @@ class GUICommand(OfrakCommandRunsScript):
             action="store_true",
             help="Don't open the browser to the OFRAK GUI",
         )
+        gui_parser.add_argument(
+            "--file",
+            "-f",
+            required=False,
+            action="append",
+            help="Path to a file to load into OFRAK when starting the GUI (multiple may be "
+            "provided)",
+            default=[],
+        )
         self.add_ofrak_arguments(gui_parser)
         return gui_parser
 
     async def ofrak_func(self, ofrak_context: OFRAKContext, args: Namespace):  # pragma: no cover
-        server = await open_gui(args.hostname, args.port, open_in_browser=(not args.no_browser))
+        most_recent_root = None
+        if len(args.file) > 0:
+            for path in args.file:
+                most_recent_root = await ofrak_context.create_root_resource_from_file(path)
+        server = await open_gui(
+            args.hostname,
+            args.port,
+            open_in_browser=(not args.no_browser),
+            ofrak_context=ofrak_context,
+            focus_resource=most_recent_root if len(args.file) == 1 else None,
+        )
         await server.run_until_cancelled()
