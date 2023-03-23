@@ -380,6 +380,7 @@ async def test_add_tag(ofrak_client: TestClient, hello_world_elf):
     )
     assert resp.status == 200
 
+
 async def test_get_all_components_for_resource(ofrak_client: TestClient, hello_world_elf):
     create_resp = await ofrak_client.post(
         "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
@@ -393,21 +394,22 @@ async def test_get_all_components_for_resource(ofrak_client: TestClient, hello_w
     assert resp.status == 200
     res = await resp.json()
     assert res == [
-        'BinwalkAnalyzer',
-        'Md5Analyzer',
-        'Sha256Analyzer',
-        'ElfProgramAttributesAnalyzer',
-        'LiefAddSegmentModifier',
-        'ElfAddStringModifier',
-        'ElfRelocateSymbolsModifier',
-        'ElfUnpacker',
-        'MagicAnalyzer',
-        'UpdateLinkableSymbolsModifier',
-        'FunctionReplacementModifier',
-        'PatchFromSourceModifier',
-        'SegmentInjectorModifier',
-        'StringFindReplaceModifier'
-        ]
+        "BinwalkAnalyzer",
+        "Md5Analyzer",
+        "Sha256Analyzer",
+        "ElfProgramAttributesAnalyzer",
+        "LiefAddSegmentModifier",
+        "ElfAddStringModifier",
+        "ElfRelocateSymbolsModifier",
+        "ElfUnpacker",
+        "MagicAnalyzer",
+        "UpdateLinkableSymbolsModifier",
+        "FunctionReplacementModifier",
+        "PatchFromSourceModifier",
+        "SegmentInjectorModifier",
+        "StringFindReplaceModifier",
+    ]
+
 
 async def test_get_config_for_component(ofrak_client: TestClient, hello_world_elf):
     create_resp = await ofrak_client.post(
@@ -418,9 +420,14 @@ async def test_get_config_for_component(ofrak_client: TestClient, hello_world_el
     resp = await ofrak_client.post(f"/{create_body['id']}/identify")
     resp = await ofrak_client.get(
         f"/{resource_id}/get_config_for_component",
-        params={"component": "ElfRelocateSymbolsModifier"}
+        params={"component": "ElfRelocateSymbolsModifier"},
     )
     assert resp.status == 200
     res = await resp.json()
-    import ipdb; ipdb.set_trace()
-    assert res == ['ElfRelocateSymbolsModifierConfig', {'new_symbol_vaddrs': 'typing.Dict[int, int]'}]
+    import ipdb
+
+    ipdb.set_trace()
+    assert res == [
+        "ElfRelocateSymbolsModifierConfig",
+        {"new_symbol_vaddrs": "typing.Dict[int, int]"},
+    ]

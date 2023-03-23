@@ -42,7 +42,7 @@ from ofrak import (
     Packer,
     Unpacker,
     Modifier,
-    Analyzer
+    Analyzer,
 )
 from ofrak.core import Addressable, File
 from ofrak.core import (
@@ -77,7 +77,6 @@ from ofrak.service.script_builder import ActionType, ScriptBuilder
 from ofrak.service.serialization.pjson_types import PJSONType
 from ofrak.core.entropy import DataSummaryAnalyzer
 from ofrak.cli.ofrak_cli import OFRAKEnvironment
-from ofrak.model.component_model import ComponentConfig
 
 T = TypeVar("T")
 LOGGER = logging.getLogger(__name__)
@@ -163,8 +162,12 @@ class AiohttpOFRAKServer:
                 web.post("/{resource_id}/add_tag", self.add_tag),
                 web.get("/get_all_tags", self.get_all_tags),
                 web.get("/{resource_id}/get_script", self.get_script),
-                web.get("/{resource_id}/get_all_components_for_resource", self.get_all_components_for_resource),
+                web.get(
+                    "/{resource_id}/get_all_components_for_resource",
+                    self.get_all_components_for_resource,
+                ),
                 web.get("/{resource_id}/get_config_for_component", self.get_config_for_component),
+                web.post("/{resource_id}/run_component", self.run_component),
                 web.get("/", self.get_static_files),
                 web.static(
                     "/",
@@ -586,27 +589,29 @@ class AiohttpOFRAKServer:
             if issubclass(component, (Packer, Unpacker, Analyzer, Modifier)):
                 if len([tag for tag in tags if tag in component.targets]) > 0:
                     components_for_resource.append(component_name)
-        return json_response(
-            self._serializer.to_pjson(components_for_resource, Set[str])
-        )
+        return json_response(self._serializer.to_pjson(components_for_resource, Set[str]))
 
     async def get_config_for_component(self, request: Request) -> Response:
         component = self.env.components[request.query.get("component")]
         if issubclass(component, Packer):
-            config = inspect.signature(component.pack).parameters['config'].annotation
+            config = inspect.signature(component.pack).parameters["config"].annotation
         elif issubclass(component, Unpacker):
-            config = inspect.signature(component.unpack).parameters['config'].annotation
+            config = inspect.signature(component.unpack).parameters["config"].annotation
         elif issubclass(component, Modifier):
-            config = inspect.signature(component.modify).parameters['config'].annotation
+            config = inspect.signature(component.modify).parameters["config"].annotation
         elif issubclass(component, Analyzer):
-            config = inspect.signature(component.analyze).parameters['config'].annotation
-       
+            config = inspect.signature(component.analyze).parameters["config"].annotation
+
         return json_response(
             (
-                config.__name__, 
+                config.__name__,
                 {field.name: str(field.type) for field in fields(config) if field.init is True},
             )
         )
+
+    @exceptions_to_http(SerializedError)
+    async def run_component(self, request: Request) -> Response:
+        pass
 
     @exceptions_to_http(SerializedError)
     async def get_static_files(self, request: Request) -> FileResponse:

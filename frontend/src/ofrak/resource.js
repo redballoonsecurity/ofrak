@@ -386,6 +386,18 @@ export class Resource {
     throw new NotImplementedError("get_script");
   }
 
+  async get_all_components_for_resource() {
+    throw new NotImplementedError("get_all_components_for_resource");
+  }
+
+  async get_config_for_component() {
+    throw new NotImplementedError("get_config_for_component");
+  }
+
+  async run_component() {
+    throw new NotImplementedError("run_component");
+  }
+
   /***
    * Return the string representation of a comment, which includes its range as prefix if it
    * has one.

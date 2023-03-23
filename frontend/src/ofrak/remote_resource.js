@@ -494,6 +494,60 @@ export class RemoteResource extends Resource {
       script.set(await r.json());
     });
   }
+
+  async get_all_components_for_resource() {
+    await fetch(`${backendUrl}/${this.uri}/get_all_components_for_resource`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      console.log(await r.json());
+      // TODO: render list of components
+    });
+  }
+
+  async get_config_for_component(component) {
+    await fetch(
+      `${backendUrl}/${this.uri}/get_config_for_component?component=${component}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    ).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      console.log(await r.json());
+      // TODO: map fields to components
+    });
+  }
+
+  async run_component(component) {
+    await fetch(`${backendUrl}/${this.uri}/run_component`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify([
+        // TODO: aribtrary string
+        "",
+        {
+          // TODO: arbitrary fields
+        },
+      ]),
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return await r.json();
+    });
+  }
 }
 
 export function remote_models_to_resources(remote_models, resources) {
