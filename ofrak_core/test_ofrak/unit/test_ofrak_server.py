@@ -379,3 +379,47 @@ async def test_add_tag(ofrak_client: TestClient, hello_world_elf):
         json="ofrak.core.apk.Apk",
     )
     assert resp.status == 200
+
+async def test_get_all_components_for_resource(ofrak_client: TestClient, hello_world_elf):
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+    )
+    create_body = await create_resp.json()
+    resource_id = create_body["id"]
+    resp = await ofrak_client.post(f"/{create_body['id']}/identify")
+    resp = await ofrak_client.get(
+        f"/{resource_id}/get_all_components_for_resource",
+    )
+    res = await resp.json()
+    assert res == [
+        'BinwalkAnalyzer',
+        'Md5Analyzer',
+        'Sha256Analyzer',
+        'ElfProgramAttributesAnalyzer',
+        'LiefAddSegmentModifier',
+        'ElfAddStringModifier',
+        'ElfRelocateSymbolsModifier',
+        'ElfUnpacker',
+        'MagicAnalyzer',
+        'UpdateLinkableSymbolsModifier',
+        'FunctionReplacementModifier',
+        'PatchFromSourceModifier',
+        'SegmentInjectorModifier',
+        'StringFindReplaceModifier'
+        ]
+    assert resp.status == 200
+
+async def test_get_config_for_component(ofrak_client: TestClient, hello_world_elf):
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+    )
+    create_body = await create_resp.json()
+    resource_id = create_body["id"]
+    resp = await ofrak_client.post(f"/{create_body['id']}/identify")
+    resp = await ofrak_client.get(
+        f"/{resource_id}/get_config_for_component",
+        params={"component": "ElfRelocateSymbolsModifier"}
+    )
+    res = await resp.json()
+    import ipdb; ipdb.set_trace()
+    assert resp.status == 200

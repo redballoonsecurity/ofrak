@@ -1,7 +1,9 @@
 import asyncio
 import functools
 import logging
+from ofrak.service.serialization.serializers.class_instance_serializer import ClassInstanceSerializer
 import orjson
+import inspect
 import os
 import sys
 import webbrowser
@@ -38,6 +40,10 @@ from ofrak import (
     ResourceAttributeValueFilter,
     ResourceSort,
     ResourceTag,
+    Packer,
+    Unpacker,
+    Modifier,
+    Analyzer
 )
 from ofrak.core import Addressable, File
 from ofrak.core import (
@@ -71,6 +77,8 @@ from ofrak.service.serialization.pjson import (
 from ofrak.service.script_builder import ActionType, ScriptBuilder
 from ofrak.service.serialization.pjson_types import PJSONType
 from ofrak.core.entropy import DataSummaryAnalyzer
+from ofrak.cli.ofrak_cli import OFRAKEnvironment
+from ofrak.model.component_model import ComponentConfig
 
 T = TypeVar("T")
 LOGGER = logging.getLogger(__name__)
@@ -121,6 +129,7 @@ class AiohttpOFRAKServer:
         self.resource_view_context: ResourceViewContext = ResourceViewContext()
         self.component_context: ComponentContext = ClientComponentContext()
         self.script_builder: ScriptBuilder = ScriptBuilder()
+        self.env = OFRAKEnvironment()
         self._app.add_routes(
             [
                 web.post("/create_root_resource", self.create_root_resource),
@@ -155,6 +164,8 @@ class AiohttpOFRAKServer:
                 web.post("/{resource_id}/add_tag", self.add_tag),
                 web.get("/get_all_tags", self.get_all_tags),
                 web.get("/{resource_id}/get_script", self.get_script),
+                web.get("/{resource_id}/get_all_components_for_resource", self.get_all_components_for_resource),
+                web.get("/{resource_id}/get_config_for_component", self.get_config_for_component),
                 web.get("/", self.get_static_files),
                 web.static(
                     "/",
@@ -566,6 +577,39 @@ class AiohttpOFRAKServer:
     async def get_script(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         return json_response(await self.script_builder.get_script(resource))
+
+    @exceptions_to_http(SerializedError)
+    async def get_all_components_for_resource(self, request: Request) -> Response:
+        resource: Resource = await self._get_resource_for_request(request)
+        tags = resource.get_tags()
+        components_for_resource = []
+        for component_name, component in self.env.components.items():
+            if issubclass(component, (Packer, Unpacker, Analyzer, Modifier)):
+                if len([tag for tag in tags if tag in component.targets]) > 0:
+                    components_for_resource.append(component_name)
+        return json_response(
+            self._serializer.to_pjson(components_for_resource, Set[str])
+        )
+
+    async def get_config_for_component(self, request: Request) -> Response:
+        component = self.env.components[request.query.get("component")]
+        if issubclass(component, Packer):
+            config = inspect.signature(component.pack).parameters['config'].annotation
+        elif issubclass(component, Unpacker):
+            config = inspect.signature(component.unpack).parameters['config'].annotation
+        elif issubclass(component, Modifier):
+            config = inspect.signature(component.modify).parameters['config'].annotation
+        elif issubclass(component, Analyzer):
+            config = inspect.signature(component.analyze).parameters['config'].annotation
+       
+        serializer = ClassInstanceSerializer()
+        config_fields_pjson: Dict[str, PJSONType] = {}
+        fields_and_types = serializer._get_class_fields_and_types(config, as_dataclass=True)
+        for field_name, field_type in fields_and_types.items():
+            config_fields_pjson[field_name] = serializer._service.to_pjson(
+                getattr(config, field_name), field_type
+            )
+        return json_response(config_fields_pjson)
 
     @exceptions_to_http(SerializedError)
     async def get_static_files(self, request: Request) -> FileResponse:
