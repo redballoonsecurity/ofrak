@@ -82,6 +82,15 @@
       },
 
       {
+        text: "Run Component",
+        // TODO: Change icon
+        iconUrl: "/icons/modify.svg",
+        onclick: async (e) => {
+          modifierView = ModifyView;
+        },
+      },
+
+      {
         text: "Pack",
         iconUrl: "/icons/pack.svg",
         shortcut: "p",
