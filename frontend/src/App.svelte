@@ -66,7 +66,7 @@
     currentResource,
     rootResource,
     modifierView,
-    scriptView;
+    bottomLeftPane;
 
   let riddleAnswered = JSON.parse(window.localStorage.getItem("riddleSolved"));
   if (riddleAnswered === null || riddleAnswered === undefined) {
@@ -169,15 +169,15 @@ Answer by running riddle.answer('your answer here') from the console.`);
           {:else}
             <ResourceTreeView
               rootResource="{rootResource}"
-              bind:scriptView="{scriptView}"
+              bind:bottomLeftPane="{bottomLeftPane}"
               bind:resourceNodeDataMap="{resourceNodeDataMap}"
               bind:modifierView="{modifierView}"
             />
           {/if}
         </Pane>
         <Pane slot="second" paddingVertical="{'1em'}">
-          {#if scriptView}
-            <ScriptView bind:scriptView="{scriptView}" />
+          {#if bottomLeftPane}
+            <ScriptView bind:bottomLeftPane="{bottomLeftPane}" />
           {:else}
             <AttributesView resource="{currentResource}" />
           {/if}
