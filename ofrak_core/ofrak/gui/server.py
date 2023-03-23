@@ -288,8 +288,6 @@ class AiohttpOFRAKServer:
         else:
             raise ValueError("No IP address found for the remote request!")
 
-        # TODO: replace request.json()
-
         async def get_resource_range(resource_id):
             resource_model = await self._get_resource_model_by_id(
                 bytes.fromhex(resource_id), job_id

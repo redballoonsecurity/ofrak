@@ -9,7 +9,7 @@
   import SearchView from "./SearchView.svelte";
   import AddTagView from "./AddTagView.svelte";
 
-  export let resourceNodeDataMap, modifierView, scriptView;
+  export let resourceNodeDataMap, modifierView, bottomLeftPane;
   $: rootResource = $selectedResource;
 
   function refreshResource() {
@@ -216,9 +216,9 @@
 
       {
         text: "Show Script",
-        iconUrl: "/icons/identify.svg",
+        iconUrl: "/icons/document.svg",
         onclick: async (e) => {
-          scriptView = ScriptView;
+          bottomLeftPane = ScriptView;
         },
       },
     ];
