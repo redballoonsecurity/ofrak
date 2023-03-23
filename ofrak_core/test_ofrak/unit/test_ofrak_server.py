@@ -390,6 +390,7 @@ async def test_get_all_components_for_resource(ofrak_client: TestClient, hello_w
     resp = await ofrak_client.get(
         f"/{resource_id}/get_all_components_for_resource",
     )
+    assert resp.status == 200
     res = await resp.json()
     assert res == [
         'BinwalkAnalyzer',
@@ -407,7 +408,6 @@ async def test_get_all_components_for_resource(ofrak_client: TestClient, hello_w
         'SegmentInjectorModifier',
         'StringFindReplaceModifier'
         ]
-    assert resp.status == 200
 
 async def test_get_config_for_component(ofrak_client: TestClient, hello_world_elf):
     create_resp = await ofrak_client.post(
@@ -420,6 +420,7 @@ async def test_get_config_for_component(ofrak_client: TestClient, hello_world_el
         f"/{resource_id}/get_config_for_component",
         params={"component": "ElfRelocateSymbolsModifier"}
     )
+    assert resp.status == 200
     res = await resp.json()
     import ipdb; ipdb.set_trace()
-    assert resp.status == 200
+    assert res == ['ElfRelocateSymbolsModifierConfig', {'new_symbol_vaddrs': 'typing.Dict[int, int]'}]

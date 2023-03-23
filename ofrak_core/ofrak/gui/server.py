@@ -1,7 +1,6 @@
 import asyncio
 import functools
 import logging
-from ofrak.service.serialization.serializers.class_instance_serializer import ClassInstanceSerializer
 import orjson
 import inspect
 import os
@@ -28,7 +27,7 @@ from aiohttp.web_exceptions import HTTPBadRequest
 from aiohttp.web_request import Request
 from aiohttp.web_response import Response
 from aiohttp.web_fileresponse import FileResponse
-
+from dataclasses import fields
 from ofrak.ofrak_context import get_current_ofrak_context
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
@@ -602,14 +601,12 @@ class AiohttpOFRAKServer:
         elif issubclass(component, Analyzer):
             config = inspect.signature(component.analyze).parameters['config'].annotation
        
-        serializer = ClassInstanceSerializer()
-        config_fields_pjson: Dict[str, PJSONType] = {}
-        fields_and_types = serializer._get_class_fields_and_types(config, as_dataclass=True)
-        for field_name, field_type in fields_and_types.items():
-            config_fields_pjson[field_name] = serializer._service.to_pjson(
-                getattr(config, field_name), field_type
+        return json_response(
+            (
+                config.__name__, 
+                {field.name: str(field.type) for field in fields(config) if field.init is True},
             )
-        return json_response(config_fields_pjson)
+        )
 
     @exceptions_to_http(SerializedError)
     async def get_static_files(self, request: Request) -> FileResponse:
