@@ -86,28 +86,39 @@
 </style>
 
 <script>
-  import { selectedResource, config } from "./stores";
-  import Icon from "./Icon.svelte";
+  import { selectedResource } from "./stores";
+  import { onMount } from "svelte";
   import ComponentConfigField from "./ComponentConfigField.svelte";
-  let component = undefined;
-  let submitted = false;
+  import LoadingText from "./LoadingText.svelte";
+
+  export let modifierView, selectedComponent, resourceNodeDataMap, dataPromise;
+  let errorMessage,
+    ofrakConfigsPromise = new Promise(() => {});
   let field_entries = {};
-  export let modifierView;
+
+  onMount(async () => {
+    try {
+      ofrakConfigsPromise =
+        $selectedResource.get_config_for_component(selectedComponent);
+    } catch (err) {
+      try {
+        errorMessage = JSON.parse(err.message).message;
+      } catch (_) {
+        errorMessage = err.message;
+      }
+    }
+  });
 </script>
 
 <div class="container">
-  <form
-    on:submit="{async (e) => {
-      await $selectedResource.get_config_for_component(component);
-      submitted = true;
-    }}"
-  >
-    <input bind:value="{component}" />
-  </form>
-  <p>
-    {#if submitted}
-      {$config["name"]};
-      {#each $config["fields"] as field}
+  <p>Configure component to be run.</p>
+  {#await ofrakConfigsPromise}
+    <LoadingText />
+  {:then ofrakConfig}
+    {console.log(ofrakConfig)}
+    {#if ofrakConfig && ofrakConfig["fields"].length > 0}
+      {ofrakConfig["name"]};
+      {#each ofrakConfig["fields"] as field}
         <ComponentConfigField
           field="{field}"
           field_name="{field['name']}"
@@ -115,19 +126,36 @@
           bind:field_entries="{field_entries}"
         />
       {/each}
-    {/if}
-  </p>
-
-  <button
-    on:click="{(e) => {
-      $selectedResource.run_component(
-        component,
-        $config['name'],
+    {:else}
+      <!-- TODO: How run component when no config is required? -->
+      {$selectedResource.run_component(
+        selectedComponent,
+        ofrakConfig["name"],
         field_entries
-      );
-    }}"
-  >
-    Run Componenet
-  </button>
+      )}
+    {/if}
+
+    <button
+      on:click="{(e) => {
+        $selectedResource.run_component(
+          selectedComponent,
+          ofrakConfig['name'],
+          field_entries
+        );
+        modifierView = undefined;
+      }}"
+    >
+      Run Component
+    </button>
+  {:catch}
+    <p>Failed to get config for OFRAK component!</p>
+    <p>The back end server may be down.</p>
+  {/await}
+  {#if errorMessage}
+    <p class="error">
+      Error:
+      {errorMessage}
+    </p>
+  {/if}
   <button on:click="{() => (modifierView = undefined)}">Cancel</button>
 </div>

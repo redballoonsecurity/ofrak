@@ -513,7 +513,7 @@ export class RemoteResource extends Resource {
   }
 
   async get_config_for_component(component) {
-    await fetch(
+    return await fetch(
       `${backendUrl}/${this.uri}/get_config_for_component?component=${component}`,
       {
         method: "GET",
@@ -525,8 +525,7 @@ export class RemoteResource extends Resource {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }
-      config.set(await r.json());
-      console.log(config);
+      return await r.json();
     });
   }
 

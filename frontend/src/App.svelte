@@ -68,7 +68,8 @@
     currentResource,
     rootResource,
     modifierView,
-    bottomLeftPane;
+    bottomLeftPane,
+    selectedComponent;
 
   let riddleAnswered = JSON.parse(window.localStorage.getItem("riddleSolved"));
   if (riddleAnswered === null || riddleAnswered === undefined) {
@@ -167,6 +168,7 @@ Answer by running riddle.answer('your answer here') from the console.`);
               dataPromise="{displayDataPromise}"
               bind:modifierView="{modifierView}"
               bind:resourceNodeDataMap="{resourceNodeDataMap}"
+              bind:selectedComponent="{selectedComponent}"
             />
           {:else}
             <ResourceTreeView

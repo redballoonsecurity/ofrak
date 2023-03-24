@@ -90,22 +90,21 @@
 <script>
   import { selectedResource } from "./stores.js";
   import { onMount } from "svelte";
-  import LoadingText from "./LoadingText.svelte";
   import ComponentConfig from "./ComponentConfig.svelte";
+  import LoadingText from "./LoadingText.svelte";
 
-  export let modifierView, resourceNodeDataMap, dataPromise;
+  export let modifierView, selectedComponent, resourceNodeDataMap, dataPromise;
   let errorMessage,
-    ofrakComponentsPromise = new Promise(() => {}),
-    selectedComponent;
+    ofrakComponentsPromise = new Promise(() => {});
 
   function chooseComponent() {
     if (selectedComponent) {
       modifierView = ComponentConfig;
-      $selectedResource.get_config_for_componenet();
     }
   }
 
   onMount(async () => {
+    selectedComponent = undefined;
     try {
       ofrakComponentsPromise =
         $selectedResource.get_all_components_for_resource();
