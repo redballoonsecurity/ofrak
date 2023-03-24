@@ -529,13 +529,12 @@ export class RemoteResource extends Resource {
   }
 
   async run_component(component, config, fields) {
-    await fetch(`${backendUrl}/${this.uri}/run_component`, {
+    await fetch(`${backendUrl}/${this.uri}/run_component?component=${component}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify([
-        component,
         config,
         fields,
       ]),
