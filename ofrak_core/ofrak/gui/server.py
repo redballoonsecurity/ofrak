@@ -31,7 +31,7 @@ from dataclasses import fields
 from ofrak.ofrak_context import get_current_ofrak_context
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
-
+from ofrak.component.abstract import AbstractComponent
 from ofrak import (
     OFRAKContext,
     ResourceFilter,
@@ -593,15 +593,7 @@ class AiohttpOFRAKServer:
 
     async def get_config_for_component(self, request: Request) -> Response:
         component = self.env.components[request.query.get("component")]
-        if issubclass(component, Packer):
-            config = inspect.signature(component.pack).parameters["config"].annotation
-        elif issubclass(component, Unpacker):
-            config = inspect.signature(component.unpack).parameters["config"].annotation
-        elif issubclass(component, Modifier):
-            config = inspect.signature(component.modify).parameters["config"].annotation
-        elif issubclass(component, Analyzer):
-            config = inspect.signature(component.analyze).parameters["config"].annotation
-
+        config = self._get_config_for_component(component)
         return json_response(
             {
                 "name": config.__name__,
@@ -611,7 +603,12 @@ class AiohttpOFRAKServer:
 
     @exceptions_to_http(SerializedError)
     async def run_component(self, request: Request) -> Response:
-        pass
+        resource: Resource = await self._get_resource_for_request(request)
+        component = self.env.components[request.query.get("component")]
+        config_type = self._get_config_for_component(component)
+        config = self._serializer.from_pjson(await request.json(), config_type)
+        result = await resource.run(component, config)
+        return json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
     async def get_static_files(self, request: Request) -> FileResponse:
@@ -626,6 +623,16 @@ class AiohttpOFRAKServer:
             self.component_context,
         )
         return resource
+
+    def _get_config_for_component(self, component: AbstractComponent):
+        if issubclass(component, Packer):
+            return inspect.signature(component.pack).parameters["config"].annotation
+        elif issubclass(component, Unpacker):
+            return inspect.signature(component.unpack).parameters["config"].annotation
+        elif issubclass(component, Modifier):
+            return inspect.signature(component.modify).parameters["config"].annotation
+        elif issubclass(component, Analyzer):
+            return inspect.signature(component.analyze).parameters["config"].annotation
 
     async def _get_resource_model_by_id(
         self, resource_id: bytes, job_id: bytes
