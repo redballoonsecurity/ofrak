@@ -424,7 +424,7 @@ async def test_get_config_for_component(ofrak_client: TestClient, hello_world_el
     )
     assert resp.status == 200
     res = await resp.json()
-    assert res == ['ElfRelocateSymbolsModifierConfig', {'new_symbol_vaddrs': 'typing.Dict[int, int]'}]
+    assert res == {"name": '<class \'ofrak.core.elf.modifier.ElfRelocateSymbolsModifierConfig\'>', "fields": [['new_symbol_vaddrs', 'typing.Dict[int, int]']]}
 
 async def test_run_component(ofrak_client: TestClient, hello_world_elf):
     create_resp = await ofrak_client.post(

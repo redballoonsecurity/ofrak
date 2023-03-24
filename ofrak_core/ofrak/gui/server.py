@@ -596,7 +596,7 @@ class AiohttpOFRAKServer:
         config = self._get_config_for_component(component)
         return json_response(
             {
-                "name": config.__name__,
+                "name": str(config),
                 "fields": [(field.name, str(field.type)) for field in fields(config) if field.init is True],
             }
         )
