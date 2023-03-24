@@ -1,6 +1,7 @@
 <script>
   import CarveView from "./CarveView.svelte";
   import CommentView from "./CommentView.svelte";
+  import ComponentsView from "./ComponentsView.svelte";
   import ModifyView from "./ModifyView.svelte";
   import ScriptView from "./ScriptView.svelte";
   import Toolbar from "./Toolbar.svelte";
@@ -8,7 +9,7 @@
   import { selectedResource, selected } from "./stores.js";
   import SearchView from "./SearchView.svelte";
   import AddTagView from "./AddTagView.svelte";
-    import ComponentConfig from "./ComponentConfig.svelte";
+  import ComponentConfig from "./ComponentConfig.svelte";
 
   export let resourceNodeDataMap, modifierView, bottomLeftPane;
   $: rootResource = $selectedResource;
@@ -87,7 +88,7 @@
         // TODO: Change icon
         iconUrl: "/icons/modify.svg",
         onclick: async (e) => {
-          modifierView = ModifyView;
+          modifierView = ComponentsView;
         },
       },
 

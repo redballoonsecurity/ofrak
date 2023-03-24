@@ -77,7 +77,6 @@ from ofrak.service.script_builder import ActionType, ScriptBuilder
 from ofrak.service.serialization.pjson_types import PJSONType
 from ofrak.core.entropy import DataSummaryAnalyzer
 from ofrak.cli.ofrak_cli import OFRAKEnvironment
-from ofrak.core import *
 
 T = TypeVar("T")
 LOGGER = logging.getLogger(__name__)
@@ -598,7 +597,11 @@ class AiohttpOFRAKServer:
         return json_response(
             {
                 "name": f"{config.__module__}.{config.__qualname__}",
-                "fields": [{"name": field.name, "type": str(field.type)} for field in fields(config) if field.init is True],
+                "fields": [
+                    {"name": field.name, "type": str(field.type)}
+                    for field in fields(config)
+                    if field.init is True
+                ],
             }
         )
 

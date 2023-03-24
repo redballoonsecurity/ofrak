@@ -34,6 +34,8 @@
   import AudioPlayer from "./AudioPlayer.svelte";
   import ByteclassView from "./ByteclassView.svelte";
   import CarouselSelector from "./CarouselSelector.svelte";
+  import ComponentConfig from "./ComponentConfig.svelte";
+  import ComponentsView from "./ComponentsView.svelte";
   import EntropyView from "./EntropyView.svelte";
   import HexView from "./HexView.svelte";
   import JumpToOffset from "./JumpToOffset.svelte";
