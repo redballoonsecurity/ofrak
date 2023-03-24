@@ -1,5 +1,5 @@
 import { Resource } from "./resource";
-import { backendUrl, script } from "../stores";
+import { backendUrl, script, config } from "../stores";
 
 let batchQueues = {};
 
@@ -523,23 +523,21 @@ export class RemoteResource extends Resource {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }
-      console.log(await r.json());
-      // TODO: map fields to components
+      config.set(await r.json());
+      console.log(config);
     });
   }
 
-  async run_component(component) {
+  async run_component(component, config, fields) {
     await fetch(`${backendUrl}/${this.uri}/run_component`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify([
-        // TODO: aribtrary string
-        "",
-        {
-          // TODO: arbitrary fields
-        },
+        component,
+        config,
+        fields,
       ]),
     }).then(async (r) => {
       if (!r.ok) {
