@@ -210,18 +210,27 @@ class JobService(JobServiceInterface):
             job_context = self._job_context_factory.create()
 
         target_resource_model = await self._resource_service.get_by_id(request.resource_id)
+        # There may be an analyzer that outputs ALL the requested attributes at once
+        # If there is (as is usually the case for views), only run that one
+        one_analyzer_for_all_attributes: ComponentFilter = ComponentAndMetaFilter(
+            AnalyzerOutputFilter(*request.attributes),
+            _build_tag_filter(tuple(target_resource_model.get_tags())),
+        )
+        # Otherwise, look for individual analyzers for each attributes type
+        analyzer_for_each_attribute: List[ComponentFilter] = [
+            ComponentAndMetaFilter(
+                AnalyzerOutputFilter(attr_t),
+                _build_tag_filter(tuple(target_resource_model.get_tags())),
+            )
+            for attr_t in request.attributes
+        ]
+
         component_filter: ComponentFilter = ComponentAndMetaFilter(
             ANALYZERS_FILTER,
             ComponentPrioritySelectingMetaFilter(
-                # There may be an analyzer that outputs ALL the requested attributes at once
-                # If there is (as is usually the case for views), only run that one
-                AnalyzerOutputFilter(*request.attributes),
-                # Otherwise, look for individual analyzers for each attributes type
-                ComponentOrMetaFilter(
-                    *(AnalyzerOutputFilter(attr_t) for attr_t in request.attributes)
-                ),
+                one_analyzer_for_all_attributes,
+                ComponentOrMetaFilter(*analyzer_for_each_attribute),
             ),
-            _build_tag_filter(tuple(target_resource_model.get_tags())),
         )
 
         components_result = await self._auto_run_components(
