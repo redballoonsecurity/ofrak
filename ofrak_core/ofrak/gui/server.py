@@ -20,7 +20,7 @@ from typing import (
     Any,
 )
 
-import json
+import orjson
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPBadRequest
 from aiohttp.web_request import Request
