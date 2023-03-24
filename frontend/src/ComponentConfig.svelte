@@ -55,6 +55,16 @@
     margin-left: 1ch;
   }
 
+  form {
+    background: inherit;
+    color: inherit;
+    border: none;
+    border-bottom: 1px solid white;
+    flex-grow: 1em;
+    margin-left: 2em;
+    border: 2px solid rgb(255, 255, 255)(255, 255, 255);
+    border-radius: 4px;
+  }
   input:focus {
     outline: none;
     box-shadow: inset 0 -1px 0 var(--main-fg-color);
@@ -89,16 +99,15 @@
 <script>
     import { selectedResource, config } from "./stores";
     import Icon from "./Icon.svelte";
+    import ComponentConfigField from "./ComponentConfigField.svelte";
     let component = undefined;
     let submitted = false;
     let field_entries = {};
-    let displayed;
+    export let modifierView;
 
 </script>
+
 <div class="container">
-    <p>
-        {displayed}
-    </p>
     <form on:submit="{async (e) => {
         await $selectedResource.get_config_for_component(component);
         submitted = true;
@@ -107,19 +116,18 @@
     </form>
     <p>
         {#if submitted}
-            config name is {$config["name"]};
+            {$config["name"]};
             {#each $config["fields"] as field}
-                <label class={field}>
-                    {field}
-                    <input class={field} bind:value={field_entries[field]}>
-                </label>
+              <ComponentConfigField field={field} field_name={field["name"]} field_type={field["type"]} bind:field_entries={field_entries}/>
             {/each}
         {/if}
     </p>
+    
     <button on:click="{(e) => {
         $selectedResource.run_component(component, $config["name"], field_entries);
     }}">
-        <Icon url="/icons/error.svg" />
+      Run Componenet
     </button>
+    <button on:click="{() => (modifierView = undefined)}">Cancel</button>
 
 </div>
