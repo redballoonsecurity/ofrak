@@ -603,10 +603,10 @@ class AiohttpOFRAKServer:
             config = inspect.signature(component.analyze).parameters["config"].annotation
 
         return json_response(
-            (
-                config.__name__,
-                {field.name: str(field.type) for field in fields(config) if field.init is True},
-            )
+            {
+                "name": config.__name__,
+                "fields": [(field.name, str(field.type)) for field in fields(config) if field.init is True],
+            }
         )
 
     @exceptions_to_http(SerializedError)
