@@ -91,6 +91,7 @@
   import { selectedResource } from "./stores.js";
   import { onMount } from "svelte";
   import LoadingText from "./LoadingText.svelte";
+  import ComponentConfig from "./ComponentConfig.svelte";
 
   export let modifierView, resourceNodeDataMap, dataPromise;
   let errorMessage,
@@ -99,7 +100,7 @@
 
   function chooseComponent() {
     if (selectedComponent) {
-      modifierView = undefined;
+      modifierView = ComponentConfig;
       $selectedResource.get_config_for_componenet();
     }
   }
