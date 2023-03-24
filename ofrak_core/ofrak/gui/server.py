@@ -20,7 +20,7 @@ from typing import (
     Any,
 )
 
-import json
+import orjson
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPBadRequest
 from aiohttp.web_request import Request
@@ -92,7 +92,6 @@ def exceptions_to_http(error_class: Type[SerializedError]):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             try:
-                print(f"{func.__name__}: Request == {args[1]}")
                 return await func(*args, **kwargs)
             except Exception as error:
                 LOGGER.exception("Exception raised in aiohttp endpoint")
@@ -723,7 +722,7 @@ def json_response(
     reason: Optional[str] = None,
     headers=None,
     content_type: str = "application/json",
-    dumps=json.dumps,
+    dumps=orjson.dumps,
 ) -> Response:
     if data is not None:
         if text or body:
