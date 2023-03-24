@@ -85,8 +85,7 @@
 
       {
         text: "Run Component",
-        // TODO: Change icon
-        iconUrl: "/icons/modify.svg",
+        iconUrl: "/icons/run.svg",
         onclick: async (e) => {
           modifierView = ComponentsView;
         },
