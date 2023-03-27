@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Changed
 - Remove need to create Resources to pass source code and headers to `PatchFromSourceModifier` and `FunctionReplaceModifier` ([#249](https://github.com/redballoonsecurity/ofrak/pull/249))
+- Choose Analyzer components which output the entirety of a view, rather than piece by piece, which would choose the wrong Analyzer sometimes. [#264](https://github.com/redballoonsecurity/ofrak/pull/264)
 
 ### Fixed
 - Fix bug where jumping to a multiple of `0x10` in the GUI went to the previous line ([#254](https://github.com/redballoonsecurity/ofrak/pull/254))
