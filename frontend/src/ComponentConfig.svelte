@@ -91,10 +91,17 @@
   import ComponentConfigField from "./ComponentConfigField.svelte";
   import LoadingText from "./LoadingText.svelte";
 
-  export let modifierView, selectedComponent, resourceNodeDataMap, dataPromise;
+  export let modifierView, selectedComponent, resourceNodeDataMap;
   let errorMessage,
     ofrakConfigsPromise = new Promise(() => {});
   let field_entries = {};
+
+  function refreshResource() {
+    // Force hex view refresh with colors
+    const originalSelected = $selectedResource;
+    $selectedResource = undefined;
+    $selectedResource = originalSelected;
+  }
 
   onMount(async () => {
     try {
@@ -115,8 +122,7 @@
   {#await ofrakConfigsPromise}
     <LoadingText />
   {:then ofrakConfig}
-    {console.log(ofrakConfig)}
-    {#if ofrakConfig && ofrakConfig["fields"].length > 0}
+    {#if ofrakConfig.length != 0}
       {ofrakConfig["name"]};
       {#each ofrakConfig["fields"] as field}
         <ComponentConfigField
@@ -130,7 +136,7 @@
       <!-- TODO: How run component when no config is required? -->
       {$selectedResource.run_component(
         selectedComponent,
-        ofrakConfig["name"],
+        null,
         field_entries
       )}
     {/if}
@@ -139,9 +145,14 @@
       on:click="{(e) => {
         $selectedResource.run_component(
           selectedComponent,
-          ofrakConfig['name'],
+          "None",
           field_entries
         );
+        resourceNodeDataMap[$selectedResource] = {
+            collapsed: false,
+            childrenPromise: $selectedResource.get_children(),
+          };
+        refreshResource();
         modifierView = undefined;
       }}"
     >

@@ -594,23 +594,29 @@ class AiohttpOFRAKServer:
     async def get_config_for_component(self, request: Request) -> Response:
         component = self.env.components[request.query.get("component")]
         config = self._get_config_for_component(component)
-        return json_response(
-            {
-                "name": f"{config.__module__}.{config.__qualname__}",
-                "fields": [
-                    {"name": field.name, "type": str(field.type)}
-                    for field in fields(config)
-                    if field.init is True
-                ],
-            }
-        )
+        if not config == inspect._empty:
+            return json_response(
+                {
+                    "name": f"{config.__module__}.{config.__qualname__}",
+                    "fields": [
+                        {"name": field.name, "type": str(field.type)}
+                        for field in fields(config)
+                        if field.init is True
+                    ],
+                }
+            )
+        else:
+            return json_response([])
 
     @exceptions_to_http(SerializedError)
     async def run_component(self, request: Request) -> Response:
         resource: Resource = await self._get_resource_for_request(request)
         component = self.env.components[request.query.get("component")]
         config_type = self._get_config_for_component(component)
-        config = self._serializer.from_pjson(await request.json(), config_type)
+        if config_type == inspect._empty:
+            config = None
+        else:
+            config = self._serializer.from_pjson(await request.json(), config_type)
         result = await resource.run(component, config)
         return json_response(await self._serialize_component_result(result))
 
@@ -637,6 +643,8 @@ class AiohttpOFRAKServer:
             return inspect.signature(component.modify).parameters["config"].annotation
         elif issubclass(component, Analyzer):
             return inspect.signature(component.analyze).parameters["config"].annotation
+        else:
+            raise ValueError("{component} can not be run from the web API.")
 
     async def _get_resource_model_by_id(
         self, resource_id: bytes, job_id: bytes

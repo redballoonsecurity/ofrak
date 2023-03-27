@@ -14,10 +14,12 @@
 </script>
 
 <p>
-  {field_name}
-  {#if field_type == "builtins.bool"}
-    <Checkbox bind:checked="{field_entries[field_name]}" />
-  {:else}
-    <input class="{field}" bind:value="{field_entries[field_name]}" />
-  {/if}
+    {field_name}
+    {#if (field_type == "builtins.bool")}
+        <Checkbox bind:checked="{field_entries[field_name]}"/>
+    {:else if (field_type == "builtins.str" || field_type == "builtins.int")}
+        <input class={field} bind:value="{field_entries[field_name]}">
+    {:else}
+        {field_name} of type {field_type} is not yet supported.
+    {/if}
 </p>

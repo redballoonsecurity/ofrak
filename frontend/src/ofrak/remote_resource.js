@@ -530,7 +530,7 @@ export class RemoteResource extends Resource {
   }
 
   async run_component(component, config, fields) {
-    await fetch(
+    const result = await fetch(
       `${backendUrl}/${this.uri}/run_component?component=${component}`,
       {
         method: "POST",
@@ -545,6 +545,10 @@ export class RemoteResource extends Resource {
       }
       return await r.json();
     });
+    ingest_component_results(result, this.resource_list);
+    this.flush_cache();
+    this.update();
+    await this.get_script();
   }
 }
 
