@@ -496,22 +496,24 @@ export class RemoteResource extends Resource {
   }
 
   async get_all_components_for_resource() {
-    await fetch(`${backendUrl}/${this.uri}/get_all_components_for_resource`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }).then(async (r) => {
+    return await fetch(
+      `${backendUrl}/${this.uri}/get_all_components_for_resource`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    ).then(async (r) => {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }
-      console.log(await r.json());
-      // TODO: render list of components
+      return await r.json();
     });
   }
 
   async get_config_for_component(component) {
-    await fetch(
+    return await fetch(
       `${backendUrl}/${this.uri}/get_config_for_component?component=${component}`,
       {
         method: "GET",
@@ -523,22 +525,21 @@ export class RemoteResource extends Resource {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }
-      config.set(await r.json());
-      console.log(config);
+      return await r.json();
     });
   }
 
   async run_component(component, config, fields) {
-    await fetch(`${backendUrl}/${this.uri}/run_component?component=${component}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify([
-        config,
-        fields,
-      ]),
-    }).then(async (r) => {
+    await fetch(
+      `${backendUrl}/${this.uri}/run_component?component=${component}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify([config, fields]),
+      }
+    ).then(async (r) => {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }

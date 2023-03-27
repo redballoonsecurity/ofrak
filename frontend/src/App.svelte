@@ -34,6 +34,8 @@
   import AudioPlayer from "./AudioPlayer.svelte";
   import ByteclassView from "./ByteclassView.svelte";
   import CarouselSelector from "./CarouselSelector.svelte";
+  import ComponentConfig from "./ComponentConfig.svelte";
+  import ComponentsView from "./ComponentsView.svelte";
   import EntropyView from "./EntropyView.svelte";
   import HexView from "./HexView.svelte";
   import JumpToOffset from "./JumpToOffset.svelte";
@@ -66,7 +68,8 @@
     currentResource,
     rootResource,
     modifierView,
-    bottomLeftPane;
+    bottomLeftPane,
+    selectedComponent;
 
   let riddleAnswered = JSON.parse(window.localStorage.getItem("riddleSolved"));
   if (riddleAnswered === null || riddleAnswered === undefined) {
@@ -165,6 +168,7 @@ Answer by running riddle.answer('your answer here') from the console.`);
               dataPromise="{displayDataPromise}"
               bind:modifierView="{modifierView}"
               bind:resourceNodeDataMap="{resourceNodeDataMap}"
+              bind:selectedComponent="{selectedComponent}"
             />
           {:else}
             <ResourceTreeView
