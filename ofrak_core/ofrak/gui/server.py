@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import logging
+import json
 import orjson
 import os
 import sys
@@ -20,7 +21,6 @@ from typing import (
     Any,
 )
 
-import orjson
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPBadRequest
 from aiohttp.web_request import Request

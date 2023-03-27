@@ -50,24 +50,25 @@ class ScriptSession:
 
     async def main(ofrak_context: OFRAKContext):
     """
+    # TODO: Replace with backend in use by OFRAK instance used to create the script.
     boilerplate_footer: str = r"""
     if __name__ == "__main__":
 
-        # Use ANGR Backend
-        # import ofrak_angr
-        # import ofrak_capstone
-        # ofrak.discover(ofrak_capstone)
-        # ofrak.discover(ofrak_angr)
+        if False:
+            import ofrak_angr
+            import ofrak_capstone
+            ofrak.discover(ofrak_capstone)
+            ofrak.discover(ofrak_angr)
 
-        # Use Binary Ninja Backend
-        # import ofrak_binary_ninja
-        # import ofrak_capstone
-        # ofrak.discover(ofrak_capstone)
-        # ofrak.discover(ofrak_binary_ninja)
+        if False:
+            import ofrak_binary_ninja
+            import ofrak_capstone
+            ofrak.discover(ofrak_capstone)
+            ofrak.discover(ofrak_binary_ninja)
 
-        # Use Ghidra Backend
-        # import ofrak_ghidra
-        # ofrak.discover(ofrak_ghidra)
+        if False:
+            import ofrak_ghidra
+            ofrak.discover(ofrak_ghidra)
 
         ofrak = OFRAK()
         ofrak.run(main)
@@ -108,7 +109,8 @@ class ScriptBuilder:
             )
         except:
             raise SelectableAttributesError(
-                f"Resource with ID {resource.get_id()} cannot be uniquely identified by attribute {attribute.__name__} (resource has value {attribute_value})."
+                f"Resource with ID {resource.get_id()} cannot be uniquely identified by attribute "
+                f"{attribute.__name__} (resource has value {attribute_value})."
             )
         if isinstance(attribute_value, str) or isinstance(attribute_value, bytes):
             attribute_value = f'"{attribute_value}"'.rstrip()
@@ -140,7 +142,7 @@ class ScriptBuilder:
         most_specific_tag = list(resource.get_most_specific_tags())[0].__name__.lower()
         _, selectable_attribute_value = await self._get_selectable_attribute(resource)
         name = f"{most_specific_tag}_{selectable_attribute_value}"
-        name = re.sub(r"[\-\.\/\\]", "_", name)
+        name = re.sub(r"[\s\-\.\/\\]", "_", name)
         if name in self.script_sessions[root_resource.get_id()].resource_variable_names.values():
             parent = await resource.get_parent()
             return f"{self.script_sessions[root_resource.get_id()].resource_variable_names[parent.get_id()]}_{name}"
@@ -234,7 +236,12 @@ class ScriptBuilder:
         script = []
         script.append(self.script_sessions[resource_id].boilerplate_header)
         for script_action in self.script_sessions[resource_id].actions:
-            if target_type is None or target_type == script_action.action_type:
+            # Always include UNDEF actions like variable assignments
+            if (
+                target_type is None
+                or script_action.action_type == target_type
+                or script_action.action_type == ActionType.UNDEF
+            ):
                 script.append(f"{script_action.action}")
         script.append(self.script_sessions[resource_id].boilerplate_footer)
         script = "\n".join(script)
