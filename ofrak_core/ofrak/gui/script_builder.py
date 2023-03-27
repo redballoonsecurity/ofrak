@@ -137,7 +137,6 @@ class ScriptBuilder:
 
     async def _generate_name(self, resource: Resource) -> str:
         root_resource = await self._get_root_resource(resource)
-        # Find the most specific tag and use that with a number
         most_specific_tag = list(resource.get_most_specific_tags())[0].__name__.lower()
         _, selectable_attribute_value = await self._get_selectable_attribute(resource)
         name = f"{most_specific_tag}_{selectable_attribute_value}"
