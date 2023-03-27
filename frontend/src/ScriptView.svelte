@@ -78,7 +78,7 @@
   export let bottomLeftPane;
 
   onMount(async () => {
-    await $selectedResource.get_script();
+    await $selectedResource.update_script();
   });
 </script>
 
