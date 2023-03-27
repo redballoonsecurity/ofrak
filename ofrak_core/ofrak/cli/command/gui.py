@@ -36,9 +36,19 @@ class GUICommand(OfrakCommandRunsScript):
             action="store_true",
             help="Don't open the browser to the OFRAK GUI",
         )
+        gui_parser.add_argument(
+            "--enable_cors",
+            action="store_true",
+            help="Enable CORS for debugging.",
+        )
         self.add_ofrak_arguments(gui_parser)
         return gui_parser
 
     async def ofrak_func(self, ofrak_context: OFRAKContext, args: Namespace):  # pragma: no cover
-        server = await open_gui(args.hostname, args.port, open_in_browser=(not args.no_browser))
+        server = await open_gui(
+            args.hostname,
+            args.port,
+            open_in_browser=(not args.no_browser),
+            enable_cors=(args.enable_cors),
+        )
         await server.run_until_cancelled()
