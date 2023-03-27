@@ -44,7 +44,7 @@ class ScriptSession:
     """
 
     hashed_actions: OrderedDict[int, ScriptAction] = OrderedDict()
-    variable_mapping: Dict[bytes, str] = {}
+    resource_variable_names: Dict[bytes, str] = {}
     actions_counter: int = 0
     boilerplate_header: str = r"""
     from ofrak import *
@@ -93,7 +93,10 @@ class ScriptBuilder:
     async def _get_selector(self, resource: Resource) -> str:
         root_resource = await self._get_root_resource(resource)
         for ancestor in await resource.get_ancestors():
-            if ancestor.get_id() in self.script_sessions[root_resource.get_id()].variable_mapping:
+            if (
+                ancestor.get_id()
+                in self.script_sessions[root_resource.get_id()].resource_variable_names
+            ):
                 break
         attribute, attribute_value = await self._get_selectable_attribute(resource)
         try:
@@ -111,7 +114,7 @@ class ScriptBuilder:
             )
         if isinstance(attribute_value, str) or isinstance(attribute_value, bytes):
             attribute_value = f'"{attribute_value}"'.rstrip()
-        return f"""await {self.script_sessions[root_resource.get_id()].variable_mapping[ancestor.get_id()]}.get_only_child(
+        return f"""await {self.script_sessions[root_resource.get_id()].resource_variable_names[ancestor.get_id()]}.get_only_child(
                     r_filter=ResourceFilter(
                         tags={resource.get_most_specific_tags()},
                         attribute_filters=[
@@ -145,9 +148,9 @@ class ScriptBuilder:
         _, selectable_attribute_value = await self._get_selectable_attribute(resource)
         name = f"{most_specific_tag}_{selectable_attribute_value}"
         name = re.sub(r"[\-\.\/\\]", "_", name)
-        if name in self.script_sessions[root_resource.get_id()].variable_mapping.values():
+        if name in self.script_sessions[root_resource.get_id()].resource_variable_names.values():
             parent = await resource.get_parent()
-            return f"{self.script_sessions[root_resource.get_id()].variable_mapping[parent.get_id()]}_{name}"
+            return f"{self.script_sessions[root_resource.get_id()].resource_variable_names[parent.get_id()]}_{name}"
         return name
 
     async def add_variable(self, resource: Resource) -> bytes:
@@ -185,7 +188,7 @@ class ScriptBuilder:
         :param action_type:
         """
         var_name = await self.add_variable(resource)
-        qualified_action = action.replace("$resource", var_name)
+        qualified_action = action.format(resource=var_name)
         await self._add_action_to_session(resource, qualified_action, action_type)
 
     async def _add_action_to_session(self, resource, action, action_type):
@@ -198,16 +201,18 @@ class ScriptBuilder:
     async def _add_variable_to_session(self, resource: Resource, var_name: str):
         root_resource = await self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
-        session.variable_mapping[resource.get_id()] = var_name
+        session.resource_variable_names[resource.get_id()] = var_name
 
     async def _get_variable_from_session(self, resource: Resource):
         root_resource = await self._get_root_resource(resource)
-        return self.script_sessions[root_resource.get_id()].variable_mapping[resource.get_id()]
+        return self.script_sessions[root_resource.get_id()].resource_variable_names[
+            resource.get_id()
+        ]
 
     async def _var_exists(self, resource: Resource):
         root_resource = await self._get_root_resource(resource)
         session = self._get_session(root_resource)
-        return resource.get_id() in session.variable_mapping
+        return resource.get_id() in session.resource_variable_names
 
     def delete_action(self, resource_id: bytes, action: str) -> None:
         """

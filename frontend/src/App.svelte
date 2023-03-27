@@ -177,7 +177,10 @@ Answer by running riddle.answer('your answer here') from the console.`);
         </Pane>
         <Pane slot="second" paddingVertical="{'1em'}">
           {#if bottomLeftPane}
-            <ScriptView bind:bottomLeftPane="{bottomLeftPane}" />
+            <svelte:component
+              this="{bottomLeftPane}"
+              bind:bottomLeftPane="{bottomLeftPane}"
+            />
           {:else}
             <AttributesView resource="{currentResource}" />
           {/if}

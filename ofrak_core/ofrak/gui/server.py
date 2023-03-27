@@ -68,7 +68,7 @@ from ofrak.service.serialization.pjson import (
     SerializationServiceInterface,
     PJSONSerializationService,
 )
-from gui.script_builder import ActionType, ScriptBuilder
+from ofrak.gui.script_builder import ActionType, ScriptBuilder
 from ofrak.service.serialization.pjson_types import PJSONType
 from ofrak.core.entropy import DataSummaryAnalyzer
 
@@ -111,6 +111,7 @@ class AiohttpOFRAKServer:
         ofrak_context: OFRAKContext,
         host: str,
         port: int,
+        enable_cors: bool = False,
     ):
         self._serializer = serializer
         self._app = web.Application(client_max_size=None)  # type: ignore
@@ -167,27 +168,30 @@ class AiohttpOFRAKServer:
         self._job_ids: Dict[str, bytes] = defaultdict(
             lambda: ofrak_context.id_service.generate_id()
         )
-        try:
-            import aiohttp_cors
+        if enable_cors is True:
+            try:
+                import aiohttp_cors
 
-            # From: https://github.com/aio-libs/aiohttp-cors
-            # Configure default CORS settings.
-            cors = aiohttp_cors.setup(
-                self._app,
-                defaults={
-                    "*": aiohttp_cors.ResourceOptions(
-                        allow_credentials=True,
-                        expose_headers="*",
-                        allow_headers="*",
-                    )
-                },
-            )
+                # From: https://github.com/aio-libs/aiohttp-cors
+                # Configure default CORS settings.
+                cors = aiohttp_cors.setup(
+                    self._app,
+                    defaults={
+                        "*": aiohttp_cors.ResourceOptions(
+                            allow_credentials=True,
+                            expose_headers="*",
+                            allow_headers="*",
+                        )
+                    },
+                )
 
-            # Configure CORS on all routes.
-            for route in list(self._app.router.routes()):
-                cors.add(route)
-        except ImportError:
-            pass
+                # Configure CORS on all routes.
+                for route in list(self._app.router.routes()):
+                    cors.add(route)
+            except ImportError:
+                LOGGER.warning(
+                    "Unable to enable CORS. Please confirm that aiohttp_cors is installed."
+                )
 
     async def start(self):  # pragma: no cover
         """
@@ -330,7 +334,7 @@ class AiohttpOFRAKServer:
     async def unpack(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         script_str = """
-        await $resource.unpack()"""
+        await {resource}.unpack()"""
         await self.script_builder.add_action(resource, script_str, ActionType.UNPACK)
         result = await resource.unpack()
         return json_response(await self._serialize_component_result(result))
@@ -339,7 +343,7 @@ class AiohttpOFRAKServer:
     async def unpack_recursively(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         script_str = """
-        await $resource.unpack_recursively()"""
+        await {resource}.unpack_recursively()"""
         await self.script_builder.add_action(resource, script_str, ActionType.UNPACK)
         result = await resource.unpack_recursively()
         return json_response(await self._serialize_component_result(result))
@@ -349,7 +353,7 @@ class AiohttpOFRAKServer:
         resource = await self._get_resource_for_request(request)
         script_str = """
 
-        await $resource.pack()"""
+        await {resource}.pack()"""
         await self.script_builder.add_action(resource, script_str, ActionType.PACK)
         result = await resource.pack()
         return json_response(await self._serialize_component_result(result))
@@ -358,7 +362,7 @@ class AiohttpOFRAKServer:
     async def pack_recursively(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         script_str = """
-        await $resource.pack_recursively()"""
+        await {resource}.pack_recursively()"""
         await self.script_builder.add_action(resource, script_str, ActionType.PACK)
         result = await resource.pack_recursively()
         return json_response(await self._serialize_component_result(result))
@@ -367,7 +371,7 @@ class AiohttpOFRAKServer:
     async def identify(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         script_str = """
-        await $resource.identify()"""
+        await {resource}.identify()"""
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         result = await resource.identify()
         return json_response(await self._serialize_component_result(result))
@@ -383,7 +387,7 @@ class AiohttpOFRAKServer:
     async def analyze(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         script_str = """
-        await $resource.auto_run(all_analyzers=True)"""
+        await {resource}.auto_run(all_analyzers=True)"""
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         result = await resource.auto_run(all_analyzers=True)
         return json_response(await self._serialize_component_result(result))
@@ -458,9 +462,12 @@ class AiohttpOFRAKServer:
         new_data_string = "/x" + "/x".join(
             [new_data.hex()[i : i + 2] for i in range(0, len(new_data.hex()), 2)]
         )
-        script_str = rf"""
-        $resource.queue_patch(Range({start}, {end}), b"{new_data_string}")
-        await $resource.save()"""
+        script_str = (
+            r"""
+        {resource}.queue_patch"""
+            rf"""(Range({start}, {end}), b"{new_data_string}")"""
+        )
+        """await {resource}.save()"""
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         resource.queue_patch(Range(start, end), new_data)
         await resource.save()
@@ -485,8 +492,8 @@ class AiohttpOFRAKServer:
             replace_with="{config.replace_with}", 
             null_terminate={config.null_terminate}, 
             allow_overflow={config.allow_overflow}
-        )
-        await $resource.run(StringFindReplaceModifier, config)
+        )"""
+        """await {resource}.run(StringFindReplaceModifier, config)
         """
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         result = await resource.run(StringFindReplaceModifier, config=config)
@@ -498,9 +505,12 @@ class AiohttpOFRAKServer:
         """
         resource = await self._get_resource_for_request(request)
         comment = self._serializer.from_pjson(await request.json(), Tuple[Optional[Range], str])
-        script_str = f"""
-        await $resource.run(AddCommentModifier, AddCommentModifierConfig({comment}))
+        script_str = (
+            """
+        await {resource}.run"""
+            f"""(AddCommentModifier, AddCommentModifierConfig({comment}))
         """
+        )
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         result = await resource.run(AddCommentModifier, AddCommentModifierConfig(comment))
         return json_response(await self._serialize_component_result(result))
@@ -509,10 +519,13 @@ class AiohttpOFRAKServer:
     async def delete_comment(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         comment_range = self._serializer.from_pjson(await request.json(), Optional[Range])
-        script_str = f"""
-        await $resource.run(
+        script_str = (
+            """
+        await {resource}.run"""
+            f"""(
             DeleteCommentModifier, DeleteCommentModifierConfig({comment_range})
         )"""
+        )
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         result = await resource.run(
             DeleteCommentModifier, DeleteCommentModifierConfig(comment_range)
@@ -549,8 +562,8 @@ class AiohttpOFRAKServer:
         resource = await self._get_resource_for_request(request)
         tag = self._serializer.from_pjson(await request.json(), ResourceTag)
         script_str = """
-        $resource.add_tag(tag)
-        await $resource.save()"""
+        {resource}.add_tag(tag)
+        await {resource}.save()"""
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         resource.add_tag(tag)
         await resource.save()
@@ -649,7 +662,10 @@ class AiohttpOFRAKServer:
 
 
 async def start_server(
-    ofrak_context: OFRAKContext, host: str, port: int
+    ofrak_context: OFRAKContext,
+    host: str,
+    port: int,
+    enable_cors: bool = False,
 ) -> AiohttpOFRAKServer:  # pragma: no cover
     # Force using the correct PJSON serialization with the expected structure. Otherwise the
     # dependency injector may accidentally use the Stashed PJSON serialization service,
@@ -661,6 +677,7 @@ async def start_server(
         ofrak_context=ofrak_context,
         host=host,
         port=port,
+        enable_cors=enable_cors,
     )
     server = await ofrak_context.injector.get_instance(AiohttpOFRAKServer)
     await server.start()
@@ -695,11 +712,12 @@ async def open_gui(
     focus_resource: Optional[Resource] = None,
     ofrak_context: Optional[OFRAKContext] = None,
     open_in_browser: bool = True,
+    enable_cors: bool = False,
 ) -> AiohttpOFRAKServer:  # pragma: no cover
     if ofrak_context is None:
         ofrak_context = get_current_ofrak_context()
 
-    server = await start_server(ofrak_context, host, port)
+    server = await start_server(ofrak_context, host, port, enable_cors)
 
     if focus_resource is None:
         url = f"http://{server._host}:{server._port}/"
