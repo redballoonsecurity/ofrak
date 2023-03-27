@@ -747,23 +747,23 @@ class Resource:
             self._resource_view_context.add_view(self.get_id(), view)
             return cast(RV, view)
 
-        analysis_task = self._analyze_attributes(
+        # Only if analysis is absolutely necessary is an awaitable created and returned
+        async def finish_view_creation(
+            attrs_to_analyze: Tuple[Type[ResourceAttributes], ...]
+        ) -> RV:
+            await self._analyze_attributes(attrs_to_analyze)
+            view = viewable_tag.create(self.get_model())
+            view.resource = self  # type: ignore
+            self._resource_view_context.add_view(self.get_id(), view)
+            return cast(RV, view)
+
+        return finish_view_creation(
             tuple(
                 attrs_t
                 for attrs_t, existing in zip(composed_attrs_types, existing_attributes)
                 if not existing
             )
         )
-
-        # Only if analysis is absolutely necessary is an awaitable created and returned
-        async def finish_view_creation() -> RV:
-            await asyncio.gather(analysis_task)
-            view = viewable_tag.create(self.get_model())
-            view.resource = self  # type: ignore
-            self._resource_view_context.add_view(self.get_id(), view)
-            return cast(RV, view)
-
-        return finish_view_creation()
 
     async def view_as(self, viewable_tag: Type[RV]) -> RV:
         """

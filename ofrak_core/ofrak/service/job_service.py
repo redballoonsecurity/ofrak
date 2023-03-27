@@ -248,7 +248,7 @@ class JobService(JobServiceInterface):
         else:
             raise NotFoundError(
                 f"Unable to find any analyzer for attributes "
-                f"{','.join(attr_t.__name__ for attr_t in request.attributes)}"
+                f"{', '.join(attr_t.__name__ for attr_t in request.attributes)}"
                 f"\nFilter: {component_filter}"
             )
 
