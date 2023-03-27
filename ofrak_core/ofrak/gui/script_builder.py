@@ -89,6 +89,100 @@ class ScriptBuilder:
             Data.Offset,
         ]
 
+    async def add_action(
+        self,
+        resource: Resource,
+        action: str,
+        action_type: ActionType,
+    ) -> None:
+        """
+        :param action:
+        :param action_type:
+        """
+        var_name = await self.add_variable(resource)
+        qualified_action = action.format(resource=var_name)
+        await self._add_action_to_session(resource, qualified_action, action_type)
+
+    async def add_variable(self, resource: Resource) -> bytes:
+        if await self._var_exists(resource):
+            return await self._get_variable_from_session(resource)
+
+        root_resource = await self._get_root_resource(resource)
+        if resource.get_id() == root_resource.get_id():
+            await self._add_variable_to_session(resource, "root_resource")
+            return "root_resource"
+
+        parent = await resource.get_parent()
+        if not await self._var_exists(parent):
+            await self.add_variable(parent)
+
+        selector = await self._get_selector(resource)
+        name = await self._generate_name(resource)
+        await self._add_action_to_session(
+            resource,
+            rf"""
+        {name} = {selector}""",
+            ActionType.UNDEF,
+        )
+        await self._add_variable_to_session(resource, name)
+        return name
+
+    async def delete_action(self, resource: Resource, action: str) -> None:
+        """
+        :param action:
+        """
+        root_resource = await self._get_root_resource(resource)
+        session = self._get_session(root_resource.get_id())
+        # TODO: do we really need to delete an action from the script?
+        for idx, script_action in enumerate(session.actions):
+            if script_action.action == action:
+                session.actions.pop(idx)
+
+    async def get_script(self, resource: Resource) -> str:
+        """
+        :return script:
+        """
+        root_resource = await self._get_root_resource(resource)
+        return self._get_script(root_resource.get_id())
+
+    async def get_all_of_type(self, resource: Resource, target_type: ActionType) -> str:
+        """
+        :param target_type:
+        :return script:
+        """
+        root_resource = await self._get_root_resource(resource)
+        return self._get_script(root_resource.get_id(), target_type)
+
+    async def _get_root_resource(self, resource: Resource) -> Resource:
+        if resource.get_id() in self.root_cache:
+            return self.root_cache[resource.get_id()]
+        while len(list(await resource.get_ancestors())) != 0:
+            resource = await resource.get_parent()
+        self.root_cache[resource.get_id()] = resource
+        return resource
+
+    async def _get_variable_from_session(self, resource: Resource):
+        root_resource = await self._get_root_resource(resource)
+        return self.script_sessions[root_resource.get_id()].resource_variable_names[
+            resource.get_id()
+        ]
+
+    async def _var_exists(self, resource: Resource):
+        root_resource = await self._get_root_resource(resource)
+        session = self._get_session(root_resource)
+        return resource.get_id() in session.resource_variable_names
+
+    async def _add_action_to_session(self, resource, action, action_type):
+        root_resource = await self._get_root_resource(resource)
+        session = self._get_session(root_resource.get_id())
+        # TODO: actions are duplicated if page is refreshed, is this reasonable?
+        session.actions.append(ScriptAction(action_type, action))
+
+    async def _add_variable_to_session(self, resource: Resource, var_name: str):
+        root_resource = await self._get_root_resource(resource)
+        session = self._get_session(root_resource.get_id())
+        session.resource_variable_names[resource.get_id()] = var_name
+
     async def _get_selector(self, resource: Resource) -> str:
         root_resource = await self._get_root_resource(resource)
         for ancestor in await resource.get_ancestors():
@@ -148,75 +242,6 @@ class ScriptBuilder:
             return f"{self.script_sessions[root_resource.get_id()].resource_variable_names[parent.get_id()]}_{name}"
         return name
 
-    async def add_variable(self, resource: Resource) -> bytes:
-        if await self._var_exists(resource):
-            return await self._get_variable_from_session(resource)
-
-        root_resource = await self._get_root_resource(resource)
-        if resource.get_id() == root_resource.get_id():
-            await self._add_variable_to_session(resource, "root_resource")
-            return "root_resource"
-
-        parent = await resource.get_parent()
-        if not await self._var_exists(parent):
-            await self.add_variable(parent)
-
-        selector = await self._get_selector(resource)
-        name = await self._generate_name(resource)
-        await self._add_action_to_session(
-            resource,
-            rf"""
-        {name} = {selector}""",
-            ActionType.UNDEF,
-        )
-        await self._add_variable_to_session(resource, name)
-        return name
-
-    async def add_action(
-        self,
-        resource: Resource,
-        action: str,
-        action_type: ActionType,
-    ) -> None:
-        """
-        :param action:
-        :param action_type:
-        """
-        var_name = await self.add_variable(resource)
-        qualified_action = action.format(resource=var_name)
-        await self._add_action_to_session(resource, qualified_action, action_type)
-
-    async def _add_action_to_session(self, resource, action, action_type):
-        root_resource = await self._get_root_resource(resource)
-        session = self._get_session(root_resource.get_id())
-        # TODO: actions are duplicated if page is refreshed, is this reasonable?
-        session.actions.append(ScriptAction(action_type, action))
-
-    async def _add_variable_to_session(self, resource: Resource, var_name: str):
-        root_resource = await self._get_root_resource(resource)
-        session = self._get_session(root_resource.get_id())
-        session.resource_variable_names[resource.get_id()] = var_name
-
-    async def _get_variable_from_session(self, resource: Resource):
-        root_resource = await self._get_root_resource(resource)
-        return self.script_sessions[root_resource.get_id()].resource_variable_names[
-            resource.get_id()
-        ]
-
-    async def _var_exists(self, resource: Resource):
-        root_resource = await self._get_root_resource(resource)
-        session = self._get_session(root_resource)
-        return resource.get_id() in session.resource_variable_names
-
-    def delete_action(self, resource_id: bytes, action: str) -> None:
-        """
-        :param action:
-        """
-        # TODO: do we really need to delete an action from the script?
-        for idx, script_action in enumerate(self.script_sessions[resource_id].actions):
-            if script_action.action == action:
-                self.script_sessions[resource_id].actions.pop(idx)
-
     def _get_session(self, resource_id: bytes) -> ScriptSession:
         session = self.script_sessions.get(resource_id, None)
         if session is None:
@@ -224,13 +249,6 @@ class ScriptBuilder:
             self.script_sessions[resource_id] = session
 
         return session
-
-    async def get_script(self, resource: Resource) -> str:
-        """
-        :return script:
-        """
-        root_resource = await self._get_root_resource(resource)
-        return self._get_script(root_resource.get_id())
 
     def _get_script(self, resource_id: bytes, target_type: Optional[ActionType] = None) -> str:
         script = []
@@ -258,18 +276,3 @@ class ScriptBuilder:
             return s
         indent_end_index = len(indent_matches[0])
         return [line[indent_end_index:] for line in split if line.startswith(prefix) and line != ""]
-
-    def get_all_of_type(self, resource_id: bytes, target_type: ActionType) -> str:
-        """
-        :param target_type:
-        :return script:
-        """
-        return self._get_script(resource_id, target_type)
-
-    async def _get_root_resource(self, resource: Resource) -> Resource:
-        if resource.get_id() in self.root_cache:
-            return self.root_cache[resource.get_id()]
-        while len(list(await resource.get_ancestors())) != 0:
-            resource = await resource.get_parent()
-        self.root_cache[resource.get_id()] = resource
-        return resource
