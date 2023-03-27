@@ -127,13 +127,9 @@ class ScriptBuilder:
         self, resource: Resource
     ) -> Tuple[ResourceIndexedAttribute, any]:
         for attribute in self.selectable_indexes:
-            try:
-                await resource.analyze(attribute.attributes_owner)
+            if resource.has_attributes(attribute.attributes_owner):
                 attribute_value = attribute.get_value(resource.get_model())
-            except Exception as e:
-                print(e)
-                continue
-            return attribute, attribute_value
+                return attribute, attribute_value
         raise SelectableAttributesError(
             f"Resource with ID {resource.get_id()} does not have a selectable attribute."
         )

@@ -1,5 +1,5 @@
 import { Resource } from "./resource";
-import { backendUrl, script, config } from "../stores";
+import { backendUrl, script } from "../stores";
 
 let batchQueues = {};
 
