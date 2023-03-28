@@ -196,7 +196,7 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
     ) -> str:
         bss_section_name = ".bss"
         return (
-            f"    {bss_section_name} : {{\n"
+            f"    {bss_section_name} : SUBALIGN(0) {{\n"
             f"        *.o({bss_section_name}, {bss_section_name}.*)\n"
             f"    }} > {memory_region_name}"
         )
