@@ -223,13 +223,32 @@ class ScriptBuilder:
     async def _get_selectable_attribute(
         self, resource: Resource
     ) -> Tuple[ResourceIndexedAttribute, any]:
+        attribute_collisions = {}
         for attribute in self.selectable_indexes:
             if resource.has_attributes(attribute.attributes_owner):
                 attribute_value = attribute.get_value(resource.get_model())
+                parent = await resource.get_parent()
+                children = await parent.get_children(
+                    r_filter=ResourceFilter(
+                        resource.get_most_specific_tags(),
+                        attribute_filters=ResourceAttributeValueFilter(
+                            attribute=attribute,
+                            value=attribute_value)
+                        )
+                    )
+                if len(children) > 1:
+                    attribute_collisions[attribute.__name__] = attribute_value
+                    continue
                 return attribute, attribute_value
-        raise SelectableAttributesError(
-            f"Resource with ID {resource.get_id()} does not have a selectable attribute."
-        )
+        if len(attribute_collisions) == 0:
+            raise SelectableAttributesError(
+                f"Resource with ID {resource.get_id()} does not have a selectable attribute."
+            )
+        else:
+            msg = []
+            for collision, value in attribute_collisions.items(): 
+                msg.append(f"Resource with ID {resource.get_id()} cannot be uniquely identified by attribute {attribute.__name__} (resource has value {attribute_value}).")
+            raise SelectableAttributesError("\n".join(msg))
 
     async def _generate_name(self, resource: Resource) -> str:
         root_resource = await self._get_root_resource(resource)
