@@ -61,7 +61,7 @@ class LLVM_12_0_1_Toolchain(Toolchain):
             self._compiler_flags.append("-msoft-float")
 
         if self._config.separate_data_sections:
-            raise NotImplementedError("separate sections not supported by LLVM Toolchain yet")
+            self._compiler_flags.append("-fdata-sections")
         if self._config.compiler_cpu:
             self._logger.warning("compiler_cpu option set, but has no meaning for LLVM toolchain")
 
@@ -244,7 +244,7 @@ class LLVM_12_0_1_Toolchain(Toolchain):
         abs_path = os.path.abspath(object_path)
         return (
             f"    .rbs_{stripped_obj_name}_{stripped_seg_name} : {{\n"
-            f"        {abs_path}({segment_name})\n"
+            f"        {abs_path}({segment_name}*)\n"
             f"    }} > {memory_region_name}"
         )
 

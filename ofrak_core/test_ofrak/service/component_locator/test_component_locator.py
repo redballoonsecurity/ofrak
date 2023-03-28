@@ -325,6 +325,15 @@ GET_COMPONENTS_TEST_CASES = [
             AbstractionRRUnpacker,
         ),
     ),
+    GetComponentMatchingFiltersTestCase(
+        "match only the analyzer outputting ALL the requested attributes",
+        (
+            AnalyzerOutputFilter(
+                AbstractionAttributesA, AbstractionAttributesB, AbstractionAttributesC
+            ),
+        ),
+        (TargetsQOutputsABC,),
+    ),
 ]
 
 

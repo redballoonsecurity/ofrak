@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add methods to parse relocation symbols from object files.
 - Extend parsed symbol dictionary to include LinkableSymbolType.
 - Extend AssembledObject and BOM types to include relocation and unresolved symbols.
+- Add separate data sections support to LLVM toolchain, and add general flag for including subsections
 
 ### Changed
 - Switch to standard GCC-like frontend for LLVM, which supports C attribute(weak)
