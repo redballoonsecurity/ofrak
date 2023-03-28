@@ -9,7 +9,6 @@
   import { selectedResource, selected } from "./stores.js";
   import SearchView from "./SearchView.svelte";
   import AddTagView from "./AddTagView.svelte";
-  import ComponentConfig from "./ComponentConfig.svelte";
 
   export let resourceNodeDataMap, modifierView, bottomLeftPane;
   $: rootResource = $selectedResource;

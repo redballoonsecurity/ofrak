@@ -120,8 +120,6 @@
       {#each ofrakConfig["fields"] as field}
         <ComponentConfigField
           field="{field}"
-          field_name="{field['name']}"
-          field_type="{field['type']}"
           bind:field_entries="{field_entries}"
         />
       {/each}
@@ -129,21 +127,21 @@
 
     <button
       on:click="{async (e) => {
-        if(ofrakConfig.length != 0){
+        if (ofrakConfig.length != 0) {
           ofrakConfigName = ofrakConfig['name'];
         }
-        console.log({ofrakConfigName});
+        console.log({ ofrakConfigName });
         await $selectedResource.run_component(
           selectedComponent,
           ofrakConfigName,
           field_entries
         );
         resourceNodeDataMap[$selected] = {
-            collapsed: false,
-            childrenPromise: $selectedResource.get_children(),
-          };
-          $selected = $selected
-          modifierView = undefined;
+          collapsed: false,
+          childrenPromise: $selectedResource.get_children(),
+        };
+        $selected = $selected;
+        modifierView = undefined;
       }}"
     >
       Run Component

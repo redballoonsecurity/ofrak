@@ -1,6 +1,9 @@
 import asyncio
+import dataclasses
 import functools
 import logging
+from types import NoneType
+import typing
 import orjson
 import inspect
 import os
@@ -597,9 +600,20 @@ class AiohttpOFRAKServer:
         if not config == inspect._empty:
             return json_response(
                 {
-                    "name": f"{config.__module__}.{config.__qualname__}",
+                    "name": self._convert_to_class_name_str(config),
                     "fields": [
-                        {"name": field.name, "type": str(field.type)}
+                        {
+                            "name": field.name,
+                            "type": self._convert_to_class_name_str(field.type),
+                            "args": [
+                                self._convert_to_class_name_str(arg)
+                                for arg in typing.get_args(field.type)
+                            ],
+                            "fields": self.construct_field_response(field.type),
+                            "default": field.default
+                            if not isinstance(field.default, dataclasses._MISSING_TYPE)
+                            else None,
+                        }
                         for field in fields(config)
                         if field.init is True
                     ],
@@ -624,6 +638,23 @@ class AiohttpOFRAKServer:
     async def get_static_files(self, request: Request) -> FileResponse:
         return FileResponse(os.path.join(os.path.dirname(__file__), "./public/index.html"))
 
+    def construct_field_response(self, field):
+        if dataclasses.is_dataclass(field):
+            return {
+                "name": field.name,
+                "type": self._convert_to_class_name_str(field.type),
+                "args": [
+                    self._convert_to_class_name_str(arg) for arg in typing.get_args(field.type)
+                ],
+                "fields": self.construct_field_response(field.type),
+                "default": field.default,
+            }
+        else:
+            return {}
+
+    def _convert_to_class_name_str(self, obj: any):
+        return f"{obj.__module__}.{obj.__qualname__}"
+
     async def _get_resource_by_id(self, resource_id: bytes, job_id: bytes) -> Resource:
         resource = await self._ofrak_context.resource_factory.create(
             job_id,
@@ -636,15 +667,19 @@ class AiohttpOFRAKServer:
 
     def _get_config_for_component(self, component: AbstractComponent):
         if issubclass(component, Packer):
-            return inspect.signature(component.pack).parameters["config"].annotation
+            config = inspect.signature(component.pack).parameters["config"].annotation
         elif issubclass(component, Unpacker):
-            return inspect.signature(component.unpack).parameters["config"].annotation
+            config = inspect.signature(component.unpack).parameters["config"].annotation
         elif issubclass(component, Modifier):
-            return inspect.signature(component.modify).parameters["config"].annotation
+            config = inspect.signature(component.modify).parameters["config"].annotation
         elif issubclass(component, Analyzer):
-            return inspect.signature(component.analyze).parameters["config"].annotation
+            config = inspect.signature(component.analyze).parameters["config"].annotation
         else:
             raise ValueError("{component} can not be run from the web API.")
+        if hasattr(config, "_name"):
+            if config._name == "Optional":
+                config = [conf for conf in typing.get_args(config) if conf is not NoneType][0]
+        return config
 
     async def _get_resource_model_by_id(
         self, resource_id: bytes, job_id: bytes
