@@ -21,7 +21,7 @@ BACKEND_PACKAGES = {
     "angr": {"ofrak_angr", "ofrak_capstone"},
     "binary-ninja": {"ofrak_binary_ninja", "ofrak_capstone"},
     "ghidra": {"ofrak_ghidra"},
-    None: {},
+    None: set(),
 }
 
 
@@ -169,7 +169,7 @@ class OfrakCommandRunsScript(OfrakCommand, ABC):
         ofrak_pkgs = set(args.imports)
         ofrak_pkgs.update(BACKEND_PACKAGES.get(args.backend))
 
-        if not any(pkgs.issubset(ofrak_pkgs) for pkgs in BACKEND_PACKAGES.values()):
+        if not any(pkgs and pkgs.issubset(ofrak_pkgs) for pkgs in BACKEND_PACKAGES.values()):
             logging.warning("No disassembler backend specified, so no disassembly will be possible")
 
         for ofrak_pkg_name in ofrak_pkgs:
