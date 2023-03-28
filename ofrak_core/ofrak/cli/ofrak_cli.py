@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from argparse import ArgumentParser, _SubParsersAction, Namespace
 from inspect import isabstract
 from types import ModuleType
-from typing import Dict, Iterable, List, Optional, Sequence, Type
+from typing import Dict, Iterable, List, Optional, Sequence, Type, Set
 
 from importlib_metadata import entry_points
 
@@ -16,8 +16,7 @@ from ofrak.model.component_model import ComponentExternalTool
 from ofrak.ofrak_context import OFRAKContext, OFRAK
 from synthol.injector import DependencyInjector
 
-
-BACKEND_PACKAGES = {
+BACKEND_PACKAGES: Dict[Optional[str], Set[str]] = {
     "angr": {"ofrak_angr", "ofrak_capstone"},
     "binary-ninja": {"ofrak_binary_ninja", "ofrak_capstone"},
     "ghidra": {"ofrak_ghidra"},
@@ -167,7 +166,7 @@ class OfrakCommandRunsScript(OfrakCommand, ABC):
         )
 
         ofrak_pkgs = set(args.imports)
-        ofrak_pkgs.update(BACKEND_PACKAGES.get(args.backend))
+        ofrak_pkgs.update(BACKEND_PACKAGES[args.backend])
 
         if not any(pkgs and pkgs.issubset(ofrak_pkgs) for pkgs in BACKEND_PACKAGES.values()):
             logging.warning("No disassembler backend specified, so no disassembly will be possible")
