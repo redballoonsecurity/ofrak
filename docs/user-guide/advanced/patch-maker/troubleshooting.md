@@ -110,6 +110,21 @@ section. There are two approaches for addressing this:
 - reuse the variable in the binary, if present, as described above.
 - define a read-write segment part of the `segments` field of the `PatchRegionConfig`. Note that additional space will be required for that segment.
 
+## Linking to existing global variables in the target binary
+Error:
+```
+/path/to/linker-ld: error: no memory region specified for section '.rel.dyn'
+```
+This issue occurs when the patch uses a global variable in the target binary, so the linker attempts to link the usages in the patch to the address in the target binary.
+Linkers often try to do this with a Global Offset Table, a table of pointers which gets put in the `.got` section, and the offsets of those pointers are stored in the `.rel.dyn` section.
+The code using the variable is expected to load an address from an offset in this table, and the dynamic linker is expected to fix up this table at runtime to have accurate pointers.
+When injecting a patch, we usually don't want to have to deal with a Global Offset Table since, in the best-case scenario, it would mean finding and appending to the table already in the target binary, which is complicated.
+
+A good workaround is to use `__attribute__((weak))` instead of `extern` when declaring the global variable in the patch source code, and defining a strong symbol for the variable at the address in the target binary.
+Contrary to `extern`, declaring a symbol as "weak" will count as a definition so that the BOM can be built without a Global Offset Table to resolve the pointer to some outside data.
+But, since a "weak" definition can still be overruled by a "strong" definition of the variable elsewhere, you can define the variable at the correct address when building the FEM and the linker will go fix the usage of that variable to point at the correct address.
+If using the symbol stub generation provided by OFRAK's `LinkableBinary` (indirectly in `PatchFromSourceModifier` or `FunctionReplacementModifier`), the stub symbols are already strong definitions, so just use `__attribute__((weak))` in your patch source.
+
 ## Linker errors
 In the case of linker errors, helpful troubleshooting approaches are:
 
