@@ -267,6 +267,8 @@ class ScriptBuilder:
         root_resource = await self._get_root_resource(resource)
         most_specific_tag = list(resource.get_most_specific_tags())[0].__name__.lower()
         _, selectable_attribute_value = await self._get_selectable_attribute(resource)
+        if isinstance(selectable_attribute_value, int):
+            selectable_attribute_value = hex(selectable_attribute_value)
         name = f"{most_specific_tag}_{selectable_attribute_value}"
         name = re.sub(r"[^a-zA-Z0-9]", "_", name)
         if name in self.script_sessions[root_resource.get_id()].resource_variable_names.values():
