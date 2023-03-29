@@ -495,16 +495,20 @@ export class RemoteResource extends Resource {
     });
   }
 
-  async get_all_components_for_resource() {
-    return await fetch(
-      `${backendUrl}/${this.uri}/get_all_components_for_resource`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    ).then(async (r) => {
+  async get_components(target, analyzers, modifiers, packers, unpackers) {
+    return await fetch(`${backendUrl}/${this.uri}/get_components`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        target: target,
+        analyzers: analyzers,
+        modifiers: modifiers,
+        packers: packers,
+        unpackers: unpackers,
+      }),
+    }).then(async (r) => {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }

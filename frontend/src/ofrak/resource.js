@@ -386,8 +386,8 @@ export class Resource {
     throw new NotImplementedError("get_script");
   }
 
-  async get_all_components_for_resource() {
-    throw new NotImplementedError("get_all_components_for_resource");
+  async get_components() {
+    throw new NotImplementedError("get_components");
   }
 
   async get_config_for_component() {

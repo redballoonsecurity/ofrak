@@ -1,6 +1,7 @@
 import asyncio
 import dataclasses
 import functools
+import itertools
 import logging
 from types import NoneType
 import typing
@@ -22,6 +23,7 @@ from typing import (
     Callable,
     TypeVar,
     Any,
+    List,
 )
 
 import json
@@ -165,9 +167,9 @@ class AiohttpOFRAKServer:
                 web.post("/{resource_id}/add_tag", self.add_tag),
                 web.get("/get_all_tags", self.get_all_tags),
                 web.get("/{resource_id}/get_script", self.get_script),
-                web.get(
-                    "/{resource_id}/get_all_components_for_resource",
-                    self.get_all_components_for_resource,
+                web.post(
+                    "/{resource_id}/get_components",
+                    self.get_components,
                 ),
                 web.get("/{resource_id}/get_config_for_component", self.get_config_for_component),
                 web.post("/{resource_id}/run_component", self.run_component),
@@ -584,15 +586,20 @@ class AiohttpOFRAKServer:
         return json_response(await self.script_builder.get_script(resource))
 
     @exceptions_to_http(SerializedError)
-    async def get_all_components_for_resource(self, request: Request) -> Response:
+    async def get_components(self, request: Request) -> Response:
         resource: Resource = await self._get_resource_for_request(request)
-        tags = resource.get_tags()
-        components_for_resource = []
-        for component_name, component in self.env.components.items():
-            if issubclass(component, (Packer, Unpacker, Analyzer, Modifier)):
-                if len([tag for tag in tags if tag in component.targets]) > 0:
-                    components_for_resource.append(component_name)
-        return json_response(self._serializer.to_pjson(components_for_resource, Set[str]))
+        options = await request.json()
+        only_target = options["target"]
+        incl_analyzers = options["analyzers"]
+        incl_modifiers = options["modifiers"]
+        incl_packers = options["packers"]
+        incl_unpackers = options["unpackers"]
+
+        components = self._get_specific_components(
+            resource, only_target, incl_analyzers, incl_modifiers, incl_packers, incl_unpackers
+        )
+
+        return json_response(self._serializer.to_pjson(components, Set[str]))
 
     async def get_config_for_component(self, request: Request) -> Response:
         component = self.env.components[request.query.get("component")]
@@ -689,6 +696,32 @@ class AiohttpOFRAKServer:
             self.component_context,
         )
         return resource
+
+    def _get_specific_components(
+        self,
+        resource: Resource,
+        only_target: bool,
+        incl_analyzers: bool,
+        incl_modifiers: bool,
+        incl_packers: bool,
+        incl_unpackers: bool,
+    ) -> List[str]:
+        components = []
+        tags = resource.get_tags()
+
+        req_components = [incl_analyzers, incl_modifiers, incl_packers, incl_unpackers]
+        comp_categories = (Analyzer, Modifier, Packer, Unpacker)
+        if any(req_components):
+            categories = tuple(itertools.compress(comp_categories, req_components))
+        else:
+            categories = comp_categories
+
+        for component_name, component in self.env.components.items():
+            if issubclass(component, categories):
+                if len([tag for tag in tags if not only_target or tag in component.targets]) > 0:
+                    components.append(component_name)
+
+        return components
 
     def _get_config_for_component(self, component: AbstractComponent):
         if issubclass(component, Packer):
