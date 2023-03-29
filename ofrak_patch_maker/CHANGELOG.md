@@ -10,7 +10,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Use `SUBALIGN(0)` for `.bss` sections
 - Force literal pool at end of function for AARCH64 using `-mpc-relative-literal-loads`
 ### Added
-- `cortex-a72` processor type
 - `-fno-pic` flag added to the GNU_10_Toolchain to omit GOTs in patches (FEMs) against binaries that aren't dynamically linked. (see [#245](https://github.com/redballoonsecurity/ofrak/pull/245))
 
 ### Added
