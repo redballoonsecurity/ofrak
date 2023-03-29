@@ -117,7 +117,7 @@
     <LoadingText />
   {:then ofrakConfig}
     {#if ofrakConfig.length != 0}
-      <ComponentConfigNode node="{ofrakConfig}" bind:element="{config}"/>
+      <ComponentConfigNode node="{ofrakConfig}" bind:element="{config}" />
     {/if}
 
     <button
@@ -126,10 +126,7 @@
           ofrakConfigName = ofrakConfig['name'];
         }
         console.log({ ofrakConfigName });
-        await $selectedResource.run_component(
-          selectedComponent,
-          config
-        );
+        await $selectedResource.run_component(selectedComponent, config);
         resourceNodeDataMap[$selected] = {
           collapsed: false,
           childrenPromise: $selectedResource.get_children(),
