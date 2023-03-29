@@ -600,16 +600,15 @@ class AiohttpOFRAKServer:
         if not config == inspect._empty:
             return json_response(
                 {
-                    "name": self._convert_to_class_name_str(config),
+                    "name": config.__name__,
+                    "type": self._convert_to_class_name_str(config),
+                    "args": self._construct_arg_response(self._convert_to_class_name_str(config)),
                     "fields": [
                         {
                             "name": field.name,
                             "type": self._convert_to_class_name_str(field.type),
-                            "args": [
-                                self._convert_to_class_name_str(arg)
-                                for arg in typing.get_args(field.type)
-                            ],
-                            "fields": self.construct_field_response(field.type),
+                            "args": self._construct_arg_response(field.type),
+                            "fields": self._construct_field_response(field.type),
                             "default": field.default
                             if not isinstance(field.default, dataclasses._MISSING_TYPE)
                             else None,
@@ -638,21 +637,47 @@ class AiohttpOFRAKServer:
     async def get_static_files(self, request: Request) -> FileResponse:
         return FileResponse(os.path.join(os.path.dirname(__file__), "./public/index.html"))
 
-    def construct_field_response(self, field):
-        if dataclasses.is_dataclass(field):
-            return {
-                "name": field.name,
-                "type": self._convert_to_class_name_str(field.type),
-                "args": [
-                    self._convert_to_class_name_str(arg) for arg in typing.get_args(field.type)
-                ],
-                "fields": self.construct_field_response(field.type),
-                "default": field.default,
-            }
+    def _construct_field_response(self, obj):
+        if dataclasses.is_dataclass(obj):
+            return [
+                {
+                    "name": field.name,
+                    "type": self._convert_to_class_name_str(field.type),
+                    "args": self._construct_arg_response(field.type),
+                    "fields": self._construct_field_response(field.type),
+                    "default": field.default
+                    if not isinstance(field.default, dataclasses._MISSING_TYPE)
+                    else None,
+                }
+                for field in fields(obj)
+                if field.init is True
+            ]
         else:
-            return {}
-
+            return None
+    
+    def _construct_arg_response(self, obj):
+            args = typing.get_args(obj)
+            if len(args) != 0:
+                return [
+                    {
+                        "name": None,
+                        "type": self._convert_to_class_name_str(arg),
+                        "args": self._construct_arg_response(arg),
+                        "fields": self._construct_field_response(arg),
+                        "default": None,
+                    }
+                    for arg in args
+                    if not isinstance(arg, type(...))
+                ]
+            else:
+                return None
+    
     def _convert_to_class_name_str(self, obj: any):
+        if isinstance(obj, type(...)):
+            return "ellipsis"
+        if hasattr(obj, "_name"):
+            if obj._name == "Optional":
+                obj = [conf for conf in typing.get_args(obj) if conf is not NoneType][0]
         return f"{obj.__module__}.{obj.__qualname__}"
 
     async def _get_resource_by_id(self, resource_id: bytes, job_id: bytes) -> Resource:

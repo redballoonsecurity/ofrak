@@ -88,13 +88,13 @@
 <script>
   import { selectedResource, selected } from "./stores";
   import { onMount } from "svelte";
-  import ComponentConfigField from "./ComponentConfigField.svelte";
+  import ComponentConfigNode from "./ComponentConfigNode.svelte";
   import LoadingText from "./LoadingText.svelte";
 
   export let modifierView, selectedComponent, resourceNodeDataMap;
   let errorMessage,
     ofrakConfigsPromise = new Promise(() => {});
-  let field_entries = {};
+  let config = {};
   let ofrakConfigName = null;
 
   onMount(async () => {
@@ -117,12 +117,7 @@
     <LoadingText />
   {:then ofrakConfig}
     {#if ofrakConfig.length != 0}
-      {#each ofrakConfig["fields"] as field}
-        <ComponentConfigField
-          field="{field}"
-          bind:field_entries="{field_entries}"
-        />
-      {/each}
+      <ComponentConfigNode node="{ofrakConfig}" bind:element="{config}"/>
     {/if}
 
     <button
@@ -133,8 +128,7 @@
         console.log({ ofrakConfigName });
         await $selectedResource.run_component(
           selectedComponent,
-          ofrakConfigName,
-          field_entries
+          config
         );
         resourceNodeDataMap[$selected] = {
           collapsed: false,
