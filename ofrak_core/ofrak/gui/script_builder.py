@@ -48,8 +48,7 @@ class ScriptSession:
     from ofrak import *
     from ofrak.core import *
 
-    async def main(ofrak_context: OFRAKContext):
-    """
+    async def main(ofrak_context: OFRAKContext):"""
     # TODO: Replace with backend in use by OFRAK instance used to create the script.
     boilerplate_footer: str = r"""
     if __name__ == "__main__":
