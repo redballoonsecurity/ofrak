@@ -227,14 +227,14 @@ class ScriptBuilder:
             if resource.has_attributes(attribute.attributes_owner):
                 attribute_value = attribute.get_value(resource.get_model())
                 parent = await resource.get_parent()
-                children = await parent.get_children(
+                children = list(await parent.get_children(
                     r_filter=ResourceFilter(
-                        resource.get_most_specific_tags(),
-                        attribute_filters=ResourceAttributeValueFilter(
+                        tags=resource.get_most_specific_tags(),
+                        attribute_filters=[ResourceAttributeValueFilter(
                             attribute=attribute,
                             value=attribute_value)
-                        )
-                    )
+                        ])
+                    ))
                 if len(children) > 1:
                     attribute_collisions[attribute.__name__] = attribute_value
                     continue
