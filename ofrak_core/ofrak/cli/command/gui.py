@@ -37,7 +37,7 @@ class GUICommand(OfrakCommandRunsScript):
             help="Don't open the browser to the OFRAK GUI",
         )
         gui_parser.add_argument(
-            "--enable_cors",
+            "--enable-cors",
             action="store_true",
             help="Enable CORS for debugging.",
         )
