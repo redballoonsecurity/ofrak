@@ -1,5 +1,6 @@
 import functools
 import importlib
+import importlib.util
 import logging
 import os.path
 import sys
@@ -148,7 +149,7 @@ class OfrakCommandRunsScript(OfrakCommand, ABC):
             "--import",
             help="Import additional OFRAK Python packages, where additional Components, Tags, etc. "
             "may be defined. Can be either the name of an installed module or a local path to "
-            "a Python file or module.",
+            "a Python file.",
             required=False,
             action="append",
             default=[],
@@ -168,24 +169,30 @@ class OfrakCommandRunsScript(OfrakCommand, ABC):
         ofrak_pkgs = set(args.imports)
         ofrak_pkgs.update(BACKEND_PACKAGES[args.backend])
 
-        if not any(pkgs and pkgs.issubset(ofrak_pkgs) for pkgs in BACKEND_PACKAGES.values()):
+        if not any(pkgs.issubset(ofrak_pkgs) for pkgs in BACKEND_PACKAGES.values() if pkgs):
             logging.warning("No disassembler backend specified, so no disassembly will be possible")
 
         for ofrak_pkg_name in ofrak_pkgs:
-            if os.path.sep in ofrak_pkg_name or ofrak_pkg_name.endswith(".py"):
-                ofrak_file_path = os.path.abspath(ofrak_pkg_name)
-                ofrak_file_dir = os.path.dirname(ofrak_file_path)
-                ofrak_file_name = os.path.basename(ofrak_file_path)
-                if ofrak_file_name.endswith(".py"):
-                    ofrak_file_name = ofrak_file_name[:-3]
-
-                sys.path.append(ofrak_file_dir)
-                ofrak_pkg = importlib.import_module(ofrak_file_name)
+            if os.path.exists(ofrak_pkg_name):
+                ofrak_pkg = self._import_via_path(ofrak_pkg_name)
             else:
                 ofrak_pkg = importlib.import_module(ofrak_pkg_name)
             ofrak.discover(ofrak_pkg)
 
         ofrak.run(self.ofrak_func, args)
+
+    def _import_via_path(self, path: str):
+        ofrak_file_path = os.path.abspath(path)
+        ofrak_module_name = os.path.basename(ofrak_file_path)
+        if ofrak_module_name.endswith(".py"):
+            ofrak_module_name = ofrak_module_name[:-3]
+
+        spec = importlib.util.spec_from_file_location(ofrak_module_name, ofrak_file_path)
+        if spec is None:
+            raise ImportError(f"`{path}` exists but does not appear to be a valid Python file!")
+        ofrak_pkg = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ofrak_pkg)
+        return ofrak_pkg
 
     @abstractmethod
     async def ofrak_func(self, ofrak_context: OFRAKContext, args: Namespace):
