@@ -95,14 +95,29 @@ class ScriptBuilder:
         action_type: ActionType,
     ) -> None:
         """
-        :param action:
-        :param action_type:
+        Adds an action to the script session to which the selected resource belongs. An action is
+        a string representing the code that is being run on the resource based on an action that
+        has occurred in the GUI.
+
+        :param resource: Resource upon which the action is being taken.
+        :param action: A string describing the code being run based on a GUI action.
+        :param action_type: An instance of `ActionType` categorizing the action.
         """
         var_name = await self.add_variable(resource)
         qualified_action = action.format(resource=var_name)
         await self._add_action_to_session(resource, qualified_action, action_type)
 
-    async def add_variable(self, resource: Resource) -> bytes:
+    async def add_variable(self, resource: Resource) -> str:
+        """
+        Replaces references to a particular resource selected in the GUI with a generated variable
+        name based on uniquely identifying characteristics of the resource. This overcomes the issue
+        of referencing the same resource across OFRAK contexts due to the randomly generated
+        resource IDs changing.
+
+        :param resource: Resource that needs to be uniquely identified in the script.
+
+        :return: A unique variable name.
+        """
         if await self._var_exists(resource):
             return await self._get_variable_from_session(resource)
 
@@ -128,7 +143,10 @@ class ScriptBuilder:
 
     async def delete_action(self, resource: Resource, action: str) -> None:
         """
-        :param action:
+        Removes the first occurrence of an action from the script.
+
+        :param resource: Resource belonging to the session for which the action is to removed.
+        :param action: The exact action to be removed.
         """
         root_resource = await self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
@@ -138,17 +156,30 @@ class ScriptBuilder:
                 session.actions.pop(idx)
                 break
 
-    async def get_script(self, resource: Resource) -> str:
+    async def get_script(self, resource: Resource) -> List[str]:
         """
-        :return script:
+        Returns the most up-to-date version of the script for the session to which the resource
+        belongs.
+
+        :param resource: Resource belonging to the session for which the script is to be returned.
+
+        :return: List of strings where each entry is a line in the script.
         """
         root_resource = await self._get_root_resource(resource)
         return self._get_script(root_resource.get_id())
 
-    async def get_all_of_type(self, resource: Resource, target_type: ActionType) -> str:
+    async def get_all_of_type(self, resource: Resource, target_type: ActionType) -> List[str]:
         """
-        :param target_type:
-        :return script:
+        Returns a subset of the most up-to-date version of the script for the session to which the
+        resource belongs, including only those actions whose type matches `target_type` or is UNDEF.
+        (UNDEF actions are actions such as variable assignment.)
+
+        Allows a script to be created that reproduces specific actions which can then be applied to
+        different files, such as all unpack steps to arrive at a particular resource.
+
+        :param target_type: ActionType to include in the subset script.
+
+        :return: List of strings where each entry is a line in the script.
         """
         root_resource = await self._get_root_resource(resource)
         return self._get_script(root_resource.get_id(), target_type)
@@ -166,23 +197,23 @@ class ScriptBuilder:
         self.root_cache[resource_id] = resource
         return resource
 
-    async def _get_variable_from_session(self, resource: Resource):
+    async def _get_variable_from_session(self, resource: Resource) -> str:
         root_resource = await self._get_root_resource(resource)
         return self.script_sessions[root_resource.get_id()].resource_variable_names[
             resource.get_id()
         ]
 
-    async def _var_exists(self, resource: Resource):
+    async def _var_exists(self, resource: Resource) -> bool:
         root_resource = await self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
         return resource.get_id() in session.resource_variable_names
 
-    async def _add_action_to_session(self, resource, action, action_type):
+    async def _add_action_to_session(self, resource, action, action_type) -> None:
         root_resource = await self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
         session.actions.append(ScriptAction(action_type, action))
 
-    async def _add_variable_to_session(self, resource: Resource, var_name: str):
+    async def _add_variable_to_session(self, resource: Resource, var_name: str) -> None:
         root_resource = await self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
         session.resource_variable_names[resource.get_id()] = var_name
@@ -284,7 +315,9 @@ class ScriptBuilder:
 
         return session
 
-    def _get_script(self, resource_id: bytes, target_type: Optional[ActionType] = None) -> str:
+    def _get_script(
+        self, resource_id: bytes, target_type: Optional[ActionType] = None
+    ) -> List[str]:
         script = []
         script.append(self.script_sessions[resource_id].boilerplate_header)
         for script_action in self.script_sessions[resource_id].actions:
