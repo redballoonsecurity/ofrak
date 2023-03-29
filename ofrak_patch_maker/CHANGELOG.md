@@ -11,6 +11,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Extend AssembledObject and BOM types to include relocation and unresolved symbols.
 - Add separate data sections support to LLVM toolchain, and add general flag for including subsections
 
+### Changed
+- Switch to standard GCC-like frontend for LLVM, which supports C attribute(weak)
+- Treat weak symbols as "undefined" in BOM, so alternative, strong definitions can be searched
+
 ## [3.0.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-patch-maker-v.2.0.0...ofrak-patch-maker-v.3.0.0) - 2023-01-20
 ### Added
 - `-fno-optimize-sibling-calls` flag added to AVR toolchain.

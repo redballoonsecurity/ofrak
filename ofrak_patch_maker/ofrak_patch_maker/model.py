@@ -32,16 +32,16 @@ class AssembledObject:
     :var path: .o file path
     :var file_format: .elf, .coff, etc.
     :var segment_map: e.g. `{".text", Segment(...)}`
-    :var symbols:
-    :var rel_symbols: {symbol name: (address, symbol type)}
+    :var strong_symbols:
+    :var unresolved_symbols: {symbol name: (address, symbol type)}
     :var bss_size_required:
     """
 
     path: str
     file_format: BinFileType
     segment_map: Mapping[str, Segment]  # segment name to Segment
-    symbols: Mapping[str, Tuple[int, LinkableSymbolType]]
-    rel_symbols: Mapping[str, Tuple[int, LinkableSymbolType]]
+    strong_symbols: Mapping[str, Tuple[int, LinkableSymbolType]]
+    unresolved_symbols: Mapping[str, Tuple[int, LinkableSymbolType]]
     bss_size_required: int
 
 

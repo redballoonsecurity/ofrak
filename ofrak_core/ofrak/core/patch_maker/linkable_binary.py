@@ -209,8 +209,7 @@ class LinkableBinary(GenericBinary):
                 stubs_file = os.path.join(build_tmp_dir, f"stub_{symbol.name}.as")
                 stub_info = symbol.get_stub_info()
                 stub_body = "\n".join(
-                    stub_info.asm_prefixes
-                    + [f".global {symbol.name}", f".weak {symbol.name}", f"{symbol.name}:", ""]
+                    stub_info.asm_prefixes + [f".global {symbol.name}", f"{symbol.name}:", ""]
                 )
 
                 with open(stubs_file, "w+") as f:
@@ -275,10 +274,11 @@ class UpdateLinkableSymbolsModifier(Modifier[UpdateLinkableSymbolsModifierConfig
             if symbol.virtual_address not in unhandled_vaddrs:
                 unhandled_vaddrs[symbol.virtual_address] = symbol
             else:
-                raise ValueError(
-                    f"Too many symbols supplied for address {symbol.virtual_address}! Need "
-                    f"exactly one."
-                )
+                # Multiple symbols defined for an address (which is valid)
+                # However it would be pointless to look for and rename an existing resource at that
+                # address multiple times
+                # So after the first one, create a new child for each symbol sharing an address
+                await resource.create_child_from_view(symbol)
 
         # Overwrite existing ComplexBlock with new LinkableSymbols
         filter_for_cb_by_vaddr = ResourceFilter(
