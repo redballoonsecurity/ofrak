@@ -279,7 +279,7 @@ class ScriptBuilder:
                 or script_action.action_type == target_type
                 or script_action.action_type == ActionType.UNDEF
             ):
-                script.append(f"{script_action.action}")
+                script.append(script_action.action)
         script.append(self.script_sessions[resource_id].boilerplate_footer)
         script = "\n".join(script)
         script = self._dedent(script)
