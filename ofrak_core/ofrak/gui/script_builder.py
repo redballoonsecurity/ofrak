@@ -52,7 +52,6 @@ class ScriptSession:
     # TODO: Replace with backend in use by OFRAK instance used to create the script.
     boilerplate_footer: str = r"""
     if __name__ == "__main__":
-
         if False:
             import ofrak_angr
             import ofrak_capstone
