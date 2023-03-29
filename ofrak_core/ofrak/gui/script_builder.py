@@ -99,9 +99,9 @@ class ScriptBuilder:
         a string representing the code that is being run on the resource based on an action that
         has occurred in the GUI.
 
-        :param resource: Resource upon which the action is being taken.
-        :param action: A string describing the code being run based on a GUI action.
-        :param action_type: An instance of `ActionType` categorizing the action.
+        :param resource: Resource upon which the action is being taken
+        :param action: A string describing the code being run based on a GUI action
+        :param action_type: An instance of `ActionType` categorizing the action
         """
         var_name = await self.add_variable(resource)
         qualified_action = action.format(resource=var_name)
@@ -114,9 +114,12 @@ class ScriptBuilder:
         of referencing the same resource across OFRAK contexts due to the randomly generated
         resource IDs changing.
 
-        :param resource: Resource that needs to be uniquely identified in the script.
+        :param resource: Resource that needs to be uniquely identified in the script
 
-        :return: A unique variable name.
+        :raises SelectableAttributesError: if the resource cannot be uniquely identified by its
+        attributes
+
+        :return: a unique variable name
         """
         if await self._var_exists(resource):
             return await self._get_variable_from_session(resource)
@@ -145,8 +148,8 @@ class ScriptBuilder:
         """
         Removes the first occurrence of an action from the script.
 
-        :param resource: Resource belonging to the session for which the action is to removed.
-        :param action: The exact action to be removed.
+        :param resource: Resource belonging to the session for which the action is to removed
+        :param action: The exact action to be removed
         """
         root_resource = await self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
@@ -161,9 +164,9 @@ class ScriptBuilder:
         Returns the most up-to-date version of the script for the session to which the resource
         belongs.
 
-        :param resource: Resource belonging to the session for which the script is to be returned.
+        :param resource: Resource belonging to the session for which the script is to be returned
 
-        :return: List of strings where each entry is a line in the script.
+        :return: List of strings where each entry is a line in the script
         """
         root_resource = await self._get_root_resource(resource)
         return self._get_script(root_resource.get_id())
@@ -177,9 +180,9 @@ class ScriptBuilder:
         Allows a script to be created that reproduces specific actions which can then be applied to
         different files, such as all unpack steps to arrive at a particular resource.
 
-        :param target_type: ActionType to include in the subset script.
+        :param target_type: ActionType to include in the subset script
 
-        :return: List of strings where each entry is a line in the script.
+        :return: List of strings where each entry is a line in the script
         """
         root_resource = await self._get_root_resource(resource)
         return self._get_script(root_resource.get_id(), target_type)

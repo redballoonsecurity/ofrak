@@ -480,6 +480,13 @@ class AiohttpOFRAKServer:
     async def create_mapped_child(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         _range = self._serializer.from_pjson(await request.json(), Optional[Range])
+        script_str = (
+            """
+        await {resource}"""
+            f""".create_child(tags=(GenericBinary,), data_range={_range})
+        """
+        )
+        await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         child = await resource.create_child(tags=(GenericBinary,), data_range=_range)
 
         return json_response(self._serialize_resource(child))
