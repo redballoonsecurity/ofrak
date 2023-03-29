@@ -44,29 +44,24 @@
     margin-top: 0;
   }
 
-  .actions {
-    margin-top: 2em;
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    justify-content: space-evenly;
-    align-items: center;
-    align-content: center;
+  .label {
+    padding-left: 10px;
   }
 
-  .break {
-    flex-basis: 100%;
-    height: 1px;
-  }
-
-  .row {
+  .checkboxes {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     flex-wrap: wrap;
     justify-content: space-evenly;
-    align-items: baseline;
+    align-items: flex-end;
     align-content: center;
     white-space: nowrap;
+    float: left;
+    direction: rtl;
+  }
+
+  .dropdown {
+    float: right;
   }
 
   .error {
@@ -108,10 +103,11 @@
   import ComponentConfig from "./ComponentConfig.svelte";
   import LoadingText from "./LoadingText.svelte";
   import Checkbox from "./Checkbox.svelte";
+  import AddTagView from "./AddTagView.svelte";
 
   export let modifierView, selectedComponent, resourceNodeDataMap, dataPromise;
   let errorMessage,
-    only_targets = false,
+    only_targets = true,
     incl_analyzers = false,
     incl_modifiers = false,
     incl_packers = false,
@@ -165,23 +161,28 @@
 <div class="container">
   <div class="inputs">
     <p>Select component to run on resource.</p>
-    <form on:change|preventDefault="{getComponents}">
-      <div class="row">
-        <Checkbox bind:checked="{only_targets}">
-          Only Targetable Components:
-        </Checkbox>
-        <Checkbox bind:checked="{incl_analyzers}">Include Analyzers:</Checkbox>
-        <Checkbox bind:checked="{incl_modifiers}">Include Modifiers:</Checkbox>
-        <Checkbox bind:checked="{incl_packers}">Include Packers:</Checkbox>
-
-        <Checkbox bind:checked="{incl_unpackers}">Include Unpackers:</Checkbox>
-      </div>
+    <form class="checkboxes " on:change|preventDefault="{getComponents}">
+      <Checkbox bind:checked="{only_targets}"
+        ><div class="label">Only Targetable Components</div></Checkbox
+      >
+      <Checkbox bind:checked="{incl_analyzers}"
+        ><div class="label">Include Analyzers</div></Checkbox
+      >
+      <Checkbox bind:checked="{incl_modifiers}"
+        ><div class="label">Include Modifiers</div></Checkbox
+      >
+      <Checkbox bind:checked="{incl_packers}"
+        ><div class="label">Include Packers</div></Checkbox
+      >
+      <Checkbox bind:checked="{incl_unpackers}"
+        ><div class="label">Include Unpackers</div></Checkbox
+      >
     </form>
     {#await ofrakComponentsPromise}
       <LoadingText />
     {:then ofrakComponents}
       {#if ofrakComponents && ofrakComponents.length > 0}
-        <form on:submit|preventDefault="{chooseComponent}">
+        <form class="dropdown" on:submit|preventDefault="{chooseComponent}">
           Run Component: <select
             on:click|stopPropagation="{() => undefined}"
             bind:value="{selectedComponent}"
@@ -201,7 +202,7 @@
           >
         </form>
       {:else}
-        No components found!
+        <div class="dropdown">No components found!</div>
       {/if}
     {:catch}
       <p>Failed to get the list of OFRAK components!</p>
