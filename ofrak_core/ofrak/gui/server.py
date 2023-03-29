@@ -467,7 +467,9 @@ class AiohttpOFRAKServer:
         {resource}.queue_patch"""
             rf"""(Range({start}, {end}), b"{new_data_string}")"""
         )
-        """await {resource}.save()"""
+        await self.script_builder.add_action(resource, script_str, ActionType.MOD)
+        script_str = """
+        await {resource}.save()"""
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         resource.queue_patch(Range(start, end), new_data)
         await resource.save()

@@ -153,11 +153,16 @@ class ScriptBuilder:
         return self._get_script(root_resource.get_id(), target_type)
 
     async def _get_root_resource(self, resource: Resource) -> Resource:
-        if resource.get_id() in self.root_cache:
-            return self.root_cache[resource.get_id()]
+        """
+        Maps a given resource to its root for efficient retrieval of the root resource because
+        getting the root resource is likely the most performed operation in ScriptBuilder.
+        """
+        resource_id = resource.get_id()
+        if resource_id in self.root_cache:
+            return self.root_cache[resource_id]
         while len(list(await resource.get_ancestors())) != 0:
             resource = await resource.get_parent()
-        self.root_cache[resource.get_id()] = resource
+        self.root_cache[resource_id] = resource
         return resource
 
     async def _get_variable_from_session(self, resource: Resource):
@@ -174,7 +179,6 @@ class ScriptBuilder:
     async def _add_action_to_session(self, resource, action, action_type):
         root_resource = await self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
-        # TODO: actions are duplicated if page is refreshed, is this reasonable?
         session.actions.append(ScriptAction(action_type, action))
 
     async def _add_variable_to_session(self, resource: Resource, var_name: str):
@@ -207,8 +211,10 @@ class ScriptBuilder:
             )
         if isinstance(attribute_value, str) or isinstance(attribute_value, bytes):
             attribute_value = f'"{attribute_value}"'.rstrip()
-        var_name = self.script_sessions[root_resource.get_id()].resource_variable_names[ancestor.get_id()]
-        return f"""await {name}.get_only_child(
+        var_name = self.script_sessions[root_resource.get_id()].resource_variable_names[
+            ancestor.get_id()
+        ]
+        return f"""await {var_name}.get_only_child(
                     r_filter=ResourceFilter(
                         tags={resource.get_most_specific_tags()},
                         attribute_filters=[
@@ -228,14 +234,18 @@ class ScriptBuilder:
             if resource.has_attributes(attribute.attributes_owner):
                 attribute_value = attribute.get_value(resource.get_model())
                 parent = await resource.get_parent()
-                children = list(await parent.get_children(
-                    r_filter=ResourceFilter(
-                        tags=resource.get_most_specific_tags(),
-                        attribute_filters=[ResourceAttributeValueFilter(
-                            attribute=attribute,
-                            value=attribute_value)
-                        ])
-                    ))
+                children = list(
+                    await parent.get_children(
+                        r_filter=ResourceFilter(
+                            tags=resource.get_most_specific_tags(),
+                            attribute_filters=[
+                                ResourceAttributeValueFilter(
+                                    attribute=attribute, value=attribute_value
+                                )
+                            ],
+                        )
+                    )
+                )
                 if len(children) > 1:
                     attribute_collisions[attribute.__name__] = attribute_value
                     continue
@@ -246,8 +256,10 @@ class ScriptBuilder:
             )
         else:
             msg = []
-            for collision, value in attribute_collisions.items(): 
-                msg.append(f"Resource with ID {resource.get_id()} cannot be uniquely identified by attribute {attribute.__name__} (resource has value {attribute_value}).")
+            for collision, value in attribute_collisions.items():
+                msg.append(
+                    f"Resource with ID {resource.get_id()} cannot be uniquely identified by attribute {attribute.__name__} (resource has value {attribute_value})."
+                )
             raise SelectableAttributesError("\n".join(msg))
 
     async def _generate_name(self, resource: Resource) -> str:
@@ -283,15 +295,18 @@ class ScriptBuilder:
         script.append(self.script_sessions[resource_id].boilerplate_footer)
         script = "\n".join(script)
         script = self._dedent(script)
-        res = format_str("\n".join(script), mode=FileMode())
+        res = format_str(script, mode=FileMode())
         script = res.split("\n")
         return script
 
-    def _dedent(self, s):
+    def _dedent(self, s: str) -> str:
         split = list(s.splitlines())
         prefix = os.path.commonprefix([line for line in split if line])
         indent_matches = re.findall(r"^\s+", prefix)
         if not indent_matches:
             return s
         indent_end_index = len(indent_matches[0])
-        return [line[indent_end_index:] if line and line.startswith(prefix) else "" for line in split]
+        dedented_strings = [
+            line[indent_end_index:] if line and line.startswith(prefix) else "" for line in split
+        ]
+        return "\n".join(dedented_strings)
