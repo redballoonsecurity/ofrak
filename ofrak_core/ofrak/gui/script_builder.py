@@ -254,7 +254,7 @@ class ScriptBuilder:
         most_specific_tag = list(resource.get_most_specific_tags())[0].__name__.lower()
         _, selectable_attribute_value = await self._get_selectable_attribute(resource)
         name = f"{most_specific_tag}_{selectable_attribute_value}"
-        name = re.sub(r"[\s\-\.\/\\]", "_", name)
+        name = re.sub(r"[^a-zA-Z0-9]", "_", name)
         if name in self.script_sessions[root_resource.get_id()].resource_variable_names.values():
             parent = await resource.get_parent()
             return f"{self.script_sessions[root_resource.get_id()].resource_variable_names[parent.get_id()]}_{name}"
