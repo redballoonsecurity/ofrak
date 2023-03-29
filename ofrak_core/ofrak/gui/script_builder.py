@@ -135,6 +135,7 @@ class ScriptBuilder:
         for idx, script_action in enumerate(session.actions):
             if script_action.action == action:
                 session.actions.pop(idx)
+                break
 
     async def get_script(self, resource: Resource) -> str:
         """
