@@ -293,4 +293,4 @@ class ScriptBuilder:
         if not indent_matches:
             return s
         indent_end_index = len(indent_matches[0])
-        return [line[indent_end_index:] for line in split if line.startswith(prefix) and line != ""]
+        return [line[indent_end_index:] if line and line.startswith(prefix) else "" for line in split]
