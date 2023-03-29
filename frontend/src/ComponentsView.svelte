@@ -54,6 +54,21 @@
     align-content: center;
   }
 
+  .break {
+    flex-basis: 100%;
+    height: 1px;
+  }
+
+  .row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+    align-items: baseline;
+    align-content: center;
+    white-space: nowrap;
+  }
+
   .error {
     margin-top: 2em;
   }
@@ -92,9 +107,15 @@
   import { onMount } from "svelte";
   import ComponentConfig from "./ComponentConfig.svelte";
   import LoadingText from "./LoadingText.svelte";
+  import Checkbox from "./Checkbox.svelte";
 
   export let modifierView, selectedComponent, resourceNodeDataMap, dataPromise;
   let errorMessage,
+    only_targets = false,
+    incl_analyzers = false,
+    incl_modifiers = false,
+    incl_packers = false,
+    incl_unpackers = false,
     ofrakComponentsPromise = new Promise(() => {});
 
   function chooseComponent() {
@@ -103,11 +124,34 @@
     }
   }
 
+  async function getComponents() {
+    try {
+      ofrakComponentsPromise = $selectedResource.get_components(
+        only_targets,
+        incl_analyzers,
+        incl_modifiers,
+        incl_packers,
+        incl_unpackers
+      );
+    } catch (err) {
+      try {
+        errorMessage = JSON.parse(err.message).message;
+      } catch (_) {
+        errorMessage = err.message;
+      }
+    }
+  }
+
   onMount(async () => {
     selectedComponent = undefined;
     try {
-      ofrakComponentsPromise =
-        $selectedResource.get_all_components_for_resource();
+      ofrakComponentsPromise = $selectedResource.get_components(
+        only_targets,
+        incl_analyzers,
+        incl_modifiers,
+        incl_packers,
+        incl_unpackers
+      );
     } catch (err) {
       try {
         errorMessage = JSON.parse(err.message).message;
@@ -121,6 +165,18 @@
 <div class="container">
   <div class="inputs">
     <p>Select component to run on resource.</p>
+    <form on:change|preventDefault="{getComponents}">
+      <div class="row">
+        <Checkbox bind:checked="{only_targets}">
+          Only Targetable Components:
+        </Checkbox>
+        <Checkbox bind:checked="{incl_analyzers}">Include Analyzers:</Checkbox>
+        <Checkbox bind:checked="{incl_modifiers}">Include Modifiers:</Checkbox>
+        <Checkbox bind:checked="{incl_packers}">Include Packers:</Checkbox>
+
+        <Checkbox bind:checked="{incl_unpackers}">Include Unpackers:</Checkbox>
+      </div>
+    </form>
     {#await ofrakComponentsPromise}
       <LoadingText />
     {:then ofrakComponents}
