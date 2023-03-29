@@ -288,7 +288,7 @@ class ScriptBuilder:
 
     def _dedent(self, s):
         split = list(s.splitlines())
-        prefix = os.path.commonprefix([line for line in split if line != ""])
+        prefix = os.path.commonprefix([line for line in split if line])
         indent_matches = re.findall(r"^\s+", prefix)
         if not indent_matches:
             return s
