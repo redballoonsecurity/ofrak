@@ -333,6 +333,7 @@ export class RemoteResource extends Resource {
       return r.json();
     });
     this.flush_cache();
+    await this.update_script();
   }
 
   async create_child(
@@ -359,6 +360,7 @@ export class RemoteResource extends Resource {
     });
     this.cache["get_children"] = undefined;
     this.cache["get_child_data_ranges"] = undefined;
+    await this.update_script();
   }
 
   async find_and_replace(
