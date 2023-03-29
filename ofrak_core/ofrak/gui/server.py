@@ -168,7 +168,7 @@ class AiohttpOFRAKServer:
         self._job_ids: Dict[str, bytes] = defaultdict(
             lambda: ofrak_context.id_service.generate_id()
         )
-        if enable_cors is True:
+        if enable_cors:
             try:
                 import aiohttp_cors
 
