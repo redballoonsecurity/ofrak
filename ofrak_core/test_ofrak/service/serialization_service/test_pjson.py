@@ -21,8 +21,9 @@ from hypothesis.strategies import (
     floats,
 )
 from intervaltree import IntervalTree, Interval
-
 from ofrak.model.viewable_tag_model import AttributesType
+from ofrak.service.component_locator_i import ComponentFilter
+
 from synthol.injector import DependencyInjector
 from typing_inspect import get_args
 
@@ -35,7 +36,6 @@ from ofrak.core.memory_region import MemoryRegion
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributes, ResourceAttributeDependency
 from ofrak.resource_view import ResourceView
-from ofrak.service.component_locator_i import ComponentFilter
 from ofrak.service.serialization.pjson import PJSONSerializationService
 from ofrak_type.architecture import InstructionSet, InstructionSetMode
 from ofrak_type.range import Range

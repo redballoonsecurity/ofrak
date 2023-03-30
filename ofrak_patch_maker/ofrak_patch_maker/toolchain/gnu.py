@@ -16,6 +16,7 @@ from ofrak_patch_maker.toolchain.model import (
 )
 from ofrak_patch_maker.toolchain.utils import get_file_format
 from ofrak_type.memory_permissions import MemoryPermissions
+from ofrak_type.symbol_type import LinkableSymbolType
 
 
 class Abstract_GNU_Toolchain(Toolchain, ABC):
@@ -111,17 +112,6 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
     @staticmethod
     def _get_linker_map_flag(exec_path: str) -> Iterable[str]:
         return "-Map", f"{exec_path}.map"
-
-    def keep_section(self, section_name: str):
-        if section_name in self._linker_keep_list:
-            return True
-        if self._config.separate_data_sections:
-            for keep_section in self._linker_keep_list:
-                if section_name.startswith(keep_section):
-                    return True
-            return False
-        else:
-            return False
 
     def add_linker_include_values(self, symbols: Mapping[str, int], path: str):
         with open(path, "a") as f:
@@ -328,7 +318,9 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
     def segment_alignment(self) -> int:
         raise NotImplementedError()
 
-    def get_bin_file_symbols(self, executable_path: str) -> Dict[str, int]:
+    def get_bin_file_symbols(
+        self, executable_path: str
+    ) -> Dict[str, Tuple[int, LinkableSymbolType]]:
         # This happens to be the same as LLVM but it really doesn't belong in Parent code.
         # Note: readobj for gcc is objdump
         readobj_output = self._execute_tool(self._readobj_path, ["--syms"], [executable_path])
@@ -344,6 +336,13 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
         readobj_output = self._execute_tool(self._readobj_path, ["--section-headers"], [path])
 
         return self._parser.parse_sections(readobj_output)
+
+    def get_bin_file_rel_symbols(
+        self, executable_path: str
+    ) -> Dict[str, Tuple[int, LinkableSymbolType]]:
+        readobj_output = self._execute_tool(self._readobj_path, ["--syms"], [executable_path])
+
+        return self._parser.parse_relocations(readobj_output)
 
 
 class GNU_10_Toolchain(Abstract_GNU_Toolchain):
