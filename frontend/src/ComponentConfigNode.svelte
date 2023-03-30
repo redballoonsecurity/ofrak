@@ -88,6 +88,13 @@
         {/if}
         <input bind:value="{element}" />
       </li>
+    {:else if node["type"] == "builtins.bytes"}
+      <li>
+        {#if node["name"] != null}
+          {node["name"]}
+        {/if}
+        <input bind:value="{element}" />
+      </li>
     {:else if node["type"] == "builtins.int"}
       <li>
         {#if node["name"] != null}
