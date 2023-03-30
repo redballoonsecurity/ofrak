@@ -4,9 +4,11 @@ These classes must only ever contain "immutable" data.
 We never want to worry about the state of these objects at any point during a patch injection.
 """
 from dataclasses import dataclass
-from typing import Mapping, Optional, Tuple
+from enum import Enum
+from typing import Mapping, Optional, Set, Tuple
 
 from ofrak_patch_maker.toolchain.model import Segment, BinFileType
+from ofrak_type.symbol_type import LinkableSymbolType
 
 AUTOGENERATE_WARNING = """/*
 *
@@ -30,12 +32,16 @@ class AssembledObject:
     :var path: .o file path
     :var file_format: .elf, .coff, etc.
     :var segment_map: e.g. `{".text", Segment(...)}`
+    :var strong_symbols:
+    :var unresolved_symbols: {symbol name: (address, symbol type)}
+    :var bss_size_required:
     """
 
     path: str
     file_format: BinFileType
     segment_map: Mapping[str, Segment]  # segment name to Segment
-    symbols: Mapping[str, int]
+    strong_symbols: Mapping[str, Tuple[int, LinkableSymbolType]]
+    unresolved_symbols: Mapping[str, Tuple[int, LinkableSymbolType]]
     bss_size_required: int
 
 
@@ -54,7 +60,7 @@ class LinkedExecutable:
     path: str
     file_format: BinFileType
     segments: Tuple[Segment, ...]
-    symbols: Mapping[str, int]
+    symbols: Mapping[str, Tuple[int, LinkableSymbolType]]
     relocatable: bool
 
 
@@ -108,12 +114,20 @@ class BOM:
 
     :var name: a name
     :var object_map: {source file path: AssembledObject}
+    :var unresolved_symbols: symbols used but undefined within the BOM source files
     :var bss_size_required:
     :var entry_point_symbol: symbol of the patch entrypoint, when relevant
     """
 
     name: str
     object_map: Mapping[str, AssembledObject]
+    unresolved_symbols: Set[str]
     bss_size_required: int
     entry_point_symbol: Optional[str]
     segment_alignment: int
+
+
+class SourceFileType(Enum):
+    DEFAULT = 0
+    C = 1
+    ASM = 2

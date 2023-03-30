@@ -37,6 +37,15 @@ class GUICommand(OfrakCommandRunsScript):
             help="Don't open the browser to the OFRAK GUI",
         )
         gui_parser.add_argument(
+            "--file",
+            "-f",
+            required=False,
+            action="append",
+            help="Path to a file to load into OFRAK when starting the GUI (multiple may be "
+            "provided)",
+            default=[],
+        )
+        gui_parser.add_argument(
             "--enable-cors",
             action="store_true",
             help="Enable CORS for debugging.",
@@ -45,9 +54,15 @@ class GUICommand(OfrakCommandRunsScript):
         return gui_parser
 
     async def ofrak_func(self, ofrak_context: OFRAKContext, args: Namespace):  # pragma: no cover
+        most_recent_root = None
+        if len(args.file) > 0:
+            for path in args.file:
+                most_recent_root = await ofrak_context.create_root_resource_from_file(path)
         server = await open_gui(
             args.hostname,
             args.port,
+            focus_resource=most_recent_root if len(args.file) == 1 else None,
+            ofrak_context=ofrak_context,
             open_in_browser=(not args.no_browser),
             enable_cors=(args.enable_cors),
         )
