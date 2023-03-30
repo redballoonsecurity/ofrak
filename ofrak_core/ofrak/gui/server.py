@@ -170,7 +170,7 @@ class AiohttpOFRAKServer:
         )
         if enable_cors:
             try:
-                import aiohttp_cors
+                import aiohttp_cors  # type: ignore
 
                 # From: https://github.com/aio-libs/aiohttp-cors
                 # Configure default CORS settings.

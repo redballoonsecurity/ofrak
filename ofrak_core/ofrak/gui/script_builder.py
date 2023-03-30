@@ -3,7 +3,7 @@ from enum import IntEnum
 import logging
 import re
 import os
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from ofrak.model.resource_model import ResourceIndexedAttribute
 from ofrak.core import Addressable
 from ofrak.core.filesystem import FilesystemEntry
@@ -263,11 +263,11 @@ class ScriptBuilder:
             )
         except:
             raise SelectableAttributesError(
-                f"Resource with ID {resource.get_id()} cannot be uniquely identified by attribute "
+                f"Resource with ID {resource.get_id()!s} cannot be uniquely identified by attribute "
                 f"{attribute.__name__} (resource has value {attribute_value})."
             )
         if isinstance(attribute_value, str) or isinstance(attribute_value, bytes):
-            attribute_value = f'"{attribute_value}"'.rstrip()
+            attribute_value = f'"{attribute_value!s}"'.rstrip()
         var_name = self.script_sessions[root_resource.get_id()].resource_variable_names[
             ancestor.get_id()
         ]
@@ -285,10 +285,10 @@ class ScriptBuilder:
 
     async def _get_selectable_attribute(
         self, resource: Resource
-    ) -> Tuple[ResourceIndexedAttribute, any]:
+    ) -> Tuple[ResourceIndexedAttribute, Any]:
         attribute_collisions = {}
         for attribute in self.selectable_indexes:
-            if resource.has_attributes(attribute.attributes_owner):
+            if attribute.attributes_owner and resource.has_attributes(attribute.attributes_owner):
                 attribute_value = attribute.get_value(resource.get_model())
                 parent = await resource.get_parent()
                 children = list(
@@ -309,13 +309,13 @@ class ScriptBuilder:
                 return attribute, attribute_value
         if len(attribute_collisions) == 0:
             raise SelectableAttributesError(
-                f"Resource with ID {resource.get_id()} does not have a selectable attribute."
+                f"Resource with ID {resource.get_id()!s} does not have a selectable attribute."
             )
         else:
             msg = []
             for collision, value in attribute_collisions.items():
                 msg.append(
-                    f"Resource with ID {resource.get_id()} cannot be uniquely identified by attribute {attribute.__name__} (resource has value {attribute_value})."
+                    f"Resource with ID {resource.get_id()!s} cannot be uniquely identified by attribute {attribute.__name__} (resource has value {attribute_value})."
                 )
             raise SelectableAttributesError("\n".join(msg))
 
@@ -343,8 +343,8 @@ class ScriptBuilder:
     def _get_script(
         self, resource_id: bytes, target_type: Optional[ActionType] = None
     ) -> List[str]:
-        script = []
-        script.append(self.script_sessions[resource_id].boilerplate_header)
+        script_list: List[str] = []
+        script_list.append(self.script_sessions[resource_id].boilerplate_header)
         for script_action in self.script_sessions[resource_id].actions:
             # Always include UNDEF actions like variable assignments
             if (
@@ -352,13 +352,13 @@ class ScriptBuilder:
                 or script_action.action_type == target_type
                 or script_action.action_type == ActionType.UNDEF
             ):
-                script.append(script_action.action)
-        script.append(self.script_sessions[resource_id].boilerplate_footer)
-        script = "\n".join(script)
-        script = self._dedent(script)
-        res = format_str(script, mode=FileMode())
-        script = res.split("\n")
-        return script
+                script_list.append(script_action.action)
+        script_list.append(self.script_sessions[resource_id].boilerplate_footer)
+        script_str = "\n".join(script_list)
+        script_str = self._dedent(script_str)
+        res = format_str(script_str, mode=FileMode())
+        script_list = res.split("\n")
+        return script_list
 
     def _dedent(self, s: str) -> str:
         split = list(s.splitlines())
