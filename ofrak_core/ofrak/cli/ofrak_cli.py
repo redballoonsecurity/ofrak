@@ -183,16 +183,15 @@ class OfrakCommandRunsScript(OfrakCommand, ABC):
 
     def _import_via_path(self, path: str):
         ofrak_file_path = os.path.abspath(path)
-        ofrak_module_name = os.path.basename(ofrak_file_path)
-        if ofrak_module_name.endswith(".py"):
-            ofrak_module_name = ofrak_module_name[:-3]
+        ofrak_file_dir = os.path.dirname(ofrak_file_path)
+        ofrak_file_name = os.path.basename(ofrak_file_path)
+        if os.path.isdir(ofrak_file_path) or not ofrak_file_name.endswith(".py"):
+            raise ImportError(f"Cannot import {path} as it does not appear to be a Python file!")
+        ofrak_file_name = ofrak_file_name[:-3]
 
-        spec = importlib.util.spec_from_file_location(ofrak_module_name, ofrak_file_path)
-        if spec is None or spec.loader is None:
-            raise ImportError(f"`{path}` exists but does not appear to be a valid Python file!")
-        ofrak_pkg = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(ofrak_pkg)
-        return ofrak_pkg
+        sys.path.append(ofrak_file_dir)
+        pkg = importlib.import_module(ofrak_file_name)
+        return pkg
 
     @abstractmethod
     async def ofrak_func(self, ofrak_context: OFRAKContext, args: Namespace):
