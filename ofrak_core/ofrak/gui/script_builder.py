@@ -4,6 +4,7 @@ import re
 import os
 from typing import Dict, List, Optional, Tuple
 from ofrak.model.resource_model import ResourceIndexedAttribute
+from ofrak.core import Addressable
 from ofrak.core.filesystem import FilesystemEntry
 from ofrak.model.resource_model import Data
 from ofrak.service.resource_service_i import ResourceAttributeValueFilter, ResourceFilter
@@ -85,6 +86,7 @@ class ScriptBuilder:
         self.script_sessions: Dict[bytes, ScriptSession] = {}
         self.selectable_indexes: List[ResourceIndexedAttribute] = [
             FilesystemEntry.Name,
+            Addressable.VirtualAddress,
             Data.Offset,
         ]
 
