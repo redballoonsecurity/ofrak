@@ -233,8 +233,6 @@ class AiohttpOFRAKServer:
             self._job_ids[request.remote] = root_resource.get_job_id()
 
         script_str = rf"""
-        with open("{name}", "rb") as fh:
-            resource_data = fh.read()
         root_resource = await ofrak_context.create_root_resource_from_file("{name}")"""
         await self.script_builder.add_action(root_resource, script_str, ActionType.UNPACK)
         return json_response(self._serialize_resource(root_resource))
