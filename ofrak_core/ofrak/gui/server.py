@@ -495,15 +495,16 @@ class AiohttpOFRAKServer:
     async def find_and_replace(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         config = self._serializer.from_pjson(await request.json(), StringFindReplaceConfig)
-        script_str = rf"""
+        script_str = f"""
         config = StringFindReplaceConfig(
             to_find="{config.to_find}", 
             replace_with="{config.replace_with}", 
             null_terminate={config.null_terminate}, 
             allow_overflow={config.allow_overflow}
         )"""
-        """await {resource}.run(StringFindReplaceModifier, config)
-        """
+        await self.script_builder.add_action(resource, script_str, ActionType.MOD)
+        script_str = """
+        await {resource}.run(StringFindReplaceModifier, config)"""
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         result = await resource.run(StringFindReplaceModifier, config=config)
         return json_response(await self._serialize_component_result(result))
@@ -570,8 +571,13 @@ class AiohttpOFRAKServer:
     async def add_tag(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         tag = self._serializer.from_pjson(await request.json(), ResourceTag)
+        script_str = (
+            """
+        {resource}.add_tag"""
+            f"""({tag.__name__})"""
+        )
+        await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         script_str = """
-        {resource}.add_tag(tag)
         await {resource}.save()"""
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         resource.add_tag(tag)
