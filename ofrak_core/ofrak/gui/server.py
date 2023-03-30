@@ -463,9 +463,9 @@ class AiohttpOFRAKServer:
             [new_data.hex()[i : i + 2] for i in range(0, len(new_data.hex()), 2)]
         )
         script_str = (
-            r"""
+            """
         {resource}.queue_patch"""
-            rf"""(Range({start}, {end}), b"{new_data_string}")"""
+            f"""(Range({hex(start)}, {hex(end)}), b"{new_data_string}")"""
         )
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         script_str = """
