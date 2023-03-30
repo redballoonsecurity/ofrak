@@ -188,7 +188,7 @@ class OfrakCommandRunsScript(OfrakCommand, ABC):
             ofrak_module_name = ofrak_module_name[:-3]
 
         spec = importlib.util.spec_from_file_location(ofrak_module_name, ofrak_file_path)
-        if spec is None:
+        if spec is None or spec.loader is None:
             raise ImportError(f"`{path}` exists but does not appear to be a valid Python file!")
         ofrak_pkg = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(ofrak_pkg)
