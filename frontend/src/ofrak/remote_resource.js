@@ -453,6 +453,8 @@ export class RemoteResource extends Resource {
     });
     this.flush_cache();
     this.update();
+    
+    await this.update_script();
   }
 
   async search_for_vaddr(vaddr_start, vaddr_end) {

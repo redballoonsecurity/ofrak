@@ -174,13 +174,13 @@ class ScriptBuilder:
     async def get_all_of_type(self, resource: Resource, target_type: ActionType) -> List[str]:
         """
         Returns a subset of the most up-to-date version of the script for the session to which the
-        resource belongs, including only those actions whose type matches `target_type` or is UNDEF.
-        (UNDEF actions are actions such as variable assignment.)
+        resource belongs, including only those actions whose type matches `target_type` or is `UNDEF`.
+        (`UNDEF` actions are actions such as variable assignment.)
 
         Allows a script to be created that reproduces specific actions which can then be applied to
         different files, such as all unpack steps to arrive at a particular resource.
 
-        :param target_type: ActionType to include in the subset script
+        :param target_type: `ActionType` to include in the subset script
 
         :return: List of strings where each entry is a line in the script
         """
@@ -190,7 +190,7 @@ class ScriptBuilder:
     async def _get_root_resource(self, resource: Resource) -> Resource:
         """
         Maps a given resource to its root for efficient retrieval of the root resource because
-        getting the root resource is likely the most performed operation in ScriptBuilder.
+        getting the root resource is likely the most performed operation in `ScriptBuilder`.
         """
         resource_id = resource.get_id()
         if resource_id in self.root_cache:
