@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from enum import IntEnum
+import logging
 import re
 import os
 from typing import Dict, List, Optional, Tuple
@@ -11,6 +12,9 @@ from ofrak.service.resource_service_i import ResourceAttributeValueFilter, Resou
 from black import format_str, FileMode
 
 from ofrak.resource import Resource
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class SelectableAttributesError(Exception):
@@ -118,9 +122,6 @@ class ScriptBuilder:
 
         :param resource: Resource that needs to be uniquely identified in the script
 
-        :raises SelectableAttributesError: if the resource cannot be uniquely identified by its
-        attributes
-
         :return: a unique variable name
         """
         if await self._var_exists(resource):
@@ -135,15 +136,34 @@ class ScriptBuilder:
         if not await self._var_exists(parent):
             await self.add_variable(parent)
 
-        selector = await self._get_selector(resource)
-        name = await self._generate_name(resource)
-        await self._add_action_to_session(
-            resource,
-            rf"""
+        name = ""
+        # Cannot propagate exceptions to the server as this would interfere with user actions
+        # regardless of whether they're interested in the script. Currently only _get_selector()
+        # and _generate_name() can lead to exceptions raised within ScriptBuilder.
+        try:
+            selector = await self._get_selector(resource)
+            name = await self._generate_name(resource)
+            await self._add_action_to_session(
+                resource,
+                rf"""
         {name} = {selector}""",
-            ActionType.UNDEF,
-        )
-        await self._add_variable_to_session(resource, name)
+                ActionType.UNDEF,
+            )
+            await self._add_variable_to_session(resource, name)
+        except SelectableAttributesError:
+            parent_name = await self._get_variable_from_session(parent)
+            name = f"{parent_name}_MISSING_CHILD"
+            await self._add_action_to_session(
+                resource,
+                f"""
+        # Resource with parent {parent_name} is missing, could not find selectable attributes.
+        raise RuntimeError('AMBER ALERT: MISSING CHILD!')""",
+                ActionType.UNDEF,
+            )
+            await self._add_variable_to_session(resource, name)
+            LOGGER.exception("Could not find selectable attributes for resource")
+        except:
+            LOGGER.exception("Exception raised in add_variable")
         return name
 
     async def delete_action(self, resource: Resource, action: str) -> None:
