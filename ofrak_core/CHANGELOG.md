@@ -6,7 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 ### Added
 - Generate dynamic, runnable script based on GUI actions and display the script in the GUI. ([#265](https://github.com/redballoonsecurity/ofrak/pull/265))
-- Add option to `ofrak gui` command to pre-load some files into OFRAK before opening the GUI, so they can be explored right away ([#266](https://github.com/redballoonsecurity/ofrak/pull/266))
+- Add `-f`/`--file` option to `ofrak gui` command to pre-load some files into OFRAK before opening the GUI, so they can be explored right away ([#266](https://github.com/redballoonsecurity/ofrak/pull/266))
+- Add `-i`/`--import` option to the CLI to import and discover additional OFRAK Python packages when starting OFRAK. [#269](https://github.com/redballoonsecurity/ofrak/pull/269)
 
 ### Changed
 - Remove need to create Resources to pass source code and headers to `PatchFromSourceModifier` and `FunctionReplaceModifier` ([#249](https://github.com/redballoonsecurity/ofrak/pull/249))

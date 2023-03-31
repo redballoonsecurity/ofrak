@@ -1,11 +1,14 @@
 import functools
+import importlib
+import importlib.util
 import logging
+import os.path
 import sys
 from abc import ABC, abstractmethod
 from argparse import ArgumentParser, _SubParsersAction, Namespace
 from inspect import isabstract
 from types import ModuleType
-from typing import Dict, Iterable, List, Optional, Sequence, Type
+from typing import Dict, Iterable, List, Optional, Sequence, Type, Set
 
 from importlib_metadata import entry_points
 
@@ -13,6 +16,13 @@ from ofrak.component.interface import ComponentInterface
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.ofrak_context import OFRAKContext, OFRAK
 from synthol.injector import DependencyInjector
+
+BACKEND_PACKAGES: Dict[Optional[str], Set[str]] = {
+    "angr": {"ofrak_angr", "ofrak_capstone"},
+    "binary-ninja": {"ofrak_binary_ninja", "ofrak_capstone"},
+    "ghidra": {"ofrak_ghidra"},
+    None: set(),
+}
 
 
 class OFRAKEnvironment:
@@ -110,7 +120,6 @@ class OfrakCommandRunsScript(OfrakCommand, ABC):
 
     @staticmethod
     def add_ofrak_arguments(command_subparser):
-        # TODO: Add CLI arguments for additional modules to discover (e.g. ofrak_ghidra)
         command_subparser.add_argument(
             "--logging-level",
             "-l",
@@ -129,8 +138,22 @@ class OfrakCommandRunsScript(OfrakCommand, ABC):
             "-b",
             "--backend",
             action="store",
-            help="Set GUI server backend.",
+            help="Set GUI server backend by importing additional OFRAK packages. Equivalent to "
+            "importing these packages with `-i`. For example, `-b angr` is: `-i ofrak_angr "
+            "-i ofrak_capstone`",
+            choices=BACKEND_PACKAGES.keys(),
             default=None,
+        )
+        command_subparser.add_argument(
+            "-i",
+            "--import",
+            help="Import additional OFRAK Python packages, where additional Components, Tags, etc. "
+            "may be defined. Can be either the name of an installed module or a local path to "
+            "a Python file.",
+            required=False,
+            action="append",
+            default=[],
+            dest="imports",  # object member can't be called "import"
         )
 
     def run(self, ofrak_env: OFRAKEnvironment, args: Namespace):
@@ -143,31 +166,32 @@ class OfrakCommandRunsScript(OfrakCommand, ABC):
             exclude_components_missing_dependencies=args.exclude_components_missing_dependencies,
         )
 
-        if args.backend is not None:
-            if args.backend.lower() == "binary-ninja":
-                import ofrak_capstone  # type: ignore
-                import ofrak_binary_ninja  # type: ignore
+        ofrak_pkgs = set(args.imports)
+        ofrak_pkgs.update(BACKEND_PACKAGES[args.backend])
 
-                ofrak.discover(ofrak_capstone)
-                ofrak.discover(ofrak_binary_ninja)
+        if not any(pkgs.issubset(ofrak_pkgs) for pkgs in BACKEND_PACKAGES.values() if pkgs):
+            logging.warning("No disassembler backend specified, so no disassembly will be possible")
 
-            elif args.backend.lower() == "ghidra":
-                import ofrak_ghidra  # type: ignore
-
-                ofrak.discover(ofrak_ghidra)
-
-            elif args.backend.lower() == "angr":
-                import ofrak_capstone  # type: ignore
-                import ofrak_angr  # type: ignore
-
-                ofrak.discover(ofrak_capstone)
-                ofrak.discover(ofrak_angr)
+        for ofrak_pkg_name in ofrak_pkgs:
+            if os.path.exists(ofrak_pkg_name):
+                ofrak_pkg = self._import_via_path(ofrak_pkg_name)
             else:
-                logging.warning(
-                    "No disassembler backend specified, so no disassembly will be possible"
-                )
+                ofrak_pkg = importlib.import_module(ofrak_pkg_name)
+            ofrak.discover(ofrak_pkg)
 
         ofrak.run(self.ofrak_func, args)
+
+    def _import_via_path(self, path: str):
+        ofrak_file_path = os.path.abspath(path)
+        ofrak_file_dir = os.path.dirname(ofrak_file_path)
+        ofrak_file_name = os.path.basename(ofrak_file_path)
+        if os.path.isdir(ofrak_file_path) or not ofrak_file_name.endswith(".py"):
+            raise ImportError(f"Cannot import {path} as it does not appear to be a Python file!")
+        ofrak_file_name = ofrak_file_name[:-3]
+
+        sys.path.append(ofrak_file_dir)
+        pkg = importlib.import_module(ofrak_file_name)
+        return pkg
 
     @abstractmethod
     async def ofrak_func(self, ofrak_context: OFRAKContext, args: Namespace):
