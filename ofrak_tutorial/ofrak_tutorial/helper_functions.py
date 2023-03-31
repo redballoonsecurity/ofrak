@@ -1,40 +1,17 @@
 """
 Helper functions for the OFRAK tutorial.
-
 Useful since the tutorial is split into multiple notebooks, which can't easily import previous notebooks and don't
 assume they have already been run either.
-
 Importing this file also has the side effect of changing the current working directory to /tmp.
 """
-
-
-def create_noops():
-    noops = []
-
-    i = 0
-
-    for i in range(250):
-        instruction = f"int noop{i}(){{}}"
-        noops.append(instruction)
-
-    return noops
-
-
-noops = create_noops()
 
 import os
 
 HELLO_WORLD_SOURCE = r"""
 #include <stdio.h>
-"""
-
-for noop in noops:
-    HELLO_WORLD_SOURCE += noop
-
-HELLO_WORLD_SOURCE += r"""
 int main() {
-    printf("Hello, World!\n");
-    return 0;
+   printf("Hello, World!\n");
+   return 0;
 }
 """
 
