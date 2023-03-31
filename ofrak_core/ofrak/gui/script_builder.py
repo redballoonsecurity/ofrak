@@ -5,13 +5,13 @@ import re
 import os
 from typing import Any, Dict, List, Optional, Tuple
 from ofrak.model.resource_model import ResourceIndexedAttribute
+from ofrak.resource import Resource
+from ofrak.core.dtb import DtbNode, DtbProperty
 from ofrak.core import Addressable
 from ofrak.core.filesystem import FilesystemEntry
 from ofrak.model.resource_model import Data
 from ofrak.service.resource_service_i import ResourceAttributeValueFilter, ResourceFilter
 from black import format_str, FileMode
-
-from ofrak.resource import Resource
 
 
 LOGGER = logging.getLogger(__name__)
@@ -103,6 +103,8 @@ class ScriptBuilder:
             FilesystemEntry.Name,
             Addressable.VirtualAddress,
             Data.Offset,
+            DtbNode.DtbNodeName,
+            DtbProperty.DtbPropertyName,
         ]
 
     async def add_action(
@@ -123,6 +125,27 @@ class ScriptBuilder:
         var_name = await self._add_variable(resource)
         qualified_action = action.format(resource=var_name)
         await self._add_action_to_session_queue(resource, qualified_action, action_type)
+
+    async def get_script(self, resource: Resource) -> List[str]:
+        """
+        Returns the most up-to-date version of the script for the session to which the resource
+        belongs.
+
+        :param resource: Resource belonging to the session for which the script is to be returned
+
+        :return: List of strings where each entry is a line in the script
+        """
+        root_resource = await self._get_root_resource(resource)
+        return self._get_script(root_resource.get_id())
+
+    async def commit_to_script(self, resource: Resource):
+        root_resource = await self._get_root_resource(resource)
+        session = self._get_session(root_resource.get_id())
+        for id, name in session.resource_variable_names_queue.items():
+            session.resource_variable_names[id] = name
+        session.actions += session.actions_queue
+        session.actions_queue = []
+        session.resource_variable_names_queue = {}
 
     async def _add_variable(self, resource: Resource) -> str:
         """
@@ -176,27 +199,6 @@ class ScriptBuilder:
         except:
             LOGGER.exception("Exception raised in add_variable")
         return name
-
-    async def get_script(self, resource: Resource) -> List[str]:
-        """
-        Returns the most up-to-date version of the script for the session to which the resource
-        belongs.
-
-        :param resource: Resource belonging to the session for which the script is to be returned
-
-        :return: List of strings where each entry is a line in the script
-        """
-        root_resource = await self._get_root_resource(resource)
-        return self._get_script(root_resource.get_id())
-
-    async def commit_to_script(self, resource: Resource):
-        root_resource = await self._get_root_resource(resource)
-        session = self._get_session(root_resource.get_id())
-        for id, name in session.resource_variable_names_queue.items():
-            session.resource_variable_names[id] = name
-        session.actions += session.actions_queue
-        session.actions_queue = []
-        session.resource_variable_names_queue = {}
 
     async def _get_root_resource(self, resource: Resource) -> Resource:
         """
@@ -259,6 +261,7 @@ class ScriptBuilder:
 
         if isinstance(attribute_value, str) or isinstance(attribute_value, bytes):
             attribute_value = f'"{attribute_value}"'.rstrip()
+
         return f"""await {session.get_var_name(parent.get_id())}.get_only_child(
                     r_filter=ResourceFilter(
                         tags={resource.get_most_specific_tags()},
@@ -309,7 +312,7 @@ class ScriptBuilder:
             msg = []
             for collision, value in attribute_collisions.items():
                 msg.append(
-                    f"Resource with ID {resource.get_id()!s} cannot be uniquely identified by attribute {attribute.__name__} (resource has value {attribute_value})."
+                    f"Resource with ID {resource.get_id()!s} cannot be uniquely identified by attribute {collision} (resource has value {value})."
                 )
             raise SelectableAttributesError("\n".join(msg))
 
@@ -351,7 +354,11 @@ class ScriptBuilder:
         script_list.append(self.script_sessions[resource_id].boilerplate_footer)
         script_str = "\n".join(script_list)
         script_str = self._dedent(script_str)
-        res = format_str(script_str, mode=FileMode())
+        try:
+            res = format_str(script_str, mode=FileMode())
+        except Exception as e:
+            logging.exception("Black Formatting Error:")
+            logging.exception(e)
         script_list = res.split("\n")
         return script_list
 
