@@ -229,7 +229,6 @@ class ScriptBuilder:
     async def _add_action_to_session_queue(self, resource, action, action_type):
         root_resource = await self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
-        # TODO: actions are duplicated if page is refreshed, is this reasonable?
         session.actions_queue.append(ScriptAction(action_type, action))
 
     async def _add_variable_to_session_queue(self, resource: Resource, var_name: str) -> None:
@@ -248,7 +247,7 @@ class ScriptBuilder:
             )
         except Exception as e:
             raise SelectableAttributesError(
-                f"Resource with ID {resource.get_id()} cannot be uniquely identified by attribute "
+                f"Resource with ID 0x{resource.get_id().hex()} cannot be uniquely identified by attribute "
                 f"{attribute.__name__} (resource has value {attribute_value})."
             )
 
@@ -261,7 +260,7 @@ class ScriptBuilder:
 
         if isinstance(attribute_value, str) or isinstance(attribute_value, bytes):
             attribute_value = f'"{attribute_value!s}"'.rstrip()
-        return f"""await {session.get_var_name(parent.get_id())}.get_only_child(
+        return f"""await {session.get_var_name(parent.get_id().hex())}.get_only_child(
                     r_filter=ResourceFilter(
                         tags={resource.get_most_specific_tags()},
                         attribute_filters=[
@@ -305,13 +304,13 @@ class ScriptBuilder:
                     continue
         if len(attribute_collisions) == 0:
             raise SelectableAttributesError(
-                f"Resource with ID {resource.get_id()!s} does not have a selectable attribute."
+                f"Resource with ID 0x{resource.get_id().hex()} does not have a selectable attribute."
             )
         else:
             msg = []
             for collision, value in attribute_collisions.items():
                 msg.append(
-                    f"Resource with ID {resource.get_id()!s} cannot be uniquely identified by attribute {collision} (resource has value {value})."
+                    f"Resource with ID 0x{resource.get_id().hex()} cannot be uniquely identified by attribute {collision} (resource has value {value})."
                 )
             raise SelectableAttributesError("\n".join(msg))
 
@@ -355,10 +354,11 @@ class ScriptBuilder:
         script_str = self._dedent(script_str)
         try:
             res = format_str(script_str, mode=FileMode())
+            script_list = res.split("\n")
         except Exception as e:
             logging.exception("Black Formatting Error:")
             logging.exception(e)
-        script_list = res.split("\n")
+            script_list = script_str.split("\n")
         return script_list
 
     def _dedent(self, s: str) -> str:

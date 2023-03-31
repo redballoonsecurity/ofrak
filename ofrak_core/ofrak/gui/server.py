@@ -232,6 +232,7 @@ class AiohttpOFRAKServer:
         root_resource = await ofrak_context.create_root_resource_from_file("{name}")"""
         root_resource = await self._ofrak_context.create_root_resource(name, resource_data, (File,))
         await self.script_builder.add_action(root_resource, script_str, ActionType.UNPACK)
+        await self.script_builder.commit_to_script(root_resource)
         return json_response(self._serialize_resource(root_resource))
 
     @exceptions_to_http(SerializedError)
@@ -490,6 +491,7 @@ class AiohttpOFRAKServer:
         """
         )
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
+        await self.script_builder.commit_to_script(resource)
         return json_response(self._serialize_resource(child))
 
     @exceptions_to_http(SerializedError)
