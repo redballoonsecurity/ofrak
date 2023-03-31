@@ -495,6 +495,7 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def find_and_replace(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
+        config = self._serializer.from_pjson(await request.json(), StringFindReplaceConfig)
         script_str = f"""
         config = StringFindReplaceConfig(
             to_find="{config.to_find}", 
@@ -506,7 +507,6 @@ class AiohttpOFRAKServer:
         script_str = """
         await {resource}.run(StringFindReplaceModifier, config)"""
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
-        config = self._serializer.from_pjson(await request.json(), StringFindReplaceConfig)
         result = await resource.run(StringFindReplaceModifier, config=config)
         await self.script_builder.commit_to_script(resource)
         return json_response(await self._serialize_component_result(result))
