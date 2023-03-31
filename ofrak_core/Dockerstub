@@ -62,4 +62,4 @@ RUN cd /tmp && \
 RUN cd /tmp && \
     git clone https://github.com/ReFirmLabs/binwalk && \
     cd binwalk && \
-python3 setup.py install
+    python3 setup.py install
