@@ -379,3 +379,73 @@ async def test_add_tag(ofrak_client: TestClient, hello_world_elf):
         json="ofrak.core.apk.Apk",
     )
     assert resp.status == 200
+
+
+async def test_update_script(ofrak_client: TestClient, hello_world_elf):
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+    )
+    root = await create_resp.json()
+    root_id = root["id"]
+
+    # Perform some actions that should hit add_action, add_variable, and all their subcalls
+    await ofrak_client.post(f"/{root_id}/unpack")
+    children_resp = await ofrak_client.post(f"/batch/get_children", json=[root_id])
+    children_body = await children_resp.json()
+    eldest_child_id = children_body[root_id][0]["id"]
+    await ofrak_client.post(f"/{eldest_child_id}/analyze")
+
+    # Get final script and compare it
+    resp = await ofrak_client.get(
+        f"/{root_id}/get_script",
+    )
+    resp_body = await resp.json()
+    assert resp_body == [
+        "from ofrak import *",
+        "from ofrak.core import *",
+        "",
+        "",
+        "async def main(ofrak_context: OFRAKContext):",
+        "",
+        "    root_resource = await ofrak_context.create_root_resource_from_file(",
+        '        "hello_world_elf"',
+        "    )",
+        "",
+        "    await root_resource.unpack()",
+        "",
+        "    elfbasicheader_0x0 = await root_resource.get_only_child(",
+        "        r_filter=ResourceFilter(",
+        "            tags={ElfBasicHeader},",
+        "            attribute_filters=[",
+        "                ResourceAttributeValueFilter(attribute=Data.Offset, value=0)",
+        "            ],",
+        "        )",
+        "    )",
+        "",
+        "    await elfbasicheader_0x0.auto_run(all_analyzers=True)",
+        "",
+        "",
+        'if __name__ == "__main__":',
+        "    if False:",
+        "        import ofrak_angr",
+        "        import ofrak_capstone",
+        "",
+        "        ofrak.discover(ofrak_capstone)",
+        "        ofrak.discover(ofrak_angr)",
+        "",
+        "    if False:",
+        "        import ofrak_binary_ninja",
+        "        import ofrak_capstone",
+        "",
+        "        ofrak.discover(ofrak_capstone)",
+        "        ofrak.discover(ofrak_binary_ninja)",
+        "",
+        "    if False:",
+        "        import ofrak_ghidra",
+        "",
+        "        ofrak.discover(ofrak_ghidra)",
+        "",
+        "    ofrak = OFRAK()",
+        "    ofrak.run(main)",
+        "",
+    ]
