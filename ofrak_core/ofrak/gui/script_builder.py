@@ -150,14 +150,14 @@ class ScriptBuilder:
                 ActionType.UNDEF,
             )
             await self._add_variable_to_session(resource, name)
-        except SelectableAttributesError:
+        except SelectableAttributesError as e:
             parent_name = await self._get_variable_from_session(parent)
-            name = f"{parent_name}_MISSING_CHILD"
+            name = f"{parent_name}_MISSING_RESOURCE"
             await self._add_action_to_session(
                 resource,
                 f"""
         # Resource with parent {parent_name} is missing, could not find selectable attributes.
-        raise RuntimeError('AMBER ALERT: MISSING CHILD!')""",
+        raise RuntimeError(\"{str(e)}\")""",
                 ActionType.UNDEF,
             )
             await self._add_variable_to_session(resource, name)
