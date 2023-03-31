@@ -166,21 +166,6 @@ class ScriptBuilder:
             LOGGER.exception("Exception raised in add_variable")
         return name
 
-    async def delete_action(self, resource: Resource, action: str) -> None:
-        """
-        Removes the first occurrence of an action from the script.
-
-        :param resource: Resource belonging to the session for which the action is to removed
-        :param action: The exact action to be removed
-        """
-        root_resource = await self._get_root_resource(resource)
-        session = self._get_session(root_resource.get_id())
-        # TODO: do we really need to delete an action from the script?
-        for idx, script_action in enumerate(session.actions):
-            if script_action.action == action:
-                session.actions.pop(idx)
-                break
-
     async def get_script(self, resource: Resource) -> List[str]:
         """
         Returns the most up-to-date version of the script for the session to which the resource
@@ -192,22 +177,6 @@ class ScriptBuilder:
         """
         root_resource = await self._get_root_resource(resource)
         return self._get_script(root_resource.get_id())
-
-    async def get_all_of_type(self, resource: Resource, target_type: ActionType) -> List[str]:
-        """
-        Returns a subset of the most up-to-date version of the script for the session to which the
-        resource belongs, including only those actions whose type matches `target_type` or is `UNDEF`.
-        (`UNDEF` actions are actions such as variable assignment.)
-
-        Allows a script to be created that reproduces specific actions which can then be applied to
-        different files, such as all unpack steps to arrive at a particular resource.
-
-        :param target_type: `ActionType` to include in the subset script
-
-        :return: List of strings where each entry is a line in the script
-        """
-        root_resource = await self._get_root_resource(resource)
-        return self._get_script(root_resource.get_id(), target_type)
 
     async def _get_root_resource(self, resource: Resource) -> Resource:
         """
