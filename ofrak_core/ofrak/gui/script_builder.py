@@ -147,6 +147,12 @@ class ScriptBuilder:
         session.actions_queue = []
         session.resource_variable_names_queue = {}
 
+    async def clear_script_queue(self, resource: Resource):
+        root_resource = await self._get_root_resource(resource)
+        session = self._get_session(root_resource.get_id())
+        session.actions_queue = []
+        session.resource_variable_names_queue = {}
+
     async def _add_variable(self, resource: Resource) -> str:
         """
         Replaces references to a particular resource selected in the GUI with a generated variable
