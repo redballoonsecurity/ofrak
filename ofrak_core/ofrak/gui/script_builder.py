@@ -260,7 +260,7 @@ class ScriptBuilder:
 
         if isinstance(attribute_value, str) or isinstance(attribute_value, bytes):
             attribute_value = f'"{attribute_value!s}"'.rstrip()
-        return f"""await {session.get_var_name(parent.get_id().hex())}.get_only_child(
+        return f"""await {session.get_var_name(parent.get_id())}.get_only_child(
                     r_filter=ResourceFilter(
                         tags={resource.get_most_specific_tags()},
                         attribute_filters=[
