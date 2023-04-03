@@ -112,11 +112,11 @@
 </script>
 
 <div class="container">
-  <p>Configure component to be run.</p>
   {#await ofrakConfigsPromise}
     <LoadingText />
   {:then ofrakConfig}
     {#if ofrakConfig.length != 0}
+      <p>Configure {selectedComponent}:</p>
       <ComponentConfigNode node="{ofrakConfig}" bind:element="{config}" />
     {/if}
 
@@ -125,7 +125,6 @@
         if (ofrakConfig.length != 0) {
           ofrakConfigName = ofrakConfig['name'];
         }
-        console.log({ ofrakConfigName });
         await $selectedResource.run_component(selectedComponent, config);
         resourceNodeDataMap[$selected] = {
           collapsed: false,
@@ -135,7 +134,7 @@
         modifierView = undefined;
       }}"
     >
-      Run Component
+      Run {selectedComponent}
     </button>
   {:catch}
     <p>Failed to get config for OFRAK component!</p>
