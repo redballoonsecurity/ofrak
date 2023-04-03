@@ -231,7 +231,9 @@ class AiohttpOFRAKServer:
         script_str = rf"""
         root_resource = await ofrak_context.create_root_resource_from_file("{name}")"""
         try:
-            root_resource = await self._ofrak_context.create_root_resource(name, resource_data, (File,))
+            root_resource = await self._ofrak_context.create_root_resource(
+                name, resource_data, (File,)
+            )
             await self.script_builder.add_action(root_resource, script_str, ActionType.UNPACK)
             if request.remote is not None:
                 self._job_ids[request.remote] = root_resource.get_job_id()
