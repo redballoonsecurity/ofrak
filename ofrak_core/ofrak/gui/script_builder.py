@@ -194,20 +194,40 @@ class ScriptBuilder:
             )
             await self._add_variable_to_session_queue(resource, name)
         except SelectableAttributesError as e:
-            parent_name = await self._get_variable_from_session(parent)
-            name = f"{parent_name}_MISSING_RESOURCE"
-            await self._add_action_to_session_queue(
-                resource,
-                f"""
-        # Resource with parent {parent_name} is missing, could not find selectable attributes.
-        raise RuntimeError(\"{str(e)}\")""",
-                ActionType.UNDEF,
-            )
-            await self._add_variable_to_session_queue(resource, name)
+            name = await self._generate_missing_name(resource, e)
             LOGGER.exception("Could not find selectable attributes for resource")
+            return name
         except:
             LOGGER.exception("Exception raised in add_variable")
         return name
+
+    async def _generate_missing_name(self, resource: Resource, e: Exception):
+        root_resource = await self._get_root_resource(resource)
+        session = self._get_session(root_resource.get_id())
+        parent = await resource.get_parent()
+        parent_name = await self._get_variable_from_session(parent)
+        name = f"{parent_name}_MISSING_RESOURCE_0"
+        await self._add_action_to_session_queue(
+            resource,
+            f"""
+        # Resource with parent {parent_name} is missing, could not find selectable attributes.
+        raise RuntimeError(\"{str(e)}\")""",
+            ActionType.UNDEF,
+        )
+        index = 1
+        var_names = list(session.resource_variable_names.values()) + list(session.resource_variable_names_queue.values())
+        name = self._increment_missing_name_index(name, var_names, index)
+        await self._add_variable_to_session_queue(resource, name)
+        return name
+
+    def _increment_missing_name_index(self, name: str, var_names: List[str], index: int):
+        name_template = "_".join(name.split("_")[:-1])
+        if name in var_names:
+            name = name_template + f"_{index}"
+            index += 1
+            return self._increment_missing_name_index(name, var_names, index)
+        else:
+            return name
 
     async def _get_root_resource(self, resource: Resource) -> Resource:
         """
