@@ -589,3 +589,72 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
         "    ofrak.run(main)",
         "",
     ]
+
+
+async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+    )
+    root = await create_resp.json()
+    root_id = root["id"]
+
+    # StringFindReplace will fail because replacement string is longer than original
+    await ofrak_client.post(
+        f"/{root_id}/find_and_replace",
+        json=[
+            "ofrak.core.strings.StringFindReplaceConfig",
+            {
+                "to_find": "cat",
+                "replace_with": "meow",
+                "null_terminate": "true",
+                "allow_overflow": "false",
+            },
+        ],
+    )
+
+    # Force script to update to ensure nothing is missed in the queue
+    await ofrak_client.post(f"/{root_id}/unpack")
+
+    # Verify string modify action was dequeued and not in the script
+    resp = await ofrak_client.get(
+        f"/{root_id}/get_script",
+    )
+    resp_body = await resp.json()
+    assert resp_body == [
+        "from ofrak import *",
+        "from ofrak.core import *",
+        "",
+        "",
+        "async def main(ofrak_context: OFRAKContext):",
+        "",
+        "    root_resource = await ofrak_context.create_root_resource_from_file(",
+        '        "hello_world_elf"',
+        "    )",
+        "",
+        "    await root_resource.unpack()",
+        "",
+        "",
+        'if __name__ == "__main__":',
+        "    if False:",
+        "        import ofrak_angr",
+        "        import ofrak_capstone",
+        "",
+        "        ofrak.discover(ofrak_capstone)",
+        "        ofrak.discover(ofrak_angr)",
+        "",
+        "    if False:",
+        "        import ofrak_binary_ninja",
+        "        import ofrak_capstone",
+        "",
+        "        ofrak.discover(ofrak_capstone)",
+        "        ofrak.discover(ofrak_binary_ninja)",
+        "",
+        "    if False:",
+        "        import ofrak_ghidra",
+        "",
+        "        ofrak.discover(ofrak_ghidra)",
+        "",
+        "    ofrak = OFRAK()",
+        "    ofrak.run(main)",
+        "",
+    ]
