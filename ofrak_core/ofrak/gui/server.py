@@ -2,6 +2,7 @@ import asyncio
 import dataclasses
 import functools
 import itertools
+import json
 import logging
 from types import NoneType
 import typing
@@ -746,24 +747,24 @@ class AiohttpOFRAKServer:
             ]
         else:
             return None
-    
+
     def _construct_arg_response(self, obj):
-            args = typing.get_args(obj)
-            if len(args) != 0:
-                return [
-                    {
-                        "name": None,
-                        "type": self._convert_to_class_name_str(arg),
-                        "args": self._construct_arg_response(arg),
-                        "fields": self._construct_field_response(arg),
-                        "default": None,
-                    }
-                    for arg in args
-                    if not isinstance(arg, type(...))
-                ]
-            else:
-                return None
-    
+        args = typing.get_args(obj)
+        if len(args) != 0:
+            return [
+                {
+                    "name": None,
+                    "type": self._convert_to_class_name_str(arg),
+                    "args": self._construct_arg_response(arg),
+                    "fields": self._construct_field_response(arg),
+                    "default": None,
+                }
+                for arg in args
+                if not isinstance(arg, type(...))
+            ]
+        else:
+            return None
+
     def _convert_to_class_name_str(self, obj: any):
         if isinstance(obj, type(...)):
             return "ellipsis"
@@ -791,22 +792,22 @@ class AiohttpOFRAKServer:
         incl_packers: bool,
         incl_unpackers: bool,
     ) -> List[str]:
-        components = []
+        selected_components = []
         tags = resource.get_tags()
 
-        req_components = [incl_analyzers, incl_modifiers, incl_packers, incl_unpackers]
-        comp_categories = (Analyzer, Modifier, Packer, Unpacker)
-        if any(req_components):
-            categories = tuple(itertools.compress(comp_categories, req_components))
+        requested_components = [incl_analyzers, incl_modifiers, incl_packers, incl_unpackers]
+        all_categories = (Analyzer, Modifier, Packer, Unpacker)
+        if any(requested_components):
+            categories = tuple(itertools.compress(all_categories, requested_components))
         else:
-            categories = comp_categories
+            categories = all_categories
 
         for component_name, component in self.env.components.items():
             if issubclass(component, categories):
                 if len([tag for tag in tags if not only_target or tag in component.targets]) > 0:
-                    components.append(component_name)
+                    selected_components.append(component_name)
 
-        return components
+        return selected_components
 
     def _get_config_for_component(self, component: AbstractComponent):
         if issubclass(component, Packer):

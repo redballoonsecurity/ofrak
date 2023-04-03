@@ -544,7 +544,7 @@ export class RemoteResource extends Resource {
     ingest_component_results(result, this.resource_list);
     this.flush_cache();
     this.update();
-    await this.get_script();
+    await this.update_script();
   }
 }
 
