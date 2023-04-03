@@ -331,8 +331,8 @@ async def test_find_and_replace(ofrak_client: TestClient, hello_world_elf):
             {
                 "to_find": "hello",
                 "replace_with": "Hello",
-                "null_terminate": "true",
-                "allow_overflow": "false",
+                "null_terminate": False,
+                "allow_overflow": False,
             },
         ],
     )
@@ -555,14 +555,14 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
         '        "Resource with ID 0x00000002 cannot be uniquely identified by attribute Data.Offset (resource has value 0)."',
         "    )",
         "",
-        "    await root_resource_MISSING_RESOURCE.unpack()",
+        "    await root_resource_MISSING_RESOURCE_0.unpack()",
         "",
         "    # Resource with parent root_resource is missing, could not find selectable attributes.",
         "    raise RuntimeError(",
         '        "Resource with ID 0x00000003 cannot be uniquely identified by attribute Data.Offset (resource has value 0)."',
         "    )",
         "",
-        "    await root_resource_MISSING_RESOURCE.unpack()",
+        "    await root_resource_MISSING_RESOURCE_1.unpack()",
         "",
         "",
         'if __name__ == "__main__":',
@@ -606,8 +606,8 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
             {
                 "to_find": "cat",
                 "replace_with": "meow",
-                "null_terminate": "true",
-                "allow_overflow": "false",
+                "null_terminate": True,
+                "allow_overflow": False,
             },
         ],
     )

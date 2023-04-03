@@ -215,7 +215,9 @@ class ScriptBuilder:
             ActionType.UNDEF,
         )
         index = 1
-        var_names = list(session.resource_variable_names.values()) + list(session.resource_variable_names_queue.values())
+        var_names = list(session.resource_variable_names.values()) + list(
+            session.resource_variable_names_queue.values()
+        )
         name = self._increment_missing_name_index(name, var_names, index)
         await self._add_variable_to_session_queue(resource, name)
         return name
