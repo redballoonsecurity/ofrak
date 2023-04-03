@@ -22,16 +22,19 @@
     position: sticky;
     top: 0;
     left: 0;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: start;
+    justify-content: end;
   }
 
   .buttonbar button {
-    position: absolute;
-    right: 0;
-    top: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0.5em;
+    margin-left: 0.5em;
     border: 0;
     background: var(--main-bg-color);
   }
@@ -58,10 +61,6 @@
   .textarea {
     white-space: pre;
   }
-
-  .buttonbar button.download {
-    right: 2em;
-  }
 </style>
 
 <script>
@@ -86,7 +85,6 @@
 
 <div class="buttonbar">
   <button
-    class="download"
     on:click="{async (e) => {
       const lines = $script.join('\n');
       if (lines.length === 0) {

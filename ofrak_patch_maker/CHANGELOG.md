@@ -4,8 +4,21 @@ All notable changes to `ofrak-patch-maker` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+
+### Changed
+- Discard `.altinstructions` section when linking
+- Use `SUBALIGN(0)` for `.bss` sections
+- Force literal pool at end of function for AARCH64 using `-mpc-relative-literal-loads`
 ### Added
 - `-fno-pic` flag added to the GNU_10_Toolchain to omit GOTs in patches (FEMs) against binaries that aren't dynamically linked. (see [#245](https://github.com/redballoonsecurity/ofrak/pull/245))
+- Add methods to parse relocation symbols from object files.
+- Extend parsed symbol dictionary to include LinkableSymbolType.
+- Extend AssembledObject and BOM types to include relocation and unresolved symbols.
+- Add separate data sections support to LLVM toolchain, and add general flag for including subsections
+
+### Changed
+- Switch to standard GCC-like frontend for LLVM, which supports C attribute(weak)
+- Treat weak symbols as "undefined" in BOM, so alternative, strong definitions can be searched
 
 ## [3.0.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-patch-maker-v.2.0.0...ofrak-patch-maker-v.3.0.0) - 2023-01-20
 ### Added

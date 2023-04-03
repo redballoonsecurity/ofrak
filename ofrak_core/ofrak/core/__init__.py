@@ -8,7 +8,6 @@ from ofrak.core.elf.lief_modifier import *
 from ofrak.core.pe.unpacker import *
 from ofrak.core.pe.model import *
 
-from ofrak.core.patch_maker.model import *
 from ofrak.core.patch_maker.linkable_binary import *
 from ofrak.core.patch_maker.linkable_symbol import *
 from ofrak.core.patch_maker.modifiers import *

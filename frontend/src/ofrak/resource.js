@@ -382,8 +382,8 @@ export class Resource {
     throw new NotImplementedError("search_for_vaddr");
   }
 
-  async get_script() {
-    throw new NotImplementedError("get_script");
+  async update_script() {
+    throw new NotImplementedError("update_script");
   }
 
   async get_components() {
