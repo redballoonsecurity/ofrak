@@ -488,7 +488,7 @@ export class RemoteResource extends Resource {
   }
 
   async get_components(target, analyzers, modifiers, packers, unpackers) {
-    return await fetch(`${backendUrl}/${this.uri}/get_components`, {
+    return await fetch(`${this.uri}/get_components`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -510,7 +510,7 @@ export class RemoteResource extends Resource {
 
   async get_config_for_component(component) {
     return await fetch(
-      `${backendUrl}/${this.uri}/get_config_for_component?component=${component}`,
+      `${this.uri}/get_config_for_component?component=${component}`,
       {
         method: "GET",
         headers: {
@@ -527,7 +527,7 @@ export class RemoteResource extends Resource {
 
   async run_component(component, response) {
     const result = await fetch(
-      `${backendUrl}/${this.uri}/run_component?component=${component}`,
+      `${this.uri}/run_component?component=${component}`,
       {
         method: "POST",
         headers: {
