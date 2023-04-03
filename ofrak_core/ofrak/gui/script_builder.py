@@ -64,17 +64,20 @@ class ScriptSession:
         if False:
             import ofrak_angr
             import ofrak_capstone
+
             ofrak.discover(ofrak_capstone)
             ofrak.discover(ofrak_angr)
 
         if False:
             import ofrak_binary_ninja
             import ofrak_capstone
+
             ofrak.discover(ofrak_capstone)
             ofrak.discover(ofrak_binary_ninja)
 
         if False:
             import ofrak_ghidra
+
             ofrak.discover(ofrak_ghidra)
 
         ofrak = OFRAK()

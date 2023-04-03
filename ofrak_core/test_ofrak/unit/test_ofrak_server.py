@@ -482,7 +482,7 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
     root_id = root["id"]
 
     # Carving the root resource twice will result in 2 children with identical attributes, which
-    # leads to a SelectableAttributesError when you attempt to unpack the second child
+    # leads to a SelectableAttributesError when you attempt to unpack the children
     await ofrak_client.post(f"/{root_id}/create_mapped_child", json=[0, 8181])
 
     await ofrak_client.post(f"/{root_id}/create_mapped_child", json=[0, 8181])
