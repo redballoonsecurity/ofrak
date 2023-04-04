@@ -218,7 +218,7 @@ class ScriptBuilder:
             LOGGER.exception("Exception raised in add_variable")
         return name
 
-    async def _generate_missing_name(self, resource: Resource, e: Exception):
+    async def _generate_missing_name(self, resource: Resource, e: Exception) -> str:
         root_resource = await self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
         parent = await resource.get_parent()
@@ -240,7 +240,7 @@ class ScriptBuilder:
         await self._add_variable_to_session_queue(resource, name)
         return name
 
-    def _increment_missing_name_index(self, name: str, var_names: List[str], index: int):
+    def _increment_missing_name_index(self, name: str, var_names: List[str], index: int) -> str:
         name_template = "_".join(name.split("_")[:-1])
         if name in var_names:
             name = name_template + f"_{index}"
@@ -267,7 +267,7 @@ class ScriptBuilder:
         session = self._get_session(root_resource.get_id())
         return session.get_var_name(resource.get_id())
 
-    async def _var_exists(self, resource: Resource):
+    async def _var_exists(self, resource: Resource) -> bool:
         root_resource = await self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
         return (
@@ -275,7 +275,9 @@ class ScriptBuilder:
             or resource.get_id() in session.resource_variable_names_queue
         )
 
-    async def _add_action_to_session_queue(self, resource, action, action_type):
+    async def _add_action_to_session_queue(
+        self, resource: Resource, action: str, action_type: ActionType
+    ) -> None:
         root_resource = await self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
         session.actions_queue.append(ScriptAction(action_type, action))
@@ -285,7 +287,13 @@ class ScriptBuilder:
         session = self._get_session(root_resource.get_id())
         session.resource_variable_names_queue[resource.get_id()] = var_name
 
-    async def _test_selectable_attributes(self, ancestor, resource, attribute, attribute_value):
+    async def _test_selectable_attributes(
+        self,
+        ancestor: Resource,
+        resource: Resource,
+        attribute: ResourceIndexedAttribute,
+        attribute_value: Any,
+    ) -> None:
         try:
             result = await ancestor.get_only_child(
                 r_filter=ResourceFilter(
