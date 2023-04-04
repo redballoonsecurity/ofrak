@@ -125,11 +125,23 @@
         if (ofrakConfig.length != 0) {
           ofrakConfigName = ofrakConfig['name'];
         }
-        await $selectedResource.run_component(selectedComponent, config);
+        const results = await $selectedResource.run_component(
+          selectedComponent,
+          config
+        );
         resourceNodeDataMap[$selected] = {
           collapsed: false,
           childrenPromise: $selectedResource.get_children(),
         };
+        for (const result in results) {
+          if (result === 'modified') {
+            for (const resource of results[result]) {
+              resourceNodeDataMap[resource['id']] = {
+                modified: true,
+              };
+            }
+          }
+        }
         $selected = $selected;
         modifierView = undefined;
       }}"

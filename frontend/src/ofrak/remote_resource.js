@@ -395,6 +395,7 @@ export class RemoteResource extends Resource {
     this.update();
 
     await this.update_script();
+    return find_replace_results;
   }
 
   async add_comment(optional_range, comment) {
@@ -545,6 +546,7 @@ export class RemoteResource extends Resource {
     this.flush_cache();
     this.update();
     await this.update_script();
+    return result;
   }
 }
 
