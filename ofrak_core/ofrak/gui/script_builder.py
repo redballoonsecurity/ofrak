@@ -211,7 +211,8 @@ class ScriptBuilder:
             resource,
             f"""
         # Resource with parent {parent_name} is missing, could not find selectable attributes.
-        raise RuntimeError(\"{str(e)}\")""",
+        raise RuntimeError(\"{str(e)}\")
+        {name} = None""",
             ActionType.UNDEF,
         )
         index = 1
