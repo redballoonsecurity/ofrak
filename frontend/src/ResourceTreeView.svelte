@@ -17,16 +17,19 @@
     min-width: 18ch;
   }
 
-  .hbox,
   .toolbar {
     overflow: auto;
     overflow-y: scroll;
   }
 
+  .hbox {
+    overflow: auto;
+  }
+
   .treebox {
     flex-grow: 1;
     padding-left: 1em;
-    overflow-x: scroll;
+    overflow-x: auto;
     white-space: nowrap;
     text-align: left;
   }
