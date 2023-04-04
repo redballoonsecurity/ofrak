@@ -153,6 +153,7 @@ class ProcessorType(Enum):
     COLDFIRE4E = "cfv4e"
     CORTEX_A53 = "cortex-a53"
     CORTEX_A55 = "cortex-a55"
+    CORTEX_A72 = "cortex-a72"
     AVR = "avr"
 
 

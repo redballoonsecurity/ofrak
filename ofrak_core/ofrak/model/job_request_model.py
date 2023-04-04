@@ -10,7 +10,7 @@ from ofrak.model.tag_model import ResourceTag
 class JobAnalyzerRequest:
     job_id: bytes
     resource_id: bytes
-    attributes: Type[ResourceAttributes]
+    attributes: Tuple[Type[ResourceAttributes], ...]
     target_tags: Tuple[ResourceTag, ...]
 
 

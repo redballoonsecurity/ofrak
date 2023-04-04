@@ -4,9 +4,16 @@ All notable changes to `ofrak` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+### Added
+- Generate dynamic, runnable script based on GUI actions and display the script in the GUI. ([#265](https://github.com/redballoonsecurity/ofrak/pull/265))
+- Add `-f`/`--file` option to `ofrak gui` command to pre-load some files into OFRAK before opening the GUI, so they can be explored right away ([#266](https://github.com/redballoonsecurity/ofrak/pull/266))
+- Add `-i`/`--import` option to the CLI to import and discover additional OFRAK Python packages when starting OFRAK. [#269](https://github.com/redballoonsecurity/ofrak/pull/269)
+
 ### Changed
 - Remove need to create Resources to pass source code and headers to `PatchFromSourceModifier` and `FunctionReplaceModifier` ([#249](https://github.com/redballoonsecurity/ofrak/pull/249))
-
+- Choose Analyzer components which output the entirety of a view, rather than piece by piece, which would choose the wrong Analyzer sometimes. [#264](https://github.com/redballoonsecurity/ofrak/pull/264)
+- Generate LinkableBinary stubs as strong symbols, so linker use them to override weak symbols in patch
+- 
 ### Fixed
 - Fix bug where jumping to a multiple of `0x10` in the GUI went to the previous line ([#254](https://github.com/redballoonsecurity/ofrak/pull/254))
 

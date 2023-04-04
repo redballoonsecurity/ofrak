@@ -82,7 +82,7 @@ class Toolchain(ABC):
         # The keep_list should only contain FUNCTIONALLY important sections
         # (not empty .got.plt, for instance).
         # TODO: Come up with a better system to handle this...
-        self._linker_keep_list = [".data", ".rodata", ".text"]
+        self._linker_keep_list = [".data", ".rodata", ".text", ".rel"]
         self._linker_discard_list = [
             ".gnu.hash",
             ".comment",
@@ -93,6 +93,7 @@ class Toolchain(ABC):
             ".dynsym",
             ".dynstr",
             ".eh_frame",
+            ".altinstructions",
         ]
 
         self._assembler_target = self._get_assembler_target(processor)
@@ -357,11 +358,16 @@ class Toolchain(ABC):
     def linker_include_filter(symbol_name: str) -> bool:
         return "." in symbol_name or "_DYNAMIC" in symbol_name
 
-    def keep_section(self, section_name: str) -> bool:
-        if self._config.separate_data_sections:
-            raise NotImplementedError("you must override keep_section() in your Toolchain sublass")
+    def keep_section(self, section_name: str):
+        if section_name in self._linker_keep_list:
+            return True
+        if self._config.separate_data_sections or self._config.include_subsections:
+            for keep_section in self._linker_keep_list:
+                if section_name.startswith(keep_section):
+                    return True
+            return False
         else:
-            return section_name in self._linker_keep_list
+            return False
 
     @abstractmethod
     def generate_linker_include_file(self, symbols: Mapping[str, int], out_path: str) -> str:

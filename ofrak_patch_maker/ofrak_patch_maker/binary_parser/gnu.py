@@ -11,10 +11,10 @@ class GNU_ELF_Parser(AbstractBinaryFileParser):
     file_format = BinFileType.ELF
 
     _re_symbol_prog = re.compile(
-        r"^(?P<address>[0-9A-Fa-f]{8})[ \t]+"
+        r"^(?P<address>[0-9A-Fa-f]+)[ \t]+"
         r"(?P<flags>[lg!\s][w\s][C\s][W\s][I\s][dD\s][fFO\s])?[ \t]+"
         r"(?P<section>\S+)[ \t]"
-        r"(?P<size_or_alignment>[0-9A-Fa-f]{8})[ \t]*"
+        r"(?P<size_or_alignment>[0-9A-Fa-f]+)[ \t]*"
         r"(?P<name>.+)?$",
         flags=re.MULTILINE,
     )
@@ -39,7 +39,7 @@ class GNU_ELF_Parser(AbstractBinaryFileParser):
         result = {}
         symbols = self._get_all_symbols(output)
         for sym_name, sym_vaddr, sym_section, sym_type in symbols:
-            if sym_section != "*UND*":
+            if sym_section != "*UND*" and "w" not in sym_type:
                 if "F" in sym_type:
                     result[sym_name] = (sym_vaddr, LinkableSymbolType.FUNC)
                 else:
@@ -81,7 +81,7 @@ class GNU_ELF_Parser(AbstractBinaryFileParser):
         result = {}
         symbols = self._get_all_symbols(output)
         for sym_name, sym_vaddr, sym_section, sym_type in symbols:
-            if sym_section == "*UND*":
+            if sym_section == "*UND*" or "w" in sym_type:
                 result[sym_name] = (sym_vaddr, LinkableSymbolType.UNDEF)
         return result
 

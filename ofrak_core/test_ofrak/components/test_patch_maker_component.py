@@ -133,8 +133,11 @@ TEST_CASE_CONFIGS = [
         LLVM_12_0_1_Toolchain,
         [
             "00000000004004c4 <main>:",
-            "  4004c4: 6a 03                         pushq $3",
-            "  4004c6: 58                            popq %rax",
+            "  4004c4: 55 pushq %rbp",
+            "  4004c5: 48 89 e5 movq %rsp, %rbp",
+            "  4004c8: b8 03 00 00 00 movl $3, %eax",
+            "  4004cd: 5d popq %rbp",
+            "  4004ce: c3 retq",
         ],
     ),
     FunctionReplacementTestCaseConfig(
