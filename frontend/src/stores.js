@@ -5,6 +5,7 @@ import { writable } from "svelte/store";
  */
 export const selected = writable(undefined);
 export const selectedResource = writable(undefined);
+export const script = writable([]);
 
 /***
  * Points the OFRAK frontend to a seperate backend server

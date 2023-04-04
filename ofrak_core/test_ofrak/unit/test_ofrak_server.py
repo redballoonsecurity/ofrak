@@ -1,5 +1,7 @@
+import itertools
 import json
 import pytest
+import sys
 
 from multiprocessing import Process
 
@@ -44,6 +46,20 @@ async def ofrak_client(ofrak_server, aiohttp_client):
 @pytest.fixture
 async def test_resource(ofrak_context, hello_world_elf):
     return await ofrak_context.create_root_resource(hello_world_elf, hello_world_elf, (File,))
+
+
+def dicts_are_similar(d1, d2, attributes_to_skip=None):
+    if attributes_to_skip is None:
+        attributes_to_skip = {"id", "data_id"}
+    for key, value in d1.items():
+        if key in attributes_to_skip:
+            continue
+        # Necessary to compare the unordered list of tags returned from unpack
+        if isinstance(value, list) and set(value) != set(d2[key]):
+            return False
+        elif value != d2[key]:
+            return False
+    return True
 
 
 # Test server methods and top-level functions.
@@ -316,8 +332,8 @@ async def test_find_and_replace(ofrak_client: TestClient, hello_world_elf):
             {
                 "to_find": "hello",
                 "replace_with": "Hello",
-                "null_terminate": "true",
-                "allow_overflow": "false",
+                "null_terminate": False,
+                "allow_overflow": False,
             },
         ],
     )
@@ -379,3 +395,272 @@ async def test_add_tag(ofrak_client: TestClient, hello_world_elf):
         json="ofrak.core.apk.Apk",
     )
     assert resp.status == 200
+
+
+async def test_update_script(ofrak_client: TestClient, hello_world_elf):
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+    )
+    root = await create_resp.json()
+    root_id = root["id"]
+
+    # Perform some actions that should hit add_action, add_variable, and all their subcalls
+    await ofrak_client.post(f"/{root_id}/unpack")
+    children_resp = await ofrak_client.post(f"/batch/get_children", json=[root_id])
+    children_body = await children_resp.json()
+    eldest_child_id = children_body[root_id][0]["id"]
+    await ofrak_client.post(f"/{eldest_child_id}/analyze")
+
+    # Get final script and compare it
+    resp = await ofrak_client.get(
+        f"/{root_id}/get_script",
+    )
+    resp_body = await resp.json()
+    assert resp_body == [
+        "from ofrak import *",
+        "from ofrak.core import *",
+        "",
+        "",
+        "async def main(ofrak_context: OFRAKContext):",
+        "",
+        "    root_resource = await ofrak_context.create_root_resource_from_file(",
+        '        "hello_world_elf"',
+        "    )",
+        "",
+        "    await root_resource.unpack()",
+        "",
+        "    elfbasicheader_0x0 = await root_resource.get_only_child(",
+        "        r_filter=ResourceFilter(",
+        "            tags={ElfBasicHeader},",
+        "            attribute_filters=[",
+        "                ResourceAttributeValueFilter(attribute=Data.Offset, value=0)",
+        "            ],",
+        "        )",
+        "    )",
+        "",
+        # TODO: Normalize the tests for ScriptBuilder scripts by canonicalizing the reference
+        # script and resp_body by comparing as strings and using regex to replace inconsistent values
+        # https://github.com/redballoonsecurity/ofrak/pull/265#discussion_r1156543786
+        "    await elfbasicheader_0x0.auto_run(all_analyzers=True)",
+        "",
+        "",
+        'if __name__ == "__main__":',
+        "    ofrak = OFRAK()",
+        "    if False:",
+        "        import ofrak_angr",
+        "        import ofrak_capstone",
+        "",
+        "        ofrak.discover(ofrak_capstone)",
+        "        ofrak.discover(ofrak_angr)",
+        "",
+        "    if False:",
+        "        import ofrak_binary_ninja",
+        "        import ofrak_capstone",
+        "",
+        "        ofrak.discover(ofrak_capstone)",
+        "        ofrak.discover(ofrak_binary_ninja)",
+        "",
+        "    if False:",
+        "        import ofrak_ghidra",
+        "",
+        "        ofrak.discover(ofrak_ghidra)",
+        "",
+        "    ofrak.run(main)",
+        "",
+    ]
+
+
+async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
+    def get_child_sort_key(child):
+        attrs = dict(child.get("attributes"))
+        data_attr = attrs.get("ofrak.model.resource_model.Data")
+        if data_attr is not None:
+            return data_attr[1]["_offset"]
+        else:
+            return sys.maxsize
+
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+    )
+    root = await create_resp.json()
+    root_id = root["id"]
+
+    # Carving the root resource twice will result in 2 children with identical attributes, which
+    # leads to a SelectableAttributesError when you attempt to unpack the children
+    await ofrak_client.post(f"/{root_id}/create_mapped_child", json=[0, 8181])
+
+    await ofrak_client.post(f"/{root_id}/create_mapped_child", json=[0, 8181])
+    children_resp = await ofrak_client.post(f"/batch/get_children", json=[root_id])
+    children_body = await children_resp.json()
+
+    child_one = children_body[root_id][0]
+    child_two = children_body[root_id][1]
+    child_one_res = await ofrak_client.post(f"/{child_one['id']}/unpack")
+    child_two_res = await ofrak_client.post(f"/{child_two['id']}/unpack")
+    child_one_body = await child_one_res.json()
+    child_two_body = await child_two_res.json()
+    child_one_resources = child_one_body["created"]
+    child_two_resources = child_two_body["created"]
+    # Must sort results of unpacking so that comparison works
+    child_one_resources.sort(key=get_child_sort_key)
+    child_two_resources.sort(key=get_child_sort_key)
+
+    # Verify results of unpacking are the same for both children and are what we expect
+    attrs_to_skip = {"id", "data_id", "parent_id", "attributes"}
+    assert len(child_one_resources) == len(child_two_resources)
+    assert all(
+        list(
+            map(
+                dicts_are_similar,
+                child_one_resources,
+                child_two_resources,
+                itertools.repeat(attrs_to_skip),
+            )
+        )
+    )
+    assert all(
+        list(
+            map(
+                dicts_are_similar,
+                child_two_resources,
+                child_one_resources,
+                itertools.repeat(attrs_to_skip),
+            )
+        )
+    )
+    assert "ofrak.core.elf.model.ElfBasicHeader" in child_one_resources[0]["tags"]
+
+    # Verify script is as expected
+    resp = await ofrak_client.get(
+        f"/{root_id}/get_script",
+    )
+    resp_body = await resp.json()
+    assert resp_body == [
+        "from ofrak import *",
+        "from ofrak.core import *",
+        "",
+        "",
+        "async def main(ofrak_context: OFRAKContext):",
+        "",
+        "    root_resource = await ofrak_context.create_root_resource_from_file(",
+        '        "hello_world_elf"',
+        "    )",
+        "",
+        "    await root_resource.create_child(",
+        "        tags=(GenericBinary,), data_range=Range(0x0, 0x1FF5)",
+        "    )",
+        "",
+        "    await root_resource.create_child(",
+        "        tags=(GenericBinary,), data_range=Range(0x0, 0x1FF5)",
+        "    )",
+        "",
+        "    # Resource with parent root_resource is missing, could not find selectable attributes.",
+        "    raise RuntimeError(",
+        '        "Resource with ID 0x00000002 cannot be uniquely identified by attribute Data.Offset (resource has value 0)."',
+        "    )",
+        "    root_resource_MISSING_RESOURCE_0 = None",
+        "",
+        "    await root_resource_MISSING_RESOURCE_0.unpack()",
+        "",
+        "    # Resource with parent root_resource is missing, could not find selectable attributes.",
+        "    raise RuntimeError(",
+        '        "Resource with ID 0x00000003 cannot be uniquely identified by attribute Data.Offset (resource has value 0)."',
+        "    )",
+        "    root_resource_MISSING_RESOURCE_1 = None",
+        "",
+        "    await root_resource_MISSING_RESOURCE_1.unpack()",
+        "",
+        "",
+        'if __name__ == "__main__":',
+        "    ofrak = OFRAK()",
+        "    if False:",
+        "        import ofrak_angr",
+        "        import ofrak_capstone",
+        "",
+        "        ofrak.discover(ofrak_capstone)",
+        "        ofrak.discover(ofrak_angr)",
+        "",
+        "    if False:",
+        "        import ofrak_binary_ninja",
+        "        import ofrak_capstone",
+        "",
+        "        ofrak.discover(ofrak_capstone)",
+        "        ofrak.discover(ofrak_binary_ninja)",
+        "",
+        "    if False:",
+        "        import ofrak_ghidra",
+        "",
+        "        ofrak.discover(ofrak_ghidra)",
+        "",
+        "    ofrak.run(main)",
+        "",
+    ]
+
+
+async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+    )
+    root = await create_resp.json()
+    root_id = root["id"]
+
+    # StringFindReplace will fail because replacement string is longer than original
+    await ofrak_client.post(
+        f"/{root_id}/find_and_replace",
+        json=[
+            "ofrak.core.strings.StringFindReplaceConfig",
+            {
+                "to_find": "cat",
+                "replace_with": "meow",
+                "null_terminate": True,
+                "allow_overflow": False,
+            },
+        ],
+    )
+
+    # Force script to update to ensure nothing is missed in the queue
+    await ofrak_client.post(f"/{root_id}/unpack")
+
+    # Verify string modify action was dequeued and not in the script
+    resp = await ofrak_client.get(
+        f"/{root_id}/get_script",
+    )
+    resp_body = await resp.json()
+    assert resp_body == [
+        "from ofrak import *",
+        "from ofrak.core import *",
+        "",
+        "",
+        "async def main(ofrak_context: OFRAKContext):",
+        "",
+        "    root_resource = await ofrak_context.create_root_resource_from_file(",
+        '        "hello_world_elf"',
+        "    )",
+        "",
+        "    await root_resource.unpack()",
+        "",
+        "",
+        'if __name__ == "__main__":',
+        "    ofrak = OFRAK()",
+        "    if False:",
+        "        import ofrak_angr",
+        "        import ofrak_capstone",
+        "",
+        "        ofrak.discover(ofrak_capstone)",
+        "        ofrak.discover(ofrak_angr)",
+        "",
+        "    if False:",
+        "        import ofrak_binary_ninja",
+        "        import ofrak_capstone",
+        "",
+        "        ofrak.discover(ofrak_capstone)",
+        "        ofrak.discover(ofrak_binary_ninja)",
+        "",
+        "    if False:",
+        "        import ofrak_ghidra",
+        "",
+        "        ofrak.discover(ofrak_ghidra)",
+        "",
+        "    ofrak.run(main)",
+        "",
+    ]
