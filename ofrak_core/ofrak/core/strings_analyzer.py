@@ -1,4 +1,5 @@
 import asyncio
+import re
 import tempfile
 from dataclasses import dataclass
 from typing import Dict, Optional
@@ -108,14 +109,18 @@ class StringsUnpacker(Unpacker[None]):
             min_length = 8
         else:
             min_length = 2
-        await resource.run(StringsAnalyzer, StringsAnalyzerConfig(min_length=min_length))
-        analyzed_strings = await resource.analyze(StringsAttributes)
+
+        # match sequences of printable characters of at least `min_length` ending with null byte
+        # printable characters defined as: ASCII between ' ' and '~', tab, newline, carriage return
+        pattern = rb"([ -~,\n,\t,\r]{%d,})\x00" % min_length
+
+        data = await resource.get_data()
 
         children = [
             resource.create_child_from_view(
-                AsciiString(string), data_range=Range.from_size(offset, len(string) + 1)
+                AsciiString(m.group(0).decode("ascii")), data_range=Range(m.start(), m.end())
             )
-            for offset, string in analyzed_strings.strings.items()
+            for m in re.finditer(pattern, data)
         ]
 
         await asyncio.gather(*children)
