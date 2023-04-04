@@ -438,6 +438,9 @@ async def test_update_script(ofrak_client: TestClient, hello_world_elf):
         "        )",
         "    )",
         "",
+        # TODO: Normalize the tests for ScriptBuilder scripts by canonicalizing the reference
+        # script and resp_body by comparing as strings and using regex to replace inconsistent values
+        # https://github.com/redballoonsecurity/ofrak/pull/265#discussion_r1156543786
         "    await elfbasicheader_0x0.auto_run(all_analyzers=True)",
         "",
         "",
