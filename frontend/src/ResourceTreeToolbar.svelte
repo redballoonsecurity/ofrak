@@ -2,13 +2,14 @@
   import CarveView from "./CarveView.svelte";
   import CommentView from "./CommentView.svelte";
   import ModifyView from "./ModifyView.svelte";
+  import ScriptView from "./ScriptView.svelte";
   import Toolbar from "./Toolbar.svelte";
 
   import { selectedResource, selected } from "./stores.js";
   import SearchView from "./SearchView.svelte";
   import AddTagView from "./AddTagView.svelte";
 
-  export let resourceNodeDataMap, modifierView;
+  export let resourceNodeDataMap, modifierView, bottomLeftPane;
   $: rootResource = $selectedResource;
 
   function refreshResource() {
@@ -210,6 +211,14 @@
         iconUrl: "/icons/identify.svg",
         onclick: async (e) => {
           modifierView = SearchView;
+        },
+      },
+
+      {
+        text: "Show Script",
+        iconUrl: "/icons/document.svg",
+        onclick: async (e) => {
+          bottomLeftPane = ScriptView;
         },
       },
     ];

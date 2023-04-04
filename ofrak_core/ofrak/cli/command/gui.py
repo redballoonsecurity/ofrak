@@ -45,6 +45,11 @@ class GUICommand(OfrakCommandRunsScript):
             "provided)",
             default=[],
         )
+        gui_parser.add_argument(
+            "--enable-cors",
+            action="store_true",
+            help="Enable CORS for debugging.",
+        )
         self.add_ofrak_arguments(gui_parser)
         return gui_parser
 
@@ -56,8 +61,9 @@ class GUICommand(OfrakCommandRunsScript):
         server = await open_gui(
             args.hostname,
             args.port,
-            open_in_browser=(not args.no_browser),
-            ofrak_context=ofrak_context,
             focus_resource=most_recent_root if len(args.file) == 1 else None,
+            ofrak_context=ofrak_context,
+            open_in_browser=(not args.no_browser),
+            enable_cors=(args.enable_cors),
         )
         await server.run_until_cancelled()
