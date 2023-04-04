@@ -366,7 +366,6 @@ class AiohttpOFRAKServer:
     async def pack(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         script_str = """
-
         await {resource}.pack()"""
         await self.script_builder.add_action(resource, script_str, ActionType.PACK)
         result = await resource.pack()
