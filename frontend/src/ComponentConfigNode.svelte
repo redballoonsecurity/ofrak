@@ -32,6 +32,18 @@
     outline: none;
     box-shadow: inset 0 -1px 0 var(--main-fg-color);
   }
+
+  /* Hide spinner buttons for numeric inputs
+     Source: https://stackoverflow.com/questions/3790935/can-i-hide-the-html5-number-input-s-spin-box/4298216#4298216 */
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
 </style>
 
 <script>

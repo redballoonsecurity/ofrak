@@ -137,7 +137,7 @@
       Run {selectedComponent}
     </button>
   {:catch}
-    <p>Failed to get config for OFRAK component!</p>
+    <p>Failed to get config for {selectedComponent}!</p>
     <p>The back end server may be down.</p>
   {/await}
   {#if errorMessage}
