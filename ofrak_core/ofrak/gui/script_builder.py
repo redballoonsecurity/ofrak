@@ -84,7 +84,7 @@ class ScriptSession:
         ofrak.run(main)
     """
 
-    def get_var_name(self, id):
+    def get_var_name(self, id: bytes) -> str:
         if id in self.resource_variable_names:
             return self.resource_variable_names[id]
         elif id in self.resource_variable_names_queue:
