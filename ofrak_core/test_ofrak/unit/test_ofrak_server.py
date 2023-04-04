@@ -54,6 +54,7 @@ def dicts_are_similar(d1, d2, attributes_to_skip=None):
     for key, value in d1.items():
         if key in attributes_to_skip:
             continue
+        # Necessary to compare the unordered list of tags returned from unpack
         if isinstance(value, list) and set(value) != set(d2[key]):
             return False
         elif value != d2[key]:
@@ -441,6 +442,7 @@ async def test_update_script(ofrak_client: TestClient, hello_world_elf):
         "",
         "",
         'if __name__ == "__main__":',
+        "    ofrak = OFRAK()",
         "    if False:",
         "        import ofrak_angr",
         "        import ofrak_capstone",
@@ -460,7 +462,6 @@ async def test_update_script(ofrak_client: TestClient, hello_world_elf):
         "",
         "        ofrak.discover(ofrak_ghidra)",
         "",
-        "    ofrak = OFRAK()",
         "    ofrak.run(main)",
         "",
     ]
@@ -554,6 +555,7 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
         "    raise RuntimeError(",
         '        "Resource with ID 0x00000002 cannot be uniquely identified by attribute Data.Offset (resource has value 0)."',
         "    )",
+        "    root_resource_MISSING_RESOURCE_0 = None",
         "",
         "    await root_resource_MISSING_RESOURCE_0.unpack()",
         "",
@@ -561,11 +563,13 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
         "    raise RuntimeError(",
         '        "Resource with ID 0x00000003 cannot be uniquely identified by attribute Data.Offset (resource has value 0)."',
         "    )",
+        "    root_resource_MISSING_RESOURCE_1 = None",
         "",
         "    await root_resource_MISSING_RESOURCE_1.unpack()",
         "",
         "",
         'if __name__ == "__main__":',
+        "    ofrak = OFRAK()",
         "    if False:",
         "        import ofrak_angr",
         "        import ofrak_capstone",
@@ -585,7 +589,6 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
         "",
         "        ofrak.discover(ofrak_ghidra)",
         "",
-        "    ofrak = OFRAK()",
         "    ofrak.run(main)",
         "",
     ]
@@ -635,6 +638,7 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
         "",
         "",
         'if __name__ == "__main__":',
+        "    ofrak = OFRAK()",
         "    if False:",
         "        import ofrak_angr",
         "        import ofrak_capstone",
@@ -654,7 +658,6 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
         "",
         "        ofrak.discover(ofrak_ghidra)",
         "",
-        "    ofrak = OFRAK()",
         "    ofrak.run(main)",
         "",
     ]
