@@ -136,6 +136,7 @@
     ).then((r) => r.json());
 
     rootResource = remote_model_to_resource(rootModel, resources);
+    rootResource.update_script();
     $selected = rootModel.id;
   }
 

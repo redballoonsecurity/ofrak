@@ -70,15 +70,10 @@
   import Icon from "./Icon.svelte";
 
   import { script, selectedResource } from "./stores.js";
-  import { onMount } from "svelte";
 
   hljs.registerLanguage("python", python);
 
   export let bottomLeftPane;
-
-  onMount(async () => {
-    await $selectedResource.update_script();
-  });
 </script>
 
 <link rel="stylesheet" href="./code.css" />
