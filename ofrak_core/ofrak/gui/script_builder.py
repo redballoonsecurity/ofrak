@@ -90,7 +90,7 @@ class ScriptSession:
         elif id in self.resource_variable_names_queue:
             return self.resource_variable_names_queue[id]
         else:
-            raise ValueError(f"No variable name for resource ID {id}")
+            raise ValueError(f"No variable name for resource ID {id.hex()}")
 
 
 class ScriptBuilder:
