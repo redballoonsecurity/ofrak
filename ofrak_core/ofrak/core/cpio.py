@@ -1,4 +1,5 @@
 import asyncio
+import os
 import logging
 import tempfile
 from dataclasses import dataclass
@@ -100,7 +101,7 @@ class CpioUnpacker(Unpacker[None]):
 
             # use 7z utility to unpack cpio temp file to temp_flush_dir
             cmd = [
-                "7z",
+                "7zz",
                 "x",
                 f"-o{temp_flush_dir}",
                 temp_file_path,
@@ -112,7 +113,7 @@ class CpioUnpacker(Unpacker[None]):
 
             await proc.communicate()
             await proc.wait()
-            if proc.returncode:
+            if proc.returncode and proc.returncode != 2:
                 raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
 
             # before initializing cpio resource, remove the temp cpio file

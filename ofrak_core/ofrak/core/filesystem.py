@@ -352,13 +352,22 @@ class FilesystemRoot(ResourceView):
                         ),
                     )
                 elif os.path.isfile(absolute_path):
-                    with open(absolute_path, "rb") as fh:
-                        await self.add_file(
-                            relative_path,
-                            fh.read(),
-                            file_attributes_stat,
-                            file_attributes_xattr,
-                        )
+                    try:
+                        with open(absolute_path, "rb") as fh:
+                            file_data = fh.read()
+
+                    except Exception as e:
+                        os.chmod(absolute_path, stat.S_IRUSR)
+                        with open(absolute_path, "rb") as fh:
+                            file_data = fh.read()
+
+                    await self.add_file(
+                        relative_path,
+                        file_data,
+                        file_attributes_stat,
+                        file_attributes_xattr,
+                    )
+
                 elif stat.S_ISFIFO(mode):
                     await self.add_special_file_entry(
                         relative_path,
