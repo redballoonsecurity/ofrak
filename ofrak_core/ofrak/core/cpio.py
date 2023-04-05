@@ -85,23 +85,39 @@ class CpioUnpacker(Unpacker[None]):
     external_dependencies = (CPIO_TOOL,)
 
     async def unpack(self, resource: Resource, config=None):
+
+        resource_data = await resource.get_data()
         cpio_v = await resource.view_as(CpioFilesystem)
-        resource_data = await cpio_v.resource.get_data()
+
         with tempfile.TemporaryDirectory() as temp_flush_dir:
+
+            temp_file_path = os.path.join(temp_flush_dir, "temp_cpio")
+
+            # write cpio data to a temp file in temp_flush_dir
+            with open( temp_file_path, "wb") as t:
+                t.write(resource_data)
+                t.close()
+
+            # use 7z utility to unpack cpio temp file to temp_flush_dir
             cmd = [
-                "cpio",
-                "-id",
+                "7z",
+                "x",
+                f"-o{temp_flush_dir}",
+                temp_file_path,
             ]
+
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
-                stdin=asyncio.subprocess.PIPE,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                cwd=temp_flush_dir,
             )
-            await proc.communicate(input=resource_data)
+
+            await proc.communicate()
+            await proc.wait()
             if proc.returncode:
                 raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
+
+            # before initializing cpio resource, remove the temp cpio file
+            os.remove(temp_file_path)
+
             await cpio_v.initialize_from_disk(temp_flush_dir)
 
 
