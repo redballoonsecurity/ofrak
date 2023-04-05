@@ -11,7 +11,7 @@ from ofrak_ghidra.constants import (
 
 
 def _run_ghidra_server(args):
-    if sys.platform == "linux":
+    if sys.platform == "linux" or sys.platform == "darwin":
         subprocess.call(["chmod", "+x", GHIDRA_START_SERVER_SCRIPT])
         subprocess.call([GHIDRA_START_SERVER_SCRIPT, GHIDRA_PATH, CORE_OFRAK_GHIDRA_SCRIPTS])
     else:
