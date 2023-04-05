@@ -103,9 +103,9 @@
         $selectedResource.get_config_for_component(selectedComponent);
     } catch (err) {
       try {
-        errorMessage = JSON.parse(err.message).message;
+        errorMessage = `Error: ${JSON.parse(err.message).message}`;
       } catch (_) {
-        errorMessage = err.message;
+        errorMessage = `Error: ${err.message}`;
       }
     }
   });
@@ -125,25 +125,35 @@
         if (ofrakConfig.length != 0) {
           ofrakConfigName = ofrakConfig['name'];
         }
-        const results = await $selectedResource.run_component(
-          selectedComponent,
-          config
-        );
-        resourceNodeDataMap[$selected] = {
-          collapsed: false,
-          childrenPromise: $selectedResource.get_children(),
-        };
-        for (const result in results) {
-          if (result === 'modified') {
-            for (const resource of results[result]) {
-              resourceNodeDataMap[resource['id']] = {
-                modified: true,
-              };
+        try {
+          const results = await $selectedResource.run_component(
+            selectedComponent,
+            config
+          );
+          resourceNodeDataMap[$selected] = {
+            collapsed: false,
+            childrenPromise: $selectedResource.get_children(),
+          };
+          for (const result in results) {
+            if (result === 'modified') {
+              for (const resource of results[result]) {
+                resourceNodeDataMap[resource['id']] = {
+                  modified: true,
+                };
+              }
             }
           }
+          $selected = $selected;
+          modifierView = undefined;
+        } catch (err) {
+          try {
+            errorMessage = `${JSON.parse(err.message).type}: ${
+              JSON.parse(err.message).message
+            }`;
+          } catch (_) {
+            errorMessage = `Error: ${err.message}`;
+          }
         }
-        $selected = $selected;
-        modifierView = undefined;
       }}"
     >
       Run {selectedComponent}
@@ -152,11 +162,10 @@
     <p>Failed to get config for {selectedComponent}!</p>
     <p>The back end server may be down.</p>
   {/await}
+  <button on:click="{() => (modifierView = undefined)}">Cancel</button>
   {#if errorMessage}
     <p class="error">
-      Error:
       {errorMessage}
     </p>
   {/if}
-  <button on:click="{() => (modifierView = undefined)}">Cancel</button>
 </div>
