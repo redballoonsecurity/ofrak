@@ -129,6 +129,7 @@
             a.click();
 
             URL.revokeObjectURL(blobUrl);
+            await $selectedResource.flush_to_disk(a.download);
           }
         },
       },

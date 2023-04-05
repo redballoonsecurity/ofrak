@@ -486,6 +486,21 @@ export class RemoteResource extends Resource {
       script.set(await r.json());
     });
   }
+
+  async flush_to_disk(output_file_name) {
+    await fetch(`${this.uri}/flush_to_disk`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(output_file_name),
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      await this.update_script();
+    });
+  }
 }
 
 export function remote_models_to_resources(remote_models, resources) {

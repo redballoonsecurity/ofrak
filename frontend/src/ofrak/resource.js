@@ -386,6 +386,10 @@ export class Resource {
     throw new NotImplementedError("update_script");
   }
 
+  async flush_to_disk() {
+    throw new NotImplementedError("flush_to_disk");
+  }
+
   /***
    * Return the string representation of a comment, which includes its range as prefix if it
    * has one.
