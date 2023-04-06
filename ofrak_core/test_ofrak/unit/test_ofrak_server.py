@@ -164,6 +164,20 @@ async def test_get_children(ofrak_client: TestClient, hello_world_elf):
     assert len(children_body[root_id]) > 1
 
 
+async def test_get_descendants(ofrak_client: TestClient, hello_world_elf):
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+    )
+    root = await create_resp.json()
+    root_id = root["id"]
+    await ofrak_client.post(f"/{root_id}/unpack")
+    descendants_resp = await ofrak_client.get(f"/{root_id}/get_descendats")
+    assert descendants_resp.status == 200
+    descendants = await descendants_resp.json()
+    assert root_id in descendants
+    assert len(descendants) > 1
+
+
 async def test_get_data_range(ofrak_client: TestClient, hello_world_elf):
     create_resp = await ofrak_client.post(
         "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf

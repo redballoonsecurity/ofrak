@@ -90,6 +90,7 @@ export class RemoteResource extends Resource {
       get_child_data_ranges: undefined,
       get_data: undefined,
       get_ancestors: undefined,
+      get_descendants: undefined,
     };
   }
 
@@ -313,6 +314,24 @@ export class RemoteResource extends Resource {
     );
     this.cache["get_ancestors"] = remote_models_to_resources(ancestor_models);
     return this.cache["get_ancestors"];
+  }
+
+  async get_descendants() {
+    if (this.cache["get_descendants"]) {
+      return this.cache["get_descendants"];
+    }
+
+    const descendant_models = await fetch(`${this.uri}/get_descendants`).then(
+      async (r) => {
+        if (!r.ok) {
+          throw Error(JSON.stringify(await r.json(), undefined, 2));
+        }
+        return r.json();
+      }
+    );
+    this.cache["get_descendants"] =
+      remote_models_to_resources(descendant_models);
+    return this.cache["get_descendants"];
   }
 
   async queue_patch(data, start, end, after, before) {
