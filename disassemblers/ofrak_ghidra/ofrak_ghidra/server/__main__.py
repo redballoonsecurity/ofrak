@@ -19,7 +19,7 @@ def _run_ghidra_server(args):
 
 
 def _stop_ghidra_server(args):
-    if sys.platform == "linux":
+    if sys.platform == "linux" or sys.platform == "darwin":
         subprocess.call([os.path.join(GHIDRA_PATH, "server", "ghidraSvr"), "stop"])
     else:
         raise NotImplementedError(f"Native OFRAK Ghidra server not supported for {sys.platform}!")

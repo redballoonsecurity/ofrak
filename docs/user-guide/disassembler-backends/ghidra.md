@@ -2,30 +2,38 @@
 
 ## Install
 
-### Docker
-If building an OFRAK Docker image, Ghidra will be automatically installed if the `disassemblers/ofrak_ghidra` package is included in the Docker build's config file.
-For example, `ofrak-ghidra.yml`:
+=== "Docker"
 
-```yaml
-registry: "redballoonsecurity/ofrak"
-base_image_name: "ghidra-base"
-image_name: "ghidra"
-packages_paths:
-  [
-    "ofrak_type",
-    "ofrak_io",
-    "ofrak_patch_maker",
-    "ofrak_core",
-    "disassemblers/ofrak_ghidra",
-    "frontend",
-  ]
-entrypoint: |
-    nginx \
-      & python3 -m ofrak_ghidra.server start \
-      & python3 -m ofrak gui -H 0.0.0.0 -p 8877
+    If building an OFRAK Docker image, Ghidra will be automatically installed if the `disassemblers/ofrak_ghidra` package is included in the Docker build's config file.
+    For example, `ofrak-ghidra.yml`:
 
+    ```yaml
+    registry: "redballoonsecurity/ofrak"
+    base_image_name: "ghidra-base"
+    image_name: "ghidra"
+    packages_paths:
+      [
+        "ofrak_type",
+        "ofrak_io",
+        "ofrak_patch_maker",
+        "ofrak_core",
+        "disassemblers/ofrak_ghidra",
+        "frontend",
+      ]
+    entrypoint: |
+        nginx \
+          & python3 -m ofrak_ghidra.server start \
+          & python3 -m ofrak gui -H 0.0.0.0 -p 8877
+    ```
+=== "Native"
 
-```
+    If you are running OFRAK natively, you can use your existing Ghidra installation by following these steps:
+
+    1. Copy `ofrak/disassemblers/ofrak_ghidra/server.conf` to the `server/` directory of your local Ghidra installation.
+    1. Run `python -m ofrak_ghidra.config dump > ofrak_ghidra.yml` to create the default YAML file.
+    1. Modify `ofrak_ghidra.yml` according to your local Ghidra environment.
+    1. Run `python -m ofrak_ghidra.config import ofrak_ghidra.yml`.
+    1. Run `sudo python -m ofrak_ghidra.server start`.
 
 ## Start/Stop the Ghidra Server
 
