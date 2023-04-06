@@ -657,6 +657,7 @@ class AiohttpOFRAKServer:
     async def flush_to_disk(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         output_file_name = self._serializer.from_pjson(await request.json(), str)
+        # Use FilesystemEntry name as filename if available, otherwise generate random filename
         if not output_file_name:
             output_file_name = str(uuid.uuid4())
         script_str = (
