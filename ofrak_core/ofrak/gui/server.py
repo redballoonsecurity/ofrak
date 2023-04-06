@@ -154,7 +154,9 @@ class AiohttpOFRAKServer:
                 web.post("/{resource_id}/delete_comment", self.delete_comment),
                 web.post("/{resource_id}/search_for_vaddr", self.search_for_vaddr),
                 web.post("/{resource_id}/add_tag", self.add_tag),
-                web.post("/{resource_id}/flush_to_disk", self.flush_to_disk),
+                web.post(
+                    "/{resource_id}/add_flush_to_disk_to_script", self.add_flush_to_disk_to_script
+                ),
                 web.get("/get_all_tags", self.get_all_tags),
                 web.get("/{resource_id}/get_script", self.get_script),
                 web.get("/", self.get_static_files),
@@ -653,7 +655,7 @@ class AiohttpOFRAKServer:
         )
 
     @exceptions_to_http(SerializedError)
-    async def flush_to_disk(self, request: Request) -> Response:
+    async def add_flush_to_disk_to_script(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         output_file_name = self._serializer.from_pjson(await request.json(), str)
         # Use FilesystemEntry name as filename if available, otherwise generate random filename

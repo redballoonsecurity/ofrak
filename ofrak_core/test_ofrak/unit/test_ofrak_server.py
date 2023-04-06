@@ -677,7 +677,7 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
     ]
 
 
-async def test_flush_to_disk(ofrak_client: TestClient, firmware_zip):
+async def test_add_flush_to_disk_to_script(ofrak_client: TestClient, firmware_zip):
     create_resp = await ofrak_client.post(
         "/create_root_resource", params={"name": "firmware_zip"}, data=firmware_zip
     )
@@ -693,7 +693,7 @@ async def test_flush_to_disk(ofrak_client: TestClient, firmware_zip):
     grandchildren_body = await grandchildren_resp.json()
     eldest_grandchild_id = grandchildren_body[only_child_id][0]["id"]
     await ofrak_client.post(
-        f"/{eldest_grandchild_id}/flush_to_disk", json="DIR655B1_FW203NAB02.bin"
+        f"/{eldest_grandchild_id}/add_flush_to_disk_to_script", json="DIR655B1_FW203NAB02.bin"
     )
 
     resp = await ofrak_client.get(

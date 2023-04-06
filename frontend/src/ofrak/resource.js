@@ -386,8 +386,8 @@ export class Resource {
     throw new NotImplementedError("update_script");
   }
 
-  async flush_to_disk() {
-    throw new NotImplementedError("flush_to_disk");
+  async add_flush_to_disk_to_script() {
+    throw new NotImplementedError("add_flush_to_disk_to_script");
   }
 
   /***

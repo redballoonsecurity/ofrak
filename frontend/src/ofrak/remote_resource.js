@@ -487,8 +487,8 @@ export class RemoteResource extends Resource {
     });
   }
 
-  async flush_to_disk(output_file_name) {
-    await fetch(`${this.uri}/flush_to_disk`, {
+  async add_flush_to_disk_to_script(output_file_name) {
+    await fetch(`${this.uri}/add_flush_to_disk_to_script`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
