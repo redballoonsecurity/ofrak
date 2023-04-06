@@ -5,7 +5,6 @@ import json
 import orjson
 import os
 import sys
-import uuid
 import webbrowser
 from collections import defaultdict
 from typing import (
@@ -659,7 +658,7 @@ class AiohttpOFRAKServer:
         output_file_name = self._serializer.from_pjson(await request.json(), str)
         # Use FilesystemEntry name as filename if available, otherwise generate random filename
         if not output_file_name:
-            output_file_name = str(uuid.uuid4())
+            output_file_name = self._ofrak_context.id_service.generate_id().hex()
         script_str = (
             """
         await {resource}"""
