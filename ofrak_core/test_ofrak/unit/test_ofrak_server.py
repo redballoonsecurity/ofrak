@@ -677,9 +677,6 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
     ]
 
 
-i = 0
-
-
 async def test_flush_to_disk(ofrak_client: TestClient, firmware_zip):
     create_resp = await ofrak_client.post(
         "/create_root_resource", params={"name": "firmware_zip"}, data=firmware_zip
