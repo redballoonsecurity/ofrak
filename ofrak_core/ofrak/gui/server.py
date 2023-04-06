@@ -664,7 +664,7 @@ class AiohttpOFRAKServer:
         await {resource}"""
             f""".flush_to_disk("{output_file_name}")"""
         )
-        await self.script_builder.add_action(resource, script_str, ActionType.PACK)
+        await self.script_builder.add_action(resource, script_str, ActionType.UNDEF)
         await self.script_builder.commit_to_script(resource)
         return json_response(self._serialize_resource(resource))
 
