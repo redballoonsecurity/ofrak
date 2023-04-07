@@ -193,6 +193,14 @@ Answer by running riddle.answer('your answer here') from the console.`);
           {:else}
             <AttributesView resource="{currentResource}" />
           {/if}
+          {#if bottomLeftPane}
+            <svelte:component
+              this="{bottomLeftPane}"
+              bind:bottomLeftPane="{bottomLeftPane}"
+            />
+          {:else}
+            <AttributesView resource="{currentResource}" />
+          {/if}
         </Pane>
       </Split>
       <Pane

@@ -345,8 +345,8 @@ async def test_find_and_replace(ofrak_client: TestClient, hello_world_elf):
             {
                 "to_find": "hello",
                 "replace_with": "Hello",
-                "null_terminate": "true",
-                "allow_overflow": "false",
+                "null_terminate": False,
+                "allow_overflow": False,
             },
         ],
     )
@@ -451,10 +451,14 @@ async def test_update_script(ofrak_client: TestClient, hello_world_elf):
         "        )",
         "    )",
         "",
+        # TODO: Normalize the tests for ScriptBuilder scripts by canonicalizing the reference
+        # script and resp_body by comparing as strings and using regex to replace inconsistent values
+        # https://github.com/redballoonsecurity/ofrak/pull/265#discussion_r1156543786
         "    await elfbasicheader_0x0.auto_run(all_analyzers=True)",
         "",
         "",
         'if __name__ == "__main__":',
+        "    ofrak = OFRAK()",
         "    if False:",
         "        import ofrak_angr",
         "        import ofrak_capstone",
@@ -474,7 +478,6 @@ async def test_update_script(ofrak_client: TestClient, hello_world_elf):
         "",
         "        ofrak.discover(ofrak_ghidra)",
         "",
-        "    ofrak = OFRAK()",
         "    ofrak.run(main)",
         "",
     ]
@@ -568,18 +571,21 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
         "    raise RuntimeError(",
         '        "Resource with ID 0x00000002 cannot be uniquely identified by attribute Data.Offset (resource has value 0)."',
         "    )",
+        "    root_resource_MISSING_RESOURCE_0 = None",
         "",
-        "    await root_resource_MISSING_RESOURCE.unpack()",
+        "    await root_resource_MISSING_RESOURCE_0.unpack()",
         "",
         "    # Resource with parent root_resource is missing, could not find selectable attributes.",
         "    raise RuntimeError(",
         '        "Resource with ID 0x00000003 cannot be uniquely identified by attribute Data.Offset (resource has value 0)."',
         "    )",
+        "    root_resource_MISSING_RESOURCE_1 = None",
         "",
-        "    await root_resource_MISSING_RESOURCE.unpack()",
+        "    await root_resource_MISSING_RESOURCE_1.unpack()",
         "",
         "",
         'if __name__ == "__main__":',
+        "    ofrak = OFRAK()",
         "    if False:",
         "        import ofrak_angr",
         "        import ofrak_capstone",
@@ -599,7 +605,6 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
         "",
         "        ofrak.discover(ofrak_ghidra)",
         "",
-        "    ofrak = OFRAK()",
         "    ofrak.run(main)",
         "",
     ]
@@ -620,8 +625,8 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
             {
                 "to_find": "cat",
                 "replace_with": "meow",
-                "null_terminate": "true",
-                "allow_overflow": "false",
+                "null_terminate": True,
+                "allow_overflow": False,
             },
         ],
     )
@@ -649,6 +654,7 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
         "",
         "",
         'if __name__ == "__main__":',
+        "    ofrak = OFRAK()",
         "    if False:",
         "        import ofrak_angr",
         "        import ofrak_capstone",
@@ -668,7 +674,6 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
         "",
         "        ofrak.discover(ofrak_ghidra)",
         "",
-        "    ofrak = OFRAK()",
         "    ofrak.run(main)",
         "",
     ]
