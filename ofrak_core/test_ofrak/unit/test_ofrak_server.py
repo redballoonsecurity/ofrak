@@ -171,10 +171,19 @@ async def test_get_descendants(ofrak_client: TestClient, hello_world_elf):
     root = await create_resp.json()
     root_id = root["id"]
     await ofrak_client.post(f"/{root_id}/unpack")
-    descendants_resp = await ofrak_client.get(f"/{root_id}/get_descendats")
+    children_resp = await ofrak_client.post(f"/batch/get_children", json=[root_id])
+    children = await children_resp.json()
+    children_ids = [
+        cid_v for child in children[root_id] for cid_k, cid_v, in child.items() if cid_k == "id"
+    ]
+    descendants_resp = await ofrak_client.get(f"/{root_id}/get_descendants")
     assert descendants_resp.status == 200
     descendants = await descendants_resp.json()
-    assert root_id in descendants
+    descendant_ids = [
+        did_v for descendant in descendants for did_k, did_v in descendant.items() if did_k == "id"
+    ]
+    for child in children_ids:
+        assert child in descendant_ids
     assert len(descendants) > 1
 
 
