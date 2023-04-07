@@ -1,5 +1,4 @@
 import asyncio
-import os
 import logging
 import tempfile
 from dataclasses import dataclass
@@ -15,6 +14,8 @@ from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier, Ma
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.resource import Resource
 from ofrak_type.range import Range
+
+from ofrak_core.ofrak.core.seven_zip import SEVEN_ZIP
 
 LOGGER = logging.getLogger(__name__)
 
@@ -83,42 +84,30 @@ class CpioUnpacker(Unpacker[None]):
 
     targets = (CpioFilesystem,)
     children = (File, Folder, SpecialFileType)
-    external_dependencies = (CPIO_TOOL,)
+    external_dependencies = (SEVEN_ZIP,)
 
     async def unpack(self, resource: Resource, config=None):
+        with tempfile.TemporaryDirectory() as temp_flush_dir, tempfile.NamedTemporaryFile(
+            suffix=".cpio"
+        ) as temp_cpio:
+            temp_cpio.write(await resource.get_data())
+            temp_cpio.flush()
 
-        resource_data = await resource.get_data()
-        cpio_v = await resource.view_as(CpioFilesystem)
-
-        with tempfile.TemporaryDirectory() as temp_flush_dir:
-
-            temp_file_path = os.path.join(temp_flush_dir, "temp_cpio")
-
-            # write cpio data to a temp file in temp_flush_dir
-            with open( temp_file_path, "wb") as t:
-                t.write(resource_data)
-                t.close()
-
-            # use 7z utility to unpack cpio temp file to temp_flush_dir
+            # use 7z utility to unpack CPIO temp file to temp_flush_dir
             cmd = [
                 "7zz",
                 "x",
                 f"-o{temp_flush_dir}",
-                temp_file_path,
+                temp_cpio.name,
             ]
-
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
             )
-
-            await proc.communicate()
             await proc.wait()
             if proc.returncode and proc.returncode != 2:
                 raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
 
-            # before initializing cpio resource, remove the temp cpio file
-            os.remove(temp_file_path)
-
+            cpio_v = await resource.view_as(CpioFilesystem)
             await cpio_v.initialize_from_disk(temp_flush_dir)
 
 

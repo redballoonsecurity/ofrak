@@ -355,8 +355,7 @@ class FilesystemRoot(ResourceView):
                     try:
                         with open(absolute_path, "rb") as fh:
                             file_data = fh.read()
-
-                    except Exception as e:
+                    except PermissionError as e:
                         os.chmod(absolute_path, stat.S_IRUSR)
                         with open(absolute_path, "rb") as fh:
                             file_data = fh.read()
