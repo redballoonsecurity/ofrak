@@ -9,7 +9,7 @@ lief==0.12.3
 orjson~=3.8.7
 pefile==2023.2.7
 pycdlib==1.12.0
-python-magic
+python-magic;platform_system!="Windows"
 python-magic-bin;platform_system=="Windows"
 reedsolo==1.7.0
 sortedcontainers==2.2.2

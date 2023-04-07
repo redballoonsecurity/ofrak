@@ -14,7 +14,6 @@
 
   .inner {
     overflow: auto;
-    overflow-y: scroll;
     flex-grow: 1;
   }
 
