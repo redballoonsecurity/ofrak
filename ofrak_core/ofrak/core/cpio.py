@@ -15,7 +15,7 @@ from ofrak.model.component_model import ComponentExternalTool
 from ofrak.resource import Resource
 from ofrak_type.range import Range
 
-from ofrak_core.ofrak.core.seven_zip import SEVEN_ZIP
+from ofrak.core.seven_zip import SEVEN_ZIP
 
 LOGGER = logging.getLogger(__name__)
 
