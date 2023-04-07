@@ -95,6 +95,8 @@
         iconUrl: "/icons/pack.svg",
         shortcut: "p",
         onclick: async (e) => {
+          const descendants = await $selectedResource.get_descendants();
+          clearModified(descendants);
           await rootResource.pack();
           resourceNodeDataMap[$selected] = {
             collapsed: false,
@@ -198,6 +200,8 @@
         iconUrl: "/icons/pack_r.svg",
         shortcut: "p+Shift",
         onclick: async (e) => {
+          const descendants = await $selectedResource.get_descendants();
+          clearModified(descendants);
           await rootResource.pack_recursively();
           resourceNodeDataMap[$selected] = {
             collapsed: false,
@@ -231,6 +235,15 @@
         },
       },
     ];
+  }
+
+  function clearModified(descendants) {
+    for (const descendant of descendants) {
+      resourceNodeDataMap[descendant["resource_id"]] = {
+        modified: undefined,
+        prevModified: undefined,
+      };
+    }
   }
 </script>
 

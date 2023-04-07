@@ -90,6 +90,7 @@ export class RemoteResource extends Resource {
       get_child_data_ranges: undefined,
       get_data: undefined,
       get_ancestors: undefined,
+      get_descendants: undefined,
     };
   }
 
@@ -315,6 +316,24 @@ export class RemoteResource extends Resource {
     return this.cache["get_ancestors"];
   }
 
+  async get_descendants() {
+    if (this.cache["get_descendants"]) {
+      return this.cache["get_descendants"];
+    }
+
+    const descendant_models = await fetch(`${this.uri}/get_descendants`).then(
+      async (r) => {
+        if (!r.ok) {
+          throw Error(JSON.stringify(await r.json(), undefined, 2));
+        }
+        return r.json();
+      }
+    );
+    this.cache["get_descendants"] =
+      remote_models_to_resources(descendant_models);
+    return this.cache["get_descendants"];
+  }
+
   async queue_patch(data, start, end, after, before) {
     // TODO: Implement after and before
 
@@ -395,6 +414,7 @@ export class RemoteResource extends Resource {
     this.update();
 
     await this.update_script();
+    return find_replace_results;
   }
 
   async add_comment(optional_range, comment) {
@@ -545,6 +565,7 @@ export class RemoteResource extends Resource {
     this.flush_cache();
     this.update();
     await this.update_script();
+    return result;
   }
 }
 

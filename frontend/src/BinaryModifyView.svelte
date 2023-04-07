@@ -99,7 +99,7 @@
   import { selected, selectedResource as _selectedResource } from "./stores.js";
   const selectedResource = $_selectedResource;
 
-  export let modifierView, dataPromise;
+  export let modifierView, dataPromise, resourceNodeDataMap;
   let startInput,
     endInput,
     startOffset,
@@ -181,6 +181,7 @@
         await selectedResource.queue_patch(patchData, startOffset, endOffset);
       }
 
+      resourceNodeDataMap[$selected].modified = true;
       modifierView = undefined;
       refreshResource();
     } catch (err) {

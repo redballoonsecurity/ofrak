@@ -158,6 +158,7 @@ class AiohttpOFRAKServer:
                 web.post("/{resource_id}/data_summary", self.data_summary),
                 web.get("/{resource_id}/get_parent", self.get_parent),
                 web.get("/{resource_id}/get_ancestors", self.get_ancestors),
+                web.get("/{resource_id}/get_descendants", self.get_descendants),
                 web.post("/batch/get_children", self.batch_get_children),
                 web.post("/{resource_id}/queue_patch", self.queue_patch),
                 web.post("/{resource_id}/create_mapped_child", self.create_mapped_child),
@@ -453,6 +454,13 @@ class AiohttpOFRAKServer:
         ancestors = await resource.get_ancestors()
 
         return json_response(self._serialize_multi_resource(ancestors))
+
+    @exceptions_to_http(SerializedError)
+    async def get_descendants(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
+        descendants = await resource.get_descendants()
+
+        return json_response(self._serialize_multi_resource(descendants))
 
     @exceptions_to_http(SerializedError)
     async def batch_get_children(self, request: Request) -> Response:
