@@ -1,6 +1,6 @@
 # Ghidra Backend
 
-## Install
+## Installation Type
 
 === "Docker"
 
