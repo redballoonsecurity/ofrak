@@ -1,6 +1,6 @@
 # Ghidra Backend
 
-## Installation Type
+## Install
 
 === "Docker"
 
@@ -27,13 +27,14 @@
     ```
 === "Native"
 
-    If you are running OFRAK natively, you can use your existing Ghidra installation by following these steps:
+    If you would like to run OFRAK natively with a local Ghidra installation, follow these steps:
 
-    1. Copy `ofrak/disassemblers/ofrak_ghidra/server.conf` to the `server/` directory of your local Ghidra installation.
-    1. Run `python -m ofrak_ghidra.config dump > ofrak_ghidra.yml` to create the default YAML file.
-    1. Modify `ofrak_ghidra.yml` according to your local Ghidra environment.
-    1. Run `python -m ofrak_ghidra.config import ofrak_ghidra.yml`.
-    1. Run `sudo python -m ofrak_ghidra.server start`.
+    1. [Follow the directions to install Ghidra](https://github.com/NationalSecurityAgency/ghidra#install), or use your existing Ghidra installation
+    1. Copy `ofrak/disassemblers/ofrak_ghidra/server.conf` to the `server/` directory of your local Ghidra installation
+    1. Run `python -m ofrak_ghidra.config dump > ofrak_ghidra.yml` to create the default YAML file
+    1. Modify `ofrak_ghidra.yml` according to your local Ghidra environment
+    1. Run `python -m ofrak_ghidra.config import ofrak_ghidra.yml`
+    1. Run `sudo python -m ofrak_ghidra.server start`
 
 ## Start/Stop the Ghidra Server
 
