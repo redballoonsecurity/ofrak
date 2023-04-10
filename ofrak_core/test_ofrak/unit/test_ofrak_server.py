@@ -315,15 +315,17 @@ async def test_create_mapped_child(ofrak_client: TestClient, hello_world_elf):
     create_resp = await ofrak_client.post(
         "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
     )
-    create_body = await create_resp.json()
-    unpack_resp = await ofrak_client.post(f"/{create_body['id']}/unpack")
-    unpack_body = await unpack_resp.json()
-    resp = await ofrak_client.post(
-        f"/{unpack_body['created'][0]['id']}/create_mapped_child", json=[0, 1]
-    )
+    root = await create_resp.json()
+    root_id = root["id"]
+    await ofrak_client.post(f"/{root_id}/unpack")
+    children_resp = await ofrak_client.post(f"/batch/get_children", json=[root_id])
+    children_body = await children_resp.json()
+    eldest_child_id = children_body[root_id][0]["id"]
+
+    resp = await ofrak_client.post(f"/{eldest_child_id}/create_mapped_child", json=[0, 1])
     assert resp.status == 200
     resp_body = await resp.json()
-    assert resp_body["parent_id"] == unpack_body["created"][0]["id"]
+    assert resp_body["parent_id"] == eldest_child_id
 
 
 # find_and_replace doesn't appear to send back any information in the response
