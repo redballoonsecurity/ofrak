@@ -1,9 +1,11 @@
 import itertools
 import json
 import pytest
+import re
 import sys
 
 from multiprocessing import Process
+from typing import List
 
 from aiohttp.test_utils import TestClient
 
@@ -60,6 +62,11 @@ def dicts_are_similar(d1, d2, attributes_to_skip=None):
         elif value != d2[key]:
             return False
     return True
+
+
+def normalize(list_of_strs: List[str]) -> str:
+    in_str = "\n".join(list_of_strs)
+    return re.sub(r"RuntimeError\(\s*.*\s*\)", "RuntimeError(err)", in_str, flags=re.M)
 
 
 # Test server methods and top-level functions.
@@ -416,7 +423,7 @@ async def test_update_script(ofrak_client: TestClient, hello_world_elf):
         f"/{root_id}/get_script",
     )
     resp_body = await resp.json()
-    assert resp_body == [
+    expected_list = [
         "from ofrak import *",
         "from ofrak.core import *",
         "",
@@ -438,9 +445,6 @@ async def test_update_script(ofrak_client: TestClient, hello_world_elf):
         "        )",
         "    )",
         "",
-        # TODO: Normalize the tests for ScriptBuilder scripts by canonicalizing the reference
-        # script and resp_body by comparing as strings and using regex to replace inconsistent values
-        # https://github.com/redballoonsecurity/ofrak/pull/265#discussion_r1156543786
         "    await elfbasicheader_0x0.auto_run(all_analyzers=True)",
         "",
         "",
@@ -468,6 +472,10 @@ async def test_update_script(ofrak_client: TestClient, hello_world_elf):
         "    ofrak.run(main)",
         "",
     ]
+
+    expected_str = normalize(expected_list)
+    actual_str = normalize(resp_body)
+    assert actual_str == expected_str
 
 
 async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
@@ -535,7 +543,7 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
         f"/{root_id}/get_script",
     )
     resp_body = await resp.json()
-    assert resp_body == [
+    expected_list = [
         "from ofrak import *",
         "from ofrak.core import *",
         "",
@@ -596,6 +604,10 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
         "",
     ]
 
+    expected_str = normalize(expected_list)
+    actual_str = normalize(resp_body)
+    assert actual_str == expected_str
+
 
 async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
     create_resp = await ofrak_client.post(
@@ -626,7 +638,7 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
         f"/{root_id}/get_script",
     )
     resp_body = await resp.json()
-    assert resp_body == [
+    expected_list = [
         "from ofrak import *",
         "from ofrak.core import *",
         "",
@@ -664,3 +676,7 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
         "    ofrak.run(main)",
         "",
     ]
+
+    expected_str = normalize(expected_list)
+    actual_str = normalize(resp_body)
+    assert actual_str == expected_str
