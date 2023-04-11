@@ -171,10 +171,19 @@ async def test_get_descendants(ofrak_client: TestClient, hello_world_elf):
     root = await create_resp.json()
     root_id = root["id"]
     await ofrak_client.post(f"/{root_id}/unpack")
-    descendants_resp = await ofrak_client.get(f"/{root_id}/get_descendats")
+    children_resp = await ofrak_client.post(f"/batch/get_children", json=[root_id])
+    children = await children_resp.json()
+    children_ids = [
+        cid_v for child in children[root_id] for cid_k, cid_v, in child.items() if cid_k == "id"
+    ]
+    descendants_resp = await ofrak_client.get(f"/{root_id}/get_descendants")
     assert descendants_resp.status == 200
     descendants = await descendants_resp.json()
-    assert root_id in descendants
+    descendant_ids = [
+        did_v for descendant in descendants for did_k, did_v in descendant.items() if did_k == "id"
+    ]
+    for child in children_ids:
+        assert child in descendant_ids
     assert len(descendants) > 1
 
 
@@ -345,8 +354,8 @@ async def test_find_and_replace(ofrak_client: TestClient, hello_world_elf):
             {
                 "to_find": "hello",
                 "replace_with": "Hello",
-                "null_terminate": "true",
-                "allow_overflow": "false",
+                "null_terminate": False,
+                "allow_overflow": False,
             },
         ],
     )
@@ -451,10 +460,14 @@ async def test_update_script(ofrak_client: TestClient, hello_world_elf):
         "        )",
         "    )",
         "",
+        # TODO: Normalize the tests for ScriptBuilder scripts by canonicalizing the reference
+        # script and resp_body by comparing as strings and using regex to replace inconsistent values
+        # https://github.com/redballoonsecurity/ofrak/pull/265#discussion_r1156543786
         "    await elfbasicheader_0x0.auto_run(all_analyzers=True)",
         "",
         "",
         'if __name__ == "__main__":',
+        "    ofrak = OFRAK()",
         "    if False:",
         "        import ofrak_angr",
         "        import ofrak_capstone",
@@ -474,7 +487,6 @@ async def test_update_script(ofrak_client: TestClient, hello_world_elf):
         "",
         "        ofrak.discover(ofrak_ghidra)",
         "",
-        "    ofrak = OFRAK()",
         "    ofrak.run(main)",
         "",
     ]
@@ -568,18 +580,21 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
         "    raise RuntimeError(",
         '        "Resource with ID 0x00000002 cannot be uniquely identified by attribute Data.Offset (resource has value 0)."',
         "    )",
+        "    root_resource_MISSING_RESOURCE_0 = None",
         "",
-        "    await root_resource_MISSING_RESOURCE.unpack()",
+        "    await root_resource_MISSING_RESOURCE_0.unpack()",
         "",
         "    # Resource with parent root_resource is missing, could not find selectable attributes.",
         "    raise RuntimeError(",
         '        "Resource with ID 0x00000003 cannot be uniquely identified by attribute Data.Offset (resource has value 0)."',
         "    )",
+        "    root_resource_MISSING_RESOURCE_1 = None",
         "",
-        "    await root_resource_MISSING_RESOURCE.unpack()",
+        "    await root_resource_MISSING_RESOURCE_1.unpack()",
         "",
         "",
         'if __name__ == "__main__":',
+        "    ofrak = OFRAK()",
         "    if False:",
         "        import ofrak_angr",
         "        import ofrak_capstone",
@@ -599,7 +614,6 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
         "",
         "        ofrak.discover(ofrak_ghidra)",
         "",
-        "    ofrak = OFRAK()",
         "    ofrak.run(main)",
         "",
     ]
@@ -620,8 +634,8 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
             {
                 "to_find": "cat",
                 "replace_with": "meow",
-                "null_terminate": "true",
-                "allow_overflow": "false",
+                "null_terminate": True,
+                "allow_overflow": False,
             },
         ],
     )
@@ -649,6 +663,7 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
         "",
         "",
         'if __name__ == "__main__":',
+        "    ofrak = OFRAK()",
         "    if False:",
         "        import ofrak_angr",
         "        import ofrak_capstone",
@@ -668,7 +683,6 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
         "",
         "        ofrak.discover(ofrak_ghidra)",
         "",
-        "    ofrak = OFRAK()",
         "    ofrak.run(main)",
         "",
     ]

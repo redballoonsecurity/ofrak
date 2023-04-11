@@ -61,6 +61,7 @@ class ScriptSession:
     # TODO: Replace with backend in use by OFRAK instance used to create the script.
     boilerplate_footer: str = r"""
     if __name__ == "__main__":
+        ofrak = OFRAK()
         if False:
             import ofrak_angr
             import ofrak_capstone
@@ -80,17 +81,16 @@ class ScriptSession:
 
             ofrak.discover(ofrak_ghidra)
 
-        ofrak = OFRAK()
         ofrak.run(main)
     """
 
-    def get_var_name(self, id):
+    def get_var_name(self, id: bytes) -> str:
         if id in self.resource_variable_names:
             return self.resource_variable_names[id]
         elif id in self.resource_variable_names_queue:
             return self.resource_variable_names_queue[id]
         else:
-            raise ValueError(f"No variable name for resource ID {id}")
+            raise ValueError(f"No variable name for resource ID 0x{id.hex()}")
 
 
 class ScriptBuilder:
@@ -117,9 +117,14 @@ class ScriptBuilder:
         action_type: ActionType,
     ) -> None:
         """
-        Adds an action to the script session to which the selected resource belongs. An action is
-        a string representing the code that is being run on the resource based on an action that
+        Adds an action to the script session queue to which the selected resource belongs. An action
+        is a string representing the code that is being run on the resource based on an action that
         has occurred in the GUI.
+
+        Actions are queued so that invalid actions which result in runtime exceptions within OFRAK
+        do not make it into the final script. Once an action is queued and the corresponding OFRAK
+        calls have run, the caller must explicitly call `clear_script_queue` or `commit_to_script`
+        depending on whether an exception was raised or not, respectively.
 
         :param resource: Resource upon which the action is being taken
         :param action: A string describing the code being run based on a GUI action
@@ -141,7 +146,13 @@ class ScriptBuilder:
         root_resource = await self._get_root_resource(resource)
         return self._get_script(root_resource.get_id())
 
-    async def commit_to_script(self, resource: Resource):
+    async def commit_to_script(self, resource: Resource) -> None:
+        """
+        Commits the staged actions and variable names in the queue to the script session following
+        a one or more valid actions being run.
+
+        :param resource: Resource belonging to the session whose queue will be committed
+        """
         root_resource = await self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
         for id, name in session.resource_variable_names_queue.items():
@@ -150,7 +161,13 @@ class ScriptBuilder:
         session.actions_queue = []
         session.resource_variable_names_queue = {}
 
-    async def clear_script_queue(self, resource: Resource):
+    async def clear_script_queue(self, resource: Resource) -> None:
+        """
+        Clears the script session queue of all staged actions and variable names following an
+        invalid action being run.
+
+        :param resource: Resource belonging to the session whose queue will be cleared
+        """
         root_resource = await self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
         session.actions_queue = []
@@ -201,28 +218,29 @@ class ScriptBuilder:
             LOGGER.exception("Exception raised in add_variable")
         return name
 
-    async def _generate_missing_name(self, resource: Resource, e: Exception):
+    async def _generate_missing_name(self, resource: Resource, e: Exception) -> str:
         root_resource = await self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
         parent = await resource.get_parent()
         parent_name = await self._get_variable_from_session(parent)
         name = f"{parent_name}_MISSING_RESOURCE_0"
-        await self._add_action_to_session_queue(
-            resource,
-            f"""
-        # Resource with parent {parent_name} is missing, could not find selectable attributes.
-        raise RuntimeError(\"{str(e)}\")""",
-            ActionType.UNDEF,
-        )
         index = 1
         var_names = list(session.resource_variable_names.values()) + list(
             session.resource_variable_names_queue.values()
         )
         name = self._increment_missing_name_index(name, var_names, index)
+        await self._add_action_to_session_queue(
+            resource,
+            f"""
+        # Resource with parent {parent_name} is missing, could not find selectable attributes.
+        raise RuntimeError(\"{str(e)}\")
+        {name} = None""",
+            ActionType.UNDEF,
+        )
         await self._add_variable_to_session_queue(resource, name)
         return name
 
-    def _increment_missing_name_index(self, name: str, var_names: List[str], index: int):
+    def _increment_missing_name_index(self, name: str, var_names: List[str], index: int) -> str:
         name_template = "_".join(name.split("_")[:-1])
         if name in var_names:
             name = name_template + f"_{index}"
@@ -239,17 +257,17 @@ class ScriptBuilder:
         resource_id = resource.get_id()
         if resource_id in self.root_cache:
             return self.root_cache[resource_id]
-        while len(list(await resource.get_ancestors())) != 0:
-            resource = await resource.get_parent()
-        self.root_cache[resource_id] = resource
-        return resource
+        ancestors = list(await resource.get_ancestors())
+        root = ancestors[-1] if ancestors else resource
+        self.root_cache[resource_id] = root
+        return root
 
     async def _get_variable_from_session(self, resource: Resource) -> str:
         root_resource = await self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
         return session.get_var_name(resource.get_id())
 
-    async def _var_exists(self, resource: Resource):
+    async def _var_exists(self, resource: Resource) -> bool:
         root_resource = await self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
         return (
@@ -257,7 +275,9 @@ class ScriptBuilder:
             or resource.get_id() in session.resource_variable_names_queue
         )
 
-    async def _add_action_to_session_queue(self, resource, action, action_type):
+    async def _add_action_to_session_queue(
+        self, resource: Resource, action: str, action_type: ActionType
+    ) -> None:
         root_resource = await self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
         session.actions_queue.append(ScriptAction(action_type, action))
@@ -267,7 +287,13 @@ class ScriptBuilder:
         session = self._get_session(root_resource.get_id())
         session.resource_variable_names_queue[resource.get_id()] = var_name
 
-    async def _test_selectable_attributes(self, ancestor, resource, attribute, attribute_value):
+    async def _test_selectable_attributes(
+        self,
+        ancestor: Resource,
+        resource: Resource,
+        attribute: ResourceIndexedAttribute,
+        attribute_value: Any,
+    ) -> None:
         try:
             result = await ancestor.get_only_child(
                 r_filter=ResourceFilter(
@@ -289,8 +315,7 @@ class ScriptBuilder:
         attribute, attribute_value = await self._get_selectable_attribute(resource)
         await self._test_selectable_attributes(parent, resource, attribute, attribute_value)
 
-        if isinstance(attribute_value, str) or isinstance(attribute_value, bytes):
-            attribute_value = f'"{attribute_value!s}"'.rstrip()
+        attribute_value = f"{attribute_value!r}"
         return f"""await {session.get_var_name(parent.get_id())}.get_only_child(
                     r_filter=ResourceFilter(
                         tags={resource.get_most_specific_tags()},
