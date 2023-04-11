@@ -355,7 +355,7 @@ class FilesystemRoot(ResourceView):
                     try:
                         with open(absolute_path, "rb") as fh:
                             file_data = fh.read()
-                    except PermissionError as e:
+                    except (PermissionError, OSError) as e:
                         os.chmod(absolute_path, stat.S_IRUSR)
                         with open(absolute_path, "rb") as fh:
                             file_data = fh.read()
@@ -663,7 +663,14 @@ class FilesystemRoot(ResourceView):
 
     @classmethod
     def _get_xattr_map(cls, path):
-        xattr_dict = {}
-        for attr in xattr.listxattr(path, symlink=True):  # Don't follow links
-            xattr_dict[attr] = xattr.getxattr(path, attr)
+        try:
+            xattr_dict = {}
+            for attr in xattr.listxattr(path, symlink=True):  # Don't follow links
+                xattr_dict[attr] = xattr.getxattr(path, attr)
+        except (PermissionError, OSError) as e:
+            os.chmod(path, stat.S_IRUSR)
+            xattr_dict = {}
+            for attr in xattr.listxattr(path, symlink=True):  # Don't follow links
+                xattr_dict[attr] = xattr.getxattr(path, attr)
+
         return xattr_dict
