@@ -15,6 +15,7 @@ from ofrak.core.filesystem import (
 )
 from ofrak.resource import Resource
 from pytest_ofrak.patterns.pack_unpack_filesystem import FilesystemPackUnpackVerifyPattern
+import test_ofrak.components
 
 CHILD_TEXT = "Hello World\n"
 SUBCHILD_TEXT = "Goodbye World\n"
@@ -26,6 +27,8 @@ SUBCHILD_FOLDER = "test_subfolder"
 
 FIFO_PIPE_NAME = "fifo"
 DEVICE_NAME = "device"
+
+CPIO_FILESYSTEM = os.path.join(test_ofrak.components.ASSETS_DIR, "filesystem.cpio")
 
 
 class FilesystemRootDirectory(tempfile.TemporaryDirectory):
@@ -69,6 +72,17 @@ async def filesystem_root(ofrak_context: OFRAKContext) -> Resource:
         filesystem_root = await resource.view_as(FilesystemRoot)
         await filesystem_root.initialize_from_disk(temp_dir)
         yield filesystem_root
+
+
+@pytest.fixture
+async def cpio_filesystem_root(ofrak_context: OFRAKContext) -> Resource:
+    resource = await ofrak_context.create_root_resource_from_file(CPIO_FILESYSTEM)
+    # resource.add_tag(FilesystemRoot)
+    # resource.add_tag(CpioFilesystem)
+    # filesystem_root = await resource.view_as(CpioFilesystem)
+    return resource
+    # await resource.unpack()
+    # return filesystem_root
 
 
 class TestFilesystemRoot:
@@ -397,3 +411,21 @@ def diff_directories(dir_1, dir_2, extra_diff_flags):
             second_type = " ".join(second.split(" ")[4:])
 
             assert first_type == second_type
+
+
+class TestCPIOFilesystem:
+    async def test_unpack(self, cpio_filesystem_root):
+        await cpio_filesystem_root.unpack()
+
+    async def test_absolute_paths(self, cpio_filesystem_root):
+        await cpio_filesystem_root.unpack()
+        # Check that /dev/console exists
+        children = list(await cpio_filesystem_root.get_children_as_view(FilesystemEntry))
+        for child in children:
+            name = child.get_name()
+            if name == "dev":
+                grandchildren = list(await child.resource.get_children_as_view(FilesystemEntry))
+                for grandchild in grandchildren:
+                    name = grandchild.get_name()
+                    if name == "console":
+                        assert True
