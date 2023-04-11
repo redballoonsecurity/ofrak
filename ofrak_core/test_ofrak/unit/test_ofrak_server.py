@@ -718,7 +718,7 @@ async def test_add_flush_to_disk_to_script(ofrak_client: TestClient, firmware_zi
         f"/{root_id}/get_script",
     )
     resp_body = await resp.json()
-    assert resp_body == [
+    expected_list = [
         "from ofrak import *",
         "from ofrak.core import *",
         "",
@@ -782,3 +782,7 @@ async def test_add_flush_to_disk_to_script(ofrak_client: TestClient, firmware_zi
         "    ofrak.run(main)",
         "",
     ]
+
+    expected_str = join_and_normalize(expected_list)
+    actual_str = join_and_normalize(resp_body)
+    assert actual_str == expected_str
