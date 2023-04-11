@@ -85,3 +85,14 @@ async def test_string_replace_modifier_no_overflow(resource: Resource):
     config = StringFindReplaceConfig("me the way", "WHAT!!!!!!!!!!!!", allow_overflow=False)
     with pytest.raises(ModifierError):
         await resource.run(StringFindReplaceModifier, config)
+
+
+async def test_string_unpacker():
+    # run stringunpacker on binary
+    # get all descendant strings
+    # check:
+    # short string in non-code section is found
+    # short string in code section is not found
+    # long string in either section is found
+
+    pass
