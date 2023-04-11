@@ -1,11 +1,13 @@
 import asyncio
 import dataclasses
+from enum import EnumType
 import functools
 import itertools
 import json
 import logging
 from types import NoneType
 import typing
+import json
 import orjson
 import inspect
 import os
@@ -691,13 +693,12 @@ class AiohttpOFRAKServer:
         incl_modifiers = options["modifiers"]
         incl_packers = options["packers"]
         incl_unpackers = options["unpackers"]
-
         components = self._get_specific_components(
             resource, only_target, incl_analyzers, incl_modifiers, incl_packers, incl_unpackers
         )
-
         return json_response(self._serializer.to_pjson(components, Set[str]))
 
+    @exceptions_to_http(SerializedError)
     async def get_config_for_component(self, request: Request) -> Response:
         component = self.env.components[request.query.get("component")]
         config = self._get_config_for_component(component)
@@ -707,12 +708,16 @@ class AiohttpOFRAKServer:
                     "name": config.__name__,
                     "type": self._convert_to_class_name_str(config),
                     "args": self._construct_arg_response(self._convert_to_class_name_str(config)),
+                    "enum": self._construct_enum_response(config),
+                    "optional": self._is_optional(config),
                     "fields": [
                         {
                             "name": field.name,
                             "type": self._convert_to_class_name_str(field.type),
                             "args": self._construct_arg_response(field.type),
                             "fields": self._construct_field_response(field.type),
+                            "enum": self._construct_enum_response(field.type),
+                            "optional": self._is_optional(field.type),
                             "default": field.default
                             if not isinstance(field.default, dataclasses._MISSING_TYPE)
                             else None,
@@ -749,6 +754,8 @@ class AiohttpOFRAKServer:
                     "type": self._convert_to_class_name_str(field.type),
                     "args": self._construct_arg_response(field.type),
                     "fields": self._construct_field_response(field.type),
+                    "enum": self._construct_enum_response(field.type),
+                    "optional": self._is_optional(field.type),
                     "default": field.default
                     if not isinstance(field.default, dataclasses._MISSING_TYPE)
                     else None,
@@ -768,6 +775,8 @@ class AiohttpOFRAKServer:
                     "type": self._convert_to_class_name_str(arg),
                     "args": self._construct_arg_response(arg),
                     "fields": self._construct_field_response(arg),
+                    "enum": self._construct_enum_response(arg),
+                    "optional": self._is_optional(arg),
                     "default": None,
                 }
                 for arg in args
@@ -776,12 +785,23 @@ class AiohttpOFRAKServer:
         else:
             return None
 
+    def _construct_enum_response(self, obj):
+        if type(obj) != EnumType:
+            return None
+        else:
+            return {name: value.value for name, value in obj.__members__.items()}
+
+    def _is_optional(self, obj):
+        if hasattr(obj, "_name"):
+            return obj._name == "Optional"
+        return False
+
     def _convert_to_class_name_str(self, obj: any):
         if isinstance(obj, type(...)):
             return "ellipsis"
-        if hasattr(obj, "_name"):
-            if obj._name == "Optional":
-                obj = [conf for conf in typing.get_args(obj) if conf is not NoneType][0]
+        # if hasattr(obj, "_name"):
+        #     if obj._name == "Optional":
+        #         obj = [conf for conf in typing.get_args(obj) if conf is not NoneType][0]
         return f"{obj.__module__}.{obj.__qualname__}"
 
     async def _get_resource_by_id(self, resource_id: bytes, job_id: bytes) -> Resource:

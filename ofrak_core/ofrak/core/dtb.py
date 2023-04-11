@@ -19,7 +19,7 @@ from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort
 from ofrak.core import GenericBinary, MagicMimeIdentifier, MagicDescriptionIdentifier
-from ofrak.model.component_model import CC
+from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import index
 from ofrak_type.range import Range
 
@@ -101,7 +101,7 @@ class DtbHeaderAnalyzer(Analyzer[None, DtbHeader]):
     targets = (DtbHeader,)
     outputs = (DtbHeader,)
 
-    async def analyze(self, resource: Resource, config: CC) -> DtbHeader:
+    async def analyze(self, resource: Resource, config: ComponentConfig) -> DtbHeader:
         header_data = await resource.get_data()
         (
             dtb_magic,
@@ -227,7 +227,7 @@ class DeviceTreeBlobUnpacker(Unpacker[None]):
         DtbProperty,
     )
 
-    async def unpack(self, resource: Resource, config: CC = None):
+    async def unpack(self, resource: Resource, config: ComponentConfig = None):
         dtb_data = await resource.get_data()
         dtb_view = await resource.view_as(DeviceTreeBlob)
         dtb = fdt.parse_dtb(dtb_data)
@@ -283,7 +283,7 @@ class DeviceTreeBlobPacker(Packer[None]):
     id = b"DeviceTreeBlobPacker"
     targets = (DeviceTreeBlob,)
 
-    async def pack(self, resource: Resource, config: CC = None):
+    async def pack(self, resource: Resource, config: ComponentConfig = None):
         header = fdt.Header()
         header_view = await resource.get_only_descendant_as_view(
             v_type=DtbHeader, r_filter=ResourceFilter(tags=[DtbHeader])
@@ -339,7 +339,7 @@ class DeviceTreeBlobIdentifier(Identifier[None]):
 
     targets = (GenericBinary,)
 
-    async def identify(self, resource: Resource, config: None) -> None:
+    async def identify(self, resource: Resource, config: ComponentConfig = None) -> None:
         """
         Identify DTB files based on the first four bytes being "d00dfeed".
         """

@@ -1,7 +1,7 @@
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Dict, Tuple, Optional
-
+from enum import Enum
 from ofrak.component.modifier import Modifier
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributes
@@ -19,9 +19,16 @@ class CommentsAttributes(ResourceAttributes):
     comments: Dict[Optional[Range], str]
 
 
+class TestEnum(Enum):
+    test_1 = 1
+    test_2 = 3
+    test_3 = 6
+
+
 @dataclass
 class AddCommentModifierConfig(ComponentConfig):
     comment: Tuple[Optional[Range], str]
+    test: TestEnum
 
 
 class AddCommentModifier(Modifier[AddCommentModifierConfig]):

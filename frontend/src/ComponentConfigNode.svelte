@@ -68,7 +68,7 @@
 <script>
   import Checkbox from "./Checkbox.svelte";
   export let node, element;
-  let listElement, dictKey, dictValue, dataclassFields, unionTypeSelect;
+  let listElement, dictKey, dictValue, dataclassFields, unionTypeSelect, optionalElement;
   $: element;
   $: dataclassFields;
   console.log(node["type"]);
@@ -81,9 +81,10 @@
   } else if (node["type"] == "typing.Union") {
     unionTypeSelect = node["args"][0];
   }
-  if (node["fields"] != null) {
-    dataclassFields = {};
-    element = [node["type"], dataclassFields];
+  if (node["type"] == "ofrak_type.range.Range"){
+    element = [];
+  } else if (node["fields"] != null) {
+    element = {};
   }
   if (node["default"] != null) {
     element = node["default"];
@@ -105,13 +106,18 @@
 
 <div class="container">
   <div class="inputs">
-    {#if node["type"] == "builtins.bool"}
+    {#if node["type"] == "typing.Optional"}
+      {#each node["args"] as arg}
+        <svelte:self node="{arg}" bind:element="{element}" />
+      {/each}
+    {:else if node["type"] == "builtins.bool"}
       <li>
         {#if node["name"] != null}
           {node["name"]}
         {/if}
         <Checkbox bind:checked="{element}" />
       </li>
+
     {:else if node["type"] == "builtins.str"}
       <li>
         {#if node["name"] != null}
@@ -119,6 +125,7 @@
         {/if}
         <input bind:value="{element}" />
       </li>
+
     {:else if node["type"] == "builtins.bytes"}
       <li>
         {#if node["name"] != null}
@@ -126,6 +133,7 @@
         {/if}
         <input bind:value="{element}" />
       </li>
+
     {:else if node["type"] == "builtins.int"}
       <li>
         {#if node["name"] != null}
@@ -133,7 +141,8 @@
         {/if}
         <input type="number" bind:value="{element}" />
       </li>
-    {:else if node["type"] == "typing.List" || node["type"] == "typing.Tuple"}
+      
+    {:else if node["type"] == "typing.List"}
       <li>
         {#if node["name"] != null}
           {node["name"]}
@@ -146,6 +155,18 @@
       {#each element as elements}
         <li>{elements}</li>
       {/each}
+
+    {:else if node["type"] == "typing.Tuple"}
+      <li>
+        {#if node["name"] != null}
+          {node["name"]}
+        {/if}
+        {#each node["args"] as arg, i}
+          <svelte:self node="{arg}" bind:element="{element[i]}" />
+        {/each}
+      </li>
+      <li>{element}</li>
+
     {:else if node["type"] == "typing.Dict"}
       <li>
         {#if node["name"] != null}
@@ -160,6 +181,7 @@
       {#each element as elements}
         <li>{elements}</li>
       {/each}
+
     {:else if node["type"] == "typing.Union"}
       <p>Select Type</p>
       {#each node["args"] as type}
@@ -169,13 +191,37 @@
           }}">Use {type["type"]}</button
         >
       {/each}
-      <svelte:self node="{unionTypeSelect}" bind:element="{element}" />
+      <svelte:self node="{unionTypeSelect}" bind:element="{element}" />          
+
+    {:else if node["enum"] != null}
+        <form class="dropdown">
+          {node["name"]}: <select
+            on:click|stopPropagation="{() => undefined}"
+            bind:value="{element}"
+          >
+            <option value="{null}">{node["enum"][0]}</option>
+            {console.log(node["enum"])}
+            {#each Object.entries(node["enum"]) as [name, value]}
+              <option value="{node["type"].name}">
+                {name}
+              </option>
+            {/each}
+          </select>
+        </form>
+        
     {:else if node["fields"] != null}
-      {#each node["fields"] as field}
-        <svelte:self
-          node="{field}"
-          bind:element="{dataclassFields[field['name']]}"
-        />
+      {#each node["fields"] as field, i}
+        {#if node["type"] == "ofrak_type.range.Range"}
+          <svelte:self
+            node="{field}"
+            bind:element="{element[i]}"
+          />
+        {:else}
+          <svelte:self
+            node="{field}"
+            bind:element="{element[field['name']]}"
+          />
+        {/if}
       {/each}
     {/if}
   </div>

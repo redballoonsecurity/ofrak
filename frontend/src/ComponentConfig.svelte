@@ -128,7 +128,7 @@
         try {
           const results = await $selectedResource.run_component(
             selectedComponent,
-            config
+            ofrakConfig["type"], config
           );
           resourceNodeDataMap[$selected] = {
             collapsed: false,
@@ -143,7 +143,9 @@
               }
             }
           }
-          $selected = $selected;
+          const orig_selected = $selected;
+          $selected = undefined;
+          $selected = orig_selected;  
           modifierView = undefined;
         } catch (err) {
           try {

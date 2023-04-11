@@ -41,7 +41,7 @@ class ZstdUnpacker(Unpacker[None]):
     children = (GenericBinary,)
     external_dependencies = (ZSTD,)
 
-    async def unpack(self, resource: Resource, config: CC) -> None:
+    async def unpack(self, resource: Resource, config: ComponentConfig = None) -> None:
         with tempfile.NamedTemporaryFile(suffix=".zstd") as compressed_file:
             compressed_file.write(await resource.get_data())
             compressed_file.flush()

@@ -104,7 +104,6 @@ class PatchFromSourceModifier(Modifier):
     targets = (Program,)
 
     async def modify(self, resource: Resource, config: PatchFromSourceModifierConfig) -> None:
-
         if config.patch_name is None:
             patch_name = f"{resource.get_id().hex()}_patch"
         else:

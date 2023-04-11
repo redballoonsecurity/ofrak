@@ -205,7 +205,6 @@ class JobService(JobServiceInterface):
         request: JobAnalyzerRequest,
         job_context: Optional[JobRunContext] = None,
     ) -> ComponentRunResult:
-
         if job_context is None:
             job_context = self._job_context_factory.create()
 

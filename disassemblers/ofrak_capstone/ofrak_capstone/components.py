@@ -3,6 +3,7 @@ import logging
 
 from ofrak.component.unpacker import UnpackerError
 from ofrak.model.viewable_tag_model import AttributesType
+from ofrak.model.component_model import ComponentConfig
 from ofrak_type.architecture import InstructionSetMode
 from ofrak.core.addressable import Addressable
 from ofrak.core.architecture import ProgramAttributes
@@ -143,7 +144,7 @@ class CapstoneInstructionRegisterUsageAnalyzer(InstructionRegisterUsageAnalyzer)
         super().__init__(resource_factory, data_service, resource_service)
         self._disassembler_service = disassembler_service
 
-    async def analyze(self, resource: Resource, config: None) -> RegisterUsage:
+    async def analyze(self, resource: Resource, config: ComponentConfig = None) -> RegisterUsage:
         program_attrs = await resource.analyze(ProgramAttributes)
 
         instruction = await resource.view_as(Instruction)

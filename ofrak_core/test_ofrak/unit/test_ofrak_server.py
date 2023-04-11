@@ -686,3 +686,36 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
         "    ofrak.run(main)",
         "",
     ]
+
+
+async def test_configs(ofrak_client: TestClient, hello_world_elf):
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+    )
+    create_body = await create_resp.json()
+    resource_id = create_body["id"]
+    resp = await ofrak_client.post(
+        f"/{resource_id}/get_components",
+        json={
+            "target": False,
+            "analyzers": True,
+            "modifiers": True,
+            "packers": True,
+            "unpackers": True,
+        },
+    )
+    components = await resp.json()
+    configs = []
+    bad_configs = {}
+    for component in components:
+        resp = await ofrak_client.get(
+            f"/{resource_id}/get_config_for_component", params={"component": component}
+        )
+        try:
+            config = await resp.json()
+            configs.append(component)
+        except Exception as e:
+            bad_configs[component] = e
+    import ipdb
+
+    ipdb.set_trace()
