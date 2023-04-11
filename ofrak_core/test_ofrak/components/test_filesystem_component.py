@@ -77,12 +77,7 @@ async def filesystem_root(ofrak_context: OFRAKContext) -> Resource:
 @pytest.fixture
 async def cpio_filesystem_root(ofrak_context: OFRAKContext) -> Resource:
     resource = await ofrak_context.create_root_resource_from_file(CPIO_FILESYSTEM)
-    # resource.add_tag(FilesystemRoot)
-    # resource.add_tag(CpioFilesystem)
-    # filesystem_root = await resource.view_as(CpioFilesystem)
     return resource
-    # await resource.unpack()
-    # return filesystem_root
 
 
 class TestFilesystemRoot:
