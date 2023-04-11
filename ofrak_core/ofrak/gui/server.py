@@ -154,6 +154,9 @@ class AiohttpOFRAKServer:
                 web.post("/{resource_id}/delete_comment", self.delete_comment),
                 web.post("/{resource_id}/search_for_vaddr", self.search_for_vaddr),
                 web.post("/{resource_id}/add_tag", self.add_tag),
+                web.post(
+                    "/{resource_id}/add_flush_to_disk_to_script", self.add_flush_to_disk_to_script
+                ),
                 web.get("/get_all_tags", self.get_all_tags),
                 web.get("/{resource_id}/get_script", self.get_script),
                 web.get("/", self.get_static_files),
@@ -650,6 +653,22 @@ class AiohttpOFRAKServer:
         return json_response(
             self._serializer.to_pjson(self._ofrak_context.get_all_tags(), Set[ResourceTag])
         )
+
+    @exceptions_to_http(SerializedError)
+    async def add_flush_to_disk_to_script(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
+        output_file_name = self._serializer.from_pjson(await request.json(), str)
+        # Use FilesystemEntry name as filename if available, otherwise generate random filename
+        if not output_file_name:
+            output_file_name = self._ofrak_context.id_service.generate_id().hex()
+        script_str = (
+            """
+        await {resource}"""
+            f""".flush_to_disk("{output_file_name}")"""
+        )
+        await self.script_builder.add_action(resource, script_str, ActionType.UNDEF)
+        await self.script_builder.commit_to_script(resource)
+        return json_response(self._serialize_resource(resource))
 
     @exceptions_to_http(SerializedError)
     async def get_script(self, request: Request) -> Response:

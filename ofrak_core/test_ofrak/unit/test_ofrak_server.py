@@ -1,5 +1,6 @@
 import itertools
 import json
+import os
 import pytest
 import sys
 
@@ -19,6 +20,16 @@ from test_ofrak.components.hello_world_elf import hello_elf
 @pytest.fixture(scope="session")
 def hello_world_elf() -> bytes:
     return hello_elf()
+
+
+@pytest.fixture(scope="session")
+def firmware_zip() -> bytes:
+    assets_dir = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "../components/assets/binwalk_assets")
+    )
+    asset_path = os.path.join(assets_dir, "firmware.zip")
+    with open(asset_path, "rb") as f:
+        return f.read()
 
 
 # Create test server that will be spun up for each test
@@ -640,6 +651,95 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
         "    )",
         "",
         "    await root_resource.unpack()",
+        "",
+        "",
+        'if __name__ == "__main__":',
+        "    ofrak = OFRAK()",
+        "    if False:",
+        "        import ofrak_angr",
+        "        import ofrak_capstone",
+        "",
+        "        ofrak.discover(ofrak_capstone)",
+        "        ofrak.discover(ofrak_angr)",
+        "",
+        "    if False:",
+        "        import ofrak_binary_ninja",
+        "        import ofrak_capstone",
+        "",
+        "        ofrak.discover(ofrak_capstone)",
+        "        ofrak.discover(ofrak_binary_ninja)",
+        "",
+        "    if False:",
+        "        import ofrak_ghidra",
+        "",
+        "        ofrak.discover(ofrak_ghidra)",
+        "",
+        "    ofrak.run(main)",
+        "",
+    ]
+
+
+async def test_add_flush_to_disk_to_script(ofrak_client: TestClient, firmware_zip):
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": "firmware_zip"}, data=firmware_zip
+    )
+    root = await create_resp.json()
+    root_id = root["id"]
+
+    await ofrak_client.post(f"/{root_id}/unpack")
+    child_resp = await ofrak_client.post(f"/batch/get_children", json=[root_id])
+    child_body = await child_resp.json()
+    only_child_id = child_body[root_id][0]["id"]
+    await ofrak_client.post(f"/{only_child_id}/unpack")
+    grandchildren_resp = await ofrak_client.post(f"/batch/get_children", json=[only_child_id])
+    grandchildren_body = await grandchildren_resp.json()
+    eldest_grandchild_id = grandchildren_body[only_child_id][0]["id"]
+    await ofrak_client.post(
+        f"/{eldest_grandchild_id}/add_flush_to_disk_to_script", json="DIR655B1_FW203NAB02.bin"
+    )
+
+    resp = await ofrak_client.get(
+        f"/{root_id}/get_script",
+    )
+    resp_body = await resp.json()
+    assert resp_body == [
+        "from ofrak import *",
+        "from ofrak.core import *",
+        "",
+        "",
+        "async def main(ofrak_context: OFRAKContext):",
+        "",
+        '    root_resource = await ofrak_context.create_root_resource_from_file("firmware_zip")',
+        "",
+        "    await root_resource.unpack()",
+        "",
+        "    folder_dir655_revB_FW_203NA = await root_resource.get_only_child(",
+        "        r_filter=ResourceFilter(",
+        "            tags={Folder},",
+        "            attribute_filters=[",
+        "                ResourceAttributeValueFilter(",
+        "                    attribute=AttributesType[FilesystemEntry].Name,",
+        '                    value="dir655_revB_FW_203NA",',
+        "                )",
+        "            ],",
+        "        )",
+        "    )",
+        "",
+        "    await folder_dir655_revB_FW_203NA.unpack()",
+        "",
+        "    file_DIR655B1_FW203NAB02_bin = await folder_dir655_revB_FW_203NA.get_only_child(",
+        "        r_filter=ResourceFilter(",
+        "            tags={File},",
+        "            attribute_filters=[",
+        "                ResourceAttributeValueFilter(",
+        "                    attribute=AttributesType[FilesystemEntry].Name,",
+        '                    value="DIR655B1_FW203NAB02.bin",',
+        "                )",
+        "            ],",
+        "        )",
+        "    )",
+        "",
+        '    await file_DIR655B1_FW203NAB02_bin.flush_to_disk("DIR655B1_FW203NAB02.bin")',
         "",
         "",
         'if __name__ == "__main__":',
