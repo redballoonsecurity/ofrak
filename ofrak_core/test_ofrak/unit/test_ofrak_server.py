@@ -64,7 +64,7 @@ def dicts_are_similar(d1, d2, attributes_to_skip=None):
     return True
 
 
-def normalize(list_of_strs: List[str]) -> str:
+def join_and_normalize(list_of_strs: List[str]) -> str:
     in_str = "\n".join(list_of_strs)
     return re.sub(r"RuntimeError\(\s*.*\s*\)", "RuntimeError(err)", in_str, flags=re.M)
 
@@ -475,8 +475,8 @@ async def test_update_script(ofrak_client: TestClient, hello_world_elf):
         "",
     ]
 
-    expected_str = normalize(expected_list)
-    actual_str = normalize(resp_body)
+    expected_str = join_and_normalize(expected_list)
+    actual_str = join_and_normalize(resp_body)
     assert actual_str == expected_str
 
 
@@ -606,8 +606,8 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
         "",
     ]
 
-    expected_str = normalize(expected_list)
-    actual_str = normalize(resp_body)
+    expected_str = join_and_normalize(expected_list)
+    actual_str = join_and_normalize(resp_body)
     assert actual_str == expected_str
 
 
@@ -679,6 +679,6 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
         "",
     ]
 
-    expected_str = normalize(expected_list)
-    actual_str = normalize(resp_body)
+    expected_str = join_and_normalize(expected_list)
+    actual_str = join_and_normalize(resp_body)
     assert actual_str == expected_str
