@@ -19,16 +19,9 @@ class CommentsAttributes(ResourceAttributes):
     comments: Dict[Optional[Range], str]
 
 
-class TestEnum(Enum):
-    test_1 = 1
-    test_2 = 3
-    test_3 = 6
-
-
 @dataclass
 class AddCommentModifierConfig(ComponentConfig):
     comment: Tuple[Optional[Range], str]
-    test: TestEnum
 
 
 class AddCommentModifier(Modifier[AddCommentModifierConfig]):

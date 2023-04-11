@@ -68,7 +68,7 @@
 <script>
   import Checkbox from "./Checkbox.svelte";
   export let node, element;
-  let listElement, dictKey, dictValue, dataclassFields, unionTypeSelect, optionalElement;
+  let listElement, dictKey, dictValue, dataclassFields, unionTypeSelect;
   $: element;
   $: dataclassFields;
   console.log(node["type"]);
@@ -202,7 +202,7 @@
             <option value="{null}">{node["enum"][0]}</option>
             {console.log(node["enum"])}
             {#each Object.entries(node["enum"]) as [name, value]}
-              <option value="{node["type"].name}">
+              <option value="{node["type"]}.{name}">
                 {name}
               </option>
             {/each}
