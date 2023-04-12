@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from typing import Iterable, List, Mapping, Optional, Tuple, Dict
 from warnings import warn
 
-from ofrak_type import ArchInfo
+from ofrak_type import ArchInfo, Endianness
 from ofrak_patch_maker.toolchain.abstract import Toolchain, RBS_AUTOGEN_WARNING
 from ofrak_patch_maker.toolchain.model import (
     Segment,
@@ -46,7 +46,6 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
                 #      if sections contain more than one function =/
                 "-fno-merge-constants",  # avoids sections like .rodata.cst16, .rodata.str1.1 etc
                 "-fno-reorder-functions",
-                "-Wall",
             ]
         )
         if self._config.separate_data_sections:
@@ -101,6 +100,10 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
 
         if toolchain_config.isysroot is not None:
             self._compiler_flags.append(f"-isysroot {toolchain_config.isysroot}")
+
+        if self._processor.endianness == Endianness.BIG_ENDIAN:
+            self._compiler_flags.append("-mbig-endian")
+            self._linker_flags.append("-EB")
 
     def _get_compiler_target(self, processor: ArchInfo) -> Optional[str]:
         return self._config.compiler_target
@@ -363,6 +366,8 @@ class GNU_10_Toolchain(Abstract_GNU_Toolchain):
             self._assembler_flags.append(f"-march={self._assembler_target}")
         if self._config.assembler_cpu:
             self._assembler_flags.append(f"-mcpu={self._config.assembler_cpu}")
+        if self._processor.endianness == Endianness.BIG_ENDIAN:
+            self._assembler_flags.append("-mbig-endian")
 
         self._linker_flags.append(
             "--no-eh-frame-hdr",
