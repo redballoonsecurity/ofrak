@@ -135,7 +135,7 @@ class StringsUnpacker(Unpacker[None]):
 
         children = [
             resource.create_child_from_view(
-                AsciiString(m.group(0).decode("ascii")), data_range=Range(m.start(), m.end())
+                AsciiString(m.group(1).decode("ascii")), data_range=Range(m.start(), m.end())
             )
             for m in re.finditer(pattern, data)
         ]

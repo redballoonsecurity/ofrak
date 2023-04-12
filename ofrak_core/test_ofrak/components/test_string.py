@@ -161,22 +161,30 @@ async def test_string_replace_modifier_no_overflow(resource: Resource):
 
 
 async def test_shortest_string_not_in_non_code(executable_strings: List[str]):
-    assert "O\x00" not in executable_strings
+    assert "O" not in executable_strings
 
 
 async def test_short_string_in_non_code(executable_strings: List[str]):
-    assert "h, hi\x00" in executable_strings
+    assert "h, hi" in executable_strings
 
 
 async def test_short_string_not_in_code(executable_strings: List[str]):
     # ASCII representation of shortString code from test file
-    assert "AWL#<%\x00" not in executable_strings
+    assert "AWL#<%" not in executable_strings
 
 
 async def test_long_string_in_none(executable_strings: List[str]):
-    assert "You are tearing me apart, Lisa!\x00" in executable_strings
+    assert "You are tearing me apart, Lisa!" in executable_strings
 
 
 async def test_long_string_in_code(executable_strings: List[str]):
     # ASCII representation of longString code from test file
-    assert "AWAWAWAWAWAWAWAWL#<%\x00" in executable_strings
+    assert "AWAWAWAWAWAWAWAWL#<%" in executable_strings
+
+
+async def test_strings_analyzer(ofrak_context):
+    res = await ofrak_context.create_root_resource(
+        "test_strings_analyzer", b"Oh hi Mark!\x00", tags=(AsciiString,)
+    )
+    ascii_str = await res.view_as(AsciiString)
+    assert ascii_str.text == "Oh hi Mark!"
