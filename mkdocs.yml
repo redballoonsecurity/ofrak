@@ -45,7 +45,8 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.superfences
   - pymdownx.snippets
-  - admonition
+  - pymdownx.tabbed:
+      alternate_style: true
 
 nav:
   - Home: "index.md"
