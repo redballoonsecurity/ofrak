@@ -1,5 +1,6 @@
 import os
 import pytest
+import subprocess
 
 from typing import List
 
@@ -15,9 +16,42 @@ from ofrak.core.strings import (
     StringFindReplaceConfig,
     StringFindReplaceModifier,
 )
-import test_ofrak.components
 
-STRING_FILE = os.path.join(test_ofrak.components.ASSETS_DIR, "string_test.out")
+STRING_TEST_C_SOURCE = r"""
+#include <stdio.h>
+
+extern int longString(void);
+extern int shortString(void);
+
+// Generate bytes that look like a long ascii string (21 bytes)
+__asm__(".global longString\n\t"
+    ".type longString, @function\n\t"
+    "push %r15\n\t"
+    "push %r15\n\t"
+    "push %r15\n\t"
+    "push %r15\n\t"
+    "push %r15\n\t"
+    "push %r15\n\t"
+    "push %r15\n\t"
+    "push %r15\n\t"
+    "and 0, %r15\n\t"
+);
+
+// Generate bytes that look like a short ascii string (7 bytes)
+__asm__(".global shortString\n\t"
+    ".type shortString, @function\n\t"
+    "push %r15\n\t"
+    "and 0, %r15\n\t"
+);
+
+int main() {
+    printf("O");
+    printf("h, hi");
+    printf(" Mark!\n");
+    printf("You are tearing me apart, Lisa!\n");
+    return 0;
+}
+"""
 
 
 @pytest.fixture
@@ -36,8 +70,26 @@ async def resource(ofrak_context: OFRAKContext) -> Resource:
 
 
 @pytest.fixture
-async def executable_strings(ofrak_context: OFRAKContext) -> List[str]:
-    root_resource = await ofrak_context.create_root_resource_from_file(STRING_FILE)
+def string_test_directory(tmpdir):
+    c_source_path = os.path.join(tmpdir, "string_test.c")
+
+    with open(c_source_path, "w") as f:
+        f.write(STRING_TEST_C_SOURCE)
+
+    return tmpdir
+
+
+@pytest.fixture
+def executable_file(string_test_directory):
+    source = os.path.join(string_test_directory, "string_test.c")
+    executable = os.path.join(string_test_directory, "string_test.out")
+    subprocess.run(["gcc", "-o", executable, source])
+    return executable
+
+
+@pytest.fixture
+async def executable_strings(ofrak_context: OFRAKContext, executable_file) -> List[str]:
+    root_resource = await ofrak_context.create_root_resource_from_file(executable_file)
     await root_resource.unpack_recursively()
     descendants = list(
         await root_resource.get_descendants_as_view(
