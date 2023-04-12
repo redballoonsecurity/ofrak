@@ -1,15 +1,23 @@
+import os
 import pytest
+
+from typing import List
 
 from ofrak import OFRAKContext
 from ofrak.component.modifier import ModifierError
 from ofrak.core.binary import GenericBinary
 from ofrak.resource import Resource
+from ofrak.service.resource_service_i import ResourceFilter
 from ofrak.core.strings import (
+    AsciiString,
     StringPatchingConfig,
     StringPatchingModifier,
     StringFindReplaceConfig,
     StringFindReplaceModifier,
 )
+import test_ofrak.components
+
+STRING_FILE = os.path.join(test_ofrak.components.ASSETS_DIR, "string_test.out")
 
 
 @pytest.fixture
@@ -25,6 +33,19 @@ async def resource(ofrak_context: OFRAKContext) -> Resource:
     I would like to live in paradise.\n
     """
     return await ofrak_context.create_root_resource("text", test_binary, tags=(GenericBinary,))
+
+
+@pytest.fixture
+async def executable_strings(ofrak_context: OFRAKContext) -> List[str]:
+    root_resource = await ofrak_context.create_root_resource_from_file(STRING_FILE)
+    await root_resource.unpack_recursively()
+    descendants = list(
+        await root_resource.get_descendants_as_view(
+            AsciiString,
+            r_filter=ResourceFilter.with_tags(AsciiString),
+        )
+    )
+    return [string.Text for string in descendants]
 
 
 async def test_string_modifier(resource: Resource):
@@ -87,12 +108,21 @@ async def test_string_replace_modifier_no_overflow(resource: Resource):
         await resource.run(StringFindReplaceModifier, config)
 
 
-async def test_string_unpacker():
-    # run stringunpacker on binary
-    # get all descendant strings
-    # check:
-    # short string in non-code section is found
-    # short string in code section is not found
-    # long string in either section is found
+async def test_shortest_string_not_in_non_code(executable_strings: List[str]):
+    assert "O\x00" not in executable_strings
 
-    pass
+
+async def test_short_string_in_non_code(executable_strings: List[str]):
+    assert "h, hi\x00" in executable_strings
+
+
+async def test_short_string_not_in_code(executable_strings: List[str]):
+    assert "AWL#<%\x00" not in executable_strings
+
+
+async def test_long_string_in_none(executable_strings: List[str]):
+    assert "You are tearing me apart, Lisa!\x00" in executable_strings
+
+
+async def test_long_string_in_code(executable_strings: List[str]):
+    assert "AWAWAWAWAWAWAWAWL#<%\x00" in executable_strings
