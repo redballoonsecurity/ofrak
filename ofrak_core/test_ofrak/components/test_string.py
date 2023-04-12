@@ -117,6 +117,7 @@ async def test_short_string_in_non_code(executable_strings: List[str]):
 
 
 async def test_short_string_not_in_code(executable_strings: List[str]):
+    # ASCII representation of shortString code from test file
     assert "AWL#<%\x00" not in executable_strings
 
 
@@ -125,4 +126,5 @@ async def test_long_string_in_none(executable_strings: List[str]):
 
 
 async def test_long_string_in_code(executable_strings: List[str]):
+    # ASCII representation of longString code from test file
     assert "AWAWAWAWAWAWAWAWL#<%\x00" in executable_strings
