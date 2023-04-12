@@ -67,7 +67,7 @@
 
 <script>
   import Checkbox from "./Checkbox.svelte";
-  export let node, element;
+  export let node, element, optional;
   let listElement, dictKey, dictValue, dataclassFields, unionTypeSelect;
   $: element;
   $: dataclassFields;
@@ -89,6 +89,9 @@
   if (node["default"] != null) {
     element = node["default"];
   }
+  if (optional){
+    element = null;
+  }
 
   const addElementToArray = () => {
     element = [...element, listElement];
@@ -108,7 +111,7 @@
   <div class="inputs">
     {#if node["type"] == "typing.Optional"}
       {#each node["args"] as arg}
-        <svelte:self node="{arg}" bind:element="{element}" />
+        <svelte:self node="{arg}" optional=true bind:element="{element}" />
       {/each}
     {:else if node["type"] == "builtins.bool"}
       <li>
@@ -212,12 +215,12 @@
     {:else if node["fields"] != null}
       {#each node["fields"] as field, i}
         {#if node["type"] == "ofrak_type.range.Range"}
-          <svelte:self
+          {field["name"]}: <svelte:self
             node="{field}"
             bind:element="{element[i]}"
           />
         {:else}
-          <svelte:self
+          {field["name"]}: <svelte:self
             node="{field}"
             bind:element="{element[field['name']]}"
           />
