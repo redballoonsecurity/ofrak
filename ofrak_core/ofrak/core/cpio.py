@@ -105,6 +105,7 @@ class CpioUnpacker(Unpacker[None]):
             )
             await proc.wait()
             # Raise when a specific or non-fatal error occurs
+            # https://sourceforge.net/p/sevenzip/discussion/45797/thread/c374fd35/
             if proc.returncode and proc.returncode != 2:
                 raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
 

@@ -415,7 +415,9 @@ class TestCPIOFilesystem:
 
     async def test_absolute_paths(self, cpio_filesystem_root):
         await cpio_filesystem_root.unpack()
-        # Check that absolute path '/dev/console' exists after unpacking
+        # Check that absolute path '/dev/console' exists after unpacking to
+        # ensure that files in filesystems with absolute paths unpack
+        # successfully without overwriting system files
         children = list(await cpio_filesystem_root.get_children_as_view(FilesystemEntry))
         children_names = [child.get_name() for child in children]
         assert "dev" in children_names
