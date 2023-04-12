@@ -14,7 +14,9 @@ from ofrak.core.filesystem import (
     Folder,
 )
 from ofrak.resource import Resource
+from ofrak.service.resource_service_i import ResourceFilter, ResourceAttributeValueFilter
 from pytest_ofrak.patterns.pack_unpack_filesystem import FilesystemPackUnpackVerifyPattern
+import test_ofrak.components
 
 CHILD_TEXT = "Hello World\n"
 SUBCHILD_TEXT = "Goodbye World\n"
@@ -26,6 +28,8 @@ SUBCHILD_FOLDER = "test_subfolder"
 
 FIFO_PIPE_NAME = "fifo"
 DEVICE_NAME = "device"
+
+CPIO_FILESYSTEM = os.path.join(test_ofrak.components.ASSETS_DIR, "filesystem.cpio")
 
 
 class FilesystemRootDirectory(tempfile.TemporaryDirectory):
@@ -69,6 +73,12 @@ async def filesystem_root(ofrak_context: OFRAKContext) -> Resource:
         filesystem_root = await resource.view_as(FilesystemRoot)
         await filesystem_root.initialize_from_disk(temp_dir)
         yield filesystem_root
+
+
+@pytest.fixture
+async def cpio_filesystem_root(ofrak_context: OFRAKContext) -> Resource:
+    resource = await ofrak_context.create_root_resource_from_file(CPIO_FILESYSTEM)
+    return resource
 
 
 class TestFilesystemRoot:
@@ -397,3 +407,23 @@ def diff_directories(dir_1, dir_2, extra_diff_flags):
             second_type = " ".join(second.split(" ")[4:])
 
             assert first_type == second_type
+
+
+class TestCPIOFilesystem:
+    async def test_unpack(self, cpio_filesystem_root):
+        await cpio_filesystem_root.unpack()
+
+    async def test_absolute_paths(self, cpio_filesystem_root):
+        await cpio_filesystem_root.unpack()
+        # Check that absolute path '/dev/console' exists after unpacking
+        children = list(await cpio_filesystem_root.get_children_as_view(FilesystemEntry))
+        children_names = [child.get_name() for child in children]
+        assert "dev" in children_names
+        dev = await cpio_filesystem_root.get_only_child(
+            r_filter=ResourceFilter(
+                attribute_filters=(ResourceAttributeValueFilter(FilesystemEntry.Name, "dev"),)
+            )
+        )
+        grandchildren = list(await dev.get_children_as_view(FilesystemEntry))
+        grandkid_names = [grandkid.get_name() for grandkid in grandchildren]
+        assert "console" in grandkid_names

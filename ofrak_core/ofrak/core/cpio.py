@@ -104,6 +104,7 @@ class CpioUnpacker(Unpacker[None]):
                 *cmd,
             )
             await proc.wait()
+            # Raise when a specific or non-fatal error occurs
             if proc.returncode and proc.returncode != 2:
                 raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
 
