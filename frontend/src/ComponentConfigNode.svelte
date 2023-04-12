@@ -81,7 +81,7 @@
   } else if (node["type"] == "typing.Union") {
     unionTypeSelect = node["args"][0];
   }
-  if (node["type"] == "ofrak_type.range.Range"){
+  if (node["type"] == "ofrak_type.range.Range") {
     element = [];
   } else if (node["fields"] != null) {
     element = {};
@@ -89,7 +89,7 @@
   if (node["default"] != null) {
     element = node["default"];
   }
-  if (optional){
+  if (optional) {
     element = null;
   }
 
@@ -111,7 +111,7 @@
   <div class="inputs">
     {#if node["type"] == "typing.Optional"}
       {#each node["args"] as arg}
-        <svelte:self node="{arg}" optional=true bind:element="{element}" />
+        <svelte:self node="{arg}" optional="true" bind:element="{element}" />
       {/each}
     {:else if node["type"] == "builtins.bool"}
       <li>
@@ -120,7 +120,6 @@
         {/if}
         <Checkbox bind:checked="{element}" />
       </li>
-
     {:else if node["type"] == "builtins.str"}
       <li>
         {#if node["name"] != null}
@@ -128,7 +127,6 @@
         {/if}
         <input bind:value="{element}" />
       </li>
-
     {:else if node["type"] == "builtins.bytes"}
       <li>
         {#if node["name"] != null}
@@ -136,7 +134,6 @@
         {/if}
         <input bind:value="{element}" />
       </li>
-
     {:else if node["type"] == "builtins.int"}
       <li>
         {#if node["name"] != null}
@@ -144,7 +141,6 @@
         {/if}
         <input type="number" bind:value="{element}" />
       </li>
-      
     {:else if node["type"] == "typing.List"}
       <li>
         {#if node["name"] != null}
@@ -158,7 +154,6 @@
       {#each element as elements}
         <li>{elements}</li>
       {/each}
-
     {:else if node["type"] == "typing.Tuple"}
       <li>
         {#if node["name"] != null}
@@ -169,7 +164,6 @@
         {/each}
       </li>
       <li>{element}</li>
-
     {:else if node["type"] == "typing.Dict"}
       <li>
         {#if node["name"] != null}
@@ -184,7 +178,6 @@
       {#each element as elements}
         <li>{elements}</li>
       {/each}
-
     {:else if node["type"] == "typing.Union"}
       <p>Select Type</p>
       {#each node["args"] as type}
@@ -194,24 +187,23 @@
           }}">Use {type["type"]}</button
         >
       {/each}
-      <svelte:self node="{unionTypeSelect}" bind:element="{element}" />          
-
+      <svelte:self node="{unionTypeSelect}" bind:element="{element}" />
     {:else if node["enum"] != null}
-        <form class="dropdown">
-          {node["name"]}: <select
-            on:click|stopPropagation="{() => undefined}"
-            bind:value="{element}"
-          >
-            <option value="{null}">{node["enum"][0]}</option>
-            {console.log(node["enum"])}
-            {#each Object.entries(node["enum"]) as [name, value]}
-              <option value="{node["type"]}.{name}">
-                {name}
-              </option>
-            {/each}
-          </select>
-        </form>
-        
+      <form class="dropdown">
+        {node["name"]}:
+        <select
+          on:click|stopPropagation="{() => undefined}"
+          bind:value="{element}"
+        >
+          <option value="{null}">{node["enum"][0]}</option>
+          {console.log(node["enum"])}
+          {#each Object.entries(node["enum"]) as [name, value]}
+            <option value="{node['type']}.{name}">
+              {name}
+            </option>
+          {/each}
+        </select>
+      </form>
     {:else if node["fields"] != null}
       {#each node["fields"] as field, i}
         {#if node["type"] == "ofrak_type.range.Range"}

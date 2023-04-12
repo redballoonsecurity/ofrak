@@ -51,6 +51,7 @@ from ofrak import (
     Modifier,
     Analyzer,
 )
+from ofrak.resource_view import ResourceView
 from ofrak.core import Addressable, File
 from ofrak.core import (
     GenericBinary,
@@ -178,6 +179,9 @@ class AiohttpOFRAKServer:
                 web.get("/{resource_id}/get_config_for_component", self.get_config_for_component),
                 web.post("/{resource_id}/run_component", self.run_component),
                 web.get("/", self.get_static_files),
+                web.post(
+                    "/{resource_id}/get_tags_and_num_components", self.get_tags_and_num_components
+                ),
                 web.static(
                     "/",
                     os.path.join(os.path.dirname(__file__), "./public"),
@@ -689,12 +693,19 @@ class AiohttpOFRAKServer:
         resource: Resource = await self._get_resource_for_request(request)
         options = await request.json()
         only_target = options["target"]
+        target_filter = options["target_filter"]
         incl_analyzers = options["analyzers"]
         incl_modifiers = options["modifiers"]
         incl_packers = options["packers"]
         incl_unpackers = options["unpackers"]
         components = self._get_specific_components(
-            resource, only_target, incl_analyzers, incl_modifiers, incl_packers, incl_unpackers
+            resource,
+            only_target,
+            target_filter,
+            incl_analyzers,
+            incl_modifiers,
+            incl_packers,
+            incl_unpackers,
         )
         return json_response(self._serializer.to_pjson(components, Set[str]))
 
@@ -745,6 +756,34 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def get_static_files(self, request: Request) -> FileResponse:
         return FileResponse(os.path.join(os.path.dirname(__file__), "./public/index.html"))
+
+    @exceptions_to_http(SerializedError)
+    async def get_tags_and_num_components(self, request: Request):
+        resource = await self._get_resource_for_request(request)
+        options = await request.json()
+        only_target = options["target"]
+        incl_analyzers = options["analyzers"]
+        incl_modifiers = options["modifiers"]
+        incl_packers = options["packers"]
+        incl_unpackers = options["unpackers"]
+        all_resource_tags = set()
+        for specific_tag in resource.get_most_specific_tags():
+            for tag in inspect.getmro(specific_tag):
+                components = self._get_specific_components(
+                    resource,
+                    only_target,
+                    tag.__qualname__,
+                    incl_analyzers,
+                    incl_modifiers,
+                    incl_packers,
+                    incl_unpackers,
+                )
+                all_resource_tags.add((tag.__qualname__, len(components)))
+        all_resource_tags = list(all_resource_tags)
+        for tag in all_resource_tags:
+            if "object" in tag:
+                all_resource_tags.remove(tag)
+        return json_response(all_resource_tags)
 
     def _construct_field_response(self, obj):
         if dataclasses.is_dataclass(obj):
@@ -818,6 +857,7 @@ class AiohttpOFRAKServer:
         self,
         resource: Resource,
         only_target: bool,
+        target_filter: Optional[str],
         incl_analyzers: bool,
         incl_modifiers: bool,
         incl_packers: bool,
@@ -836,7 +876,10 @@ class AiohttpOFRAKServer:
         for component_name, component in self.env.components.items():
             if issubclass(component, categories):
                 if len([tag for tag in tags if not only_target or tag in component.targets]) > 0:
-                    selected_components.append(component_name)
+                    if target_filter is None or target_filter in [
+                        target.__qualname__ for target in component.targets
+                    ]:
+                        selected_components.append(component_name)
 
         return selected_components
 

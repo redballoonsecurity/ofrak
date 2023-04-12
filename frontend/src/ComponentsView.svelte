@@ -112,7 +112,9 @@
     incl_modifiers = false,
     incl_packers = false,
     incl_unpackers = false,
-    ofrakComponentsPromise = new Promise(() => {});
+    target_filter = null,
+    ofrakComponentsPromise = new Promise(() => {}),
+    ofrakTargetsPromise = new Promise(() => {});
 
   function chooseComponent() {
     if (selectedComponent) {
@@ -120,10 +122,31 @@
     }
   }
 
+  async function getTargets() {
+    try {
+      ofrakTargetsPromise = $selectedResource.get_tags_and_num_components(
+        only_targets,
+        incl_analyzers,
+        incl_modifiers,
+        incl_packers,
+        incl_unpackers
+      );
+    } catch (err) {
+      try {
+        errorMessage = JSON.parse(err.message).message;
+      } catch (_) {
+        errorMessage = err.message;
+      }
+    }
+  }
+
+  getTargets();
+
   async function getComponents() {
     try {
       ofrakComponentsPromise = $selectedResource.get_components(
         only_targets,
+        target_filter,
         incl_analyzers,
         incl_modifiers,
         incl_packers,
@@ -143,6 +166,7 @@
     try {
       ofrakComponentsPromise = $selectedResource.get_components(
         only_targets,
+        target_filter,
         incl_analyzers,
         incl_modifiers,
         incl_packers,
@@ -161,7 +185,33 @@
 <div class="container">
   <div class="inputs">
     <p>Select component to run on resource.</p>
-    <form class="checkboxes " on:change|preventDefault="{getComponents}">
+    {#await ofrakTargetsPromise}
+      <LoadingText />
+    {:then ofrakTags}
+      <form class="dropdown" on:change|preventDefault="{getComponents}">
+        Tag Filter: <select
+          on:click|stopPropagation="{() => undefined}"
+          bind:value="{target_filter}"
+        >
+          <option value="{null}">None</option>
+          {#each ofrakTags as [ofrakTag, numComponents]}
+            {#if numComponents != 0}
+              <option value="{ofrakTag}">
+                {ofrakTag} ({numComponents})
+              </option>
+            {/if}
+          {/each}
+        </select>
+      </form>
+    {:catch}
+      <p>Failed to get the list of OFRAK components!</p>
+      <p>The back end server may be down.</p>
+    {/await}
+    <form
+      class="checkboxes "
+      on:change|preventDefault="{getComponents}"
+      on:change|preventDefault="{getTargets}"
+    >
       <Checkbox bind:checked="{only_targets}"
         ><div class="label">Only Targetable Components</div></Checkbox
       >
@@ -181,29 +231,25 @@
     {#await ofrakComponentsPromise}
       <LoadingText />
     {:then ofrakComponents}
-      {#if ofrakComponents && ofrakComponents.length > 0}
-        <form class="dropdown" on:submit|preventDefault="{chooseComponent}">
-          Run Component: <select
-            on:click|stopPropagation="{() => undefined}"
-            bind:value="{selectedComponent}"
-          >
-            <option value="{null}">Select a component to run</option>
-            {#each ofrakComponents as ofrakComponent}
-              <option value="{ofrakComponent}">
-                {ofrakComponent}
-              </option>
-            {/each}
-          </select>
+      <form class="dropdown" on:submit|preventDefault="{chooseComponent}">
+        Run Component: <select
+          on:click|stopPropagation="{() => undefined}"
+          bind:value="{selectedComponent}"
+        >
+          <option value="{null}">Select a component to run</option>
+          {#each ofrakComponents as ofrakComponent}
+            <option value="{ofrakComponent}">
+              {ofrakComponent}
+            </option>
+          {/each}
+        </select>
 
-          <button
-            on:click|stopPropagation="{() => undefined}"
-            disabled="{!selectedComponent}"
-            type="submit">Run</button
-          >
-        </form>
-      {:else}
-        <div class="dropdown">No components found!</div>
-      {/if}
+        <button
+          on:click|stopPropagation="{() => undefined}"
+          disabled="{!selectedComponent}"
+          type="submit">Run</button
+        >
+      </form>
     {:catch}
       <p>Failed to get the list of OFRAK components!</p>
       <p>The back end server may be down.</p>

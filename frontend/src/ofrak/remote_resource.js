@@ -1,5 +1,6 @@
 import { Resource } from "./resource";
 import { backendUrl, script } from "../stores";
+import { get } from "svelte/store";
 
 let batchQueues = {};
 
@@ -507,7 +508,41 @@ export class RemoteResource extends Resource {
     });
   }
 
-  async get_components(target, analyzers, modifiers, packers, unpackers) {
+  async get_tags_and_num_components(
+    target,
+    analyzers,
+    modifiers,
+    packers,
+    unpackers
+  ) {
+    return await fetch(`${this.uri}/get_tags_and_num_components`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        target: target,
+        analyzers: analyzers,
+        modifiers: modifiers,
+        packers: packers,
+        unpackers: unpackers,
+      }),
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return await r.json();
+    });
+  }
+
+  async get_components(
+    target,
+    target_filter,
+    analyzers,
+    modifiers,
+    packers,
+    unpackers
+  ) {
     return await fetch(`${this.uri}/get_components`, {
       method: "POST",
       headers: {
@@ -515,6 +550,7 @@ export class RemoteResource extends Resource {
       },
       body: JSON.stringify({
         target: target,
+        target_filter: target_filter,
         analyzers: analyzers,
         modifiers: modifiers,
         packers: packers,

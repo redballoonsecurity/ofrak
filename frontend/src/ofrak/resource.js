@@ -398,6 +398,10 @@ export class Resource {
     throw new NotImplementedError("run_component");
   }
 
+  async get_tags_and_num_components() {
+    throw new NotImplementedError("get_tags_and_num_components");
+  }
+
   /***
    * Return the string representation of a comment, which includes its range as prefix if it
    * has one.
