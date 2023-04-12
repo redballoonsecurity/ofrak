@@ -14,6 +14,7 @@ from ofrak.core.filesystem import (
     Folder,
 )
 from ofrak.resource import Resource
+from ofrak.service.resource_service_i import ResourceFilter, ResourceAttributeValueFilter
 from pytest_ofrak.patterns.pack_unpack_filesystem import FilesystemPackUnpackVerifyPattern
 import test_ofrak.components
 
@@ -414,13 +415,15 @@ class TestCPIOFilesystem:
 
     async def test_absolute_paths(self, cpio_filesystem_root):
         await cpio_filesystem_root.unpack()
-        # Check that /dev/console exists
+        # Check that absolute path '/dev/console' exists after unpacking
         children = list(await cpio_filesystem_root.get_children_as_view(FilesystemEntry))
-        for child in children:
-            name = child.get_name()
-            if name == "dev":
-                grandchildren = list(await child.resource.get_children_as_view(FilesystemEntry))
-                for grandchild in grandchildren:
-                    name = grandchild.get_name()
-                    if name == "console":
-                        assert True
+        children_names = [child.get_name() for child in children]
+        assert "dev" in children_names
+        dev = await cpio_filesystem_root.get_only_child(
+            r_filter=ResourceFilter(
+                attribute_filters=(ResourceAttributeValueFilter(FilesystemEntry.Name, "dev"),)
+            )
+        )
+        grandchildren = list(await dev.get_children_as_view(FilesystemEntry))
+        grandkid_names = [grandkid.get_name() for grandkid in grandchildren]
+        assert "console" in grandkid_names
