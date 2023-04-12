@@ -17,7 +17,7 @@ __asm__(".global longString\n\t"
 		"and 0, %r15\n\t"
 );
 
-// Generate bytes that look like a long ascii string (7 bytes)
+// Generate bytes that look like a short ascii string (7 bytes)
 __asm__(".global shortString\n\t"
 		".type shortString, @function\n\t"
 		"push %r15\n\t"
