@@ -4,7 +4,7 @@ from enum import IntEnum
 from dataclasses import dataclass
 from typing import List, Tuple
 
-from ofrak.core import MagicDescriptionIdentifier
+from ofrak import Identifier
 from ofrak.core.code_region import CodeRegion
 
 from ofrak.resource import Resource
@@ -244,4 +244,14 @@ class Uf2FilePacker(Packer[None]):
         resource.queue_patch(Range(0, await resource.get_data_length()), repacked_data)
 
 
-MagicDescriptionIdentifier.register(Uf2File, lambda s: s.startswith("UF2"))
+class Uf2FileIdentifier(Identifier[None]):
+    targets = (GenericBinary,)
+
+    async def identify(self, resource: Resource, config=None) -> None:
+        if await resource.get_data_length() < 8:
+            pass
+        else:
+            data = await resource.get_data(Range(0, 8))
+            magic_one, magic_two = struct.unpack("<II", data)
+            if magic_one == UF2_MAGIC_START_ONE and magic_two == UF2_MAGIC_START_TWO:
+                resource.add_tag(Uf2File)
