@@ -90,6 +90,11 @@ class StringFindReplaceModifier(Modifier[StringFindReplaceConfig]):
 
 @dataclass
 class AsciiString(ResourceView):
+    """
+    Resource representing a C-style null-terminated string of ASCII characters. The `text` string
+    is not null-terminated.
+    """
+
     text: str
 
     @index
@@ -106,6 +111,10 @@ class AsciiString(ResourceView):
 
 
 class AsciiStringAnalyzer(Analyzer[None, AsciiString]):
+    """
+    Extract the decoded string from a C-style null-terminated string of ASCII characters.
+    """
+
     targets = (AsciiString,)
     outputs = (AsciiString,)
 
@@ -115,6 +124,10 @@ class AsciiStringAnalyzer(Analyzer[None, AsciiString]):
 
 
 class StringsUnpacker(Unpacker[None]):
+    """
+    Unpack null-terminated strings of printable ASCII characters.
+    """
+
     targets = (ProgramSection,)  # TODO: Other reasonable targets?
     children = (AsciiString,)
 
