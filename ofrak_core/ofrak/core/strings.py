@@ -91,8 +91,8 @@ class StringFindReplaceModifier(Modifier[StringFindReplaceConfig]):
 @dataclass
 class AsciiString(ResourceView):
     """
-    Resource representing a C-style null-terminated string of ASCII characters. The `text` string
-    is not null-terminated.
+    Resource representing a C-style, NULL-terminated string of ASCII characters. The `text` string
+    is not NULL-terminated.
     """
 
     text: str
@@ -112,7 +112,7 @@ class AsciiString(ResourceView):
 
 class AsciiStringAnalyzer(Analyzer[None, AsciiString]):
     """
-    Extract the decoded string from a C-style null-terminated string of ASCII characters.
+    Extract the decoded string from a C-style, NULL-terminated string of ASCII characters.
     """
 
     targets = (AsciiString,)
@@ -142,7 +142,7 @@ class StringsUnpacker(Unpacker[None]):
 
         # match sequences of printable characters of at least `min_length` ending with null byte
         # printable characters defined as: ASCII between ' ' and '~', tab, newline, carriage return
-        pattern = rb"([ -~,\n,\t,\r]{%d,})\x00" % min_length
+        pattern = rb"([ -~\n\t\r]{%d,})\x00" % min_length
 
         data = await resource.get_data()
 
