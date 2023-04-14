@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Fixed
 - Fix bug where jumping to a multiple of `0x10` in the GUI went to the previous line ([#254](https://github.com/redballoonsecurity/ofrak/pull/254))
 - Fix installing on Windows, as well as small GUI style fixes for Windows ([#261](https://github.com/redballoonsecurity/ofrak/pull/261))
+- Fixed `Uf2File` identifier so that it correctly tags UF2 files with `Uf2File`
 
 ## [2.2.1](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.2.0...ofrak-v2.2.1) - 2023-03-08
 ### Added
