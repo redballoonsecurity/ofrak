@@ -23,7 +23,8 @@ STRING_TEST_C_SOURCE = r"""
 extern int longString(void);
 extern int shortString(void);
 
-// Generate bytes that look like a long ascii string (21 bytes)
+// Generate bytes that look like a long ascii string (21 bytes) that will be matched as a string
+// by the AsciiUnpacker. Assumes running on x86.
 __asm__(".global longString\n\t"
     ".type longString, @function\n\t"
     "push %r15\n\t"
@@ -37,7 +38,8 @@ __asm__(".global longString\n\t"
     "and 0, %r15\n\t"
 );
 
-// Generate bytes that look like a short ascii string (7 bytes)
+// Generate bytes that look like a short ascii string (7 bytes) that will not be matched as a string
+// by the AsciiUnpacker because of the min length requirement. Assumes running on x86.
 __asm__(".global shortString\n\t"
     ".type shortString, @function\n\t"
     "push %r15\n\t"
@@ -47,7 +49,7 @@ __asm__(".global shortString\n\t"
 int main() {
     printf("O");
     printf("h, hi");
-    printf(" Mark!\n");
+    printf(" Marc!\n");
     printf("You are tearing me apart, Lisa!\n");
     return 0;
 }
@@ -184,7 +186,7 @@ async def test_long_string_in_code(executable_strings: List[str]):
 
 async def test_strings_analyzer(ofrak_context):
     res = await ofrak_context.create_root_resource(
-        "test_strings_analyzer", b"Oh hi Mark!\x00", tags=(AsciiString,)
+        "test_strings_analyzer", b"Oh hi Marc!\x00", tags=(AsciiString,)
     )
     ascii_str = await res.view_as(AsciiString)
-    assert ascii_str.text == "Oh hi Mark!"
+    assert ascii_str.text == "Oh hi Marc!"
