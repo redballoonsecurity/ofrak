@@ -879,7 +879,9 @@ class AiohttpOFRAKServer:
                     if target_filter is None or target_filter in [
                         target.__qualname__ for target in component.targets
                     ]:
-                        selected_components.append(component_name)
+                        # TODO: Get Angr components to work in gui
+                        if "Angr" not in component_name:
+                            selected_components.append(component_name)
 
         return selected_components
 

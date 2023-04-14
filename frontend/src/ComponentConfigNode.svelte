@@ -71,7 +71,6 @@
   let listElement, dictKey, dictValue, dataclassFields, unionTypeSelect;
   $: element;
   $: dataclassFields;
-  console.log(node["type"]);
   if (
     node["type"] == "typing.List" ||
     node["type"] == "typing.Tuple" ||
@@ -115,37 +114,22 @@
       {/each}
     {:else if node["type"] == "builtins.bool"}
       <li>
-        {#if node["name"] != null}
-          {node["name"]}
-        {/if}
         <Checkbox bind:checked="{element}" />
       </li>
     {:else if node["type"] == "builtins.str"}
       <li>
-        {#if node["name"] != null}
-          {node["name"]}
-        {/if}
         <input bind:value="{element}" />
       </li>
     {:else if node["type"] == "builtins.bytes"}
       <li>
-        {#if node["name"] != null}
-          {node["name"]}
-        {/if}
         <input bind:value="{element}" />
       </li>
     {:else if node["type"] == "builtins.int"}
       <li>
-        {#if node["name"] != null}
-          {node["name"]}
-        {/if}
         <input type="number" bind:value="{element}" />
       </li>
     {:else if node["type"] == "typing.List"}
       <li>
-        {#if node["name"] != null}
-          {node["name"]}
-        {/if}
         {#each node["args"] as arg}
           <svelte:self node="{arg}" bind:element="{listElement}" />
           <button on:click="{addElementToArray}">Add Element</button>
@@ -156,9 +140,6 @@
       {/each}
     {:else if node["type"] == "typing.Tuple"}
       <li>
-        {#if node["name"] != null}
-          {node["name"]}
-        {/if}
         {#each node["args"] as arg, i}
           <svelte:self node="{arg}" bind:element="{element[i]}" />
         {/each}
@@ -166,9 +147,6 @@
       <li>{element}</li>
     {:else if node["type"] == "typing.Dict"}
       <li>
-        {#if node["name"] != null}
-          {node["name"]}
-        {/if}
         <button on:click="{addElementToDict}">Add Element</button>
         <p>Key</p>
         <svelte:self node="{node['args'][0]}" bind:element="{dictKey}" />
@@ -190,13 +168,11 @@
       <svelte:self node="{unionTypeSelect}" bind:element="{element}" />
     {:else if node["enum"] != null}
       <form class="dropdown">
-        {node["name"]}:
         <select
           on:click|stopPropagation="{() => undefined}"
           bind:value="{element}"
         >
           <option value="{null}">{node["enum"][0]}</option>
-          {console.log(node["enum"])}
           {#each Object.entries(node["enum"]) as [name, value]}
             <option value="{node['type']}.{name}">
               {name}

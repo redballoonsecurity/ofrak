@@ -10,6 +10,8 @@ from aiohttp.test_utils import TestClient
 from ofrak.core import File
 from ofrak.core.entropy import DataSummaryAnalyzer
 from ofrak.gui.server import AiohttpOFRAKServer, start_server
+from ofrak.cli.ofrak_cli import OFRAKEnvironment
+from ofrak.component.identifier import Identifier
 from ofrak.service.serialization.pjson import (
     PJSONSerializationService,
 )
@@ -688,7 +690,7 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
     ]
 
 
-async def test_configs(ofrak_client: TestClient, hello_world_elf):
+async def test_get_components(ofrak_client: TestClient, hello_world_elf):
     create_resp = await ofrak_client.post(
         "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
     )
@@ -698,6 +700,7 @@ async def test_configs(ofrak_client: TestClient, hello_world_elf):
         f"/{resource_id}/get_components",
         json={
             "target": False,
+            "target_filter": None,
             "analyzers": True,
             "modifiers": True,
             "packers": True,
@@ -705,17 +708,129 @@ async def test_configs(ofrak_client: TestClient, hello_world_elf):
         },
     )
     components = await resp.json()
-    configs = []
-    bad_configs = {}
-    for component in components:
-        resp = await ofrak_client.get(
-            f"/{resource_id}/get_config_for_component", params={"component": component}
-        )
-        try:
-            config = await resp.json()
-            configs.append(component)
-        except Exception as e:
-            bad_configs[component] = e
-    import ipdb
+    env = OFRAKEnvironment()
+    assert components == [
+        comp
+        for (comp, comp_class) in env.components.items()
+        if not issubclass(comp_class, Identifier) and "Angr" not in comp
+    ]
 
-    ipdb.set_trace()
+
+async def test_get_config(ofrak_client: TestClient, hello_world_elf):
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+    )
+    create_body = await create_resp.json()
+    resource_id = create_body["id"]
+    components_resp = await ofrak_client.post(
+        f"/{resource_id}/get_components",
+        json={
+            "target": False,
+            "target_filter": None,
+            "analyzers": True,
+            "modifiers": True,
+            "packers": True,
+            "unpackers": True,
+        },
+    )
+    components = await components_resp.json()
+    configs = []
+    for component in components:
+        configs_resp = await ofrak_client.get(
+            f"/{resource_id}/get_config_for_component",
+            params={"component": component},
+        )
+        configs.append(await configs_resp.json())
+    assert len(configs) == len(components)
+    config_resp = await ofrak_client.get(
+        f"/{resource_id}/get_config_for_component",
+        params={"component": "UpdateLinkableSymbolsModifier"},
+    )
+    config = await config_resp.json()
+    assert config == {
+        "name": "UpdateLinkableSymbolsModifierConfig",
+        "type": "ofrak.core.patch_maker.linkable_binary.UpdateLinkableSymbolsModifierConfig",
+        "args": None,
+        "enum": None,
+        "optional": False,
+        "fields": [
+            {
+                "name": "updated_symbols",
+                "type": "typing.Tuple",
+                "args": [
+                    {
+                        "name": None,
+                        "type": "ofrak.core.patch_maker.linkable_symbol.LinkableSymbol",
+                        "args": None,
+                        "fields": [
+                            {
+                                "name": "virtual_address",
+                                "type": "builtins.int",
+                                "args": None,
+                                "fields": None,
+                                "enum": None,
+                                "optional": False,
+                                "default": None,
+                            },
+                            {
+                                "name": "name",
+                                "type": "builtins.str",
+                                "args": None,
+                                "fields": None,
+                                "enum": None,
+                                "optional": False,
+                                "default": None,
+                            },
+                            {
+                                "name": "symbol_type",
+                                "type": "ofrak_type.symbol_type.LinkableSymbolType",
+                                "args": None,
+                                "fields": None,
+                                "enum": {"FUNC": 0, "RW_DATA": 1, "RO_DATA": 2, "UNDEF": -1},
+                                "optional": False,
+                                "default": None,
+                            },
+                            {
+                                "name": "mode",
+                                "type": "ofrak_type.architecture.InstructionSetMode",
+                                "args": None,
+                                "fields": None,
+                                "enum": {"NONE": 0, "THUMB": 1, "VLE": 2},
+                                "optional": False,
+                                "default": 0,
+                            },
+                        ],
+                        "enum": None,
+                        "optional": False,
+                        "default": None,
+                    }
+                ],
+                "fields": None,
+                "enum": None,
+                "optional": False,
+                "default": None,
+            }
+        ],
+    }
+
+
+async def test_run_component(ofrak_client: TestClient, hello_world_elf):
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+    )
+    create_body = await create_resp.json()
+    resource_id = create_body["id"]
+    resp = await ofrak_client.post(
+        f"/{resource_id}/run_component",
+        params={"component": "StringFindReplaceModifier"},
+        json=[
+            "ofrak.core.strings.StringFindReplaceConfig",
+            {
+                "allow_overflow": False,
+                "null_terminate": False,
+                "to_find": "ELF",
+                "replace_with": "ORC",
+            },
+        ],
+    )
+    assert resp.status == 200
