@@ -8,7 +8,7 @@ This package requires:
 - the Binary Ninja python APIs
 
 # Install
-Follow the instructions in the [OFRAK Binary Ninja backend guide](http://localhost:8000/user-guide/disassembler-backends/binary_ninja.html).
+Follow the instructions in the [OFRAK Binary Ninja backend guide](https://ofrak.com/docs/user-guide/disassembler-backends/binary_ninja.html).
 
 ## Testing
 This package maintains 100% test coverage of functions.
