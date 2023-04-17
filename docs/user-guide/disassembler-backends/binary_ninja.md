@@ -24,9 +24,7 @@ The recommended Binary Ninja version to use with OFRAK is 3.2.3814. If you are r
 
 === "Docker"
 
-    You need to have a valid **headless** Binary Ninja license to build and run the image. For more details:
-    - [Read about the environment setup](../../environment-setup.md#binary-ninja).
-    - See the [Docker commands that are run](https://github.com/redballoonsecurity/ofrak/blob/master/disassemblers/ofrak_binary_ninja/Dockerstub).
+    You need to have a valid **headless** Binary Ninja license to build and run the Docker image. [Read about the environment setup](../../environment-setup.md#binary-ninja) for more details.
 
     To build the image, the license should be placed in the project's root directory and named `license.dat`. The serial number needs to be extracted from that file into a file named `serial.txt`. This can be done with the following command:
 
