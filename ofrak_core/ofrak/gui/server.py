@@ -5,7 +5,6 @@ import functools
 import itertools
 import json
 import logging
-from types import NoneType
 import typing
 import json
 import orjson
@@ -51,7 +50,6 @@ from ofrak import (
     Modifier,
     Analyzer,
 )
-from ofrak.resource_view import ResourceView
 from ofrak.core import Addressable, File
 from ofrak.core import (
     GenericBinary,
@@ -750,7 +748,18 @@ class AiohttpOFRAKServer:
             config = None
         else:
             config = self._serializer.from_pjson(await request.json(), config_type)
-        result = await resource.run(component, config)
+        script_str = (
+            """
+        await {resource}"""
+            f""".run({request.query.get("component")}, {config})"""
+        )
+        await self.script_builder.add_action(resource, script_str, ActionType.MOD)
+        try:
+            result = await resource.run(component, config)
+            await self.script_builder.commit_to_script(resource)
+        except Exception as e:
+            await self.script_builder.clear_script_queue(resource)
+            raise e
         return json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
@@ -838,9 +847,9 @@ class AiohttpOFRAKServer:
     def _convert_to_class_name_str(self, obj: any):
         if isinstance(obj, type(...)):
             return "ellipsis"
-        # if hasattr(obj, "_name"):
-        #     if obj._name == "Optional":
-        #         obj = [conf for conf in typing.get_args(obj) if conf is not NoneType][0]
+        if hasattr(obj, "_name"):
+            if obj._name == "Optional":
+                obj = [conf for conf in typing.get_args(obj) if conf is not None][0]
         return f"{obj.__module__}.{obj.__qualname__}"
 
     async def _get_resource_by_id(self, resource_id: bytes, job_id: bytes) -> Resource:
@@ -898,7 +907,7 @@ class AiohttpOFRAKServer:
             raise ValueError("{component} can not be run from the web API.")
         if hasattr(config, "_name"):
             if config._name == "Optional":
-                config = [conf for conf in typing.get_args(config) if conf is not NoneType][0]
+                config = [conf for conf in typing.get_args(config) if conf is not None][0]
         return config
 
     async def _get_resource_model_by_id(
