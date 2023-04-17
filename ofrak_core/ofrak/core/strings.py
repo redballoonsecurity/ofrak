@@ -125,24 +125,25 @@ class AsciiStringAnalyzer(Analyzer[None, AsciiString]):
 
 class StringsUnpacker(Unpacker[None]):
     """
-    Unpack null-terminated strings of printable ASCII characters.
+    Unpack NULL-terminated strings of printable ASCII characters.
     """
 
     targets = (ProgramSection,)  # TODO: Other reasonable targets?
     children = (AsciiString,)
+
+    # match sequences of at least 2 (or 8 in CodeRegions) printable characters ending with NULL
+    # printable characters defined as: ASCII between ' ' and '~', tab, newline, carriage return
+    LONG_STRING_PATTERN = re.compile(b"([ -~\n\t\r]{8,})\x00")
+    SHORT_STRING_PATTERN = re.compile(b"([ -~\n\t\r]{2,})\x00")
 
     async def unpack(self, resource: Resource, config: None) -> None:
         if resource.get_data_id() is None:
             return
         if resource.has_tag(CodeRegion):
             # code is less likely to have strings so more likely to have false positives
-            min_length = 8
+            pattern = self.LONG_STRING_PATTERN
         else:
-            min_length = 2
-
-        # match sequences of printable characters of at least `min_length` ending with null byte
-        # printable characters defined as: ASCII between ' ' and '~', tab, newline, carriage return
-        pattern = rb"([ -~\n\t\r]{%d,})\x00" % min_length
+            pattern = self.SHORT_STRING_PATTERN
 
         data = await resource.get_data()
 
