@@ -1,6 +1,6 @@
 import asyncio
 import dataclasses
-from enum import EnumType
+from enum import Enum
 import functools
 import itertools
 import json
@@ -834,7 +834,7 @@ class AiohttpOFRAKServer:
             return None
 
     def _construct_enum_response(self, obj):
-        if type(obj) != EnumType:
+        if not isinstance(obj, Enum):
             return None
         else:
             return {name: value.value for name, value in obj.__members__.items()}
