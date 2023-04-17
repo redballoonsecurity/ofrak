@@ -11,7 +11,7 @@ from ofrak.core.binary import GenericBinary
 from ofrak.core.filesystem import FilesystemRoot, Folder, File, SpecialFileType
 from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
 
-from ofrak.model.component_model import CC, ComponentExternalTool
+from ofrak.model.component_model import ComponentExternalTool
 from ofrak.model.component_model import ComponentConfig
 from ofrak_type.range import Range
 
