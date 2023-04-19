@@ -1,7 +1,6 @@
 import asyncio
 from collections import defaultdict
 from dataclasses import dataclass, field
-from subprocess import CalledProcessError
 from typing import Dict, List, Optional, Set, Type, TypeVar
 
 from ofrak.model.data_model import DataPatch
@@ -66,12 +65,10 @@ class ComponentExternalTool:
             )
 
             returncode = await proc.wait()
-            if returncode:
-                raise CalledProcessError(returncode=returncode, cmd=cmd)
         except FileNotFoundError:
             return False
 
-        return True
+        return 0 == returncode
 
 
 CC = TypeVar("CC", bound=Optional[ComponentConfig])
