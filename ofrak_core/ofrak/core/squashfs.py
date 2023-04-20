@@ -35,8 +35,6 @@ class _UnsquashfsV45Tool(ComponentExternalTool):
                 stderr=asyncio.subprocess.DEVNULL,
             )
             stdout, stderr = await proc.communicate()
-            if proc.returncode:
-                raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
         except FileNotFoundError:
             return False
 
