@@ -21,6 +21,11 @@ def mock_dependency(dependency_path):
     return ComponentExternalTool(dependency_path, "", "")
 
 
+@pytest.fixture()
+def bad_dependency():
+    return ComponentExternalTool("ls", "", "-1234")
+
+
 async def test_missing_external_tool_caught(
     ofrak_context: OFRAKContext, dependency_path, mock_dependency
 ):
@@ -102,3 +107,7 @@ async def test_tool_install_check(mock_dependency):
 
     echo_tool = ComponentExternalTool("echo", "", install_check_arg=".")
     assert await echo_tool.is_tool_installed()
+
+
+async def test_bad_tool_install_check(bad_dependency):
+    assert not await bad_dependency.is_tool_installed()
