@@ -23,6 +23,7 @@ def mock_dependency(dependency_path):
 
 @pytest.fixture()
 def bad_dependency():
+    # Use known bad flag that will return a non-zero exit code
     return ComponentExternalTool("ls", "", "-1234")
 
 
