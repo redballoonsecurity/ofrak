@@ -15,8 +15,6 @@ from ofrak.model.component_model import ComponentExternalTool
 from ofrak.resource import Resource
 from ofrak_type.range import Range
 
-from ofrak.core.seven_zip import SEVEN_ZIP
-
 LOGGER = logging.getLogger(__name__)
 
 CPIO_TOOL = ComponentExternalTool(
@@ -84,32 +82,26 @@ class CpioUnpacker(Unpacker[None]):
 
     targets = (CpioFilesystem,)
     children = (File, Folder, SpecialFileType)
-    external_dependencies = (SEVEN_ZIP,)
+    external_dependencies = (CPIO_TOOL,)
 
     async def unpack(self, resource: Resource, config=None):
-        with tempfile.TemporaryDirectory() as temp_flush_dir, tempfile.NamedTemporaryFile(
-            suffix=".cpio"
-        ) as temp_cpio:
-            temp_cpio.write(await resource.get_data())
-            temp_cpio.flush()
-
-            # use 7z utility to unpack CPIO temp file to temp_flush_dir
+        cpio_v = await resource.view_as(CpioFilesystem)
+        resource_data = await cpio_v.resource.get_data()
+        with tempfile.TemporaryDirectory() as temp_flush_dir:
             cmd = [
-                "7zz",
-                "x",
-                f"-o{temp_flush_dir}",
-                temp_cpio.name,
+                "cpio",
+                "-id",
             ]
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                cwd=temp_flush_dir,
             )
-            await proc.wait()
-            # Raise when a specific or non-fatal error occurs
-            # https://sourceforge.net/p/sevenzip/discussion/45797/thread/c374fd35/
-            if proc.returncode and proc.returncode != 2:
+            await proc.communicate(input=resource_data)
+            if proc.returncode:
                 raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
-
-            cpio_v = await resource.view_as(CpioFilesystem)
             await cpio_v.initialize_from_disk(temp_flush_dir)
 
 
