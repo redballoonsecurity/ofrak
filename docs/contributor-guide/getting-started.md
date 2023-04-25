@@ -188,11 +188,11 @@ The build relies on the following assumptions:
 The repository has several automated static code anaysis workflows.
 
 1. [Pre-commit](#pre-commit) is used, both as a pre-commit hook and as a CI/CD workflow, to ensure repository-wide:
-   1. [PEP8 compliance](#pep-8) (this is done using [black](#black)).
-   1. No Python modules contain unused imports.
-   1. Files are either empty or end with a newline.
+    1. [PEP8 compliance](#pep-8) (this is done using [black](#black)).
+    1. No Python modules contain unused imports.
+    1. Files are either empty or end with a newline.
 1. Each package contains an `inspect` target responsible for static code analysis for that package.
-   1. As part of this, [MyPy](#type-annotations-and-mypy) is used to perform static type checking.
+    1. As part of this, [MyPy](#type-annotations-and-mypy) is used to perform static type checking.
 
 
 <div align="right">
