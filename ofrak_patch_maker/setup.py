@@ -31,12 +31,12 @@ def read_requirements(requirements_path):
 
 setuptools.setup(
     name="ofrak_patch_maker",
-    version="3.0.0",
+    version="4.0.0rc3",
     description="PatchMaker tool for applying source-code patches to binaries",
     packages=setuptools.find_packages(exclude=("ofrak_patch_maker_test",)),
     package_data={"ofrak_patch_maker": ["py.typed"]},
     install_requires=[
-        "ofrak_type~=2.0",
+        "ofrak_type>=2.2.0rc0,==2.*",
     ]
     + read_requirements("requirements.txt"),
     extras_require={

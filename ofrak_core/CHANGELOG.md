@@ -4,6 +4,8 @@ All notable changes to `ofrak` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+
+## [3.0.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.2.1...ofrak-v3.0.0)
 ### Added
 - Add call to flush a resource to disk in the script whenever a user downloads a resource from the GUI. ([#277](https://github.com/redballoonsecurity/ofrak/pull/277))
 - Generate dynamic, runnable script based on GUI actions and display the script in the GUI. ([#265](https://github.com/redballoonsecurity/ofrak/pull/265))
@@ -11,16 +13,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add `-i`/`--import` option to the CLI to import and discover additional OFRAK Python packages when starting OFRAK. [#269](https://github.com/redballoonsecurity/ofrak/pull/269)
 
 ### Changed
-- Changed the `CpioUnpacker` to use `7zz` instead of the `cpio` utility due to `cpio` failing when extracting absolute paths. [#276](https://github.com/redballoonsecurity/ofrak/pull/276)
+- Changed the `CpioUnpacker` to use `7zz` instead of the `cpio` utility due to `cpio` failing when extracting absolute paths. ([#276](https://github.com/redballoonsecurity/ofrak/pull/276))
 - Remove need to create Resources to pass source code and headers to `PatchFromSourceModifier` and `FunctionReplaceModifier` ([#249](https://github.com/redballoonsecurity/ofrak/pull/249))
-- Choose Analyzer components which output the entirety of a view, rather than piece by piece, which would choose the wrong Analyzer sometimes. [#264](https://github.com/redballoonsecurity/ofrak/pull/264)
-- Generate LinkableBinary stubs as strong symbols, so linker use them to override weak symbols in patch
+- Choose Analyzer components which output the entirety of a view, rather than piece by piece, which would choose the wrong Analyzer sometimes. ([#264](https://github.com/redballoonsecurity/ofrak/pull/264))
+- Generate LinkableBinary stubs as strong symbols, so linker use them to override weak symbols in patch ([#259](https://github.com/redballoonsecurity/ofrak/pull/259))
 - 
 ### Fixed
 - Fix bug where `ComponentExternalTool` would raise an error when checking whether a tool was installed returned a non-zero exit value ([#289](https://github.com/redballoonsecurity/ofrak/pull/289))
 - Fix bug where jumping to a multiple of `0x10` in the GUI went to the previous line ([#254](https://github.com/redballoonsecurity/ofrak/pull/254))
 - Fix installing on Windows, as well as small GUI style fixes for Windows ([#261](https://github.com/redballoonsecurity/ofrak/pull/261))
-- Fixed `Uf2File` identifier so that it correctly tags UF2 files with `Uf2File`
+- Fixed `Uf2File` identifier so that it correctly tags UF2 files with `Uf2File` ([#283](https://github.com/redballoonsecurity/ofrak/pull/283))
 
 ## [2.2.1](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.2.0...ofrak-v2.2.1) - 2023-03-08
 ### Added

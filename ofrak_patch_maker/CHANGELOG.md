@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 
+## [4.0.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-patch-maker-v.3.0.0...ofrak-patch-maker-v.4.0.0)
+
 ### Changed
 - Discard `.altinstructions` section when linking
 - Use `SUBALIGN(0)` for `.bss` sections
