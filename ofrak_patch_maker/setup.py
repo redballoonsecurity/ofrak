@@ -31,7 +31,7 @@ def read_requirements(requirements_path):
 
 setuptools.setup(
     name="ofrak_patch_maker",
-    version="4.0.0rc3",
+    version="4.0.0rc4",
     description="PatchMaker tool for applying source-code patches to binaries",
     packages=setuptools.find_packages(exclude=("ofrak_patch_maker_test",)),
     package_data={"ofrak_patch_maker": ["py.typed"]},
