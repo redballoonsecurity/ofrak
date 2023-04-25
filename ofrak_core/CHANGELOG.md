@@ -11,7 +11,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add `-i`/`--import` option to the CLI to import and discover additional OFRAK Python packages when starting OFRAK. [#269](https://github.com/redballoonsecurity/ofrak/pull/269)
 
 ### Changed
-- Changed the `CpioUnpacker` to use `7zz` instead of the `cpio` utility due to `cpio` failing when extracting absolute paths. [#276](https://github.com/redballoonsecurity/ofrak/pull/276)
 - Remove need to create Resources to pass source code and headers to `PatchFromSourceModifier` and `FunctionReplaceModifier` ([#249](https://github.com/redballoonsecurity/ofrak/pull/249))
 - Choose Analyzer components which output the entirety of a view, rather than piece by piece, which would choose the wrong Analyzer sometimes. [#264](https://github.com/redballoonsecurity/ofrak/pull/264)
 - Generate LinkableBinary stubs as strong symbols, so linker use them to override weak symbols in patch
