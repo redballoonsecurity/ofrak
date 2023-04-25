@@ -71,6 +71,7 @@
   let listElement, dictKey, dictValue, dataclassFields, unionTypeSelect;
   $: element;
   $: dataclassFields;
+  $: unionTypeSelect;
   if (
     node["type"] == "typing.List" ||
     node["type"] == "typing.Tuple" ||
@@ -158,13 +159,19 @@
       {/each}
     {:else if node["type"] == "typing.Union"}
       <p>Select Type</p>
-      {#each node["args"] as type}
-        <button
-          on:click="{(e) => {
-            unionTypeSelect = type;
-          }}">Use {type["type"]}</button
+      <form class="dropdown">
+        <select
+          on:click="{() => undefined}"
+          bind:value="{unionTypeSelect}"
         >
-      {/each}
+          <option value="{null}">{node["args"][0]}</option>
+          {#each node["args"] as arg}
+            <option value="{arg}">
+              {arg.type}
+            </option>
+          {/each}
+        </select>
+      </form>
       <svelte:self node="{unionTypeSelect}" bind:element="{element}" />
     {:else if node["enum"] != null}
       <form class="dropdown">
