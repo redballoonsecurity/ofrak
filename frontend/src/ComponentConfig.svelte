@@ -97,7 +97,7 @@
   let config = {};
   let ofrakConfigName = null;
 
-  onMount(async () => {
+  $: {
     try {
       ofrakConfigsPromise =
         $selectedResource.get_config_for_component(selectedComponent);
@@ -108,7 +108,7 @@
         errorMessage = `Error: ${err.message}`;
       }
     }
-  });
+  };
 </script>
 
 <div class="container">

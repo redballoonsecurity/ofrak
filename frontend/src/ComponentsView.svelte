@@ -105,7 +105,7 @@
   import Checkbox from "./Checkbox.svelte";
   import AddTagView from "./AddTagView.svelte";
 
-  export let modifierView, selectedComponent, resourceNodeDataMap, dataPromise;
+  export let modifierView, resourceNodeDataMap, dataPromise;
   let errorMessage,
     only_targets = true,
     incl_analyzers = false,
@@ -113,14 +113,9 @@
     incl_packers = false,
     incl_unpackers = false,
     target_filter = null,
+    selectedComponent = null,
     ofrakComponentsPromise = new Promise(() => {}),
     ofrakTargetsPromise = new Promise(() => {});
-
-  function chooseComponent() {
-    if (selectedComponent) {
-      modifierView = ComponentConfig;
-    }
-  }
 
   async function getTargets() {
     try {
@@ -231,7 +226,7 @@
     {#await ofrakComponentsPromise}
       <LoadingText />
     {:then ofrakComponents}
-      <form class="dropdown" on:submit|preventDefault="{chooseComponent}">
+      <form class="dropdown">
         Run Component: <select
           on:click|stopPropagation="{() => undefined}"
           bind:value="{selectedComponent}"
@@ -250,6 +245,9 @@
           type="submit">Run</button
         >
       </form>
+      {#if selectedComponent != null}
+        <ComponentConfig selectedComponent="{selectedComponent}" modifierView="{modifierView}" resourceNodeDataMap="{resourceNodeDataMap}"/>
+      {/if}
     {:catch}
       <p>Failed to get the list of OFRAK components!</p>
       <p>The back end server may be down.</p>

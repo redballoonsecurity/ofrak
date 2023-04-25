@@ -69,8 +69,7 @@
     currentResource,
     rootResource,
     modifierView,
-    bottomLeftPane,
-    selectedComponent;
+    bottomLeftPane;
 
   let riddleAnswered = JSON.parse(window.localStorage.getItem("riddleSolved"));
   if (riddleAnswered === null || riddleAnswered === undefined) {
@@ -116,10 +115,11 @@
     // Disable shortcuts in views with text inputs, otherwise misclicking outside of a text area may
     // cause users to accidentally run shortcuts.
     if (
-      ["input", "textarea"].includes(e.target?.tagName.toLocaleLowerCase()) ||
+      (["input", "textarea"].includes(e.target?.tagName.toLocaleLowerCase()) ||
       e.target.isContentEditable ||
       modifierView === ComponentConfig ||
-      modifierView === FindReplaceView
+      modifierView === FindReplaceView) &&
+      modifierView
     ) {
       return;
     }
@@ -173,7 +173,6 @@ Answer by running riddle.answer('your answer here') from the console.`);
               dataPromise="{displayDataPromise}"
               bind:modifierView="{modifierView}"
               bind:resourceNodeDataMap="{resourceNodeDataMap}"
-              bind:selectedComponent="{selectedComponent}"
             />
           {:else}
             <ResourceTreeView
