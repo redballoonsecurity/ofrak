@@ -137,10 +137,45 @@ ofrak_package_x
  |--setup.py
  |--ofrak_package_x_python_module
      |...
+ |--ofrak_package_x_python_module_test
+     |...
 ```
 
-`Makefile` must contain a rule `dependencies`. This rule should take care of any setup that needs to be done for that package before the Docker build.
+### Makefile
+At a minimum, an OFRAK package Makefile should contain the following targets:
 
+- `install`: a phony target that installs the package
+- `develop`: a phony target that installs the package in editable mode (for development)
+- `inspect`: a phony target that runs static code analysis on the package
+- `test`: a phony target that:
+  - has a dependency on `inspect`
+  - runs the packages tests, recording "term-missing" coverage information
+  - uses [fun-coverage](https://pypi.org/project/fun-coverage/) to assert that the package has 100% function coverage
+
+An example of such a Makefile for `ofrak_package_x` is:
+```make
+PYTHON=python3
+PIP=pip3
+
+.PHONY: install
+install:
+	$(PIP) install .
+
+.PHONY: develop
+develop:
+	$(PIP) install -e .[test]
+
+.PHONY: inspect
+inspect:
+	mypy
+
+.PHONY: test
+test: inspect
+	$(PYTHON) -m pytest -n auto --cov=ofrak_package_x_python_module --cov-report=term-missing --cov-fail-under=100 ofrak_package_x_python_module_test
+	fun-coverage --cov-fail-under=100
+```
+
+### Dockerstub & Dockerstage
 `Dockerstub` should read as a normal Dockerfile, only without a base image specified at the top. This file should contain all of the steps necessary to install this package in a Docker image. During build, all packages' `Dockerstub`s will be concatenated, so specifying a base image is unnecessary. Also, any specified entrypoint may be overridden. 
 
 The build relies on the following assumptions:
@@ -148,6 +183,17 @@ The build relies on the following assumptions:
 - `Dockerstub`, `Dockerstage`, and `Makefile` should not use any relative paths which go into the parent directory of `ofrak_package_x` because at build time that parent directory will not be the same.
 - All rules in `Makefile` should assume the working directory is `ofrak_package_x` (but at a different path as explained above)
 - `Dockerstub` and `Dockerstage` should be written assuming the build context is the parent directory of `ofrak_package_x`. Do not assume anything is present in the build context besides the contents of `ofrak_package_x` and what `Makefile` adds to `ofrak_package_x` in the `dependencies` rule.
+
+## Static Code Analysis
+The repository has several automated static code anaysis workflows.
+
+1. [Pre-commit](#pre-commit) is used, both as a pre-commit hook and as a CI/CD workflow, to ensure repository-wide:
+   1. [PEP8 compliance](#pep-8) (this is done using [black](#black)).
+   1. No Python modules contain unused imports.
+   1. Files are either empty or end with a newline.
+1. Each package contains an `inspect` target responsible for static code analysis for that package.
+   1. As part of this, [MyPy](#type-annotations-and-mypy) is used to perform static type checking.
+
 
 <div align="right">
 <img src="../assets/square_05.png" width="125" height="125">
