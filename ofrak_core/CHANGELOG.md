@@ -10,16 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add call to flush a resource to disk in the script whenever a user downloads a resource from the GUI. ([#277](https://github.com/redballoonsecurity/ofrak/pull/277))
 - Generate dynamic, runnable script based on GUI actions and display the script in the GUI. ([#265](https://github.com/redballoonsecurity/ofrak/pull/265))
 - Add `-f`/`--file` option to `ofrak gui` command to pre-load some files into OFRAK before opening the GUI, so they can be explored right away ([#266](https://github.com/redballoonsecurity/ofrak/pull/266))
-- Add `-i`/`--import` option to the CLI to import and discover additional OFRAK Python packages when starting OFRAK. [#269](https://github.com/redballoonsecurity/ofrak/pull/269)
-- Add Identifier to tag `ComplexBlocks` as `LinkableSymbols` and Analyzer to copy attributes from a `ComplexBlock` to its `LinkableSymbol`. [#226](https://github.com/redballoonsecurity/ofrak/pull/226)
-- Add method to create new `LinkableSymbols` from symbols defined in a patch file. [#226](https://github.com/redballoonsecurity/ofrak/pull/226)
+- Add `-i`/`--import` option to the CLI to import and discover additional OFRAK Python packages when starting OFRAK. ([#269](https://github.com/redballoonsecurity/ofrak/pull/269))
+- Add Identifier to tag `ComplexBlocks` as `LinkableSymbols` and Analyzer to copy attributes from a `ComplexBlock` to its `LinkableSymbol`. ([#226](https://github.com/redballoonsecurity/ofrak/pull/226))
+- Add method to create new `LinkableSymbols` from symbols defined in a patch file. ([#226](https://github.com/redballoonsecurity/ofrak/pull/226))
 
 
 ### Changed
 - Remove need to create Resources to pass source code and headers to `PatchFromSourceModifier` and `FunctionReplaceModifier` ([#249](https://github.com/redballoonsecurity/ofrak/pull/249))
 - Choose Analyzer components which output the entirety of a view, rather than piece by piece, which would choose the wrong Analyzer sometimes. ([#264](https://github.com/redballoonsecurity/ofrak/pull/264))
 - Generate LinkableBinary stubs as strong symbols, so linker use them to override weak symbols in patch ([#259](https://github.com/redballoonsecurity/ofrak/pull/259))
-- Limit stub file creation for linkable BOMs to only those required by a patch. [#226](https://github.com/redballoonsecurity/ofrak/pull/226)
+- Limit stub file creation for linkable BOMs to only those required by a patch. ([#226](https://github.com/redballoonsecurity/ofrak/pull/226))
 
 ### Fixed
 - Fix bug where `ComponentExternalTool` would raise an error when checking whether a tool was installed returned a non-zero exit value ([#289](https://github.com/redballoonsecurity/ofrak/pull/289))
