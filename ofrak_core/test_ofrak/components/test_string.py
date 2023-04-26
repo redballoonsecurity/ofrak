@@ -49,8 +49,8 @@ __asm__(".global shortString\n\t"
 int main() {
     printf("O");
     printf("h, hi");
-    printf(" Marc!\n");
-    printf("You are tearing me apart, Lisa!\n");
+    printf(" Marc!");
+    printf("You are tearing me apart, Lisa!");
     return 0;
 }
 """
