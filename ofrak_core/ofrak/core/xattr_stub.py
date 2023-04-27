@@ -19,10 +19,6 @@ class xattr:
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
         return ""
 
-    def _call(self, name_func, fd_func, *args):
-        frame = inspect.currentframe()
-        _warn_user_no_xattr(inspect.getframeinfo(frame).function)
-
     def get(self, name, options=0):
         frame = inspect.currentframe()
         _warn_user_no_xattr(inspect.getframeinfo(frame).function)
@@ -144,7 +140,7 @@ def removexattr(f, attr, symlink=False):
 
 
 def _warn_user_no_xattr(function_name: str) -> None:
-    logging.warning(
+    LOGGER.warning(
         f"Function {function_name} not found. Library xattr is not available on Windows platforms. \
         Extended attributes will not be properly handled while using OFRAK on this platform. \
         If you require extended attributes, please use a platform that supports xattr."

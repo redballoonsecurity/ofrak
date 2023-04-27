@@ -1,4 +1,4 @@
-import subprocess
+import asyncio
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Type, TypeVar
@@ -47,7 +47,7 @@ class ComponentExternalTool:
     apt_package: Optional[str] = None
     brew_package: Optional[str] = None
 
-    def is_tool_installed(self) -> bool:
+    async def is_tool_installed(self) -> bool:
         """
         Check if a tool is installed by running it with the `install_check_arg`.
         This method runs `<tool> <install_check_arg>`.
@@ -56,15 +56,21 @@ class ComponentExternalTool:
         returned non-zero exit code.
         """
         try:
-            retcode = subprocess.call(
-                [self.tool, self.install_check_arg],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+            cmd = [
+                self.tool,
+                self.install_check_arg,
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
             )
+
+            returncode = await proc.wait()
         except FileNotFoundError:
             return False
 
-        return 0 == retcode
+        return 0 == returncode
 
 
 CC = TypeVar("CC", bound=Optional[ComponentConfig])

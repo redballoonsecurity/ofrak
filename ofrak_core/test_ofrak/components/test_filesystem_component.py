@@ -71,7 +71,6 @@ async def filesystem_root(ofrak_context: OFRAKContext) -> Resource:
         yield filesystem_root
 
 
-@pytest.mark.serial
 class TestFilesystemRoot:
     """
     Test FilesystemRoot methods.
@@ -165,7 +164,6 @@ class TestFilesystemRoot:
         assert CHILD_TEXTFILE_NAME not in updated_list_dir_output
 
 
-@pytest.mark.serial
 class TestFilesystemEntry:
     """
     Test FilesystemEntry methods.
@@ -191,7 +189,6 @@ class TestFilesystemEntry:
         assert child_textfile.xattrs == {"user.foo": b"bar"}
 
 
-@pytest.mark.serial
 class TestFolder:
     async def test_get_entry(self, filesystem_root: FilesystemRoot):
         """
@@ -204,7 +201,6 @@ class TestFolder:
         assert subchild.name == SUBCHILD_TEXTFILE_NAME
 
 
-@pytest.mark.serial
 class TestSymbolicLinkUnpackPack(FilesystemPackUnpackVerifyPattern):
     def setup(self):
         super().setup()
@@ -342,7 +338,6 @@ class TestSymbolicLinkUnpackPack(FilesystemPackUnpackVerifyPattern):
             subprocess.run(command, check=True, capture_output=True)
 
 
-@pytest.mark.serial
 class TestLoadInMemoryFilesystem(TestSymbolicLinkUnpackPack):
     async def create_root_resource(self, ofrak_context: OFRAKContext, directory: str) -> Resource:
         with tempfile.TemporaryDirectory() as archive_dir:
@@ -368,7 +363,6 @@ class TestLoadInMemoryFilesystem(TestSymbolicLinkUnpackPack):
         await super().extract(child, extract_dir)
 
 
-@pytest.mark.serial
 def diff_directories(dir_1, dir_2, extra_diff_flags):
     """
     Diff two directories and assert that their contents are equal.

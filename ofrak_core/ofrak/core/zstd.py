@@ -1,7 +1,8 @@
-import subprocess
+import asyncio
 import tempfile
 from dataclasses import dataclass
 from typing import Optional
+from subprocess import CalledProcessError
 
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
@@ -46,8 +47,20 @@ class ZstdUnpacker(Unpacker[None]):
             compressed_file.flush()
             output_filename = tempfile.mktemp()
 
-            command = ["zstd", "-d", "-k", compressed_file.name, "-o", output_filename]
-            subprocess.run(command, check=True)
+            cmd = [
+                "zstd",
+                "-d",
+                "-k",
+                compressed_file.name,
+                "-o",
+                output_filename,
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+            )
+            returncode = await proc.wait()
+            if proc.returncode:
+                raise CalledProcessError(returncode=returncode, cmd=cmd)
             with open(output_filename, "rb") as f:
                 result = f.read()
 
@@ -78,7 +91,12 @@ class ZstdPacker(Packer[ZstdPackerConfig]):
             if config.compression_level > 19:
                 command.append("--ultra")
             command.extend([uncompressed_file.name, "-o", output_filename])
-            subprocess.run(command, check=True)
+            proc = await asyncio.create_subprocess_exec(
+                *command,
+            )
+            returncode = await proc.wait()
+            if proc.returncode:
+                raise CalledProcessError(returncode=returncode, cmd=command)
             with open(output_filename, "rb") as f:
                 result = f.read()
 

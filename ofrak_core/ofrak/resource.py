@@ -421,7 +421,7 @@ class Resource:
         """
         attributes = self._check_attributes(resource_attributes)
         if attributes is None:
-            await self._analyze_attributes(resource_attributes)
+            await self._analyze_attributes((resource_attributes,))
             return self.get_attributes(resource_attributes)
         else:
             return attributes
@@ -533,13 +533,13 @@ class Resource:
 
         destination.write(await self.get_data())
 
-    async def _analyze_attributes(self, attribute_type: Type[ResourceAttributes]):
+    async def _analyze_attributes(self, attribute_types: Tuple[Type[ResourceAttributes], ...]):
         job_context = self._job_context
         components_result = await self._job_service.run_analyzer_by_attribute(
             JobAnalyzerRequest(
                 self._job_id,
                 self._resource.id,
-                attribute_type,
+                attribute_types,
                 tuple(self._resource.tags),
             ),
             job_context,
@@ -747,21 +747,23 @@ class Resource:
             self._resource_view_context.add_view(self.get_id(), view)
             return cast(RV, view)
 
-        analysis_tasks = [
-            self._analyze_attributes(attrs_t)
-            for attrs_t, existing in zip(composed_attrs_types, existing_attributes)
-            if not existing
-        ]
-
         # Only if analysis is absolutely necessary is an awaitable created and returned
-        async def finish_view_creation() -> RV:
-            await asyncio.gather(*analysis_tasks)
+        async def finish_view_creation(
+            attrs_to_analyze: Tuple[Type[ResourceAttributes], ...]
+        ) -> RV:
+            await self._analyze_attributes(attrs_to_analyze)
             view = viewable_tag.create(self.get_model())
             view.resource = self  # type: ignore
             self._resource_view_context.add_view(self.get_id(), view)
             return cast(RV, view)
 
-        return finish_view_creation()
+        return finish_view_creation(
+            tuple(
+                attrs_t
+                for attrs_t, existing in zip(composed_attrs_types, existing_attributes)
+                if not existing
+            )
+        )
 
     async def view_as(self, viewable_tag: Type[RV]) -> RV:
         """

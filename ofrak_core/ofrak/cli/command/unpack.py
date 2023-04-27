@@ -119,7 +119,7 @@ class UnpackCommand(OfrakCommandRunsScript):
             "utf-8",
         )
 
-        with open(info_dump_path, "w") as f:
+        with open(info_dump_path, "w", encoding="utf-8") as f:
             f.write(info_dump)
 
         print(info_dump)

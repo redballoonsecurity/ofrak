@@ -1,8 +1,9 @@
+import asyncio
 import logging
-import subprocess
 import tempfile
 from gzip import GzipFile
 from io import BytesIO
+from subprocess import CalledProcessError
 
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
@@ -43,17 +44,26 @@ class GzipUnpacker(Unpacker[None]):
         with tempfile.NamedTemporaryFile(suffix=".gz") as temp_file:
             temp_file.write(await resource.get_data())
             temp_file.flush()
-            command = ["pigz", "-d", "-c", temp_file.name]  # Decompress to stdout
-            try:
-                run_result = subprocess.run(command, check=True, capture_output=True)
-                data = run_result.stdout
-            except subprocess.CalledProcessError as e:
+            cmd = [
+                "pigz",
+                "-d",
+                "-c",
+                temp_file.name,
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate()
+            data = stdout
+            if proc.returncode:
                 # Forward any gzip warning message and continue
-                if e.returncode == -2 or e.returncode == 2:
-                    LOGGER.warning(e.stderr)
-                    data = e.stdout
+                if proc.returncode == -2 or proc.returncode == 2:
+                    LOGGER.warning(stderr)
+                    data = stdout
                 else:
-                    raise
+                    raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
 
             await resource.create_child(
                 tags=(GenericBinary,),

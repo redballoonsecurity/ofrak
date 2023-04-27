@@ -1,6 +1,9 @@
+import asyncio
 import os
-import subprocess
+import pathlib
+import sys
 import tempfile
+from subprocess import CalledProcessError
 from dataclasses import dataclass
 
 from ofrak.core.filesystem import File, Folder
@@ -30,24 +33,46 @@ JAVA = ComponentExternalTool(
 
 
 class _UberApkSignerTool(ComponentExternalTool):
+    if sys.platform.startswith("win32"):
+        # Windows: look in Program Files (x86)
+        JAR_PATH = os.path.join(
+            "C:", "Program Files (x86)", "uber-apk-signer", "uber-apk-signer.jar"
+        )
+    elif sys.platform.startswith("linux") or sys.platform.startswith("darwin"):
+        # Linux, Mac OSX: look in usr/local/bin
+        JAR_PATH = os.path.join(os.path.sep, "usr", "local", "bin", "uber-apk-signer.jar")
+    else:
+        # All other platforms: look in home dir
+        JAR_PATH = os.path.join(pathlib.Path.home(), "uber-apk-signer.jar")
+
     def __init__(self):
         super().__init__(
-            "/usr/local/bin/uber-apk-signer.jar",
+            _UberApkSignerTool.JAR_PATH,
             "https://github.com/patrickfav/uber-apk-signer",
             install_check_arg="",
         )
 
-    def is_tool_installed(self) -> bool:
+    async def is_tool_installed(self) -> bool:
+        if not os.path.exists(_UberApkSignerTool.JAR_PATH):
+            return False
+
         try:
-            retcode = subprocess.call(
-                ("java", "-jar", "/usr/local/bin/uber-apk-signer.jar", "--help"),
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+            cmd = [
+                "java",
+                "-jar",
+                _UberApkSignerTool.JAR_PATH,
+                "--help",
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
             )
+            returncode = await proc.wait()
         except FileNotFoundError:
             return False
 
-        return 0 == retcode
+        return 0 == returncode
 
 
 UBER_APK_SIGNER = _UberApkSignerTool()
@@ -81,7 +106,7 @@ class ApkUnpacker(Unpacker[None]):
             temp_file.write(data)
             temp_file.flush()
             with tempfile.TemporaryDirectory() as temp_flush_dir:
-                command = [
+                cmd = [
                     "apktool",
                     "decode",
                     "--output",
@@ -89,7 +114,12 @@ class ApkUnpacker(Unpacker[None]):
                     "--force",
                     temp_file.name,
                 ]
-                subprocess.run(command, check=True, capture_output=True)
+                proc = await asyncio.create_subprocess_exec(
+                    *cmd,
+                )
+                returncode = await proc.wait()
+                if proc.returncode:
+                    raise CalledProcessError(returncode=returncode, cmd=cmd)
                 await apk.initialize_from_disk(temp_flush_dir)
 
 
@@ -127,8 +157,20 @@ class ApkPacker(Packer[ApkPackerConfig]):
         temp_flush_dir = await apk.flush_to_disk()
         apk_suffix = ".apk"
         with tempfile.NamedTemporaryFile(suffix=apk_suffix) as temp_apk:
-            command = ["apktool", "build", "--force-all", temp_flush_dir, "--output", temp_apk.name]
-            subprocess.run(command, check=True, capture_output=True)
+            apk_cmd = [
+                "apktool",
+                "build",
+                "--force-all",
+                temp_flush_dir,
+                "--output",
+                temp_apk.name,
+            ]
+            apk_proc = await asyncio.create_subprocess_exec(
+                *apk_cmd,
+            )
+            apk_returncode = await apk_proc.wait()
+            if apk_proc.returncode:
+                raise CalledProcessError(returncode=apk_returncode, cmd=apk_cmd)
             if not config.sign_apk:
                 # Close the file handle and reopen, to avoid observed situations where temp.read()
                 # was not returning data
@@ -136,17 +178,22 @@ class ApkPacker(Packer[ApkPackerConfig]):
                     new_data = file_handle.read()
             else:
                 with tempfile.TemporaryDirectory() as signed_apk_temp_dir:
-                    command = [
+                    java_cmd = [
                         "java",
                         "-jar",
-                        "/usr/local/bin/uber-apk-signer.jar",
+                        _UberApkSignerTool.JAR_PATH,
                         "--apks",
                         temp_apk.name,
                         "--out",
                         signed_apk_temp_dir,
                         "--allowResign",
                     ]
-                    subprocess.run(command, check=True, capture_output=True)
+                    java_proc = await asyncio.create_subprocess_exec(
+                        *java_cmd,
+                    )
+                    java_returncode = await java_proc.wait()
+                    if java_proc.returncode:
+                        raise CalledProcessError(returncode=java_returncode, cmd=java_cmd)
                     signed_apk_filename = (
                         os.path.basename(temp_apk.name)[: -len(apk_suffix)]
                         + "-aligned-debugSigned.apk"
@@ -172,9 +219,19 @@ class ApkIdentifier(Identifier):
             with tempfile.NamedTemporaryFile(suffix=".zip") as temp_file:
                 temp_file.write(await resource.get_data())
                 temp_file.flush()
+                unzip_cmd = [
+                    "unzip",
+                    "-l",
+                    temp_file.name,
+                ]
+                unzip_proc = await asyncio.create_subprocess_exec(
+                    *unzip_cmd,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                stdout, stderr = await unzip_proc.communicate()
+                if unzip_proc.returncode:
+                    raise CalledProcessError(returncode=unzip_proc.returncode, cmd=unzip_cmd)
 
-                command = ["unzip", "-l", temp_file.name]
-                filenames = subprocess.run(command, check=True, capture_output=True).stdout
-
-                if b"androidmanifest.xml" in filenames.lower():
+                if b"androidmanifest.xml" in stdout.lower():
                     resource.add_tag(Apk)

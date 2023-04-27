@@ -1,7 +1,8 @@
+import asyncio
 import os.path
-import subprocess
 import tempfile
 from dataclasses import dataclass
+from subprocess import CalledProcessError
 
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker, UnpackerError
@@ -40,9 +41,21 @@ class TarUnpacker(Unpacker[None]):
             temp_archive.flush()
 
             # Check the archive member files to ensure none unpack to a parent directory
-            command = ["tar", "-P", "-tf", temp_archive.name]
-            output = subprocess.run(command, check=True, capture_output=True)
-            for filename in output.stdout.decode().splitlines():
+            cmd = [
+                "tar",
+                "-P",
+                "-tf",
+                temp_archive.name,
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate()
+            if proc.returncode:
+                raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
+            for filename in stdout.decode().splitlines():
                 # Handles relative parent paths and rooted paths, and normalizes paths like "./../"
                 rel_filename = os.path.relpath(filename)
                 if rel_filename.startswith("../"):
@@ -54,7 +67,12 @@ class TarUnpacker(Unpacker[None]):
             # Unpack into a temporary directory using the temporary file
             with tempfile.TemporaryDirectory() as temp_dir:
                 command = ["tar", "--xattrs", "-C", temp_dir, "-xf", temp_archive.name]
-                subprocess.run(command, check=True, capture_output=True)
+                proc = await asyncio.create_subprocess_exec(
+                    *command,
+                )
+                returncode = await proc.wait()
+                if returncode:
+                    raise CalledProcessError(returncode=returncode, cmd=command)
 
                 # Initialize a filesystem from the unpacked/untarred temporary folder
                 tar_view = await resource.view_as(TarArchive)
@@ -76,8 +94,21 @@ class TarPacker(Packer[None]):
 
         # Pack it back into a temporary archive
         with tempfile.NamedTemporaryFile(suffix=".tar") as temp_archive:
-            command = ["tar", "--xattrs", "-C", flush_dir, "-cf", temp_archive.name, "."]
-            subprocess.run(command, check=True, capture_output=True)
+            cmd = [
+                "tar",
+                "--xattrs",
+                "-C",
+                flush_dir,
+                "-cf",
+                temp_archive.name,
+                ".",
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+            )
+            returncode = await proc.wait()
+            if proc.returncode:
+                raise CalledProcessError(returncode=returncode, cmd=cmd)
 
             # Replace the original archive data
             resource.queue_patch(Range(0, await resource.get_data_length()), temp_archive.read())

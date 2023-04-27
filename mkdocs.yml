@@ -45,7 +45,8 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.superfences
   - pymdownx.snippets
-  - admonition
+  - pymdownx.tabbed:
+      alternate_style: true
 
 nav:
   - Home: "index.md"
@@ -65,7 +66,7 @@ nav:
           - Packer: "user-guide/key-concepts/component/packer.md"
         - GUI:
           - Minimap View: "user-guide/key-concepts/gui/minimap.md"
-          - Keybindings: "user-guide/gui/keybindings.md"
+          - Keybindings: "user-guide/key-concepts/gui/keybindings.md"
       - Disassembler Backends:
         - Ghidra Backend: "user-guide/disassembler-backends/ghidra.md"
         - Binary Ninja Backend: "user-guide/disassembler-backends/binary_ninja.md"

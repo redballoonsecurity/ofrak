@@ -1,9 +1,10 @@
-import subprocess
+import asyncio
 import tempfile
 from dataclasses import dataclass
 import logging
 from typing import List, Tuple
 import os
+from subprocess import CalledProcessError
 
 from ofrak.model.tag_model import ResourceTag
 
@@ -47,7 +48,7 @@ class _PyLzoTool(ComponentExternalTool):
             install_check_arg="",
         )
 
-    def is_tool_installed(self) -> bool:
+    async def is_tool_installed(self) -> bool:
         try:
             import lzo  # type: ignore
 
@@ -196,13 +197,18 @@ class UbiUnpacker(Unpacker[None]):
                 temp_file.flush()
 
             # extract temp_file to temp_flush_dir
-            command = [
+            cmd = [
                 "ubireader_extract_images",
                 "-o",
                 f"{temp_flush_dir}/output",
                 temp_file.name,
             ]
-            subprocess.run(command, check=True, capture_output=True)
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+            )
+            returncode = await proc.wait()
+            if proc.returncode:
+                raise CalledProcessError(returncode=returncode, cmd=cmd)
 
             ubi_view = await resource.view_as(Ubi)
 
@@ -238,16 +244,6 @@ class UbiPacker(Packer[None]):
         # with tempfile.NamedTemporaryFile(mode="rb") as temp:
         with tempfile.TemporaryDirectory() as temp_flush_dir:
             ubi_volumes = await resource.get_children()
-            command = [
-                "ubinize",
-                "-p",
-                str(ubi_view.peb_size),
-                "-m",
-                str(ubi_view.min_io_size),
-                "-o",
-                f"{temp_flush_dir}/output.ubi",
-                f"{temp_flush_dir}/config.ini",
-            ]
             ubinize_ini_entries = []
 
             for volume in ubi_volumes:
@@ -282,7 +278,22 @@ vol_name={volume_view.name}
             with open(f"{temp_flush_dir}/config.ini", "w") as config_ini_file:
                 config_ini_file.write("\n".join(ubinize_ini_entries))
 
-            subprocess.run(command, check=True, capture_output=True)
+            cmd = [
+                "ubinize",
+                "-p",
+                str(ubi_view.peb_size),
+                "-m",
+                str(ubi_view.min_io_size),
+                "-o",
+                f"{temp_flush_dir}/output.ubi",
+                f"{temp_flush_dir}/config.ini",
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+            )
+            returncode = await proc.wait()
+            if proc.returncode:
+                raise CalledProcessError(returncode=returncode, cmd=cmd)
 
             with open(f"{temp_flush_dir}/output.ubi", "rb") as output_f:
                 packed_blob_data = output_f.read()
