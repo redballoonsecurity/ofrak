@@ -13,7 +13,10 @@ from ofrak.component.interface import ComponentInterface
 from ofrak.core.binary import GenericBinary
 from ofrak.core.filesystem import File, FilesystemRoot
 from ofrak.model.component_model import ClientComponentContext
-from ofrak.model.resource_model import ResourceModel, ClientResourceContextFactory
+from ofrak.model.resource_model import (
+    ResourceModel,
+    EphemeralResourceContextFactory,
+)
 from ofrak.model.tag_model import ResourceTag
 from ofrak.model.viewable_tag_model import ResourceViewContext
 from ofrak.resource import Resource, ResourceFactory
@@ -48,7 +51,7 @@ class OFRAKContext:
         self.resource_service = resource_service
         self.job_service = job_service
         self._all_ofrak_services = all_ofrak_services
-        self._resource_context_factory = ClientResourceContextFactory()
+        self._resource_context_factory = EphemeralResourceContextFactory()
 
     async def create_root_resource(
         self, name: str, data: bytes, tags: Iterable[ResourceTag] = (GenericBinary,)

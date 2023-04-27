@@ -3,7 +3,6 @@ from _warnings import warn
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import Tuple, Type, Dict, Any, List, Set, TypeVar, Iterable, MutableMapping, Generic
-from weakref import WeakValueDictionary
 
 import ofrak.model._auto_attributes
 from ofrak.model.resource_model import (
@@ -313,7 +312,7 @@ class ResourceViewContext:
 
     def __init__(self):
         self.views_by_resource: MutableMapping[bytes, ResourceViewContext.ViewByTag] = defaultdict(
-            WeakValueDictionary
+            dict
         )
 
     def has_view(self, resource_id: bytes, view_type: ViewableResourceTag) -> bool:
