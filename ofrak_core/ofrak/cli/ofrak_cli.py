@@ -173,7 +173,7 @@ class OfrakCommandRunsScript(OfrakCommand, ABC):
             logging.warning("No disassembler backend specified, so no disassembly will be possible")
 
         for ofrak_pkg_name in ofrak_pkgs:
-            if os.path.exists(ofrak_pkg_name):
+            if os.path.exists(ofrak_pkg_name) and os.path.isfile(os.path.abspath(ofrak_pkg_name)):
                 ofrak_pkg = self._import_via_path(ofrak_pkg_name)
             else:
                 ofrak_pkg = importlib.import_module(ofrak_pkg_name)
