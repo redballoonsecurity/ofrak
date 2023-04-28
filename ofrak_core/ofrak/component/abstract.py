@@ -160,6 +160,12 @@ class AbstractComponent(ComponentInterface[CC], ABC):
         # (deleting and modifying are handled separately)
         modified_resource_ids.difference_update(component_context.resources_deleted)
 
+        tags_added = {
+            r_id: set(modified_r.diff.tags_added)
+            for r_id, modified_r in modified_resource_models.items()
+            if modified_r.diff.tags_added
+        }
+
         # Save modified resources
         await self._save_resources(
             job_id,
@@ -175,6 +181,7 @@ class AbstractComponent(ComponentInterface[CC], ABC):
             modified_resource_ids,
             component_context.resources_deleted,
             component_context.resources_created,
+            tags_added,
         )
         return component_result
 

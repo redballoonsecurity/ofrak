@@ -269,11 +269,11 @@ class JobService(JobServiceInterface):
         resource = await self._resource_service.get_by_id(request.resource_id)
         component_filter = _build_auto_run_filter(request)
 
-        tags_to_target = tuple(resource.tags)
+        tags_to_target: Optional[Iterable[ResourceTag]] = tuple(resource.tags)
         components_result = ComponentRunResult()
-        while len(tags_to_target) > 0:
+        while tags_to_target:
             job_context = self._job_context_factory.create()
-            component_tag_filter = _build_tag_filter(tags_to_target)
+            component_tag_filter = _build_tag_filter(tuple(tags_to_target))
             final_filter = ComponentAndMetaFilter(component_filter, component_tag_filter)
             individual_component_results = await self._auto_run_components(
                 (
@@ -287,8 +287,7 @@ class JobService(JobServiceInterface):
             )
 
             components_result.update(individual_component_results)
-            tags_added = individual_component_results.tags_added
-            tags_to_target = tuple(tags_added)
+            tags_to_target = individual_component_results.tags_added.get(request.resource_id)
 
         return components_result
 
@@ -312,7 +311,7 @@ class JobService(JobServiceInterface):
         while tags_added_count > 0:
             job_context = self._job_context_factory.create()
             _run_components_requests = []
-            for r_id, tags_added_to_r in tags_previously_added:
+            for r_id, tags_added_to_r in tags_previously_added.items():
                 final_filter = ComponentAndMetaFilter(
                     component_filter,
                     _build_tag_filter(tuple(tags_added_to_r)),

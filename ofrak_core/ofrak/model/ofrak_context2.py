@@ -79,7 +79,7 @@ class OFRAKContext2:
     """
     Purpose: Interface between local state and "database" (service state)
 
-    Import functions:
+    Important functions:
     1. Cache and update resource models appropriately
     2. Cache and update resource views appropriately
     3. Track modifications
@@ -542,7 +542,7 @@ class OFRAKContext2:
             )
             # Remove any dependencies on modified attributes
             for attributes_type_altered in attributes_modified:
-                dependencies = model.attribute_dependencies.get(type(attributes_type_altered), ())
+                dependencies = model.attribute_dependencies.get(attributes_type_altered, ())
                 for dependency in dependencies:
                     model.remove_dependency(dependency)
 
