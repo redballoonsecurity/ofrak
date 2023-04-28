@@ -176,10 +176,10 @@ class AiohttpOFRAKServer:
                 ),
                 web.get("/{resource_id}/get_config_for_component", self.get_config_for_component),
                 web.post("/{resource_id}/run_component", self.run_component),
-                web.get("/", self.get_static_files),
                 web.post(
                     "/{resource_id}/get_tags_and_num_components", self.get_tags_and_num_components
                 ),
+                web.get("/", self.get_static_files),
                 web.static(
                     "/",
                     os.path.join(os.path.dirname(__file__), "./public"),
@@ -712,6 +712,24 @@ class AiohttpOFRAKServer:
         component = self.env.components[request.query.get("component")]
         config = self._get_config_for_component(component)
         if not config == inspect._empty:
+            _fields = []
+            for field in fields(config):
+                field.type = self._modify_elipsis(field.type)
+                if isinstance(field.default, dataclasses._MISSING_TYPE):
+                    field.default = None
+                _fields.append(
+                    {
+                        "name": field.name,
+                        "type": self._convert_to_class_name_str(field.type),
+                        "args": self._construct_arg_response(field.type),
+                        "fields": self._construct_field_response(field.type),
+                        "enum": self._construct_enum_response(field.type),
+                        "optional": self._is_optional(field.type),
+                        "default": field.default
+                        if not isinstance(field.default, dataclasses._MISSING_TYPE)
+                        else None,
+                    }
+                )
             return json_response(
                 {
                     "name": config.__name__,
@@ -719,21 +737,7 @@ class AiohttpOFRAKServer:
                     "args": self._construct_arg_response(self._convert_to_class_name_str(config)),
                     "enum": self._construct_enum_response(config),
                     "optional": self._is_optional(config),
-                    "fields": [
-                        {
-                            "name": field.name,
-                            "type": self._convert_to_class_name_str(field.type),
-                            "args": self._construct_arg_response(field.type),
-                            "fields": self._construct_field_response(field.type),
-                            "enum": self._construct_enum_response(field.type),
-                            "optional": self._is_optional(field.type),
-                            "default": field.default
-                            if not isinstance(field.default, dataclasses._MISSING_TYPE)
-                            else None,
-                        }
-                        for field in fields(config)
-                        if field.init is True
-                    ],
+                    "fields": _fields,
                 }
             )
         else:
@@ -796,42 +800,59 @@ class AiohttpOFRAKServer:
 
     def _construct_field_response(self, obj):
         if dataclasses.is_dataclass(obj):
-            return [
-                {
-                    "name": field.name,
-                    "type": self._convert_to_class_name_str(field.type),
-                    "args": self._construct_arg_response(field.type),
-                    "fields": self._construct_field_response(field.type),
-                    "enum": self._construct_enum_response(field.type),
-                    "optional": self._is_optional(field.type),
-                    "default": field.default
-                    if not isinstance(field.default, dataclasses._MISSING_TYPE)
-                    else None,
-                }
-                for field in fields(obj)
-                if field.init is True
-            ]
+            res = []
+            for field in fields(obj):
+                if field.init:
+                    field.type = self._modify_elipsis(field.type)
+                    res.append(
+                        {
+                            "name": field.name,
+                            "type": self._convert_to_class_name_str(field.type),
+                            "args": self._construct_arg_response(field.type),
+                            "fields": self._construct_field_response(field.type),
+                            "enum": self._construct_enum_response(field.type),
+                            "optional": self._is_optional(field.type),
+                            "default": field.default
+                            if not isinstance(field.default, dataclasses._MISSING_TYPE)
+                            else None,
+                        }
+
+                    )
+            return res
         else:
             return None
 
     def _construct_arg_response(self, obj):
         args = typing.get_args(obj)
         if len(args) != 0:
-            return [
-                {
-                    "name": None,
-                    "type": self._convert_to_class_name_str(arg),
-                    "args": self._construct_arg_response(arg),
-                    "fields": self._construct_field_response(arg),
-                    "enum": self._construct_enum_response(arg),
-                    "optional": self._is_optional(arg),
-                    "default": None,
-                }
-                for arg in args
-                if not isinstance(arg, type(...))
-            ]
+            res = []
+            for arg in args:
+                arg = self._modify_elipsis(arg)
+                res.append(
+                    {
+                        "name": None,
+                        "type": self._convert_to_class_name_str(arg),
+                        "args": self._construct_arg_response(arg),
+                        "fields": self._construct_field_response(arg),
+                        "enum": self._construct_enum_response(arg),
+                        "optional": self._is_optional(arg),
+                        "default": None,
+                    }
+                )
+            return res
         else:
             return None
+
+    def _modify_elipsis(self, obj):
+        args = typing.get_args(obj)
+        has_elipsis = any([isinstance(arg, type(...)) for arg in args])
+        if has_elipsis:
+            if len(args) == 2:
+                other_arg = [arg for arg in args if not isinstance(arg, type(...))][0]
+                obj = typing.List[other_arg]
+            else:
+                raise AttributeError("Unexpected type format with elipsis")
+        return obj
 
     def _construct_enum_response(self, obj):
         if not isinstance(obj, Enum):
@@ -845,8 +866,6 @@ class AiohttpOFRAKServer:
         return False
 
     def _convert_to_class_name_str(self, obj: any):
-        if isinstance(obj, type(...)):
-            return "ellipsis"
         if hasattr(obj, "_name"):
             if obj._name == "Optional":
                 obj = [conf for conf in typing.get_args(obj) if conf is not None][0]
