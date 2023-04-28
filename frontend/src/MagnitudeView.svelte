@@ -93,7 +93,7 @@
     }
   }
 
-  $: if (mounted && canvas !== undefined && canvas !== null) {
+  $: if (mounted && canvas !== undefined && canvas !== null && imageData) {
     const context = canvas.getContext("2d");
     context.putImageData(imageData, 0, 0);
 
