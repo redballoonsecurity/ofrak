@@ -123,10 +123,10 @@
 <script>
   import { selectedResource } from "./stores.js";
   import { onMount } from "svelte";
+
   import ComponentConfig from "./ComponentConfig.svelte";
   import LoadingText from "./LoadingText.svelte";
   import Checkbox from "./Checkbox.svelte";
-  import AddTagView from "./AddTagView.svelte";
 
   export let modifierView, resourceNodeDataMap;
   let errorMessage,
@@ -140,7 +140,7 @@
     ofrakComponentsPromise = new Promise(() => {}),
     ofrakTargetsPromise = new Promise(() => {});
 
-  async function getTargets() {
+  async function getTargetsAndComponents() {
     try {
       ofrakTargetsPromise = $selectedResource.get_tags_and_num_components(
         only_targets,
@@ -149,19 +149,6 @@
         incl_packers,
         incl_unpackers
       );
-    } catch (err) {
-      try {
-        errorMessage = JSON.parse(err.message).message;
-      } catch (_) {
-        errorMessage = err.message;
-      }
-    }
-  }
-
-  getTargets();
-
-  async function getComponents() {
-    try {
       ofrakComponentsPromise = $selectedResource.get_components(
         only_targets,
         target_filter,
@@ -179,16 +166,10 @@
     }
   }
 
+  getTargetsAndComponents();
+
   $: {
-    getComponents(
-      only_targets,
-      incl_analyzers,
-      incl_modifiers,
-      incl_packers,
-      incl_unpackers,
-      target_filter
-    );
-    getTargets(
+    getTargetsAndComponents(
       only_targets,
       incl_analyzers,
       incl_modifiers,
@@ -200,22 +181,7 @@
 
   onMount(async () => {
     selectedComponent = undefined;
-    try {
-      ofrakComponentsPromise = $selectedResource.get_components(
-        only_targets,
-        target_filter,
-        incl_analyzers,
-        incl_modifiers,
-        incl_packers,
-        incl_unpackers
-      );
-    } catch (err) {
-      try {
-        errorMessage = JSON.parse(err.message).message;
-      } catch (_) {
-        errorMessage = err.message;
-      }
-    }
+    getTargetsAndComponents();
   });
 </script>
 
@@ -240,9 +206,6 @@
           <p>Failed to get the list of OFRAK components!</p>
           <p>The back end server may be down.</p>
         {/await}
-        <Checkbox bind:checked="{only_targets}" leftbox="{true}">
-          Only Targetable Components
-        </Checkbox>
         <Checkbox bind:checked="{incl_analyzers}" leftbox="{true}">
           Include Analyzers
         </Checkbox>
@@ -259,7 +222,7 @@
       {#await ofrakComponentsPromise}
         <LoadingText />
       {:then ofrakComponents}
-        <div>
+        <div class="checkboxes">
           <select bind:value="{selectedComponent}">
             <option value="{null}">Select a component to run</option>
             {#each ofrakComponents as ofrakComponent}
@@ -268,6 +231,9 @@
               </option>
             {/each}
           </select>
+          <Checkbox bind:checked="{only_targets}" leftbox="{true}">
+            Show all components
+          </Checkbox>
         </div>
       {:catch}
         <p>Failed to get the list of OFRAK components!</p>
@@ -298,6 +264,7 @@
       </p>
     {/if}
   </div>
+
   <div class="actions">
     <!-- TODO -->
     <button on:click="{() => alert('Not yet implemented')}">Run</button>
