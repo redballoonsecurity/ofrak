@@ -1,12 +1,4 @@
 <style>
-  form {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    justify-content: space-between;
-    align-items: center;
-  }
-
   button {
     padding-top: 0.5em;
     padding-bottom: 0.5em;
@@ -38,34 +30,37 @@
 
   .inputs {
     flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: stretch;
   }
 
-  .inputs *:first-child {
+  .inputs > *:first-child {
     margin-top: 0;
-  }
-
-  .label {
-    padding-left: 10px;
   }
 
   .checkboxes {
     display: flex;
     flex-direction: column;
-    flex-wrap: wrap;
-    justify-content: space-evenly;
-    align-items: flex-end;
-    align-content: center;
-    white-space: nowrap;
-    float: left;
-    direction: rtl;
-  }
-
-  .dropdown {
-    float: right;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: flex-start;
+    align-content: baseline;
   }
 
   .error {
     margin-top: 2em;
+  }
+
+  .actions {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-evenly;
+    align-items: center;
+    align-content: center;
   }
 
   button,
@@ -76,10 +71,7 @@
     border: 1px solid;
     border-color: inherit;
     border-radius: 0;
-    padding-top: 0.5em;
-    padding-bottom: 0.5em;
-    padding-left: 1em;
-    padding-right: 1em;
+    padding: 0.5em 1em;
     margin-left: 0.5em;
     margin-right: 0.5em;
     font-size: inherit;
@@ -88,12 +80,43 @@
   }
 
   select {
-    flex-grow: 1;
-    margin: 0 2ch;
+    width: 100%;
+    margin: 0;
+    margin-bottom: 1em;
   }
 
   option {
     font-family: monospace;
+  }
+
+  .filters {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    align-content: center;
+  }
+
+  .filters > * {
+    flex-grow: 1;
+    margin: 0 1em;
+  }
+
+  .filters > *:first-child {
+    margin-left: 0;
+  }
+
+  .filters > *:last-child {
+    margin-right: 0;
+  }
+
+  hr {
+    border: 1px dashed var(--main-fg-color);
+    width: 100%;
+    margin: 2em 0;
+    padding: 0;
+    box-sizing: border-box;
   }
 </style>
 
@@ -105,7 +128,7 @@
   import Checkbox from "./Checkbox.svelte";
   import AddTagView from "./AddTagView.svelte";
 
-  export let modifierView, resourceNodeDataMap, dataPromise;
+  export let modifierView, resourceNodeDataMap;
   let errorMessage,
     only_targets = true,
     incl_analyzers = false,
@@ -156,6 +179,25 @@
     }
   }
 
+  $: {
+    getComponents(
+      only_targets,
+      incl_analyzers,
+      incl_modifiers,
+      incl_packers,
+      incl_unpackers,
+      target_filter
+    );
+    getTargets(
+      only_targets,
+      incl_analyzers,
+      incl_modifiers,
+      incl_packers,
+      incl_unpackers,
+      target_filter
+    );
+  }
+
   onMount(async () => {
     selectedComponent = undefined;
     try {
@@ -179,74 +221,71 @@
 
 <div class="container">
   <div class="inputs">
-    <p>Select component to run on resource.</p>
-    {#await ofrakTargetsPromise}
-      <LoadingText />
-    {:then ofrakTags}
-      <form class="dropdown" on:change|preventDefault="{getComponents}">
-        Tag Filter: <select
-          on:click|stopPropagation="{() => undefined}"
-          bind:value="{target_filter}"
-        >
-          <option value="{null}">None</option>
-          {#each ofrakTags as [ofrakTag, numComponents]}
-            {#if numComponents != 0}
-              <option value="{ofrakTag}">
-                {ofrakTag} ({numComponents})
+    <div class="filters">
+      <div class="checkboxes">
+        {#await ofrakTargetsPromise}
+          <LoadingText />
+        {:then ofrakTags}
+          <select bind:value="{target_filter}">
+            <option value="{null}">Filter by Tag</option>
+            {#each ofrakTags as [ofrakTag, numComponents]}
+              {#if numComponents != 0}
+                <option value="{ofrakTag}">
+                  {ofrakTag} ({numComponents})
+                </option>
+              {/if}
+            {/each}
+          </select>
+        {:catch}
+          <p>Failed to get the list of OFRAK components!</p>
+          <p>The back end server may be down.</p>
+        {/await}
+        <Checkbox bind:checked="{only_targets}" leftbox="{true}">
+          Only Targetable Components
+        </Checkbox>
+        <Checkbox bind:checked="{incl_analyzers}" leftbox="{true}">
+          Include Analyzers
+        </Checkbox>
+        <Checkbox bind:checked="{incl_modifiers}" leftbox="{true}">
+          Include Modifiers
+        </Checkbox>
+        <Checkbox bind:checked="{incl_packers}" leftbox="{true}">
+          Include Packers
+        </Checkbox>
+        <Checkbox bind:checked="{incl_unpackers}" leftbox="{true}">
+          Include Unpackers
+        </Checkbox>
+      </div>
+      {#await ofrakComponentsPromise}
+        <LoadingText />
+      {:then ofrakComponents}
+        <div>
+          <select bind:value="{selectedComponent}">
+            <option value="{null}">Select a component to run</option>
+            {#each ofrakComponents as ofrakComponent}
+              <option value="{ofrakComponent}">
+                {ofrakComponent}
               </option>
-            {/if}
-          {/each}
-        </select>
-      </form>
-    {:catch}
-      <p>Failed to get the list of OFRAK components!</p>
-      <p>The back end server may be down.</p>
-    {/await}
-    <form
-      class="checkboxes "
-      on:change|preventDefault="{getComponents}"
-      on:change|preventDefault="{getTargets}"
-    >
-      <Checkbox bind:checked="{only_targets}"
-        ><div class="label">Only Targetable Components</div></Checkbox
-      >
-      <Checkbox bind:checked="{incl_analyzers}"
-        ><div class="label">Include Analyzers</div></Checkbox
-      >
-      <Checkbox bind:checked="{incl_modifiers}"
-        ><div class="label">Include Modifiers</div></Checkbox
-      >
-      <Checkbox bind:checked="{incl_packers}"
-        ><div class="label">Include Packers</div></Checkbox
-      >
-      <Checkbox bind:checked="{incl_unpackers}"
-        ><div class="label">Include Unpackers</div></Checkbox
-      >
-    </form>
+            {/each}
+          </select>
+        </div>
+      {:catch}
+        <p>Failed to get the list of OFRAK components!</p>
+        <p>The back end server may be down.</p>
+      {/await}
+    </div>
+
+    <hr />
+
     {#await ofrakComponentsPromise}
       <LoadingText />
     {:then ofrakComponents}
-      <form class="dropdown">
-        Run Component: <select
-          on:click|stopPropagation="{() => undefined}"
-          bind:value="{selectedComponent}"
-        >
-          <option value="{null}">Select a component to run</option>
-          {#each ofrakComponents as ofrakComponent}
-            <option value="{ofrakComponent}">
-              {ofrakComponent}
-            </option>
-          {/each}
-        </select>
-
-        <button
-          on:click|stopPropagation="{() => undefined}"
-          disabled="{!selectedComponent}"
-          type="submit">Run</button
-        >
-      </form>
       {#if selectedComponent != null}
-        <ComponentConfig selectedComponent="{selectedComponent}" modifierView="{modifierView}" resourceNodeDataMap="{resourceNodeDataMap}"/>
+        <ComponentConfig
+          selectedComponent="{selectedComponent}"
+          modifierView="{modifierView}"
+          resourceNodeDataMap="{resourceNodeDataMap}"
+        />
       {/if}
     {:catch}
       <p>Failed to get the list of OFRAK components!</p>
@@ -259,5 +298,9 @@
       </p>
     {/if}
   </div>
-  <button on:click="{() => (modifierView = undefined)}">Cancel</button>
+  <div class="actions">
+    <!-- TODO -->
+    <button on:click="{() => alert('Not yet implemented')}">Run</button>
+    <button on:click="{() => (modifierView = undefined)}">Cancel</button>
+  </div>
 </div>
