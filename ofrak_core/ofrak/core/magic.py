@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass
+from types import ModuleType
 from typing import Callable, Dict, Iterable, Union
 
 from ofrak.component.analyzer import Analyzer
@@ -24,14 +25,17 @@ class Magic(ResourceAttributes):
 class _LibmagicDependency(ComponentExternalTool):
     try:
         import magic
+
+        magic_: ModuleType = magic
     except ImportError:
-        magic = None
+        magic_ = None
 
     def __init__(self):
         super().__init__(
             "libmagic",
             "https://linux.die.net/man/3/libmagic",
             install_check_arg="",
+            apt_package="libmagic1",
             brew_package="libmagic",
         )
 
@@ -43,7 +47,7 @@ class _LibmagicDependency(ComponentExternalTool):
             _LibmagicDependency._magic = None
 
     async def is_tool_installed(self) -> bool:
-        return self.magic is not None
+        return self.magic_ is not None
 
 
 LIBMAGIC_DEP = _LibmagicDependency()
@@ -60,9 +64,12 @@ class MagicAnalyzer(Analyzer[None, Magic]):
 
     async def analyze(self, resource: Resource, config=None) -> Magic:
         data = await resource.get_data()
-        magic_mime = LIBMAGIC_DEP.magic.from_buffer(data, mime=True)
-        magic_description = LIBMAGIC_DEP.magic.from_buffer(data)
-        return Magic(magic_mime, magic_description)
+        if LIBMAGIC_DEP.magic_ is None:
+            raise ImportError("libmagic does not seem to be installed!")
+        else:
+            magic_mime = LIBMAGIC_DEP.magic_.from_buffer(data, mime=True)
+            magic_description = LIBMAGIC_DEP.magic_.from_buffer(data)
+            return Magic(magic_mime, magic_description)
 
 
 class MagicMimeIdentifier(Identifier[None]):
