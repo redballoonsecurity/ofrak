@@ -34,7 +34,6 @@
   import AudioPlayer from "./AudioPlayer.svelte";
   import ByteclassView from "./ByteclassView.svelte";
   import CarouselSelector from "./CarouselSelector.svelte";
-  import ComponentConfig from "./ComponentConfig.svelte";
   import ComponentsView from "./ComponentsView.svelte";
   import EntropyView from "./EntropyView.svelte";
   import FindReplaceView from "./FindReplaceView.svelte";
@@ -117,7 +116,7 @@
     if (
       (["input", "textarea"].includes(e.target?.tagName.toLocaleLowerCase()) ||
         e.target.isContentEditable ||
-        modifierView === ComponentConfig ||
+        modifierView === ComponentsView ||
         modifierView === FindReplaceView) &&
       modifierView
     ) {

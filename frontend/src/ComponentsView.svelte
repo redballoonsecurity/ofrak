@@ -121,10 +121,10 @@
 </style>
 
 <script>
-  import { selectedResource } from "./stores.js";
+  import { selected, selectedResource } from "./stores.js";
   import { onMount } from "svelte";
 
-  import ComponentConfig from "./ComponentConfig.svelte";
+  import ComponentConfigNode from "./ComponentConfigNode.svelte";
   import LoadingText from "./LoadingText.svelte";
   import Checkbox from "./Checkbox.svelte";
 
@@ -138,7 +138,10 @@
     target_filter = null,
     selectedComponent = null,
     ofrakComponentsPromise = new Promise(() => {}),
-    ofrakTargetsPromise = new Promise(() => {});
+    ofrakTargetsPromise = new Promise(() => {}),
+    ofrakConfigsPromise = new Promise(() => {}),
+    config = {},
+    ofrakConfigName = null;
 
   async function getTargetsAndComponents() {
     try {
@@ -178,6 +181,57 @@
       target_filter
     );
   }
+
+  $: if (selectedComponent) {
+    try {
+      ofrakConfigsPromise =
+        $selectedResource.get_config_for_component(selectedComponent);
+    } catch (err) {
+      try {
+        errorMessage = `Error: ${JSON.parse(err.message).message}`;
+      } catch (_) {
+        errorMessage = `Error: ${err.message}`;
+      }
+    }
+  }
+
+  $: runComponent = async () => {
+    let ofrakConfig = await ofrakConfigsPromise;
+    if (ofrakConfig.length != 0) {
+      ofrakConfigName = ofrakConfig["name"];
+    }
+    try {
+      const results = await $selectedResource.run_component(
+        selectedComponent,
+        ofrakConfig["type"],
+        config
+      );
+      resourceNodeDataMap[$selected] = {
+        collapsed: false,
+        childrenPromise: $selectedResource.get_children(),
+      };
+      for (const result in results) {
+        if (result === "modified") {
+          for (const resource of results[result]) {
+            resourceNodeDataMap[resource["id"]] = {
+              modified: true,
+            };
+          }
+        }
+      }
+      const orig_selected = $selected;
+      $selected = undefined;
+      $selected = orig_selected;
+      modifierView = undefined;
+    } catch (err) {
+      try {
+        const parsed = JSON.parse(err.message);
+        errorMessage = `${parsed.type}: ${parsed.message}`;
+      } catch (_) {
+        errorMessage = `Error: ${err.message}`;
+      }
+    }
+  };
 
   onMount(async () => {
     selectedComponent = undefined;
@@ -247,11 +301,17 @@
       <LoadingText />
     {:then ofrakComponents}
       {#if selectedComponent != null}
-        <ComponentConfig
-          selectedComponent="{selectedComponent}"
-          modifierView="{modifierView}"
-          resourceNodeDataMap="{resourceNodeDataMap}"
-        />
+        {#await ofrakConfigsPromise}
+          <LoadingText />
+        {:then ofrakConfig}
+          {#if ofrakConfig.length != 0}
+            <p>Configure {selectedComponent}:</p>
+            <ComponentConfigNode node="{ofrakConfig}" bind:element="{config}" />
+          {/if}
+        {:catch}
+          <p>Failed to get config for {selectedComponent}!</p>
+          <p>The back end server may be down.</p>
+        {/await}
       {/if}
     {:catch}
       <p>Failed to get the list of OFRAK components!</p>
@@ -266,8 +326,9 @@
   </div>
 
   <div class="actions">
-    <!-- TODO -->
-    <button on:click="{() => alert('Not yet implemented')}">Run</button>
+    <button on:click="{runComponent}">
+      Run {selectedComponent}
+    </button>
     <button on:click="{() => (modifierView = undefined)}">Cancel</button>
   </div>
 </div>
