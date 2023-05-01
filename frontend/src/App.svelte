@@ -116,9 +116,9 @@
     // cause users to accidentally run shortcuts.
     if (
       (["input", "textarea"].includes(e.target?.tagName.toLocaleLowerCase()) ||
-      e.target.isContentEditable ||
-      modifierView === ComponentConfig ||
-      modifierView === FindReplaceView) &&
+        e.target.isContentEditable ||
+        modifierView === ComponentConfig ||
+        modifierView === FindReplaceView) &&
       modifierView
     ) {
       return;

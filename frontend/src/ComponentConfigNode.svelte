@@ -160,10 +160,7 @@
     {:else if node["type"] == "typing.Union"}
       <p>Select Type</p>
       <form class="dropdown">
-        <select
-          on:click="{() => undefined}"
-          bind:value="{unionTypeSelect}"
-        >
+        <select on:click="{() => undefined}" bind:value="{unionTypeSelect}">
           <option value="{null}">{node["args"][0]}</option>
           {#each node["args"] as arg}
             <option value="{arg}">

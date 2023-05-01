@@ -108,7 +108,7 @@
         errorMessage = `Error: ${err.message}`;
       }
     }
-  };
+  }
 </script>
 
 <div class="container">
