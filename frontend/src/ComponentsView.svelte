@@ -61,6 +61,7 @@
     justify-content: space-evenly;
     align-items: center;
     align-content: center;
+    margin-top: 1em;
   }
 
   button,
