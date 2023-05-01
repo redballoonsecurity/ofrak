@@ -5,15 +5,19 @@ import platform
 from multiprocessing import Pool, cpu_count
 from typing import Optional, Dict, Mapping, Tuple
 
-import magic
-
 from ofrak_patch_maker.toolchain.model import BinFileType, Segment
 from ofrak_type.error import NotFoundError
 from ofrak_type.memory_permissions import MemoryPermissions
 
+_magic = None
+
 
 def get_file_format(path):
-    result = magic.from_file(path).split(" ")[0].lower()
+    global _magic
+    if _magic is None:
+        import magic as _magic
+
+    result = _magic.from_file(path).split(" ")[0].lower()
     try:
         return BinFileType(result)
     except:
