@@ -33,7 +33,7 @@ class _LibmagicDependency(ComponentExternalTool):
     def __init__(self):
         super().__init__(
             "libmagic",
-            "https://linux.die.net/man/3/libmagic",
+            "https://www.darwinsys.com/file/",
             install_check_arg="",
             apt_package="libmagic1",
             brew_package="libmagic",
