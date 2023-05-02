@@ -118,7 +118,8 @@
   if (
     node["type"] == "typing.List" ||
     node["type"] == "typing.Tuple" ||
-    node["type"] == "typing.Dict"
+    node["type"] == "typing.Dict" ||
+    node["type"] == "ofrak.core.patch_maker.modifiers.SourceBundle"
   ) {
     element = [];
   } else if (node["type"] == "typing.Union") {
@@ -142,6 +143,51 @@
     element = [...element, [null, null]];
     element = element;
   };
+
+  $: if (node["type"] == "ofrak.core.patch_maker.modifiers.SourceBundle") {
+    node = {
+      name: node["name"],
+      type: "typing.Dict",
+      args: [
+        {
+          name: null,
+          type: "builtins.str",
+          args: null,
+          fields: null,
+          enum: null,
+          default: null,
+        },
+        {
+          name: null,
+          type: "typing.Union",
+          args: [
+            {
+              name: null,
+              type: "builtins.bytes",
+              args: null,
+              fields: null,
+              enum: null,
+              default: null,
+            },
+            {
+              name: null,
+              type: "ofrak.core.patch_maker.modifiers.SourceBundle",
+              args: null,
+              fields: null,
+              enum: null,
+              default: null,
+            },
+          ],
+          fields: null,
+          enum: null,
+          default: null,
+        },
+      ],
+      fields: null,
+      enum: null,
+      default: null,
+    };
+  }
 
   $: nodeName = node["name"] ? node["name"] + ":" : "";
 </script>
