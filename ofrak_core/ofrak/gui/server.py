@@ -5,7 +5,7 @@ import functools
 import itertools
 import json
 import logging
-import typing
+from typing_inspect import get_args
 import json
 import orjson
 import inspect
@@ -823,7 +823,7 @@ class AiohttpOFRAKServer:
             return None
 
     def _construct_arg_response(self, obj):
-        args = typing.get_args(obj)
+        args = get_args(obj)
         if len(args) != 0:
             res = []
             for arg in args:
@@ -844,12 +844,12 @@ class AiohttpOFRAKServer:
             return None
 
     def _modify_elipsis(self, obj):
-        args = typing.get_args(obj)
+        args = get_args(obj)
         has_elipsis = any([isinstance(arg, type(...)) for arg in args])
         if has_elipsis:
             if len(args) == 2:
                 other_arg = [arg for arg in args if not isinstance(arg, type(...))][0]
-                obj = typing.List[other_arg]
+                obj = List[other_arg]
             else:
                 raise AttributeError("Unexpected type format with elipsis")
         return obj
@@ -868,7 +868,7 @@ class AiohttpOFRAKServer:
     def _convert_to_class_name_str(self, obj: any):
         if hasattr(obj, "_name"):
             if obj._name == "Optional":
-                obj = [conf for conf in typing.get_args(obj) if conf is not None][0]
+                obj = [conf for conf in get_args(obj) if conf is not None][0]
         return f"{obj.__module__}.{obj.__qualname__}"
 
     async def _get_resource_by_id(self, resource_id: bytes, job_id: bytes) -> Resource:
@@ -926,7 +926,7 @@ class AiohttpOFRAKServer:
             raise ValueError("{component} can not be run from the web API.")
         if hasattr(config, "_name"):
             if config._name == "Optional":
-                config = [conf for conf in typing.get_args(config) if conf is not None][0]
+                config = [conf for conf in get_args(config) if conf is not None][0]
         return config
 
     async def _get_resource_model_by_id(
