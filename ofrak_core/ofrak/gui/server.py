@@ -714,7 +714,7 @@ class AiohttpOFRAKServer:
         if not config == inspect._empty:
             _fields = []
             for field in fields(config):
-                field.type = self._modify_elipsis(field.type)
+                field.type = self._modify_by_case(field.type)
                 if isinstance(field.default, dataclasses._MISSING_TYPE):
                     field.default = None
                 _fields.append(
@@ -724,7 +724,6 @@ class AiohttpOFRAKServer:
                         "args": self._construct_arg_response(field.type),
                         "fields": self._construct_field_response(field.type),
                         "enum": self._construct_enum_response(field.type),
-                        "optional": self._is_optional(field.type),
                         "default": field.default
                         if not isinstance(field.default, dataclasses._MISSING_TYPE)
                         else None,
@@ -736,7 +735,6 @@ class AiohttpOFRAKServer:
                     "type": self._convert_to_class_name_str(config),
                     "args": self._construct_arg_response(self._convert_to_class_name_str(config)),
                     "enum": self._construct_enum_response(config),
-                    "optional": self._is_optional(config),
                     "fields": _fields,
                 }
             )
@@ -803,7 +801,7 @@ class AiohttpOFRAKServer:
             res = []
             for field in fields(obj):
                 if field.init:
-                    field.type = self._modify_elipsis(field.type)
+                    field.type = self._modify_by_case(field.type)
                     res.append(
                         {
                             "name": field.name,
@@ -811,12 +809,10 @@ class AiohttpOFRAKServer:
                             "args": self._construct_arg_response(field.type),
                             "fields": self._construct_field_response(field.type),
                             "enum": self._construct_enum_response(field.type),
-                            "optional": self._is_optional(field.type),
                             "default": field.default
                             if not isinstance(field.default, dataclasses._MISSING_TYPE)
                             else None,
                         }
-
                     )
             return res
         else:
@@ -827,7 +823,7 @@ class AiohttpOFRAKServer:
         if len(args) != 0:
             res = []
             for arg in args:
-                arg = self._modify_elipsis(arg)
+                arg = self._modify_by_case(arg)
                 res.append(
                     {
                         "name": None,
@@ -835,7 +831,6 @@ class AiohttpOFRAKServer:
                         "args": self._construct_arg_response(arg),
                         "fields": self._construct_field_response(arg),
                         "enum": self._construct_enum_response(arg),
-                        "optional": self._is_optional(arg),
                         "default": None,
                     }
                 )
@@ -843,10 +838,9 @@ class AiohttpOFRAKServer:
         else:
             return None
 
-    def _modify_elipsis(self, obj):
+    def _modify_by_case(self, obj):
         args = get_args(obj)
-        has_elipsis = any([isinstance(arg, type(...)) for arg in args])
-        if has_elipsis:
+        if self._has_elipsis(obj):
             if len(args) == 2:
                 other_arg = [arg for arg in args if not isinstance(arg, type(...))][0]
                 obj = List[other_arg]
@@ -865,10 +859,10 @@ class AiohttpOFRAKServer:
             return obj._name == "Optional"
         return False
 
+    def _has_elipsis(self, obj):
+        return any([isinstance(arg, type(...)) for arg in get_args(obj)])
+
     def _convert_to_class_name_str(self, obj: any):
-        if hasattr(obj, "_name"):
-            if obj._name == "Optional":
-                obj = [conf for conf in get_args(obj) if conf is not None][0]
         return f"{obj.__module__}.{obj.__qualname__}"
 
     async def _get_resource_by_id(self, resource_id: bytes, job_id: bytes) -> Resource:
@@ -903,10 +897,15 @@ class AiohttpOFRAKServer:
 
         for component_name, component in self.env.components.items():
             if issubclass(component, categories):
-                if len([tag for tag in tags if show_all_components or tag in component.targets]) > 0:
-                    if show_all_components or target_filter is None or target_filter in [
-                        target.__qualname__ for target in component.targets
-                    ]:
+                if (
+                    len([tag for tag in tags if show_all_components or tag in component.targets])
+                    > 0
+                ):
+                    if (
+                        show_all_components
+                        or target_filter is None
+                        or target_filter in [target.__qualname__ for target in component.targets]
+                    ):
                         # TODO: Get Angr components to work in gui
                         if "Angr" not in component_name:
                             selected_components.append(component_name)

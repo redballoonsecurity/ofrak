@@ -102,9 +102,8 @@
 <script>
   import Checkbox from "./Checkbox.svelte";
   import { calculator } from "./helpers";
-  export let node, element, optional;
-  let unionTypeSelect,
-    _element;
+  export let node, element;
+  let unionTypeSelect, _element;
 
   const INT_PLACEHOLDERS = ["0x10 * 2 + 8", "(0x10 * 0x100 + 25) * 69"];
 
@@ -133,14 +132,11 @@
   if (node["default"] != null) {
     element = node["default"];
   }
-  if (optional) {
-    element = null;
-  }
 
   const addElementToArray = () => {
     element = [...element, null];
     element = element;
-  }; 
+  };
 
   const addElementToDict = () => {
     element = [...element, [null, null]];
@@ -156,13 +152,8 @@
       {node["name"]}:
     {/if}
 
-    {#if node["type"] == "typing.Optional"}
-      {#each node["args"] as arg}
-        <svelte:self node="{arg}" optional="true" bind:element="{element}" />
-      {/each}
-
-      <!---->
-    {:else if node["type"] == "builtins.bool"}
+    <!---->
+    {#if node["type"] == "builtins.bool"}
       <Checkbox bind:checked="{element}" leftbox="{true}">
         {node["name"]}
       </Checkbox>
@@ -199,18 +190,22 @@
 
       <!---->
     {:else if node["type"] == "typing.List"}
-    <button on:click="{addElementToArray}">Add</button>
-    {#each element as elements}
-      <div class="boxed">
-        <button on:click="{(e) => {element = element.filter((x) => x !== elements)}}">Remove</button>
-        {#each node["args"] as arg}
-          <svelte:self node="{arg}" bind:element="{elements}" />
-        {/each}
-        {#each element as elements}
-          {elements}
-        {/each}
-      </div>
-    {/each}
+      <button on:click="{addElementToArray}">Add</button>
+      {#each element as elements}
+        <div class="boxed">
+          <button
+            on:click="{(e) => {
+              element = element.filter((x) => x !== elements);
+            }}">Remove</button
+          >
+          {#each node["args"] as arg}
+            <svelte:self node="{arg}" bind:element="{elements}" />
+          {/each}
+          {#each element as elements}
+            {elements}
+          {/each}
+        </div>
+      {/each}
 
       <!---->
     {:else if node["type"] == "typing.Tuple"}
@@ -224,7 +219,11 @@
       <button on:click="{addElementToDict}">Add</button>
       {#each Object.entries(element) as [key, value]}
         <div class="boxed">
-          <button on:click="{(e) => {element = delete element[key] && element}}">Remove</button>
+          <button
+            on:click="{(e) => {
+              element = delete element[key] && element;
+            }}">Remove</button
+          >
           <p>Key</p>
           <svelte:self node="{node['args'][0]}" bind:element="{key}" />
           <p>Value</p>
@@ -236,7 +235,7 @@
       {/each}
 
       <!---->
-    {:else if node["type"] == "typing.Union"}
+    {:else if node["type"] == "typing.Union" || node["type"] == "typing.Optional"}
       <p>Select Type</p>
       <select bind:value="{unionTypeSelect}">
         {#each node["args"] as arg}
@@ -245,7 +244,9 @@
           </option>
         {/each}
       </select>
-      <svelte:self node="{unionTypeSelect}" bind:element="{element}" />
+      {#if unionTypeSelect != null}
+        <svelte:self node="{unionTypeSelect}" bind:element="{element}" />
+      {/if}
 
       <!---->
     {:else if node["enum"] != null}
