@@ -236,7 +236,6 @@
 
       <!---->
     {:else if node["type"] == "typing.Union" || node["type"] == "typing.Optional"}
-      <p>Select Type</p>
       <select bind:value="{unionTypeSelect}">
         {#each node["args"] as arg}
           <option value="{arg}">

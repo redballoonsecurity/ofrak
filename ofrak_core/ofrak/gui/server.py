@@ -849,7 +849,9 @@ class AiohttpOFRAKServer:
         return obj
 
     def _construct_enum_response(self, obj):
-        if not isinstance(obj, Enum):
+        if not inspect.isclass(obj):
+            return None
+        elif not issubclass(obj, Enum):
             return None
         else:
             return {name: value.value for name, value in obj.__members__.items()}
