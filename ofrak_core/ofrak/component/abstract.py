@@ -18,7 +18,7 @@ from ofrak.model.component_model import (
     ComponentConfig,
     ComponentExternalTool,
 )
-from ofrak.model.ofrak_context2 import OFRAKContext2Interface
+from ofrak.model.ofrak_context_interface import OFRAKContext2Interface
 from ofrak.resource import Resource
 
 LOGGER = logging.getLogger(__name__)
@@ -54,7 +54,9 @@ class AbstractComponent(ComponentInterface[CC], ABC):
         :param config:
         :return: The IDs of all resources modified by this component
         """
-        context = self._context.fork(job_id=job_id)
+        context = self._context.fork(
+            job_id=job_id, component_id=self.get_id(), component_version=self.get_version()
+        )
         (resource,) = await context.get_resources(resource_id)
         if config is None and self._default_config is not None:
             config = dataclasses.replace(self._default_config)

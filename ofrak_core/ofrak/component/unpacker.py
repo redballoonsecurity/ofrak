@@ -13,14 +13,12 @@ from ofrak.model.component_filters import (
     ComponentNotMetaFilter,
 )
 from ofrak.model.component_model import CC
-from ofrak.model.ofrak_context2 import OFRAKContext2Interface
+from ofrak.model.ofrak_context_interface import OFRAKContext2Interface
 from ofrak.model.tag_model import ResourceTag
-from ofrak.resource import Resource, ResourceFactory
+from ofrak.resource import Resource
 from ofrak.service.component_locator_i import (
     ComponentLocatorInterface,
 )
-from ofrak.service.data_service_i import DataServiceInterface
-from ofrak.service.resource_service_i import ResourceServiceInterface
 
 
 class UnpackerError(RuntimeError):
@@ -34,12 +32,10 @@ class Unpacker(AbstractComponent[CC], ABC):
 
     def __init__(
         self,
-        resource_factory: ResourceFactory,
-        data_service: DataServiceInterface,
-        resource_service: ResourceServiceInterface,
+        ofrak_context: OFRAKContext2Interface,
         component_locator: ComponentLocatorInterface,
     ):
-        super().__init__(resource_factory, data_service, resource_service)
+        super().__init__(ofrak_context)
         self._component_locator = component_locator
 
     @property
@@ -83,7 +79,7 @@ class Unpacker(AbstractComponent[CC], ABC):
             )
         await self.unpack(resource, config)
         resource.add_component(self.get_id(), self.get_version())
-        self._validate_unpacked_children(resource)
+        self._validate_unpacked_children(resource, context)
         # Identify which packers ran (if any) and clear that record, so that it will be allowed
         # to run again
         packer_ids = self._get_which_packers_ran(resource)

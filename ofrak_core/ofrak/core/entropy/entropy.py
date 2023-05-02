@@ -7,10 +7,9 @@ from concurrent.futures.process import BrokenProcessPool
 from dataclasses import dataclass
 
 from ofrak.component.analyzer import Analyzer
+from ofrak.model.ofrak_context_interface import OFRAKContext2Interface
 from ofrak.model.resource_model import ResourceAttributes
-from ofrak.resource import Resource, ResourceFactory
-from ofrak.service.data_service_i import DataServiceInterface
-from ofrak.service.resource_service_i import ResourceServiceInterface
+from ofrak.resource import Resource
 
 LOGGER = logging.getLogger(__name__)
 
@@ -50,11 +49,9 @@ class DataSummaryAnalyzer(Analyzer[None, DataSummary]):
 
     def __init__(
         self,
-        resource_factory: ResourceFactory,
-        data_service: DataServiceInterface,
-        resource_service: ResourceServiceInterface,
+        ofrak_context: OFRAKContext2Interface,
     ):
-        super().__init__(resource_factory, data_service, resource_service)
+        super().__init__(ofrak_context)
         self.pool = ProcessPoolExecutor()
         self.max_analysis_retries = 10
 

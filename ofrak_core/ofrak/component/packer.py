@@ -6,12 +6,6 @@ from ofrak.component.abstract import AbstractComponent
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.identifier import Identifier
 from ofrak.component.modifier import Modifier
-from ofrak.model.component_model import CC
-from ofrak.model.ofrak_context2 import OFRAKContext2Interface
-from ofrak.resource import Resource, ResourceFactory
-from ofrak.service.component_locator_i import (
-    ComponentLocatorInterface,
-)
 from ofrak.model.component_filters import (
     ComponentWhitelistFilter,
     ComponentTypeFilter,
@@ -19,8 +13,12 @@ from ofrak.model.component_filters import (
     ComponentAndMetaFilter,
     ComponentNotMetaFilter,
 )
-from ofrak.service.data_service_i import DataServiceInterface
-from ofrak.service.resource_service_i import ResourceServiceInterface
+from ofrak.model.component_model import CC
+from ofrak.model.ofrak_context_interface import OFRAKContext2Interface
+from ofrak.resource import Resource
+from ofrak.service.component_locator_i import (
+    ComponentLocatorInterface,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -37,12 +35,10 @@ class Packer(AbstractComponent[CC], ABC):
 
     def __init__(
         self,
-        resource_factory: ResourceFactory,
-        data_service: DataServiceInterface,
-        resource_service: ResourceServiceInterface,
+        ofrak_context: OFRAKContext2Interface,
         component_locator: ComponentLocatorInterface,
     ):
-        super().__init__(resource_factory, data_service, resource_service)
+        super().__init__(ofrak_context)
         self._component_locator = component_locator
 
     @abstractmethod

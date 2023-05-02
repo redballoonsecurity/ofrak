@@ -1,8 +1,7 @@
 import asyncio
 import logging
 import os
-from abc import ABC
-from dataclasses import field, fields
+from dataclasses import fields
 from typing import (
     Dict,
     List,
@@ -17,14 +16,16 @@ from typing import (
     TypeVar,
 )
 
-from ofrak.core.filesystem import FilesystemRoot, File
-from ofrak.core.binary import GenericBinary
-
 from ofrak import Resource
-from ofrak.model.tag_model import ResourceTag
-
-from ofrak.model.component_model import ComponentRunResult
+from ofrak.core.binary import GenericBinary
+from ofrak.core.filesystem import FilesystemRoot, File
+from ofrak.model.component_model import (
+    ComponentRunResult,
+    CLIENT_COMPONENT_ID,
+    CLIENT_COMPONENT_VERSION,
+)
 from ofrak.model.data_model import DataModel, DataPatch
+from ofrak.model.ofrak_context_interface import OFRAKContext2Interface, ResourceTracker
 from ofrak.model.resource_model import (
     MutableResourceModel,
     ResourceAttributeDependency,
@@ -32,7 +33,7 @@ from ofrak.model.resource_model import (
     Data,
     ResourceModel,
 )
-from ofrak.model.viewable_tag_model import ViewableResourceTag, ResourceViewInterface
+from ofrak.model.tag_model import ResourceTag
 from ofrak.service.abstract_ofrak_service import AbstractOfrakService
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.id_service_i import IDServiceInterface
@@ -43,76 +44,7 @@ from ofrak_type import Range, InvalidStateError
 LOGGER = logging.getLogger(__file__)
 
 
-class ResourceTracker:
-    def __init__(self, model: MutableResourceModel):
-        self.model: MutableResourceModel = model
-        self.attribute_reads: Set[Type[ResourceAttributes]] = set()
-        self.data_reads: Set[Range] = set()
-        self.data_writes: List[Tuple[Range, bytes]] = list()
-
-        # TODO: Possibly makes sense as a WeakKeyDictionary or WeakValueDictionary, so entries are
-        #  discarded when view is no longer in use.
-        #  Need to be careful of circular references in that case
-        self.views: MutableMapping[ViewableResourceTag, ResourceViewInterface] = dict()
-
-        self.is_deleted: bool = False  # Set after the resource is actually deleted
-        self.is_new: bool = False
-
-    def is_dirty(self) -> bool:
-        return self.modified() or self.is_deleted
-
-    def model_modified(self) -> bool:
-        return self.model.diff.modified()
-
-    def data_modified(self) -> bool:
-        return len(self.data_writes) > 0
-
-    def modified(self) -> bool:
-        return self.model_modified() or self.data_modified()
-
-    def why_dirty(self) -> str:
-        if not self.is_dirty():
-            return "Not dirty!"
-
-        reasons = []
-        if self.model_modified():
-            field_names: List[str] = []
-
-            diff_infos = []
-            for field_name in field_names:
-                val = getattr(self.model.diff, field_name)
-                if len(val) > 0:
-                    diff_infos.append(f"{field_name}: {val}")
-            diff_info = "\n\t".join(diff_infos)
-            reasons.append(f"Model was modified: \n\t{diff_info}")
-
-        if self.data_modified():
-            reasons.append("Data patches are queued")
-
-        if self.is_deleted:
-            reasons.append("Resource has been deleted")
-
-        assert len(reasons) > 0, "Resource is dirty but could not extract the reason(s)!"
-
-        return "\n".join(reasons)
-
-
 S = TypeVar("S", bound=AbstractOfrakService)
-
-
-class OFRAKContext2Interface(ABC):
-    async def get_resources(self, *resource_ids: bytes) -> Iterable["Resource"]:
-        raise NotImplementedError()
-
-    def fork(
-        self,
-        job_id: Optional[bytes] = None,
-        component_id: Optional[bytes] = None,
-        component_version: Optional[int] = None,
-    ) -> "OFRAKContext2Interface":
-        raise NotImplementedError()
-
-    # TODO: The rest...
 
 
 class OFRAKContext2(OFRAKContext2Interface):
@@ -160,10 +92,10 @@ class OFRAKContext2(OFRAKContext2Interface):
 
     def __init__(
         self,
-        job_id: bytes,
-        component_id: bytes,
-        component_version: int,
-        services: List[AbstractOfrakService],
+        job_id: bytes = b"root",
+        component_id: bytes = CLIENT_COMPONENT_ID,
+        component_version: int = CLIENT_COMPONENT_VERSION,
+        services: List[AbstractOfrakService] = [],
     ):
         self.services: Dict[Type[S], S] = self._set_up_services_dict(services)
 
@@ -173,10 +105,10 @@ class OFRAKContext2(OFRAKContext2Interface):
 
         self.trackers: MutableMapping[bytes, ResourceTracker] = dict()
 
-        self.resources_to_delete: Set[bytes] = field(default_factory=set)
+        self.resources_to_delete: Set[bytes] = set()
 
         # TODO: Do we need this? BTW, it is weird that creation is always "instant" and deletion isn't...
-        self.resources_created: Set[bytes] = field(default_factory=set)
+        self.resources_created: Set[bytes] = set()
 
         self.history: List[ComponentRunResult] = []
 
@@ -196,7 +128,7 @@ class OFRAKContext2(OFRAKContext2Interface):
 
     async def get_resources(self, *resource_ids: bytes) -> Iterable[Resource]:
         trackers = await self._get_trackers(resource_ids)
-        resources = [Resource(tracker.model, self, tracker) for tracker in trackers]
+        resources = [Resource(self, tracker) for tracker in trackers]
         return resources
 
     def fork(
@@ -460,7 +392,7 @@ class OFRAKContext2(OFRAKContext2Interface):
         updated_ids = set()
         tags_added = dict()
         for tracker in self.trackers.values():
-            if tracker.model_modified():
+            if tracker.model_modified() and not tracker.is_deleted:
                 resource_m = tracker.model
                 diff = resource_m.save()
                 diffs.append(diff)

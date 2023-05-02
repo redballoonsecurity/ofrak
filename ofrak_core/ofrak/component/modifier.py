@@ -3,7 +3,7 @@ from typing import Optional
 
 from ofrak.component.abstract import AbstractComponent
 from ofrak.model.component_model import CC
-from ofrak.model.ofrak_context2 import OFRAKContext2Interface
+from ofrak.model.ofrak_context_interface import OFRAKContext2Interface
 from ofrak.resource import Resource
 
 

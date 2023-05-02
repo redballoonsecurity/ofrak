@@ -2,8 +2,6 @@ import asyncio
 import logging
 
 from ofrak.component.unpacker import UnpackerError
-from ofrak.model.viewable_tag_model import AttributesType
-from ofrak_type.architecture import InstructionSetMode
 from ofrak.core.addressable import Addressable
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.basic_block import BasicBlock, BasicBlockUnpacker
@@ -13,6 +11,7 @@ from ofrak.core.instruction import (
     InstructionRegisterUsageAnalyzer,
     RegisterUsage,
 )
+from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource, ResourceFactory
 from ofrak.service.component_locator_i import ComponentLocatorInterface
 from ofrak.service.data_service_i import DataServiceInterface
@@ -21,6 +20,7 @@ from ofrak.service.disassembler.disassembler_service_i import (
     DisassemblerServiceRequest,
 )
 from ofrak.service.resource_service_i import ResourceServiceInterface
+from ofrak_type.architecture import InstructionSetMode
 
 LOGGER = logging.getLogger(__name__)
 
@@ -76,15 +76,9 @@ class CapstoneBasicBlockUnpacker(BasicBlockUnpacker):
 
 
 class CapstoneInstructionAnalyzer(InstructionAnalyzer):
-    def __init__(
-        self,
-        resource_factory: ResourceFactory,
-        data_service: DataServiceInterface,
-        resource_service: ResourceServiceInterface,
-        disassembler_service: DisassemblerServiceInterface,
-    ):
-        super().__init__(resource_factory, data_service, resource_service)
-        self._disassembler_service = disassembler_service
+    @property
+    def _disassembler_service(self) -> DisassemblerServiceInterface:
+        return self._context.services[DisassemblerServiceInterface]
 
     async def analyze(self, resource: Resource, config=None) -> Instruction:
         parent_block = await resource.get_parent_as_view(Addressable)
@@ -133,15 +127,9 @@ class CapstoneInstructionAnalyzer(InstructionAnalyzer):
 
 
 class CapstoneInstructionRegisterUsageAnalyzer(InstructionRegisterUsageAnalyzer):
-    def __init__(
-        self,
-        resource_factory: ResourceFactory,
-        data_service: DataServiceInterface,
-        resource_service: ResourceServiceInterface,
-        disassembler_service: DisassemblerServiceInterface,
-    ):
-        super().__init__(resource_factory, data_service, resource_service)
-        self._disassembler_service = disassembler_service
+    @property
+    def _disassembler_service(self) -> DisassemblerServiceInterface:
+        return self._context.services[DisassemblerServiceInterface]
 
     async def analyze(self, resource: Resource, config: None) -> RegisterUsage:
         program_attrs = await resource.analyze(ProgramAttributes)

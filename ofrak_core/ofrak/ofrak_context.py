@@ -6,13 +6,11 @@ import time
 from types import ModuleType
 from typing import Type, Any, Awaitable, Callable, List, Iterable, Optional
 
-from ofrak_type import InvalidStateError
-from synthol.injector import DependencyInjector
-
 from ofrak.component.interface import ComponentInterface
 from ofrak.core.binary import GenericBinary
 from ofrak.core.filesystem import File, FilesystemRoot
 from ofrak.model.component_model import ClientComponentContext
+from ofrak.model.ofrak_context_interface import OFRAKContext2Interface
 from ofrak.model.resource_model import ResourceModel, ClientResourceContextFactory
 from ofrak.model.tag_model import ResourceTag
 from ofrak.model.viewable_tag_model import ResourceViewContext
@@ -23,6 +21,8 @@ from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.id_service_i import IDServiceInterface
 from ofrak.service.job_service_i import JobServiceInterface
 from ofrak.service.resource_service_i import ResourceServiceInterface
+from ofrak_type import InvalidStateError
+from synthol.injector import DependencyInjector
 
 LOGGER = logging.getLogger("ofrak")
 DEFAULT_OFRAK_LOG_FILE = os.path.join(tempfile.gettempdir(), "ofrak.log")
@@ -142,33 +142,25 @@ class OFRAK:
     def set_id_service(self, service: IDServiceInterface):
         self._id_service = service
 
-    async def create_ofrak_context(self) -> OFRAKContext:
+    async def create_ofrak_context(self) -> OFRAKContext2Interface:
         """
         Create the OFRAKContext and start all its services.
         """
         self._setup()
         component_locator = await self.injector.get_instance(ComponentLocatorInterface)
 
-        resource_factory = await self.injector.get_instance(ResourceFactory)
         components = await self._get_discovered_components()
         component_locator.add_components(components, self._discovered_modules)
-
-        id_service = await self.injector.get_instance(IDServiceInterface)
-        data_service = await self.injector.get_instance(DataServiceInterface)
-        resource_service = await self.injector.get_instance(ResourceServiceInterface)
-        job_service = await self.injector.get_instance(JobServiceInterface)
         all_services = await self.injector.get_instance(List[AbstractOfrakService])
 
-        ofrak_context = OFRAKContext(
-            self.injector,
-            resource_factory,
-            component_locator,
-            id_service,
-            data_service,
-            resource_service,
-            job_service,
-            all_services,
-        )
+        ofrak_context = await self.injector.get_instance(OFRAKContext2Interface)
+
+        # ofrak_context = OFRAKContext2(
+        #     job_id=b"root",
+        #     component_id=CLIENT_COMPONENT_ID,
+        #     component_version=CLIENT_COMPONENT_VERSION,
+        #     services=all_services
+        # )
         await ofrak_context.start_context()
         return ofrak_context
 

@@ -2,13 +2,12 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Type, Tuple, Generic, TypeVar, Union, cast, Iterable, Optional
 
-from ofrak.model.ofrak_context2 import OFRAKContext2Interface
-from ofrak.resource import Resource
-
 from ofrak.component.abstract import AbstractComponent
 from ofrak.model.component_model import CC
+from ofrak.model.ofrak_context_interface import OFRAKContext2Interface
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.model.viewable_tag_model import ViewableResourceTag
+from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
 
 LOGGER = logging.getLogger(__name__)

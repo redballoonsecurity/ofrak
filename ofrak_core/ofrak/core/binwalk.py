@@ -4,12 +4,11 @@ from concurrent.futures.process import ProcessPoolExecutor
 from dataclasses import dataclass
 from typing import Dict
 
-from ofrak.resource import ResourceFactory, Resource
-
-from ofrak.model.resource_model import ResourceAttributes
-
 from ofrak.component.abstract import ComponentMissingDependencyError
 from ofrak.component.analyzer import Analyzer
+from ofrak.model.ofrak_context_interface import OFRAKContext2Interface
+from ofrak.model.resource_model import ResourceAttributes
+from ofrak.resource import Resource
 
 try:
     import binwalk
@@ -21,8 +20,6 @@ except ImportError:
 from ofrak.core.binary import GenericBinary
 from ofrak.core.filesystem import File
 from ofrak.model.component_model import ComponentExternalTool
-from ofrak.service.data_service_i import DataServiceInterface
-from ofrak.service.resource_service_i import ResourceServiceInterface
 
 
 class _BinwalkExternalTool(ComponentExternalTool):
@@ -52,11 +49,9 @@ class BinwalkAnalyzer(Analyzer[None, BinwalkAttributes]):
 
     def __init__(
         self,
-        resource_factory: ResourceFactory,
-        data_service: DataServiceInterface,
-        resource_service: ResourceServiceInterface,
+        ofrak_context: OFRAKContext2Interface,
     ):
-        super().__init__(resource_factory, data_service, resource_service)
+        super().__init__(ofrak_context)
         self.pool = ProcessPoolExecutor()
 
     async def analyze(self, resource: Resource, config=None) -> BinwalkAttributes:

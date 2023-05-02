@@ -2,7 +2,6 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
-
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
 from ofrak.core.architecture import ProgramAttributes
@@ -10,10 +9,8 @@ from ofrak.core.memory_region import MemoryRegion
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import index, ResourceAttributes
 from ofrak.model.viewable_tag_model import AttributesType
-from ofrak.resource import Resource, ResourceFactory
+from ofrak.resource import Resource
 from ofrak.service.assembler.assembler_service_i import AssemblerServiceInterface
-from ofrak.service.data_service_i import DataServiceInterface
-from ofrak.service.resource_service_i import ResourceServiceInterface
 from ofrak_type.architecture import InstructionSetMode
 from ofrak_type.range import Range
 
@@ -139,19 +136,9 @@ class InstructionModifier(Modifier[InstructionModifierConfig]):
 
     targets = (Instruction,)
 
-    def __init__(
-        self,
-        resource_factory: ResourceFactory,
-        data_service: DataServiceInterface,
-        resource_service: ResourceServiceInterface,
-        assembler_service: AssemblerServiceInterface,
-    ):
-        super().__init__(
-            resource_factory,
-            data_service,
-            resource_service,
-        )
-        self._assembler_service = assembler_service
+    @property
+    def _assembler_service(self) -> AssemblerServiceInterface:
+        return self._context.services[AssemblerServiceInterface]
 
     async def modify(self, resource: Resource, config: InstructionModifierConfig):
         """

@@ -27,7 +27,7 @@ from ofrak.model.job_request_model import (
     JobComponentRequest,
     JobMultiComponentRequest,
 )
-from ofrak.model.ofrak_context2 import OFRAKContext2, ResourceTracker
+from ofrak.model.ofrak_context_interface import OFRAKContext2Interface, ResourceTracker
 from ofrak.model.resource_model import (
     ResourceAttributes,
     ResourceModel,
@@ -67,25 +67,22 @@ class Resource:
     __slots__ = (
         "_ofrak_context",
         "_tracker",
-        "_resource",
-        "_resource_service",
-        "_data_service",
         "_job_service",
-        "_dependency_handler",
     )
 
     def __init__(
         self,
-        resource: MutableResourceModel,
-        ofrak_context: OFRAKContext2,
+        ofrak_context: OFRAKContext2Interface,
         tracker: ResourceTracker,
     ):
         self._ofrak_context = ofrak_context
         self._tracker = tracker
 
-        self._resource: MutableResourceModel = resource
-
         self._job_service: JobServiceInterface = ofrak_context.services[JobServiceInterface]
+
+    @property
+    def _resource(self) -> MutableResourceModel:
+        return self._tracker.model
 
     def get_id(self) -> bytes:
         """
@@ -455,7 +452,9 @@ class Resource:
     async def _create_resources(
         self, resource_models: Iterable[ResourceModel]
     ) -> Iterable["Resource"]:
-        return await self._ofrak_context.get_resources(*(model.id for model in resource_models))
+        return iter(
+            await self._ofrak_context.get_resources(*(model.id for model in resource_models))
+        )
 
     async def create_child(
         self,
@@ -684,6 +683,7 @@ class Resource:
         """
         if self._resource.has_tag(tag, False):
             return
+        self._resource.add_tag(tag)
 
     def add_tag(self, *tags: ResourceTag):
         """
