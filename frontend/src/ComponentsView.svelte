@@ -131,7 +131,7 @@
 
   export let modifierView, resourceNodeDataMap;
   let errorMessage,
-    only_targets = true,
+    all_components = true,
     incl_analyzers = false,
     incl_modifiers = false,
     incl_packers = false,
@@ -147,14 +147,14 @@
   async function getTargetsAndComponents() {
     try {
       ofrakTargetsPromise = $selectedResource.get_tags_and_num_components(
-        only_targets,
+        all_components,
         incl_analyzers,
         incl_modifiers,
         incl_packers,
         incl_unpackers
       );
       ofrakComponentsPromise = $selectedResource.get_components(
-        only_targets,
+        all_components,
         target_filter,
         incl_analyzers,
         incl_modifiers,
@@ -174,7 +174,7 @@
 
   $: {
     getTargetsAndComponents(
-      only_targets,
+      all_components,
       incl_analyzers,
       incl_modifiers,
       incl_packers,
@@ -286,7 +286,7 @@
               </option>
             {/each}
           </select>
-          <Checkbox bind:checked="{only_targets}" leftbox="{true}">
+          <Checkbox bind:checked="{all_components}" leftbox="{true}">
             Show all components
           </Checkbox>
         </div>

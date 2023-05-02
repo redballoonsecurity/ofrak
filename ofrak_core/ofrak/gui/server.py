@@ -690,7 +690,7 @@ class AiohttpOFRAKServer:
     async def get_components(self, request: Request) -> Response:
         resource: Resource = await self._get_resource_for_request(request)
         options = await request.json()
-        only_target = options["target"]
+        show_all_components = options["show_all_components"]
         target_filter = options["target_filter"]
         incl_analyzers = options["analyzers"]
         incl_modifiers = options["modifiers"]
@@ -698,7 +698,7 @@ class AiohttpOFRAKServer:
         incl_unpackers = options["unpackers"]
         components = self._get_specific_components(
             resource,
-            only_target,
+            show_all_components,
             target_filter,
             incl_analyzers,
             incl_modifiers,
@@ -884,7 +884,7 @@ class AiohttpOFRAKServer:
     def _get_specific_components(
         self,
         resource: Resource,
-        only_target: bool,
+        show_all_components: bool,
         target_filter: Optional[str],
         incl_analyzers: bool,
         incl_modifiers: bool,
@@ -903,8 +903,8 @@ class AiohttpOFRAKServer:
 
         for component_name, component in self.env.components.items():
             if issubclass(component, categories):
-                if len([tag for tag in tags if not only_target or tag in component.targets]) > 0:
-                    if target_filter is None or target_filter in [
+                if len([tag for tag in tags if show_all_components or tag in component.targets]) > 0:
+                    if show_all_components or target_filter is None or target_filter in [
                         target.__qualname__ for target in component.targets
                     ]:
                         # TODO: Get Angr components to work in gui
