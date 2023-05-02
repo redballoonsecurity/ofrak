@@ -144,7 +144,8 @@
     node["type"] == "typing.List" ||
     node["type"] == "typing.Tuple" ||
     node["type"] == "typing.Dict" ||
-    node["type"] == "ofrak.core.patch_maker.modifiers.SourceBundle"
+    node["type"] == "ofrak.core.patch_maker.modifiers.SourceBundle" ||
+    node["type"] == "typing.Iterable"
   ) {
     element = [];
   } else if (node["type"] == "typing.Union") {
@@ -269,7 +270,7 @@
       </label>
 
       <!---->
-    {:else if node["type"] == "typing.List"}
+    {:else if node["type"] == "typing.List" || node["type"] == "typing.Iterable"}
       <div class="buttonbar">
         <button class="add" on:click="{addElementToArray}">
           <Icon url="/icons/plus.svg" />
