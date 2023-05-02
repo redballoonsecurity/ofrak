@@ -125,18 +125,33 @@
 
 <script>
   import Checkbox from "./Checkbox.svelte";
-  import { calculator } from "./helpers";
+  import { calculator, splitAndCapitalize } from "./helpers";
   import Icon from "./Icon.svelte";
   export let node, element;
-  let unionTypeSelect, _element;
+  let unionTypeSelect, _element, intInput;
 
-  const INT_PLACEHOLDERS = ["0x10 * 2 + 8", "(0x10 * 0x100 + 25) * 69"];
+  const INT_PLACEHOLDERS = [
+    "0x10 * 2 + 8",
+    "(0x10 * 0x100 + 25) * 69",
+    "0x3 + 5 - 0x2",
+    "6 * 0x2 + 1",
+    "0x4 * (0x2 + 2)",
+    "12 / (0x3 * 0x2)",
+    "0x7 - 0x2 * 0x3",
+    "0x2 * (0x3 + 3)",
+    "(0x2 ^ 3) - 1",
+    "10 + 0x3 * 2",
+    "0x3 * (0x2 + 2) + 2",
+    "0x7 - 1 + 10",
+  ];
 
   $: if (node["type"] == "builtins.int") {
     try {
       element = calculator.calculate(_element);
+      intInput?.setCustomValidity("");
     } catch {
       element = undefined;
+      intInput?.setCustomValidity("Invalid expression.");
     }
   }
 
@@ -215,16 +230,7 @@
     };
   }
 
-  function splitAndCapitalize(node){
-    let nodeName = [];
-    node["name"].split("_").forEach(name => {
-      nodeName.push(name.charAt(0).toUpperCase() + name.slice(1));
-    });
-    return nodeName.join(" ");
-  }
-
-  $: nodeName = node["name"] ? splitAndCapitalize(node) : "";
-
+  $: nodeName = node["name"] ? splitAndCapitalize(node["name"]) : "";
 </script>
 
 <div class="container">
@@ -262,6 +268,7 @@
       <label>
         {nodeName}
         <input
+          bind:this="{intInput}"
           placeholder="{INT_PLACEHOLDERS[
             Math.floor(Math.random() * INT_PLACEHOLDERS.length)
           ]}"
@@ -302,7 +309,7 @@
     {:else if node["type"] == "typing.Dict"}
       <div class="buttonbar">
         <button class="add" on:click="{addElementToDict}">
-           <Icon url="/icons/plus.svg" />
+          <Icon url="/icons/plus.svg" />
         </button>
       </div>
       {#each Object.entries(element) as [key, value]}

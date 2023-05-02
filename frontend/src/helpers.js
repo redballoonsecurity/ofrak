@@ -220,3 +220,15 @@ export const calculator = {
     return output[0];
   },
 };
+
+/***
+ * Title case a variable name, whether in camel case or snake case.
+ */
+export function splitAndCapitalize(name) {
+  return (
+    name
+      .split(/_|(?=[A-Z])/)
+      .map((name) => name.charAt(0).toUpperCase() + name.slice(1))
+      .join(" ")
+  );
+}

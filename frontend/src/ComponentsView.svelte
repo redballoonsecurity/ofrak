@@ -123,6 +123,7 @@
 
 <script>
   import { selected, selectedResource } from "./stores.js";
+  import { splitAndCapitalize } from "./helpers.js";
   import { onMount } from "svelte";
 
   import ComponentConfigNode from "./ComponentConfigNode.svelte";
@@ -306,7 +307,7 @@
           <LoadingText />
         {:then ofrakConfig}
           {#if ofrakConfig.length != 0}
-            <p>Configure {selectedComponent}:</p>
+            <p>Configure {splitAndCapitalize(selectedComponent)}:</p>
             <ComponentConfigNode node="{ofrakConfig}" bind:element="{config}" />
           {/if}
         {:catch}
