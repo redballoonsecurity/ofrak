@@ -99,7 +99,6 @@
   }
 
   .buttonbar {
-    position: sticky;
     top: 0;
     left: 0;
     display: flex;
@@ -108,11 +107,20 @@
     align-items: start;
     justify-content: start;
   }
-  .buttonbar button{
+
+  .buttonbar .remove {
     display: flex;
     align-items: start;
     justify-content: start;
     flex-direction: row;
+  }
+
+  .buttonbar .add {
+    display: flex;
+    align-items: start;
+    justify-content: start;
+    flex-direction: row;
+    width: 100%;
   }
 </style>
 
@@ -260,16 +268,16 @@
       {#each element as elements}
         <div class="boxed">
           <div class="buttonbar">
-            <button class="remove"
+            <button
+              class="remove"
               on:click="{(e) => {
                 element = element.filter((x) => x !== elements);
-              }}">
-              <Icon url="/icons/error.svg" />
-            </button
+              }}"
             >
+              <Icon url="/icons/error.svg" />
+            </button>
           </div>
-          <svelte:self node="{node["args"][0]}" bind:element="{elements}" />
-
+          <svelte:self node="{node['args'][0]}" bind:element="{elements}" />
         </div>
       {/each}
 
@@ -287,13 +295,14 @@
       {#each Object.entries(element) as [key, value]}
         <div class="boxed">
           <div class="buttonbar">
-              <button class="remove"
+            <button
+              class="remove"
               on:click="{(e) => {
                 element = delete element[key] && element;
-              }}">
-              <Icon url="/icons/error.svg" />
-              </button
+              }}"
             >
+              <Icon url="/icons/error.svg" />
+            </button>
           </div>
           <p>Key</p>
           <svelte:self node="{node['args'][0]}" bind:element="{key}" />
