@@ -214,19 +214,28 @@
     };
   }
 
-  $: nodeName = node["name"] ? node["name"] + ":" : "";
+  function splitAndCapitalize(node){
+    let nodeName = [];
+    node["name"].split("_").forEach(name => {
+      nodeName.push(name.charAt(0).toUpperCase() + name.slice(1));
+    });
+    return nodeName.join(" ");
+  }
+
+  $: nodeName = node["name"] ? splitAndCapitalize(node) : "";
+
 </script>
 
 <div class="container">
   <div class="input">
     {#if node["name"] && !["builtins.bool", "builtins.str", "builtins.bytes", "builtins.int"].includes(node["type"])}
-      {node["name"]}:
+      {nodeName}
     {/if}
 
     <!---->
     {#if node["type"] == "builtins.bool"}
       <Checkbox bind:checked="{element}" leftbox="{true}">
-        {node["name"]}
+        {nodeName}
       </Checkbox>
 
       <!---->
