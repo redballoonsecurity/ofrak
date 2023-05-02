@@ -13,6 +13,7 @@ from ofrak.model.component_filters import (
     ComponentNotMetaFilter,
 )
 from ofrak.model.component_model import CC
+from ofrak.model.ofrak_context2 import OFRAKContext2Interface
 from ofrak.model.tag_model import ResourceTag
 from ofrak.resource import Resource, ResourceFactory
 from ofrak.service.component_locator_i import (
@@ -71,7 +72,7 @@ class Unpacker(AbstractComponent[CC], ABC):
     def get_default_config(cls) -> Optional[CC]:
         return cls._get_default_config_from_method(cls.unpack)
 
-    async def _run(self, resource: Resource, config: CC):
+    async def _run(self, resource: Resource, context: OFRAKContext2Interface, config: CC):
         if resource.has_component_run(self.get_id(), self.get_version()):
             return self._log_component_has_run_warning(resource)
         if resource.has_component_run(self.get_id()):
@@ -106,7 +107,9 @@ class Unpacker(AbstractComponent[CC], ABC):
         )
         return tuple(unpacker.get_id() for unpacker in unpackers_ran)
 
-    def _validate_unpacked_children(self, resource: Resource) -> None:
+    def _validate_unpacked_children(
+        self, resource: Resource, context: OFRAKContext2Interface
+    ) -> None:
         """
         Validate that the unpacked resources match the type defined by
         [Unpacker.children][ofrak.component.unpacker.Unpacker.children].
@@ -115,16 +118,15 @@ class Unpacker(AbstractComponent[CC], ABC):
         :raises ValueError: if the unpacked child does not match the type defined in
           [Unpacker.children][ofrak.component.unpacker.Unpacker.children]
         """
-        component_context = resource.get_component_context()
-        resource_context = resource.get_resource_context()
         untagged_descendants_allowed = None in self.children
-        for descendant_id in component_context.resources_created:
-            descendant_model = resource_context.resource_models.get(descendant_id)
-            if descendant_model is None:
+        for descendant_id in context.resources_created:
+            descendant_tracker = context.trackers.get(descendant_id)
+            if descendant_tracker is None:
                 raise ValueError(
                     f"Cannot find descendant {descendant_id.decode()} for resource "
                     f"{resource.get_id().decode()}."
                 )
+            descendant_model = descendant_tracker.model
             descendant_has_tags = 0 != len(descendant_model.get_tags())
 
             if descendant_has_tags:

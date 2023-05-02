@@ -2,10 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Generic, Optional, Tuple
 
 from ofrak.model.component_model import CC, ComponentRunResult, ComponentExternalTool
-from ofrak.model.job_model import JobRunContext
-from ofrak.model.resource_model import ResourceContext
 from ofrak.model.tag_model import ResourceTag
-from ofrak.model.viewable_tag_model import ResourceViewContext
 
 
 class ComponentInterface(Generic[CC], ABC):
@@ -41,18 +38,12 @@ class ComponentInterface(Generic[CC], ABC):
         self,
         job_id: bytes,
         resource_id: bytes,
-        job_context: JobRunContext,
-        resource_context: ResourceContext,
-        resource_view_context: ResourceViewContext,
         config: CC,
     ) -> ComponentRunResult:
         """
 
         :param job_id:
         :param resource_id:
-        :param job_context:
-        :param resource_context:
-        :param resource_view_context:
         :param config:
         :return: The IDs of all resources modified by this component
         """

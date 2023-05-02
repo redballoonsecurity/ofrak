@@ -650,9 +650,7 @@ class AiohttpOFRAKServer:
 
     @exceptions_to_http(SerializedError)
     async def get_all_tags(self, request: Request) -> Response:
-        return json_response(
-            self._serializer.to_pjson(self._ofrak_context.get_all_tags(), Set[ResourceTag])
-        )
+        return json_response(self._serializer.to_pjson(ResourceTag.all_tags, Set[ResourceTag]))
 
     @exceptions_to_http(SerializedError)
     async def add_flush_to_disk_to_script(self, request: Request) -> Response:

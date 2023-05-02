@@ -7,6 +7,7 @@ from ofrak.component.analyzer import Analyzer
 from ofrak.component.identifier import Identifier
 from ofrak.component.modifier import Modifier
 from ofrak.model.component_model import CC
+from ofrak.model.ofrak_context2 import OFRAKContext2Interface
 from ofrak.resource import Resource, ResourceFactory
 from ofrak.service.component_locator_i import (
     ComponentLocatorInterface,
@@ -65,7 +66,7 @@ class Packer(AbstractComponent[CC], ABC):
     def get_default_config(cls) -> Optional[CC]:
         return cls._get_default_config_from_method(cls.pack)
 
-    async def _run(self, resource: Resource, config: CC) -> None:
+    async def _run(self, resource: Resource, context: OFRAKContext2Interface, config: CC) -> None:
         if resource.has_component_run(self.get_id(), self.get_version()):
             LOGGER.warning(
                 f"The {self.get_id().decode()} packer has already been run on resource"

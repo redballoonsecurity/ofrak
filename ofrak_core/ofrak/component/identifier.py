@@ -4,6 +4,7 @@ from typing import Optional
 
 from ofrak.component.abstract import AbstractComponent
 from ofrak.model.component_model import CC
+from ofrak.model.ofrak_context2 import OFRAKContext2Interface
 from ofrak.resource import Resource
 
 LOGGER = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ class Identifier(AbstractComponent[CC], ABC):
     def get_default_config(cls) -> Optional[CC]:
         return cls._get_default_config_from_method(cls.identify)
 
-    async def _run(self, resource: Resource, config: CC):
+    async def _run(self, resource: Resource, context: OFRAKContext2Interface, config: CC):
         if resource.has_component_run(self.get_id(), self.get_version()):
             LOGGER.debug(
                 f"The {self.get_id().decode()} identifier has already been run on resource"

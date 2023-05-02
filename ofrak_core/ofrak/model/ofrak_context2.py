@@ -1,7 +1,26 @@
+import asyncio
 import logging
-from dataclasses import dataclass, field, fields
-from typing import Dict, List, MutableMapping, Optional, Sequence, Set, Tuple, Type, Iterable, cast
+import os
+from abc import ABC
+from dataclasses import field, fields
+from typing import (
+    Dict,
+    List,
+    MutableMapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    Iterable,
+    cast,
+    TypeVar,
+)
 
+from ofrak.core.filesystem import FilesystemRoot, File
+from ofrak.core.binary import GenericBinary
+
+from ofrak import Resource
 from ofrak.model.tag_model import ResourceTag
 
 from ofrak.model.component_model import ComponentRunResult
@@ -11,9 +30,13 @@ from ofrak.model.resource_model import (
     ResourceAttributeDependency,
     ResourceAttributes,
     Data,
+    ResourceModel,
 )
 from ofrak.model.viewable_tag_model import ViewableResourceTag, ResourceViewInterface
+from ofrak.service.abstract_ofrak_service import AbstractOfrakService
 from ofrak.service.data_service_i import DataServiceInterface
+from ofrak.service.id_service_i import IDServiceInterface
+from ofrak.service.job_service_i import JobServiceInterface
 from ofrak.service.resource_service_i import ResourceServiceInterface
 from ofrak_type import Range, InvalidStateError
 
@@ -27,9 +50,9 @@ class ResourceTracker:
         self.data_reads: Set[Range] = set()
         self.data_writes: List[Tuple[Range, bytes]] = list()
 
-        # TODO: Maybe it would make sense to use ResourceModels as keys to a WeakKeyDictionary, so we forget about the views once there is no reference to them
-        # Only problem with that brilliant plan is the circular reference created by Key[Model] -> View -> Resource -> Model
-        # However that can be solved by excluding the underlying Resource from cached views, easily
+        # TODO: Possibly makes sense as a WeakKeyDictionary or WeakValueDictionary, so entries are
+        #  discarded when view is no longer in use.
+        #  Need to be careful of circular references in that case
         self.views: MutableMapping[ViewableResourceTag, ResourceViewInterface] = dict()
 
         self.is_deleted: bool = False  # Set after the resource is actually deleted
@@ -74,8 +97,25 @@ class ResourceTracker:
         return "\n".join(reasons)
 
 
-@dataclass
-class OFRAKContext2:
+S = TypeVar("S", bound=AbstractOfrakService)
+
+
+class OFRAKContext2Interface(ABC):
+    async def get_resources(self, *resource_ids: bytes) -> Iterable["Resource"]:
+        raise NotImplementedError()
+
+    def fork(
+        self,
+        job_id: Optional[bytes] = None,
+        component_id: Optional[bytes] = None,
+        component_version: Optional[int] = None,
+    ) -> "OFRAKContext2Interface":
+        raise NotImplementedError()
+
+    # TODO: The rest...
+
+
+class OFRAKContext2(OFRAKContext2Interface):
     """
     Purpose: Interface between local state and "database" (service state)
 
@@ -120,21 +160,18 @@ class OFRAKContext2:
 
     def __init__(
         self,
-        resource_service: ResourceServiceInterface,
-        data_service: DataServiceInterface,
         job_id: bytes,
         component_id: bytes,
         component_version: int,
+        services: List[AbstractOfrakService],
     ):
-        self.resource_service = resource_service
-        self.data_service = data_service
+        self.services: Dict[Type[S], S] = self._set_up_services_dict(services)
 
         self.job_id: bytes = job_id  # This could be unique to each context?
         self.current_component_id: bytes = component_id
         self.current_component_version: int = component_version
 
         self.trackers: MutableMapping[bytes, ResourceTracker] = dict()
-        self.dependency_events: List = []
 
         self.resources_to_delete: Set[bytes] = field(default_factory=set)
 
@@ -143,18 +180,40 @@ class OFRAKContext2:
 
         self.history: List[ComponentRunResult] = []
 
+        # TODO: Also include component locator? Unpacker at least needs it
+
+    @property
+    def resource_service(self) -> ResourceServiceInterface:
+        return self.services[ResourceServiceInterface]
+
+    @property
+    def data_service(self) -> DataServiceInterface:
+        return self.services[DataServiceInterface]
+
+    @property
+    def id_service(self) -> IDServiceInterface:
+        return self.services[IDServiceInterface]
+
+    async def get_resources(self, *resource_ids: bytes) -> Iterable[Resource]:
+        trackers = await self._get_trackers(resource_ids)
+        resources = [Resource(tracker.model, self, tracker) for tracker in trackers]
+        return resources
+
     def fork(
         self,
+        job_id: Optional[bytes] = None,
         component_id: Optional[bytes] = None,
         component_version: Optional[int] = None,
     ) -> "OFRAKContext2":
-        return OFRAKContext2(
-            self.resource_service,
-            self.data_service,
-            self.job_id,
-            component_id if component_id else self.current_component_id,
-            component_version if component_version else self.current_component_version,
+        new_context = OFRAKContext2(
+            job_id if job_id is not None else self.job_id,
+            component_id if component_id is not None else self.current_component_id,
+            component_version if component_version is not None else self.current_component_version,
+            [],
         )
+
+        new_context.services = self.services
+        return new_context
 
     async def push(self):
         """
@@ -215,12 +274,78 @@ class OFRAKContext2:
 
         return result
 
-    async def get_model(self, resource_id: bytes) -> MutableResourceModel:
+    async def create_root_resource(
+        self, name: str, data: bytes, tags: Iterable[ResourceTag] = (GenericBinary,)
+    ) -> Resource:
+        job_id = self.id_service.generate_id()
+        resource_id = self.id_service.generate_id()
+        data_id = resource_id
+
+        await self.services[JobServiceInterface].create_job(job_id, name)
+        await self.data_service.create_root(data_id, data)
+        resource_model = await self.resource_service.create(
+            ResourceModel.create(resource_id, data_id, tags=tags)
+        )
+        (root_resource,) = await self.get_resources(resource_id)
+        return root_resource
+
+    async def create_root_resource_from_file(self, file_path: str) -> Resource:
+        full_file_path = os.path.abspath(file_path)
+        with open(full_file_path, "rb") as f:
+            root_resource = await self.create_root_resource(
+                os.path.basename(full_file_path), f.read(), (File,)
+            )
+        root_resource.add_view(
+            File(
+                os.path.basename(full_file_path),
+                os.lstat(full_file_path),
+                FilesystemRoot._get_xattr_map(full_file_path),
+            )
+        )
+        await root_resource.save()
+        return root_resource
+
+    async def start_context(self):
+        if "_ofrak_context" in globals():
+            raise InvalidStateError(
+                "Cannot start OFRAK context as a context has already been started in this process!"
+            )
+        globals()["_ofrak_context"] = self
+        await asyncio.gather(*(service.run() for service in self.services.values()))
+
+    async def shutdown_context(self):
+        if "_ofrak_context" in globals():
+            del globals()["_ofrak_context"]
+        await asyncio.gather(*(service.shutdown() for service in self.services.values()))
+        logging.shutdown()
+
+    ## Private helper methods only beyond this point
+
+    async def _get_model(self, resource_id: bytes) -> MutableResourceModel:
         (tracker,) = await self._get_trackers((resource_id,))
         return tracker.model
 
-    async def get_models(self, resource_ids: Sequence[bytes]) -> Sequence[MutableResourceModel]:
+    async def _get_models(self, resource_ids: Sequence[bytes]) -> Sequence[MutableResourceModel]:
         return [tracker.model for tracker in await self._get_trackers(resource_ids)]
+
+    def _set_up_services_dict(self, all_services: List[AbstractOfrakService]) -> Dict[Type[S], S]:
+        d = dict()
+        for service in all_services:
+            service_i: Optional[Type[AbstractOfrakService]] = None
+            for base_class in type(service).mro():
+                if AbstractOfrakService in base_class.__bases__:
+                    service_i = base_class  # type: ignore
+                    break
+            if service_i is not None:
+                d[service_i] = service
+            else:
+                LOGGER.warning(
+                    f"{service} was passed as an OFRAK service to context initialization, but "
+                    f"could not find the base class inheriting from AbstractOfrakService! "
+                    f"Ignoring..."
+                )
+
+        return d
 
     async def _get_trackers(
         self, resource_ids: Sequence[bytes], resources_must_exist: bool = True
@@ -383,7 +508,7 @@ class OFRAKContext2:
                 if deleted_tracker.is_dirty():
                     raise InvalidStateError(
                         f"Cannot pull resource {deleted_id.hex()} because it would be deleted but "
-                        f"the local version as unpushed changes: {deleted_tracker.why_dirty()}"
+                        f"the local version has unpushed changes: {deleted_tracker.why_dirty()}"
                     )
 
                 deleted_tracker.is_deleted = True

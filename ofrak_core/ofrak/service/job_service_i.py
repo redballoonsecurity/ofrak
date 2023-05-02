@@ -1,10 +1,9 @@
 from abc import ABCMeta, abstractmethod
-from typing import Optional, Tuple
+from typing import Tuple
 
 from ofrak.model.component_model import ComponentRunResult
 from ofrak.model.job_model import (
     JobModel,
-    JobRunContext,
 )
 from ofrak.model.job_request_model import (
     JobAnalyzerRequest,
@@ -28,13 +27,11 @@ class JobServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
     async def run_component(
         self,
         request: JobComponentRequest,
-        job_context: Optional[JobRunContext] = None,
     ) -> ComponentRunResult:
         """
         Run a single component for a job.
 
         :param request:
-        :param job_context: Context of the job to run the component in.
 
         :return: A data structure describing the component run and resources
         modified/created/deleted.
@@ -44,7 +41,6 @@ class JobServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
     async def run_analyzer_by_attribute(
         self,
         request: JobAnalyzerRequest,
-        job_context: Optional[JobRunContext] = None,
     ) -> ComponentRunResult:
         """
         Choose one or more Analyzer components to analyze the requested attributes on the given
@@ -53,7 +49,6 @@ class JobServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         :param request: Data structure containing the ID of the job to run the components in,
         the ID of the resource to run components on, which attributes the Analyzers should
         output, and the tags of the target resource.
-        :param job_context: Context of the job to run the component in.
 
         :return: A data structure describing the component(s) run and resources
         modified/created/deleted.

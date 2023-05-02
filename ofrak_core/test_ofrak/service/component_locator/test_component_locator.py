@@ -7,6 +7,7 @@ from ofrak.component.abstract import AbstractComponent
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.interface import ComponentInterface
 from ofrak.component.unpacker import Unpacker
+from ofrak.model.ofrak_context2 import OFRAKContext2Interface
 from ofrak.service.component_locator import (
     ComponentLocator,
     InvalidComponentError,
@@ -121,7 +122,7 @@ def test_add_components(component_locator, components_for_testing):
         def __init__(self):
             super().__init__(None, None, None)  # type: ignore
 
-        async def _run(self, resource, config=None):
+        async def _run(self, resource, context: OFRAKContext2Interface, config=None):
             pass
 
         @classmethod
