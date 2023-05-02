@@ -120,7 +120,6 @@
     align-items: start;
     justify-content: start;
     flex-direction: row;
-    width: 100%;
   }
 </style>
 
@@ -263,7 +262,9 @@
       <!---->
     {:else if node["type"] == "typing.List"}
       <div class="buttonbar">
-        <button class="add" on:click="{addElementToArray}">Add</button>
+        <button class="add" on:click="{addElementToArray}">
+          <Icon url="/icons/plus.svg" />
+        </button>
       </div>
       {#each element as elements}
         <div class="boxed">
@@ -290,7 +291,9 @@
       <!---->
     {:else if node["type"] == "typing.Dict"}
       <div class="buttonbar">
-        <button class="add" on:click="{addElementToDict}">Add</button>
+        <button class="add" on:click="{addElementToDict}">
+           <Icon url="/icons/plus.svg" />
+        </button>
       </div>
       {#each Object.entries(element) as [key, value]}
         <div class="boxed">
