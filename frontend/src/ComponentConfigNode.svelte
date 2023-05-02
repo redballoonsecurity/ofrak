@@ -97,11 +97,29 @@
     padding: 2em;
     margin: 1em 0 2em 0;
   }
+
+  .buttonbar {
+    position: sticky;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: start;
+    justify-content: start;
+  }
+  .buttonbar button{
+    display: flex;
+    align-items: start;
+    justify-content: start;
+    flex-direction: row;
+  }
 </style>
 
 <script>
   import Checkbox from "./Checkbox.svelte";
   import { calculator } from "./helpers";
+  import Icon from "./Icon.svelte";
   export let node, element;
   let unionTypeSelect, _element;
 
@@ -236,20 +254,22 @@
 
       <!---->
     {:else if node["type"] == "typing.List"}
-      <button on:click="{addElementToArray}">Add</button>
+      <div class="buttonbar">
+        <button class="add" on:click="{addElementToArray}">Add</button>
+      </div>
       {#each element as elements}
         <div class="boxed">
-          <button
-            on:click="{(e) => {
-              element = element.filter((x) => x !== elements);
-            }}">Remove</button
-          >
-          {#each node["args"] as arg}
-            <svelte:self node="{arg}" bind:element="{elements}" />
-          {/each}
-          {#each element as elements}
-            {elements}
-          {/each}
+          <div class="buttonbar">
+            <button class="remove"
+              on:click="{(e) => {
+                element = element.filter((x) => x !== elements);
+              }}">
+              <Icon url="/icons/error.svg" />
+            </button
+            >
+          </div>
+          <svelte:self node="{node["args"][0]}" bind:element="{elements}" />
+
         </div>
       {/each}
 
@@ -258,25 +278,27 @@
       {#each node["args"] as arg, i}
         <svelte:self node="{arg}" bind:element="{element[i]}" />
       {/each}
-      {element}
 
       <!---->
     {:else if node["type"] == "typing.Dict"}
-      <button on:click="{addElementToDict}">Add</button>
+      <div class="buttonbar">
+        <button class="add" on:click="{addElementToDict}">Add</button>
+      </div>
       {#each Object.entries(element) as [key, value]}
         <div class="boxed">
-          <button
-            on:click="{(e) => {
-              element = delete element[key] && element;
-            }}">Remove</button
-          >
+          <div class="buttonbar">
+              <button class="remove"
+              on:click="{(e) => {
+                element = delete element[key] && element;
+              }}">
+              <Icon url="/icons/error.svg" />
+              </button
+            >
+          </div>
           <p>Key</p>
           <svelte:self node="{node['args'][0]}" bind:element="{key}" />
           <p>Value</p>
           <svelte:self node="{node['args'][1]}" bind:element="{value}" />
-          {#each element as elements}
-            {elements}
-          {/each}
         </div>
       {/each}
 
