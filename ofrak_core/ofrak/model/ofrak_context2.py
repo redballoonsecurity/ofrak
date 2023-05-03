@@ -49,44 +49,10 @@ S = TypeVar("S", bound=AbstractOfrakService)
 
 class OFRAKContext2(OFRAKContext2Interface):
     """
-    Purpose: Interface between local state and "database" (service state)
+    Main gateway to access OFRAK functionality, holding references to all the OFRAK services.
 
-    Important functions:
-    1. Cache and update resource models appropriately
-    2. Cache and update resource views appropriately
-    3. Track modifications
-        - NOT Tags added - but will need to work out what tags were added when flushing
-        - Data patches
-        - Any modification (is_modified)
-           Currently the root "truth" for this lives in ResourceModel.is_modified
-    4. Track accesses
-        - Data ranges accessed
-        - Attributes accessed
-
-
-    MutableResourceModel will have an instance of this guy
-    when anything gets modified, it updates the trackers?
-
-    Push before running component, pull after
-    Push after component or context ends
-
-    I need to figure out the hierarchy of which information goes where
-
-    ## Base, client context
-      |
-      V
-    ## Call Component 1
-      Resource.run
-        JobService.run
-          AbstractComponent.run
-            Component1.{unpack,analyze,modify,identify,pack}
-          Component needs to know what global state to modify. PUSH TO GLOBAL STATE
-          Component needs to know what was modified so that it can mark dependencies it created
-        JobService needs tags added (well only if its auto-run, but generally speaking)
-      Resource needs to know how to update its own cache - what was modified? PULL FROM GLOBAL STATE
-      |
-      V
-    ## Call Component 2
+    Serves as the interface between local and global state, handling pushing from local to global
+    and pulling from global to local, via the services.
 
     """
 

@@ -308,6 +308,11 @@ class ResourceViewInterface(metaclass=ViewableResourceTag):
         raise NotImplementedError()
 
     def copy_from_view(self, other_view):
+        """
+        Copy the values out of the fields of another view into this one.
+
+        :param other_view: View to copy values from
+        """
         for _field in dataclasses.fields(other_view):
             if _field.name == "_resource":
                 continue
