@@ -117,7 +117,10 @@ class CpioPacker(Packer[None]):
         cpio_v: CpioFilesystem = await resource.view_as(CpioFilesystem)
         temp_flush_dir = await cpio_v.flush_to_disk()
         cpio_format = cpio_v.archive_type.value
-        list_files_cmd = ["find", "."]
+        list_files_cmd = [
+            "find",
+            "-print",
+        ]
         list_files_proc = await asyncio.create_subprocess_exec(
             *list_files_cmd,
             stdout=asyncio.subprocess.PIPE,

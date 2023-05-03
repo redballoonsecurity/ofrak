@@ -714,7 +714,6 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
         "",
     ]
 
-<<<<<<< HEAD
 
 async def test_get_components(ofrak_client: TestClient, hello_world_elf):
     create_resp = await ofrak_client.post(
@@ -860,7 +859,6 @@ async def test_run_component(ofrak_client: TestClient, hello_world_elf):
         ],
     )
     assert resp.status == 200
-=======
     expected_str = join_and_normalize(expected_list)
     actual_str = join_and_normalize(resp_body)
     assert actual_str == expected_str
@@ -957,4 +955,3 @@ async def test_add_flush_to_disk_to_script(ofrak_client: TestClient, firmware_zi
     expected_str = join_and_normalize(expected_list)
     actual_str = join_and_normalize(resp_body)
     assert actual_str == expected_str
->>>>>>> master
