@@ -140,6 +140,7 @@
             a.click();
 
             URL.revokeObjectURL(blobUrl);
+            await $selectedResource.add_flush_to_disk_to_script(a.download);
           }
         },
       },

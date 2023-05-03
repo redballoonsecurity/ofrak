@@ -69,12 +69,10 @@ class _UberApkSignerTool(ComponentExternalTool):
                 stderr=asyncio.subprocess.DEVNULL,
             )
             returncode = await proc.wait()
-            if returncode:
-                raise CalledProcessError(returncode=returncode, cmd=cmd)
         except FileNotFoundError:
             return False
 
-        return True
+        return 0 == returncode
 
 
 UBER_APK_SIGNER = _UberApkSignerTool()

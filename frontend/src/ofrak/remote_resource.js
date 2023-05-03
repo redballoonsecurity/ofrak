@@ -508,6 +508,21 @@ export class RemoteResource extends Resource {
     });
   }
 
+  async add_flush_to_disk_to_script(output_file_name) {
+    await fetch(`${this.uri}/add_flush_to_disk_to_script`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(output_file_name),
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      await this.update_script();
+    });
+  }
+
   async get_tags_and_num_components(
     target,
     analyzers,
