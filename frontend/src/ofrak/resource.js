@@ -401,7 +401,7 @@ export class Resource {
   async get_tags_and_num_components() {
     throw new NotImplementedError("get_tags_and_num_components");
   }
-  
+
   async add_flush_to_disk_to_script() {
     throw new NotImplementedError("add_flush_to_disk_to_script");
   }
