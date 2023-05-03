@@ -1,8 +1,11 @@
 from dataclasses import dataclass
+
+from ofrak.service.component_locator_i import ComponentLocatorInterface
 from ofrak_type.error import NotFoundError
 
 import pytest
 
+from synthol.injector import DependencyInjector
 from test_ofrak.unit.component.analyzer.analyzer_test_case import (
     AnalyzerTestCase,
     PopulatedAnalyzerTestCase,
@@ -10,7 +13,6 @@ from test_ofrak.unit.component.analyzer.analyzer_test_case import (
 )
 
 from ofrak.ofrak_context import OFRAKContext
-from ofrak.resource import Resource
 from ofrak.core.strings_analyzer import StringsAnalyzer, StringsAttributes
 
 
@@ -21,11 +23,7 @@ class StringsAnalyzerTestCase(AnalyzerTestCase):
 
 @dataclass
 class PopulatedStringsAnalyzerTestCase(PopulatedAnalyzerTestCase, StringsAnalyzerTestCase):
-    ofrak_context: OFRAKContext
-    resource: Resource
-
-    def get_analyzer(self):
-        return self.ofrak_context.component_locator.get_by_type(self.analyzer_type)
+    pass
 
 
 @pytest.fixture(
@@ -36,15 +34,16 @@ class PopulatedStringsAnalyzerTestCase(PopulatedAnalyzerTestCase, StringsAnalyze
     ]
 )
 async def test_case(
-    request, ofrak_context: OFRAKContext, test_id: str
+    request, ofrak_context: OFRAKContext, test_id: str, ofrak_injector: DependencyInjector
 ) -> PopulatedStringsAnalyzerTestCase:
     test_case: StringsAnalyzerTestCase = request.param
     resource = await ofrak_context.create_root_resource(test_id, test_case.resource_contents)
+    component_locator = await ofrak_injector.get_instance(ComponentLocatorInterface)
     return PopulatedStringsAnalyzerTestCase(
         test_case.analyzer_type,
         test_case.expected_result,
         test_case.resource_contents,
-        ofrak_context,
+        component_locator,
         resource,
     )
 

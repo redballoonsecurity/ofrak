@@ -97,6 +97,8 @@ class OFRAKContext2(OFRAKContext2Interface):
         component_version: int = CLIENT_COMPONENT_VERSION,
         services: List[AbstractOfrakService] = [],
     ):
+        # TODO: I believe this should be split up into the "global" context (all services,
+        #  components) and "ephemeral" context (trackers, current component)
         self.services: Dict[Type[S], S] = self._set_up_services_dict(services)
 
         self.job_id: bytes = job_id  # This could be unique to each context?
@@ -164,6 +166,11 @@ class OFRAKContext2(OFRAKContext2Interface):
         patched_model_ranges = await self._push_data_modifications()
         await self._flush_dependencies(patched_model_ranges)
         resource_models_modified, tags_added = await self._push_model_modifications()
+        for created_r_id in self.resources_created:
+            model = self.trackers.get(created_r_id)  # TODO: is it possible this aint here?
+            tags_added[created_r_id] = set(
+                model.model.tags
+            )  # TODO: Safety checks? duplication/overwrites dict entry?
         data_models_modified = {model.id for model, _ in patched_model_ranges}
 
         self.history.append(
@@ -173,11 +180,11 @@ class OFRAKContext2(OFRAKContext2Interface):
                 },
                 resources_modified=resource_models_modified.union(data_models_modified),
                 resources_deleted=set(deleted_data_ids),
-                resources_created=set(self.resources_created),
+                resources_created=self.resources_created,
                 tags_added=tags_added,
             )
         )
-        self.resources_created.clear()
+        self.resources_created = set()
 
     async def pull(
         self,
@@ -469,6 +476,7 @@ class OFRAKContext2(OFRAKContext2Interface):
             )
             for tracker in self.trackers.values()
             for attrs_added in tracker.model.diff.attributes_added
+            if attrs_added is not Data
         ]
 
         # Collect all the data read
@@ -482,6 +490,7 @@ class OFRAKContext2(OFRAKContext2Interface):
             (tracker.model.id, read_attrs)
             for tracker in self.trackers.values()
             for read_attrs in tracker.attribute_reads
+            if read_attrs is not Data
         ]
 
         # The record of data reads and attribute reads is NOT cleared, so that creating new
@@ -525,7 +534,9 @@ class OFRAKContext2(OFRAKContext2Interface):
         unhandled_dependencies = set()
         for tracker in self.trackers.values():
             unhandled_dependencies.update(tracker.model.diff.data_dependencies_removed)
-            unhandled_dependencies.update(tracker.model.diff.attribute_dependencies_removed)
+            unhandled_dependencies.update(
+                dep for _, dep in tracker.model.diff.attribute_dependencies_removed
+            )
 
         # Invalidate attributes of all resources that depend on modified attributes or data
         await self._invalidate_dependencies_recursively(
@@ -599,7 +610,7 @@ class OFRAKContext2(OFRAKContext2Interface):
             )
             # Remove any dependencies on modified attributes
             for attributes_type_altered in attributes_modified:
-                dependencies = model.attribute_dependencies.get(attributes_type_altered, ())
+                dependencies = list(model.attribute_dependencies.get(attributes_type_altered, ()))
                 for dependency in dependencies:
                     model.remove_dependency(dependency)
 

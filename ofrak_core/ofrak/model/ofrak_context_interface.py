@@ -91,7 +91,7 @@ class OFRAKContext2Interface(ABC):
         job_id: Optional[bytes] = None,
         component_id: Optional[bytes] = None,
         component_version: Optional[int] = None,
-    ) -> "OFRAKContext2":
+    ) -> "OFRAKContext2Interface":
         raise NotImplementedError()
 
     @abstractmethod
