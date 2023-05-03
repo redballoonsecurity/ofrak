@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import os
-from dataclasses import fields
 from typing import (
     Dict,
     List,
@@ -35,6 +34,7 @@ from ofrak.model.resource_model import (
 )
 from ofrak.model.tag_model import ResourceTag
 from ofrak.service.abstract_ofrak_service import AbstractOfrakService
+from ofrak.service.component_locator import ComponentLocator
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.id_service_i import IDServiceInterface
 from ofrak.service.job_service_i import JobServiceInterface
@@ -92,29 +92,29 @@ class OFRAKContext2(OFRAKContext2Interface):
 
     def __init__(
         self,
+        component_locator: ComponentLocator,
+        services: List[AbstractOfrakService],
         job_id: bytes = b"root",
         component_id: bytes = CLIENT_COMPONENT_ID,
         component_version: int = CLIENT_COMPONENT_VERSION,
-        services: List[AbstractOfrakService] = [],
     ):
-        # TODO: I believe this should be split up into the "global" context (all services,
-        #  components) and "ephemeral" context (trackers, current component)
-        self.services: Dict[Type[S], S] = self._set_up_services_dict(services)
+        # TODO: It could make sense to split these "global" and "local" contexts, but for now,
+        #  there's no reason
 
+        # "Global" Context
+        self.services: Dict[Type[S], S] = self._set_up_services_dict(services)
+        self.component_locator = component_locator
+
+        # "Ephemeral" Context
         self.job_id: bytes = job_id  # This could be unique to each context?
         self.current_component_id: bytes = component_id
         self.current_component_version: int = component_version
-
         self.trackers: MutableMapping[bytes, ResourceTracker] = dict()
-
         self.resources_to_delete: Set[bytes] = set()
-
         # TODO: Do we need this? BTW, it is weird that creation is always "instant" and deletion isn't...
         self.resources_created: Set[bytes] = set()
 
         self.history: List[ComponentRunResult] = []
-
-        # TODO: Also include component locator? Unpacker at least needs it
 
     @property
     def resource_service(self) -> ResourceServiceInterface:
@@ -140,10 +140,11 @@ class OFRAKContext2(OFRAKContext2Interface):
         component_version: Optional[int] = None,
     ) -> "OFRAKContext2":
         new_context = OFRAKContext2(
+            self.component_locator,
+            [],  # Empty services, the dict will be directly copied
             job_id if job_id is not None else self.job_id,
             component_id if component_id is not None else self.current_component_id,
             component_version if component_version is not None else self.current_component_version,
-            [],
         )
 
         new_context.services = self.services
@@ -159,6 +160,7 @@ class OFRAKContext2(OFRAKContext2Interface):
         3. Handle data patches
         4. Handle dependencies
         5. Push updated resource models
+        6. Update resource views
         :return:
         """
         deleted_ids, deleted_data_ids = await self._push_deletions()
@@ -166,6 +168,8 @@ class OFRAKContext2(OFRAKContext2Interface):
         patched_model_ranges = await self._push_data_modifications()
         await self._flush_dependencies(patched_model_ranges)
         resource_models_modified, tags_added = await self._push_model_modifications()
+        self._update_modified_views(resource_models_modified)
+
         for created_r_id in self.resources_created:
             model = self.trackers.get(created_r_id)  # TODO: is it possible this aint here?
             tags_added[created_r_id] = set(
@@ -245,16 +249,20 @@ class OFRAKContext2(OFRAKContext2Interface):
         return root_resource
 
     async def start_context(self):
-        if "_ofrak_context" in globals():
+        import ofrak.ofrak_context
+
+        if hasattr(ofrak.ofrak_context, "_ofrak_context"):
             raise InvalidStateError(
                 "Cannot start OFRAK context as a context has already been started in this process!"
             )
-        globals()["_ofrak_context"] = self
+        ofrak.ofrak_context._ofrak_context = self
         await asyncio.gather(*(service.run() for service in self.services.values()))
 
     async def shutdown_context(self):
-        if "_ofrak_context" in globals():
-            del globals()["_ofrak_context"]
+        import ofrak.ofrak_context
+
+        if hasattr(ofrak.ofrak_context, "_ofrak_context"):
+            delattr(ofrak.ofrak_context, "_ofrak_context")
         await asyncio.gather(*(service.shutdown() for service in self.services.values()))
         logging.shutdown()
 
@@ -713,7 +721,4 @@ class OFRAKContext2(OFRAKContext2Interface):
             for view in views_in_context.values():
                 updated_model = tracker.model
                 fresh_view = view.create(updated_model)
-                for _field in fields(fresh_view):
-                    if _field.name == "_resource":
-                        continue
-                    setattr(view, _field.name, getattr(fresh_view, _field.name))
+                view.copy_from_view(fresh_view)

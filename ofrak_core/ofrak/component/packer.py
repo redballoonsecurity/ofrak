@@ -16,9 +16,6 @@ from ofrak.model.component_filters import (
 from ofrak.model.component_model import CC
 from ofrak.model.ofrak_context_interface import OFRAKContext2Interface
 from ofrak.resource import Resource
-from ofrak.service.component_locator_i import (
-    ComponentLocatorInterface,
-)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -32,14 +29,6 @@ class Packer(AbstractComponent[CC], ABC):
     Packers are components that typically mirror unpackers, taking constituent children resources
     (and sometimes descendants) and reassembling them to produce a new resource.
     """
-
-    def __init__(
-        self,
-        ofrak_context: OFRAKContext2Interface,
-        component_locator: ComponentLocatorInterface,
-    ):
-        super().__init__(ofrak_context)
-        self._component_locator = component_locator
 
     @abstractmethod
     async def pack(self, resource: Resource, config: CC) -> None:
@@ -80,7 +69,7 @@ class Packer(AbstractComponent[CC], ABC):
             await child_r.delete()
 
     def _get_which_unpackers_ran(self, resource: Resource) -> Tuple[bytes, ...]:
-        unpackers_ran = self._component_locator.get_components_matching_filter(
+        unpackers_ran = self._context.component_locator.get_components_matching_filter(
             ComponentAndMetaFilter(
                 ComponentWhitelistFilter(*resource.get_model().component_versions.keys()),
                 # Use process of elimination to avoid circular import between unpacker.py, packer.py

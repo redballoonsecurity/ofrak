@@ -6,9 +6,7 @@ import pytest
 from ofrak import Unpacker, OFRAKContext
 from ofrak.component.abstract import ComponentMissingDependencyError, ComponentSubprocessError
 from ofrak.model.component_model import ComponentExternalTool
-from ofrak.model.job_model import JobRunContext
-from ofrak.model.resource_model import ResourceContext
-from ofrak.model.viewable_tag_model import ResourceViewContext
+from ofrak.model.ofrak_context_interface import OFRAKContext2Interface
 
 
 @pytest.fixture()
@@ -28,7 +26,7 @@ def bad_dependency():
 
 
 async def test_missing_external_tool_caught(
-    ofrak_context: OFRAKContext, dependency_path, mock_dependency
+    ofrak_context: OFRAKContext2Interface, dependency_path, mock_dependency, ofrak_injector
 ):
     class _MockComponent(Unpacker):
         targets = ()
@@ -41,10 +39,7 @@ async def test_missing_external_tool_caught(
             return
 
     unpacker = _MockComponent(
-        ofrak_context.resource_factory,
-        ofrak_context.data_service,
-        ofrak_context.resource_service,
-        ofrak_context.component_locator,
+        ofrak_context,
     )
 
     root = await ofrak_context.create_root_resource("any", b"")
@@ -52,9 +47,6 @@ async def test_missing_external_tool_caught(
         await unpacker.run(
             b"test job",
             root.get_id(),
-            JobRunContext(),
-            ResourceContext(dict()),
-            ResourceViewContext(),
             None,
         )
 
@@ -68,9 +60,6 @@ async def test_missing_external_tool_caught(
         await unpacker.run(
             b"test job",
             root.get_id(),
-            JobRunContext(),
-            ResourceContext(dict()),
-            ResourceViewContext(),
             None,
         )
 
@@ -84,21 +73,13 @@ async def test_external_tool_runtime_error_caught(ofrak_context: OFRAKContext, t
             subprocess.run(["cat", os.path.join(tmpdir, "nonexistant_file")], check=True)
             return
 
-    unpacker = _MockComponent(
-        ofrak_context.resource_factory,
-        ofrak_context.data_service,
-        ofrak_context.resource_service,
-        ofrak_context.component_locator,
-    )
+    unpacker = _MockComponent(ofrak_context)
 
     root = await ofrak_context.create_root_resource("any", b"")
     with pytest.raises(ComponentSubprocessError):
         await unpacker.run(
             b"test job",
             root.get_id(),
-            JobRunContext(),
-            ResourceContext(dict()),
-            ResourceViewContext(),
             None,
         )
 

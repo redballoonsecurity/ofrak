@@ -10,7 +10,6 @@ from ofrak.core.filesystem import File
 
 import ofrak_capstone
 from ofrak import OFRAKContext
-from ofrak.model.viewable_tag_model import ResourceViewContext
 from ofrak_type.architecture import InstructionSet, InstructionSetMode
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.basic_block import BasicBlock
@@ -118,7 +117,7 @@ class UnpackerTestCase:
         for expected_child, child in zip(self.expected_children, children):
             assert expected_child == child
 
-    async def run_instruction_analzyer_test_case(self, ofrak: OFRAKContext):
+    async def run_instruction_analyzer_test_case(self, ofrak: OFRAKContext):
         bb_r = await self._initialize_basic_bloc_resource(ofrak)
         await bb_r.unpack()
         basic_block = await bb_r.view_as(BasicBlock)
@@ -128,7 +127,7 @@ class UnpackerTestCase:
             await instruction.resource.run(BinaryPatchModifier, BinaryPatchConfig(0, raw_bytes))
             # Clear context to get resource view again, triggering InstructionAnalyzer. Without
             # this step the InstructionAnalyzer does not run.
-            instruction.resource._resource_view_context = ResourceViewContext()
+            instruction.resource._tracker.views.clear()
             reanalyzed_instruction = await instruction.resource.view_as(Instruction)
             assert instruction == reanalyzed_instruction
 
@@ -202,12 +201,12 @@ BASIC_BLOCK_TEST_CASES = [
 
 @pytest.mark.parametrize("test_case", BASIC_BLOCK_TEST_CASES, ids=lambda tc: tc.label)
 async def test_capstone_unpacker(test_case, ofrak_context):
-    await test_case.run_instruction_analzyer_test_case(ofrak_context)
+    await test_case.run_instruction_analyzer_test_case(ofrak_context)
 
 
 @pytest.mark.parametrize("test_case", BASIC_BLOCK_TEST_CASES, ids=lambda tc: tc.label)
 async def test_capstone_analyzer(test_case, ofrak_context):
-    await test_case.run_instruction_analzyer_test_case(ofrak_context)
+    await test_case.run_instruction_analyzer_test_case(ofrak_context)
 
 
 class TestCapstoneRegisterUsage(RegisterUsageTestPattern):

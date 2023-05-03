@@ -33,6 +33,15 @@ class AbstractComponent(ComponentInterface[CC], ABC):
         self._default_config = self.get_default_config()
 
         self._context = ofrak_context
+        self.__post_init__()
+
+    def __post_init__(self):
+        """
+        Override for any state that a component needs to set up, without messing with the dependency
+        injection that uses the constructor.
+
+        :return:
+        """
 
     @classmethod
     def get_id(cls) -> bytes:

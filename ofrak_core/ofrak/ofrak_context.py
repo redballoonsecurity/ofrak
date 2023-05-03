@@ -216,7 +216,7 @@ class OFRAK:
         return audited_components
 
 
-def get_current_ofrak_context() -> OFRAKContext:
+def get_current_ofrak_context() -> OFRAKContext2Interface:
     # TODO: This is a brittle MVP, creating multiple simultaneous contexts in a single process
     #  will probably break it!
     ctx = globals().get("_ofrak_context")

@@ -27,6 +27,7 @@ from aiohttp.web_request import Request
 from aiohttp.web_response import Response
 from aiohttp.web_fileresponse import FileResponse
 
+from ofrak.model.ofrak_context_interface import OFRAKContext2Interface
 from ofrak.ofrak_context import get_current_ofrak_context
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
@@ -50,18 +51,13 @@ from ofrak.core import (
     StringFindReplaceModifier,
 )
 from ofrak.model.component_model import (
-    ComponentContext,
-    ClientComponentContext,
     ComponentRunResult,
 )
 from ofrak.model.resource_model import (
-    ResourceContext,
-    ClientResourceContext,
     ResourceModel,
     ResourceAttributes,
     MutableResourceModel,
 )
-from ofrak.model.viewable_tag_model import ResourceViewContext
 from ofrak.resource import Resource
 from ofrak.service.error import SerializedError
 from ofrak.service.serialization.pjson import (
@@ -108,7 +104,7 @@ class AiohttpOFRAKServer:
     def __init__(
         self,
         serializer: SerializationServiceInterface,
-        ofrak_context: OFRAKContext,
+        ofrak_context: OFRAKContext2Interface,
         host: str,
         port: int,
         enable_cors: bool = False,
@@ -118,9 +114,6 @@ class AiohttpOFRAKServer:
         self._host = host
         self._port = port
         self._ofrak_context = ofrak_context
-        self.resource_context: ResourceContext = ClientResourceContext()
-        self.resource_view_context: ResourceViewContext = ResourceViewContext()
-        self.component_context: ComponentContext = ClientComponentContext()
         self.script_builder: ScriptBuilder = ScriptBuilder()
         self._app.add_routes(
             [
@@ -269,8 +262,8 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def get_child_data_ranges(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
-        resource_service = self._ofrak_context.resource_factory._resource_service
-        data_service = self._ofrak_context.resource_factory._data_service
+        resource_service = self._ofrak_context.resource_service
+        data_service = self._ofrak_context.data_service
         children = await resource_service.get_descendants_by_id(
             resource.get_id(),
             max_depth=1,
@@ -310,8 +303,8 @@ class AiohttpOFRAKServer:
             if resource_model.parent_id is None:
                 data_range = Range(0, 0)
             else:
-                resource_service = self._ofrak_context.resource_factory._resource_service
-                data_service = self._ofrak_context.resource_factory._data_service
+                resource_service = self._ofrak_context.resource_service
+                data_service = self._ofrak_context.data_service
                 parent_models = list(
                     await resource_service.get_ancestors_by_id(resource_model.id, max_count=1)
                 )
@@ -451,8 +444,8 @@ class AiohttpOFRAKServer:
 
         async def get_resource_children(resource_id):
             resource = await self._get_resource_by_id(bytes.fromhex(resource_id), job_id)
-            child_models = await resource._resource_service.get_descendants_by_id(
-                resource._resource.id,
+            child_models = await self._ofrak_context.resource_service.get_descendants_by_id(
+                resource.get_id(),
                 max_depth=1,
             )
             serialized_children = list(map(self._serialize_resource_model, child_models))
@@ -678,25 +671,14 @@ class AiohttpOFRAKServer:
         return FileResponse(os.path.join(os.path.dirname(__file__), "./public/index.html"))
 
     async def _get_resource_by_id(self, resource_id: bytes, job_id: bytes) -> Resource:
-        resource = await self._ofrak_context.resource_factory.create(
-            job_id,
-            resource_id,
-            self.resource_context,
-            self.resource_view_context,
-            self.component_context,
-        )
+        (resource,) = await self._ofrak_context.get_resources(resource_id)
         return resource
 
     async def _get_resource_model_by_id(
         self, resource_id: bytes, job_id: bytes
     ) -> Optional[Union[ResourceModel, MutableResourceModel]]:
-        resource_m: Optional[Union[ResourceModel, MutableResourceModel]] = None
-        resource_m = self.resource_context.resource_models.get(resource_id)
-        if resource_m is None:
-            resource_m = await self._ofrak_context.resource_factory._resource_service.get_by_id(
-                resource_id
-            )
-        return resource_m
+        (resource,) = await self._ofrak_context.get_resources(resource_id)
+        return resource.get_model()
 
     async def _serialize_component_result(self, result: ComponentRunResult) -> PJSONType:
         async def get_and_serialize(resource_id) -> PJSONType:

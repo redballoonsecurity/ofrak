@@ -16,9 +16,6 @@ from ofrak.model.component_model import CC
 from ofrak.model.ofrak_context_interface import OFRAKContext2Interface
 from ofrak.model.tag_model import ResourceTag
 from ofrak.resource import Resource
-from ofrak.service.component_locator_i import (
-    ComponentLocatorInterface,
-)
 
 
 class UnpackerError(RuntimeError):
@@ -29,14 +26,6 @@ class Unpacker(AbstractComponent[CC], ABC):
     """
     Unpackers are components that unpack resources, splitting them into one or more children.
     """
-
-    def __init__(
-        self,
-        ofrak_context: OFRAKContext2Interface,
-        component_locator: ComponentLocatorInterface,
-    ):
-        super().__init__(ofrak_context)
-        self._component_locator = component_locator
 
     @property
     @abstractmethod
@@ -87,7 +76,7 @@ class Unpacker(AbstractComponent[CC], ABC):
             resource.remove_component(packer_id)
 
     def _get_which_packers_ran(self, resource: Resource) -> Tuple[bytes, ...]:
-        unpackers_ran = self._component_locator.get_components_matching_filter(
+        unpackers_ran = self._context.component_locator.get_components_matching_filter(
             ComponentAndMetaFilter(
                 ComponentWhitelistFilter(*resource.get_model().component_versions.keys()),
                 # Use process of elimination to avoid circular import between unpacker.py, packer.py

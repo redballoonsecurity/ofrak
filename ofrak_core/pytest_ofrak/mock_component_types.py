@@ -17,7 +17,7 @@ class MockUnpacker(Unpacker[None]):
     children = ()
 
     def __init__(self):
-        super().__init__(None, None)
+        super().__init__(None)
 
     async def unpack(self, resource, config=None):
         pass

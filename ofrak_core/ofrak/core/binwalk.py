@@ -6,7 +6,6 @@ from typing import Dict
 
 from ofrak.component.abstract import ComponentMissingDependencyError
 from ofrak.component.analyzer import Analyzer
-from ofrak.model.ofrak_context_interface import OFRAKContext2Interface
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.resource import Resource
 
@@ -47,11 +46,7 @@ class BinwalkAnalyzer(Analyzer[None, BinwalkAttributes]):
     outputs = (BinwalkAttributes,)
     external_dependencies = (BINWALK_TOOL,)
 
-    def __init__(
-        self,
-        ofrak_context: OFRAKContext2Interface,
-    ):
-        super().__init__(ofrak_context)
+    def __post_init__(self):
         self.pool = ProcessPoolExecutor()
 
     async def analyze(self, resource: Resource, config=None) -> BinwalkAttributes:

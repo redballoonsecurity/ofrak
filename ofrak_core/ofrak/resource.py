@@ -1,4 +1,5 @@
 import asyncio
+import dataclasses
 import hashlib
 import logging
 from inspect import isawaitable
@@ -675,6 +676,12 @@ class Resource:
         for attributes in view.get_attributes_instances().values():  # type: ignore
             self.add_attributes(attributes)
         self.add_tag(type(view))
+        if type(view) in self._tracker.views:
+            self._tracker.views[type(view)].copy_from_view(view)
+        else:
+            view_copy = dataclasses.replace(view)
+            view_copy.resource = self  # type: ignore
+            self._tracker.views[type(view)] = view_copy
 
     def _add_tag(self, tag: ResourceTag):
         """
@@ -750,6 +757,11 @@ class Resource:
         if existing_attributes is not None and existing_attributes == attributes:
             return
         self._resource.add_attributes(attributes)
+        self._resource.add_component_for_attributes(
+            self._ofrak_context.current_component_id,
+            self._ofrak_context.current_component_version,
+            type(attributes),
+        )
 
     def add_attributes(self, *attributes: ResourceAttributes):
         """
