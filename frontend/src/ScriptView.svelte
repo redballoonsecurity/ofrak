@@ -90,6 +90,35 @@
       if (lines.length === 0) {
         return;
       }
+      if (window.clipboardData && window.clipboardData.setData) {
+        return window.clipboardData.setData("Text", lines);
+      } else if (document.queryCommandSupported && document.queryCommandSupported("copy")) {
+        var textarea = document.createElement("textarea");
+        textarea.textContent = lines;
+        // Prevent scrolling to bottom of page in MS Edge
+        textarea.style.position = "fixed";
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          // Security exception may be thrown by some browsers
+          return document.execCommand("copy");
+        } catch (ex) {
+          console.warn("Copy to clipboard failed.", ex);
+          return false;
+        } finally {
+          document.body.removeChild(textarea);
+        }
+	  }
+    }}"
+  >
+    <Icon url="/icons/content_copy.svg" />
+  </button>
+  <button
+    on:click="{async (e) => {
+      const lines = $script.join('\n');
+      if (lines.length === 0) {
+        return;
+      }
       const blob = new Blob([lines], { type: 'application/x-python-code' });
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
