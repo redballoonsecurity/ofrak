@@ -91,24 +91,27 @@
         return;
       }
       if (window.clipboardData && window.clipboardData.setData) {
-        return window.clipboardData.setData("Text", lines);
-      } else if (document.queryCommandSupported && document.queryCommandSupported("copy")) {
-        var textarea = document.createElement("textarea");
+        return window.clipboardData.setData('Text', lines);
+      } else if (
+        document.queryCommandSupported &&
+        document.queryCommandSupported('copy')
+      ) {
+        var textarea = document.createElement('textarea');
         textarea.textContent = lines;
         // Prevent scrolling to bottom of page in MS Edge
-        textarea.style.position = "fixed";
+        textarea.style.position = 'fixed';
         document.body.appendChild(textarea);
         textarea.select();
         try {
           // Security exception may be thrown by some browsers
-          return document.execCommand("copy");
+          return document.execCommand('copy');
         } catch (ex) {
-          console.warn("Copy to clipboard failed.", ex);
+          console.warn('Copy to clipboard failed.', ex);
           return false;
         } finally {
           document.body.removeChild(textarea);
         }
-	  }
+      }
     }}"
   >
     <Icon url="/icons/content_copy.svg" />
