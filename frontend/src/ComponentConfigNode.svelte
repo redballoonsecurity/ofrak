@@ -149,15 +149,15 @@
     "0x7 - 1 + 10",
   ];
 
-  $: if (node["type"] == "builtins.int") {
-    try {
-      element = calculator.calculate(_element);
-      intInput?.setCustomValidity("");
-    } catch {
-      element = undefined;
-      intInput?.setCustomValidity("Invalid expression.");
-    }
-  }
+  // $: if (node["type"] == "builtins.int") {
+  //   try {
+  //     element = calculator.calculate(_element);
+  //     intInput?.setCustomValidity("");
+  //   } catch {
+  //     element = undefined;
+  //     intInput?.setCustomValidity("Invalid expression.");
+  //   }
+  // }
 
   async function slurpSourceBundle(files) {
     for (const file of files) {
@@ -250,11 +250,10 @@
       <label>
         {nodeName}
         <input
-          bind:this="{intInput}"
           placeholder="{INT_PLACEHOLDERS[
             Math.floor(Math.random() * INT_PLACEHOLDERS.length)
           ]}"
-          bind:value="{_element}"
+          bind:value="{element}"
         />
       </label>
 
@@ -294,22 +293,23 @@
           <Icon url="/icons/plus.svg" />
         </button>
       </div>
-      {#each Object.entries(element) as [key, value]}
+      {#each element as elements, index}
         <div class="boxed">
           <div class="buttonbar">
             <button
               class="remove"
               on:click="{(e) => {
-                element = delete element[key] && element;
+                 element = element.filter((x) => element.indexOf(x) !== index);
               }}"
             >
               <Icon url="/icons/error.svg" />
             </button>
+            {elements}
           </div>
           <p>Key</p>
-          <svelte:self node="{node['args'][0]}" bind:element="{key}" />
+          <svelte:self node="{node['args'][0]}" bind:element="{element[index][0]}" />
           <p>Value</p>
-          <svelte:self node="{node['args'][1]}" bind:element="{value}" />
+          <svelte:self node="{node['args'][1]}" bind:element="{element[index][1]}" />
         </div>
       {/each}
 
