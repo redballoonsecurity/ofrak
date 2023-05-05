@@ -5,6 +5,7 @@ import functools
 import itertools
 import json
 import logging
+
 from typing_inspect import get_args
 import json
 import orjson
@@ -34,10 +35,12 @@ from aiohttp.web_request import Request
 from aiohttp.web_response import Response
 from aiohttp.web_fileresponse import FileResponse
 from dataclasses import fields
+
+from ofrak.component.interface import ComponentInterface
 from ofrak.ofrak_context import get_current_ofrak_context
+from ofrak_patch_maker.toolchain.abstract import Toolchain
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
-from ofrak.component.abstract import AbstractComponent
 from ofrak import (
     OFRAKContext,
     ResourceFilter,
@@ -64,6 +67,7 @@ from ofrak.model.component_model import (
     ComponentContext,
     ClientComponentContext,
     ComponentRunResult,
+    ComponentConfig,
 )
 from ofrak.model.resource_model import (
     ResourceContext,
@@ -868,6 +872,12 @@ class AiohttpOFRAKServer:
         return obj
 
     def _construct_enum_response(self, obj):
+        if obj == Type[Toolchain]:
+            return {
+                tc.__name__: f"{tc.__module__}.{tc.__qualname__}"
+                for tc in Toolchain.toolchain_implementations
+                if not inspect.isabstract(tc)
+            }
         if not inspect.isclass(obj):
             return None
         elif not issubclass(obj, Enum):
@@ -933,7 +943,9 @@ class AiohttpOFRAKServer:
 
         return selected_components
 
-    def _get_config_for_component(self, component: AbstractComponent):
+    def _get_config_for_component(
+        self, component: Type[ComponentInterface]
+    ) -> Type[ComponentConfig]:
         if issubclass(component, Packer):
             config = inspect.signature(component.pack).parameters["config"].annotation
         elif issubclass(component, Unpacker):

@@ -347,8 +347,8 @@
       <!---->
     {:else if node["enum"] != null}
       <select bind:value="{element}">
-        {#each Object.entries(node["enum"]) as [name, value]}
-          <option value="{node['type']}.{name}">
+        {#each Object.entries(node["enum"]) as [name, enum_value]}
+          <option value="{enum_value}">
             {name}
           </option>
         {/each}
