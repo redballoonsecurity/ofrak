@@ -894,7 +894,29 @@ class AiohttpOFRAKServer:
         return any([isinstance(arg, type(...)) for arg in get_args(obj)])
 
     def _convert_to_class_name_str(self, obj: any):
-        return f"{obj.__module__}.{obj.__qualname__}"
+        if hasattr(obj, "__qualname__") and hasattr(obj, "__module__"):
+            return f"{obj.__module__}.{obj.__qualname__}"
+        else:
+            if obj in {bool, str, bytes, int}:
+                return f"builtins.{obj.__name__}"
+            elif typing_inspect.is_optional_type(obj):
+                return "typing.Optional"
+            elif typing_inspect.is_union_type(obj):
+                return "typing.Union"
+            elif obj is Range:
+                return "ofrak_type.range.Range"
+            elif hasattr(obj, "__origin__"):
+                origin = obj.__origin__
+                if origin is list:
+                    return "typing.List"
+                elif origin is Iterable.__origin__:
+                    return "typing.Iterable"
+                elif origin is tuple:
+                    return "typing.Tuple"
+                elif origin is dict:
+                    return "typing.Dict"
+            else:
+                return repr(obj).split("[")[0]
 
     async def _get_resource_by_id(self, resource_id: bytes, job_id: bytes) -> Resource:
         resource = await self._ofrak_context.resource_factory.create(

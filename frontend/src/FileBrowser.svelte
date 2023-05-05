@@ -68,7 +68,7 @@
   {#if !dragging}
     <label class="filelabel">
       <slot />
-      <input type="file" bind:this="{input}" bind:files="{files}" />
+      <input type="file" multiple bind:this="{input}" bind:files="{files}" />
       <span>
         <button on:click="{() => input.click()}"> Browse... </button>
         {#if files}
