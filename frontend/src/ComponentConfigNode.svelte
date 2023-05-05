@@ -127,8 +127,12 @@
   import Checkbox from "./Checkbox.svelte";
   import { calculator, splitAndCapitalize } from "./helpers";
   import Icon from "./Icon.svelte";
+  import FileBrowser from "./FileBrowser.svelte";
   export let node, element;
-  let unionTypeSelect, _element, intInput;
+  let unionTypeSelect,
+    _element,
+    intInput,
+    files = null;
 
   const INT_PLACEHOLDERS = [
     "0x10 * 2 + 8",
@@ -145,14 +149,30 @@
     "0x7 - 1 + 10",
   ];
 
-  $: if (node["type"] == "builtins.int") {
-    try {
-      element = calculator.calculate(_element);
-      intInput?.setCustomValidity("");
-    } catch {
-      element = undefined;
-      intInput?.setCustomValidity("Invalid expression.");
+  // $: if (node["type"] == "builtins.int") {
+  //   try {
+  //     element = calculator.calculate(_element);
+  //     intInput?.setCustomValidity("");
+  //   } catch {
+  //     element = undefined;
+  //     intInput?.setCustomValidity("Invalid expression.");
+  //   }
+  // }
+
+  async function slurpSourceBundle(files) {
+    for (const file of files) {
+      let text = await file.text();
+      element = [...element, [file.name, text]];
     }
+    return element;
+  }
+
+  const getFileContents = async () => {
+    await slurpSourceBundle(files);
+  };
+
+  $: if (files) {
+    getFileContents(files);
   }
 
   if (
@@ -163,7 +183,10 @@
     node["type"] == "typing.Iterable"
   ) {
     element = [];
-  } else if (node["type"] == "typing.Union") {
+  } else if (
+    node["type"] == "typing.Union" ||
+    node["type"] == "typing.Optional"
+  ) {
     unionTypeSelect = node["args"][0];
   }
   if (node["type"] == "ofrak_type.range.Range") {
@@ -185,49 +208,8 @@
     element = element;
   };
 
-  $: if (node["type"] == "ofrak.core.patch_maker.modifiers.SourceBundle") {
-    node = {
-      name: node["name"],
-      type: "typing.Dict",
-      args: [
-        {
-          name: null,
-          type: "builtins.str",
-          args: null,
-          fields: null,
-          enum: null,
-          default: null,
-        },
-        {
-          name: null,
-          type: "typing.Union",
-          args: [
-            {
-              name: null,
-              type: "builtins.bytes",
-              args: null,
-              fields: null,
-              enum: null,
-              default: null,
-            },
-            {
-              name: null,
-              type: "ofrak.core.patch_maker.modifiers.SourceBundle",
-              args: null,
-              fields: null,
-              enum: null,
-              default: null,
-            },
-          ],
-          fields: null,
-          enum: null,
-          default: null,
-        },
-      ],
-      fields: null,
-      enum: null,
-      default: null,
-    };
+  if (node["type"] == "builtins.NoneType") {
+    element = null;
   }
 
   $: nodeName = node["name"] ? splitAndCapitalize(node["name"]) : "";
@@ -268,11 +250,10 @@
       <label>
         {nodeName}
         <input
-          bind:this="{intInput}"
           placeholder="{INT_PLACEHOLDERS[
             Math.floor(Math.random() * INT_PLACEHOLDERS.length)
           ]}"
-          bind:value="{_element}"
+          bind:value="{element}"
         />
       </label>
 
@@ -312,22 +293,23 @@
           <Icon url="/icons/plus.svg" />
         </button>
       </div>
-      {#each Object.entries(element) as [key, value]}
+      {#each element as elements, index}
         <div class="boxed">
           <div class="buttonbar">
             <button
               class="remove"
               on:click="{(e) => {
-                element = delete element[key] && element;
+                 element = element.filter((x) => element.indexOf(x) !== index);
               }}"
             >
               <Icon url="/icons/error.svg" />
             </button>
+            {elements}
           </div>
           <p>Key</p>
-          <svelte:self node="{node['args'][0]}" bind:element="{key}" />
+          <svelte:self node="{node['args'][0]}" bind:element="{element[index][0]}" />
           <p>Value</p>
-          <svelte:self node="{node['args'][1]}" bind:element="{value}" />
+          <svelte:self node="{node['args'][1]}" bind:element="{element[index][1]}" />
         </div>
       {/each}
 
@@ -343,6 +325,10 @@
       {#if unionTypeSelect != null}
         <svelte:self node="{unionTypeSelect}" bind:element="{element}" />
       {/if}
+
+      <!---->
+    {:else if node["type"] == "ofrak.core.patch_maker.modifiers.SourceBundle"}
+      <FileBrowser bind:files="{files}" />
 
       <!---->
     {:else if node["enum"] != null}
