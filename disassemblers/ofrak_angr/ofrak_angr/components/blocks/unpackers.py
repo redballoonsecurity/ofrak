@@ -4,7 +4,7 @@ from typing import Optional
 from warnings import warn
 
 from angr.knowledge_plugins.functions.function import Function as AngrFunction
-from archinfo.arch_arm import get_real_address_if_arm
+from archinfo.arch_arm import get_real_address_if_arm, is_arm_arch
 from ofrak_type.architecture import InstructionSetMode
 from ofrak_type.range import Range
 
@@ -126,6 +126,10 @@ class AngrComplexBlockUnpacker(ComplexBlockUnpacker):
 
         angr_complex_block = angr_analysis.project.kb.functions.function(addr=cb_vaddr_range.start)
         if not angr_complex_block:
+            thumb_cb_vaddr = cb_vaddr_range.start | 0x1
+            angr_complex_block = angr_analysis.project.kb.functions.function(addr=thumb_cb_vaddr)
+
+        if not angr_complex_block:
             LOGGER.error(f"Could not find complex block at {cb_vaddr_range.start:#x} in angr")
             return
 
@@ -133,9 +137,9 @@ class AngrComplexBlockUnpacker(ComplexBlockUnpacker):
         for idx, bb in enumerate(angr_cb_basic_blocks):
             bb_addr = get_real_address_if_arm(angr_analysis.project.arch, bb.addr)
 
-            bb_mode = (
-                InstructionSetMode.THUMB if "thumb" in bb.arch.name else InstructionSetMode.NONE
-            )
+            bb_mode = InstructionSetMode.NONE
+            if is_arm_arch(bb.arch) and (bb.addr & 0x1):
+                bb_mode = InstructionSetMode.THUMB
 
             ## Fetch the exit point addr (if it exists) and sanity check the selection
             bb_is_exit_point = bb.codenode in angr_complex_block.endpoints
