@@ -125,7 +125,7 @@ class AngrComplexBlockUnpacker(ComplexBlockUnpacker):
         LOGGER.debug(f"Getting basic blocks from function {cb_vaddr_range.start:#x}")
 
         angr_complex_block = angr_analysis.project.kb.functions.function(addr=cb_vaddr_range.start)
-        if not angr_complex_block:
+        if not angr_complex_block and is_arm_arch(angr_analysis.project.arch):
             thumb_cb_vaddr = cb_vaddr_range.start | 0x1
             angr_complex_block = angr_analysis.project.kb.functions.function(addr=thumb_cb_vaddr)
 
