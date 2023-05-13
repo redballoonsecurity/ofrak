@@ -15,13 +15,11 @@ from ofrak.core.elf.model import (
     ElfSegment,
     ElfSectionStructure,
     ElfSection,
-    UnanalyzedElfSection,
     ElfSymbol,
     ElfSymbolStructure,
     ElfRelaEntry,
     ElfDynamicEntry,
     ElfVirtualAddress,
-    UnanalyzedElfSegment,
 )
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.model.component_model import ComponentConfig
@@ -161,8 +159,9 @@ class ElfSegmentAnalyzer(Analyzer[None, ElfSegment]):
     outputs = (ElfSegment,)
 
     async def analyze(self, resource: Resource, config=None) -> ElfSegment:
-        unnamed_segment = await resource.view_as(UnanalyzedElfSegment)
-        segment_header = await unnamed_segment.get_header()
+
+        segment = await resource.view_as(ElfSegmentStructure)
+        segment_header = await segment.get_header()
         return ElfSegment(
             segment_index=segment_header.segment_index,
             virtual_address=segment_header.p_vaddr,
@@ -320,9 +319,9 @@ class ElfSectionNameAnalyzer(Analyzer[None, AttributesType[NamedProgramSection]]
     outputs = (AttributesType[NamedProgramSection],)
 
     async def analyze(self, resource: Resource, config=None) -> AttributesType[NamedProgramSection]:
-        unnamed_section = await resource.view_as(UnanalyzedElfSection)
-        section_header = await unnamed_section.get_header()
-        elf_r = await unnamed_section.get_elf()
+        section = await resource.view_as(ElfSectionStructure)
+        section_header = await section.get_header()
+        elf_r = await section.get_elf()
         string_section = await elf_r.get_section_name_string_section()
         try:
             string_section_data = await string_section.resource.get_data(
@@ -352,8 +351,8 @@ class ElfSectionMemoryRegionAnalyzer(Analyzer[None, MemoryRegion]):
     outputs = (MemoryRegion,)
 
     async def analyze(self, resource: Resource, config=None) -> MemoryRegion:
-        unnamed_section = await resource.view_as(UnanalyzedElfSection)
-        section_header = await unnamed_section.get_header()
+        section = await resource.view_as(ElfSectionStructure)
+        section_header = await section.get_header()
         return MemoryRegion(
             virtual_address=section_header.sh_addr,
             size=section_header.sh_size,
