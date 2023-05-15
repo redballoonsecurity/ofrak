@@ -266,7 +266,7 @@
         {#if loadingDark}
           <Icon url="/icons/loading.svg" />
         {/if}
-        AI Generated Dark Mode
+        Generate Dark Mode
       </button>
       <button
         on:click="{() => {
@@ -276,7 +276,7 @@
         {#if loadingLight}
           <Icon url="/icons/loading.svg" />
         {/if}
-        AI Generated Light Mode
+        Generate Light Mode
       </button>
     </div>
     <div class="inputs" style:margin="2em 0">
