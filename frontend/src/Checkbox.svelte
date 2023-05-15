@@ -38,15 +38,19 @@
     background: var(--main-fg-color);
     border: none;
   }
+
+  .nomargin {
+    margin: 0;
+  }
 </style>
 
 <script>
-  export let checked, value;
+  export let checked, value, nomargin = false;
 
   $: value = checked;
 </script>
 
-<label>
+<label class:nomargin={nomargin}>
   <slot />
   <input type="checkbox" bind:checked="{checked}" />
   <span></span>
