@@ -299,7 +299,7 @@
             <button
               class="remove"
               on:click="{(e) => {
-                 element = element.filter((x) => element.indexOf(x) !== index);
+                element = element.filter((x) => element.indexOf(x) !== index);
               }}"
             >
               <Icon url="/icons/error.svg" />
@@ -307,9 +307,15 @@
             {elements}
           </div>
           <p>Key</p>
-          <svelte:self node="{node['args'][0]}" bind:element="{element[index][0]}" />
+          <svelte:self
+            node="{node['args'][0]}"
+            bind:element="{element[index][0]}"
+          />
           <p>Value</p>
-          <svelte:self node="{node['args'][1]}" bind:element="{element[index][1]}" />
+          <svelte:self
+            node="{node['args'][1]}"
+            bind:element="{element[index][1]}"
+          />
         </div>
       {/each}
 
