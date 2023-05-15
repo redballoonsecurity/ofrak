@@ -167,12 +167,8 @@
     return element;
   }
 
-  const getFileContents = async () => {
-    await slurpSourceBundle(files);
-  };
-
   $: if (files) {
-    getFileContents(files);
+    slurpSourceBundle(files);
   }
 
   if (
