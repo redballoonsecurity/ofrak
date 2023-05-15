@@ -1,12 +1,10 @@
 import logging
-from typing import Iterable, Tuple
+from typing import Iterable, Tuple, List
 from typing import Optional
 from warnings import warn
 
 from angr.knowledge_plugins.functions.function import Function as AngrFunction
 from archinfo.arch_arm import get_real_address_if_arm, is_arm_arch
-from ofrak_type.architecture import InstructionSetMode
-from ofrak_type.range import Range
 
 from ofrak.core.basic_block import BasicBlock
 from ofrak.core.code_region import CodeRegionUnpacker, CodeRegion
@@ -17,6 +15,8 @@ from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_angr.components.angr_analyzer import AngrAnalyzerConfig, AngrCodeRegionModifier
 from ofrak_angr.components.identifiers import AngrAnalysisResource
 from ofrak_angr.model import AngrAnalysis
+from ofrak_type.architecture import InstructionSetMode
+from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
 
@@ -102,12 +102,17 @@ class AngrComplexBlockUnpacker(ComplexBlockUnpacker):
         )
         angr_analysis = await root_resource.analyze(AngrAnalysis)
 
+        valid_data_xref_ranges = []
         ## Fetch and create Basic Blocks to populate the CB with
         for basic_block in self._angr_get_basic_blocks(angr_analysis, cb_vaddr_range):
             await cb_view.create_child_region(basic_block)
+            valid_data_xref_ranges.append(basic_block.vaddr_range())
 
+        valid_data_xref_ranges = Range.merge_ranges(valid_data_xref_ranges)
         ## Fetch and create Data Words to populate the CB with
-        for data_word in self._angr_get_dword_blocks(angr_analysis, cb_vaddr_range, cb_data_range):
+        for data_word in self._angr_get_dword_blocks(
+            angr_analysis, cb_vaddr_range, cb_data_range, valid_data_xref_ranges
+        ):
             await cb_view.create_child_region(data_word)
 
     @staticmethod
@@ -177,6 +182,7 @@ class AngrComplexBlockUnpacker(ComplexBlockUnpacker):
         angr_analysis: AngrAnalysis,
         cb_data_range: Range,
         cb_vaddr_range: Range,
+        valid_data_xref_ranges: List[Range],
     ) -> Iterable[DataWord]:
         """
         Iterator which yields Dword Blocks derived from the angr CFG within an address range
@@ -208,9 +214,9 @@ class AngrComplexBlockUnpacker(ComplexBlockUnpacker):
 
         # Filter xrefs within the requested address range & if known dword type
         cb_data_xrefs = [
-            d
-            for d in angr_cfg.insn_addr_to_memory_data.items()
-            if (d[1].addr in cb_data_range) and (d[1].sort in dword_types)
+            (xref, cb_data_xref)
+            for xref, cb_data_xref in angr_cfg.insn_addr_to_memory_data.items()
+            if (cb_data_xref.addr in cb_data_range) and (cb_data_xref.sort in dword_types)
         ]
 
         for xref, cb_data_xref in cb_data_xrefs:
@@ -219,6 +225,9 @@ class AngrComplexBlockUnpacker(ComplexBlockUnpacker):
 
             if word_size not in dword_size_map:
                 raise ValueError(f"Bad word size {word_size} at {cb_data_xref_addr:#x}")
+
+            if xref is None or not any(xref in bb_range for bb_range in valid_data_xref_ranges):
+                continue
 
             LOGGER.debug(f"Creating DataWord for {cb_data_xref.content} @ {cb_data_xref_addr:#x}")
 

@@ -1,5 +1,5 @@
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Dict, List, Union
 
 import pytest
@@ -276,6 +276,35 @@ COMPLEX_BLOCK_UNPACKER_TEST_CASES = [
         "simple_arm_gcc.o.elf",
         "c79d1bea0398d7a9d0faa1ba68786f5e",
     ),
+    # ARM + Thumb, PIE
+    ComplexBlockUnpackerTestCase(
+        "PIE ARM with Thumb function",
+        {
+            0x140: [
+                BasicBlock(0x140, 0x10, InstructionSetMode.THUMB, False, 0x150),
+                BasicBlock(0x150, 0x6, InstructionSetMode.THUMB, False, 0x15A),
+                BasicBlock(0x156, 0x4, InstructionSetMode.THUMB, False, 0x15A),
+                BasicBlock(0x15A, 0xA, InstructionSetMode.THUMB, False, 0x192),
+                BasicBlock(0x164, 0x6, InstructionSetMode.THUMB, False, 0x170),
+                BasicBlock(0x16A, 0x6, InstructionSetMode.THUMB, False, 0x170),
+                BasicBlock(0x170, 0x14, InstructionSetMode.THUMB, False, 0x184),
+                BasicBlock(0x184, 0xE, InstructionSetMode.THUMB, False, 0x192),
+                BasicBlock(0x192, 0x8, InstructionSetMode.THUMB, False, 0x19A),
+                BasicBlock(0x19A, 0x12, InstructionSetMode.THUMB, True, None),
+            ],
+            0x110: [
+                BasicBlock(0x110, 0x30, InstructionSetMode.NONE, True, None),
+            ],
+        },
+        {
+            0x1B0: [
+                BasicBlock(0x1B0, 0xC, InstructionSetMode.NONE, True, None),
+                DataWord(0x1BC, 0x4, "<L", (0x1B0,)),
+            ],
+        },
+        "simple_pie_thumb_bin",
+        "fc7a6b95d993f955bd92f2bef2699dd0",
+    ),
 ]
 
 
@@ -335,11 +364,16 @@ class ComplexBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
         # Check that the parent complex blocks are extracted as expected
         complex_block_start_address = complex_block.virtual_address
         # Check that all expected basic blocks have been extracted
-        assert {basic_block.virtual_address for basic_block in basic_blocks} == {
+        unpacked_bb_vaddrs = {basic_block.virtual_address for basic_block in basic_blocks}
+        expected_bb_vaddrs = {
             expected_basic_block.virtual_address
             for expected_basic_block in specified_result
             if isinstance(expected_basic_block, BasicBlock)
         }
+
+        assert (
+            unpacked_bb_vaddrs == expected_bb_vaddrs
+        ), f"Unpacked different BBs from CB 0x{complex_block_start_address:x}. All different basic blocks (expected XOR unpacked): {unpacked_bb_vaddrs.symmetric_difference(expected_bb_vaddrs)}"
 
         blocks_by_addr: Dict[int, Union[DataWord, BasicBlock]] = {
             block.virtual_address: block for block in specified_result
@@ -350,26 +384,32 @@ class ComplexBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
                 f"got BasicBlock at "
                 f"{hex(basic_block.virtual_address)} but expected {type(expected_basic_block)}"
             )
-            expected_bb_info = (
-                expected_basic_block.virtual_address,
-                expected_basic_block.size,
-                expected_basic_block.mode,
-                expected_basic_block.is_exit_point,
-                expected_basic_block.exit_vaddr,
+            expected_bb_info = replace(expected_basic_block, exit_vaddr=None)
+            extracted_bb_info = replace(
+                basic_block,
+                exit_vaddr=None,  # Different backends analyze "exit_vaddr" differently
             )
-            extracted_bb_info = (
-                basic_block.virtual_address,
-                basic_block.size,
-                basic_block.mode,
-                basic_block.is_exit_point,
-                basic_block.exit_vaddr,
-            )
+
             assert expected_bb_info == extracted_bb_info, (
                 f"Extracted BasicBlocks do not match expected for ComplexBlock "
                 f"0x{complex_block_start_address:x}: got {extracted_bb_info}, expected {expected_bb_info}"
             )
 
         data_words = await complex_block.get_data_words()
+        unpacked_dw_vaddrs = {dw.virtual_address for dw in data_words}
+        expected_dw_vaddrs = {
+            expected_data_word.virtual_address
+            for expected_data_word in specified_result
+            if isinstance(expected_data_word, DataWord)
+        }
+
+        if unpacked_dw_vaddrs != expected_dw_vaddrs:
+            expected_xor_unpacked = unpacked_dw_vaddrs.symmetric_difference(expected_dw_vaddrs)
+            expected_xor_unpacked_str = ", ".join(hex(vaddr) for vaddr in expected_xor_unpacked)
+            pytest.fail(
+                f"Unpacked different DWs from CB 0x{complex_block_start_address:x}. All different data words (expected XOR unpacked): {expected_xor_unpacked_str}"
+            )
+
         for data_word in data_words:
             expected_data_word = blocks_by_addr[data_word.virtual_address]
             assert type(expected_data_word) is DataWord, (
@@ -380,15 +420,56 @@ class ComplexBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
                 expected_data_word.virtual_address,
                 expected_data_word.size,
                 expected_data_word.format_string,
-                expected_data_word.xrefs_to,
+                # Different backends count xrefs differently, xrefs not part of the compared info
             )
             extracted_data_word_info = (
                 data_word.virtual_address,
                 data_word.size,
                 data_word.format_string,
-                data_word.xrefs_to,
+                # Different backends count xrefs differently, xrefs not part of the compared info
             )
             assert expected_data_word_info == extracted_data_word_info, (
                 f"Extracted DataWord do not match expected for ComplexBlock: "
                 f"0x{complex_block_start_address:x}"
             )
+
+    def _fixup_test_case_for_pie(
+        self,
+        expected_results: Dict[int, List[Union[BasicBlock, DataWord]]],
+        pie_base_vaddr: int,
+    ) -> Dict[int, List[Union[BasicBlock, DataWord]]]:
+        """
+        PIE files are loaded into some backends at an arbitrary offset
+        For now OFRAK remaps its CodeRegions to match this, so test cases need to remap too
+
+        :param pie_base_vaddr:
+        :param expected_results:
+        :return:
+        """
+        new_expected_results = {}
+        for cb_vaddr, cb_children in expected_results.items():
+            expected_children = []
+            for child in cb_children:
+                if isinstance(child, BasicBlock):
+                    expected_children.append(
+                        BasicBlock(
+                            child.virtual_address + pie_base_vaddr,
+                            child.size,
+                            child.mode,
+                            child.is_exit_point,
+                            None if child.exit_vaddr is None else child.exit_vaddr + pie_base_vaddr,
+                        )
+                    )
+                elif isinstance(child, DataWord):
+                    expected_children.append(
+                        DataWord(
+                            child.virtual_address + pie_base_vaddr,
+                            child.size,
+                            child.format_string,
+                            tuple(xref_vaddr + pie_base_vaddr for xref_vaddr in child.xrefs_to),
+                        )
+                    )
+
+            new_expected_results[cb_vaddr + pie_base_vaddr] = expected_children
+
+        return new_expected_results
