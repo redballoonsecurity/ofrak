@@ -6,6 +6,7 @@ import itertools
 import json
 import logging
 
+import typing_inspect
 from typing_inspect import get_args
 import json
 import orjson
