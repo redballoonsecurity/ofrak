@@ -215,9 +215,7 @@ COMPLEX_BLOCK_UNPACKER_TEST_CASES = [
                 ),
             ],
         },
-        {
-            # No optional results
-        },
+        set(),  # No optional results
         "hello.out",
         "cc2de3c0cd2d0ded7543682c2470fcf0",
     ),
@@ -270,9 +268,7 @@ COMPLEX_BLOCK_UNPACKER_TEST_CASES = [
                 ),
             ],
         },
-        {
-            # No optional results
-        },
+        set(),  # No optional results
         "simple_arm_gcc.o.elf",
         "c79d1bea0398d7a9d0faa1ba68786f5e",
     ),
@@ -297,10 +293,7 @@ COMPLEX_BLOCK_UNPACKER_TEST_CASES = [
             ],
         },
         {
-            0x1B0: [
-                BasicBlock(0x1B0, 0xC, InstructionSetMode.NONE, True, None),
-                DataWord(0x1BC, 0x4, "<L", (0x1B0,)),
-            ],
+            0x1B0,  # __foo_from_arm
         },
         "simple_pie_thumb_bin",
         "fc7a6b95d993f955bd92f2bef2699dd0",
