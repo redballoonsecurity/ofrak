@@ -21,6 +21,8 @@ export function loadSettings(forceReset) {
     accentText: animals[1].color,
     colors: otherColors, // animals.map(a => a.color).concat(otherColors),
 
+    experimentalFeatures: false,
+
     showDevSettings: false,
     // Points the OFRAK frontend to a seperate backend server. When empty, uses
     // the same host and port as the frontend.

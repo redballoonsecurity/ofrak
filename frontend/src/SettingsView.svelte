@@ -279,6 +279,9 @@
         AI Generate light mode
       </button>
     </div>
+    <div class="inputs" style:margin="2em 0">
+      <Checkbox bind:checked={$settings.experimentalFeatures} leftbox={true} nomargin={true}>Enable Experimental OFRAK Features</Checkbox>
+    </div>
     <div class="inputs">
       <Checkbox bind:checked={$settings.showDevSettings} leftbox={true} nomargin={true}>Show Developer Settings</Checkbox>
     </div>
