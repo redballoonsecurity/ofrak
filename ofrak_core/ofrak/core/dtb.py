@@ -101,7 +101,7 @@ class DtbHeaderAnalyzer(Analyzer[None, DtbHeader]):
     targets = (DtbHeader,)
     outputs = (DtbHeader,)
 
-    async def analyze(self, resource: Resource, config: ComponentConfig) -> DtbHeader:
+    async def analyze(self, resource: Resource, config: None) -> DtbHeader:
         header_data = await resource.get_data()
         (
             dtb_magic,

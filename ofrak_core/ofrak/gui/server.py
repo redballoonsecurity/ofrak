@@ -733,8 +733,12 @@ class AiohttpOFRAKServer:
 
     @exceptions_to_http(SerializedError)
     async def get_config_for_component(self, request: Request) -> Response:
-        component = self.env.components[request.query.get("component")]
-        config = self._get_config_for_component(component)
+        component_string = request.query.get("component")
+        if component_string is not None:
+            component = self.env.components[component_string]
+            config = self._get_config_for_component(component)
+        else:
+            return json_response([])
         if not config == inspect._empty:
             _fields = []
             for field in fields(config):
@@ -768,8 +772,12 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def run_component(self, request: Request) -> Response:
         resource: Resource = await self._get_resource_for_request(request)
-        component = self.env.components[request.query.get("component")]
-        config_type = self._get_config_for_component(component)
+        component_string = request.query.get("component")
+        if component_string is not None:
+            component = self.env.components[component_string]
+            config_type = self._get_config_for_component(component)
+        else:
+            return json_response([])
         if config_type == inspect._empty:
             config = None
         else:
@@ -801,7 +809,7 @@ class AiohttpOFRAKServer:
         incl_modifiers = options["modifiers"]
         incl_packers = options["packers"]
         incl_unpackers = options["unpackers"]
-        all_resource_tags = set()
+        all_resource_tags: Set[Tuple[str, int]] = set()
         for specific_tag in resource.get_most_specific_tags():
             for tag in inspect.getmro(specific_tag):
                 components = self._get_specific_components(
@@ -814,11 +822,11 @@ class AiohttpOFRAKServer:
                     incl_unpackers,
                 )
                 all_resource_tags.add((tag.__qualname__, len(components)))
-        all_resource_tags = list(all_resource_tags)
-        for tag in all_resource_tags:
-            if "object" in tag:
-                all_resource_tags.remove(tag)
-        return json_response(all_resource_tags)
+        all_resource_tags_l: List[Tuple[str, int]] = list(all_resource_tags)
+        for resource_tag in all_resource_tags_l:
+            if "object" in resource_tag:
+                all_resource_tags_l.remove(resource_tag)
+        return json_response(all_resource_tags_l)
 
     def _construct_field_response(self, obj):
         if dataclasses.is_dataclass(obj):
@@ -894,7 +902,7 @@ class AiohttpOFRAKServer:
     def _has_elipsis(self, obj):
         return any([isinstance(arg, type(...)) for arg in get_args(obj)])
 
-    def _convert_to_class_name_str(self, obj: any):
+    def _convert_to_class_name_str(self, obj: Any):
         if hasattr(obj, "__qualname__") and hasattr(obj, "__module__"):
             return f"{obj.__module__}.{obj.__qualname__}"
         else:
@@ -910,7 +918,7 @@ class AiohttpOFRAKServer:
                 origin = obj.__origin__
                 if origin is list:
                     return "typing.List"
-                elif origin is Iterable.__origin__:
+                elif origin is Iterable.__origin__:  # type: ignore
                     return "typing.Iterable"
                 elif origin is tuple:
                     return "typing.Tuple"
@@ -952,13 +960,14 @@ class AiohttpOFRAKServer:
         for component_name, component in self.env.components.items():
             if issubclass(component, categories):
                 if (
-                    len([tag for tag in tags if show_all_components or tag in component.targets])
+                    # mypy does not see CC.targets as iterable
+                    len([tag for tag in tags if show_all_components or tag in component.targets])  # type: ignore
                     > 0
                 ):
                     if (
                         show_all_components
                         or target_filter is None
-                        or target_filter in [target.__qualname__ for target in component.targets]
+                        or target_filter in [target.__qualname__ for target in component.targets]  # type: ignore
                     ):
                         # TODO: Get Angr components to work in gui
                         if "Angr" not in component_name:
