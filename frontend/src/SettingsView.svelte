@@ -256,7 +256,7 @@
         on:click="{() => {
           $settings.colors.push('#dddddd');
           $settings.colors = $settings.colors;
-        }}">Add color</button
+        }}">Add Color</button
       >
       <button
         on:click="{() => {
@@ -266,7 +266,7 @@
         {#if loadingDark}
           <Icon url="/icons/loading.svg" />
         {/if}
-        AI Generate dark mode
+        AI Generated Dark Mode
       </button>
       <button
         on:click="{() => {
@@ -276,7 +276,7 @@
         {#if loadingLight}
           <Icon url="/icons/loading.svg" />
         {/if}
-        AI Generate light mode
+        AI Generated Light Mode
       </button>
     </div>
     <div class="inputs" style:margin="2em 0">

@@ -90,9 +90,12 @@
       // data. Do simple linear interpolation between the foreground and
       // background color for each byte of each pixel.
       const index = i * 4;
-      imageData.data[index + 0] = bgcolors[0] + (value / 255) * (fgcolors[0] - bgcolors[0]);
-      imageData.data[index + 1] = bgcolors[1] + (value / 255) * (fgcolors[1] - bgcolors[1]);
-      imageData.data[index + 2] = bgcolors[2] + (value / 255) * (fgcolors[2] - bgcolors[2]);
+      imageData.data[index + 0] =
+        bgcolors[0] + (value / 255) * (fgcolors[0] - bgcolors[0]);
+      imageData.data[index + 1] =
+        bgcolors[1] + (value / 255) * (fgcolors[1] - bgcolors[1]);
+      imageData.data[index + 2] =
+        bgcolors[2] + (value / 255) * (fgcolors[2] - bgcolors[2]);
       // Always use 100% opacity
       imageData.data[index + 3] = 255;
     }
