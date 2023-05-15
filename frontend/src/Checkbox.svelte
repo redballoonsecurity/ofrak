@@ -50,14 +50,17 @@
 </style>
 
 <script>
-  export let checked, value, leftbox = false, nomargin = false;
+  export let checked,
+    value,
+    leftbox = false,
+    nomargin = false;
 
   $: value = checked;
 </script>
 
-<label class:nomargin={nomargin}>
+<label class:nomargin="{nomargin}">
   {#if leftbox}
-    <input class:leftbox={leftbox} type="checkbox" bind:checked="{checked}" />
+    <input class:leftbox="{leftbox}" type="checkbox" bind:checked="{checked}" />
     <span></span>
   {/if}
   <slot />

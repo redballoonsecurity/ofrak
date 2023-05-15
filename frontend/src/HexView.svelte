@@ -157,7 +157,11 @@
     }
     return ranges;
   }
-  $: childRangesPromise = calculateRanges($selectedResource, dataPromise, $settings.colors);
+  $: childRangesPromise = calculateRanges(
+    $selectedResource,
+    dataPromise,
+    $settings.colors
+  );
 
   function getRangeInfo(T, childRanges) {
     if (childRanges === undefined) {

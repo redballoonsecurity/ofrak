@@ -106,7 +106,7 @@
   import { loadSettings, settings } from "./stores.js";
 
   import Icon from "./Icon.svelte";
-    import Checkbox from "./Checkbox.svelte";
+  import Checkbox from "./Checkbox.svelte";
 
   export let modifierView;
   let errorMessage, loadingDark, loadingLight, fileInput, browsedFiles;
@@ -280,18 +280,26 @@
       </button>
     </div>
     <div class="inputs" style:margin="2em 0">
-      <Checkbox bind:checked={$settings.experimentalFeatures} leftbox={true} nomargin={true}>Enable Experimental OFRAK Features</Checkbox>
+      <Checkbox
+        bind:checked="{$settings.experimentalFeatures}"
+        leftbox="{true}"
+        nomargin="{true}">Enable Experimental OFRAK Features</Checkbox
+      >
     </div>
     <div class="inputs">
-      <Checkbox bind:checked={$settings.showDevSettings} leftbox={true} nomargin={true}>Show Developer Settings</Checkbox>
+      <Checkbox
+        bind:checked="{$settings.showDevSettings}"
+        leftbox="{true}"
+        nomargin="{true}">Show Developer Settings</Checkbox
+      >
     </div>
     {#if $settings.showDevSettings}
-    <div class="inputs" style:margin="1em 0">
-      <label>
-        Backend URL
-        <input type="text" bind:value={$settings.backendUrl} />
-      </label>
-    </div>
+      <div class="inputs" style:margin="1em 0">
+        <label>
+          Backend URL
+          <input type="text" bind:value="{$settings.backendUrl}" />
+        </label>
+      </div>
     {/if}
     {#if errorMessage}
       <p class="error">
