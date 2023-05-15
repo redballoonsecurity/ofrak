@@ -197,6 +197,7 @@
     $settings.selected = shuffled[0];
     $settings.highlight = shuffled[1];
     $settings.comment = shuffled[2];
+    $settings.accent_text = shuffled[3];
     $settings.colors = shuffled;
   }
 
@@ -238,6 +239,10 @@
         Comment
         <input type="color" bind:value="{$settings.comment}" />
       </label>
+      <label>
+        Text Accent
+        <input type="color" bind:value="{$settings.accent_text}" />
+      </label>
       {#each $settings.colors as _, i}
         <label>
           Accent {i + 1}
@@ -272,6 +277,12 @@
         {/if}
         AI Generate light mode
       </button>
+    </div>
+    <div class="inputs">
+      <label>
+        Backend URL
+        <input type="text" bind:value={$settings.backendUrl} />
+      </label>
     </div>
     {#if errorMessage}
       <p class="error">
