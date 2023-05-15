@@ -251,7 +251,7 @@
         </label>
       {/each}
     </div>
-    <div style:margin="2em 0">
+    <div style:margin="1em 0 2em 0">
       <button
         on:click="{() => {
           $settings.colors.push('#dddddd');

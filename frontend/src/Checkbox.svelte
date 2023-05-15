@@ -39,19 +39,30 @@
     border: none;
   }
 
+  label input[type="checkbox"].leftbox + span {
+    margin-left: 0;
+    margin-right: 2ch;
+  }
+
   .nomargin {
     margin: 0;
   }
 </style>
 
 <script>
-  export let checked, value, nomargin = false;
+  export let checked, value, leftbox = false, nomargin = false;
 
   $: value = checked;
 </script>
 
 <label class:nomargin={nomargin}>
+  {#if leftbox}
+    <input class:leftbox={leftbox} type="checkbox" bind:checked="{checked}" />
+    <span></span>
+  {/if}
   <slot />
-  <input type="checkbox" bind:checked="{checked}" />
-  <span></span>
+  {#if !leftbox}
+    <input type="checkbox" bind:checked="{checked}" />
+    <span></span>
+  {/if}
 </label>
