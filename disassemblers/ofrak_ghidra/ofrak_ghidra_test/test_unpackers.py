@@ -40,9 +40,11 @@ class TestGhidraComplexBlockUnpackAndVerify(ComplexBlockUnpackerUnpackAndVerifyP
     @pytest.fixture
     async def optional_results(self, unpack_verify_test_case: ComplexBlockUnpackerTestCase):
         if unpack_verify_test_case.binary_md5_digest == "fc7a6b95d993f955bd92f2bef2699dd0":
-            return self._fixup_test_case_for_pie(
-                unpack_verify_test_case.optional_results,
-                pie_base_vaddr=0x10000,
+            return set(
+                self._fixup_test_case_for_pie(
+                    {vaddr: [] for vaddr in unpack_verify_test_case.optional_results},
+                    pie_base_vaddr=0x10000,
+                ).keys()
             )
 
         return unpack_verify_test_case.optional_results

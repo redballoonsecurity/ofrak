@@ -377,15 +377,10 @@ class ComplexBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
                 f"got BasicBlock at "
                 f"{hex(basic_block.virtual_address)} but expected {type(expected_basic_block)}"
             )
-            expected_bb_info = replace(expected_basic_block, exit_vaddr=None)
-            extracted_bb_info = replace(
-                basic_block,
-                exit_vaddr=None,  # Different backends analyze "exit_vaddr" differently
-            )
 
-            assert expected_bb_info == extracted_bb_info, (
+            assert expected_basic_block == basic_block, (
                 f"Extracted BasicBlocks do not match expected for ComplexBlock "
-                f"0x{complex_block_start_address:x}: got {extracted_bb_info}, expected {expected_bb_info}"
+                f"0x{complex_block_start_address:x}: got {basic_block}, expected {expected_basic_block}"
             )
 
         data_words = await complex_block.get_data_words()
@@ -409,17 +404,13 @@ class ComplexBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
                 f"got DataWord at "
                 f"{hex(data_word.virtual_address)} but expected {type(expected_data_word)}"
             )
-            expected_data_word_info = (
-                expected_data_word.virtual_address,
-                expected_data_word.size,
-                expected_data_word.format_string,
-                # Different backends count xrefs differently, xrefs not part of the compared info
+            expected_data_word_info = replace(
+                expected_data_word,
+                xrefs_to=(),  # Different backends count xrefs differently, exclude them
             )
-            extracted_data_word_info = (
-                data_word.virtual_address,
-                data_word.size,
-                data_word.format_string,
-                # Different backends count xrefs differently, xrefs not part of the compared info
+            extracted_data_word_info = replace(
+                data_word,
+                xrefs_to=(),  # Different backends count xrefs differently, exclude them
             )
             assert expected_data_word_info == extracted_data_word_info, (
                 f"Extracted DataWord do not match expected for ComplexBlock: "

@@ -5,6 +5,8 @@ from warnings import warn
 
 from angr.knowledge_plugins.functions.function import Function as AngrFunction
 from archinfo.arch_arm import get_real_address_if_arm, is_arm_arch
+from ofrak_type.architecture import InstructionSetMode
+from ofrak_type.range import Range
 
 from ofrak.core.basic_block import BasicBlock
 from ofrak.core.code_region import CodeRegionUnpacker, CodeRegion
@@ -15,8 +17,6 @@ from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_angr.components.angr_analyzer import AngrAnalyzerConfig, AngrCodeRegionModifier
 from ofrak_angr.components.identifiers import AngrAnalysisResource
 from ofrak_angr.model import AngrAnalysis
-from ofrak_type.architecture import InstructionSetMode
-from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
 
@@ -146,19 +146,13 @@ class AngrComplexBlockUnpacker(ComplexBlockUnpacker):
             if is_arm_arch(bb.arch) and (bb.addr & 0x1):
                 bb_mode = InstructionSetMode.THUMB
 
-            ## Fetch the exit point addr (if it exists) and sanity check the selection
-            bb_is_exit_point = bb.codenode in angr_complex_block.endpoints
-            if bb_is_exit_point:
-                bb_exit_addr = None
-            else:
-                if idx == len(angr_cb_basic_blocks) - 1:
-                    LOGGER.error(
-                        f"Exit point defined for BB even though it is the last BB on the addr list"
-                    )
-                    return
-                bb_exit_addr = get_real_address_if_arm(
-                    angr_analysis.project.arch, angr_cb_basic_blocks[(idx + 1)].addr
-                )
+            bb_is_exit_point, bb_exit_addr = _get_bb_exit_addr_info(
+                angr_analysis,
+                angr_complex_block,
+                angr_cb_basic_blocks,
+                bb,
+                idx,
+            )
 
             if (bb_addr + bb.size) > cb_vaddr_range.end or bb_addr < cb_vaddr_range.start:
                 warning_string = (
@@ -239,3 +233,43 @@ class AngrComplexBlockUnpacker(ComplexBlockUnpacker):
             xref = get_real_address_if_arm(angr_analysis.project.arch, xref) if xref else None
 
             yield DataWord(cb_data_xref_addr, word_size, format_string, (xref,))
+
+
+def _get_bb_exit_addr_info(
+    angr_analysis,
+    angr_complex_block,
+    angr_cb_basic_blocks,
+    current_angr_bb,
+    current_bb_idx,
+):
+    ## Fetch the exit point addr (if it exists) and sanity check the selection
+    if current_angr_bb.codenode in angr_complex_block.endpoints:
+        return True, None
+
+    if current_bb_idx == len(angr_cb_basic_blocks) - 1:
+        LOGGER.error(
+            f"Exit point defined for BB 0x{current_angr_bb.addr:x} even though it is the last BB on the addr list"
+        )
+        raise ValueError()
+
+    # If no conditional branches taken, execution "falls through" to next basic block
+    fallthrough_vaddr = get_real_address_if_arm(
+        angr_analysis.project.arch, angr_cb_basic_blocks[current_bb_idx + 1].addr
+    )
+    successors_generator = angr_complex_block.graph.succ.get(current_angr_bb.codenode)
+
+    if successors_generator is None:
+        LOGGER.warning(
+            f"angr did not find any successors for BB 0x{current_angr_bb.addr:x}, but since it has a BB after it, assuming that it still can fallthrough to the next BB."
+        )
+        return True, fallthrough_vaddr
+
+    successor_vaddrs = [
+        get_real_address_if_arm(angr_analysis.project.arch, succ_codenode.addr)
+        for succ_codenode, edge_info in successors_generator.items()
+    ]
+
+    if fallthrough_vaddr in successor_vaddrs:
+        return False, fallthrough_vaddr
+    else:
+        return False, successor_vaddrs[0]

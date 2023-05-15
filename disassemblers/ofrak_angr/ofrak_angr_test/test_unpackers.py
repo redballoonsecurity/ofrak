@@ -102,7 +102,7 @@ class TestAngrComplexBlockUnpackAndVerify(ComplexBlockUnpackerUnpackAndVerifyPat
         bb_1.size = bb_1_size
         if not keep_same_is_exit_point:
             bb_1.is_exit_point = False
-        bb_1.exit_vaddr = bb_2_addr
+            bb_1.exit_vaddr = bb_2_addr
 
         expected_results[cb_addr][idx] = bb_1
         expected_results[cb_addr].append(bb_2)
