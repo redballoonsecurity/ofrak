@@ -132,12 +132,12 @@
 
   export let modifierView, resourceNodeDataMap;
   let errorMessage,
-    all_components = true,
-    incl_analyzers = false,
-    incl_modifiers = false,
-    incl_packers = false,
-    incl_unpackers = false,
-    target_filter = null,
+    allComponents = true,
+    includeAnalyzers = false,
+    includeModifiers = false,
+    includePackers = false,
+    includeUnpackers = false,
+    targetFilter = null,
     selectedComponent = null,
     ofrakComponentsPromise = new Promise(() => {}),
     ofrakTargetsPromise = new Promise(() => {}),
@@ -148,19 +148,19 @@
   async function getTargetsAndComponents() {
     try {
       ofrakTargetsPromise = $selectedResource.get_tags_and_num_components(
-        all_components,
-        incl_analyzers,
-        incl_modifiers,
-        incl_packers,
-        incl_unpackers
+        allComponents,
+        includeAnalyzers,
+        includeModifiers,
+        includePackers,
+        includeUnpackers
       );
       ofrakComponentsPromise = $selectedResource.get_components(
-        all_components,
-        target_filter,
-        incl_analyzers,
-        incl_modifiers,
-        incl_packers,
-        incl_unpackers
+        allComponents,
+        targetFilter,
+        includeAnalyzers,
+        includeModifiers,
+        includePackers,
+        includeUnpackers
       );
     } catch (err) {
       try {
@@ -175,12 +175,12 @@
 
   $: {
     getTargetsAndComponents(
-      all_components,
-      incl_analyzers,
-      incl_modifiers,
-      incl_packers,
-      incl_unpackers,
-      target_filter
+      allComponents,
+      includeAnalyzers,
+      includeModifiers,
+      includePackers,
+      includeUnpackers,
+      targetFilter
     );
   }
 
@@ -248,7 +248,7 @@
         {#await ofrakTargetsPromise}
           <LoadingText />
         {:then ofrakTags}
-          <select bind:value="{target_filter}">
+          <select bind:value="{targetFilter}">
             <option value="{null}">Filter by Tag</option>
             {#each ofrakTags as [ofrakTag, numComponents]}
               {#if numComponents != 0}
@@ -262,16 +262,16 @@
           <p>Failed to get the list of OFRAK components!</p>
           <p>The back end server may be down.</p>
         {/await}
-        <Checkbox bind:checked="{incl_analyzers}" leftbox="{true}">
+        <Checkbox bind:checked="{includeAnalyzers}" leftbox="{true}">
           Include Analyzers
         </Checkbox>
-        <Checkbox bind:checked="{incl_modifiers}" leftbox="{true}">
+        <Checkbox bind:checked="{includeModifiers}" leftbox="{true}">
           Include Modifiers
         </Checkbox>
-        <Checkbox bind:checked="{incl_packers}" leftbox="{true}">
+        <Checkbox bind:checked="{includePackers}" leftbox="{true}">
           Include Packers
         </Checkbox>
-        <Checkbox bind:checked="{incl_unpackers}" leftbox="{true}">
+        <Checkbox bind:checked="{includeUnpackers}" leftbox="{true}">
           Include Unpackers
         </Checkbox>
       </div>
@@ -287,7 +287,7 @@
               </option>
             {/each}
           </select>
-          <Checkbox bind:checked="{all_components}" leftbox="{true}">
+          <Checkbox bind:checked="{allComponents}" leftbox="{true}">
             Show all components
           </Checkbox>
         </div>

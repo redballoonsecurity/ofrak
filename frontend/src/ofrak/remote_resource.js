@@ -552,7 +552,7 @@ export class RemoteResource extends Resource {
 
   async get_components(
     show_all_components,
-    target_filter,
+    targetFilter,
     analyzers,
     modifiers,
     packers,
@@ -565,7 +565,7 @@ export class RemoteResource extends Resource {
       },
       body: JSON.stringify({
         show_all_components: show_all_components,
-        target_filter: target_filter,
+        target_filter: targetFilter,
         analyzers: analyzers,
         modifiers: modifiers,
         packers: packers,

@@ -162,7 +162,7 @@
   async function slurpSourceBundle(files) {
     for (const file of files) {
       let text = await file.text();
-      element = [...element, [file.name, text]];
+      element.push([file.name, text]);
     }
     return element;
   }
@@ -330,7 +330,7 @@
 
       <!---->
     {:else if node["type"] == "ofrak.core.patch_maker.modifiers.SourceBundle"}
-      <FileBrowser bind:files="{files}" />
+      <FileBrowser multiple="{true}" bind:files="{files}" />
 
       <!---->
     {:else if node["enum"] != null}

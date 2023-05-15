@@ -78,7 +78,7 @@
 
   .lastModified {
     text-decoration-line: underline;
-    text-decoration-color: var(--highlight-color);
+    text-decoration-color: var(--modified-color);
     text-decoration-thickness: 2px;
   }
 
