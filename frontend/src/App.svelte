@@ -156,7 +156,7 @@ Answer by running riddle.answer('your answer here') from the console.`);
   $: docstyle.setProperty("--selected-bg-color", $settings.selected);
   $: docstyle.setProperty("--highlight-color", $settings.highlight);
   $: docstyle.setProperty("--comment-color", $settings.comment);
-  $: docstyle.setProperty("--accent-text-color", $settings.accent_text);
+  $: docstyle.setProperty("--accent-text-color", $settings.accentText);
 </script>
 
 <svelte:window on:popstate="{backButton}" on:keyup="{handleShortcut}" />

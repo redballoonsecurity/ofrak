@@ -197,7 +197,7 @@
     $settings.selected = shuffled[0];
     $settings.highlight = shuffled[1];
     $settings.comment = shuffled[2];
-    $settings.accent_text = shuffled[3];
+    $settings.accentText = shuffled[3];
     $settings.colors = shuffled;
   }
 
@@ -241,7 +241,7 @@
       </label>
       <label>
         Text Accent
-        <input type="color" bind:value="{$settings.accent_text}" />
+        <input type="color" bind:value="{$settings.accentText}" />
       </label>
       {#each $settings.colors as _, i}
         <label>
