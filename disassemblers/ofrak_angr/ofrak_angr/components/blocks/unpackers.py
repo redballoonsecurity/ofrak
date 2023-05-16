@@ -5,6 +5,8 @@ from warnings import warn
 
 from angr.knowledge_plugins.functions.function import Function as AngrFunction
 from archinfo.arch_arm import get_real_address_if_arm, is_arm_arch
+
+from ofrak.component.unpacker import UnpackerError
 from ofrak_type.architecture import InstructionSetMode
 from ofrak_type.range import Range
 
@@ -146,13 +148,16 @@ class AngrComplexBlockUnpacker(ComplexBlockUnpacker):
             if is_arm_arch(bb.arch) and (bb.addr & 0x1):
                 bb_mode = InstructionSetMode.THUMB
 
-            bb_is_exit_point, bb_exit_addr = _get_bb_exit_addr_info(
-                angr_analysis,
-                angr_complex_block,
-                angr_cb_basic_blocks,
-                bb,
-                idx,
-            )
+            try:
+                bb_is_exit_point, bb_exit_addr = _get_bb_exit_addr_info(
+                    angr_analysis,
+                    angr_complex_block,
+                    angr_cb_basic_blocks,
+                    bb,
+                    idx,
+                )
+            except UnpackerError:
+                return
 
             if (bb_addr + bb.size) > cb_vaddr_range.end or bb_addr < cb_vaddr_range.start:
                 warning_string = (
@@ -241,7 +246,7 @@ def _get_bb_exit_addr_info(
     angr_cb_basic_blocks,
     current_angr_bb,
     current_bb_idx,
-):
+) -> Tuple[bool, Optional[int]]:
     ## Fetch the exit point addr (if it exists) and sanity check the selection
     if current_angr_bb.codenode in angr_complex_block.endpoints:
         return True, None
@@ -250,7 +255,7 @@ def _get_bb_exit_addr_info(
         LOGGER.error(
             f"Exit point defined for BB 0x{current_angr_bb.addr:x} even though it is the last BB on the addr list"
         )
-        raise ValueError()
+        raise UnpackerError()
 
     # If no conditional branches taken, execution "falls through" to next basic block
     fallthrough_vaddr = get_real_address_if_arm(
