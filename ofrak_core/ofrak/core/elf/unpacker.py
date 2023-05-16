@@ -210,7 +210,7 @@ class ElfDynamicSectionUnpacker(Unpacker[None]):
 
     async def unpack(self, resource: Resource, config=None):
         e_section = await resource.view_as(ElfDynamicSection)
-        elf_r = await e_section.get_parent()
+        elf_r = await e_section.get_elf()
         e_basic_header = await elf_r.get_basic_header()
         dyn_entry_size = 16 if e_basic_header.get_bitwidth() is BitWidth.BIT_64 else 8
         await make_children_helper(resource, ElfDynamicEntry, dyn_entry_size, None)
@@ -223,7 +223,7 @@ class ElfRelaUnpacker(Unpacker[None]):
 
     async def unpack(self, resource: Resource, config=None):
         e_section = await resource.view_as(ElfRelaSection)
-        elf_r = await e_section.get_parent()
+        elf_r = await e_section.get_elf()
         e_basic_header = await elf_r.get_basic_header()
         rela_size = 24 if e_basic_header.get_bitwidth() is BitWidth.BIT_64 else 12
         await make_children_helper(resource, ElfRelaEntry, rela_size, None)
@@ -236,7 +236,7 @@ class ElfSymbolUnpacker(Unpacker[None]):
 
     async def unpack(self, resource: Resource, config=None):
         e_section = await resource.view_as(ElfSymbolSection)
-        elf_r = await e_section.get_parent()
+        elf_r = await e_section.get_elf()
         e_basic_header = await elf_r.get_basic_header()
         symbol_size = 16 if e_basic_header.get_bitwidth() is BitWidth.BIT_32 else 24
         await make_children_helper(

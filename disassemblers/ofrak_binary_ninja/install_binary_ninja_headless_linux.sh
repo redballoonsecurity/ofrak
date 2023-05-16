@@ -14,4 +14,3 @@ python download_headless.py --serial $SERIAL
 unzip BinaryNinja-headless.zip
 rm download_headless.py BinaryNinja-headless.zip
 python binaryninja/scripts/install_api.py
-./binaryninja/scripts/linux-setup.sh
