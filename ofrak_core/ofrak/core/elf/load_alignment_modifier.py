@@ -141,8 +141,9 @@ def _pairwise(iterable):
     """
     A helper function waiting for itertools.pairwise from Python 3.10:
     https://docs.python.org/3/library/itertools.html#itertools.pairwise.
+    
+    Usage: `_pairwise('ABCDEFG') --> AB BC CD DE EF FG`
     """
-    # pairwise('ABCDEFG') --> AB BC CD DE EF FG
     a, b = tee(iterable)
     next(b, None)
     return zip(a, b)
