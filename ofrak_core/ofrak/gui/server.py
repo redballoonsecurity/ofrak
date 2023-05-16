@@ -739,7 +739,11 @@ class AiohttpOFRAKServer:
             config = self._get_config_for_component(component)
         else:
             return json_response([])
-        if not config == inspect._empty:
+        if (
+            not config == inspect._empty
+            and not type(config) == type(None)
+            and not typing_inspect.is_optional_type(config)
+        ):
             _fields = []
             for field in fields(config):
                 field.type = self._modify_by_case(field.type)

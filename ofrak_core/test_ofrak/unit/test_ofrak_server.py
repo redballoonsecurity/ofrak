@@ -724,7 +724,7 @@ async def test_get_components(ofrak_client: TestClient, hello_world_elf):
     resp = await ofrak_client.post(
         f"/{resource_id}/get_components",
         json={
-            "target": False,
+            "show_all_components": True,
             "target_filter": None,
             "analyzers": True,
             "modifiers": True,
@@ -750,7 +750,7 @@ async def test_get_config(ofrak_client: TestClient, hello_world_elf):
     components_resp = await ofrak_client.post(
         f"/{resource_id}/get_components",
         json={
-            "target": False,
+            "show_all_components": True,
             "target_filter": None,
             "analyzers": True,
             "modifiers": True,
@@ -777,11 +777,10 @@ async def test_get_config(ofrak_client: TestClient, hello_world_elf):
         "type": "ofrak.core.patch_maker.linkable_binary.UpdateLinkableSymbolsModifierConfig",
         "args": None,
         "enum": None,
-        "optional": False,
         "fields": [
             {
                 "name": "updated_symbols",
-                "type": "typing.Tuple",
+                "type": "typing.List",
                 "args": [
                     {
                         "name": None,
@@ -794,7 +793,6 @@ async def test_get_config(ofrak_client: TestClient, hello_world_elf):
                                 "args": None,
                                 "fields": None,
                                 "enum": None,
-                                "optional": False,
                                 "default": None,
                             },
                             {
@@ -803,7 +801,6 @@ async def test_get_config(ofrak_client: TestClient, hello_world_elf):
                                 "args": None,
                                 "fields": None,
                                 "enum": None,
-                                "optional": False,
                                 "default": None,
                             },
                             {
@@ -812,7 +809,6 @@ async def test_get_config(ofrak_client: TestClient, hello_world_elf):
                                 "args": None,
                                 "fields": None,
                                 "enum": {"FUNC": 0, "RW_DATA": 1, "RO_DATA": 2, "UNDEF": -1},
-                                "optional": False,
                                 "default": None,
                             },
                             {
@@ -821,18 +817,15 @@ async def test_get_config(ofrak_client: TestClient, hello_world_elf):
                                 "args": None,
                                 "fields": None,
                                 "enum": {"NONE": 0, "THUMB": 1, "VLE": 2},
-                                "optional": False,
                                 "default": 0,
                             },
                         ],
                         "enum": None,
-                        "optional": False,
                         "default": None,
                     }
                 ],
                 "fields": None,
                 "enum": None,
-                "optional": False,
                 "default": None,
             }
         ],
@@ -859,6 +852,26 @@ async def test_run_component(ofrak_client: TestClient, hello_world_elf):
         ],
     )
     assert resp.status == 200
+    resp_body = await resp.json()
+    expected_list = {
+        "created": [],
+        "modified": [
+            {
+                "id": "00000001",
+                "data_id": "00000001",
+                "parent_id": None,
+                "tags": ["ofrak.core.filesystem.File", "ofrak.core.filesystem.FilesystemEntry"],
+                "attributes": [
+                    [
+                        "ofrak.model.resource_model.Data",
+                        ["ofrak.model.resource_model.Data", {"_offset": 0, "_length": 8181}],
+                    ]
+                ],
+                "caption": "File",
+            }
+        ],
+        "deleted": [],
+    }
     expected_str = join_and_normalize(expected_list)
     actual_str = join_and_normalize(resp_body)
     assert actual_str == expected_str
