@@ -42,19 +42,29 @@
     background: var(--main-fg-color);
     border: none;
   }
+
+  label input[type="checkbox"].leftbox + span {
+    margin-left: 0;
+    margin-right: 2ch;
+  }
+
+  .nomargin {
+    margin: 0;
+  }
 </style>
 
 <script>
   export let checked,
     value,
-    leftbox = false;
+    leftbox = false,
+    nomargin = false;
 
   $: value = checked;
 </script>
 
-<label>
+<label class:nomargin="{nomargin}">
   {#if leftbox}
-    <input class="leftbox" type="checkbox" bind:checked="{checked}" />
+    <input class:leftbox="{leftbox}" type="checkbox" bind:checked="{checked}" />
     <span></span>
   {/if}
   <slot />

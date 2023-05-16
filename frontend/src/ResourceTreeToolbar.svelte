@@ -4,6 +4,7 @@
   import ComponentsView from "./ComponentsView.svelte";
   import ModifyView from "./ModifyView.svelte";
   import ScriptView from "./ScriptView.svelte";
+  import SettingsView from "./SettingsView.svelte";
   import Toolbar from "./Toolbar.svelte";
 
   import { selectedResource, selected } from "./stores.js";
@@ -233,6 +234,14 @@
         iconUrl: "/icons/document.svg",
         onclick: async (e) => {
           bottomLeftPane = ScriptView;
+        },
+      },
+
+      {
+        text: "Settings",
+        iconUrl: "/icons/settings.svg",
+        onclick: async (e) => {
+          modifierView = SettingsView;
         },
       },
     ];
