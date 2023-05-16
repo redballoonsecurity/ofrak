@@ -18,7 +18,7 @@ Besides being able to manually change all of the colors in the settings pane,
 it is also possible to use auto-generated themes made by AI. The AI-generated
 themes come from [Huemint](https://huemint.com/about/), a nifty tool for
 developing color palettes. The palette engine was trained on a large corpus of
-professional grpahic design images, and can produce some pretty nice-looking
+professional graphic design images, and can produce some pretty nice-looking
 results that don't usually need much tweaking. 
 
 ## Other Settings
@@ -36,4 +36,5 @@ considerably easier.
 Once a user is happy with their settings, they must save them before closing
 the settings pane. Saved settings can be exported, which will download a
 `.json` file to the user's computer. That file can be shared with other OFRAK
-users. If you find a theme you really like, feel free to share it! 
+users and imported via the GUI. If you find a theme you really like, feel free
+to share it! 
