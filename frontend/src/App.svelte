@@ -47,7 +47,7 @@
   import TextView from "./TextView.svelte";
 
   import { printConsoleArt } from "./console-art.js";
-  import { selected, selectedResource, script } from "./stores.js";
+  import { selected, selectedResource, settings } from "./stores.js";
   import { keyEventToString, shortcuts } from "./keyboard.js";
 
   import { writable } from "svelte/store";
@@ -68,6 +68,7 @@
     modifierView,
     bottomLeftPane;
 
+  // TODO: Move to settings
   let riddleAnswered = JSON.parse(window.localStorage.getItem("riddleSolved"));
   if (riddleAnswered === null || riddleAnswered === undefined) {
     riddleAnswered = false;
@@ -148,6 +149,15 @@ Answer by running riddle.answer('your answer here') from the console.`);
     },
   };
   window.riddle.ask();
+
+  // Use colors from settings
+  const docstyle = document.documentElement.style;
+  $: docstyle.setProperty("--main-bg-color", $settings.background);
+  $: docstyle.setProperty("--main-fg-color", $settings.foreground);
+  $: docstyle.setProperty("--selected-bg-color", $settings.selected);
+  $: docstyle.setProperty("--highlight-color", $settings.highlight);
+  $: docstyle.setProperty("--comment-color", $settings.comment);
+  $: docstyle.setProperty("--accent-text-color", $settings.accentText);
 </script>
 
 <svelte:window on:popstate="{backButton}" on:keyup="{handleShortcut}" />

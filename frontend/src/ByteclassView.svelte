@@ -28,12 +28,20 @@
   import LoadingTextVertical from "./LoadingTextVertical.svelte";
 
   import { hexToByteArray } from "./helpers.js";
-  import { selectedResource } from "./stores.js";
+  import { selectedResource, settings } from "./stores.js";
 
   import { onMount } from "svelte";
 
   export let scrollY;
   let data = undefined;
+
+  $: colorArray = [
+    hexToByteArray($settings.background.slice(1)),
+    hexToByteArray($settings.foreground.slice(1)),
+    hexToByteArray($settings.colors[0].slice(1)),
+    hexToByteArray($settings.colors[1].slice(1)),
+    hexToByteArray($settings.colors[2].slice(1)),
+  ];
 
   async function loadData(resource) {
     await resource.data_summary();
@@ -84,27 +92,22 @@
       const value = data[i];
       const index = i * 4;
 
-      if (value === 0x0 || value === 0xff) {
-        // There are four colors per pixel, hence four array entries per byte of data
-        imageData.data[index + 0] = value;
-        imageData.data[index + 1] = value;
-        imageData.data[index + 2] = value;
+      let c;
+      if (value === 0x0) {
+        c = colorArray[0];
+      } else if (value === 0xff) {
+        c = colorArray[1];
       } else if (0 < value && value < 32) {
-        // animals.otherColors[0]
-        imageData.data[index + 0] = 0x86;
-        imageData.data[index + 1] = 0xe3;
-        imageData.data[index + 2] = 0xed;
-      } else if (32 < value && value < 127) {
-        // animals.otherColors[1]
-        imageData.data[index + 0] = 0xff;
-        imageData.data[index + 1] = 0xf2;
-        imageData.data[index + 2] = 0x59;
+        c = colorArray[2];
+      } else if (32 <= value && value <= 127) {
+        c = colorArray[3];
       } else if (127 < value && value < 0xff) {
-        // animals.otherColors[2]
-        imageData.data[index + 0] = 0xb9;
-        imageData.data[index + 1] = 0x9f;
-        imageData.data[index + 2] = 0xf9;
+        c = colorArray[4];
       }
+      // There are four colors per pixel, hence four array entries per byte of data
+      imageData.data[index + 0] = c[0];
+      imageData.data[index + 1] = c[1];
+      imageData.data[index + 2] = c[2];
       // Always use 100% opacity
       imageData.data[index + 3] = 255;
     }
