@@ -46,7 +46,9 @@ class ElfLoadAlignmentModifier(Modifier[None]):
         # First, get program headers sorted by file offset
         load_program_headers_by_offset = sorted(load_program_headers, key=lambda x: x.p_offset)
         found_space = False
-        for first_program_header, second_program_header in _pairwise(load_program_headers_by_offset):
+        for first_program_header, second_program_header in _pairwise(
+            load_program_headers_by_offset
+        ):
             if first_program_header.p_filesz != first_program_header.p_memsz:
                 # Avoid overwriting .bss in data segments or other weird things that change size
                 continue
@@ -141,7 +143,7 @@ def _pairwise(iterable):
     """
     A helper function waiting for itertools.pairwise from Python 3.10:
     https://docs.python.org/3/library/itertools.html#itertools.pairwise.
-    
+
     Usage: `_pairwise('ABCDEFG') --> AB BC CD DE EF FG`
     """
     a, b = tee(iterable)
