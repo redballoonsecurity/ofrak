@@ -42,9 +42,8 @@
   import Breadcrumb from "./Breadcrumb.svelte";
   import LoadingAnimation from "./LoadingAnimation.svelte";
 
-  import { otherColors } from "./animals.js";
   import { chunkList, buf2hex, hexToChar } from "./helpers.js";
-  import { selectedResource, selected } from "./stores.js";
+  import { selectedResource, selected, settings } from "./stores.js";
 
   export let dataPromise, scrollY, resourceNodeDataMap, resources;
   let childRangesPromise = Promise.resolve(undefined);
@@ -99,7 +98,7 @@
     );
   }
 
-  async function calculateRanges(resource, dataPromise) {
+  async function calculateRanges(resource, dataPromise, colors) {
     const children = await resource.get_children();
     if (children === []) {
       return [];
@@ -117,7 +116,7 @@
         // adjacent.
         const [start, end] = rangeInParent;
         return {
-          color: otherColors[i % otherColors.length],
+          color: colors[i % colors.length],
           resource_id: child_id,
           start: start,
           end: end,
@@ -158,7 +157,11 @@
     }
     return ranges;
   }
-  $: childRangesPromise = calculateRanges($selectedResource, dataPromise);
+  $: childRangesPromise = calculateRanges(
+    $selectedResource,
+    dataPromise,
+    $settings.colors
+  );
 
   function getRangeInfo(T, childRanges) {
     if (childRanges === undefined) {
