@@ -137,7 +137,7 @@ def _crop_range(range_1: Range, range_2: Range) -> Range:
     )
 
 
-def pairwise(iterable):
+def _pairwise(iterable):
     """
     A helper function waiting for itertools.pairwise from Python 3.10:
     https://docs.python.org/3/library/itertools.html#itertools.pairwise.
