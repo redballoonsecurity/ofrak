@@ -1,18 +1,18 @@
 import os
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from typing import Dict, List, Union
 
 import pytest
-from ofrak.core.filesystem import File
 
 from ofrak import OFRAKContext
-from ofrak_type.architecture import InstructionSetMode
 from ofrak.core.basic_block import BasicBlock
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.core.data import DataWord
+from ofrak.core.elf.model import Elf
+from ofrak.core.filesystem import File
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort
-from ofrak.core.elf.model import Elf
+from ofrak_type.architecture import InstructionSetMode
 from pytest_ofrak.patterns import TEST_PATTERN_ASSETS_DIR
 from pytest_ofrak.patterns.unpack_verify import (
     UnpackAndVerifyTestCase,
@@ -404,15 +404,7 @@ class ComplexBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
                 f"got DataWord at "
                 f"{hex(data_word.virtual_address)} but expected {type(expected_data_word)}"
             )
-            expected_data_word_info = replace(
-                expected_data_word,
-                xrefs_to=(),  # Different backends count xrefs differently, exclude them
-            )
-            extracted_data_word_info = replace(
-                data_word,
-                xrefs_to=(),  # Different backends count xrefs differently, exclude them
-            )
-            assert expected_data_word_info == extracted_data_word_info, (
+            assert expected_data_word == data_word, (
                 f"Extracted DataWord do not match expected for ComplexBlock: "
                 f"0x{complex_block_start_address:x}"
             )
