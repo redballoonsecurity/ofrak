@@ -115,10 +115,8 @@
     // Disable shortcuts in views with text inputs, otherwise misclicking outside of a text area may
     // cause users to accidentally run shortcuts.
     if (
-      (["input", "textarea"].includes(e.target?.tagName.toLocaleLowerCase()) ||
-        e.target.isContentEditable ||
-        modifierView === ComponentsView ||
-        modifierView === FindReplaceView) &&
+      ["input", "textarea"].includes(e.target?.tagName.toLocaleLowerCase()) ||
+      e.target.isContentEditable ||
       modifierView
     ) {
       return;
