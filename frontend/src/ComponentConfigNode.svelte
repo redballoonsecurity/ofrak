@@ -132,8 +132,8 @@
   let unionTypeSelect,
     _element,
     intInput,
-    files = null
-    let skip = [];
+    files = null;
+  let skip = [];
 
   const INT_PLACEHOLDERS = [
     "0x10 * 2 + 8",
@@ -150,7 +150,7 @@
     "0x7 - 1 + 10",
   ];
 
-  function doCalc(){
+  function doCalc() {
     try {
       element = calculator.calculate(_element);
       intInput?.setCustomValidity("");
@@ -161,7 +161,7 @@
   }
 
   $: if (node["type"] == "builtins.int") {
-    doCalc(_element)
+    doCalc(_element);
   }
 
   async function slurpSourceBundle(files) {
@@ -176,18 +176,18 @@
     slurpSourceBundle(files);
   }
 
-  function setArray(){
-    element = _element.filter(e => !skip.includes(e))
+  function setArray() {
+    element = _element.filter((e) => !skip.includes(e));
   }
 
   $: if (
-    (node["type"] == "typing.List" ||
+    node["type"] == "typing.List" ||
     node["type"] == "typing.Tuple" ||
     node["type"] == "typing.Dict" ||
     node["type"] == "ofrak.core.patch_maker.modifiers.SourceBundle" ||
-    node["type"] == "typing.Iterable")
+    node["type"] == "typing.Iterable"
   ) {
-    setArray(_element, skip)
+    setArray(_element, skip);
   }
 
   if (
@@ -284,8 +284,8 @@
               <button
                 class="remove"
                 on:click="{(e) => {
-                    skip.push(elements)
-                    skip = skip
+                  skip.push(elements);
+                  skip = skip;
                 }}"
               >
                 <Icon url="/icons/error.svg" />
@@ -316,8 +316,8 @@
               <button
                 class="remove"
                 on:click="{(e) => {
-                  skip.push(elements)
-                  skip = skip
+                  skip.push(elements);
+                  skip = skip;
                 }}"
               >
                 <Icon url="/icons/error.svg" />
