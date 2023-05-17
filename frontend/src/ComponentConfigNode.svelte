@@ -132,7 +132,8 @@
   let unionTypeSelect,
     _element,
     intInput,
-    files = null;
+    files = null
+    let skip = [];
 
   const INT_PLACEHOLDERS = [
     "0x10 * 2 + 8",
@@ -149,15 +150,19 @@
     "0x7 - 1 + 10",
   ];
 
-  // $: if (node["type"] == "builtins.int") {
-  //   try {
-  //     element = calculator.calculate(_element);
-  //     intInput?.setCustomValidity("");
-  //   } catch {
-  //     element = undefined;
-  //     intInput?.setCustomValidity("Invalid expression.");
-  //   }
-  // }
+  function doCalc(){
+    try {
+      element = calculator.calculate(_element);
+      intInput?.setCustomValidity("");
+    } catch {
+      element = undefined;
+      intInput?.setCustomValidity("Invalid expression.");
+    }
+  }
+
+  $: if (node["type"] == "builtins.int") {
+    doCalc(_element)
+  }
 
   async function slurpSourceBundle(files) {
     for (const file of files) {
@@ -171,6 +176,20 @@
     slurpSourceBundle(files);
   }
 
+  function setArray(){
+    element = _element.filter(e => !skip.includes(e))
+  }
+
+  $: if (
+    (node["type"] == "typing.List" ||
+    node["type"] == "typing.Tuple" ||
+    node["type"] == "typing.Dict" ||
+    node["type"] == "ofrak.core.patch_maker.modifiers.SourceBundle" ||
+    node["type"] == "typing.Iterable")
+  ) {
+    setArray(_element, skip)
+  }
+
   if (
     node["type"] == "typing.List" ||
     node["type"] == "typing.Tuple" ||
@@ -178,7 +197,7 @@
     node["type"] == "ofrak.core.patch_maker.modifiers.SourceBundle" ||
     node["type"] == "typing.Iterable"
   ) {
-    element = [];
+    _element = [];
   } else if (
     node["type"] == "typing.Union" ||
     node["type"] == "typing.Optional"
@@ -195,13 +214,11 @@
   }
 
   const addElementToArray = () => {
-    element = [...element, null];
-    element = element;
+    _element = [..._element, null];
   };
 
   const addElementToDict = () => {
-    element = [...element, [null, null]];
-    element = element;
+    _element = [..._element, [null, null]];
   };
 
   if (node["type"] == "builtins.NoneType") {
@@ -249,7 +266,7 @@
           placeholder="{INT_PLACEHOLDERS[
             Math.floor(Math.random() * INT_PLACEHOLDERS.length)
           ]}"
-          bind:value="{element}"
+          bind:value="{_element}"
         />
       </label>
 
@@ -260,20 +277,23 @@
           <Icon url="/icons/plus.svg" />
         </button>
       </div>
-      {#each element as elements}
-        <div class="boxed">
-          <div class="buttonbar">
-            <button
-              class="remove"
-              on:click="{(e) => {
-                element = element.filter((x) => x !== elements);
-              }}"
-            >
-              <Icon url="/icons/error.svg" />
-            </button>
+      {#each _element as elements}
+        {#if !skip.includes(elements)}
+          <div class="boxed">
+            <div class="buttonbar">
+              <button
+                class="remove"
+                on:click="{(e) => {
+                    skip.push(elements)
+                    skip = skip
+                }}"
+              >
+                <Icon url="/icons/error.svg" />
+              </button>
+            </div>
+            <svelte:self node="{node['args'][0]}" bind:element="{elements}" />
           </div>
-          <svelte:self node="{node['args'][0]}" bind:element="{elements}" />
-        </div>
+        {/if}
       {/each}
 
       <!---->
@@ -289,30 +309,33 @@
           <Icon url="/icons/plus.svg" />
         </button>
       </div>
-      {#each element as elements, index}
-        <div class="boxed">
-          <div class="buttonbar">
-            <button
-              class="remove"
-              on:click="{(e) => {
-                element = element.filter((x) => element.indexOf(x) !== index);
-              }}"
-            >
-              <Icon url="/icons/error.svg" />
-            </button>
-            {elements}
+      {#each _element as elements, index}
+        {#if !skip.includes(elements)}
+          <div class="boxed">
+            <div class="buttonbar">
+              <button
+                class="remove"
+                on:click="{(e) => {
+                  skip.push(elements)
+                  skip = skip
+                }}"
+              >
+                <Icon url="/icons/error.svg" />
+              </button>
+              {elements}
+            </div>
+            <p>Key</p>
+            <svelte:self
+              node="{node['args'][0]}"
+              bind:element="{elements[0]}"
+            />
+            <p>Value</p>
+            <svelte:self
+              node="{node['args'][1]}"
+              bind:element="{elements[1]}"
+            />
           </div>
-          <p>Key</p>
-          <svelte:self
-            node="{node['args'][0]}"
-            bind:element="{element[index][0]}"
-          />
-          <p>Value</p>
-          <svelte:self
-            node="{node['args'][1]}"
-            bind:element="{element[index][1]}"
-          />
-        </div>
+        {/if}
       {/each}
 
       <!---->
