@@ -11,10 +11,8 @@ from ofrak.core.basic_block import BasicBlock
 from ofrak.core.code_region import CodeRegionUnpacker, CodeRegion
 from ofrak.core.complex_block import ComplexBlock, ComplexBlockUnpacker
 from ofrak.core.data import DataWord
-from ofrak.resource import Resource, ResourceFactory
-from ofrak.service.component_locator_i import ComponentLocatorInterface
-from ofrak.service.data_service_i import DataServiceInterface
-from ofrak.service.resource_service_i import ResourceFilter, ResourceServiceInterface
+from ofrak.resource import Resource
+from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_ghidra.constants import CORE_OFRAK_GHIDRA_SCRIPTS
 from ofrak_ghidra.ghidra_model import GhidraProject, OfrakGhidraMixin, OfrakGhidraScript
 from ofrak_ghidra.components.ghidra_analyzer import GhidraCodeRegionModifier
@@ -85,16 +83,9 @@ class GhidraComplexBlockUnpacker(
         os.path.join(CORE_OFRAK_GHIDRA_SCRIPTS, "GetDataWords.java")
     )
 
-    def __init__(
-        self,
-        resource_factory: ResourceFactory,
-        data_service: DataServiceInterface,
-        resource_service: ResourceServiceInterface,
-        component_locator: ComponentLocatorInterface,
-    ):
+    def __post_init__(self):
         self.get_bb_batch_manager = make_batch_manager(self._handle_get_basic_blocks_batch)
         self.get_dw_batch_manager = make_batch_manager(self._handle_get_data_words_batch)
-        super().__init__(resource_factory, data_service, resource_service, component_locator)
 
     async def unpack(self, resource: Resource, config=None):
         cb_view = await resource.view_as(ComplexBlock)

@@ -26,7 +26,6 @@ from ofrak.component.packer import Packer
 from ofrak.model.component_model import CC, ComponentRunResult
 from ofrak.model.job_model import (
     JobModel,
-    JobRunContext,
     JobRunContextFactory,
 )
 from ofrak.model.job_request_model import (
@@ -36,7 +35,6 @@ from ofrak.model.job_request_model import (
 )
 from ofrak.model.resource_model import EphemeralResourceContextFactory
 from ofrak.model.tag_model import ResourceTag
-from ofrak.model.viewable_tag_model import ResourceViewContext
 from ofrak.service.component_locator_i import (
     ComponentLocatorInterface,
     ComponentFilter,
@@ -110,7 +108,6 @@ class JobService(JobServiceInterface):
         job_id: bytes,
         resource_id: bytes,
         component: ComponentInterface,
-        job_context: JobRunContext,
         config: CC,
     ) -> _RunTaskResultT:
         """
@@ -126,18 +123,9 @@ class JobService(JobServiceInterface):
         )
 
         # Create a new resource context for every component
-        fresh_resource_context = self._resource_context_factory.create()
-        fresh_resource_view_context = ResourceViewContext()
         result: Union[ComponentRunResult, BaseException]
         try:
-            result = await component.run(
-                job_id,
-                resource_id,
-                job_context,
-                fresh_resource_context,
-                fresh_resource_view_context,
-                config,
-            )
+            result = await component.run(job_id, resource_id, config)
             _log_component_run_result_info(job_id, resource_id, component, result)
         except Exception as e:
             result = e
@@ -152,7 +140,6 @@ class JobService(JobServiceInterface):
         job_id: bytes,
         resource_id: bytes,
         component: ComponentInterface,
-        job_context: JobRunContext,
         config: CC = None,
     ) -> Awaitable[_RunTaskResultT]:
         component_task_id = (resource_id, component.get_id())
@@ -172,7 +159,6 @@ class JobService(JobServiceInterface):
                     job_id,
                     resource_id,
                     component,
-                    job_context,
                     config,
                 )
             )
@@ -182,17 +168,13 @@ class JobService(JobServiceInterface):
     async def run_component(
         self,
         request: JobComponentRequest,
-        job_context: Optional[JobRunContext] = None,
     ) -> ComponentRunResult:
         component = self._component_locator.get_by_id(request.component_id)
-        if job_context is None:
-            job_context = self._job_context_factory.create()
         result, _ = await self._create_run_component_task(
             request,
             request.job_id,
             request.resource_id,
             component,
-            job_context,
             request.config,
         )
         if isinstance(result, BaseException):
@@ -203,11 +185,7 @@ class JobService(JobServiceInterface):
     async def run_analyzer_by_attribute(
         self,
         request: JobAnalyzerRequest,
-        job_context: Optional[JobRunContext] = None,
     ) -> ComponentRunResult:
-
-        if job_context is None:
-            job_context = self._job_context_factory.create()
 
         target_resource_model = await self._resource_service.get_by_id(request.resource_id)
         # There may be an analyzer that outputs ALL the requested attributes at once
@@ -241,7 +219,6 @@ class JobService(JobServiceInterface):
                 ),
             ),
             request.job_id,
-            job_context,
         )
         if components_result.components_run:
             return components_result
@@ -269,11 +246,10 @@ class JobService(JobServiceInterface):
         resource = await self._resource_service.get_by_id(request.resource_id)
         component_filter = _build_auto_run_filter(request)
 
-        tags_to_target = tuple(resource.tags)
+        tags_to_target: Optional[Iterable[ResourceTag]] = tuple(resource.tags)
         components_result = ComponentRunResult()
-        while len(tags_to_target) > 0:
-            job_context = self._job_context_factory.create()
-            component_tag_filter = _build_tag_filter(tags_to_target)
+        while tags_to_target:
+            component_tag_filter = _build_tag_filter(tuple(tags_to_target))
             final_filter = ComponentAndMetaFilter(component_filter, component_tag_filter)
             individual_component_results = await self._auto_run_components(
                 (
@@ -283,13 +259,10 @@ class JobService(JobServiceInterface):
                     ),
                 ),
                 request.job_id,
-                job_context,
             )
 
             components_result.update(individual_component_results)
-            resource_tracker = job_context.trackers[request.resource_id]
-            tags_added = resource_tracker.tags_added
-            tags_to_target = tuple(tags_added)
+            tags_to_target = individual_component_results.tags_added.get(request.resource_id)
 
         return components_result
 
@@ -303,26 +276,23 @@ class JobService(JobServiceInterface):
             request.resource_id, component_filter
         )
 
-        # Create a mock context to match all existing tags
-        previous_job_context: JobRunContext = self._job_context_factory.create()
-        for existing_resource_model in initial_target_resource_models:
-            previous_job_context.trackers[existing_resource_model.id].tags_added.update(
-                existing_resource_model.tags
-            )
+        tags_previously_added = {
+            existing_resource_model.id: existing_resource_model.tags
+            for existing_resource_model in initial_target_resource_models
+        }
         iterations = 0
         tags_added_count = 1  # initialize just so loop starts
 
         while tags_added_count > 0:
-            job_context = self._job_context_factory.create()
             _run_components_requests = []
-            for resource_id, previous_tracker in previous_job_context.trackers.items():
+            for r_id, tags_added_to_r in tags_previously_added.items():
                 final_filter = ComponentAndMetaFilter(
                     component_filter,
-                    _build_tag_filter(tuple(previous_tracker.tags_added)),
+                    _build_tag_filter(tuple(tags_added_to_r)),
                 )
                 _run_components_requests.append(
                     _ComponentAutoRunRequest(
-                        resource_id,
+                        r_id,
                         final_filter,
                     )
                 )
@@ -330,15 +300,13 @@ class JobService(JobServiceInterface):
             iteration_components_result = await self._auto_run_components(
                 _run_components_requests,
                 request.job_id,
-                job_context,
             )
             components_result.update(iteration_components_result)
+            tags_previously_added = iteration_components_result.tags_added
 
             tags_added_count = 0
-            for resource_id, tracker in job_context.trackers.items():
-                if len(tracker.tags_added) > 0:
-                    tags_added_count += len(tracker.tags_added)
-            previous_job_context = job_context
+            for tags_added in tags_previously_added.values():
+                tags_added_count += len(tags_added)
             LOGGER.info(
                 f"Completed iteration {iterations} of run_components_recursively on "
                 f"{request.resource_id.hex()}. {len(components_result.resources_modified)} "
@@ -366,7 +334,6 @@ class JobService(JobServiceInterface):
             ),
         )
         resources = list(resources)  # we'll need that Iterable more than once
-        job_context = self._job_context_factory.create()
 
         # We want to start with the deepest packers. Packers at the same levels can run
         # concurrently. So we first ask for the relative depth of each returned resource.
@@ -393,7 +360,6 @@ class JobService(JobServiceInterface):
                 component_result = await self._auto_run_components(
                     [request],
                     job_id,
-                    job_context,
                 )
                 n_packers_run = len(component_result.components_run)
                 if n_packers_run == 0:
@@ -421,7 +387,6 @@ class JobService(JobServiceInterface):
         self,
         requests: Iterable[_ComponentAutoRunRequest],
         job_id: bytes,
-        job_context: JobRunContext,
     ) -> ComponentRunResult:
         queue: List[Tuple[_ComponentAutoRunRequest, ComponentInterface]] = []
         for request in requests:
@@ -449,7 +414,6 @@ class JobService(JobServiceInterface):
                 job_id,
                 request.target_resource_id,
                 component,
-                job_context,
             )
             concurrent_run_tasks.append(run_component_task)
 
@@ -484,7 +448,6 @@ class JobService(JobServiceInterface):
                     job_id,
                     request.target_resource_id,
                     component,
-                    job_context,
                 )
                 concurrent_run_tasks.append(run_component_task)
 

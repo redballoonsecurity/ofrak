@@ -16,12 +16,10 @@ from typing import (
     Awaitable,
     Sequence,
     Callable,
-    Set,
 )
 
 from ofrak.component.interface import ComponentInterface
 from ofrak.model.component_model import ComponentContext, CC, ComponentRunResult
-from ofrak.model.data_model import DataPatch
 from ofrak.model.job_model import (
     JobRunContext,
 )
@@ -30,6 +28,7 @@ from ofrak.model.job_request_model import (
     JobComponentRequest,
     JobMultiComponentRequest,
 )
+from ofrak.model.ofrak_context_interface import OFRAKContext2Interface, ResourceTracker
 from ofrak.model.resource_model import (
     ResourceAttributes,
     ResourceModel,
@@ -44,7 +43,6 @@ from ofrak.model.viewable_tag_model import (
     ResourceViewContext,
 )
 from ofrak.service.data_service_i import DataServiceInterface
-from ofrak.service.dependency_handler import DependencyHandler
 from ofrak.service.id_service_i import IDServiceInterface
 from ofrak.service.job_service_i import JobServiceInterface
 from ofrak.service.resource_service_i import (
@@ -52,7 +50,7 @@ from ofrak.service.resource_service_i import (
     ResourceFilter,
     ResourceSort,
 )
-from ofrak_type.error import NotFoundError, InvalidStateError
+from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
@@ -68,46 +66,24 @@ class Resource:
     """
 
     __slots__ = (
-        "_job_id",
-        "_job_context",
-        "_component_context",
-        "_resource_context",
-        "_resource_view_context",
-        "_resource",
-        "_resource_factory",
-        "_id_service",
-        "_resource_service",
-        "_data_service",
+        "_ofrak_context",
+        "_tracker",
         "_job_service",
-        "_dependency_handler",
     )
 
     def __init__(
         self,
-        job_id: bytes,
-        resource: MutableResourceModel,
-        resource_context: ResourceContext,
-        resource_view_context: ResourceViewContext,
-        job_context: Optional[JobRunContext],
-        component_context: ComponentContext,
-        resource_factory: "ResourceFactory",
-        id_service: IDServiceInterface,
-        data_service: DataServiceInterface,
-        resource_service: ResourceServiceInterface,
-        job_service: JobServiceInterface,
+        ofrak_context: OFRAKContext2Interface,
+        tracker: ResourceTracker,
     ):
-        self._job_id: bytes = job_id
-        self._job_context: Optional[JobRunContext] = job_context
-        self._component_context: ComponentContext = component_context
-        self._resource_context: ResourceContext = resource_context
-        self._resource_view_context: ResourceViewContext = resource_view_context
-        self._resource: MutableResourceModel = resource
+        self._ofrak_context = ofrak_context
+        self._tracker = tracker
 
-        self._resource_factory: "ResourceFactory" = resource_factory
-        self._id_service: IDServiceInterface = id_service
-        self._resource_service: ResourceServiceInterface = resource_service
-        self._data_service: DataServiceInterface = data_service
-        self._job_service: JobServiceInterface = job_service
+        self._job_service: JobServiceInterface = ofrak_context.services[JobServiceInterface]
+
+    @property
+    def _resource(self) -> MutableResourceModel:
+        return self._tracker.model
 
     def get_id(self) -> bytes:
         """
@@ -122,7 +98,7 @@ class Resource:
 
         :return: The ID of the job this resource belongs to
         """
-        return self._job_id
+        return self._ofrak_context.job_id
 
     def get_data_id(self) -> Optional[bytes]:
         """
@@ -134,16 +110,16 @@ class Resource:
         return self._resource.data_id
 
     def get_resource_context(self) -> ResourceContext:
-        return self._resource_context
+        raise NotImplementedError()
 
     def get_resource_view_context(self) -> ResourceViewContext:
-        return self._resource_view_context
+        raise NotImplementedError()
 
     def get_component_context(self) -> ComponentContext:
-        return self._component_context
+        raise NotImplementedError()
 
     def get_job_context(self) -> Optional[JobRunContext]:
-        return self._job_context
+        raise NotImplementedError()
 
     def get_caption(self) -> str:
         return self._resource.caption
@@ -176,10 +152,10 @@ class Resource:
             raise ValueError(
                 "Resource does not have a data_id. Cannot get data from a resource with no data"
             )
-        data = await self._data_service.get_data(self._resource.data_id, range)
+        data = await self._ofrak_context.data_service.get_data(self._resource.data_id, range)
         if range is None:
             range = Range(0, len(data))
-        self._component_context.access_trackers[self._resource.id].data_accessed.add(range)
+        self._tracker.data_reads.add(range)
         return data
 
     async def get_data_length(self) -> int:
@@ -191,7 +167,7 @@ class Resource:
                 "Resource does not have a data_id. Cannot get data length from a "
                 "resource with no data."
             )
-        return await self._data_service.get_data_length(self._resource.data_id)
+        return await self._ofrak_context.data_service.get_data_length(self._resource.data_id)
 
     async def get_data_range_within_parent(self) -> Range:
         """
@@ -211,7 +187,9 @@ class Resource:
             return Range(0, 0)
 
         parent_models = list(
-            await self._resource_service.get_ancestors_by_id(self._resource.id, max_count=1)
+            await self._ofrak_context.resource_service.get_ancestors_by_id(
+                self._resource.id, max_count=1
+            )
         )
         if len(parent_models) != 1:
             raise NotFoundError(f"There is no parent for resource {self._resource.id.hex()}")
@@ -222,7 +200,7 @@ class Resource:
             return Range(0, 0)
 
         try:
-            return await self._data_service.get_range_within_other(
+            return await self._ofrak_context.data_service.get_range_within_other(
                 self._resource.data_id, parent_data_id
             )
         except ValueError:
@@ -240,91 +218,19 @@ class Resource:
                 "Resource does not have a data_id. Cannot get data range from a "
                 "resource with no data."
             )
-        return await self._data_service.get_data_range_within_root(self._resource.data_id)
+        return await self._ofrak_context.data_service.get_data_range_within_root(
+            self._resource.data_id
+        )
 
     async def save(self):
         """
         If this resource has been modified, update the model stored in the resource service with
         the local changes.
+        NOTE: Now pushes ALL modifications, not only to this resource!
+        TODO: Remove this method from Resource, switch usages to just do OfrakContext.push
 
-        :raises NotFoundError: If the resource service does not have a model for this resource's ID
         """
-        await save_resources(
-            (self,),
-            self._resource_service,
-            self._data_service,
-            self._component_context,
-            self._resource_context,
-            self._resource_view_context,
-        )
-
-    def _save(
-        self,
-        resources_to_delete: List[bytes],
-        patches_to_apply: List[DataPatch],
-        resources_to_update: List[MutableResourceModel],
-    ):
-        if self._resource.is_deleted:
-            resources_to_delete.append(self._resource.id)
-        elif self._resource.is_modified:
-            modification_tracker = self._component_context.modification_trackers.get(
-                self._resource.id
-            )
-            assert modification_tracker is not None, (
-                f"Resource {self._resource.id.hex()} was "
-                f"marked as modified but is missing a tracker!"
-            )
-            patches_to_apply.extend(modification_tracker.data_patches)
-            resources_to_update.append(self._resource)
-            modification_tracker.data_patches.clear()
-
-    async def _fetch(self, resource: MutableResourceModel):
-        """
-        Update the local model with the latest version from the resource service. This will fail
-        if this resource has been modified.
-
-        :raises InvalidStateError: If the local resource model has been modified
-        :raises NotFoundError: If the resource service does not have a model for this resource's ID
-        """
-        if resource.is_modified and not resource.is_deleted:
-            raise InvalidStateError(
-                f"Cannot fetch dirty resource {resource.id.hex()} (resource "
-                f"{self.get_id().hex()} attempted fetch)"
-            )
-        try:
-            fetched_resource = await self._resource_service.get_by_id(resource.id)
-        except NotFoundError:
-            if resource.id in self._component_context.modification_trackers:
-                del self._resource_context.resource_models[resource.id]
-            return
-
-        resource.reset(fetched_resource)
-
-    async def _fetch_resources(self, resource_ids: Iterable[bytes]):
-        tasks = []
-        for resource_id in resource_ids:
-            context_resource = self._resource_context.resource_models.get(resource_id)
-            if context_resource is not None:
-                tasks.append(self._fetch(context_resource))
-        await asyncio.gather(*tasks)
-
-    async def _update_views(self, modified: Set[bytes], deleted: Set[bytes]):
-        for resource_id in modified:
-            views_in_context = self._resource_view_context.views_by_resource[resource_id]
-            for view in views_in_context.values():
-                if resource_id not in self._resource_context.resource_models:
-                    await self._fetch(view.resource.get_model())  # type: ignore
-                updated_model = self._resource_context.resource_models[resource_id]
-                fresh_view = view.create(updated_model)
-                for field in dataclasses.fields(fresh_view):
-                    if field.name == "_resource":
-                        continue
-                    setattr(view, field.name, getattr(fresh_view, field.name))
-
-        for resource_id in deleted:
-            views_in_context = self._resource_view_context.views_by_resource[resource_id]
-            for view in views_in_context.values():
-                view.set_deleted()
+        await self._ofrak_context.push()
 
     async def run(
         self,
@@ -339,21 +245,15 @@ class Resource:
 
         :return: A ComponentRunResult containing information on resources affected by the component
         """
-        job_context = self._job_context
         component_result = await self._job_service.run_component(
             JobComponentRequest(
-                self._job_id,
+                self._ofrak_context.job_id,
                 self._resource.id,
                 component_type.get_id(),
                 config,
             ),
-            job_context,
         )
-        for deleted_id in component_result.resources_deleted:
-            if deleted_id in self._component_context.modification_trackers:
-                del self._component_context.modification_trackers[deleted_id]
-        await self._fetch_resources(component_result.resources_modified)
-        await self._update_views(
+        await self._ofrak_context.pull(
             component_result.resources_modified, component_result.resources_deleted
         )
         return component_result
@@ -384,7 +284,7 @@ class Resource:
         """
         components_result = await self._job_service.run_components(
             JobMultiComponentRequest(
-                self._job_id,
+                self._ofrak_context.job_id,
                 self._resource.id,
                 components_allowed=tuple(c.get_id() for c in components),
                 components_disallowed=tuple(c.get_id() for c in blacklisted_components),
@@ -394,11 +294,7 @@ class Resource:
                 all_packers=all_packers,
             )
         )
-        for deleted_id in components_result.resources_deleted:
-            if deleted_id in self._component_context.modification_trackers:
-                del self._component_context.modification_trackers[deleted_id]
-        await self._fetch_resources(components_result.resources_modified)
-        await self._update_views(
+        await self._ofrak_context.pull(
             components_result.resources_modified, components_result.resources_deleted
         )
         return components_result
@@ -470,7 +366,7 @@ class Resource:
         """
         components_result = await self._job_service.run_components_recursively(
             JobMultiComponentRequest(
-                self._job_id,
+                self._ofrak_context.job_id,
                 self._resource.id,
                 components_allowed=tuple(c.get_id() for c in components),
                 components_disallowed=tuple(c.get_id() for c in blacklisted_components),
@@ -480,8 +376,7 @@ class Resource:
                 tags_ignored=tuple(blacklisted_tags),
             )
         )
-        await self._fetch_resources(components_result.resources_modified)
-        await self._update_views(
+        await self._ofrak_context.pull(
             components_result.resources_modified, components_result.resources_deleted
         )
         return components_result
@@ -520,7 +415,9 @@ class Resource:
         """
         Recursively pack the resource, starting with its descendants.
         """
-        return await self._job_service.pack_recursively(self._job_id, self._resource.id)
+        return await self._job_service.pack_recursively(
+            self._ofrak_context.job_id, self._resource.id
+        )
 
     async def write_to(self, destination: BinaryIO, pack: bool = True):
         """
@@ -534,44 +431,30 @@ class Resource:
         destination.write(await self.get_data())
 
     async def _analyze_attributes(self, attribute_types: Tuple[Type[ResourceAttributes], ...]):
-        job_context = self._job_context
         components_result = await self._job_service.run_analyzer_by_attribute(
             JobAnalyzerRequest(
-                self._job_id,
+                self._ofrak_context.job_id,
                 self._resource.id,
                 attribute_types,
                 tuple(self._resource.tags),
             ),
-            job_context,
         )
         # Update all the resources in the local context that were modified as part of the
         # analysis
-        await self._fetch_resources(components_result.resources_modified)
-        await self._update_views(
+        await self._ofrak_context.pull(
             components_result.resources_modified, components_result.resources_deleted
         )
         return components_result
 
     async def _create_resource(self, resource_model: ResourceModel) -> "Resource":
-        return await self._resource_factory.create(
-            self._job_id,
-            resource_model.id,
-            self._resource_context,
-            self._resource_view_context,
-            self._component_context,
-            self._job_context,
-        )
+        (resource,) = await self._ofrak_context.get_resources(resource_model.id)
+        return resource
 
     async def _create_resources(
         self, resource_models: Iterable[ResourceModel]
     ) -> Iterable["Resource"]:
-        return await self._resource_factory.create_many(
-            self._job_id,
-            [resource_model.id for resource_model in resource_models],
-            self._resource_context,
-            self._resource_view_context,
-            self._component_context,
-            self._job_context,
+        return iter(
+            await self._ofrak_context.get_resources(*(model.id for model in resource_models))
         )
 
     async def create_child(
@@ -623,14 +506,15 @@ class Resource:
                 "Cannot create a child from both data and data_range. These parameters are "
                 "mutually exclusive."
             )
-        resource_id = self._id_service.generate_id()
+        id_service: IDServiceInterface = self._ofrak_context.services[IDServiceInterface]
+        resource_id = id_service.generate_id()
         if data_range is not None:
             if self._resource.data_id is None:
                 raise ValueError(
                     "Cannot create a child with mapped data from a parent that doesn't have data"
                 )
             data_model_id = resource_id
-            await self._data_service.create_mapped(
+            await self._ofrak_context.data_service.create_mapped(
                 data_model_id,
                 self._resource.data_id,
                 data_range,
@@ -643,7 +527,7 @@ class Resource:
                     "Cannot create a child with data from a parent that doesn't have data"
                 )
             data_model_id = resource_id
-            await self._data_service.create_root(data_model_id, data)
+            await self._ofrak_context.data_service.create_root(data_model_id, data)
             data_attrs = Data(0, len(data))
             attributes = [data_attrs, *attributes] if attributes else [data_attrs]
         else:
@@ -654,15 +538,12 @@ class Resource:
             self._resource.id,
             tags,
             attributes,
-            self._component_context.component_id,
-            self._component_context.component_version,
+            self._ofrak_context.current_component_id,
+            self._ofrak_context.current_component_version,
         )
-        await self._resource_service.create(resource_model)
-        if self._job_context:
-            resource_tracker = self._job_context.trackers[resource_model.id]
-            resource_tracker.tags_added.update(resource_model.tags)
-        self._component_context.mark_resource_modified(resource_id)
-        self._component_context.resources_created.add(resource_model.id)
+        await self._ofrak_context.resource_service.create(resource_model)
+
+        self._ofrak_context.resources_created.add(resource_id)
         created_resource = await self._create_resource(resource_model)
         return created_resource
 
@@ -724,9 +605,9 @@ class Resource:
         to create the view are already present and up-to-date, and only if both of those are not
         found does it return an awaitable.
         """
-        if self._resource_view_context.has_view(self.get_id(), viewable_tag):
+        if viewable_tag in self._tracker.views:
             # First early return: View already exists in cache
-            return self._resource_view_context.get_view(self.get_id(), viewable_tag)
+            return self._tracker.views[viewable_tag]
         if not issubclass(viewable_tag, ResourceViewInterface):
             raise ValueError(
                 f"Cannot get view for resource {self.get_id().hex()} of a type "
@@ -744,7 +625,7 @@ class Resource:
             # Second early return: All attributes needed for view are present and up-to-date
             view = viewable_tag.create(self.get_model())
             view.resource = self  # type: ignore
-            self._resource_view_context.add_view(self.get_id(), view)
+            self._tracker.views[viewable_tag] = view
             return cast(RV, view)
 
         # Only if analysis is absolutely necessary is an awaitable created and returned
@@ -754,7 +635,7 @@ class Resource:
             await self._analyze_attributes(attrs_to_analyze)
             view = viewable_tag.create(self.get_model())
             view.resource = self  # type: ignore
-            self._resource_view_context.add_view(self.get_id(), view)
+            self._tracker.views[viewable_tag] = view
             return cast(RV, view)
 
         return finish_view_creation(
@@ -795,9 +676,12 @@ class Resource:
         for attributes in view.get_attributes_instances().values():  # type: ignore
             self.add_attributes(attributes)
         self.add_tag(type(view))
-
-    def _set_modified(self):
-        self._component_context.mark_resource_modified(self._resource.id)
+        if type(view) in self._tracker.views:
+            self._tracker.views[type(view)].copy_from_view(view)
+        else:
+            view_copy = dataclasses.replace(view)
+            view_copy.resource = self  # type: ignore
+            self._tracker.views[type(view)] = view_copy
 
     def _add_tag(self, tag: ResourceTag):
         """
@@ -806,11 +690,7 @@ class Resource:
         """
         if self._resource.has_tag(tag, False):
             return
-        self._component_context.mark_resource_modified(self._resource.id)
-        new_tags = self._resource.add_tag(tag)
-        if self._job_context:
-            resource_tracker = self._job_context.trackers[self._resource.id]
-            resource_tracker.tags_added.update(new_tags)
+        self._resource.add_tag(tag)
 
     def add_tag(self, *tags: ResourceTag):
         """
@@ -836,7 +716,6 @@ class Resource:
     def remove_tag(self, tag: ResourceTag):
         if not self._resource.has_tag(tag):
             return
-        self._set_modified()
         self._resource.remove_tag(tag)
 
     def get_most_specific_tags(self) -> Iterable[ResourceTag]:
@@ -877,11 +756,11 @@ class Resource:
         existing_attributes = self._resource.get_attributes(type(attributes))
         if existing_attributes is not None and existing_attributes == attributes:
             return
-        self._set_modified()
         self._resource.add_attributes(attributes)
-        component_context = self._component_context
         self._resource.add_component_for_attributes(
-            component_context.component_id, component_context.component_version, type(attributes)
+            self._ofrak_context.current_component_id,
+            self._ofrak_context.current_component_version,
+            type(attributes),
         )
 
     def add_attributes(self, *attributes: ResourceAttributes):
@@ -913,9 +792,7 @@ class Resource:
                 f"Cannot find attributes {attributes_type} for resource {self.get_id().hex()}"
             )
 
-        self._component_context.access_trackers[self._resource.id].attributes_accessed.add(
-            attributes_type
-        )
+        self._tracker.attribute_reads.add(attributes_type)
         return attributes
 
     def remove_attributes(self, attributes_type: Type[ResourceAttributes]):
@@ -927,7 +804,6 @@ class Resource:
         """
         if not self._resource.has_attributes(attributes_type):
             return
-        self._set_modified()
         self._resource.remove_attributes(attributes_type)
 
     def add_component(
@@ -942,7 +818,6 @@ class Resource:
         :param version: Version of the component which ran
         :return:
         """
-        self._set_modified()
         self._resource.add_component(component_id, version)
 
     def add_component_for_attributes(
@@ -958,7 +833,6 @@ class Resource:
         :param attributes: The type of attributes which were added
         :return:
         """
-        self._set_modified()
         self._resource.add_component_for_attributes(component_id, version, attributes)
 
     def remove_component(
@@ -973,7 +847,6 @@ class Resource:
         :param attributes: The type of attributes to remove information about
         :return:
         """
-        self._set_modified()
         self._resource.remove_component(component_id, attributes)
 
     def has_component_run(self, component_id: bytes, desired_version: Optional[int] = None) -> bool:
@@ -1009,19 +882,9 @@ class Resource:
         :param data: The bytes to replace part of this resource's data with
         :return:
         """
-        if not self._component_context:
-            raise InvalidStateError(
-                f"Cannot patch resource {self._resource.id.hex()} without a context"
-            )
         if self._resource.data_id is None:
             raise ValueError("Cannot patch a resource with no data")
-        self._component_context.modification_trackers[self._resource.id].data_patches.append(
-            DataPatch(
-                patch_range,
-                self._resource.data_id,
-                data,
-            )
-        )
+        self._tracker.data_writes.append((patch_range, data))
         self._resource.is_modified = True
 
     async def get_parent_as_view(self, v_type: Type[RV]) -> RV:
@@ -1039,7 +902,9 @@ class Resource:
         Get the parent of this resource.
         """
         models = list(
-            await self._resource_service.get_ancestors_by_id(self._resource.id, max_count=1)
+            await self._ofrak_context.resource_service.get_ancestors_by_id(
+                self._resource.id, max_count=1
+            )
         )
         if len(models) != 1:
             raise NotFoundError(f"There is no parent for resource {self._resource.id.hex()}")
@@ -1059,7 +924,7 @@ class Resource:
 
         :raises NotFoundError: If a filter was provided and no resources match the provided filter
         """
-        models = await self._resource_service.get_ancestors_by_id(
+        models = await self._ofrak_context.resource_service.get_ancestors_by_id(
             self._resource.id, r_filter=r_filter
         )
         return await self._create_resources(models)
@@ -1092,7 +957,9 @@ class Resource:
         :return:
         """
         ancestors = list(
-            await self._resource_service.get_ancestors_by_id(self._resource.id, 1, r_filter)
+            await self._ofrak_context.resource_service.get_ancestors_by_id(
+                self._resource.id, 1, r_filter
+            )
         )
         if len(ancestors) == 0:
             raise NotFoundError(
@@ -1169,7 +1036,7 @@ class Resource:
 
         :raises NotFoundError: If a filter was provided and no resources match the provided filter
         """
-        models = await self._resource_service.get_descendants_by_id(
+        models = await self._ofrak_context.resource_service.get_descendants_by_id(
             self._resource.id, max_depth=max_depth, r_filter=r_filter, r_sort=r_sort
         )
         return await self._create_resources(models)
@@ -1220,7 +1087,7 @@ class Resource:
         :raises NotFoundError: If a filter is not provided and this resource has multiple descendant
         """
         models = list(
-            await self._resource_service.get_descendants_by_id(
+            await self._ofrak_context.resource_service.get_descendants_by_id(
                 self._resource.id,
                 max_depth=max_depth,
                 max_count=2,
@@ -1276,7 +1143,7 @@ class Resource:
         :raises NotFoundError: If a filter is not provided and this resource has multiple siblings
         """
         models = list(
-            await self._resource_service.get_siblings_by_id(
+            await self._ofrak_context.resource_service.get_siblings_by_id(
                 self._resource.id,
                 max_count=2,
                 r_filter=r_filter,
@@ -1376,13 +1243,7 @@ class Resource:
 
         :return:
         """
-        self._component_context.resources_deleted.add(self._resource.id)
-
-        for child_r in await self.get_children():
-            await child_r.delete()
-
-        self._resource.is_modified = True
-        self._resource.is_deleted = True
+        self._ofrak_context.resources_to_delete.add(self._resource.id)
 
     async def flush_to_disk(self, path: str, pack: bool = True):
         """
@@ -1483,44 +1344,6 @@ class Resource:
         return tree_string
 
 
-async def save_resources(
-    resources: Iterable["Resource"],
-    resource_service: ResourceServiceInterface,
-    data_service: DataServiceInterface,
-    component_context: ComponentContext,
-    resource_context: ResourceContext,
-    resource_view_context: ResourceViewContext,
-):
-    dependency_handler = DependencyHandler(
-        resource_service, data_service, component_context, resource_context
-    )
-    resources_to_delete: List[bytes] = []
-    patches_to_apply: List[DataPatch] = []
-    resources_to_update: List[MutableResourceModel] = []
-
-    for resource in resources:
-        resource._save(
-            resources_to_delete,
-            patches_to_apply,
-            resources_to_update,
-        )
-
-    deleted_descendants = await resource_service.delete_resources(resources_to_delete)
-    data_ids_to_delete = [
-        resource_m.data_id for resource_m in deleted_descendants if resource_m.data_id is not None
-    ]
-    await data_service.delete_models(data_ids_to_delete)
-    patch_results = await data_service.apply_patches(patches_to_apply)
-    await dependency_handler.handle_post_patch_dependencies(patch_results)
-    diffs = []
-    updated_ids = []
-    for resource_m in resources_to_update:
-        diffs.append(resource_m.save())
-        updated_ids.append(resource_m.id)
-    await resource_service.update_many(diffs)
-    resource_view_context.update_views(updated_ids, resources_to_delete, resource_context)
-
-
 class ResourceFactory:
     """
     Factory for creating [Resource][ofrak.resource.Resource].
@@ -1534,8 +1357,8 @@ class ResourceFactory:
         job_service: JobServiceInterface,
     ):
         self._id_service = id_service
-        self._data_service = data_service
-        self._resource_service = resource_service
+        self._ofrak_context.data_service = data_service
+        self._ofrak_context.resource_service = resource_service
         self._job_service = job_service
 
     async def create(
@@ -1560,7 +1383,7 @@ class ResourceFactory:
         resource_m = resource_context.resource_models.get(resource_id)
         if resource_m is None:
             resource_m = MutableResourceModel.from_model(
-                await self._resource_service.get_by_id(resource_id)
+                await self._ofrak_context.resource_service.get_by_id(resource_id)
             )
             resource_context.resource_models[resource_id] = resource_m
 
@@ -1610,7 +1433,7 @@ class ResourceFactory:
                 resource_models_minus_missing.append(resource_m)
 
         fetched_models: List[ResourceModel] = list(
-            await self._resource_service.get_by_ids(missing_ids)
+            await self._ofrak_context.resource_service.get_by_ids(missing_ids)
         )
 
         resource_models = []
@@ -1652,8 +1475,8 @@ class ResourceFactory:
                 component_context,
                 self,
                 self._id_service,
-                self._data_service,
-                self._resource_service,
+                self._ofrak_context.data_service,
+                self._ofrak_context.resource_service,
                 self._job_service,
             )
 

@@ -11,9 +11,8 @@ from ofrak.core.elf.model import Elf
 from ofrak.core.filesystem import FilesystemRoot
 from ofrak.core.patch_maker.linkable_binary import LinkableBinary
 from ofrak.core.program import Program
-from ofrak.model.component_model import ComponentContext
-from ofrak.model.resource_model import ResourceAttributes, ResourceContext
-from ofrak.model.viewable_tag_model import AttributesType, ResourceViewContext
+from ofrak.model.resource_model import ResourceAttributes
+from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import ResourceFilter
@@ -311,12 +310,3 @@ async def test_create_child_data_and_data_range(ofrak_context: OFRAKContext):
     resource = await ofrak_context.create_root_resource(name="test_file", data=b"\xff" * 10)
     with pytest.raises(ValueError):
         await resource.create_child(data=b"\x00", data_range=Range(0, 1))
-
-
-async def test_get_contexts(resource: Resource):
-    assert isinstance(resource.get_resource_context(), ResourceContext)
-    assert isinstance(resource.get_resource_view_context(), ResourceViewContext)
-    assert isinstance(resource.get_component_context(), ComponentContext)
-
-    # Outside the context of a component, resources don't have job run contexts
-    assert resource.get_job_context() is None

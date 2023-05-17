@@ -8,13 +8,12 @@ from dataclasses import dataclass
 from typing import Optional, List
 
 from ofrak import ResourceFilter
-from ofrak.core import CodeRegion
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
+from ofrak.core import CodeRegion
 from ofrak.model.component_model import ComponentConfig
-from ofrak.resource import Resource, ResourceFactory
-from ofrak.service.data_service_i import DataServiceInterface
-from ofrak.service.resource_service_i import ResourceServiceInterface
+from ofrak.model.ofrak_context_interface import OFRAKContext2Interface
+from ofrak.resource import Resource
 from ofrak_ghidra.constants import (
     GHIDRA_HEADLESS_EXEC,
     GHIDRA_USER,
@@ -64,15 +63,11 @@ class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProjec
 
     def __init__(
         self,
-        resource_factory: ResourceFactory,
-        data_service: DataServiceInterface,
-        resource_service: ResourceServiceInterface,
+        ofrak_context: OFRAKContext2Interface,
         ghidra_mixins: List[OfrakGhidraMixin],
     ):
         super().__init__(
-            resource_factory,
-            data_service,
-            resource_service,
+            ofrak_context,
         )
 
         self._script_directories = set()

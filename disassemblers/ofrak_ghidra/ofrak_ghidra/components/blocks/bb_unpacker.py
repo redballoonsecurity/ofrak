@@ -5,13 +5,9 @@ from collections import defaultdict
 from typing import Tuple, Dict, Union, List, Iterable
 
 from ofrak.core.architecture import ProgramAttributes
-from ofrak_type.architecture import InstructionSet, InstructionSetMode
 from ofrak.core.basic_block import BasicBlockUnpacker, BasicBlock
 from ofrak.core.instruction import Instruction
-from ofrak.resource import ResourceFactory, Resource
-from ofrak.service.component_locator_i import ComponentLocatorInterface
-from ofrak.service.data_service_i import DataServiceInterface
-from ofrak.service.resource_service_i import ResourceServiceInterface
+from ofrak.resource import Resource
 from ofrak_ghidra.components.blocks.unpackers import (
     RE_STRIP_PRECEDING_ZERO,
     RE_CPY_TO_MOV,
@@ -19,6 +15,7 @@ from ofrak_ghidra.components.blocks.unpackers import (
 from ofrak_ghidra.constants import CORE_OFRAK_GHIDRA_SCRIPTS
 from ofrak_ghidra.ghidra_model import OfrakGhidraMixin, OfrakGhidraScript
 from ofrak_io.batch_manager import make_batch_manager
+from ofrak_type.architecture import InstructionSet, InstructionSetMode
 
 _GetInstructionsRequest = Tuple[Resource, int, int]
 _GetInstructionsResult = List[Dict[str, Union[str, int]]]
@@ -35,15 +32,8 @@ class GhidraBasicBlockUnpacker(
         os.path.join(CORE_OFRAK_GHIDRA_SCRIPTS, "GetInstructions.java"),
     )
 
-    def __init__(
-        self,
-        resource_factory: ResourceFactory,
-        data_service: DataServiceInterface,
-        resource_service: ResourceServiceInterface,
-        component_locator: ComponentLocatorInterface,
-    ):
+    def __post_init__(self):
         self.batch_manager = make_batch_manager(self._handle_get_instructions_batch)
-        super().__init__(resource_factory, data_service, resource_service, component_locator)
 
     async def unpack(self, resource: Resource, config=None):
         bb_view: BasicBlock = await resource.view_as(BasicBlock)

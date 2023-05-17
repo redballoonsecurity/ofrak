@@ -4,9 +4,6 @@ import logging
 from abc import ABC, abstractmethod
 from subprocess import CalledProcessError
 from typing import (
-    Dict,
-    Iterable,
-    List,
     Optional,
     Callable,
     Any,
@@ -16,26 +13,13 @@ from typing import (
 
 from ofrak.component.interface import ComponentInterface
 from ofrak.model.component_model import (
-    ComponentContext,
     CC,
     ComponentRunResult,
     ComponentConfig,
     ComponentExternalTool,
 )
-from ofrak.model.data_model import DataPatchesResult
-from ofrak.model.job_model import (
-    JobRunContext,
-)
-from ofrak.model.resource_model import (
-    ResourceContext,
-    MutableResourceModel,
-)
-from ofrak.model.viewable_tag_model import ResourceViewContext
-from ofrak.resource import Resource, ResourceFactory, save_resources
-from ofrak.service.data_service_i import DataServiceInterface
-from ofrak.service.dependency_handler import DependencyHandlerFactory
-from ofrak.service.resource_service_i import ResourceServiceInterface
-from ofrak_type.error import NotFoundError
+from ofrak.model.ofrak_context_interface import OFRAKContext2Interface
+from ofrak.resource import Resource
 
 LOGGER = logging.getLogger(__name__)
 
@@ -43,15 +27,21 @@ LOGGER = logging.getLogger(__name__)
 class AbstractComponent(ComponentInterface[CC], ABC):
     def __init__(
         self,
-        resource_factory: ResourceFactory,
-        data_service: DataServiceInterface,
-        resource_service: ResourceServiceInterface,
+        ofrak_context: OFRAKContext2Interface,
     ):
-        self._resource_factory = resource_factory
-        self._data_service = data_service
-        self._resource_service = resource_service
-        self._dependency_handler_factory = DependencyHandlerFactory()
+        self._resource_factory = None
         self._default_config = self.get_default_config()
+
+        self._context = ofrak_context
+        self.__post_init__()
+
+    def __post_init__(self):
+        """
+        Override for any state that a component needs to set up, without messing with the dependency
+        injection that uses the constructor.
+
+        :return:
+        """
 
     @classmethod
     def get_id(cls) -> bytes:
@@ -64,34 +54,24 @@ class AbstractComponent(ComponentInterface[CC], ABC):
         self,
         job_id: bytes,
         resource_id: bytes,
-        job_context: JobRunContext,
-        resource_context: ResourceContext,
-        resource_view_context: ResourceViewContext,
         config: CC,
     ) -> ComponentRunResult:
         """
 
         :param job_id:
         :param resource_id:
-        :param job_context:
-        :param resource_context:
-        :param resource_view_context:
         :param config:
         :return: The IDs of all resources modified by this component
         """
-        component_context = ComponentContext(self.get_id(), self.get_version())
-        resource = await self._resource_factory.create(
-            job_id,
-            resource_id,
-            resource_context,
-            resource_view_context,
-            component_context,
-            job_context,
+        context = self._context.fork(
+            job_id=job_id, component_id=self.get_id(), component_version=self.get_version()
         )
+        (resource,) = await context.get_resources(resource_id)
         if config is None and self._default_config is not None:
             config = dataclasses.replace(self._default_config)
+
         try:
-            await self._run(resource, config)
+            await self._run(resource, context, config)
         except FileNotFoundError as e:
             # Check if the problem was that one of the dependencies is missing
             missing_file = e.filename
@@ -102,111 +82,12 @@ class AbstractComponent(ComponentInterface[CC], ABC):
         except CalledProcessError as e:
             raise ComponentSubprocessError(e)
 
-        deleted_resource_models: List[MutableResourceModel] = list()
-
-        for deleted_r_id in component_context.resources_deleted:
-            mutable_resource_model = resource_context.resource_models.get(deleted_r_id)
-            if mutable_resource_model:
-                deleted_resource_models.append(mutable_resource_model)
-            else:
-                raise NotFoundError(
-                    f"The resource {deleted_r_id.hex()} was deleted but not in "
-                    f"the resource context"
-                )
-
-        # Save deleted resource so they won't interfere with patches
-        # This is where deleted resources are actually deleted from their respective databases
-        await self._save_resources(
-            job_id,
-            deleted_resource_models,
-            resource_context,
-            resource_view_context,
-            job_context,
-            component_context,
-        )
-
-        dependency_handler = self._dependency_handler_factory.create(
-            self._resource_service,
-            self._data_service,
-            component_context,
-            resource_context,
-        )
-        patch_results = await self.apply_all_patches(component_context)
-        await dependency_handler.handle_post_patch_dependencies(patch_results)
-        dependency_handler.create_component_dependencies(self.get_id(), self.get_version())
-        dependency_handler.create_resource_dependencies(self.get_id())
-
-        # Get modified resources
-        modified_resource_models: Dict[bytes, MutableResourceModel] = dict()
-        modified_resource_ids = component_context.get_modified_resource_ids()
-        for modified_r_id in modified_resource_ids:
-            mutable_resource_model = resource_context.resource_models.get(modified_r_id)
-            if mutable_resource_model:
-                modified_resource_models[modified_r_id] = mutable_resource_model
-            else:
-                raise NotFoundError(
-                    f"The resource {modified_r_id.hex()} was modified but not in "
-                    f"the resource context"
-                )
-
-        # Include resources modified by data patches in `modified_resource_ids`
-        data_ids_to_models = await dependency_handler.map_data_ids_to_resources(
-            patch_result.data_id for patch_result in patch_results
-        )
-        for m in data_ids_to_models.values():
-            modified_resource_ids.add(m.id)
-
-        # Exclude deleted resources from `modified_resource_ids`
-        # (deleting and modifying are handled separately)
-        modified_resource_ids.difference_update(component_context.resources_deleted)
-
-        # Save modified resources
-        await self._save_resources(
-            job_id,
-            modified_resource_models.values(),
-            resource_context,
-            resource_view_context,
-            job_context,
-            component_context,
-        )
-
-        component_result = ComponentRunResult(
-            {self.get_id()},
-            modified_resource_ids,
-            component_context.resources_deleted,
-            component_context.resources_created,
-        )
-        return component_result
+        await context.push()
+        return context.get_cumulative_result()
 
     @abstractmethod
-    async def _run(self, resource: Resource, config: CC):
+    async def _run(self, resource: Resource, context: OFRAKContext2Interface, config: CC):
         raise NotImplementedError()
-
-    async def _save_resources(
-        self,
-        job_id: bytes,
-        mutable_resource_models: Iterable[MutableResourceModel],
-        resource_context: ResourceContext,
-        resource_view_context: ResourceViewContext,
-        job_context: Optional[JobRunContext],
-        component_context: ComponentContext,
-    ):
-        resources = await self._resource_factory.create_many(
-            job_id,
-            (mutable_resource_model.id for mutable_resource_model in mutable_resource_models),
-            resource_context,
-            resource_view_context,
-            component_context,
-            job_context,
-        )
-        await save_resources(
-            resources,
-            self._resource_service,
-            self._data_service,
-            component_context,
-            resource_context,
-            resource_view_context,
-        )
 
     @staticmethod
     def _get_default_config_from_method(
@@ -232,19 +113,6 @@ class AbstractComponent(ComponentInterface[CC], ABC):
             )
         else:
             return None
-
-    async def apply_all_patches(
-        self, component_context: ComponentContext
-    ) -> List[DataPatchesResult]:
-        # Build a list of patches, making sure that there is at most one patch that causes a resize
-        patches = []
-        for resource_id, tracker in component_context.modification_trackers.items():
-            patches.extend(tracker.data_patches)
-            tracker.data_patches.clear()
-        if len(patches) > 0:
-            return await self._data_service.apply_patches(patches)
-        else:
-            return []
 
     def get_version(self) -> int:
         return 1

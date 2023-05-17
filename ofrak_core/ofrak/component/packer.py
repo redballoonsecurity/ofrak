@@ -6,11 +6,6 @@ from ofrak.component.abstract import AbstractComponent
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.identifier import Identifier
 from ofrak.component.modifier import Modifier
-from ofrak.model.component_model import CC
-from ofrak.resource import Resource, ResourceFactory
-from ofrak.service.component_locator_i import (
-    ComponentLocatorInterface,
-)
 from ofrak.model.component_filters import (
     ComponentWhitelistFilter,
     ComponentTypeFilter,
@@ -18,8 +13,9 @@ from ofrak.model.component_filters import (
     ComponentAndMetaFilter,
     ComponentNotMetaFilter,
 )
-from ofrak.service.data_service_i import DataServiceInterface
-from ofrak.service.resource_service_i import ResourceServiceInterface
+from ofrak.model.component_model import CC
+from ofrak.model.ofrak_context_interface import OFRAKContext2Interface
+from ofrak.resource import Resource
 
 LOGGER = logging.getLogger(__name__)
 
@@ -33,16 +29,6 @@ class Packer(AbstractComponent[CC], ABC):
     Packers are components that typically mirror unpackers, taking constituent children resources
     (and sometimes descendants) and reassembling them to produce a new resource.
     """
-
-    def __init__(
-        self,
-        resource_factory: ResourceFactory,
-        data_service: DataServiceInterface,
-        resource_service: ResourceServiceInterface,
-        component_locator: ComponentLocatorInterface,
-    ):
-        super().__init__(resource_factory, data_service, resource_service)
-        self._component_locator = component_locator
 
     @abstractmethod
     async def pack(self, resource: Resource, config: CC) -> None:
@@ -65,7 +51,7 @@ class Packer(AbstractComponent[CC], ABC):
     def get_default_config(cls) -> Optional[CC]:
         return cls._get_default_config_from_method(cls.pack)
 
-    async def _run(self, resource: Resource, config: CC) -> None:
+    async def _run(self, resource: Resource, context: OFRAKContext2Interface, config: CC) -> None:
         if resource.has_component_run(self.get_id(), self.get_version()):
             LOGGER.warning(
                 f"The {self.get_id().decode()} packer has already been run on resource"
@@ -83,7 +69,7 @@ class Packer(AbstractComponent[CC], ABC):
             await child_r.delete()
 
     def _get_which_unpackers_ran(self, resource: Resource) -> Tuple[bytes, ...]:
-        unpackers_ran = self._component_locator.get_components_matching_filter(
+        unpackers_ran = self._context.component_locator.get_components_matching_filter(
             ComponentAndMetaFilter(
                 ComponentWhitelistFilter(*resource.get_model().component_versions.keys()),
                 # Use process of elimination to avoid circular import between unpacker.py, packer.py

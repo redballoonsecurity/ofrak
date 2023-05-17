@@ -307,6 +307,17 @@ class ResourceViewInterface(metaclass=ViewableResourceTag):
     def create(cls: Type[RVI], resource_model: ResourceModel) -> RVI:  # pragma: no cover
         raise NotImplementedError()
 
+    def copy_from_view(self, other_view):
+        """
+        Copy the values out of the fields of another view into this one.
+
+        :param other_view: View to copy values from
+        """
+        for _field in dataclasses.fields(other_view):
+            if _field.name == "_resource":
+                continue
+            setattr(self, _field.name, getattr(other_view, _field.name))
+
 
 class ResourceViewContext:
     ViewByTag = MutableMapping[ViewableResourceTag, ResourceViewInterface]

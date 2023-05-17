@@ -2,12 +2,12 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Type, Tuple, Generic, TypeVar, Union, cast, Iterable, Optional
 
-from ofrak.resource import Resource
-
 from ofrak.component.abstract import AbstractComponent
 from ofrak.model.component_model import CC
+from ofrak.model.ofrak_context_interface import OFRAKContext2Interface
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.model.viewable_tag_model import ViewableResourceTag
+from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
 
 LOGGER = logging.getLogger(__name__)
@@ -105,7 +105,7 @@ class Analyzer(AbstractComponent, Generic[CC, AnalyzerReturnType], ABC):
     def get_default_config(cls) -> Optional[CC]:
         return cls._get_default_config_from_method(cls.analyze)
 
-    async def _run(self, resource: Resource, config: CC):
+    async def _run(self, resource: Resource, context: OFRAKContext2Interface, config: CC):
         if resource.has_component_run(self.get_id(), self.get_version()):
             return self._log_component_has_run_warning(resource)
         if resource.has_component_run(self.get_id()):

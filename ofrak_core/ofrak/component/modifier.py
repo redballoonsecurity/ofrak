@@ -3,6 +3,7 @@ from typing import Optional
 
 from ofrak.component.abstract import AbstractComponent
 from ofrak.model.component_model import CC
+from ofrak.model.ofrak_context_interface import OFRAKContext2Interface
 from ofrak.resource import Resource
 
 
@@ -36,5 +37,5 @@ class Modifier(AbstractComponent[CC], ABC):
     def get_default_config(cls) -> Optional[CC]:
         return cls._get_default_config_from_method(cls.modify)
 
-    async def _run(self, resource: Resource, config: CC) -> None:
+    async def _run(self, resource: Resource, context: OFRAKContext2Interface, config: CC) -> None:
         await self.modify(resource, config)

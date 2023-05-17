@@ -3,11 +3,11 @@ from typing import Type
 
 import pytest
 
-from ofrak import OFRAKContext
 from ofrak.component.analyzer import Analyzer, AnalyzerReturnType
 from ofrak.model.component_model import CC
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.resource import Resource
+from ofrak.service.component_locator_i import ComponentLocatorInterface
 from ofrak_type.error import NotFoundError
 
 
@@ -24,11 +24,11 @@ class AnalyzerTestCase:
 
 @dataclass
 class PopulatedAnalyzerTestCase(AnalyzerTestCase):
-    ofrak_context: OFRAKContext
+    component_locator: ComponentLocatorInterface
     resource: Resource
 
     def get_analyzer(self):
-        return self.ofrak_context.component_locator.get_by_type(self.analyzer_type)
+        return self.component_locator.get_by_type(self.analyzer_type)
 
 
 class AnalyzerTests:
@@ -43,7 +43,7 @@ class AnalyzerTests:
         Test that :func:`Analyzer.analyze` returns the expected AnalyzerReturnType
         """
         analyzer = test_case.get_analyzer()
-        result = await analyzer.analyze(test_case.resource)
+        result = await analyzer.analyze(test_case.resource, None)
         assert result == test_case.expected_result
 
     async def test_resource_analyzer(self, test_case: PopulatedAnalyzerTestCase):

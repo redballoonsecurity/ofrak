@@ -7,14 +7,6 @@ from ofrak.component.abstract import AbstractComponent
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.interface import ComponentInterface
 from ofrak.component.unpacker import Unpacker
-from ofrak.service.component_locator import (
-    ComponentLocator,
-    InvalidComponentError,
-)
-from ofrak.service.component_locator_i import (
-    ComponentLocatorInterface,
-    ComponentFilter,
-)
 from ofrak.model.component_filters import (
     ComponentWhitelistFilter,
     ComponentTypeFilter,
@@ -25,9 +17,18 @@ from ofrak.model.component_filters import (
     ComponentPrioritySelectingMetaFilter,
     ComponentNotMetaFilter,
 )
+from ofrak.model.ofrak_context_interface import OFRAKContext2Interface
+from ofrak.service.component_locator import (
+    ComponentLocator,
+    InvalidComponentError,
+)
+from ofrak.service.component_locator_i import (
+    ComponentLocatorInterface,
+    ComponentFilter,
+)
 from ofrak_type.error import NotFoundError
-from pytest_ofrak.mock_component_types import MockAnalyzer
 from pytest_ofrak import mock_library2, mock_library
+from pytest_ofrak.mock_component_types import MockAnalyzer
 from pytest_ofrak.mock_library import (
     TargetsCommonOutputsA,
     TargetsQOutputsABC,
@@ -119,9 +120,9 @@ def test_add_components(component_locator, components_for_testing):
         targets = [AbstractionP]
 
         def __init__(self):
-            super().__init__(None, None, None)  # type: ignore
+            super().__init__(None)  # type: ignore
 
-        async def _run(self, resource, config=None):
+        async def _run(self, resource, context: OFRAKContext2Interface, config=None):
             pass
 
         @classmethod
