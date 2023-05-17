@@ -32,7 +32,7 @@
           modifierView = ComponentsView;
         },
       },
-    ]
+    ];
   }
 
   $: {
@@ -251,8 +251,8 @@
     ];
   }
 
-  $: if ($settings.experimentalFeatures){
-    toolbarButtons = [...toolbarButtons, ...experimentalFeatures]
+  $: if ($settings.experimentalFeatures) {
+    toolbarButtons = [...toolbarButtons, ...experimentalFeatures];
   }
 
   function clearModified(descendants) {
