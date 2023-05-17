@@ -30,6 +30,7 @@ from ofrak.core.dtb import *
 from ofrak.core.filesystem import *
 from ofrak.core.flash import *
 from ofrak.core.free_space import *
+from ofrak.core.generic_script import *
 from ofrak.core.gzip import *
 from ofrak.core.injector import *
 from ofrak.core.instruction import *
