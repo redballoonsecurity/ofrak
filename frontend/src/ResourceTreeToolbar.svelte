@@ -7,7 +7,7 @@
   import SettingsView from "./SettingsView.svelte";
   import Toolbar from "./Toolbar.svelte";
 
-  import { selectedResource, selected } from "./stores.js";
+  import { selectedResource, selected, settings } from "./stores.js";
   import SearchView from "./SearchView.svelte";
   import AddTagView from "./AddTagView.svelte";
 
@@ -21,8 +21,20 @@
     $selected = originalSelected;
   }
 
-  let toolbarButtons;
+  let toolbarButtons, experimentalFeatures;
   const neverResolves = new Promise(() => {});
+  $: {
+    experimentalFeatures = [
+      {
+        text: "Run Component",
+        iconUrl: "/icons/run.svg",
+        onclick: async (e) => {
+          modifierView = ComponentsView;
+        },
+      },
+    ]
+  }
+
   $: {
     toolbarButtons = [
       {
@@ -80,14 +92,6 @@
         iconUrl: "/icons/modify.svg",
         onclick: async (e) => {
           modifierView = ModifyView;
-        },
-      },
-
-      {
-        text: "Run Component",
-        iconUrl: "/icons/run.svg",
-        onclick: async (e) => {
-          modifierView = ComponentsView;
         },
       },
 
@@ -245,6 +249,10 @@
         },
       },
     ];
+  }
+
+  $: if ($settings.experimentalFeatures){
+    toolbarButtons = [...toolbarButtons, ...experimentalFeatures]
   }
 
   function clearModified(descendants) {
