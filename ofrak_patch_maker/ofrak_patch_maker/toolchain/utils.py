@@ -9,15 +9,15 @@ from ofrak_patch_maker.toolchain.model import BinFileType, Segment
 from ofrak_type.error import NotFoundError
 from ofrak_type.memory_permissions import MemoryPermissions
 
-_magic = None
-
 
 def get_file_format(path):
-    global _magic
-    if _magic is None:
-        import magic as _magic
+    try:
+        import magic
+    except ImportError:
+        # ImportError is likely raise because libmagic cannot be found on the system. See error message.
+        raise
 
-    result = _magic.from_file(path).split(" ")[0].lower()
+    result = magic.from_file(path).split(" ")[0].lower()
     try:
         return BinFileType(result)
     except:
