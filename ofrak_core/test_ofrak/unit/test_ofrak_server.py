@@ -832,6 +832,31 @@ async def test_get_config(ofrak_client: TestClient, hello_world_elf):
     }
 
 
+async def test_get_tags_and_num_components(ofrak_client: TestClient, hello_world_elf):
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+    )
+    create_body = await create_resp.json()
+    resource_id = create_body["id"]
+    resp = await ofrak_client.post(
+        f"/{resource_id}/get_tags_and_num_components",
+        json={
+            "target": "File",
+            "analyzers": True,
+            "modifiers": True,
+            "packers": True,
+            "unpackers": True,
+        },
+    )
+    resp_body = await resp.json()
+    assert resp_body == [
+        ["File", 115],
+        ["ResourceViewInterface", 115],
+        ["ResourceView", 115],
+        ["FilesystemEntry", 115],
+    ]
+
+
 async def test_run_component(ofrak_client: TestClient, hello_world_elf):
     create_resp = await ofrak_client.post(
         "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
