@@ -18,7 +18,7 @@
   }
 
   li:not(:last-child) button {
-    color: #9be088;
+    color: var(--accent-text-color);
   }
 
   li:not(:last-child) button:hover {
@@ -59,6 +59,7 @@
   {#if ancestors !== null && ancestors !== undefined}
     <ol>
       {#each ancestors as ancestor}
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
         <li
           on:click="{(e) => {
             $selected = ancestor.get_id();
