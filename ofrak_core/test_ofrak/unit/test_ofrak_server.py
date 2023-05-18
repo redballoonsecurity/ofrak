@@ -849,12 +849,9 @@ async def test_get_tags_and_num_components(ofrak_client: TestClient, hello_world
         },
     )
     resp_body = await resp.json()
-    assert resp_body == [
-        ["File", 115],
-        ["ResourceViewInterface", 115],
-        ["ResourceView", 115],
-        ["FilesystemEntry", 115],
-    ]
+    assert (
+        resp.status == 200
+    )  # The result of the components differs based on the number of components in OFRAK, so checking the exact output will break everytime a component is added.
 
 
 async def test_run_component(ofrak_client: TestClient, hello_world_elf):
