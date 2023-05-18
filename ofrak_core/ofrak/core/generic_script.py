@@ -1,11 +1,10 @@
+import inspect
 from dataclasses import dataclass
-
-from typing import Tuple, Dict
-
-from ofrak.resource import Resource
+from typing import Tuple, Dict, Optional
 
 from ofrak.component.modifier import Modifier
 from ofrak.model.component_model import ComponentConfig
+from ofrak.resource import Resource
 
 
 @dataclass
@@ -30,7 +29,15 @@ class RunScriptModifier(Modifier[UserScript]):
         else:
             raise ValueError("No `main` function found in script!")
 
-        from ofrak.ofrak_context import get_current_ofrak_context
+        from ofrak.ofrak_context import get_current_ofrak_context, OFRAKContext
+
+        # expect main function in script to have signature like:
+        # main(ofrak_context: OFRAKContext, <anything>, root_resource: Optional[Resource] = None):
+
+        script_main_signature = inspect.getfullargspec(script_main)
+        assert script_main_signature.annotations[script_main_signature.args[0]] == OFRAKContext
+        assert "root_resource" in script_main_signature.args
+        assert script_main_signature.annotations["root_resource"] == Optional[Resource]
 
         context = get_current_ofrak_context()
 
@@ -38,7 +45,7 @@ class RunScriptModifier(Modifier[UserScript]):
         script_main.__globals__.update(script_locals)
 
         try:
-            await script_main(context, *config.args, **config.kwargs)
+            await script_main(context, *config.args, **config.kwargs, root_resource=resource)
         except:
             raise
 
@@ -46,7 +53,7 @@ class RunScriptModifier(Modifier[UserScript]):
 async def example_usage(oc):
     r = await oc.create_root_resource("any", b"")
 
-    with open("/tmp/tinycore_manual_unpack.py") as f:
+    with open("/transfer/test_script.py") as f:
         code = f.read()
 
     config = UserScript(code, (), {})

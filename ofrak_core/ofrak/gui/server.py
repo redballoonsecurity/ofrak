@@ -232,7 +232,8 @@ class AiohttpOFRAKServer:
             return HTTPBadRequest(reason="Missing root resource `name` from request")
         resource_data = await request.read()
         script_str = rf"""
-        root_resource = await ofrak_context.create_root_resource_from_file("{name}")"""
+        if root_resource is None:
+            root_resource = await ofrak_context.create_root_resource_from_file("{name}")"""
         try:
             root_resource = await self._ofrak_context.create_root_resource(
                 name, resource_data, (File,)
