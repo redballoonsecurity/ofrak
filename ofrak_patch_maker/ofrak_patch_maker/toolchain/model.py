@@ -121,4 +121,4 @@ class ToolchainConfig:
     c_standard: Optional[CStandardVersion] = CStandardVersion.C99
     separate_data_sections: bool = False
     include_subsections: bool = False
-    hard_float: Optional[bool] = False
+    hard_float: bool = False
