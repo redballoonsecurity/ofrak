@@ -787,10 +787,12 @@ class AiohttpOFRAKServer:
             config = None
         else:
             config = self._serializer.from_pjson(await request.json(), config_type)
+
+        config_str = str(config).replace("{", "{{").replace("}", "}}")
         script_str = (
             """
         await {resource}"""
-            f""".run({request.query.get("component")}, {config})"""
+            f""".run({request.query.get("component")}, {config_str})"""
         )
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         try:

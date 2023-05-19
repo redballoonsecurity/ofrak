@@ -20,7 +20,7 @@ class RunScriptModifier(Modifier[UserScript]):
     async def modify(self, resource: Resource, config: UserScript) -> None:
         script_globals = dict()
         script_locals = dict()
-        exec(config.code, script_globals, script_locals)
+        exec(config.code[0][1], script_globals, script_locals)
 
         if "main" in script_globals:
             script_main = script_globals["main"]
