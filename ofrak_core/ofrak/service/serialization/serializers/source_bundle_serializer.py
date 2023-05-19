@@ -36,14 +36,16 @@ class SourceBundleSerializer(SerializerInterface):
         if isinstance(value, SourceBundle):
             return self.obj_to_pjson(value, SourceBundle)
         else:
-            # TODO: Only de/serializing as strings for the GUI SourceBundle inputs, which are
+            # TODO: Only serializing as strings for the GUI SourceBundle inputs, which are
             #  strings, instead of bytes as they should be
-            string_value: str = value.decode("ascii")
+            string_value: str = value.decode("utf-8")
             return self._service.to_pjson(string_value, str)
 
     def _deserialize_value(self, value: Any) -> Union[bytes, SourceBundle]:
         if isinstance(value, str):
+            # TODO: Only deserializing from strings for the GUI SourceBundle inputs, which are
+            #  strings, instead of bytes as they should be
             deserialized_string: str = self._service.from_pjson(value, str)
-            return deserialized_string.encode("ascii")
+            return deserialized_string.encode("utf-8")
         else:
             return self._service.from_pjson(value, SourceBundle)
