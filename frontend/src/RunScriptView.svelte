@@ -53,6 +53,7 @@
   export let modifierView, resourceNodeDataMap;
   let files = null,
     loaded_script = [],
+    target_function = "main",
     errorMessage;
 
   $: if (files) {
@@ -69,7 +70,7 @@
         {
           kwargs: [],
           args: [],
-          function_name: "main",
+          function_name: target_function,
           code: loaded_script.join("\n"),
         }
       );
@@ -106,6 +107,12 @@
 <div class="container">
   <div class="inputs">
     <FileBrowser multiple="{false}" bind:files="{files}" />
+    {#if files}
+      <label>
+        Run function:
+        <input bind:value="{target_function}" />
+      </label>
+    {/if}
   </div>
   <div class="hbox">
     <div class="line-numbers">
