@@ -246,12 +246,11 @@
     {:else if node["type"] == "builtins.str"}
       {#if node["name"] == "code"}
         <FileBrowser multiple="{true}" bind:files="{files}" />
-
       {:else}
-      <label>
-        {nodeName}
-        <input bind:value="{element}" />
-      </label>
+        <label>
+          {nodeName}
+          <input bind:value="{element}" />
+        </label>
       {/if}
 
       <!---->
