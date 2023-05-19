@@ -185,8 +185,7 @@
     node["type"] == "typing.Tuple" ||
     node["type"] == "typing.Dict" ||
     node["type"] == "ofrak.core.patch_maker.modifiers.SourceBundle" ||
-    node["type"] == "typing.Iterable" ||
-    node["name"] == "code"
+    node["type"] == "typing.Iterable"
   ) {
     setArray(_element, skip);
   }
@@ -196,8 +195,7 @@
     node["type"] == "typing.Tuple" ||
     node["type"] == "typing.Dict" ||
     node["type"] == "ofrak.core.patch_maker.modifiers.SourceBundle" ||
-    node["type"] == "typing.Iterable" ||
-    node["name"] == "code"
+    node["type"] == "typing.Iterable"
   ) {
     _element = [];
   } else if (
@@ -244,14 +242,10 @@
 
       <!---->
     {:else if node["type"] == "builtins.str"}
-      {#if node["name"] == "code"}
-        <FileBrowser multiple="{true}" bind:files="{files}" />
-      {:else}
-        <label>
-          {nodeName}
-          <input bind:value="{element}" />
-        </label>
-      {/if}
+      <label>
+        {nodeName}
+        <input bind:value="{element}" />
+      </label>
 
       <!---->
     {:else if node["type"] == "builtins.bytes"}
