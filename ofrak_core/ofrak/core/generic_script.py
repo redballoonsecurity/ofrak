@@ -1,5 +1,5 @@
 import inspect
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Tuple, Dict, Optional
 
 from ofrak.component.modifier import Modifier
@@ -10,8 +10,9 @@ from ofrak.resource import Resource
 @dataclass
 class UserScript(ComponentConfig):
     code: str
-    args: Tuple[str, ...]
-    kwargs: Dict[str, str]
+    function_name: str = "main"
+    args: Tuple[str, ...] = ()
+    kwargs: Dict[str, str] = field(default_factory=dict)
 
 
 class RunScriptModifier(Modifier[UserScript]):
@@ -22,17 +23,17 @@ class RunScriptModifier(Modifier[UserScript]):
         script_locals = dict()
         exec(config.code[0][1], script_globals, script_locals)
 
-        if "main" in script_globals:
-            script_main = script_globals["main"]
-        elif "main" in script_locals:
-            script_main = script_locals["main"]
+        if config.function_name in script_globals:
+            script_main = script_globals[config.function_name]
+        elif config.function_name in script_locals:
+            script_main = script_locals[config.function_name]
         else:
-            raise ValueError("No `main` function found in script!")
+            raise ValueError(f"No `{config.function_name}` function found in script!")
 
         from ofrak.ofrak_context import get_current_ofrak_context, OFRAKContext
 
-        # expect main function in script to have signature like:
-        # main(ofrak_context: OFRAKContext, <anything>, root_resource: Optional[Resource] = None):
+        # expect function in script to have signature like:
+        # foo(ofrak_context: OFRAKContext, <anything>, root_resource: Optional[Resource] = None):
 
         script_main_signature = inspect.getfullargspec(script_main)
         assert script_main_signature.annotations[script_main_signature.args[0]] == OFRAKContext
@@ -45,7 +46,9 @@ class RunScriptModifier(Modifier[UserScript]):
         script_main.__globals__.update(script_locals)
 
         try:
-            await script_main(context, *config.args, **config.kwargs, root_resource=resource)
+            await script_main(
+                ofrak_context=context, *config.args, **config.kwargs, root_resource=resource
+            )
         except:
             raise
 
