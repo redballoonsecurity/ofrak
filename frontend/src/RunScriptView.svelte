@@ -47,18 +47,22 @@
   import hljs from "highlight.js";
   import python from "highlight.js/lib/languages/python";
   import { selected, selectedResource } from "./stores";
+  import { onMount } from "svelte";
+  import LoadingText from "./LoadingText.svelte";
+  import ComponentConfigNode from "./ComponentConfigNode.svelte";
 
   hljs.registerLanguage("python", python);
 
   export let modifierView, resourceNodeDataMap;
   let files = null,
-    loaded_script = [],
-    target_function = "main",
-    errorMessage;
+    loadedScript = [],
+    errorMessage,
+    ofrakConfigsPromise = new Promise(() => {}),
+    scriptParams = {};
 
   $: if (files) {
     files[0].text().then((value) => {
-      loaded_script = value.split("\n");
+      loadedScript = value.split("\n");
     });
   }
 
@@ -66,13 +70,8 @@
     try {
       const results = await $selectedResource.run_component(
         "RunScriptModifier",
-        "ofrak.core.generic_script.UserScript",
-        {
-          kwargs: [],
-          args: [],
-          function_name: target_function,
-          code: loaded_script.join("\n"),
-        }
+        "ofrak.core.generic_script.RunScriptModifierConfig",
+        Object.assign({ code: loadedScript.join("\n") }, scriptParams)
       );
       resourceNodeDataMap[$selected] = {
         collapsed: false,
@@ -100,6 +99,19 @@
       }
     }
   }
+
+  onMount(async () => {
+    try {
+      ofrakConfigsPromise =
+        $selectedResource.get_config_for_component("RunScriptModifier");
+    } catch (err) {
+      try {
+        errorMessage = `Error: ${JSON.parse(err.message).message}`;
+      } catch (_) {
+        errorMessage = `Error: ${err.message}`;
+      }
+    }
+  });
 </script>
 
 <link rel="stylesheet" href="./code.css" />
@@ -107,16 +119,27 @@
 <div class="container">
   <div class="inputs">
     <FileBrowser multiple="{false}" bind:files="{files}" />
-    {#if files}
-      <label>
-        Run function:
-        <input bind:value="{target_function}" />
-      </label>
-    {/if}
+    {#await ofrakConfigsPromise}
+      <LoadingText />
+    {:then ofrakConfig}
+      {#if ofrakConfig.length != 0}
+        {#each ofrakConfig["fields"] as field, i}
+          {#if field.name != "code"}
+            <ComponentConfigNode
+              node="{field}"
+              bind:element="{scriptParams[field.name]}"
+            />
+          {/if}
+        {/each}
+      {/if}
+    {:catch}
+      <p>Failed to get config for RunScriptModifier!</p>
+      <p>The back end server may be down.</p>
+    {/await}
   </div>
   <div class="hbox">
     <div class="line-numbers">
-      {#each loaded_script as _, index}
+      {#each loadedScript as _, index}
         <div>{index + 1}</div>
       {/each}
     </div>
@@ -125,7 +148,7 @@
 
     <div class="textarea">
       <code>
-        {@html hljs.highlight(loaded_script.join("\n"), {
+        {@html hljs.highlight(loadedScript.join("\n"), {
           language: "python",
         }).value}
       </code>

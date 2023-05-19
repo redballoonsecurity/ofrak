@@ -1,26 +1,43 @@
-import inspect
 from dataclasses import dataclass, field
-from typing import Tuple, Dict, Optional
+from typing import Any, Dict, Union
 
 from ofrak.component.modifier import Modifier
 from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
 
+_PrimitiveType = Union[int, bool, str, float, bytes]
+
 
 @dataclass
-class UserScript(ComponentConfig):
+class RunScriptModifierConfig(ComponentConfig):
+    """
+    Specification of some Python code to run in the current OFRAK context. Useful for reusing quick
+    helper functions and the like.
+
+    :ivar code: Python source code defining one or more function which take an OFRAKContext and
+    Resource as arguments.
+    :ivar function_name: Name of the function to run.
+    :ivar extra_args: Extra arguments to pass to the function in key-value form.
+    """
+
     code: str
     function_name: str = "main"
-    args: Tuple[str, ...] = ()
-    kwargs: Dict[str, str] = field(default_factory=dict)
+    extra_args: Dict[str, _PrimitiveType] = field(default_factory=dict)
 
 
-class RunScriptModifier(Modifier[UserScript]):
+class RunScriptModifier(Modifier[RunScriptModifierConfig]):
+    """
+    "Import" and run Python functions in the current OFRAK context. Useful for reusing quick
+    helper functions and the like. Since this can be run through the GUI, it can be used to
+    automate tasks which might be repetitive or impossible purely through the graphical interface.
+
+    """
+
     targets = ()
 
-    async def modify(self, resource: Resource, config: UserScript) -> None:
-        script_globals = dict()
-        script_locals = dict()
+    async def modify(self, resource: Resource, config: RunScriptModifierConfig) -> None:
+        script_globals: Dict[str, Any] = dict()
+        script_locals: Dict[str, Any] = dict()
         exec(config.code, script_globals, script_locals)
 
         if config.function_name in script_globals:
@@ -30,37 +47,17 @@ class RunScriptModifier(Modifier[UserScript]):
         else:
             raise ValueError(f"No `{config.function_name}` function found in script!")
 
-        from ofrak.ofrak_context import get_current_ofrak_context, OFRAKContext
-
-        # expect function in script to have signature like:
-        # foo(ofrak_context: OFRAKContext, <anything>, root_resource: Optional[Resource] = None):
-
-        script_main_signature = inspect.getfullargspec(script_main)
-        assert script_main_signature.annotations[script_main_signature.args[0]] == OFRAKContext
-        assert "root_resource" in script_main_signature.args
-        assert script_main_signature.annotations["root_resource"] == Optional[Resource]
+        from ofrak.ofrak_context import get_current_ofrak_context
 
         context = get_current_ofrak_context()
 
         script_main.__globals__.update(script_globals)
         script_main.__globals__.update(script_locals)
 
-        try:
-            await script_main(
-                ofrak_context=context, *config.args, **config.kwargs, root_resource=resource
-            )
-        except:
-            raise
+        full_kwargs: Dict[str, Any] = {
+            "ofrak_context": context,
+            "root_resource": resource,
+        }
+        full_kwargs.update(config.extra_args)
 
-
-async def example_usage(oc):
-    r = await oc.create_root_resource("any", b"")
-
-    with open("/transfer/test_script.py") as f:
-        code = f.read()
-
-    config = UserScript(code, (), {})
-    await r.run(
-        RunScriptModifier,
-        config,
-    )
+        await script_main(**full_kwargs)
