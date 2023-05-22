@@ -75,3 +75,6 @@ RUN apt-get update && apt-get install -y gcc-avr binutils-avr avr-libc
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
     apt-get update && apt-get install -y gcc-10-powerpc-linux-gnu; \
 fi;
+
+#MIPS 10 GNU
+apt-get update && apt-get install -y gcc-10-mips-linux-gnu
