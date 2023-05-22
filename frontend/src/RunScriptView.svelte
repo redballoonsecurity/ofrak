@@ -18,6 +18,10 @@
       inset -2px -2px 0 var(--main-fg-color);
   }
 
+  .inputs > *:nth-child(1) {
+    margin: 0 0 1em -1em;
+  }
+
   .hbox {
     display: flex;
     flex-direction: row;
@@ -26,6 +30,30 @@
     align-items: stretch;
     line-height: var(--line-height);
     font-size: 0.95em;
+    height: 16em;
+    width: 100%;
+    overflow: auto;
+    flex-grow: 1;
+    margin: 1em 0;
+  }
+
+  .container {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: flex-start;
+    min-height: 100%;
+  }
+
+  .actions {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-evenly;
+    align-items: flex-start;
+    align-content: flex-start;
+    width: 100%;
   }
 
   .spacer {
@@ -44,17 +72,21 @@
 
 <script>
   import FileBrowser from "./FileBrowser.svelte";
-  import hljs from "highlight.js";
-  import python from "highlight.js/lib/languages/python";
-  import { selected, selectedResource } from "./stores";
-  import { onMount } from "svelte";
   import LoadingText from "./LoadingText.svelte";
   import ComponentConfigNode from "./ComponentConfigNode.svelte";
+  import Icon from "./Icon.svelte";
+
+  import hljs from "highlight.js";
+  import python from "highlight.js/lib/languages/python";
+
+  import { selected, selectedResource } from "./stores";
+  import { onMount } from "svelte";
 
   hljs.registerLanguage("python", python);
 
   export let modifierView, resourceNodeDataMap;
-  let files = null,
+  let runScriptPromise,
+    files = null,
     loadedScript = [],
     errorMessage,
     ofrakConfigsPromise = new Promise(() => {}),
@@ -97,6 +129,7 @@
       } catch (_) {
         errorMessage = `Error: ${err.message}`;
       }
+      throw err;
     }
   }
 
@@ -118,7 +151,9 @@
 
 <div class="container">
   <div class="inputs">
-    <FileBrowser multiple="{false}" bind:files="{files}" />
+    <div>
+      <FileBrowser multiple="{false}" bind:files="{files}" />
+    </div>
     {#await ofrakConfigsPromise}
       <LoadingText />
     {:then ofrakConfig}
@@ -153,15 +188,24 @@
         }).value}
       </code>
     </div>
-    {#if errorMessage}
-      <p class="error">
-        Error:
-        {errorMessage}
-      </p>
-    {/if}
   </div>
+  {#if errorMessage}
+    <p class="error">
+      Error:
+      {errorMessage}
+    </p>
+  {/if}
   <div class="actions">
-    <button on:click="{runLoadedScript}"> Run script </button>
+    <button on:click="{() => (runScriptPromise = runLoadedScript())}">
+      {#await runScriptPromise}
+        <Icon url="/icons/loading.svg" />
+      {:then _}
+        <!---->
+      {:catch}
+        <Icon url="/icons/error.svg" />
+      {/await}
+      Run script
+    </button>
     <button on:click="{() => (modifierView = undefined)}">Cancel</button>
   </div>
 </div>
