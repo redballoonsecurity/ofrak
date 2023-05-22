@@ -34,7 +34,9 @@
   import AudioPlayer from "./AudioPlayer.svelte";
   import ByteclassView from "./ByteclassView.svelte";
   import CarouselSelector from "./CarouselSelector.svelte";
+  import ComponentsView from "./ComponentsView.svelte";
   import EntropyView from "./EntropyView.svelte";
+  import FindReplaceView from "./FindReplaceView.svelte";
   import HexView from "./HexView.svelte";
   import JumpToOffset from "./JumpToOffset.svelte";
   import LoadingAnimation from "./LoadingAnimation.svelte";
@@ -110,9 +112,12 @@
 
   function handleShortcut(e) {
     // Don't handle keypresses from within text inputs.
+    // Disable shortcuts in views with text inputs, otherwise misclicking outside of a text area may
+    // cause users to accidentally run shortcuts.
     if (
       ["input", "textarea"].includes(e.target?.tagName.toLocaleLowerCase()) ||
-      e.target.isContentEditable
+      e.target.isContentEditable ||
+      modifierView
     ) {
       return;
     }

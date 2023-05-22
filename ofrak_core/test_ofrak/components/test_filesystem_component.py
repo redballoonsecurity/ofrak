@@ -81,7 +81,6 @@ class TestFilesystemRoot:
         Test that FilesystemRoot.initialize_from_disk modifies a resources tree summary.
         """
         with FilesystemRootDirectory() as temp_dir:
-
             resource = await ofrak_context.create_root_resource(
                 name=temp_dir, data=b"", tags=[FilesystemRoot]
             )

@@ -89,7 +89,6 @@ class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProjec
     async def analyze(
         self, resource: Resource, config: Optional[GhidraProjectConfig] = None
     ) -> GhidraProject:
-
         # TODO: allow multiple headless server instances
         os.system("pkill -if analyzeHeadless")
         if config is not None:

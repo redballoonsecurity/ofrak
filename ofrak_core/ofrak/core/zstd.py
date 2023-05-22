@@ -8,7 +8,7 @@ from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.core.binary import GenericBinary
 from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
-from ofrak.model.component_model import CC, ComponentConfig, ComponentExternalTool
+from ofrak.model.component_model import ComponentConfig, ComponentExternalTool
 from ofrak.resource import Resource
 from ofrak_type.range import Range
 
@@ -41,7 +41,7 @@ class ZstdUnpacker(Unpacker[None]):
     children = (GenericBinary,)
     external_dependencies = (ZSTD,)
 
-    async def unpack(self, resource: Resource, config: CC) -> None:
+    async def unpack(self, resource: Resource, config: ComponentConfig = None) -> None:
         with tempfile.NamedTemporaryFile(suffix=".zstd") as compressed_file:
             compressed_file.write(await resource.get_data())
             compressed_file.flush()
