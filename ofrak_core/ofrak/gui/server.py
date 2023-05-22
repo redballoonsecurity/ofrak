@@ -3,7 +3,6 @@ import dataclasses
 from enum import Enum
 import functools
 import itertools
-import json
 import logging
 
 import typing_inspect
@@ -38,6 +37,12 @@ from aiohttp.web_fileresponse import FileResponse
 from dataclasses import fields
 
 from ofrak.component.interface import ComponentInterface
+from ofrak.model.component_filters import (
+    ComponentOrMetaFilter,
+    ComponentTypeFilter,
+    ComponentTargetFilter,
+    ComponentAndMetaFilter,
+)
 from ofrak.ofrak_context import get_current_ofrak_context
 from ofrak_patch_maker.toolchain.abstract import Toolchain
 from ofrak_type.error import NotFoundError
@@ -87,7 +92,6 @@ from ofrak.service.serialization.pjson import (
 from ofrak.gui.script_builder import ActionType, ScriptBuilder
 from ofrak.service.serialization.pjson_types import PJSONType
 from ofrak.core.entropy import DataSummaryAnalyzer
-from ofrak.cli.ofrak_cli import OFRAKEnvironment
 
 T = TypeVar("T")
 LOGGER = logging.getLogger(__name__)
@@ -139,7 +143,6 @@ class AiohttpOFRAKServer:
         self.resource_view_context: ResourceViewContext = ResourceViewContext()
         self.component_context: ComponentContext = ClientComponentContext()
         self.script_builder: ScriptBuilder = ScriptBuilder()
-        self.env = OFRAKEnvironment()
         self._app.add_routes(
             [
                 web.post("/create_root_resource", self.create_root_resource),
@@ -199,6 +202,8 @@ class AiohttpOFRAKServer:
         self._job_ids: Dict[str, bytes] = defaultdict(
             lambda: ofrak_context.id_service.generate_id()
         )
+        self._all_tags: Dict[str, ResourceTag] = {tag.__name__: tag for tag in ResourceTag.all_tags}
+
         if enable_cors:
             try:
                 import aiohttp_cors  # type: ignore
@@ -686,7 +691,7 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def get_all_tags(self, request: Request) -> Response:
         return json_response(
-            self._serializer.to_pjson(self._ofrak_context.get_all_tags(), Set[ResourceTag])
+            self._serializer.to_pjson(set(self._all_tags.values()), Set[ResourceTag])
         )
 
     @exceptions_to_http(SerializedError)
@@ -735,8 +740,10 @@ class AiohttpOFRAKServer:
     async def get_config_for_component(self, request: Request) -> Response:
         component_string = request.query.get("component")
         if component_string is not None:
-            component = self.env.components[component_string]
-            config = self._get_config_for_component(component)
+            component = self._ofrak_context.component_locator.get_by_id(
+                component_string.encode("ascii")
+            )
+            config = self._get_config_for_component(type(component))
         else:
             return json_response([])
         if (
@@ -778,7 +785,9 @@ class AiohttpOFRAKServer:
         resource: Resource = await self._get_resource_for_request(request)
         component_string = request.query.get("component")
         if component_string is not None:
-            component = self.env.components[component_string]
+            component = self._ofrak_context.component_locator.get_by_id(
+                component_string.encode("ascii")
+            )
             config_type = self._get_config_for_component(component)
         else:
             return json_response([])
@@ -815,7 +824,7 @@ class AiohttpOFRAKServer:
         incl_unpackers = options["unpackers"]
         all_resource_tags: Set[Tuple[str, int]] = set()
         for specific_tag in resource.get_most_specific_tags():
-            for tag in inspect.getmro(specific_tag):
+            for tag in specific_tag.tag_classes():
                 components = self._get_specific_components(
                     resource,
                     only_target,
@@ -948,6 +957,8 @@ class AiohttpOFRAKServer:
     ) -> List[str]:
         selected_components = []
         tags = resource.get_tags()
+        if show_all_components and len(set(tags)) == 0:
+            return []
 
         requested_components = [incl_analyzers, incl_modifiers, incl_packers, incl_unpackers]
         all_categories = (Analyzer, Modifier, Packer, Unpacker)
@@ -956,21 +967,24 @@ class AiohttpOFRAKServer:
         else:
             categories = all_categories
 
-        for component_name, component in self.env.components.items():
-            if issubclass(component, categories):
-                if (
-                    # mypy does not see CC.targets as iterable
-                    len([tag for tag in tags if show_all_components or tag in component.targets])  # type: ignore
-                    > 0
-                ):
-                    if (
-                        show_all_components
-                        or target_filter is None
-                        or target_filter in [target.__qualname__ for target in component.targets]  # type: ignore
-                    ):
-                        # TODO: Get Angr components to work in gui
-                        if "Angr" not in component_name:
-                            selected_components.append(component_name)
+        component_filters = [
+            ComponentOrMetaFilter(*(ComponentTypeFilter(cat) for cat in categories)),
+        ]
+        if not show_all_components:
+            component_filters.append(ComponentTargetFilter(*tags))
+            if target_filter is not None:
+                component_filters.append(ComponentTargetFilter(self._all_tags[target_filter]))
+
+        for component in self._ofrak_context.component_locator.get_components_matching_filter(
+            ComponentAndMetaFilter(*component_filters)
+        ):
+            if type(component).__name__ != component.get_id().decode("ascii"):
+                # TODO: The server lookups for these components won't work yet
+                continue
+            if type(component).__name__ == "AngrAnalyzer":
+                # TODO: The config for this includes some angr types and can't be serialized
+                continue
+            selected_components.append(type(component).__name__)
 
         return selected_components
 
