@@ -144,7 +144,7 @@ class CapstoneInstructionRegisterUsageAnalyzer(InstructionRegisterUsageAnalyzer)
         super().__init__(resource_factory, data_service, resource_service)
         self._disassembler_service = disassembler_service
 
-    async def analyze(self, resource: Resource, config: ComponentConfig = None) -> RegisterUsage:
+    async def analyze(self, resource: Resource, config: Optional[ComponentConfig] = None) -> RegisterUsage:
         program_attrs = await resource.analyze(ProgramAttributes)
 
         instruction = await resource.view_as(Instruction)
