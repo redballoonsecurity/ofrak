@@ -23,10 +23,13 @@ OFRAK_INSTALL_PYTHON=python3
 
 .PHONY: install_tutorial install_core install_develop
 install_tutorial:
+	$(OFRAK_INSTALL_PYTHON) -m pip install pyyaml
 	$(OFRAK_INSTALL_PYTHON) install.py --config ofrak-tutorial.yml --target install
 
 install_core:
+	$(OFRAK_INSTALL_PYTHON) -m pip install pyyaml
 	$(OFRAK_INSTALL_PYTHON) install.py --config ofrak-core-dev.yml --target install
 
 install_develop:
+	$(OFRAK_INSTALL_PYTHON) -m pip install pyyaml
 	$(OFRAK_INSTALL_PYTHON) install.py --config ofrak-dev.yml --target develop
