@@ -3,8 +3,8 @@ import logging
 from typing import Iterable, Tuple, List
 from typing import Optional
 from warnings import warn
+from ofrak.component.abstract import ComponentMissingDependencyError
 
-from binaryninja import BinaryView, Endianness, TypeClass
 from ofrak_type.architecture import InstructionSetMode
 from ofrak_type.range import Range
 
@@ -17,8 +17,14 @@ from ofrak.core.program import Program
 from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter
+from ofrak_binary_ninja.components.binary_ninja_analyzer import BINJA_INSTALLED, BINJA_TOOL
 from ofrak_binary_ninja.components.identifiers import BinaryNinjaAnalysisResource
 from ofrak_binary_ninja.model import BinaryNinjaAnalysis
+
+if BINJA_INSTALLED:
+    from binaryninja import BinaryView, Endianness, TypeClass
+else:
+    BinaryView=None
 
 LOGGER = logging.getLogger(__name__)
 
@@ -27,7 +33,11 @@ MAX_GAP_BETWEEN_FUNC_ADDRESS_RANGE = 0x20
 
 
 class BinaryNinjaCodeRegionUnpacker(CodeRegionUnpacker):
+    external_dependencies = (BINJA_TOOL,)
+
     async def unpack(self, resource: Resource, config=None):
+        if not BINJA_INSTALLED:
+            raise ComponentMissingDependencyError(self, BINJA_TOOL)
         region_view = await resource.view_as(CodeRegion)
         program_r = await region_view.resource.get_only_ancestor_as_view(
             Program, ResourceFilter.with_tags(Program)
@@ -148,6 +158,8 @@ class BinaryNinjaCodeRegionUnpacker(CodeRegionUnpacker):
 
 
 class BinaryNinjaComplexBlockUnpacker(ComplexBlockUnpacker):
+    external_dependencies = (BINJA_TOOL,)
+
     async def unpack(self, resource: Resource, config: Optional[ComponentConfig] = None):
         cb_view = await resource.view_as(ComplexBlock)
         program_r = await cb_view.resource.get_only_ancestor_as_view(

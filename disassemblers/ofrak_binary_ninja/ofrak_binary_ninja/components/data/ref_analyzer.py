@@ -2,11 +2,14 @@ import logging
 from collections import defaultdict
 from typing import DefaultDict, Iterable, List, Tuple
 
-from binaryninja import BinaryView
+try:
+    from binaryninja.binaryview import BinaryView
+except ImportError:
+    BinaryView = None
 
 from ofrak.core.data import ReferencedDataAttributes
 from ofrak.core.program import ReferencedDataAnalyzer
-from ofrak_binary_ninja.components.binary_ninja_analyzer import BinaryNinjaAnalyzer
+from ofrak_binary_ninja.components.binary_ninja_analyzer import BINJA_TOOL, BinaryNinjaAnalyzer
 from ofrak_binary_ninja.model import BinaryNinjaAnalysis
 
 from ofrak.resource import Resource
@@ -18,6 +21,7 @@ class BinaryNinjaReferencedDataAnalyzer(ReferencedDataAnalyzer):
     """
     Analyzer to get all data references in the program
     """
+    external_dependencies = (BINJA_TOOL,)
 
     async def analyze(self, resource: Resource, config=None) -> Tuple[ReferencedDataAttributes]:
         if not resource.has_attributes(BinaryNinjaAnalysis):

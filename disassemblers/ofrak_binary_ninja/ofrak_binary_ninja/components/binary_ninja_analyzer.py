@@ -2,17 +2,38 @@ import logging
 import tempfile
 from dataclasses import dataclass
 from typing import Optional, List
+from ofrak.component.abstract import ComponentMissingDependencyError
 
-from binaryninja import open_view, BinaryViewType
+try:
+    from binaryninja import open_view, BinaryViewType
+
+    BINJA_INSTALLED = True
+except ImportError:
+    BINJA_INSTALLED = False
 
 from ofrak.component.analyzer import Analyzer
-from ofrak.model.component_model import ComponentConfig
+from ofrak.model.component_model import ComponentConfig, ComponentExternalTool
 from ofrak.model.resource_model import ResourceAttributeDependency
 from ofrak_binary_ninja.components.identifiers import BinaryNinjaAnalysisResource
 from ofrak_binary_ninja.model import BinaryNinjaAnalysis
 from ofrak.resource import Resource
 
 LOGGER = logging.getLogger(__file__)
+
+
+class _BinjaExternalTool(ComponentExternalTool):
+    def __init__(self):
+        super().__init__(
+            "binary_ninja",
+            "https://ofrak.com/docs/user-guide/disassembler-backends/binary_ninja.html",
+            install_check_arg="",
+        )
+
+    async def is_tool_installed(self) -> bool:
+        return BINJA_INSTALLED
+
+
+BINJA_TOOL = _BinjaExternalTool()
 
 
 @dataclass
@@ -24,10 +45,13 @@ class BinaryNinjaAnalyzer(Analyzer[Optional[BinaryNinjaAnalyzerConfig], BinaryNi
     id = b"BinaryNinjaAnalyzer"
     targets = (BinaryNinjaAnalysisResource,)
     outputs = (BinaryNinjaAnalysis,)
+    external_dependencies = (BINJA_TOOL,)
 
     async def analyze(
         self, resource: Resource, config: Optional[BinaryNinjaAnalyzerConfig] = None
     ) -> BinaryNinjaAnalysis:
+        if not BINJA_INSTALLED:
+            raise ComponentMissingDependencyError(self, BINJA_TOOL)
         if not config:
             resource_data = await resource.get_data()
             temp_file = tempfile.NamedTemporaryFile()

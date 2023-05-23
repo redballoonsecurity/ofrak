@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 
-from binaryninja.binaryview import BinaryView
+try:
+    from binaryninja.binaryview import BinaryView
+except ImportError:
+    BinaryView = None
 from ofrak.model.resource_model import ResourceAttributes
 
 
