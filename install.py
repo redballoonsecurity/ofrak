@@ -7,7 +7,6 @@ import argparse
 import os
 import subprocess
 import sys
-import pkg_resources
 import yaml
 import shutil
 
