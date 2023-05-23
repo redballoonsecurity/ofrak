@@ -1,5 +1,7 @@
 import { Resource } from "./resource";
-import { backendUrl, script } from "../stores";
+import { settings, script } from "../stores";
+
+import { get } from "svelte/store";
 
 let batchQueues = {};
 
@@ -16,13 +18,16 @@ function createQueue(route, maxlen) {
         queue.requests = [];
       }
 
-      const result_models = await fetch(`${backendUrl}/batch/${route}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requests),
-      }).then(async (r) => {
+      const result_models = await fetch(
+        `${get(settings).backendUrl}/batch/${route}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requests),
+        }
+      ).then(async (r) => {
         if (!r.ok) {
           throw Error(JSON.stringify(await r.json(), undefined, 2));
         }
@@ -83,13 +88,14 @@ export class RemoteResource extends Resource {
     super(resource_id, data_id, parent_id, tags, caption, attributes);
 
     this.resource_list = resource_list;
-    this.uri = `${backendUrl}/${this.resource_id}`;
+    this.uri = `${get(settings).backendUrl}/${this.resource_id}`;
     this.cache = {
       get_children: undefined,
       get_data_range_within_parent: undefined,
       get_child_data_ranges: undefined,
       get_data: undefined,
       get_ancestors: undefined,
+      get_descendants: undefined,
     };
   }
 
@@ -315,6 +321,24 @@ export class RemoteResource extends Resource {
     return this.cache["get_ancestors"];
   }
 
+  async get_descendants() {
+    if (this.cache["get_descendants"]) {
+      return this.cache["get_descendants"];
+    }
+
+    const descendant_models = await fetch(`${this.uri}/get_descendants`).then(
+      async (r) => {
+        if (!r.ok) {
+          throw Error(JSON.stringify(await r.json(), undefined, 2));
+        }
+        return r.json();
+      }
+    );
+    this.cache["get_descendants"] =
+      remote_models_to_resources(descendant_models);
+    return this.cache["get_descendants"];
+  }
+
   async queue_patch(data, start, end, after, before) {
     // TODO: Implement after and before
 
@@ -395,6 +419,7 @@ export class RemoteResource extends Resource {
     this.update();
 
     await this.update_script();
+    return find_replace_results;
   }
 
   async add_comment(optional_range, comment) {
@@ -500,6 +525,101 @@ export class RemoteResource extends Resource {
       }
       await this.update_script();
     });
+  }
+
+  async get_tags_and_num_components(
+    target,
+    analyzers,
+    modifiers,
+    packers,
+    unpackers
+  ) {
+    return await fetch(`${this.uri}/get_tags_and_num_components`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        target: target,
+        analyzers: analyzers,
+        modifiers: modifiers,
+        packers: packers,
+        unpackers: unpackers,
+      }),
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return await r.json();
+    });
+  }
+
+  async get_components(
+    show_all_components,
+    targetFilter,
+    analyzers,
+    modifiers,
+    packers,
+    unpackers
+  ) {
+    return await fetch(`${this.uri}/get_components`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        show_all_components: show_all_components,
+        target_filter: targetFilter,
+        analyzers: analyzers,
+        modifiers: modifiers,
+        packers: packers,
+        unpackers: unpackers,
+      }),
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return await r.json();
+    });
+  }
+
+  async get_config_for_component(component) {
+    return await fetch(
+      `${this.uri}/get_config_for_component?component=${component}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    ).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return await r.json();
+    });
+  }
+
+  async run_component(component, configtype, response) {
+    const result = await fetch(
+      `${this.uri}/run_component?component=${component}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify([configtype, response]),
+      }
+    ).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return await r.json();
+    });
+    ingest_component_results(result, this.resource_list);
+    this.flush_cache();
+    this.update();
+    await this.update_script();
   }
 }
 

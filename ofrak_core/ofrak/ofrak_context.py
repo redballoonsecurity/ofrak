@@ -6,6 +6,8 @@ import time
 from types import ModuleType
 from typing import Type, Any, Awaitable, Callable, List, Iterable, Optional
 
+import ofrak_patch_maker
+
 from ofrak_type import InvalidStateError
 from synthol.injector import DependencyInjector
 
@@ -101,10 +103,6 @@ class OFRAKContext:
         await asyncio.gather(*(service.shutdown() for service in self._all_ofrak_services))
         logging.shutdown()
 
-    def get_all_tags(self) -> Iterable[ResourceTag]:
-        all_tags = ResourceTag.all_tags
-        return all_tags
-
 
 class OFRAK:
     DEFAULT_LOG_LEVEL = logging.WARNING
@@ -191,6 +189,7 @@ class OFRAK:
         import ofrak
 
         self.discover(ofrak)
+        self.discover(ofrak_patch_maker)
 
         if self._id_service:
             self.injector.bind_instance(self._id_service)

@@ -81,10 +81,6 @@
   .clickable {
     cursor: pointer;
   }
-
-  .underline {
-    text-decoration: underline;
-  }
 </style>
 
 <script>
@@ -94,7 +90,7 @@
   import TextDivider from "./TextDivider.svelte";
 
   import { animals } from "./animals.js";
-  import { selected, backendUrl } from "./stores.js";
+  import { selected, settings } from "./stores.js";
   import { remote_model_to_resource } from "./ofrak/remote_resource";
 
   import { onMount } from "svelte";
@@ -128,7 +124,7 @@
     }
 
     const rootModel = await fetch(
-      `${backendUrl}/create_root_resource?name=${f.name}`,
+      `${$settings.backendUrl}/create_root_resource?name=${f.name}`,
       {
         method: "POST",
         body: await f.arrayBuffer(),
@@ -171,7 +167,19 @@
   }
 
   async function getResourcesFromHash(resourceId) {
-    const root = await fetch(`${backendUrl}/${resourceId}/get_root`).then(
+    const root = await fetch(
+      `${$settings.backendUrl}/${resourceId}/get_root`
+    ).then((r) => {
+      if (!r.ok) {
+        throw Error(r.statusText);
+      }
+      return r.json();
+    });
+
+    rootResource = remote_model_to_resource(root, resources);
+    $selected = root.id;
+
+    let resource = await fetch(`${$settings.backendUrl}/${resourceId}/`).then(
       (r) => {
         if (!r.ok) {
           throw Error(r.statusText);
@@ -179,30 +187,20 @@
         return r.json();
       }
     );
-
-    rootResource = remote_model_to_resource(root, resources);
-    $selected = root.id;
-
-    let resource = await fetch(`${backendUrl}/${resourceId}/`).then((r) => {
-      if (!r.ok) {
-        throw Error(r.statusText);
-      }
-      return r.json();
-    });
     resources[resource.id] = remote_model_to_resource(resource, resources);
     if (resourceNodeDataMap[resource.id] === undefined) {
       resourceNodeDataMap[resource.id] = {};
     }
     resourceNodeDataMap[resource.id].collapsed = false;
     while (resource.parent_id) {
-      resource = await fetch(`${backendUrl}/${resource.parent_id}/`).then(
-        (r) => {
-          if (!r.ok) {
-            throw Error(r.statusText);
-          }
-          return r.json();
+      resource = await fetch(
+        `${$settings.backendUrl}/${resource.parent_id}/`
+      ).then((r) => {
+        if (!r.ok) {
+          throw Error(r.statusText);
         }
-      );
+        return r.json();
+      });
       resources[resource.id] = remote_model_to_resource(resource, resources);
 
       if (resourceNodeDataMap[resource.id] === undefined) {
@@ -226,7 +224,7 @@
 
   onMount(async () => {
     preExistingRootsPromise = await fetch(
-      `${backendUrl}/get_root_resources`
+      `${$settings.backendUrl}/get_root_resources`
     ).then((r) => r.json());
   });
 </script>

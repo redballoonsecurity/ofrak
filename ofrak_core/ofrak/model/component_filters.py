@@ -66,7 +66,6 @@ class ComponentTargetFilter(ComponentFilter):
         return f"ComponentTargetFilter({', '.join(t.__name__ for t in self.tags)})"
 
     def filter(self, components: Set[ComponentInterface]) -> Set[ComponentInterface]:
-
         return {c for c in components if any(t in c.targets for t in self.tags)}
 
 

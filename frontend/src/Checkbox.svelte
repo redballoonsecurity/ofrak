@@ -1,6 +1,5 @@
 <style>
   label {
-    margin-left: 1em;
     margin-right: 1em;
     display: inline-flex;
     flex-direction: row;
@@ -27,6 +26,11 @@
     box-sizing: content-box;
   }
 
+  label input[type="checkbox"].leftbox + span {
+    margin-left: 0;
+    margin-right: 2ch;
+  }
+
   label input[type="checkbox"]:checked + span::after {
     content: "";
     display: block;
@@ -38,16 +42,34 @@
     background: var(--main-fg-color);
     border: none;
   }
+
+  label input[type="checkbox"].leftbox + span {
+    margin-left: 0;
+    margin-right: 2ch;
+  }
+
+  .nomargin {
+    margin: 0;
+  }
 </style>
 
 <script>
-  export let checked, value;
+  export let checked,
+    value,
+    leftbox = false,
+    nomargin = false;
 
   $: value = checked;
 </script>
 
-<label>
+<label class:nomargin="{nomargin}">
+  {#if leftbox}
+    <input class:leftbox="{leftbox}" type="checkbox" bind:checked="{checked}" />
+    <span></span>
+  {/if}
   <slot />
-  <input type="checkbox" bind:checked="{checked}" />
-  <span></span>
+  {#if !leftbox}
+    <input type="checkbox" bind:checked="{checked}" />
+    <span></span>
+  {/if}
 </label>
