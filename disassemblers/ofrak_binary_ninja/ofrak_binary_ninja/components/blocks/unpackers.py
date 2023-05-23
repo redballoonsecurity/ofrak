@@ -24,7 +24,7 @@ from ofrak_binary_ninja.model import BinaryNinjaAnalysis
 if BINJA_INSTALLED:
     from binaryninja import BinaryView, Endianness, TypeClass
 else:
-    BinaryView=None
+    BinaryView = None
 
 LOGGER = logging.getLogger(__name__)
 

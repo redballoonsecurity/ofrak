@@ -21,6 +21,7 @@ class BinaryNinjaReferencedDataAnalyzer(ReferencedDataAnalyzer):
     """
     Analyzer to get all data references in the program
     """
+
     external_dependencies = (BINJA_TOOL,)
 
     async def analyze(self, resource: Resource, config=None) -> Tuple[ReferencedDataAttributes]:
