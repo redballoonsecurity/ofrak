@@ -241,6 +241,7 @@
           bottomLeftPane = ScriptView;
         },
       },
+
       {
         text: "Run Script",
         iconUrl: "/icons/settings.svg",
@@ -248,6 +249,7 @@
           modifierView = RunScriptView;
         },
       },
+      
       {
         text: "Settings",
         iconUrl: "/icons/settings.svg",
