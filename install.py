@@ -46,7 +46,7 @@ def main():
             "development environment " if config.install_target == InstallTarget.DEVELOP else ""
         )
         print(
-            f"*** Installing OFRAK {install_type} for {config.python_command} from: "
+            f"*** Installing OFRAK {install_type}for {config.python_command} from: "
             f"{', '.join(config.packages_paths)}."
         )
     for package_path in config.packages_paths:
