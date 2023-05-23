@@ -261,20 +261,26 @@ def _get_bb_exit_addr_info(
     fallthrough_vaddr = get_real_address_if_arm(
         angr_analysis.project.arch, angr_cb_basic_blocks[current_bb_idx + 1].addr
     )
-    successors_generator = angr_complex_block.graph.succ.get(current_angr_bb.codenode)
-
-    if successors_generator is None:
+    try:
+        successor_vaddrs = [
+            get_real_address_if_arm(angr_analysis.project.arch, succ_codenode.addr)
+            for succ_codenode, edge_info in angr_complex_block.graph.succ[
+                current_angr_bb.codenode
+            ].items()
+        ]
+    except KeyError:
         LOGGER.warning(
-            f"angr did not find any successors for BB 0x{current_angr_bb.addr:x}, but since it has a BB after it, assuming that it still can fallthrough to the next BB."
+            f"Cannot find any successors in angr for BB 0x{current_angr_bb.addr:x}, but since it "
+            f"has a BB after it, assume that it still falls through to the next BB."
         )
         return True, fallthrough_vaddr
 
-    successor_vaddrs = [
-        get_real_address_if_arm(angr_analysis.project.arch, succ_codenode.addr)
-        for succ_codenode, edge_info in successors_generator.items()
-    ]
-
     if fallthrough_vaddr in successor_vaddrs:
+        # Basic block can fall through to next block, so the next block should be the exit addr
         return False, fallthrough_vaddr
     else:
+        # Basic block can't fall through to next block, choose first succ as exit addr
+        # For example: basic block ends in unconditional one-way branch (not a call)
+        # If there are somehow multiple successors and the fallthrough block is not one of them,
+        # choosing the first succ as the exit addr is arbitrary, but better choice is unclear.
         return False, successor_vaddrs[0]
