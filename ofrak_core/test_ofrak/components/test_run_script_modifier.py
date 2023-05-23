@@ -23,7 +23,9 @@ async def test_run_script_modifier(ofrak_context, hello_world_elf):
     original_machine = header.e_machine
     await header.resource.run(ElfHeaderModifier, ElfHeaderModifierConfig(e_machine=0x20))
 
-    await root_2.run(RunScriptModifier, RunScriptModifierConfig(SCRIPT, "part_2"))
+    await root_2.run(
+        RunScriptModifier, RunScriptModifierConfig(SCRIPT, "part_2", extra_args={"e_machine": 0x20})
+    )
 
     elf_2 = await root_2.view_as(Elf)
     header_2 = await elf_2.get_header()
@@ -38,9 +40,9 @@ from ofrak.core import *
 async def part_1(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):
     await root_resource.unpack()
 
-async def part_2(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):
+async def part_2(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None, e_machine: int = 0):
     elf = await root_resource.view_as(Elf)
     header = await elf.get_header()
-    await header.resource.run(ElfHeaderModifier, ElfHeaderModifierConfig(e_machine=0x20))
+    await header.resource.run(ElfHeaderModifier, ElfHeaderModifierConfig(e_machine=e_machine))
     
 """
