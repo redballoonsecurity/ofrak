@@ -13,7 +13,6 @@ from ofrak.core import DataWord, ReferencedDataAttributes
 
 @dataclass
 class MockResource:
-
     data: bytes
 
     async def get_data(self):

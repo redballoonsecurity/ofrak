@@ -11,7 +11,8 @@ from ofrak.core.binary import GenericBinary
 from ofrak.core.filesystem import FilesystemRoot, Folder, File, SpecialFileType
 from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
 
-from ofrak.model.component_model import CC, ComponentExternalTool
+from ofrak.model.component_model import ComponentExternalTool
+from ofrak.model.component_model import ComponentConfig
 from ofrak_type.range import Range
 
 
@@ -34,7 +35,7 @@ class TarUnpacker(Unpacker[None]):
     children = (File, Folder, SpecialFileType)
     external_dependencies = (TAR,)
 
-    async def unpack(self, resource: Resource, config: CC) -> None:
+    async def unpack(self, resource: Resource, config: ComponentConfig = None) -> None:
         # Write the archive data to a file
         with tempfile.NamedTemporaryFile(suffix=".tar") as temp_archive:
             temp_archive.write(await resource.get_data())
@@ -87,7 +88,7 @@ class TarPacker(Packer[None]):
     targets = (TarArchive,)
     external_dependencies = (TAR,)
 
-    async def pack(self, resource: Resource, config: CC) -> None:
+    async def pack(self, resource: Resource, config: ComponentConfig = None) -> None:
         # Flush the child files to the filesystem
         tar_view = await resource.view_as(TarArchive)
         flush_dir = await tar_view.flush_to_disk()

@@ -210,7 +210,6 @@ class KeystoneAssemblerService(AssemblerServiceInterface):
                 machine_code, _ = ks.asm(preprocessed_assembly, addr=vm_addr, as_bytes=True)
             return machine_code
         except KsError as error:
-
             assembly_vm_addr = vm_addr
             failing_instruction = None
 

@@ -5,3 +5,6 @@ ofrak_core/test_ofrak/components/assets/* filter=lfs diff=lfs merge=lfs -text
 ofrak_core/test_ofrak/components/assets/README.md !filter !diff !merge text
 ofrak_tutorial/assets/* filter=lfs diff=lfs merge=lfs -text
 docs/user-guide/gui/assets/* filter=lfs diff=lfs merge=lfs -text
+ofrak_core/test_ofrak/components/assets/elf/* filter=lfs diff=lfs merge=lfs -text
+ofrak_core/test_ofrak/components/assets/elf/edge-cases/* filter=lfs diff=lfs merge=lfs -text
+frontend/public/themes/**/* filter=lfs diff=lfs merge=lfs -text

@@ -28,12 +28,15 @@
   import LoadingTextVertical from "./LoadingTextVertical.svelte";
 
   import { hexToByteArray } from "./helpers.js";
-  import { selectedResource } from "./stores.js";
+  import { selectedResource, settings } from "./stores.js";
 
   import { onMount } from "svelte";
 
   export let scrollY;
   let data = undefined;
+
+  $: bgcolors = hexToByteArray($settings.background.slice(1));
+  $: fgcolors = hexToByteArray($settings.foreground.slice(1));
 
   async function loadData(resource) {
     await resource.data_summary();
@@ -83,17 +86,22 @@
     for (let i = 0; i < data.length; i++) {
       const value = data[i];
 
-      // There are four colors per pixel, hence four array entries per byte of data
+      // There are four colors per pixel, hence four array entries per byte of
+      // data. Do simple linear interpolation between the foreground and
+      // background color for each byte of each pixel.
       const index = i * 4;
-      imageData.data[index + 0] = value;
-      imageData.data[index + 1] = value;
-      imageData.data[index + 2] = value;
+      imageData.data[index + 0] =
+        bgcolors[0] + (value / 255) * (fgcolors[0] - bgcolors[0]);
+      imageData.data[index + 1] =
+        bgcolors[1] + (value / 255) * (fgcolors[1] - bgcolors[1]);
+      imageData.data[index + 2] =
+        bgcolors[2] + (value / 255) * (fgcolors[2] - bgcolors[2]);
       // Always use 100% opacity
       imageData.data[index + 3] = 255;
     }
   }
 
-  $: if (mounted && canvas !== undefined && canvas !== null) {
+  $: if (mounted && canvas !== undefined && canvas !== null && imageData) {
     const context = canvas.getContext("2d");
     context.putImageData(imageData, 0, 0);
 
