@@ -10,11 +10,11 @@ from typing import List
 
 from aiohttp.test_utils import TestClient
 
+from ofrak import Analyzer, Unpacker, Modifier, Packer
 from ofrak.core import File
 from ofrak.core.entropy import DataSummaryAnalyzer
 from ofrak.gui.server import AiohttpOFRAKServer, start_server
-from ofrak.cli.ofrak_cli import OFRAKEnvironment
-from ofrak.component.identifier import Identifier
+from ofrak.model.component_filters import ComponentOrMetaFilter, ComponentTypeFilter
 from ofrak.service.serialization.pjson import (
     PJSONSerializationService,
 )
@@ -715,7 +715,7 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
     ]
 
 
-async def test_get_components(ofrak_client: TestClient, hello_world_elf):
+async def test_get_components(ofrak_client: TestClient, hello_world_elf, ofrak_context):
     create_resp = await ofrak_client.post(
         "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
     )
@@ -732,13 +732,18 @@ async def test_get_components(ofrak_client: TestClient, hello_world_elf):
             "unpackers": True,
         },
     )
-    components = await resp.json()
-    env = OFRAKEnvironment()
-    assert components == [
-        comp
-        for (comp, comp_class) in env.components.items()
-        if not issubclass(comp_class, Identifier) and "Angr" not in comp
-    ]
+    components = set(await resp.json())
+    expected_components = ofrak_context.component_locator.get_components_matching_filter(
+        ComponentOrMetaFilter(
+            ComponentTypeFilter(Analyzer),
+            ComponentTypeFilter(Unpacker),
+            ComponentTypeFilter(Modifier),
+            ComponentTypeFilter(Packer),
+        )
+    )
+    assert components == {
+        type(comp).__name__ for comp in expected_components if "Angr" not in type(comp).__name__
+    }
 
 
 async def test_get_config(ofrak_client: TestClient, hello_world_elf):

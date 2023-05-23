@@ -103,10 +103,6 @@ class OFRAKContext:
         await asyncio.gather(*(service.shutdown() for service in self._all_ofrak_services))
         logging.shutdown()
 
-    def get_all_tags(self) -> Iterable[ResourceTag]:
-        all_tags = ResourceTag.all_tags
-        return all_tags
-
 
 class OFRAK:
     DEFAULT_LOG_LEVEL = logging.WARNING
