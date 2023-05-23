@@ -901,11 +901,6 @@ class AiohttpOFRAKServer:
         else:
             return {name: value.value for name, value in obj.__members__.items()}
 
-    def _is_optional(self, obj):
-        if hasattr(obj, "_name"):
-            return obj._name == "Optional"
-        return False
-
     def _has_elipsis(self, obj):
         return any([isinstance(arg, type(...)) for arg in get_args(obj)])
 
