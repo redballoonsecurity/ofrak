@@ -249,7 +249,7 @@
           modifierView = RunScriptView;
         },
       },
-      
+
       {
         text: "Settings",
         iconUrl: "/icons/settings.svg",
