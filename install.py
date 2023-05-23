@@ -9,8 +9,12 @@ import subprocess
 import sys
 import yaml
 import shutil
+import logging
 
 from build_image import InstallTarget
+
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.INFO)
 
 
 class DependencyMechanism(Enum):
@@ -31,40 +35,42 @@ class OfrakInstallConfig:
 
 
 def main():
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.INFO)
+    formatter = logging.Formatter('*** %(msg)s')
+    handler.setFormatter(formatter)
+    LOGGER.addHandler(handler)
+
     config = parse_args()
 
     for package_path in config.packages_paths:
         check_package_contents(package_path)
 
-    if not config.quiet:
-        print(f"*** Checking whether npm and rollup are installed")
+    LOGGER.info(f"Checking whether npm and rollup are installed")
     check_executable(config, "npm")
     check_executable(config, "rollup")
 
-    if not config.quiet:
-        install_type = (
-            "development environment " if config.install_target == InstallTarget.DEVELOP else ""
-        )
-        print(
-            f"*** Installing OFRAK {install_type}for {config.python_command} from: "
-            f"{', '.join(config.packages_paths)}."
-        )
+    install_type = (
+        "development environment " if config.install_target == InstallTarget.DEVELOP else ""
+    )
+    LOGGER.info(
+        f"Installing OFRAK {install_type}for {config.python_command} from: "
+        f"{', '.join(config.packages_paths)}."
+    )
     for package_path in config.packages_paths:
-        if not config.quiet:
-            print(f"** Installing {package_path}")
         install_package(config, package_path)
 
     if config.dependency_mechanism == DependencyMechanism.NONE:
         pass
     elif config.dependency_mechanism == DependencyMechanism.SHOW:
-        print("*** Checking for missing OFRAK dependencies")
+        LOGGER.info("Checking for missing OFRAK dependencies")
         show_dependencies(config)
         show_install(config, "apt", "sudo apt install -y")
         show_install(config, "brew", "brew install")
     else:
         install_deps(config)
+        LOGGER.info("Checking OFRAK dependencies that may need to be installed manually")
         if not config.quiet:
-            print("*** Checking OFRAK dependencies that may need to be installed manually")
             show_dependencies(config)
 
 
@@ -105,15 +111,14 @@ def parse_args() -> OfrakInstallConfig:
     )
     parser.add_argument("--quiet", "-q", action="store_true", help="Reduce verbosity")
     args = parser.parse_args()
+    if args.quiet:
+        LOGGER.setLevel(logging.ERROR)
     python = shutil.which(args.python)
     if python is None:
-        if not args.quiet:
-            print(
-                "*** Specify correct name or path of python binary to use, using either the "
-                '"--python" command line argument, or the "OFRAK_INSTALL_PYTHON" environment'
-                "variable.",
-                file=sys.stderr,
-            )
+        LOGGER.critical(
+            "Specify correct name or path of python binary to use, using either the "
+            '"--python" command line argument, or the "OFRAK_INSTALL_PYTHON" environment variable.',
+        )
         raise ValueError(f"{args.python} not found")
     with open(args.config) as file_handle:
         config_dict = yaml.safe_load(file_handle)
@@ -144,22 +149,21 @@ def check_package_contents(package_path: str):
 def check_executable(config: OfrakInstallConfig, executable: str) -> None:
     if shutil.which(executable) is None:
         if config.dependency_mechanism in [DependencyMechanism.APT, DependencyMechanism.BREW]:
-            if not config.quiet:
-                print(f"** {executable} not found, attempting to install")
+            LOGGER.warning(f"{executable} not found, attempting to install")
             run_command(config, config.dep_install + [executable])
         elif config.dependency_mechanism in [DependencyMechanism.NONE, DependencyMechanism.SHOW]:
             if config.dependency_mechanism == DependencyMechanism.SHOW:
-                print(f"** {executable} not found, please install manually,")
-                print('** or use "--install_deps" / "OFRAK_INSTALL_DEPS"')
-                print("** to have it be installed automatically for you:")
-                print(f"**    apt:  sudo apt install -y {executable}")
-                print(f"**    brew: brew install {executable}")
+                LOGGER.critical(
+                    f"{executable} not found, please install manually, or use"
+                    ' "--install_deps" / "OFRAK_INSTALL_DEPS" to have it be installed automatically'
+                    f' for you: with apt: "sudo apt install -y {executable}";'
+                    f' with brew: "brew install {executable}"'
+                )
             raise FileNotFoundError(2, f"{executable} not found", executable)
 
 
 def install_package(config: OfrakInstallConfig, package_path: str) -> None:
-    if not config.quiet:
-        print(f"** Installing from {package_path}")
+    LOGGER.info(f"Installing from {package_path}")
     etc_dir = os.path.join(os.getenv("HOME", "/"), "etc")
     run_command(
         config,
@@ -176,7 +180,13 @@ def install_package(config: OfrakInstallConfig, package_path: str) -> None:
 
 
 def show_dependencies(config: OfrakInstallConfig) -> None:
-    run_ofrak_command(config, ["deps", "--missing-only"])
+    missing_deps = run_ofrak_command(config, ["deps", "--missing-only"], capture_out=True)
+    if missing_deps:
+        print("\n*** Some optional OFRAK dependencies are missing. ***")
+        print(
+            "To get full mileage out of OFRAK, you may want to also install some of the following:"
+        )
+        print(missing_deps.rstrip())
 
 
 def show_install(config: OfrakInstallConfig, dep: str, prefix: str) -> None:
@@ -186,14 +196,16 @@ def show_install(config: OfrakInstallConfig, dep: str, prefix: str) -> None:
         True,
     )
     if deps:
-        print(f"** If your system has {dep}, you can install some of the dependencies using:")
+        deps = deps.strip().replace('\n', ' ')
+        print(
+            f"** If your system has {dep}, you can install some of the above missing dependencies using:"
+        )
         print(f"**    {prefix} {deps}")
 
 
 def install_deps(config: OfrakInstallConfig) -> None:
-    if not config.quiet:
-        print(
-            "*** Installing those OFRAK dependencies that can be installed with "
+    LOGGER.info(
+            "Installing those OFRAK dependencies that can be installed with "
             + config.dependency_mechanism.value
         )
     deps = run_ofrak_command(
@@ -212,8 +224,7 @@ def run_ofrak_command(
 
 
 def run_command(config: OfrakInstallConfig, args: List[str], capture_out=False) -> Optional[str]:
-    if not config.quiet:
-        print("% " + " ".join(args))
+    (LOGGER.debug if capture_out else LOGGER.info) ("% " + " ".join(args))
     result = subprocess.run(args=args, capture_output=capture_out, check=True)
     return result.stdout.decode("ascii") if capture_out else None
 
@@ -222,14 +233,14 @@ if __name__ == "__main__":
     try:
         main()
     except subprocess.CalledProcessError as error:
-        print(f"*** Error running shell command, exit status: {error.returncode}", file=sys.stderr)
+        LOGGER.critical(f"Error running shell command, exit status: {error.returncode}")
         sys.exit(error.returncode)
     except ValueError as error:
-        print(f"*** Error: {error}", file=sys.stderr)
+        LOGGER.critical(f"Error: {error}")
         sys.exit(1)
     except FileNotFoundError as error:
-        print(f"*** Error: No such file or directory: {error.filename}", file=sys.stderr)
+        LOGGER.critical(f"Error: No such file or directory: {error.filename}")
         sys.exit(1)
     except Exception as error:
-        print(f"*** Unexpected exception: {error}", file=sys.stderr)
+        LOGGER.critical(f"Unexpected exception: {error}")
         sys.exit(1)
