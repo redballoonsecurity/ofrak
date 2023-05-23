@@ -44,6 +44,7 @@ from ofrak.model.component_filters import (
     ComponentAndMetaFilter,
 )
 from ofrak.ofrak_context import get_current_ofrak_context
+from ofrak.service.component_locator_i import ComponentFilter
 from ofrak_patch_maker.toolchain.abstract import Toolchain
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
@@ -785,8 +786,8 @@ class AiohttpOFRAKServer:
         resource: Resource = await self._get_resource_for_request(request)
         component_string = request.query.get("component")
         if component_string is not None:
-            component = self._ofrak_context.component_locator.get_by_id(
-                component_string.encode("ascii")
+            component = type(
+                self._ofrak_context.component_locator.get_by_id(component_string.encode("ascii"))
             )
             config_type = self._get_config_for_component(component)
         else:
@@ -961,13 +962,11 @@ class AiohttpOFRAKServer:
             return []
 
         requested_components = [incl_analyzers, incl_modifiers, incl_packers, incl_unpackers]
-        all_categories = (Analyzer, Modifier, Packer, Unpacker)
+        categories: Tuple[Type[ComponentInterface], ...] = (Analyzer, Modifier, Packer, Unpacker)
         if any(requested_components):
-            categories = tuple(itertools.compress(all_categories, requested_components))
-        else:
-            categories = all_categories
+            categories = tuple(itertools.compress(categories, requested_components))
 
-        component_filters = [
+        component_filters: List[ComponentFilter] = [
             ComponentOrMetaFilter(*(ComponentTypeFilter(cat) for cat in categories)),
         ]
         if not show_all_components:
