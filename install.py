@@ -37,7 +37,7 @@ class OfrakInstallConfig:
 def main():
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.INFO)
-    formatter = logging.Formatter('*** %(msg)s')
+    formatter = logging.Formatter("*** %(msg)s")
     handler.setFormatter(formatter)
     LOGGER.addHandler(handler)
 
@@ -196,7 +196,7 @@ def show_install(config: OfrakInstallConfig, dep: str, prefix: str) -> None:
         True,
     )
     if deps:
-        deps = deps.strip().replace('\n', ' ')
+        deps = deps.strip().replace("\n", " ")
         print(
             f"** If your system has {dep}, you can install some of the above missing dependencies using:"
         )
@@ -205,9 +205,9 @@ def show_install(config: OfrakInstallConfig, dep: str, prefix: str) -> None:
 
 def install_deps(config: OfrakInstallConfig) -> None:
     LOGGER.info(
-            "Installing those OFRAK dependencies that can be installed with "
-            + config.dependency_mechanism.value
-        )
+        "Installing those OFRAK dependencies that can be installed with "
+        + config.dependency_mechanism.value
+    )
     deps = run_ofrak_command(
         config,
         ["deps", "--missing-only", f"--packages-for={config.dependency_mechanism.value}"],
@@ -224,7 +224,7 @@ def run_ofrak_command(
 
 
 def run_command(config: OfrakInstallConfig, args: List[str], capture_out=False) -> Optional[str]:
-    (LOGGER.debug if capture_out else LOGGER.info) ("% " + " ".join(args))
+    (LOGGER.debug if capture_out else LOGGER.info)("% " + " ".join(args))
     result = subprocess.run(args=args, capture_output=capture_out, check=True)
     return result.stdout.decode("ascii") if capture_out else None
 
