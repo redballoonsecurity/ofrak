@@ -21,7 +21,7 @@ tutorial-run:
 
 OFRAK_INSTALL_PYTHON=python3
 
-.PHONY: install_tutorial install_code install_develop
+.PHONY: install_tutorial install_core install_develop
 install_tutorial:
 	$(OFRAK_INSTALL_PYTHON) install.py --config ofrak-tutorial.yml --target install
 

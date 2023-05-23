@@ -145,16 +145,16 @@ def check_executable(config: OfrakInstallConfig, executable: str) -> None:
     if shutil.which(executable) is None:
         if config.dependency_mechanism in [DependencyMechanism.APT, DependencyMechanism.BREW]:
             if not config.quiet:
-                print("** {executable} not found, attempting to install")
+                print(f"** {executable} not found, attempting to install")
             run_command(config, config.dep_install + [executable])
         elif config.dependency_mechanism in [DependencyMechanism.NONE, DependencyMechanism.SHOW]:
             if config.dependency_mechanism == DependencyMechanism.SHOW:
-                print("** {executable} not found, please install manually,")
+                print(f"** {executable} not found, please install manually,")
                 print('** or use "--install_deps" / "OFRAK_INSTALL_DEPS"')
                 print("** to have it be installed automatically for you:")
-                print("**    apt:  sudo apt install -y {executable}")
-                print("**    brew: brew install {executable}")
-            raise FileNotFoundError(2, "{executable} not found", executable)
+                print(f"**    apt:  sudo apt install -y {executable}")
+                print(f"**    brew: brew install {executable}")
+            raise FileNotFoundError(2, f"{executable} not found", executable)
 
 
 def install_package(config: OfrakInstallConfig, package_path: str) -> None:
@@ -194,7 +194,7 @@ def install_deps(config: OfrakInstallConfig) -> None:
     if not config.quiet:
         print(
             "*** Installing those OFRAK dependencies that can be installed with "
-            "{config.dependency_mechanism.value}"
+            + config.dependency_mechanism.value
         )
     deps = run_ofrak_command(
         config,
