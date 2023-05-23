@@ -18,3 +18,14 @@ tutorial-image:
 
 tutorial-run:
 	make -C ofrak_tutorial run
+
+.PHONY: install_tutorial install_code install_develop
+install_tutorial:
+	python3 install.py --config ofrak-tutorial.yml --target install
+
+install_core:
+	python3 install.py --config ofrak-core-dev.yml --target install
+
+install_develop:
+	python3 install.py --config ofrak-dev.yml --target develop
+

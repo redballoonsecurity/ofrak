@@ -1,20 +1,20 @@
 PYTHON=python3
 PIP=pip3
+ETC=/etc
 
 
 # toolchain.conf is a file mapping ID to the various binaries responsible for preprocessing,
 #  assembling, compiling, linking, analyzing binaries for each currently supported toolchain.
-.PHONY: toolchain_conf
-toolchain_conf:
-	cp ofrak_patch_maker/toolchain.conf /etc/toolchain.conf
-	mv ofrak_patch_maker/toolchain.conf ofrak_patch_maker/toolchain.conf.bak
+$(ETC)/toolchain.conf: ofrak_patch_maker/toolchain.conf
+	mkdir -p $(ETC)
+	cp -a $< $@
 
 .PHONY: install
-install: toolchain_conf
+install: $(ETC)/toolchain.conf
 	$(PIP) install .
 
 .PHONY: develop
-develop: toolchain_conf
+develop: $(ETC)/toolchain.conf
 	$(PIP) install -e .[test]
 
 .PHONY: inspect
