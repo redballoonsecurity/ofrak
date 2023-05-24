@@ -180,8 +180,9 @@
       if (selectedResource) {
         await selectedResource.queue_patch(patchData, startOffset, endOffset);
       }
-
-      resourceNodeDataMap[$selected].modified = true;
+      resourceNodeDataMap[$selected] = {
+        lastModified: true,
+      };
       modifierView = undefined;
       refreshResource();
     } catch (err) {

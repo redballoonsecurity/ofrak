@@ -78,13 +78,13 @@
 
   .lastModified {
     text-decoration-line: underline;
-    text-decoration-color: var(--modified-color);
+    text-decoration-color: var(--last-modified-color);
     text-decoration-thickness: 2px;
   }
 
   .allModified {
     text-decoration-line: underline;
-    text-decoration-color: var(--main-fg-color);
+    text-decoration-color: var(--all-modified-color);
     text-decoration-thickness: 2px;
   }
 
