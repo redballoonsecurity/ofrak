@@ -99,11 +99,17 @@
   }
 
   async function runLoadedScript() {
-    const results = await $selectedResource.run_component(
-      "RunScriptModifier",
-      "ofrak.core.run_script_modifier.RunScriptModifierConfig",
-      Object.assign({ code: loadedScript.join("\n") }, scriptParams)
-    );
+    let results = {};
+    try {
+      results = await $selectedResource.run_component(
+        "RunScriptModifier",
+        "ofrak.core.run_script_modifier.RunScriptModifierConfig",
+        Object.assign({ code: loadedScript.join("\n") }, scriptParams)
+      );
+    } catch (err) {
+      $selectedResource.flush_cache();
+      throw err;
+    }
     resourceNodeDataMap[$selected] = {
       collapsed: false,
       childrenPromise: $selectedResource.get_children(),
@@ -209,10 +215,14 @@
     </button>
     <button
       on:click="{() => {
+        modifierView = undefined;
         const orig_selected = $selected;
         $selected = undefined;
         $selected = orig_selected;
-        modifierView = undefined;
+        resourceNodeDataMap[$selected] = {
+          collapsed: false,
+          childrenPromise: $selectedResource.get_children(),
+        };
       }}">Back</button
     >
   </div>
