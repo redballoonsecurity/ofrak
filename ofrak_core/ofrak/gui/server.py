@@ -1016,7 +1016,9 @@ class AiohttpOFRAKServer:
             "modified": await asyncio.gather(
                 *map(
                     get_and_serialize,
-                    result.resources_modified.difference(result.resources_created),
+                    result.resources_modified.difference(result.resources_created).difference(
+                        result.resources_deleted
+                    ),
                 )
             ),
             "deleted": self._serializer.to_pjson(result.resources_deleted, Set[bytes]),

@@ -85,7 +85,7 @@
   hljs.registerLanguage("python", python);
 
   export let modifierView, resourceNodeDataMap;
-  let runScriptPromise,
+  let runScriptPromise = Promise.resolve(null),
     files = null,
     loadedScript = [],
     errorMessage,
@@ -99,51 +99,39 @@
   }
 
   async function runLoadedScript() {
-    try {
-      const results = await $selectedResource.run_component(
-        "RunScriptModifier",
-        "ofrak.core.generic_script.RunScriptModifierConfig",
-        Object.assign({ code: loadedScript.join("\n") }, scriptParams)
-      );
-      resourceNodeDataMap[$selected] = {
-        collapsed: false,
-        childrenPromise: $selectedResource.get_children(),
-      };
-      for (const result in results) {
-        if (result === "modified") {
-          for (const resource of results[result]) {
-            resourceNodeDataMap[resource["id"]] = {
-              modified: true,
-            };
-          }
+    const results = await $selectedResource.run_component(
+      "RunScriptModifier",
+      "ofrak.core.run_script_modifier.RunScriptModifierConfig",
+      Object.assign({ code: loadedScript.join("\n") }, scriptParams)
+    );
+    resourceNodeDataMap[$selected] = {
+      collapsed: false,
+      childrenPromise: $selectedResource.get_children(),
+    };
+    for (const result in results) {
+      if (result === "modified") {
+        for (const resource of results[result]) {
+          resourceNodeDataMap[resource["id"]] = {
+            modified: true,
+          };
         }
       }
-      const orig_selected = $selected;
-      $selected = undefined;
-      $selected = orig_selected;
-      modifierView = undefined;
-    } catch (err) {
-      try {
-        const parsed = JSON.parse(err.message);
-        errorMessage = `${parsed.type}: ${parsed.message}`;
-      } catch (_) {
-        errorMessage = `Error: ${err.message}`;
-      }
-      throw err;
+    }
+    return results;
+  }
+
+  function parseError(err) {
+    try {
+      const parsed = JSON.parse(err.message);
+      return `${parsed.type}: ${parsed.message}`;
+    } catch (_) {
+      return `Error: ${err.message}`;
     }
   }
 
   onMount(async () => {
-    try {
-      ofrakConfigsPromise =
-        $selectedResource.get_config_for_component("RunScriptModifier");
-    } catch (err) {
-      try {
-        errorMessage = `Error: ${JSON.parse(err.message).message}`;
-      } catch (_) {
-        errorMessage = `Error: ${err.message}`;
-      }
-    }
+    ofrakConfigsPromise =
+      $selectedResource.get_config_for_component("RunScriptModifier");
   });
 </script>
 
@@ -167,9 +155,13 @@
           {/if}
         {/each}
       {/if}
-    {:catch}
+    {:catch err}
       <p>Failed to get config for RunScriptModifier!</p>
       <p>The back end server may be down.</p>
+      <p class="error">
+        Error:
+        {parseError(err)}
+      </p>
     {/await}
   </div>
   <div class="hbox">
@@ -189,23 +181,39 @@
       </code>
     </div>
   </div>
-  {#if errorMessage}
+  {#await runScriptPromise}
+    <!---->
+  {:then results}
+    {#if results}
+      <p>
+        Success! {results.modified.length} resource{#if results.modified.length !== 1}s{/if}
+        modified.
+      </p>
+    {/if}
+  {:catch err}
     <p class="error">
       Error:
-      {errorMessage}
+      {parseError(err)}
     </p>
-  {/if}
+  {/await}
   <div class="actions">
     <button on:click="{() => (runScriptPromise = runLoadedScript())}">
       {#await runScriptPromise}
         <Icon url="/icons/loading.svg" />
       {:then _}
         <!---->
-      {:catch}
+      {:catch _}
         <Icon url="/icons/error.svg" />
       {/await}
       Run script
     </button>
-    <button on:click="{() => (modifierView = undefined)}">Cancel</button>
+    <button
+      on:click="{() => {
+        const orig_selected = $selected;
+        $selected = undefined;
+        $selected = orig_selected;
+        modifierView = undefined;
+      }}">Back</button
+    >
   </div>
 </div>
