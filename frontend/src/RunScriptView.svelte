@@ -110,10 +110,6 @@
       $selectedResource.flush_cache();
       throw err;
     }
-    resourceNodeDataMap[$selected] = {
-      collapsed: false,
-      childrenPromise: $selectedResource.get_children(),
-    };
     for (const result in results) {
       if (result === "modified") {
         for (const resource of results[result]) {
