@@ -147,7 +147,11 @@ export class RemoteResource extends Resource {
     if (this.cache["get_data"]) {
       return this.cache["get_data"];
     }
-    let result = await fetch(`${this.uri}/get_data`)
+    let range_query = ""
+    if (range){
+      range_query = `?range=${range}`
+    }
+    let result = await fetch(`${this.uri}/get_data${range_query}`)
       .then((r) => r.blob())
       .then((b) => b.arrayBuffer());
     this.cache["get_data"] = result;
