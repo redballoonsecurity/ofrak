@@ -88,12 +88,12 @@
 </style>
 
 <script>
-  import { selected, selectedResource, backendUrl } from "./stores.js";
+  import { selected, selectedResource, settings } from "./stores.js";
   import { onMount } from "svelte";
   import LoadingText from "./LoadingText.svelte";
   import { cleanOfrakType } from "./helpers";
 
-  export let modifierView, resourceNodeDataMap, dataPromise;
+  export let modifierView, resourceNodeDataMap;
   let errorMessage,
     ofrakTagsPromise = new Promise(() => {}),
     selectedTag;
@@ -119,7 +119,7 @@
 
   onMount(async () => {
     try {
-      await fetch(`${backendUrl}/get_all_tags`).then(async (r) => {
+      await fetch(`${$settings.backendUrl}/get_all_tags`).then(async (r) => {
         if (!r.ok) {
           throw Error(JSON.stringify(await r.json(), undefined, 2));
         }

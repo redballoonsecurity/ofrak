@@ -4,9 +4,40 @@ All notable changes to `ofrak` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+### Added
+- Add `ElfLoadAlignmentModifier`, which reclaims unused alignment bytes between PT_LOAD segments in ELFs as free space. ([#302](https://github.com/redballoonsecurity/ofrak/pull/302))
+- Add a "copy to clipboard" button to the "Show Snippet" view for easy exporting. ([#301](https://github.com/redballoonsecurity/ofrak/pull/301))
+- Add a settings pane to the OFRAK GUI that supports theming and changing colors ([#309](https://github.com/redballoonsecurity/ofrak/pull/309))
+- Add a button and interface in the OFRAK GUI to specifically select any component to run on a resource ([#287](https://github.com/redballoonsecurity/ofrak/pull/287))
+
+### Changed
+- `PatchFromSourceModifier` and `FunctionReplaceModifier` automatically include cross-compile headers for target system
+
+### Fixed 
+- Fixed a bug where clicking "Unpack" or "Identify" (for example) too quickly after loading a large resource causes an error that freezes up the whole GUI ([#297](https://github.com/redballoonsecurity/ofrak/pull/297))
+- Bump `importlib-metadata` version to fix import errors ([#296](https://github.com/redballoonsecurity/ofrak/pull/296))
+
+## [3.0.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.2.1...ofrak-v3.0.0)
+### Added
+- Add call to flush a resource to disk in the script whenever a user downloads a resource from the GUI. ([#277](https://github.com/redballoonsecurity/ofrak/pull/277))
+- Generate dynamic, runnable script based on GUI actions and display the script in the GUI. ([#265](https://github.com/redballoonsecurity/ofrak/pull/265))
+- Add `-f`/`--file` option to `ofrak gui` command to pre-load some files into OFRAK before opening the GUI, so they can be explored right away ([#266](https://github.com/redballoonsecurity/ofrak/pull/266))
+- Add `-i`/`--import` option to the CLI to import and discover additional OFRAK Python packages when starting OFRAK. ([#269](https://github.com/redballoonsecurity/ofrak/pull/269))
+- Add Identifier to tag `ComplexBlocks` as `LinkableSymbols` and Analyzer to copy attributes from a `ComplexBlock` to its `LinkableSymbol`. ([#226](https://github.com/redballoonsecurity/ofrak/pull/226))
+- Add method to create new `LinkableSymbols` from symbols defined in a patch file. ([#226](https://github.com/redballoonsecurity/ofrak/pull/226))
+
+
 ### Changed
 - Remove need to create Resources to pass source code and headers to `PatchFromSourceModifier` and `FunctionReplaceModifier` ([#249](https://github.com/redballoonsecurity/ofrak/pull/249))
-- `PatchFromSourceModifier` and `FunctionReplaceModifier` automatically include cross-compile headers for target system
+- Choose Analyzer components which output the entirety of a view, rather than piece by piece, which would choose the wrong Analyzer sometimes. ([#264](https://github.com/redballoonsecurity/ofrak/pull/264))
+- Generate LinkableBinary stubs as strong symbols, so linker use them to override weak symbols in patch ([#259](https://github.com/redballoonsecurity/ofrak/pull/259))
+- Limit stub file creation for linkable BOMs to only those required by a patch. ([#226](https://github.com/redballoonsecurity/ofrak/pull/226))
+
+### Fixed
+- Fix bug where `ComponentExternalTool` would raise an error when checking whether a tool was installed returned a non-zero exit value ([#289](https://github.com/redballoonsecurity/ofrak/pull/289))
+- Fix bug where jumping to a multiple of `0x10` in the GUI went to the previous line ([#254](https://github.com/redballoonsecurity/ofrak/pull/254))
+- Fix installing on Windows, as well as small GUI style fixes for Windows ([#261](https://github.com/redballoonsecurity/ofrak/pull/261))
+- Fixed `Uf2File` identifier so that it correctly tags UF2 files with `Uf2File` ([#283](https://github.com/redballoonsecurity/ofrak/pull/283))
 
 ## [2.2.1](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.2.0...ofrak-v2.2.1) - 2023-03-08
 ### Added
@@ -32,11 +63,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Fix bug in GUI where "jump to offset" feature in hex view rounded up instead of down ([#243](https://github.com/redballoonsecurity/ofrak/pull/243))
 - Support more OpenWRT TRX files by making fewer assumptions about the partitions ([#216](https://github.com/redballoonsecurity/ofrak/pull/216))
 - Fix some OS-specific problems (libmagic install, log file path) preventing OFRAK install on Windows ([#239](https://github.com/redballoonsecurity/ofrak/pull/239))
-
-### Added
-- Add Identifier to tag `ComplexBlocks` as `LinkableSymbols` and Analyzer to copy attributes from a `ComplexBlock` to its `LinkableSymbol`.
-- Add method to create new `LinkableSymbols` from symbols defined in a patch file.
-- Limit stub file creation for linkable BOMs to only those required by a patch.
 
 ## [2.2.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.1.1...ofrak-v2.2.0) - 2023-02-01
 ### Fixed

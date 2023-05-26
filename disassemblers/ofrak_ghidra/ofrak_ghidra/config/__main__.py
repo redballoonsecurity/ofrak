@@ -34,7 +34,9 @@ import_parser = command_parser.add_parser(
     "import",
     description="Loads a complete OFRAK Ghidra config from a path to a yaml file and saves it as the current Ghidra config.",
 )
-import_parser.add_argument("config-path", type=str, help="Path to config file to import")
+import_parser.add_argument(
+    "config_path", type=str, help="Path to config file to import", metavar="config-path"
+)
 import_parser.set_defaults(func=_import_config)
 restore_parser = command_parser.add_parser(
     "restore", description="Restore the default OFRAK Ghidra settings."

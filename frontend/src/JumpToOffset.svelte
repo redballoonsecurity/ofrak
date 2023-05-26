@@ -55,7 +55,7 @@
     if (e.key === 'Enter') {
       input.blur();
       try {
-        let result = calculator.calculate(input.value);
+        let result = calculator.calculate(input.value) + 1;
         $scrollY.top = result / dataLength;
       } catch (_) {
         input.value = `0x${startOffset.toString(16)}`;

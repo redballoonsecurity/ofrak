@@ -4,9 +4,7 @@ import logging
 import pytest
 
 from ofrak import OFRAK, OFRAKContext
-from ofrak.core import BasicBlock
 from ofrak.core.apk import ApkIdentifier
-from ofrak.model.viewable_tag_model import ViewableResourceTag
 from ofrak.ofrak_context import get_current_ofrak_context
 from ofrak_type.error import NotFoundError, InvalidStateError
 from pytest_ofrak import mock_library3
@@ -85,10 +83,3 @@ async def test_get_ofrak_context_fixture(ofrak_context: OFRAKContext):
     current_ofrak_context = get_current_ofrak_context()
     assert current_ofrak_context is not None
     assert current_ofrak_context is ofrak_context
-
-
-async def test_get_all_tags(ofrak_context: OFRAKContext):
-    tags = set(ofrak_context.get_all_tags())
-    print(tags)
-    assert BasicBlock in tags
-    assert ViewableResourceTag not in tags

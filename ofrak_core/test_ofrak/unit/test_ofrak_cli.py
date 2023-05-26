@@ -264,6 +264,37 @@ def test_unpack(ofrak_cli_parser, capsys, filename, tmpdir, ofrak_context, all_e
     assert any(["┌" in info_dump, "┬" in info_dump, "─" in info_dump])
 
 
+def test_import_file(ofrak_cli_parser, tmpdir, capsys):
+    scratch_file = os.path.join(tmpdir, "scratch.py")
+    with open(scratch_file, "w") as f:
+        f.write(
+            """
+from ofrak import *
+from ofrak.core import *
+
+class ScratchTag(GenericBinary):
+    pass
+    
+class ScratchIdentifier(Identifier[None]):
+    targets = (File,)
+    
+    async def identify(self, resource, config=None):
+        d = await resource.get_data()
+        if d.startswith(b"ofrak cli test file"):
+            resource.add_tag(ScratchTag)
+
+"""
+        )
+
+    target_file = os.path.join(tmpdir, "target.txt")
+    with open(target_file, "wb") as f:
+        f.write(b"ofrak cli test file")
+    ofrak_cli_parser.parse_and_run(["identify", "-l", "DEBUG", "-i", scratch_file, target_file])
+
+    captured = capsys.readouterr()
+    assert "ScratchTag" in captured.out
+
+
 def test_ofrak_help(cli_commands):
     ofrak_env = OFRAKEnvironment()
     ofrak_cli = OFRAKCommandLineInterface(cli_commands, ofrak_env)

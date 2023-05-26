@@ -97,6 +97,8 @@ class ToolchainConfig:
     :var isysroot: Specifies the root directory for header files
     :var c_standard: Specifies the version of C to use, e.g. C89, C99, etc
     :var separate_data_sections: Whether to put each data object in a separate section in .o file
+    :var include_subsections: In addition to normal keep sections, keep "sub"-sections sharing name
+    prefix e.g. .text.foo (this flag is treated as True if separate_data_sections is True)
     :var hard_float: Compile with support for hardware floating point operations (Default: `False`)
     """
 
@@ -117,5 +119,6 @@ class ToolchainConfig:
     userspace_dynamic_linker: Optional[str] = None
     isysroot: Optional[str] = None
     c_standard: Optional[CStandardVersion] = CStandardVersion.C99
-    separate_data_sections: Optional[bool] = False
-    hard_float: Optional[bool] = False
+    separate_data_sections: bool = False
+    include_subsections: bool = False
+    hard_float: bool = False

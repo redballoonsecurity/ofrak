@@ -21,14 +21,14 @@ with open("README.md") as f:
 
 setuptools.setup(
     name="ofrak_type",
-    version="2.1.0",
+    version="2.2.0",
     description="Custom classes and types used in OFRAK",
     package_data={
         "ofrak_type": ["py.typed"],
     },
     extras_require={
         "test": [
-            "black==22.3.0",
+            "black==22.6.0",
             "fun-coverage==0.2.0",
             "hypothesis~=6.39.3",
             "mypy==0.942",

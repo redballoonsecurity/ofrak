@@ -8,8 +8,9 @@ from ofrak.core.binary import GenericBinary
 from ofrak.core.filesystem import FilesystemRoot, File, Folder, SpecialFileType
 
 from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
-from ofrak.model.component_model import CC, ComponentExternalTool
+from ofrak.model.component_model import ComponentExternalTool
 from ofrak.resource import Resource
+from ofrak.model.component_model import ComponentConfig
 
 UNAR = ComponentExternalTool(
     "unar",
@@ -36,7 +37,7 @@ class RarUnpacker(Unpacker[None]):
     children = (File, Folder, SpecialFileType)
     external_dependencies = (UNAR,)
 
-    async def unpack(self, resource: Resource, config: CC):
+    async def unpack(self, resource: Resource, config: ComponentConfig = None):
         with tempfile.NamedTemporaryFile(
             suffix=".rar"
         ) as temp_archive, tempfile.TemporaryDirectory() as temp_dir:

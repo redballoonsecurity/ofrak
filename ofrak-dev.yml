@@ -22,4 +22,4 @@ extra_build_args:
 entrypoint: |
     nginx \
       & python3 -m ofrak_ghidra.server start \
-      & python3 -m ofrak gui -H 0.0.0.0 -p 8877
+      & python3 -m ofrak gui -H 0.0.0.0 -p 8877 --backend ghidra

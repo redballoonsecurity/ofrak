@@ -3,8 +3,10 @@
   --main-fg-color: white;
   --selected-bg-color: #86e3ed;
   --comment-color: #eb8e5b;
+  --modified-color: #dc4e47;
   --font: "cartograph";
   --highlight-color: #fff259; /* Snake color */
+  --accent-text-color: #a9ed96; /* Caterpillar color */
   --line-height: 1.6;
 }
 

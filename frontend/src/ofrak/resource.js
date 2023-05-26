@@ -382,6 +382,30 @@ export class Resource {
     throw new NotImplementedError("search_for_vaddr");
   }
 
+  async update_script() {
+    throw new NotImplementedError("update_script");
+  }
+
+  async get_components() {
+    throw new NotImplementedError("get_components");
+  }
+
+  async get_config_for_component() {
+    throw new NotImplementedError("get_config_for_component");
+  }
+
+  async run_component() {
+    throw new NotImplementedError("run_component");
+  }
+
+  async get_tags_and_num_components() {
+    throw new NotImplementedError("get_tags_and_num_components");
+  }
+
+  async add_flush_to_disk_to_script() {
+    throw new NotImplementedError("add_flush_to_disk_to_script");
+  }
+
   /***
    * Return the string representation of a comment, which includes its range as prefix if it
    * has one.

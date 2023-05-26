@@ -25,9 +25,3 @@ inspect:
 test: inspect
 	$(PYTHON) -m pytest -n auto --cov=ofrak_patch_maker --cov-report=term-missing ofrak_patch_maker_test
 	fun-coverage --cov-fail-under=100
-
-.PHONY: dependencies
-dependencies:
-
-clean:
-	-rm -rf lib

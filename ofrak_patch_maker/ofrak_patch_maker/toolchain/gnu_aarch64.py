@@ -19,6 +19,8 @@ class GNU_AARCH64_LINUX_10_Toolchain(GNU_10_Toolchain):
         super().__init__(processor, toolchain_config, logger=logger)
         # Enable compilation of the GNU atomics intrinsics.
         self._compiler_flags.append("-mno-outline-atomics")
+        # Force literal pools at end of functions, rather than .rodata
+        self._compiler_flags.append("-mpc-relative-literal-loads")
 
     @property
     def name(self) -> str:

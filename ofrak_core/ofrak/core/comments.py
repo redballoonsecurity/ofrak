@@ -1,7 +1,6 @@
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Dict, Tuple, Optional
-
 from ofrak.component.modifier import Modifier
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributes
