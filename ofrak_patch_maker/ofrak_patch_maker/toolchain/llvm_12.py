@@ -3,7 +3,7 @@ import os
 import tempfile
 from typing import List, Mapping, Optional, Tuple, Dict
 
-from ofrak_type import ArchInfo
+from ofrak_type import ArchInfo, Endianness
 from ofrak_type.architecture import InstructionSet
 from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.symbol_type import LinkableSymbolType
@@ -122,6 +122,10 @@ class LLVM_12_0_1_Toolchain(Toolchain):
         if not self._config.check_overlap:
             self._linker_flags.append("--no-check-sections")
 
+        if processor.isa is InstructionSet.MIPS and not toolchain_config.relocatable:
+            # Linker for MIPS always wants to generate a .got
+            self._linker_discard_list.append(".got")
+
     @property
     def name(self) -> str:
         return "LLVM_12_0_1"
@@ -134,6 +138,19 @@ class LLVM_12_0_1_Toolchain(Toolchain):
             return "armv7-a"
         elif arch == InstructionSet.X86.value:
             return "generic64"
+        elif processor.isa is InstructionSet.MIPS:
+            # GNU MIPS assembler only takes endianness through a special flag, not target flag
+            # Of course, we shouldn't even need to set GNU assembler flags in the LLVM toolchain:
+            # https://github.com/redballoonsecurity/ofrak/issues/263
+            if processor.endianness is Endianness.BIG_ENDIAN:
+                self._assembler_flags.append("-EB")
+            elif processor.endianness is Endianness.LITTLE_ENDIAN:
+                self._assembler_flags.append("-EL")
+
+            if processor.bit_width.BIT_32:
+                return "mips32"
+            elif processor.bit_width.BIT_64:
+                return "mips64"
         else:
             raise ToolchainException("Assembler Target not provided and no valid default found!")
 
@@ -145,6 +162,15 @@ class LLVM_12_0_1_Toolchain(Toolchain):
             return "armv7---elf"
         elif arch == InstructionSet.X86.value:
             return "amd64---elf"
+        elif processor.isa is InstructionSet.MIPS:
+            if processor.bit_width.BIT_32 and processor.endianness is Endianness.BIG_ENDIAN:
+                return "mips---elf"
+            elif processor.bit_width.BIT_32 and processor.endianness is Endianness.LITTLE_ENDIAN:
+                return "mipsel---elf"
+            elif processor.bit_width.BIT_64 and processor.endianness is Endianness.BIG_ENDIAN:
+                return "mips64---elf"
+            elif processor.bit_width.BIT_64 and processor.endianness is Endianness.LITTLE_ENDIAN:
+                return "mips64el---elf"
         else:
             raise ToolchainException("Compiler Target not provided and no valid default found!")
 

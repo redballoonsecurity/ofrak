@@ -4,7 +4,7 @@ from typing import Optional
 from ofrak_patch_maker.binary_parser.gnu import GNU_V10_ELF_Parser
 from ofrak_patch_maker.toolchain.gnu import GNU_10_Toolchain
 from ofrak_patch_maker.toolchain.model import ToolchainConfig
-from ofrak_type import ArchInfo, InstructionSet, MemoryPermissions
+from ofrak_type import ArchInfo, InstructionSet, MemoryPermissions, Endianness
 
 
 class GNU_MIPS_LINUX_10_Toolchain(GNU_10_Toolchain):
@@ -17,10 +17,21 @@ class GNU_MIPS_LINUX_10_Toolchain(GNU_10_Toolchain):
         logger: logging.Logger = logging.getLogger(__name__),
     ):
         super().__init__(processor, toolchain_config, logger=logger)
+        if processor.isa is InstructionSet.MIPS:
+            if processor.endianness is Endianness.BIG_ENDIAN:
+                self._compiler_flags.append("-EB")
+                self._assembler_flags.append("-EB")
+                self._linker_flags.append("-EB")
+            else:
+                self._compiler_flags.append("-EL")
+                self._assembler_flags.append("-EL")
+                self._linker_flags.append("-EL")
         if self._config.hard_float:
             self._compiler_flags.append("-mhard-float")
+            self._assembler_flags.append("-mhard-float")
         else:
             self._compiler_flags.append("-msoft-float")
+            self._assembler_flags.append("-msoft-float")
 
     @property
     def segment_alignment(self) -> int:

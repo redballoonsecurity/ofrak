@@ -14,6 +14,9 @@ from keystone import (
     KS_ARCH_PPC,
     KS_MODE_BIG_ENDIAN,
     KS_MODE_LITTLE_ENDIAN,
+    KS_ARCH_MIPS,
+    KS_MODE_MIPS32,
+    KS_MODE_MIPS64,
 )
 
 from ofrak.core.architecture import ProgramAttributes
@@ -56,6 +59,8 @@ class KeystoneAssemblerService(AssemblerServiceInterface):
             return KS_ARCH_X86
         elif program_attributes.isa is InstructionSet.PPC:
             return KS_ARCH_PPC
+        elif program_attributes.isa is InstructionSet.MIPS:
+            return KS_ARCH_MIPS
         raise ValueError(f"Cannot generate the keystone architecture flag for {program_attributes}")
 
     @staticmethod
@@ -104,6 +109,12 @@ class KeystoneAssemblerService(AssemblerServiceInterface):
                 return KS_MODE_64 | ks_endian_flag
             elif program_attributes.bit_width == BitWidth.BIT_32:
                 return KS_MODE_32 | ks_endian_flag
+
+        elif program_attributes.isa is InstructionSet.MIPS:
+            if program_attributes.bit_width == BitWidth.BIT_64:
+                return KS_MODE_MIPS64 | ks_endian_flag
+            elif program_attributes.bit_width == BitWidth.BIT_32:
+                return KS_MODE_MIPS32 | ks_endian_flag
 
         raise ValueError(f"Cannot generate the keystone mode flag for {program_attributes}")
 

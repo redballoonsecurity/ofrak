@@ -2,9 +2,9 @@ import logging
 import os
 import tempfile
 from ofrak_patch_maker.toolchain.gnu_avr import GNU_AVR_5_Toolchain
+from ofrak_patch_maker.toolchain.gnu_mips import GNU_MIPS_LINUX_10_Toolchain
 from ofrak_patch_maker.toolchain.gnu_x64 import GNU_X86_64_LINUX_EABI_10_3_0_Toolchain
 from ofrak_patch_maker_test import ToolchainUnderTest
-from ofrak_type.architecture import InstructionSet
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.model import (
@@ -25,11 +25,12 @@ def run_bounds_check_test(toolchain_under_test: ToolchainUnderTest):
     source_path = os.path.join(source_dir, "bounds_check.c")
     build_dir = tempfile.mkdtemp()
 
-    if toolchain_under_test.proc.isa == InstructionSet.AVR:
+    if toolchain_under_test.toolchain in (GNU_AVR_5_Toolchain, GNU_MIPS_LINUX_10_Toolchain):
         # avr-gcc does not support relocatable
         relocatable = False
     else:
         relocatable = True
+
     tc_config = ToolchainConfig(
         file_format=BinFileType.ELF,
         force_inlines=True,
@@ -64,7 +65,7 @@ def run_bounds_check_test(toolchain_under_test: ToolchainUnderTest):
         vm_address=0x6FE173D0,
         offset=0,
         is_entry=False,
-        length=64,
+        length=128,
         access_perms=MemoryPermissions.RX,
     )
     manual_map = {source_path: (text_segment,)}
@@ -92,12 +93,15 @@ def run_hello_world_test(toolchain_under_test: ToolchainUnderTest):
     source_path = os.path.join(source_dir, "hello_world.c")
     build_dir = tempfile.mkdtemp()
 
-    if toolchain_under_test.toolchain == GNU_AVR_5_Toolchain:
+    if toolchain_under_test.toolchain in (GNU_AVR_5_Toolchain, GNU_MIPS_LINUX_10_Toolchain):
         relocatable = False
-        base_symbols = {"__mulhi3": 0x1234}  # Dummy address to fix missing symbol
     else:
         relocatable = True
-        base_symbols = None
+
+    base_symbols = None
+    if toolchain_under_test.toolchain == GNU_AVR_5_Toolchain:
+        base_symbols = {"__mulhi3": 0x1234}  # Dummy address to fix missing symbol
+
     tc_config = ToolchainConfig(
         file_format=BinFileType.ELF,
         force_inlines=True,

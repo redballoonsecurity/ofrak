@@ -94,6 +94,8 @@ class Toolchain(ABC):
             ".dynstr",
             ".eh_frame",
             ".altinstructions",
+            ".MIPS.abiflags",
+            ".reginfo",
         ]
 
         self._assembler_target = self._get_assembler_target(processor)

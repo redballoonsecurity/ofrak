@@ -160,7 +160,7 @@ class InstructionModifier(Modifier[InstructionModifierConfig]):
         :param resource: the instruction resource to modify
         :param config:
 
-        :raises AssertionError: if the modified instruction length does not match the length of
+        :raises ValueError: if the modified instruction length does not match the length of
         the original instruction
         """
         resource_memory_region = await resource.view_as(MemoryRegion)
@@ -173,6 +173,12 @@ class InstructionModifier(Modifier[InstructionModifierConfig]):
             await resource.analyze(ProgramAttributes),
             config.mode,
         )
+        if len(asm) != resource_memory_region.size:
+            raise ValueError(
+                f"The modified instruction length does not match the original instruction length "
+                f"({'+' if len(asm) > resource_memory_region.size else ''}"
+                f"{len(asm) - resource_memory_region.size})"
+            )
         assert (
             len(asm) == resource_memory_region.size
         ), "The modified instruction length does not match the original instruction length"
