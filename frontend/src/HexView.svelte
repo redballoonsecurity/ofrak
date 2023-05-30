@@ -74,7 +74,7 @@
 
   const alignment = 16,
     chunkSize = 4096,
-    windowSize = chunkSize * 10;
+    windowSize = chunkSize * 5;
   // Sadly, this is the most flexible, most reliable way to get the line height
   // from arbitrary CSS units in pixels. It is definitely a little nasty :(
   const lineHeight = (() => {
