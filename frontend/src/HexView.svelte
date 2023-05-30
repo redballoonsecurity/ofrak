@@ -45,10 +45,7 @@
   import { chunkList, buf2hex, hexToChar } from "./helpers.js";
   import { selectedResource, selected, settings } from "./stores.js";
 
-  export let dataLenPromise,
-    scrollY,
-    resourceNodeDataMap,
-    resources;
+  export let dataLenPromise, scrollY, resourceNodeDataMap, resources;
   let childRangesPromise = Promise.resolve(undefined);
   let chunkDataPromise = Promise.resolve(undefined);
   let childRanges,
@@ -64,18 +61,16 @@
   $: chunkDataPromise.then((r) => {
     chunks = r;
   });
-  $: Promise.any([dataLenPromise, childRangesPromise]).then(
-    (_) => {
-      // Hacky solution to minimap view box rectangle only updating on scroll
-      // after data has loaded -- force a scroll to reload the rectangle after a
-      // timeout
-      setTimeout(() => {
-        if (scrollY !== undefined) {
-          $scrollY.top = 0;
-        }
-      }, 500);
-    }
-  );
+  $: Promise.any([dataLenPromise, childRangesPromise]).then((_) => {
+    // Hacky solution to minimap view box rectangle only updating on scroll
+    // after data has loaded -- force a scroll to reload the rectangle after a
+    // timeout
+    setTimeout(() => {
+      if (scrollY !== undefined) {
+        $scrollY.top = 0;
+      }
+    }, 500);
+  });
 
   const alignment = 16,
     chunkSize = 4096,
@@ -99,7 +94,7 @@
     endWindow = 0,
     startWindow = 0;
 
-  async function getNewData(){
+  async function getNewData() {
     const len = await dataLenPromise;
     start = Math.max(
       Math.floor((len * $scrollY.top) / alignment) * alignment,
@@ -112,44 +107,41 @@
 
     if (end >= endWindow) {
       startWindow = start;
-      if (startWindow < 0){
+      if (startWindow < 0) {
         startWindow = 0;
       }
 
       endWindow = startWindow + loadSize;
-      if (endWindow > len){
+      if (endWindow > len) {
         endWindow = len;
       }
 
       chunkData = await $selectedResource.get_data([startWindow, endWindow]);
     } else if (start < startWindow) {
       endWindow = end;
-      if (endWindow > len){
+      if (endWindow > len) {
         endWindow = len;
       }
 
       startWindow = endWindow - loadSize;
-      if (startWindow < 0){
+      if (startWindow < 0) {
         startWindow = 0;
       }
 
       chunkData = await $selectedResource.get_data([startWindow, endWindow]);
     }
 
-    chunks = chunkList(new Uint8Array(chunkData.slice(start - startWindow, end - startWindow)), alignment).map(
-      (chunk) => chunkList(buf2hex(chunk), 2)
-    );
+    chunks = chunkList(
+      new Uint8Array(chunkData.slice(start - startWindow, end - startWindow)),
+      alignment
+    ).map((chunk) => chunkList(buf2hex(chunk), 2));
     return chunks;
   }
   $: if (scrollY !== undefined && $scrollY !== undefined) {
     chunkDataPromise = getNewData($scrollY);
   }
 
-  async function calculateRanges(
-    resource,
-    dataLenPromise,
-    colors
-  ) {
+  async function calculateRanges(resource, dataLenPromise, colors) {
     const children = await resource.get_children();
     if (children === []) {
       return [];
@@ -248,7 +240,6 @@
   }
 </script>
 
-
 {#await dataLenPromise}
   <LoadingAnimation />
 {:then dataLen}
@@ -269,7 +260,7 @@
         </div>
         <div class="hbox">
           {#await chunkDataPromise}
-            <LoadingAnimation/>
+            <LoadingAnimation />
           {:then chunks}
             <div>
               {#each chunks as _, chunkIndex}
