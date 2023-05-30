@@ -99,11 +99,11 @@
   import { selected, selectedResource as _selectedResource } from "./stores.js";
   const selectedResource = $_selectedResource;
 
-  export let modifierView, dataPromise, dataLenPromise, resourceNodeDataMap;
+  export let modifierView, dataLenPromise, resourceNodeDataMap;
   let startInput,
     endInput,
-    startOffset,
-    endOffset,
+    startOffset = null,
+    endOffset = null,
     dataLength,
     errorMessage,
     userData;
@@ -135,15 +135,10 @@
       }
 
       if (selectedResource) {
-        dataPromise.then(
-          (data) =>
-            (userData = chunkList(
-              new Uint8Array(data.slice(startOffset, endOffset)),
-              16
-            )
-              .map((r) => buf2hex(r, " "))
-              .join("\n"))
-        );
+        let data = await selectedResource.get_data([startOffset, endOffset]);
+        userData = chunkList(new Uint8Array(data), 16)
+          .map((r) => buf2hex(r, " "))
+          .join("\n");
       }
     } catch (err) {
       try {

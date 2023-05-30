@@ -33,8 +33,10 @@
 <script>
   import Breadcrumb from "./Breadcrumb.svelte";
   import LoadingAnimation from "./LoadingAnimation.svelte";
+  import { selectedResource } from "./stores";
 
-  export let dataPromise;
+  let dataPromise = Promise.resolve([]);
+  dataPromise = $selectedResource.get_data();
 
   const decoder = new TextDecoder();
   function bufferToString(buffer) {

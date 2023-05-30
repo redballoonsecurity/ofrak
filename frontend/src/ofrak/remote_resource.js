@@ -162,8 +162,9 @@ export class RemoteResource extends Resource {
     if (this.data_id === null) {
       return null;
     }
-    let result = await fetch(`${this.uri}/get_data_length`)
-      .then((r) => r.json());
+    let result = await fetch(`${this.uri}/get_data_length`).then((r) =>
+      r.json()
+    );
     return result;
   }
 
