@@ -199,7 +199,17 @@ class CapstoneDisassemblerService(DisassemblerServiceInterface):
 
 
 def _asm_fixups(base_mnemonic: str, base_operands: str, isa: InstructionSet) -> Tuple[str, str]:
-    arm64_vector_hexify_exclusion_mnems = ["movi", "fmov"]
+    arm64_vector_hexify_exclusion_mnems = [
+        "movi",
+        "fdiv",
+        "fmax",
+        "fmla",
+        "fmls",
+        "fmov",
+        "fmul",
+        "fmulx",
+        "fneg",
+    ]
     """
     In AARCH64, vector instructions use numerical constants to reference vectors to perform operations on
     These numerical constants shouldn't be converted to hex because keystone will be unable to reassemble them
