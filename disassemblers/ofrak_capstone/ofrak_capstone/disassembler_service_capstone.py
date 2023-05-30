@@ -199,7 +199,8 @@ class CapstoneDisassemblerService(DisassemblerServiceInterface):
 
 
 def _asm_fixups(base_mnemonic: str, base_operands: str, isa: InstructionSet) -> Tuple[str, str]:
-    operands = re.sub(RE_REPRESENT_CONSTANTS_HEX, r"\g<1>0x\g<2>", base_operands)
+    # operands = re.sub(RE_REPRESENT_CONSTANTS_HEX, r"\g<1>0x\g<2>", base_operands)
+    operands = base_operands
     if isa is InstructionSet.ARM:
         operands = re.sub(RE_RENAME_FP_TO_R11, r"\1r11\2", operands)
 
