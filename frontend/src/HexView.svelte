@@ -45,26 +45,37 @@
   import { chunkList, buf2hex, hexToChar } from "./helpers.js";
   import { selectedResource, selected, settings } from "./stores.js";
 
-  export let dataPromise, scrollY, resourceNodeDataMap, resources;
+  export let dataPromise,
+    dataLenPromise,
+    scrollY,
+    resourceNodeDataMap,
+    resources;
   let childRangesPromise = Promise.resolve(undefined);
   let childRanges,
-    data = [];
+    data = [],
+    len = null;
+
   $: dataPromise.then((r) => {
     data = r;
+  });
+  $: dataLenPromise.then((r) => {
+    len = r;
   });
   $: childRangesPromise.then((r) => {
     childRanges = r;
   });
-  $: Promise.any([dataPromise, childRangesPromise]).then((_) => {
-    // Hacky solution to minimap view box rectangle only updating on scroll
-    // after data has loaded -- force a scroll to reload the rectangle after a
-    // timeout
-    setTimeout(() => {
-      if (scrollY !== undefined) {
-        $scrollY.top = 0;
-      }
-    }, 500);
-  });
+  $: Promise.any([dataPromise, dataLenPromise, childRangesPromise]).then(
+    (_) => {
+      // Hacky solution to minimap view box rectangle only updating on scroll
+      // after data has loaded -- force a scroll to reload the rectangle after a
+      // timeout
+      setTimeout(() => {
+        if (scrollY !== undefined) {
+          $scrollY.top = 0;
+        }
+      }, 500);
+    }
+  );
 
   const alignment = 16,
     chunkSize = 4096;
@@ -86,24 +97,30 @@
     end = 64;
   $: if (scrollY !== undefined && $scrollY !== undefined) {
     start = Math.max(
-      Math.floor((data.byteLength * $scrollY.top) / alignment) * alignment,
+      Math.floor((len * $scrollY.top) / alignment) * alignment,
       0
     );
     end = Math.min(
       start + Math.floor($scrollY.viewHeightPixels / lineHeight) * alignment,
-      data.byteLength
+      len
     );
     chunks = chunkList(new Uint8Array(data.slice(start, end)), alignment).map(
       (chunk) => chunkList(buf2hex(chunk), 2)
     );
   }
 
-  async function calculateRanges(resource, dataPromise, colors) {
+  async function calculateRanges(
+    resource,
+    dataPromise,
+    dataLenPromise,
+    colors
+  ) {
     const children = await resource.get_children();
     if (children === []) {
       return [];
     }
     const data = await dataPromise;
+    const len = await dataLenPromise;
     const childRanges = Object.entries(await resource.get_child_data_ranges())
       .filter(
         ([_, rangeInParent]) =>
@@ -146,12 +163,12 @@
       ranges = ranges;
     } else if (childRanges.length == 0) {
       ranges = [];
-      for (let i = 0; i < data.byteLength; i += chunkSize) {
+      for (let i = 0; i < len; i += chunkSize) {
         ranges.push({
           color: null,
           resource_id: null,
           start: i,
-          end: Math.min(i + chunkSize, data.byteLength),
+          end: Math.min(i + chunkSize, len),
         });
       }
     }
@@ -160,6 +177,7 @@
   $: childRangesPromise = calculateRanges(
     $selectedResource,
     dataPromise,
+    dataLenPromise,
     $settings.colors
   );
 
@@ -200,96 +218,100 @@
 {#await dataPromise}
   <LoadingAnimation />
 {:then dataResult}
-  {#if dataResult !== undefined && dataResult.byteLength > 0}
-    <!-- 
-      The magic number below is the largest height that Firefox will support with
-      a position: sticky element. Otherwise, the sticky element scrolls away.
-      Found this by manual binary search on my computer. 
-    -->
-    <div
-      style:height="min(8940000px, calc(var(--line-height) * {Math.ceil(
-        dataResult.byteLength / alignment
-      )}))"
-    >
-      <div class="sticky">
-        <div class="breadcrumb">
-          <Breadcrumb />
-        </div>
-        <div class="hbox">
-          <div>
-            {#each chunks as _, chunkIndex}
-              <div>
-                {(chunkIndex * alignment + start)
-                  .toString(16)
-                  .padStart(8, "0") + ": "}
-              </div>
-            {/each}
+  {#await dataLenPromise}
+    <LoadingAnimation />
+  {:then dataLen}
+    {#if dataResult !== undefined && dataLen > 0}
+      <!-- 
+        The magic number below is the largest height that Firefox will support with
+        a position: sticky element. Otherwise, the sticky element scrolls away.
+        Found this by manual binary search on my computer. 
+      -->
+      <div
+        style:height="min(8940000px, calc(var(--line-height) * {Math.ceil(
+          dataLen / alignment
+        )}))"
+      >
+        <div class="sticky">
+          <div class="breadcrumb">
+            <Breadcrumb />
           </div>
-
-          <span class="spacer"> </span>
-
-          {#await childRangesPromise}
+          <div class="hbox">
             <div>
+              {#each chunks as _, chunkIndex}
+                <div>
+                  {(chunkIndex * alignment + start)
+                    .toString(16)
+                    .padStart(8, "0") + ": "}
+                </div>
+              {/each}
+            </div>
+
+            <span class="spacer"> </span>
+
+            {#await childRangesPromise}
+              <div>
+                {#each chunks as hexes}
+                  <div>
+                    {#each hexes as byte}
+                      <span class="byte">{byte}</span>
+                    {/each}
+                  </div>
+                {/each}
+              </div>
+            {:then childRangesResult}
+              <div>
+                {#each chunks as hexes, chunkIndex}
+                  <div>
+                    {#each hexes as byte, byteIndex}
+                      {@const rangeInfo = getRangeInfo(
+                        chunkIndex * alignment + byteIndex + start,
+                        childRangesResult,
+                        byte
+                      )}
+                      {#if rangeInfo?.resource_id === null || rangeInfo?.resource_id === undefined}
+                        <span class="byte">{byte}</span>
+                      {:else}
+                        <span
+                          class="byte"
+                          style:background-color="{rangeInfo.background}"
+                          style:color="{rangeInfo.foreground}"
+                          style:cursor="pointer"
+                          style:user-select="none"
+                          title="{rangeInfo.resource_id !== null
+                            ? resources[rangeInfo.resource_id]?.get_caption() ||
+                              rangeInfo.resource_id
+                            : ''}"
+                          on:dblclick="{() => {
+                            resourceNodeDataMap[$selected].collapsed = false;
+                            $selected = rangeInfo.resource_id;
+                          }}">{byte}</span
+                        >
+                      {/if}
+                    {/each}
+                  </div>
+                {/each}
+              </div>
+            {/await}
+
+            <span class="spacer"></span>
+
+            <div class="ascii">
               {#each chunks as hexes}
                 <div>
-                  {#each hexes as byte}
-                    <span class="byte">{byte}</span>
-                  {/each}
+                  {hexes.map(hexToChar).join("") + " "}
                 </div>
               {/each}
             </div>
-          {:then childRangesResult}
-            <div>
-              {#each chunks as hexes, chunkIndex}
-                <div>
-                  {#each hexes as byte, byteIndex}
-                    {@const rangeInfo = getRangeInfo(
-                      chunkIndex * alignment + byteIndex + start,
-                      childRangesResult,
-                      byte
-                    )}
-                    {#if rangeInfo?.resource_id === null || rangeInfo?.resource_id === undefined}
-                      <span class="byte">{byte}</span>
-                    {:else}
-                      <span
-                        class="byte"
-                        style:background-color="{rangeInfo.background}"
-                        style:color="{rangeInfo.foreground}"
-                        style:cursor="pointer"
-                        style:user-select="none"
-                        title="{rangeInfo.resource_id !== null
-                          ? resources[rangeInfo.resource_id]?.get_caption() ||
-                            rangeInfo.resource_id
-                          : ''}"
-                        on:dblclick="{() => {
-                          resourceNodeDataMap[$selected].collapsed = false;
-                          $selected = rangeInfo.resource_id;
-                        }}">{byte}</span
-                      >
-                    {/if}
-                  {/each}
-                </div>
-              {/each}
-            </div>
-          {/await}
-
-          <span class="spacer"></span>
-
-          <div class="ascii">
-            {#each chunks as hexes}
-              <div>
-                {hexes.map(hexToChar).join("") + " "}
-              </div>
-            {/each}
           </div>
         </div>
       </div>
-    </div>
-  {:else}
-    <div class="breadcrumb sticky">
-      <Breadcrumb />
-    </div>
+    {:else}
+      <div class="breadcrumb sticky">
+        <Breadcrumb />
+      </div>
 
-    Resource has no data!
-  {/if}
+      Resource has no data!
+    {/if}
+  {/await}
 {/await}

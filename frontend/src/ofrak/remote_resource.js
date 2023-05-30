@@ -158,6 +158,14 @@ export class RemoteResource extends Resource {
     return result;
   }
 
+  async get_data_len() {
+    if (this.data_id === null) {
+      return [];
+    }
+    let result = await fetch(`${this.uri}/get_data_len`).then((r) => r.json());
+    return result;
+  }
+
   async get_data_range_within_parent() {
     if (this.data_id === null) {
       return null;

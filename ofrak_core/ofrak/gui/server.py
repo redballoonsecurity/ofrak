@@ -146,7 +146,7 @@ class AiohttpOFRAKServer:
                 web.get("/get_root_resources", self.get_root_resources),
                 web.get("/{resource_id}/", self.get_resource),
                 web.get("/{resource_id}/get_data", self.get_data),
-                web.get("/{resource_id}/get_data_len", self.get_data_len),
+                web.get("/{resource_id}/get_data_length", self.get_data_length),
                 web.post(
                     "/batch/get_data_range_within_parent",
                     self.batch_get_range,
@@ -296,7 +296,7 @@ class AiohttpOFRAKServer:
         return Response(body=data)
 
     @exceptions_to_http(SerializedError)
-    async def get_data_len(self, request: Request) -> Response:
+    async def get_data_length(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         data_len = await resource.get_data_length()
         return json_response(data_len)

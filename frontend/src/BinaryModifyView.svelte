@@ -99,7 +99,7 @@
   import { selected, selectedResource as _selectedResource } from "./stores.js";
   const selectedResource = $_selectedResource;
 
-  export let modifierView, dataPromise, resourceNodeDataMap;
+  export let modifierView, dataPromise, dataLenPromise, resourceNodeDataMap;
   let startInput,
     endInput,
     startOffset,
@@ -108,7 +108,9 @@
     errorMessage,
     userData;
 
-  $: dataPromise.then((data) => (dataLength = data.byteLength));
+  $: dataLenPromise.then((r) => {
+    dataLength = r;
+  });
 
   function refreshResource() {
     // Force hex view refresh with colors

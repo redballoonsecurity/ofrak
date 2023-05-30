@@ -58,6 +58,7 @@
 
   let showRootResource = false,
     displayDataPromise = Promise.resolve([]),
+    dataLenPromise = Promise.resolve([]),
     hexScrollY = writable({}),
     useAssemblyView = false,
     useTextView = false,
@@ -83,6 +84,7 @@
     } else {
       $selectedResource = currentResource;
       displayDataPromise = currentResource.get_data();
+      dataLenPromise = currentResource.get_data_len();
       useAssemblyView = [
         "ofrak.core.complex_block.ComplexBlock",
         "ofrak.core.basic_block.BasicBlock",
@@ -178,6 +180,7 @@ Answer by running riddle.answer('your answer here') from the console.`);
             <svelte:component
               this="{modifierView}"
               dataPromise="{displayDataPromise}"
+              dataLenPromise="{dataLenPromise}"
               bind:modifierView="{modifierView}"
               bind:resourceNodeDataMap="{resourceNodeDataMap}"
             />
@@ -213,6 +216,7 @@ Answer by running riddle.answer('your answer here') from the console.`);
         {:else}
           <HexView
             dataPromise="{displayDataPromise}"
+            dataLenPromise="{dataLenPromise}"
             resources="{resources}"
             scrollY="{hexScrollY}"
             bind:resourceNodeDataMap="{resourceNodeDataMap}"
@@ -224,7 +228,7 @@ Answer by running riddle.answer('your answer here') from the console.`);
         -->
         <svelte:fragment slot="minimap">
           <JumpToOffset
-            dataPromise="{displayDataPromise}"
+            dataLenPromise="{dataLenPromise}"
             scrollY="{hexScrollY}"
           />
           {#if carouselSelection === "Entropy"}
