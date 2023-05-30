@@ -96,24 +96,11 @@
   let chunks = [],
     start = 0,
     end = 64,
-    lastLoadedAddress = 0;
-  // $: if (scrollY !== undefined && $scrollY !== undefined) {
-  //   start = Math.max(
-  //     Math.floor((len * $scrollY.top) / alignment) * alignment,
-  //     0
-  //   );
-  //   end = Math.min(
-  //     start + Math.floor($scrollY.viewHeightPixels / lineHeight) * alignment,
-  //     len
-  //   );
-  //   chunks = chunkList(new Uint8Array(data.slice(start, end)), alignment).map(
-  //     (chunk) => chunkList(buf2hex(chunk), 2)
-  //   );
-  // }
+    endWindow = 0,
+    startWindow = 0;
 
   async function getNewData(){
     const len = await dataLenPromise;
-    console.log("scrolling")
     start = Math.max(
       Math.floor((len * $scrollY.top) / alignment) * alignment,
       0
@@ -122,24 +109,34 @@
       start + Math.floor($scrollY.viewHeightPixels / lineHeight) * alignment,
       len
     );
-    // console.log("Start: " + start);
-    // console.log("End: " + end);
-    // console.log("Last Addr: " + lastLoadedAddress);
-    // console.log("Len: " + len);
-    // console.log("possible start:" + Math.floor((len * $scrollY.top) / alignment) * alignment)
 
-    if (end >= lastLoadedAddress) {
-      console.log("Updating data")
-      lastLoadedAddress = start + loadSize;
-      if (lastLoadedAddress > len){
-        console.log("end of file")
-        lastLoadedAddress = len;
+    if (end >= endWindow) {
+      startWindow = start;
+      if (startWindow < 0){
+        startWindow = 0;
       }
-      chunkData = await $selectedResource.get_data([start, lastLoadedAddress]).then((r) => new Blob([chunkData, r]).arrayBuffer());
-      console.log("data updated")
 
+      endWindow = startWindow + loadSize;
+      if (endWindow > len){
+        endWindow = len;
+      }
+
+      chunkData = await $selectedResource.get_data([startWindow, endWindow]);
+    } else if (start < startWindow) {
+      endWindow = end;
+      if (endWindow > len){
+        endWindow = len;
+      }
+
+      startWindow = endWindow - loadSize;
+      if (startWindow < 0){
+        startWindow = 0;
+      }
+
+      chunkData = await $selectedResource.get_data([startWindow, endWindow]);
     }
-    chunks = chunkList(new Uint8Array(chunkData.slice(start, end)), alignment).map(
+
+    chunks = chunkList(new Uint8Array(chunkData.slice(start - startWindow, end - startWindow)), alignment).map(
       (chunk) => chunkList(buf2hex(chunk), 2)
     );
     return chunks;
