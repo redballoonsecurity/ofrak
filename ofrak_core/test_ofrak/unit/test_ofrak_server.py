@@ -157,7 +157,7 @@ async def test_get_data(ofrak_client: TestClient, hello_world_elf):
     assert resp.status == 200
     resp_body = await resp.read()
     assert resp_body == hello_world_elf
-    resp = await ofrak_client.get(f"/{create_body['id']}/get_data", params={"range": "16,80"})
+    resp = await ofrak_client.get(f"/{create_body['id']}/get_data", params={"range": "[16,80]"})
     assert resp.status == 200
     resp_body = await resp.read()
     assert resp_body == hello_world_elf[0x10:0x50]
