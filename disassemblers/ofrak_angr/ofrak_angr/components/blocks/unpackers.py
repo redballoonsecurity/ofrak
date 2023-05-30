@@ -25,21 +25,21 @@ LOGGER = logging.getLogger(__name__)
 
 class AngrCodeRegionUnpacker(CodeRegionUnpacker):
     async def unpack(self, resource: Resource, config: Optional[AngrAnalyzerConfig] = None):
-        ## Prepare CR unpacker
+        # Prepare CR unpacker
         cr_view = await resource.view_as(CodeRegion)
 
-        ## Run AngrAnalyzer
+        # Run AngrAnalyzer
         root_resource = await resource.get_only_ancestor(
             ResourceFilter(tags=[AngrAnalysisResource], include_self=True)
         )
         angr_analysis = await root_resource.analyze(AngrAnalysis)
 
-        ## Fixup the CodeRegion's virtual address after analyzing with angr.
+        # Fixup the CodeRegion's virtual address after analyzing with angr.
         await resource.run(AngrCodeRegionModifier, None)
 
         cr_vaddr_range = cr_view.vaddr_range()
 
-        ## Fetch and create complex blocks to populate the CR with
+        # Fetch and create complex blocks to populate the CR with
         num_overlapping_cbs = 0
 
         for complex_block in self._angr_get_complex_blocks(angr_analysis, cr_vaddr_range):
@@ -64,27 +64,27 @@ class AngrCodeRegionUnpacker(CodeRegionUnpacker):
         """
         LOGGER.debug(f"Getting complex blocks from region {region_vaddr.start:#x}")
 
-        ## Filter for functions within the requested region
+        # Filter for functions within the requested region
         angr_funcs: Iterable[Tuple[int, AngrFunction]] = angr_analysis.project.kb.functions.items()
         funcs = [f[1] for f in angr_funcs if f[0] in region_vaddr]
 
-        ## Filter out non-returning functions, unless it's an entrypoint
+        # Filter out non-returning functions, unless it's an entrypoint
         # TODO: Re-visit this; this will likely filter HW interrupt funcs
         funcs = [f for f in funcs if (f.has_return) or (f.addr == angr_analysis.project.entry)]
 
-        ## Yield the next function via a generator
+        # Yield the next function via a generator
         for idx, func in enumerate(funcs):
             start_addr = func.addr
 
-            ## Adjust the upper bound of the CB to include DWORDS
-            ## The boundary of a CB extends up to min(region_end_vaddr, next_func_addr)
+            # Adjust the upper bound of the CB to include DWORDS
+            # The boundary of a CB extends up to min(region_end_vaddr, next_func_addr)
             next_idx = idx + 1
             if next_idx < len(funcs):
                 end_addr = min(region_vaddr.end, funcs[next_idx].addr)
             else:
                 end_addr = region_vaddr.end
 
-            ## OFRAK expects real addresses, so we need to convert the thumb-masked addresses angr returns
+            # OFRAK expects real addresses, so we need to convert the thumb-masked addresses angr returns
             start_addr = get_real_address_if_arm(angr_analysis.project.arch, start_addr)
             end_addr = get_real_address_if_arm(angr_analysis.project.arch, end_addr)
 
@@ -93,25 +93,25 @@ class AngrCodeRegionUnpacker(CodeRegionUnpacker):
 
 class AngrComplexBlockUnpacker(ComplexBlockUnpacker):
     async def unpack(self, resource: Resource, config: Optional[AngrAnalyzerConfig] = None):
-        ## Prepare CB unpacker
+        # Prepare CB unpacker
         cb_view = await resource.view_as(ComplexBlock)
         cb_vaddr_range = cb_view.vaddr_range()
         cb_data_range = await resource.get_data_range_within_root()
 
-        ## Run / fetch angr analyzer
+        # Run / fetch angr analyzer
         root_resource = await resource.get_only_ancestor(
             ResourceFilter(tags=[AngrAnalysisResource], include_self=True)
         )
         angr_analysis = await root_resource.analyze(AngrAnalysis)
 
         valid_data_xref_ranges = []
-        ## Fetch and create Basic Blocks to populate the CB with
+        # Fetch and create Basic Blocks to populate the CB with
         for basic_block in self._angr_get_basic_blocks(angr_analysis, cb_vaddr_range):
             await cb_view.create_child_region(basic_block)
             valid_data_xref_ranges.append(basic_block.vaddr_range())
 
         valid_data_xref_ranges = Range.merge_ranges(valid_data_xref_ranges)
-        ## Fetch and create Data Words to populate the CB with
+        # Fetch and create Data Words to populate the CB with
         for data_word in self._angr_get_dword_blocks(
             angr_analysis, cb_vaddr_range, cb_data_range, valid_data_xref_ranges
         ):
@@ -247,7 +247,11 @@ def _get_bb_exit_addr_info(
     current_angr_bb,
     current_bb_idx,
 ) -> Tuple[bool, Optional[int]]:
-    ## Fetch the exit point addr (if it exists) and sanity check the selection
+    """
+    Get exit address info needed for BasicBlock creation:
+    BasicBlock.is_exit_point, BasicBlock.exit_addr.
+    """
+    # Fetch the exit point addr (if it exists) and sanity check the selection
     if current_angr_bb.codenode in angr_complex_block.endpoints:
         return True, None
 
