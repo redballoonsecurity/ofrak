@@ -178,7 +178,7 @@
         await selectedResource.queue_patch(patchData, startOffset, endOffset);
       }
       resourceNodeDataMap[$selected] = {
-        lastModified: true,
+        modified: true,
       };
       modifierView = undefined;
       refreshResource();
