@@ -135,7 +135,7 @@
         console.log("end of file")
         lastLoadedAddress = len;
       }
-      chunkData = await $selectedResource.get_data([start, lastLoadedAddress]);
+      chunkData = await $selectedResource.get_data([start, lastLoadedAddress]).then((r) => new Blob([chunkData, r]).arrayBuffer());
       console.log("data updated")
 
     }
