@@ -27,3 +27,11 @@ PPC_ARCH = ProgramAttributes(
     Endianness.BIG_ENDIAN,
     None,
 )
+
+AARCH64_ARCH = ProgramAttributes(
+    InstructionSet.AARCH64,
+    None,
+    BitWidth.BIT_64,
+    Endianness.LITTLE_ENDIAN,
+    None,
+)

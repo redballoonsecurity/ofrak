@@ -186,12 +186,6 @@ class KeystoneAssemblerService(AssemblerServiceInterface):
                         r" %s" % register_operand, " %u" % n
                     )
 
-        # special processing for movi instructions in AARCH64
-        # because for some reason capstone turns the bytes for movi v0.2d... into movi v0.0x2d which breaks keystone
-        if program_attributes.isa is InstructionSet.AARCH64:
-            if "movi" in preprocessed_assembly:
-                preprocessed_assembly = preprocessed_assembly.replace(".0x2d", ".2d")
-
         try:
             ks = self._get_keystone_instance(program_attributes, mode)
             if program_attributes.isa in (InstructionSet.ARM, InstructionSet.AARCH64):
