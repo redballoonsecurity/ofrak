@@ -144,25 +144,26 @@ export class RemoteResource extends Resource {
       return [];
     }
 
-    if (this.cache["get_data"]) {
-      return this.cache["get_data"];
-    }
+    // if (this.cache["get_data"]) {
+    //   return this.cache["get_data"];
+    // }
     let range_query = "";
     if (range) {
-      range_query = `?range=${range}`;
+      range_query = `?range=[${range}]`;
     }
     let result = await fetch(`${this.uri}/get_data${range_query}`)
       .then((r) => r.blob())
       .then((b) => b.arrayBuffer());
-    this.cache["get_data"] = result;
+    // this.cache["get_data"] = result;
     return result;
   }
 
-  async get_data_len() {
+  async get_data_length() {
     if (this.data_id === null) {
-      return [];
+      return null;
     }
-    let result = await fetch(`${this.uri}/get_data_len`).then((r) => r.json());
+    let result = await fetch(`${this.uri}/get_data_length`)
+      .then((r) => r.json());
     return result;
   }
 

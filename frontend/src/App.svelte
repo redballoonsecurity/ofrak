@@ -84,7 +84,7 @@
     } else {
       $selectedResource = currentResource;
       displayDataPromise = currentResource.get_data();
-      dataLenPromise = currentResource.get_data_len();
+      dataLenPromise = currentResource.get_data_length();
       useAssemblyView = [
         "ofrak.core.complex_block.ComplexBlock",
         "ofrak.core.basic_block.BasicBlock",
@@ -215,7 +215,6 @@ Answer by running riddle.answer('your answer here') from the console.`);
           <TextView dataPromise="{displayDataPromise}" />
         {:else}
           <HexView
-            dataPromise="{displayDataPromise}"
             dataLenPromise="{dataLenPromise}"
             resources="{resources}"
             scrollY="{hexScrollY}"

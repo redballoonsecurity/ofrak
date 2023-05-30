@@ -45,26 +45,26 @@
   import { chunkList, buf2hex, hexToChar } from "./helpers.js";
   import { selectedResource, selected, settings } from "./stores.js";
 
-  export let dataPromise,
-    dataLenPromise,
+  export let dataLenPromise,
     scrollY,
     resourceNodeDataMap,
     resources;
   let childRangesPromise = Promise.resolve(undefined);
+  let chunkDataPromise = Promise.resolve(undefined);
   let childRanges,
-    data = [],
-    len = null;
+    len = null,
+    chunkData = [];
 
-  $: dataPromise.then((r) => {
-    data = r;
-  });
   $: dataLenPromise.then((r) => {
     len = r;
   });
   $: childRangesPromise.then((r) => {
     childRanges = r;
   });
-  $: Promise.any([dataPromise, dataLenPromise, childRangesPromise]).then(
+  $: chunkDataPromise.then((r) => {
+    chunks = r;
+  });
+  $: Promise.any([dataLenPromise, childRangesPromise]).then(
     (_) => {
       // Hacky solution to minimap view box rectangle only updating on scroll
       // after data has loaded -- force a scroll to reload the rectangle after a
@@ -78,7 +78,8 @@
   );
 
   const alignment = 16,
-    chunkSize = 4096;
+    chunkSize = 4096,
+    loadSize = chunkSize * 10;
   // Sadly, this is the most flexible, most reliable way to get the line height
   // from arbitrary CSS units in pixels. It is definitely a little nasty :(
   const lineHeight = (() => {
@@ -94,8 +95,25 @@
 
   let chunks = [],
     start = 0,
-    end = 64;
-  $: if (scrollY !== undefined && $scrollY !== undefined) {
+    end = 64,
+    lastLoadedAddress = 0;
+  // $: if (scrollY !== undefined && $scrollY !== undefined) {
+  //   start = Math.max(
+  //     Math.floor((len * $scrollY.top) / alignment) * alignment,
+  //     0
+  //   );
+  //   end = Math.min(
+  //     start + Math.floor($scrollY.viewHeightPixels / lineHeight) * alignment,
+  //     len
+  //   );
+  //   chunks = chunkList(new Uint8Array(data.slice(start, end)), alignment).map(
+  //     (chunk) => chunkList(buf2hex(chunk), 2)
+  //   );
+  // }
+
+  async function getNewData(){
+    const len = await dataLenPromise;
+    console.log("scrolling")
     start = Math.max(
       Math.floor((len * $scrollY.top) / alignment) * alignment,
       0
@@ -104,14 +122,34 @@
       start + Math.floor($scrollY.viewHeightPixels / lineHeight) * alignment,
       len
     );
-    chunks = chunkList(new Uint8Array(data.slice(start, end)), alignment).map(
+    // console.log("Start: " + start);
+    // console.log("End: " + end);
+    // console.log("Last Addr: " + lastLoadedAddress);
+    // console.log("Len: " + len);
+    // console.log("possible start:" + Math.floor((len * $scrollY.top) / alignment) * alignment)
+
+    if (end >= lastLoadedAddress) {
+      console.log("Updating data")
+      lastLoadedAddress = start + loadSize;
+      if (lastLoadedAddress > len){
+        console.log("end of file")
+        lastLoadedAddress = len;
+      }
+      chunkData = await $selectedResource.get_data([start, lastLoadedAddress]);
+      console.log("data updated")
+
+    }
+    chunks = chunkList(new Uint8Array(chunkData.slice(start, end)), alignment).map(
       (chunk) => chunkList(buf2hex(chunk), 2)
     );
+    return chunks;
+  }
+  $: if (scrollY !== undefined && $scrollY !== undefined) {
+    chunkDataPromise = getNewData($scrollY);
   }
 
   async function calculateRanges(
     resource,
-    dataPromise,
     dataLenPromise,
     colors
   ) {
@@ -119,7 +157,6 @@
     if (children === []) {
       return [];
     }
-    const data = await dataPromise;
     const len = await dataLenPromise;
     const childRanges = Object.entries(await resource.get_child_data_ranges())
       .filter(
@@ -176,7 +213,6 @@
   }
   $: childRangesPromise = calculateRanges(
     $selectedResource,
-    dataPromise,
     dataLenPromise,
     $settings.colors
   );
@@ -215,28 +251,29 @@
   }
 </script>
 
-{#await dataPromise}
+
+{#await dataLenPromise}
   <LoadingAnimation />
-{:then dataResult}
-  {#await dataLenPromise}
-    <LoadingAnimation />
-  {:then dataLen}
-    {#if dataResult !== undefined && dataLen > 0}
-      <!-- 
-        The magic number below is the largest height that Firefox will support with
-        a position: sticky element. Otherwise, the sticky element scrolls away.
-        Found this by manual binary search on my computer. 
-      -->
-      <div
-        style:height="min(8940000px, calc(var(--line-height) * {Math.ceil(
-          dataLen / alignment
-        )}))"
-      >
-        <div class="sticky">
-          <div class="breadcrumb">
-            <Breadcrumb />
-          </div>
-          <div class="hbox">
+{:then dataLen}
+  {#if dataLen > 0}
+    <!-- 
+      The magic number below is the largest height that Firefox will support with
+      a position: sticky element. Otherwise, the sticky element scrolls away.
+      Found this by manual binary search on my computer. 
+    -->
+    <div
+      style:height="min(8940000px, calc(var(--line-height) * {Math.ceil(
+        dataLen / alignment
+      )}))"
+    >
+      <div class="sticky">
+        <div class="breadcrumb">
+          <Breadcrumb />
+        </div>
+        <div class="hbox">
+          {#await chunkDataPromise}
+            <LoadingAnimation/>
+          {:then chunks}
             <div>
               {#each chunks as _, chunkIndex}
                 <div>
@@ -303,15 +340,15 @@
                 </div>
               {/each}
             </div>
-          </div>
+          {/await}
         </div>
       </div>
-    {:else}
-      <div class="breadcrumb sticky">
-        <Breadcrumb />
-      </div>
+    </div>
+  {:else}
+    <div class="breadcrumb sticky">
+      <Breadcrumb />
+    </div>
 
-      Resource has no data!
-    {/if}
-  {/await}
+    Resource has no data!
+  {/if}
 {/await}
