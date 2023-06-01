@@ -244,7 +244,7 @@
 
       {
         text: "Run Script",
-        iconUrl: "/icons/run.svg",
+        iconUrl: "/icons/run_script.svg",
         onclick: async (e) => {
           modifierView = RunScriptView;
         },
