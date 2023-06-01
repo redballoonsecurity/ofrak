@@ -114,7 +114,7 @@
       if (result === "modified") {
         for (const resource of results[result]) {
           resourceNodeDataMap[resource["id"]] = {
-            modified: true,
+            lastModified: true,
           };
         }
       }
