@@ -33,6 +33,14 @@
           modifierView = ComponentsView;
         },
       },
+
+      {
+        text: "Run Script",
+        iconUrl: "/icons/run_script.svg",
+        onclick: async (e) => {
+          modifierView = RunScriptView;
+        },
+      },
     ];
   }
 
@@ -239,14 +247,6 @@
         iconUrl: "/icons/document.svg",
         onclick: async (e) => {
           bottomLeftPane = ScriptView;
-        },
-      },
-
-      {
-        text: "Run Script",
-        iconUrl: "/icons/run_script.svg",
-        onclick: async (e) => {
-          modifierView = RunScriptView;
         },
       },
 
