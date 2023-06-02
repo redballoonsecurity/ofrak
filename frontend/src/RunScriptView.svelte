@@ -215,10 +215,11 @@
         const orig_selected = $selected;
         $selected = undefined;
         $selected = orig_selected;
-        resourceNodeDataMap[$selected] = {
-          collapsed: false,
-          childrenPromise: $selectedResource.get_children(),
-        };
+        if (!resourceNodeDataMap[$selected]) {
+            resourceNodeDataMap[$selected] = {};
+          };
+        resourceNodeDataMap[$selected].collapsed = false;
+        resourceNodeDataMap[$selected].childrenPromise = rootResource.get_children();
       }}">Back</button
     >
   </div>

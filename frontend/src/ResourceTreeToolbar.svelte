@@ -52,10 +52,11 @@
         shortcut: "i",
         onclick: async (e) => {
           await rootResource.identify();
-          resourceNodeDataMap[$selected] = {
-            collapsed: !!resourceNodeDataMap[$selected]?.collapsed,
-            childrenPromise: rootResource.get_children(),
+          if (!resourceNodeDataMap[$selected]) {
+            resourceNodeDataMap[$selected] = {};
           };
+          resourceNodeDataMap[$selected].collapsed = !!resourceNodeDataMap[$selected]?.collapsed;
+          resourceNodeDataMap[$selected].childrenPromise = rootResource.get_children();
           refreshResource();
         },
       },
@@ -66,10 +67,11 @@
         shortcut: "u",
         onclick: async (e) => {
           await rootResource.unpack();
-          resourceNodeDataMap[$selected] = {
-            collapsed: false,
-            childrenPromise: rootResource.get_children(),
+          if (!resourceNodeDataMap[$selected]) {
+            resourceNodeDataMap[$selected] = {};
           };
+          resourceNodeDataMap[$selected].collapsed = false;
+          resourceNodeDataMap[$selected].childrenPromise = rootResource.get_children();
           refreshResource();
         },
       },
@@ -88,10 +90,11 @@
         shortcut: "a",
         onclick: async (e) => {
           await rootResource.analyze();
-          resourceNodeDataMap[$selected] = {
-            collapsed: !!resourceNodeDataMap[$selected]?.collapsed,
-            childrenPromise: rootResource.get_children(),
+          if (!resourceNodeDataMap[$selected]) {
+            resourceNodeDataMap[$selected] = {};
           };
+          resourceNodeDataMap[$selected].collapsed = !!resourceNodeDataMap[$selected]?.collapsed;
+          resourceNodeDataMap[$selected].childrenPromise = rootResource.get_children();
           refreshResource();
         },
       },
@@ -112,10 +115,11 @@
           const descendants = await $selectedResource.get_descendants();
           clearModified(descendants);
           await rootResource.pack();
-          resourceNodeDataMap[$selected] = {
-            collapsed: false,
-            childrenPromise: rootResource.get_children(),
+          if (!resourceNodeDataMap[$selected]) {
+            resourceNodeDataMap[$selected] = {};
           };
+          resourceNodeDataMap[$selected].collapsed = false;
+          resourceNodeDataMap[$selected].childrenPromise = rootResource.get_children();
           refreshResource();
         },
       },
@@ -202,10 +206,11 @@
         shortcut: "u+Shift",
         onclick: async (e) => {
           await rootResource.unpack_recursively();
-          resourceNodeDataMap[$selected] = {
-            collapsed: false,
-            childrenPromise: rootResource.get_children(),
+          if (!resourceNodeDataMap[$selected]) {
+            resourceNodeDataMap[$selected] = {};
           };
+          resourceNodeDataMap[$selected].collapsed = false;
+          resourceNodeDataMap[$selected].childrenPromise = rootResource.get_children();
           refreshResource();
         },
       },
@@ -218,10 +223,11 @@
           const descendants = await $selectedResource.get_descendants();
           clearModified(descendants);
           await rootResource.pack_recursively();
-          resourceNodeDataMap[$selected] = {
-            collapsed: false,
-            childrenPromise: rootResource.get_children(),
+          if (!resourceNodeDataMap[$selected]) {
+            resourceNodeDataMap[$selected] = {};
           };
+          resourceNodeDataMap[$selected].collapsed = false;
+          resourceNodeDataMap[$selected].childrenPromise = rootResource.get_children();
           refreshResource();
         },
       },
@@ -266,10 +272,11 @@
 
   function clearModified(descendants) {
     for (const descendant of descendants) {
-      resourceNodeDataMap[descendant["resource_id"]] = {
-        modified: undefined,
-        prevModified: undefined,
+      if (!resourceNodeDataMap[descendant["resource_id"]]) {
+        resourceNodeDataMap[descendant["resource_id"]] = {};
       };
+      resourceNodeDataMap[descendant["resource_id"]].lastModified = undefined;
+      resourceNodeDataMap[descendant["resource_id"]].allModified = undefined;
     }
   }
 </script>

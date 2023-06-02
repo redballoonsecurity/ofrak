@@ -208,16 +208,18 @@
         ofrakConfig["type"],
         config
       );
-      resourceNodeDataMap[$selected] = {
-        collapsed: false,
-        childrenPromise: $selectedResource.get_children(),
-      };
+      if (!resourceNodeDataMap[$selected]) {
+        resourceNodeDataMap[$selected] = {}
+      }
+      resourceNodeDataMap[$selected].collapsed = false;
+      resourceNodeDataMap[$selected].childrenPromise = $selectedResource.get_children();
       for (const result in results) {
         if (result === "modified") {
           for (const resource of results[result]) {
-            resourceNodeDataMap[resource["id"]] = {
-              lastModified: true,
-            };
+            if (!resourceNodeDataMap[resource["id"]]) {
+              resourceNodeDataMap[resource["id"]] = {}
+            }
+            resourceNodeDataMap[resource["id"]].lastModified = true;
           }
         }
       }
