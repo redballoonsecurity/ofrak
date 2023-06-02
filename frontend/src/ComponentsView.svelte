@@ -209,15 +209,16 @@
         config
       );
       if (!resourceNodeDataMap[$selected]) {
-        resourceNodeDataMap[$selected] = {}
+        resourceNodeDataMap[$selected] = {};
       }
       resourceNodeDataMap[$selected].collapsed = false;
-      resourceNodeDataMap[$selected].childrenPromise = $selectedResource.get_children();
+      resourceNodeDataMap[$selected].childrenPromise =
+        $selectedResource.get_children();
       for (const result in results) {
         if (result === "modified") {
           for (const resource of results[result]) {
             if (!resourceNodeDataMap[resource["id"]]) {
-              resourceNodeDataMap[resource["id"]] = {}
+              resourceNodeDataMap[resource["id"]] = {};
             }
             resourceNodeDataMap[resource["id"]].lastModified = true;
           }

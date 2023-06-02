@@ -54,9 +54,11 @@
           await rootResource.identify();
           if (!resourceNodeDataMap[$selected]) {
             resourceNodeDataMap[$selected] = {};
-          };
-          resourceNodeDataMap[$selected].collapsed = !!resourceNodeDataMap[$selected]?.collapsed;
-          resourceNodeDataMap[$selected].childrenPromise = rootResource.get_children();
+          }
+          resourceNodeDataMap[$selected].collapsed =
+            !!resourceNodeDataMap[$selected]?.collapsed;
+          resourceNodeDataMap[$selected].childrenPromise =
+            rootResource.get_children();
           refreshResource();
         },
       },
@@ -69,9 +71,10 @@
           await rootResource.unpack();
           if (!resourceNodeDataMap[$selected]) {
             resourceNodeDataMap[$selected] = {};
-          };
+          }
           resourceNodeDataMap[$selected].collapsed = false;
-          resourceNodeDataMap[$selected].childrenPromise = rootResource.get_children();
+          resourceNodeDataMap[$selected].childrenPromise =
+            rootResource.get_children();
           refreshResource();
         },
       },
@@ -92,9 +95,11 @@
           await rootResource.analyze();
           if (!resourceNodeDataMap[$selected]) {
             resourceNodeDataMap[$selected] = {};
-          };
-          resourceNodeDataMap[$selected].collapsed = !!resourceNodeDataMap[$selected]?.collapsed;
-          resourceNodeDataMap[$selected].childrenPromise = rootResource.get_children();
+          }
+          resourceNodeDataMap[$selected].collapsed =
+            !!resourceNodeDataMap[$selected]?.collapsed;
+          resourceNodeDataMap[$selected].childrenPromise =
+            rootResource.get_children();
           refreshResource();
         },
       },
@@ -117,9 +122,10 @@
           await rootResource.pack();
           if (!resourceNodeDataMap[$selected]) {
             resourceNodeDataMap[$selected] = {};
-          };
+          }
           resourceNodeDataMap[$selected].collapsed = false;
-          resourceNodeDataMap[$selected].childrenPromise = rootResource.get_children();
+          resourceNodeDataMap[$selected].childrenPromise =
+            rootResource.get_children();
           refreshResource();
         },
       },
@@ -208,9 +214,10 @@
           await rootResource.unpack_recursively();
           if (!resourceNodeDataMap[$selected]) {
             resourceNodeDataMap[$selected] = {};
-          };
+          }
           resourceNodeDataMap[$selected].collapsed = false;
-          resourceNodeDataMap[$selected].childrenPromise = rootResource.get_children();
+          resourceNodeDataMap[$selected].childrenPromise =
+            rootResource.get_children();
           refreshResource();
         },
       },
@@ -225,9 +232,10 @@
           await rootResource.pack_recursively();
           if (!resourceNodeDataMap[$selected]) {
             resourceNodeDataMap[$selected] = {};
-          };
+          }
           resourceNodeDataMap[$selected].collapsed = false;
-          resourceNodeDataMap[$selected].childrenPromise = rootResource.get_children();
+          resourceNodeDataMap[$selected].childrenPromise =
+            rootResource.get_children();
           refreshResource();
         },
       },
@@ -274,7 +282,7 @@
     for (const descendant of descendants) {
       if (!resourceNodeDataMap[descendant["resource_id"]]) {
         resourceNodeDataMap[descendant["resource_id"]] = {};
-      };
+      }
       resourceNodeDataMap[descendant["resource_id"]].lastModified = undefined;
       resourceNodeDataMap[descendant["resource_id"]].allModified = undefined;
     }
