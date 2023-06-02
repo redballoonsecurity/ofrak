@@ -27,7 +27,7 @@ from pytest_ofrak.patterns.register_usage_analyzer import (
     RegisterAnalyzerTestCase,
     RegisterUsageTestPattern,
 )
-from test_ofrak.constants import ARM32_ARCH
+from test_ofrak.constants import ARM32_ARCH, AARCH64_ARCH
 
 pytest_plugins = ["pytest_ofrak.fixtures"]
 
@@ -196,13 +196,40 @@ BASIC_BLOCK_TEST_CASES = [
                 InstructionSetMode.NONE,
             ),
         ],
-    )
+    ),
+    UnpackerTestCase(
+        "AARCH64",
+        AARCH64_ARCH,
+        BasicBlock(0x100, 0x14, InstructionSetMode.NONE, False, None),
+        unhexlify("00E4006F"),
+        [
+            Instruction(
+                0x100,
+                4,
+                "movi v0.2d, #0000000000000000",
+                "movi",
+                "v0.2d, #0000000000000000",
+                InstructionSetMode.NONE,
+            )
+        ],
+    ),
+    UnpackerTestCase(
+        "AARCH64",
+        AARCH64_ARCH,
+        BasicBlock(0x100, 0x14, InstructionSetMode.NONE, False, None),
+        unhexlify("02102E1E"),
+        [
+            Instruction(
+                0x100, 4, "fmov s2, #1.00000000", "fmov", "s2, #1.00000000", InstructionSetMode.NONE
+            )
+        ],
+    ),
 ]
 
 
 @pytest.mark.parametrize("test_case", BASIC_BLOCK_TEST_CASES, ids=lambda tc: tc.label)
 async def test_capstone_unpacker(test_case, ofrak_context):
-    await test_case.run_instruction_analzyer_test_case(ofrak_context)
+    await test_case.run_instruction_unpacker_test_case(ofrak_context)
 
 
 @pytest.mark.parametrize("test_case", BASIC_BLOCK_TEST_CASES, ids=lambda tc: tc.label)

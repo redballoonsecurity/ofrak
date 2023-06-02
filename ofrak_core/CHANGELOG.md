@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Fixed 
 - Fixed a bug where clicking "Unpack" or "Identify" (for example) too quickly after loading a large resource causes an error that freezes up the whole GUI ([#297](https://github.com/redballoonsecurity/ofrak/pull/297))
 - Bump `importlib-metadata` version to fix import errors ([#296](https://github.com/redballoonsecurity/ofrak/pull/296))
+- Fixed a bug in assembler_service_keystone that mishandled AARCH64 vector instructions
 
 ## [3.0.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.2.1...ofrak-v3.0.0)
 ### Added
