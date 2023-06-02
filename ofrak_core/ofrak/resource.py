@@ -294,7 +294,10 @@ class Resource:
         try:
             fetched_resource = await self._resource_service.get_by_id(resource.id)
         except NotFoundError:
-            if resource.id in self._component_context.modification_trackers:
+            if (
+                resource.id in self._component_context.modification_trackers
+                and resource.id in self._resource_context.resource_models
+            ):
                 del self._resource_context.resource_models[resource.id]
             return
 
