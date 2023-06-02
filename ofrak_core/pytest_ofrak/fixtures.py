@@ -2,7 +2,6 @@ import logging
 
 import pytest
 
-from ofrak.model.resource_model import ClientResourceContextFactory, EphemeralResourceContextFactory
 from ofrak.service.id_service_sequential import SequentialIDService
 from ofrak import OFRAK
 
@@ -28,9 +27,8 @@ def ofrak(ofrak_injector, ofrak_id_service):
     return ofrak
 
 
-@pytest.fixture(params=[EphemeralResourceContextFactory, ClientResourceContextFactory])
-async def ofrak_context(request, ofrak):
+@pytest.fixture
+async def ofrak_context(ofrak):
     context = await ofrak.create_ofrak_context()
-    context._resource_context_factory = request.param()
     yield context
     await context.shutdown_context()

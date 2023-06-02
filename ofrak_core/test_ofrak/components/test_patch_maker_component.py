@@ -7,6 +7,7 @@ import re
 import subprocess
 
 from ofrak.core import MemoryRegion
+from ofrak.model.resource_model import EphemeralResourceContextFactory, ClientResourceContextFactory
 from ofrak_patch_maker.toolchain.gnu_x64 import GNU_X86_64_LINUX_EABI_10_3_0_Toolchain
 
 from ofrak_patch_maker.toolchain.gnu_arm import GNU_ARM_NONE_EABI_10_2_1_Toolchain
@@ -45,6 +46,14 @@ from ofrak_type.endianness import Endianness
 PATCH_DIRECTORY = str(Path(__file__).parent / "assets" / "src")
 X86_64_PROGRAM_PATH = str(Path(__file__).parent / "assets" / "hello.out")
 ARM32_PROGRAM_PATH = str(Path(__file__).parent / "assets" / "simple_arm_gcc.o.elf")
+
+
+@pytest.fixture(params=[EphemeralResourceContextFactory, ClientResourceContextFactory])
+async def ofrak_context(request, ofrak):
+    context = await ofrak.create_ofrak_context()
+    context._resource_context_factory = request.param()
+    yield context
+    await context.shutdown_context()
 
 
 def normalize_assembly(assembly_str: str) -> str:
