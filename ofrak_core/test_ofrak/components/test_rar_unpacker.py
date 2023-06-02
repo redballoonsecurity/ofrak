@@ -22,7 +22,7 @@ class RarUnpackerTestCase(UnpackAndVerifyTestCase[str, bytes]):
 
 
 RAR_UNPACKER_TEST_CASES = [
-    RarUnpackerTestCase("Single text file", {"hello.txt": b"hello world"}, {}, "hello.rar"),
+    RarUnpackerTestCase("Single text file", {"hello.txt": b"hello world"}, set(), "hello.rar"),
 ]
 
 
