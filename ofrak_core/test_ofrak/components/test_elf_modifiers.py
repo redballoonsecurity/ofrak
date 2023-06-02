@@ -181,7 +181,6 @@ async def test_elf_program_header_modifier(elf_resource: Resource):
 
 
 class TestElfPointerArraySectionModifier:
-
     add_value = 0x1337
 
     async def test_elf_pointer_array_section_modifier(self, elf_resource: Resource):

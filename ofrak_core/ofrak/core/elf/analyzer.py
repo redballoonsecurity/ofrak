@@ -46,7 +46,6 @@ class ElfBasicHeaderAttributesAnalyzer(Analyzer[None, ElfBasicHeader]):
     <https://man7.org/linux/man-pages/man5/elf.5.html> for details.
     """
 
-    id = b"ElfHeaderMetadataAttributesAnalyzer"
     targets = (ElfBasicHeader,)
     outputs = (ElfBasicHeader,)
 
@@ -218,7 +217,6 @@ class ElfSymbolAttributesAnalyzer(Analyzer[None, ElfSymbol]):
     table.
     """
 
-    id = b"ElfSymbolAnalyzer"
     targets = (ElfSymbol,)
     outputs = (ElfSymbol,)
 

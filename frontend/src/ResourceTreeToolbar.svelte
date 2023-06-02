@@ -1,14 +1,16 @@
 <script>
   import CarveView from "./CarveView.svelte";
   import CommentView from "./CommentView.svelte";
+  import ComponentsView from "./ComponentsView.svelte";
   import ModifyView from "./ModifyView.svelte";
   import ScriptView from "./ScriptView.svelte";
   import SettingsView from "./SettingsView.svelte";
   import Toolbar from "./Toolbar.svelte";
 
-  import { selectedResource, selected } from "./stores.js";
+  import { selectedResource, selected, settings } from "./stores.js";
   import SearchView from "./SearchView.svelte";
   import AddTagView from "./AddTagView.svelte";
+  import RunScriptView from "./RunScriptView.svelte";
 
   export let resourceNodeDataMap, modifierView, bottomLeftPane;
   $: rootResource = $selectedResource;
@@ -20,8 +22,28 @@
     $selected = originalSelected;
   }
 
-  let toolbarButtons;
+  let toolbarButtons, experimentalFeatures;
   const neverResolves = new Promise(() => {});
+  $: {
+    experimentalFeatures = [
+      {
+        text: "Run Component",
+        iconUrl: "/icons/run.svg",
+        onclick: async (e) => {
+          modifierView = ComponentsView;
+        },
+      },
+
+      {
+        text: "Run Script",
+        iconUrl: "/icons/run_script.svg",
+        onclick: async (e) => {
+          modifierView = RunScriptView;
+        },
+      },
+    ];
+  }
+
   $: {
     toolbarButtons = [
       {
@@ -87,6 +109,8 @@
         iconUrl: "/icons/pack.svg",
         shortcut: "p",
         onclick: async (e) => {
+          const descendants = await $selectedResource.get_descendants();
+          clearModified(descendants);
           await rootResource.pack();
           resourceNodeDataMap[$selected] = {
             collapsed: false,
@@ -191,6 +215,8 @@
         iconUrl: "/icons/pack_r.svg",
         shortcut: "p+Shift",
         onclick: async (e) => {
+          const descendants = await $selectedResource.get_descendants();
+          clearModified(descendants);
           await rootResource.pack_recursively();
           resourceNodeDataMap[$selected] = {
             collapsed: false,
@@ -232,6 +258,19 @@
         },
       },
     ];
+  }
+
+  $: if ($settings.experimentalFeatures) {
+    toolbarButtons = [...toolbarButtons, ...experimentalFeatures];
+  }
+
+  function clearModified(descendants) {
+    for (const descendant of descendants) {
+      resourceNodeDataMap[descendant["resource_id"]] = {
+        modified: undefined,
+        prevModified: undefined,
+      };
+    }
   }
 </script>
 

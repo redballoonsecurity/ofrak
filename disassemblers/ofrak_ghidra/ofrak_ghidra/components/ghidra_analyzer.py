@@ -89,7 +89,6 @@ class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProjec
     async def analyze(
         self, resource: Resource, config: Optional[GhidraProjectConfig] = None
     ) -> GhidraProject:
-
         # TODO: allow multiple headless server instances
         os.system("pkill -if analyzeHeadless")
         if config is not None:
@@ -143,6 +142,9 @@ class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProjec
 
             if len(line) > 0:
                 LOGGER.debug(line)
+            elif ghidra_proc.stdout.at_eof():
+                raise GhidraComponentException("Ghidra client exited unexpectedly")
+
             if "Repository Server: localhost" in line:
                 time.sleep(0.5)
                 ghidra_proc.stdin.write((GHIDRA_PASS + "\n").encode("ascii"))

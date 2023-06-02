@@ -76,6 +76,18 @@
     color: var(--main-bg-color);
   }
 
+  .lastModified {
+    text-decoration-line: underline;
+    text-decoration-color: var(--modified-color);
+    text-decoration-thickness: 2px;
+  }
+
+  .allModified {
+    text-decoration-line: underline;
+    text-decoration-color: var(--main-fg-color);
+    text-decoration-thickness: 2px;
+  }
+
   .comment {
     /* align with the caption above */
     padding-left: 1ch;
@@ -99,6 +111,7 @@
   import Hoverable from "./Hoverable.svelte";
   import LoadingText from "./LoadingText.svelte";
 
+  import { onDestroy } from "svelte";
   import { selected } from "./stores.js";
   import { shortcuts } from "./keyboard";
 
@@ -111,6 +124,8 @@
   let firstChild,
     childrenPromise,
     commentsPromise,
+    lastModified,
+    allModified,
     self_id = rootResource.get_id(),
     kiddoChunksize = 512;
 
@@ -129,9 +144,17 @@
       resourceNodeDataMap[self_id].commentsPromise =
         rootResource.get_comments();
     }
+    if (resourceNodeDataMap[self_id].lastModified === undefined) {
+      resourceNodeDataMap[self_id].lastModified = false;
+    }
+    if (resourceNodeDataMap[self_id].allModified === undefined) {
+      resourceNodeDataMap[self_id].allModified = false;
+    }
     childrenPromise = resourceNodeDataMap[self_id].childrenPromise;
     commentsPromise = resourceNodeDataMap[self_id].commentsPromise;
     collapsed = resourceNodeDataMap[self_id].collapsed;
+    lastModified = resourceNodeDataMap[self_id].lastModified;
+    allModified = resourceNodeDataMap[self_id].allModified;
   }
 
   function updateRootModel() {
@@ -197,6 +220,14 @@
     resourceNodeDataMap[$selected].commentsPromise =
       rootResource.get_comments();
   }
+
+  // Swap "just modified" indication to "previously modified" indication
+  onDestroy(() => {
+    if (resourceNodeDataMap[self_id].lastModified) {
+      resourceNodeDataMap[self_id].allModified =
+        resourceNodeDataMap[self_id].lastModified;
+    }
+  });
 </script>
 
 {#await childrenPromise then children}
@@ -216,6 +247,8 @@
   on:click="{onClick}"
   on:dblclick="{onDoubleClick}"
   class:selected="{$selected === self_id}"
+  class:lastModified="{resourceNodeDataMap[self_id].lastModified}"
+  class:allModified="{resourceNodeDataMap[self_id].allModified}"
   id="{self_id}"
 >
   {rootResource.get_caption()}
