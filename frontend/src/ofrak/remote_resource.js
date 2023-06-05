@@ -147,7 +147,7 @@ export class RemoteResource extends Resource {
     // TODO: Implement data cache for ranges
     let range_query = "";
     if (range) {
-      let [start, end] = range
+      let [start, end] = range;
       range_query = `?range=[${start},${end}]`;
     }
     let result = await fetch(`${this.uri}/get_data${range_query}`)
