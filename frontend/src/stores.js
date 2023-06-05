@@ -18,6 +18,8 @@ export function loadSettings(forceReset) {
     selected: otherColors[0],
     highlight: otherColors[1],
     comment: "#eb8e5b",
+    lastModified: "#dc4e47",
+    allModified: "#fdb44e",
     accentText: animals[1].color,
     colors: otherColors, // animals.map(a => a.color).concat(otherColors),
 

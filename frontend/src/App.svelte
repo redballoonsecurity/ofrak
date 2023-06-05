@@ -163,6 +163,8 @@ Answer by running riddle.answer('your answer here') from the console.`);
   $: docstyle.setProperty("--highlight-color", $settings.highlight);
   $: docstyle.setProperty("--comment-color", $settings.comment);
   $: docstyle.setProperty("--accent-text-color", $settings.accentText);
+  $: docstyle.setProperty("--last-modified-color", $settings.lastModified);
+  $: docstyle.setProperty("--all-modified-color", $settings.allModified);
 </script>
 
 <svelte:window on:popstate="{backButton}" on:keyup="{handleShortcut}" />
