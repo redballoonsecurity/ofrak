@@ -74,7 +74,7 @@
 
   const alignment = 16,
     chunkSize = 4096,
-    windowSize = chunkSize * 5;
+    windowSize = chunkSize * 10;
   // Sadly, this is the most flexible, most reliable way to get the line height
   // from arbitrary CSS units in pixels. It is definitely a little nasty :(
   const lineHeight = (() => {
@@ -92,7 +92,8 @@
     start = 0,
     end = 64,
     endWindow = 0,
-    startWindow = 0;
+    startWindow = 0,
+    windowPadding = 1024;
 
   async function getNewData() {
     const len = await dataLenPromise;
@@ -105,29 +106,25 @@
       len
     );
 
-    if (end > endWindow) {
-      startWindow = start;
+    if (end > endWindow - windowPadding) {
+      startWindow = start - windowPadding;
       if (startWindow < 0) {
         startWindow = 0;
       }
-
       endWindow = startWindow + windowSize;
       if (endWindow > len) {
         endWindow = len;
       }
-
       chunkData = await $selectedResource.get_data([startWindow, endWindow]);
-    } else if (start < startWindow) {
-      endWindow = end;
+    } else if (start < startWindow + windowPadding) {
+      endWindow = end + windowPadding;
       if (endWindow > len) {
         endWindow = len;
       }
-
       startWindow = endWindow - windowSize;
       if (startWindow < 0) {
         startWindow = 0;
       }
-
       chunkData = await $selectedResource.get_data([startWindow, endWindow]);
     }
 
