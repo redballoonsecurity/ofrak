@@ -49,11 +49,9 @@ ARM32_PROGRAM_PATH = str(Path(__file__).parent / "assets" / "simple_arm_gcc.o.el
 
 
 @pytest.fixture(params=[EphemeralResourceContextFactory, ClientResourceContextFactory])
-async def ofrak_context(request, ofrak):
-    context = await ofrak.create_ofrak_context()
-    context._resource_context_factory = request.param()
-    yield context
-    await context.shutdown_context()
+async def ofrak_context(request, ofrak_context):
+    ofrak_context._resource_context_factory = request.param()
+    return ofrak_context
 
 
 def normalize_assembly(assembly_str: str) -> str:

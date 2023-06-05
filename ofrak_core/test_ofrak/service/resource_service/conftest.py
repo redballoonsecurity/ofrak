@@ -1,28 +1,17 @@
 from dataclasses import dataclass
 from typing import Optional, List, Union, Tuple, Iterable
 
-import pytest
 
 from ofrak.model.resource_model import (
     ResourceModel,
     ResourceTag,
     ResourceAttributes,
-    EphemeralResourceContextFactory,
-    ClientResourceContextFactory,
 )
 from ofrak.service.resource_service_i import (
     ResourceFilter,
     ResourceSort,
     ResourceServiceInterface,
 )
-
-
-@pytest.fixture(params=[EphemeralResourceContextFactory, ClientResourceContextFactory])
-async def ofrak_context(request, ofrak):
-    context = await ofrak.create_ofrak_context()
-    context._resource_context_factory = request.param()
-    yield context
-    await context.shutdown_context()
 
 
 @dataclass

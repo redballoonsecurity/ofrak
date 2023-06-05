@@ -318,6 +318,7 @@ class Resource:
                 if resource_id not in self._resource_context.resource_models:
                     await self._fetch(view.resource.get_model())  # type: ignore
                 if resource_id not in self._resource_context.resource_models:
+                    view.set_deleted()
                     continue
                 updated_model = self._resource_context.resource_models[resource_id]
                 fresh_view = view.create(updated_model)
