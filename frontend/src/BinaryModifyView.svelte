@@ -102,8 +102,8 @@
   export let modifierView, dataLenPromise, resourceNodeDataMap;
   let startInput,
     endInput,
-    startOffset = null,
-    endOffset = null,
+    startOffset,
+    endOffset,
     dataLength,
     errorMessage,
     userData;
