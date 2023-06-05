@@ -223,7 +223,10 @@ Answer by running riddle.answer('your answer here') from the console.`);
           https://github.com/sveltejs/svelte/issues/5604 
         -->
         <svelte:fragment slot="minimap">
-          <JumpToOffset scrollY="{hexScrollY}" />
+          <JumpToOffset
+            dataLenPromise="{dataLenPromise}"
+            scrollY="{hexScrollY}"
+          />
           {#if carouselSelection === "Entropy"}
             <EntropyView scrollY="{hexScrollY}" />
           {:else if carouselSelection === "Byteclass"}
