@@ -932,7 +932,6 @@ async def test_add_flush_to_disk_to_script(ofrak_client: TestClient, firmware_zi
         "",
         "",
         "async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):",
-        "",
         "    if root_resource is None:",
         "        root_resource = await ofrak_context.create_root_resource_from_file(",
         '            "firmware_zip"',
