@@ -294,7 +294,10 @@ class Resource:
         try:
             fetched_resource = await self._resource_service.get_by_id(resource.id)
         except NotFoundError:
-            if resource.id in self._component_context.modification_trackers:
+            if (
+                resource.id in self._component_context.modification_trackers
+                and resource.id in self._resource_context.resource_models
+            ):
                 del self._resource_context.resource_models[resource.id]
             return
 
@@ -314,6 +317,9 @@ class Resource:
             for view in views_in_context.values():
                 if resource_id not in self._resource_context.resource_models:
                     await self._fetch(view.resource.get_model())  # type: ignore
+                if resource_id not in self._resource_context.resource_models:
+                    view.set_deleted()
+                    continue
                 updated_model = self._resource_context.resource_models[resource_id]
                 fresh_view = view.create(updated_model)
                 for field in dataclasses.fields(fresh_view):
