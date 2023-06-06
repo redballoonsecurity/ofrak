@@ -267,7 +267,8 @@ class AiohttpOFRAKServer:
             return HTTPBadRequest(reason="Missing root resource `name` from request")
         resource_data = await request.read()
         script_str = rf"""
-        root_resource = await ofrak_context.create_root_resource_from_file("{name}")"""
+        if root_resource is None:
+            root_resource = await ofrak_context.create_root_resource_from_file("{name}")"""
         try:
             root_resource = await self._ofrak_context.create_root_resource(
                 name, resource_data, (File,)
@@ -803,10 +804,12 @@ class AiohttpOFRAKServer:
             config = None
         else:
             config = self._serializer.from_pjson(await request.json(), config_type)
+
+        config_str = str(config).replace("{", "{{").replace("}", "}}")
         script_str = (
             """
         await {resource}"""
-            f""".run({request.query.get("component")}, {config})"""
+            f""".run({request.query.get("component")}, {config_str})"""
         )
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         try:
@@ -1033,7 +1036,9 @@ class AiohttpOFRAKServer:
             "modified": await asyncio.gather(
                 *map(
                     get_and_serialize,
-                    result.resources_modified.difference(result.resources_created),
+                    result.resources_modified.difference(result.resources_created).difference(
+                        result.resources_deleted
+                    ),
                 )
             ),
             "deleted": self._serializer.to_pjson(result.resources_deleted, Set[bytes]),
