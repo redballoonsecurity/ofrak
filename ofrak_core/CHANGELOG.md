@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add a "copy to clipboard" button to the "Show Snippet" view for easy exporting. ([#301](https://github.com/redballoonsecurity/ofrak/pull/301))
 - Add a settings pane to the OFRAK GUI that supports theming and changing colors ([#309](https://github.com/redballoonsecurity/ofrak/pull/309))
 - Add a button and interface in the OFRAK GUI to specifically select any component to run on a resource ([#287](https://github.com/redballoonsecurity/ofrak/pull/287))
+- Add DDR pad support to the OFRAK GUI ([#322](https://github.com/redballoonsecurity/ofrak/pull/322))
 
 ### Fixed 
 - Fixed a bug where clicking "Unpack" or "Identify" (for example) too quickly after loading a large resource causes an error that freezes up the whole GUI ([#297](https://github.com/redballoonsecurity/ofrak/pull/297))
