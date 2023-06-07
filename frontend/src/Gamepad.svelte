@@ -62,7 +62,8 @@
       if (!buttons[i]) {
         return;
       }
-     // on button release, if the button corresponds to an OFRAK shortcut and that shortcut is found, trigger the shortcut
+      // On button release, if the button corresponds to an OFRAK shortcut and
+      // that shortcut is found, trigger the shortcut
       if (buttons[i].pressed && !b.pressed) {
         buttons[i].shortcut &&
           shortcuts[buttons[i].shortcut] &&
