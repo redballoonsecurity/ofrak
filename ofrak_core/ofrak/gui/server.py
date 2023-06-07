@@ -265,7 +265,11 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def send_root_resource_chunk(self, request: Request) -> Response:
         name = request.query.get("name")
-        addr = int(request.query.get("addr"))
+        addr = request.query.get("addr")
+        if addr is not None:
+            addr = int(addr)
+        else:
+            raise HTTPBadRequest(reason="Missing chunk address from request")
         print(name)
         print("Chunk")
         if name not in self.resource_builder.keys():
