@@ -49,7 +49,7 @@
 
   function isValidGamepad(gamepad) {
     // TODO: Refine selection criteria to handle non-DDR gamepads
-    return gamepad.axes.length == 0 && gamepad.buttons.length >= 10;
+    return gamepad && gamepad.axes.length == 0 && gamepad.buttons.length >= 10;
   }
 
   function loop() {
