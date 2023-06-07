@@ -144,13 +144,35 @@ export class RemoteResource extends Resource {
       return [];
     }
 
-    if (this.cache["get_data"]) {
-      return this.cache["get_data"];
+    if (!range) {
+      if (this.cache["get_data"]) {
+        return this.cache["get_data"];
+      }
+
+      let result = await fetch(`${this.uri}/get_data`)
+        .then((r) => r.blob())
+        .then((b) => b.arrayBuffer());
+      this.cache["get_data"] = result;
+      return result;
     }
-    let result = await fetch(`${this.uri}/get_data`)
+
+    // TODO: Implement data cache for ranges
+    let range_query = "";
+    let [start, end] = range;
+    range_query = `?range=[${start},${end}]`;
+    let result = await fetch(`${this.uri}/get_data${range_query}`)
       .then((r) => r.blob())
       .then((b) => b.arrayBuffer());
-    this.cache["get_data"] = result;
+    return result;
+  }
+
+  async get_data_length() {
+    if (this.data_id === null) {
+      return null;
+    }
+    let result = await fetch(`${this.uri}/get_data_length`).then((r) =>
+      r.json()
+    );
     return result;
   }
 

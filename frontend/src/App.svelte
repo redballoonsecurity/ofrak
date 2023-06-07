@@ -56,7 +56,7 @@
   printConsoleArt();
 
   let showRootResource = false,
-    displayDataPromise = Promise.resolve([]),
+    dataLenPromise = Promise.resolve([]),
     hexScrollY = writable({}),
     useAssemblyView = false,
     useTextView = false,
@@ -81,7 +81,7 @@
       console.error("Couldn't get the resource for ID " + $selected);
     } else {
       $selectedResource = currentResource;
-      displayDataPromise = currentResource.get_data();
+      dataLenPromise = currentResource.get_data_length();
       useAssemblyView = [
         "ofrak.core.complex_block.ComplexBlock",
         "ofrak.core.basic_block.BasicBlock",
@@ -179,7 +179,7 @@ Answer by running riddle.answer('your answer here') from the console.`);
           {#if modifierView}
             <svelte:component
               this="{modifierView}"
-              dataPromise="{displayDataPromise}"
+              dataLenPromise="{dataLenPromise}"
               bind:modifierView="{modifierView}"
               bind:resourceNodeDataMap="{resourceNodeDataMap}"
             />
@@ -211,10 +211,10 @@ Answer by running riddle.answer('your answer here') from the console.`);
         {#if useAssemblyView}
           <AssemblyView />
         {:else if useTextView}
-          <TextView dataPromise="{displayDataPromise}" />
+          <TextView />
         {:else}
           <HexView
-            dataPromise="{displayDataPromise}"
+            dataLenPromise="{dataLenPromise}"
             resources="{resources}"
             scrollY="{hexScrollY}"
             bind:resourceNodeDataMap="{resourceNodeDataMap}"
@@ -226,7 +226,7 @@ Answer by running riddle.answer('your answer here') from the console.`);
         -->
         <svelte:fragment slot="minimap">
           <JumpToOffset
-            dataPromise="{displayDataPromise}"
+            dataLenPromise="{dataLenPromise}"
             scrollY="{hexScrollY}"
           />
           {#if carouselSelection === "Entropy"}

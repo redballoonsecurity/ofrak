@@ -82,10 +82,12 @@
   import { calculator } from "./helpers.js";
   import { selected, selectedResource } from "./stores.js";
 
-  export let modifierView, resourceNodeDataMap, dataPromise;
+  export let modifierView, resourceNodeDataMap, dataLenPromise;
   let comment, startInput, endInput, dataLength, errorMessage;
 
-  $: dataPromise.then((data) => (dataLength = data.byteLength));
+  $: dataLenPromise.then((r) => {
+    dataLength = r;
+  });
 
   function refreshResource() {
     resourceNodeDataMap[$selected].commentsPromise =

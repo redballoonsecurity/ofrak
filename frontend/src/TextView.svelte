@@ -34,7 +34,11 @@
   import Breadcrumb from "./Breadcrumb.svelte";
   import LoadingAnimation from "./LoadingAnimation.svelte";
 
-  export let dataPromise;
+  import { selectedResource } from "./stores";
+
+  let dataPromise = $selectedResource
+    ? $selectedResource.get_data()
+    : Promise.resolve([]);
 
   const decoder = new TextDecoder();
   function bufferToString(buffer) {
