@@ -293,6 +293,7 @@ class AiohttpOFRAKServer:
         except Exception as e:
             await self.script_builder.clear_script_queue(root_resource)
             raise e
+        self.resource_builder.pop(name)
         return json_response(self._serialize_resource(root_resource))
 
     @exceptions_to_http(SerializedError)
