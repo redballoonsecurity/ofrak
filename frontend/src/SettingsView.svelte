@@ -241,6 +241,14 @@
         <input type="color" bind:value="{$settings.comment}" />
       </label>
       <label>
+        Last Modified Resource
+        <input type="color" bind:value="{$settings.lastModified}" />
+      </label>
+      <label>
+        All Modified Resources
+        <input type="color" bind:value="{$settings.allModified}" />
+      </label>
+      <label>
         Text Accent
         <input type="color" bind:value="{$settings.accentText}" />
       </label>

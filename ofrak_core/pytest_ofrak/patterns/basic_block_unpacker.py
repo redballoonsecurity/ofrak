@@ -1281,9 +1281,7 @@ BASIC_BLOCK_UNPACKER_TEST_CASES = [
                 ),
             ],
         },
-        {
-            # No optional results
-        },
+        set(),  # No optional results
         "hello.out",
         "cc2de3c0cd2d0ded7543682c2470fcf0",
         {
@@ -1644,9 +1642,7 @@ BASIC_BLOCK_UNPACKER_TEST_CASES = [
                 ),
             ],
         },
-        {
-            # No optional results
-        },
+        set(),  # No optional results
         "simple_arm_gcc.o.elf",
         "c79d1bea0398d7a9d0faa1ba68786f5e",
         {

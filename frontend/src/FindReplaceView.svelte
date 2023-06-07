@@ -117,9 +117,10 @@
         for (const result in results) {
           if (result === "modified") {
             for (const resource of results[result]) {
-              resourceNodeDataMap[resource["id"]] = {
-                modified: true,
-              };
+              if (!resourceNodeDataMap[resource["id"]]) {
+                resourceNodeDataMap[resource["id"]] = {};
+              }
+              resourceNodeDataMap[resource["id"]].lastModified = true;
             }
           }
         }

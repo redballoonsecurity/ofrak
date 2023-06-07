@@ -34,9 +34,8 @@
   import AudioPlayer from "./AudioPlayer.svelte";
   import ByteclassView from "./ByteclassView.svelte";
   import CarouselSelector from "./CarouselSelector.svelte";
-  import ComponentsView from "./ComponentsView.svelte";
   import EntropyView from "./EntropyView.svelte";
-  import FindReplaceView from "./FindReplaceView.svelte";
+  import Gamepad from "./Gamepad.svelte";
   import HexView from "./HexView.svelte";
   import JumpToOffset from "./JumpToOffset.svelte";
   import LoadingAnimation from "./LoadingAnimation.svelte";
@@ -163,9 +162,12 @@ Answer by running riddle.answer('your answer here') from the console.`);
   $: docstyle.setProperty("--highlight-color", $settings.highlight);
   $: docstyle.setProperty("--comment-color", $settings.comment);
   $: docstyle.setProperty("--accent-text-color", $settings.accentText);
+  $: docstyle.setProperty("--last-modified-color", $settings.lastModified);
+  $: docstyle.setProperty("--all-modified-color", $settings.allModified);
 </script>
 
 <svelte:window on:popstate="{backButton}" on:keyup="{handleShortcut}" />
+<Gamepad />
 
 {#if showRootResource}
   {#await rootResourceLoadPromise}

@@ -1,13 +1,21 @@
 import logging
 from dataclasses import dataclass
-from typing import Dict, Callable, Union, Iterable
+from typing import Callable, Dict, Iterable, Union
 
-import magic
+from ofrak.component.abstract import ComponentMissingDependencyError
+
+try:
+    import magic
+
+    MAGIC_INSTALLED = True
+except ImportError:
+    MAGIC_INSTALLED = False
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.identifier import Identifier
 from ofrak.core.binary import GenericBinary, GenericText
 from ofrak.core.filesystem import File
+from ofrak.model.component_model import ComponentExternalTool
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.model.tag_model import ResourceTag
 from ofrak.resource import Resource
@@ -22,6 +30,30 @@ class Magic(ResourceAttributes):
     descriptor: str
 
 
+class _LibmagicDependency(ComponentExternalTool):
+    def __init__(self):
+        super().__init__(
+            "libmagic",
+            "https://www.darwinsys.com/file/",
+            install_check_arg="",
+            apt_package="libmagic1",
+            brew_package="libmagic",
+        )
+
+        try:
+            import magic as _magic
+
+            _LibmagicDependency._magic = _magic
+        except ImportError:
+            _LibmagicDependency._magic = None
+
+    async def is_tool_installed(self) -> bool:
+        return MAGIC_INSTALLED
+
+
+LIBMAGIC_DEP = _LibmagicDependency()
+
+
 class MagicAnalyzer(Analyzer[None, Magic]):
     """
     Analyze a binary blob to extract its mimetype and magic description.
@@ -29,12 +61,16 @@ class MagicAnalyzer(Analyzer[None, Magic]):
 
     targets = (File, GenericBinary)
     outputs = (Magic,)
+    external_dependencies = (LIBMAGIC_DEP,)
 
     async def analyze(self, resource: Resource, config=None) -> Magic:
         data = await resource.get_data()
-        magic_mime = magic.from_buffer(data, mime=True)
-        magic_description = magic.from_buffer(data)
-        return Magic(magic_mime, magic_description)
+        if not MAGIC_INSTALLED:
+            raise ComponentMissingDependencyError(self, LIBMAGIC_DEP)
+        else:
+            magic_mime = magic.from_buffer(data, mime=True)
+            magic_description = magic.from_buffer(data)
+            return Magic(magic_mime, magic_description)
 
 
 class MagicMimeIdentifier(Identifier[None]):
@@ -44,6 +80,8 @@ class MagicMimeIdentifier(Identifier[None]):
 
     id = b"MagicMimeIdentifier"
     targets = (File, GenericBinary)
+    external_dependencies = (LIBMAGIC_DEP,)  # Indirect thru MagicAnalyzer, but worth tagging
+
     _tags_by_mime: Dict[str, ResourceTag] = dict()
 
     async def identify(self, resource: Resource, config=None):
@@ -70,6 +108,8 @@ class MagicDescriptionIdentifier(Identifier[None]):
 
     id = b"MagicDescriptionIdentifier"
     targets = (File, GenericBinary)
+    external_dependencies = (LIBMAGIC_DEP,)  # Indirect thru MagicAnalyzer, but worth tagging
+
     _matchers: Dict[Callable, ResourceTag] = dict()
 
     async def identify(self, resource: Resource, config):
