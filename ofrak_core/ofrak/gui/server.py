@@ -144,8 +144,10 @@ class AiohttpOFRAKServer:
         self.resource_view_context: ResourceViewContext = ResourceViewContext()
         self.component_context: ComponentContext = ClientComponentContext()
         self.script_builder: ScriptBuilder = ScriptBuilder()
+        self.resource_builder: Dict[str:bytes] = {}
         self._app.add_routes(
             [
+                web.post("/send_root_resource_chunk", self.send_root_resource_chunk),
                 web.post("/create_root_resource", self.create_root_resource),
                 web.get("/get_root_resources", self.get_root_resources),
                 web.get("/{resource_id}/", self.get_resource),
@@ -261,11 +263,23 @@ class AiohttpOFRAKServer:
             await self.runner.cleanup()
 
     @exceptions_to_http(SerializedError)
+    async def send_root_resource_chunk(self, request: Request) -> Response:
+        name = request.query.get("name")
+        print(name)
+        print("Chunk")
+        if name not in self.resource_builder.keys():
+            self.resource_builder[name] = b""
+        chunk_data = await request.read()
+        self.resource_builder[name] += chunk_data
+        return json_response([])
+
+    @exceptions_to_http(SerializedError)
     async def create_root_resource(self, request: Request) -> Response:
         name = request.query.get("name")
         if name is None:
             return HTTPBadRequest(reason="Missing root resource `name` from request")
-        resource_data = await request.read()
+
+        resource_data = self.resource_builder[name]
         script_str = rf"""
         root_resource = await ofrak_context.create_root_resource_from_file("{name}")"""
         try:

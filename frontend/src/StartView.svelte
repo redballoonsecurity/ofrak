@@ -109,6 +109,7 @@
     tryHash = !!window.location.hash;
   let mouseX, selectedAnimal;
   const warnFileSize = 250 * 1024 * 1024;
+  const fileChunkSize = warnFileSize;
 
   async function createRootResource(f) {
     if (
@@ -123,11 +124,21 @@
       return;
     }
 
+    for (var start = 0; start < f.size; start += fileChunkSize) {
+      let end = Math.min(start + fileChunkSize, f.size);
+      const result = await fetch(
+        `${$settings.backendUrl}/send_root_resource_chunk?name=${f.name}`,
+        {
+          method: "POST",
+          body: await f.slice(start, end),
+        }
+      );
+    }
+
     const rootModel = await fetch(
       `${$settings.backendUrl}/create_root_resource?name=${f.name}`,
       {
         method: "POST",
-        body: await f.arrayBuffer(),
       }
     ).then((r) => r.json());
 
