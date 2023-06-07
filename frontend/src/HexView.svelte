@@ -49,12 +49,32 @@
   let childRangesPromise = Promise.resolve(undefined);
   let chunkDataPromise = Promise.resolve(undefined);
   let childRanges,
-    len = null,
-    chunkData = [];
+    dataLength,
+    resourceData,
+    chunkData = [],
+    chunks = [],
+    start = 0,
+    end = 64,
+    startWindow = 0,
+    endWindow = 0;
+
+  const alignment = 16,
+    chunkSize = 4096,
+    windowSize = chunkSize * 10,
+    windowPadding = 1024;
 
   $: dataLenPromise.then((r) => {
-    len = r;
+    dataLength = r;
   });
+  $: dataLenPromise
+    .then((length) => {
+      if (length < 1024 * 1024 * 64 && $selectedResource) {
+        return $selectedResource.get_data();
+      }
+    })
+    .then((data) => {
+      resourceData = data;
+    });
   $: childRangesPromise.then((r) => {
     childRanges = r;
   });
@@ -72,9 +92,6 @@
     }, 500);
   });
 
-  const alignment = 16,
-    chunkSize = 4096,
-    windowSize = chunkSize * 10;
   // Sadly, this is the most flexible, most reliable way to get the line height
   // from arbitrary CSS units in pixels. It is definitely a little nasty :(
   const lineHeight = (() => {
@@ -88,54 +105,40 @@
     return result;
   })();
 
-  let chunks = [],
-    start = 0,
-    end = 64,
-    endWindow = 0,
-    startWindow = 0,
-    windowPadding = 1024;
-
   async function getNewData() {
-    const len = await dataLenPromise;
     start = Math.max(
-      Math.floor((len * $scrollY.top) / alignment) * alignment,
+      Math.floor((dataLength * $scrollY.top) / alignment) * alignment,
       0
     );
     end = Math.min(
       start + Math.floor($scrollY.viewHeightPixels / lineHeight) * alignment,
-      len
+      dataLength
     );
 
+    if (resourceData) {
+      return chunkList(
+        new Uint8Array(resourceData.slice(start, end)),
+        alignment
+      ).map((chunk) => chunkList(buf2hex(chunk), 2));
+    }
+
     if (end > endWindow - windowPadding) {
-      startWindow = start - windowPadding;
-      if (startWindow < 0) {
-        startWindow = 0;
-      }
-      endWindow = startWindow + windowSize;
-      if (endWindow > len) {
-        endWindow = len;
-      }
+      startWindow = Math.max(start - windowPadding, 0);
+      endWindow = Math.min(startWindow + windowSize, dataLength);
       chunkData = await $selectedResource.get_data([startWindow, endWindow]);
     } else if (start < startWindow + windowPadding) {
-      endWindow = end + windowPadding;
-      if (endWindow > len) {
-        endWindow = len;
-      }
-      startWindow = endWindow - windowSize;
-      if (startWindow < 0) {
-        startWindow = 0;
-      }
+      endWindow = Math.min(end + windowPadding, dataLength);
+      startWindow = Math.max(endWindow - windowSize, 0);
       chunkData = await $selectedResource.get_data([startWindow, endWindow]);
     }
 
-    chunks = chunkList(
+    return chunkList(
       new Uint8Array(chunkData.slice(start - startWindow, end - startWindow)),
       alignment
     ).map((chunk) => chunkList(buf2hex(chunk), 2));
-    return chunks;
   }
   $: if (scrollY !== undefined && $scrollY !== undefined) {
-    chunkDataPromise = getNewData($scrollY);
+    chunkDataPromise = dataLenPromise.then(getNewData);
   }
 
   async function calculateRanges(resource, dataLenPromise, colors) {
@@ -143,7 +146,6 @@
     if (children === []) {
       return [];
     }
-    const len = await dataLenPromise;
     const childRanges = Object.entries(await resource.get_child_data_ranges())
       .filter(
         ([_, rangeInParent]) =>
@@ -186,12 +188,12 @@
       ranges = ranges;
     } else if (childRanges.length == 0) {
       ranges = [];
-      for (let i = 0; i < len; i += chunkSize) {
+      for (let i = 0; i < dataLength; i += chunkSize) {
         ranges.push({
           color: null,
           resource_id: null,
           start: i,
-          end: Math.min(i + chunkSize, len),
+          end: Math.min(i + chunkSize, dataLength),
         });
       }
     }
@@ -239,8 +241,8 @@
 
 {#await dataLenPromise}
   <LoadingAnimation />
-{:then dataLen}
-  {#if dataLen > 0}
+{:then dataLength}
+  {#if dataLength > 0}
     <!-- 
       The magic number below is the largest height that Firefox will support with
       a position: sticky element. Otherwise, the sticky element scrolls away.
@@ -248,7 +250,7 @@
     -->
     <div
       style:height="min(8940000px, calc(var(--line-height) * {Math.ceil(
-        dataLen / alignment
+        dataLength / alignment
       )}))"
     >
       <div class="sticky">
