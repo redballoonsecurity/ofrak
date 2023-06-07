@@ -144,7 +144,7 @@ class AiohttpOFRAKServer:
         self.resource_view_context: ResourceViewContext = ResourceViewContext()
         self.component_context: ComponentContext = ClientComponentContext()
         self.script_builder: ScriptBuilder = ScriptBuilder()
-        self.resource_builder: Dict[str : Dict[int:bytes]] = {}
+        self.resource_builder: Dict[str, Dict[int, bytes]] = {}
         self._app.add_routes(
             [
                 web.post("/send_root_resource_chunk", self.send_root_resource_chunk),
