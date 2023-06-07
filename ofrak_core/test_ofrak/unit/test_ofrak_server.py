@@ -157,6 +157,21 @@ async def test_get_data(ofrak_client: TestClient, hello_world_elf):
     assert resp.status == 200
     resp_body = await resp.read()
     assert resp_body == hello_world_elf
+    resp = await ofrak_client.get(f"/{create_body['id']}/get_data", params={"range": "[16,80]"})
+    assert resp.status == 200
+    resp_body = await resp.read()
+    assert resp_body == hello_world_elf[0x10:0x50]
+
+
+async def test_get_data_length(ofrak_client: TestClient, hello_world_elf):
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+    )
+    create_body = await create_resp.json()
+    resp = await ofrak_client.get(f"/{create_body['id']}/get_data_length")
+    assert resp.status == 200
+    resp_body = await resp.json()
+    assert resp_body == len(hello_world_elf)
 
 
 async def test_unpack(ofrak_client: TestClient, hello_world_elf):
@@ -466,7 +481,6 @@ async def test_update_script(ofrak_client: TestClient, hello_world_elf):
         "",
         "",
         "async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):",
-        "",
         "    if root_resource is None:",
         "        root_resource = await ofrak_context.create_root_resource_from_file(",
         '            "hello_world_elf"',
@@ -587,7 +601,6 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
         "",
         "",
         "async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):",
-        "",
         "    if root_resource is None:",
         "        root_resource = await ofrak_context.create_root_resource_from_file(",
         '            "hello_world_elf"',
@@ -683,7 +696,6 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
         "",
         "",
         "async def main(ofrak_context: OFRAKContext):",
-        "",
         "    root_resource = await ofrak_context.create_root_resource_from_file(",
         '        "hello_world_elf"',
         "    )",
@@ -935,7 +947,6 @@ async def test_add_flush_to_disk_to_script(ofrak_client: TestClient, firmware_zi
         "",
         "",
         "async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):",
-        "",
         "    if root_resource is None:",
         "        root_resource = await ofrak_context.create_root_resource_from_file(",
         '            "firmware_zip"',
