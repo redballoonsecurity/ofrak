@@ -127,7 +127,7 @@
     for (var start = 0; start < f.size; start += fileChunkSize) {
       let end = Math.min(start + fileChunkSize, f.size);
       const result = await fetch(
-        `${$settings.backendUrl}/send_root_resource_chunk?name=${f.name}`,
+        `${$settings.backendUrl}/send_root_resource_chunk?name=${f.name}&addr=${start}`,
         {
           method: "POST",
           body: await f.slice(start, end),
