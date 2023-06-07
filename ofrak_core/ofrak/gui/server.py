@@ -266,16 +266,16 @@ class AiohttpOFRAKServer:
     async def send_root_resource_chunk(self, request: Request) -> Response:
         name = request.query.get("name")
         addr = request.query.get("addr")
-        if addr is not None:
-            addr = int(addr)
-        else:
+        if name is None:
+            raise HTTPBadRequest(reason="Missing resource name from request")
+        if addr is None:
             raise HTTPBadRequest(reason="Missing chunk address from request")
         print(name)
         print("Chunk")
         if name not in self.resource_builder.keys():
             self.resource_builder[name] = {}
         chunk_data = await request.read()
-        self.resource_builder[name][addr] = chunk_data
+        self.resource_builder[name][int(addr)] = chunk_data
         return json_response([])
 
     @exceptions_to_http(SerializedError)
