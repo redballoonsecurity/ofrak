@@ -33,7 +33,9 @@
 <script>
   import Breadcrumb from "./Breadcrumb.svelte";
   import LoadingAnimation from "./LoadingAnimation.svelte";
+
   import { selectedResource } from "./stores";
+
   let dataPromise = $selectedResource
     ? $selectedResource.get_data()
     : Promise.resolve([]);
