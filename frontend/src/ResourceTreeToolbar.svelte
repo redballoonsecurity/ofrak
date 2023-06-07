@@ -10,6 +10,7 @@
   import { selectedResource, selected, settings } from "./stores.js";
   import SearchView from "./SearchView.svelte";
   import AddTagView from "./AddTagView.svelte";
+  import RunScriptView from "./RunScriptView.svelte";
 
   export let resourceNodeDataMap, modifierView, bottomLeftPane;
   $: rootResource = $selectedResource;
@@ -30,6 +31,14 @@
         iconUrl: "/icons/run.svg",
         onclick: async (e) => {
           modifierView = ComponentsView;
+        },
+      },
+
+      {
+        text: "Run Script",
+        iconUrl: "/icons/run_script.svg",
+        onclick: async (e) => {
+          modifierView = RunScriptView;
         },
       },
     ];
