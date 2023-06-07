@@ -119,6 +119,23 @@ async def test_create_root_resource(
     assert body["tags"] == json_result["tags"]
 
 
+async def test_create_chunked_root_resource(
+    ofrak_client: TestClient, ofrak_context, ofrak_server, hello_world_elf
+):
+    chunk_size = int(len(hello_world_elf) / 10)
+    for start in range(0, len(hello_world_elf), chunk_size):
+        end = min(start + chunk_size, len(hello_world_elf))
+        res = await ofrak_client.post(
+            "/root_resource_chunk",
+            params={"name": "hello_world_elf", "addr": start},
+            data=hello_world_elf[start:end],
+        )
+    create_resp = await ofrak_client.post(
+        "/create_chunked_root_resource", params={"name": "hello_world_elf"}
+    )
+    assert create_resp.status == 200
+
+
 async def test_get_root_resources(
     ofrak_client: TestClient, ofrak_context, ofrak_server, hello_world_elf
 ):
