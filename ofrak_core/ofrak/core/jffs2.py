@@ -12,7 +12,6 @@ from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
 from ofrak.core.magic import MagicDescriptionIdentifier
 
 from ofrak.core.binary import GenericBinary
-from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
 
@@ -63,25 +62,7 @@ class Jffs2Packer(Packer[None]):
     targets = (Jffs2Filesystem,)
 
     async def pack(self, resource: Resource, config=None):
-        squashfs_view: Jffs2Filesystem = await resource.view_as(Jffs2Filesystem)
-        temp_flush_dir = await squashfs_view.flush_to_disk()
-        with tempfile.NamedTemporaryFile(suffix=".sqsh", mode="rb") as temp:
-            cmd = [
-                # "mksquashfs",
-                # temp_flush_dir,
-                # temp.name,
-                # "-noappend",
-            ]
-            proc = await asyncio.create_subprocess_exec(
-                *cmd,
-            )
-            returncode = await proc.wait()
-            if proc.returncode:
-                raise CalledProcessError(returncode=returncode, cmd=cmd)
-            new_data = temp.read()
-            # Passing in the original range effectively replaces the original data with the new data
-            resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
+        raise NotImplementedError()
 
 
-# MagicMimeIdentifier.register(Jffs2Filesystem, "application/octet-stream")
 MagicDescriptionIdentifier.register(Jffs2Filesystem, lambda s: "jffs2 filesystem" in s.lower())
