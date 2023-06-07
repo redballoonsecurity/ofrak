@@ -270,8 +270,6 @@ class AiohttpOFRAKServer:
             raise HTTPBadRequest(reason="Missing resource name from request")
         if addr is None:
             raise HTTPBadRequest(reason="Missing chunk address from request")
-        print(name)
-        print("Chunk")
         if name not in self.resource_builder.keys():
             self.resource_builder[name] = {}
         chunk_data = await request.read()
