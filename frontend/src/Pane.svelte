@@ -113,7 +113,9 @@
       <div
         class="minimap"
         style:margin-top="{paddingVertical}"
-        style:margin-bottom="{paddingVertical}"
+        style:margin-bottom="{!!window.chrome
+          ? `calc(${paddingVertical} * 2)`
+          : paddingVertical}"
         style:margin-right="{paddingHorizontal}"
       >
         <slot name="minimap" />
