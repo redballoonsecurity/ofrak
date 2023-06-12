@@ -1,7 +1,6 @@
 registry: "redballoonsecurity/ofrak"
 base_image_name: "tutorial-base"
 image_name: "tutorial"
-platform: linux/amd64
 packages_paths:
   [
     "ofrak_type",
