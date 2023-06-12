@@ -40,7 +40,7 @@
 
 <script>
   import Breadcrumb from "./Breadcrumb.svelte";
-  import LoadingAnimation from "./LoadingAnimation.svelte";
+  import LoadingText from "./LoadingText.svelte";
 
   import { chunkList, buf2hex, hexToChar } from "./helpers.js";
   import { selectedResource, selected, settings } from "./stores.js";
@@ -240,7 +240,7 @@
 </script>
 
 {#await dataLenPromise}
-  <LoadingAnimation />
+  <LoadingText />
 {:then dataLength}
   {#if dataLength > 0}
     <!-- 
@@ -259,7 +259,7 @@
         </div>
         <div class="hbox">
           {#await chunkDataPromise}
-            <LoadingAnimation />
+            <LoadingText />
           {:then chunks}
             <div>
               {#each chunks as _, chunkIndex}
