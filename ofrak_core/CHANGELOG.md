@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 ### Added
+- Add a JFFS2 packer and unpacker. ([#326](https://github.com/redballoonsecurity/ofrak/pull/326))
 - Add `ElfLoadAlignmentModifier`, which reclaims unused alignment bytes between PT_LOAD segments in ELFs as free space. ([#302](https://github.com/redballoonsecurity/ofrak/pull/302))
 - Add a "copy to clipboard" button to the "Show Snippet" view for easy exporting. ([#301](https://github.com/redballoonsecurity/ofrak/pull/301))
 - Add a settings pane to the OFRAK GUI that supports theming and changing colors ([#309](https://github.com/redballoonsecurity/ofrak/pull/309))
