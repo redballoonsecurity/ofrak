@@ -18,3 +18,13 @@ frontend/public/build
 ofrak_core/ofrak/core/entropy/entropy_c.cpython*
 ofrak_core/ofrak/gui/public
 ofrak_core/build
+ofrak_patch_maker/build
+ofrak_type/build
+helper_functions_w_MJZ_edits.py
+6_code_insertion_with_extension \w MJZ\ edits.ipynb
+Dockerstub-old
+disassemblers/ofrak_ghidra/build
+scratch-pad.py
+disassemblers/ofrak_binary_ninja/build
+ofrak_ai/chatgpt_config.py
+ofrak_ai/build

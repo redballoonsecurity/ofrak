@@ -8,6 +8,7 @@ FULL_IMAGE_NAME=${BASE_IMAGE_NAME}:${commit_short_hash}
 # 
 # Note that the arguments at the end are passed to the bash entrypoint, but that
 # the --entrypoint argument must come before the image name.
+#--platform linux/amd64 \
 .PHONY: run
 run:
 	docker run \
@@ -15,6 +16,7 @@ run:
 		--detach \
 		--interactive \
 		--tty \
+		--platform linux/amd64 \
 		--publish 8888:8888 \
 		--publish 80:80 \
 		--name ofrak-tutorial \
