@@ -3,6 +3,10 @@ set -e
 
 GHIDRA_PATH=$1
 OFRAK_GHIDRA_SCRIPTS_PATH=$2
+GHIDRA_USER=$3
+GHIDRA_PASS=$4
+GHIDRA_REPO_HOST=$5
+GHIDRA_REPO_PORT=$6
 
 # cd /opt/rbs/ghidra_10.1.2_PUBLIC
 cd ${GHIDRA_PATH}
@@ -24,4 +28,4 @@ while ! ./server/svrAdmin -add root; do
 done
 
 ./server/ghidraSvr restart
-./support/analyzeHeadless . dummy -postScript CreateRepository.java -scriptPath ${OFRAK_GHIDRA_SCRIPTS_PATH} -deleteProject -noanalysis
+./support/analyzeHeadless . dummy -postScript CreateRepository.java $GHIDRA_USER $GHIDRA_PASS $GHIDRA_REPO_HOST $GHIDRA_REPO_PORT -scriptPath ${OFRAK_GHIDRA_SCRIPTS_PATH} -deleteProject -noanalysis
