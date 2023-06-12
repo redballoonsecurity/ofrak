@@ -16,6 +16,8 @@ from ofrak.model.component_model import ComponentExternalTool
 
 LOGGER = logging.getLogger(__name__)
 
+JEFFERSON = ComponentExternalTool("jefferson", "https://pypi.org/project/jefferson/", "--help")
+
 MKFS_JFFS2 = ComponentExternalTool(
     "mkfs.jffs2", "http://linux-mtd.infradead.org/", "-help", "mtd-utils"
 )
@@ -33,6 +35,7 @@ class Jffs2Unpacker(Unpacker[None]):
 
     targets = (Jffs2Filesystem,)
     children = (File, Folder, SpecialFileType)
+    external_dependencies = (JEFFERSON,)
 
     async def unpack(self, resource: Resource, config=None):
         with tempfile.NamedTemporaryFile() as temp_file:

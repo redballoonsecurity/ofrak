@@ -195,7 +195,7 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
         dockerfile_base_parts += [f"### {dockerstage_path}", dockerstub]
 
     dockerfile_base_parts += [
-        "FROM python:3.8-bullseye",
+        "FROM python:3.7-bullseye@sha256:338ead05c1a0aa8bd8fcba8e4dbbe2afd0283b4732fd30cf9b3bfcfcbc4affab",
         "",
     ]
 
