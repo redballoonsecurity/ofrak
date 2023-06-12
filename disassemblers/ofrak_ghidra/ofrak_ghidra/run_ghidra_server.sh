@@ -27,5 +27,7 @@ while ! ./server/svrAdmin -add $GHIDRA_USER; do
   echo "Retrying running './server/svrAdmin -add $GHIDRA_USER' ($retry_counter/$max_retries)..."
 done
 
+./server/svrAdmin -grant $GHIDRA_USER +w ofrak
+
 ./server/ghidraSvr restart
 ./support/analyzeHeadless . dummy -postScript CreateRepository.java $GHIDRA_USER $GHIDRA_PASS $GHIDRA_REPO_HOST $GHIDRA_REPO_PORT -scriptPath ${OFRAK_GHIDRA_SCRIPTS_PATH} -deleteProject -noanalysis

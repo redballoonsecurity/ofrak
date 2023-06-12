@@ -187,7 +187,7 @@ class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProjec
         if skip_analysis:
             args.append("-noanalysis")
 
-        args.extend(["-scriptPath", "'" + (";".join(self._script_directories)) + "'"])
+        args.extend(["-scriptPath", (";".join(self._script_directories))])
 
         args.extend(["-postScript", "AnalysisServer.java"])
         args.extend(self._build_ghidra_server_args())
