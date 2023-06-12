@@ -34,7 +34,7 @@
 </style>
 
 <script>
-  import { afterUpdate } from "svelte";
+  import { onMount } from "svelte";
 
   export let paddingVertical = "3em",
     paddingHorizontal = "3em",
@@ -50,6 +50,7 @@
     }
   }
   $: if (scrollY !== undefined && $scrollY !== undefined) {
+    refreshHeight();
     updateScrollTop($scrollY.top);
   }
 
@@ -64,7 +65,7 @@
         inner.clientHeight / (inner.scrollHeight - inner.clientTop);
     }
   }
-  afterUpdate(refreshHeight);
+  onMount(refreshHeight);
 </script>
 
 <svelte:window on:resize="{refreshHeight}" />
