@@ -157,6 +157,21 @@ async def test_get_data(ofrak_client: TestClient, hello_world_elf):
     assert resp.status == 200
     resp_body = await resp.read()
     assert resp_body == hello_world_elf
+    resp = await ofrak_client.get(f"/{create_body['id']}/get_data", params={"range": "[16,80]"})
+    assert resp.status == 200
+    resp_body = await resp.read()
+    assert resp_body == hello_world_elf[0x10:0x50]
+
+
+async def test_get_data_length(ofrak_client: TestClient, hello_world_elf):
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+    )
+    create_body = await create_resp.json()
+    resp = await ofrak_client.get(f"/{create_body['id']}/get_data_length")
+    assert resp.status == 200
+    resp_body = await resp.json()
+    assert resp_body == len(hello_world_elf)
 
 
 async def test_unpack(ofrak_client: TestClient, hello_world_elf):

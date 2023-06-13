@@ -99,7 +99,7 @@
   import { selected, selectedResource as _selectedResource } from "./stores.js";
   const selectedResource = $_selectedResource;
 
-  export let modifierView, dataPromise, resourceNodeDataMap;
+  export let modifierView, dataLenPromise, resourceNodeDataMap;
   let startInput,
     endInput,
     startOffset,
@@ -108,7 +108,9 @@
     errorMessage,
     userData;
 
-  $: dataPromise.then((data) => (dataLength = data.byteLength));
+  $: dataLenPromise.then((r) => {
+    dataLength = r;
+  });
 
   function refreshResource() {
     // Force hex view refresh with colors
@@ -133,15 +135,10 @@
       }
 
       if (selectedResource) {
-        dataPromise.then(
-          (data) =>
-            (userData = chunkList(
-              new Uint8Array(data.slice(startOffset, endOffset)),
-              16
-            )
-              .map((r) => buf2hex(r, " "))
-              .join("\n"))
-        );
+        let data = await selectedResource.get_data([startOffset, endOffset]);
+        userData = chunkList(new Uint8Array(data), 16)
+          .map((r) => buf2hex(r, " "))
+          .join("\n");
       }
     } catch (err) {
       try {
