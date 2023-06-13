@@ -71,8 +71,8 @@ class Jffs2Packer(Packer[None]):
     external_dependencies = (MKFS_JFFS2,)
 
     async def pack(self, resource: Resource, config=None):
-        squashfs_view: Jffs2Filesystem = await resource.view_as(Jffs2Filesystem)
-        temp_flush_dir = await squashfs_view.flush_to_disk()
+        jffs2_view: Jffs2Filesystem = await resource.view_as(Jffs2Filesystem)
+        temp_flush_dir = await jffs2_view.flush_to_disk()
         with tempfile.NamedTemporaryFile(suffix=".sqsh", mode="rb") as temp:
             cmd = [
                 "mkfs.jffs2",
