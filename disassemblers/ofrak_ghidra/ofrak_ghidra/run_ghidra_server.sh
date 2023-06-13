@@ -27,6 +27,21 @@ while ! ./server/svrAdmin -add $GHIDRA_USER; do
   echo "Retrying running './server/svrAdmin -add $GHIDRA_USER' ($retry_counter/$max_retries)..."
 done
 
+# Also add root for when running with sudo, to make sure the repository can be created
+max_retries=5
+retry_counter=0
+while ! ./server/svrAdmin -add root; do
+  if [ $retry_counter -ge $max_retries ]; then
+    echo "Failure running './server/svrAdmin -add root'. Retried $retry_counter times." >&2
+    exit 1
+  fi
+  # Use ++v instead of v++ since bash returns 1 when an arithmetic operation returns 0,
+  # and we exit on failures with `set -e`.
+  ((++retry_counter))
+  sleep 0.5
+  echo "Retrying running './server/svrAdmin -add root' ($retry_counter/$max_retries)..."
+done
+
 
 ./server/ghidraSvr restart
 ./support/analyzeHeadless . dummy -postScript CreateRepository.java $GHIDRA_USER $GHIDRA_PASS $GHIDRA_REPO_HOST $GHIDRA_REPO_PORT -scriptPath ${OFRAK_GHIDRA_SCRIPTS_PATH} -deleteProject -noanalysis
