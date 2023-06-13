@@ -27,10 +27,11 @@ while ! ./server/svrAdmin -add $GHIDRA_USER; do
   echo "Retrying running './server/svrAdmin -add $GHIDRA_USER' ($retry_counter/$max_retries)..."
 done
 
+
+./server/ghidraSvr restart
+./support/analyzeHeadless . dummy -postScript CreateRepository.java $GHIDRA_USER $GHIDRA_PASS $GHIDRA_REPO_HOST $GHIDRA_REPO_PORT -scriptPath ${OFRAK_GHIDRA_SCRIPTS_PATH} -deleteProject -noanalysis
+
 # Some versions of Ghidra have a command to add permissions to users, in addition to -add
 if (./server/svrAdmin --help 2>&1 | grep "\-grant" ) then
   ./server/svrAdmin -grant $GHIDRA_USER +w ofrak
 fi
-
-./server/ghidraSvr restart
-./support/analyzeHeadless . dummy -postScript CreateRepository.java $GHIDRA_USER $GHIDRA_PASS $GHIDRA_REPO_HOST $GHIDRA_REPO_PORT -scriptPath ${OFRAK_GHIDRA_SCRIPTS_PATH} -deleteProject -noanalysis
