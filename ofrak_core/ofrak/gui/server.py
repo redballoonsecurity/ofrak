@@ -144,10 +144,11 @@ class AiohttpOFRAKServer:
         self.resource_view_context: ResourceViewContext = ResourceViewContext()
         self.component_context: ComponentContext = ClientComponentContext()
         self.script_builder: ScriptBuilder = ScriptBuilder()
-        self.resource_builder: Dict[str, Dict[int, bytes]] = {}
+        self.resource_builder: Dict[bytes, Tuple[Resource, memoryview]] = {}
         self._app.add_routes(
             [
                 web.post("/create_root_resource", self.create_root_resource),
+                web.post("/init_chunked_root_resource", self.init_chunked_root_resource),
                 web.post("/root_resource_chunk", self.root_resource_chunk),
                 web.post("/create_chunked_root_resource", self.create_chunked_root_resource),
                 web.get("/get_root_resources", self.get_root_resources),
@@ -264,33 +265,54 @@ class AiohttpOFRAKServer:
             await self.runner.cleanup()
 
     @exceptions_to_http(SerializedError)
-    async def root_resource_chunk(self, request: Request) -> Response:
+    async def init_chunked_root_resource(self, request: Request) -> Response:
         name = request.query.get("name")
-        addr = request.query.get("addr")
+        size = int(request.query.get("size"))
         if name is None:
             raise HTTPBadRequest(reason="Missing resource name from request")
-        if addr is None:
-            raise HTTPBadRequest(reason="Missing chunk address from request")
-        if name not in self.resource_builder.keys():
-            self.resource_builder[name] = {}
+        if size is None:
+            raise HTTPBadRequest(reason="Missing chunk size from request")
+        root_resource: Resource = await self._ofrak_context.create_root_resource(
+            name, bytearray(b"\x00" * size), (File,)
+        )
+        self.resource_builder[root_resource.get_id().hex()] = (
+            root_resource,
+            memoryview(bytearray(b"\x00" * size)),
+        )
+        return json_response(root_resource.get_id().hex())
+
+    @exceptions_to_http(SerializedError)
+    async def root_resource_chunk(self, request: Request) -> Response:
+        id = request.query.get("id")
+        start = int(request.query.get("start"))
+        end = int(request.query.get("end"))
+        if id is None:
+            raise HTTPBadRequest(reason="Missing resource id from request")
+        if start is None:
+            raise HTTPBadRequest(reason="Missing chunk start from request")
+        if end is None:
+            raise HTTPBadRequest(reason="Missing chunk end from request")
         chunk_data = await request.read()
-        self.resource_builder[name][int(addr)] = chunk_data
+        _, data = self.resource_builder[id]
+        data[start:end] = chunk_data
         return json_response([])
 
     @exceptions_to_http(SerializedError)
     async def create_chunked_root_resource(self, request: Request) -> Response:
+        id = request.query.get("id")
         name = request.query.get("name")
+        if id is None:
+            return HTTPBadRequest(reason="Missing root resource `id` from request")
         if name is None:
             return HTTPBadRequest(reason="Missing root resource `name` from request")
 
-        resource_data = b"".join([v for k, v in sorted(self.resource_builder[name].items())])
-        script_str = rf"""
-        if root_resource is None:
-            root_resource = await ofrak_context.create_root_resource_from_file("{name}")"""
         try:
-            root_resource = await self._ofrak_context.create_root_resource(
-                name, resource_data, (File,)
-            )
+            root_resource, data = self.resource_builder[id]
+            script_str = rf"""
+            if root_resource is None:
+                root_resource = await ofrak_context.create_root_resource_from_file("{name}")"""
+            root_resource.queue_patch(Range(0, len(bytearray(data))), bytearray(data))
+            await root_resource.save()
             await self.script_builder.add_action(root_resource, script_str, ActionType.UNPACK)
             if request.remote is not None:
                 self._job_ids[request.remote] = root_resource.get_job_id()
@@ -298,7 +320,7 @@ class AiohttpOFRAKServer:
         except Exception as e:
             await self.script_builder.clear_script_queue(root_resource)
             raise e
-        self.resource_builder.pop(name)
+        self.resource_builder.pop(id)
         return json_response(self._serialize_resource(root_resource))
 
     @exceptions_to_http(SerializedError)
