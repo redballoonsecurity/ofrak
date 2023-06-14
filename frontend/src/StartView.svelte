@@ -123,6 +123,17 @@
   const warnFileSize = 250 * 1024 * 1024;
   const fileChunkSize = warnFileSize;
 
+  async function sendChunk(start, f){
+    let end = Math.min(start + fileChunkSize, f.size);
+    await fetch(
+          `${$settings.backendUrl}/root_resource_chunk?name=${f.name}&addr=${start}`,
+          {
+            method: "POST",
+            body: await f.slice(start, end),
+          }
+        )
+  }
+
   async function createRootResource(f) {
     let rootModel;
     if (
@@ -137,16 +148,8 @@
       return;
     }
     if (f.size > warnFileSize) {
-      for (var start = 0; start < f.size; start += fileChunkSize) {
-        let end = Math.min(start + fileChunkSize, f.size);
-        const result = await fetch(
-          `${$settings.backendUrl}/root_resource_chunk?name=${f.name}&addr=${start}`,
-          {
-            method: "POST",
-            body: await f.slice(start, end),
-          }
-        );
-      }
+      let chunkStartAddrs = Array.from({length:Math.ceil(f.size / fileChunkSize)}, (v, i ) => i * fileChunkSize)
+      await Promise.all(chunkStartAddrs.map(start => sendChunk(start, f)))
 
       rootModel = await fetch(
         `${$settings.backendUrl}/create_chunked_root_resource?name=${f.name}`,
