@@ -36,7 +36,7 @@
 
   import { selectedResource } from "./stores";
 
-  let dataPromise = $selectedResource
+  $: dataPromise = $selectedResource
     ? $selectedResource.get_data()
     : Promise.resolve([]);
 

@@ -11,7 +11,19 @@
   }
 
   form {
+    width: 35%;
     max-width: 50%;
+    display: flex;
+  }
+
+  form > select {
+    max-width: 90%;
+    flex-grow: 1;
+  }
+
+  form > button {
+    max-width: 10%;
+    flex-grow: 1;
   }
 
   .center {

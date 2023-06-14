@@ -221,7 +221,7 @@
         }
         resourceNodeDataMap[$selected].collapsed = false;
         resourceNodeDataMap[$selected].childrenPromise =
-          rootResource.get_children();
+          $selectedResource?.get_children();
       }}">Back</button
     >
   </div>
