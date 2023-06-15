@@ -268,14 +268,12 @@ class AiohttpOFRAKServer:
     async def init_chunked_root_resource(self, request: Request) -> Response:
         name = request.query.get("name")
         size_param = request.query.get("size")
-        size = int(size_param) if size_param is not None else None
         if name is None:
             raise HTTPBadRequest(reason="Missing resource name from request")
-        if size is None:
+        if size_param is None:
             raise HTTPBadRequest(reason="Missing chunk size from request")
-        root_resource: Resource = await self._ofrak_context.create_root_resource(
-            name, bytearray(b"\x00" * size), (File,)
-        )
+        size = int(size_param)
+        root_resource: Resource = await self._ofrak_context.create_root_resource(name, b"", (File,))
         self.resource_builder[root_resource.get_id().hex()] = (
             root_resource,
             memoryview(bytearray(b"\x00" * size)),
@@ -286,15 +284,15 @@ class AiohttpOFRAKServer:
     async def root_resource_chunk(self, request: Request) -> Response:
         id = request.query.get("id")
         start_param = request.query.get("start")
-        start = int(start_param) if start_param is not None else None
         end_param = request.query.get("end")
-        end = int(end_param) if end_param is not None else None
         if id is None:
             raise HTTPBadRequest(reason="Missing resource id from request")
-        if start is None:
+        if start_param is None:
             raise HTTPBadRequest(reason="Missing chunk start from request")
-        if end is None:
+        if end_param is None:
             raise HTTPBadRequest(reason="Missing chunk end from request")
+        start = int(start_param)
+        end = int(end_param)
         chunk_data = await request.read()
         _, data = self.resource_builder[id]
         data[start:end] = chunk_data
@@ -314,7 +312,7 @@ class AiohttpOFRAKServer:
             script_str = rf"""
             if root_resource is None:
                 root_resource = await ofrak_context.create_root_resource_from_file("{name}")"""
-            root_resource.queue_patch(Range(0, len(bytearray(data))), bytearray(data))
+            root_resource.queue_patch(Range(0, 0), bytearray(data))
             await root_resource.save()
             await self.script_builder.add_action(root_resource, script_str, ActionType.UNPACK)
             if request.remote is not None:
