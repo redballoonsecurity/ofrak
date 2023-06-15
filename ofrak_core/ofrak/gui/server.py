@@ -144,7 +144,7 @@ class AiohttpOFRAKServer:
         self.resource_view_context: ResourceViewContext = ResourceViewContext()
         self.component_context: ComponentContext = ClientComponentContext()
         self.script_builder: ScriptBuilder = ScriptBuilder()
-        self.resource_builder: Dict[bytes, Tuple[Resource, memoryview]] = {}
+        self.resource_builder: Dict[str, Tuple[Resource, memoryview]] = {}
         self._app.add_routes(
             [
                 web.post("/create_root_resource", self.create_root_resource),
@@ -267,7 +267,8 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def init_chunked_root_resource(self, request: Request) -> Response:
         name = request.query.get("name")
-        size = int(request.query.get("size"))
+        size_param = request.query.get("size")
+        size = int(size_param) if size_param is not None else None
         if name is None:
             raise HTTPBadRequest(reason="Missing resource name from request")
         if size is None:
@@ -284,8 +285,10 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def root_resource_chunk(self, request: Request) -> Response:
         id = request.query.get("id")
-        start = int(request.query.get("start"))
-        end = int(request.query.get("end"))
+        start_param = request.query.get("start")
+        start = int(start_param) if start_param is not None else None
+        end_param = request.query.get("end")
+        end = int(end_param) if end_param is not None else None
         if id is None:
             raise HTTPBadRequest(reason="Missing resource id from request")
         if start is None:
