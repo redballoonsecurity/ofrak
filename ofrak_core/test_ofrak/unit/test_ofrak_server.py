@@ -123,15 +123,20 @@ async def test_create_chunked_root_resource(
     ofrak_client: TestClient, ofrak_context, ofrak_server, hello_world_elf
 ):
     chunk_size = int(len(hello_world_elf) / 10)
+    init_resp = await ofrak_client.post(
+        "/init_chunked_root_resource",
+        params={"name": "hellow_world_elf", "size": len(hello_world_elf)},
+    )
+    id = await init_resp.json()
     for start in range(0, len(hello_world_elf), chunk_size):
         end = min(start + chunk_size, len(hello_world_elf))
         res = await ofrak_client.post(
             "/root_resource_chunk",
-            params={"name": "hello_world_elf", "addr": start},
+            params={"id": id, "start": start, "end": end},
             data=hello_world_elf[start:end],
         )
     create_resp = await ofrak_client.post(
-        "/create_chunked_root_resource", params={"name": "hello_world_elf"}
+        "/create_chunked_root_resource", params={"name": "hello_world_elf", "id": id}
     )
     assert create_resp.status == 200
 
