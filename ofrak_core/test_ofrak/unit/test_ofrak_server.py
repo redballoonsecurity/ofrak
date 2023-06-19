@@ -33,7 +33,7 @@ def hello_world_elf() -> bytes:
 async def large_test_file(ofrak_context: OFRAKContext) -> Resource:
     with tempfile.NamedTemporaryFile() as temp:
         for i in range(256):
-            temp.write(int.to_bytes(i, 1, "big") * 4096)
+            temp.write(int.to_bytes(i, 1, "big") * 1024 * 1024)
         yield await ofrak_context.create_root_resource_from_file(temp.name)
 
 
