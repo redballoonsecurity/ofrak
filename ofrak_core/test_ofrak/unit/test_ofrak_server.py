@@ -1,6 +1,9 @@
 import itertools
 import json
 import os
+import tempfile
+from ofrak.ofrak_context import OFRAKContext
+from ofrak.resource import Resource
 import pytest
 import re
 import sys
@@ -24,6 +27,14 @@ from test_ofrak.components.hello_world_elf import hello_elf
 @pytest.fixture(scope="session")
 def hello_world_elf() -> bytes:
     return hello_elf()
+
+
+@pytest.fixture()
+async def large_test_file(ofrak_context: OFRAKContext) -> Resource:
+    with tempfile.NamedTemporaryFile() as temp:
+        for i in range(256):
+            temp.write(int.to_bytes(i, 1, "big") * 1024 * 1024)
+        yield await ofrak_context.create_root_resource_from_file(temp.name)
 
 
 @pytest.fixture(scope="session")
@@ -117,6 +128,32 @@ async def test_create_root_resource(
     serialized_resource = ofrak_server._serialize_resource(test_resource)
     json_result = json.loads(json.dumps(serialized_resource))
     assert body["tags"] == json_result["tags"]
+
+
+async def test_create_chunked_root_resource(
+    ofrak_client: TestClient, ofrak_server, large_test_file
+):
+    test_file_data = await large_test_file.get_data()
+    chunk_size = int(len(test_file_data) / 10)
+    init_resp = await ofrak_client.post(
+        "/init_chunked_root_resource",
+        params={"name": "test_file_data", "size": len(test_file_data)},
+    )
+    id = await init_resp.json()
+    for start in range(0, len(test_file_data), chunk_size):
+        end = min(start + chunk_size, len(test_file_data))
+        res = await ofrak_client.post(
+            "/root_resource_chunk",
+            params={"id": id, "start": start, "end": end},
+            data=test_file_data[start:end],
+        )
+    create_resp = await ofrak_client.post(
+        "/create_chunked_root_resource", params={"name": "test_file_data", "id": id}
+    )
+    assert create_resp.status == 200
+    length_resp = await ofrak_client.get(f"/{id}/get_data_length")
+    length_resp_body = await length_resp.json()
+    assert length_resp_body == len(test_file_data)
 
 
 async def test_get_root_resources(
