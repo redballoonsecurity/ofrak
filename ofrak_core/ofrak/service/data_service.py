@@ -2,7 +2,19 @@ import heapq
 import itertools
 from bisect import bisect_left, bisect_right
 from collections import defaultdict
-from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, TypeVar, Generic
+from typing import (
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    TypeVar,
+    Generic,
+    Pattern,
+    cast,
+)
 
 from sortedcontainers import SortedList
 
@@ -133,6 +145,29 @@ class DataService(DataServiceInterface):
             root = self._get_root_by_id(model.root_id)
             root.delete_mapped_model(model)
             del self._model_store[model.id]
+
+    async def search(self, data_id, query):
+        model = self._get_by_id(data_id)
+        root = self._get_root_by_id(data_id)
+        if type(query) is bytes:
+            start = model.range.start
+            matches = []
+            while True:
+                match_offset = root.data.find(query, start, model.range.end)
+                if match_offset < 0:
+                    break
+
+                matches.append(match_offset)
+                start = match_offset + 1
+
+            return matches
+        else:
+            query = cast(Pattern, query)
+            matches = [
+                (match.start(), match.group(0))
+                for match in query.finditer(root.data, model.range.start, model.range.end)
+            ]
+            return matches
 
     def _get_by_id(self, data_id: DataId) -> DataModel:
         model = self._model_store.get(data_id)

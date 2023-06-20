@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from ofrak.model.data_model import DataPatch
@@ -375,3 +377,11 @@ class TestDataServiceInterface:
         for data_id in [DATA_0, DATA_1, DATA_2, DATA_3, DATA_4, DATA_5]:
             with pytest.raises(NotFoundError):
                 await populated_data_service.get_by_id(data_id)
+
+    async def test_search_bytes(self, populated_data_service: DataServiceInterface):
+        results = await populated_data_service.search(DATA_0, b"\x00\x10")
+        assert results == [0x10 - 1]
+
+    async def test_search_regex(self, populated_data_service: DataServiceInterface):
+        results = await populated_data_service.search(DATA_0, re.compile(b"\x00\x10+"))
+        assert results == [(0x10 - 1, b"\x00\x10\x10\x10\x10\x10\x10\x10\x10")]

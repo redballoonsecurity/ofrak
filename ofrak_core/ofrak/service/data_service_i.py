@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import List, Iterable, Optional
+from typing import List, Iterable, Optional, Tuple, overload, Pattern
 
 from ofrak.model.data_model import DataModel, DataPatch, DataPatchesResult
 from ofrak.service.abstract_ofrak_service import AbstractOfrakService
@@ -178,5 +178,35 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         :param data_ids: Multiple unique IDs for data models
 
         :raises NotFoundError: if any ID in `data_ids` is not associated with any known model
+        """
+        raise NotImplementedError()
+
+    @overload
+    @abstractmethod
+    async def search(
+        self,
+        data_id: bytes,
+        query: Pattern[bytes],
+    ) -> List[Tuple[int, int]]:
+        ...
+
+    @overload
+    @abstractmethod
+    async def search(self, data_id: bytes, query: bytes) -> List[int]:
+        ...
+
+    @abstractmethod
+    async def search(self, data_id, query):
+        """
+        Search for some data in one of the models. The query may be a regex pattern (a return value
+        of re.compile). If the query is a regex pattern, returns a list of pairs with both the
+        offset of the match and the contents of the match itself. If the query is plain bytes, a
+        list of only the match offsets are returned.
+
+        :param data_id: Data model to search
+        :param query: Plain bytes to exactly match or a regex pattern to search for
+
+        :return: A list of offsets matching a plain bytes query, or a list of (offset, match) pairs
+        for a regex pattern query
         """
         raise NotImplementedError()
