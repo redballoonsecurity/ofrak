@@ -63,3 +63,9 @@ RUN cd /tmp && \
     git clone https://github.com/ReFirmLabs/binwalk && \
     cd binwalk && \
     python3 setup.py install
+
+# Install Jefferson
+WORKDIR /tmp
+RUN wget https://bootstrap.pypa.io/pip/get-pip.py && python3.9 get-pip.py && python3.7 get-pip.py && rm get-pip.py
+RUN python3.9 -m pip install jefferson
+WORKDIR /
