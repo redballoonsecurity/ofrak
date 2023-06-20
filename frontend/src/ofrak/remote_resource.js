@@ -644,6 +644,20 @@ export class RemoteResource extends Resource {
     await this.update_script();
     return result;
   }
+
+  async search(searchQuery) {
+    return await fetch(`${this.uri}/search?search_query=${searchQuery}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return await r.json();
+    });
+  }
 }
 
 export function remote_models_to_resources(remote_models, resources) {

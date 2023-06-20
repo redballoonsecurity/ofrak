@@ -406,6 +406,9 @@ export class Resource {
     throw new NotImplementedError("add_flush_to_disk_to_script");
   }
 
+  async search() {
+    throw new NotImplementedError("search");
+  }
   /***
    * Return the string representation of a comment, which includes its range as prefix if it
    * has one.
