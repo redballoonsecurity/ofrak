@@ -189,14 +189,14 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         query: Pattern[bytes],
         start: Optional[int] = None,
         end: Optional[int] = None,
-    ) -> List[Tuple[int, bytes]]:
+    ) -> Tuple[Tuple[int, bytes], ...]:
         ...
 
     @overload
     @abstractmethod
     async def search(
         self, data_id: bytes, query: bytes, start: Optional[int] = None, end: Optional[int] = None
-    ) -> List[int]:
+    ) -> Tuple[int, ...]:
         ...
 
     @abstractmethod

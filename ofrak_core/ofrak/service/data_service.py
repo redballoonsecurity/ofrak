@@ -161,13 +161,13 @@ class DataService(DataServiceInterface):
                 matches.append(match_offset)
                 start = match_offset + 1
 
-            return matches
+            return tuple(matches)
         else:
             query = cast(Pattern, query)
             matches = [
                 (match.start(), match.group(0)) for match in query.finditer(root.data, start, end)
             ]
-            return matches
+            return tuple(matches)
 
     def _get_by_id(self, data_id: DataId) -> DataModel:
         model = self._model_store.get(data_id)
