@@ -514,7 +514,7 @@ class ElfSymbol(ElfSymbolStructure):
         elf = await self.resource.get_only_ancestor_as_view(Elf, ResourceFilter.with_tags(Elf))
         string_section = await elf.get_string_section()
         ((_, raw_symbol_name),) = await string_section.resource.search_data(
-            re.compile(b".*\x00"), self.st_name
+            re.compile(b".[^\x00]+\x00"), start=self.st_name, max_matches=1
         )
         return raw_symbol_name[:-1].decode("ascii")
 

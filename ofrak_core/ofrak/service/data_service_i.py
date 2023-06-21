@@ -189,18 +189,24 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         query: Pattern[bytes],
         start: Optional[int] = None,
         end: Optional[int] = None,
+        max_matches: Optional[int] = None,
     ) -> Tuple[Tuple[int, bytes], ...]:
         ...
 
     @overload
     @abstractmethod
     async def search(
-        self, data_id: bytes, query: bytes, start: Optional[int] = None, end: Optional[int] = None
+        self,
+        data_id: bytes,
+        query: bytes,
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+        max_matches: Optional[int] = None,
     ) -> Tuple[int, ...]:
         ...
 
     @abstractmethod
-    async def search(self, data_id, query, start=None, end=None):
+    async def search(self, data_id, query, start=None, end=None, max_matches=None):
         """
         Search for some data in one of the models. The query may be a regex pattern (a return value
         of `re.compile`). If the query is a regex pattern, returns a list of pairs with both the
@@ -211,6 +217,7 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         :param query: Plain bytes to exactly match or a regex pattern to search for
         :param start: Start offset in the data model to begin searching
         :param end: End offset in the data model to stop searching
+        :param max_matches: Maximum number of matches to return
 
         :return: A list of offsets matching a plain bytes query, or a list of (offset, match) pairs
         for a regex pattern query

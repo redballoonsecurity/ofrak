@@ -323,10 +323,10 @@ class ElfSectionNameAnalyzer(Analyzer[None, AttributesType[NamedProgramSection]]
         string_section = await elf_r.get_section_name_string_section()
         try:
             ((_, raw_section_name),) = await string_section.resource.search_data(
-                re.compile(b".*\x00"), start=section_header.sh_name
+                re.compile(b".[^\x00]+\x00"), start=section_header.sh_name, max_matches=1
             )
             section_name = raw_section_name[:-1].decode("ascii")
-        except ValueError:
+        except ValueError as e:
             LOGGER.info("String section is empty! Using '<no-strings>' as section name")
             section_name = "<no-strings>"  # This is what readelf returns in this situation
         return AttributesType[NamedProgramSection](

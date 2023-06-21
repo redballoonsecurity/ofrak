@@ -250,16 +250,21 @@ class Resource:
         query: Pattern[bytes],
         start: Optional[int] = None,
         end: Optional[int] = None,
+        max_matches: Optional[int] = None,
     ) -> Tuple[Tuple[int, bytes], ...]:
         ...
 
     @overload
     async def search_data(
-        self, query: bytes, start: Optional[int] = None, end: Optional[int] = None
+        self,
+        query: bytes,
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+        max_matches: Optional[int] = None,
     ) -> Tuple[int, ...]:
         ...
 
-    async def search_data(self, query, start=None, end=None):
+    async def search_data(self, query, start=None, end=None, max_matches=None):
         """
         Search for some data in this resource. The query may be a regex pattern (a return value
         of `re.compile`). If the query is a regex pattern, returns a list of pairs with both the
@@ -273,7 +278,7 @@ class Resource:
         :return: A list of offsets matching a plain bytes query, or a list of (offset, match) pairs
         for a regex pattern query
         """
-        return await self._data_service.search(self.get_data_id(), query, start, end)
+        return await self._data_service.search(self.get_data_id(), query, start, end, max_matches)
 
     async def save(self):
         """
