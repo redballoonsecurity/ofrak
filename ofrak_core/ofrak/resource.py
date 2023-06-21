@@ -17,6 +17,8 @@ from typing import (
     Sequence,
     Callable,
     Set,
+    Pattern,
+    overload,
 )
 
 from ofrak.component.interface import ComponentInterface
@@ -241,6 +243,37 @@ class Resource:
                 "resource with no data."
             )
         return await self._data_service.get_data_range_within_root(self._resource.data_id)
+
+    @overload
+    async def search_data(
+        self,
+        query: Pattern[bytes],
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+    ) -> List[Tuple[int, bytes]]:
+        ...
+
+    @overload
+    async def search_data(
+        self, query: bytes, start: Optional[int] = None, end: Optional[int] = None
+    ) -> List[int]:
+        ...
+
+    async def search_data(self, query, start=None, end=None):
+        """
+        Search for some data in this resource. The query may be a regex pattern (a return value
+        of `re.compile`). If the query is a regex pattern, returns a list of pairs with both the
+        offset of the match and the contents of the match itself. If the query is plain bytes, a
+        list of only the match offsets are returned.
+
+        :param query: Plain bytes to exactly match or a regex pattern to search for
+        :param start: Start offset in the data model to begin searching
+        :param end: End offset in the data model to stop searching
+
+        :return: A list of offsets matching a plain bytes query, or a list of (offset, match) pairs
+        for a regex pattern query
+        """
+        return await self._data_service.search(self.get_data_id(), query, start, end)
 
     async def save(self):
         """

@@ -189,7 +189,7 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         query: Pattern[bytes],
         start: Optional[int] = None,
         end: Optional[int] = None,
-    ) -> List[Tuple[int, int]]:
+    ) -> List[Tuple[int, bytes]]:
         ...
 
     @overload
@@ -203,7 +203,7 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
     async def search(self, data_id, query, start=None, end=None):
         """
         Search for some data in one of the models. The query may be a regex pattern (a return value
-        of re.compile). If the query is a regex pattern, returns a list of pairs with both the
+        of `re.compile`). If the query is a regex pattern, returns a list of pairs with both the
         offset of the match and the contents of the match itself. If the query is plain bytes, a
         list of only the match offsets are returned.
 

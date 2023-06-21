@@ -148,7 +148,7 @@ class DataService(DataServiceInterface):
 
     async def search(self, data_id, query, start=None, end=None):
         model = self._get_by_id(data_id)
-        root = self._get_root_by_id(data_id)
+        root = self._get_root_by_id(model.root_id)
         start = model.range.start if start is None else model.range.start + start
         end = model.range.end if end is None else min(model.range.end, model.range.start + end)
         if type(query) is bytes:
