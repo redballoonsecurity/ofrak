@@ -158,14 +158,15 @@ class DataService(DataServiceInterface):
                 if match_offset < 0:
                     break
 
-                matches.append(match_offset)
+                matches.append(match_offset - model.range.start)
                 start = match_offset + 1
 
             return tuple(matches)
         else:
             query = cast(Pattern, query)
             matches = [
-                (match.start(), match.group(0)) for match in query.finditer(root.data, start, end)
+                (match.start() - model.range.start, match.group(0))
+                for match in query.finditer(root.data, start, end)
             ]
             return tuple(matches)
 
