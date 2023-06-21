@@ -382,6 +382,14 @@ class TestDataServiceInterface:
         results = await populated_data_service.search(DATA_0, b"\x00\x10")
         assert results == [0x10 - 1]
 
+        results = await populated_data_service.search(DATA_0, b"\x10", start=0x10)
+        assert results == [0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17]
+
     async def test_search_regex(self, populated_data_service: DataServiceInterface):
         results = await populated_data_service.search(DATA_0, re.compile(b"\x00\x10+"))
         assert results == [(0x10 - 1, b"\x00\x10\x10\x10\x10\x10\x10\x10\x10")]
+
+        results = await populated_data_service.search(
+            DATA_0, re.compile(b"\x00+\x10+"), start=0xC, end=0x14
+        )
+        assert results == [(0xC, b"\x00\x00\x00\x00\x10\x10\x10\x10")]

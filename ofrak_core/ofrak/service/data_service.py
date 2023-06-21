@@ -146,14 +146,15 @@ class DataService(DataServiceInterface):
             root.delete_mapped_model(model)
             del self._model_store[model.id]
 
-    async def search(self, data_id, query):
+    async def search(self, data_id, query, start=None, end=None):
         model = self._get_by_id(data_id)
         root = self._get_root_by_id(data_id)
+        start = model.range.start if start is None else model.range.start + start
+        end = model.range.end if end is None else min(model.range.end, model.range.start + end)
         if type(query) is bytes:
-            start = model.range.start
             matches = []
             while True:
-                match_offset = root.data.find(query, start, model.range.end)
+                match_offset = root.data.find(query, start, end)
                 if match_offset < 0:
                     break
 
@@ -164,8 +165,7 @@ class DataService(DataServiceInterface):
         else:
             query = cast(Pattern, query)
             matches = [
-                (match.start(), match.group(0))
-                for match in query.finditer(root.data, model.range.start, model.range.end)
+                (match.start(), match.group(0)) for match in query.finditer(root.data, start, end)
             ]
             return matches
 
