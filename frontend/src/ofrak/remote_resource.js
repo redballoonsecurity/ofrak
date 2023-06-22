@@ -645,16 +645,14 @@ export class RemoteResource extends Resource {
     return result;
   }
 
-  async search_for_string(searchQuery) {
-    return await fetch(
-      `${this.uri}/search_for_string?search_query=${searchQuery}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    ).then(async (r) => {
+  async search_for_string(searchQuery, regex) {
+    return await fetch(`${this.uri}/search_for_string?regex=${regex}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(searchQuery),
+    }).then(async (r) => {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }
@@ -662,16 +660,14 @@ export class RemoteResource extends Resource {
     });
   }
 
-  async search_for_bytes(searchQuery) {
-    return await fetch(
-      `${this.uri}/search_for_bytes?search_query=${searchQuery}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    ).then(async (r) => {
+  async search_for_bytes(searchQuery, regex) {
+    return await fetch(`${this.uri}/search_for_bytes?regex=${regex}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(searchQuery),
+    }).then(async (r) => {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }

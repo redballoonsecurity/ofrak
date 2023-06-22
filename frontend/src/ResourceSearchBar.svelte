@@ -65,9 +65,9 @@
   <form
     on:submit|preventDefault="{async (e) => {
       if (searchType == 'String') {
-        searchFilter = await rootResource.search_for_string(searchQuery);
+        searchFilter = await rootResource.search_for_string(searchQuery, false);
       } else if (searchType == 'Bytes') {
-        searchFilter = await rootResource.search_for_bytes(searchQuery);
+        searchFilter = await rootResource.search_for_bytes(searchQuery, false);
       }
     }}"
   >
