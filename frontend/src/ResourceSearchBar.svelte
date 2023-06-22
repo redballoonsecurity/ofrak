@@ -60,7 +60,11 @@
   </select>
   <form
     on:submit|preventDefault="{async (e) => {
-      searchFilter = await rootResource.search_for_string(searchQuery);
+      if (searchType == 'String') {
+        searchFilter = await rootResource.search_for_string(searchQuery);
+      } else if (searchType == 'Bytes') {
+        searchFilter = await rootResource.search_for_bytes(searchQuery);
+      }
     }}"
   >
     <label>
