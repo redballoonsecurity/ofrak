@@ -48,7 +48,7 @@
       searchQuery = searchQuery.match(/[0-9a-fA-F]{1,2}/g).join(" ");
       bytesInput?.setCustomValidity("");
     } catch {
-      searchQuery = ""
+      searchQuery = "";
       bytesInput?.setCustomValidity("Invalid bytes representation.");
     }
   }
