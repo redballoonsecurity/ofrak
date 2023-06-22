@@ -44,9 +44,12 @@
   let searchTypes = ["String", "Bytes"];
 
   $: if (searchQuery != null && searchType == "Bytes") {
-    searchQuery = searchQuery.match(/[0-9a-fA-F]{1,2}/g).join(" ");
-    console.log(searchQuery);
-    bytesInput?.setCustomValidity("");
+    try {
+      searchQuery = searchQuery.match(/[0-9a-fA-F]{1,2}/g).join(" ");
+      bytesInput?.setCustomValidity("");
+    } catch {
+      bytesInput?.setCustomValidity("Invalid bytes representation.");
+    }
   }
 </script>
 
@@ -71,11 +74,7 @@
       {#if searchType == "String"}
         <input placeholder=" Search for a String" bind:value="{searchQuery}" />
       {:else if searchType == "Bytes"}
-        <input
-          placeholder=" Search for Bytes"
-          pattern="([0-9a-fA-F][0-9a-fA-F]\s*)*"
-          bind:value="{searchQuery}"
-        />
+        <input placeholder=" Search for Bytes" bind:value="{searchQuery}" />
       {/if}
     </label>
   </form>
