@@ -279,30 +279,32 @@
     {#if !collapsed && children.length > 0}
       <ul>
         {#each children.slice(0, kiddoChunksize) as child, i}
-          <li>
-            <div>
-              <svelte:self
-                rootResource="{child}"
-                collapsed="{childrenCollapsed}"
-                childrenCollapsed="{childrenCollapsed}"
-                selectNextSibling="{i ===
-                Math.min(kiddoChunksize, children.length) - 1
-                  ? selectNextSibling
-                  : () => {
-                      $selected = children[i + 1]?.resource_id;
-                    }}"
-                selectPreviousSibling="{i === 0
-                  ? () => {
-                      $selected = self_id;
-                    }
-                  : () => {
-                      $selected = children[i - 1]?.resource_id;
-                    }}"
-                bind:resourceNodeDataMap="{resourceNodeDataMap}"
-                searchFilter="{searchFilter}"
-              />
-            </div>
-          </li>
+          {#if filter == null || filter.length == 0 || filter.includes(child.get_id())}
+            <li>
+              <div>
+                <svelte:self
+                  rootResource="{child}"
+                  collapsed="{childrenCollapsed}"
+                  childrenCollapsed="{childrenCollapsed}"
+                  selectNextSibling="{i ===
+                  Math.min(kiddoChunksize, children.length) - 1
+                    ? selectNextSibling
+                    : () => {
+                        $selected = children[i + 1]?.resource_id;
+                      }}"
+                  selectPreviousSibling="{i === 0
+                    ? () => {
+                        $selected = self_id;
+                      }
+                    : () => {
+                        $selected = children[i - 1]?.resource_id;
+                      }}"
+                  bind:resourceNodeDataMap="{resourceNodeDataMap}"
+                  searchFilter="{searchFilter}"
+                />
+              </div>
+            </li>
+          {/if}
         {/each}
         {#if children.length > kiddoChunksize}
           <div class="morebutton">
