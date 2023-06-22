@@ -239,14 +239,28 @@
     return null;
   }
 
+  let matches = [], search_result_index = 0;
+
   async function searchHex(query, mode) {
-    await $selectedResource.search_data(
+    matches = await $selectedResource.search_data(
             query, mode
-    ).then(async (matches) => {
-      if (matches.length > 0) {
-        await dataLenPromise.then((dataLength) => {$scrollY.top = matches[0] / dataLength});
-      }
-    })
+    )
+    if (matches.length > 0) {
+      await dataLenPromise.then((dataLength) => {$scrollY.top = matches[0] / dataLength});
+    }
+  }
+
+  async function nextSearchResult() {
+    search_result_index = Math.min(search_result_index + 1, matches.length - 1);
+    if (matches.length > 0) {
+      await dataLenPromise.then((dataLength) => {$scrollY.top = matches[search_result_index] / dataLength});
+    }
+  }
+  async function prevSearchResult() {
+    search_result_index = Math.max(search_result_index - 1, 0);
+    if (matches.length > 0) {
+      await dataLenPromise.then((dataLength) => {$scrollY.top = matches[search_result_index] / dataLength});
+    }
   }
 </script>
 
@@ -269,7 +283,7 @@
           <Breadcrumb />
         </div>
         <div>
-          <ResourceSearchBar search="{searchHex}" />
+          <ResourceSearchBar search="{searchHex}" goNextMatch="{nextSearchResult}" goPrevMatch="{prevSearchResult}"/>
         </div>
         <div class="hbox">
           {#await chunkDataPromise}

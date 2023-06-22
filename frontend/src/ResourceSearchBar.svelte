@@ -43,7 +43,9 @@
   let searchType, searchQuery;
   let searchTypes = ["String", "Bytes"];
   let searchFilter = null;
-  export let search;
+  export let search,
+          goNextMatch = () => {},
+          goPrevMatch = () => {};
 </script>
 
 <div class="searchbar">
@@ -66,4 +68,8 @@
       />
     </label>
   </form>
+  <div>
+    <button on:click={goNextMatch}>↓</button>
+    <button on:click={goPrevMatch}>↑</button>
+  </div>
 </div>
