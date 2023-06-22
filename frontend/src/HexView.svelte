@@ -239,28 +239,20 @@
     return null;
   }
 
-  let matches = [], search_result_index = 0;
+  let dataSearchResults = {};
+
+  $: {
+    const localDataSearchResults = dataSearchResults;
+
+    if (localDataSearchResults.matches !== undefined && localDataSearchResults.matches.length > 0 && localDataSearchResults.index !== undefined) {
+      dataLenPromise.then((dataLength) => {
+        $scrollY.top = localDataSearchResults.matches[localDataSearchResults.index] / dataLength
+      });
+    }
+  }
 
   async function searchHex(query, mode) {
-    matches = await $selectedResource.search_data(
-            query, mode
-    )
-    if (matches.length > 0) {
-      await dataLenPromise.then((dataLength) => {$scrollY.top = matches[0] / dataLength});
-    }
-  }
-
-  async function nextSearchResult() {
-    search_result_index = Math.min(search_result_index + 1, matches.length - 1);
-    if (matches.length > 0) {
-      await dataLenPromise.then((dataLength) => {$scrollY.top = matches[search_result_index] / dataLength});
-    }
-  }
-  async function prevSearchResult() {
-    search_result_index = Math.max(search_result_index - 1, 0);
-    if (matches.length > 0) {
-      await dataLenPromise.then((dataLength) => {$scrollY.top = matches[search_result_index] / dataLength});
-    }
+    return await $selectedResource.search_data(query, mode)
   }
 </script>
 
@@ -283,7 +275,7 @@
           <Breadcrumb />
         </div>
         <div>
-          <ResourceSearchBar search="{searchHex}" goNextMatch="{nextSearchResult}" goPrevMatch="{prevSearchResult}"/>
+          <ResourceSearchBar search={searchHex} bind:searchResults={dataSearchResults}/>
         </div>
         <div class="hbox">
           {#await chunkDataPromise}

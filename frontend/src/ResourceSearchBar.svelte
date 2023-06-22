@@ -43,9 +43,31 @@
   let searchType, searchQuery;
   let searchTypes = ["String", "Bytes"];
   let searchFilter = null;
+
   export let search,
-          goNextMatch = () => {},
-          goPrevMatch = () => {};
+          searchResults;
+
+  searchResults.matches = undefined;
+  searchResults.index = 0;
+
+  let prevQuery = '';
+
+  function nextMatch(){
+    let nextIndex = searchResults.index + 1;
+      if (nextIndex >= searchResults.matches.length){
+        nextIndex = 0;
+      }
+      searchResults = {matches: searchResults.matches, index: nextIndex}
+  }
+
+  function prevMatch(){
+    let nextIndex = searchResults.index - 1;
+      if (nextIndex < 0){
+        nextIndex = Math.max(searchResults.matches.length - 1, 0)
+      }
+      searchResults = {matches: searchResults.matches, index: nextIndex}
+  }
+
 </script>
 
 <div class="searchbar">
@@ -58,7 +80,16 @@
   </select>
   <form
     on:submit|preventDefault="{async (e) => {
-      await search(searchQuery, searchType);
+      if (searchQuery.length === 0){
+        searchResults.matches = undefined;
+        prevQuery = '';
+      } else if (searchQuery == prevQuery){
+        nextMatch();
+      } else {
+        searchResults.matches = await search(searchQuery, searchType);
+        searchResults.index = 0;
+        prevQuery = searchQuery;
+      }
     }}"
   >
     <label>
@@ -69,7 +100,14 @@
     </label>
   </form>
   <div>
-    <button on:click={goNextMatch}>↓</button>
-    <button on:click={goPrevMatch}>↑</button>
+    {#if (searchResults.matches !== undefined && searchResults.matches !== null)}
+      {#if searchResults.matches.length > 0}
+        {searchResults.index + 1}/{searchResults.matches.length}
+      {:else}
+        No match
+      {/if}
+    {/if}
+    <button on:click={nextMatch}>↓</button>
+    <button on:click={prevMatch}>↑</button>
   </div>
 </div>
