@@ -44,6 +44,7 @@
 
   import { chunkList, buf2hex, hexToChar } from "./helpers.js";
   import { selectedResource, selected, settings } from "./stores.js";
+  import ResourceSearchBar from "./ResourceSearchBar.svelte";
 
   export let dataLenPromise, scrollY, resourceNodeDataMap, resources;
   let childRangesPromise = Promise.resolve(undefined);
@@ -237,6 +238,16 @@
 
     return null;
   }
+
+  async function searchHex(query, mode) {
+    await $selectedResource.search_data(
+            query, mode
+    ).then(async (matches) => {
+      if (matches.length > 0) {
+        await dataLenPromise.then((dataLength) => {$scrollY.top = matches[0] / dataLength});
+      }
+    })
+  }
 </script>
 
 {#await dataLenPromise}
@@ -256,6 +267,9 @@
       <div class="sticky">
         <div class="breadcrumb">
           <Breadcrumb />
+        </div>
+        <div>
+          <ResourceSearchBar search="{searchHex}" />
         </div>
         <div class="hbox">
           {#await chunkDataPromise}

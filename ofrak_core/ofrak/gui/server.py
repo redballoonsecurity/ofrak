@@ -1,5 +1,7 @@
 import asyncio
+import binascii
 import dataclasses
+import re
 from enum import Enum
 import functools
 import itertools
@@ -196,6 +198,7 @@ class AiohttpOFRAKServer:
                 web.post(
                     "/{resource_id}/get_tags_and_num_components", self.get_tags_and_num_components
                 ),
+                web.post("/{resource_id}/search_data", self.search_data),
                 web.get("/", self.get_static_files),
                 web.static(
                     "/",
@@ -915,6 +918,33 @@ class AiohttpOFRAKServer:
             if "object" in resource_tag:
                 all_resource_tags_l.remove(resource_tag)
         return json_response(all_resource_tags_l)
+
+    @exceptions_to_http(SerializedError)
+    async def search_data(self, request: Request) -> Response:
+        resource: Resource = await self._get_resource_for_request(request)
+        mode = request.query.get("mode")
+        if mode is None:
+            mode = "String"
+
+        raw_query = await request.json()
+
+        if mode == "String":
+            query = raw_query.encode("utf-8")
+        elif mode == "Bytes":
+            query = binascii.unhexlify(raw_query.replace(" ", ""))
+        elif mode == "StringRegex":
+            query = re.compile(raw_query.encode("utf-8"))
+        elif mode == "BytesRegex":
+            raise ValueError("regex for bytes not yet supported")
+        else:
+            raise ValueError(f"Invalid query mode {mode}")
+
+        results = await resource.search_data(query)
+
+        if "Regex" in mode:
+            results = [offset for offset, _ in results]
+
+        return json_response(results)
 
     def _construct_field_response(self, obj):
         if dataclasses.is_dataclass(obj):
