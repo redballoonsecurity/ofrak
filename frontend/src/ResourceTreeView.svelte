@@ -52,8 +52,9 @@
   export let rootResource,
     modifierView,
     bottomLeftPane,
-    resourceNodeDataMap = {},
-    searchFilter;
+    resourceNodeDataMap = {};
+
+  let searchFilter;
 </script>
 
 <div class="hbox">
@@ -66,7 +67,10 @@
   </div>
   <div class="resources">
     <div class="searchbar">
-      <ResourceSearchBar bind:searchFilter="{searchFilter}" />
+      <ResourceSearchBar
+        rootResource="{rootResource}"
+        bind:searchFilter="{searchFilter}"
+      />
     </div>
     <div class="treebox">
       <ResourceTreeNode

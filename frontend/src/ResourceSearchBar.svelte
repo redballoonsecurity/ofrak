@@ -39,9 +39,15 @@
 
 <script>
   import { selectedResource } from "./stores";
-  export let searchFilter;
-  let searchType, searchQuery;
+  export let rootResource, searchFilter;
+  let searchType, searchQuery, bytesInput;
   let searchTypes = ["String", "Bytes"];
+
+  $: if (searchQuery != null && searchType == "Bytes") {
+    searchQuery = searchQuery.match(/[0-9a-fA-F]{1,2}/g).join(" ");
+    console.log(searchQuery);
+    bytesInput?.setCustomValidity("");
+  }
 </script>
 
 <div class="searchbar">
@@ -54,14 +60,19 @@
   </select>
   <form
     on:submit|preventDefault="{async (e) => {
-      searchFilter = await $selectedResource.search_for_string(searchQuery);
+      searchFilter = await rootResource.search_for_string(searchQuery);
     }}"
   >
     <label>
-      <input
-        placeholder=" Search for a {searchType}"
-        bind:value="{searchQuery}"
-      />
+      {#if searchType == "String"}
+        <input placeholder=" Search for a String" bind:value="{searchQuery}" />
+      {:else if searchType == "Bytes"}
+        <input
+          placeholder=" Search for Bytes"
+          pattern="([0-9a-fA-F][0-9a-fA-F]\s*)*"
+          bind:value="{searchQuery}"
+        />
+      {/if}
     </label>
   </form>
 </div>
