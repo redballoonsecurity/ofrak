@@ -1,5 +1,6 @@
 import io
 import logging
+import re
 from typing import Optional, TypeVar
 
 from ofrak.component.analyzer import Analyzer
@@ -28,7 +29,6 @@ from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_io.deserializer import BinaryDeserializer
-from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
 
@@ -322,15 +322,11 @@ class ElfSectionNameAnalyzer(Analyzer[None, AttributesType[NamedProgramSection]]
         elf_r = await section.get_elf()
         string_section = await elf_r.get_section_name_string_section()
         try:
-            string_section_data = await string_section.resource.get_data(
-                Range(section_header.sh_name, Range.MAX)
+            ((_, raw_section_name),) = await string_section.resource.search_data(
+                re.compile(b".[^\x00]+\x00"), start=section_header.sh_name, max_matches=1
             )
-            name_string_end = string_section_data.find(b"\x00")
-            raw_section_name = await string_section.resource.get_data(
-                Range(section_header.sh_name, section_header.sh_name + name_string_end)
-            )
-            section_name = raw_section_name.decode("ascii")
-        except ValueError:
+            section_name = raw_section_name[:-1].decode("ascii")
+        except ValueError as e:
             LOGGER.info("String section is empty! Using '<no-strings>' as section name")
             section_name = "<no-strings>"  # This is what readelf returns in this situation
         return AttributesType[NamedProgramSection](

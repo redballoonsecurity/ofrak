@@ -82,8 +82,7 @@ class StringFindReplaceModifier(Modifier[StringFindReplaceConfig]):
                 f"If you expect that the string to replace is null-terminated, then an overflow "
                 f"of one byte when config.null_terminate = True will not have any effect."
             )
-        original_data = await resource.get_data()
-        offsets = [m.start() for m in re.finditer(to_find, original_data)]
+        offsets = [offset for offset in await resource.search_data(to_find)]
         for offset in offsets:
             await resource.run(BinaryPatchModifier, BinaryPatchConfig(offset, replace_with))
 
@@ -145,13 +144,12 @@ class StringsUnpacker(Unpacker[None]):
         else:
             pattern = self.SHORT_STRING_PATTERN
 
-        data = await resource.get_data()
-
         children = [
             resource.create_child_from_view(
-                AsciiString(m.group(1).decode("ascii")), data_range=Range(m.start(), m.end())
+                AsciiString(string[:-1].decode("ascii")),
+                data_range=Range.from_size(offset, len(string)),
             )
-            for m in re.finditer(pattern, data)
+            for offset, string in await resource.search_data(pattern)
         ]
 
         await asyncio.gather(*children)
