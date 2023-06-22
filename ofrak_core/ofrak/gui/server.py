@@ -10,7 +10,6 @@ from typing_inspect import get_args
 import json
 import orjson
 import inspect
-import re
 import os
 import sys
 import webbrowser
@@ -745,15 +744,13 @@ class AiohttpOFRAKServer:
     async def search_for_string(self, request: Request):
         resource = await self._get_resource_for_request(request)
         string_query = request.query.get("search_query")
-        data = await resource.get_data()
+        offsets = await resource.search_data(string_query.encode())
         found_resources = []
-        offsets = [m.start() for m in re.finditer(string_query.encode(), data)]
         if len(offsets) > 0:
             # found_resources[resource.get_id().hex()] = offsets
             found_resources.append(resource.get_id().hex())
         for child in await resource.get_descendants():
-            child_data = await child.get_data()
-            offsets = [m.start() for m in re.finditer(string_query.encode(), child_data)]
+            offsets = await child.search_data(string_query.encode())
             if len(offsets) > 0:
                 # found_resources[child.get_id().hex()] = offsets
                 found_resources.append(child.get_id().hex())
@@ -766,15 +763,13 @@ class AiohttpOFRAKServer:
         resource = await self._get_resource_for_request(request)
         bytes_query_request = request.query.get("search_query")
         bytes_query = bytes.fromhex("".join(bytes_query_request.split(" ")))
-        data = await resource.get_data()
+        offsets = await resource.search_data(bytes_query)
         found_resources = []
-        offsets = [m.start() for m in re.finditer(bytes_query, data)]
         if len(offsets) > 0:
             # found_resources[resource.get_id().hex()] = offsets
             found_resources.append(resource.get_id().hex())
         for child in await resource.get_descendants():
-            child_data = await child.get_data()
-            offsets = [m.start() for m in re.finditer(bytes_query, child_data)]
+            offsets = await child.search_data(bytes_query)
             if len(offsets) > 0:
                 # found_resources[child.get_id().hex()] = offsets
                 found_resources.append(child.get_id().hex())
