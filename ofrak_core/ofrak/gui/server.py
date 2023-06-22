@@ -10,6 +10,7 @@ from typing_inspect import get_args
 import json
 import orjson
 import inspect
+import re
 import os
 import sys
 import webbrowser
@@ -181,6 +182,8 @@ class AiohttpOFRAKServer:
                 web.post("/{resource_id}/add_comment", self.add_comment),
                 web.post("/{resource_id}/delete_comment", self.delete_comment),
                 web.post("/{resource_id}/search_for_vaddr", self.search_for_vaddr),
+                web.get("/{resource_id}/search_for_string", self.search_for_string),
+                web.get("/{resource_id}/search_for_bytes", self.search_for_bytes),
                 web.post("/{resource_id}/add_tag", self.add_tag),
                 web.post(
                     "/{resource_id}/add_flush_to_disk_to_script", self.add_flush_to_disk_to_script
@@ -738,6 +741,30 @@ class AiohttpOFRAKServer:
 
         except NotFoundError:
             return json_response([])
+
+    async def search_for_string(self, request: Request):
+        resource = await self._get_resource_for_request(request)
+        string_query = request.query.get("search_query")
+        data = await resource.get_data()
+        # found_resources = {}
+        found_resources = []
+        offsets = [m.start() for m in re.finditer(string_query.encode(), data)]
+        if len(offsets) > 0:
+            # found_resources[resource.get_id().hex()] = offsets
+            found_resources.append(resource.get_id().hex())
+        for child in await resource.get_descendants():
+            child_data = await child.get_data()
+            offsets = [m.start() for m in re.finditer(string_query.encode(), child_data)]
+            if len(offsets) > 0:
+                # found_resources[child.get_id().hex()] = offsets
+                found_resources.append(child.get_id().hex())
+                for ancestor in await child.get_ancestors():
+                    found_resources.append(ancestor.get_id().hex())
+
+        return json_response(found_resources)
+
+    async def search_for_bytes(self, request: Request):
+        pass
 
     @exceptions_to_http(SerializedError)
     async def add_tag(self, request: Request) -> Response:

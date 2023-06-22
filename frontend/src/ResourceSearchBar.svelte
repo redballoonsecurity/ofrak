@@ -39,13 +39,9 @@
 
 <script>
   import { selectedResource } from "./stores";
-
+  export let searchFilter;
   let searchType, searchQuery;
   let searchTypes = ["String", "Bytes"];
-
-  async function search() {
-    searchFilter = await $selectedResource.search(searchQuery);
-  }
 </script>
 
 <div class="searchbar">
@@ -58,7 +54,7 @@
   </select>
   <form
     on:submit|preventDefault="{async (e) => {
-      await search();
+      searchFilter = await $selectedResource.search_for_string(searchQuery);
     }}"
   >
     <label>

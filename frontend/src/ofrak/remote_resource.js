@@ -645,13 +645,33 @@ export class RemoteResource extends Resource {
     return result;
   }
 
-  async search(searchQuery) {
-    return await fetch(`${this.uri}/search?search_query=${searchQuery}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }).then(async (r) => {
+  async search_for_string(searchQuery) {
+    return await fetch(
+      `${this.uri}/search_for_string?search_query=${searchQuery}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    ).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return await r.json();
+    });
+  }
+
+  async search_for_bytes(searchQuery) {
+    return await fetch(
+      `${this.uri}/search_for_bytes?search_query=${searchQuery}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    ).then(async (r) => {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }
