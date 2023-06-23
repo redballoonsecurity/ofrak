@@ -31,9 +31,27 @@
   .searchbar {
     display: flex;
     align-items: left;
-    width: 100%;
     flex-grow: 1;
     height: 2em;
+    position: sticky;
+    padding-right: 0.5em;
+  }
+
+  .resultwidgets {
+    display: flex;
+  }
+
+  .resultcount {
+    margin-top: 0;
+    margin-bottom: 0;
+    border-style: solid;
+    width: 100%;
+    padding-left: 1em;
+    padding-right: 1em;
+  }
+
+  button {
+    height: 100%;
   }
 </style>
 
@@ -99,15 +117,13 @@
       />
     </label>
   </form>
-  <div>
+  <div class="resultwidgets">
     {#if (searchResults.matches !== undefined && searchResults.matches !== null)}
-      {#if searchResults.matches.length > 0}
-        {searchResults.index + 1}/{searchResults.matches.length}
+      {#if searchResults.matches.length > 0}<p class="resultcount">{searchResults.index + 1}/{searchResults.matches.length} </p><button on:click={nextMatch}>↓</button>
+        <button on:click={prevMatch}>↑</button>
       {:else}
-        No match
+        <p class="resultcount"> No match </p>
       {/if}
     {/if}
-    <button on:click={nextMatch}>↓</button>
-    <button on:click={prevMatch}>↑</button>
   </div>
 </div>
