@@ -34,7 +34,6 @@
     flex-grow: 1;
     height: 2em;
     position: sticky;
-    padding-right: 0.5em;
   }
 
   .resultwidgets {

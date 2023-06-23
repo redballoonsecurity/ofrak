@@ -42,7 +42,6 @@
   import MagnitudeView from "./MagnitudeView.svelte";
   import Pane from "./Pane.svelte";
   import ResourceTreeView from "./ResourceTreeView.svelte";
-  import ScriptView from "./ScriptView.svelte";
   import Split from "./Split.svelte";
   import StartView from "./StartView.svelte";
   import TextView from "./TextView.svelte";
@@ -52,7 +51,6 @@
   import { keyEventToString, shortcuts } from "./keyboard.js";
 
   import { writable } from "svelte/store";
-  import ResourceSearchBar from "./ResourceSearchBar.svelte";
 
   printConsoleArt();
 
@@ -129,22 +127,6 @@
     if (callback) {
       callback();
     }
-  }
-
-  let dataSearchResults = {};
-
-  $: {
-    const localDataSearchResults = dataSearchResults;
-
-    if (localDataSearchResults.matches !== undefined && localDataSearchResults.matches.length > 0 && localDataSearchResults.index !== undefined) {
-      dataLenPromise.then((dataLength) => {
-        $hexScrollY.top = localDataSearchResults.matches[localDataSearchResults.index] / dataLength
-      });
-    }
-  }
-
-  async function searchHex(query, mode) {
-    return await $selectedResource.search_data(query, mode)
   }
 
   window.riddle = {
@@ -225,7 +207,6 @@ Answer by running riddle.answer('your answer here') from the console.`);
         scrollY="{hexScrollY}"
         displayMinimap="{currentResource && !useAssemblyView && !useTextView}"
       >
-        <ResourceSearchBar search={searchHex} bind:searchResults={dataSearchResults}/>
         {#if useAssemblyView}
           <AssemblyView />
         {:else if useTextView}

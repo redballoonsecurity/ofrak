@@ -94,7 +94,6 @@
       }}"
     >
       <slot />
-      <slot />
     </div>
   {:else}
     <div
@@ -106,7 +105,6 @@
       style:margin-right="{paddingHorizontal}"
       style:height="{`calc(100% - ${paddingVertical} * 2)`}"
     >
-      <slot />
       <slot />
     </div>
   {/if}
