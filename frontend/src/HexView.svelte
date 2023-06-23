@@ -9,7 +9,7 @@
   }
 
   .breadcrumb {
-    padding-bottom: 1em;
+    padding-bottom: 0.5em;
     background: var(--main-bg-color);
   }
 
