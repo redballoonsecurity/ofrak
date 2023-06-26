@@ -16,6 +16,7 @@
     border: 1px solid;
     border-bottom: 1px solid var(--main-fg-color);
     flex: 1;
+    text-indent: .5em;
   }
 
   form {
@@ -60,13 +61,13 @@
 
   $: if (searchType == "String") {
     if (regex) {
-      placeholderString = " Search for a Regex Pattern";
+      placeholderString = "Search for a Regex Pattern";
     } else {
-      placeholderString = " Search for a String";
+      placeholderString = "Search for a String";
     }
   } else if (searchType == "Bytes") {
     regex = false; // Regex for bytes not yet implemented
-    placeholderString = " Search for Bytes";
+    placeholderString = "Search for Bytes";
   }
 </script>
 
