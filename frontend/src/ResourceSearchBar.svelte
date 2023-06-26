@@ -46,7 +46,13 @@
 <script>
   import Checkbox from "./Checkbox.svelte";
   export let rootResource, searchFilter;
-  let searchType, searchQuery, bytesInput, regex, placeholderString, caseIgnore;
+  let searchType,
+    searchQuery,
+    bytesInput,
+    regex,
+    placeholderString,
+    caseIgnore,
+    errorMessage;
   let searchTypes = ["String", "Bytes"];
 
   $: if (searchQuery && searchType === "Bytes") {
@@ -81,14 +87,27 @@
   </select>
   <form
     on:keyup|preventDefault="{async (e) => {
-      if (searchType == 'String') {
-        searchFilter = await rootResource.search_for_string(
-          searchQuery,
-          regex,
-          caseIgnore
-        );
-      } else if (searchType == 'Bytes') {
-        searchFilter = await rootResource.search_for_bytes(searchQuery, false);
+      try {
+        if (searchType == 'String') {
+          searchFilter = await rootResource.search_for_string(
+            searchQuery,
+            regex,
+            caseIgnore
+          );
+        } else if (searchType == 'Bytes') {
+          searchFilter = await rootResource.search_for_bytes(
+            searchQuery,
+            false
+          );
+        }
+      } catch (err) {
+        try {
+          errorMessage = JSON.parse(err.message).message;
+        } catch (_) {
+          errorMessage = err.message;
+        }
+        console.log('Search Failed!');
+        console.log(errorMessage);
       }
     }}"
   >
