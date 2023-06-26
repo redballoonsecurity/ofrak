@@ -1,5 +1,4 @@
 import asyncio
-import re
 import tempfile
 from dataclasses import dataclass
 from subprocess import CalledProcessError
@@ -74,11 +73,10 @@ class ExtUnpacker(Unpacker[None]):
                 if returncode:
                     raise CalledProcessError(returncode=returncode, cmd=command)
 
-                fs_view = await resource.view_as(Ext4Filesystem)
+                fs_view = await resource.view_as(ExtFilesystem)
                 await fs_view.initialize_from_disk(temp_dir)
 
 
-EXT_REGEX = re.compile(r"ext\d* filesystem")
-MagicDescriptionIdentifier.register(
-    ExtFilesystem, lambda s: EXT_REGEX.search(s.lower()) is not None
-)
+MagicDescriptionIdentifier.register(Ext2Filesystem, lambda s: "ext2 filesystem" in s.lower())
+MagicDescriptionIdentifier.register(Ext3Filesystem, lambda s: "ext3 filesystem" in s.lower())
+MagicDescriptionIdentifier.register(Ext4Filesystem, lambda s: "ext4 filesystem" in s.lower())
