@@ -16,7 +16,7 @@
     border: 1px solid;
     border-bottom: 1px solid var(--main-fg-color);
     flex: 1;
-    text-indent: .5em;
+    text-indent: 0.5em;
   }
 
   form {
