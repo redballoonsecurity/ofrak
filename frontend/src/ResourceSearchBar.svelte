@@ -48,7 +48,7 @@
   let searchType, searchQuery, bytesInput, regex, placeholderString, caseIgnore;
   let searchTypes = ["String", "Bytes"];
 
-  $: if (searchQuery != null && searchType == "Bytes") {
+  $: if (searchQuery && searchType === "Bytes") {
     try {
       searchQuery = searchQuery.match(/[0-9a-fA-F]{1,2}/g).join(" ");
       bytesInput?.setCustomValidity("");
