@@ -1048,3 +1048,25 @@ async def test_add_flush_to_disk_to_script(ofrak_client: TestClient, firmware_zi
     expected_str = join_and_normalize(expected_list)
     actual_str = join_and_normalize(resp_body)
     assert actual_str == expected_str
+
+
+async def test_search_data(ofrak_client: TestClient, hello_world_elf):
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+    )
+    create_body = await create_resp.json()
+    resource_id = create_body["id"]
+    resp = await ofrak_client.post(
+        f"/{resource_id}/search_data?mode=String",
+        json="Hello",
+    )
+    resp_body1 = await resp.json()
+    assert resp.status == 200
+    assert resp_body1 == [[1496, 5]]
+    resp = await ofrak_client.post(
+        f"/{resource_id}/search_data?mode=Bytes",
+        json="48656c6c6f",  # binascii.hexlify("Hello".encode("utf-8")).decode('ascii')
+    )
+    resp_body2 = await resp.json()
+    assert resp.status == 200
+    assert resp_body1 == resp_body2
