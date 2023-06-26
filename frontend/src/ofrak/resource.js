@@ -407,7 +407,7 @@ export class Resource {
   }
 
   async search_data(query, mode) {
-    throw new NotImplementedError("search_data")
+    throw new NotImplementedError("search_data");
   }
 
   /***

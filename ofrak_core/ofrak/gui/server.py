@@ -942,7 +942,9 @@ class AiohttpOFRAKServer:
         results = await resource.search_data(query)
 
         if "Regex" in mode:
-            results = [offset for offset, _ in results]
+            results = [(offset, len(match)) for offset, match in results]
+        else:
+            results = [(offset, len(query)) for offset in results]
 
         return json_response(results)
 
