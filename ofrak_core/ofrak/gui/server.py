@@ -747,6 +747,8 @@ class AiohttpOFRAKServer:
         resource = await self._get_resource_for_request(request)
         body = await request.json()
         string_query_string = body["search_query"]
+        if string_query_string == "":
+            return json_response(None)
         regex = body["regex"]
         case_ignore = body["case_ignore"]
         if not isinstance(string_query_string, str):
@@ -758,8 +760,6 @@ class AiohttpOFRAKServer:
             string_query = re.compile(string_query)
 
         offsets = await resource.search_data(string_query)
-        if string_query == "":
-            return json_response(None)
         found_resources = []
         if len(offsets) > 0:
             found_resources.append(resource.get_id().hex())
