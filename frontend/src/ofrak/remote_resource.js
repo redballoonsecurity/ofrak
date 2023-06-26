@@ -659,6 +659,49 @@ export class RemoteResource extends Resource {
       return await r.json();
     });
   }
+
+  async search_for_string(searchQuery, regex, caseIgnore) {
+    if (searchQuery == null) {
+      searchQuery = "";
+    }
+    return await fetch(`${this.uri}/search_for_string`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        search_query: searchQuery,
+        regex: regex,
+        case_ignore: caseIgnore,
+      }),
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return await r.json();
+    });
+  }
+
+  async search_for_bytes(searchQuery, regex) {
+    if (searchQuery == null) {
+      searchQuery = "";
+    }
+    return await fetch(`${this.uri}/search_for_bytes`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        search_query: searchQuery,
+        regex: regex,
+      }),
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return await r.json();
+    });
+  }
 }
 
 export function remote_models_to_resources(remote_models, resources) {

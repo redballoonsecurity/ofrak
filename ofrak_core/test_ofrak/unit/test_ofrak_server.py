@@ -888,6 +888,40 @@ async def test_get_config(ofrak_client: TestClient, hello_world_elf):
     }
 
 
+async def test_search_string(ofrak_client, hello_world_elf):
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+    )
+    create_body = await create_resp.json()
+    resource_id = create_body["id"]
+    resp = await ofrak_client.post(
+        f"/{resource_id}/search_for_string",
+        json={"search_query": "hello", "case_ignore": True, "regex": True},
+    )
+    resp_body = await resp.json()
+    assert resp.status == 200
+    resp = await ofrak_client.post(
+        f"/{resource_id}/search_for_string",
+        json={"search_query": "hello", "case_ignore": False, "regex": False},
+    )
+    resp_body = await resp.json()
+    assert resp.status == 200
+
+
+async def test_search_bytes(ofrak_client, hello_world_elf):
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+    )
+    create_body = await create_resp.json()
+    resource_id = create_body["id"]
+    resp = await ofrak_client.post(
+        f"/{resource_id}/search_for_bytes",
+        json={"search_query": "68 65 6c 6c 6f", "regex": False},
+    )
+    resp_body = await resp.json()
+    assert resp.status == 200
+
+
 async def test_get_tags_and_num_components(ofrak_client: TestClient, hello_world_elf):
     create_resp = await ofrak_client.post(
         "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf

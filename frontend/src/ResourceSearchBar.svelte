@@ -33,6 +33,7 @@
     align-items: left;
     flex-grow: 1;
     height: 2em;
+    width: 100%;
     position: sticky;
     padding-bottom: 1em;
   }
@@ -53,14 +54,20 @@
   button {
     height: 100%;
   }
+
+  .optionbar {
+    padding-bottom: 0;
+    padding-top: 0;
+  }
 </style>
 
 <script>
   import { selectedResource } from "./stores";
+  import Checkbox from "./Checkbox.svelte";
 
-  let searchType, searchQuery;
+  let searchType, searchQuery, bytesInput, regex, placeholderString, caseIgnore;
   let searchTypes = ["String", "Bytes"];
-  let searchFilter = null;
+  export let rootResource, searchFilter;
 
   export let search, searchResults;
 
@@ -83,6 +90,27 @@
       nextIndex = Math.max(searchResults.matches.length - 1, 0);
     }
     searchResults = { matches: searchResults.matches, index: nextIndex };
+  }
+
+  $: if (searchQuery && searchType === "Bytes") {
+    try {
+      searchQuery = searchQuery.match(/[0-9a-fA-F]{1,2}/g).join(" ");
+      bytesInput?.setCustomValidity("");
+    } catch {
+      searchQuery = "";
+      bytesInput?.setCustomValidity("Invalid bytes representation.");
+    }
+  }
+
+  $: if (searchType == "String") {
+    if (regex) {
+      placeholderString = " Search for a Regex Pattern";
+    } else {
+      placeholderString = " Search for a String";
+    }
+  } else if (searchType == "Bytes") {
+    regex = false; // Regex for bytes not yet implemented
+    placeholderString = " Search for Bytes";
   }
 </script>
 
@@ -107,12 +135,15 @@
         prevQuery = searchQuery;
       }
     }}"
+
+    on:keyup|preventDefault="{async (e) => {
+    searchResults.matches = await search(searchQuery, searchType);
+    searchResults.index = 0;
+    prevQuery = searchQuery;
+    }}"
   >
     <label>
-      <input
-        placeholder=" Search for a {searchType}"
-        bind:value="{searchQuery}"
-      />
+      <input placeholder="{placeholderString}" bind:value="{searchQuery}" />
     </label>
   </form>
   <div class="resultwidgets">
@@ -127,4 +158,14 @@
       {/if}
     {/if}
   </div>
+</div>
+<div class="optionbar">
+  {#if searchType == "String"}
+    <Checkbox checked="{caseIgnore}" bind:value="{regex}" leftbox="{true}">
+      Pattern
+    </Checkbox>
+    <Checkbox checked="{false}" bind:value="{caseIgnore}" leftbox="{true}">
+      Ignore Case
+    </Checkbox>
+  {/if}
 </div>

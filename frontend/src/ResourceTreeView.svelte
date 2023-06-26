@@ -26,6 +26,10 @@
     overflow: auto;
   }
 
+  .resources {
+    flex-grow: 1;
+  }
+
   .treebox {
     flex-grow: 1;
     padding-left: 1em;
@@ -33,9 +37,16 @@
     white-space: nowrap;
     text-align: left;
   }
+
+  .searchbar {
+    flex-grow: 1;
+    padding-left: 1em;
+    padding-bottom: 0.5em;
+  }
 </style>
 
 <script>
+  import ResourceSearchBar from "./ResourceSearchBar.svelte";
   import ResourceTreeNode from "./ResourceTreeNode.svelte";
   import ResourceTreeToolbar from "./ResourceTreeToolbar.svelte";
 
@@ -43,6 +54,8 @@
     modifierView,
     bottomLeftPane,
     resourceNodeDataMap = {};
+
+  let searchFilter;
 </script>
 
 <div class="hbox">
@@ -53,11 +66,19 @@
       bind:bottomLeftPane="{bottomLeftPane}"
     />
   </div>
-
-  <div class="treebox">
-    <ResourceTreeNode
-      rootResource="{rootResource}"
-      bind:resourceNodeDataMap="{resourceNodeDataMap}"
-    />
+  <div class="resources">
+    <div class="searchbar">
+      <ResourceSearchBar
+        rootResource="{rootResource}"
+        bind:searchFilter="{searchFilter}"
+      />
+    </div>
+    <div class="treebox">
+      <ResourceTreeNode
+        rootResource="{rootResource}"
+        bind:searchFilter="{searchFilter}"
+        bind:resourceNodeDataMap="{resourceNodeDataMap}"
+      />
+    </div>
   </div>
 </div>
