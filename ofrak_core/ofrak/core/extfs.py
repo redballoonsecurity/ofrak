@@ -1,4 +1,5 @@
 import asyncio
+import re
 import tempfile
 from dataclasses import dataclass
 from subprocess import CalledProcessError
@@ -20,23 +21,42 @@ DEBUGFS = ComponentExternalTool(
 
 
 @dataclass
-class Ext4Filesystem(GenericBinary, FilesystemRoot):
+class ExtFilesystem(GenericBinary, FilesystemRoot):
+    pass
+
+
+@dataclass
+class Ext2Filesystem(ExtFilesystem):
+    """
+    Linux EXT2 filesystem.
+    """
+
+
+@dataclass
+class Ext3Filesystem(ExtFilesystem):
+    """
+    Linux EXT3 filesystem.
+    """
+
+
+@dataclass
+class Ext4Filesystem(ExtFilesystem):
     """
     Linux EXT4 filesystem.
     """
 
 
-class Ext4Unpacker(Unpacker[None]):
+class ExtUnpacker(Unpacker[None]):
     """
-    Unpack a Linux EXT4 filesystem.
+    Unpack a Linux EXT filesystem.
     """
 
-    targets = (Ext4Filesystem,)
+    targets = (ExtFilesystem,)
     children = (File, Folder, SpecialFileType)
     external_dependencies = (DEBUGFS,)
 
     async def unpack(self, resource: Resource, config: CC = None) -> None:
-        with tempfile.NamedTemporaryFile(suffix=".ext4") as temp_fs_file:
+        with tempfile.NamedTemporaryFile(suffix=".extfs") as temp_fs_file:
             temp_fs_file.write(await resource.get_data())
             temp_fs_file.flush()
 
@@ -58,4 +78,7 @@ class Ext4Unpacker(Unpacker[None]):
                 await fs_view.initialize_from_disk(temp_dir)
 
 
-MagicDescriptionIdentifier.register(Ext4Filesystem, lambda s: "ext4 filesystem" in s.lower())
+EXT_REGEX = re.compile(r"ext\d* filesystem")
+MagicDescriptionIdentifier.register(
+    ExtFilesystem, lambda s: EXT_REGEX.search(s.lower()) is not None
+)
