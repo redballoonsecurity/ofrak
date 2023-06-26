@@ -78,7 +78,7 @@
     {/each}
   </select>
   <form
-    on:submit|preventDefault="{async (e) => {
+    on:keyup|preventDefault="{async (e) => {
       if (searchType == 'String') {
         searchFilter = await rootResource.search_for_string(searchQuery, regex);
       } else if (searchType == 'Bytes') {
