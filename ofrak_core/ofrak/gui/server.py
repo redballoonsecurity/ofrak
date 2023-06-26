@@ -762,12 +762,10 @@ class AiohttpOFRAKServer:
             return json_response(None)
         found_resources = []
         if len(offsets) > 0:
-            # found_resources[resource.get_id().hex()] = offsets
             found_resources.append(resource.get_id().hex())
         for child in await resource.get_descendants():
             offsets = await child.search_data(string_query)
             if len(offsets) > 0:
-                # found_resources[child.get_id().hex()] = offsets
                 found_resources.append(child.get_id().hex())
                 for ancestor in await child.get_ancestors():
                     found_resources.append(ancestor.get_id().hex())
@@ -785,12 +783,10 @@ class AiohttpOFRAKServer:
         offsets = await resource.search_data(bytes_query)
         found_resources = []
         if len(offsets) > 0:
-            # found_resources[resoxurce.get_id().hex()] = offsets
             found_resources.append(resource.get_id().hex())
         for child in await resource.get_descendants():
             offsets = await child.search_data(bytes_query)
             if len(offsets) > 0:
-                # found_resources[child.get_id().hex()] = offsets
                 found_resources.append(child.get_id().hex())
                 for ancestor in await child.get_ancestors():
                     found_resources.append(ancestor.get_id().hex())
