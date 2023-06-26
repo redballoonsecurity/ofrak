@@ -87,6 +87,7 @@ class SubInstructionSet(Enum):
     AVRXMEGA7 = "avrxmega7"
     AVRTINY = "avrtiny"
     AVR1 = "avr1"  # assembler only
+    PPCVLE = "ppc-vle"  # PowerPC VLE (Variable Length Encoding)
 
 
 class InstructionSetMode(Enum):

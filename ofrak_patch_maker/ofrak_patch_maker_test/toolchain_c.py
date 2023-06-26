@@ -2,6 +2,7 @@ import logging
 import os
 import tempfile
 from ofrak_patch_maker.toolchain.gnu_avr import GNU_AVR_5_Toolchain
+from ofrak_patch_maker.toolchain.gnu_ppc import GNU_PPCVLE_4_Toolchain
 from ofrak_patch_maker.toolchain.gnu_x64 import GNU_X86_64_LINUX_EABI_10_3_0_Toolchain
 from ofrak_patch_maker_test import ToolchainUnderTest
 from ofrak_type.architecture import InstructionSet
@@ -95,6 +96,9 @@ def run_hello_world_test(toolchain_under_test: ToolchainUnderTest):
     if toolchain_under_test.toolchain == GNU_AVR_5_Toolchain:
         relocatable = False
         base_symbols = {"__mulhi3": 0x1234}  # Dummy address to fix missing symbol
+    elif toolchain_under_test.toolchain == GNU_PPCVLE_4_Toolchain:
+        relocatable = True
+        base_symbols = {"__eabi": 0x1234}
     else:
         relocatable = True
         base_symbols = None

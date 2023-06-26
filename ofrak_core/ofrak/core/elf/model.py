@@ -5,7 +5,7 @@ from typing import Iterable, Optional
 
 from ofrak.model.viewable_tag_model import AttributesType
 
-from ofrak_type.architecture import InstructionSet
+from ofrak_type.architecture import InstructionSet, SubInstructionSet
 from ofrak.core.program import Program
 from ofrak.core.program_section import NamedProgramSection, ProgramSegment
 from ofrak.model.resource_model import index
@@ -862,6 +862,29 @@ class Elf(Program):
                 ),
             ),
         )
+
+    async def get_sub_isa(self) -> Optional[SubInstructionSet]:
+        elf_header = await self.get_header()
+        isa = elf_header.get_isa()
+        if isa == InstructionSet.PPC:
+            # We can detect whether the elf is PPC VLE by looking at the section header flags, as described here: https://reverseengineering.stackexchange.com/questions/20863/powerpc-elf32-detecting-vle
+            PF_PPC_VLE = 0x10000000
+            SHF_PPC_VLE = 0x10000000
+            ppc_vle = False
+            program_headers = await self.get_program_headers()
+            for program_header in program_headers:
+                if program_header.p_flags & PF_PPC_VLE != 0:
+                    ppc_vle = True
+                    break
+            if not ppc_vle:
+                section_headers = await self.get_section_headers()
+                for section_header in section_headers:
+                    if section_header.sh_flags & SHF_PPC_VLE != 0:
+                        ppc_vle = True
+                        break
+            if ppc_vle:
+                return SubInstructionSet.PPCVLE
+        return None
 
 
 MagicDescriptionIdentifier.register(Elf, lambda s: s.startswith("ELF "))
