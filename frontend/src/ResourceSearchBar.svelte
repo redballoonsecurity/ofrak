@@ -35,6 +35,7 @@
     flex-grow: 1;
     height: 2em;
   }
+
   .optionbar {
     padding-bottom: 0;
     padding-top: 0;
@@ -44,7 +45,7 @@
 <script>
   import Checkbox from "./Checkbox.svelte";
   export let rootResource, searchFilter;
-  let searchType, searchQuery, bytesInput, regex, ph_string, case_ignore;
+  let searchType, searchQuery, bytesInput, regex, placeholderString, caseIgnore;
   let searchTypes = ["String", "Bytes"];
 
   $: if (searchQuery != null && searchType == "Bytes") {
@@ -59,13 +60,13 @@
 
   $: if (searchType == "String") {
     if (regex) {
-      ph_string = " Search for a Regex Pattern";
+      placeholderString = " Search for a Regex Pattern";
     } else {
-      ph_string = " Search for a String";
+      placeholderString = " Search for a String";
     }
   } else if (searchType == "Bytes") {
     regex = false; // Regex for bytes not yet implemented
-    ph_string = " Search for Bytes";
+    placeholderString = " Search for Bytes";
   }
 </script>
 
@@ -83,7 +84,7 @@
         searchFilter = await rootResource.search_for_string(
           searchQuery,
           regex,
-          case_ignore
+          caseIgnore
         );
       } else if (searchType == 'Bytes') {
         searchFilter = await rootResource.search_for_bytes(searchQuery, false);
@@ -91,17 +92,17 @@
     }}"
   >
     <label>
-      <input placeholder="{ph_string}" bind:value="{searchQuery}" />
+      <input placeholder="{placeholderString}" bind:value="{searchQuery}" />
     </label>
   </form>
 </div>
 
 <div class="optionbar">
   {#if searchType == "String"}
-    <Checkbox checked="{case_ignore}" bind:value="{regex}" leftbox="{true}">
+    <Checkbox checked="{caseIgnore}" bind:value="{regex}" leftbox="{true}">
       Pattern
     </Checkbox>
-    <Checkbox checked="{false}" bind:value="{case_ignore}" leftbox="{true}">
+    <Checkbox checked="{false}" bind:value="{caseIgnore}" leftbox="{true}">
       Ignore Case
     </Checkbox>
   {/if}

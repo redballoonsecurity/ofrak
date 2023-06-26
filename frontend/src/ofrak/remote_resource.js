@@ -645,7 +645,7 @@ export class RemoteResource extends Resource {
     return result;
   }
 
-  async search_for_string(searchQuery, regex, case_ignore) {
+  async search_for_string(searchQuery, regex, caseIgnore) {
     if (searchQuery == null) {
       searchQuery = "";
     }
@@ -657,7 +657,7 @@ export class RemoteResource extends Resource {
       body: JSON.stringify({
         search_query: searchQuery,
         regex: regex,
-        case_ignore: case_ignore,
+        case_ignore: caseIgnore,
       }),
     }).then(async (r) => {
       if (!r.ok) {

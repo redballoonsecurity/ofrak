@@ -29,6 +29,7 @@
   .resources {
     flex-grow: 1;
   }
+
   .treebox {
     flex-grow: 1;
     padding-left: 1em;
