@@ -747,10 +747,13 @@ class AiohttpOFRAKServer:
         body = await request.json()
         string_query_string = body["search_query"]
         regex = body["regex"]
+        case_ignore = body["case_ignore"]
         if not isinstance(string_query_string, str):
             raise ValueError("Invalid search query.")
         string_query: Union[bytes, re.Pattern[bytes]] = string_query_string.encode()
-        if regex:
+        if case_ignore:
+            string_query = re.compile(string_query, re.IGNORECASE)
+        elif regex:
             string_query = re.compile(string_query)
 
         offsets = await resource.search_data(string_query)

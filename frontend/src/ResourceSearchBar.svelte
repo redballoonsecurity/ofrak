@@ -44,7 +44,7 @@
 <script>
   import Checkbox from "./Checkbox.svelte";
   export let rootResource, searchFilter;
-  let searchType, searchQuery, bytesInput, regex, ph_string;
+  let searchType, searchQuery, bytesInput, regex, ph_string, case_ignore;
   let searchTypes = ["String", "Bytes"];
 
   $: if (searchQuery != null && searchType == "Bytes") {
@@ -80,7 +80,11 @@
   <form
     on:keyup|preventDefault="{async (e) => {
       if (searchType == 'String') {
-        searchFilter = await rootResource.search_for_string(searchQuery, regex);
+        searchFilter = await rootResource.search_for_string(
+          searchQuery,
+          regex,
+          case_ignore
+        );
       } else if (searchType == 'Bytes') {
         searchFilter = await rootResource.search_for_bytes(searchQuery, false);
       }
@@ -94,8 +98,11 @@
 
 <div class="optionbar">
   {#if searchType == "String"}
-    <Checkbox checked="{false}" bind:value="{regex}" leftbox="{true}">
+    <Checkbox checked="{case_ignore}" bind:value="{regex}" leftbox="{true}">
       Pattern
+    </Checkbox>
+    <Checkbox checked="{false}" bind:value="{case_ignore}" leftbox="{true}">
+      Ignore Case
     </Checkbox>
   {/if}
 </div>
