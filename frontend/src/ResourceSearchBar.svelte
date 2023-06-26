@@ -35,12 +35,16 @@
     flex-grow: 1;
     height: 2em;
   }
+  .optionbar {
+    padding-bottom: 0;
+    padding-top: 0;
+  }
 </style>
 
 <script>
-  import { selectedResource } from "./stores";
+  import Checkbox from "./Checkbox.svelte";
   export let rootResource, searchFilter;
-  let searchType, searchQuery, bytesInput;
+  let searchType, searchQuery, bytesInput, regex, ph_string;
   let searchTypes = ["String", "Bytes"];
 
   $: if (searchQuery != null && searchType == "Bytes") {
@@ -51,6 +55,17 @@
       searchQuery = "";
       bytesInput?.setCustomValidity("Invalid bytes representation.");
     }
+  }
+
+  $: if (searchType == "String") {
+    if (regex) {
+      ph_string = " Search for a Regex Pattern";
+    } else {
+      ph_string = " Search for a String";
+    }
+  } else if (searchType == "Bytes") {
+    regex = false; // Regex for bytes not yet implemented
+    ph_string = " Search for Bytes";
   }
 </script>
 
@@ -65,18 +80,22 @@
   <form
     on:submit|preventDefault="{async (e) => {
       if (searchType == 'String') {
-        searchFilter = await rootResource.search_for_string(searchQuery, false);
+        searchFilter = await rootResource.search_for_string(searchQuery, regex);
       } else if (searchType == 'Bytes') {
         searchFilter = await rootResource.search_for_bytes(searchQuery, false);
       }
     }}"
   >
     <label>
-      {#if searchType == "String"}
-        <input placeholder=" Search for a String" bind:value="{searchQuery}" />
-      {:else if searchType == "Bytes"}
-        <input placeholder=" Search for Bytes" bind:value="{searchQuery}" />
-      {/if}
+      <input placeholder="{ph_string}" bind:value="{searchQuery}" />
     </label>
   </form>
+</div>
+
+<div class="optionbar">
+  {#if searchType == "String"}
+    <Checkbox checked="{false}" bind:value="{regex}" leftbox="{true}">
+      Pattern
+    </Checkbox>
+  {/if}
 </div>

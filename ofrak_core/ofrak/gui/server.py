@@ -4,6 +4,7 @@ from enum import Enum
 import functools
 import itertools
 import logging
+import re
 
 import typing_inspect
 from typing_inspect import get_args
@@ -181,8 +182,8 @@ class AiohttpOFRAKServer:
                 web.post("/{resource_id}/add_comment", self.add_comment),
                 web.post("/{resource_id}/delete_comment", self.delete_comment),
                 web.post("/{resource_id}/search_for_vaddr", self.search_for_vaddr),
-                web.get("/{resource_id}/search_for_string", self.search_for_string),
-                web.get("/{resource_id}/search_for_bytes", self.search_for_bytes),
+                web.post("/{resource_id}/search_for_string", self.search_for_string),
+                web.post("/{resource_id}/search_for_bytes", self.search_for_bytes),
                 web.post("/{resource_id}/add_tag", self.add_tag),
                 web.post(
                     "/{resource_id}/add_flush_to_disk_to_script", self.add_flush_to_disk_to_script
@@ -743,14 +744,24 @@ class AiohttpOFRAKServer:
 
     async def search_for_string(self, request: Request):
         resource = await self._get_resource_for_request(request)
-        string_query = request.query.get("search_query")
-        offsets = await resource.search_data(string_query.encode())
+        body = await request.json()
+        string_query_string = body["search_query"]
+        regex = body["regex"]
+        if not isinstance(string_query_string, str):
+            raise ValueError("Invalid search query.")
+        string_query: Union[bytes, re.Pattern[bytes]] = string_query_string.encode()
+        if regex:
+            string_query = re.compile(string_query)
+
+        offsets = await resource.search_data(string_query)
+        if string_query == "":
+            return json_response(None)
         found_resources = []
         if len(offsets) > 0:
             # found_resources[resource.get_id().hex()] = offsets
             found_resources.append(resource.get_id().hex())
         for child in await resource.get_descendants():
-            offsets = await child.search_data(string_query.encode())
+            offsets = await child.search_data(string_query)
             if len(offsets) > 0:
                 # found_resources[child.get_id().hex()] = offsets
                 found_resources.append(child.get_id().hex())
@@ -761,12 +772,15 @@ class AiohttpOFRAKServer:
 
     async def search_for_bytes(self, request: Request):
         resource = await self._get_resource_for_request(request)
-        bytes_query_request = request.query.get("search_query")
+        body = await request.json()
+        bytes_query_request = body["search_query"]
+        if bytes_query_request == "":
+            return json_response(None)
         bytes_query = bytes.fromhex("".join(bytes_query_request.split(" ")))
         offsets = await resource.search_data(bytes_query)
         found_resources = []
         if len(offsets) > 0:
-            # found_resources[resource.get_id().hex()] = offsets
+            # found_resources[resoxurce.get_id().hex()] = offsets
             found_resources.append(resource.get_id().hex())
         for child in await resource.get_descendants():
             offsets = await child.search_data(bytes_query)
