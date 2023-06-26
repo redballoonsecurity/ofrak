@@ -742,6 +742,7 @@ class AiohttpOFRAKServer:
         except NotFoundError:
             return json_response([])
 
+    @exceptions_to_http(SerializedError)
     async def search_for_string(self, request: Request):
         resource = await self._get_resource_for_request(request)
         body = await request.json()
@@ -773,6 +774,7 @@ class AiohttpOFRAKServer:
 
         return json_response(found_resources)
 
+    @exceptions_to_http(SerializedError)
     async def search_for_bytes(self, request: Request):
         resource = await self._get_resource_for_request(request)
         body = await request.json()
