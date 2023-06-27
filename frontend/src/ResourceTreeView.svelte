@@ -56,6 +56,21 @@
     resourceNodeDataMap = {};
 
   let searchFilter;
+  let searchResults = {};
+
+  async function searchTreeForData(searchQuery, options) {
+    if (options.searchType === "String") {
+      searchFilter = await rootResource.search_for_string(
+        searchQuery,
+        options.regex,
+        options.caseIgnore
+      );
+    } else if (options.searchType === "Bytes") {
+      searchFilter = await rootResource.search_for_bytes(searchQuery, false);
+    }
+
+    return { matches: searchFilter, index: 0 };
+  }
 </script>
 
 <div class="hbox">
@@ -69,8 +84,10 @@
   <div class="resources">
     <div class="searchbar">
       <ResourceSearchBar
-        rootResource="{rootResource}"
-        bind:searchFilter="{searchFilter}"
+        search="{searchTreeForData}"
+        liveUpdate="{true}"
+        showResultsWidgets="{false}"
+        bind:searchResults="{searchResults}"
       />
     </div>
     <div class="treebox">

@@ -284,7 +284,13 @@
     }
   }
 
-  async function searchHex(query, mode) {
+  async function searchHex(query, options) {
+    let mode;
+    if (options.regex) {
+      mode = options.searchType + "Regex";
+    } else {
+      mode = options.searchType;
+    }
     return await $selectedResource.search_data(query, mode);
   }
 </script>
@@ -309,6 +315,8 @@
         </div>
         <ResourceSearchBar
           search="{searchHex}"
+          liveUpdate="{false}"
+          showResultsWidgets="{true}"
           bind:searchResults="{dataSearchResults}"
         />
         <div class="hbox">
