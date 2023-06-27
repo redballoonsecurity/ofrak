@@ -764,6 +764,8 @@ class AiohttpOFRAKServer:
         if len(offsets) > 0:
             found_resources.append(resource.get_id().hex())
         for child in await resource.get_descendants():
+            if child.get_data_id() is None:
+                continue
             offsets = await child.search_data(string_query)
             if len(offsets) > 0:
                 found_resources.append(child.get_id().hex())
