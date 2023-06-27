@@ -781,7 +781,7 @@ class AiohttpOFRAKServer:
         bytes_query_request = body["search_query"]
         if bytes_query_request == "":
             return json_response(None)
-        bytes_query = bytes.fromhex("".join(bytes_query_request.split(" ")))
+        bytes_query = bytes.fromhex(re.sub(r"[^0-9a-fA-F]+", "", bytes_query_request))
         offsets = await resource.search_data(bytes_query)
         found_resources = []
         if len(offsets) > 0:
