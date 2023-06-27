@@ -36,6 +36,7 @@
     width: 100%;
     position: sticky;
     padding-bottom: 1em;
+    min-height: 2.25em;
   }
 
   .resultwidgets {
@@ -50,6 +51,7 @@
     width: 100%;
     padding-left: 1em;
     padding-right: 1em;
+    padding-top: 0.25em;
   }
 
   button {
@@ -57,17 +59,13 @@
   }
 
   .optionbar {
-    padding-bottom: 0.25em;
+    padding-bottom: 0;
     padding-top: 0.25em;
     border-style: solid;
     border-width: thin;
     padding-left: 1em;
     padding-right: 1em;
     height: fit-content;
-  }
-
-  .optionbar div {
-    vertical-align: middle;
   }
 </style>
 
@@ -172,8 +170,8 @@
       <input placeholder="{placeholderString}" bind:value="{searchQuery}" />
     </label>
   </form>
-  <div class="optionbar">
-    {#if searchOptions.searchType == "String"}
+  {#if searchOptions.searchType == "String"}
+    <div class="optionbar">
       <Checkbox
         checked="{false}"
         bind:value="{searchOptions.regex}"
@@ -188,8 +186,8 @@
       >
         Ignore Case
       </Checkbox>
-    {/if}
-  </div>
+    </div>
+  {/if}
   {#if showResultsWidgets}
     <div class="resultwidgets">
       {#if searchResults.matches !== undefined && searchResults.matches !== null}
