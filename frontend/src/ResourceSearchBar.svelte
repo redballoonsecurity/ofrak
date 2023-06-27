@@ -86,7 +86,7 @@
     {/each}
   </select>
   <form
-    on:keyup|preventDefault="{async (e) => {
+    on:submit|preventDefault="{async (e) => {
       try {
         if (searchType == 'String') {
           searchFilter = await rootResource.search_for_string(
