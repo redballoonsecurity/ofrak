@@ -1,5 +1,6 @@
 import os
 import tempfile
+from warnings import warn
 
 import pytest
 
@@ -36,6 +37,32 @@ from ofrak_patch_maker_test.toolchain_c import (
 PPC_EXTENSION = ".vle"
 
 
+INSTALL_TOOLCHAIN_MESSAGE = f"""
+The NXP PPC VLE toolchain was not installed as part af the container build, because it requires signing-up and manually downloading the toolchain.
+Download the toolchain into your OFRAK directory from here:
+https://www.nxp.com/design/software/development-software/s32-design-studio-ide/s32-design-studio-for-power-architecture:S32DS-PA
+Then rebuild the docker container, or refer to the Dockerfile for installation instructions.
+"""
+
+
+def check_toolchain_installed(toolchain_under_test: ToolchainUnderTest) -> bool:
+    tc_config = ToolchainConfig(
+        file_format=BinFileType.ELF,
+        force_inlines=True,
+        relocatable=False,
+        no_std_lib=True,
+        no_jump_tables=True,
+        no_bss_section=True,
+        compiler_optimization_level=CompilerOptimizationLevel.FULL,
+    )
+    compiler_path_exist = os.path.exists(
+        toolchain_under_test.toolchain(toolchain_under_test.proc, tc_config)._compiler_path
+    )
+    if not compiler_path_exist:
+        warn(INSTALL_TOOLCHAIN_MESSAGE)
+    return compiler_path_exist
+
+
 @pytest.fixture(
     params=[
         ToolchainUnderTest(
@@ -62,19 +89,27 @@ def toolchain_under_test(request) -> ToolchainUnderTest:
 
 
 def test_monkey_patch(toolchain_under_test: ToolchainUnderTest):
+    if not check_toolchain_installed(toolchain_under_test):
+        pytest.skip(INSTALL_TOOLCHAIN_MESSAGE)
     run_monkey_patch_test(toolchain_under_test)
 
 
 # C Tests
 def test_bounds_check(toolchain_under_test: ToolchainUnderTest):
+    if not check_toolchain_installed(toolchain_under_test):
+        pytest.skip(INSTALL_TOOLCHAIN_MESSAGE)
     run_bounds_check_test(toolchain_under_test)
 
 
 def test_hello_world(toolchain_under_test: ToolchainUnderTest):
+    if not check_toolchain_installed(toolchain_under_test):
+        pytest.skip(INSTALL_TOOLCHAIN_MESSAGE)
     run_hello_world_test(toolchain_under_test)
 
 
 def test_vle_alignment(toolchain_under_test: ToolchainUnderTest):
+    if not check_toolchain_installed(toolchain_under_test):
+        pytest.skip(INSTALL_TOOLCHAIN_MESSAGE)
     tc_config = ToolchainConfig(
         file_format=BinFileType.ELF,
         force_inlines=True,

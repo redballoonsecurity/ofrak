@@ -79,12 +79,16 @@ fi;
 #PPCVLE 4 NXP GCC Fork
 # Download the toolchain into your OFRAK directory from here (requires sign up):
 # https://www.nxp.com/design/software/development-software/s32-design-studio-ide/s32-design-studio-for-power-architecture:S32DS-PA
+# if the file `gcc-4.9.4-Ee200-eabivle-x86_64-linux-g2724867.zip` doesn't exist, the toolchain won't be installed, and corresponding tests will be skipped.
 ARG OFRAK_DIR=.
-COPY $OFRAK_DIR/gcc-4.9.4-Ee200-eabivle-x86_64-linux-g2724867.zip /tmp
-RUN cd /tmp && \
-    unzip gcc-4.9.4-Ee200-eabivle-x86_64-linux-g2724867.zip && \
-    cd powerpc-eabivle-4_9 && \
-    for f in *; do test -d "${f}" && cp -r "${f}" /usr/; done && \
+COPY $OFRAK_DIR/gcc-4.9.4-Ee200-eabivle-x86_64-linux-g2724867.zi[p] /tmp
+RUN test -f /tmp/gcc-4.9.4-Ee200-eabivle-x86_64-linux-g2724867.zip && \
+    cd /tmp && \
+    unzip -q gcc-4.9.4-Ee200-eabivle-x86_64-linux-g2724867.zip && \
+    cp -r powerpc-eabivle-4_9 /opt/rbs/toolchain/ && \
+    rm -rf powerpc-eabivle-4_9 && \
+    rm gcc-4.9.4-Ee200-eabivle-x86_64-linux-g2724867.zip && \
     dpkg --add-architecture i386 && \
     apt-get update && \
-    apt-get install -y libc6:i386 libncurses5:i386 libstdc++6:i386 lib32z1
+    apt-get install -y libc6:i386 libncurses5:i386 libstdc++6:i386 lib32z1 \
+    || true
