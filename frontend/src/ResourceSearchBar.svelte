@@ -32,7 +32,7 @@
     display: flex;
     align-items: left;
     flex-grow: 1;
-    height: 2em;
+    height: fit-content;
     width: 100%;
     position: sticky;
     padding-bottom: 1em;
@@ -57,12 +57,17 @@
   }
 
   .optionbar {
-    padding-bottom: 0;
-    padding-top: 0;
+    padding-bottom: 0.25em;
+    padding-top: 0.25em;
     border-style: solid;
     border-width: thin;
     padding-left: 1em;
     padding-right: 1em;
+    height: fit-content;
+  }
+
+  .optionbar div {
+    vertical-align: middle;
   }
 </style>
 
