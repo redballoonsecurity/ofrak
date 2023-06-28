@@ -75,9 +75,12 @@ jobs:
       - name: Build base image
         # Always rebuild the base image when the scheduled workflow runs
         if: inputs.flush_cache || steps.cache-image.outputs.cache-hit != 'true' || github.event_name == 'schedule'
+        env:
+          NXP_EMAIL: ${{ secrets.NXP_EMAIL }}
+          NXP_PASSWORD: ${{ secrets.NXP_PASSWORD }}
         run: |
           python3 -m pip install PyYAML
-          DOCKER_BUILDKIT=1 python3 build_image.py --config ofrak-core-dev.yml --base 
+          DOCKER_BUILDKIT=1 python3 build_image.py --config ofrak-core-dev.yml --base --nxp-email "${NXP_EMAIL}" --nxp-password "${NXP_PASSWORD}"
       - name: Export base image
         if: inputs.flush_cache || steps.cache-image.outputs.cache-hit != 'true' || github.event_name == 'schedule'
         run: |
@@ -113,6 +116,9 @@ jobs:
             | docker load 
           docker images
       - name: Build Ghidra image
+        env:
+          NXP_EMAIL: ${{ secrets.NXP_EMAIL }}
+          NXP_PASSWORD: ${{ secrets.NXP_PASSWORD }}
         run: |
           python3 -m pip install PyYAML
           DOCKER_BUILDKIT=1 \
@@ -120,7 +126,9 @@ jobs:
             --config ofrak-ghidra.yml \
             --base \
             --finish \
-            --cache-from redballoonsecurity/ofrak/core-dev-base:latest
+            --cache-from redballoonsecurity/ofrak/core-dev-base:latest \
+            --nxp-email "${NXP_EMAIL}" \
+            --nxp-password "${NXP_PASSWORD}"
       - name: Test documentation
         run: |
           docker run \
