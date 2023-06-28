@@ -38,8 +38,8 @@ as well as the [code references for PatchMaker](https://ofrak.com/docs/reference
 ## Dependencies
 This Python package only includes the Python code for the PatchMaker and does not include any of the 
 toolchains which the PatchMaker utilizes! These would have to be
-installed individually and added to a `toolchain.conf`, which by default is placed in `/etc`.
-An example of the `toolchain.conf` can be found [here](https://github.com/redballoonsecurity/ofrak/blob/master/ofrak_patch_maker/toolchain.conf),
+installed individually and added to `toolchain.conf`, which is bundled with this package.
+An example of the `toolchain.conf` can be found [here](https://github.com/redballoonsecurity/ofrak/blob/master/ofrak_patch_maker/ofrak_patch_maker/toolchain.conf),
 and examples of how to install the toolchains can be found [here](https://github.com/redballoonsecurity/ofrak/blob/master/ofrak_patch_maker/Dockerstub).
 
 ## Testing
