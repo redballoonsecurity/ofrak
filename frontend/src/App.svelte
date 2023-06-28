@@ -52,10 +52,12 @@
   import { keyEventToString, shortcuts } from "./keyboard.js";
 
   import { writable } from "svelte/store";
+  import ProjectManagerView from "./ProjectManagerView.svelte";
 
   printConsoleArt();
 
   let showRootResource = false,
+    showProjectManager = false,
     dataLenPromise = Promise.resolve([]),
     hexScrollY = writable({}),
     useAssemblyView = false,
@@ -252,10 +254,13 @@ Answer by running riddle.answer('your answer here') from the console.`);
       <AudioPlayer />
     </div>
   {/if}
+{:else if showProjectManager}
+  <ProjectManagerView />
 {:else}
   <StartView
     bind:rootResourceLoadPromise="{rootResourceLoadPromise}"
     bind:showRootResource="{showRootResource}"
+    bind:showProjectManager="{showProjectManager}"
     bind:resources="{resources}"
     bind:rootResource="{rootResource}"
     bind:resourceNodeDataMap="{resourceNodeDataMap}"
