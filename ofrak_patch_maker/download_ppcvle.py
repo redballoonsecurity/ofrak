@@ -5,10 +5,9 @@ from playwright.sync_api import sync_playwright
 
 
 START_URL = "https://www.nxp.com/design/software/development-software/s32-design-studio-ide/s32-design-studio-for-power-architecture:S32DS-PA"
-DOWNLOAD_PATH = "gcc-4.9.4-Ee200-eabivle-x86_64-linux-g2724867.zip"
 
 
-def run(page, email, password) -> None:
+def run(page, email: str, password: str, outfile: str) -> None:
     print("Going to page")
     page.goto()
     page.get_by_role("listitem").filter(
@@ -29,9 +28,9 @@ def run(page, email, password) -> None:
     with page.expect_download() as download_info:
         # Download begins when the page is loaded
         pass
-    os.rename(download_info.value.path(), DOWNLOAD_PATH)
+    os.rename(download_info.value.path(), outfile)
 
-    print(f"Complete! Saved to {DOWNLOAD_PATH}")
+    print(f"Complete! Saved to {outfile}")
 
 
 def main(args):
@@ -39,7 +38,7 @@ def main(args):
         browser = playwright.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()
-        run(page, args.email, args.password)
+        run(page, args.email, args.password, args.outfile)
         context.close()
         browser.close()
 
@@ -48,4 +47,7 @@ if __name__ == "__main__":
     argument_parser = argparse.ArgumentParser()
     argument_parser.add_argument("email")
     argument_parser.add_argument("password")
+    argument_parser.add_argument(
+        "-o", "--outfile", default="/tmp/gcc-4.9.4-Ee200-eabivle-x86_64-linux-g2724867.zip"
+    )
     main(argument_parser.parse_args())
