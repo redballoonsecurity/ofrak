@@ -89,16 +89,24 @@
     on:submit|preventDefault="{async (e) => {
       try {
         if (searchType == 'String') {
-          searchFilter = await rootResource.search_for_string(
-            searchQuery,
-            regex,
-            caseIgnore
-          );
+          if (searchQuery === '') {
+            searchFilter = null;
+          } else {
+            searchFilter = await rootResource.search_for_string(
+              searchQuery,
+              regex,
+              caseIgnore
+            );
+          }
         } else if (searchType == 'Bytes') {
-          searchFilter = await rootResource.search_for_bytes(
-            searchQuery,
-            false
-          );
+          if (searchQuery === '') {
+            searchFilter = null;
+          } else {
+            searchFilter = await rootResource.search_for_bytes(
+              searchQuery,
+              false
+            );
+          }
         }
       } catch (err) {
         try {
