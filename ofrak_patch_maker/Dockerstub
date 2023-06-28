@@ -77,16 +77,19 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
 fi;
 
 #PPCVLE 4 NXP GCC Fork
-# Download the toolchain into your OFRAK directory from here (requires sign up):
-# https://www.nxp.com/design/software/development-software/s32-design-studio-ide/s32-design-studio-for-power-architecture:S32DS-PA
-# if the file `gcc-4.9.4-Ee200-eabivle-x86_64-linux-g2724867.zip` doesn't exist, the toolchain won't be installed, and corresponding tests will be skipped.
+# Only runs if the NXP email and password to log in and download the toolchain are passed to build_image.py via the CLI flags
 ARG OFRAK_DIR=.
-COPY $OFRAK_DIR/gcc-4.9.4-Ee200-eabivle-x86_64-linux-g2724867.zi[p] /tmp
-RUN test -f /tmp/gcc-4.9.4-Ee200-eabivle-x86_64-linux-g2724867.zip && \
+COPY $OFRAK_DIR/ofrak_patch_maker/download_ppcvle.py /tmp/
+RUN --mount=type=secret,id=nxp_email,dst=/tmp/nxp_email.txt \
+    --mount=type=secret,id=nxp_password,dst=/tmp/nxp_password.txt \
+    test -f /tmp/nxp_email.txt && \
+    test -f /tmp/nxp_password.txt && \
+    python3 -m pip install playwright && \
+    playwright install --with-deps chromium && \
+    python3 /tmp/download_ppcvle.py "$(cat /tmp/nxp_email.txt)" "$(cat /tmp/nxp_password.txt)" && \
     cd /tmp && \
     unzip -q gcc-4.9.4-Ee200-eabivle-x86_64-linux-g2724867.zip && \
-    cp -r powerpc-eabivle-4_9 /opt/rbs/toolchain/ && \
-    rm -rf powerpc-eabivle-4_9 && \
+    mv powerpc-eabivle-4_9 /opt/rbs/toolchain/ && \
     rm gcc-4.9.4-Ee200-eabivle-x86_64-linux-g2724867.zip && \
     dpkg --add-architecture i386 && \
     apt-get update && \

@@ -8,29 +8,29 @@ START_URL = "https://www.nxp.com/design/software/development-software/s32-design
 
 
 def run(page, email: str, password: str, outfile: str) -> None:
-    print("Going to page")
-    page.goto()
+    print(f"Going to page {START_URL}", flush=True)
+    page.goto(START_URL)
     page.get_by_role("listitem").filter(
         has_text="Build Tools NXP Embedded GCC for Power Architecture"
     ).filter(has_text="Linux").get_by_role("link", name="Download", exact=True).click()
 
-    print("Signing in")
+    print("Signing in", flush=True)
     page.locator("#username").click()
     page.keyboard.type(email)
     page.locator("#password").click()
     page.keyboard.type(password)
     page.get_by_role("button", name="SIGN IN").click()
 
-    print("Accepting terms and conditions")
+    print("Accepting terms and conditions", flush=True)
     page.get_by_role("button", name="I Accept").click()
 
-    print("Waiting for download")
+    print("Waiting for download", flush=True)
     with page.expect_download() as download_info:
         # Download begins when the page is loaded
         pass
     os.rename(download_info.value.path(), outfile)
 
-    print(f"Complete! Saved to {outfile}")
+    print(f"Complete! Saved to {outfile}", flush=True)
 
 
 def main(args):
