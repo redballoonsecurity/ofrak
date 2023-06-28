@@ -1,5 +1,6 @@
 import argparse
 import os
+import stat
 import subprocess
 import sys
 
@@ -16,7 +17,9 @@ from ofrak_ghidra.constants import (
 
 def _run_ghidra_server(*args):
     if sys.platform == "linux" or sys.platform == "darwin":
-        subprocess.call(["chmod", "+x", GHIDRA_START_SERVER_SCRIPT])
+        os.chmod(
+            GHIDRA_START_SERVER_SCRIPT, os.stat(GHIDRA_START_SERVER_SCRIPT).st_mode | stat.S_IEXEC
+        )
         subprocess.call(
             [
                 GHIDRA_START_SERVER_SCRIPT,
