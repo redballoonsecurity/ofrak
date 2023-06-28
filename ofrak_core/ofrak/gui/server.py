@@ -982,7 +982,10 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def search_data(self, request: Request) -> Response:
         resource: Resource = await self._get_resource_for_request(request)
-        mode = request.query.get("mode")
+        mode = request.query.get("type")
+        regex = request.query.get("regex") == "true"
+        case_ignore = request.query.get("caseignore") == "true"
+
         if mode is None:
             mode = "String"
 
@@ -990,18 +993,24 @@ class AiohttpOFRAKServer:
 
         if mode == "String":
             query = raw_query.encode("utf-8")
+
+            if case_ignore:
+                query = re.compile(query, re.IGNORECASE)
+                regex = True
+            elif regex:
+                query = re.compile(query)
+
         elif mode == "Bytes":
+            if regex:
+                raise NotImplementedError("regex for bytes not yet supported")
             query = binascii.unhexlify(raw_query.replace(" ", ""))
-        elif mode == "StringRegex":
-            query = re.compile(raw_query.encode("utf-8"))
-        elif mode == "BytesRegex":
-            raise ValueError("regex for bytes not yet supported")
+
         else:
             raise ValueError(f"Invalid query mode {mode}")
 
         results = await resource.search_data(query)
 
-        if "Regex" in mode:
+        if regex:
             results = [(offset, len(match)) for offset, match in results]
         else:
             results = [(offset, len(query)) for offset in results]

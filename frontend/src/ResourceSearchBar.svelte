@@ -86,7 +86,8 @@
   searchResults.matches = undefined;
   searchResults.index = 0;
 
-  let prevQuery = "";
+  let prevQuery = "",
+    prevOptions = {};
 
   function nextMatch() {
     let nextIndex = searchResults.index + 1;
@@ -102,6 +103,15 @@
       nextIndex = Math.max(searchResults.matches.length - 1, 0);
     }
     searchResults = { matches: searchResults.matches, index: nextIndex };
+  }
+
+  function isRepeatedQuery() {
+    return (
+      searchQuery == prevQuery &&
+      searchOptions.searchType == prevOptions.searchType &&
+      searchOptions.regex == prevOptions.regex &&
+      searchOptions.caseIgnore == prevOptions.caseIgnore
+    );
   }
 
   $: if (searchQuery && searchOptions.searchType === "Bytes") {
@@ -139,12 +149,14 @@
       if (searchQuery === undefined || searchQuery.length === 0) {
         searchResults.matches = undefined;
         prevQuery = '';
-      } else if (searchQuery == prevQuery) {
+        prevOptions = {};
+      } else if (isRepeatedQuery()) {
         nextMatch();
       } else {
         searchResults.matches = await search(searchQuery, searchOptions);
         searchResults.index = 0;
         prevQuery = searchQuery;
+        prevOptions = { ...searchOptions };
       }
     }}"
     on:keyup|preventDefault="{async (e) => {
@@ -159,10 +171,12 @@
       ) {
         searchResults.matches = undefined;
         prevQuery = '';
+        prevOptions = {};
       } else {
         searchResults.matches = await search(searchQuery, searchOptions);
         searchResults.index = 0;
         prevQuery = searchQuery;
+        prevOptions = { ...searchOptions };
       }
     }}"
   >

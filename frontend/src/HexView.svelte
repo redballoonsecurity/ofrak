@@ -285,13 +285,7 @@
   }
 
   async function searchHex(query, options) {
-    let mode;
-    if (options.regex) {
-      mode = options.searchType + "Regex";
-    } else {
-      mode = options.searchType;
-    }
-    return await $selectedResource.search_data(query, mode);
+    return await $selectedResource.search_data(query, options);
   }
 </script>
 
