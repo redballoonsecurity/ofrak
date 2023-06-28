@@ -180,15 +180,11 @@ def _asm_fixups(
         # But it is more natural to express it in bytes, to get the instruction `se_stw r0,0x24(r1)`
         # (this is also the convention used by the VLE assembler)
 
-        def replace_offset(match):
-            new_operand = match.group(1)
-            new_operand += f"0x{int(match.group(2), 0)*4:x}"
-            new_operand += match.group(3)
-            return new_operand
-
         mnemonic = base_mnemonic
         operands = re.sub(
-            r"(.*, )(0x[0-9]+)(\(r[0-9]+\))", lambda match: replace_offset(match), operands
+            r"(.*, )(0x[0-9]+)(\(r[0-9]+\))",
+            lambda match: match.group(1) + f"0x{int(match.group(2), 0)*4:x}" + match.group(3),
+            operands,
         )
     else:
         mnemonic = base_mnemonic
