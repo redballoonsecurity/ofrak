@@ -754,11 +754,15 @@ class AiohttpOFRAKServer:
         if not isinstance(string_query_string, str):
             raise ValueError("Invalid search query.")
         string_query: Union[bytes, re.Pattern[bytes]] = string_query_string.encode()
-        if case_ignore:
-            string_query = re.compile(string_query, re.IGNORECASE)
-        elif regex:
-            string_query = re.compile(string_query)
-
+        try:
+            if case_ignore:
+                if not regex:
+                    string_query = re.escape(string_query)
+                string_query = re.compile(string_query, re.IGNORECASE)
+            elif regex:
+                string_query = re.compile(string_query)
+        except re.error:
+            logging.ERROR("Bad regex expression in search")
         offsets = await resource.search_data(string_query)
         found_resources = []
         if len(offsets) > 0:

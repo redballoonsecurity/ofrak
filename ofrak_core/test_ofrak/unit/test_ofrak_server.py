@@ -896,7 +896,7 @@ async def test_search_string(ofrak_client, hello_world_elf):
     resource_id = create_body["id"]
     resp = await ofrak_client.post(
         f"/{resource_id}/search_for_string",
-        json={"search_query": "he[l]{2}o", "case_ignore": True, "regex": True},
+        json={"search_query": "he[l]{2}o", "case_ignore": False, "regex": True},
     )
     resp_body = await resp.json()
     assert resp.status == 200
@@ -911,6 +911,27 @@ async def test_search_string(ofrak_client, hello_world_elf):
     resp = await ofrak_client.post(
         f"/{resource_id}/search_for_string",
         json={"search_query": "he[l]{2}o", "case_ignore": False, "regex": False},
+    )
+    resp_body = await resp.json()
+    assert resp.status == 200
+    assert resp_body == []
+    resp = await ofrak_client.post(
+        f"/{resource_id}/search_for_string",
+        json={"search_query": "He[l]{2}o", "case_ignore": True, "regex": True},
+    )
+    resp_body = await resp.json()
+    assert resp.status == 200
+    assert resp_body == ["00000001"]
+    resp = await ofrak_client.post(
+        f"/{resource_id}/search_for_string",
+        json={"search_query": "He[l]{2}o", "case_ignore": False, "regex": True},
+    )
+    resp_body = await resp.json()
+    assert resp.status == 200
+    assert resp_body == []
+    resp = await ofrak_client.post(
+        f"/{resource_id}/search_for_string",
+        json={"search_query": "he[l]{2}o", "case_ignore": True, "regex": False},
     )
     resp_body = await resp.json()
     assert resp.status == 200

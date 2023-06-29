@@ -127,7 +127,7 @@
 
 <div class="optionbar">
   {#if searchType == "String"}
-    <Checkbox checked="{caseIgnore}" bind:value="{regex}" leftbox="{true}">
+    <Checkbox checked="{false}" bind:value="{regex}" leftbox="{true}">
       Pattern
     </Checkbox>
     <Checkbox checked="{false}" bind:value="{caseIgnore}" leftbox="{true}">
