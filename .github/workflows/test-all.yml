@@ -2,6 +2,8 @@ name: OFRAK CI Tests
 
 on:
   pull_request_target:
+    branches:
+      - *
   push:
     branches:
       - master
