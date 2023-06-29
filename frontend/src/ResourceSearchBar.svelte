@@ -65,7 +65,6 @@
     border-width: thin;
     padding-left: 1em;
     padding-right: 1em;
-    height: fit-content;
   }
 </style>
 
@@ -187,7 +186,7 @@
   {#if searchOptions.searchType == "String"}
     <div class="optionbar">
       <Checkbox
-        checked="{false}"
+        checked="{searchOptions.caseIgnore || searchOptions.regex}"
         bind:value="{searchOptions.regex}"
         leftbox="{true}"
       >
