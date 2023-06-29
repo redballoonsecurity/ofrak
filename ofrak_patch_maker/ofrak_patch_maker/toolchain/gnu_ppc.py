@@ -95,11 +95,11 @@ class GNU_PPCVLE_4_Toolchain(Abstract_GNU_Toolchain):
         logger: logging.Logger = logging.getLogger(__name__),
     ):
         super().__init__(processor, toolchain_config, logger=logger)
-        logging.warning(f"PLOUF: {self._config}")
         if self._config.hard_float:
             self._compiler_flags.append("-mhard-float")
         else:
             self._compiler_flags.append("-msoft-float")
+        self._compiler_flags.append("-std=c99")
         self._assembler_flags.append("-mvle")
 
     @property
