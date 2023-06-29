@@ -4,7 +4,7 @@
   }
 
   .carousel {
-    margin-top: 1em;
+    margin-top: 0.1em;
   }
 
   .bottomleft {
@@ -42,7 +42,6 @@
   import MagnitudeView from "./MagnitudeView.svelte";
   import Pane from "./Pane.svelte";
   import ResourceTreeView from "./ResourceTreeView.svelte";
-  import ScriptView from "./ScriptView.svelte";
   import Split from "./Split.svelte";
   import StartView from "./StartView.svelte";
   import TextView from "./TextView.svelte";
@@ -52,7 +51,7 @@
   import { keyEventToString, shortcuts } from "./keyboard.js";
 
   import { writable } from "svelte/store";
-  import ProjectManagerView from "./ProjectManagerView.svelte";
+  import ProjectManagerView from "./ProjectManager/ProjectManagerView.svelte";
 
   printConsoleArt();
 
