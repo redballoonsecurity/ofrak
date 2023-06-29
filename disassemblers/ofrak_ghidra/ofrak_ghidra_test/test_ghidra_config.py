@@ -10,11 +10,11 @@ DEFAULT_CONFIG = """ghidra_install:
   path: /opt/rbs/ghidra_10.1.2_PUBLIC
 server:
   analysis:
-    host: http://localhost
+    host: localhost
     port: 13300
   pass: changeme
   repository:
-    host: ghidra://localhost
+    host: localhost
     port: 13100
   user: root
 """

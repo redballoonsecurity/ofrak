@@ -6,8 +6,8 @@ server:
   user: root
   pass: changeme
   repository:
-    host: ghidra://localhost
+    host: localhost
     port: 13100
   analysis:
-    host: http://localhost
+    host: localhost
     port: 13300
