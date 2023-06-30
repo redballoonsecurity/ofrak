@@ -746,23 +746,23 @@ class AiohttpOFRAKServer:
     async def search_for_string(self, request: Request):
         resource = await self._get_resource_for_request(request)
         body = await request.json()
-        string_query_string = body["search_query"]
-        if string_query_string == "":
+        string_query_param = body["search_query"]
+        if string_query_param == "":
             return json_response(None)
         regex = body["regex"]
         case_ignore = body["case_ignore"]
-        if not isinstance(string_query_string, str):
+        if not isinstance(string_query_param, str):
             raise ValueError("Invalid search query.")
-        string_query: Union[bytes, re.Pattern[bytes]] = string_query_string.encode()
+        string_query: Union[bytes, re.Pattern[bytes]] = b""
         try:
             if case_ignore:
                 if not regex:
-                    string_query = re.escape(string_query)
-                string_query = re.compile(string_query, re.IGNORECASE)
+                    string_query = re.escape(string_query_param.encode())
+                string_query = re.compile(string_query_param.encode(), re.IGNORECASE)
             elif regex:
-                string_query = re.compile(string_query)
+                string_query = re.compile(string_query_param.encode())
         except re.error:
-            logging.ERROR("Bad regex expression in search")
+            logging.exception("Bad regex expression in search")
         offsets = await resource.search_data(string_query)
         found_resources = []
         if len(offsets) > 0:
