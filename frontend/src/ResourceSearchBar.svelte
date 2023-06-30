@@ -70,10 +70,9 @@
 </style>
 
 <script>
-  import { selectedResource } from "./stores";
   import Checkbox from "./Checkbox.svelte";
 
-  let searchQuery, bytesInput, placeholderString;
+  let searchQuery, bytesInput, placeholderString, errorMessage;
   let searchOptions = {
     searchType: "String",
     regex: false,
@@ -112,6 +111,23 @@
       searchOptions.regex == prevOptions.regex &&
       searchOptions.caseIgnore == prevOptions.caseIgnore
     );
+  }
+
+  async function doSearch() {
+    try {
+      searchResults.matches = await search(searchQuery, searchOptions);
+    } catch (err) {
+      try {
+        errorMessage = JSON.parse(err.message).message;
+      } catch (_) {
+        errorMessage = err.message;
+      }
+      console.log("Search Failed!");
+      console.log(errorMessage);
+    }
+    searchResults.index = 0;
+    prevQuery = searchQuery;
+    prevOptions = { ...searchOptions };
   }
 
   $: if (searchQuery && searchOptions.searchType === "Bytes") {
@@ -153,10 +169,7 @@
       } else if (isRepeatedQuery()) {
         nextMatch();
       } else {
-        searchResults.matches = await search(searchQuery, searchOptions);
-        searchResults.index = 0;
-        prevQuery = searchQuery;
-        prevOptions = { ...searchOptions };
+        await doSearch();
       }
     }}"
     on:keyup|preventDefault="{async (e) => {
@@ -173,10 +186,7 @@
         prevQuery = '';
         prevOptions = {};
       } else {
-        searchResults.matches = await search(searchQuery, searchOptions);
-        searchResults.index = 0;
-        prevQuery = searchQuery;
-        prevOptions = { ...searchOptions };
+        await doSearch();
       }
     }}"
   >
