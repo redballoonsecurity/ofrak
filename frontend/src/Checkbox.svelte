@@ -57,19 +57,25 @@
   export let checked,
     value,
     leftbox = false,
-    nomargin = false;
+    nomargin = false,
+    onselect = null;
 
   $: value = checked;
 </script>
 
 <label class:nomargin="{nomargin}">
   {#if leftbox}
-    <input class:leftbox="{leftbox}" type="checkbox" bind:checked="{checked}" />
+    <input
+      on:change="{onselect}"
+      class:leftbox="{leftbox}"
+      type="checkbox"
+      bind:checked="{checked}"
+    />
     <span></span>
   {/if}
   <slot />
   {#if !leftbox}
-    <input type="checkbox" bind:checked="{checked}" />
+    <input on:change="{onselect}" type="checkbox" bind:checked="{checked}" />
     <span></span>
   {/if}
 </label>

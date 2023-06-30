@@ -1,7 +1,7 @@
 <style>
   .vbox {
-    width: 100%;
-    height: 100%;
+    width: auto;
+    height: auto;
   }
 
   .title {
@@ -11,59 +11,58 @@
     font-size: xxx-large;
     line-height: 1;
     margin: 0;
-    padding-bottom: 1em;
+    margin-bottom: 1em;
     max-width: 100%;
     max-height: 100%;
     text-align: center;
   }
 
-  .manager {
+  .selectors {
     display: flex;
     align-items: stretch;
     justify-content: space-around;
     flex-direction: row;
-    width: 100%;
-    height: 70%;
+    height: 50vh;
   }
-
-  .options-box{
+  .options {
     display: flex;
-    outline: solid 2px var(--main-fg-color);
-    border-radius: 5%;
-    width: 100%;
-    height: 30%;
-    font-size: x-large;
-    overflow: auto;
-    overflow-y: hidden;
-    margin-top: 1em;
-}
-.options{
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: 30100%;
-    overflow:auto;
-    overflow-y:  scroll;
-}
+    align-items: stretch;
+    justify-content: space-around;
+    flex-direction: row;
+    height: 30vh;
+  }
 </style>
 
 <script>
-    import ProjectManagerSelector from "./ProjectManagerSelector.svelte";
-
+  import ProjectManagerOptions from "./ProjectManagerOptions.svelte";
+  import ProjectManagerSelector from "./ProjectManagerSelector.svelte";
 
   export let project;
+  let focus, selectedBinary, selectedScript;
 </script>
 
 <div class="vbox">
   <div class="title">OFRAK Project Manager</div>
-  <div class="manager">
-    <ProjectManagerSelector title=Binaries projectElementOptions="{project.binaries}"/>
-    <ProjectManagerSelector title=Scripts projectElementOptions="{project.scripts}"/>
-    <ProjectManagerSelector title=Components projectElementOptions="{project.components}"/>
+  <div class="selectors">
+    <ProjectManagerSelector
+      title="Binaries"
+      projectElementOptions="{project.binaries}"
+      selection="{selectedBinary}"
+      bind:focus="{focus}"
+    />
+    <ProjectManagerSelector
+      title="Scripts"
+      projectElementOptions="{project.scripts}"
+      selection="{selectedScript}"
+      bind:focus="{focus}"
+    />
+    <ProjectManagerSelector
+      title="Components"
+      projectElementOptions="{project.components}"
+      bind:focus="{focus}"
+    />
   </div>
-</div>
-<div class="options-box">
   <div class="options">
-      
+    <ProjectManagerOptions focus="{focus}" />
   </div>
 </div>
