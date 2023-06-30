@@ -151,7 +151,7 @@ class DataService(DataServiceInterface):
         root = self._get_root_by_id(model.root_id)
         start = model.range.start if start is None else model.range.start + start
         end = model.range.end if end is None else min(model.range.end, model.range.start + end)
-        if type(query) is bytes:
+        if isinstance(query, bytes):
             matches = []
             while max_matches is None or len(matches) < max_matches:
                 match_offset = root.data.find(query, start, end)

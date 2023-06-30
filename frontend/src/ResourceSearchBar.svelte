@@ -116,7 +116,7 @@
     </label>
   </form>
   <div class="resultwidgets">
-    {#if searchResults.matches !== undefined && searchResults.matches !== null}
+    {#if searchResults.matches}
       {#if searchResults.matches.length > 0}<p class="resultcount">
           {searchResults.index + 1}/{searchResults.matches.length}
         </p>
