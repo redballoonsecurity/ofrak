@@ -8,7 +8,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add a JFFS2 packer and unpacker. ([#326](https://github.com/redballoonsecurity/ofrak/pull/326))
 - Add method to Resource and data service to search for patterns in its data ([#333](https://github.com/redballoonsecurity/ofrak/pull/333))
 - Add searchbar to HexView in order to search for a string or bytes within a resource. ([#336](https://github.com/redballoonsecurity/ofrak/pull/336))
-- Add method to Resource and data service to search for patterns in its data ([#333](https://github.com/redballoonsecurity/ofrak/pull/333))
 
 ### Changed
 - Support uploading files in chunks to handle files larger than 2GB from the GUI ([#324](https://github.com/redballoonsecurity/ofrak/pull/324))
