@@ -158,7 +158,6 @@ class ElfSegmentAnalyzer(Analyzer[None, ElfSegment]):
     outputs = (ElfSegment,)
 
     async def analyze(self, resource: Resource, config=None) -> ElfSegment:
-
         segment = await resource.view_as(ElfSegmentStructure)
         segment_header = await segment.get_header()
         return ElfSegment(

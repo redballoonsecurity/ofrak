@@ -749,30 +749,33 @@ class AiohttpOFRAKServer:
     async def search_for_string(self, request: Request):
         resource = await self._get_resource_for_request(request)
         body = await request.json()
-        string_query_string = body["search_query"]
+        string_query_param = body["search_query"]
+        if string_query_param == "":
+            return json_response(None)
         regex = body["regex"]
         case_ignore = body["case_ignore"]
-        if not isinstance(string_query_string, str):
+        if not isinstance(string_query_param, str):
             raise ValueError("Invalid search query.")
-        string_query: Union[bytes, re.Pattern[bytes]] = string_query_string.encode()
-        if case_ignore:
-            string_query = re.compile(string_query, re.IGNORECASE)
-        elif regex:
-            string_query = re.compile(string_query)
-
+        string_query: Union[bytes, re.Pattern[bytes]] = string_query_param.encode()
+        try:
+            if case_ignore:
+                if not regex:
+                    string_query = re.compile(re.escape(string_query_param.encode()), re.IGNORECASE)
+                else:
+                    string_query = re.compile(string_query_param.encode(), re.IGNORECASE)
+            elif regex:
+                string_query = re.compile(string_query_param.encode())
+        except re.error:
+            logging.exception("Bad regex expression in search")
         offsets = await resource.search_data(string_query)
-        if string_query == "":
-            return json_response(None)
         found_resources = []
         if len(offsets) > 0:
-            # found_resources[resource.get_id().hex()] = offsets
             found_resources.append(resource.get_id().hex())
         for child in await resource.get_descendants():
             if child.get_data_id() is None:
                 continue
             offsets = await child.search_data(string_query)
             if len(offsets) > 0:
-                # found_resources[child.get_id().hex()] = offsets
                 found_resources.append(child.get_id().hex())
                 for ancestor in await child.get_ancestors():
                     found_resources.append(ancestor.get_id().hex())
@@ -786,16 +789,14 @@ class AiohttpOFRAKServer:
         bytes_query_request = body["search_query"]
         if bytes_query_request == "":
             return json_response(None)
-        bytes_query = bytes.fromhex("".join(bytes_query_request.split(" ")))
+        bytes_query = bytes.fromhex(re.sub(r"[^0-9a-fA-F]+", "", bytes_query_request))
         offsets = await resource.search_data(bytes_query)
         found_resources = []
         if len(offsets) > 0:
-            # found_resources[resoxurce.get_id().hex()] = offsets
             found_resources.append(resource.get_id().hex())
         for child in await resource.get_descendants():
             offsets = await child.search_data(bytes_query)
             if len(offsets) > 0:
-                # found_resources[child.get_id().hex()] = offsets
                 found_resources.append(child.get_id().hex())
                 for ancestor in await child.get_ancestors():
                     found_resources.append(ancestor.get_id().hex())
