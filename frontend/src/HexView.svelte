@@ -272,8 +272,9 @@
     const localDataSearchResults = dataSearchResults;
 
     if (
-      localDataSearchResults.matches?.length > 0 &&
-      localDataSearchResults.index
+      localDataSearchResults.matches !== undefined &&
+      localDataSearchResults.matches.length > 0 &&
+      localDataSearchResults.index !== undefined
     ) {
       dataLenPromise.then((dataLength) => {
         $scrollY.top =
