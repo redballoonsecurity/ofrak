@@ -23,61 +23,47 @@
     justify-content: space-around;
     flex-direction: row;
     width: 100%;
-    height: 100%;
+    height: 70%;
   }
 
-  .view {
-    padding-left: 1em;
-    text-align: center;
-    font-size: x-large;
-    font-weight: bold;
-    text-transform: uppercase;
-    width: 100%;
-    height: 100%;
-  }
-
-  .box {
-    outline: solid 1px var(--main-fg-color);
+  .options-box{
+    display: flex;
+    outline: solid 2px var(--main-fg-color);
     border-radius: 5%;
-    padding-top: 1em;
     width: 100%;
-    height: 100%;
-  }
+    height: 30%;
+    font-size: x-large;
+    overflow: auto;
+    overflow-y: hidden;
+    margin-top: 1em;
+}
+.options{
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 30100%;
+    overflow:auto;
+    overflow-y:  scroll;
+}
 </style>
 
 <script>
-  import ProjectManagerBinariesView from "./ProjectManagerBinariesView.svelte";
-  import ProjectManagerComponentsView from "./ProjectManagerComponentsView.svelte";
-  import ProjectManagerReadmeView from "./ProjectManagerReadmeView.svelte";
-  import ProjectManagerScriptsView from "./ProjectManagerScriptsView.svelte";
+    import ProjectManagerSelector from "./ProjectManagerSelector.svelte";
+
+
+  export let project;
 </script>
 
 <div class="vbox">
   <div class="title">OFRAK Project Manager</div>
   <div class="manager">
-    <div class="view">
-      Binaries
-      <div class="box">
-        <ProjectManagerBinariesView />
-      </div>
-    </div>
-    <div class="view">
-      Scripts
-      <div class="box">
-        <ProjectManagerScriptsView />
-      </div>
-    </div>
-    <div class="view">
-      Components
-      <div class="box">
-        <ProjectManagerComponentsView />
-      </div>
-    </div>
-    <div class="view">
-      Documentation
-      <div class="box">
-        <ProjectManagerReadmeView />
-      </div>
-    </div>
+    <ProjectManagerSelector title=Binaries projectElementOptions="{project.binaries}"/>
+    <ProjectManagerSelector title=Scripts projectElementOptions="{project.scripts}"/>
+    <ProjectManagerSelector title=Components projectElementOptions="{project.components}"/>
+  </div>
+</div>
+<div class="options-box">
+  <div class="options">
+      
   </div>
 </div>

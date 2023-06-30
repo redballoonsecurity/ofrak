@@ -342,7 +342,6 @@
             type="submit">Go!</button
           >
         </form>
-        <button on:click="{createNewProject}">Project Manager</button>
       {:else}
         No resources loaded yet.
       {/if}
@@ -350,6 +349,7 @@
       <p>Failed to get any pre-existing root resources!</p>
       <p>The back end server may be down.</p>
     {/await}
+    <button on:click="{createNewProject}">Project Manager</button>
 
     <Animals
       x="{mouseX}"

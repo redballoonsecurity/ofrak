@@ -70,6 +70,14 @@
     modifierView,
     bottomLeftPane;
 
+  let testProject = {
+    name: "Test Project",
+    binaries: ["example_1", "example_2"],
+    scripts: ["example_1.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_2.py", "example_3.py"],
+    components: [],
+    readme: "This is the Readme\nIt looks like this"
+  }
+
   // TODO: Move to settings
   let riddleAnswered = JSON.parse(window.localStorage.getItem("riddleSolved"));
   if (riddleAnswered === null || riddleAnswered === undefined) {
@@ -254,7 +262,7 @@ Answer by running riddle.answer('your answer here') from the console.`);
     </div>
   {/if}
 {:else if showProjectManager}
-  <ProjectManagerView />
+  <ProjectManagerView project="{testProject}"/>
 {:else}
   <StartView
     bind:rootResourceLoadPromise="{rootResourceLoadPromise}"
