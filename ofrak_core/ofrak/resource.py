@@ -267,7 +267,7 @@ class Resource:
     async def search_data(self, query, start=None, end=None, max_matches=None):
         """
         Search for some data in this resource. The query may be a regex pattern (a return value
-        of `re.compile`). If the query is a regex pattern, returns a list of pairs with both the
+        of `re.compile`). If the query is a regex pattern, returns a tuple of pairs with both the
         offset of the match and the contents of the match itself. If the query is plain bytes, a
         list of only the match offsets are returned.
 
@@ -275,7 +275,7 @@ class Resource:
         :param start: Start offset in the data model to begin searching
         :param end: End offset in the data model to stop searching
 
-        :return: A list of offsets matching a plain bytes query, or a list of (offset, match) pairs
+        :return: A tuple of offsets matching a plain bytes query, or a list of (offset, match) pairs
         for a regex pattern query
         """
         return await self._data_service.search(self.get_data_id(), query, start, end, max_matches)

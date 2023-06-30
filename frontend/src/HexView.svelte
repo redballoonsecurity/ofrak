@@ -230,13 +230,13 @@
       onDoubleClick: () => {},
       title: undefined,
     };
-    if (childRanges === undefined) {
+    if (!childRanges) {
       return info;
     }
 
     // Binary search for child ranges this byte overlaps with
     let childRange = binarySearchRanges(T, childRanges);
-    if (childRange !== null) {
+    if (childRange) {
       info.foreground = "var(--main-bg-color)";
       info.background = childRange.color;
       info.cursor = "pointer";
@@ -272,9 +272,8 @@
     const localDataSearchResults = dataSearchResults;
 
     if (
-      localDataSearchResults.matches !== undefined &&
-      localDataSearchResults.matches.length > 0 &&
-      localDataSearchResults.index !== undefined
+      localDataSearchResults.matches?.length > 0 &&
+      (localDataSearchResults.index || localDataSearchResults.index === 0)
     ) {
       dataLenPromise.then((dataLength) => {
         $scrollY.top =
