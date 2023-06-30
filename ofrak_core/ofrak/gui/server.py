@@ -995,11 +995,12 @@ class AiohttpOFRAKServer:
         if mode == "String":
             query = raw_query.encode("utf-8")
 
-            if case_ignore:
+            if regex and case_ignore:
                 query = re.compile(query, re.IGNORECASE)
-                regex = True
             elif regex:
                 query = re.compile(query)
+            elif case_ignore:
+                query = re.compile(re.escape(query), re.IGNORECASE)
 
         elif mode == "Bytes":
             if regex:
@@ -1011,10 +1012,11 @@ class AiohttpOFRAKServer:
 
         results = await resource.search_data(query)
 
-        if regex:
-            results = [(offset, len(match)) for offset, match in results]
-        else:
+        if isinstance(query, bytes):
             results = [(offset, len(query)) for offset in results]
+        else:
+            # final search query was regex pattern, matches were also returned
+            results = [(offset, len(match)) for offset, match in results]
 
         return json_response(results)
 

@@ -197,7 +197,7 @@
   {#if searchOptions.searchType == "String"}
     <div class="optionbar">
       <Checkbox
-        checked="{searchOptions.caseIgnore || searchOptions.regex}"
+        checked="{false}"
         bind:value="{searchOptions.regex}"
         leftbox="{true}"
       >
