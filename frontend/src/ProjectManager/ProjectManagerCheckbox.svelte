@@ -1,15 +1,16 @@
 <script>
   import Checkbox from "../Checkbox.svelte";
   export let option, selection, focus;
-  function onCheck() {
-    focus = option;
-    selection = option;
+  let selected;
+  
+  $: focus = selection;
+  $: if (selected) {
+    selection = option
   }
-  $: selected = selection === option;
 </script>
 
 <div>
-  <Checkbox onselect="{onCheck}" bind:checked="{selected}" leftbox="{true}"
+  <Checkbox checked="{selection===option}" bind:value="{selected}" leftbox="{true}"
     >{option}</Checkbox
   >
 </div>
