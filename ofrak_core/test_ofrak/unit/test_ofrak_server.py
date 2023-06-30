@@ -924,7 +924,7 @@ async def test_search_string(ofrak_client, hello_world_elf):
     assert resp_body == ["00000001"]
     resp = await ofrak_client.post(
         f"/{resource_id}/search_for_string",
-        json={"search_query": "He[l]{2}o", "case_ignore": False, "regex": True},
+        json={"search_query": "HE[l]{2}O", "case_ignore": False, "regex": True},
     )
     resp_body = await resp.json()
     assert resp.status == 200

@@ -753,12 +753,13 @@ class AiohttpOFRAKServer:
         case_ignore = body["case_ignore"]
         if not isinstance(string_query_param, str):
             raise ValueError("Invalid search query.")
-        string_query: Union[bytes, re.Pattern[bytes]] = b""
+        string_query: Union[bytes, re.Pattern[bytes]] = string_query_param.encode()
         try:
             if case_ignore:
                 if not regex:
-                    string_query = re.escape(string_query_param.encode())
-                string_query = re.compile(string_query_param.encode(), re.IGNORECASE)
+                    string_query = re.compile(re.escape(string_query_param.encode()), re.IGNORECASE)
+                else:
+                    string_query = re.compile(string_query_param.encode(), re.IGNORECASE)
             elif regex:
                 string_query = re.compile(string_query_param.encode())
         except re.error:
