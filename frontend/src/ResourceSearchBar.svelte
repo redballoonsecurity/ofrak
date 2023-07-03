@@ -2,8 +2,7 @@
   select {
     background-color: var(--main-bg-color);
     color: inherit;
-    border: 1px solid;
-    border-color: inherit;
+    border: 1px solid var(--main-fg-color);
     border-radius: 0;
     font-size: inherit;
     font-family: var(--font);
@@ -13,8 +12,7 @@
   input {
     background: inherit;
     color: inherit;
-    border: 1px solid;
-    border-bottom: 1px solid var(--main-fg-color);
+    border: 1px solid var(--main-fg-color);
     flex: 1;
     text-indent: 0.5em;
   }
@@ -22,6 +20,7 @@
   form {
     display: inherit;
     flex: 1;
+    margin-left: -1px;
   }
 
   label {
@@ -42,13 +41,13 @@
 
   .resultwidgets {
     display: flex;
+    margin-left: -1px;
   }
 
   .resultcount {
     margin-top: 0;
     margin-bottom: 0;
-    border-style: solid;
-    border-width: thin;
+    border: 1px solid var(--main-fg-color);
     width: 100%;
     padding-left: 1em;
     padding-right: 1em;
@@ -57,15 +56,16 @@
 
   button {
     height: 100%;
+    margin-left: -1px;
   }
 
   .optionbar {
     padding-bottom: 0;
     padding-top: 0.25em;
-    border-style: solid;
-    border-width: thin;
+    border: 1px solid var(--main-fg-color);
     padding-left: 1em;
     padding-right: 1em;
+    margin-left: -1px;
   }
 </style>
 
@@ -212,17 +212,15 @@
       </Checkbox>
     </div>
   {/if}
-  {#if showResultsWidgets}
+  {#if showResultsWidgets && searchResults.matches}
     <div class="resultwidgets">
-      {#if searchResults.matches}
-        {#if searchResults.matches.length > 0}<p class="resultcount">
-            {searchResults.index + 1}/{searchResults.matches.length}
-          </p>
-          <button on:click="{nextMatch}">↓</button>
-          <button on:click="{prevMatch}">↑</button>
-        {:else}
-          <p class="resultcount">No match</p>
-        {/if}
+      {#if searchResults.matches.length > 0}<p class="resultcount">
+          {searchResults.index + 1}/{searchResults.matches.length}
+        </p>
+        <button on:click="{nextMatch}">↓</button>
+        <button on:click="{prevMatch}">↑</button>
+      {:else}
+        <p class="resultcount">No match</p>
       {/if}
     </div>
   {/if}
