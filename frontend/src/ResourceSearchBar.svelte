@@ -13,19 +13,19 @@
     background: inherit;
     color: inherit;
     border: 1px solid var(--main-fg-color);
-    flex: 1;
+    flex-grow: 1;
     text-indent: 0.5em;
   }
 
   form {
-    display: inherit;
-    flex: 1;
+    flex-grow: 1;
+    display: flex;
     margin-left: -1px;
   }
 
   label {
-    display: inherit;
-    flex: 1;
+    flex-grow: 1;
+    display: flex;
   }
 
   .searchbar {
@@ -217,8 +217,8 @@
       {#if searchResults.matches.length > 0}<p class="resultcount">
           {searchResults.index + 1}/{searchResults.matches.length}
         </p>
-        <button on:click="{nextMatch}">↓</button>
-        <button on:click="{prevMatch}">↑</button>
+        <button on:click="{nextMatch}">&#8595;</button>
+        <button on:click="{prevMatch}">&#8593;</button>
       {:else}
         <p class="resultcount">No match</p>
       {/if}
