@@ -1129,14 +1129,14 @@ async def test_search_data(ofrak_client: TestClient, hello_world_elf):
     create_body = await create_resp.json()
     resource_id = create_body["id"]
     resp = await ofrak_client.post(
-        f"/{resource_id}/search_data?mode=String",
+        f"/{resource_id}/search_data?type=String",
         json="Hello",
     )
     resp_body1 = await resp.json()
     assert resp.status == 200
     assert resp_body1 == [[1496, 5]]
     resp = await ofrak_client.post(
-        f"/{resource_id}/search_data?mode=Bytes",
+        f"/{resource_id}/search_data?type=Bytes",
         json="48656c6c6f",  # binascii.hexlify("Hello".encode("utf-8")).decode('ascii')
     )
     resp_body2 = await resp.json()
