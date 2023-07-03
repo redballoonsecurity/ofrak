@@ -9,6 +9,11 @@
     box-shadow: none;
   }
 
+  select:focus {
+    outline: none;
+    box-shadow: inset 0 -1px 0 var(--main-fg-color);
+  }
+
   input {
     background: inherit;
     color: inherit;
@@ -34,7 +39,6 @@
     flex-grow: 1;
     height: fit-content;
     width: 100%;
-    position: sticky;
     padding-bottom: 1em;
     min-height: 2.25em;
   }
