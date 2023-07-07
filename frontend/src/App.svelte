@@ -70,7 +70,7 @@
     modifierView,
     bottomLeftPane;
 
-  let testProject = {
+  let project = {
     name: "Test Project",
     binaries: ["example_1", "example_2"],
     scripts: [
@@ -315,7 +315,7 @@ Answer by running riddle.answer('your answer here') from the console.`);
     </div>
   {/if}
 {:else if showProjectManager}
-  <ProjectManagerView project="{testProject}" />
+  <ProjectManagerView project="{project}" />
 {:else}
   <StartView
     bind:rootResourceLoadPromise="{rootResourceLoadPromise}"
@@ -324,6 +324,7 @@ Answer by running riddle.answer('your answer here') from the console.`);
     bind:resources="{resources}"
     bind:rootResource="{rootResource}"
     bind:resourceNodeDataMap="{resourceNodeDataMap}"
+    bind:project="{project}"
   />
 {/if}
 
