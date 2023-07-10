@@ -985,7 +985,7 @@ class AiohttpOFRAKServer:
         body = await request.json()
         mode = body.get("type")
         regex = body.get("regex") == "true"
-        case_ignore = body.get("caseignore") == "true"
+        case_ignore = body.get("case_ignore") == "true"
         raw_query = body.get("search_query")
         if mode is None:
             mode = "String"
@@ -1007,9 +1007,10 @@ class AiohttpOFRAKServer:
 
         else:
             raise ValueError(f"Invalid query mode {mode}")
-
         results = await resource.search_data(query)
+        import ipdb
 
+        ipdb.set_trace()
         if isinstance(query, bytes):
             results = [(offset, len(query)) for offset in results]
         else:
