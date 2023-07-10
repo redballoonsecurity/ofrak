@@ -101,9 +101,9 @@ class GNU_PPCVLE_4_Toolchain(Abstract_GNU_Toolchain):
             self._compiler_flags.append("-msoft-float")
         self._assembler_flags.append("-mvle")
 
-    @property
+    @property  # pragma: no cover
     def segment_alignment(self) -> int:
-        return 4  # TODO: Check
+        return 4
 
     @property
     def name(self) -> str:
@@ -121,7 +121,7 @@ class GNU_PPCVLE_4_Toolchain(Abstract_GNU_Toolchain):
         # PPCVLE GNU 4 does not implement -march
         return None
 
-    @staticmethod
+    @staticmethod  # pragma: no cover
     def _ld_generate_rel_dyn_section(
         memory_region_name: str,
     ) -> str:
@@ -132,7 +132,7 @@ class GNU_PPCVLE_4_Toolchain(Abstract_GNU_Toolchain):
             f"    }} > {memory_region_name}"
         )
 
-    @staticmethod
+    @staticmethod  # pragma: no cover
     def _ld_generate_got_plt_section(
         memory_region_name: str,
     ) -> str:
@@ -143,7 +143,7 @@ class GNU_PPCVLE_4_Toolchain(Abstract_GNU_Toolchain):
             f"    }} > {memory_region_name}"
         )
 
-    def _ld_generate_got_region(self, vm_address, length):
+    def _ld_generate_got_region(self, vm_address, length):  # pragma: no cover
         region_name = '".got_mem"'
         perms_string = self._ld_perm2str(MemoryPermissions.R)
         return (
@@ -152,7 +152,7 @@ class GNU_PPCVLE_4_Toolchain(Abstract_GNU_Toolchain):
             region_name,
         )
 
-    def ld_generate_placeholder_reloc_sections(self):
+    def ld_generate_placeholder_reloc_sections(self):  # pragma: no cover
         regions, sections = super().ld_generate_placeholder_reloc_sections()
         (
             got_region,
