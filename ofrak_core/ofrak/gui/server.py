@@ -1008,9 +1008,6 @@ class AiohttpOFRAKServer:
         else:
             raise ValueError(f"Invalid query mode {mode}")
         results = await resource.search_data(query)
-        import ipdb
-
-        ipdb.set_trace()
         if isinstance(query, bytes):
             results = [(offset, len(query)) for offset in results]
         else:
