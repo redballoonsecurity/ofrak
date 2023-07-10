@@ -653,9 +653,7 @@ export class RemoteResource extends Resource {
       },
       body: JSON.stringify({
         search_query: query,
-        type: options.searchType,
-        regex: options.regex,
-        case_ignore: options.caseIgnore,
+        ...options,
       }),
     }).then(async (r) => {
       if (!r.ok) {
@@ -676,8 +674,7 @@ export class RemoteResource extends Resource {
       },
       body: JSON.stringify({
         search_query: searchQuery,
-        regex: options.regex,
-        case_ignore: options.caseIgnore,
+        ...options,
       }),
     }).then(async (r) => {
       if (!r.ok) {
@@ -698,7 +695,7 @@ export class RemoteResource extends Resource {
       },
       body: JSON.stringify({
         search_query: searchQuery,
-        regex: options.regex,
+        ...options,
       }),
     }).then(async (r) => {
       if (!r.ok) {

@@ -752,7 +752,7 @@ class AiohttpOFRAKServer:
         if string_query_param == "":
             return json_response(None)
         regex = body["regex"]
-        case_ignore = body["case_ignore"]
+        case_ignore = body["caseIgnore"]
         if not isinstance(string_query_param, str):
             raise ValueError("Invalid search query.")
         string_query: Union[bytes, re.Pattern[bytes]] = string_query_param.encode()
@@ -985,7 +985,7 @@ class AiohttpOFRAKServer:
         body = await request.json()
         mode = body.get("type")
         regex = body.get("regex") == "true"
-        case_ignore = body.get("case_ignore") == "true"
+        case_ignore = body.get("caseIgnore") == "true"
         raw_query = body.get("search_query")
         if mode is None:
             mode = "String"
