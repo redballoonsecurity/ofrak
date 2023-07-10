@@ -6,7 +6,6 @@ from enum import Enum
 import functools
 import itertools
 import logging
-import re
 
 import typing_inspect
 from typing_inspect import get_args
