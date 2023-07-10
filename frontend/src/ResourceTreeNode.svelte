@@ -230,7 +230,7 @@
   });
 </script>
 
-{#if searchFilter == null || searchFilter.includes(self_id)}
+{#if !searchFilter || searchFilter.includes(self_id)}
   {#await childrenPromise then children}
     {#if children?.length > 0}
       <button
@@ -278,7 +278,7 @@
     {#if !collapsed && children.length > 0}
       <ul>
         {#each children.slice(0, kiddoChunksize) as child, i}
-          {#if searchFilter == null || searchFilter.includes(child.get_id())}
+          {#if !searchFilter || searchFilter.includes(child.get_id())}
             <li>
               <div>
                 <svelte:self

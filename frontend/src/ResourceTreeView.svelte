@@ -59,6 +59,9 @@
   let searchResults = {};
 
   async function searchTreeForData(searchQuery, options) {
+    if (searchQuery === "") {
+      searchFilter = null;
+    }
     if (options.searchType === "String") {
       searchFilter = await rootResource.search_for_string(
         searchQuery,

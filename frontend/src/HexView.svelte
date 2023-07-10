@@ -41,10 +41,10 @@
 <script>
   import Breadcrumb from "./Breadcrumb.svelte";
   import LoadingText from "./LoadingText.svelte";
+  import ResourceSearchBar from "./ResourceSearchBar.svelte";
 
   import { chunkList, buf2hex, hexToChar } from "./helpers.js";
   import { selectedResource, selected, settings } from "./stores.js";
-  import ResourceSearchBar from "./ResourceSearchBar.svelte";
 
   export let dataLenPromise, scrollY, resourceNodeDataMap, resources;
   let childRangesPromise = Promise.resolve(undefined);

@@ -82,7 +82,7 @@
     regex: false,
     caseIgnore: false,
   };
-  let searchTypes = ["String", "Bytes"];
+  const searchTypes = ["String", "Bytes"];
 
   export let search, searchResults, liveUpdate, showResultsWidgets;
 
@@ -126,8 +126,7 @@
       } catch (_) {
         errorMessage = err.message;
       }
-      console.log("Search Failed!");
-      console.log(errorMessage);
+      console.error("Search Failed!", errorMessage);
     }
     searchResults.index = 0;
     prevQuery = searchQuery;
