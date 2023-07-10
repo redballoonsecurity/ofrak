@@ -983,14 +983,13 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def search_data(self, request: Request) -> Response:
         resource: Resource = await self._get_resource_for_request(request)
-        mode = request.query.get("type")
-        regex = request.query.get("regex") == "true"
-        case_ignore = request.query.get("caseignore") == "true"
-
+        body = await request.json()
+        mode = body.get("type")
+        regex = body.get("regex") == "true"
+        case_ignore = body.get("caseignore") == "true"
+        raw_query = body.get("search_query")
         if mode is None:
             mode = "String"
-
-        raw_query = await request.json()
 
         if mode == "String":
             query = raw_query.encode("utf-8")

@@ -646,16 +646,18 @@ export class RemoteResource extends Resource {
   }
 
   async search_data(query, options) {
-    return await fetch(
-      `${this.uri}/search_data?type=${options.searchType}&regex=${options.regex}&caseignore=${options.caseIgnore}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(query),
-      }
-    ).then(async (r) => {
+    return await fetch(`${this.uri}/search_data`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        search_query: query,
+        type: options.searchType,
+        regex: options.regex,
+        case_ignore: options.caseIgnore,
+      }),
+    }).then(async (r) => {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }
@@ -663,7 +665,7 @@ export class RemoteResource extends Resource {
     });
   }
 
-  async search_for_string(searchQuery, regex, caseIgnore) {
+  async search_for_string(searchQuery, options) {
     if (searchQuery == null) {
       searchQuery = "";
     }
@@ -674,8 +676,8 @@ export class RemoteResource extends Resource {
       },
       body: JSON.stringify({
         search_query: searchQuery,
-        regex: regex,
-        case_ignore: caseIgnore,
+        regex: options.regex,
+        case_ignore: options.caseIgnore,
       }),
     }).then(async (r) => {
       if (!r.ok) {
@@ -685,7 +687,7 @@ export class RemoteResource extends Resource {
     });
   }
 
-  async search_for_bytes(searchQuery, regex) {
+  async search_for_bytes(searchQuery, options) {
     if (searchQuery == null) {
       searchQuery = "";
     }
@@ -696,7 +698,7 @@ export class RemoteResource extends Resource {
       },
       body: JSON.stringify({
         search_query: searchQuery,
-        regex: regex,
+        regex: options.regex,
       }),
     }).then(async (r) => {
       if (!r.ok) {

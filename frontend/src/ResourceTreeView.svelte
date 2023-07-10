@@ -63,11 +63,7 @@
       searchFilter = null;
     }
     if (options.searchType === "String") {
-      searchFilter = await rootResource.search_for_string(
-        searchQuery,
-        options.regex,
-        options.caseIgnore
-      );
+      searchFilter = await rootResource.search_for_string(searchQuery, options);
     } else if (options.searchType === "Bytes") {
       searchFilter = await rootResource.search_for_bytes(searchQuery, false);
     }
