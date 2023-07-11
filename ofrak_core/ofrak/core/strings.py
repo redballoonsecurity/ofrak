@@ -82,8 +82,7 @@ class StringFindReplaceModifier(Modifier[StringFindReplaceConfig]):
                 f"If you expect that the string to replace is null-terminated, then an overflow "
                 f"of one byte when config.null_terminate = True will not have any effect."
             )
-        offsets = [offset for offset in await resource.search_data(to_find)]
-        for offset in offsets:
+        for offset in await resource.search_data(to_find):
             await resource.run(BinaryPatchModifier, BinaryPatchConfig(offset, replace_with))
 
 
@@ -118,7 +117,7 @@ class AsciiStringAnalyzer(Analyzer[None, AsciiString]):
     outputs = (AsciiString,)
 
     async def analyze(self, resource: Resource, config: None) -> AsciiString:
-        raw_without_null_byte = (await resource.get_data())[:-1]
+        raw_without_null_byte = (await resource.get_data()).rstrip(b"\x00")
         return AsciiString(raw_without_null_byte.decode("ascii"))
 
 
@@ -146,7 +145,7 @@ class StringsUnpacker(Unpacker[None]):
 
         children = [
             resource.create_child_from_view(
-                AsciiString(string[:-1].decode("ascii")),
+                AsciiString(string.rstrip(b"\x00").decode("ascii")),
                 data_range=Range.from_size(offset, len(string)),
             )
             for offset, string in await resource.search_data(pattern)

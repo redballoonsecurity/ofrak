@@ -406,6 +406,17 @@ export class Resource {
     throw new NotImplementedError("add_flush_to_disk_to_script");
   }
 
+  async search_data(query, mode) {
+    throw new NotImplementedError("search_data");
+  }
+
+  async search_for_string() {
+    throw new NotImplementedError("search_for_string");
+  }
+
+  async search_for_bytes() {
+    throw new NotImplementedError("search_for_bytes");
+  }
   /***
    * Return the string representation of a comment, which includes its range as prefix if it
    * has one.

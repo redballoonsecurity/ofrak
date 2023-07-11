@@ -644,6 +644,66 @@ export class RemoteResource extends Resource {
     await this.update_script();
     return result;
   }
+
+  async search_data(query, options) {
+    return await fetch(`${this.uri}/search_data`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        search_query: query,
+        ...options,
+      }),
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return await r.json();
+    });
+  }
+
+  async search_for_string(searchQuery, options) {
+    if (searchQuery == null) {
+      searchQuery = "";
+    }
+    return await fetch(`${this.uri}/search_for_string`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        search_query: searchQuery,
+        ...options,
+      }),
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return await r.json();
+    });
+  }
+
+  async search_for_bytes(searchQuery, options) {
+    if (searchQuery == null) {
+      searchQuery = "";
+    }
+    return await fetch(`${this.uri}/search_for_bytes`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        search_query: searchQuery,
+        ...options,
+      }),
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return await r.json();
+    });
+  }
 }
 
 export function remote_models_to_resources(remote_models, resources) {

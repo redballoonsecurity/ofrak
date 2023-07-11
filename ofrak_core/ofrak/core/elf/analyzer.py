@@ -1,6 +1,5 @@
 import io
 import logging
-import re
 from typing import Optional, TypeVar
 
 from ofrak.component.analyzer import Analyzer
@@ -21,6 +20,7 @@ from ofrak.core.elf.model import (
     ElfRelaEntry,
     ElfDynamicEntry,
     ElfVirtualAddress,
+    SECTION_NAME_PATTERN,
 )
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.model.component_model import ComponentConfig
@@ -158,7 +158,6 @@ class ElfSegmentAnalyzer(Analyzer[None, ElfSegment]):
     outputs = (ElfSegment,)
 
     async def analyze(self, resource: Resource, config=None) -> ElfSegment:
-
         segment = await resource.view_as(ElfSegmentStructure)
         segment_header = await segment.get_header()
         return ElfSegment(
@@ -323,9 +322,9 @@ class ElfSectionNameAnalyzer(Analyzer[None, AttributesType[NamedProgramSection]]
         string_section = await elf_r.get_section_name_string_section()
         try:
             ((_, raw_section_name),) = await string_section.resource.search_data(
-                re.compile(b".[^\x00]+\x00"), start=section_header.sh_name, max_matches=1
+                SECTION_NAME_PATTERN, start=section_header.sh_name, max_matches=1
             )
-            section_name = raw_section_name[:-1].decode("ascii")
+            section_name = raw_section_name.rstrip(b"\x00").decode("ascii")
         except ValueError as e:
             LOGGER.info("String section is empty! Using '<no-strings>' as section name")
             section_name = "<no-strings>"  # This is what readelf returns in this situation
