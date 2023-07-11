@@ -8,9 +8,9 @@
 </style>
 
 <script>
-  export let focus, label, focusText;
+  export let focus, label, newFocus;
   function focusLabel() {
-    focus = focusText;
+    focus = newFocus;
   }
 </script>
 

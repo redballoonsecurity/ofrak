@@ -21,11 +21,19 @@
     height: 5vh;
     margin-top: 1em;
   }
+  .title {
+    padding-bottom: 0.5em;
+    text-align: center;
+    font-size: xx-large;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
 </style>
 
 <script>
   import Pane from "../Pane.svelte";
   import Split from "../Split.svelte";
+  import ProjectManagerFocusableLabel from "./ProjectManagerFocusableLabel.svelte";
   import ProjectManagerOptions from "./ProjectManagerOptions.svelte";
   import ProjectManagerSelector from "./ProjectManagerSelector.svelte";
 
@@ -39,18 +47,28 @@
 <Split vertical="{true}" percentOfFirstSplit="{70}">
   <Split percentOfFirstSplit="{50}" slot="first">
     <Pane slot="first">
+      <div class="title">
+        <ProjectManagerFocusableLabel
+          bind:focus="{focus}"
+          label="Binaries"
+          newFocus="Binaries"
+        />
+      </div>
       <ProjectManagerSelector
-        title="Binaries"
-        description="Select a binary for OFRAK to analyze."
         projectElementOptions="{project.binaries}"
         selection="{selectedBinary}"
         bind:focus="{focus}"
       />
     </Pane>
     <Pane slot="second">
+      <div class="title">
+        <ProjectManagerFocusableLabel
+          bind:focus="{focus}"
+          label="Scripts"
+          newFocus="Scripts"
+        />
+      </div>
       <ProjectManagerSelector
-        title="Scripts"
-        description="Select a script to analyze your binary with."
         projectElementOptions="{project.scripts}"
         selection="{selectedScript}"
         bind:focus="{focus}"

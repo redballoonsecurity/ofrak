@@ -22,19 +22,11 @@
 
 <script>
   import ProjectManagerCheckbox from "./ProjectManagerCheckbox.svelte";
-  import ProjectManagerFocusableLabel from "./ProjectManagerFocusableLabel.svelte";
 
-  export let title, projectElementOptions, selection, focus, description;
+  export let projectElementOptions, selection, focus;
 </script>
 
 <div class="hbox">
-  <div class="title">
-    <ProjectManagerFocusableLabel
-      bind:focus="{focus}"
-      label="{title}"
-      focusText="{description}"
-    />
-  </div>
   <div class="content">
     {#each projectElementOptions as projectOption}
       <div class="element">
