@@ -1130,11 +1130,46 @@ async def test_search_data(ofrak_client: TestClient, hello_world_elf):
     resource_id = create_body["id"]
     resp = await ofrak_client.post(
         f"/{resource_id}/search_data",
-        json={"search_query": "Hello", "type": "String"},
+        json={"search_query": "Hello", "type": "String", "regex": False, "caseIgnore": False},
     )
     resp_body1 = await resp.json()
     assert resp.status == 200
     assert resp_body1 == [[1496, 5]]
+    resp = await ofrak_client.post(
+        f"/{resource_id}/search_data",
+        json={"search_query": "H[a-z]llo", "type": "String", "regex": True, "caseIgnore": False},
+    )
+    resp_body1 = await resp.json()
+    assert resp.status == 200
+    assert resp_body1 == [[1496, 5]]
+    resp = await ofrak_client.post(
+        f"/{resource_id}/search_data",
+        json={"search_query": "hello", "type": "String", "regex": False, "caseIgnore": True},
+    )
+    resp_body1 = await resp.json()
+    assert resp.status == 200
+    assert resp_body1 == [[1496, 5]]
+    resp = await ofrak_client.post(
+        f"/{resource_id}/search_data",
+        json={"search_query": "hel[a-z]o", "type": "String", "regex": True, "caseIgnore": True},
+    )
+    resp_body1 = await resp.json()
+    assert resp.status == 200
+    assert resp_body1 == [[1496, 5]]
+    resp = await ofrak_client.post(
+        f"/{resource_id}/search_data",
+        json={"search_query": "hel[a-z]o", "type": "String", "regex": False, "caseIgnore": True},
+    )
+    resp_body1 = await resp.json()
+    assert resp.status == 200
+    assert resp_body1 == []
+    resp = await ofrak_client.post(
+        f"/{resource_id}/search_data",
+        json={"search_query": "hello", "type": "String", "regex": False, "caseIgnore": False},
+    )
+    resp_body1 = await resp.json()
+    assert resp.status == 200
+    assert resp_body1 == []
     resp = await ofrak_client.post(
         f"/{resource_id}/search_data",
         json={
