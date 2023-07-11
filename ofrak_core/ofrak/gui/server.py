@@ -983,7 +983,7 @@ class AiohttpOFRAKServer:
     async def search_data(self, request: Request) -> Response:
         resource: Resource = await self._get_resource_for_request(request)
         body = await request.json()
-        mode = body.get("type")
+        mode = body.get("searchType")
         regex = body.get("regex")
         case_ignore = body.get("caseIgnore")
         raw_query = body.get("search_query")
