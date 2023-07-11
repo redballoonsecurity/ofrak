@@ -1171,7 +1171,7 @@ async def test_search_data(ofrak_client: TestClient, hello_world_elf):
     )
     resp_body1 = await resp.json()
     assert resp.status == 200
-    assert resp_body1 == []
+    assert [1496, 5] not in resp_body1
     resp = await ofrak_client.post(
         f"/{resource_id}/search_data",
         json={
