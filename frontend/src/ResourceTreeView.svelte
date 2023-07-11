@@ -26,6 +26,10 @@
     overflow: auto;
   }
 
+  .resources {
+    flex-grow: 1;
+  }
+
   .treebox {
     flex-grow: 1;
     padding-left: 1em;
@@ -33,9 +37,16 @@
     white-space: nowrap;
     text-align: left;
   }
+
+  .searchbar {
+    flex-grow: 1;
+    padding-left: 1em;
+    padding-bottom: 0.5em;
+  }
 </style>
 
 <script>
+  import ResourceSearchBar from "./ResourceSearchBar.svelte";
   import ResourceTreeNode from "./ResourceTreeNode.svelte";
   import ResourceTreeToolbar from "./ResourceTreeToolbar.svelte";
 
@@ -43,6 +54,22 @@
     modifierView,
     bottomLeftPane,
     resourceNodeDataMap = {};
+
+  let searchFilter;
+  let searchResults = {};
+
+  async function searchTreeForData(searchQuery, options) {
+    if (searchQuery === "") {
+      searchFilter = null;
+    }
+    if (options.searchType === "String") {
+      searchFilter = await rootResource.search_for_string(searchQuery, options);
+    } else if (options.searchType === "Bytes") {
+      searchFilter = await rootResource.search_for_bytes(searchQuery, false);
+    }
+
+    return { matches: searchFilter, index: 0 };
+  }
 </script>
 
 <div class="hbox">
@@ -53,11 +80,21 @@
       bind:bottomLeftPane="{bottomLeftPane}"
     />
   </div>
-
-  <div class="treebox">
-    <ResourceTreeNode
-      rootResource="{rootResource}"
-      bind:resourceNodeDataMap="{resourceNodeDataMap}"
-    />
+  <div class="resources">
+    <div class="searchbar">
+      <ResourceSearchBar
+        search="{searchTreeForData}"
+        liveUpdate="{true}"
+        showResultsWidgets="{false}"
+        bind:searchResults="{searchResults}"
+      />
+    </div>
+    <div class="treebox">
+      <ResourceTreeNode
+        rootResource="{rootResource}"
+        bind:searchFilter="{searchFilter}"
+        bind:resourceNodeDataMap="{resourceNodeDataMap}"
+      />
+    </div>
   </div>
 </div>

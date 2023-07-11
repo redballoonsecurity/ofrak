@@ -209,7 +209,7 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
     async def search(self, data_id, query, start=None, end=None, max_matches=None):
         """
         Search for some data in one of the models. The query may be a regex pattern (a return value
-        of `re.compile`). If the query is a regex pattern, returns a list of pairs with both the
+        of `re.compile`). If the query is a regex pattern, returns a tuple of pairs with both the
         offset of the match and the contents of the match itself. If the query is plain bytes, a
         list of only the match offsets are returned.
 
@@ -219,7 +219,7 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         :param end: End offset in the data model to stop searching
         :param max_matches: Maximum number of matches to return
 
-        :return: A list of offsets matching a plain bytes query, or a list of (offset, match) pairs
+        :return: A tuple of offsets matching a plain bytes query, or a list of (offset, match) pairs
         for a regex pattern query
         """
         raise NotImplementedError()
