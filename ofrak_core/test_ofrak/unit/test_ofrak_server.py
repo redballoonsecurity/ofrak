@@ -1191,7 +1191,7 @@ async def test_search_data(ofrak_client: TestClient, hello_world_elf):
         f"/{resource_id}/search_data",
         json={
             "search_query": "48656c6c6f",
-            "type": "Bytes",
+            "searchType": "Bytes",
         },  # binascii.hexlify("Hello".encode("utf-8")).decode('ascii')
     )
     resp_body2 = await resp.json()
