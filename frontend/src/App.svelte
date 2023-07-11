@@ -4,7 +4,7 @@
   }
 
   .carousel {
-    margin-top: 0.1em;
+    margin-top: 1em;
   }
 
   .bottomleft {

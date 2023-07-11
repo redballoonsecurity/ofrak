@@ -3,17 +3,11 @@
     width: 100%;
     height: 100%;
   }
-  .options-box {
-    display: flex;
-    outline: solid 2px var(--main-fg-color);
-    border-radius: 1em;
-    height: 95%;
-    font-size: x-large;
-  }
   .options {
     display: flex;
     flex-direction: column;
     margin: 1em;
+    font-size: x-large;
   }
 </style>
 
@@ -22,11 +16,11 @@
 </script>
 
 <div class="hbox">
-  <div class="options-box">
-    <div class="options">
-      {#if focus}
-        {focus}
-      {/if}
-    </div>
+  <div class="options">
+    {#if focus}
+      {focus}
+    {:else}
+      Click anywhere to see its options.
+    {/if}
   </div>
 </div>

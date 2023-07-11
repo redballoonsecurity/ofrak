@@ -1,6 +1,6 @@
 <style>
   button {
-    border: 0px;
+    border: none;
     font-size: xx-large;
     font-weight: bold;
     text-transform: uppercase;

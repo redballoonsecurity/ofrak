@@ -11,22 +11,12 @@
     font-weight: bold;
     text-transform: uppercase;
   }
-  .content-box {
-    display: flex;
-    outline: solid 2px var(--main-fg-color);
-    border-radius: 1em;
-    width: 100%;
-    height: 95%;
-    font-size: x-large;
-    overflow: auto;
-    overflow-y: hidden;
-  }
   .content {
+    font-size: x-large;
     display: flex;
     flex-direction: column;
     width: 100%;
     overflow: auto;
-    overflow-y: scroll;
   }
 </style>
 
@@ -45,17 +35,15 @@
       focusText="{description}"
     />
   </div>
-  <div class="content-box">
-    <div class="content">
-      {#each projectElementOptions as projectOption}
-        <div class="element">
-          <ProjectManagerCheckbox
-            option="{projectOption}"
-            bind:selection="{selection}"
-            bind:focus="{focus}"
-          />
-        </div>
-      {/each}
-    </div>
+  <div class="content">
+    {#each projectElementOptions as projectOption}
+      <div class="element">
+        <ProjectManagerCheckbox
+          option="{projectOption}"
+          bind:selection="{selection}"
+          bind:focus="{focus}"
+        />
+      </div>
+    {/each}
   </div>
 </div>
