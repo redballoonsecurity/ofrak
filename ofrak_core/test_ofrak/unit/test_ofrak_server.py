@@ -1149,7 +1149,7 @@ async def test_search_data(ofrak_client: TestClient, hello_world_elf):
     resp_body1 = await resp.json()
     assert resp.status == 200
     assert len(resp_body1) >= len([[1496, 5]])
-    assert [1496] in resp_body1
+    assert [1496, 5] in resp_body1
     resp = await ofrak_client.post(
         f"/{resource_id}/search_data",
         json={"search_query": "hel[a-z]o", "type": "String", "regex": True, "caseIgnore": True},
@@ -1157,7 +1157,7 @@ async def test_search_data(ofrak_client: TestClient, hello_world_elf):
     resp_body1 = await resp.json()
     assert resp.status == 200
     assert len(resp_body1) >= len([[1496, 5]])
-    assert [1496] in resp_body1
+    assert [1496, 5] in resp_body1
     resp = await ofrak_client.post(
         f"/{resource_id}/search_data",
         json={"search_query": "hel[a-z]o", "type": "String", "regex": False, "caseIgnore": True},
