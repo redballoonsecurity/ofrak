@@ -984,8 +984,8 @@ class AiohttpOFRAKServer:
         resource: Resource = await self._get_resource_for_request(request)
         body = await request.json()
         mode = body.get("type")
-        regex = body.get("regex") == "true"
-        case_ignore = body.get("caseIgnore") == "true"
+        regex = body.get("regex")
+        case_ignore = body.get("caseIgnore")
         raw_query = body.get("search_query")
         if mode is None:
             mode = "String"
