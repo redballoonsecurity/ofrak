@@ -24,6 +24,9 @@ from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.range import Range
 
 
+SECTION_NAME_PATTERN = re.compile(b"[^\x00]*\x00")
+
+
 ##################################################################################
 #                           ELF BASIC HEADER
 ##################################################################################
@@ -514,9 +517,9 @@ class ElfSymbol(ElfSymbolStructure):
         elf = await self.resource.get_only_ancestor_as_view(Elf, ResourceFilter.with_tags(Elf))
         string_section = await elf.get_string_section()
         ((_, raw_symbol_name),) = await string_section.resource.search_data(
-            re.compile(b".[^\x00]+\x00"), start=self.st_name, max_matches=1
+            SECTION_NAME_PATTERN, start=self.st_name, max_matches=1
         )
-        return raw_symbol_name[:-1].decode("ascii")
+        return raw_symbol_name.rstrip(b"\x00").decode("ascii")
 
     @index
     def SymbolValue(self) -> int:

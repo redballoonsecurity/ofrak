@@ -1,9 +1,9 @@
 import configparser
-import math
 import os
-import platform
 from multiprocessing import Pool, cpu_count
 from typing import Optional, Dict, Mapping, Tuple
+
+import math
 
 from ofrak_patch_maker.toolchain.model import BinFileType, Segment
 from ofrak_type.error import NotFoundError
@@ -26,31 +26,20 @@ def get_file_format(path):
 
 def get_repository_config(section: str, key: Optional[str] = None):
     """
-    Find config file and values. Look in user's `~/etc` directory followed by `/etc`.
+    Get config values from toolchain.conf.
 
     :param section: section name in config file
     :param key: key in `config[section]`
 
     :raises SystemExit: If `config[section]` or `config[section][key]` not found.
-    :raises KeyError: If the `$HOME` environment variable is not found.
     :return Union[str, List[Tuple[str, str]]]: the result of ``config.get(section, key)`` or
         ``config.items(section)``
     """
 
     config = configparser.RawConfigParser()
     config_name = "toolchain.conf"
-    if platform.system().find("CYGWIN") > -1 or platform.system().find("Windows") > -1:
-        config_root = "/winetc"
-    else:
-        config_root = "/etc"
     local_config = os.path.join(os.path.dirname(__file__), os.path.pardir)
-    config_paths = [config_root, local_config]
-    try:
-        local_etc = os.path.join(os.environ["HOME"], "etc")
-        config_paths = [local_etc] + config_paths
-    except KeyError:
-        print("unable to find home directory")
-
+    config_paths = [local_config]
     error_by_config_file: Dict[str, Exception] = dict()
     for p in config_paths:
         conf = os.path.join(p, config_name)

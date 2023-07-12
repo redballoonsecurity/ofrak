@@ -104,7 +104,7 @@ class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProjec
             with open(full_fname, "wb") as f:
                 f.write(data)
 
-        ghidra_project = f"{GHIDRA_REPOSITORY_HOST}:{GHIDRA_REPOSITORY_PORT}/ofrak"
+        ghidra_project = f"ghidra://{GHIDRA_REPOSITORY_HOST}:{GHIDRA_REPOSITORY_PORT}/ofrak"
 
         program_name = await self._do_ghidra_import(ghidra_project, full_fname)
         await self._do_ghidra_analyze_and_serve(
@@ -114,7 +114,7 @@ class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProjec
         if tmp_dir:
             tmp_dir.cleanup()
 
-        return GhidraProject(ghidra_project, f"{GHIDRA_SERVER_HOST}:{GHIDRA_SERVER_PORT}")
+        return GhidraProject(ghidra_project, f"http://{GHIDRA_SERVER_HOST}:{GHIDRA_SERVER_PORT}")
 
     async def _do_ghidra_import(self, ghidra_project: str, full_fname: str):
         args = [
@@ -187,7 +187,7 @@ class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProjec
         if skip_analysis:
             args.append("-noanalysis")
 
-        args.extend(["-scriptPath", "'" + (";".join(self._script_directories)) + "'"])
+        args.extend(["-scriptPath", (";".join(self._script_directories))])
 
         args.extend(["-postScript", "AnalysisServer.java"])
         args.extend(self._build_ghidra_server_args())

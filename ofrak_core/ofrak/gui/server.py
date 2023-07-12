@@ -1,5 +1,7 @@
 import asyncio
+import binascii
 import dataclasses
+import re
 from enum import Enum
 import functools
 import itertools
@@ -181,6 +183,8 @@ class AiohttpOFRAKServer:
                 web.post("/{resource_id}/add_comment", self.add_comment),
                 web.post("/{resource_id}/delete_comment", self.delete_comment),
                 web.post("/{resource_id}/search_for_vaddr", self.search_for_vaddr),
+                web.post("/{resource_id}/search_for_string", self.search_for_string),
+                web.post("/{resource_id}/search_for_bytes", self.search_for_bytes),
                 web.post("/{resource_id}/add_tag", self.add_tag),
                 web.post(
                     "/{resource_id}/add_flush_to_disk_to_script", self.add_flush_to_disk_to_script
@@ -196,6 +200,7 @@ class AiohttpOFRAKServer:
                 web.post(
                     "/{resource_id}/get_tags_and_num_components", self.get_tags_and_num_components
                 ),
+                web.post("/{resource_id}/search_data", self.search_data),
                 web.get("/", self.get_static_files),
                 web.static(
                     "/",
@@ -740,6 +745,64 @@ class AiohttpOFRAKServer:
             return json_response([])
 
     @exceptions_to_http(SerializedError)
+    async def search_for_string(self, request: Request):
+        resource = await self._get_resource_for_request(request)
+        body = await request.json()
+        string_query_param = body["search_query"]
+        if string_query_param == "":
+            return json_response(None)
+        regex = body["regex"]
+        case_ignore = body["caseIgnore"]
+        if not isinstance(string_query_param, str):
+            raise ValueError("Invalid search query.")
+        string_query: Union[bytes, re.Pattern[bytes]] = string_query_param.encode()
+        try:
+            if case_ignore:
+                if not regex:
+                    string_query = re.compile(re.escape(string_query_param.encode()), re.IGNORECASE)
+                else:
+                    string_query = re.compile(string_query_param.encode(), re.IGNORECASE)
+            elif regex:
+                string_query = re.compile(string_query_param.encode())
+        except re.error:
+            logging.exception("Bad regex expression in search")
+        offsets = await resource.search_data(string_query)
+        found_resources = []
+        if len(offsets) > 0:
+            found_resources.append(resource.get_id().hex())
+        for child in await resource.get_descendants():
+            if child.get_data_id() is None:
+                continue
+            offsets = await child.search_data(string_query)
+            if len(offsets) > 0:
+                found_resources.append(child.get_id().hex())
+                for ancestor in await child.get_ancestors():
+                    found_resources.append(ancestor.get_id().hex())
+
+        return json_response(found_resources)
+
+    @exceptions_to_http(SerializedError)
+    async def search_for_bytes(self, request: Request):
+        resource = await self._get_resource_for_request(request)
+        body = await request.json()
+        bytes_query_request = body["search_query"]
+        if bytes_query_request == "":
+            return json_response(None)
+        bytes_query = bytes.fromhex(re.sub(r"[^0-9a-fA-F]+", "", bytes_query_request))
+        offsets = await resource.search_data(bytes_query)
+        found_resources = []
+        if len(offsets) > 0:
+            found_resources.append(resource.get_id().hex())
+        for child in await resource.get_descendants():
+            offsets = await child.search_data(bytes_query)
+            if len(offsets) > 0:
+                found_resources.append(child.get_id().hex())
+                for ancestor in await child.get_ancestors():
+                    found_resources.append(ancestor.get_id().hex())
+
+        return json_response(found_resources)
+
+    @exceptions_to_http(SerializedError)
     async def add_tag(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         tag = self._serializer.from_pjson(await request.json(), ResourceTag)
@@ -915,6 +978,43 @@ class AiohttpOFRAKServer:
             if "object" in resource_tag:
                 all_resource_tags_l.remove(resource_tag)
         return json_response(all_resource_tags_l)
+
+    @exceptions_to_http(SerializedError)
+    async def search_data(self, request: Request) -> Response:
+        resource: Resource = await self._get_resource_for_request(request)
+        body = await request.json()
+        mode = body.get("searchType")
+        regex = body.get("regex")
+        case_ignore = body.get("caseIgnore")
+        raw_query = body.get("search_query")
+        if mode is None:
+            mode = "String"
+
+        if mode == "String":
+            query = raw_query.encode("utf-8")
+
+            if regex and case_ignore:
+                query = re.compile(query, re.IGNORECASE)
+            elif regex:
+                query = re.compile(query)
+            elif case_ignore:
+                query = re.compile(re.escape(query), re.IGNORECASE)
+
+        elif mode == "Bytes":
+            if regex:
+                raise NotImplementedError("regex for bytes not yet supported")
+            query = binascii.unhexlify(raw_query.replace(" ", ""))
+
+        else:
+            raise ValueError(f"Invalid query mode {mode}")
+        results = await resource.search_data(query)
+        if isinstance(query, bytes):
+            results = [(offset, len(query)) for offset in results]
+        else:
+            # final search query was regex pattern, matches were also returned
+            results = [(offset, len(match)) for offset, match in results]
+
+        return json_response(results)
 
     def _construct_field_response(self, obj):
         if dataclasses.is_dataclass(obj):
