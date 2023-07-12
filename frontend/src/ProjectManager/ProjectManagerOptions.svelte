@@ -17,8 +17,10 @@
 
 <div class="hbox">
   <div class="options">
-    {#if focus}
-      {focus}
+    {#if focus && typeof focus == "string"}
+      "{focus}"
+    {:else if focus}
+      <svelte:component this="{focus}" />
     {:else}
       Click anywhere to see its options.
     {/if}

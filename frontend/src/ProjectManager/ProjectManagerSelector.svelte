@@ -4,13 +4,6 @@
     padding: 2em;
     overflow-y: hidden;
   }
-  .title {
-    padding-bottom: 0.5em;
-    text-align: center;
-    font-size: xx-large;
-    font-weight: bold;
-    text-transform: uppercase;
-  }
   .content {
     font-size: x-large;
     display: flex;

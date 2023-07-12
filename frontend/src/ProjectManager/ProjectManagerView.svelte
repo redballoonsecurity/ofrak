@@ -33,6 +33,7 @@
 <script>
   import Pane from "../Pane.svelte";
   import Split from "../Split.svelte";
+  import ProjectManagerAddFileToProject from "./ProjectManagerAddFileToProject.svelte";
   import ProjectManagerFocusableLabel from "./ProjectManagerFocusableLabel.svelte";
   import ProjectManagerOptions from "./ProjectManagerOptions.svelte";
   import ProjectManagerSelector from "./ProjectManagerSelector.svelte";
@@ -51,7 +52,7 @@
         <ProjectManagerFocusableLabel
           bind:focus="{focus}"
           label="Binaries"
-          newFocus="Binaries"
+          newFocus="{ProjectManagerAddFileToProject}"
         />
       </div>
       <ProjectManagerSelector
