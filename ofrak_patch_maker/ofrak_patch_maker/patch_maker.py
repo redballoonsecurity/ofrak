@@ -64,6 +64,8 @@ class PatchMaker:
         base_symbols: Mapping[str, int] = None,
         build_dir: str = ".",
         logger: logging.Logger = logging.getLogger(),
+        *,
+        auto_add_linux_headers: bool = False,
     ):
         """
         The PatchMaker class is responsible for building and applying FEM instance binary data
@@ -93,6 +95,8 @@ class PatchMaker:
         :param base_symbols: maps symbol name to effective address for patches
         :param build_dir: output directory for build artifacts
         :param logger:
+        :param auto_add_linux_headers: If the toolchain is able to determine where to find the
+          linux headers for the target architecture, and they are installed, add them to platform_includes
         """
         self._platform_includes = platform_includes
         self.build_dir = build_dir
@@ -111,6 +115,26 @@ class PatchMaker:
             self._base_symbols.update(base_symbols)
 
         self.logger = logger
+
+        if auto_add_linux_headers:
+            if toolchain._linux_xcompile_headers is None:
+                self.logger.warning(
+                    f"Toolchain could not automatically determine cross-compile headers. It may "
+                    f"be necessary to supply these manually for successful compilation."
+                )
+            elif not os.path.exists(toolchain._linux_xcompile_headers):
+                self.logger.warning(
+                    f"Toolchain automatically determined cross-compile headers at: "
+                    f"{toolchain._linux_xcompile_headers}, but this path does not exist!"
+                )
+            else:
+                if not self._platform_includes:
+                    self._platform_includes = [toolchain._linux_xcompile_headers]
+                else:
+                    self._platform_includes = [
+                        *self._platform_includes,
+                        toolchain._linux_xcompile_headers,
+                    ]
 
     def _extract_symbols(self, path: str) -> Dict[str, Tuple[int, LinkableSymbolType]]:
         """

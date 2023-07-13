@@ -14,6 +14,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Fixed
 - Localize magic import ([#299](https://github.com/redballoonsecurity/ofrak/pull/299))
 
+### Added
+- Add PatchMaker option to auto-choose a linux cross-compiler header include path
+
 ## [4.0.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-patch-maker-v.3.0.0...ofrak-patch-maker-v.4.0.0)
 
 ### Changed
