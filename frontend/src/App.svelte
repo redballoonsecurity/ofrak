@@ -262,5 +262,5 @@ Answer by running riddle.answer('your answer here') from the console.`);
 {/if}
 
 <div class="bottomright">
-  <p><a href="https://ofrak.com" target="_blank" rel="noreferrer">v3.1.0</a></p>
+  <p><a href="https://ofrak.com" target="_blank" rel="noreferrer">v3.2.0rc0</a></p>
 </div>
