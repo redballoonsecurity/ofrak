@@ -197,7 +197,7 @@
 
   async function createNewProject() {
     let result = await fetch(
-      `${$settings.backendUrl}/create_new_project?id=${id}name=${f.name}`,
+      `${$settings.backendUrl}/create_new_project`,
       {
         method: "POST",
         headers: {
