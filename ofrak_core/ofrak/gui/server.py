@@ -208,6 +208,7 @@ class AiohttpOFRAKServer:
                 web.get("/get_project_by_id", self.get_project_by_id),
                 web.post("/add_binary_to_project", self.add_binary_to_project),
                 web.post("/add_script_to_project", self.add_script_to_project),
+                web.post("/open_project", self.open_project),
                 web.get("/", self.get_static_files),
                 web.static(
                     "/",
@@ -1026,20 +1027,21 @@ class AiohttpOFRAKServer:
     async def create_new_project(self, request: Request) -> Response:
         body = await request.json()
         name = body.get("name")
-        id = len(self.projects)
-        self.projects.append(OfrakProject(os.path.join("/tmp/", name), name, id, {}, []))
-        return json_response({"id": id})
+        project = OfrakProject.create(os.path.join("/tmp/", name), name)
+        self.projects.append(project)
+
+        return json_response({"id": project.project_id.hex()})
 
     async def get_projects(self, request: Request) -> Response:
         return json_response([project.id for project in self.projects])
 
     async def get_project_by_id(self, request: Request) -> Response:
-        id = int(request.query.get("id"))
+        id = request.query.get("id")
         project = self._get_project_by_id(id)
         return json_response(project.to_dict())
 
     async def add_binary_to_project(self, request: Request) -> Response:
-        id = int(request.query.get("id"))
+        id = request.query.get("id")
         name = request.query.get("name")
         data = await request.read()
         project = self._get_project_by_id(id)
@@ -1047,12 +1049,22 @@ class AiohttpOFRAKServer:
         return json_response([])
 
     async def add_script_to_project(self, request: Request) -> Response:
-        id = int(request.query.get("id"))
+        id = request.query.get("id")
         name = request.query.get("name")
         data = await request.read()
         project = self._get_project_by_id(id)
         project.add_script(name, data.decode())
         return json_response([])
+
+    async def open_project(self, request: Request) -> Response:
+        body = await request.json()
+        id = body["id"]
+        binary = body["binary"]
+        script = body["script"]
+        project = self._get_project_by_id(id)
+        resource = await project.init_adventure_binary(binary, script, self._ofrak_context)
+        self._job_ids[request.remote] = resource.get_job_id()
+        return json_response(self._serialize_resource(resource))
 
     def _get_project_by_name(self, name) -> OfrakProject:
         result = [project for project in self.projects if project.name == name]
@@ -1063,7 +1075,7 @@ class AiohttpOFRAKServer:
         return result[0]
 
     def _get_project_by_id(self, id) -> OfrakProject:
-        result = [project for project in self.projects if project.project_id == id]
+        result = [project for project in self.projects if project.project_id.hex() == id]
         if len(result) > 1:
             raise AttributeError("Project ID Collision")
         if len(result) == 0:

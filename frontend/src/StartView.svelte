@@ -115,8 +115,7 @@
     rootResource,
     resourceNodeDataMap,
     browsedFiles,
-    fileinput,
-    project;
+    fileinput;
   let dragging = false,
     selectedPreExistingRoot = null,
     preExistingRootsPromise = new Promise(() => {}),

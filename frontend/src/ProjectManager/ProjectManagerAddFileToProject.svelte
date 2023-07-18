@@ -2,7 +2,6 @@
   import FileBrowser from "../FileBrowser.svelte";
   import { selectedProject, settings } from "../stores";
   let files, f;
-  let dataPromise = new Promise(() => {});
 
   $: if (files) {
     f = files[0];

@@ -37,14 +37,37 @@
   import ProjectManagerFocusableLabel from "./ProjectManagerFocusableLabel.svelte";
   import ProjectManagerOptions from "./ProjectManagerOptions.svelte";
   import ProjectManagerSelector from "./ProjectManagerSelector.svelte";
-  import { selectedProject } from "../stores";
+  import { selectedProject, settings, selected } from "../stores";
+  import { remote_model_to_resource } from "../ofrak/remote_resource";
 
-  let focus, selectedBinary, selectedScript;
+  let focus,
+    selectedBinary,
+    selectedScript,
+    resources,
+    showRootResource,
+    showProjectManager;
 
-  function openProject() {}
+  async function openProject() {
+    let rootModel = await fetch(`${$settings.backendUrl}/open_project`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: $selectedProject.id,
+        binary: selectedBinary,
+        script: selectedScript,
+      }),
+    }).then((r) => r.json());
+    remote_model_to_resource(rootModel, resources);
+    $selected = rootModel.id;
+    showProjectManager = false;
+    showRootResource = true;
+  }
 </script>
 
 <div class="title">OFRAK Project Manager</div>
+<button on:click|stopPropagation="{openProject}">Run Project</button>
 <Split vertical="{true}" percentOfFirstSplit="{70}">
   <Split percentOfFirstSplit="{50}" slot="first">
     <Pane slot="first">
@@ -57,7 +80,7 @@
       </div>
       <ProjectManagerSelector
         projectElementOptions="{$selectedProject.binaries}"
-        selection="{selectedBinary}"
+        bind:selection="{selectedBinary}"
         bind:focus="{focus}"
       />
     </Pane>
@@ -71,7 +94,7 @@
       </div>
       <ProjectManagerSelector
         projectElementOptions="{$selectedProject.scripts}"
-        selection="{selectedScript}"
+        bind:selection="{selectedScript}"
         bind:focus="{focus}"
       />
     </Pane>

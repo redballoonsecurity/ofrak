@@ -153,13 +153,13 @@ class OfrakProject:
         return p
 
     async def init_adventure_binary(
-        self, binary_name: str, ofrak_context: OFRAKContext
+        self, binary_name: str, script_name: str, ofrak_context: OFRAKContext
     ) -> Resource:
         binary_metadata = self.binaries[binary_name]
         resource = await ofrak_context.create_root_resource_from_file(self.binary_path(binary_name))
 
         if binary_metadata.init_script:
-            with open(self.script_path(binary_metadata.init_script)) as f:
+            with open(self.script_path(script_name)) as f:
                 code = f.read()
             await resource.run(RunScriptModifier, RunScriptModifierConfig(code))
 
@@ -197,7 +197,7 @@ class OfrakProject:
     def to_dict(self):
         return {
             "name": self.name,
-            "id": self.project_id,
+            "id": self.project_id.hex(),
             "binaries": [binary for binary in self.binaries.keys()],
             "scripts": [script for script in self.scripts],
         }

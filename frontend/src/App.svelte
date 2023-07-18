@@ -256,7 +256,11 @@ Answer by running riddle.answer('your answer here') from the console.`);
     </div>
   {/if}
 {:else if showProjectManager}
-  <ProjectManagerView />
+  <ProjectManagerView
+    bind:resources="{resources}"
+    bind:showRootResource="{showRootResource}"
+    bind:showProjectManager="{showProjectManager}"
+  />
 {:else}
   <StartView
     bind:rootResourceLoadPromise="{rootResourceLoadPromise}"
