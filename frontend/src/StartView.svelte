@@ -115,7 +115,8 @@
     rootResource,
     resourceNodeDataMap,
     browsedFiles,
-    fileinput;
+    fileinput,
+    project;
   let dragging = false,
     selectedPreExistingRoot = null,
     preExistingRootsPromise = new Promise(() => {}),
@@ -196,24 +197,28 @@
   }
 
   async function createNewProject() {
-    let result = await fetch(
-      `${$settings.backendUrl}/create_new_project`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: "test",
-        }),
+    let result = await fetch(`${$settings.backendUrl}/create_new_project`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: "test",
+      }),
+    }).then((r) => {
+      if (!r.ok) {
+        throw Error(r.statusText);
       }
+      return r.json();
+    });
+    $selectedProject = await fetch(
+      `${$settings.backendUrl}/get_project_by_id?id=${result.id}`
     ).then((r) => {
       if (!r.ok) {
         throw Error(r.statusText);
       }
       return r.json();
     });
-    $selectedProject = result.id;
     console.log($selectedProject);
     showProjectManager = true;
   }

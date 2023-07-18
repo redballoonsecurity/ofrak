@@ -37,8 +37,8 @@
   import ProjectManagerFocusableLabel from "./ProjectManagerFocusableLabel.svelte";
   import ProjectManagerOptions from "./ProjectManagerOptions.svelte";
   import ProjectManagerSelector from "./ProjectManagerSelector.svelte";
+  import { selectedProject } from "../stores";
 
-  export let project;
   let focus, selectedBinary, selectedScript;
 
   function openProject() {}
@@ -56,7 +56,7 @@
         />
       </div>
       <ProjectManagerSelector
-        projectElementOptions="{project.binaries}"
+        projectElementOptions="{$selectedProject.binaries}"
         selection="{selectedBinary}"
         bind:focus="{focus}"
       />
@@ -70,7 +70,7 @@
         />
       </div>
       <ProjectManagerSelector
-        projectElementOptions="{project.scripts}"
+        projectElementOptions="{$selectedProject.scripts}"
         selection="{selectedScript}"
         bind:focus="{focus}"
       />

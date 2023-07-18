@@ -192,3 +192,11 @@ class OfrakProject:
         self.scripts.append(name)
         with open(self.script_path(name, check=False), "w+") as f:
             f.write(script_contents)
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "id": self.project_id,
+            "binaries": [binary for binary in self.binaries.keys()],
+            "scripts": [script for script in self.scripts],
+        }

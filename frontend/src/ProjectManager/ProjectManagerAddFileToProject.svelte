@@ -10,7 +10,7 @@
   }
   async function addBinaryToProject() {
     await fetch(
-      `${$settings.backendUrl}/add_binary_to_project?id=${$selectedProject}&name=${f.name}`,
+      `${$settings.backendUrl}/add_binary_to_project?id=${$selectedProject.id}&name=${f.name}`,
       {
         method: "POST",
         headers: {
@@ -22,6 +22,15 @@
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }
+      $selectedProject = await fetch(
+        `${$settings.backendUrl}/get_project_by_id?id=${$selectedProject.id}`
+      ).then((r) => {
+        if (!r.ok) {
+          throw Error(r.statusText);
+        }
+        return r.json();
+      });
+      console.log($selectedProject);
       return await r.json();
     });
   }
@@ -29,7 +38,7 @@
   async function addScriptToProject(name, data) {
     data = await dataPromise;
     return await fetch(
-      `${$settings.backendUrl}/add_script_to_project?id=${$selectedProject}&name=${f.name}`,
+      `${$settings.backendUrl}/add_script_to_project?id=${$selectedProject.id}&name=${f.name}`,
       {
         method: "POST",
         headers: {
@@ -41,6 +50,14 @@
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }
+      $selectedProject = await fetch(
+        `${$settings.backendUrl}/get_project_by_id?id=${$selectedProject.id}`
+      ).then((r) => {
+        if (!r.ok) {
+          throw Error(r.statusText);
+        }
+        return r.json();
+      });
       return await r.json();
     });
   }
