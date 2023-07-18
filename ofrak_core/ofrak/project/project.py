@@ -158,7 +158,7 @@ class OfrakProject:
         binary_metadata = self.binaries[binary_name]
         resource = await ofrak_context.create_root_resource_from_file(self.binary_path(binary_name))
 
-        if binary_metadata.init_script:
+        if script_name is not None:
             with open(self.script_path(script_name)) as f:
                 code = f.read()
             await resource.run(RunScriptModifier, RunScriptModifierConfig(code))

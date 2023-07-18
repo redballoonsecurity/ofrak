@@ -1024,22 +1024,26 @@ class AiohttpOFRAKServer:
 
         return json_response(results)
 
+    @exceptions_to_http(SerializedError)
     async def create_new_project(self, request: Request) -> Response:
         body = await request.json()
         name = body.get("name")
-        project = OfrakProject.create(os.path.join("/tmp/", name), name)
+        project = OfrakProject.create(name, os.path.join("/tmp/", name))
         self.projects.append(project)
 
         return json_response({"id": project.project_id.hex()})
 
+    @exceptions_to_http(SerializedError)
     async def get_projects(self, request: Request) -> Response:
         return json_response([project.id for project in self.projects])
 
+    @exceptions_to_http(SerializedError)
     async def get_project_by_id(self, request: Request) -> Response:
         id = request.query.get("id")
         project = self._get_project_by_id(id)
         return json_response(project.to_dict())
 
+    @exceptions_to_http(SerializedError)
     async def add_binary_to_project(self, request: Request) -> Response:
         id = request.query.get("id")
         name = request.query.get("name")
@@ -1048,6 +1052,7 @@ class AiohttpOFRAKServer:
         project.add_binary(name, data)
         return json_response([])
 
+    @exceptions_to_http(SerializedError)
     async def add_script_to_project(self, request: Request) -> Response:
         id = request.query.get("id")
         name = request.query.get("name")
@@ -1056,6 +1061,7 @@ class AiohttpOFRAKServer:
         project.add_script(name, data.decode())
         return json_response([])
 
+    @exceptions_to_http(SerializedError)
     async def open_project(self, request: Request) -> Response:
         body = await request.json()
         id = body["id"]
