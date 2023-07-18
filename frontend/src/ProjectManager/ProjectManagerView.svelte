@@ -66,7 +66,7 @@
         <ProjectManagerFocusableLabel
           bind:focus="{focus}"
           label="Scripts"
-          newFocus="Scripts"
+          newFocus="{ProjectManagerAddFileToProject}"
         />
       </div>
       <ProjectManagerSelector

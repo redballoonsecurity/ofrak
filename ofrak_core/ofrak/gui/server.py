@@ -6,6 +6,7 @@ from enum import Enum
 import functools
 import itertools
 import logging
+from ofrak.project.project import OfrakProject
 
 import typing_inspect
 from typing_inspect import get_args
@@ -147,6 +148,7 @@ class AiohttpOFRAKServer:
         self.component_context: ComponentContext = ClientComponentContext()
         self.script_builder: ScriptBuilder = ScriptBuilder()
         self.resource_builder: Dict[str, Tuple[Resource, memoryview]] = {}
+        self.projects: List[OfrakProject] = []
         self._app.add_routes(
             [
                 web.post("/create_root_resource", self.create_root_resource),
@@ -201,6 +203,10 @@ class AiohttpOFRAKServer:
                     "/{resource_id}/get_tags_and_num_components", self.get_tags_and_num_components
                 ),
                 web.post("/{resource_id}/search_data", self.search_data),
+                web.post("/create_new_project", self.create_new_project),
+                web.get("/get_projects", self.get_projects),
+                web.post("/add_binary_to_project", self.add_binary_to_project),
+                web.post("/add_script_to_project", self.add_script_to_project),
                 web.get("/", self.get_static_files),
                 web.static(
                     "/",
@@ -1015,6 +1021,47 @@ class AiohttpOFRAKServer:
             results = [(offset, len(match)) for offset, match in results]
 
         return json_response(results)
+
+    async def create_new_project(self, request: Request) -> Response:
+        body = await request.json()
+        name = body.get("name")
+        id = len(self.projects)
+        self.projects.append(OfrakProject(os.path.join("/tmp/", name), name, id, {}, []))
+        return json_response({"id": id})
+
+    async def get_projects(self, requests: Request) -> Response:
+        return json_response([project.id for project in self.projects])
+
+    async def add_binary_to_project(self, request: Request) -> Response:
+        id = int(request.query.get("id"))
+        name = request.query.get("name")
+        data = await request.read()
+        project = self._get_project_by_id(id)
+        project.add_binary(name, data)
+
+    async def add_script_to_project(self, request: Request) -> Response:
+        body = await request.json()
+        id = body["id"]
+        name = body["name"]
+        data = body["data"]
+        project = self._get_project_by_id(id)
+        project.add_script(name, data)
+
+    def _get_project_by_name(self, name) -> OfrakProject:
+        result = [project for project in self.projects if project.name == name]
+        if len(result) > 1:
+            raise AttributeError("Project Name Collision")
+        if len(result) == 0:
+            return None
+        return result[0]
+
+    def _get_project_by_id(self, id) -> OfrakProject:
+        result = [project for project in self.projects if project.project_id == id]
+        if len(result) > 1:
+            raise AttributeError("Project ID Collision")
+        if len(result) == 0:
+            raise ValueError(f"Project with ID {id} not found")
+        return result[0]
 
     def _construct_field_response(self, obj):
         if dataclasses.is_dataclass(obj):

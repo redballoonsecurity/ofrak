@@ -48,7 +48,6 @@ class OfrakProject:
 
     @staticmethod
     def create(name: str, path: str) -> "OfrakProject":
-
         new_project = OfrakProject(
             path,
             name,

@@ -102,7 +102,7 @@
   import TextDivider from "./TextDivider.svelte";
 
   import { animals } from "./animals.js";
-  import { selected, settings } from "./stores.js";
+  import { selected, settings, selectedProject } from "./stores.js";
   import { remote_model_to_resource } from "./ofrak/remote_resource";
 
   import { onMount } from "svelte";
@@ -195,8 +195,41 @@
     }
   }
 
-  function createNewProject() {
+  async function createNewProject() {
+    let result = await fetch(
+      `${$settings.backendUrl}/create_new_project?id=${id}name=${f.name}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: "test",
+        }),
+      }
+    ).then((r) => {
+      if (!r.ok) {
+        throw Error(r.statusText);
+      }
+      return r.json();
+    });
+    $selectedProject = result.id;
+    console.log($selectedProject);
     showProjectManager = true;
+  }
+
+  async function getProjects() {
+    return await this.fetch(`/get_projects`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return await r.json();
+    });
   }
 
   async function handleDrop(e) {
@@ -349,7 +382,9 @@
       <p>Failed to get any pre-existing root resources!</p>
       <p>The back end server may be down.</p>
     {/await}
-    <button on:click="{createNewProject}">Project Manager</button>
+    <button on:click|stopPropagation="{createNewProject}"
+      >Project Manager</button
+    >
 
     <Animals
       x="{mouseX}"

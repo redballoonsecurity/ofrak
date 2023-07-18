@@ -704,6 +704,72 @@ export class RemoteResource extends Resource {
       return await r.json();
     });
   }
+
+  async create_new_project() {
+    return await this.fetch("/create_new_project", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return await r.json();
+    });
+  }
+
+  async get_projects() {
+    return await this.fetch("/get_projects", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return await r.json();
+    });
+  }
+
+  async add_binary_to_project(id, name, data) {
+    return await this.fetch("/add_binary_to_project", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: id,
+        name: name,
+        data: data,
+      }),
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return await r.json();
+    });
+  }
+
+  async add_binary_to_project(id, name, data) {
+    return await this.fetch("/add_script_to_project", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: id,
+        name: name,
+        data: data,
+      }),
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return await r.json();
+    });
+  }
 }
 
 export function remote_models_to_resources(remote_models, resources) {
