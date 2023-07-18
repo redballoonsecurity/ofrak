@@ -40,10 +40,11 @@
   import { selectedProject, settings, selected } from "../stores";
   import { remote_model_to_resource } from "../ofrak/remote_resource";
 
-  let focus,
-    selectedBinary,
-    selectedScript,
-    resources,
+  let focus, selectedBinary, selectedScript;
+
+  export let resources,
+    rootResourceLoadPromise,
+    rootResource,
     showRootResource,
     showProjectManager;
 
@@ -59,11 +60,12 @@
         script: selectedScript,
       }),
     }).then((r) => r.json());
-    remote_model_to_resource(rootModel, resources);
+    rootResource = remote_model_to_resource(rootModel, resources);
     $selected = rootModel.id;
     showProjectManager = false;
     showRootResource = true;
   }
+  $: rootResourceLoadPromise = openProject;
 </script>
 
 <div class="title">OFRAK Project Manager</div>
