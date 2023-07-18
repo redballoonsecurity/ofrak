@@ -190,6 +190,7 @@ class OfrakProject:
 
     def add_script(self, name: str, script_contents: str):
         self.scripts.append(name)
+        os.makedirs(os.path.join(self.path, "scripts"), exist_ok=True)
         with open(self.script_path(name, check=False), "w+") as f:
             f.write(script_contents)
 

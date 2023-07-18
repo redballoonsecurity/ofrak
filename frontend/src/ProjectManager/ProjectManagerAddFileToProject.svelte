@@ -35,8 +35,7 @@
     });
   }
 
-  async function addScriptToProject(name, data) {
-    data = await dataPromise;
+  async function addScriptToProject() {
     return await fetch(
       `${$settings.backendUrl}/add_script_to_project?id=${$selectedProject.id}&name=${f.name}`,
       {

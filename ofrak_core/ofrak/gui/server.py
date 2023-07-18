@@ -1047,12 +1047,11 @@ class AiohttpOFRAKServer:
         return json_response([])
 
     async def add_script_to_project(self, request: Request) -> Response:
-        body = await request.json()
-        id = body["id"]
-        name = body["name"]
-        data = body["data"]
+        id = int(request.query.get("id"))
+        name = request.query.get("name")
+        data = await request.read()
         project = self._get_project_by_id(id)
-        project.add_script(name, data)
+        project.add_script(name, data.decode())
         return json_response([])
 
     def _get_project_by_name(self, name) -> OfrakProject:
