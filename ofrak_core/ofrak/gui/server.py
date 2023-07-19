@@ -6,6 +6,7 @@ from enum import Enum
 import functools
 import itertools
 import logging
+import shutil
 from ofrak.project.project import OfrakProject
 
 import typing_inspect
@@ -209,6 +210,7 @@ class AiohttpOFRAKServer:
                 web.post("/add_binary_to_project", self.add_binary_to_project),
                 web.post("/add_script_to_project", self.add_script_to_project),
                 web.post("/open_project", self.open_project),
+                web.post("/clone_project_from_git", self.clone_project_from_git),
                 web.get("/", self.get_static_files),
                 web.static(
                     "/",
@@ -1031,6 +1033,17 @@ class AiohttpOFRAKServer:
         project = OfrakProject.create(name, os.path.join("/tmp/", name))
         self.projects.append(project)
 
+        return json_response({"id": project.project_id.hex()})
+
+    @exceptions_to_http(SerializedError)
+    async def clone_project_from_git(self, request: Request) -> Response:
+        body = await request.json()
+        url = body.get("url")
+        path = os.path.join("/tmp/", url.split(":")[-1])
+        if os.path.exists(path):
+            shutil.rmtree(path)
+        project = OfrakProject.clone_from_git(url, path)
+        self.projects.append(project)
         return json_response({"id": project.project_id.hex()})
 
     @exceptions_to_http(SerializedError)

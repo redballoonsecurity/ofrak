@@ -121,7 +121,7 @@
     preExistingRootsPromise = new Promise(() => {}),
     preExistingProjectsPromise = new Promise(() => {}),
     tryHash = !!window.location.hash;
-  let mouseX, selectedAnimal, showProjectOptions, newProjectName;
+  let mouseX, selectedAnimal, showProjectOptions, newProjectName, gitUrl;
   const warnFileSize = 250 * 1024 * 1024;
   const fileChunkSize = warnFileSize;
 
@@ -219,22 +219,25 @@
       }
       return r.json();
     });
-    console.log($selectedProject);
     showProjectManager = true;
   }
 
-  async function getProjects() {
-    return await this.fetch(`/get_projects`, {
-      method: "GET",
+  async function cloneProjectFromGit() {
+    let result = await fetch(`${$settings.backendUrl}/clone_project_from_git`, {
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-    }).then(async (r) => {
+      body: JSON.stringify({
+        url: gitUrl,
+      }),
+    }).then((r) => {
       if (!r.ok) {
-        throw Error(JSON.stringify(await r.json(), undefined, 2));
+        throw Error(r.statusText);
       }
-      return await r.json();
+      return r.json();
     });
+    showProjectManager = true;
   }
 
   async function handleDrop(e) {
@@ -414,6 +417,15 @@
           }}">Open Existing Project</button
         >
       {/await}
+      <input
+        on:click|stopPropagation
+        type="text"
+        bind:value="{gitUrl}"
+        placeholder="Git Url"
+      />
+      <button on:click|stopPropagation="{cloneProjectFromGit}"
+        >Clone Project From Git</button
+      >
     {/if}
     <button
       on:click|stopPropagation="{(e) => {
