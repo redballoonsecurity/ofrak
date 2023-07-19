@@ -48,8 +48,7 @@
     padding-bottom: 0.5em;
     padding-left: 1em;
     padding-right: 1em;
-    margin-left: 0.5em;
-    margin-right: 0.5em;
+    margin: 0.5em;
     font-size: inherit;
     font-family: var(--font);
     box-shadow: none;
@@ -92,6 +91,21 @@
 
   .clickable {
     cursor: pointer;
+  }
+
+  .project-options {
+    display: flex;
+    flex-direction: row;
+  }
+
+  .project-input {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .project {
+    display: flex;
+    flex-direction: column;
   }
 </style>
 
@@ -393,46 +407,61 @@
       <p>Failed to get any pre-existing root resources!</p>
       <p>The back end server may be down.</p>
     {/await}
-    {#if showProjectOptions}
-      <input
-        on:click|stopPropagation
-        type="text"
-        bind:value="{newProjectName}"
-        placeholder="Project Name"
-      />
-      <button on:click|stopPropagation="{createNewProject}"
-        >Create New Project</button
-      >
-      {#await preExistingProjectsPromise then projects}
-        <select on:click|stopPropagation bind:value="{$selectedProject}">
-          {#each projects as project}
-            <option value="{project}">
-              {project.name}
-            </option>
-          {/each}
-        </select>
+    <div class="project">
+      {#if showProjectOptions}
+        <div class="project-options">
+          <div class="project-input">
+            <input
+              on:click|stopPropagation
+              type="text"
+              bind:value="{newProjectName}"
+              placeholder="Project Name"
+            />
+            <button on:click|stopPropagation="{createNewProject}"
+              >Create New Project</button
+            >
+          </div>
+          <div class="project-input">
+            {#await preExistingProjectsPromise then projects}
+              <select on:click|stopPropagation bind:value="{$selectedProject}">
+                {#each projects as project}
+                  <option value="{project}">
+                    {project.name}
+                  </option>
+                {/each}
+              </select>
+              <button
+                on:click|stopPropagation="{(e) => {
+                  showProjectManager = true;
+                }}">Open Existing Project</button
+              >
+            {/await}
+          </div>
+          <div class="project-input">
+            <input
+              on:click|stopPropagation
+              type="text"
+              bind:value="{gitUrl}"
+              placeholder="Git Url"
+            />
+            <button on:click|stopPropagation="{cloneProjectFromGit}"
+              >Clone Project From Git</button
+            >
+          </div>
+        </div>
         <button
           on:click|stopPropagation="{(e) => {
-            showProjectManager = true;
-          }}">Open Existing Project</button
+            showProjectOptions = false;
+          }}">Hide Project Options</button
         >
-      {/await}
-      <input
-        on:click|stopPropagation
-        type="text"
-        bind:value="{gitUrl}"
-        placeholder="Git Url"
-      />
-      <button on:click|stopPropagation="{cloneProjectFromGit}"
-        >Clone Project From Git</button
-      >
-    {/if}
-    <button
-      on:click|stopPropagation="{(e) => {
-        showProjectOptions = true;
-      }}">Project Options</button
-    >
-
+      {:else}
+        <button
+          on:click|stopPropagation="{(e) => {
+            showProjectOptions = true;
+          }}">Show Project Options</button
+        >
+      {/if}
+    </div>
     <Animals
       x="{mouseX}"
       visible="{true}"
