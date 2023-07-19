@@ -119,8 +119,9 @@
   let dragging = false,
     selectedPreExistingRoot = null,
     preExistingRootsPromise = new Promise(() => {}),
+    preExistingProjectsPromise = new Promise(() => {}),
     tryHash = !!window.location.hash;
-  let mouseX, selectedAnimal;
+  let mouseX, selectedAnimal, showProjectOptions, newProjectName;
   const warnFileSize = 250 * 1024 * 1024;
   const fileChunkSize = warnFileSize;
 
@@ -202,7 +203,7 @@
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        name: "test",
+        name: newProjectName,
       }),
     }).then((r) => {
       if (!r.ok) {
@@ -312,6 +313,9 @@
     preExistingRootsPromise = await fetch(
       `${$settings.backendUrl}/get_root_resources`
     ).then((r) => r.json());
+    preExistingProjectsPromise = await fetch(
+      `${$settings.backendUrl}/get_all_projects`
+    ).then((r) => r.json());
   });
 </script>
 
@@ -386,8 +390,35 @@
       <p>Failed to get any pre-existing root resources!</p>
       <p>The back end server may be down.</p>
     {/await}
-    <button on:click|stopPropagation="{createNewProject}"
-      >Project Manager</button
+    {#if showProjectOptions}
+      <input
+        on:click|stopPropagation
+        type="text"
+        bind:value="{newProjectName}"
+        placeholder="Project Name"
+      />
+      <button on:click|stopPropagation="{createNewProject}"
+        >Create New Project</button
+      >
+      {#await preExistingProjectsPromise then projects}
+        <select on:click|stopPropagation bind:value="{$selectedProject}">
+          {#each projects as project}
+            <option value="{project}">
+              {project.name}
+            </option>
+          {/each}
+        </select>
+        <button
+          on:click|stopPropagation="{(e) => {
+            showProjectManager = true;
+          }}">Open Existing Project</button
+        >
+      {/await}
+    {/if}
+    <button
+      on:click|stopPropagation="{(e) => {
+        showProjectOptions = true;
+      }}">Project Options</button
     >
 
     <Animals

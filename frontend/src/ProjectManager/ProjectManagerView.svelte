@@ -66,7 +66,7 @@
     showRootResource = true;
   }
   $: rootResourceLoadPromise = openProject;
- </script>
+</script>
 
 <div class="title">OFRAK Project Manager</div>
 <button on:click|stopPropagation="{openProject}">Run Project</button>

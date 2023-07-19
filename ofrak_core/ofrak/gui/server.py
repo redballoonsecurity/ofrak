@@ -204,7 +204,7 @@ class AiohttpOFRAKServer:
                 ),
                 web.post("/{resource_id}/search_data", self.search_data),
                 web.post("/create_new_project", self.create_new_project),
-                web.get("/get_projects", self.get_projects),
+                web.get("/get_all_projects", self.get_all_projects),
                 web.get("/get_project_by_id", self.get_project_by_id),
                 web.post("/add_binary_to_project", self.add_binary_to_project),
                 web.post("/add_script_to_project", self.add_script_to_project),
@@ -1034,14 +1034,14 @@ class AiohttpOFRAKServer:
         return json_response({"id": project.project_id.hex()})
 
     @exceptions_to_http(SerializedError)
-    async def get_projects(self, request: Request) -> Response:
-        return json_response([project.id for project in self.projects])
-
-    @exceptions_to_http(SerializedError)
     async def get_project_by_id(self, request: Request) -> Response:
         id = request.query.get("id")
         project = self._get_project_by_id(id)
         return json_response(project.to_dict())
+
+    @exceptions_to_http(SerializedError)
+    async def get_all_projects(self, requet: Request) -> Response:
+        return json_response([project.to_dict() for project in self.projects])
 
     @exceptions_to_http(SerializedError)
     async def add_binary_to_project(self, request: Request) -> Response:
