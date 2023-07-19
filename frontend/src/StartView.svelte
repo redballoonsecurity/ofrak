@@ -38,7 +38,8 @@
 
   button,
   select,
-  option {
+  option,
+  input {
     background-color: var(--main-bg-color);
     color: inherit;
     border: 1px solid;
@@ -348,18 +349,24 @@
     on:drop|preventDefault="{handleDrop}"
     on:mousemove="{(e) => (mouseX = e.clientX)}"
     on:mouseleave="{() => (mouseX = undefined)}"
-    on:click="{() => fileinput.click()}"
+    on:click="{() => {
+      if (!showProjectOptions) {
+        fileinput.click();
+      }
+    }}"
     style:border-color="{animals[selectedAnimal]?.color ||
       "var(--main-fg-color)"}"
     style:color="{animals[selectedAnimal]?.color || "var(--main-fg-color)"}"
   >
-    {#if !dragging}
+    {#if !dragging && !showProjectOptions}
       <h1>Drag in a file to analyze</h1>
       <p style:margin-bottom="0">
         Click anwyhere to browse for a file to analyze
       </p>
-    {:else}
+    {:else if dragging}
       <h1>Drop the file!</h1>
+    {:else if showProjectOptions}
+      <h1>Open a Project!</h1>
     {/if}
 
     <input type="file" bind:this="{fileinput}" bind:files="{browsedFiles}" />
@@ -400,7 +407,7 @@
             type="submit">Go!</button
           >
         </form>
-      {:else}
+      {:else if !showProjectOptions}
         No resources loaded yet.
       {/if}
     {:catch}
