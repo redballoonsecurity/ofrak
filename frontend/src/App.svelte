@@ -193,6 +193,7 @@ Answer by running riddle.answer('your answer here') from the console.`);
               bind:resourceNodeDataMap="{resourceNodeDataMap}"
               bind:modifierView="{modifierView}"
               bind:showProjectManager="{showProjectManager}"
+              bind:showRootResource="{showRootResource}"
             />
           {/if}
         </Pane>

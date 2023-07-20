@@ -54,7 +54,8 @@
     modifierView,
     bottomLeftPane,
     resourceNodeDataMap = {},
-    showProjectManager;
+    showProjectManager,
+    showRootResource;
 
   let searchFilter;
   let searchResults = {};
@@ -80,6 +81,7 @@
       bind:modifierView="{modifierView}"
       bind:bottomLeftPane="{bottomLeftPane}"
       bind:showProjectManager="{showProjectManager}"
+      bind:showRootResource="{showRootResource}"
     />
   </div>
   <div class="resources">
