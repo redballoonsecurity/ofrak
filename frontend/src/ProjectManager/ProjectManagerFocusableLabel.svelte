@@ -1,6 +1,7 @@
 <style>
   button {
     border: none;
+    padding: 2px;
     font-size: xx-large;
     font-weight: bold;
     text-transform: uppercase;

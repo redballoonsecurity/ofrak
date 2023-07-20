@@ -72,7 +72,11 @@
 
 <div class="title">OFRAK Project Manager</div>
 <div class="hbox">
-  <ProjectManagerToolbar bind:focus="{focus}" openProject="{openProject}" />
+  <ProjectManagerToolbar
+    bind:focus="{focus}"
+    openProject="{openProject}"
+    bind:showProjectManager="{showProjectManager}"
+  />
   <div class="manager">
     <Split vertical="{true}" percentOfFirstSplit="{70}">
       <Split percentOfFirstSplit="{50}" slot="first">

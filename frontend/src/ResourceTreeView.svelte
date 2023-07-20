@@ -53,7 +53,8 @@
   export let rootResource,
     modifierView,
     bottomLeftPane,
-    resourceNodeDataMap = {};
+    resourceNodeDataMap = {},
+    showProjectManager;
 
   let searchFilter;
   let searchResults = {};
@@ -78,6 +79,7 @@
       bind:resourceNodeDataMap="{resourceNodeDataMap}"
       bind:modifierView="{modifierView}"
       bind:bottomLeftPane="{bottomLeftPane}"
+      bind:showProjectManager="{showProjectManager}"
     />
   </div>
   <div class="resources">

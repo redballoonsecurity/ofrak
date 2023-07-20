@@ -12,7 +12,10 @@
   import AddTagView from "./AddTagView.svelte";
   import RunScriptView from "./RunScriptView.svelte";
 
-  export let resourceNodeDataMap, modifierView, bottomLeftPane;
+  export let resourceNodeDataMap,
+    modifierView,
+    bottomLeftPane,
+    showProjectManager;
   $: rootResource = $selectedResource;
 
   function refreshResource() {
@@ -245,6 +248,15 @@
         iconUrl: "/icons/comment.svg",
         onclick: async (e) => {
           modifierView = CommentView;
+        },
+      },
+
+      {
+        text: "Project Manager",
+        iconUrl: "/icons/briefcase.svg",
+        onclick: async (e) => {
+          showProjectManager = true;
+          window.location.replace("/");
         },
       },
 

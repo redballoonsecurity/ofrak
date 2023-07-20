@@ -2,11 +2,28 @@
   .add-file {
     display: flex;
     flex-direction: row;
+    justify-content: space-around;
+  }
+
+  button {
+    margin: 1em, 0;
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+    padding-left: 1em;
+    padding-right: 1em;
+    background-color: var(--main-bg-color);
+    color: var(--main-fg-color);
+    border: 1px solid var(--main-fg-color);
+    border-radius: 0;
+    font-size: smaller;
+    overflow: hidden;
+    box-shadow: none;
   }
 </style>
 
 <script>
   import FileBrowser from "../FileBrowser.svelte";
+  import Icon from "../Icon.svelte";
   import { selectedProject, settings } from "../stores";
   let files, f;
 
@@ -71,8 +88,11 @@
 <div class="add-file">
   <FileBrowser bind:files="{files}" />
   {#if f}
-    {f.name}[{f.size}B]
-    <button on:click="{addBinaryToProject}">Add to Project as Binary</button>
-    <button on:click="{addScriptToProject}">Add to Project as Script</button>
+    <button on:click="{addBinaryToProject}"
+      ><Icon url="/icons/binary.svg" /> Add to Project as Binary</button
+    >
+    <button on:click="{addScriptToProject}"
+      ><Icon url="/icons/document.svg" /> Add to Project as Script</button
+    >
   {/if}
 </div>
