@@ -1,7 +1,15 @@
 <style>
-  button {
-    padding: 0.5em, 1em;
-    border-radius: 1em;
+  .hbox {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+  }
+  .manager {
+    width: 100%;
   }
   .title {
     text-transform: uppercase;
@@ -14,14 +22,7 @@
     max-height: 100%;
     text-align: center;
   }
-  .toolbar {
-    display: flex;
-    justify-content: space-around;
-    flex-direction: row;
-    height: 5vh;
-    margin-top: 1em;
-  }
-  .title {
+  .sub-title {
     padding-bottom: 0.5em;
     text-align: center;
     font-size: xx-large;
@@ -39,6 +40,7 @@
   import ProjectManagerSelector from "./ProjectManagerSelector.svelte";
   import { selectedProject, settings, selected } from "../stores";
   import { remote_model_to_resource } from "../ofrak/remote_resource";
+  import ProjectManagerToolbar from "./ProjectManagerToolbar.svelte";
 
   let focus, selectedBinary, selectedScript;
 
@@ -69,42 +71,43 @@
 </script>
 
 <div class="title">OFRAK Project Manager</div>
-<button on:click|stopPropagation="{openProject}">Run Project</button>
-<Split vertical="{true}" percentOfFirstSplit="{70}">
-  <Split percentOfFirstSplit="{50}" slot="first">
-    <Pane slot="first">
-      <div class="title">
-        <ProjectManagerFocusableLabel
-          bind:focus="{focus}"
-          label="Binaries"
-          newFocus="{ProjectManagerAddFileToProject}"
-        />
-      </div>
-      <ProjectManagerSelector
-        projectElementOptions="{$selectedProject.binaries}"
-        bind:selection="{selectedBinary}"
-        bind:focus="{focus}"
-      />
-    </Pane>
-    <Pane slot="second">
-      <div class="title">
-        <ProjectManagerFocusableLabel
-          bind:focus="{focus}"
-          label="Scripts"
-          newFocus="{ProjectManagerAddFileToProject}"
-        />
-      </div>
-      <ProjectManagerSelector
-        projectElementOptions="{$selectedProject.scripts}"
-        bind:selection="{selectedScript}"
-        bind:focus="{focus}"
-      />
-    </Pane>
-  </Split>
-  <Pane slot="second" paddingVertical="{'1em'}">
-    <ProjectManagerOptions focus="{focus}" />
-  </Pane>
-</Split>
-<div class="toolbar">
-  <button on:click="{openProject}">Open Project</button>
+<div class="hbox">
+  <ProjectManagerToolbar bind:focus="{focus}" openProject="{openProject}" />
+  <div class="manager">
+    <Split vertical="{true}" percentOfFirstSplit="{70}">
+      <Split percentOfFirstSplit="{50}" slot="first">
+        <Pane slot="first">
+          <div class="sub-title">
+            <ProjectManagerFocusableLabel
+              bind:focus="{focus}"
+              label="Binaries"
+              newFocus="{ProjectManagerAddFileToProject}"
+            />
+          </div>
+          <ProjectManagerSelector
+            projectElementOptions="{$selectedProject.binaries}"
+            bind:selection="{selectedBinary}"
+            bind:focus="{focus}"
+          />
+        </Pane>
+        <Pane slot="second">
+          <div class="sub-title">
+            <ProjectManagerFocusableLabel
+              bind:focus="{focus}"
+              label="Scripts"
+              newFocus="{ProjectManagerAddFileToProject}"
+            />
+          </div>
+          <ProjectManagerSelector
+            projectElementOptions="{$selectedProject.scripts}"
+            bind:selection="{selectedScript}"
+            bind:focus="{focus}"
+          />
+        </Pane>
+      </Split>
+      <Pane slot="second" paddingVertical="{'1em'}">
+        <ProjectManagerOptions focus="{focus}" />
+      </Pane>
+    </Split>
+  </div>
 </div>

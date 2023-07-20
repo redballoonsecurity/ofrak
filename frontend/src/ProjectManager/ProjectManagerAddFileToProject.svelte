@@ -1,3 +1,10 @@
+<style>
+  .add-file {
+    display: flex;
+    flex-direction: row;
+  }
+</style>
+
 <script>
   import FileBrowser from "../FileBrowser.svelte";
   import { selectedProject, settings } from "../stores";
@@ -61,12 +68,11 @@
   }
 </script>
 
-<FileBrowser bind:files="{files}" />
-{#if f}
-  <button on:click="{addBinaryToProject}"
-    >Add {f.name}[{f.size}B] to Project as Binary</button
-  >
-  <button on:click="{addScriptToProject}"
-    >Add {f.name}[{f.size}B] to Project as Script</button
-  >
-{/if}
+<div class="add-file">
+  <FileBrowser bind:files="{files}" />
+  {#if f}
+    {f.name}[{f.size}B]
+    <button on:click="{addBinaryToProject}">Add to Project as Binary</button>
+    <button on:click="{addScriptToProject}">Add to Project as Script</button>
+  {/if}
+</div>

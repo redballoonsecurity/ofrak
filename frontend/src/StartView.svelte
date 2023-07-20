@@ -252,6 +252,14 @@
       }
       return r.json();
     });
+    $selectedProject = await fetch(
+      `${$settings.backendUrl}/get_project_by_id?id=${result.id}`
+    ).then((r) => {
+      if (!r.ok) {
+        throw Error(r.statusText);
+      }
+      return r.json();
+    });
     showProjectManager = true;
   }
 
@@ -366,7 +374,7 @@
     {:else if dragging}
       <h1>Drop the file!</h1>
     {:else if showProjectOptions}
-      <h1>Open a Project!</h1>
+      <h1>Open a Project</h1>
     {/if}
 
     <input type="file" bind:this="{fileinput}" bind:files="{browsedFiles}" />
@@ -382,7 +390,7 @@
     {#await preExistingRootsPromise}
       <LoadingText />
     {:then preExistingRootResources}
-      {#if preExistingRootsPromise && preExistingRootsPromise.length > 0}
+      {#if !showProjectOptions && preExistingRootsPromise && preExistingRootsPromise.length > 0}
         <form on:submit|preventDefault="{choosePreExistingRoot}">
           <select
             on:click|stopPropagation="{() => undefined}"
