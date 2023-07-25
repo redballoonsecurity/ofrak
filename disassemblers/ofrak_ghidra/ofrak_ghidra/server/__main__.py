@@ -1,5 +1,6 @@
 import argparse
 import os
+import stat
 import subprocess
 import sys
 
@@ -7,18 +8,34 @@ from ofrak_ghidra.constants import (
     GHIDRA_START_SERVER_SCRIPT,
     GHIDRA_PATH,
     CORE_OFRAK_GHIDRA_SCRIPTS,
+    GHIDRA_USER,
+    GHIDRA_PASS,
+    GHIDRA_REPOSITORY_HOST,
+    GHIDRA_REPOSITORY_PORT,
 )
 
 
-def _run_ghidra_server(args):
+def _run_ghidra_server(*args):
     if sys.platform == "linux" or sys.platform == "darwin":
-        subprocess.call(["chmod", "+x", GHIDRA_START_SERVER_SCRIPT])
-        subprocess.call([GHIDRA_START_SERVER_SCRIPT, GHIDRA_PATH, CORE_OFRAK_GHIDRA_SCRIPTS])
+        os.chmod(
+            GHIDRA_START_SERVER_SCRIPT, os.stat(GHIDRA_START_SERVER_SCRIPT).st_mode | stat.S_IEXEC
+        )
+        subprocess.call(
+            [
+                GHIDRA_START_SERVER_SCRIPT,
+                GHIDRA_PATH,
+                CORE_OFRAK_GHIDRA_SCRIPTS,
+                GHIDRA_USER,
+                GHIDRA_PASS,
+                GHIDRA_REPOSITORY_HOST,
+                str(GHIDRA_REPOSITORY_PORT),
+            ]
+        )
     else:
         raise NotImplementedError(f"Native OFRAK Ghidra server not supported for {sys.platform}!")
 
 
-def _stop_ghidra_server(args):
+def _stop_ghidra_server(*args):
     if sys.platform == "linux" or sys.platform == "darwin":
         subprocess.call([os.path.join(GHIDRA_PATH, "server", "ghidraSvr"), "stop"])
     else:

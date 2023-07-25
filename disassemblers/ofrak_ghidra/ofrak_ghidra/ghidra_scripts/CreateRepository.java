@@ -13,7 +13,8 @@ public class CreateRepository extends HeadlessScript {
 
     @Override
     public void run() throws Exception {
-        setServerCredentials("root", "changeme");
-        GhidraProject.getServerRepository("localhost", 13100, "ofrak", true);
+        String[] args = getScriptArgs();
+        setServerCredentials(args[0], args[1]);
+        GhidraProject.getServerRepository(args[2], Integer.parseInt(args[3]), "ofrak", true);
     }
 }

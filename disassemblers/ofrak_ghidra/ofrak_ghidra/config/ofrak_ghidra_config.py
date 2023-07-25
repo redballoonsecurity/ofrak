@@ -49,10 +49,10 @@ server:
   user: # User for the local Ghidra repository and server OFRAK will create
   pass: # Password for the local Ghidra repository and server OFRAK will create
   repository:
-    host: # Host for the Ghidra repository OFRAK will create, e.g. ghidra://localhost
+    host: # Host for the Ghidra repository OFRAK will create, e.g. localhost
     port: # Port for the Ghidra repository OFRAK will create
   analysis:
-    host: # Host for the server OFRAK will create in a headless Ghidra instance, e.g. http://localhost
+    host: # Host for the server OFRAK will create in a headless Ghidra instance, e.g. localhost
     port: # Host for the port OFRAK will create in a headless Ghidra instance
 """
 
