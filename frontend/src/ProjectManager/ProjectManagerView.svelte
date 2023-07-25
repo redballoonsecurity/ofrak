@@ -42,7 +42,9 @@
   import { remote_model_to_resource } from "../ofrak/remote_resource";
   import ProjectManagerToolbar from "./ProjectManagerToolbar.svelte";
 
-  let focus, selectedBinary, selectedScript;
+  let focus,
+    selectedBinary,
+    selectedScript = null;
 
   export let resources,
     rootResourceLoadPromise,

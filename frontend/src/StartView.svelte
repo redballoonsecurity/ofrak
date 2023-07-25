@@ -108,6 +108,29 @@
     display: flex;
     flex-direction: column;
   }
+
+  .advanced {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .advanced-options {
+    display: flex;
+    flex-direction: row;
+  }
+
+  .advanced-check {
+    margin: 0.5em;
+  }
+
+  .advanced-options > button {
+    width: 25%;
+  }
+
+  .advanced-options > input {
+    width: 75%;
+  }
 </style>
 
 <script>
@@ -122,6 +145,7 @@
 
   import { onMount } from "svelte";
   import { numBytesToQuantity } from "./helpers";
+  import Checkbox from "./Checkbox.svelte";
 
   export let rootResourceLoadPromise,
     showRootResource,
@@ -136,7 +160,13 @@
     preExistingRootsPromise = new Promise(() => {}),
     preExistingProjectsPromise = new Promise(() => {}),
     tryHash = !!window.location.hash;
-  let mouseX, selectedAnimal, showProjectOptions, newProjectName, gitUrl;
+  let mouseX,
+    selectedAnimal,
+    showProjectOptions,
+    newProjectName,
+    gitUrl,
+    projectPath,
+    showAdvancedProjectOptions;
   const warnFileSize = 250 * 1024 * 1024;
   const fileChunkSize = warnFileSize;
 
@@ -246,12 +276,22 @@
       body: JSON.stringify({
         url: gitUrl,
       }),
-    }).then((r) => {
-      if (!r.ok) {
-        throw Error(r.statusText);
-      }
-      return r.json();
-    });
+    })
+      .then((r) => {
+        if (!r.ok) {
+          throw Error(r.statusText);
+        }
+        return r.json();
+      })
+      .catch((e) => {
+        try {
+          let errorObject = JSON.parse(e.message);
+          alert(`${errorObject.type}: ${errorObject.message}`);
+        } catch {
+          alert(e);
+        }
+        console.error(e);
+      });
     $selectedProject = await fetch(
       `${$settings.backendUrl}/get_project_by_id?id=${result.id}`
     ).then((r) => {
@@ -261,6 +301,39 @@
       return r.json();
     });
     showProjectManager = true;
+  }
+
+  async function changeProjectPath() {
+    let result = await fetch(`${$settings.backendUrl}/set_projects_path`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        path: projectPath,
+      }),
+    })
+      .then((r) => {
+        if (!r.ok) {
+          throw Error(r.statusText);
+        }
+        return r.json();
+      })
+      .catch((e) => {
+        try {
+          let errorObject = JSON.parse(e.message);
+          alert(`${errorObject.type}: ${errorObject.message}`);
+        } catch {
+          alert(e);
+        }
+        console.error(e);
+      });
+    projectPath = await fetch(`${$settings.backendUrl}/get_projects_path`).then(
+      (r) => r.json()
+    );
+    preExistingProjectsPromise = await fetch(
+      `${$settings.backendUrl}/get_all_projects`
+    ).then((r) => r.json());
   }
 
   async function handleDrop(e) {
@@ -339,6 +412,9 @@
     preExistingRootsPromise = await fetch(
       `${$settings.backendUrl}/get_root_resources`
     ).then((r) => r.json());
+    projectPath = await fetch(`${$settings.backendUrl}/get_projects_path`).then(
+      (r) => r.json()
+    );
     preExistingProjectsPromise = await fetch(
       `${$settings.backendUrl}/get_all_projects`
     ).then((r) => r.json());
@@ -463,6 +539,23 @@
               >Clone Project From Git</button
             >
           </div>
+        </div>
+        <div class="advanced">
+          <div class="advanced-check">
+            <Checkbox
+              leftbox="{true}"
+              bind:checked="{showAdvancedProjectOptions}"
+              >Show Advanced Options</Checkbox
+            >
+          </div>
+          {#if showAdvancedProjectOptions}
+            <div class="advanced-options">
+              <input bind:value="{projectPath}" placeholder="{projectPath}" />
+              <button on:click|stopPropagation="{changeProjectPath}"
+                >Set Location</button
+              >
+            </div>
+          {/if}
         </div>
         <button
           on:click|stopPropagation="{(e) => {

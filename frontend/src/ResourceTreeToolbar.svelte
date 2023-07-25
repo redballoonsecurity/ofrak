@@ -261,7 +261,7 @@
         text: "Project Manager",
         iconUrl: "/icons/briefcase.svg",
         onclick: async (e) => {
-          if ($selectedProject){
+          if ($selectedProject) {
             let state = {
               $selectProject: $selectedProject,
             };
@@ -269,7 +269,7 @@
             showRootResource = false;
             history.pushState(state, "", "/");
           }
-        }
+        },
       },
 
       {

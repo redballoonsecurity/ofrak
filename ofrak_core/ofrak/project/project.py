@@ -70,7 +70,7 @@ class OfrakProject:
     @staticmethod
     def clone_from_git(url: str, path: str) -> "OfrakProject":
         repo = Repo.clone_from(url, path)
-        name = repo.remotes.origin.url.split(".git")[0].split("/")[-1]
+        name = os.path.basename(path)
         if not os.path.exists(path):
             raise ValueError(f"{path} does not exist")
         if not os.path.isdir(path):
@@ -104,6 +104,40 @@ class OfrakProject:
 
     @staticmethod
     def init_from_path(path: str) -> "OfrakProject":
+        name = os.path.basename(path)
+        if not os.path.exists(path):
+            raise ValueError(f"{path} does not exist")
+        if not os.path.isdir(path):
+            raise ValueError(f"{path} is not a directory")
+        binaries_path = os.path.join(path, "binaries")
+        scripts_path = os.path.join(path, "scripts")
+
+        if not all(
+            [
+                os.path.exists(binaries_path),
+                os.path.isdir(binaries_path),
+                os.path.exists(scripts_path),
+                os.path.isdir(scripts_path),
+            ]
+        ):
+            raise ValueError(f"{path} has invalid structure to be an Project")
+        scripts = [script_name for script_name in os.listdir(scripts_path)]
+        binaries = {}
+        for binary in os.listdir(binaries_path):
+            binaries[binary] = _OfrakProjectBinary([], None)
+
+        project = OfrakProject(
+            path,
+            name,
+            uuid.uuid4().bytes,
+            binaries,
+            scripts,
+        )
+
+        return project
+
+    @staticmethod
+    def _init_from_path(path: str) -> "OfrakProject":
         """
 
         Assume path points to a directory with the following structure:

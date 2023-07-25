@@ -70,8 +70,6 @@
     modifierView,
     bottomLeftPane;
 
-  let project;
-
   // TODO: Move to settings
   let riddleAnswered = JSON.parse(window.localStorage.getItem("riddleSolved"));
   if (riddleAnswered === null || riddleAnswered === undefined) {

@@ -6,7 +6,6 @@ from enum import Enum
 import functools
 import itertools
 import logging
-import shutil
 from ofrak.project.project import OfrakProject
 
 import typing_inspect
@@ -149,7 +148,9 @@ class AiohttpOFRAKServer:
         self.component_context: ComponentContext = ClientComponentContext()
         self.script_builder: ScriptBuilder = ScriptBuilder()
         self.resource_builder: Dict[str, Tuple[Resource, memoryview]] = {}
-        self.projects: List[OfrakProject] = []
+        self.projects: Set[OfrakProject] = set()
+        self.projects_dir: str = "/tmp/ofrak-projects"
+        self._slurp_projects_from_dir()
         self._app.add_routes(
             [
                 web.post("/create_root_resource", self.create_root_resource),
@@ -211,6 +212,8 @@ class AiohttpOFRAKServer:
                 web.post("/add_script_to_project", self.add_script_to_project),
                 web.post("/open_project", self.open_project),
                 web.post("/clone_project_from_git", self.clone_project_from_git),
+                web.get("/get_projects_path", self.get_projects_path),
+                web.post("/set_projects_path", self.set_projects_path),
                 web.get("/", self.get_static_files),
                 web.static(
                     "/",
@@ -1031,19 +1034,30 @@ class AiohttpOFRAKServer:
         body = await request.json()
         name = body.get("name")
         project = OfrakProject.create(name, os.path.join("/tmp/", name))
-        self.projects.append(project)
+        self.projects.add(project)
 
         return json_response({"id": project.project_id.hex()})
 
     @exceptions_to_http(SerializedError)
     async def clone_project_from_git(self, request: Request) -> Response:
+        def recurse_path_collisions(path: str, count: int) -> str:
+            if count == 0:
+                incr_path = path
+            else:
+                incr_path = f"{path}_{count}"
+            if os.path.exists(incr_path):
+                count += 1
+                return recurse_path_collisions(path, count)
+            else:
+                return incr_path
+
         body = await request.json()
         url = body.get("url")
-        path = os.path.join("/tmp/", url.split(":")[-1])
-        if os.path.exists(path):
-            shutil.rmtree(path)
+        path = recurse_path_collisions(
+            os.path.join(self.projects_dir, url.split(":")[-1].split("/")[-1]), 0
+        )
         project = OfrakProject.clone_from_git(url, path)
-        self.projects.append(project)
+        self.projects.add(project)
         return json_response({"id": project.project_id.hex()})
 
     @exceptions_to_http(SerializedError)
@@ -1084,6 +1098,29 @@ class AiohttpOFRAKServer:
         resource = await project.init_adventure_binary(binary, script, self._ofrak_context)
         self._job_ids[request.remote] = resource.get_job_id()
         return json_response(self._serialize_resource(resource))
+
+    @exceptions_to_http(SerializedError)
+    async def get_projects_path(self, request: Request) -> Response:
+        return json_response(self.projects_dir)
+
+    @exceptions_to_http(SerializedError)
+    async def set_projects_path(self, request: Request) -> Response:
+        body = await request.json()
+        new_path = body["path"]
+        if not os.path.exists(new_path):
+            os.mkdir(new_path)
+        self.projects_dir = new_path
+        self._slurp_projects_from_dir()
+        return json_response(self.projects_dir)
+
+    def _slurp_projects_from_dir(self) -> None:
+        self.projects = set()
+        for dir in os.listdir(self.projects_dir):
+            try:
+                project = OfrakProject.init_from_path(os.path.join(self.projects_dir, dir))
+                self.projects.add(project)
+            except:
+                pass
 
     def _get_project_by_name(self, name) -> OfrakProject:
         result = [project for project in self.projects if project.name == name]
