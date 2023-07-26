@@ -1,10 +1,10 @@
 import logging
+import re
 import sys
 from dataclasses import dataclass
-from re import match
 from typing import List, Union, Tuple
 
-from bincopy import BinFile
+from bincopy import BinFile  # type:ignore
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.identifier import Identifier
@@ -40,7 +40,7 @@ class IhexProgram(Program):
     segments: List[Range]
 
 
-class IhexAnalyzer(Analyzer[None, Ihex]):
+class IhexAnalyzer(Analyzer[None, IhexProgram]):
     """
     Extract Intel HEX parameters
     """
@@ -49,7 +49,8 @@ class IhexAnalyzer(Analyzer[None, Ihex]):
     outputs = (IhexProgram,)
 
     async def analyze(self, resource: Resource, config: None = None) -> IhexProgram:
-        ihex_program, _ = _binfile_analysis(await resource.get_data())
+        raw_ihex = await resource.get_parent()
+        ihex_program, _ = _binfile_analysis(await raw_ihex.get_data())
         return ihex_program
 
 
@@ -107,7 +108,7 @@ class IhexPacker(Packer[None]):
             binfile = BinFile()
             binfile.execution_start_address = program_child.start_addr
             for seg in program_child.segments:
-                seg_data = await resource.get_data(seg.translate(vaddr_offset))
+                seg_data = await program_child.resource.get_data(seg.translate(vaddr_offset))
                 binfile.add_binary(seg_data, seg.start)
 
             new_data = binfile.as_ihex()
@@ -125,12 +126,12 @@ class IhexIdentifier(Identifier):
 
     targets = (GenericText,)
 
+    _INTEL_HEX_PATTERN = re.compile(rb"(\:([0-9A-F]{2}){5,})(\n|\r\n)+")
+
     async def identify(self, resource: Resource, config=None) -> None:
-        datalength = await resource.get_data_length()
-        if datalength >= 10:
-            data = await resource.get_data()
-            if match(r"(\:([0-9A-F]{2}){5,})(\n|\r\n)+", data.decode("utf-8")):
-                resource.add_tag(Ihex)
+        matched_ihex = await resource.search_data(self._INTEL_HEX_PATTERN)
+        if matched_ihex:
+            resource.add_tag(Ihex)
 
 
 def _binfile_analysis(raw_ihex: bytes) -> Tuple[IhexProgram, BinFile]:
