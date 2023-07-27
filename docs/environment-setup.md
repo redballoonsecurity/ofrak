@@ -35,6 +35,22 @@ OFRAK has a system for inspecting and installing such dependencies. See [the sec
 
 ## From Source Code
 
+### Prerequisites
+
+#### Git LFS
+**OFRAK uses Git LFS. 
+This means that you must have Git LFS installed to completely clone the repository!** 
+Install Git LFS by following [the instructions here](https://git-lfs.github.com/). 
+You can install Git LFS before or after you clone OFRAK, but if you clone the OFRAK repo first, you will need to `cd` into the repository and run `git lfs install && git lfs pull`.
+
+#### Python
+OFRAK Requires Python 3.7 or higher. Make sure to install the development files as well (e.g. on Ubuntu, run `apt install pythin3.X-dev` for some X>=7).
+
+#### NPM
+OFRAK GUI requires NPM.
+
+### Pulling source Code
+
 The OFRAK source code can be pulled from [the github page](https://github.com/redballoonsecurity/ofrak):
 
 ```shell
@@ -43,14 +59,10 @@ cd ofrak
 
 ```
 
-**OFRAK uses Git LFS. 
-This means that you must have Git LFS installed to completely clone the repository!** 
-Install Git LFS by following [the instructions here](https://git-lfs.github.com/). 
-You can install Git LFS before or after you clone OFRAK, but if you clone the OFRAK repo first, you will need to `cd` into the repository and run `git lfs install && git lfs pull`.
+### Installing
 
-
-Once cloned, make sure you have Python and NPM installed, then run `make install_develop` to create a development install if OFRAK linked to your cloned source tree.
-You can also use `make install_tutorial` or `make install_core` to create a standalone install of just the portions of OFRAK needed for the tutorial, or just the core OFRAK respectively.
+Once cloned, run `make install_develop` to create a development install if OFRAK linked to your cloned source tree.
+You can also use `make install_tutorial` or `make install_core` to create a standalone install of just the portions of OFRAK needed for the tutorial, or just the core OFRAK respectively. If you have multiple instances of Python 3.X installed on your machine, then prior to running make, you can set the `OFRAK_INSTALL_PYTHON` environment variable to point to a particular version and/or path of python executable (or run `make OFRAK_INSTALL_PYTHON=python3.X install_...`) to have OFRAK installed for a partular Python instance.
 There are other installation options - run `./install.py --help` for more information.
 
 Installing OFRAK from source code will not install all of OFRAK's non-Python dependencies (for same reason as when installing OFRAK from PyPI - not all of its dependencies are pip-installable).
