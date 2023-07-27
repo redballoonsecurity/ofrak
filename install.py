@@ -32,6 +32,7 @@ class OfrakInstallConfig:
     dependency_mechanism: DependencyMechanism
     dep_install: List[str]
     quiet: bool
+    run_tests: bool
 
 
 def main():
@@ -109,6 +110,11 @@ def parse_args() -> OfrakInstallConfig:
         '"OFRAK_INSTALL_DEPS" environment variable if set, and "show", if not',
     )
     parser.add_argument("--quiet", "-q", action="store_true", help="Reduce verbosity")
+    parser.add_argument(
+        "--test",
+        action="store_true",
+        help="Run OFRAK tests after install. Can also be enabled by setting the OFRAK_TEST_AFTER_INSTALL environment valiable to a non-empty value",
+    )
     args = parser.parse_args()
     if args.quiet:
         LOGGER.setLevel(logging.ERROR)
@@ -134,6 +140,7 @@ def parse_args() -> OfrakInstallConfig:
         dependency_mechanism=DependencyMechanism(args.install_deps),
         quiet=args.quiet,
         dep_install=install_command,
+        run_tests=args.test or bool(os.getenv("OFRAK_TEST_AFTER_INSTALL", "")),
     )
     return install_config
 
@@ -163,7 +170,6 @@ def check_executable(config: OfrakInstallConfig, executable: str) -> None:
 
 def install_package(config: OfrakInstallConfig, package_path: str) -> None:
     LOGGER.info(f"Installing from {package_path}")
-    etc_dir = os.path.join(os.getenv("HOME", "/"), "etc")
     if os.path.exists(os.path.join(package_path, "package.json")):
         run_command(config, ["make", "-C", package_path, "npm_install_build"])
     run_command(
@@ -172,12 +178,22 @@ def install_package(config: OfrakInstallConfig, package_path: str) -> None:
             "make",
             f"PYTHON={config.python_command}",
             f"PIP={config.python_command} -m pip",
-            f"ETC={etc_dir}",
             "-C",
             package_path,
             config.install_target.value,
         ],
     )
+    if config.run_tests:
+        run_command(
+            config,
+            [
+                "make",
+                f"PYTHON={config.python_command}",
+                "-C",
+                package_path,
+                "test",
+            ],
+        )
 
 
 def show_dependencies(config: OfrakInstallConfig) -> None:
