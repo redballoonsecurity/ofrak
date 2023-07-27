@@ -23,6 +23,7 @@ from ofrak.core.ecc.abstract import EccAlgorithm, EccError
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter
+from ofrak.model.component_model import ComponentConfig
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 
@@ -298,7 +299,7 @@ class FlashResourceUnpacker(Unpacker[None]):
     targets = (FlashResource,)
     children = (FlashOobResource,)
 
-    async def unpack(self, resource: Resource, config=None):
+    async def unpack(self, resource: Resource, config: ComponentConfig = None):
         try:
             flash_attr = resource.get_attributes(FlashAttributes)
         except NotFoundError:

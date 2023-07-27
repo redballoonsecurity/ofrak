@@ -1,14 +1,16 @@
 <script>
   import CarveView from "./CarveView.svelte";
   import CommentView from "./CommentView.svelte";
+  import ComponentsView from "./ComponentsView.svelte";
   import ModifyView from "./ModifyView.svelte";
   import ScriptView from "./ScriptView.svelte";
   import SettingsView from "./SettingsView.svelte";
   import Toolbar from "./Toolbar.svelte";
 
-  import { selectedResource, selected } from "./stores.js";
+  import { selectedResource, selected, settings } from "./stores.js";
   import SearchView from "./SearchView.svelte";
   import AddTagView from "./AddTagView.svelte";
+  import RunScriptView from "./RunScriptView.svelte";
 
   export let resourceNodeDataMap, modifierView, bottomLeftPane;
   $: rootResource = $selectedResource;
@@ -20,8 +22,28 @@
     $selected = originalSelected;
   }
 
-  let toolbarButtons;
+  let toolbarButtons, experimentalFeatures;
   const neverResolves = new Promise(() => {});
+  $: {
+    experimentalFeatures = [
+      {
+        text: "Run Component",
+        iconUrl: "/icons/run.svg",
+        onclick: async (e) => {
+          modifierView = ComponentsView;
+        },
+      },
+
+      {
+        text: "Run Script",
+        iconUrl: "/icons/run_script.svg",
+        onclick: async (e) => {
+          modifierView = RunScriptView;
+        },
+      },
+    ];
+  }
+
   $: {
     toolbarButtons = [
       {
@@ -30,10 +52,13 @@
         shortcut: "i",
         onclick: async (e) => {
           await rootResource.identify();
-          resourceNodeDataMap[$selected] = {
-            collapsed: !!resourceNodeDataMap[$selected]?.collapsed,
-            childrenPromise: rootResource.get_children(),
-          };
+          if (!resourceNodeDataMap[$selected]) {
+            resourceNodeDataMap[$selected] = {};
+          }
+          resourceNodeDataMap[$selected].collapsed =
+            !!resourceNodeDataMap[$selected]?.collapsed;
+          resourceNodeDataMap[$selected].childrenPromise =
+            rootResource.get_children();
           refreshResource();
         },
       },
@@ -44,10 +69,12 @@
         shortcut: "u",
         onclick: async (e) => {
           await rootResource.unpack();
-          resourceNodeDataMap[$selected] = {
-            collapsed: false,
-            childrenPromise: rootResource.get_children(),
-          };
+          if (!resourceNodeDataMap[$selected]) {
+            resourceNodeDataMap[$selected] = {};
+          }
+          resourceNodeDataMap[$selected].collapsed = false;
+          resourceNodeDataMap[$selected].childrenPromise =
+            rootResource.get_children();
           refreshResource();
         },
       },
@@ -66,10 +93,13 @@
         shortcut: "a",
         onclick: async (e) => {
           await rootResource.analyze();
-          resourceNodeDataMap[$selected] = {
-            collapsed: !!resourceNodeDataMap[$selected]?.collapsed,
-            childrenPromise: rootResource.get_children(),
-          };
+          if (!resourceNodeDataMap[$selected]) {
+            resourceNodeDataMap[$selected] = {};
+          }
+          resourceNodeDataMap[$selected].collapsed =
+            !!resourceNodeDataMap[$selected]?.collapsed;
+          resourceNodeDataMap[$selected].childrenPromise =
+            rootResource.get_children();
           refreshResource();
         },
       },
@@ -87,11 +117,15 @@
         iconUrl: "/icons/pack.svg",
         shortcut: "p",
         onclick: async (e) => {
+          const descendants = await $selectedResource.get_descendants();
+          clearModified(descendants);
           await rootResource.pack();
-          resourceNodeDataMap[$selected] = {
-            collapsed: false,
-            childrenPromise: rootResource.get_children(),
-          };
+          if (!resourceNodeDataMap[$selected]) {
+            resourceNodeDataMap[$selected] = {};
+          }
+          resourceNodeDataMap[$selected].collapsed = false;
+          resourceNodeDataMap[$selected].childrenPromise =
+            rootResource.get_children();
           refreshResource();
         },
       },
@@ -178,10 +212,12 @@
         shortcut: "u+Shift",
         onclick: async (e) => {
           await rootResource.unpack_recursively();
-          resourceNodeDataMap[$selected] = {
-            collapsed: false,
-            childrenPromise: rootResource.get_children(),
-          };
+          if (!resourceNodeDataMap[$selected]) {
+            resourceNodeDataMap[$selected] = {};
+          }
+          resourceNodeDataMap[$selected].collapsed = false;
+          resourceNodeDataMap[$selected].childrenPromise =
+            rootResource.get_children();
           refreshResource();
         },
       },
@@ -191,11 +227,15 @@
         iconUrl: "/icons/pack_r.svg",
         shortcut: "p+Shift",
         onclick: async (e) => {
+          const descendants = await $selectedResource.get_descendants();
+          clearModified(descendants);
           await rootResource.pack_recursively();
-          resourceNodeDataMap[$selected] = {
-            collapsed: false,
-            childrenPromise: rootResource.get_children(),
-          };
+          if (!resourceNodeDataMap[$selected]) {
+            resourceNodeDataMap[$selected] = {};
+          }
+          resourceNodeDataMap[$selected].collapsed = false;
+          resourceNodeDataMap[$selected].childrenPromise =
+            rootResource.get_children();
           refreshResource();
         },
       },
@@ -232,6 +272,20 @@
         },
       },
     ];
+  }
+
+  $: if ($settings.experimentalFeatures) {
+    toolbarButtons = [...toolbarButtons, ...experimentalFeatures];
+  }
+
+  function clearModified(descendants) {
+    for (const descendant of descendants) {
+      if (!resourceNodeDataMap[descendant["resource_id"]]) {
+        resourceNodeDataMap[descendant["resource_id"]] = {};
+      }
+      resourceNodeDataMap[descendant["resource_id"]].lastModified = undefined;
+      resourceNodeDataMap[descendant["resource_id"]].allModified = undefined;
+    }
   }
 </script>
 

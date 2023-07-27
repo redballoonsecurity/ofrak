@@ -76,6 +76,18 @@
     color: var(--main-bg-color);
   }
 
+  .lastModified {
+    text-decoration-line: underline;
+    text-decoration-color: var(--last-modified-color);
+    text-decoration-thickness: 2px;
+  }
+
+  .allModified {
+    text-decoration-line: underline;
+    text-decoration-color: var(--all-modified-color);
+    text-decoration-thickness: 2px;
+  }
+
   .comment {
     /* align with the caption above */
     padding-left: 1ch;
@@ -99,6 +111,7 @@
   import Hoverable from "./Hoverable.svelte";
   import LoadingText from "./LoadingText.svelte";
 
+  import { onDestroy } from "svelte";
   import { selected } from "./stores.js";
   import { shortcuts } from "./keyboard";
 
@@ -107,10 +120,13 @@
     selectNextSibling = () => {},
     selectPreviousSibling = () => {},
     collapsed = true,
-    childrenCollapsed = true;
+    childrenCollapsed = true,
+    searchFilter;
   let firstChild,
     childrenPromise,
     commentsPromise,
+    lastModified,
+    allModified,
     self_id = rootResource.get_id(),
     kiddoChunksize = 512;
 
@@ -129,11 +145,18 @@
       resourceNodeDataMap[self_id].commentsPromise =
         rootResource.get_comments();
     }
+    if (resourceNodeDataMap[self_id].lastModified === undefined) {
+      resourceNodeDataMap[self_id].lastModified = false;
+    }
+    if (resourceNodeDataMap[self_id].allModified === undefined) {
+      resourceNodeDataMap[self_id].allModified = false;
+    }
     childrenPromise = resourceNodeDataMap[self_id].childrenPromise;
     commentsPromise = resourceNodeDataMap[self_id].commentsPromise;
     collapsed = resourceNodeDataMap[self_id].collapsed;
+    lastModified = resourceNodeDataMap[self_id].lastModified;
+    allModified = resourceNodeDataMap[self_id].allModified;
   }
-
   function updateRootModel() {
     rootResource.update();
     rootResource = rootResource;
@@ -197,84 +220,99 @@
     resourceNodeDataMap[$selected].commentsPromise =
       rootResource.get_comments();
   }
+
+  // Swap "just modified" indication to "previously modified" indication
+  onDestroy(() => {
+    if (resourceNodeDataMap[self_id].lastModified) {
+      resourceNodeDataMap[self_id].allModified =
+        resourceNodeDataMap[self_id].lastModified;
+    }
+  });
 </script>
 
-{#await childrenPromise then children}
-  {#if children?.length > 0}
-    <button
-      on:click="{() => {
-        resourceNodeDataMap[self_id].collapsed = !collapsed;
-      }}"
-    >
-      {#if collapsed}
-        [+{children.length}]
-      {:else}
-        [-]
-      {/if}
-      <!-- Ugly next line is required to prevent Svelte from adding space after the button -->
-    </button>{/if}{/await}<button
-  on:click="{onClick}"
-  on:dblclick="{onDoubleClick}"
-  class:selected="{$selected === self_id}"
-  id="{self_id}"
->
-  {rootResource.get_caption()}
-</button>
-{#await commentsPromise then comments}
-  {#each comments as comment}
-    <div class="comment">
-      <Hoverable let:hovering>
-        <button
-          title="Delete this comment"
-          on:click="{onDeleteClick(comment[0])}"
-        >
-          <Icon
-            class="comment_icon"
-            url="{hovering ? '/icons/trash_can.svg' : '/icons/comment.svg'}"
-          />
-        </button></Hoverable
-      >{comment[1]}
-    </div>
-  {/each}
-{/await}
-
-{#await childrenPromise}
-  <LoadingText />
-{:then children}
-  {#if !collapsed && children.length > 0}
-    <ul>
-      {#each children.slice(0, kiddoChunksize) as child, i}
-        <li>
-          <div>
-            <svelte:self
-              rootResource="{child}"
-              collapsed="{childrenCollapsed}"
-              childrenCollapsed="{childrenCollapsed}"
-              selectNextSibling="{i ===
-              Math.min(kiddoChunksize, children.length) - 1
-                ? selectNextSibling
-                : () => {
-                    $selected = children[i + 1]?.resource_id;
-                  }}"
-              selectPreviousSibling="{i === 0
-                ? () => {
-                    $selected = self_id;
-                  }
-                : () => {
-                    $selected = children[i - 1]?.resource_id;
-                  }}"
-              bind:resourceNodeDataMap="{resourceNodeDataMap}"
+{#if !searchFilter || searchFilter.includes(self_id)}
+  {#await childrenPromise then children}
+    {#if children?.length > 0}
+      <button
+        on:click="{() => {
+          resourceNodeDataMap[self_id].collapsed = !collapsed;
+        }}"
+      >
+        {#if collapsed}
+          [+{children.length}]
+        {:else}
+          [-]
+        {/if}
+        <!-- Ugly next line is required to prevent Svelte from adding space after the button -->
+      </button>{/if}{/await}<button
+    on:click="{onClick}"
+    on:dblclick="{onDoubleClick}"
+    class:selected="{$selected === self_id}"
+    class:lastModified="{resourceNodeDataMap[self_id].lastModified}"
+    class:allModified="{resourceNodeDataMap[self_id].allModified}"
+    id="{self_id}"
+  >
+    {rootResource.get_caption()}
+  </button>
+  {#await commentsPromise then comments}
+    {#each comments as comment}
+      <div class="comment">
+        <Hoverable let:hovering>
+          <button
+            title="Delete this comment"
+            on:click="{onDeleteClick(comment[0])}"
+          >
+            <Icon
+              class="comment_icon"
+              url="{hovering ? '/icons/trash_can.svg' : '/icons/comment.svg'}"
             />
+          </button></Hoverable
+        >{comment[1]}
+      </div>
+    {/each}
+  {/await}
+
+  {#await childrenPromise}
+    <LoadingText />
+  {:then children}
+    {#if !collapsed && children.length > 0}
+      <ul>
+        {#each children.slice(0, kiddoChunksize) as child, i}
+          {#if !searchFilter || searchFilter.includes(child.get_id())}
+            <li>
+              <div>
+                <svelte:self
+                  rootResource="{child}"
+                  collapsed="{childrenCollapsed}"
+                  childrenCollapsed="{childrenCollapsed}"
+                  selectNextSibling="{i ===
+                  Math.min(kiddoChunksize, children.length) - 1
+                    ? selectNextSibling
+                    : () => {
+                        $selected = children[i + 1]?.resource_id;
+                      }}"
+                  selectPreviousSibling="{i === 0
+                    ? () => {
+                        $selected = self_id;
+                      }
+                    : () => {
+                        $selected = children[i - 1]?.resource_id;
+                      }}"
+                  bind:resourceNodeDataMap="{resourceNodeDataMap}"
+                  searchFilter="{searchFilter}"
+                />
+              </div>
+            </li>
+          {/if}
+        {/each}
+        {#if children.length > kiddoChunksize}
+          <div class="morebutton">
+            <button on:click="{() => (kiddoChunksize += 512)}">
+              Show 512 more children...
+            </button>
           </div>
-        </li>
-      {/each}
-      {#if children.length > kiddoChunksize}
-        <div class="morebutton">
-          <button on:click="{() => (kiddoChunksize += 512)}">
-            Show 512 more children...
-          </button>
-        </div>
-      {/if}
-    </ul>
-  {/if}
-{/await}
+        {/if}
+      </ul>
+    {/if}
+  {/await}
+{/if}

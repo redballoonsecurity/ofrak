@@ -1,6 +1,5 @@
 <style>
   label {
-    margin-left: 1em;
     margin-right: 1em;
     display: inline-flex;
     flex-direction: row;
@@ -23,8 +22,13 @@
     background: var(--main-bg-color);
     color: var(--main-fg-color);
     border: 1px solid var(--main-fg-color);
-    margin-left: 2ch;
+    margin-left: 1ch;
     box-sizing: content-box;
+  }
+
+  label input[type="checkbox"].leftbox + span {
+    margin-left: 0;
+    margin-right: 1ch;
   }
 
   label input[type="checkbox"]:checked + span::after {
@@ -41,7 +45,7 @@
 
   label input[type="checkbox"].leftbox + span {
     margin-left: 0;
-    margin-right: 2ch;
+    margin-right: 1ch;
   }
 
   .nomargin {

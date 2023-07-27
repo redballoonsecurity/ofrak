@@ -284,7 +284,7 @@ class FreeSpaceAnalyzer(Analyzer[None, Allocatable]):
     targets = (Allocatable,)
     outputs = (Allocatable,)
 
-    async def analyze(self, resource: Resource, config: None) -> Allocatable:
+    async def analyze(self, resource: Resource, config: ComponentConfig = None) -> Allocatable:
         ranges_by_permissions = defaultdict(list)
         for free_space_r in await resource.get_descendants_as_view(
             FreeSpace,
@@ -314,7 +314,6 @@ class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
     targets = (Allocatable,)
 
     async def modify(self, resource: Resource, config: FreeSpaceAllocation) -> None:
-
         wholly_allocated_resources = list()
         partially_allocated_resources: Dict[bytes, Tuple[FreeSpace, List[Range]]] = dict()
         allocatable = await resource.view_as(Allocatable)

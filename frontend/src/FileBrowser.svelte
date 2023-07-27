@@ -53,7 +53,9 @@
 </style>
 
 <script>
-  export let files, input;
+  export let files,
+    input,
+    multiple = false;
   let dragging = false;
 </script>
 
@@ -68,7 +70,11 @@
   {#if !dragging}
     <label class="filelabel">
       <slot />
-      <input type="file" bind:this="{input}" bind:files="{files}" />
+      {#if multiple}
+        <input type="file" multiple bind:this="{input}" bind:files="{files}" />
+      {:else}
+        <input type="file" bind:this="{input}" bind:files="{files}" />
+      {/if}
       <span>
         <button on:click="{() => input.click()}"> Browse... </button>
         {#if files}

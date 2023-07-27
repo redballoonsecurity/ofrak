@@ -90,7 +90,7 @@
   import Checkbox from "./Checkbox.svelte";
   import { selected, selectedResource } from "./stores.js";
 
-  export let modifierView;
+  export let modifierView, resourceNodeDataMap;
   let toFind,
     toReplace,
     nullTerminated = true,
@@ -107,12 +107,23 @@
   async function findAndReplace() {
     try {
       if ($selectedResource) {
-        await $selectedResource.find_and_replace(
+        const results = await $selectedResource.find_and_replace(
           toFind,
           toReplace,
           nullTerminated,
           allowOverflow
         );
+
+        for (const result in results) {
+          if (result === "modified") {
+            for (const resource of results[result]) {
+              if (!resourceNodeDataMap[resource["id"]]) {
+                resourceNodeDataMap[resource["id"]] = {};
+              }
+              resourceNodeDataMap[resource["id"]].lastModified = true;
+            }
+          }
+        }
       }
 
       modifierView = undefined;

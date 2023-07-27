@@ -19,15 +19,16 @@
   import { onMount, tick } from "svelte";
   import { shortcuts } from "./keyboard";
 
-  export let dataPromise, scrollY;
+  export let dataLenPromise, scrollY;
   let startOffset,
     input,
     mounted = false;
   const alignment = 16;
 
   let dataLength = 0;
-  $: dataPromise.then((data) => {
-    dataLength = data.byteLength;
+
+  $: dataLenPromise.then((r) => {
+    dataLength = r;
   });
 
   onMount(() => {

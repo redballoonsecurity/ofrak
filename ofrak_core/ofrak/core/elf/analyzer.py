@@ -20,6 +20,7 @@ from ofrak.core.elf.model import (
     ElfRelaEntry,
     ElfDynamicEntry,
     ElfVirtualAddress,
+    SECTION_NAME_PATTERN,
 )
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.model.component_model import ComponentConfig
@@ -28,7 +29,6 @@ from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_io.deserializer import BinaryDeserializer
-from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
 
@@ -46,7 +46,6 @@ class ElfBasicHeaderAttributesAnalyzer(Analyzer[None, ElfBasicHeader]):
     <https://man7.org/linux/man-pages/man5/elf.5.html> for details.
     """
 
-    id = b"ElfHeaderMetadataAttributesAnalyzer"
     targets = (ElfBasicHeader,)
     outputs = (ElfBasicHeader,)
 
@@ -159,7 +158,6 @@ class ElfSegmentAnalyzer(Analyzer[None, ElfSegment]):
     outputs = (ElfSegment,)
 
     async def analyze(self, resource: Resource, config=None) -> ElfSegment:
-
         segment = await resource.view_as(ElfSegmentStructure)
         segment_header = await segment.get_header()
         return ElfSegment(
@@ -218,7 +216,6 @@ class ElfSymbolAttributesAnalyzer(Analyzer[None, ElfSymbol]):
     table.
     """
 
-    id = b"ElfSymbolAnalyzer"
     targets = (ElfSymbol,)
     outputs = (ElfSymbol,)
 
@@ -324,15 +321,11 @@ class ElfSectionNameAnalyzer(Analyzer[None, AttributesType[NamedProgramSection]]
         elf_r = await section.get_elf()
         string_section = await elf_r.get_section_name_string_section()
         try:
-            string_section_data = await string_section.resource.get_data(
-                Range(section_header.sh_name, Range.MAX)
+            ((_, raw_section_name),) = await string_section.resource.search_data(
+                SECTION_NAME_PATTERN, start=section_header.sh_name, max_matches=1
             )
-            name_string_end = string_section_data.find(b"\x00")
-            raw_section_name = await string_section.resource.get_data(
-                Range(section_header.sh_name, section_header.sh_name + name_string_end)
-            )
-            section_name = raw_section_name.decode("ascii")
-        except ValueError:
+            section_name = raw_section_name.rstrip(b"\x00").decode("ascii")
+        except ValueError as e:
             LOGGER.info("String section is empty! Using '<no-strings>' as section name")
             section_name = "<no-strings>"  # This is what readelf returns in this situation
         return AttributesType[NamedProgramSection](

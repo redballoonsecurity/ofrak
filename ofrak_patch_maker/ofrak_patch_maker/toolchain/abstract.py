@@ -7,7 +7,7 @@ import os
 import subprocess
 from abc import ABC, abstractmethod
 from os.path import join, split
-from typing import Dict, Iterable, List, Optional, Tuple, Mapping
+from typing import Dict, Iterable, List, Optional, Tuple, Mapping, Type
 
 from ofrak_type import ArchInfo
 from ofrak_patch_maker.binary_parser.abstract import AbstractBinaryFileParser
@@ -30,6 +30,7 @@ RBS_AUTOGEN_WARNING = (
 
 class Toolchain(ABC):
     binary_file_parsers: List[AbstractBinaryFileParser] = []
+    toolchain_implementations: List[Type["Toolchain"]] = []
 
     def __init__(
         self,
@@ -98,6 +99,9 @@ class Toolchain(ABC):
 
         self._assembler_target = self._get_assembler_target(processor)
         self._compiler_target = self._get_compiler_target(processor)
+
+    def __init_subclass__(cls, **kwargs):
+        Toolchain.toolchain_implementations.append(cls)
 
     @property
     @abstractmethod

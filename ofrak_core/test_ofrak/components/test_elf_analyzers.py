@@ -624,7 +624,6 @@ async def _create_populated_elf(
     e_shnum=0,
     e_shstrndx=0,
 ) -> Resource:
-
     elf_basic_header = ElfBasicHeader(
         ei_magic,
         ei_class,

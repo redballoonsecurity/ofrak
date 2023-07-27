@@ -4,6 +4,15 @@ All notable changes to `ofrak-patch-maker` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+### Fixed
+- Remove option to read or install toolchain.conf from/to "/etc/toolchain.conf" ([#342](https://github.com/redballoonsecurity/ofrak/pull/342))
+
+## [4.0.1](https://github.com/redballoonsecurity/ofrak/compare/ofrak-patch-maker-v.4.0.0...ofrak-patch-maker-v.4.0.1)
+### Added
+- Interface to iterate over all Toolchain implementations ([#287](https://github.com/redballoonsecurity/ofrak/pull/287))
+
+### Fixed
+- Localize magic import ([#299](https://github.com/redballoonsecurity/ofrak/pull/299))
 
 ## [4.0.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-patch-maker-v.3.0.0...ofrak-patch-maker-v.4.0.0)
 

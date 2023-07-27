@@ -17,6 +17,8 @@ from typing import (
     Sequence,
     Callable,
     Set,
+    Pattern,
+    overload,
 )
 
 from ofrak.component.interface import ComponentInterface
@@ -242,6 +244,42 @@ class Resource:
             )
         return await self._data_service.get_data_range_within_root(self._resource.data_id)
 
+    @overload
+    async def search_data(
+        self,
+        query: Pattern[bytes],
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+        max_matches: Optional[int] = None,
+    ) -> Tuple[Tuple[int, bytes], ...]:
+        ...
+
+    @overload
+    async def search_data(
+        self,
+        query: bytes,
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+        max_matches: Optional[int] = None,
+    ) -> Tuple[int, ...]:
+        ...
+
+    async def search_data(self, query, start=None, end=None, max_matches=None):
+        """
+        Search for some data in this resource. The query may be a regex pattern (a return value
+        of `re.compile`). If the query is a regex pattern, returns a tuple of pairs with both the
+        offset of the match and the contents of the match itself. If the query is plain bytes, a
+        list of only the match offsets are returned.
+
+        :param query: Plain bytes to exactly match or a regex pattern to search for
+        :param start: Start offset in the data model to begin searching
+        :param end: End offset in the data model to stop searching
+
+        :return: A tuple of offsets matching a plain bytes query, or a list of (offset, match) pairs
+        for a regex pattern query
+        """
+        return await self._data_service.search(self.get_data_id(), query, start, end, max_matches)
+
     async def save(self):
         """
         If this resource has been modified, update the model stored in the resource service with
@@ -294,7 +332,10 @@ class Resource:
         try:
             fetched_resource = await self._resource_service.get_by_id(resource.id)
         except NotFoundError:
-            if resource.id in self._component_context.modification_trackers:
+            if (
+                resource.id in self._component_context.modification_trackers
+                and resource.id in self._resource_context.resource_models
+            ):
                 del self._resource_context.resource_models[resource.id]
             return
 
@@ -314,6 +355,9 @@ class Resource:
             for view in views_in_context.values():
                 if resource_id not in self._resource_context.resource_models:
                     await self._fetch(view.resource.get_model())  # type: ignore
+                if resource_id not in self._resource_context.resource_models:
+                    view.set_deleted()
+                    continue
                 updated_model = self._resource_context.resource_models[resource_id]
                 fresh_view = view.create(updated_model)
                 for field in dataclasses.fields(fresh_view):

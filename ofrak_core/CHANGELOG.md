@@ -5,13 +5,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 ### Added
+- Add a JFFS2 packer and unpacker. ([#326](https://github.com/redballoonsecurity/ofrak/pull/326))
+- Add method to Resource and data service to search for patterns in its data ([#333](https://github.com/redballoonsecurity/ofrak/pull/333))
+- Add search bars to GUI in order to search for a string or bytes within a resource. ([#345](https://github.com/redballoonsecurity/ofrak/pull/345))
+
+### Changed
+- Support uploading files in chunks to handle files larger than 2GB from the GUI ([#324](https://github.com/redballoonsecurity/ofrak/pull/324))
+
+### Fixed
+
+## [3.1.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v3.0.0...ofrak-v3.1.0)
+### Added
 - Add `ElfLoadAlignmentModifier`, which reclaims unused alignment bytes between PT_LOAD segments in ELFs as free space. ([#302](https://github.com/redballoonsecurity/ofrak/pull/302))
 - Add a "copy to clipboard" button to the "Show Snippet" view for easy exporting. ([#301](https://github.com/redballoonsecurity/ofrak/pull/301))
 - Add a settings pane to the OFRAK GUI that supports theming and changing colors ([#309](https://github.com/redballoonsecurity/ofrak/pull/309))
+- Add a button and interface in the OFRAK GUI to specifically select any component to run on a resource ([#287](https://github.com/redballoonsecurity/ofrak/pull/287))
+- Add DDR pad support to the OFRAK GUI ([#322](https://github.com/redballoonsecurity/ofrak/pull/322))
 
 ### Fixed 
 - Fixed a bug where clicking "Unpack" or "Identify" (for example) too quickly after loading a large resource causes an error that freezes up the whole GUI ([#297](https://github.com/redballoonsecurity/ofrak/pull/297))
 - Bump `importlib-metadata` version to fix import errors ([#296](https://github.com/redballoonsecurity/ofrak/pull/296))
+- Treat `libmagic`, `strings` as `ComponentExternalTools` so that they are considered dependencies. ([#299](https://github.com/redballoonsecurity/ofrak/pull/299/))
+- Fixed GUI minimap bottom overlapping version number ([#327](https://github.com/redballoonsecurity/ofrak/pull/327))
 
 ## [3.0.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v2.2.1...ofrak-v3.0.0)
 ### Added

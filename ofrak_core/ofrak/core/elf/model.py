@@ -1,3 +1,4 @@
+import re
 from abc import abstractmethod
 from dataclasses import dataclass
 from enum import Enum
@@ -21,6 +22,9 @@ from ofrak_type.bit_width import BitWidth
 from ofrak_type.endianness import Endianness
 from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.range import Range
+
+
+SECTION_NAME_PATTERN = re.compile(b"[^\x00]*\x00")
 
 
 ##################################################################################
@@ -512,10 +516,10 @@ class ElfSymbol(ElfSymbolStructure):
     async def get_name(self) -> str:
         elf = await self.resource.get_only_ancestor_as_view(Elf, ResourceFilter.with_tags(Elf))
         string_section = await elf.get_string_section()
-        string_section_data = await string_section.resource.get_data(Range(self.st_name, Range.MAX))
-        name_string_end = string_section_data.find(b"\x00")
-        raw_symbol_name = string_section_data[:name_string_end]
-        return raw_symbol_name.decode("ascii")
+        ((_, raw_symbol_name),) = await string_section.resource.search_data(
+            SECTION_NAME_PATTERN, start=self.st_name, max_matches=1
+        )
+        return raw_symbol_name.rstrip(b"\x00").decode("ascii")
 
     @index
     def SymbolValue(self) -> int:

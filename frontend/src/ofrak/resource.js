@@ -386,10 +386,37 @@ export class Resource {
     throw new NotImplementedError("update_script");
   }
 
+  async get_components() {
+    throw new NotImplementedError("get_components");
+  }
+
+  async get_config_for_component() {
+    throw new NotImplementedError("get_config_for_component");
+  }
+
+  async run_component() {
+    throw new NotImplementedError("run_component");
+  }
+
+  async get_tags_and_num_components() {
+    throw new NotImplementedError("get_tags_and_num_components");
+  }
+
   async add_flush_to_disk_to_script() {
     throw new NotImplementedError("add_flush_to_disk_to_script");
   }
 
+  async search_data(query, mode) {
+    throw new NotImplementedError("search_data");
+  }
+
+  async search_for_string() {
+    throw new NotImplementedError("search_for_string");
+  }
+
+  async search_for_bytes() {
+    throw new NotImplementedError("search_for_bytes");
+  }
   /***
    * Return the string representation of a comment, which includes its range as prefix if it
    * has one.

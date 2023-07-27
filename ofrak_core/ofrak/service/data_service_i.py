@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import List, Iterable, Optional
+from typing import List, Iterable, Optional, Tuple, overload, Pattern
 
 from ofrak.model.data_model import DataModel, DataPatch, DataPatchesResult
 from ofrak.service.abstract_ofrak_service import AbstractOfrakService
@@ -178,5 +178,48 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         :param data_ids: Multiple unique IDs for data models
 
         :raises NotFoundError: if any ID in `data_ids` is not associated with any known model
+        """
+        raise NotImplementedError()
+
+    @overload
+    @abstractmethod
+    async def search(
+        self,
+        data_id: bytes,
+        query: Pattern[bytes],
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+        max_matches: Optional[int] = None,
+    ) -> Tuple[Tuple[int, bytes], ...]:
+        ...
+
+    @overload
+    @abstractmethod
+    async def search(
+        self,
+        data_id: bytes,
+        query: bytes,
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+        max_matches: Optional[int] = None,
+    ) -> Tuple[int, ...]:
+        ...
+
+    @abstractmethod
+    async def search(self, data_id, query, start=None, end=None, max_matches=None):
+        """
+        Search for some data in one of the models. The query may be a regex pattern (a return value
+        of `re.compile`). If the query is a regex pattern, returns a tuple of pairs with both the
+        offset of the match and the contents of the match itself. If the query is plain bytes, a
+        list of only the match offsets are returned.
+
+        :param data_id: Data model to search
+        :param query: Plain bytes to exactly match or a regex pattern to search for
+        :param start: Start offset in the data model to begin searching
+        :param end: End offset in the data model to stop searching
+        :param max_matches: Maximum number of matches to return
+
+        :return: A tuple of offsets matching a plain bytes query, or a list of (offset, match) pairs
+        for a regex pattern query
         """
         raise NotImplementedError()

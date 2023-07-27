@@ -89,7 +89,6 @@ class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProjec
     async def analyze(
         self, resource: Resource, config: Optional[GhidraProjectConfig] = None
     ) -> GhidraProject:
-
         # TODO: allow multiple headless server instances
         os.system("pkill -if analyzeHeadless")
         if config is not None:
@@ -105,7 +104,7 @@ class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProjec
             with open(full_fname, "wb") as f:
                 f.write(data)
 
-        ghidra_project = f"{GHIDRA_REPOSITORY_HOST}:{GHIDRA_REPOSITORY_PORT}/ofrak"
+        ghidra_project = f"ghidra://{GHIDRA_REPOSITORY_HOST}:{GHIDRA_REPOSITORY_PORT}/ofrak"
 
         program_name = await self._do_ghidra_import(ghidra_project, full_fname)
         await self._do_ghidra_analyze_and_serve(
@@ -115,7 +114,7 @@ class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProjec
         if tmp_dir:
             tmp_dir.cleanup()
 
-        return GhidraProject(ghidra_project, f"{GHIDRA_SERVER_HOST}:{GHIDRA_SERVER_PORT}")
+        return GhidraProject(ghidra_project, f"http://{GHIDRA_SERVER_HOST}:{GHIDRA_SERVER_PORT}")
 
     async def _do_ghidra_import(self, ghidra_project: str, full_fname: str):
         args = [
@@ -143,6 +142,9 @@ class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProjec
 
             if len(line) > 0:
                 LOGGER.debug(line)
+            elif ghidra_proc.stdout.at_eof():
+                raise GhidraComponentException("Ghidra client exited unexpectedly")
+
             if "Repository Server: localhost" in line:
                 time.sleep(0.5)
                 ghidra_proc.stdin.write((GHIDRA_PASS + "\n").encode("ascii"))
@@ -185,7 +187,7 @@ class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProjec
         if skip_analysis:
             args.append("-noanalysis")
 
-        args.extend(["-scriptPath", "'" + (";".join(self._script_directories)) + "'"])
+        args.extend(["-scriptPath", (";".join(self._script_directories))])
 
         args.extend(["-postScript", "AnalysisServer.java"])
         args.extend(self._build_ghidra_server_args())
