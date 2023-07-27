@@ -96,3 +96,12 @@ develop:
 
 .PHONY: test
 test:
+
+################################################################################
+# Run for local install from source
+################################################################################
+
+.PHONY: npm_install_build
+npm_install_build:
+	npm install
+	npm run build

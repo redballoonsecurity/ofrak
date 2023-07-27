@@ -46,9 +46,8 @@ def main():
     for package_path in config.packages_paths:
         check_package_contents(package_path)
 
-    LOGGER.info(f"Checking whether npm and rollup are installed")
+    LOGGER.info(f"Checking whether npm is installed")
     check_executable(config, "npm")
-    check_executable(config, "rollup")
 
     install_type = (
         "development environment " if config.install_target == InstallTarget.DEVELOP else ""
@@ -165,6 +164,8 @@ def check_executable(config: OfrakInstallConfig, executable: str) -> None:
 def install_package(config: OfrakInstallConfig, package_path: str) -> None:
     LOGGER.info(f"Installing from {package_path}")
     etc_dir = os.path.join(os.getenv("HOME", "/"), "etc")
+    if os.path.exists(os.path.join(package_path, "package.json")):
+        run_command(config, ["make", "-C", package_path, "npm_install_build"])
     run_command(
         config,
         [
