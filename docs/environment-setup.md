@@ -7,7 +7,7 @@ There are three main ways one can set up an environment to use OFRAK:
 
 1. From [PyPI](https://pypi.org/project/ofrak/) via `pip`. 
 **This is the simplest setup and generally recommended. Use this!**
-2. From the [source code](https://github.com/redballoonsecurity/ofrak) via `pip` or the `setup.py`. 
+2. From the [source code](https://github.com/redballoonsecurity/ofrak) via a custom install script that relies on `pip`.
 This is a little more complicated, but allows one to keep with and contribute to OFRAK development.
 3. By building the appropriate OFRAK [Docker](https://www.docker.com/get-started) image. 
 This has the most overhead as it requires installing Docker, but provides the most consistent and comprehensive environment.
@@ -49,23 +49,14 @@ Install Git LFS by following [the instructions here](https://git-lfs.github.com/
 You can install Git LFS before or after you clone OFRAK, but if you clone the OFRAK repo first, you will need to `cd` into the repository and run `git lfs install && git lfs pull`.
 
 
-Once cloned, go into each directory in the top level and run the installation command `make develop` 
-(if you do not have and do not wish to have `make` installed, try inspecting the `Makefile` in each directory to see what commands it tries to run, usually something like `pip install -e .`).
-The best order to install each directory is as follows:
-
-1. `ofrak_type`
-2. `ofrak_io`
-3. `ofrak_patch_maker`
-4. `ofrak_core`
-5. Any/all others: `frontend`, `ofrak_tutorial`, `disassemblers/ofrak_angr`, `disassemblers/ofrak_binary_ninja`, `disassemblers/ofrak_capstone`, `disassemblers/ofrak_ghidra`
-
-You *can* skip the installation step for any of the packages above. 
-Any subsequent OFRAK packages which require a non-installed package should be able to simply install it from PyPI. 
-However, this will result in a somewhat confusing environment where some of the OFRAK code in your local repo is actively used by your system, and the rest is not.
+Once cloned, make sure you have Python and NPM installed, then run `make install_develop` to create a development install if OFRAK linked to your cloned source tree.
+You can also use `make install_tutorial` or `make install_core` to create a standalone install of just the portions of OFRAK needed for the tutorial, or just the core OFRAK respectively.
+There are other installation options - run `./install.py --help` for more information.
 
 Installing OFRAK from source code will not install all of OFRAK's non-Python dependencies (for same reason as when installing OFRAK from PyPI - not all of its dependencies are pip-installable).
 These dependencies are, however, optional, and the OFRAK code that requires them can be disabled in order avoid runtime errors.
-OFRAK has a system for inspecting and installing dependencies. See [the section on external dependencies](#handling-non-python-dependencies) for more info on that.
+OFRAK has a system for inspecting and installing dependencies. The above `make install_XXX` commands will provide you with a listing of the optional dependencies you are missing.
+See [the section on external dependencies](#handling-non-python-dependencies) for more info on that.
 
 
 ### Modifying OFRAK Source Code
