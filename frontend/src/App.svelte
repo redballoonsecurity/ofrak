@@ -51,6 +51,7 @@
   import { keyEventToString, shortcuts } from "./keyboard.js";
 
   import { writable } from "svelte/store";
+  import {blendColors} from "./helpers";
 
   printConsoleArt();
 
@@ -157,8 +158,12 @@ Answer by running riddle.answer('your answer here') from the console.`);
   const docstyle = document.documentElement.style;
   $: docstyle.setProperty("--main-bg-color", $settings.background);
   $: docstyle.setProperty("--main-fg-color", $settings.foreground);
-  $: docstyle.setProperty("--faded-bg-color", $settings.background_faded);
-  $: docstyle.setProperty("--faded-fg-color", $settings.foreground_faded);
+  $: docstyle.setProperty(
+          "--faded-bg-color", blendColors($settings.background, $settings.foreground, 0.2)
+  );
+  $: docstyle.setProperty(
+          "--faded-fg-color", blendColors($settings.background, $settings.foreground, 0.8)
+  );
   $: docstyle.setProperty("--selected-bg-color", $settings.selected);
   $: docstyle.setProperty("--highlight-color", $settings.highlight);
   $: docstyle.setProperty("--comment-color", $settings.comment);

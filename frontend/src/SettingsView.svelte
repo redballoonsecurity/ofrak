@@ -194,8 +194,6 @@
     }
     $settings.background = palette[0];
     $settings.foreground = palette[1];
-    $settings.background_faded = blendColors(palette[0], palette[1], 0.8)
-    $settings.foreground_faded = blendColors(palette[0], palette[1], 0.2)
     const shuffled = palette.slice(2);
     shuffleArray(shuffled);
     $settings.selected = shuffled[0];
