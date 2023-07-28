@@ -157,6 +157,8 @@ Answer by running riddle.answer('your answer here') from the console.`);
   const docstyle = document.documentElement.style;
   $: docstyle.setProperty("--main-bg-color", $settings.background);
   $: docstyle.setProperty("--main-fg-color", $settings.foreground);
+  $: docstyle.setProperty("--faded-bg-color", $settings.background_faded);
+  $: docstyle.setProperty("--faded-fg-color", $settings.foreground_faded);
   $: docstyle.setProperty("--selected-bg-color", $settings.selected);
   $: docstyle.setProperty("--highlight-color", $settings.highlight);
   $: docstyle.setProperty("--comment-color", $settings.comment);

@@ -1,6 +1,7 @@
 import { animals, otherColors } from "./animals.js";
 
 import { writable } from "svelte/store";
+import {blendColors} from "./helpers";
 
 // Currently selected resource ID
 export const selected = writable(undefined);
@@ -15,6 +16,8 @@ export function loadSettings(forceReset) {
   const defaultSettings = {
     background: "#000000",
     foreground: "#ffffff",
+    background_faded: blendColors("#000000", "#ffffff", 0.2),
+    foreground_faded: blendColors("#000000", "#ffffff", 0.8),
     selected: otherColors[0],
     highlight: otherColors[1],
     comment: "#eb8e5b",
@@ -35,9 +38,10 @@ export function loadSettings(forceReset) {
     return defaultSettings;
   }
   try {
-    return (
-      JSON.parse(window.localStorage.getItem("settings")) || defaultSettings
-    );
+      const prevSettings = JSON.parse(window.localStorage.getItem("settings")) || defaultSettings
+      // allows fields in defaultSettings which don't exist in prevSettings (i.e. a new setting has
+      // been introduced since user saved their own settings) to still be populated, with default.
+      return {...defaultSettings, ...prevSettings}
   } catch {
     return defaultSettings;
   }
