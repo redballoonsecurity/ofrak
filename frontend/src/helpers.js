@@ -230,18 +230,3 @@ export function splitAndCapitalize(name) {
     .map((name) => name.charAt(0).toUpperCase() + name.slice(1))
     .join(" ");
 }
-
-/***
- * Blend two hex colors, with the bias towards one color or the other as a parameter.
- * https://stackoverflow.com/questions/6367010/average-2-hex-colors-together-in-javascript
- *
- * e.g. amount=1.0 would just return colorA unchanged, and amount=0.5 would return their average.
- */
-export function blendColors(colorA, colorB, amount) {
-  const [rA, gA, bA] = colorA.match(/\w\w/g).map((c) => parseInt(c, 16));
-  const [rB, gB, bB] = colorB.match(/\w\w/g).map((c) => parseInt(c, 16));
-  const r = Math.round(rA + (rB - rA) * amount).toString(16).padStart(2, '0');
-  const g = Math.round(gA + (gB - gA) * amount).toString(16).padStart(2, '0');
-  const b = Math.round(bA + (bB - bA) * amount).toString(16).padStart(2, '0');
-  return '#' + r + g + b;
-}

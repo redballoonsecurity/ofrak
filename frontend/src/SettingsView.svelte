@@ -104,7 +104,6 @@
 
 <script>
   import { loadSettings, settings } from "./stores.js";
-  import { blendColors } from "./helpers"
 
   import Icon from "./Icon.svelte";
   import Checkbox from "./Checkbox.svelte";

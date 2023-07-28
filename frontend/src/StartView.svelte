@@ -66,8 +66,7 @@
   }
 
   button:disabled {
-    background-color: var(--faded-bg-color);
-    color: var(--faded-fg-color);
+    opacity: 0.45;
   }
 
   option {
