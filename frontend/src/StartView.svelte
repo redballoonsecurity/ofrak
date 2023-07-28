@@ -38,7 +38,8 @@
 
   button,
   select,
-  option {
+  option,
+  input {
     background-color: var(--main-bg-color);
     color: inherit;
     border: 1px solid;
@@ -48,8 +49,7 @@
     padding-bottom: 0.5em;
     padding-left: 1em;
     padding-right: 1em;
-    margin-left: 0.5em;
-    margin-right: 0.5em;
+    margin: 0.5em;
     font-size: inherit;
     font-family: var(--font);
     box-shadow: none;
@@ -93,6 +93,44 @@
   .clickable {
     cursor: pointer;
   }
+
+  .project-options {
+    display: flex;
+    flex-direction: row;
+  }
+
+  .project-input {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .project {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .advanced {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .advanced-options {
+    display: flex;
+    flex-direction: row;
+  }
+
+  .advanced-check {
+    margin: 0.5em;
+  }
+
+  .advanced-options > button {
+    width: 25%;
+  }
+
+  .advanced-options > input {
+    width: 75%;
+  }
 </style>
 
 <script>
@@ -102,14 +140,16 @@
   import TextDivider from "./TextDivider.svelte";
 
   import { animals } from "./animals.js";
-  import { selected, settings } from "./stores.js";
+  import { selected, settings, selectedProject } from "./stores.js";
   import { remote_model_to_resource } from "./ofrak/remote_resource";
 
   import { onMount } from "svelte";
   import { numBytesToQuantity } from "./helpers";
+  import Checkbox from "./Checkbox.svelte";
 
   export let rootResourceLoadPromise,
     showRootResource,
+    showProjectManager,
     resources,
     rootResource,
     resourceNodeDataMap,
@@ -118,8 +158,15 @@
   let dragging = false,
     selectedPreExistingRoot = null,
     preExistingRootsPromise = new Promise(() => {}),
+    preExistingProjectsPromise = new Promise(() => {}),
     tryHash = !!window.location.hash;
-  let mouseX, selectedAnimal;
+  let mouseX,
+    selectedAnimal,
+    showProjectOptions,
+    newProjectName,
+    gitUrl,
+    projectPath,
+    showAdvancedProjectOptions;
   const warnFileSize = 250 * 1024 * 1024;
   const fileChunkSize = warnFileSize;
 
@@ -192,6 +239,101 @@
 
       rootResourceLoadPromise = Promise.resolve(undefined);
     }
+  }
+
+  async function createNewProject() {
+    let result = await fetch(`${$settings.backendUrl}/create_new_project`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: newProjectName,
+      }),
+    }).then((r) => {
+      if (!r.ok) {
+        throw Error(r.statusText);
+      }
+      return r.json();
+    });
+    $selectedProject = await fetch(
+      `${$settings.backendUrl}/get_project_by_id?id=${result.id}`
+    ).then((r) => {
+      if (!r.ok) {
+        throw Error(r.statusText);
+      }
+      return r.json();
+    });
+    showProjectManager = true;
+  }
+
+  async function cloneProjectFromGit() {
+    let result = await fetch(`${$settings.backendUrl}/clone_project_from_git`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        url: gitUrl,
+      }),
+    })
+      .then((r) => {
+        if (!r.ok) {
+          throw Error(r.statusText);
+        }
+        return r.json();
+      })
+      .catch((e) => {
+        try {
+          let errorObject = JSON.parse(e.message);
+          alert(`${errorObject.type}: ${errorObject.message}`);
+        } catch {
+          alert(e);
+        }
+        console.error(e);
+      });
+    $selectedProject = await fetch(
+      `${$settings.backendUrl}/get_project_by_id?id=${result.id}`
+    ).then((r) => {
+      if (!r.ok) {
+        throw Error(r.statusText);
+      }
+      return r.json();
+    });
+    showProjectManager = true;
+  }
+
+  async function changeProjectPath() {
+    let result = await fetch(`${$settings.backendUrl}/set_projects_path`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        path: projectPath,
+      }),
+    })
+      .then((r) => {
+        if (!r.ok) {
+          throw Error(r.statusText);
+        }
+        return r.json();
+      })
+      .catch((e) => {
+        try {
+          let errorObject = JSON.parse(e.message);
+          alert(`${errorObject.type}: ${errorObject.message}`);
+        } catch {
+          alert(e);
+        }
+        console.error(e);
+      });
+    projectPath = await fetch(`${$settings.backendUrl}/get_projects_path`).then(
+      (r) => r.json()
+    );
+    preExistingProjectsPromise = await fetch(
+      `${$settings.backendUrl}/get_all_projects`
+    ).then((r) => r.json());
   }
 
   async function handleDrop(e) {
@@ -270,6 +412,12 @@
     preExistingRootsPromise = await fetch(
       `${$settings.backendUrl}/get_root_resources`
     ).then((r) => r.json());
+    projectPath = await fetch(`${$settings.backendUrl}/get_projects_path`).then(
+      (r) => r.json()
+    );
+    preExistingProjectsPromise = await fetch(
+      `${$settings.backendUrl}/get_all_projects`
+    ).then((r) => r.json());
   });
 </script>
 
@@ -285,18 +433,24 @@
     on:drop|preventDefault="{handleDrop}"
     on:mousemove="{(e) => (mouseX = e.clientX)}"
     on:mouseleave="{() => (mouseX = undefined)}"
-    on:click="{() => fileinput.click()}"
+    on:click="{() => {
+      if (!showProjectOptions) {
+        fileinput.click();
+      }
+    }}"
     style:border-color="{animals[selectedAnimal]?.color ||
       "var(--main-fg-color)"}"
     style:color="{animals[selectedAnimal]?.color || "var(--main-fg-color)"}"
   >
-    {#if !dragging}
+    {#if !dragging && !showProjectOptions}
       <h1>Drag in a file to analyze</h1>
       <p style:margin-bottom="0">
         Click anwyhere to browse for a file to analyze
       </p>
-    {:else}
+    {:else if dragging}
       <h1>Drop the file!</h1>
+    {:else if showProjectOptions}
+      <h1>Open a Project</h1>
     {/if}
 
     <input type="file" bind:this="{fileinput}" bind:files="{browsedFiles}" />
@@ -312,7 +466,7 @@
     {#await preExistingRootsPromise}
       <LoadingText />
     {:then preExistingRootResources}
-      {#if preExistingRootsPromise && preExistingRootsPromise.length > 0}
+      {#if !showProjectOptions && preExistingRootsPromise && preExistingRootsPromise.length > 0}
         <form on:submit|preventDefault="{choosePreExistingRoot}">
           <select
             on:click|stopPropagation="{() => undefined}"
@@ -337,13 +491,85 @@
             type="submit">Go!</button
           >
         </form>
-      {:else}
+      {:else if !showProjectOptions}
         No resources loaded yet.
       {/if}
     {:catch}
       <p>Failed to get any pre-existing root resources!</p>
       <p>The back end server may be down.</p>
     {/await}
+    <div class="project">
+      {#if showProjectOptions}
+        <div class="project-options">
+          <div class="project-input">
+            <input
+              on:click|stopPropagation
+              type="text"
+              bind:value="{newProjectName}"
+              placeholder="Project Name"
+            />
+            <button on:click|stopPropagation="{createNewProject}"
+              >Create New Project</button
+            >
+          </div>
+          <div class="project-input">
+            {#await preExistingProjectsPromise then projects}
+              <select on:click|stopPropagation bind:value="{$selectedProject}">
+                {#each projects as project}
+                  <option value="{project}">
+                    {project.name}
+                  </option>
+                {/each}
+              </select>
+              <button
+                on:click|stopPropagation="{(e) => {
+                  showProjectManager = true;
+                }}">Open Existing Project</button
+              >
+            {/await}
+          </div>
+          <div class="project-input">
+            <input
+              on:click|stopPropagation
+              type="text"
+              bind:value="{gitUrl}"
+              placeholder="Git Url"
+            />
+            <button on:click|stopPropagation="{cloneProjectFromGit}"
+              >Clone Project From Git</button
+            >
+          </div>
+        </div>
+        <div class="advanced">
+          <div class="advanced-check">
+            <Checkbox
+              leftbox="{true}"
+              bind:checked="{showAdvancedProjectOptions}"
+              >Show Advanced Options</Checkbox
+            >
+          </div>
+          {#if showAdvancedProjectOptions}
+            <div class="advanced-options">
+              <input bind:value="{projectPath}" placeholder="{projectPath}" />
+              <button on:click|stopPropagation="{changeProjectPath}"
+                >Set Location</button
+              >
+            </div>
+          {/if}
+        </div>
+        <button
+          on:click|stopPropagation="{(e) => {
+            showProjectOptions = false;
+          }}">Hide Project Options</button
+        >
+      {:else}
+        <button
+          on:click|stopPropagation="{(e) => {
+            showProjectOptions = true;
+          }}">Show Project Options</button
+        >
+      {/if}
+    </div>
     <Animals
       x="{mouseX}"
       visible="{true}"
