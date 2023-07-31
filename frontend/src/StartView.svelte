@@ -508,13 +508,14 @@
               bind:value="{newProjectName}"
               placeholder="Project Name"
             />
-            <button on:click|stopPropagation="{createNewProject}"
+            <button disabled="{!(newProjectName?.length > 0)}" on:click|stopPropagation="{createNewProject}"
               >Create New Project</button
             >
           </div>
           <div class="project-input">
             {#await preExistingProjectsPromise then projects}
               <select on:click|stopPropagation bind:value="{$selectedProject}">
+                  <option value="{undefined}" selected disabled>Select a Project</option>
                 {#each projects as project}
                   <option value="{project}">
                     {project.name}
@@ -522,6 +523,7 @@
                 {/each}
               </select>
               <button
+                disabled="{!($selectedProject)}"
                 on:click|stopPropagation="{(e) => {
                   showProjectManager = true;
                 }}">Open Existing Project</button
@@ -535,7 +537,7 @@
               bind:value="{gitUrl}"
               placeholder="Git Url"
             />
-            <button on:click|stopPropagation="{cloneProjectFromGit}"
+            <button disabled="{!(gitUrl?.length > 0)}" on:click|stopPropagation="{cloneProjectFromGit}"
               >Clone Project From Git</button
             >
           </div>

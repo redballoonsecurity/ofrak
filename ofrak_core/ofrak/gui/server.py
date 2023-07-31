@@ -148,9 +148,8 @@ class AiohttpOFRAKServer:
         self.component_context: ComponentContext = ClientComponentContext()
         self.script_builder: ScriptBuilder = ScriptBuilder()
         self.resource_builder: Dict[str, Tuple[Resource, memoryview]] = {}
-        self.projects: Set[OfrakProject] = set()
+        self.projects: Optional[Set[OfrakProject]] = None
         self.projects_dir: str = "/tmp/ofrak-projects"
-        self._slurp_projects_from_dir()
         self._app.add_routes(
             [
                 web.post("/create_root_resource", self.create_root_resource),
@@ -1031,6 +1030,8 @@ class AiohttpOFRAKServer:
 
     @exceptions_to_http(SerializedError)
     async def create_new_project(self, request: Request) -> Response:
+        if self.projects is None:
+            self._slurp_projects_from_dir()
         body = await request.json()
         name = body.get("name")
         project = OfrakProject.create(name, os.path.join("/tmp/", name))
@@ -1040,6 +1041,9 @@ class AiohttpOFRAKServer:
 
     @exceptions_to_http(SerializedError)
     async def clone_project_from_git(self, request: Request) -> Response:
+        if self.projects is None:
+            self._slurp_projects_from_dir()
+
         def recurse_path_collisions(path: str, count: int) -> str:
             if count == 0:
                 incr_path = path
@@ -1068,6 +1072,8 @@ class AiohttpOFRAKServer:
 
     @exceptions_to_http(SerializedError)
     async def get_all_projects(self, requet: Request) -> Response:
+        if self.projects is None:
+            self._slurp_projects_from_dir()
         return json_response([project.to_dict() for project in self.projects])
 
     @exceptions_to_http(SerializedError)
@@ -1115,6 +1121,8 @@ class AiohttpOFRAKServer:
 
     def _slurp_projects_from_dir(self) -> None:
         self.projects = set()
+        if not os.path.exists(self.projects_dir):
+            os.makedirs(self.projects_dir)
         for dir in os.listdir(self.projects_dir):
             try:
                 project = OfrakProject.init_from_path(os.path.join(self.projects_dir, dir))
@@ -1122,7 +1130,9 @@ class AiohttpOFRAKServer:
             except:
                 pass
 
-    def _get_project_by_name(self, name) -> OfrakProject:
+    def _get_project_by_name(self, name) -> Optional[OfrakProject]:
+        if self.projects is None:
+            self._slurp_projects_from_dir()
         result = [project for project in self.projects if project.name == name]
         if len(result) > 1:
             raise AttributeError("Project Name Collision")
@@ -1131,6 +1141,8 @@ class AiohttpOFRAKServer:
         return result[0]
 
     def _get_project_by_id(self, id) -> OfrakProject:
+        if self.projects is None:
+            self._slurp_projects_from_dir()
         result = [project for project in self.projects if project.project_id.hex() == id]
         if len(result) > 1:
             raise AttributeError("Project ID Collision")
