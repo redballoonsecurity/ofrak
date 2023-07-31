@@ -14,7 +14,7 @@ from ofrak.core import (
 )
 from ofrak.model.component_model import ComponentExternalTool, ComponentConfig
 
-DEBUGFS = ComponentExternalTool(
+_DEBUGFS = ComponentExternalTool(
     "debugfs", "https://e2fsprogs.sourceforge.net/", "-V", brew_package="e2fsprogs"
 )
 
@@ -52,7 +52,7 @@ class ExtUnpacker(Unpacker[None]):
 
     targets = (ExtFilesystem,)
     children = (File, Folder, SpecialFileType)
-    external_dependencies = (DEBUGFS,)
+    external_dependencies = (_DEBUGFS,)
 
     async def unpack(self, resource: Resource, config: ComponentConfig = None) -> None:
         with tempfile.NamedTemporaryFile(suffix=".extfs") as temp_fs_file:
