@@ -24,7 +24,7 @@
     {#each projectElementOptions as projectOption}
       <div class="element">
         <ProjectManagerCheckbox
-          option="{projectOption}"
+          option="{projectOption['name']}"
           bind:selection="{selection}"
           bind:focus="{focus}"
         />

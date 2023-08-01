@@ -59,7 +59,7 @@
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        id: $selectedProject.id,
+        id: $selectedProject.session_id,
         binary: selectedBinary,
         script: selectedScript,
       }),

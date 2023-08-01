@@ -213,6 +213,7 @@ class AiohttpOFRAKServer:
                 web.post("/clone_project_from_git", self.clone_project_from_git),
                 web.get("/get_projects_path", self.get_projects_path),
                 web.post("/set_projects_path", self.set_projects_path),
+                web.post("/save_project_data", self.save_project_data),
                 web.get("/", self.get_static_files),
                 web.static(
                     "/",
@@ -1034,10 +1035,10 @@ class AiohttpOFRAKServer:
             self._slurp_projects_from_dir()
         body = await request.json()
         name = body.get("name")
-        project = OfrakProject.create(name, os.path.join("/tmp/", name))
+        project = OfrakProject.create(name, os.path.join(self.projects_dir, name))
         self.projects.add(project)
 
-        return json_response({"id": project.project_id.hex()})
+        return json_response({"id": project.session_id.hex()})
 
     @exceptions_to_http(SerializedError)
     async def clone_project_from_git(self, request: Request) -> Response:
@@ -1062,19 +1063,19 @@ class AiohttpOFRAKServer:
         )
         project = OfrakProject.clone_from_git(url, path)
         self.projects.add(project)
-        return json_response({"id": project.project_id.hex()})
+        return json_response({"id": project.session_id.hex()})
 
     @exceptions_to_http(SerializedError)
     async def get_project_by_id(self, request: Request) -> Response:
         id = request.query.get("id")
         project = self._get_project_by_id(id)
-        return json_response(project.to_dict())
+        return json_response(project.get_current_metadata())
 
     @exceptions_to_http(SerializedError)
-    async def get_all_projects(self, requet: Request) -> Response:
+    async def get_all_projects(self, request: Request) -> Response:
         if self.projects is None:
             self._slurp_projects_from_dir()
-        return json_response([project.to_dict() for project in self.projects])
+        return json_response([project.get_saved_metadata() for project in self.projects])
 
     @exceptions_to_http(SerializedError)
     async def add_binary_to_project(self, request: Request) -> Response:
@@ -1119,6 +1120,25 @@ class AiohttpOFRAKServer:
         self._slurp_projects_from_dir()
         return json_response(self.projects_dir)
 
+    @exceptions_to_http(SerializedError)
+    async def update_binary_data(self, request: Request) -> Response:
+        body = await request.json()
+        id = body["id"]
+        binary_name = body["name"]
+        init_script = body["init"]
+        associated_scripts = body["associated_scripts"]
+        project = self._get_project_by_id(id)
+        project.update_binary_data(binary_name, init_script, associated_scripts)
+        return json_response([])
+
+    @exceptions_to_http(SerializedError)
+    async def save_project_data(self, request: Request) -> Response:
+        body = await request.json()
+        id = body["id"]
+        project = self._get_project_by_id(id)
+        project.write_metadata_to_disk()
+        return json_response([])
+
     def _slurp_projects_from_dir(self) -> None:
         self.projects = set()
         if not os.path.exists(self.projects_dir):
@@ -1143,7 +1163,7 @@ class AiohttpOFRAKServer:
     def _get_project_by_id(self, id) -> OfrakProject:
         if self.projects is None:
             self._slurp_projects_from_dir()
-        result = [project for project in self.projects if project.project_id.hex() == id]
+        result = [project for project in self.projects if project.session_id.hex() == id]
         if len(result) > 1:
             raise AttributeError("Project ID Collision")
         if len(result) == 0:

@@ -96,7 +96,7 @@
 
   .project-options {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
   }
 
   .project-input {
@@ -107,6 +107,9 @@
   .project {
     display: flex;
     flex-direction: column;
+    justify-content: stretch;
+    align-items: stretch;
+    width: 50%;
   }
 
   .advanced {
@@ -450,19 +453,22 @@
     {:else if dragging}
       <h1>Drop the file!</h1>
     {:else if showProjectOptions}
-      <h1>Open a Project</h1>
-    {/if}
-
-    <input type="file" bind:this="{fileinput}" bind:files="{browsedFiles}" />
-
-    <div class="maxwidth">
+      <h1>Project Options</h1>
       <TextDivider
         color="{animals[selectedAnimal]?.color || 'var(--main-fg-color)'}"
-      >
-        OR
-      </TextDivider>
-    </div>
+      />
+    {/if}
+    {#if !showProjectOptions}
+      <input type="file" bind:this="{fileinput}" bind:files="{browsedFiles}" />
 
+      <div class="maxwidth">
+        <TextDivider
+          color="{animals[selectedAnimal]?.color || 'var(--main-fg-color)'}"
+        >
+          OR
+        </TextDivider>
+      </div>
+    {/if}
     {#await preExistingRootsPromise}
       <LoadingText />
     {:then preExistingRootResources}
@@ -508,28 +514,42 @@
               bind:value="{newProjectName}"
               placeholder="Project Name"
             />
-            <button disabled="{!(newProjectName?.length > 0)}" on:click|stopPropagation="{createNewProject}"
+            <button
+              disabled="{!(newProjectName?.length > 0)}"
+              on:click|stopPropagation="{createNewProject}"
               >Create New Project</button
             >
           </div>
+          <TextDivider
+            color="{animals[selectedAnimal]?.color || 'var(--main-fg-color)'}"
+          >
+            OR
+          </TextDivider>
           <div class="project-input">
             {#await preExistingProjectsPromise then projects}
               <select on:click|stopPropagation bind:value="{$selectedProject}">
-                  <option value="{undefined}" selected disabled>Select a Project</option>
+                <option value="{undefined}" selected disabled
+                  >Select a Project</option
+                >
                 {#each projects as project}
                   <option value="{project}">
-                    {project.name}
+                    {project.name}: {project.session_id}
                   </option>
                 {/each}
               </select>
               <button
-                disabled="{!($selectedProject)}"
+                disabled="{!$selectedProject}"
                 on:click|stopPropagation="{(e) => {
                   showProjectManager = true;
                 }}">Open Existing Project</button
               >
             {/await}
           </div>
+          <TextDivider
+            color="{animals[selectedAnimal]?.color || 'var(--main-fg-color)'}"
+          >
+            OR
+          </TextDivider>
           <div class="project-input">
             <input
               on:click|stopPropagation
@@ -537,7 +557,9 @@
               bind:value="{gitUrl}"
               placeholder="Git Url"
             />
-            <button disabled="{!(gitUrl?.length > 0)}" on:click|stopPropagation="{cloneProjectFromGit}"
+            <button
+              disabled="{!(gitUrl?.length > 0)}"
+              on:click|stopPropagation="{cloneProjectFromGit}"
               >Clone Project From Git</button
             >
           </div>
@@ -562,7 +584,7 @@
         <button
           on:click|stopPropagation="{(e) => {
             showProjectOptions = false;
-          }}">Hide Project Options</button
+          }}">Back</button
         >
       {:else}
         <button
