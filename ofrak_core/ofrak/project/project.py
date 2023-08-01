@@ -38,6 +38,7 @@ class OfrakProject:
         self.project_id: bytes = project_id
         self.binaries: Dict[str, _OfrakProjectBinary] = binaries
         self.scripts: List[str] = scripts
+        self.session_id = uuid.uuid4().bytes
 
     @property
     def metadata_path(self):
@@ -60,16 +61,58 @@ class OfrakProject:
         os.makedirs(os.path.join(path, "scripts"), exist_ok=True)
         os.makedirs(os.path.join(path, "binaries"), exist_ok=True)
 
-        with open(new_project.metadata_path, "w+") as f:
-            pass
-        with open(new_project.readme_path, "w+") as f:
-            pass
+        new_project.write_metadata_to_disk()
 
         return new_project
 
     @staticmethod
     def clone_from_git(url: str, path: str) -> "OfrakProject":
         repo = Repo.clone_from(url, path)
+        if not os.path.exists(path):
+            raise ValueError(f"{path} does not exist")
+        if not os.path.isdir(path):
+            raise ValueError(f"{path} is not a directory")
+
+        metadata_path = os.path.join(path, "metadata.json")
+        binaries_path = os.path.join(path, "binaries")
+        scripts_path = os.path.join(path, "scripts")
+
+        if not all(
+            [
+                os.path.exists(metadata_path),
+                os.path.exists(binaries_path),
+                os.path.isdir(binaries_path),
+                os.path.exists(scripts_path),
+                os.path.isdir(scripts_path),
+            ]
+        ):
+            raise ValueError(f"{path} has invalid structure to be an Project")
+
+        with open(metadata_path) as f:
+            raw_metadata = json.load(f)
+
+        scripts = [script["name"] for script in raw_metadata["scripts"]]
+
+        binaries = {}
+
+        for info in raw_metadata["binaries"]:
+            binaries[info["name"]] = _OfrakProjectBinary(
+                info["associated_scripts"], info.get("init_script")
+            )
+        name = raw_metadata["name"]
+        project_id = binascii.unhexlify(raw_metadata["project_id"])
+        project = OfrakProject(
+            path,
+            name,
+            project_id,
+            binaries,
+            scripts,
+        )
+
+        return project
+
+    @staticmethod
+    def _init_from_path(path: str) -> "OfrakProject":
         name = os.path.basename(path)
         if not os.path.exists(path):
             raise ValueError(f"{path} does not exist")
@@ -104,40 +147,6 @@ class OfrakProject:
 
     @staticmethod
     def init_from_path(path: str) -> "OfrakProject":
-        name = os.path.basename(path)
-        if not os.path.exists(path):
-            raise ValueError(f"{path} does not exist")
-        if not os.path.isdir(path):
-            raise ValueError(f"{path} is not a directory")
-        binaries_path = os.path.join(path, "binaries")
-        scripts_path = os.path.join(path, "scripts")
-
-        if not all(
-            [
-                os.path.exists(binaries_path),
-                os.path.isdir(binaries_path),
-                os.path.exists(scripts_path),
-                os.path.isdir(scripts_path),
-            ]
-        ):
-            raise ValueError(f"{path} has invalid structure to be an Project")
-        scripts = [script_name for script_name in os.listdir(scripts_path)]
-        binaries = {}
-        for binary in os.listdir(binaries_path):
-            binaries[binary] = _OfrakProjectBinary([], None)
-
-        project = OfrakProject(
-            path,
-            name,
-            uuid.uuid4().bytes,
-            binaries,
-            scripts,
-        )
-
-        return project
-
-    @staticmethod
-    def _init_from_path(path: str) -> "OfrakProject":
         """
 
         Assume path points to a directory with the following structure:
@@ -160,14 +169,12 @@ class OfrakProject:
             raise ValueError(f"{path} is not a directory")
 
         metadata_path = os.path.join(path, "metadata.json")
-        readme_path = os.path.join(path, "README.md")
         binaries_path = os.path.join(path, "binaries")
         scripts_path = os.path.join(path, "scripts")
 
         if not all(
             [
                 os.path.exists(metadata_path),
-                os.path.exists(readme_path),
                 os.path.exists(binaries_path),
                 os.path.isdir(binaries_path),
                 os.path.exists(scripts_path),
@@ -179,7 +186,7 @@ class OfrakProject:
         with open(metadata_path) as f:
             raw_metadata = json.load(f)
 
-        scripts = [script_name for script_name in raw_metadata["scripts"]]
+        scripts = [script["name"] for script in raw_metadata["scripts"]]
 
         binaries = {}
 
@@ -188,8 +195,7 @@ class OfrakProject:
                 info["associated_scripts"], info.get("init_script")
             )
         name = raw_metadata["name"]
-        project_id = binascii.unhexlify(raw_metadata["id"])
-
+        project_id = binascii.unhexlify(raw_metadata["project_id"])
         project = OfrakProject(
             path,
             name,
@@ -238,8 +244,13 @@ class OfrakProject:
     def write_metadata_to_disk(self):
         metadata = {
             "name": self.name,
-            "id": self.project_id.hex(),
-            "scripts": [script for script in self.scripts],
+            "project_id": self.project_id.hex(),
+            "scripts": [
+                {
+                    "name": script_name,
+                }
+                for script_name in self.scripts
+            ],
             "binaries": [
                 {
                     "name": binary_name,
@@ -251,6 +262,33 @@ class OfrakProject:
         }
         with open(os.path.join(self.path, "metadata.json"), "w") as f:
             json.dump(metadata, f)
+
+    def get_saved_metadata(self):
+        with open(os.path.join(self.path, "metadata.json")) as f:
+            data = json.load(f)
+            data["session_id"] = self.session_id.hex()
+            return data
+
+    def get_current_metadata(self):
+        return {
+            "name": self.name,
+            "project_id": self.project_id.hex(),
+            "session_id": self.session_id.hex(),
+            "scripts": [
+                {
+                    "name": script_name,
+                }
+                for script_name in self.scripts
+            ],
+            "binaries": [
+                {
+                    "name": binary_name,
+                    "init_script": binary_info.init_script,
+                    "associated_scripts": binary_info.associated_scripts,
+                }
+                for binary_name, binary_info in self.binaries.items()
+            ],
+        }
 
     def add_binary(self, name: str, contents: bytes):
         self.binaries[name] = _OfrakProjectBinary([], None)
@@ -264,6 +302,13 @@ class OfrakProject:
         with open(self.script_path(name, check=False), "w+") as f:
             f.write(script_contents)
 
+    def update_binary_data(self, name: str, init: str = None, associated: List[str] = None):
+        binary = self._get_binary(name)
+        if init is not None:
+            binary.init_script = init
+        if associated is not None:
+            binary.associated_scripts = associated
+
     def to_dict(self):
         return {
             "name": self.name,
@@ -271,3 +316,8 @@ class OfrakProject:
             "binaries": [binary for binary in self.binaries.keys()],
             "scripts": [script for script in self.scripts],
         }
+
+    def _get_binary(self, name):
+        if not name in self.binaries.keys():
+            raise ValueError(f"Binary with the name {name} does not exist")
+        return self.binaries[name]
