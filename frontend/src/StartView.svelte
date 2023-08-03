@@ -67,6 +67,7 @@
 
   button:disabled {
     opacity: 0.45;
+    cursor: not-allowed;
   }
 
   option {
