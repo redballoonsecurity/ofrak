@@ -4,7 +4,7 @@ import sys
 from dataclasses import dataclass
 from typing import List, Union, Tuple
 
-from bincopy import BinFile  # type:ignore
+from bincopy import BinFile
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.identifier import Identifier
@@ -70,10 +70,13 @@ class IhexUnpacker(Unpacker[None]):
 
         elif resource.has_tag(IhexProgram):
             ihex_program = await resource.view_as(IhexProgram)
-            for seg in ihex_program.segments:
-                segment_data_range = seg.translate(-ihex_program.address_limits.start)
+            for seg_vaddr_range in ihex_program.segments:
+                # Segment is mapped into the program at an offset starting at the difference between
+                # the segment's vaddr range and the program's base address
+                segment_data_range = seg_vaddr_range.translate(-ihex_program.address_limits.start)
                 await resource.create_child_from_view(
-                    ProgramSection(seg.start, seg.length()), data_range=segment_data_range
+                    ProgramSection(seg_vaddr_range.start, seg_vaddr_range.length()),
+                    data_range=segment_data_range,
                 )
 
 
