@@ -56,70 +56,88 @@ class IhexAnalyzer(Analyzer[None, IhexProgram]):
 
 class IhexUnpacker(Unpacker[None]):
     """
-    Extract the Intel Hex image into a GenericBinary
+    Unpack an Intel HEX file, converting into raw bytes with padding bytes added to fill the gaps
+    between segments. The result is a Program made up of a binary blob representing the entire
+    memory space that the ihex file would load.
     """
 
-    targets = (Ihex, IhexProgram)
-    children = (IhexProgram, ProgramSection)
+    targets = (Ihex,)
+    children = (IhexProgram,)
 
     async def unpack(self, resource: Resource, config=None):
-        if resource.has_tag(Ihex):
-            ihex_program, binfile = _binfile_analysis(await resource.get_data())
+        ihex_program, binfile = _binfile_analysis(await resource.get_data())
 
-            await resource.create_child_from_view(ihex_program, data=bytes(binfile.as_binary()))
+        await resource.create_child_from_view(ihex_program, data=bytes(binfile.as_binary()))
 
-        elif resource.has_tag(IhexProgram):
-            ihex_program = await resource.view_as(IhexProgram)
-            for seg_vaddr_range in ihex_program.segments:
-                # Segment is mapped into the program at an offset starting at the difference between
-                # the segment's vaddr range and the program's base address
-                segment_data_range = seg_vaddr_range.translate(-ihex_program.address_limits.start)
-                await resource.create_child_from_view(
-                    ProgramSection(seg_vaddr_range.start, seg_vaddr_range.length()),
-                    data_range=segment_data_range,
-                )
+
+class IhexProgramUnpacker(Unpacker[None]):
+    """
+    Unpack the individual segments from an Intel HEX Program's binary blob.
+    """
+
+    targets = (IhexProgram,)
+    children = (ProgramSection,)
+
+    async def unpack(self, resource: Resource, config=None):
+        ihex_program = await resource.view_as(IhexProgram)
+        for seg_vaddr_range in ihex_program.segments:
+            # Segment is mapped into the program at an offset starting at the difference between
+            # the segment's vaddr range and the program's base address
+            segment_data_range = seg_vaddr_range.translate(-ihex_program.address_limits.start)
+            await resource.create_child_from_view(
+                ProgramSection(seg_vaddr_range.start, seg_vaddr_range.length()),
+                data_range=segment_data_range,
+            )
+
+
+class IhexProgramPacker(Packer[None]):
+    """
+    Pack the segments of an Intel HEX program back into a binary blob. Recomputes segment size and
+    program address range based on the actual segments at the time of packing.
+    """
+
+    targets = (IhexProgram,)
+
+    async def pack(self, resource: Resource, config=None) -> None:
+        updated_segments = []
+        min_vaddr = sys.maxsize
+        max_vaddr = 0
+        for segment_r in await resource.get_children_as_view(
+            ProgramSection, r_filter=ResourceFilter.with_tags(ProgramSection)
+        ):
+            seg_length = await segment_r.resource.get_data_length()
+            seg_start = segment_r.virtual_address
+            updated_segments.append(Range.from_size(seg_start, seg_length))
+            min_vaddr = min(min_vaddr, seg_start)
+            max_vaddr = max(max_vaddr, seg_start + seg_length)
+        ihex_prog = await resource.view_as(IhexProgram)
+        ihex_prog.segments = updated_segments
+        ihex_prog.address_limits = Range(min_vaddr, max_vaddr)
+        resource.add_view(ihex_prog)
 
 
 class IhexPacker(Packer[None]):
     """
-    Generate an Intel HEX file from an Ihex view
+    Pack a binary blob representation of an Intel HEX program back into an Intel HEX file.
     """
 
-    targets = (Ihex, IhexProgram)
+    targets = (Ihex,)
 
     async def pack(self, resource: Resource, config=None) -> None:
-        if resource.has_tag(IhexProgram):
-            updated_segments = []
-            min_vaddr = sys.maxsize
-            max_vaddr = 0
-            for segment_r in await resource.get_children_as_view(
-                ProgramSection, r_filter=ResourceFilter.with_tags(ProgramSection)
-            ):
-                seg_length = await segment_r.resource.get_data_length()
-                seg_start = segment_r.virtual_address
-                updated_segments.append(Range.from_size(seg_start, seg_length))
-                min_vaddr = min(min_vaddr, seg_start)
-                max_vaddr = max(max_vaddr, seg_start + seg_length)
-            ihex_prog = await resource.view_as(IhexProgram)
-            ihex_prog.segments = updated_segments
-            ihex_prog.address_limits = Range(min_vaddr, max_vaddr)
-            resource.add_view(ihex_prog)
+        program_child = await resource.get_only_child_as_view(IhexProgram)
+        vaddr_offset = -program_child.address_limits.start
+        binfile = BinFile()
+        binfile.execution_start_address = program_child.start_addr
+        for seg in program_child.segments:
+            seg_data = await program_child.resource.get_data(seg.translate(vaddr_offset))
+            binfile.add_binary(seg_data, seg.start)
 
-        elif resource.has_tag(Ihex):
-            program_child = await resource.get_only_child_as_view(IhexProgram)
-            vaddr_offset = -program_child.address_limits.start
-            binfile = BinFile()
-            binfile.execution_start_address = program_child.start_addr
-            for seg in program_child.segments:
-                seg_data = await program_child.resource.get_data(seg.translate(vaddr_offset))
-                binfile.add_binary(seg_data, seg.start)
-
-            new_data = binfile.as_ihex()
-            if new_data.endswith("\n"):
-                new_data = new_data[:-1]
-            new_data = new_data.encode("utf-8")
-            old_data_len = await resource.get_data_length()
-            resource.queue_patch(Range(0, old_data_len), new_data)
+        new_data = binfile.as_ihex()
+        if new_data.endswith("\n"):
+            new_data = new_data[:-1]
+        new_data = new_data.encode("utf-8")
+        old_data_len = await resource.get_data_length()
+        resource.queue_patch(Range(0, old_data_len), new_data)
 
 
 class IhexIdentifier(Identifier):
