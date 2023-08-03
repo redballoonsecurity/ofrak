@@ -214,6 +214,9 @@ class AiohttpOFRAKServer:
                 web.get("/get_projects_path", self.get_projects_path),
                 web.post("/set_projects_path", self.set_projects_path),
                 web.post("/save_project_data", self.save_project_data),
+                web.post("/delete_binary_from_project", self.delete_binary_from_project),
+                web.post("/delete_script_from_project", self.delete_script_from_project),
+                web.post("/reset_project", self.reset_project),
                 web.get("/", self.get_static_files),
                 web.static(
                     "/",
@@ -1075,7 +1078,15 @@ class AiohttpOFRAKServer:
     async def get_all_projects(self, request: Request) -> Response:
         if self.projects is None:
             self._slurp_projects_from_dir()
-        return json_response([project.get_saved_metadata() for project in self.projects])
+        return json_response([project.get_current_metadata() for project in self.projects])
+
+    @exceptions_to_http(SerializedError)
+    async def reset_project(self, request: Request) -> Response:
+        body = await request.json()
+        id = body["id"]
+        project = self._get_project_by_id(id)
+        project.reset_project()
+        return json_response([])
 
     @exceptions_to_http(SerializedError)
     async def add_binary_to_project(self, request: Request) -> Response:
@@ -1137,6 +1148,24 @@ class AiohttpOFRAKServer:
         id = body["id"]
         project = self._get_project_by_id(id)
         project.write_metadata_to_disk()
+        return json_response([])
+
+    @exceptions_to_http(SerializedError)
+    async def delete_binary_from_project(self, request: Request) -> Response:
+        body = await request.json()
+        id = body["id"]
+        binary_name = body["binary"]
+        project = self._get_project_by_id(id)
+        project.delete_binary(binary_name)
+        return json_response([])
+        
+    @exceptions_to_http(SerializedError)
+    async def delete_script_from_project(self, request: Request) -> Response:
+        body = await request.json()
+        id = body["id"]
+        script_name = body["script"]
+        project = self._get_project_by_id(id)
+        project.delete_script(script_name) 
         return json_response([])
 
     def _slurp_projects_from_dir(self) -> None:
