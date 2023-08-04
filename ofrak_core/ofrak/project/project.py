@@ -275,7 +275,9 @@ class OfrakProject:
         with open(self.script_path(name, check=False), "w+") as f:
             f.write(script_contents)
 
-    def update_binary_data(self, name: str, init: str = None, associated: List[str] = None):
+    def update_binary_data(
+        self, name: str, init: Optional[str] = None, associated: Optional[List[str]] = None
+    ):
         binary = self._get_binary(name)
         if init is not None:
             binary.init_script = init
