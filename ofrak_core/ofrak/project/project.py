@@ -207,6 +207,13 @@ class OfrakProject:
 
         return resource
 
+    def get_script_body(self, script_name: str) -> str:
+        if script_name not in self.scripts:
+            raise ValueError(f"Script {script_name} is not a script in this Project")
+        with open(self.script_path(script_name)) as f:
+            code = f.read()
+        return code
+
     def write_metadata_to_disk(self):
         metadata = {
             "name": self.name,

@@ -217,6 +217,7 @@ class AiohttpOFRAKServer:
                 web.post("/delete_binary_from_project", self.delete_binary_from_project),
                 web.post("/delete_script_from_project", self.delete_script_from_project),
                 web.post("/reset_project", self.reset_project),
+                web.get("/get_project_script", self.get_project_script),
                 web.get("/", self.get_static_files),
                 web.static(
                     "/",
@@ -1151,6 +1152,7 @@ class AiohttpOFRAKServer:
         return json_response([])
 
     @exceptions_to_http(SerializedError)
+<<<<<<< HEAD
     async def delete_binary_from_project(self, request: Request) -> Response:
         body = await request.json()
         id = body["id"]
@@ -1167,6 +1169,15 @@ class AiohttpOFRAKServer:
         project = self._get_project_by_id(id)
         project.delete_script(script_name)
         return json_response([])
+=======
+    async def get_project_script(self, request: Request) -> Response:
+        project_id = request.query.get("project")
+        script_name = request.query.get("script")
+        project = self._get_project_by_id(project_id)
+        script_body = project.get_script_body(script_name)
+
+        return Response(text=script_body)
+>>>>>>> 0a113db71428c57666b1bc06097386c41ab5c23c
 
     def _slurp_projects_from_dir(self) -> None:
         self.projects = set()
