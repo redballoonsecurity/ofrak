@@ -59,7 +59,6 @@
   import { onMount } from "svelte";
   import ProjectManagerCheckbox from "./ProjectManagerCheckbox.svelte";
   import ProjectManagerScriptOptions from "./ProjectManagerScriptOptions.svelte";
-  import ExclusiveCheckbox from "../ExclusiveCheckbox.svelte";
 
   let focus,
     selectedBinaryName,
@@ -150,7 +149,7 @@
               {#each binariesForProject as binaryName}
                 <div class="element">
                   <ProjectManagerCheckbox
-                    option="{binaryName}"
+                    ownValue="{binaryName}"
                     checkbox="{false}"
                     bind:focus="{focusBinary}"
                   />
@@ -173,24 +172,19 @@
                 <div class="element">
                   {#if selectedBinaryName}
                     {#key forceRefreshProject}
-                      <ExclusiveCheckbox
-                        leftbox="true"
-                        bind:selectedValue="{$selectedProject.binaries[
-                          selectedBinaryName
-                        ].init_script}"
-                        ownValue="{script['name']}"
-                      />
                       <ProjectManagerCheckbox
-                        option="{script['name']}"
-                        bind:selection="{$selectedProject.binaries[
+                        ownValue="{script['name']}"
+                        inclusiveSelectionGroup="{$selectedProject.binaries[
                           selectedBinaryName
                         ].associated_scripts}"
+                        bind:exclusiveSelectionValue="{$selectedProject
+                          .binaries[selectedBinaryName].init_script}"
                         bind:focus="{focusScript}"
                       />
                     {/key}
                   {:else}
                     <ProjectManagerCheckbox
-                      option="{script['name']}"
+                      ownValue="{script['name']}"
                       bind:focus="{focusScript}"
                     />
                   {/if}

@@ -5,7 +5,7 @@
     margin-top: 1em;
   }
 
-  .option {
+  .ownValue {
     margin-right: 1em;
     display: inline-flex;
     flex-direction: row;
@@ -18,40 +18,66 @@
     cursor: pointer;
     border-style: none;
   }
+
+  .checkwrapper {
+    display: inline-flex;
+  }
 </style>
 
 <script>
   import Checkbox from "../Checkbox.svelte";
-  export let option,
-    selection = undefined,
+  import ExclusiveCheckbox from "../ExclusiveCheckbox.svelte";
+  export let ownValue,
+    inclusiveSelectionGroup = undefined,
+    exclusiveSelectionValue = undefined,
     focus;
-  let checked = selection?.includes(option);
-  let userChecked;
+  let inclusiveCheckboxChecked;
 
-  $: if (selection !== undefined && userChecked !== undefined) {
-    if (selection.includes(option)) {
-      if (!userChecked) {
-        selection.splice(selection.indexOf(option), 1);
+  $: if (
+    inclusiveSelectionGroup !== undefined &&
+    inclusiveCheckboxChecked !== undefined
+  ) {
+    if (inclusiveSelectionGroup.includes(ownValue)) {
+      if (!inclusiveCheckboxChecked) {
+        inclusiveSelectionGroup.splice(
+          inclusiveSelectionGroup.indexOf(ownValue),
+          1
+        );
       }
     } else {
-      if (userChecked) {
-        selection.push(option);
+      if (inclusiveCheckboxChecked) {
+        inclusiveSelectionGroup.push(ownValue);
       }
     }
   }
 </script>
 
 <div class="checkbox">
-  <!-- Selection may be an empty list ("falsey") but we still want a checkbox -->
-  {#if selection !== undefined}
-    <Checkbox checked="{checked}" bind:value="{userChecked}" leftbox="{true}" />
+  <!-- May be an empty list ("falsey") but we still want a checkbox -->
+  {#if inclusiveSelectionGroup !== undefined}
+    <span class="checkwrapper">
+      <Checkbox
+        checked="{inclusiveSelectionGroup?.includes(ownValue)}"
+        bind:value="{inclusiveCheckboxChecked}"
+        leftbox="{true}"
+      />
+    </span>
+  {/if}
+  {#if exclusiveSelectionValue !== undefined}
+    <span class="checkwrapper">
+      <ExclusiveCheckbox
+        leftbox="{true}"
+        bind:selectedValue="{exclusiveSelectionValue}"
+        ownValue="{ownValue}"
+      />
+    </span>
   {/if}
   <button
-    class="option"
+    class="ownValue"
     on:click="{() => {
-      focus = option;
+      focus = ownValue;
     }}"
   >
-    {option}
+    {ownValue}
   </button>
 </div>
