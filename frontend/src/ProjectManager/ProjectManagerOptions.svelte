@@ -19,8 +19,8 @@
   <div class="options">
     {#if focus && typeof focus == "string"}
       "{focus}"
-    {:else if focus}
-      <svelte:component this="{focus}" />
+    {:else if focus && typeof focus == "object"}
+      <svelte:component this="{focus['object']}" {...focus["args"]} />
     {:else}
       Click anywhere to see its options.
     {/if}

@@ -48,13 +48,17 @@
 <script>
   import Pane from "../Pane.svelte";
   import Split from "../Split.svelte";
-  import ProjectManagerAddFileToProject from "./ProjectManagerAddFileToProject.svelte";
   import ProjectManagerFocusableLabel from "./ProjectManagerFocusableLabel.svelte";
   import ProjectManagerOptions from "./ProjectManagerOptions.svelte";
-  import ProjectManagerSelector from "./ProjectManagerSelector.svelte";
+  import ProjectManagerBinarySelector from "./ProjectManagerBinarySelector.svelte";
+  import ProjectManagerScriptSelector from "./ProjectManagerScriptSelector.svelte";
   import { selectedProject, settings, selected } from "../stores";
   import { remote_model_to_resource } from "../ofrak/remote_resource";
   import ProjectManagerToolbar from "./ProjectManagerToolbar.svelte";
+  import ProjectManagerAddBinaryToProject from "./ProjectManagerAddBinaryToProject.svelte";
+  import ProjectManagerAddScriptToProject from "./ProjectManagerAddScriptToProject.svelte";
+  import ProjectManagerMainOptions from "./ProjectManagerMainOptions.svelte";
+  import { onMount } from "svelte";
   import ProjectManagerCheckbox from "./ProjectManagerCheckbox.svelte";
 
   let focus,
@@ -93,6 +97,13 @@
     showRootResource = true;
   }
 
+
+  onMount(async () => {
+    focus = {
+      object: ProjectManagerMainOptions,
+      args: {},
+    };
+  });
   $: rootResourceLoadPromise = openProject;
   $: {
     focus = binaryFocus;
@@ -116,7 +127,7 @@
             <ProjectManagerFocusableLabel
               bind:focus="{focus}"
               label="Binaries"
-              newFocus="{ProjectManagerAddFileToProject}"
+              newFocus="{ProjectManagerAddBinaryToProject}"
             />
           </div>
           <div class="hbox2">
@@ -138,7 +149,7 @@
             <ProjectManagerFocusableLabel
               bind:focus="{focus}"
               label="Scripts"
-              newFocus="{ProjectManagerAddFileToProject}"
+              newFocus="{ProjectManagerAddScriptToProject}"
             />
           </div>
           <div class="hbox2">

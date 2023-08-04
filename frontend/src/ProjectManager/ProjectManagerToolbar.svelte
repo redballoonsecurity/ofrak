@@ -1,6 +1,7 @@
 <script>
   import { settings, selectedProject } from "../stores.js";
-  import ProjectManagerAddFileToProject from "./ProjectManagerAddFileToProject.svelte";
+  import ProjectManagerAddBinaryToProject from "./ProjectManagerAddBinaryToProject.svelte";
+  import ProjectManagerAddScriptToProject from "./ProjectManagerAddScriptToProject.svelte";
   import Toolbar from "../Toolbar.svelte";
 
   export let focus, openProject, showProjectManager;
@@ -22,11 +23,19 @@
       onclick: openProject,
     },
     {
-      text: "Add",
-      iconUrl: "/icons/plus.svg",
-      shortcut: "+",
+      text: "Add Binary",
+      iconUrl: "/icons/binary.svg",
+      shortcut: "B",
       onclick: async (e) => {
-        focus = ProjectManagerAddFileToProject;
+        focus = ProjectManagerAddBinaryToProject;
+      },
+    },
+    {
+      text: "Add Script",
+      iconUrl: "/icons/document.svg",
+      shortcut: "S",
+      onclick: async (e) => {
+        focus = ProjectManagerAddScriptToProject;
       },
     },
     {
@@ -37,6 +46,32 @@
         await fetch(`${$settings.backendUrl}/save_project_data`, {
           method: "POST",
           body: JSON.stringify($selectedProject),
+        });
+      },
+    },
+    {
+      text: "Reset",
+      iconUrl: "/icons/reset.svg",
+      shortcut: "r",
+      onclick: async (e) => {
+        await fetch(`/${$settings.backendUrl}/reset_project`, {
+          method: "POST",
+          body: JSON.stringify({
+            id: $selectedProject.session_id,
+          }),
+        }).then(async (r) => {
+          if (!r.ok) {
+            throw Error(JSON.stringify(await r.json(), undefined, 2));
+          }
+          $selectedProject = await fetch(
+            `${$settings.backendUrl}/get_project_by_id?id=${$selectedProject.session_id}`
+          ).then((r) => {
+            if (!r.ok) {
+              throw Error(r.statusText);
+            }
+            return r.json();
+          });
+          return await r.json();
         });
       },
     },
