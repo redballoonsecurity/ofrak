@@ -60,10 +60,12 @@
   import ProjectManagerMainOptions from "./ProjectManagerMainOptions.svelte";
   import { onMount } from "svelte";
   import ProjectManagerCheckbox from "./ProjectManagerCheckbox.svelte";
+  import ProjectManagerScriptOptions from "./ProjectManagerScriptOptions.svelte";
 
   let focus,
     selectedBinaryName,
-    binaryFocus,
+    focusBinary,
+    focusScript,
     selectedScript = null;
 
   let binariesForProject = [];
@@ -97,7 +99,6 @@
     showRootResource = true;
   }
 
-
   onMount(async () => {
     focus = {
       object: ProjectManagerMainOptions,
@@ -106,9 +107,23 @@
   });
   $: rootResourceLoadPromise = openProject;
   $: {
-    focus = binaryFocus;
-    selectedBinaryName = binaryFocus;
-    binaryFocus = undefined;
+    focus = {
+      object: ProjectManagerScriptOptions,
+      args: {
+        name: focusBinary,
+      },
+    };
+    selectedBinaryName = focusBinary;
+    focusBinary = undefined;
+  }
+  $: {
+    focus = {
+      object: ProjectManagerScriptOptions,
+      args: {
+        name: focusScript,
+      },
+    };
+    focusScript = undefined;
   }
 </script>
 
@@ -137,7 +152,7 @@
                   <ProjectManagerCheckbox
                     option="{binaryName}"
                     checkbox="{false}"
-                    bind:focus="{binaryFocus}"
+                    bind:focus="{focusBinary}"
                   />
                 </div>
               {/each}
@@ -162,12 +177,12 @@
                       bind:selection="{$selectedProject.binaries[
                         selectedBinaryName
                       ].associated_scripts}"
-                      bind:focus="{focus}"
+                      bind:focus="{focusScript}"
                     />
                   {:else}
                     <ProjectManagerCheckbox
                       option="{projectOption['name']}"
-                      bind:focus="{focus}"
+                      bind:focus="{focusScript}"
                     />
                   {/if}
                 </div>
