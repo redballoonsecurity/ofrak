@@ -31,7 +31,6 @@
   $: if (selection !== undefined && userChecked !== undefined) {
     if (selection.includes(option)) {
       if (!userChecked) {
-        console.log("Removing option " + option);
         selection.splice(selection.indexOf(option), 1);
       }
     } else {
