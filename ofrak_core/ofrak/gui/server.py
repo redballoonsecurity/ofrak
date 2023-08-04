@@ -1134,8 +1134,11 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def save_project_data(self, request: Request) -> Response:
         body = await request.json()
-        id = body["id"]
-        project = self._get_project_by_id(id)
+        session_id = body["session_id"]
+        project = self._get_project_by_id(session_id)
+        for binary_name, binary_metadata in body["binaries"].items():
+            project.binaries[binary_name].init_script = binary_metadata["init_script"]
+            project.binaries[binary_name].associated_scripts = binary_metadata["associated_scripts"]
         project.write_metadata_to_disk()
         return json_response([])
 

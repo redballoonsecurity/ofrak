@@ -1,5 +1,5 @@
 <style>
-  .hbox {
+  .hbox2 {
     width: 100%;
     padding: 2em;
     overflow-y: hidden;
@@ -19,7 +19,7 @@
   export let projectElementOptions, selection, focus;
 </script>
 
-<div class="hbox">
+<div class="hbox2">
   <div class="content">
     {#each projectElementOptions as projectOption}
       <div class="element">
