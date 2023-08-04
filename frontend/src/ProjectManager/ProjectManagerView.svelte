@@ -50,8 +50,6 @@
   import Split from "../Split.svelte";
   import ProjectManagerFocusableLabel from "./ProjectManagerFocusableLabel.svelte";
   import ProjectManagerOptions from "./ProjectManagerOptions.svelte";
-  import ProjectManagerBinarySelector from "./ProjectManagerBinarySelector.svelte";
-  import ProjectManagerScriptSelector from "./ProjectManagerScriptSelector.svelte";
   import { selectedProject, settings, selected } from "../stores";
   import { remote_model_to_resource } from "../ofrak/remote_resource";
   import ProjectManagerToolbar from "./ProjectManagerToolbar.svelte";
