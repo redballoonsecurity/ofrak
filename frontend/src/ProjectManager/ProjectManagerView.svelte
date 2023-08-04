@@ -29,6 +29,20 @@
     font-weight: bold;
     text-transform: uppercase;
   }
+
+  .hbox2 {
+    width: 100%;
+    padding: 2em;
+    overflow-y: hidden;
+  }
+
+  .content {
+    font-size: x-large;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    overflow: auto;
+  }
 </style>
 
 <script>
@@ -36,8 +50,6 @@
   import Split from "../Split.svelte";
   import ProjectManagerFocusableLabel from "./ProjectManagerFocusableLabel.svelte";
   import ProjectManagerOptions from "./ProjectManagerOptions.svelte";
-  import ProjectManagerBinarySelector from "./ProjectManagerBinarySelector.svelte";
-  import ProjectManagerScriptSelector from "./ProjectManagerScriptSelector.svelte";
   import { selectedProject, settings, selected } from "../stores";
   import { remote_model_to_resource } from "../ofrak/remote_resource";
   import ProjectManagerToolbar from "./ProjectManagerToolbar.svelte";
@@ -45,9 +57,22 @@
   import ProjectManagerAddScriptToProject from "./ProjectManagerAddScriptToProject.svelte";
   import ProjectManagerMainOptions from "./ProjectManagerMainOptions.svelte";
   import { onMount } from "svelte";
+  import ProjectManagerCheckbox from "./ProjectManagerCheckbox.svelte";
+  import ProjectManagerScriptOptions from "./ProjectManagerScriptOptions.svelte";
 
-  let selectedBinary, focus;
-  let selectedScript = null;
+  let focus,
+    selectedBinaryName,
+    focusBinary,
+    focusScript,
+    selectedScript = null,
+    forceRefreshProject = {};
+
+  let binariesForProject = [];
+  for (let binaryName in $selectedProject.binaries) {
+    if ($selectedProject.binaries.hasOwnProperty(binaryName)) {
+      binariesForProject.push(binaryName);
+    }
+  }
 
   export let resources,
     rootResourceLoadPromise,
@@ -63,7 +88,7 @@
       },
       body: JSON.stringify({
         id: $selectedProject.session_id,
-        binary: selectedBinary,
+        binary: selectedBinaryName,
         script: selectedScript,
       }),
     }).then((r) => r.json());
@@ -80,6 +105,25 @@
     };
   });
   $: rootResourceLoadPromise = openProject;
+  $: {
+    focus = {
+      object: ProjectManagerScriptOptions,
+      args: {
+        name: focusBinary,
+      },
+    };
+    selectedBinaryName = focusBinary;
+    focusBinary = undefined;
+  }
+  $: {
+    focus = {
+      object: ProjectManagerScriptOptions,
+      args: {
+        name: focusScript,
+      },
+    };
+    focusScript = undefined;
+  }
 </script>
 
 <div class="title">OFRAK Project Manager</div>
@@ -88,6 +132,7 @@
     bind:focus="{focus}"
     openProject="{openProject}"
     bind:showProjectManager="{showProjectManager}"
+    bind:forceRefreshProject="{forceRefreshProject}"
   />
   <div class="manager">
     <Split vertical="{true}" percentOfFirstSplit="{70}">
@@ -100,11 +145,19 @@
               newFocus="{ProjectManagerAddBinaryToProject}"
             />
           </div>
-          <ProjectManagerBinarySelector
-            projectElementOptions="{$selectedProject.binaries}"
-            bind:selection="{selectedBinary}"
-            bind:focus="{focus}"
-          />
+          <div class="hbox2">
+            <div class="content">
+              {#each binariesForProject as binaryName}
+                <div class="element">
+                  <ProjectManagerCheckbox
+                    option="{binaryName}"
+                    checkbox="{false}"
+                    bind:focus="{focusBinary}"
+                  />
+                </div>
+              {/each}
+            </div>
+          </div>
         </Pane>
         <Pane slot="second">
           <div class="sub-title">
@@ -114,11 +167,30 @@
               newFocus="{ProjectManagerAddScriptToProject}"
             />
           </div>
-          <ProjectManagerScriptSelector
-            projectElementOptions="{$selectedProject.scripts}"
-            bind:selection="{selectedScript}"
-            bind:focus="{focus}"
-          />
+          <div class="hbox2">
+            <div class="content">
+              {#each $selectedProject.scripts as projectOption}
+                <div class="element">
+                  {#if selectedBinaryName}
+                    {#key forceRefreshProject}
+                      <ProjectManagerCheckbox
+                        option="{projectOption['name']}"
+                        bind:selection="{$selectedProject.binaries[
+                          selectedBinaryName
+                        ].associated_scripts}"
+                        bind:focus="{focusScript}"
+                      />
+                    {/key}
+                  {:else}
+                    <ProjectManagerCheckbox
+                      option="{projectOption['name']}"
+                      bind:focus="{focusScript}"
+                    />
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          </div>
         </Pane>
       </Split>
       <Pane slot="second" paddingVertical="{'1em'}">
