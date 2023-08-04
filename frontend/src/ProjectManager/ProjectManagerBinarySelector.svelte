@@ -1,0 +1,44 @@
+<style>
+  .hbox {
+    width: 100%;
+    padding: 2em;
+    overflow-y: hidden;
+  }
+  .content {
+    font-size: x-large;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    overflow: auto;
+  }
+</style>
+
+<script>
+  import ProjectManagerBinaryOptions from "./ProjectManagerBinaryOptions.svelte";
+  import ProjectManagerCheckbox from "./ProjectManagerCheckbox.svelte";
+
+  export let projectElementOptions, selection, focus;
+  let binaryName;
+  $: if (binaryName) {
+    focus = {
+      object: ProjectManagerBinaryOptions,
+      args: {
+        name: binaryName,
+      },
+    };
+  }
+</script>
+
+<div class="hbox">
+  <div class="content">
+    {#each projectElementOptions as projectOption}
+      <div class="element">
+        <ProjectManagerCheckbox
+          option="{projectOption['name']}"
+          bind:selection="{selection}"
+          bind:focus="{binaryName}"
+        />
+      </div>
+    {/each}
+  </div>
+</div>

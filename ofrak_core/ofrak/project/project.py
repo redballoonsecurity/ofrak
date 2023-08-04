@@ -112,40 +112,6 @@ class OfrakProject:
         return project
 
     @staticmethod
-    def _init_from_path(path: str) -> "OfrakProject":
-        name = os.path.basename(path)
-        if not os.path.exists(path):
-            raise ValueError(f"{path} does not exist")
-        if not os.path.isdir(path):
-            raise ValueError(f"{path} is not a directory")
-        binaries_path = os.path.join(path, "binaries")
-        scripts_path = os.path.join(path, "scripts")
-
-        if not all(
-            [
-                os.path.exists(binaries_path),
-                os.path.isdir(binaries_path),
-                os.path.exists(scripts_path),
-                os.path.isdir(scripts_path),
-            ]
-        ):
-            raise ValueError(f"{path} has invalid structure to be an Project")
-        scripts = [script_name for script_name in os.listdir(scripts_path)]
-        binaries = {}
-        for binary in os.listdir(binaries_path):
-            binaries[binary] = _OfrakProjectBinary([], None)
-
-        project = OfrakProject(
-            path,
-            name,
-            uuid.uuid4().bytes,
-            binaries,
-            scripts,
-        )
-
-        return project
-
-    @staticmethod
     def init_from_path(path: str) -> "OfrakProject":
         """
 
@@ -316,13 +282,96 @@ class OfrakProject:
         if associated is not None:
             binary.associated_scripts = associated
 
-    def to_dict(self):
-        return {
-            "name": self.name,
-            "id": self.project_id.hex(),
-            "binaries": [binary for binary in self.binaries.keys()],
-            "scripts": [script for script in self.scripts],
-        }
+    def delete_binary(self, name: str):
+        if not os.path.isdir(os.path.join(self.path, ".Trash")):
+            os.mkdir(os.path.join(self.path, ".Trash"))
+        if not os.path.isdir(os.path.join(os.path.join(self.path, ".Trash"), "binaries")):
+            os.mkdir(os.path.join(os.path.join(self.path, ".Trash"), "binaries"))
+        os.rename(
+            self.binary_path(name),
+            os.path.join(os.path.join(os.path.join(self.path, ".Trash"), "binaries"), name),
+        )
+        self.binaries.pop(name)
+
+    def delete_script(self, name: str):
+        if not os.path.isdir(os.path.join(self.path, ".Trash")):
+            os.mkdir(os.path.join(self.path, ".Trash"))
+        if not os.path.isdir(os.path.join(os.path.join(self.path, ".Trash"), "scripts")):
+            os.mkdir(os.path.join(os.path.join(self.path, ".Trash"), "scripts"))
+        os.rename(
+            self.script_path(name),
+            os.path.join(os.path.join(os.path.join(self.path, ".Trash"), "scripts"), name),
+        )
+        self.scripts.remove(name)
+
+    def reset_project(self):
+        path = self.path
+        if not os.path.exists(path):
+            raise ValueError(f"{path} does not exist")
+        if not os.path.isdir(path):
+            raise ValueError(f"{path} is not a directory")
+
+        metadata_path = os.path.join(path, "metadata.json")
+        binaries_path = os.path.join(path, "binaries")
+        scripts_path = os.path.join(path, "scripts")
+
+        if not all(
+            [
+                os.path.exists(metadata_path),
+                os.path.exists(binaries_path),
+                os.path.isdir(binaries_path),
+                os.path.exists(scripts_path),
+                os.path.isdir(scripts_path),
+            ]
+        ):
+            raise ValueError(f"{path} has invalid structure to be an Project")
+
+        with open(metadata_path) as f:
+            raw_metadata = json.load(f)
+
+        self.scripts = [script["name"] for script in raw_metadata["scripts"]]
+        for script in self.scripts:
+            if not os.path.exists(self.script_path(script, check=False)):
+                if not os.path.exists(
+                    os.path.join(os.path.join(os.path.join(self.path, ".Trash"), "scripts"), script)
+                ):
+                    raise AttributeError(
+                        f"Trying to restore script {script} but the file is missing from .Trash"
+                    )
+                else:
+                    os.rename(
+                        os.path.join(
+                            os.path.join(os.path.join(self.path, ".Trash"), "scripts"), script
+                        ),
+                        self.script_path(script, check=False),
+                    )
+
+        self.binaries = {}
+
+        for info in raw_metadata["binaries"]:
+            self.binaries[info["name"]] = _OfrakProjectBinary(
+                info["associated_scripts"], info.get("init_script")
+            )
+        for binary in self.binaries.keys():
+            if not os.path.exists(self.binary_path(binary, check=False)):
+                if not os.path.exists(
+                    os.path.join(
+                        os.path.join(os.path.join(self.path, ".Trash"), "binaries"), binary
+                    )
+                ):
+                    raise AttributeError(
+                        f"Trying to restore binary {binary} but the file is missing from .Trash"
+                    )
+                else:
+                    os.rename(
+                        os.path.join(
+                            os.path.join(os.path.join(self.path, ".Trash"), "scripts"), script
+                        ),
+                        self.binary_path(script, check=False),
+                    )
+
+        self.name = raw_metadata["name"]
+        self.project_id = binascii.unhexlify(raw_metadata["project_id"])
 
     def _get_binary(self, name):
         if not name in self.binaries.keys():

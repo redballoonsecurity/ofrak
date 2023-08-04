@@ -15,8 +15,19 @@
 
 <script>
   import ProjectManagerCheckbox from "./ProjectManagerCheckbox.svelte";
+  import ProjectManagerScriptOptions from "./ProjectManagerScriptOptions.svelte";
 
   export let projectElementOptions, selection, focus;
+  let scriptName;
+
+  $: if (scriptName) {
+    focus = {
+      object: ProjectManagerScriptOptions,
+      args: {
+        name: scriptName,
+      },
+    };
+  }
 </script>
 
 <div class="hbox">
@@ -26,7 +37,7 @@
         <ProjectManagerCheckbox
           option="{projectOption['name']}"
           bind:selection="{selection}"
-          bind:focus="{focus}"
+          bind:focus="{scriptName}"
         />
       </div>
     {/each}

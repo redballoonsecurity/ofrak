@@ -19,6 +19,17 @@
     overflow: hidden;
     box-shadow: none;
   }
+  button:hover,
+  button:focus {
+    outline: none;
+    box-shadow: inset 1px 1px 0 var(--main-fg-color),
+      inset -1px -1px 0 var(--main-fg-color);
+  }
+
+  button:active {
+    box-shadow: inset 2px 2px 0 var(--main-fg-color),
+      inset -2px -2px 0 var(--main-fg-color);
+  }
 </style>
 
 <script>
@@ -53,33 +64,6 @@
         }
         return r.json();
       });
-      console.log($selectedProject);
-      return await r.json();
-    });
-  }
-
-  async function addScriptToProject() {
-    return await fetch(
-      `${$settings.backendUrl}/add_script_to_project?id=${$selectedProject.session_id}&name=${f.name}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: await f.arrayBuffer(),
-      }
-    ).then(async (r) => {
-      if (!r.ok) {
-        throw Error(JSON.stringify(await r.json(), undefined, 2));
-      }
-      $selectedProject = await fetch(
-        `${$settings.backendUrl}/get_project_by_id?id=${$selectedProject.session_id}`
-      ).then((r) => {
-        if (!r.ok) {
-          throw Error(r.statusText);
-        }
-        return r.json();
-      });
       return await r.json();
     });
   }
@@ -89,10 +73,7 @@
   <FileBrowser bind:files="{files}" />
   {#if f}
     <button on:click="{addBinaryToProject}"
-      ><Icon url="/icons/binary.svg" /> Add to Project as Binary</button
-    >
-    <button on:click="{addScriptToProject}"
-      ><Icon url="/icons/document.svg" /> Add to Project as Script</button
+      ><Icon url="/icons/binary.svg" /> Add Binary to Project</button
     >
   {/if}
 </div>
