@@ -55,14 +55,19 @@
     box-shadow: none;
   }
 
-  button:hover,
-  button:focus {
+  button:hover:not([disabled]),
+  button:focus:not([disabled]) {
     outline: none;
     box-shadow: inset 1px 1px 0, inset -1px -1px 0;
   }
 
-  button:active {
+  button:active:not([disabled]) {
     box-shadow: inset 2px 2px 0, inset -2px -2px 0;
+  }
+
+  button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
 
   option {
