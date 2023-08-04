@@ -56,7 +56,7 @@
       iconUrl: "/icons/reset.svg",
       shortcut: "r",
       onclick: async (e) => {
-        await fetch(`/${$settings.backendUrl}/reset_project`, {
+        await fetch(`${$settings.backendUrl}/reset_project`, {
           method: "POST",
           body: JSON.stringify({
             id: $selectedProject.session_id,
