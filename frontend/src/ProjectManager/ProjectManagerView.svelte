@@ -59,12 +59,12 @@
   import { onMount } from "svelte";
   import ProjectManagerCheckbox from "./ProjectManagerCheckbox.svelte";
   import ProjectManagerScriptOptions from "./ProjectManagerScriptOptions.svelte";
+  import ExclusiveCheckbox from "../ExclusiveCheckbox.svelte";
 
   let focus,
     selectedBinaryName,
     focusBinary,
     focusScript,
-    selectedScript = null,
     forceRefreshProject = {};
 
   let binariesForProject = [];
@@ -89,7 +89,7 @@
       body: JSON.stringify({
         id: $selectedProject.session_id,
         binary: selectedBinaryName,
-        script: selectedScript,
+        script: $selectedProject.binaries[selectedBinaryName].init_script,
       }),
     }).then((r) => r.json());
     rootResource = remote_model_to_resource(rootModel, resources);
@@ -169,12 +169,19 @@
           </div>
           <div class="hbox2">
             <div class="content">
-              {#each $selectedProject.scripts as projectOption}
+              {#each $selectedProject.scripts as script}
                 <div class="element">
                   {#if selectedBinaryName}
                     {#key forceRefreshProject}
+                      <ExclusiveCheckbox
+                        leftbox="true"
+                        bind:selectedValue="{$selectedProject.binaries[
+                          selectedBinaryName
+                        ].init_script}"
+                        ownValue="{script['name']}"
+                      />
                       <ProjectManagerCheckbox
-                        option="{projectOption['name']}"
+                        option="{script['name']}"
                         bind:selection="{$selectedProject.binaries[
                           selectedBinaryName
                         ].associated_scripts}"
@@ -183,7 +190,7 @@
                     {/key}
                   {:else}
                     <ProjectManagerCheckbox
-                      option="{projectOption['name']}"
+                      option="{script['name']}"
                       bind:focus="{focusScript}"
                     />
                   {/if}

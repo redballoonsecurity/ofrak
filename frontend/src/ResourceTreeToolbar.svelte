@@ -31,7 +31,7 @@
     $selected = originalSelected;
   }
 
-  let toolbarButtons, experimentalFeatures;
+  let toolbarButtons, experimentalFeatures, projectFeatures;
   const neverResolves = new Promise(() => {});
   $: {
     experimentalFeatures = [

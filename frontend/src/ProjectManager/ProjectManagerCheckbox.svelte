@@ -29,12 +29,14 @@
   let userChecked;
 
   $: if (selection !== undefined && userChecked !== undefined) {
-    if (userChecked && !selection.includes(option)) {
-      selection.push(option);
+    if (selection.includes(option)) {
+      if (!userChecked) {
+        console.log("Removing option " + option);
+        selection.splice(selection.indexOf(option), 1);
+      }
     } else {
-      const idx = selection.indexOf(option);
-      if (idx >= 0) {
-        selection.splice(idx, 1);
+      if (userChecked) {
+        selection.push(option);
       }
     }
   }
