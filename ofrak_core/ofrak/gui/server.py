@@ -1158,14 +1158,14 @@ class AiohttpOFRAKServer:
         project = self._get_project_by_id(id)
         project.delete_binary(binary_name)
         return json_response([])
-        
+
     @exceptions_to_http(SerializedError)
     async def delete_script_from_project(self, request: Request) -> Response:
         body = await request.json()
         id = body["id"]
         script_name = body["script"]
         project = self._get_project_by_id(id)
-        project.delete_script(script_name) 
+        project.delete_script(script_name)
         return json_response([])
 
     def _slurp_projects_from_dir(self) -> None:

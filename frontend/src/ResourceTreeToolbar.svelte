@@ -54,6 +54,25 @@
   }
 
   $: {
+    projectFeatures = [
+      {
+        text: "Project Manager",
+        iconUrl: "/icons/briefcase.svg",
+        onclick: async (e) => {
+          if ($selectedProject) {
+            let state = {
+              $selectProject: $selectedProject,
+            };
+            showProjectManager = true;
+            showRootResource = false;
+            history.pushState(state, "", "/");
+          }
+        },
+      },
+    ];
+  }
+
+  $: {
     toolbarButtons = [
       {
         text: "Identify",
@@ -296,6 +315,10 @@
         },
       },
     ];
+  }
+
+  $: if ($settings.$selectedProject) {
+    toolbarButtons = [...toolbarButtons, ...projectFeatures];
   }
 
   $: if ($settings.experimentalFeatures) {
