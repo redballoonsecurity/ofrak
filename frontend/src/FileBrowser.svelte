@@ -31,7 +31,6 @@
 
   .filelabel span {
     width: 100%;
-    margin-left: 2ch;
     background: inherit;
     color: inherit;
     /* border-bottom: 1px solid var(--main-fg-color); */

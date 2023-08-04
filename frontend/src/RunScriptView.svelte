@@ -1,9 +1,19 @@
 <style>
-  button {
+  button,
+  select,
+  option {
+    background-color: var(--main-bg-color);
+    color: inherit;
+    border: 1px solid;
+    border-color: inherit;
+    border-radius: 0;
     padding-top: 0.5em;
     padding-bottom: 0.5em;
     padding-left: 1em;
     padding-right: 1em;
+    font-size: inherit;
+    font-family: var(--font);
+    box-shadow: none;
   }
 
   button:hover,
@@ -19,7 +29,7 @@
   }
 
   .inputs > *:nth-child(1) {
-    margin: 0 0 1em -1em;
+    margin: 0 0 1em 0;
   }
 
   .hbox {
@@ -68,6 +78,14 @@
   .textarea {
     white-space: pre;
   }
+
+  .scriptchoice {
+    display: block;
+  }
+
+  .scriptchoice > * {
+    display: inline-flex;
+  }
 </style>
 
 <script>
@@ -79,7 +97,12 @@
   import hljs from "highlight.js";
   import python from "highlight.js/lib/languages/python";
 
-  import { selected, selectedResource } from "./stores";
+  import {
+    selected,
+    selectedResource,
+    selectedProject,
+    settings,
+  } from "./stores";
   import { onMount } from "svelte";
 
   hljs.registerLanguage("python", python);
@@ -87,6 +110,7 @@
   export let modifierView, resourceNodeDataMap;
   let runScriptPromise = Promise.resolve(null),
     files = null,
+    projectScript = null,
     loadedScript = [],
     errorMessage,
     ofrakConfigsPromise = new Promise(() => {}),
@@ -95,6 +119,19 @@
   $: if (files) {
     files[0].text().then((value) => {
       loadedScript = value.split("\n");
+    });
+  }
+
+  $: if (projectScript) {
+    fetch(
+      `${$settings.backendUrl}/get_project_script?project=${$selectedProject.session_id}&script=${projectScript}`
+    ).then((r) => {
+      if (!r.ok) {
+        throw Error(r.statusText);
+      }
+      r.text().then((r) => {
+        loadedScript = r.split("\n");
+      });
     });
   }
 
@@ -142,8 +179,21 @@
 
 <div class="container">
   <div class="inputs">
-    <div>
-      <FileBrowser multiple="{false}" bind:files="{files}" />
+    <div class="scriptchoice">
+      {#if $selectedProject}
+        <select on:click|stopPropagation bind:value="{projectScript}">
+          <option value="{null}" selected disabled
+            >Select script from Project</option
+          >
+          {#each $selectedProject.scripts as script}
+            <option value="{script.name}">
+              {script.name}
+            </option>
+          {/each}
+        </select>
+        <p>OR</p>
+      {/if}
+      <div><FileBrowser multiple="{false}" bind:files="{files}" /></div>
     </div>
     {#await ofrakConfigsPromise}
       <LoadingText />

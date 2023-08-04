@@ -214,6 +214,7 @@ class AiohttpOFRAKServer:
                 web.get("/get_projects_path", self.get_projects_path),
                 web.post("/set_projects_path", self.set_projects_path),
                 web.post("/save_project_data", self.save_project_data),
+                web.get("/get_project_script", self.get_project_script),
                 web.get("/", self.get_static_files),
                 web.static(
                     "/",
@@ -1138,6 +1139,15 @@ class AiohttpOFRAKServer:
         project = self._get_project_by_id(id)
         project.write_metadata_to_disk()
         return json_response([])
+
+    @exceptions_to_http(SerializedError)
+    async def get_project_script(self, request: Request) -> Response:
+        project_id = request.query.get("project")
+        script_name = request.query.get("script")
+        project = self._get_project_by_id(project_id)
+        script_body = project.get_script_body(script_name)
+
+        return Response(text=script_body)
 
     def _slurp_projects_from_dir(self) -> None:
         self.projects = set()
