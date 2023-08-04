@@ -217,6 +217,7 @@ class AiohttpOFRAKServer:
                 web.post("/delete_binary_from_project", self.delete_binary_from_project),
                 web.post("/delete_script_from_project", self.delete_script_from_project),
                 web.post("/reset_project", self.reset_project),
+                web.get("/get_project_script", self.get_project_script),
                 web.get("/", self.get_static_files),
                 web.static(
                     "/",
@@ -1035,7 +1036,7 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def create_new_project(self, request: Request) -> Response:
         if self.projects is None:
-            self._slurp_projects_from_dir()
+            self.projects = self._slurp_projects_from_dir()
         body = await request.json()
         name = body.get("name")
         project = OfrakProject.create(name, os.path.join(self.projects_dir, name))
@@ -1046,7 +1047,7 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def clone_project_from_git(self, request: Request) -> Response:
         if self.projects is None:
-            self._slurp_projects_from_dir()
+            self.projects = self._slurp_projects_from_dir()
 
         def recurse_path_collisions(path: str, count: int) -> str:
             if count == 0:
@@ -1077,7 +1078,7 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def get_all_projects(self, request: Request) -> Response:
         if self.projects is None:
-            self._slurp_projects_from_dir()
+            self.projects = self._slurp_projects_from_dir()
         return json_response([project.get_current_metadata() for project in self.projects])
 
     @exceptions_to_http(SerializedError)
@@ -1091,7 +1092,9 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def add_binary_to_project(self, request: Request) -> Response:
         id = request.query.get("id")
-        name = request.query.get("name")
+        name_query = request.query.get("name")
+        if name_query is not None:
+            name = name_query
         data = await request.read()
         project = self._get_project_by_id(id)
         project.add_binary(name, data)
@@ -1100,7 +1103,9 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def add_script_to_project(self, request: Request) -> Response:
         id = request.query.get("id")
-        name = request.query.get("name")
+        name_query = request.query.get("name")
+        if name_query is not None:
+            name = name_query
         data = await request.read()
         project = self._get_project_by_id(id)
         project.add_script(name, data.decode())
@@ -1112,9 +1117,13 @@ class AiohttpOFRAKServer:
         id = body["id"]
         binary = body["binary"]
         script = body["script"]
+        if request.remote is not None:
+            resource_id = request.remote
+        else:
+            raise AttributeError("No resource ID provided")
         project = self._get_project_by_id(id)
         resource = await project.init_adventure_binary(binary, script, self._ofrak_context)
-        self._job_ids[request.remote] = resource.get_job_id()
+        self._job_ids[resource_id] = resource.get_job_id()
         return json_response(self._serialize_resource(resource))
 
     @exceptions_to_http(SerializedError)
@@ -1128,7 +1137,7 @@ class AiohttpOFRAKServer:
         if not os.path.exists(new_path):
             os.mkdir(new_path)
         self.projects_dir = new_path
-        self._slurp_projects_from_dir()
+        self.projects = self._slurp_projects_from_dir()
         return json_response(self.projects_dir)
 
     @exceptions_to_http(SerializedError)
@@ -1171,20 +1180,31 @@ class AiohttpOFRAKServer:
         project.delete_script(script_name)
         return json_response([])
 
-    def _slurp_projects_from_dir(self) -> None:
-        self.projects = set()
+    async def get_project_script(self, request: Request) -> Response:
+        project_id = request.query.get("project")
+        script_name_query = request.query.get("script")
+        if script_name_query is not None:
+            script_name = script_name_query
+        project = self._get_project_by_id(project_id)
+        script_body = project.get_script_body(script_name)
+
+        return Response(text=script_body)
+
+    def _slurp_projects_from_dir(self) -> Set:
+        projects = set()
         if not os.path.exists(self.projects_dir):
             os.makedirs(self.projects_dir)
         for dir in os.listdir(self.projects_dir):
             try:
                 project = OfrakProject.init_from_path(os.path.join(self.projects_dir, dir))
-                self.projects.add(project)
+                projects.add(project)
             except:
                 pass
+        return projects
 
     def _get_project_by_name(self, name) -> Optional[OfrakProject]:
         if self.projects is None:
-            self._slurp_projects_from_dir()
+            self.projects = self._slurp_projects_from_dir()
         result = [project for project in self.projects if project.name == name]
         if len(result) > 1:
             raise AttributeError("Project Name Collision")
@@ -1194,7 +1214,7 @@ class AiohttpOFRAKServer:
 
     def _get_project_by_id(self, id) -> OfrakProject:
         if self.projects is None:
-            self._slurp_projects_from_dir()
+            self.projects = self._slurp_projects_from_dir()
         result = [project for project in self.projects if project.session_id.hex() == id]
         if len(result) > 1:
             raise AttributeError("Project ID Collision")

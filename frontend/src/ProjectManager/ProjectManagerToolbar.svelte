@@ -27,7 +27,7 @@
       iconUrl: "/icons/binary.svg",
       shortcut: "B",
       onclick: async (e) => {
-        focus = ProjectManagerAddBinaryToProject;
+        focus = { object: ProjectManagerAddBinaryToProject, args: {} };
       },
     },
     {
@@ -35,7 +35,7 @@
       iconUrl: "/icons/document.svg",
       shortcut: "S",
       onclick: async (e) => {
-        focus = ProjectManagerAddScriptToProject;
+        focus = { object: ProjectManagerAddScriptToProject, args: {} };
       },
     },
     {
