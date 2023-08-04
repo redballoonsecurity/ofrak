@@ -26,9 +26,10 @@
     selection = undefined,
     focus;
   let checked = selection?.includes(option);
+  let userChecked;
 
-  $: if (selection !== undefined) {
-    if (checked && !selection.includes(option)) {
+  $: if (selection !== undefined && userChecked !== undefined) {
+    if (userChecked && !selection.includes(option)) {
       selection.push(option);
     } else {
       const idx = selection.indexOf(option);
@@ -42,7 +43,7 @@
 <div class="checkbox">
   <!-- Selection may be an empty list ("falsey") but we still want a checkbox -->
   {#if selection !== undefined}
-    <Checkbox bind:checked="{checked}" leftbox="{true}" />
+    <Checkbox checked="{checked}" bind:value="{userChecked}" leftbox="{true}" />
   {/if}
   <button
     class="option"

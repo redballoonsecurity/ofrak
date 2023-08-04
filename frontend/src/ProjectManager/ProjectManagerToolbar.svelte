@@ -4,7 +4,7 @@
   import ProjectManagerAddScriptToProject from "./ProjectManagerAddScriptToProject.svelte";
   import Toolbar from "../Toolbar.svelte";
 
-  export let focus, openProject, showProjectManager;
+  export let focus, openProject, showProjectManager, forceRefreshProject;
   let toolbarButtons;
 
   toolbarButtons = [
@@ -71,6 +71,7 @@
             }
             return r.json();
           });
+          forceRefreshProject = {};
           return await r.json();
         });
       },

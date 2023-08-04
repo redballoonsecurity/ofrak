@@ -64,7 +64,8 @@
     selectedBinaryName,
     focusBinary,
     focusScript,
-    selectedScript = null;
+    selectedScript = null,
+    forceRefreshProject = {};
 
   let binariesForProject = [];
   for (let binaryName in $selectedProject.binaries) {
@@ -131,6 +132,7 @@
     bind:focus="{focus}"
     openProject="{openProject}"
     bind:showProjectManager="{showProjectManager}"
+    bind:forceRefreshProject="{forceRefreshProject}"
   />
   <div class="manager">
     <Split vertical="{true}" percentOfFirstSplit="{70}">
@@ -170,13 +172,15 @@
               {#each $selectedProject.scripts as projectOption}
                 <div class="element">
                   {#if selectedBinaryName}
-                    <ProjectManagerCheckbox
-                      option="{projectOption['name']}"
-                      bind:selection="{$selectedProject.binaries[
-                        selectedBinaryName
-                      ].associated_scripts}"
-                      bind:focus="{focusScript}"
-                    />
+                    {#key forceRefreshProject}
+                      <ProjectManagerCheckbox
+                        option="{projectOption['name']}"
+                        bind:selection="{$selectedProject.binaries[
+                          selectedBinaryName
+                        ].associated_scripts}"
+                        bind:focus="{focusScript}"
+                      />
+                    {/key}
                   {:else}
                     <ProjectManagerCheckbox
                       option="{projectOption['name']}"

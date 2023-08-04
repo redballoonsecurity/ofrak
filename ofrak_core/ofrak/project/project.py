@@ -308,8 +308,8 @@ class OfrakProject:
 
         self.binaries = {}
 
-        for info in raw_metadata["binaries"]:
-            self.binaries[info["name"]] = _OfrakProjectBinary(
+        for binaryName, info in raw_metadata["binaries"].items():
+            self.binaries[binaryName] = _OfrakProjectBinary(
                 info["associated_scripts"], info.get("init_script")
             )
         self.name = raw_metadata["name"]
