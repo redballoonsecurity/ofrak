@@ -43,7 +43,7 @@
       iconUrl: "/icons/disk.svg",
       shortcut: "s",
       onclick: async (e) => {
-        await fetch(`/${$settings.backendUrl}/save_project_data`, {
+        await fetch(`${$settings.backendUrl}/save_project_data`, {
           method: "POST",
           body: JSON.stringify({
             id: $selectedProject.session_id,
