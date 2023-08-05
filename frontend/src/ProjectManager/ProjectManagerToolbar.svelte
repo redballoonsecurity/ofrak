@@ -17,9 +17,9 @@
       },
     },
     {
-      text: "Run",
+      text: "Launch",
       iconUrl: "/icons/run.svg",
-      shortcut: "r",
+      shortcut: "l",
       onclick: openProject,
     },
     {
@@ -52,7 +52,7 @@
     {
       text: "Reset",
       iconUrl: "/icons/reset.svg",
-      shortcut: "r",
+      shortcut: "R",
       onclick: async (e) => {
         await fetch(`${$settings.backendUrl}/reset_project`, {
           method: "POST",

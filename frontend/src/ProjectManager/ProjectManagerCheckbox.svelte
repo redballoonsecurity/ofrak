@@ -30,7 +30,8 @@
   export let ownValue,
     inclusiveSelectionGroup = undefined,
     exclusiveSelectionValue = undefined,
-    focus;
+    focus,
+    mouseoverInfo = {};
   let inclusiveCheckboxChecked;
 
   $: if (
@@ -55,7 +56,17 @@
 <div class="checkbox">
   <!-- May be an empty list ("falsey") but we still want a checkbox -->
   {#if inclusiveSelectionGroup !== undefined}
-    <span class="checkwrapper">
+    <span
+      class="checkwrapper"
+      on:mouseenter="{() => {
+        mouseoverInfo.onInclusive = true;
+        mouseoverInfo.inclusiveChecked = inclusiveCheckboxChecked;
+      }}"
+      on:mouseleave="{() => {
+        mouseoverInfo.onInclusive = false;
+        mouseoverInfo.inclusiveChecked = undefined;
+      }}"
+    >
       <Checkbox
         checked="{inclusiveSelectionGroup?.includes(ownValue)}"
         bind:value="{inclusiveCheckboxChecked}"
@@ -64,7 +75,17 @@
     </span>
   {/if}
   {#if exclusiveSelectionValue !== undefined}
-    <span class="checkwrapper">
+    <span
+      class="checkwrapper"
+      on:mouseenter="{() => {
+        mouseoverInfo.onExclusive = true;
+        mouseoverInfo.exclusiveChecked = exclusiveSelectionValue === ownValue;
+      }}"
+      on:mouseleave="{() => {
+        mouseoverInfo.onExclusive = false;
+        mouseoverInfo.exclusiveChecked = undefined;
+      }}"
+    >
       <ExclusiveCheckbox
         leftbox="{true}"
         bind:selectedValue="{exclusiveSelectionValue}"

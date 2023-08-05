@@ -43,6 +43,12 @@
     width: 100%;
     overflow: auto;
   }
+
+  .hint {
+    font-size: medium;
+    height: 1em;
+    margin-bottom: 1em;
+  }
 </style>
 
 <script>
@@ -64,7 +70,8 @@
     selectedBinaryName,
     focusBinary,
     focusScript,
-    forceRefreshProject = {};
+    forceRefreshProject = {},
+    scriptCheckboxHoverInfo = {};
 
   let binariesForProject = [];
   for (let binaryName in $selectedProject.binaries) {
@@ -168,6 +175,21 @@
           </div>
           <div class="hbox2">
             <div class="content">
+              <div class="element hint">
+                {#if scriptCheckboxHoverInfo.onInclusive}
+                  <p>
+                    Script is {#if !scriptCheckboxHoverInfo.inclusiveChecked}
+                      not
+                    {/if} compatible with this binary
+                  </p>
+                {:else if scriptCheckboxHoverInfo.onExclusive}
+                  <p>
+                    Script is {#if !scriptCheckboxHoverInfo.exclusiveChecked}
+                      not
+                    {/if} the one used to launch this binary
+                  </p>
+                {/if}
+              </div>
               {#each $selectedProject.scripts as script}
                 <div class="element">
                   {#if selectedBinaryName}
@@ -180,6 +202,7 @@
                         bind:exclusiveSelectionValue="{$selectedProject
                           .binaries[selectedBinaryName].init_script}"
                         bind:focus="{focusScript}"
+                        bind:mouseoverInfo="{scriptCheckboxHoverInfo}"
                       />
                     {/key}
                   {:else}
