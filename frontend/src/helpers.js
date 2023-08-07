@@ -1,3 +1,6 @@
+import { settings } from "./stores";
+import { get } from "svelte/store";
+
 /***
  * Return the hex string of a single input byte.
  */
@@ -229,4 +232,11 @@ export function splitAndCapitalize(name) {
     .split(/_|(?=[A-Z])/)
     .map((name) => name.charAt(0).toUpperCase() + name.slice(1))
     .join(" ");
+}
+
+/***
+ *
+ */
+export function saveSettings() {
+  window.localStorage.setItem("settings", JSON.stringify(get(settings)));
 }

@@ -98,6 +98,12 @@
   .clickable {
     cursor: pointer;
   }
+  .experiment-features-check {
+    position: fixed;
+    top: 3em;
+    left: 3em;
+  }
+
 </style>
 
 <script>
@@ -111,7 +117,8 @@
   import { remote_model_to_resource } from "./ofrak/remote_resource";
 
   import { onMount } from "svelte";
-  import { numBytesToQuantity } from "./helpers";
+  import { numBytesToQuantity, saveSettings } from "./helpers";
+  import Checkbox from "./Checkbox.svelte";
 
   export let rootResourceLoadPromise,
     showRootResource,
@@ -262,6 +269,9 @@
     rootResourceLoadPromise = Promise.resolve(undefined);
     $selected = resourceId;
   }
+  $: if ($settings) {
+    saveSettings();
+  }
 
   if (tryHash) {
     const linkedId = window.location.hash.slice(1);
@@ -279,6 +289,13 @@
 </script>
 
 {#if !tryHash}
+  <div class="experiment-features-check">
+    <Checkbox
+      bind:checked="{$settings.experimentalFeatures}"
+      leftbox="{true}"
+      nomargin="{true}">Enable Experimental OFRAK Features</Checkbox
+    >
+  </div>
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div
     class="center clickable {dragging ? 'dragging' : ''}"
