@@ -1177,6 +1177,7 @@ class AiohttpOFRAKServer:
         project.delete_script(script_name)
         return json_response([])
 
+    @exceptions_to_http(SerializedError)
     async def get_project_script(self, request: Request) -> Response:
         project_id = request.query.get("project")
         script_name_query = request.query.get("script")

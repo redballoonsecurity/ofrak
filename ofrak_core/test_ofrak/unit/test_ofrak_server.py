@@ -1,6 +1,7 @@
 import itertools
 import json
 import os
+import shutil
 import tempfile
 from ofrak.ofrak_context import OFRAKContext
 from ofrak.resource import Resource
@@ -1197,3 +1198,161 @@ async def test_search_data(ofrak_client: TestClient, hello_world_elf):
     resp_body2 = await resp.json()
     assert resp.status == 200
     assert resp_body1 == resp_body2
+
+async def test_create_new_project(ofrak_client: TestClient):
+    await ofrak_client.post(
+        "/set_projects_path",
+        json={
+            "path": "/tmp/test-ofrak-projects"
+        }
+    )
+    resp = await ofrak_client.post(
+        "/create_new_project",
+        json={
+            "name": "test"
+        },
+    )
+    assert resp.status == 200
+    shutil.rmtree("/tmp/test-ofrak-projects")
+    
+async def test_clone_project_from_git(ofrak_client: TestClient):
+    pass
+
+async def test_get_project_by_id(ofrak_client: TestClient):
+    await ofrak_client.post(
+        "/set_projects_path",
+        json={
+            "path": "/tmp/test-ofrak-projects"
+        }
+    )
+    resp = await ofrak_client.post(
+        "/create_new_project",
+        json={
+            "name": "test"
+        },
+    )
+    resp_body = await resp.json()
+    id = resp_body["id"]
+    
+    resp = await ofrak_client.get(
+        "/get_project_by_id", params={"id": id}
+    )
+    assert resp.status == 200
+    body = await resp.json()
+    assert list(body.keys()) == ['name', 'project_id', 'session_id', 'scripts', 'binaries']
+    shutil.rmtree("/tmp/test-ofrak-projects")
+
+async def test_get_all_projects(ofrak_client: TestClient):
+    await ofrak_client.post(
+        "/set_projects_path",
+        json={
+            "path": "/tmp/test-ofrak-projects"
+        }
+    )
+    resp = await ofrak_client.post(
+        "/create_new_project",
+        json={
+            "name": "test1"
+        },
+    )
+    resp_body = await resp.json()
+    id1 = resp_body["id"]
+    
+    resp = await ofrak_client.post(
+        "/create_new_project",
+        json={
+            "name": "test2"
+        },
+    )
+    resp_body = await resp.json()
+    id2 = resp_body["id"]
+    
+    resp = await ofrak_client.get(
+        "/get_all_projects"
+    )
+    assert resp.status == 200
+    body = await resp.json()
+    assert len(body) == 2
+    assert "test1" in [project["name"] for project in body]
+    assert "test2" in [project["name"] for project in body]
+    assert id1 in [project["project-id"] for project in body]
+    assert id2 in [project["project-id"] for project in body]
+    shutil.rmtree("/tmp/test-ofrak-projects")
+
+async def test_reset_project(ofrak_client: TestClient):
+    await ofrak_client.post(
+        "/set_projects_path",
+        json={
+            "path": "/tmp/test-ofrak-projects"
+        }
+    )
+    resp = await ofrak_client.post(
+        "/create_new_project",
+        json={
+            "name": "test"
+        },
+    )
+    resp_body = await resp.json()
+    id = resp_body["id"] 
+    resp = await ofrak_client.post(
+        "/reset_project",
+        json={
+            "id": id
+        },
+    )
+    assert resp.status == 200
+    shutil.rmtree("/tmp/test-ofrak-projects")
+    
+async def test_add_binary_to_project(ofrak_client: TestClient, hello_world_elf):
+    await ofrak_client.post(
+        "/set_projects_path",
+        json={
+            "path": "/tmp/test-ofrak-projects"
+        }
+    )
+    resp = await ofrak_client.post(
+        "/create_new_project",
+        json={
+            "name": "test"
+        },
+    )
+    resp_body = await resp.json()
+    id = resp_body["id"]
+    resp = await ofrak_client.post(
+        "/add_binary_to_project",
+        params={
+            "id": id,
+            "name": "hello_world_elf"
+        },
+        data=hello_world_elf
+    )
+    assert resp.status == 200
+    shutil.rmtree("/tmp/test-ofrak-projects")
+    
+async def test_add_script_to_project(ofrak_client: TestClient):
+    script = b"async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):\n\tawait root_resource.unpack()"
+    await ofrak_client.post(
+        "/set_projects_path",
+        json={
+            "path": "/tmp/test-ofrak-projects"
+        }
+    )
+    resp = await ofrak_client.post(
+        "/create_new_project",
+        json={
+            "name": "test"
+        },
+    )
+    resp_body = await resp.json()
+    id = resp_body["id"]
+    resp = await ofrak_client.post(
+        "/add_script_to_project",
+        params={
+            "id": id,
+            "name": "hello_world_elf"
+        },
+        data=script
+    )
+    assert resp.status == 200
+    shutil.rmtree("/tmp/test-ofrak-projects")
+    
