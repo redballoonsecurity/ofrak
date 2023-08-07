@@ -43,6 +43,12 @@
     width: 100%;
     overflow: auto;
   }
+
+  .hint {
+    font-size: medium;
+    height: 1em;
+    margin-bottom: 1em;
+  }
 </style>
 
 <script>
@@ -65,8 +71,8 @@
     selectedBinaryName,
     focusBinary,
     focusScript,
-    selectedScript = null,
-    forceRefreshProject = {};
+    forceRefreshProject = {},
+    scriptCheckboxHoverInfo = {};
 
   let binariesForProject = [];
   for (let binaryName in $selectedProject.binaries) {
@@ -90,7 +96,7 @@
       body: JSON.stringify({
         id: $selectedProject.session_id,
         binary: selectedBinaryName,
-        script: selectedScript,
+        script: $selectedProject.binaries[selectedBinaryName].init_script,
       }),
     }).then((r) => r.json());
     rootResource = remote_model_to_resource(rootModel, resources);
@@ -151,7 +157,7 @@
               {#each binariesForProject as binaryName}
                 <div class="element">
                   <ProjectManagerCheckbox
-                    option="{binaryName}"
+                    ownValue="{binaryName}"
                     checkbox="{false}"
                     bind:focus="{focusBinary}"
                   />
@@ -170,21 +176,39 @@
           </div>
           <div class="hbox2">
             <div class="content">
-              {#each $selectedProject.scripts as projectOption}
+              <div class="element hint">
+                {#if scriptCheckboxHoverInfo.onInclusive}
+                  <p>
+                    Script is {#if !scriptCheckboxHoverInfo.inclusiveChecked}
+                      not
+                    {/if} compatible with this binary
+                  </p>
+                {:else if scriptCheckboxHoverInfo.onExclusive}
+                  <p>
+                    Script is {#if !scriptCheckboxHoverInfo.exclusiveChecked}
+                      not
+                    {/if} the one used to launch this binary
+                  </p>
+                {/if}
+              </div>
+              {#each $selectedProject.scripts as script}
                 <div class="element">
                   {#if selectedBinaryName}
                     {#key forceRefreshProject}
                       <ProjectManagerCheckbox
-                        option="{projectOption['name']}"
-                        bind:selection="{$selectedProject.binaries[
+                        ownValue="{script['name']}"
+                        inclusiveSelectionGroup="{$selectedProject.binaries[
                           selectedBinaryName
                         ].associated_scripts}"
+                        bind:exclusiveSelectionValue="{$selectedProject
+                          .binaries[selectedBinaryName].init_script}"
                         bind:focus="{focusScript}"
+                        bind:mouseoverInfo="{scriptCheckboxHoverInfo}"
                       />
                     {/key}
                   {:else}
                     <ProjectManagerCheckbox
-                      option="{projectOption['name']}"
+                      ownValue="{script['name']}"
                       bind:focus="{focusScript}"
                     />
                   {/if}

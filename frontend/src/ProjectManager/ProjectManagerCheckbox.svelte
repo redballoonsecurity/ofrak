@@ -5,7 +5,7 @@
     margin-top: 1em;
   }
 
-  .option {
+  .ownValue {
     margin-right: 1em;
     display: inline-flex;
     flex-direction: row;
@@ -18,39 +18,87 @@
     cursor: pointer;
     border-style: none;
   }
+
+  .checkwrapper {
+    display: inline-flex;
+  }
 </style>
 
 <script>
   import Checkbox from "../Checkbox.svelte";
-  export let option,
-    selection = undefined,
-    focus;
-  let checked = selection?.includes(option);
-  let userChecked;
+  import ExclusiveCheckbox from "../ExclusiveCheckbox.svelte";
+  export let ownValue,
+    inclusiveSelectionGroup = undefined,
+    exclusiveSelectionValue = undefined,
+    focus,
+    mouseoverInfo = {};
+  let inclusiveCheckboxChecked;
 
-  $: if (selection !== undefined && userChecked !== undefined) {
-    if (userChecked && !selection.includes(option)) {
-      selection.push(option);
+  $: if (
+    inclusiveSelectionGroup !== undefined &&
+    inclusiveCheckboxChecked !== undefined
+  ) {
+    if (inclusiveSelectionGroup.includes(ownValue)) {
+      if (!inclusiveCheckboxChecked) {
+        inclusiveSelectionGroup.splice(
+          inclusiveSelectionGroup.indexOf(ownValue),
+          1
+        );
+      }
     } else {
-      const idx = selection.indexOf(option);
-      if (idx >= 0) {
-        selection.splice(idx, 1);
+      if (inclusiveCheckboxChecked) {
+        inclusiveSelectionGroup.push(ownValue);
       }
     }
   }
 </script>
 
 <div class="checkbox">
-  <!-- Selection may be an empty list ("falsey") but we still want a checkbox -->
-  {#if selection !== undefined}
-    <Checkbox checked="{checked}" bind:value="{userChecked}" leftbox="{true}" />
+  <!-- May be an empty list ("falsey") but we still want a checkbox -->
+  {#if inclusiveSelectionGroup !== undefined}
+    <span
+      class="checkwrapper"
+      on:mouseenter="{() => {
+        mouseoverInfo.onInclusive = true;
+        mouseoverInfo.inclusiveChecked = inclusiveCheckboxChecked;
+      }}"
+      on:mouseleave="{() => {
+        mouseoverInfo.onInclusive = false;
+        mouseoverInfo.inclusiveChecked = undefined;
+      }}"
+    >
+      <Checkbox
+        checked="{inclusiveSelectionGroup?.includes(ownValue)}"
+        bind:value="{inclusiveCheckboxChecked}"
+        leftbox="{true}"
+      />
+    </span>
+  {/if}
+  {#if exclusiveSelectionValue !== undefined}
+    <span
+      class="checkwrapper"
+      on:mouseenter="{() => {
+        mouseoverInfo.onExclusive = true;
+        mouseoverInfo.exclusiveChecked = exclusiveSelectionValue === ownValue;
+      }}"
+      on:mouseleave="{() => {
+        mouseoverInfo.onExclusive = false;
+        mouseoverInfo.exclusiveChecked = undefined;
+      }}"
+    >
+      <ExclusiveCheckbox
+        leftbox="{true}"
+        bind:selectedValue="{exclusiveSelectionValue}"
+        ownValue="{ownValue}"
+      />
+    </span>
   {/if}
   <button
-    class="option"
+    class="ownValue"
     on:click="{() => {
-      focus = option;
+      focus = ownValue;
     }}"
   >
-    {option}
+    {ownValue}
   </button>
 </div>
