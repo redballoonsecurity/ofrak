@@ -199,7 +199,7 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
         "",
     ]
 
-    requirement_suffixes = [""]
+    requirement_suffixes = ["", "non-pypi"]
     if config.install_target is InstallTarget.DEVELOP:
         requirement_suffixes += ["-docs", "-test"]
 
