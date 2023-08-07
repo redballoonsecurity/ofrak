@@ -7,12 +7,21 @@
   import SettingsView from "./SettingsView.svelte";
   import Toolbar from "./Toolbar.svelte";
 
-  import { selectedResource, selected, settings } from "./stores.js";
+  import {
+    selectedResource,
+    selected,
+    settings,
+    selectedProject,
+  } from "./stores.js";
   import SearchView from "./SearchView.svelte";
   import AddTagView from "./AddTagView.svelte";
   import RunScriptView from "./RunScriptView.svelte";
 
-  export let resourceNodeDataMap, modifierView, bottomLeftPane;
+  export let resourceNodeDataMap,
+    modifierView,
+    bottomLeftPane,
+    showProjectManager,
+    showRootResource;
   $: rootResource = $selectedResource;
 
   function refreshResource() {
@@ -39,6 +48,25 @@
         iconUrl: "/icons/run_script.svg",
         onclick: async (e) => {
           modifierView = RunScriptView;
+        },
+      },
+    ];
+  }
+
+  $: {
+    projectFeatures = [
+      {
+        text: "Project Manager",
+        iconUrl: "/icons/briefcase.svg",
+        onclick: async (e) => {
+          if ($selectedProject) {
+            let state = {
+              $selectProject: $selectedProject,
+            };
+            showProjectManager = true;
+            showRootResource = false;
+            history.pushState(state, "", "/");
+          }
         },
       },
     ];
@@ -249,6 +277,21 @@
       },
 
       {
+        text: "Project Manager",
+        iconUrl: "/icons/briefcase.svg",
+        onclick: async (e) => {
+          if ($selectedProject) {
+            let state = {
+              $selectProject: $selectedProject,
+            };
+            showProjectManager = true;
+            showRootResource = false;
+            history.pushState(state, "", "/");
+          }
+        },
+      },
+
+      {
         text: "Search",
         iconUrl: "/icons/identify.svg",
         onclick: async (e) => {
@@ -272,6 +315,10 @@
         },
       },
     ];
+  }
+
+  $: if ($settings.$selectedProject) {
+    toolbarButtons = [...toolbarButtons, ...projectFeatures];
   }
 
   $: if ($settings.experimentalFeatures) {

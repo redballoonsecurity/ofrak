@@ -8,6 +8,9 @@ export const selected = writable(undefined);
 // Currently selected resource object
 export const selectedResource = writable(undefined);
 
+// Currently selected project ID
+export const selectedProject = writable(undefined);
+
 // User-generated OFRAK script (array of lines)
 export const script = writable([]);
 

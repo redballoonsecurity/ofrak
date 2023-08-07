@@ -1,0 +1,14 @@
+{
+  "name": "Test project A",
+  "id": "38f71e0209a6cc",
+  "scripts": [
+    "script_a.py"
+  ],
+  "binaries": [
+    {
+      "name": "hello_world.bin",
+      "associated_scripts": ["script_a.py"],
+      "init_script": "script_a.py"
+    }
+  ]
+}
