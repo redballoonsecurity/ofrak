@@ -32,6 +32,7 @@ from ofrak.core.flash import *
 from ofrak.core.free_space import *
 from ofrak.core.run_script_modifier import *
 from ofrak.core.gzip import *
+from ofrak.core.ihex import *
 from ofrak.core.injector import *
 from ofrak.core.instruction import *
 from ofrak.core.iso9660 import *

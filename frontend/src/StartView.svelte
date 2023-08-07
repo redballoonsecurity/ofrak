@@ -55,14 +55,19 @@
     box-shadow: none;
   }
 
-  button:hover,
-  button:focus {
+  button:hover:not([disabled]),
+  button:focus:not([disabled]) {
     outline: none;
     box-shadow: inset 1px 1px 0, inset -1px -1px 0;
   }
 
-  button:active {
+  button:active:not([disabled]) {
     box-shadow: inset 2px 2px 0, inset -2px -2px 0;
+  }
+
+  button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
 
   option {
@@ -504,96 +509,101 @@
       <p>Failed to get any pre-existing root resources!</p>
       <p>The back end server may be down.</p>
     {/await}
-    <div class="project">
-      {#if showProjectOptions}
-        <div class="project-options">
-          <div class="project-input">
-            <input
-              on:click|stopPropagation
-              type="text"
-              bind:value="{newProjectName}"
-              placeholder="Project Name"
-            />
-            <button
-              disabled="{!(newProjectName?.length > 0)}"
-              on:click|stopPropagation="{createNewProject}"
-              >Create New Project</button
-            >
-          </div>
-          <TextDivider
-            color="{animals[selectedAnimal]?.color || 'var(--main-fg-color)'}"
-          >
-            OR
-          </TextDivider>
-          <div class="project-input">
-            {#await preExistingProjectsPromise then projects}
-              <select on:click|stopPropagation bind:value="{$selectedProject}">
-                <option value="{undefined}" selected disabled
-                  >Select a Project</option
-                >
-                {#each projects as project}
-                  <option value="{project}">
-                    {project.name}: {project.session_id}
-                  </option>
-                {/each}
-              </select>
+    {#if $settings.experimentalFeatures}
+      <div class="project">
+        {#if showProjectOptions}
+          <div class="project-options">
+            <div class="project-input">
+              <input
+                on:click|stopPropagation
+                type="text"
+                bind:value="{newProjectName}"
+                placeholder="Project Name"
+              />
               <button
-                disabled="{!$selectedProject}"
-                on:click|stopPropagation="{(e) => {
-                  showProjectManager = true;
-                }}">Open Existing Project</button
-              >
-            {/await}
-          </div>
-          <TextDivider
-            color="{animals[selectedAnimal]?.color || 'var(--main-fg-color)'}"
-          >
-            OR
-          </TextDivider>
-          <div class="project-input">
-            <input
-              on:click|stopPropagation
-              type="text"
-              bind:value="{gitUrl}"
-              placeholder="Git Url"
-            />
-            <button
-              disabled="{!(gitUrl?.length > 0)}"
-              on:click|stopPropagation="{cloneProjectFromGit}"
-              >Clone Project From Git</button
-            >
-          </div>
-        </div>
-        <div class="advanced">
-          <div class="advanced-check">
-            <Checkbox
-              leftbox="{true}"
-              bind:checked="{showAdvancedProjectOptions}"
-              >Show Advanced Options</Checkbox
-            >
-          </div>
-          {#if showAdvancedProjectOptions}
-            <div class="advanced-options">
-              <input bind:value="{projectPath}" placeholder="{projectPath}" />
-              <button on:click|stopPropagation="{changeProjectPath}"
-                >Set Location</button
+                disabled="{!(newProjectName?.length > 0)}"
+                on:click|stopPropagation="{createNewProject}"
+                >Create New Project</button
               >
             </div>
-          {/if}
-        </div>
-        <button
-          on:click|stopPropagation="{(e) => {
-            showProjectOptions = false;
-          }}">Back</button
-        >
-      {:else}
-        <button
-          on:click|stopPropagation="{(e) => {
-            showProjectOptions = true;
-          }}">Show Project Options</button
-        >
-      {/if}
-    </div>
+            <TextDivider
+              color="{animals[selectedAnimal]?.color || 'var(--main-fg-color)'}"
+            >
+              OR
+            </TextDivider>
+            <div class="project-input">
+              {#await preExistingProjectsPromise then projects}
+                <select
+                  on:click|stopPropagation
+                  bind:value="{$selectedProject}"
+                >
+                  <option value="{undefined}" selected disabled
+                    >Select a Project</option
+                  >
+                  {#each projects as project}
+                    <option value="{project}">
+                      {project.name}: {project.session_id}
+                    </option>
+                  {/each}
+                </select>
+                <button
+                  disabled="{!$selectedProject}"
+                  on:click|stopPropagation="{(e) => {
+                    showProjectManager = true;
+                  }}">Open Existing Project</button
+                >
+              {/await}
+            </div>
+            <TextDivider
+              color="{animals[selectedAnimal]?.color || 'var(--main-fg-color)'}"
+            >
+              OR
+            </TextDivider>
+            <div class="project-input">
+              <input
+                on:click|stopPropagation
+                type="text"
+                bind:value="{gitUrl}"
+                placeholder="Git Url"
+              />
+              <button
+                disabled="{!(gitUrl?.length > 0)}"
+                on:click|stopPropagation="{cloneProjectFromGit}"
+                >Clone Project From Git</button
+              >
+            </div>
+          </div>
+          <div class="advanced">
+            <div class="advanced-check">
+              <Checkbox
+                leftbox="{true}"
+                bind:checked="{showAdvancedProjectOptions}"
+                >Show Advanced Options</Checkbox
+              >
+            </div>
+            {#if showAdvancedProjectOptions}
+              <div class="advanced-options">
+                <input bind:value="{projectPath}" placeholder="{projectPath}" />
+                <button on:click|stopPropagation="{changeProjectPath}"
+                  >Set Location</button
+                >
+              </div>
+            {/if}
+          </div>
+          <button
+            on:click|stopPropagation="{(e) => {
+              showProjectOptions = false;
+            }}">Back</button
+          >
+        {:else}
+          <button
+            on:click|stopPropagation="{(e) => {
+              showProjectOptions = true;
+            }}">Show Project Options</button
+          >
+        {/if}
+      </div>
+    {/if}
     <Animals
       x="{mouseX}"
       visible="{true}"
