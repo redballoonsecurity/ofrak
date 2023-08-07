@@ -104,11 +104,6 @@
     left: 3em;
   }
 
-  .experiment-features-check {
-    position: fixed;
-    top: 3em;
-    left: 3em;
-  }
 </style>
 
 <script>
