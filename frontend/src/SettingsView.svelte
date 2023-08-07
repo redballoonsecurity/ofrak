@@ -107,6 +107,7 @@
 
   import Icon from "./Icon.svelte";
   import Checkbox from "./Checkbox.svelte";
+  import { saveSettings } from "./helpers";
 
   export let modifierView;
   let errorMessage, loadingDark, loadingLight, fileInput, browsedFiles;
@@ -207,10 +208,6 @@
     f.text().then((text) => {
       $settings = JSON.parse(text);
     });
-  }
-
-  function saveSettings() {
-    window.localStorage.setItem("settings", JSON.stringify($settings));
   }
 </script>
 
