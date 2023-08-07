@@ -104,7 +104,6 @@
     left: 3em;
   }
 
-
   .project-options {
     display: flex;
     flex-direction: column;
