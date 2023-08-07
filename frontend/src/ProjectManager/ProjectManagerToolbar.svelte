@@ -4,7 +4,7 @@
   import ProjectManagerAddScriptToProject from "./ProjectManagerAddScriptToProject.svelte";
   import Toolbar from "../Toolbar.svelte";
 
-  export let focus, openProject, showProjectManager;
+  export let focus, openProject, showProjectManager, forceRefreshProject;
   let toolbarButtons;
 
   toolbarButtons = [
@@ -17,9 +17,9 @@
       },
     },
     {
-      text: "Run",
+      text: "Launch",
       iconUrl: "/icons/run.svg",
-      shortcut: "r",
+      shortcut: "l",
       onclick: openProject,
     },
     {
@@ -45,16 +45,14 @@
       onclick: async (e) => {
         await fetch(`${$settings.backendUrl}/save_project_data`, {
           method: "POST",
-          body: JSON.stringify({
-            id: $selectedProject.session_id,
-          }),
+          body: JSON.stringify($selectedProject),
         });
       },
     },
     {
       text: "Reset",
       iconUrl: "/icons/reset.svg",
-      shortcut: "r",
+      shortcut: "R",
       onclick: async (e) => {
         await fetch(`${$settings.backendUrl}/reset_project`, {
           method: "POST",
@@ -73,6 +71,7 @@
             }
             return r.json();
           });
+          forceRefreshProject = {};
           return await r.json();
         });
       },
