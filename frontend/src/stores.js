@@ -35,9 +35,11 @@ export function loadSettings(forceReset) {
     return defaultSettings;
   }
   try {
-    return (
-      JSON.parse(window.localStorage.getItem("settings")) || defaultSettings
-    );
+    const prevSettings =
+      JSON.parse(window.localStorage.getItem("settings")) || defaultSettings;
+    // allows fields in defaultSettings which don't exist in prevSettings (i.e. a new setting has
+    // been introduced since user saved their own settings) to still be populated, with default.
+    return { ...defaultSettings, ...prevSettings };
   } catch {
     return defaultSettings;
   }
