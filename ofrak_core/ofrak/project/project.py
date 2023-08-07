@@ -95,8 +95,8 @@ class OfrakProject:
 
         binaries = {}
 
-        for info in raw_metadata["binaries"]:
-            binaries[info["name"]] = _OfrakProjectBinary(
+        for binary_name, info in raw_metadata["binaries"].items():
+            binaries[binary_name] = _OfrakProjectBinary(
                 info["associated_scripts"], info.get("init_script")
             )
         name = raw_metadata["name"]
@@ -156,8 +156,8 @@ class OfrakProject:
 
         binaries = {}
 
-        for info in raw_metadata["binaries"]:
-            binaries[info["name"]] = _OfrakProjectBinary(
+        for binary_name, info in raw_metadata["binaries"].items():
+            binaries[binary_name] = _OfrakProjectBinary(
                 info["associated_scripts"], info.get("init_script")
             )
         name = raw_metadata["name"]
@@ -224,14 +224,13 @@ class OfrakProject:
                 }
                 for script_name in self.scripts
             ],
-            "binaries": [
-                {
-                    "name": binary_name,
+            "binaries": {
+                binary_name: {
                     "init_script": binary_info.init_script,
                     "associated_scripts": binary_info.associated_scripts,
                 }
                 for binary_name, binary_info in self.binaries.items()
-            ],
+            },
         }
         with open(os.path.join(self.path, "metadata.json"), "w") as f:
             json.dump(metadata, f)
@@ -253,14 +252,13 @@ class OfrakProject:
                 }
                 for script_name in self.scripts
             ],
-            "binaries": [
-                {
-                    "name": binary_name,
+            "binaries": {
+                binary_name: {
                     "init_script": binary_info.init_script,
                     "associated_scripts": binary_info.associated_scripts,
                 }
                 for binary_name, binary_info in self.binaries.items()
-            ],
+            },
         }
 
     def add_binary(self, name: str, contents: bytes):
@@ -350,8 +348,8 @@ class OfrakProject:
 
         self.binaries = {}
 
-        for info in raw_metadata["binaries"]:
-            self.binaries[info["name"]] = _OfrakProjectBinary(
+        for binaryName, info in raw_metadata["binaries"].items():
+            self.binaries[binaryName] = _OfrakProjectBinary(
                 info["associated_scripts"], info.get("init_script")
             )
         for binary in self.binaries.keys():
