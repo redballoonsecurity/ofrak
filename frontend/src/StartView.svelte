@@ -139,6 +139,13 @@
   .advanced-options > input {
     width: 75%;
   }
+
+    /* TODO: This checkbox should be replaced with a properly placed button to access all settings */
+  .experiment-features-check {
+    position: fixed;
+    top: 3em;
+    left: 3em;
+  }
 </style>
 
 <script>
@@ -152,7 +159,7 @@
   import { remote_model_to_resource } from "./ofrak/remote_resource";
 
   import { onMount } from "svelte";
-  import { numBytesToQuantity } from "./helpers";
+  import { numBytesToQuantity, saveSettings } from "./helpers";
   import Checkbox from "./Checkbox.svelte";
 
   export let rootResourceLoadPromise,
@@ -407,6 +414,9 @@
     rootResourceLoadPromise = Promise.resolve(undefined);
     $selected = resourceId;
   }
+  $: if ($settings) {
+    saveSettings();
+  }
 
   if (tryHash) {
     const linkedId = window.location.hash.slice(1);
@@ -430,6 +440,16 @@
 </script>
 
 {#if !tryHash}
+  <div
+    class="experiment-features-check"
+    style:color="{animals[selectedAnimal]?.color || "var(--main-fg-color)"}"
+  >
+    <Checkbox
+      bind:checked="{$settings.experimentalFeatures}"
+      leftbox="{true}"
+      nomargin="{true}">Enable Experimental OFRAK Features</Checkbox
+    >
+  </div>
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div
     class="center clickable {dragging ? 'dragging' : ''}"
