@@ -97,8 +97,6 @@ class IhexProgramUnpacker(Unpacker[None]):
     targets = (IhexProgram,)
     children = (ProgramSection,)
 
-    external_dependencies = (_BINCOPY_TOOL,)
-
     async def unpack(self, resource: Resource, config=None):
         ihex_program = await resource.view_as(IhexProgram)
         for seg_vaddr_range in ihex_program.segments:
@@ -118,8 +116,6 @@ class IhexProgramPacker(Packer[None]):
     """
 
     targets = (IhexProgram,)
-
-    external_dependencies = (_BINCOPY_TOOL,)
 
     async def pack(self, resource: Resource, config=None) -> None:
         updated_segments = []
@@ -149,6 +145,9 @@ class IhexPacker(Packer[None]):
     external_dependencies = (_BINCOPY_TOOL,)
 
     async def pack(self, resource: Resource, config=None) -> None:
+        if not BINCOPY_INSTALLED:
+            raise ComponentMissingDependencyError(self, _BINCOPY_TOOL)
+
         program_child = await resource.get_only_child_as_view(IhexProgram)
         vaddr_offset = -program_child.address_limits.start
         binfile = BinFile()
