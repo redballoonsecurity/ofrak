@@ -98,6 +98,7 @@
   .clickable {
     cursor: pointer;
   }
+  /* TODO: This checkbox should be replaced with a properly placed button to access all settings */
   .experiment-features-check {
     position: fixed;
     top: 3em;
