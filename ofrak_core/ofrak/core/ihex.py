@@ -2,9 +2,16 @@ import logging
 import re
 import sys
 from dataclasses import dataclass
-from typing import List, Union, Tuple
+from typing import List, Union, Tuple, Any
 
-from bincopy import BinFile
+from ofrak.component.abstract import ComponentMissingDependencyError
+
+try:
+    from bincopy import BinFile
+
+    BINCOPY_INSTALLED = True
+except ImportError:
+    BINCOPY_INSTALLED = False
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.identifier import Identifier
@@ -13,6 +20,7 @@ from ofrak.component.unpacker import Unpacker
 from ofrak.core.binary import GenericBinary, GenericText
 from ofrak.core.program_section import ProgramSection
 from ofrak.core.program import Program
+from ofrak.model.component_model import ComponentExternalTool
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_type.range import Range
@@ -40,6 +48,13 @@ class IhexProgram(Program):
     segments: List[Range]
 
 
+_BINCOPY_TOOL = ComponentExternalTool(
+    "bincopy",
+    "https://github.com/eerimoq/bincopy",
+    "--help",
+)
+
+
 class IhexAnalyzer(Analyzer[None, IhexProgram]):
     """
     Extract Intel HEX parameters
@@ -48,9 +63,11 @@ class IhexAnalyzer(Analyzer[None, IhexProgram]):
     targets = (IhexProgram,)
     outputs = (IhexProgram,)
 
+    external_dependencies = (_BINCOPY_TOOL,)
+
     async def analyze(self, resource: Resource, config: None = None) -> IhexProgram:
         raw_ihex = await resource.get_parent()
-        ihex_program, _ = _binfile_analysis(await raw_ihex.get_data())
+        ihex_program, _ = _binfile_analysis(await raw_ihex.get_data(), self)
         return ihex_program
 
 
@@ -64,8 +81,10 @@ class IhexUnpacker(Unpacker[None]):
     targets = (Ihex,)
     children = (IhexProgram,)
 
+    external_dependencies = (_BINCOPY_TOOL,)
+
     async def unpack(self, resource: Resource, config=None):
-        ihex_program, binfile = _binfile_analysis(await resource.get_data())
+        ihex_program, binfile = _binfile_analysis(await resource.get_data(), self)
 
         await resource.create_child_from_view(ihex_program, data=bytes(binfile.as_binary()))
 
@@ -123,7 +142,12 @@ class IhexPacker(Packer[None]):
 
     targets = (Ihex,)
 
+    external_dependencies = (_BINCOPY_TOOL,)
+
     async def pack(self, resource: Resource, config=None) -> None:
+        if not BINCOPY_INSTALLED:
+            raise ComponentMissingDependencyError(self, _BINCOPY_TOOL)
+
         program_child = await resource.get_only_child_as_view(IhexProgram)
         vaddr_offset = -program_child.address_limits.start
         binfile = BinFile()
@@ -155,7 +179,9 @@ class IhexIdentifier(Identifier):
             resource.add_tag(Ihex)
 
 
-def _binfile_analysis(raw_ihex: bytes) -> Tuple[IhexProgram, BinFile]:
+def _binfile_analysis(raw_ihex: bytes, component) -> Tuple[IhexProgram, Any]:
+    if not BINCOPY_INSTALLED:
+        raise ComponentMissingDependencyError(component, _BINCOPY_TOOL)
     binfile = BinFile()
     binfile.add_ihex(raw_ihex.decode("utf-8"))
 

@@ -56,6 +56,7 @@ setuptools.setup(
         "docs": read_requirements("requirements-docs.txt"),
         "test": ["ofrak_angr~=1.0", "ofrak_capstone~=1.0"]
         + read_requirements("requirements-test.txt"),
+        "non-pypi": read_requirements("requirements-non-pypi.txt"),
     },
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",
