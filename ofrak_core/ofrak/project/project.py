@@ -194,7 +194,7 @@ class OfrakProject:
             )
         return p
 
-    async def init_adventure_binary(
+    async def init_project_binary(
         self, binary_name: str, ofrak_context: OFRAKContext, script_name: Optional[str] = None
     ) -> Resource:
         if str is None:

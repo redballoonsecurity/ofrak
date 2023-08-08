@@ -7,8 +7,8 @@ TEST_PROJECT_PATH = os.path.join(os.path.dirname(__file__), "test_projects", "pr
 
 
 async def test_load_project(ofrak_context: OFRAKContext):
-    adventure = OfrakProject.init_from_path(TEST_PROJECT_PATH)
-    initialized_resource = await adventure.init_adventure_binary("hello_world.bin", ofrak_context)
+    project = OfrakProject.init_from_path(TEST_PROJECT_PATH)
+    initialized_resource = await project.init_project_binary("hello_world.bin", ofrak_context)
     assert len(list(await initialized_resource.get_children())) > 0
 
 
