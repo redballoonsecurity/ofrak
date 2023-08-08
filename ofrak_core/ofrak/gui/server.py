@@ -1122,7 +1122,9 @@ class AiohttpOFRAKServer:
         else:
             raise AttributeError("No resource ID provided")
         project = self._get_project_by_id(id)
-        resource = await project.init_adventure_binary(binary, script, self._ofrak_context)
+        resource = await project.init_project_binary(
+            binary, self._ofrak_context, script_name=script
+        )
         self._job_ids[resource_id] = resource.get_job_id()
         return json_response(self._serialize_resource(resource))
 

@@ -194,10 +194,13 @@ class OfrakProject:
             )
         return p
 
-    async def init_adventure_binary(
-        self, binary_name: str, script_name: str, ofrak_context: OFRAKContext
+    async def init_project_binary(
+        self, binary_name: str, ofrak_context: OFRAKContext, script_name: Optional[str] = None
     ) -> Resource:
-        binary_metadata = self.binaries[binary_name]
+        if str is None:
+            binary_metadata = self.binaries[binary_name]
+            script_name = binary_metadata.init_script
+
         resource = await ofrak_context.create_root_resource_from_file(self.binary_path(binary_name))
 
         if script_name is not None:
@@ -365,9 +368,9 @@ class OfrakProject:
                 else:
                     os.rename(
                         os.path.join(
-                            os.path.join(os.path.join(self.path, ".Trash"), "scripts"), script
+                            os.path.join(os.path.join(self.path, ".Trash"), "scripts"), binary
                         ),
-                        self.binary_path(script, check=False),
+                        self.binary_path(binary, check=False),
                     )
 
         self.name = raw_metadata["name"]
