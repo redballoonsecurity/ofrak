@@ -2,7 +2,7 @@ import logging
 import re
 import sys
 from dataclasses import dataclass
-from typing import List, Union, Tuple
+from typing import List, Union, Tuple, Any
 
 from ofrak.component.abstract import ComponentMissingDependencyError
 
@@ -180,23 +180,15 @@ class IhexIdentifier(Identifier):
             resource.add_tag(Ihex)
 
 
-if BINCOPY_INSTALLED:
-
-    def _binfile_analysis(raw_ihex: bytes, _) -> Tuple[IhexProgram, BinFile]:
-        binfile = BinFile()
-        binfile.add_ihex(raw_ihex.decode("utf-8"))
-
-        ihex_program = IhexProgram(
-            Range(binfile.minimum_address, binfile.maximum_address),
-            binfile.execution_start_address,
-            [
-                Range(segment.minimum_address, segment.maximum_address)
-                for segment in binfile.segments
-            ],
-        )
-        return ihex_program, binfile
-
-else:
-
-    def _binfile_analysis(_, component):  # type: ignore
+def _binfile_analysis(raw_ihex: bytes, component) -> Tuple[IhexProgram, Any]:
+    if not BINCOPY_INSTALLED:
         raise ComponentMissingDependencyError(component, _BINCOPY_TOOL)
+    binfile = BinFile()
+    binfile.add_ihex(raw_ihex.decode("utf-8"))
+
+    ihex_program = IhexProgram(
+        Range(binfile.minimum_address, binfile.maximum_address),
+        binfile.execution_start_address,
+        [Range(segment.minimum_address, segment.maximum_address) for segment in binfile.segments],
+    )
+    return ihex_program, binfile
