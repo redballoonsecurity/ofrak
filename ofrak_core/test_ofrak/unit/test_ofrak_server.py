@@ -1210,10 +1210,6 @@ async def test_create_new_project(ofrak_client: TestClient):
     shutil.rmtree("/tmp/test-ofrak-projects")
 
 
-async def test_clone_project_from_git(ofrak_client: TestClient):
-    pass
-
-
 async def test_get_project_by_id(ofrak_client: TestClient):
     await ofrak_client.post("/set_projects_path", json={"path": "/tmp/test-ofrak-projects"})
     resp = await ofrak_client.post(
@@ -1252,8 +1248,8 @@ async def test_get_all_projects(ofrak_client: TestClient):
     assert len(body) == 2
     assert "test1" in [project["name"] for project in body]
     assert "test2" in [project["name"] for project in body]
-    assert id1 in [project["project-id"] for project in body]
-    assert id2 in [project["project-id"] for project in body]
+    assert id1 in [project["session_id"] for project in body]
+    assert id2 in [project["session_id"] for project in body]
     shutil.rmtree("/tmp/test-ofrak-projects")
 
 
@@ -1406,7 +1402,7 @@ async def test_get_project_script(ofrak_client: TestClient):
 
 
 async def test_git_clone_project(ofrak_client: TestClient):
-    git_url = "git@github.com:redballoonsecurity/ofrak-project-example.git"
+    git_url = "https://github.com/redballoonsecurity/ofrak-project-example.git"
     await ofrak_client.post("/set_projects_path", json={"path": "/tmp/test-ofrak-projects"})
     resp = await ofrak_client.post("/clone_project_from_git", json={"url": git_url})
     resp_body = await resp.json()
@@ -1428,7 +1424,7 @@ async def test_git_clone_project(ofrak_client: TestClient):
 
 
 async def test_open_project(ofrak_client: TestClient):
-    git_url = "git@github.com:redballoonsecurity/ofrak-project-example.git"
+    git_url = "https://github.com/redballoonsecurity/ofrak-project-example.git"
     await ofrak_client.post("/set_projects_path", json={"path": "/tmp/test-ofrak-projects"})
     resp = await ofrak_client.post("/clone_project_from_git", json={"url": git_url})
     resp_body = await resp.json()
