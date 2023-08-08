@@ -1507,3 +1507,38 @@ async def test_delete_from_project(ofrak_client: TestClient, hello_world_elf):
     assert resp_body[0]["scripts"] == []
     assert resp_body[0]["binaries"] == {}
     shutil.rmtree("/tmp/test-ofrak-projects")
+    
+async def test_get_project_script(ofrak_client: TestClient):
+    script = b"async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):\n\tawait root_resource.unpack()"
+    await ofrak_client.post(
+        "/set_projects_path",
+        json={
+            "path": "/tmp/test-ofrak-projects"
+        }
+    )
+    resp = await ofrak_client.post(
+        "/create_new_project",
+        json={
+            "name": "test"
+        },
+    )
+    resp_body = await resp.json()
+    id = resp_body["id"]
+    resp = await ofrak_client.post(
+        "/add_script_to_project",
+        params={
+            "id": id,
+            "name": "unpack.py"
+        },
+        data=script
+    )
+    resp = await ofrak_client.get(
+        "/get_project_script",
+        params={
+            "project": id,
+            "script": "unpack.py"
+        },
+    )
+    assert resp.status == 200
+    resp_body = await resp.text()
+    assert resp_body == script.decode()
