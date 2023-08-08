@@ -1349,10 +1349,62 @@ async def test_add_script_to_project(ofrak_client: TestClient):
         "/add_script_to_project",
         params={
             "id": id,
-            "name": "hello_world_elf"
+            "name": "unpack.py"
         },
         data=script
     )
+    assert resp.status == 200
+    shutil.rmtree("/tmp/test-ofrak-projects")
+    
+async def test_get_projects_path(ofrak_client: TestClient):
+    await ofrak_client.post(
+        "/set_projects_path",
+        json={
+            "path": "/tmp/test-ofrak-projects"
+        }
+    )
+    resp = await ofrak_client.get("/get_projects_path")
+    resp_body = await resp.json()
+    assert resp_body == "/tmp/test-ofrak-projects"
+    
+async def test_save_project_data(ofrak_client: TestClient, hello_world_elf):
+    script = b"async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):\n\tawait root_resource.unpack()"
+    await ofrak_client.post(
+        "/set_projects_path",
+        json={
+            "path": "/tmp/test-ofrak-projects"
+        }
+    )
+    resp = await ofrak_client.post(
+        "/create_new_project",
+        json={
+            "name": "test"
+        },
+    )
+    resp_body = await resp.json()
+    id = resp_body["id"]
+    resp = await ofrak_client.post(
+        "/add_script_to_project",
+        params={
+            "id": id,
+            "name": "unpack.py"
+        },
+        data=script
+    )
+    resp = await ofrak_client.post(
+        "/add_binary_to_project",
+        params={
+            "id": id,
+            "name": "hello_world_elf"
+        },
+        data=hello_world_elf
+    )
+    resp = await ofrak_client.get("/get_all_projects")
+    resp_body = await resp.json()
+    
+    assert len(resp_body) == 1
+    assert resp_body[0]["scripts"] == [{'name': 'unpack.py'}]
+    assert resp_body[0]["binaries"] == {'hello_world_elf': {'init_script': None, 'associated_scripts': []}}
     assert resp.status == 200
     shutil.rmtree("/tmp/test-ofrak-projects")
     
