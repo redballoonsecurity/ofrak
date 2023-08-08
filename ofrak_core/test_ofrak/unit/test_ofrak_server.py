@@ -1399,12 +1399,111 @@ async def test_save_project_data(ofrak_client: TestClient, hello_world_elf):
         },
         data=hello_world_elf
     )
+    resp = await ofrak_client.post(
+        "/save_project_data",
+        json={
+            "sesion_id": id
+        }
+    )
+    resp = await ofrak_client.post(
+        "/reset_project",
+        json={
+            "sesion_id": id
+        }
+    )
     resp = await ofrak_client.get("/get_all_projects")
     resp_body = await resp.json()
-    
+    resp = await ofrak_client.post(
+        "/add_binary_to_project",
+        params={
+            "id": id,
+            "name": "hello_world_elf"
+        },
+        data=hello_world_elf
+    )
     assert len(resp_body) == 1
     assert resp_body[0]["scripts"] == [{'name': 'unpack.py'}]
     assert resp_body[0]["binaries"] == {'hello_world_elf': {'init_script': None, 'associated_scripts': []}}
     assert resp.status == 200
     shutil.rmtree("/tmp/test-ofrak-projects")
     
+async def test_delete_from_project(ofrak_client: TestClient, hello_world_elf):
+    script = b"async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):\n\tawait root_resource.unpack()"
+    await ofrak_client.post(
+        "/set_projects_path",
+        json={
+            "path": "/tmp/test-ofrak-projects"
+        }
+    )
+    resp = await ofrak_client.post(
+        "/create_new_project",
+        json={
+            "name": "test"
+        },
+    )
+    resp_body = await resp.json()
+    id = resp_body["id"]
+    resp = await ofrak_client.post(
+        "/add_script_to_project",
+        params={
+            "id": id,
+            "name": "unpack.py"
+        },
+        data=script
+    )
+    resp = await ofrak_client.post(
+        "/add_binary_to_project",
+        params={
+            "id": id,
+            "name": "hello_world_elf"
+        },
+        data=hello_world_elf
+    )
+    resp = await ofrak_client.post(
+        "/save_project_data",
+        json={
+            "sesion_id": id
+        }
+    )
+    resp = await ofrak_client.post(
+        "/reset_project",
+        json={
+            "sesion_id": id
+        }
+    )
+    resp = await ofrak_client.get("/get_all_projects")
+    resp_body = await resp.json()
+    assert len(resp_body) == 1
+    assert resp_body[0]["scripts"] == [{'name': 'unpack.py'}]
+    assert resp_body[0]["binaries"] == {'hello_world_elf': {'init_script': None, 'associated_scripts': []}}
+    resp = await ofrak_client.post(
+        "/delete_script_from_project",
+        json={
+            "id": id,
+            "script": "unpack.py"
+        },
+    )
+    resp = await ofrak_client.post(
+        "/delete_binary_from_project",
+        json={
+            "id": id,
+            "binary": "hello_world_elf"
+        },
+    )
+    resp = await ofrak_client.post(
+        "/save_project_data",
+        json={
+            "session_id": id
+        }
+    )
+    resp = await ofrak_client.post(
+        "/reset_project",
+        json={
+            "session_id": id
+        }
+    )
+    resp = await ofrak_client.get("/get_all_projects")
+    resp_body = await resp.json()
+    assert resp_body[0]["scripts"] == []
+    assert resp_body[0]["binaries"] == {}
+    shutil.rmtree("/tmp/test-ofrak-projects")
