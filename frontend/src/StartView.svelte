@@ -103,7 +103,6 @@
     top: 3em;
     left: 3em;
   }
-
 </style>
 
 <script>
@@ -289,7 +288,10 @@
 </script>
 
 {#if !tryHash}
-  <div class="experiment-features-check">
+  <div
+    class="experiment-features-check"
+    style:color="{animals[selectedAnimal]?.color || "var(--main-fg-color)"}"
+  >
     <Checkbox
       bind:checked="{$settings.experimentalFeatures}"
       leftbox="{true}"
