@@ -197,7 +197,7 @@ class OfrakProject:
     async def init_project_binary(
         self, binary_name: str, ofrak_context: OFRAKContext, script_name: Optional[str] = None
     ) -> Resource:
-        if str is None:
+        if script_name is None:
             binary_metadata = self.binaries[binary_name]
             script_name = binary_metadata.init_script
 
