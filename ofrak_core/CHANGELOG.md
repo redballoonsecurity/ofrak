@@ -11,12 +11,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add method to Resource and data service to search for patterns in its data ([#333](https://github.com/redballoonsecurity/ofrak/pull/333))
 - Add search bars to GUI in order to search for a string or bytes within a resource. ([#345](https://github.com/redballoonsecurity/ofrak/pull/345))
 - Add Identifier, Unpacker, Packer for Intel Hex format. ([#349](https://github.com/redballoonsecurity/ofrak/pull/349))
+- Add unpackers for EXT filesystems (versions 2 through 4). ([#337](https://github.com/redballoonsecurity/ofrak/pull/337))
 - A new feature that allows users to create an OFRAK "project" that contains a collection of scripts and binaries. ([#360](https://github.com/redballoonsecurity/ofrak/pull/360))
 
 ### Changed
 - Support uploading files in chunks to handle files larger than 2GB from the GUI ([#324](https://github.com/redballoonsecurity/ofrak/pull/324))
+- Do not look for the `ofrak_patch_maker` toolchain.conf in /etc so local installs do not need escalated permissions. ([#342](https://github.com/redballoonsecurity/ofrak/pull/342))
 
 ### Fixed
+- Save resources affected by data patches and dependency updates on a resource being saved ([#355](https://github.com/redballoonsecurity/ofrak/pull/355))
 
 ## [3.1.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v3.0.0...ofrak-v3.1.0)
 ### Added
