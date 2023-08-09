@@ -166,17 +166,23 @@ class IhexPacker(Packer[None]):
 
 class IhexIdentifier(Identifier):
     """
-    Regex-test the entire resource to check if it satisfies intel-hex formatting
+    Regex-test the entire resource to check if it satisfies intel-hex formatting.
+
+    This identifier tags any Resource whose first two lines match the ihex format.
     """
 
     targets = (GenericText,)
 
-    _INTEL_HEX_PATTERN = re.compile(rb"(\:([0-9A-F]{2}){5,})(\n|\r\n)+")
+    # Matches on 2 lines that match ihex format
+    _INTEL_HEX_PATTERN = re.compile(rb"((\:([0-9A-F]{2}){5,})(\n|\r\n)+){2}")
 
     async def identify(self, resource: Resource, config=None) -> None:
-        matched_ihex = await resource.search_data(self._INTEL_HEX_PATTERN)
+        matched_ihex = await resource.search_data(self._INTEL_HEX_PATTERN, max_matches=1)
         if matched_ihex:
-            resource.add_tag(Ihex)
+            offset, bytes = matched_ihex[0]
+            # Only tag if pattern starts at offset 0 of resource
+            if offset == 0:
+                resource.add_tag(Ihex)
 
 
 def _binfile_analysis(raw_ihex: bytes, component) -> Tuple[IhexProgram, Any]:
