@@ -18,6 +18,9 @@ async def test_create_new_project(ofrak_context, tmpdir):
         tmpdir,
     )
 
+    assert new_project.metadata_path == os.path.join(tmpdir, "metadata.json")
+    assert new_project.readme_path == os.path.join(tmpdir, "README.md")
+
     new_project.add_binary("tiny_binary", b"just a basic binary, nothing special")
 
     new_project.write_metadata_to_disk()
