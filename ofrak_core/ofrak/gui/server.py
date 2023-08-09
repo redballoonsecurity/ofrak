@@ -1143,17 +1143,6 @@ class AiohttpOFRAKServer:
         return json_response(self.projects_dir)
 
     @exceptions_to_http(SerializedError)
-    async def update_binary_data(self, request: Request) -> Response:
-        body = await request.json()
-        id = body["id"]
-        binary_name = body["name"]
-        init_script = body["init"]
-        associated_scripts = body["associated_scripts"]
-        project = self._get_project_by_id(id)
-        project.update_binary_data(binary_name, init_script, associated_scripts)
-        return json_response([])
-
-    @exceptions_to_http(SerializedError)
     async def save_project_data(self, request: Request) -> Response:
         body = await request.json()
         session_id = body["session_id"]
@@ -1204,16 +1193,6 @@ class AiohttpOFRAKServer:
             except:
                 pass
         return projects
-
-    def _get_project_by_name(self, name) -> Optional[OfrakProject]:
-        if self.projects is None:
-            self.projects = self._slurp_projects_from_dir()
-        result = [project for project in self.projects if project.name == name]
-        if len(result) > 1:
-            raise AttributeError("Project Name Collision")
-        if len(result) == 0:
-            return None
-        return result[0]
 
     def _get_project_by_id(self, id) -> OfrakProject:
         if self.projects is None:

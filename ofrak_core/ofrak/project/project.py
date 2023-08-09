@@ -68,48 +68,8 @@ class OfrakProject:
     @staticmethod
     def clone_from_git(url: str, path: str) -> "OfrakProject":
         repo = Repo.clone_from(url, path)
-        if not os.path.exists(path):
-            raise ValueError(f"{path} does not exist")
-        if not os.path.isdir(path):
-            raise ValueError(f"{path} is not a directory")
 
-        metadata_path = os.path.join(path, "metadata.json")
-        binaries_path = os.path.join(path, "binaries")
-        scripts_path = os.path.join(path, "scripts")
-
-        if not all(
-            [
-                os.path.exists(metadata_path),
-                os.path.exists(binaries_path),
-                os.path.isdir(binaries_path),
-                os.path.exists(scripts_path),
-                os.path.isdir(scripts_path),
-            ]
-        ):
-            raise ValueError(f"{path} has invalid structure to be an Project")
-
-        with open(metadata_path) as f:
-            raw_metadata = json.load(f)
-
-        scripts = [script["name"] for script in raw_metadata["scripts"]]
-
-        binaries = {}
-
-        for binary_name, info in raw_metadata["binaries"].items():
-            binaries[binary_name] = _OfrakProjectBinary(
-                info["associated_scripts"], info.get("init_script")
-            )
-        name = raw_metadata["name"]
-        project_id = binascii.unhexlify(raw_metadata["project_id"])
-        project = OfrakProject(
-            path,
-            name,
-            project_id,
-            binaries,
-            scripts,
-        )
-
-        return project
+        return OfrakProject.init_from_path(path)
 
     @staticmethod
     def init_from_path(path: str) -> "OfrakProject":
@@ -198,7 +158,7 @@ class OfrakProject:
         self, binary_name: str, ofrak_context: OFRAKContext, script_name: Optional[str] = None
     ) -> Resource:
         if script_name is None:
-            binary_metadata = self.binaries[binary_name]
+            binary_metadata = self._get_binary(binary_name)
             script_name = binary_metadata.init_script
 
         resource = await ofrak_context.create_root_resource_from_file(self.binary_path(binary_name))
@@ -235,14 +195,8 @@ class OfrakProject:
                 for binary_name, binary_info in self.binaries.items()
             },
         }
-        with open(os.path.join(self.path, "metadata.json"), "w") as f:
+        with open(self.metadata_path, "w") as f:
             json.dump(metadata, f)
-
-    def get_saved_metadata(self):
-        with open(os.path.join(self.path, "metadata.json")) as f:
-            data = json.load(f)
-            data["session_id"] = self.session_id.hex()
-            return data
 
     def get_current_metadata(self):
         return {
@@ -276,15 +230,6 @@ class OfrakProject:
         with open(self.script_path(name, check=False), "w+") as f:
             f.write(script_contents)
 
-    def update_binary_data(
-        self, name: str, init: Optional[str] = None, associated: Optional[List[str]] = None
-    ):
-        binary = self._get_binary(name)
-        if init is not None:
-            binary.init_script = init
-        if associated is not None:
-            binary.associated_scripts = associated
-
     def delete_binary(self, name: str):
         if not os.path.isdir(os.path.join(self.path, ".Trash")):
             os.mkdir(os.path.join(self.path, ".Trash"))
@@ -314,13 +259,12 @@ class OfrakProject:
         if not os.path.isdir(path):
             raise ValueError(f"{path} is not a directory")
 
-        metadata_path = os.path.join(path, "metadata.json")
         binaries_path = os.path.join(path, "binaries")
         scripts_path = os.path.join(path, "scripts")
 
         if not all(
             [
-                os.path.exists(metadata_path),
+                os.path.exists(self.metadata_path),
                 os.path.exists(binaries_path),
                 os.path.isdir(binaries_path),
                 os.path.exists(scripts_path),
@@ -329,7 +273,7 @@ class OfrakProject:
         ):
             raise ValueError(f"{path} has invalid structure to be an Project")
 
-        with open(metadata_path) as f:
+        with open(self.metadata_path) as f:
             raw_metadata = json.load(f)
 
         self.scripts = [script["name"] for script in raw_metadata["scripts"]]
