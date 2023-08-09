@@ -144,6 +144,13 @@
   .advanced-options > input {
     width: 75%;
   }
+
+  /* TODO: This checkbox should be replaced with a properly placed button to access all settings */
+  .experiment-features-check {
+    position: fixed;
+    top: 3em;
+    left: 3em;
+  }
 </style>
 
 <script>

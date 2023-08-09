@@ -65,6 +65,7 @@
   import { onMount } from "svelte";
   import ProjectManagerCheckbox from "./ProjectManagerCheckbox.svelte";
   import ProjectManagerScriptOptions from "./ProjectManagerScriptOptions.svelte";
+  import ProjectManagerBinaryOptions from "./ProjectManagerBinaryOptions.svelte";
 
   let focus,
     selectedBinaryName,
@@ -113,7 +114,7 @@
   $: rootResourceLoadPromise = openProject;
   $: {
     focus = {
-      object: ProjectManagerScriptOptions,
+      object: ProjectManagerBinaryOptions,
       args: {
         name: focusBinary,
       },

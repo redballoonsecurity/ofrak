@@ -1122,7 +1122,9 @@ class AiohttpOFRAKServer:
         else:
             raise AttributeError("No resource ID provided")
         project = self._get_project_by_id(id)
-        resource = await project.init_adventure_binary(binary, script, self._ofrak_context)
+        resource = await project.init_project_binary(
+            binary, self._ofrak_context, script_name=script
+        )
         self._job_ids[resource_id] = resource.get_job_id()
         return json_response(self._serialize_resource(resource))
 
@@ -1139,17 +1141,6 @@ class AiohttpOFRAKServer:
         self.projects_dir = new_path
         self.projects = self._slurp_projects_from_dir()
         return json_response(self.projects_dir)
-
-    @exceptions_to_http(SerializedError)
-    async def update_binary_data(self, request: Request) -> Response:
-        body = await request.json()
-        id = body["id"]
-        binary_name = body["name"]
-        init_script = body["init"]
-        associated_scripts = body["associated_scripts"]
-        project = self._get_project_by_id(id)
-        project.update_binary_data(binary_name, init_script, associated_scripts)
-        return json_response([])
 
     @exceptions_to_http(SerializedError)
     async def save_project_data(self, request: Request) -> Response:
@@ -1180,6 +1171,7 @@ class AiohttpOFRAKServer:
         project.delete_script(script_name)
         return json_response([])
 
+    @exceptions_to_http(SerializedError)
     async def get_project_script(self, request: Request) -> Response:
         project_id = request.query.get("project")
         script_name_query = request.query.get("script")
@@ -1201,16 +1193,6 @@ class AiohttpOFRAKServer:
             except:
                 pass
         return projects
-
-    def _get_project_by_name(self, name) -> Optional[OfrakProject]:
-        if self.projects is None:
-            self.projects = self._slurp_projects_from_dir()
-        result = [project for project in self.projects if project.name == name]
-        if len(result) > 1:
-            raise AttributeError("Project Name Collision")
-        if len(result) == 0:
-            return None
-        return result[0]
 
     def _get_project_by_id(self, id) -> OfrakProject:
         if self.projects is None:
