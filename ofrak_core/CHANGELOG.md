@@ -16,7 +16,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Changed
 - Support uploading files in chunks to handle files larger than 2GB from the GUI ([#324](https://github.com/redballoonsecurity/ofrak/pull/324))
-- Do not look for the `ofrak_patch_maker` toolchain.conf in /etc so local installs do not need escalated permissions. ([#342](https://github.com/redballoonsecurity/ofrak/pull/342))
 
 ### Fixed
 - Save resources affected by data patches and dependency updates on a resource being saved ([#355](https://github.com/redballoonsecurity/ofrak/pull/355))

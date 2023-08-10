@@ -49,7 +49,7 @@ setuptools.setup(
     install_requires=[
         "ofrak_io>=1.0,==1.*",
         "ofrak_type>=2.2.0rc0,==2.*",
-        "ofrak_patch_maker>=4.0.1rc0,==4.*",
+        "ofrak_patch_maker>=4.0.2rc0,==4.*",
     ]
     + read_requirements("requirements.txt"),
     extras_require={
