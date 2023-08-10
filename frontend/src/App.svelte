@@ -276,6 +276,6 @@ Answer by running riddle.answer('your answer here') from the console.`);
 
 <div class="bottomright">
   <p>
-    <a href="https://ofrak.com" target="_blank" rel="noreferrer">v3.2.0rc3</a>
+    <a href="https://ofrak.com" target="_blank" rel="noreferrer">v3.2.0</a>
   </p>
 </div>
