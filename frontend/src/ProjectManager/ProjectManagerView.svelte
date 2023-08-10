@@ -83,6 +83,9 @@
     showProjectManager;
 
   async function openProject() {
+    if (!selectedBinaryName) {
+      throw Error("Select a binary to launch!");
+    }
     let rootModel = await fetch(`${$settings.backendUrl}/open_project`, {
       method: "POST",
       headers: {
