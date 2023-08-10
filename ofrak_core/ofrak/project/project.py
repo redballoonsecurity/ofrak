@@ -48,6 +48,14 @@ class OfrakProject:
     def readme_path(self):
         return os.path.join(self.path, "README.md")
 
+    @property
+    def trashed_binaries(self):
+        return os.path.join(self.path, ".Trash", "binaries")
+
+    @property
+    def trashed_scripts(self):
+        return os.path.join(self.path, ".Trash", "binaries")
+
     @staticmethod
     def create(name: str, path: str) -> "OfrakProject":
         new_project = OfrakProject(
@@ -130,6 +138,7 @@ class OfrakProject:
             scripts,
         )
 
+        project._restore_trashed_files()
         return project
 
     def script_path(self, script_name, check: bool = True) -> str:
@@ -231,26 +240,27 @@ class OfrakProject:
             f.write(script_contents)
 
     def delete_binary(self, name: str):
-        if not os.path.isdir(os.path.join(self.path, ".Trash")):
-            os.mkdir(os.path.join(self.path, ".Trash"))
-        if not os.path.isdir(os.path.join(os.path.join(self.path, ".Trash"), "binaries")):
-            os.mkdir(os.path.join(os.path.join(self.path, ".Trash"), "binaries"))
+        os.makedirs(self.trashed_binaries, exist_ok=True)
         os.rename(
             self.binary_path(name),
-            os.path.join(os.path.join(os.path.join(self.path, ".Trash"), "binaries"), name),
+            os.path.join(self.trashed_binaries, name),
         )
         self.binaries.pop(name)
 
     def delete_script(self, name: str):
-        if not os.path.isdir(os.path.join(self.path, ".Trash")):
-            os.mkdir(os.path.join(self.path, ".Trash"))
-        if not os.path.isdir(os.path.join(os.path.join(self.path, ".Trash"), "scripts")):
-            os.mkdir(os.path.join(os.path.join(self.path, ".Trash"), "scripts"))
+        os.makedirs(self.trashed_scripts, exist_ok=True)
         os.rename(
             self.script_path(name),
-            os.path.join(os.path.join(os.path.join(self.path, ".Trash"), "scripts"), name),
+            os.path.join(self.trashed_scripts, name),
         )
         self.scripts.remove(name)
+        for binary_metadata in self.binaries.values():
+            try:
+                binary_metadata.associated_scripts.remove(name)
+            except ValueError:
+                pass
+            if binary_metadata.init_script == name:
+                binary_metadata.init_script = None
 
     def reset_project(self):
         path = self.path
@@ -277,48 +287,46 @@ class OfrakProject:
             raw_metadata = json.load(f)
 
         self.scripts = [script["name"] for script in raw_metadata["scripts"]]
-        for script in self.scripts:
-            if not os.path.exists(self.script_path(script, check=False)):
-                if not os.path.exists(
-                    os.path.join(os.path.join(os.path.join(self.path, ".Trash"), "scripts"), script)
-                ):
-                    raise AttributeError(
-                        f"Trying to restore script {script} but the file is missing from .Trash"
-                    )
-                else:
-                    os.rename(
-                        os.path.join(
-                            os.path.join(os.path.join(self.path, ".Trash"), "scripts"), script
-                        ),
-                        self.script_path(script, check=False),
-                    )
-
         self.binaries = {}
 
         for binaryName, info in raw_metadata["binaries"].items():
             self.binaries[binaryName] = _OfrakProjectBinary(
                 info["associated_scripts"], info.get("init_script")
             )
-        for binary in self.binaries.keys():
-            if not os.path.exists(self.binary_path(binary, check=False)):
-                if not os.path.exists(
-                    os.path.join(
-                        os.path.join(os.path.join(self.path, ".Trash"), "binaries"), binary
-                    )
-                ):
-                    raise AttributeError(
-                        f"Trying to restore binary {binary} but the file is missing from .Trash"
-                    )
-                else:
-                    os.rename(
-                        os.path.join(
-                            os.path.join(os.path.join(self.path, ".Trash"), "scripts"), binary
-                        ),
-                        self.binary_path(binary, check=False),
-                    )
 
         self.name = raw_metadata["name"]
         self.project_id = binascii.unhexlify(raw_metadata["project_id"])
+
+        self._restore_trashed_files()
+
+    def _restore_trashed_files(self):
+        for script in self.scripts:
+            try:
+                self.script_path(script)
+            except ValueError:
+                try:
+                    os.rename(
+                        os.path.join(self.trashed_scripts, script),
+                        self.script_path(script, check=False),
+                    )
+                except OSError:
+                    raise AttributeError(
+                        f"Trying to restore script {script} but the file is missing from .Trash"
+                    )
+
+        for binary in self.binaries.keys():
+            try:
+                self.binary_path(binary)
+            except ValueError:
+                try:
+                    os.rename(
+                        os.path.join(self.trashed_binaries, binary),
+                        self.binary_path(binary, check=False),
+                    )
+                except OSError:
+                    raise AttributeError(
+                        f"Trying to restore binary {binary} but the file is missing from .Trash"
+                    )
 
     def _get_binary(self, name):
         if not name in self.binaries.keys():

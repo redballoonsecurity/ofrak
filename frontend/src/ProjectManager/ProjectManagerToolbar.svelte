@@ -65,9 +65,9 @@
           }
           $selectedProject = await fetch(
             `${$settings.backendUrl}/get_project_by_id?id=${$selectedProject.session_id}`
-          ).then((r) => {
+          ).then(async (r) => {
             if (!r.ok) {
-              throw Error(r.statusText);
+              throw Error(JSON.stringify(await r.json(), undefined, 2));
             }
             return r.json();
           });

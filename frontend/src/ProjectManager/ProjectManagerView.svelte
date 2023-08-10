@@ -75,11 +75,6 @@
     scriptCheckboxHoverInfo = {};
 
   let binariesForProject = [];
-  for (let binaryName in $selectedProject.binaries) {
-    if ($selectedProject.binaries.hasOwnProperty(binaryName)) {
-      binariesForProject.push(binaryName);
-    }
-  }
 
   export let resources,
     rootResourceLoadPromise,
@@ -88,6 +83,9 @@
     showProjectManager;
 
   async function openProject() {
+    if (!selectedBinaryName) {
+      throw Error("Select a binary to launch!");
+    }
     let rootModel = await fetch(`${$settings.backendUrl}/open_project`, {
       method: "POST",
       headers: {
@@ -98,7 +96,12 @@
         binary: selectedBinaryName,
         script: $selectedProject.binaries[selectedBinaryName].init_script,
       }),
-    }).then((r) => r.json());
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return await r.json();
+    });
     rootResource = remote_model_to_resource(rootModel, resources);
     $selected = rootModel.id;
     showProjectManager = false;
@@ -131,6 +134,14 @@
     };
     focusScript = undefined;
   }
+  $: {
+    binariesForProject = [];
+    for (let binaryName in $selectedProject.binaries) {
+      if ($selectedProject.binaries.hasOwnProperty(binaryName)) {
+        binariesForProject.push(binaryName);
+      }
+    }
+  }
 </script>
 
 <div class="title">OFRAK Project Manager</div>
@@ -149,20 +160,25 @@
             <ProjectManagerFocusableLabel
               bind:focus="{focus}"
               label="Binaries"
-              newFocus="{ProjectManagerAddBinaryToProject}"
+              newFocus="{{
+                object: ProjectManagerAddBinaryToProject,
+                args: {},
+              }}"
             />
           </div>
           <div class="hbox2">
             <div class="content">
-              {#each binariesForProject as binaryName}
-                <div class="element">
-                  <ProjectManagerCheckbox
-                    ownValue="{binaryName}"
-                    checkbox="{false}"
-                    bind:focus="{focusBinary}"
-                  />
-                </div>
-              {/each}
+              {#key forceRefreshProject}
+                {#each binariesForProject as binaryName}
+                  <div class="element">
+                    <ProjectManagerCheckbox
+                      ownValue="{binaryName}"
+                      checkbox="{false}"
+                      bind:focus="{focusBinary}"
+                    />
+                  </div>
+                {/each}
+              {/key}
             </div>
           </div>
         </Pane>
@@ -171,7 +187,10 @@
             <ProjectManagerFocusableLabel
               bind:focus="{focus}"
               label="Scripts"
-              newFocus="{ProjectManagerAddScriptToProject}"
+              newFocus="{{
+                object: ProjectManagerAddScriptToProject,
+                args: {},
+              }}"
             />
           </div>
           <div class="hbox2">
@@ -191,10 +210,10 @@
                   </p>
                 {/if}
               </div>
-              {#each $selectedProject.scripts as script}
-                <div class="element">
-                  {#if selectedBinaryName}
-                    {#key forceRefreshProject}
+              {#key forceRefreshProject}
+                {#each $selectedProject.scripts as script}
+                  <div class="element">
+                    {#if selectedBinaryName}
                       <ProjectManagerCheckbox
                         ownValue="{script['name']}"
                         inclusiveSelectionGroup="{$selectedProject.binaries[
@@ -205,21 +224,25 @@
                         bind:focus="{focusScript}"
                         bind:mouseoverInfo="{scriptCheckboxHoverInfo}"
                       />
-                    {/key}
-                  {:else}
-                    <ProjectManagerCheckbox
-                      ownValue="{script['name']}"
-                      bind:focus="{focusScript}"
-                    />
-                  {/if}
-                </div>
-              {/each}
+                    {:else}
+                      <ProjectManagerCheckbox
+                        ownValue="{script['name']}"
+                        bind:focus="{focusScript}"
+                      />
+                    {/if}
+                  </div>
+                {/each}
+              {/key}
             </div>
           </div>
         </Pane>
       </Split>
       <Pane slot="second" paddingVertical="{'1em'}">
-        <ProjectManagerOptions focus="{focus}" />
+        <ProjectManagerOptions
+          focus="{focus}"
+          bind:selectedBinaryName="{selectedBinaryName}"
+          bind:forceRefreshProject="{forceRefreshProject}"
+        />
       </Pane>
     </Split>
   </div>
