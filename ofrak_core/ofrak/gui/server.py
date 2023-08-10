@@ -6,6 +6,7 @@ from enum import Enum
 import functools
 import itertools
 import logging
+from ofrak.project.project import OfrakProject
 
 import typing_inspect
 from typing_inspect import get_args
@@ -147,6 +148,8 @@ class AiohttpOFRAKServer:
         self.component_context: ComponentContext = ClientComponentContext()
         self.script_builder: ScriptBuilder = ScriptBuilder()
         self.resource_builder: Dict[str, Tuple[Resource, memoryview]] = {}
+        self.projects: Optional[Set[OfrakProject]] = None
+        self.projects_dir: str = "/tmp/ofrak-projects"
         self._app.add_routes(
             [
                 web.post("/create_root_resource", self.create_root_resource),
@@ -201,6 +204,20 @@ class AiohttpOFRAKServer:
                     "/{resource_id}/get_tags_and_num_components", self.get_tags_and_num_components
                 ),
                 web.post("/{resource_id}/search_data", self.search_data),
+                web.post("/create_new_project", self.create_new_project),
+                web.get("/get_all_projects", self.get_all_projects),
+                web.get("/get_project_by_id", self.get_project_by_id),
+                web.post("/add_binary_to_project", self.add_binary_to_project),
+                web.post("/add_script_to_project", self.add_script_to_project),
+                web.post("/open_project", self.open_project),
+                web.post("/clone_project_from_git", self.clone_project_from_git),
+                web.get("/get_projects_path", self.get_projects_path),
+                web.post("/set_projects_path", self.set_projects_path),
+                web.post("/save_project_data", self.save_project_data),
+                web.post("/delete_binary_from_project", self.delete_binary_from_project),
+                web.post("/delete_script_from_project", self.delete_script_from_project),
+                web.post("/reset_project", self.reset_project),
+                web.get("/get_project_script", self.get_project_script),
                 web.get("/", self.get_static_files),
                 web.static(
                     "/",
@@ -1015,6 +1032,177 @@ class AiohttpOFRAKServer:
             results = [(offset, len(match)) for offset, match in results]
 
         return json_response(results)
+
+    @exceptions_to_http(SerializedError)
+    async def create_new_project(self, request: Request) -> Response:
+        if self.projects is None:
+            self.projects = self._slurp_projects_from_dir()
+        body = await request.json()
+        name = body.get("name")
+        project = OfrakProject.create(name, os.path.join(self.projects_dir, name))
+        self.projects.add(project)
+
+        return json_response({"id": project.session_id.hex()})
+
+    @exceptions_to_http(SerializedError)
+    async def clone_project_from_git(self, request: Request) -> Response:
+        if self.projects is None:
+            self.projects = self._slurp_projects_from_dir()
+
+        def recurse_path_collisions(path: str, count: int) -> str:
+            if count == 0:
+                incr_path = path
+            else:
+                incr_path = f"{path}_{count}"
+            if os.path.exists(incr_path):
+                count += 1
+                return recurse_path_collisions(path, count)
+            else:
+                return incr_path
+
+        body = await request.json()
+        url = body.get("url")
+        path = recurse_path_collisions(
+            os.path.join(self.projects_dir, url.split(":")[-1].split("/")[-1]), 0
+        )
+        project = OfrakProject.clone_from_git(url, path)
+        self.projects.add(project)
+        return json_response({"id": project.session_id.hex()})
+
+    @exceptions_to_http(SerializedError)
+    async def get_project_by_id(self, request: Request) -> Response:
+        id = request.query.get("id")
+        project = self._get_project_by_id(id)
+        return json_response(project.get_current_metadata())
+
+    @exceptions_to_http(SerializedError)
+    async def get_all_projects(self, request: Request) -> Response:
+        if self.projects is None:
+            self.projects = self._slurp_projects_from_dir()
+        return json_response([project.get_current_metadata() for project in self.projects])
+
+    @exceptions_to_http(SerializedError)
+    async def reset_project(self, request: Request) -> Response:
+        body = await request.json()
+        id = body["id"]
+        project = self._get_project_by_id(id)
+        project.reset_project()
+        return json_response([])
+
+    @exceptions_to_http(SerializedError)
+    async def add_binary_to_project(self, request: Request) -> Response:
+        id = request.query.get("id")
+        name_query = request.query.get("name")
+        if name_query is not None:
+            name = name_query
+        data = await request.read()
+        project = self._get_project_by_id(id)
+        project.add_binary(name, data)
+        return json_response([])
+
+    @exceptions_to_http(SerializedError)
+    async def add_script_to_project(self, request: Request) -> Response:
+        id = request.query.get("id")
+        name_query = request.query.get("name")
+        if name_query is not None:
+            name = name_query
+        data = await request.read()
+        project = self._get_project_by_id(id)
+        project.add_script(name, data.decode())
+        return json_response([])
+
+    @exceptions_to_http(SerializedError)
+    async def open_project(self, request: Request) -> Response:
+        body = await request.json()
+        id = body["id"]
+        binary = body["binary"]
+        script = body["script"]
+        if request.remote is not None:
+            resource_id = request.remote
+        else:
+            raise AttributeError("No resource ID provided")
+        project = self._get_project_by_id(id)
+        resource = await project.init_project_binary(
+            binary, self._ofrak_context, script_name=script
+        )
+        self._job_ids[resource_id] = resource.get_job_id()
+        return json_response(self._serialize_resource(resource))
+
+    @exceptions_to_http(SerializedError)
+    async def get_projects_path(self, request: Request) -> Response:
+        return json_response(self.projects_dir)
+
+    @exceptions_to_http(SerializedError)
+    async def set_projects_path(self, request: Request) -> Response:
+        body = await request.json()
+        new_path = body["path"]
+        if not os.path.exists(new_path):
+            os.mkdir(new_path)
+        self.projects_dir = new_path
+        self.projects = self._slurp_projects_from_dir()
+        return json_response(self.projects_dir)
+
+    @exceptions_to_http(SerializedError)
+    async def save_project_data(self, request: Request) -> Response:
+        body = await request.json()
+        session_id = body["session_id"]
+        project = self._get_project_by_id(session_id)
+        for binary_name, binary_metadata in body["binaries"].items():
+            project.binaries[binary_name].init_script = binary_metadata["init_script"]
+            project.binaries[binary_name].associated_scripts = binary_metadata["associated_scripts"]
+        project.write_metadata_to_disk()
+        return json_response([])
+
+    @exceptions_to_http(SerializedError)
+    async def delete_binary_from_project(self, request: Request) -> Response:
+        body = await request.json()
+        id = body["id"]
+        binary_name = body["binary"]
+        project = self._get_project_by_id(id)
+        project.delete_binary(binary_name)
+        return json_response([])
+
+    @exceptions_to_http(SerializedError)
+    async def delete_script_from_project(self, request: Request) -> Response:
+        body = await request.json()
+        id = body["id"]
+        script_name = body["script"]
+        project = self._get_project_by_id(id)
+        project.delete_script(script_name)
+        return json_response([])
+
+    @exceptions_to_http(SerializedError)
+    async def get_project_script(self, request: Request) -> Response:
+        project_id = request.query.get("project")
+        script_name_query = request.query.get("script")
+        if script_name_query is not None:
+            script_name = script_name_query
+        project = self._get_project_by_id(project_id)
+        script_body = project.get_script_body(script_name)
+
+        return Response(text=script_body)
+
+    def _slurp_projects_from_dir(self) -> Set:
+        projects = set()
+        if not os.path.exists(self.projects_dir):
+            os.makedirs(self.projects_dir)
+        for dir in os.listdir(self.projects_dir):
+            try:
+                project = OfrakProject.init_from_path(os.path.join(self.projects_dir, dir))
+                projects.add(project)
+            except:
+                pass
+        return projects
+
+    def _get_project_by_id(self, id) -> OfrakProject:
+        if self.projects is None:
+            self.projects = self._slurp_projects_from_dir()
+        result = [project for project in self.projects if project.session_id.hex() == id]
+        if len(result) > 1:
+            raise AttributeError("Project ID Collision")
+        if len(result) == 0:
+            raise ValueError(f"Project with ID {id} not found")
+        return result[0]
 
     def _construct_field_response(self, obj):
         if dataclasses.is_dataclass(obj):
