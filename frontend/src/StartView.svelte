@@ -98,11 +98,6 @@
   .clickable {
     cursor: pointer;
   }
-  .experiment-features-check {
-    position: fixed;
-    top: 3em;
-    left: 3em;
-  }
 
   .project-options {
     display: flex;
