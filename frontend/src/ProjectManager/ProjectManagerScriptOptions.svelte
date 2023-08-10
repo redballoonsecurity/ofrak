@@ -31,7 +31,7 @@
   import { selectedProject, settings, selected } from "../stores";
   import Icon from "../Icon.svelte";
 
-  export let name;
+  export let args;
 
   async function deleteScript() {
     await fetch(`${$settings.backendUrl}/delete_script_from_project`, {
@@ -41,7 +41,7 @@
       },
       body: JSON.stringify({
         id: $selectedProject.session_id,
-        script: name,
+        script: args.name,
       }),
     }).then(async (r) => {
       if (!r.ok) {
@@ -55,7 +55,6 @@
         }
         return r.json();
       });
-      console.log($selectedProject);
       return await r.json();
     });
   }
@@ -63,6 +62,6 @@
 
 <div>
   <button on:click|stopPropagation="{deleteScript}"
-    ><Icon url="/icons/trash.svg" />Delete {name} from project.</button
+    ><Icon url="/icons/trash.svg" />Delete {args.name} from project.</button
   >
 </div>

@@ -12,15 +12,18 @@
 </style>
 
 <script>
-  export let focus;
+  export let focus, selectedBinaryName, forceRefreshProject;
 </script>
 
 <div class="hbox">
   <div class="options">
-    {#if focus && typeof focus == "string"}
-      "{focus}"
-    {:else if focus && typeof focus == "object"}
-      <svelte:component this="{focus['object']}" {...focus["args"]} />
+    {#if focus}
+      <svelte:component
+        this="{focus.object}"
+        bind:selectedBinaryName="{selectedBinaryName}"
+        bind:forceRefreshProject="{forceRefreshProject}"
+        bind:args="{focus.args}"
+      />
     {:else}
       Click anywhere to see its options.
     {/if}
