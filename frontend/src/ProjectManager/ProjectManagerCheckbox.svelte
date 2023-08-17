@@ -31,8 +31,8 @@
     inclusiveSelectionGroup = undefined,
     exclusiveSelectionValue = undefined,
     focus,
-    mouseoverInfo = {};
-  let inclusiveCheckboxChecked;
+    mouseoverInfo = {},
+    inclusiveCheckboxChecked;
 
   $: if (
     inclusiveSelectionGroup !== undefined &&
@@ -47,7 +47,9 @@
       }
     } else {
       if (inclusiveCheckboxChecked) {
-        inclusiveSelectionGroup.push(ownValue);
+        if (inclusiveCheckboxChecked) {
+          inclusiveSelectionGroup.push(ownValue);
+        }
       }
     }
   }
