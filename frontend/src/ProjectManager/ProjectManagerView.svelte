@@ -109,7 +109,6 @@
       $selectedProject.loaded = {};
     }
     $selectedProject.loaded[rootModel.id] = selectedBinaryName;
-    console.log($selectedProject);
     showRootResource = true;
   }
 
