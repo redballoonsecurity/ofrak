@@ -47,7 +47,7 @@
       }
     } else {
       if (inclusiveCheckboxChecked) {
-          inclusiveSelectionGroup.push(ownValue);
+        inclusiveSelectionGroup.push(ownValue);
       }
     }
   }
