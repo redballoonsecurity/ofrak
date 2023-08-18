@@ -47,9 +47,7 @@
       }
     } else {
       if (inclusiveCheckboxChecked) {
-        if (inclusiveCheckboxChecked) {
           inclusiveSelectionGroup.push(ownValue);
-        }
       }
     }
   }
