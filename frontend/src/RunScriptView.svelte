@@ -185,9 +185,9 @@
           <option value="{null}" selected disabled
             >Select script from Project</option
           >
-          {#each $selectedProject.scripts as script}
-            <option value="{script.name}">
-              {script.name}
+          {#each $selectedProject.binaries[$selectedProject.loaded[$selected]].associated_scripts as script}
+            <option value="{script}">
+              {script}
             </option>
           {/each}
         </select>

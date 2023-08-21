@@ -277,21 +277,6 @@
       },
 
       {
-        text: "Project Manager",
-        iconUrl: "/icons/briefcase.svg",
-        onclick: async (e) => {
-          if ($selectedProject) {
-            let state = {
-              $selectProject: $selectedProject,
-            };
-            showProjectManager = true;
-            showRootResource = false;
-            history.pushState(state, "", "/");
-          }
-        },
-      },
-
-      {
         text: "Search",
         iconUrl: "/icons/identify.svg",
         onclick: async (e) => {

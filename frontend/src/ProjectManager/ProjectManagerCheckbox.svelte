@@ -31,8 +31,8 @@
     inclusiveSelectionGroup = undefined,
     exclusiveSelectionValue = undefined,
     focus,
-    mouseoverInfo = {};
-  let inclusiveCheckboxChecked;
+    mouseoverInfo = {},
+    inclusiveCheckboxChecked;
 
   $: if (
     inclusiveSelectionGroup !== undefined &&

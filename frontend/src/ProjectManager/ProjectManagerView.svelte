@@ -105,6 +105,10 @@
     rootResource = remote_model_to_resource(rootModel, resources);
     $selected = rootModel.id;
     showProjectManager = false;
+    if (!$selectedProject.loaded) {
+      $selectedProject.loaded = {};
+    }
+    $selectedProject.loaded[rootModel.id] = selectedBinaryName;
     showRootResource = true;
   }
 
@@ -173,7 +177,6 @@
                   <div class="element">
                     <ProjectManagerCheckbox
                       ownValue="{binaryName}"
-                      checkbox="{false}"
                       bind:focus="{focusBinary}"
                     />
                   </div>
@@ -216,13 +219,16 @@
                     {#if selectedBinaryName}
                       <ProjectManagerCheckbox
                         ownValue="{script['name']}"
-                        inclusiveSelectionGroup="{$selectedProject.binaries[
-                          selectedBinaryName
-                        ].associated_scripts}"
+                        bind:inclusiveSelectionGroup="{$selectedProject
+                          .binaries[selectedBinaryName].associated_scripts}"
                         bind:exclusiveSelectionValue="{$selectedProject
                           .binaries[selectedBinaryName].init_script}"
                         bind:focus="{focusScript}"
                         bind:mouseoverInfo="{scriptCheckboxHoverInfo}"
+                        ,
+                        inclusiveCheckboxChecked="{$selectedProject.binaries[
+                          selectedBinaryName
+                        ].associated_scripts.includes(script['name'])}"
                       />
                     {:else}
                       <ProjectManagerCheckbox
