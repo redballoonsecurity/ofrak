@@ -1,3 +1,5 @@
+from typing import Optional, cast
+
 from ofrak_patch_maker.binary_parser.gnu import GNU_ELF_Parser
 from ofrak_patch_maker.toolchain.gnu import GNU_10_Toolchain
 from ofrak_patch_maker.toolchain.model import ToolchainConfig, ToolchainException
@@ -7,6 +9,7 @@ import logging
 
 class GNU_ARM_NONE_EABI_10_2_1_Toolchain(GNU_10_Toolchain):
     binary_file_parsers = [GNU_ELF_Parser()]
+    DEFAULT_ARM_VERSION: SubInstructionSet = SubInstructionSet.ARMv7A
 
     def __init__(
         self,
@@ -46,6 +49,12 @@ class GNU_ARM_NONE_EABI_10_2_1_Toolchain(GNU_10_Toolchain):
         if processor.sub_isa:
             return processor.sub_isa.value.lower()
         elif processor.isa == InstructionSet.ARM:
-            return SubInstructionSet.ARMv7A.value.lower()
+            return cast(str, self.DEFAULT_ARM_VERSION.value).lower()
         else:
             raise ToolchainException("Assembler Target not provided and no valid default found!")
+
+    def _get_compiler_target(self, processor: ArchInfo) -> Optional[str]:
+        if self._config.compiler_target is None:
+            return cast(str, self.DEFAULT_ARM_VERSION.value).lower()
+        else:
+            return self._config.compiler_target
