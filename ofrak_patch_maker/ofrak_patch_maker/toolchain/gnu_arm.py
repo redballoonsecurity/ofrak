@@ -23,6 +23,19 @@ class GNU_ARM_NONE_EABI_10_2_1_Toolchain(GNU_10_Toolchain):
         else:
             self._compiler_flags.append("-msoft-float")
 
+        if self._config.relocatable:
+            # Use "PIC" instead of "PIE" for ARM relocatable binaries
+            # This is a result of subtle differences between "PIC" and "PIE" code and how GNU emits code for each
+            # The potential error, when compiling with `-pie` is:
+            # relocation R_ARM_MOVW_ABS_NC against `a local symbol' can not be used when making a shared object; recompile with -fPIC
+
+            # This is possibly a bug: https://binutils.sourceware.narkive.com/iz2t6r3I/link-problems-with-section-anchors
+            # Or, possibly, the bug is in the abstract GNU toolchain, as it uses the `-pie` compiler flag but a `--pic-executable` for the linker flag
+            # The subtle differences between PIC and PIE are maybe what is causing this error
+            # But, an error only arises for the ARM toolchain, and coercing all GNU toolchains to use `-fpic`breaks other toolchain tests
+            self._compiler_flags.remove("-pie")
+            self._compiler_flags.append("-fpic")
+
     @property
     def name(self) -> str:
         return "GNU_ARM_NONE_EABI_10_2_1"
