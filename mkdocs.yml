@@ -64,10 +64,11 @@ nav:
           - Analyzer: "user-guide/key-concepts/component/analyzer.md"
           - Modifier: "user-guide/key-concepts/component/modifier.md"
           - Packer: "user-guide/key-concepts/component/packer.md"
-        - GUI:
-          - Minimap View: "user-guide/key-concepts/gui/minimap.md"
-          - Keybindings: "user-guide/key-concepts/gui/keybindings.md"
-          - Settings: "user-guide/key-concepts/gui/settings.md"
+      - GUI:
+        - Minimap View: "user-guide/key-concepts/gui/minimap.md"
+        - Keybindings: "user-guide/key-concepts/gui/keybindings.md"
+        - Settings: "user-guide/key-concepts/gui/settings.md"
+        - Projects: "user-guide/key-concepts/gui/projects.md"
       - Disassembler Backends:
         - Ghidra Backend: "user-guide/disassembler-backends/ghidra.md"
         - Binary Ninja Backend: "user-guide/disassembler-backends/binary_ninja.md"
