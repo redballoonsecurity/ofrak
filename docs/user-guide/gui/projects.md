@@ -11,7 +11,7 @@ The OFRAK Project Manager interface is loaded upon opening a project and display
 ![](assets/project-manager.png)
 
 ## Creating a Project
-OFRAK projects should be initialized through the OFRAK Project Manager to ensure a correcting project structure. Binaries and scripts are added to the project thorugh the corresponding toolbar options on the left side of the interface. After adding your assets, use the checkboxes in the script panel to link scripts with their binaries. The Save option in the toolbar will save your project, and reset will go back to the previously saved state.
+OFRAK projects should be initialized through the OFRAK Project Manager to ensure a correct project structure. Binaries and scripts are added to the project through the corresponding toolbar options on the left side of the interface. After adding your assets, use the checkboxes in the script panel to link scripts with their binaries. The Save option in the toolbar will save your project, and Reset will go back to the previously saved state.
 
 ## Launching a Project Binary
 Binaries from projects can be launched from the Launch option of the toolbar. When launched, the selected script will run on the binary and then display the result in the OFRAK Resource interface.
