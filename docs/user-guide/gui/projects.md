@@ -6,7 +6,7 @@ The Project Options interface is available from the start menu and gives you thr
 
 ![](assets/project-options.png)
 
-The OFRAK Project Manager interface is loaded upon opening a project and displays the structure of the project along with options to modify it. The Binaries panel displays each binary in the project. Select a binary to work with by clicking on its name. The Script panel shows options for each script in your project. Upon selecting a binary, two checkboxes options appear for each script. Hovering over each checkbox describes its function. One check box selects whether the script is compatible with the currently selected binary, allowing access to it in the Run Script option of the OFRAK Resource toolbar. The second checkbox selects a script to be run upon entering the OFRAK Resource interface, giving a starting point for exploration.
+The OFRAK Project Manager interface is loaded upon opening a project and displays the structure of the project along with options to modify it. The Binaries panel displays each binary in the project. Select a binary to work with by clicking on its name. The Script panel shows options for each script in your project. Upon selecting a binary, two checkboxes options appear for each script. Hovering over each checkbox describes its function. One check box selects whether the script can be run on the currently selected binary, allowing access to it in the Run Script option of the OFRAK Resource toolbar. The second checkbox selects a script to be run upon entering the OFRAK Resource interface, giving a starting point for exploration.
 
 ![](assets/project-manager.png)
 
