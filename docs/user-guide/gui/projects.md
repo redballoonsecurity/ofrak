@@ -1,5 +1,5 @@
 # Projects
-Projects are OFRAK's way of saving, organizing, and sharing your work. Projects are collections of binaries and scripts along with metadata that describes relationships between them.
+Projects are OFRAK's way of saving, organizing, and sharing your work. Projects are collections of binaries and scripts, along with metadata that describes relationships between them.
 
 ## The Interface
 The Project Options interface is available from the start menu and gives you three options for opening a project. The "Create New Project" opens up a blank project, "Open Existing Project" will open a project already in your Project Path, and "Clone Project from Git" clones the URL provided to your Project Path. The Project Path, where all of the projects are saved to and loaded from, may be modified in the Advanced Options section of the Project Options interface.
