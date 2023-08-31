@@ -69,8 +69,7 @@
     } else if (options.searchType === "Bytes") {
       searchFilter = await rootResource.search_for_bytes(searchQuery, false);
     }
-
-    return { matches: searchFilter, index: 0 };
+    return searchFilter;
   }
 </script>
 
@@ -96,7 +95,7 @@
     <div class="treebox">
       <ResourceTreeNode
         rootResource="{rootResource}"
-        bind:searchFilter="{searchFilter}"
+        bind:searchResults="{searchResults}"
         bind:resourceNodeDataMap="{resourceNodeDataMap}"
       />
     </div>

@@ -121,7 +121,7 @@
     selectPreviousSibling = () => {},
     collapsed = true,
     childrenCollapsed = true,
-    searchFilter;
+    searchResults;
   let firstChild,
     childrenPromise,
     commentsPromise,
@@ -230,7 +230,7 @@
   });
 </script>
 
-{#if !searchFilter || searchFilter.includes(self_id)}
+{#if !searchResults.matches || searchResults.matches.includes(self_id)}
   {#await childrenPromise then children}
     {#if children?.length > 0}
       <button
@@ -278,7 +278,7 @@
     {#if !collapsed && children.length > 0}
       <ul>
         {#each children.slice(0, kiddoChunksize) as child, i}
-          {#if !searchFilter || searchFilter.includes(child.get_id())}
+          {#if !searchResults.matches || searchResults.matches.includes(child.get_id())}
             <li>
               <div>
                 <svelte:self
@@ -299,7 +299,7 @@
                         $selected = children[i - 1]?.resource_id;
                       }}"
                   bind:resourceNodeDataMap="{resourceNodeDataMap}"
-                  searchFilter="{searchFilter}"
+                  searchResults="{searchResults}"
                 />
               </div>
             </li>
