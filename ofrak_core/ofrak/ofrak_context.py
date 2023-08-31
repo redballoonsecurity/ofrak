@@ -92,6 +92,15 @@ class OFRAKContext:
         await root_resource.save()
         return root_resource
 
+    async def create_root_resource_from_directory(self, dir_path: str) -> Resource:
+        full_dir_path = os.path.abspath(dir_path)
+        root_resource = await self.create_root_resource(
+            os.path.basename(full_dir_path), b"", (FilesystemRoot,)
+        )
+        root_resource_v = await root_resource.view_as(FilesystemRoot)
+        await root_resource_v.initialize_from_disk(full_dir_path)
+        return root_resource
+
     async def start_context(self):
         if "_ofrak_context" in globals():
             raise InvalidStateError(

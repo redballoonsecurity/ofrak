@@ -297,7 +297,6 @@ class Resource:
         )
 
     def _save(self) -> Tuple[List[bytes], List[DataPatch], List[MutableResourceModel]]:
-
         resources_to_delete: List[bytes] = []
         patches_to_apply: List[DataPatch] = []
         resources_to_update: List[MutableResourceModel] = []
