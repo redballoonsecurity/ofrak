@@ -1,5 +1,4 @@
 from ofrak import OFRAKContext
-from ofrak.core.program import Program
 from ofrak.resource import Resource
 
 import ofrak_ghidra
@@ -24,7 +23,10 @@ def ghidra_components(ofrak_injector):
 async def hello_world_elf_resource(
     hello_world_elf, ofrak_context: OFRAKContext, test_id: str
 ) -> Resource:
-    resource = await ofrak_context.create_root_resource(test_id, hello_world_elf, tags=(Program,))
+    resource = await ofrak_context.create_root_resource(
+        test_id,
+        hello_world_elf,
+    )
     return resource
 
 
