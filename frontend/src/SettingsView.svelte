@@ -108,6 +108,7 @@
   import Icon from "./Icon.svelte";
   import Checkbox from "./Checkbox.svelte";
   import { saveSettings } from "./helpers";
+  import Button from "./utils/Button.svelte"
 
   export let modifierView;
   let errorMessage, loadingDark, loadingLight, fileInput, browsedFiles;
@@ -257,13 +258,13 @@
       {/each}
     </div>
     <div style:margin="1em 0 2em 0">
-      <button
+      <Button
         on:click="{() => {
           $settings.colors.push('#dddddd');
           $settings.colors = $settings.colors;
-        }}">Add Color</button
+        }}">Add Color</Button
       >
-      <button
+      <Button
         on:click="{() => {
           huemintDark().then(setTheme);
         }}"
@@ -272,8 +273,8 @@
           <Icon url="/icons/loading.svg" />
         {/if}
         Generate Dark Mode
-      </button>
-      <button
+      </Button>
+      <Button
         on:click="{() => {
           huemintLight().then(setTheme);
         }}"
@@ -282,7 +283,7 @@
           <Icon url="/icons/loading.svg" />
         {/if}
         Generate Light Mode
-      </button>
+      </Button>
     </div>
     <div class="inputs" style:margin="2em 0">
       <Checkbox
@@ -314,17 +315,17 @@
     {/if}
   </div>
   <div class="actions">
-    <button
+    <Button
       on:click="{() => {
         $settings = loadSettings(true);
-      }}">Reset All to Default</button
+      }}">Reset All to Default</Button
     >
-    <button
+    <Button
       on:click="{() => {
         fileInput?.click();
-      }}">Import Settings</button
+      }}">Import Settings</Button
     >
-    <button
+    <Button
       on:click="{() => {
         const blob = new Blob([window.localStorage.getItem('settings')], {
           type: 'application/json',
@@ -336,10 +337,10 @@
         a.download = 'ofrak_settings.json';
         a.click();
         URL.revokeObjectURL(blobUrl);
-      }}">Export Settings</button
+      }}">Export Settings</Button
     >
-    <button on:click="{saveSettings}">Save Settings</button>
-    <button
+    <Button on:click="{saveSettings}">Save Settings</Button>
+    <Button
       on:click="{() => {
         if (
           window.localStorage.getItem('settings') != JSON.stringify($settings)
@@ -347,7 +348,7 @@
           $settings = originalSettings;
         }
         modifierView = undefined;
-      }}">Close</button
+      }}">Close</Button
     >
   </div>
 </div>

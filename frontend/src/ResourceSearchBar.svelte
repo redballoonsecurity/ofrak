@@ -74,6 +74,7 @@
 </style>
 
 <script>
+    import { prevent_default } from "svelte/internal";
   import Checkbox from "./Checkbox.svelte";
 
   let searchQuery, bytesInput, placeholderString, errorMessage;
@@ -164,7 +165,8 @@
     {/each}
   </select>
   <form
-    on:submit|preventDefault="{async (e) => {
+    on:submit="{async (e) => {
+      e.preventDefault();
       if (searchQuery === undefined || searchQuery.length === 0) {
         searchResults.matches = undefined;
         prevQuery = '';
@@ -175,7 +177,8 @@
         await doSearch();
       }
     }}"
-    on:keyup|preventDefault="{async (e) => {
+    on:keyup="{async (e) => {
+      e.preventDefault();
       if (e.keyCode === 13) {
         // Ignore enter (handled by on:submit)
         return;

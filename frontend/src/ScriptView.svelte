@@ -66,6 +66,7 @@
 <script>
   import hljs from "highlight.js";
   import python from "highlight.js/lib/languages/python";
+  import Button from "./utils/Button.svelte"
 
   import Icon from "./Icon.svelte";
 
@@ -84,7 +85,7 @@
 <link rel="stylesheet" href="./code.css" />
 
 <div class="buttonbar">
-  <button
+  <Button
     on:click="{async (e) => {
       const lines = $script.join('\n');
       if (lines.length === 0) {
@@ -115,8 +116,8 @@
     }}"
   >
     <Icon url="/icons/content_copy.svg" />
-  </button>
-  <button
+  </Button>
+  <Button
     on:click="{async (e) => {
       const lines = $script.join('\n');
       if (lines.length === 0) {
@@ -133,10 +134,10 @@
     }}"
   >
     <Icon url="/icons/download.svg" />
-  </button>
-  <button on:click="{() => (bottomLeftPane = undefined)}">
+  </Button>
+  <Button on:click="{() => (bottomLeftPane = undefined)}">
     <Icon url="/icons/error.svg" />
-  </button>
+  </Button>
 </div>
 
 <div class="hbox">

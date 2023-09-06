@@ -61,7 +61,10 @@
 </script>
 
 <div>
-  <button on:click|stopPropagation="{deleteScript}"
+  <button on:click="{(e) => {
+    e.stopPropagation();
+    deleteScript();
+  }}"
     ><Icon url="/icons/trash.svg" />Delete {args.name} from project.</button
   >
 </div>

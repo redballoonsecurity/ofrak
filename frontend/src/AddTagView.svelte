@@ -7,25 +7,6 @@
     align-items: center;
   }
 
-  button {
-    padding-top: 0.5em;
-    padding-bottom: 0.5em;
-    padding-left: 1em;
-    padding-right: 1em;
-  }
-
-  button:hover,
-  button:focus {
-    outline: none;
-    box-shadow: inset 1px 1px 0 var(--main-fg-color),
-      inset -1px -1px 0 var(--main-fg-color);
-  }
-
-  button:active {
-    box-shadow: inset 2px 2px 0 var(--main-fg-color),
-      inset -2px -2px 0 var(--main-fg-color);
-  }
-
   .container {
     min-height: 100%;
     display: flex;
@@ -89,6 +70,7 @@
 
 <script>
   import { selected, selectedResource, settings } from "./stores.js";
+  import Button from "./utils/Button.svelte"
   import { onMount } from "svelte";
   import LoadingText from "./LoadingText.svelte";
   import { cleanOfrakType } from "./helpers";
@@ -151,9 +133,12 @@
       <LoadingText />
     {:then ofrakTags}
       {#if ofrakTags && ofrakTags.length > 0}
-        <form on:submit|preventDefault="{chooseTag}">
+        <form on:submit="{(e) => {
+          e.preventDefault();
+          chooseTag()
+        }}">
           New Tag: <select
-            on:click|stopPropagation="{() => undefined}"
+            on:click="{(e) => {e.stopPropagation()}}"
             bind:value="{selectedTag}"
           >
             <option value="{null}">Select a tag to add</option>
@@ -164,10 +149,10 @@
             {/each}
           </select>
 
-          <button
-            on:click|stopPropagation="{() => undefined}"
+          <Button
+            on:click="{(e) => {e.stopPropagation()}}"
             disabled="{!selectedTag}"
-            type="submit">Add</button
+            type="submit">Add</Button
           >
         </form>
       {:else}
@@ -185,6 +170,6 @@
     {/if}
   </div>
   <div class="actions">
-    <button on:click="{() => (modifierView = undefined)}">Cancel</button>
+    <Button on:click="{() => (modifierView = undefined)}">Cancel</Button>
   </div>
 </div>

@@ -110,6 +110,7 @@
   import Icon from "./Icon.svelte";
   import Hoverable from "./Hoverable.svelte";
   import LoadingText from "./LoadingText.svelte";
+  import Button from "./utils/Button.svelte"
 
   import { onDestroy } from "svelte";
   import { selected } from "./stores.js";
@@ -266,7 +267,7 @@
               class="comment_icon"
               url="{hovering ? '/icons/trash_can.svg' : '/icons/comment.svg'}"
             />
-          </button></Hoverable
+        </button></Hoverable
         >{comment[1]}
       </div>
     {/each}

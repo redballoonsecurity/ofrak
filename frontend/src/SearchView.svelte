@@ -91,6 +91,7 @@
   import { calculator } from "./helpers";
   import ResourceTreeNode from "./ResourceTreeNode.svelte";
   import Checkbox from "./Checkbox.svelte";
+  import Button from "./utils/Button.svelte"
 
   export let modifierView, resourceNodeDataMap;
   let searchInput,
@@ -174,8 +175,8 @@
     {/if}
   </div>
   <div class="actions">
-    <button on:click="{search}">Search</button>
-    <button on:click="{leave_view}">Cancel</button>
+    <Button on:click="{search}">Search</Button>
+    <Button on:click="{leave_view}">Cancel</Button>
   </div>
   <div class="results">
     <p>Found {results.length} results</p>

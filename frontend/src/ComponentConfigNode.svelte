@@ -1,23 +1,4 @@
 <style>
-  button {
-    padding-top: 0.5em;
-    padding-bottom: 0.5em;
-    padding-left: 1em;
-    padding-right: 1em;
-  }
-
-  button:hover,
-  button:focus {
-    outline: none;
-    box-shadow: inset 1px 1px 0 var(--main-fg-color),
-      inset -1px -1px 0 var(--main-fg-color);
-  }
-
-  button:active {
-    box-shadow: inset 2px 2px 0 var(--main-fg-color),
-      inset -2px -2px 0 var(--main-fg-color);
-  }
-
   .container {
     min-height: 100%;
     display: flex;
@@ -97,30 +78,6 @@
     padding: 2em;
     margin: 1em 0 2em 0;
   }
-
-  .buttonbar {
-    top: 0;
-    left: 0;
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: start;
-    justify-content: start;
-  }
-
-  .buttonbar .remove {
-    display: flex;
-    align-items: start;
-    justify-content: start;
-    flex-direction: row;
-  }
-
-  .buttonbar .add {
-    display: flex;
-    align-items: start;
-    justify-content: start;
-    flex-direction: row;
-  }
 </style>
 
 <script>
@@ -128,6 +85,7 @@
   import { calculator, splitAndCapitalize } from "./helpers";
   import Icon from "./Icon.svelte";
   import FileBrowser from "./FileBrowser.svelte";
+  import Button from "./utils/Button.svelte"
   export let node, element;
   let unionTypeSelect,
     _element,
@@ -273,15 +231,15 @@
       <!---->
     {:else if node["type"] == "typing.List" || node["type"] == "typing.Iterable"}
       <div class="buttonbar">
-        <button class="add" on:click="{addElementToArray}">
+        <Button class="add" on:click="{addElementToArray}">
           <Icon url="/icons/plus.svg" />
-        </button>
+        </Button>
       </div>
       {#each _element as elements}
         {#if !skip.includes(elements)}
           <div class="boxed">
             <div class="buttonbar">
-              <button
+              <Button
                 class="remove"
                 on:click="{(e) => {
                   skip.push(elements);
@@ -289,7 +247,7 @@
                 }}"
               >
                 <Icon url="/icons/error.svg" />
-              </button>
+              </Button>
             </div>
             <svelte:self node="{node['args'][0]}" bind:element="{elements}" />
           </div>
@@ -305,15 +263,15 @@
       <!---->
     {:else if node["type"] == "typing.Dict"}
       <div class="buttonbar">
-        <button class="add" on:click="{addElementToDict}">
+        <Button class="add" on:click="{addElementToDict}">
           <Icon url="/icons/plus.svg" />
-        </button>
+        </Button>
       </div>
       {#each _element as elements, index}
         {#if !skip.includes(elements)}
           <div class="boxed">
             <div class="buttonbar">
-              <button
+              <Button
                 class="remove"
                 on:click="{(e) => {
                   skip.push(elements);
@@ -321,7 +279,7 @@
                 }}"
               >
                 <Icon url="/icons/error.svg" />
-              </button>
+              </Button>
               {elements}
             </div>
             <p>Key</p>

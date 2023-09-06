@@ -97,6 +97,7 @@
 <script>
   import { buf2hex, chunkList, calculator, hexToByteArray } from "./helpers.js";
   import { selected, selectedResource as _selectedResource } from "./stores.js";
+  import Button from "./utils/Button.svelte"
   const selectedResource = $_selectedResource;
 
   export let modifierView, dataLenPromise, resourceNodeDataMap;
@@ -215,8 +216,8 @@
       </p>
     {/if}
     <div class="actions">
-      <button on:click="{modifyData}">Apply Edits</button>
-      <button on:click="{() => (modifierView = undefined)}">Cancel</button>
+      <Button on:click="{modifyData}">Apply Edits</Button>
+      <Button on:click="{() => (modifierView = undefined)}">Cancel</Button>
     </div>
   {:else}
     <div class="inputs">
@@ -249,8 +250,8 @@
       {/if}
     </div>
     <div class="actions">
-      <button on:click="{getRange}">Edit Range</button>
-      <button on:click="{() => (modifierView = undefined)}">Cancel</button>
+      <Button on:click="{getRange}">Edit Range</Button>
+      <Button on:click="{() => (modifierView = undefined)}">Cancel</Button>
     </div>
   {/if}
 </div>

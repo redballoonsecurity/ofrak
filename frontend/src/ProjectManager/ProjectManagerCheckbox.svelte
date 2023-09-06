@@ -27,6 +27,8 @@
 <script>
   import Checkbox from "../Checkbox.svelte";
   import ExclusiveCheckbox from "../ExclusiveCheckbox.svelte";
+  import Button from "../utils/Button.svelte"
+
   export let ownValue,
     inclusiveSelectionGroup = undefined,
     exclusiveSelectionValue = undefined,
@@ -93,12 +95,12 @@
       />
     </span>
   {/if}
-  <button
+  <Button
     class="ownValue"
     on:click="{() => {
       focus = ownValue;
     }}"
   >
     {ownValue}
-  </button>
+  </Button>
 </div>

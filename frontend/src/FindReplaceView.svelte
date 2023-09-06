@@ -89,6 +89,7 @@
 <script>
   import Checkbox from "./Checkbox.svelte";
   import { selected, selectedResource } from "./stores.js";
+  import Button from "./utils/Button.svelte"
 
   export let modifierView, resourceNodeDataMap;
   let toFind,
@@ -168,7 +169,7 @@
     {/if}
   </div>
   <div class="actions">
-    <button on:click="{findAndReplace}">Find and Replace</button>
-    <button on:click="{() => (modifierView = undefined)}">Cancel</button>
+    <Button on:click="{findAndReplace}">Find and Replace</Button>
+    <Button on:click="{() => (modifierView = undefined)}">Cancel</Button>
   </div>
 </div>

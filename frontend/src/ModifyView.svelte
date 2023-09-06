@@ -32,16 +32,17 @@
 <script>
   import BinaryModifyView from "./BinaryModifyView.svelte";
   import FindReplaceView from "./FindReplaceView.svelte";
+  import Button from "./utils/Button.svelte"
 
   export let modifierView;
 </script>
 
 <div class="container">
-  <button on:click="{() => (modifierView = FindReplaceView)}">
+  <Button on:click="{() => (modifierView = FindReplaceView)}">
     Modify String
-  </button>
-  <button on:click="{() => (modifierView = BinaryModifyView)}">
+  </Button>
+  <Button on:click="{() => (modifierView = BinaryModifyView)}">
     Modify Binary
-  </button>
-  <button on:click="{() => (modifierView = undefined)}">Cancel</button>
+  </Button>
+  <Button on:click="{() => (modifierView = undefined)}">Cancel</Button>
 </div>

@@ -153,6 +153,8 @@
   import LoadingAnimation from "./LoadingAnimation.svelte";
   import LoadingText from "./LoadingText.svelte";
   import TextDivider from "./TextDivider.svelte";
+  import Button from "./utils/Button.svelte"
+  import Checkbox from "./Checkbox.svelte";
 
   import { animals } from "./animals.js";
   import { selected, settings, selectedProject } from "./stores.js";
@@ -160,7 +162,6 @@
 
   import { onMount } from "svelte";
   import { numBytesToQuantity, saveSettings } from "./helpers";
-  import Checkbox from "./Checkbox.svelte";
 
   export let rootResourceLoadPromise,
     showRootResource,
@@ -453,12 +454,19 @@
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div
     class="center clickable {dragging ? 'dragging' : ''}"
-    on:dragover|preventDefault="{(e) => {
+    on:dragover="{(e) => {
+      e.preventDefault();
       dragging = true;
       mouseX = e.clientX;
     }}"
-    on:dragleave|preventDefault="{() => (dragging = false)}"
-    on:drop|preventDefault="{handleDrop}"
+    on:dragleave="{(e) => {
+      e.preventDefault();
+      dragging = false
+    }}"
+    on:drop="{(e) => {
+      e.preventDefault();
+      handleDrop();
+      }}"
     on:mousemove="{(e) => (mouseX = e.clientX)}"
     on:mouseleave="{() => (mouseX = undefined)}"
     on:click="{() => {
@@ -498,9 +506,12 @@
       <LoadingText />
     {:then preExistingRootResources}
       {#if !showProjectOptions && preExistingRootsPromise && preExistingRootsPromise.length > 0}
-        <form on:submit|preventDefault="{choosePreExistingRoot}">
+        <form on:submit="{(e) => {
+          e.preventDefault();
+          choosePreExistingRoot()
+        }}">
           <select
-            on:click|stopPropagation="{() => undefined}"
+            on:click="{(e) => {e.stopPropagation()}}"
             bind:value="{selectedPreExistingRoot}"
           >
             <option value="{null}">Open existing resource</option>
@@ -516,10 +527,10 @@
             {/each}
           </select>
 
-          <button
-            on:click|stopPropagation="{() => undefined}"
+          <Button
+            on:click="{(e) => {e.stopPropagation()}}"
             disabled="{!selectedPreExistingRoot}"
-            type="submit">Go!</button
+            type="submit">Go!</Button
           >
         </form>
       {:else if !showProjectOptions}
@@ -540,10 +551,10 @@
                 bind:value="{newProjectName}"
                 placeholder="Project Name"
               />
-              <button
+              <Button
                 disabled="{!(newProjectName?.length > 0)}"
-                on:click|stopPropagation="{createNewProject}"
-                >Create New Project</button
+                on:click="{(e) => {e.stopPropagation; createNewProject()}}"
+                >Create New Project</Button
               >
             </div>
             <TextDivider
@@ -554,7 +565,7 @@
             <div class="project-input">
               {#await preExistingProjectsPromise then projects}
                 <select
-                  on:click|stopPropagation
+                  on:click="{(e) => {e.stopPropagation()}}"
                   bind:value="{$selectedProject}"
                 >
                   <option value="{undefined}" selected disabled
@@ -566,11 +577,12 @@
                     </option>
                   {/each}
                 </select>
-                <button
+                <Button
                   disabled="{!$selectedProject}"
-                  on:click|stopPropagation="{(e) => {
+                  on:click="{(e) => {
+                    e.stopPropagation;
                     showProjectManager = true;
-                  }}">Open Existing Project</button
+                  }}">Open Existing Project</Button
                 >
               {/await}
             </div>
@@ -581,15 +593,17 @@
             </TextDivider>
             <div class="project-input">
               <input
-                on:click|stopPropagation
+                on:click="{(e) => {e.stopPropagation()}}"
                 type="text"
                 bind:value="{gitUrl}"
                 placeholder="Git Url"
               />
-              <button
+              <Button
                 disabled="{!(gitUrl?.length > 0)}"
-                on:click|stopPropagation="{cloneProjectFromGit}"
-                >Clone Project From Git</button
+                on:click="{(e) => {
+                  e.stopPropagation,
+                  cloneProjectFromGit()}}"
+                >Clone Project From Git</Button
               >
             </div>
           </div>
@@ -604,22 +618,27 @@
             {#if showAdvancedProjectOptions}
               <div class="advanced-options">
                 <input bind:value="{projectPath}" placeholder="{projectPath}" />
-                <button on:click|stopPropagation="{changeProjectPath}"
-                  >Set Location</button
+                <Button on:click="{(e) => {
+                  e.stopPropagation();
+                  changeProjectPath()
+                  }}"
+                  >Set Location</Button
                 >
               </div>
             {/if}
           </div>
-          <button
-            on:click|stopPropagation="{(e) => {
+          <Button
+            on:click="{(e) => {
+              e.stopPropagation
               showProjectOptions = false;
-            }}">Back</button
+            }}">Back</Button
           >
         {:else}
-          <button
-            on:click|stopPropagation="{(e) => {
+          <Button
+            on:click="{(e) => {
+              e.stopPropagation()
               showProjectOptions = true;
-            }}">Show Project Options</button
+            }}">Show Project Options</Button
           >
         {/if}
       </div>
