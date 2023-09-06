@@ -1442,8 +1442,7 @@ class Resource:
 
         if self.has_tag(FilesystemEntry):
             entry = await self.view_as(FilesystemEntry)
-            # TODO: Fix path name ignore
-            await entry.flush_to_disk(root_path=path)
+            await entry.flush_to_disk(filename=path)
             return
 
         data = await self.get_data()

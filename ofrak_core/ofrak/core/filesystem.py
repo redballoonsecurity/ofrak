@@ -162,8 +162,10 @@ class FilesystemEntry(ResourceView):
     def is_device(self) -> bool:
         return self.is_block_device() or self.is_character_device()
 
-    async def flush_to_disk(self, root_path: str = "."):
+    async def flush_to_disk(self, root_path: str = ".", filename: Optional[str] = None):
         entry_path = await self.get_path()
+        if filename is not None:
+            entry_path = os.path.join(os.path.dirname(entry_path), filename)
         if self.is_link():
             link_name = os.path.join(root_path, entry_path)
             if not os.path.exists(link_name):
