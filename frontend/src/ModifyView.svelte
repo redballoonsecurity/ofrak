@@ -32,7 +32,7 @@
 <script>
   import BinaryModifyView from "./BinaryModifyView.svelte";
   import FindReplaceView from "./FindReplaceView.svelte";
-  import Button from "./utils/Button.svelte"
+  import Button from "./utils/Button.svelte";
 
   export let modifierView;
 </script>

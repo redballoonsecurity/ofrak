@@ -85,7 +85,7 @@
   import { calculator, splitAndCapitalize } from "./helpers";
   import Icon from "./Icon.svelte";
   import FileBrowser from "./FileBrowser.svelte";
-  import Button from "./utils/Button.svelte"
+  import Button from "./utils/Button.svelte";
   export let node, element;
   let unionTypeSelect,
     _element,

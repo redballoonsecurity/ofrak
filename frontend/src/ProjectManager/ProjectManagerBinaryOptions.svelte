@@ -64,10 +64,10 @@
 </script>
 
 <div>
-  <button on:click="{(e) => {
-    e.stopPropagation();
-    deleteBinary();
-    }}"
-    ><Icon url="/icons/trash.svg" />Delete {args.name} from project.</button
+  <button
+    on:click="{(e) => {
+      e.stopPropagation();
+      deleteBinary();
+    }}"><Icon url="/icons/trash.svg" />Delete {args.name} from project.</button
   >
 </div>

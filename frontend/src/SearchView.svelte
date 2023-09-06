@@ -91,7 +91,7 @@
   import { calculator } from "./helpers";
   import ResourceTreeNode from "./ResourceTreeNode.svelte";
   import Checkbox from "./Checkbox.svelte";
-  import Button from "./utils/Button.svelte"
+  import Button from "./utils/Button.svelte";
 
   export let modifierView, resourceNodeDataMap;
   let searchInput,

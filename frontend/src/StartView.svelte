@@ -153,7 +153,7 @@
   import LoadingAnimation from "./LoadingAnimation.svelte";
   import LoadingText from "./LoadingText.svelte";
   import TextDivider from "./TextDivider.svelte";
-  import Button from "./utils/Button.svelte"
+  import Button from "./utils/Button.svelte";
   import Checkbox from "./Checkbox.svelte";
 
   import { animals } from "./animals.js";
@@ -461,12 +461,12 @@
     }}"
     on:dragleave="{(e) => {
       e.preventDefault();
-      dragging = false
+      dragging = false;
     }}"
     on:drop="{(e) => {
       e.preventDefault();
       handleDrop();
-      }}"
+    }}"
     on:mousemove="{(e) => (mouseX = e.clientX)}"
     on:mouseleave="{() => (mouseX = undefined)}"
     on:click="{() => {
@@ -506,12 +506,16 @@
       <LoadingText />
     {:then preExistingRootResources}
       {#if !showProjectOptions && preExistingRootsPromise && preExistingRootsPromise.length > 0}
-        <form on:submit="{(e) => {
-          e.preventDefault();
-          choosePreExistingRoot()
-        }}">
+        <form
+          on:submit="{(e) => {
+            e.preventDefault();
+            choosePreExistingRoot();
+          }}"
+        >
           <select
-            on:click="{(e) => {e.stopPropagation()}}"
+            on:click="{(e) => {
+              e.stopPropagation();
+            }}"
             bind:value="{selectedPreExistingRoot}"
           >
             <option value="{null}">Open existing resource</option>
@@ -528,7 +532,9 @@
           </select>
 
           <Button
-            on:click="{(e) => {e.stopPropagation()}}"
+            on:click="{(e) => {
+              e.stopPropagation();
+            }}"
             disabled="{!selectedPreExistingRoot}"
             type="submit">Go!</Button
           >
@@ -553,8 +559,10 @@
               />
               <Button
                 disabled="{!(newProjectName?.length > 0)}"
-                on:click="{(e) => {e.stopPropagation; createNewProject()}}"
-                >Create New Project</Button
+                on:click="{(e) => {
+                  e.stopPropagation;
+                  createNewProject();
+                }}">Create New Project</Button
               >
             </div>
             <TextDivider
@@ -565,7 +573,9 @@
             <div class="project-input">
               {#await preExistingProjectsPromise then projects}
                 <select
-                  on:click="{(e) => {e.stopPropagation()}}"
+                  on:click="{(e) => {
+                    e.stopPropagation();
+                  }}"
                   bind:value="{$selectedProject}"
                 >
                   <option value="{undefined}" selected disabled
@@ -593,7 +603,9 @@
             </TextDivider>
             <div class="project-input">
               <input
-                on:click="{(e) => {e.stopPropagation()}}"
+                on:click="{(e) => {
+                  e.stopPropagation();
+                }}"
                 type="text"
                 bind:value="{gitUrl}"
                 placeholder="Git Url"
@@ -601,9 +613,8 @@
               <Button
                 disabled="{!(gitUrl?.length > 0)}"
                 on:click="{(e) => {
-                  e.stopPropagation,
-                  cloneProjectFromGit()}}"
-                >Clone Project From Git</Button
+                  e.stopPropagation, cloneProjectFromGit();
+                }}">Clone Project From Git</Button
               >
             </div>
           </div>
@@ -618,25 +629,25 @@
             {#if showAdvancedProjectOptions}
               <div class="advanced-options">
                 <input bind:value="{projectPath}" placeholder="{projectPath}" />
-                <Button on:click="{(e) => {
-                  e.stopPropagation();
-                  changeProjectPath()
-                  }}"
-                  >Set Location</Button
+                <Button
+                  on:click="{(e) => {
+                    e.stopPropagation();
+                    changeProjectPath();
+                  }}">Set Location</Button
                 >
               </div>
             {/if}
           </div>
           <Button
             on:click="{(e) => {
-              e.stopPropagation
+              e.stopPropagation;
               showProjectOptions = false;
             }}">Back</Button
           >
         {:else}
           <Button
             on:click="{(e) => {
-              e.stopPropagation()
+              e.stopPropagation();
               showProjectOptions = true;
             }}">Show Project Options</Button
           >

@@ -108,7 +108,7 @@
   import Icon from "./Icon.svelte";
   import Checkbox from "./Checkbox.svelte";
   import { saveSettings } from "./helpers";
-  import Button from "./utils/Button.svelte"
+  import Button from "./utils/Button.svelte";
 
   export let modifierView;
   let errorMessage, loadingDark, loadingLight, fileInput, browsedFiles;

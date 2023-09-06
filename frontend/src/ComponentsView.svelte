@@ -109,7 +109,7 @@
   import ComponentConfigNode from "./ComponentConfigNode.svelte";
   import LoadingText from "./LoadingText.svelte";
   import Checkbox from "./Checkbox.svelte";
-  import Button from "./utils/Button.svelte"
+  import Button from "./utils/Button.svelte";
 
   export let modifierView, resourceNodeDataMap;
   let errorMessage,

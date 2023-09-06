@@ -70,7 +70,7 @@
 
 <script>
   import { selected, selectedResource, settings } from "./stores.js";
-  import Button from "./utils/Button.svelte"
+  import Button from "./utils/Button.svelte";
   import { onMount } from "svelte";
   import LoadingText from "./LoadingText.svelte";
   import { cleanOfrakType } from "./helpers";
@@ -133,12 +133,16 @@
       <LoadingText />
     {:then ofrakTags}
       {#if ofrakTags && ofrakTags.length > 0}
-        <form on:submit="{(e) => {
-          e.preventDefault();
-          chooseTag()
-        }}">
+        <form
+          on:submit="{(e) => {
+            e.preventDefault();
+            chooseTag();
+          }}"
+        >
           New Tag: <select
-            on:click="{(e) => {e.stopPropagation()}}"
+            on:click="{(e) => {
+              e.stopPropagation();
+            }}"
             bind:value="{selectedTag}"
           >
             <option value="{null}">Select a tag to add</option>
@@ -150,7 +154,9 @@
           </select>
 
           <Button
-            on:click="{(e) => {e.stopPropagation()}}"
+            on:click="{(e) => {
+              e.stopPropagation();
+            }}"
             disabled="{!selectedTag}"
             type="submit">Add</Button
           >

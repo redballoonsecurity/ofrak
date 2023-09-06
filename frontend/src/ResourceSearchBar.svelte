@@ -74,7 +74,7 @@
 </style>
 
 <script>
-    import { prevent_default } from "svelte/internal";
+  import { prevent_default } from "svelte/internal";
   import Checkbox from "./Checkbox.svelte";
 
   let searchQuery, bytesInput, placeholderString, errorMessage;

@@ -25,7 +25,7 @@
 
 <script>
   import Icon from "./Icon.svelte";
-  import Button from "./utils/Button.svelte"
+  import Button from "./utils/Button.svelte";
   import { shortcuts } from "./keyboard.js";
 
   export let toolbarButtons;
@@ -81,6 +81,6 @@
         <Icon url="{button.iconUrl}" />
       {/if}
       {button.text}
-      </Button>
+    </Button>
   {/each}
 </div>

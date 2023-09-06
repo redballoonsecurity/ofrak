@@ -93,8 +93,8 @@
   import LoadingText from "./LoadingText.svelte";
   import ComponentConfigNode from "./ComponentConfigNode.svelte";
   import Icon from "./Icon.svelte";
-  import Button from "./utils/Button.svelte"
-  
+  import Button from "./utils/Button.svelte";
+
   import hljs from "highlight.js";
   import python from "highlight.js/lib/languages/python";
 
@@ -182,7 +182,12 @@
   <div class="inputs">
     <div class="scriptchoice">
       {#if $selectedProject}
-        <select on:click="{(e) => {e.stopPropagation()}}" bind:value="{projectScript}">
+        <select
+          on:click="{(e) => {
+            e.stopPropagation();
+          }}"
+          bind:value="{projectScript}"
+        >
           <option value="{null}" selected disabled
             >Select script from Project</option
           >

@@ -34,7 +34,7 @@
 </style>
 
 <script>
-  import Button from "./utils/Button.svelte"
+  import Button from "./utils/Button.svelte";
   export let files,
     input,
     multiple = false;
@@ -45,7 +45,7 @@
   on:dragover="{(e) => {
     e.preventDefault();
     dragging = true;
-    }}"
+  }}"
   on:dragleave="{(e) => {
     e.preventDefault();
     dragging = false;
@@ -65,7 +65,7 @@
         <input type="file" bind:this="{input}" bind:files="{files}" />
       {/if}
       <span>
-        <Button on:click="{() => input.click()}"> Browse... </Button>
+        <Button on:click="{() => input.click()}">Browse...</Button>
         {#if files}
           {Array.from(files)
             .map((f) => f?.name)

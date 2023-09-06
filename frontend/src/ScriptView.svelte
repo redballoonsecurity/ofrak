@@ -66,7 +66,7 @@
 <script>
   import hljs from "highlight.js";
   import python from "highlight.js/lib/languages/python";
-  import Button from "./utils/Button.svelte"
+  import Button from "./utils/Button.svelte";
 
   import Icon from "./Icon.svelte";
 
