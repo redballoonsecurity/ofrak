@@ -22,6 +22,7 @@ from typing import (
 )
 
 from ofrak.component.interface import ComponentInterface
+from ofrak.core import FilesystemEntry
 from ofrak.model.component_model import ComponentContext, CC, ComponentRunResult
 from ofrak.model.data_model import DataPatch
 from ofrak.model.job_model import (
@@ -1438,6 +1439,12 @@ class Resource:
         """
         if pack is True:
             await self.pack_recursively()
+
+        if self.has_tag(FilesystemEntry):
+            entry = await self.view_as(FilesystemEntry)
+            # TODO: Fix path name ignore
+            await entry.flush_to_disk(root_path=path)
+            return
 
         data = await self.get_data()
         if data is not None:
