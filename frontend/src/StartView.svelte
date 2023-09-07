@@ -36,7 +36,6 @@
     color: var(--main-fg-color);
   }
 
-  button,
   select,
   option,
   input {

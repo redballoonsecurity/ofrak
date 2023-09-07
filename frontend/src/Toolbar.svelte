@@ -6,21 +6,6 @@
     justify-content: flex-start;
     align-items: stretch;
   }
-
-  button {
-    margin-bottom: 1em;
-    padding-top: 0.5em;
-    padding-bottom: 0.5em;
-    padding-left: 1em;
-    padding-right: 1em;
-    background-color: var(--main-bg-color);
-    color: var(--main-fg-color);
-    border: 1px solid var(--main-fg-color);
-    border-radius: 0;
-    font-size: smaller;
-    overflow: hidden;
-    box-shadow: none;
-  }
 </style>
 
 <script>

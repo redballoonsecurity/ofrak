@@ -1,9 +1,15 @@
 <style>
   button {
-    padding-top: 0.5em;
-    padding-bottom: 0.5em;
-    padding-left: 1em;
-    padding-right: 1em;
+    margin: var(--button-margin, 0, 0, 1em, 0);
+    padding: var(--button-padding, (0.5em, 1em, 0.5em, 1em));
+    background-color: var(--button-background-color, --main-bg-color);
+    color: var(--button-color, --main-fg-color);
+    border-color: var(--button-color, --main-fg-color);
+    border: var(--button-border, 1px solid);
+    border-radius: var(--button-border-radius, 0);
+    font-size: smaller;
+    overflow: hidden;
+    box-shadow: none;
   }
 
   button:hover,
