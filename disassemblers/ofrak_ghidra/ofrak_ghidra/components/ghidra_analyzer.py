@@ -6,6 +6,7 @@ import tempfile
 import time
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Optional, List, Dict
 from xml.etree import ElementTree
 
@@ -306,9 +307,8 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
 
         return args
 
+    @lru_cache(maxsize=None)
     def _arch_info_to_processor_id(self, processor: ArchInfo):
-        # return "ARM:BE:32:v8T"
-
         families: Dict[InstructionSet, str] = {
             InstructionSet.ARM: "ARM",
             InstructionSet.AARCH64: "AARCH64",
@@ -320,8 +320,10 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
         family = families.get(processor.isa)
 
         endian = "BE" if processor.endianness is Endianness.BIG_ENDIAN else "LE"
-        # sub = "default"
+        # Ghidra proc IDs are of the form "ISA:endianness:bitWidth:suffix", where the suffix can indicate a specific processor or sub-ISA
+        # The goal of the follow code is to identify the best proc ID for the ArchInfo, and we expect to be able to fall back on this default
         partial_proc_id = f"{family}:{endian}:{processor.bit_width.value}"
+        # TODO: There are also some proc_ids that end with '_any' which are default-like
         default_proc_id = f"{partial_proc_id}:default"
 
         ldefs = os.path.join(GHIDRA_PATH, "Ghidra", "Processors", family, "data", "languages")
@@ -341,6 +343,9 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
                     continue
                 if proc_id == default_proc_id:
                     default_proc_id_found = True
+                    if not processor.sub_isa and not processor.processor:
+                        # default_proc_id found, and the ArchoInfo doesn't contain any info to narrow it down further, so just break early to return the default
+                        break
 
                 for name_elem in language.iter(tag="external_name"):
                     name = name_elem.attrib["name"].lower()
@@ -382,6 +387,11 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
 
             if block.resource.has_tag(NamedProgramSection):
                 named_section = await block.resource.view_as(NamedProgramSection)
+                if " " in named_section.name or "!" in named_section.name:
+                    raise ValueError(
+                        f"Bad character in section name {named_section.name} which interferes with "
+                        f"encoding arguments to CreateMemoryRegions.java"
+                    )
                 block_info.append(named_section.name)
             else:
                 block_info.append(f"block_{i}")

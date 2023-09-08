@@ -32,6 +32,8 @@ import ghidra.util.exception.DuplicateNameException;
 import ghidra.program.model.mem.MemoryConflictException;
 import ghidra.program.model.address.AddressOverflowException;
 import ghidra.program.database.mem.FileBytes;
+import ghidra.program.model.util.AddressSetPropertyMap;
+import ghidra.program.model.symbol.*;
 
 
 import java.io.IOException;
@@ -39,18 +41,27 @@ import java.io.OutputStream;
 import java.util.*;
 import java.lang.IllegalArgumentException;
 import java.lang.IndexOutOfBoundsException;
+import ghidra.util.exception.InvalidInputException;
 
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 
 public class CreateMemoryBlocks extends HeadlessScript {
 
+    private final static String ENTRY_NAME = "entry";
+
     @Override
     public void run() throws Exception {
-        String[] args = getScriptArgs();
+        //String[] args = getScriptArgs();
+	String[] args = {"4096!4096!rw!block_0!4096", "8192!4096!rx!block_1!8192", "0!4096!rw!FIRST_SECTION!0"};
 
         Memory mem = currentProgram.getMemory();
         FileBytes fileBytes = mem.getAllFileBytes().get(0);
+
+        // remove existing memory blocks
+        for (MemoryBlock block : mem.getBlocks()){
+            mem.removeBlock(block, TaskMonitor.DUMMY);
+        }
 
         for (String memRegionRaw : args) {
 
@@ -75,19 +86,58 @@ public class CreateMemoryBlocks extends HeadlessScript {
                 );
             } catch (LockException e) {
                     e.printStackTrace();
+                    continue;
             } catch (IllegalArgumentException e) {
                     e.printStackTrace();
+                    continue;
             } catch (IndexOutOfBoundsException e) {
                     e.printStackTrace();
+                    continue;
             } catch (MemoryConflictException e) {
                     e.printStackTrace();
+                    throw e;
             } catch (AddressOverflowException e) {
                     e.printStackTrace();
+                    continue;
             }
 
+            SymbolTable symbolTable = currentProgram.getSymbolTable();
+
+            // This section is brittle: there need to be instructions at this address in order to work
+            // So we can't just mark a section as executable and have Ghidra greedily disassemble it all
+            // TODO: Add argument for entry points to mark actual starts of code
+            if (permissions.contains("x")){
+
+                markAsCode(currentProgram, block.getStart());
+
+                try {
+                    symbolTable.createLabel(block.getStart(), ENTRY_NAME, SourceType.IMPORTED);
+                    symbolTable.addExternalEntryPoint(block.getStart());
+                }
+                catch (InvalidInputException e) {
+                    e.printStackTrace();
+                    continue;
+                }
+
+            }
 
         }
     }
 
+    private void markAsCode(Program program, Address address) {
+		AddressSetPropertyMap codeProp = program.getAddressSetPropertyMap("CodeMap");
+		if (codeProp == null) {
+			try {
+				codeProp = program.createAddressSetPropertyMap("CodeMap");
+			}
+			catch (DuplicateNameException e) {
+				codeProp = program.getAddressSetPropertyMap("CodeMap");
+			}
+		}
+
+		if (codeProp != null) {
+			codeProp.add(address, address);
+		}
+	}
 
 }
