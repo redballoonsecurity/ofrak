@@ -82,7 +82,7 @@ public class GetCodeRegionsDuplicate extends HeadlessScript {
         }
 
         String toJson() {
-            return String.format("{\"start\":%d,\"size\":%d,\"name\":\"%s\"}", start, size, name);
+            return String.format("{\"start\":%d,\"size\":%d,\"name\":\"%s\"}", start, size, name.replace("\"", "\\\""));
         }
     }
 }
