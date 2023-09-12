@@ -92,7 +92,7 @@ async def main(ofrak_context: OFRAKContext, add_things_program: str):
   await root_resource.unpack_recursively(do_not_unpack=(ComplexBlock,))
   await root_resource.analyze(ProgramAttributes)
   await root_resource.run(InfiniteLoopModifier, "add_things") # things break here!
-  await root_resource.flush_to_disk("add_things_looped.elf")
+  await root_resource.flush_data_to_disk("add_things_looped.elf")
 
 if __name__ == "__main__":
     ofrak = OFRAK()

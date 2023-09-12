@@ -230,7 +230,7 @@ async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config
 
     await target_program.resource.run(FunctionReplacementModifier, function_replacement_config)
     new_program_path = f"replaced_{Path(config.program.path).name}"
-    await target_program.resource.flush_to_disk(new_program_path)
+    await target_program.resource.flush_data_to_disk(new_program_path)
 
     # Check that the modified program looks as expected.
     readobj_path = get_repository_config(config.toolchain_name, "BIN_PARSER")
