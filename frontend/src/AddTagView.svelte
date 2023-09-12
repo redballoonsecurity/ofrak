@@ -39,7 +39,6 @@
     margin-top: 2em;
   }
 
-  button,
   select,
   option {
     background-color: var(--main-bg-color);

@@ -95,12 +95,13 @@
       />
     </span>
   {/if}
-  <Button
-    class="ownValue"
-    on:click="{() => {
-      focus = ownValue;
-    }}"
-  >
-    {ownValue}
-  </Button>
+  <div class="ownValue">
+    <Button
+      on:click="{() => {
+        focus = ownValue;
+      }}"
+    >
+      {ownValue}
+    </Button>
+  </div>
 </div>
