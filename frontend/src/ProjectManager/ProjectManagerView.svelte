@@ -49,6 +49,19 @@
     height: 1em;
     margin-bottom: 1em;
   }
+
+  .toolbar {
+    position: sticky;
+    top: 0;
+    left: 0;
+    padding-right: 1em;
+    min-width: 18ch;
+  }
+
+  .toolbar {
+    overflow: auto;
+    overflow-y: scroll;
+  }
 </style>
 
 <script>
@@ -150,12 +163,14 @@
 
 <div class="title">OFRAK Project Manager</div>
 <div class="hbox">
-  <ProjectManagerToolbar
-    bind:focus="{focus}"
-    openProject="{openProject}"
-    bind:showProjectManager="{showProjectManager}"
-    bind:forceRefreshProject="{forceRefreshProject}"
-  />
+  <div class="toolbar">
+    <ProjectManagerToolbar
+      bind:focus="{focus}"
+      openProject="{openProject}"
+      bind:showProjectManager="{showProjectManager}"
+      bind:forceRefreshProject="{forceRefreshProject}"
+    />
+  </div>
   <div class="manager">
     <Split vertical="{true}" percentOfFirstSplit="{70}">
       <Split percentOfFirstSplit="{50}" slot="first">

@@ -153,6 +153,8 @@
           </select>
 
           <Button
+            --button-margin="0 .5em 0 .5em"
+            --button-padding=".5em 1em .5em 1em"
             on:click="{(e) => {
               e.stopPropagation();
             }}"

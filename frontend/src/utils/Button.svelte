@@ -1,10 +1,10 @@
 <style>
   button {
     display: flow-root;
-    width: var(--button-flex-grow, 100%);
-    height: var(--button-flex-grow, 100%);
+    width: var(--button-flex-grow, auto);
+    height: var(--button-flex-grow, auto);
     flex-grow: var(--button-flex-grow, inherit);
-    margin: var(--button-margin, 0 0 1em 0);
+    margin: var(--button-margin, 0.5em);
     padding: var(--button-padding, 0.5em 1em 0.5em 1em);
     background-color: var(--button-background-color, --main-bg-color);
     color: var(--button-color, --main-fg-color);

@@ -17,13 +17,9 @@
   }
 
   form > select {
+    display: flex;
+    width: 80%;
     max-width: 90%;
-    flex-grow: 1;
-  }
-
-  .go-button {
-    margin: 0.5em;
-    max-width: 10%;
     flex-grow: 1;
   }
 
@@ -49,7 +45,7 @@
     padding-bottom: 0.5em;
     padding-left: 1em;
     padding-right: 1em;
-    margin: 0.5em 0;
+    margin: 0.5em;
     font-size: inherit;
     font-family: var(--font);
     box-shadow: none;
@@ -99,6 +95,7 @@
     flex-direction: column;
     justify-content: stretch;
     align-items: stretch;
+    max-width: 35%;
     width: 50%;
   }
 
@@ -515,15 +512,13 @@
               </option>
             {/each}
           </select>
-          <div class="go-button">
-            <Button
-              on:click="{(e) => {
-                e.stopPropagation();
-              }}"
-              disabled="{!selectedPreExistingRoot}"
-              type="submit">Go!</Button
-            >
-          </div>
+          <Button
+            on:click="{(e) => {
+              e.stopPropagation();
+            }}"
+            disabled="{!selectedPreExistingRoot}"
+            type="submit">Go!</Button
+          >
         </form>
       {:else if !showProjectOptions}
         No resources loaded yet.

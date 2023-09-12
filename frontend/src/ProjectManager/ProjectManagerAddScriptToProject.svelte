@@ -9,7 +9,7 @@
 <script>
   import FileBrowser from "../FileBrowser.svelte";
   import Icon from "../Icon.svelte";
-  import Button from "../utils/Button.svelte"
+  import Button from "../utils/Button.svelte";
   import { selectedProject, settings } from "../stores";
   let files, f;
 
