@@ -72,23 +72,6 @@ class GhidraProgramLoadConfig(ComponentConfig):
     ghidra_zip_file: str
 
 
-#
-#
-
-
-#
-#
-# class _GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProject]):
-#     id = b"GhidraProjectAnalyzer"
-#     targets = (GhidraProject,)
-#     outputs = (GhidraProject,)
-#
-#     """
-#     Legacy
-#     TODO
-#     """
-
-
 class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
     """
     Use Ghidra backend to create project for and analyze a binary. This analyzer must run before
