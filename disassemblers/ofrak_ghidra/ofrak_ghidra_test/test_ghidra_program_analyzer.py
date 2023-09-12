@@ -110,7 +110,7 @@ async def test_ghidra_custom_loader(ofrak_context: OFRAKContext, arch_info: Prog
 
     await _make_dummy_program(prog, arch_info)
 
-    await prog.flush_to_disk("/transfer/dummy_program")
+    await prog.flush_data_to_disk("/transfer/dummy_program")
 
     await prog.identify()
 
