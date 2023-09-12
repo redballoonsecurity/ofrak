@@ -21,9 +21,11 @@ from ofrak_ghidra.ghidra_model import GhidraProject, GhidraCustomLoadProject
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.abstract import Toolchain
+from ofrak_patch_maker.toolchain.gnu_aarch64 import GNU_AARCH64_LINUX_10_Toolchain
 from ofrak_patch_maker.toolchain.gnu_arm import GNU_ARM_NONE_EABI_10_2_1_Toolchain
 from ofrak_patch_maker.toolchain.gnu_ppc import GNU_PPC_LINUX_10_Toolchain
 from ofrak_patch_maker.toolchain.gnu_vbcc_m68k import VBCC_0_9_GNU_Hybrid_Toolchain
+from ofrak_patch_maker.toolchain.gnu_x64 import GNU_X86_64_LINUX_EABI_10_3_0_Toolchain
 from ofrak_patch_maker.toolchain.model import (
     ToolchainConfig,
     CompilerOptimizationLevel,
@@ -67,6 +69,20 @@ async def test_ghidra_project_analyzer(hello_world_elf_resource: Resource):
             InstructionSet.M68K,
             None,
             BitWidth.BIT_32,
+            Endianness.BIG_ENDIAN,
+            None,
+        ),
+        ProgramAttributes(
+            InstructionSet.X86,
+            None,
+            BitWidth.BIT_64,
+            Endianness.LITTLE_ENDIAN,
+            None,
+        ),
+        ProgramAttributes(
+            InstructionSet.AARCH64,
+            None,
+            BitWidth.BIT_64,
             Endianness.BIG_ENDIAN,
             None,
         ),
@@ -142,6 +158,8 @@ async def _make_dummy_program(resource: Resource, arch_info):
         InstructionSet.PPC: GNU_PPC_LINUX_10_Toolchain,
         InstructionSet.ARM: GNU_ARM_NONE_EABI_10_2_1_Toolchain,
         InstructionSet.M68K: VBCC_0_9_GNU_Hybrid_Toolchain,
+        InstructionSet.AARCH64: GNU_AARCH64_LINUX_10_Toolchain,
+        InstructionSet.X86: GNU_X86_64_LINUX_EABI_10_3_0_Toolchain,
     }
 
     tc = arch_map[arch_info.isa](

@@ -365,6 +365,9 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
         if default_proc_id_found:
             return default_proc_id
 
+        if len(processors_rejected) == 1:
+            return processors_rejected.pop()
+
         raise GhidraComponentException(
             f"Could not determine a Ghidra language spec for the given architecture info "
             f"{processor}. Considered the following specs:\n{', '.join(processors_rejected)}"
