@@ -145,7 +145,7 @@ async def test_patch_from_source_modifier(
     await call_new_segment_instead(resource, new_segment)
 
     await resource.pack()
-    await resource.flush_to_disk(output_file_name)
+    await resource.flush_data_to_disk(output_file_name)
 
     assert os.path.exists(output_file_name)
     assert get_file_format(output_file_name) == BinFileType.ELF

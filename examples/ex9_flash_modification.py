@@ -57,7 +57,7 @@ async def main(ofrak_context: OFRAKContext, in_file: str, out_file: str):
     await logical_data_resource.run(BinaryPatchModifier, patch_config)
 
     # Repack and save to disk
-    await root_resource.flush_to_disk(out_file)
+    await root_resource.flush_data_to_disk(out_file)
     print(f"Saved repacked dump to {out_file}!")
     print(await root_resource.summarize_tree())
 

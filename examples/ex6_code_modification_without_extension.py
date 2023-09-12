@@ -169,7 +169,7 @@ async def main(
     await root_resource.run(SegmentInjectorModifier, SegmentInjectorModifierConfig.from_fem(fem))
 
     await root_resource.pack()
-    await root_resource.flush_to_disk(output_file_name)
+    await root_resource.flush_data_to_disk(output_file_name)
     print(f"Done! Output file written to {output_file_name}")
 
 

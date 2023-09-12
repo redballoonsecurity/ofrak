@@ -56,7 +56,7 @@ async def test_elf_add_symbols(
     await original_elf.run(ElfAddStringModifier, ElfAddStringModifierConfig(strings_to_add))
 
     output_path = os.path.join(elf_test_directory, "program_with_newstrings")
-    await original_elf.flush_to_disk(output_path)
+    await original_elf.flush_data_to_disk(output_path)
     strings_result = subprocess.run(["strings", output_path], capture_output=True)
     new_strings = set(strings_result.stdout.decode().split("\n"))
 
@@ -92,7 +92,7 @@ async def test_elf_force_relocation(
         ElfRelocateSymbolsModifierConfig({foo_vaddr: bar_vaddr, bar_vaddr: foo_vaddr}),
     )
 
-    await elf.resource.flush_to_disk(os.path.join(elf_test_directory, "program_relocated.o"))
+    await elf.resource.flush_data_to_disk(os.path.join(elf_test_directory, "program_relocated.o"))
     subprocess.run(["make", "-C", elf_test_directory, "program_relocated"])
     result = subprocess.run([os.path.join(elf_test_directory, "program_relocated")])
     assert result.returncode == 24
@@ -146,7 +146,7 @@ async def test_modifier(
         for entry in await view.get_entries():
             await entry.resource.run(modifier, modifier_config)
     mod_path = elf_executable_file + "_mod"
-    await elf.resource.flush_to_disk(mod_path)
+    await elf.resource.flush_data_to_disk(mod_path)
     mod_elf = await ofrak_context.create_root_resource_from_file(mod_path)
     await mod_elf.unpack()
     views = list(
@@ -229,7 +229,7 @@ async def test_lief_add_segment_modifier(hello_out: Resource, tmp_path):
 
     # Assert new segment not in original binary
     original_path = tmp_path / "original"
-    await hello_out.flush_to_disk(original_path)
+    await hello_out.flush_data_to_disk(original_path)
     with pytest.raises(ValueError):
         assert_segment_exists(original_path, segment_vaddr, segment_length)
 
@@ -239,7 +239,7 @@ async def test_lief_add_segment_modifier(hello_out: Resource, tmp_path):
 
     # Assert new segment is in extended binary
     extended_path = tmp_path / "extended"
-    await hello_out.flush_to_disk(extended_path)
+    await hello_out.flush_data_to_disk(extended_path)
     assert_segment_exists(extended_path, segment_vaddr, 0x2000)
 
 

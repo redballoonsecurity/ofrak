@@ -64,7 +64,7 @@ async def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: st
 
     # Repack the file automagically and save the repacked file to disk
     await root_resource.pack_recursively()
-    await root_resource.flush_to_disk(output_file_name)
+    await root_resource.flush_data_to_disk(output_file_name)
 
 
 if __name__ == "__main__":

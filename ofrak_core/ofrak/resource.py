@@ -1429,7 +1429,7 @@ class Resource:
         self._resource.is_modified = True
         self._resource.is_deleted = True
 
-    async def flush_to_disk(self, path: str, pack: bool = True):
+    async def flush_data_to_disk(self, path: str, pack: bool = True):
         """
         Recursively repack the resource and write its data out to a file on disk. If this is a
         dataless resource, creates an empty file.

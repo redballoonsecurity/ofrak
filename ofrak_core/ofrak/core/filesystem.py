@@ -162,6 +162,65 @@ class FilesystemEntry(ResourceView):
     def is_device(self) -> bool:
         return self.is_block_device() or self.is_character_device()
 
+    async def flush_to_disk(self, root_path: str = ".", filename: Optional[str] = None):
+        entry_path = await self.get_path()
+        if filename is not None:
+            entry_path = os.path.join(os.path.dirname(entry_path), filename)
+        if self.is_link():
+            link_name = os.path.join(root_path, entry_path)
+            if not os.path.exists(link_name):
+                link_view = await self.resource.view_as(SymbolicLink)
+                os.symlink(link_view.source_path, link_name)
+            assert len(list(await self.resource.get_children())) == 0
+            if self.stat:
+                # https://docs.python.org/3/library/os.html#os.supports_follow_symlinks
+                if os.chown in os.supports_follow_symlinks:
+                    os.chown(link_name, self.stat.st_uid, self.stat.st_gid, follow_symlinks=False)
+                if os.chmod in os.supports_follow_symlinks:
+                    os.chmod(link_name, self.stat.st_mode, follow_symlinks=False)
+                if os.utime in os.supports_follow_symlinks:
+                    os.utime(
+                        link_name,
+                        (self.stat.st_atime, self.stat.st_mtime),
+                        follow_symlinks=False,
+                    )
+            if self.xattrs:
+                for attr, value in self.xattrs.items():
+                    xattr.setxattr(link_name, attr, value, symlink=True)  # Don't follow links
+        elif self.is_folder():
+            folder_name = os.path.join(root_path, entry_path)
+            if not os.path.exists(folder_name):
+                os.makedirs(folder_name)
+        elif self.is_file():
+            file_name = os.path.join(root_path, entry_path)
+            with open(file_name, "wb") as f:
+                f.write(await self.resource.get_data())
+            self.apply_stat_attrs(file_name)
+        elif self.is_device():
+            device_name = os.path.join(root_path, entry_path)
+            if self.stat is None:
+                raise ValueError(
+                    f"Cannot create a device {entry_path} for a "
+                    f"BlockDevice or CharacterDevice resource with no stat!"
+                )
+            os.mknod(device_name, self.stat.st_mode, self.stat.st_rdev)
+            self.apply_stat_attrs(device_name)
+        elif self.is_fifo_pipe():
+            fifo_name = os.path.join(root_path, entry_path)
+            if self.stat is None:
+                raise ValueError(
+                    f"Cannot create a fifo {entry_path} for a FIFOPipe resource " "with no stat!"
+                )
+            os.mkfifo(fifo_name, self.stat.st_mode)
+            self.apply_stat_attrs(fifo_name)
+        else:
+            entry_info = f"Stat: {stat.S_IFMT(self.stat.st_mode):o}" if self.stat else ""
+            raise NotImplementedError(
+                f"FilesystemEntry {entry_path} has an unknown or "
+                f"unsupported filesystem type! Unable to create it "
+                f"on-disk. {entry_info}"
+            )
+
 
 class File(FilesystemEntry):
     """
@@ -404,68 +463,12 @@ class FilesystemRoot(ResourceView):
         ]
         while len(entries) > 0:
             entry = entries.pop(0)
-            entry_path = await entry.get_path()
-            if entry.is_link():
-                link_name = os.path.join(root_path, entry_path)
-                if not os.path.exists(link_name):
-                    link_view = await entry.resource.view_as(SymbolicLink)
-                    os.symlink(link_view.source_path, link_name)
-                assert len(list(await entry.resource.get_children())) == 0
-                if entry.stat:
-                    # https://docs.python.org/3/library/os.html#os.supports_follow_symlinks
-                    if os.chown in os.supports_follow_symlinks:
-                        os.chown(
-                            link_name, entry.stat.st_uid, entry.stat.st_gid, follow_symlinks=False
-                        )
-                    if os.chmod in os.supports_follow_symlinks:
-                        os.chmod(link_name, entry.stat.st_mode, follow_symlinks=False)
-                    if os.utime in os.supports_follow_symlinks:
-                        os.utime(
-                            link_name,
-                            (entry.stat.st_atime, entry.stat.st_mtime),
-                            follow_symlinks=False,
-                        )
-                if entry.xattrs:
-                    for attr, value in entry.xattrs.items():
-                        xattr.setxattr(link_name, attr, value, symlink=True)  # Don't follow links
-            elif entry.is_folder():
-                folder_name = os.path.join(root_path, entry_path)
-                if not os.path.exists(folder_name):
-                    os.makedirs(folder_name)
+            if entry.is_folder():
                 for child in await entry.resource.get_children_as_view(
                     FilesystemEntry, r_filter=ResourceFilter(tags=(FilesystemEntry,))
                 ):
                     entries.append(child)
-            elif entry.is_file():
-                file_name = os.path.join(root_path, entry_path)
-                with open(file_name, "wb") as f:
-                    f.write(await entry.resource.get_data())
-                entry.apply_stat_attrs(file_name)
-            elif entry.is_device():
-                device_name = os.path.join(root_path, entry_path)
-                if entry.stat is None:
-                    raise ValueError(
-                        f"Cannot create a device {entry_path} for a "
-                        f"BlockDevice or CharacterDevice resource with no stat!"
-                    )
-                os.mknod(device_name, entry.stat.st_mode, entry.stat.st_rdev)
-                entry.apply_stat_attrs(device_name)
-            elif entry.is_fifo_pipe():
-                fifo_name = os.path.join(root_path, entry_path)
-                if entry.stat is None:
-                    raise ValueError(
-                        f"Cannot create a fifo {entry_path} for a FIFOPipe resource "
-                        "with no stat!"
-                    )
-                os.mkfifo(fifo_name, entry.stat.st_mode)
-                entry.apply_stat_attrs(fifo_name)
-            else:
-                entry_info = f"Stat: {stat.S_IFMT(entry.stat.st_mode):o}" if entry.stat else ""
-                raise NotImplementedError(
-                    f"FilesystemEntry {entry_path} has an unknown or "
-                    f"unsupported filesystem type! Unable to create it "
-                    f"on-disk. {entry_info}"
-                )
+            await entry.flush_to_disk(root_path=root_path)
 
         return root_path
 
