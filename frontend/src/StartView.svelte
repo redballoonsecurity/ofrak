@@ -21,7 +21,8 @@
     flex-grow: 1;
   }
 
-  form > button {
+  .go-button {
+    margin: 0.5em;
     max-width: 10%;
     flex-grow: 1;
   }
@@ -48,25 +49,10 @@
     padding-bottom: 0.5em;
     padding-left: 1em;
     padding-right: 1em;
-    margin: 0.5em;
+    margin: 0.5em 0;
     font-size: inherit;
     font-family: var(--font);
     box-shadow: none;
-  }
-
-  button:hover:not([disabled]),
-  button:focus:not([disabled]) {
-    outline: none;
-    box-shadow: inset 1px 1px 0, inset -1px -1px 0;
-  }
-
-  button:active:not([disabled]) {
-    box-shadow: inset 2px 2px 0, inset -2px -2px 0;
-  }
-
-  button:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
   }
 
   option {
@@ -131,7 +117,7 @@
     margin: 0.5em;
   }
 
-  .advanced-options > button {
+  .set-location-button {
     width: 25%;
   }
 
@@ -529,14 +515,15 @@
               </option>
             {/each}
           </select>
-
-          <Button
-            on:click="{(e) => {
-              e.stopPropagation();
-            }}"
-            disabled="{!selectedPreExistingRoot}"
-            type="submit">Go!</Button
-          >
+          <div class="go-button">
+            <Button
+              on:click="{(e) => {
+                e.stopPropagation();
+              }}"
+              disabled="{!selectedPreExistingRoot}"
+              type="submit">Go!</Button
+            >
+          </div>
         </form>
       {:else if !showProjectOptions}
         No resources loaded yet.
@@ -628,12 +615,14 @@
             {#if showAdvancedProjectOptions}
               <div class="advanced-options">
                 <input bind:value="{projectPath}" placeholder="{projectPath}" />
-                <Button
-                  on:click="{(e) => {
-                    e.stopPropagation();
-                    changeProjectPath();
-                  }}">Set Location</Button
-                >
+                <div class="set-location-button">
+                  <Button
+                    on:click="{(e) => {
+                      e.stopPropagation();
+                      changeProjectPath();
+                    }}">Set Location</Button
+                  >
+                </div>
               </div>
             {/if}
           </div>

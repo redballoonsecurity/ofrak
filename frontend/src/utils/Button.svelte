@@ -1,7 +1,11 @@
 <style>
   button {
-    margin: var(--button-margin, 0, 0, 1em, 0);
-    padding: var(--button-padding, (0.5em, 1em, 0.5em, 1em));
+    display: flow-root;
+    width: var(--button-flex-grow, 100%);
+    height: var(--button-flex-grow, 100%);
+    flex-grow: var(--button-flex-grow, inherit);
+    margin: var(--button-margin, 0 0 1em 0);
+    padding: var(--button-padding, 0.5em 1em 0.5em 1em);
     background-color: var(--button-background-color, --main-bg-color);
     color: var(--button-color, --main-fg-color);
     border-color: var(--button-color, --main-fg-color);
@@ -15,13 +19,16 @@
   button:hover,
   button:focus {
     outline: none;
-    box-shadow: inset 1px 1px 0 var(--main-fg-color),
-      inset -1px -1px 0 var(--main-fg-color);
+    box-shadow: inset 1px 1px 0, inset -1px -1px 0;
   }
 
   button:active {
-    box-shadow: inset 2px 2px 0 var(--main-fg-color),
-      inset -2px -2px 0 var(--main-fg-color);
+    box-shadow: inset 2px 2px 0, inset -2px -2px 0;
+  }
+
+  button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
 </style>
 

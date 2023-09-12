@@ -4,21 +4,6 @@
     flex-direction: row;
     justify-content: space-around;
   }
-
-  button {
-    margin: 1em, 0;
-    padding-top: 0.5em;
-    padding-bottom: 0.5em;
-    padding-left: 1em;
-    padding-right: 1em;
-    background-color: var(--main-bg-color);
-    color: var(--main-fg-color);
-    border: 1px solid var(--main-fg-color);
-    border-radius: 0;
-    font-size: smaller;
-    overflow: hidden;
-    box-shadow: none;
-  }
 </style>
 
 <script>
@@ -62,8 +47,8 @@
 <div class="add-file">
   <FileBrowser bind:files="{files}" />
   {#if f}
-    <button on:click="{addScriptToProject}"
-      ><Icon url="/icons/document.svg" /> Add Script to Project</button
+    <Button on:click="{addScriptToProject}"
+      ><Icon url="/icons/document.svg" /> Add Script to Project</Button
     >
   {/if}
 </div>
