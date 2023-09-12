@@ -464,7 +464,7 @@ class FilesystemRoot(ResourceView):
         while len(entries) > 0:
             entry = entries.pop(0)
             if entry.is_folder():
-                for child in await self.resource.get_children_as_view(
+                for child in await entry.resource.get_children_as_view(
                     FilesystemEntry, r_filter=ResourceFilter(tags=(FilesystemEntry,))
                 ):
                     entries.append(child)
