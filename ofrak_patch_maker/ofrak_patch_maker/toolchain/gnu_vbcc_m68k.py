@@ -61,16 +61,11 @@ class VBCC_0_9_GNU_Hybrid_Toolchain(Abstract_GNU_Toolchain, ABC):
                 "--no-dynamic-linker",
             )
 
-        vbcc_compiler_optimization_map = {
-            CompilerOptimizationLevel.NONE: "",
-            CompilerOptimizationLevel.SOME: "",
-            CompilerOptimizationLevel.SPACE: "-size",
-            # TODO: Look into O=16384 for full cross-module optimizations. Bit encoded.
-            CompilerOptimizationLevel.FULL: "-speed",
-        }
-        self._compiler_flags.append(
-            vbcc_compiler_optimization_map[self._config.compiler_optimization_level]
-        )
+        # TODO: Look into O=16384 for full cross-module optimizations. Bit encoded.
+        if self._config.compiler_optimization_level is CompilerOptimizationLevel.SPACE:
+            self._compiler_flags.append("-size")
+        elif self._config.compiler_optimization_level is CompilerOptimizationLevel.FULL:
+            self._compiler_flags.append("-speed")
 
         if not self._config.hard_float:
             self._compiler_flags.append("-soft-float")
