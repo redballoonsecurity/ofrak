@@ -46,8 +46,8 @@
 <div class="add-file">
   <FileBrowser bind:files="{files}" />
   {#if f}
-    <button on:click="{addBinaryToProject}"
-      ><Icon url="/icons/binary.svg" /> Add Binary to Project</button
+    <Button on:click="{addBinaryToProject}"
+      ><Icon url="/icons/binary.svg" /> Add Binary to Project</Button
     >
   {/if}
 </div>
