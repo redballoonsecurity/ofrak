@@ -40,26 +40,6 @@ UBINIZE_TOOL = ComponentExternalTool(
 )
 
 
-class _PyLzoTool(ComponentExternalTool):
-    def __init__(self):
-        super().__init__(
-            "python-lzo",
-            "https://github.com/jd-boyd/python-lzo",
-            install_check_arg="",
-        )
-
-    async def is_tool_installed(self) -> bool:
-        try:
-            import lzo  # type: ignore
-
-            return True
-        except ModuleNotFoundError:
-            return False
-
-
-PY_LZO_TOOL = _PyLzoTool()
-
-
 @dataclass
 class UbiVolume(ResourceView):
     """
@@ -127,8 +107,6 @@ class UbiAnalyzer(Analyzer[None, Ubi]):
     targets = (Ubi,)
     outputs = (Ubi,)
 
-    external_dependencies = (PY_LZO_TOOL,)
-
     async def analyze(self, resource: Resource, config=None) -> Ubi:
         # Flush to disk
         with tempfile.NamedTemporaryFile() as temp_file:
@@ -186,7 +164,6 @@ class UbiUnpacker(Unpacker[None]):
 
     targets = (Ubi,)
     children = (UbiVolume,)
-    external_dependencies = (PY_LZO_TOOL,)
 
     async def unpack(self, resource: Resource, config=None):
         with tempfile.TemporaryDirectory() as temp_flush_dir:
@@ -236,7 +213,7 @@ class UbiPacker(Packer[None]):
     """
 
     targets = (Ubi,)
-    external_dependencies = (UBINIZE_TOOL, PY_LZO_TOOL)
+    external_dependencies = (UBINIZE_TOOL,)
 
     async def pack(self, resource: Resource, config=None) -> None:
         ubi_view = await resource.view_as(Ubi)
@@ -307,8 +284,6 @@ class UbiIdentifier(Identifier):
     """
 
     targets = (File, GenericBinary)
-
-    external_dependencies = (PY_LZO_TOOL,)
 
     async def identify(self, resource: Resource, config=None) -> None:
         datalength = await resource.get_data_length()
