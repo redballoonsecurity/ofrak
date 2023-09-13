@@ -7,7 +7,6 @@ from subprocess import CalledProcessError
 from ofrak import Identifier, Analyzer
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
-from ofrak.core import PY_LZO_TOOL
 from ofrak.resource import Resource
 from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
 from ofrak.core.binary import GenericBinary
@@ -94,8 +93,6 @@ class UbifsAnalyzer(Analyzer[None, Ubifs]):
     targets = (Ubifs,)
     outputs = (Ubifs,)
 
-    external_dependencies = (PY_LZO_TOOL,)
-
     async def analyze(self, resource: Resource, config=None) -> Ubifs:
         with tempfile.NamedTemporaryFile() as temp_file:
             resource_data = await resource.get_data()
@@ -131,8 +128,6 @@ class UbifsUnpacker(Unpacker[None]):
 
     targets = (Ubifs,)
     children = (File, Folder, SpecialFileType)
-
-    external_dependencies = (PY_LZO_TOOL,)
 
     async def unpack(self, resource: Resource, config=None):
         with tempfile.TemporaryDirectory() as temp_flush_dir:
@@ -213,8 +208,6 @@ class UbifsIdentifier(Identifier):
     """
 
     targets = (File, GenericBinary)
-
-    external_dependencies = (PY_LZO_TOOL,)
 
     async def identify(self, resource: Resource, config=None) -> None:
         datalength = await resource.get_data_length()
