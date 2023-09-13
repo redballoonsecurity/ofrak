@@ -30,6 +30,7 @@ from ofrak_ghidra.constants import (
     GHIDRA_LOG_FILE,
     CORE_OFRAK_GHIDRA_SCRIPTS,
     GHIDRA_PATH,
+    GHIDRA_VERSION,
 )
 from ofrak_ghidra.ghidra_model import (
     GhidraProject,
@@ -192,7 +193,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
         )
-        LOGGER.debug(f"Started ghidra import.: {ghidra_proc.pid}")
+        LOGGER.debug(f"Started ghidra import: {ghidra_proc.pid}")
 
         while True:
             line = (await ghidra_proc.stdout.readline()).decode("ascii")
@@ -247,7 +248,12 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
         if skip_analysis:
             args.append("-noanalysis")
 
-        args.extend(["-scriptPath", (";".join(self._script_directories))])
+        if GHIDRA_VERSION <= "10.1.2":
+            script_dir_joiner = "\\;"
+        else:
+            script_dir_joiner = ";"
+
+        args.extend(["-scriptPath", f"'{script_dir_joiner.join(self._script_directories)}'"])
 
         args.extend(["-postScript", "AnalysisServer.java"])
         args.extend(self._build_ghidra_server_args())
@@ -255,9 +261,8 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
         cmd_str = " ".join([GHIDRA_HEADLESS_EXEC] + args)
         LOGGER.debug(f"Running command: {cmd_str}")
 
-        ghidra_proc = await asyncio.create_subprocess_exec(
-            GHIDRA_HEADLESS_EXEC,
-            *args,
+        ghidra_proc = await asyncio.create_subprocess_shell(
+            cmd_str,
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
         )

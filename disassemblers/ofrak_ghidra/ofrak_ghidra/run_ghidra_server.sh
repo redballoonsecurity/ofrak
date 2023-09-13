@@ -48,5 +48,5 @@ done
 
 # Some versions of Ghidra have a command to add permissions to users, in addition to -add
 if (./server/svrAdmin --help 2>&1 | grep "\-grant" ) then
-  ./server/svrAdmin -grant "$GHIDRA_USER" +w ofrak
+  ./server/svrAdmin -grant "$GHIDRA_USER" +a ofrak
 fi

@@ -13,6 +13,7 @@ DEFAULT_GHIDRA_CONFIG_PATH = os.path.join(
 @dataclass
 class OfrakGhidraConfig:
     ghidra_path: str
+    ghidra_version: str
     ghidra_log_file: str
     ghidra_server_user: str
     ghidra_server_pass: str
@@ -62,6 +63,7 @@ server:
 
         return OfrakGhidraConfig(
             ghidra_path=raw_config["ghidra_install"]["path"],
+            ghidra_version=raw_config["ghidra_install"]["version"],
             ghidra_log_file=raw_config["ghidra_install"]["log_file"],
             ghidra_server_user=raw_config["server"]["user"],
             ghidra_server_pass=raw_config["server"]["pass"],
@@ -76,6 +78,7 @@ server:
             "ghidra_install": {
                 "path": self.ghidra_path,
                 "log_file": self.ghidra_log_file,
+                "version": self.ghidra_version,
             },
             "server": {
                 "user": self.ghidra_server_user,
