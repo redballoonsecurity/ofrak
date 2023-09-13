@@ -1405,7 +1405,7 @@ async def test_git_clone_project(ofrak_client: TestClient):
     git_url = "https://github.com/redballoonsecurity/ofrak-project-example.git"
     await ofrak_client.post("/set_projects_path", json={"path": "/tmp/test-ofrak-projects"})
     resp = await ofrak_client.post("/clone_project_from_git", json={"url": git_url})
-    resp_body = await resp.json()
+    resp_body = await resp.json(content_type=None)
     id = resp_body["id"]
     resp = await ofrak_client.get("/get_project_by_id", params={"id": id})
     resp_body = await resp.json()
