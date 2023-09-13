@@ -312,7 +312,7 @@
   </div>
 
   <div class="actions">
-    <Button style="" on:click="{runComponent}">
+    <Button on:click="{runComponent}">
       Run {selectedComponent}
     </Button>
     <Button on:click="{() => (modifierView = undefined)}">Cancel</Button>
