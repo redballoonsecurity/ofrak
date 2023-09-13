@@ -1,6 +1,4 @@
 <style>
-  /* TODO refactor with CarveView: a large fraction of this style is the same as in CarveView
-  / (containers, labels, etc). Buttons, inputs etc could be refactored into their own components. */
   .container {
     min-height: 100%;
     display: flex;
