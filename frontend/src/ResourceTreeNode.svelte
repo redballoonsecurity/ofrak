@@ -110,7 +110,6 @@
   import Icon from "./Icon.svelte";
   import Hoverable from "./Hoverable.svelte";
   import LoadingText from "./LoadingText.svelte";
-  import Button from "./utils/Button.svelte";
 
   import { onDestroy } from "svelte";
   import { selected } from "./stores.js";

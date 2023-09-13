@@ -1,6 +1,7 @@
 <script>
   import { selectedProject, settings, selected } from "../stores";
   import Icon from "../Icon.svelte";
+  import Button from "../utils/Button.svelte"
 
   export let args;
 
@@ -32,10 +33,10 @@
 </script>
 
 <div>
-  <button
+  <Button
     on:click="{(e) => {
       e.stopPropagation();
       deleteScript();
-    }}"><Icon url="/icons/trash.svg" />Delete {args.name} from project.</button
+    }}"><Icon url="/icons/trash.svg" />Delete {args.name} from project.</Button
   >
 </div>
