@@ -78,6 +78,16 @@
     padding: 2em;
     margin: 1em 0 2em 0;
   }
+
+  .buttonbar {
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: start;
+    justify-content: start;
+  }
 </style>
 
 <script>
@@ -231,7 +241,7 @@
       <!---->
     {:else if node["type"] == "typing.List" || node["type"] == "typing.Iterable"}
       <div class="buttonbar">
-        <Button class="add" on:click="{addElementToArray}">
+        <Button on:click="{addElementToArray}">
           <Icon url="/icons/plus.svg" />
         </Button>
       </div>
@@ -240,7 +250,6 @@
           <div class="boxed">
             <div class="buttonbar">
               <Button
-                class="remove"
                 on:click="{(e) => {
                   skip.push(elements);
                   skip = skip;
@@ -263,7 +272,7 @@
       <!---->
     {:else if node["type"] == "typing.Dict"}
       <div class="buttonbar">
-        <Button class="add" on:click="{addElementToDict}">
+        <Button on:click="{addElementToDict}">
           <Icon url="/icons/plus.svg" />
         </Button>
       </div>
@@ -272,7 +281,6 @@
           <div class="boxed">
             <div class="buttonbar">
               <Button
-                class="remove"
                 on:click="{(e) => {
                   skip.push(elements);
                   skip = skip;
