@@ -1,7 +1,7 @@
 <script>
   import { selectedProject, settings, selected } from "../stores";
   import Icon from "../Icon.svelte";
-  import Button from "../utils/Button.svelte"
+  import Button from "../utils/Button.svelte";
 
   export let args;
 
