@@ -383,7 +383,7 @@ await root_resource.run(BinaryPatchModifier, binary_patch_config)
 Finally, the familiar step of packing the results
 ```
 await root_resource.pack()
-await root_resource.flush_to_disk(output_filename)
+await root_resource.flush_data_to_disk(output_filename)
 ```
 
 ### Troubleshooting
