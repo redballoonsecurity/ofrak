@@ -1188,9 +1188,12 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def get_project_by_resource_id(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
-        matching_projects = [
-            project for project in self.projects if resource.get_id().hex() in project.resource_ids
-        ]
+        if self.projects is not None:
+            matching_projects = [
+                project for project in self.projects if resource.get_id().hex() in project.resource_ids
+            ]
+        else:
+            matching_projects = []
         if len(matching_projects) == 1:
             return json_response(matching_projects[0].get_current_metadata())
         elif len(matching_projects) == 0:
