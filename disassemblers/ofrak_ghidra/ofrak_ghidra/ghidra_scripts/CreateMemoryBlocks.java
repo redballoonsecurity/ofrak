@@ -52,8 +52,7 @@ public class CreateMemoryBlocks extends HeadlessScript {
 
     @Override
     public void run() throws Exception {
-        //String[] args = getScriptArgs();
-	String[] args = {"4096!4096!rw!block_0!4096", "8192!4096!rx!block_1!8192", "0!4096!rw!FIRST_SECTION!0"};
+        String[] args = getScriptArgs();
 
         Memory mem = currentProgram.getMemory();
         FileBytes fileBytes = mem.getAllFileBytes().get(0);
@@ -84,19 +83,7 @@ public class CreateMemoryBlocks extends HeadlessScript {
                 block.setPermissions(
                     permissions.contains("r"), permissions.contains("w"), permissions.contains("x")
                 );
-            } catch (LockException e) {
-                    e.printStackTrace();
-                    continue;
-            } catch (IllegalArgumentException e) {
-                    e.printStackTrace();
-                    continue;
-            } catch (IndexOutOfBoundsException e) {
-                    e.printStackTrace();
-                    continue;
-            } catch (MemoryConflictException e) {
-                    e.printStackTrace();
-                    throw e;
-            } catch (AddressOverflowException e) {
+            } catch (Exception e) {
                     e.printStackTrace();
                     continue;
             }

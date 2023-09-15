@@ -365,7 +365,6 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
         args: List[str] = []
 
         for i, block in enumerate(blocks):
-
             block_info: List[str] = [
                 str(block.virtual_address),
                 str(block.size),

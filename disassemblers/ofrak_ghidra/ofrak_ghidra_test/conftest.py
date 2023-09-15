@@ -1,4 +1,5 @@
 from ofrak import OFRAKContext
+from ofrak.core import Elf
 from ofrak.resource import Resource
 
 import ofrak_ghidra
@@ -26,6 +27,7 @@ async def hello_world_elf_resource(
     resource = await ofrak_context.create_root_resource(
         test_id,
         hello_world_elf,
+        tags=(Elf,),
     )
     return resource
 

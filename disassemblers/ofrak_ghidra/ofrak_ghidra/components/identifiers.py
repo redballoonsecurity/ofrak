@@ -1,11 +1,11 @@
 from ofrak.component.identifier import Identifier
-from ofrak.core import Elf, Ihex
+from ofrak.core import Elf, Ihex, Pe
 from ofrak.core.program import Program
 from ofrak.resource import Resource
 from ofrak_ghidra.ghidra_model import GhidraAutoLoadProject, GhidraCustomLoadProject
 
 
-_GHIDRA_AUTO_LOADABLE_FORMATS = [Elf, Ihex]
+_GHIDRA_AUTO_LOADABLE_FORMATS = [Elf, Ihex, Pe]
 
 
 class GhidraAnalysisIdentifier(Identifier):
