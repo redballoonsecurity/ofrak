@@ -241,7 +241,10 @@
       <!---->
     {:else if node["type"] == "typing.List" || node["type"] == "typing.Iterable"}
       <div class="buttonbar">
-        <Button on:click="{addElementToArray}">
+        <Button
+          --button-padding="0.5em 1em 0em 1em"
+          on:click="{addElementToArray}"
+        >
           <Icon url="/icons/plus.svg" />
         </Button>
       </div>
@@ -250,6 +253,7 @@
           <div class="boxed">
             <div class="buttonbar">
               <Button
+                --button-padding="0.5em 1em 0em 1em"
                 on:click="{(e) => {
                   skip.push(elements);
                   skip = skip;
@@ -272,7 +276,10 @@
       <!---->
     {:else if node["type"] == "typing.Dict"}
       <div class="buttonbar">
-        <Button on:click="{addElementToDict}">
+        <Button
+          --button-padding="0.5em 1em 0em 1em"
+          on:click="{addElementToDict}"
+        >
           <Icon url="/icons/plus.svg" />
         </Button>
       </div>
@@ -281,6 +288,7 @@
           <div class="boxed">
             <div class="buttonbar">
               <Button
+                --button-padding="0.5em 1em 0em 1em"
                 on:click="{(e) => {
                   skip.push(elements);
                   skip = skip;

@@ -57,6 +57,9 @@
 
 <div class="buttonbar">
   <Button
+    --button-padding="0.5em 1em 0em 1em"
+    --button-margin="0 0.5em 0 0.5em"
+    --button-border="0"
     on:click="{async (e) => {
       const lines = $script.join('\n');
       if (lines.length === 0) {
@@ -89,6 +92,9 @@
     <Icon url="/icons/content_copy.svg" />
   </Button>
   <Button
+    --button-padding="0.5em 1em 0em 1em"
+    --button-margin="0 0.5em 0 0"
+    --button-border="0"
     on:click="{async (e) => {
       const lines = $script.join('\n');
       if (lines.length === 0) {
@@ -106,7 +112,12 @@
   >
     <Icon url="/icons/download.svg" />
   </Button>
-  <Button on:click="{() => (bottomLeftPane = undefined)}">
+  <Button
+    --button-padding="0.5em 1em 0em 1em"
+    --button-margin="0 0.5em 0 0"
+    --button-border="0"
+    on:click="{() => (bottomLeftPane = undefined)}"
+  >
     <Icon url="/icons/error.svg" />
   </Button>
 </div>

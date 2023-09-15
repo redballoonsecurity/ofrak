@@ -40,6 +40,15 @@
     align-content: center;
   }
 
+  .theme-actions {
+    margin-top: 2em;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: left;
+    align-items: center;
+    align-content: center;
+  }
   input {
     background: inherit;
     color: inherit;
@@ -238,7 +247,7 @@
         </label>
       {/each}
     </div>
-    <div style:margin="1em 0 2em 0">
+    <div class="theme-actions" style:margin="1em 0 2em 0">
       <Button
         on:click="{() => {
           $settings.colors.push('#dddddd');
