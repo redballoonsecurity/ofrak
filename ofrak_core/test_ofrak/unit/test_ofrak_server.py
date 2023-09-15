@@ -1436,3 +1436,21 @@ async def test_open_project(ofrak_client: TestClient):
     resp_body = await resp.json()
     assert resp_body["id"] == "00000001"
     shutil.rmtree("/tmp/test-ofrak-projects")
+
+
+async def test_get_project_by_resource_id(ofrak_client: TestClient):
+    git_url = "https://github.com/redballoonsecurity/ofrak-project-example.git"
+    await ofrak_client.post("/set_projects_path", json={"path": "/tmp/test-ofrak-projects"})
+    resp = await ofrak_client.post("/clone_project_from_git", json={"url": git_url})
+    resp_body = await resp.json()
+    id = resp_body["id"]
+    resp = await ofrak_client.post(
+        "/open_project",
+        json={"id": id, "binary": "example_program", "script": "unpack-and-comment.py"},
+    )
+    resp_body = await resp.json()
+    resource_id = resp_body["id"]
+    project_resp = await ofrak_client.get(f"/{resource_id}/get_project_by_resource_id")
+    project = await project_resp.json()
+    assert project["session_id"] == id
+    shutil.rmtree("/tmp/test-ofrak-projects")
