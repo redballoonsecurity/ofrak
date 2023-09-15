@@ -217,6 +217,9 @@ class AiohttpOFRAKServer:
                 web.post("/delete_binary_from_project", self.delete_binary_from_project),
                 web.post("/delete_script_from_project", self.delete_script_from_project),
                 web.post("/reset_project", self.reset_project),
+                web.get(
+                    "/{resource_id}/get_project_by_resource_id", self.get_project_by_resource_id
+                ),
                 web.get("/get_project_script", self.get_project_script),
                 web.get("/", self.get_static_files),
                 web.static(
@@ -1181,6 +1184,19 @@ class AiohttpOFRAKServer:
         script_body = project.get_script_body(script_name)
 
         return Response(text=script_body)
+
+    @exceptions_to_http(SerializedError)
+    async def get_project_by_resource_id(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
+        matching_projects = [
+            project for project in self.projects if resource.get_id().hex() in project.resource_ids
+        ]
+        if len(matching_projects) == 1:
+            return json_response(matching_projects[0].get_current_metadata())
+        elif len(matching_projects) == 0:
+            return json_response([])
+        else:
+            raise AttributeError("A resource ID became linked to multiple projects.")
 
     def _slurp_projects_from_dir(self) -> Set:
         projects = set()

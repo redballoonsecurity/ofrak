@@ -39,6 +39,7 @@ class OfrakProject:
         self.binaries: Dict[str, _OfrakProjectBinary] = binaries
         self.scripts: List[str] = scripts
         self.session_id = uuid.uuid4().bytes
+        self.resource_ids: List[str] = []
 
     @property
     def metadata_path(self):
@@ -171,7 +172,7 @@ class OfrakProject:
             script_name = binary_metadata.init_script
 
         resource = await ofrak_context.create_root_resource_from_file(self.binary_path(binary_name))
-
+        self.resource_ids.append(resource.get_id().hex())
         if script_name is not None:
             with open(self.script_path(script_name)) as f:
                 code = f.read()
@@ -212,6 +213,7 @@ class OfrakProject:
             "name": self.name,
             "project_id": self.project_id.hex(),
             "session_id": self.session_id.hex(),
+            "resource_ids": self.resource_ids,
             "scripts": [
                 {
                     "name": script_name,
