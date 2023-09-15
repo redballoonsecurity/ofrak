@@ -1225,7 +1225,14 @@ async def test_get_project_by_id(ofrak_client: TestClient):
     resp = await ofrak_client.get("/get_project_by_id", params={"id": id})
     assert resp.status == 200
     body = await resp.json()
-    assert list(body.keys()) == ["name", "project_id", "session_id", "resource_ids", "scripts", "binaries"]
+    assert list(body.keys()) == [
+        "name",
+        "project_id",
+        "session_id",
+        "resource_ids",
+        "scripts",
+        "binaries",
+    ]
     if os.path.exists("/tmp/test-ofrak-projects"):
         shutil.rmtree("/tmp/test-ofrak-projects")
 
