@@ -1190,7 +1190,9 @@ class AiohttpOFRAKServer:
         resource = await self._get_resource_for_request(request)
         if self.projects is not None:
             matching_projects = [
-                project for project in self.projects if resource.get_id().hex() in project.resource_ids
+                project
+                for project in self.projects
+                if resource.get_id().hex() in project.resource_ids
             ]
         else:
             matching_projects = []
