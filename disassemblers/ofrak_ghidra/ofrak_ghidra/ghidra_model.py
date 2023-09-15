@@ -22,7 +22,7 @@ class GhidraProject(ResourceView):
 @dataclass
 class GhidraAutoLoadProject(GhidraProject):
     """
-    A resource which Ghidra can automatically load with one of its existing Loaders (e.g. ELF)
+    A resource which Ghidra can automatically load with one of its existing Loaders (e.g. ELF).
     """
 
 
