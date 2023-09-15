@@ -1090,7 +1090,7 @@ async def test_add_flush_to_disk_to_script(ofrak_client: TestClient, firmware_zi
         "        )",
         "    )",
         "",
-        '    await file_DIR655B1_FW203NAB02_bin.flush_to_disk("DIR655B1_FW203NAB02.bin")',
+        '    await file_DIR655B1_FW203NAB02_bin.flush_data_to_disk("DIR655B1_FW203NAB02.bin")',
         "",
         "",
         'if __name__ == "__main__":',
