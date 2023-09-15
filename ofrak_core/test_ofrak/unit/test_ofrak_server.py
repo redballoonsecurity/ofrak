@@ -1207,10 +1207,13 @@ async def test_create_new_project(ofrak_client: TestClient):
         json={"name": "test"},
     )
     assert resp.status == 200
-    shutil.rmtree("/tmp/test-ofrak-projects")
+    if os.path.exists("/tmp/test-ofrak-projects"):
+        shutil.rmtree("/tmp/test-ofrak-projects")
 
 
 async def test_get_project_by_id(ofrak_client: TestClient):
+    if os.path.exists("/tmp/test-ofrak-projects"):
+        shutil.rmtree("/tmp/test-ofrak-projects")
     await ofrak_client.post("/set_projects_path", json={"path": "/tmp/test-ofrak-projects"})
     resp = await ofrak_client.post(
         "/create_new_project",
@@ -1222,11 +1225,14 @@ async def test_get_project_by_id(ofrak_client: TestClient):
     resp = await ofrak_client.get("/get_project_by_id", params={"id": id})
     assert resp.status == 200
     body = await resp.json()
-    assert list(body.keys()) == ["name", "project_id", "session_id", "scripts", "binaries"]
-    shutil.rmtree("/tmp/test-ofrak-projects")
+    assert list(body.keys()) == ["name", "project_id", "session_id", "resource_ids", "scripts", "binaries"]
+    if os.path.exists("/tmp/test-ofrak-projects"):
+        shutil.rmtree("/tmp/test-ofrak-projects")
 
 
 async def test_get_all_projects(ofrak_client: TestClient):
+    if os.path.exists("/tmp/test-ofrak-projects"):
+        shutil.rmtree("/tmp/test-ofrak-projects")
     await ofrak_client.post("/set_projects_path", json={"path": "/tmp/test-ofrak-projects"})
     resp = await ofrak_client.post(
         "/create_new_project",
@@ -1250,10 +1256,13 @@ async def test_get_all_projects(ofrak_client: TestClient):
     assert "test2" in [project["name"] for project in body]
     assert id1 in [project["session_id"] for project in body]
     assert id2 in [project["session_id"] for project in body]
-    shutil.rmtree("/tmp/test-ofrak-projects")
+    if os.path.exists("/tmp/test-ofrak-projects"):
+        shutil.rmtree("/tmp/test-ofrak-projects")
 
 
 async def test_reset_project(ofrak_client: TestClient):
+    if os.path.exists("/tmp/test-ofrak-projects"):
+        shutil.rmtree("/tmp/test-ofrak-projects")
     await ofrak_client.post("/set_projects_path", json={"path": "/tmp/test-ofrak-projects"})
     resp = await ofrak_client.post(
         "/create_new_project",
@@ -1266,7 +1275,8 @@ async def test_reset_project(ofrak_client: TestClient):
         json={"id": id},
     )
     assert resp.status == 200
-    shutil.rmtree("/tmp/test-ofrak-projects")
+    if os.path.exists("/tmp/test-ofrak-projects"):
+        shutil.rmtree("/tmp/test-ofrak-projects")
 
 
 async def test_add_binary_to_project(ofrak_client: TestClient, hello_world_elf):
@@ -1281,10 +1291,13 @@ async def test_add_binary_to_project(ofrak_client: TestClient, hello_world_elf):
         "/add_binary_to_project", params={"id": id, "name": "hello_world_elf"}, data=hello_world_elf
     )
     assert resp.status == 200
-    shutil.rmtree("/tmp/test-ofrak-projects")
+    if os.path.exists("/tmp/test-ofrak-projects"):
+        shutil.rmtree("/tmp/test-ofrak-projects")
 
 
 async def test_add_script_to_project(ofrak_client: TestClient):
+    if os.path.exists("/tmp/test-ofrak-projects"):
+        shutil.rmtree("/tmp/test-ofrak-projects")
     script = b"async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):\n\tawait root_resource.unpack()"
     await ofrak_client.post("/set_projects_path", json={"path": "/tmp/test-ofrak-projects"})
     resp = await ofrak_client.post(
@@ -1297,17 +1310,24 @@ async def test_add_script_to_project(ofrak_client: TestClient):
         "/add_script_to_project", params={"id": id, "name": "unpack.py"}, data=script
     )
     assert resp.status == 200
-    shutil.rmtree("/tmp/test-ofrak-projects")
+    if os.path.exists("/tmp/test-ofrak-projects"):
+        shutil.rmtree("/tmp/test-ofrak-projects")
 
 
 async def test_get_projects_path(ofrak_client: TestClient):
+    if os.path.exists("/tmp/test-ofrak-projects"):
+        shutil.rmtree("/tmp/test-ofrak-projects")
     await ofrak_client.post("/set_projects_path", json={"path": "/tmp/test-ofrak-projects"})
     resp = await ofrak_client.get("/get_projects_path")
     resp_body = await resp.json()
     assert resp_body == "/tmp/test-ofrak-projects"
+    if os.path.exists("/tmp/test-ofrak-projects"):
+        shutil.rmtree("/tmp/test-ofrak-projects")
 
 
 async def test_save_project_data(ofrak_client: TestClient, hello_world_elf):
+    if os.path.exists("/tmp/test-ofrak-projects"):
+        shutil.rmtree("/tmp/test-ofrak-projects")
     script = b"async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):\n\tawait root_resource.unpack()"
     await ofrak_client.post("/set_projects_path", json={"path": "/tmp/test-ofrak-projects"})
     resp = await ofrak_client.post(
@@ -1335,10 +1355,13 @@ async def test_save_project_data(ofrak_client: TestClient, hello_world_elf):
         "hello_world_elf": {"init_script": None, "associated_scripts": []}
     }
     assert resp.status == 200
-    shutil.rmtree("/tmp/test-ofrak-projects")
+    if os.path.exists("/tmp/test-ofrak-projects"):
+        shutil.rmtree("/tmp/test-ofrak-projects")
 
 
 async def test_delete_from_project(ofrak_client: TestClient, hello_world_elf):
+    if os.path.exists("/tmp/test-ofrak-projects"):
+        shutil.rmtree("/tmp/test-ofrak-projects")
     script = b"async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):\n\tawait root_resource.unpack()"
     await ofrak_client.post("/set_projects_path", json={"path": "/tmp/test-ofrak-projects"})
     resp = await ofrak_client.post(
@@ -1376,10 +1399,13 @@ async def test_delete_from_project(ofrak_client: TestClient, hello_world_elf):
     resp_body = await resp.json()
     assert resp_body[0]["scripts"] == []
     assert resp_body[0]["binaries"] == {}
-    shutil.rmtree("/tmp/test-ofrak-projects")
+    if os.path.exists("/tmp/test-ofrak-projects"):
+        shutil.rmtree("/tmp/test-ofrak-projects")
 
 
 async def test_get_project_script(ofrak_client: TestClient):
+    if os.path.exists("/tmp/test-ofrak-projects"):
+        shutil.rmtree("/tmp/test-ofrak-projects")
     script = b"async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):\n\tawait root_resource.unpack()"
     await ofrak_client.post("/set_projects_path", json={"path": "/tmp/test-ofrak-projects"})
     resp = await ofrak_client.post(
@@ -1398,10 +1424,13 @@ async def test_get_project_script(ofrak_client: TestClient):
     assert resp.status == 200
     resp_body = await resp.text()
     assert resp_body == script.decode()
-    shutil.rmtree("/tmp/test-ofrak-projects")
+    if os.path.exists("/tmp/test-ofrak-projects"):
+        shutil.rmtree("/tmp/test-ofrak-projects")
 
 
 async def test_git_clone_project(ofrak_client: TestClient):
+    if os.path.exists("/tmp/test-ofrak-projects"):
+        shutil.rmtree("/tmp/test-ofrak-projects")
     git_url = "https://github.com/redballoonsecurity/ofrak-project-example.git"
     await ofrak_client.post("/set_projects_path", json={"path": "/tmp/test-ofrak-projects"})
     resp = await ofrak_client.post("/clone_project_from_git", json={"url": git_url})
@@ -1420,10 +1449,13 @@ async def test_git_clone_project(ofrak_client: TestClient):
             "associated_scripts": ["unpack-and-comment.py", "unpack.py", "modify.py"],
         }
     }
-    shutil.rmtree("/tmp/test-ofrak-projects")
+    if os.path.exists("/tmp/test-ofrak-projects"):
+        shutil.rmtree("/tmp/test-ofrak-projects")
 
 
 async def test_open_project(ofrak_client: TestClient):
+    if os.path.exists("/tmp/test-ofrak-projects"):
+        shutil.rmtree("/tmp/test-ofrak-projects")
     git_url = "https://github.com/redballoonsecurity/ofrak-project-example.git"
     await ofrak_client.post("/set_projects_path", json={"path": "/tmp/test-ofrak-projects"})
     resp = await ofrak_client.post("/clone_project_from_git", json={"url": git_url})
@@ -1435,10 +1467,13 @@ async def test_open_project(ofrak_client: TestClient):
     )
     resp_body = await resp.json()
     assert resp_body["id"] == "00000001"
-    shutil.rmtree("/tmp/test-ofrak-projects")
+    if os.path.exists("/tmp/test-ofrak-projects"):
+        shutil.rmtree("/tmp/test-ofrak-projects")
 
 
 async def test_get_project_by_resource_id(ofrak_client: TestClient):
+    if os.path.exists("/tmp/test-ofrak-projects"):
+        shutil.rmtree("/tmp/test-ofrak-projects")
     git_url = "https://github.com/redballoonsecurity/ofrak-project-example.git"
     await ofrak_client.post("/set_projects_path", json={"path": "/tmp/test-ofrak-projects"})
     resp = await ofrak_client.post("/clone_project_from_git", json={"url": git_url})
@@ -1453,4 +1488,5 @@ async def test_get_project_by_resource_id(ofrak_client: TestClient):
     project_resp = await ofrak_client.get(f"/{resource_id}/get_project_by_resource_id")
     project = await project_resp.json()
     assert project["session_id"] == id
-    shutil.rmtree("/tmp/test-ofrak-projects")
+    if os.path.exists("/tmp/test-ofrak-projects"):
+        shutil.rmtree("/tmp/test-ofrak-projects")
