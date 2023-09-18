@@ -8,8 +8,13 @@
     height: 100%;
     max-height: 100%;
   }
+
+  .toolbar {
+    max-width: 15%;
+  }
   .manager {
     width: 100%;
+    max-width: 85%;
   }
   .title {
     text-transform: uppercase;
@@ -37,15 +42,14 @@
   }
 
   .content {
-    font-size: x-large;
     display: flex;
     flex-direction: column;
     width: 100%;
     overflow: auto;
+    font-size: medium;
   }
 
   .hint {
-    font-size: medium;
     height: 1em;
     margin-bottom: 1em;
   }
@@ -150,12 +154,14 @@
 
 <div class="title">OFRAK Project Manager</div>
 <div class="hbox">
-  <ProjectManagerToolbar
-    bind:focus="{focus}"
-    openProject="{openProject}"
-    bind:showProjectManager="{showProjectManager}"
-    bind:forceRefreshProject="{forceRefreshProject}"
-  />
+  <div class="toolbar">
+    <ProjectManagerToolbar
+      bind:focus="{focus}"
+      openProject="{openProject}"
+      bind:showProjectManager="{showProjectManager}"
+      bind:forceRefreshProject="{forceRefreshProject}"
+    />
+  </div>
   <div class="manager">
     <Split vertical="{true}" percentOfFirstSplit="{70}">
       <Split percentOfFirstSplit="{50}" slot="first">
@@ -244,11 +250,13 @@
         </Pane>
       </Split>
       <Pane slot="second" paddingVertical="{'1em'}">
-        <ProjectManagerOptions
-          focus="{focus}"
-          bind:selectedBinaryName="{selectedBinaryName}"
-          bind:forceRefreshProject="{forceRefreshProject}"
-        />
+        <div class="content">
+          <ProjectManagerOptions
+            focus="{focus}"
+            bind:selectedBinaryName="{selectedBinaryName}"
+            bind:forceRefreshProject="{forceRefreshProject}"
+          />
+        </div>
       </Pane>
     </Split>
   </div>
