@@ -363,10 +363,10 @@ export class RemoteResource extends Resource {
 
   async queue_patch(data, start, end) {
     // TODO: Implement after and before
-    let url = `${this.uri}/queue_patch`
+    let url = `${this.uri}/queue_patch`;
     start = start || null;
     end = end || null;
-    if(start && end){
+    if (start && end) {
       url = `${this.uri}/queue_patch?start=${start}&end=${end}`;
     } else if (start && !end) {
       url = `${this.uri}/queue_patch?start=${start}`;
@@ -374,14 +374,11 @@ export class RemoteResource extends Resource {
       url = `${this.uri}/queue_patch?end=${end}`;
     } else {
       url = `${this.uri}/queue_patch`;
-    };
-    const patch_results = await fetch(
-      url,
-      {
-        method: "POST",
-        body: data,
-      }
-    ).then(async (r) => {
+    }
+    const patch_results = await fetch(url, {
+      method: "POST",
+      body: data,
+    }).then(async (r) => {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }
