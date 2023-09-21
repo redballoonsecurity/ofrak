@@ -1,4 +1,14 @@
 <style>
+  .vbox {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: stretch;
+    height: 100%;
+    max-height: 95%;
+  }
+
   .hbox {
     display: flex;
     flex-direction: row;
@@ -11,10 +21,11 @@
 
   .toolbar {
     max-width: 15%;
+    min-width: 15%;
   }
   .manager {
     width: 100%;
-    max-width: 85%;
+    max-width: 100%;
   }
   .title {
     text-transform: uppercase;
@@ -36,15 +47,16 @@
   }
 
   .hbox2 {
-    width: 100%;
-    padding: 2em;
+    max-width: 100%;
+    min-width: 100%;
     overflow-y: hidden;
   }
 
   .content {
     display: flex;
     flex-direction: column;
-    width: 100%;
+    max-width: 100%;
+    min-width: 100%;
     overflow: auto;
     font-size: medium;
   }
@@ -152,112 +164,114 @@
   }
 </script>
 
-<div class="title">OFRAK Project Manager</div>
-<div class="hbox">
-  <div class="toolbar">
-    <ProjectManagerToolbar
-      bind:focus="{focus}"
-      openProject="{openProject}"
-      bind:showProjectManager="{showProjectManager}"
-      bind:forceRefreshProject="{forceRefreshProject}"
-    />
-  </div>
-  <div class="manager">
-    <Split vertical="{true}" percentOfFirstSplit="{70}">
-      <Split percentOfFirstSplit="{50}" slot="first">
-        <Pane slot="first">
-          <div class="sub-title">
-            <ProjectManagerFocusableLabel
-              bind:focus="{focus}"
-              label="Binaries"
-              newFocus="{{
-                object: ProjectManagerAddBinaryToProject,
-                args: {},
-              }}"
-            />
-          </div>
-          <div class="hbox2">
-            <div class="content">
-              {#key forceRefreshProject}
-                {#each binariesForProject as binaryName}
-                  <div class="element">
-                    <ProjectManagerCheckbox
-                      ownValue="{binaryName}"
-                      bind:focus="{focusBinary}"
-                    />
-                  </div>
-                {/each}
-              {/key}
+<div class="vbox">
+  <div class="title">OFRAK Project Manager</div>
+  <div class="hbox">
+    <div class="toolbar">
+      <ProjectManagerToolbar
+        bind:focus="{focus}"
+        openProject="{openProject}"
+        bind:showProjectManager="{showProjectManager}"
+        bind:forceRefreshProject="{forceRefreshProject}"
+      />
+    </div>
+    <div class="manager">
+      <Split vertical="{true}" percentOfFirstSplit="{70}">
+        <Split percentOfFirstSplit="{50}" slot="first">
+          <Pane slot="first">
+            <div class="sub-title">
+              <ProjectManagerFocusableLabel
+                bind:focus="{focus}"
+                label="Binaries"
+                newFocus="{{
+                  object: ProjectManagerAddBinaryToProject,
+                  args: {},
+                }}"
+              />
             </div>
-          </div>
-        </Pane>
-        <Pane slot="second">
-          <div class="sub-title">
-            <ProjectManagerFocusableLabel
-              bind:focus="{focus}"
-              label="Scripts"
-              newFocus="{{
-                object: ProjectManagerAddScriptToProject,
-                args: {},
-              }}"
-            />
-          </div>
-          <div class="hbox2">
-            <div class="content">
-              <div class="element hint">
-                {#if scriptCheckboxHoverInfo.onInclusive}
-                  <p>
-                    Script is {#if !scriptCheckboxHoverInfo.inclusiveChecked}
-                      not
-                    {/if} compatible with this binary
-                  </p>
-                {:else if scriptCheckboxHoverInfo.onExclusive}
-                  <p>
-                    Script is {#if !scriptCheckboxHoverInfo.exclusiveChecked}
-                      not
-                    {/if} the one used to launch this binary
-                  </p>
-                {/if}
+            <div class="hbox2">
+              <div class="content">
+                {#key forceRefreshProject}
+                  {#each binariesForProject as binaryName}
+                    <div class="element">
+                      <ProjectManagerCheckbox
+                        ownValue="{binaryName}"
+                        bind:focus="{focusBinary}"
+                      />
+                    </div>
+                  {/each}
+                {/key}
               </div>
-              {#key forceRefreshProject}
-                {#each $selectedProject.scripts as script}
-                  <div class="element">
-                    {#if selectedBinaryName}
-                      <ProjectManagerCheckbox
-                        ownValue="{script['name']}"
-                        bind:inclusiveSelectionGroup="{$selectedProject
-                          .binaries[selectedBinaryName].associated_scripts}"
-                        bind:exclusiveSelectionValue="{$selectedProject
-                          .binaries[selectedBinaryName].init_script}"
-                        bind:focus="{focusScript}"
-                        bind:mouseoverInfo="{scriptCheckboxHoverInfo}"
-                        ,
-                        inclusiveCheckboxChecked="{$selectedProject.binaries[
-                          selectedBinaryName
-                        ].associated_scripts.includes(script['name'])}"
-                      />
-                    {:else}
-                      <ProjectManagerCheckbox
-                        ownValue="{script['name']}"
-                        bind:focus="{focusScript}"
-                      />
-                    {/if}
-                  </div>
-                {/each}
-              {/key}
             </div>
+          </Pane>
+          <Pane slot="second">
+            <div class="sub-title">
+              <ProjectManagerFocusableLabel
+                bind:focus="{focus}"
+                label="Scripts"
+                newFocus="{{
+                  object: ProjectManagerAddScriptToProject,
+                  args: {},
+                }}"
+              />
+            </div>
+            <div class="hbox2">
+              <div class="content">
+                <div class="element hint">
+                  {#if scriptCheckboxHoverInfo.onInclusive}
+                    <p>
+                      Script is {#if !scriptCheckboxHoverInfo.inclusiveChecked}
+                        not
+                      {/if} compatible with this binary
+                    </p>
+                  {:else if scriptCheckboxHoverInfo.onExclusive}
+                    <p>
+                      Script is {#if !scriptCheckboxHoverInfo.exclusiveChecked}
+                        not
+                      {/if} the one used to launch this binary
+                    </p>
+                  {/if}
+                </div>
+                {#key forceRefreshProject}
+                  {#each $selectedProject.scripts as script}
+                    <div class="element">
+                      {#if selectedBinaryName}
+                        <ProjectManagerCheckbox
+                          ownValue="{script['name']}"
+                          bind:inclusiveSelectionGroup="{$selectedProject
+                            .binaries[selectedBinaryName].associated_scripts}"
+                          bind:exclusiveSelectionValue="{$selectedProject
+                            .binaries[selectedBinaryName].init_script}"
+                          bind:focus="{focusScript}"
+                          bind:mouseoverInfo="{scriptCheckboxHoverInfo}"
+                          ,
+                          inclusiveCheckboxChecked="{$selectedProject.binaries[
+                            selectedBinaryName
+                          ].associated_scripts.includes(script['name'])}"
+                        />
+                      {:else}
+                        <ProjectManagerCheckbox
+                          ownValue="{script['name']}"
+                          bind:focus="{focusScript}"
+                        />
+                      {/if}
+                    </div>
+                  {/each}
+                {/key}
+              </div>
+            </div>
+          </Pane>
+        </Split>
+        <Pane slot="second" paddingVertical="{'1em'}">
+          <div class="content">
+            <ProjectManagerOptions
+              focus="{focus}"
+              bind:selectedBinaryName="{selectedBinaryName}"
+              bind:forceRefreshProject="{forceRefreshProject}"
+            />
           </div>
         </Pane>
       </Split>
-      <Pane slot="second" paddingVertical="{'1em'}">
-        <div class="content">
-          <ProjectManagerOptions
-            focus="{focus}"
-            bind:selectedBinaryName="{selectedBinaryName}"
-            bind:forceRefreshProject="{forceRefreshProject}"
-          />
-        </div>
-      </Pane>
-    </Split>
+    </div>
   </div>
 </div>

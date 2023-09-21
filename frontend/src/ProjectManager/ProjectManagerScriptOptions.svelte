@@ -11,10 +11,12 @@
 
   .toolbar {
     max-width: 15%;
+    min-width: 15%;
   }
 
   .script {
     max-width: 85%;
+    min-width: 85%;
   }
 </style>
 
