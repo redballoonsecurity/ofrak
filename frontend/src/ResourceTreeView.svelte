@@ -1,13 +1,4 @@
 <style>
-  .vbox {
-    display: flex;
-    flex-direction: column;
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    align-items: stretch;
-    height: 100%;
-    max-height: 100%;
-  }
   .hbox {
     display: flex;
     flex-direction: row;
