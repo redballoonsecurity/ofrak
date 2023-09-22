@@ -1,3 +1,4 @@
+import tempfile
 from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional
@@ -35,6 +36,8 @@ class OfrakImageConfig:
     install_target: InstallTarget
     cache_from: List[str]
     entrypoint: Optional[str]
+    nxp_email: Optional[str]
+    nxp_password: Optional[str]
 
     def validate_serial_txt_existence(self):
         """
@@ -81,11 +84,27 @@ def main():
             for cache in config.cache_from:
                 cache_args.append("--cache-from")
                 cache_args.append(cache)
+        nxp_args = []
+        email_file = password_file = None
+        if config.nxp_email and config.nxp_password:
+            email_file = tempfile.NamedTemporaryFile(suffix=".txt", mode="w+")
+            email_file.write(config.nxp_email)
+            email_file.flush()
+            password_file = tempfile.NamedTemporaryFile(suffix=".txt", mode="w+")
+            password_file.write(config.nxp_password)
+            password_file.flush()
+            nxp_args = [
+                "--secret",
+                f"id=nxp_email,src={email_file.name}",
+                "--secret",
+                f"id=nxp_password,src={password_file.name}",
+            ]
         base_command = [
             "docker",
             "build",
             "--build-arg",
             "BUILDKIT_INLINE_CACHE=1",
+            *nxp_args,
             "--cache-from",
             f"{full_base_image_name}:master",
             *cache_args,
@@ -108,6 +127,9 @@ def main():
             print(f"Error running command: '{' '.join(error.cmd)}'")
             print(f"Exit status: {error.returncode}")
             sys.exit(error.returncode)
+        if email_file and password_file:
+            email_file.close()
+            password_file.close()
 
     if config.build_finish:
         full_image_name = "/".join((config.registry, config.image_name))
@@ -146,7 +168,12 @@ def parse_args() -> OfrakImageConfig:
         default=InstallTarget.DEVELOP.value,
     )
     parser.add_argument("--cache-from", action="append")
+    parser.add_argument("--nxp-email")
+    parser.add_argument("--nxp-password")
     args = parser.parse_args()
+    if (not not args.nxp_email) ^ (not not args.nxp_password):
+        raise RuntimeError("Must include the NXP email and password!")
+
     with open(args.config) as file_handle:
         config_dict = yaml.safe_load(file_handle)
     image_config = OfrakImageConfig(
@@ -161,6 +188,8 @@ def parse_args() -> OfrakImageConfig:
         InstallTarget(args.target),
         args.cache_from,
         config_dict.get("entrypoint"),
+        args.nxp_email,
+        args.nxp_password,
     )
     image_config.validate_serial_txt_existence()
     return image_config

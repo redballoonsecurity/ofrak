@@ -5,7 +5,7 @@ from collections import defaultdict
 from typing import Tuple, Dict, Union, List, Iterable
 
 from ofrak.core.architecture import ProgramAttributes
-from ofrak_type.architecture import InstructionSet, InstructionSetMode
+from ofrak_type.architecture import InstructionSet, InstructionSetMode, SubInstructionSet
 from ofrak.core.basic_block import BasicBlockUnpacker, BasicBlock
 from ofrak.core.instruction import Instruction
 from ofrak.resource import ResourceFactory, Resource
@@ -174,6 +174,18 @@ def _asm_fixups(
                 operand = re.sub(r"a([0-7])", r"%A\1", operand)
                 operand = re.sub(r"d([0-7])[bw]?", r"%D\1", operand)
             operands += operand
+    elif program_attrs.sub_isa is SubInstructionSet.PPCVLE:
+        # in Ghidra, offsets from a register like in `se_stw     r0,0x9(r1)` are expressed in words.
+        # so in this example r0 is stored at r1+0x9*4=r1+0x24
+        # But it is more natural to express it in bytes, to get the instruction `se_stw r0,0x24(r1)`
+        # (this is also the convention used by the VLE assembler)
+
+        mnemonic = base_mnemonic
+        operands = re.sub(
+            r"(.*, )(0x[0-9]+)(\(r[0-9]+\))",
+            lambda match: match.group(1) + f"0x{int(match.group(2), 0)*4:x}" + match.group(3),
+            operands,
+        )
     else:
         mnemonic = base_mnemonic
     return mnemonic, operands

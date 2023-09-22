@@ -9,7 +9,7 @@ from ofrak_patch_maker.toolchain.abstract import Toolchain
 from ofrak_patch_maker.toolchain.gnu_aarch64 import GNU_AARCH64_LINUX_10_Toolchain
 from ofrak_patch_maker.toolchain.gnu_arm import GNU_ARM_NONE_EABI_10_2_1_Toolchain
 from ofrak_patch_maker.toolchain.gnu_avr import GNU_AVR_5_Toolchain
-from ofrak_patch_maker.toolchain.gnu_ppc import GNU_PPC_LINUX_10_Toolchain
+from ofrak_patch_maker.toolchain.gnu_ppc import GNU_PPC_LINUX_10_Toolchain, GNU_PPCVLE_4_Toolchain
 from ofrak_patch_maker.toolchain.gnu_x64 import GNU_X86_64_LINUX_EABI_10_3_0_Toolchain
 from ofrak_patch_maker.toolchain.llvm_12 import LLVM_12_0_1_Toolchain
 from ofrak_patch_maker.toolchain.model import (
@@ -88,6 +88,16 @@ TOOLCHAINS_AND_TARGETS = [
     (
         GNU_PPC_LINUX_10_Toolchain,
         ArchInfo(InstructionSet.PPC, None, BitWidth.BIT_32, Endianness.BIG_ENDIAN, None),
+    ),
+    (
+        GNU_PPCVLE_4_Toolchain,
+        ArchInfo(
+            InstructionSet.PPC,
+            SubInstructionSet.PPCVLE,
+            BitWidth.BIT_32,
+            Endianness.BIG_ENDIAN,
+            None,
+        ),
     ),
     (
         GNU_AVR_5_Toolchain,

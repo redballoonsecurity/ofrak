@@ -13,7 +13,7 @@ from ofrak_type import ArchInfo
 from ofrak_patch_maker.binary_parser.abstract import AbstractBinaryFileParser
 from ofrak_patch_maker.toolchain.model import Segment, ToolchainConfig
 from ofrak_patch_maker.toolchain.utils import get_repository_config
-from ofrak_type.architecture import InstructionSet
+from ofrak_type.architecture import InstructionSet, SubInstructionSet
 from ofrak_type.bit_width import BitWidth
 from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.symbol_type import LinkableSymbolType
@@ -156,6 +156,11 @@ class Toolchain(ABC):
             and self._processor.bit_width == BitWidth.BIT_64
         ):
             assembler_path = "X86_64_ASM_PATH"
+        elif (
+            self._processor.isa == InstructionSet.PPC
+            and self._processor.sub_isa == SubInstructionSet.PPCVLE
+        ):
+            assembler_path = "PPCVLE_ASM_PATH"
         else:
             assembler_path = f"{self._processor.isa.value.upper()}_ASM_PATH"
         return get_repository_config("ASM", assembler_path)

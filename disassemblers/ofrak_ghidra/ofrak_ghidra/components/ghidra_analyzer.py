@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import Optional, List
 
 from ofrak import ResourceFilter
-from ofrak.core import CodeRegion
+from ofrak.core import CodeRegion, ProgramAttributes, Elf, ElfUnpacker
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
 from ofrak.model.component_model import ComponentConfig
@@ -34,6 +34,7 @@ from ofrak_ghidra.ghidra_model import (
     OfrakGhidraMixin,
     GhidraComponentException,
 )
+from ofrak_type import InstructionSet, SubInstructionSet
 
 LOGGER = logging.getLogger(__name__)
 
@@ -107,7 +108,16 @@ class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProjec
 
         ghidra_project = f"ghidra://{GHIDRA_REPOSITORY_HOST}:{GHIDRA_REPOSITORY_PORT}/ofrak"
 
-        program_name = await self._do_ghidra_import(ghidra_project, full_fname)
+        program_attributes = None
+        if resource.has_tag(Elf):
+            await resource.run(ElfUnpacker)
+            program_attributes = await resource.analyze(ProgramAttributes)
+        else:
+            logging.warning(
+                f"Could not get ProgramAttributes for resource {resource.get_id()} because it doesn't have the Elf tag."
+            )
+
+        program_name = await self._do_ghidra_import(ghidra_project, full_fname, program_attributes)
         await self._do_ghidra_analyze_and_serve(
             ghidra_project, program_name, skip_analysis=config is not None
         )
@@ -117,7 +127,7 @@ class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProjec
 
         return GhidraProject(ghidra_project, f"http://{GHIDRA_SERVER_HOST}:{GHIDRA_SERVER_PORT}")
 
-    async def _do_ghidra_import(self, ghidra_project: str, full_fname: str):
+    async def _do_ghidra_import(self, ghidra_project: str, full_fname: str, program_attributes):
         args = [
             ghidra_project,
             "-connect",
@@ -127,6 +137,14 @@ class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProjec
             full_fname,
             "-overwrite",
         ]
+
+        if (
+            program_attributes is not None
+            and program_attributes.isa == InstructionSet.PPC
+            and program_attributes.sub_isa == SubInstructionSet.PPCVLE
+        ):
+            args.extend(["-scriptPath", "'" + (";".join(self._script_directories)) + "'"])
+            args.extend(["-preScript", "PreAnalyzePPCVLE.java"])
 
         cmd_str = " ".join([GHIDRA_HEADLESS_EXEC] + args)
         LOGGER.debug(f"Running command: {cmd_str}")

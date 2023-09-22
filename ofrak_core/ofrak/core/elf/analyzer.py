@@ -365,6 +365,7 @@ class ElfProgramAttributesAnalyzer(Analyzer[None, ProgramAttributes]):
     async def analyze(
         self, resource: Resource, config: Optional[ComponentConfig] = None
     ) -> ProgramAttributes:
+        elf_resource = await resource.view_as(Elf)
         elf_header = await resource.get_only_descendant_as_view(
             ElfHeader, r_filter=ResourceFilter.with_tags(ElfHeader)
         )
@@ -374,7 +375,7 @@ class ElfProgramAttributesAnalyzer(Analyzer[None, ProgramAttributes]):
 
         return ProgramAttributes(
             elf_header.get_isa(),
-            None,
+            await elf_resource.get_sub_isa(),
             elf_basic_header.get_bitwidth(),
             elf_basic_header.get_endianness(),
             None,
