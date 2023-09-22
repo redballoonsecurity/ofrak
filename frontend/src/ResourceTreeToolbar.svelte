@@ -302,7 +302,7 @@
     ];
   }
 
-  $: if ($settings.$selectedProject) {
+  $: if ($selectedProject) {
     toolbarButtons = [...toolbarButtons, ...projectFeatures];
   }
 

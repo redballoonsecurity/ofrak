@@ -396,6 +396,14 @@
     showRootResource = true;
     rootResourceLoadPromise = Promise.resolve(undefined);
     $selected = resourceId;
+    $selectedProject = await fetch(
+      `${$settings.backendUrl}/${resourceId}/get_project_by_resource_id`
+    ).then((r) => {
+      if (!r.ok) {
+        throw Error(r.statusText);
+      }
+      return r.json();
+    });
   }
   $: if ($settings) {
     saveSettings();
@@ -513,8 +521,16 @@
             {/each}
           </select>
           <Button
-            on:click="{(e) => {
+            on:click="{async (e) => {
               e.stopPropagation();
+              $selectedProject = await fetch(
+                `${$settings.backendUrl}/${selectedPreExistingRoot.id}/get_project_by_resource_id`
+              ).then((r) => {
+                if (!r.ok) {
+                  throw Error(r.statusText);
+                }
+                return r.json();
+              });
             }}"
             disabled="{!selectedPreExistingRoot}"
             type="submit">Go!</Button
