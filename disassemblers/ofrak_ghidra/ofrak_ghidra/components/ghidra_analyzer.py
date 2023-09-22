@@ -4,11 +4,14 @@ import logging
 import os
 import tempfile
 import time
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Optional, List
+from functools import lru_cache
+from typing import Optional, List, Dict
+from xml.etree import ElementTree
 
 from ofrak import ResourceFilter
-from ofrak.core import CodeRegion
+from ofrak.core import CodeRegion, MemoryRegion, NamedProgramSection, ProgramAttributes, Program
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
 from ofrak.model.component_model import ComponentConfig
@@ -26,6 +29,7 @@ from ofrak_ghidra.constants import (
     GHIDRA_SERVER_PORT,
     GHIDRA_LOG_FILE,
     CORE_OFRAK_GHIDRA_SCRIPTS,
+    GHIDRA_PATH,
     GHIDRA_VERSION,
 )
 from ofrak_ghidra.ghidra_model import (
@@ -33,7 +37,10 @@ from ofrak_ghidra.ghidra_model import (
     OfrakGhidraScript,
     OfrakGhidraMixin,
     GhidraComponentException,
+    GhidraCustomLoadProject,
+    GhidraAutoLoadProject,
 )
+from ofrak_type import ArchInfo, InstructionSet, Endianness
 
 LOGGER = logging.getLogger(__name__)
 
@@ -52,7 +59,21 @@ class GhidraProjectConfig(ComponentConfig):
     ghidra_zip_file: str
 
 
-class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProject]):
+@dataclass
+class GhidraProgramLoadConfig(ComponentConfig):
+    """
+    Config for GhidraProjectAnalyzer to pass in a pre-analyzed Ghidra project for a binary as a
+    Ghidra Zip file.
+
+    A Ghidra Zip File can be exported from Ghidra's project window, right-clicking on an analyzed
+    file and "Export...". Then select the Ghidra Zip File format and save the file. This will
+    create a .gzf file that you can import with this GhidraProjectConfig.
+    """
+
+    ghidra_zip_file: str
+
+
+class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
     """
     Use Ghidra backend to create project for and analyze a binary. This analyzer must run before
     Ghidra analysis can be accessed from OFRAK. This Analyzer can either create a new project and
@@ -60,7 +81,7 @@ class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProjec
     """
 
     id = b"GhidraProjectAnalyzer"
-    targets = (GhidraProject,)
+    targets = (GhidraAutoLoadProject,)
     outputs = (GhidraProject,)
 
     def __init__(
@@ -87,13 +108,14 @@ class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProjec
                 self._script_directories.add(script.script_dir)
                 self._scripts.add(script.script_name)
 
-    async def analyze(
-        self, resource: Resource, config: Optional[GhidraProjectConfig] = None
-    ) -> GhidraProject:
+    @asynccontextmanager
+    async def _prepare_ghidra_project(
+        self, resource: Resource, ghidra_zip_file: Optional[str] = None
+    ):
         # TODO: allow multiple headless server instances
         os.system("pkill -if analyzeHeadless")
-        if config is not None:
-            full_fname = config.ghidra_zip_file
+        if ghidra_zip_file is not None:
+            full_fname = ghidra_zip_file
             tmp_dir = None
         else:
             tmp_dir = tempfile.TemporaryDirectory()
@@ -107,17 +129,40 @@ class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProjec
 
         ghidra_project = f"ghidra://{GHIDRA_REPOSITORY_HOST}:{GHIDRA_REPOSITORY_PORT}/ofrak"
 
-        program_name = await self._do_ghidra_import(ghidra_project, full_fname)
-        await self._do_ghidra_analyze_and_serve(
-            ghidra_project, program_name, skip_analysis=config is not None
-        )
+        try:
+            yield ghidra_project, full_fname
+        finally:
+            if tmp_dir is not None:
+                tmp_dir.cleanup()
 
-        if tmp_dir:
-            tmp_dir.cleanup()
+    async def analyze(
+        self, resource: Resource, config: Optional[GhidraProjectConfig] = None
+    ) -> GhidraProject:
 
-        return GhidraProject(ghidra_project, f"http://{GHIDRA_SERVER_HOST}:{GHIDRA_SERVER_PORT}")
+        gzf = config.ghidra_zip_file if config is not None else None
 
-    async def _do_ghidra_import(self, ghidra_project: str, full_fname: str):
+        async with self._prepare_ghidra_project(resource, gzf) as (ghidra_project, full_fname):
+            program_name = await self._do_ghidra_import(
+                ghidra_project, full_fname, use_binary_loader=False
+            )
+            await self._do_ghidra_analyze_and_serve(
+                ghidra_project,
+                program_name,
+                skip_analysis=config is not None,
+            )
+
+            return GhidraProject(
+                ghidra_project, f"http://{GHIDRA_SERVER_HOST}:{GHIDRA_SERVER_PORT}"
+            )
+
+    async def _do_ghidra_import(
+        self,
+        ghidra_project: str,
+        full_fname: str,
+        use_binary_loader: bool,
+        processor: Optional[ArchInfo] = None,
+        blocks: Optional[List[MemoryRegion]] = None,
+    ):
         args = [
             ghidra_project,
             "-connect",
@@ -127,6 +172,18 @@ class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProjec
             full_fname,
             "-overwrite",
         ]
+
+        if use_binary_loader:
+            args.extend(["-loader", "BinaryLoader"])
+
+        if processor:
+            processor_id = self._arch_info_to_processor_id(processor)
+            args.extend(["-processor", processor_id])
+
+        if blocks is not None:
+            args.extend(["-scriptPath", (";".join(self._script_directories))])
+            args.extend(["-preScript", "CreateMemoryBlocks.java"])
+            args.extend(await self._build_create_memory_args(blocks))
 
         cmd_str = " ".join([GHIDRA_HEADLESS_EXEC] + args)
         LOGGER.debug(f"Running command: {cmd_str}")
@@ -173,7 +230,10 @@ class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProjec
                 return program_name
 
     async def _do_ghidra_analyze_and_serve(
-        self, ghidra_project: str, program_name: str, skip_analysis: bool
+        self,
+        ghidra_project: str,
+        program_name: str,
+        skip_analysis: bool,
     ):
         args = [
             ghidra_project,
@@ -235,6 +295,108 @@ class GhidraProjectAnalyzer(Analyzer[Optional[GhidraProjectConfig], GhidraProjec
 
         return args
 
+    @lru_cache(maxsize=None)
+    def _arch_info_to_processor_id(self, processor: ArchInfo):
+        families: Dict[InstructionSet, str] = {
+            InstructionSet.ARM: "ARM",
+            InstructionSet.AARCH64: "AARCH64",
+            InstructionSet.MIPS: "MIPS",
+            InstructionSet.PPC: "PowerPC",
+            InstructionSet.M68K: "68000",
+            InstructionSet.X86: "x86",
+        }
+        family = families.get(processor.isa)
+
+        endian = "BE" if processor.endianness is Endianness.BIG_ENDIAN else "LE"
+        # Ghidra proc IDs are of the form "ISA:endianness:bitWidth:suffix", where the suffix can indicate a specific processor or sub-ISA
+        # The goal of the follow code is to identify the best proc ID for the ArchInfo, and we expect to be able to fall back on this default
+        partial_proc_id = f"{family}:{endian}:{processor.bit_width.value}"
+        # TODO: There are also some proc_ids that end with '_any' which are default-like
+        default_proc_id = f"{partial_proc_id}:default"
+
+        ldefs = os.path.join(GHIDRA_PATH, "Ghidra", "Processors", family, "data", "languages")
+        processors_rejected = set()
+        default_proc_id_found = False
+        for file in os.listdir(ldefs):
+            if not file.endswith(".ldefs"):
+                continue
+
+            tree = ElementTree.parse(os.path.join(ldefs, file))
+            for language in tree.getroot().iter(tag="language"):
+                proc_id = language.attrib["id"]
+                # Ghidra has a list of alternative names for each support language spec
+                # This is useful and interesting, for example it has the IDA equivalent name
+                if not proc_id.startswith(partial_proc_id):
+                    # Don't even consider language if it doesn't match ISA, bitwidth, endianness
+                    continue
+                if proc_id == default_proc_id:
+                    default_proc_id_found = True
+                    if not processor.sub_isa and not processor.processor:
+                        # default_proc_id found, and the ArchoInfo doesn't contain any info to narrow it down further, so just break early to return the default
+                        break
+
+                for name_elem in language.iter(tag="external_name"):
+                    name = name_elem.attrib["name"].lower()
+
+                    if not processor.sub_isa and not processor.processor:
+                        if name.endswith("_any"):
+                            return proc_id
+
+                    if processor.sub_isa and processor.sub_isa.value.lower() == name:
+                        return proc_id
+
+                    if processor.processor and processor.processor.value.lower() == name:
+                        return proc_id
+
+                processors_rejected.add(proc_id)
+
+        if default_proc_id_found:
+            return default_proc_id
+
+        if len(processors_rejected) == 1:
+            return processors_rejected.pop()
+
+        raise GhidraComponentException(
+            f"Could not determine a Ghidra language spec for the given architecture info "
+            f"{processor}. Considered the following specs:\n{', '.join(processors_rejected)}"
+        )
+
+    async def _build_create_memory_args(self, blocks: List[MemoryRegion]) -> List[str]:
+        args: List[str] = []
+
+        for i, block in enumerate(blocks):
+            block_info: List[str] = [
+                str(block.virtual_address),
+                str(block.size),
+            ]
+
+            if block.resource.has_tag(CodeRegion):
+                block_info.append("rx")
+            else:
+                block_info.append("rw")
+
+            if block.resource.has_tag(NamedProgramSection):
+                named_section = await block.resource.view_as(NamedProgramSection)
+                if " " in named_section.name or "!" in named_section.name:
+                    raise ValueError(
+                        f"Bad character in section name {named_section.name} which interferes with "
+                        f"encoding arguments to CreateMemoryRegions.java"
+                    )
+                block_info.append(named_section.name)
+            else:
+                block_info.append(f"block_{i}")
+
+            try:
+                block_offset_range = await block.resource.get_data_range_within_parent()
+                block_info.append(str(block_offset_range.start))
+            except ValueError:
+                # region has no data
+                block_info.append("-1")
+
+            args.append("!".join(block_info))
+
+        return args
+
 
 class GhidraCodeRegionModifier(Modifier, OfrakGhidraMixin):
     id = b"GhidraCodeRegionModifier"
@@ -279,3 +441,40 @@ class GhidraCodeRegionModifier(Modifier, OfrakGhidraMixin):
             )
         else:
             LOGGER.debug("No OFRAK code regions to match in Ghidra")
+
+
+class GhidraCustomLoadAnalyzer(GhidraProjectAnalyzer):
+    id = b"GhidraCustomLoadProjectAnalyzer"
+    targets = (GhidraCustomLoadProject,)
+    outputs = (GhidraCustomLoadProject,)
+
+    async def analyze(
+        self, resource: Resource, config: Optional[GhidraProjectConfig] = None
+    ) -> GhidraProject:
+
+        arch_info: ArchInfo = await resource.analyze(ProgramAttributes)
+        mem_blocks = await self._get_memory_blocks(await resource.view_as(Program))
+
+        async with self._prepare_ghidra_project(resource) as (ghidra_project, full_fname):
+            program_name = await self._do_ghidra_import(
+                ghidra_project,
+                full_fname,
+                use_binary_loader=True,
+                processor=arch_info,
+                blocks=mem_blocks,
+            )
+            await self._do_ghidra_analyze_and_serve(
+                ghidra_project,
+                program_name,
+                skip_analysis=config is not None,
+            )
+
+            return GhidraProject(
+                ghidra_project, f"http://{GHIDRA_SERVER_HOST}:{GHIDRA_SERVER_PORT}"
+            )
+
+    async def _get_memory_blocks(self, program: Program):
+        mem_regions = await program.resource.get_children_as_view(
+            MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
+        )
+        return list(mem_regions)
