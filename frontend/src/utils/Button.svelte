@@ -5,7 +5,7 @@
     height: var(--button-flex-grow, auto);
     flex-grow: var(--button-flex-grow, inherit);
     margin: var(--button-margin, 0.5em);
-    padding: var(--button-padding, 0.5em 1em 0.5em 1em);
+    padding: var(--button-padding, 0.5em 1em);
     background-color: var(--button-background-color, var(--main-bg-color));
     color: var(--button-color, var(--main-fg-color));
     border-color: var(--button-color, var(--main-fg-color));
