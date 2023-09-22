@@ -9,16 +9,6 @@
     align-items: start;
     justify-content: end;
   }
-  
-  .buttonbar button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.5em;
-    margin-left: 0.5em;
-    border: 0;
-    background: var(--main-bg-color);
-  }
 </style>
 
 <script>
