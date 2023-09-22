@@ -9,7 +9,6 @@
 </style>
 
 <script>
-  import Button from "../utils/Button.svelte";
   export let focus, label, newFocus;
   function focusLabel() {
     focus = newFocus;

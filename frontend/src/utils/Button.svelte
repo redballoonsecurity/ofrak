@@ -11,9 +11,9 @@
     border-color: var(--button-color, var(--main-fg-color));
     border: var(--button-border, 1px solid);
     border-radius: var(--button-border-radius, 0);
-    font-size: smaller;
     overflow: hidden;
     box-shadow: none;
+    color: inherit;
   }
 
   button:hover,

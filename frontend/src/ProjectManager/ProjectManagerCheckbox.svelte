@@ -27,7 +27,6 @@
 <script>
   import Checkbox from "../Checkbox.svelte";
   import ExclusiveCheckbox from "../ExclusiveCheckbox.svelte";
-  import Button from "../utils/Button.svelte";
   import ProjectManagerFocusableLabel from "./ProjectManagerFocusableLabel.svelte";
 
   export let ownValue,
