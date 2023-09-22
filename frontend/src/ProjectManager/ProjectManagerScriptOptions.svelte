@@ -1,9 +1,34 @@
+<style>
+  .hbox {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+  }
+
+  .toolbar {
+    max-width: 15%;
+    min-width: 15%;
+  }
+
+  .script {
+    max-width: 85%;
+    min-width: 85%;
+  }
+</style>
+
 <script>
+  import { onMount } from "svelte";
   import { selectedProject, settings, selected } from "../stores";
-  import Icon from "../Icon.svelte";
-  import Button from "../utils/Button.svelte";
+  import Script from "../utils/Script.svelte";
+  import Toolbar from "../Toolbar.svelte";
+  import LoadingAnimation from "../LoadingAnimation.svelte";
 
   export let args;
+  let showScriptPromise = new Promise(() => {});
 
   async function deleteScript() {
     await fetch(`${$settings.backendUrl}/delete_script_from_project`, {
@@ -30,13 +55,37 @@
       return await r.json();
     });
   }
+
+  $: showScriptPromise = fetch(
+    `${$settings.backendUrl}/get_project_script?project=${$selectedProject.session_id}&script=${args.name}`
+  ).then(async (r) => {
+    if (!r.ok) {
+      throw Error(r.statusText);
+    }
+    return (await r.text()).split("\n");
+  });
+
+  let toolbarButtons = [
+    {
+      text: "Delete Script",
+      iconUrl: "/icons/trash.svg",
+      shortcut: "D",
+      onclick: () => {
+        deleteScript;
+      },
+    },
+  ];
 </script>
 
-<div>
-  <Button
-    on:click="{(e) => {
-      e.stopPropagation();
-      deleteScript();
-    }}"><Icon url="/icons/trash.svg" />Delete {args.name} from project.</Button
-  >
+<div class="hbox">
+  <div class="toolbar">
+    <Toolbar toolbarButtons="{toolbarButtons}" />
+  </div>
+  <div class="script">
+    {#await showScriptPromise}
+      <LoadingAnimation />
+    {:then loadedScript}
+      <Script script="{loadedScript}" />
+    {/await}
+  </div>
 </div>

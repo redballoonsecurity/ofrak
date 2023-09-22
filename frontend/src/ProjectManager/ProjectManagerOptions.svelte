@@ -6,8 +6,9 @@
   .options {
     display: flex;
     flex-direction: column;
-    margin: 1em;
     font-size: x-large;
+    max-width: 100%;
+    max-height: 100%;
   }
 </style>
 

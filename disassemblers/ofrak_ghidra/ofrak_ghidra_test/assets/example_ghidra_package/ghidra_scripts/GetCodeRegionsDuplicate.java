@@ -29,11 +29,11 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.math.BigInteger;
 
-public class GetCodeRegions extends HeadlessScript {
+public class GetCodeRegionsDuplicate extends HeadlessScript {
     @Override
     public void run() throws Exception {
         try{
-            String response = new GetCodeRegions.Result().toJson();
+            String response = new GetCodeRegionsDuplicate.Result().toJson();
             storeHeadlessValue("OfrakResult_GetCodeRegions", response);
         } catch (Exception e){
             println(e.toString());
@@ -43,7 +43,7 @@ public class GetCodeRegions extends HeadlessScript {
 
 
     class Result {
-        final List<GetCodeRegions.ResultCodeRegion> codeRegions;
+        final List<GetCodeRegionsDuplicate.ResultCodeRegion> codeRegions;
 
         Result() throws CancelledException {
             this.codeRegions = new ArrayList<>();
@@ -55,7 +55,7 @@ public class GetCodeRegions extends HeadlessScript {
                 MemoryBlock block = blocks[i];
 
                 if (block.isExecute()) {
-                    GetCodeRegions.ResultCodeRegion cr = new GetCodeRegions.ResultCodeRegion(block);
+                    GetCodeRegionsDuplicate.ResultCodeRegion cr = new GetCodeRegionsDuplicate.ResultCodeRegion(block);
                     codeRegions.add(cr);
                 }
             }
@@ -63,7 +63,7 @@ public class GetCodeRegions extends HeadlessScript {
 
         String toJson() {
             String cbString = codeRegions.stream()
-                    .map(GetCodeRegions.ResultCodeRegion::toJson)
+                    .map(GetCodeRegionsDuplicate.ResultCodeRegion::toJson)
                     .collect(Collectors.joining(", "));
             return String.format("[%s]", cbString);
         }

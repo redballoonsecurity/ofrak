@@ -1,6 +1,22 @@
+<style>
+  .hbox {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+  }
+
+  .toolbar {
+    max-width: 15%;
+  }
+</style>
+
 <script>
   import { selectedProject, settings, selected } from "../stores";
-  import Icon from "../Icon.svelte";
+  import Toolbar from "../Toolbar.svelte";
   import Button from "../utils/Button.svelte";
 
   export let args, selectedBinaryName, forceRefreshProject;
@@ -32,13 +48,21 @@
       return await r.json();
     });
   }
+
+  let toolbarButtons = [
+    {
+      text: "Delete Binary",
+      iconUrl: "/icons/trash.svg",
+      shortcut: "D",
+      onclick: () => {
+        deleteBinary;
+      },
+    },
+  ];
 </script>
 
-<div>
-  <Button
-    on:click="{(e) => {
-      e.stopPropagation();
-      deleteBinary();
-    }}"><Icon url="/icons/trash.svg" />Delete {args.name} from project.</Button
-  >
+<div class="hbox">
+  <div class="toolbar">
+    <Toolbar toolbarButtons="{toolbarButtons}" />
+  </div>
 </div>

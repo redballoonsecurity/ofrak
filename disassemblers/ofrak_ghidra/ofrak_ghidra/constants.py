@@ -6,6 +6,7 @@ conf = load_ghidra_config()
 
 # Paths
 GHIDRA_PATH = conf.ghidra_path
+GHIDRA_VERSION = conf.ghidra_version
 CORE_OFRAK_GHIDRA_SCRIPTS = os.path.join(os.path.dirname(__file__), "ghidra_scripts")
 GHIDRA_LOG_FILE = conf.ghidra_log_file
 GHIDRA_START_SERVER_SCRIPT = os.path.join(os.path.dirname(__file__), "run_ghidra_server.sh")

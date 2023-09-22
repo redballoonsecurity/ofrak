@@ -177,7 +177,7 @@ async def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: st
     await call_new_segment_instead(root_resource, new_segment)
 
     await root_resource.pack()
-    await root_resource.flush_to_disk(output_file_name)
+    await root_resource.flush_data_to_disk(output_file_name)
 
     assert os.path.exists(output_file_name)
     assert get_file_format(output_file_name) == BinFileType.ELF
