@@ -1,23 +1,4 @@
 <style>
-  button {
-    padding-top: 0.5em;
-    padding-bottom: 0.5em;
-    padding-left: 1em;
-    padding-right: 1em;
-  }
-
-  button:hover,
-  button:focus {
-    outline: none;
-    box-shadow: inset 1px 1px 0 var(--main-fg-color),
-      inset -1px -1px 0 var(--main-fg-color);
-  }
-
-  button:active {
-    box-shadow: inset 2px 2px 0 var(--main-fg-color),
-      inset -2px -2px 0 var(--main-fg-color);
-  }
-
   .buttonbar {
     position: sticky;
     top: 0;
@@ -28,21 +9,12 @@
     align-items: start;
     justify-content: end;
   }
-
-  .buttonbar button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.5em;
-    margin-left: 0.5em;
-    border: 0;
-    background: var(--main-bg-color);
-  }
 </style>
 
 <script>
   import hljs from "highlight.js";
   import python from "highlight.js/lib/languages/python";
+  import Button from "./utils/Button.svelte";
   import Script from "./utils/Script.svelte";
   import Icon from "./Icon.svelte";
 
@@ -61,7 +33,10 @@
 <link rel="stylesheet" href="./code.css" />
 
 <div class="buttonbar">
-  <button
+  <Button
+    --button-padding="0.5em 1em 0em 1em"
+    --button-margin="0 0.5em 0 0.5em"
+    --button-border="0"
     on:click="{async (e) => {
       const lines = $script.join('\n');
       if (lines.length === 0) {
@@ -92,8 +67,11 @@
     }}"
   >
     <Icon url="/icons/content_copy.svg" />
-  </button>
-  <button
+  </Button>
+  <Button
+    --button-padding="0.5em 1em 0em 1em"
+    --button-margin="0 0.5em 0 0"
+    --button-border="0"
     on:click="{async (e) => {
       const lines = $script.join('\n');
       if (lines.length === 0) {
@@ -110,9 +88,14 @@
     }}"
   >
     <Icon url="/icons/download.svg" />
-  </button>
-  <button on:click="{() => (bottomLeftPane = undefined)}">
+  </Button>
+  <Button
+    --button-padding="0.5em 1em 0em 1em"
+    --button-margin="0 0.5em 0 0"
+    --button-border="0"
+    on:click="{() => (bottomLeftPane = undefined)}"
+  >
     <Icon url="/icons/error.svg" />
-  </button>
+  </Button>
 </div>
 <Script script="{$script}" />

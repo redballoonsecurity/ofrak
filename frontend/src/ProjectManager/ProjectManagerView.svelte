@@ -65,6 +65,19 @@
     height: 1em;
     margin-bottom: 1em;
   }
+
+  .toolbar {
+    position: sticky;
+    top: 0;
+    left: 0;
+    padding-right: 1em;
+    min-width: 18ch;
+  }
+
+  .toolbar {
+    overflow: auto;
+    overflow-y: scroll;
+  }
 </style>
 
 <script>

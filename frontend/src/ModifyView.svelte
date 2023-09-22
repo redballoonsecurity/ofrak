@@ -1,23 +1,4 @@
 <style>
-  button {
-    padding-top: 0.5em;
-    padding-bottom: 0.5em;
-    padding-left: 1em;
-    padding-right: 1em;
-  }
-
-  button:hover,
-  button:focus {
-    outline: none;
-    box-shadow: inset 1px 1px 0 var(--main-fg-color),
-      inset -1px -1px 0 var(--main-fg-color);
-  }
-
-  button:active {
-    box-shadow: inset 2px 2px 0 var(--main-fg-color),
-      inset -2px -2px 0 var(--main-fg-color);
-  }
-
   .container {
     min-height: 100%;
     display: flex;
@@ -32,16 +13,17 @@
 <script>
   import BinaryModifyView from "./BinaryModifyView.svelte";
   import FindReplaceView from "./FindReplaceView.svelte";
+  import Button from "./utils/Button.svelte";
 
   export let modifierView;
 </script>
 
 <div class="container">
-  <button on:click="{() => (modifierView = FindReplaceView)}">
+  <Button on:click="{() => (modifierView = FindReplaceView)}">
     Modify String
-  </button>
-  <button on:click="{() => (modifierView = BinaryModifyView)}">
+  </Button>
+  <Button on:click="{() => (modifierView = BinaryModifyView)}">
     Modify Binary
-  </button>
-  <button on:click="{() => (modifierView = undefined)}">Cancel</button>
+  </Button>
+  <Button on:click="{() => (modifierView = undefined)}">Cancel</Button>
 </div>

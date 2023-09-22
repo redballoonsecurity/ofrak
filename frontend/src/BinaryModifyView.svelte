@@ -1,23 +1,4 @@
 <style>
-  button {
-    padding-top: 0.5em;
-    padding-bottom: 0.5em;
-    padding-left: 1em;
-    padding-right: 1em;
-  }
-
-  button:hover,
-  button:focus {
-    outline: none;
-    box-shadow: inset 1px 1px 0 var(--main-fg-color),
-      inset -1px -1px 0 var(--main-fg-color);
-  }
-
-  button:active {
-    box-shadow: inset 2px 2px 0 var(--main-fg-color),
-      inset -2px -2px 0 var(--main-fg-color);
-  }
-
   textarea {
     font-family: inherit;
     font-size: inherit;
@@ -97,6 +78,7 @@
 <script>
   import { buf2hex, chunkList, calculator, hexToByteArray } from "./helpers.js";
   import { selected, selectedResource as _selectedResource } from "./stores.js";
+  import Button from "./utils/Button.svelte";
   const selectedResource = $_selectedResource;
 
   export let modifierView, dataLenPromise, resourceNodeDataMap;
@@ -215,8 +197,8 @@
       </p>
     {/if}
     <div class="actions">
-      <button on:click="{modifyData}">Apply Edits</button>
-      <button on:click="{() => (modifierView = undefined)}">Cancel</button>
+      <Button on:click="{modifyData}">Apply Edits</Button>
+      <Button on:click="{() => (modifierView = undefined)}">Cancel</Button>
     </div>
   {:else}
     <div class="inputs">
@@ -249,8 +231,8 @@
       {/if}
     </div>
     <div class="actions">
-      <button on:click="{getRange}">Edit Range</button>
-      <button on:click="{() => (modifierView = undefined)}">Cancel</button>
+      <Button on:click="{getRange}">Edit Range</Button>
+      <Button on:click="{() => (modifierView = undefined)}">Cancel</Button>
     </div>
   {/if}
 </div>

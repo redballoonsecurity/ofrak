@@ -27,6 +27,8 @@
 <script>
   import Checkbox from "../Checkbox.svelte";
   import ExclusiveCheckbox from "../ExclusiveCheckbox.svelte";
+  import ProjectManagerFocusableLabel from "./ProjectManagerFocusableLabel.svelte";
+
   export let ownValue,
     inclusiveSelectionGroup = undefined,
     exclusiveSelectionValue = undefined,
@@ -93,12 +95,11 @@
       />
     </span>
   {/if}
-  <button
-    class="ownValue"
-    on:click="{() => {
-      focus = ownValue;
-    }}"
-  >
-    {ownValue}
-  </button>
+  <div class="ownValue">
+    <ProjectManagerFocusableLabel
+      bind:focus="{focus}"
+      newFocus="{ownValue}"
+      label="{ownValue}"
+    />
+  </div>
 </div>
