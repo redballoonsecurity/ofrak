@@ -1,25 +1,4 @@
 <style>
-  /* TODO refactor with CarveView: a large fraction of this style is the same as in CarveView
-  / (containers, labels, etc). Buttons, inputs etc could be refactored into their own components. */
-  button {
-    padding-top: 0.5em;
-    padding-bottom: 0.5em;
-    padding-left: 1em;
-    padding-right: 1em;
-  }
-
-  button:hover,
-  button:focus {
-    outline: none;
-    box-shadow: inset 1px 1px 0 var(--main-fg-color),
-      inset -1px -1px 0 var(--main-fg-color);
-  }
-
-  button:active {
-    box-shadow: inset 2px 2px 0 var(--main-fg-color),
-      inset -2px -2px 0 var(--main-fg-color);
-  }
-
   .container {
     min-height: 100%;
     display: flex;
@@ -81,6 +60,7 @@
 <script>
   import { calculator } from "./helpers.js";
   import { selected, selectedResource } from "./stores.js";
+  import Button from "./utils/Button.svelte";
 
   export let modifierView, resourceNodeDataMap, dataLenPromise;
   let comment, startInput, endInput, dataLength, errorMessage;
@@ -150,7 +130,7 @@
     {/if}
   </div>
   <div class="actions">
-    <button on:click="{addComment}">Add comment</button>
-    <button on:click="{() => (modifierView = undefined)}">Cancel</button>
+    <Button on:click="{addComment}">Add comment</Button>
+    <Button on:click="{() => (modifierView = undefined)}">Cancel</Button>
   </div>
 </div>

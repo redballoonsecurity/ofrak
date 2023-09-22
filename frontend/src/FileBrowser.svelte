@@ -1,22 +1,4 @@
 <style>
-  button {
-    padding-top: 0.5em;
-    padding-bottom: 0.5em;
-    padding-left: 1em;
-    padding-right: 1em;
-    margin-right: 2ch;
-  }
-
-  button:hover,
-  button:focus {
-    outline: none;
-    box-shadow: inset 1px 1px 0 currentColor, inset -1px -1px 0 currentColor;
-  }
-
-  button:active {
-    box-shadow: inset 2px 2px 0 currentColor, inset -2px -2px 0 currentColor;
-  }
-
   .filelabel {
     cursor: pointer;
     font-family: inherit;
@@ -52,6 +34,7 @@
 </style>
 
 <script>
+  import Button from "./utils/Button.svelte";
   export let files,
     input,
     multiple = false;
@@ -59,9 +42,16 @@
 </script>
 
 <div
-  on:dragover|preventDefault="{() => (dragging = true)}"
-  on:dragleave|preventDefault="{() => (dragging = false)}"
-  on:drop|preventDefault="{(e) => {
+  on:dragover="{(e) => {
+    e.preventDefault();
+    dragging = true;
+  }}"
+  on:dragleave="{(e) => {
+    e.preventDefault();
+    dragging = false;
+  }}"
+  on:drop="{(e) => {
+    e.preventDefault();
     files = e.dataTransfer.files;
     dragging = false;
   }}"
@@ -75,7 +65,7 @@
         <input type="file" bind:this="{input}" bind:files="{files}" />
       {/if}
       <span>
-        <button on:click="{() => input.click()}"> Browse... </button>
+        <Button on:click="{() => input.click()}">Browse...</Button>
         {#if files}
           {Array.from(files)
             .map((f) => f?.name)

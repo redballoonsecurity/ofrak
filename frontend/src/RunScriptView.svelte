@@ -1,5 +1,4 @@
 <style>
-  button,
   select,
   option {
     background-color: var(--main-bg-color);
@@ -14,18 +13,6 @@
     font-size: inherit;
     font-family: var(--font);
     box-shadow: none;
-  }
-
-  button:hover,
-  button:focus {
-    outline: none;
-    box-shadow: inset 1px 1px 0 var(--main-fg-color),
-      inset -1px -1px 0 var(--main-fg-color);
-  }
-
-  button:active {
-    box-shadow: inset 2px 2px 0 var(--main-fg-color),
-      inset -2px -2px 0 var(--main-fg-color);
   }
 
   .inputs > *:nth-child(1) {
@@ -93,6 +80,7 @@
   import LoadingText from "./LoadingText.svelte";
   import ComponentConfigNode from "./ComponentConfigNode.svelte";
   import Icon from "./Icon.svelte";
+  import Button from "./utils/Button.svelte";
 
   import hljs from "highlight.js";
   import python from "highlight.js/lib/languages/python";
@@ -181,7 +169,12 @@
   <div class="inputs">
     <div class="scriptchoice">
       {#if $selectedProject}
-        <select on:click|stopPropagation bind:value="{projectScript}">
+        <select
+          on:click="{(e) => {
+            e.stopPropagation();
+          }}"
+          bind:value="{projectScript}"
+        >
           <option value="{null}" selected disabled
             >Select script from Project</option
           >
@@ -250,7 +243,7 @@
     </p>
   {/await}
   <div class="actions">
-    <button on:click="{() => (runScriptPromise = runLoadedScript())}">
+    <Button on:click="{() => (runScriptPromise = runLoadedScript())}">
       {#await runScriptPromise}
         <Icon url="/icons/loading.svg" />
       {:then _}
@@ -259,8 +252,8 @@
         <Icon url="/icons/error.svg" />
       {/await}
       Run script
-    </button>
-    <button
+    </Button>
+    <Button
       on:click="{() => {
         modifierView = undefined;
         const orig_selected = $selected;
@@ -272,7 +265,7 @@
         resourceNodeDataMap[$selected].collapsed = false;
         resourceNodeDataMap[$selected].childrenPromise =
           $selectedResource?.get_children();
-      }}">Back</button
+      }}">Back</Button
     >
   </div>
 </div>
