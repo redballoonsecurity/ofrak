@@ -1,7 +1,6 @@
 import itertools
 import json
 import os
-import shutil
 import tempfile
 from ofrak.ofrak_context import OFRAKContext
 from ofrak.resource import Resource
