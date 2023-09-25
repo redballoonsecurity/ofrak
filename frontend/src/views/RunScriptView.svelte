@@ -78,7 +78,7 @@
 <script>
   import FileBrowser from "./FileBrowser.svelte";
   import LoadingText from "./LoadingText.svelte";
-  import ComponentConfigNode from "./ComponentConfigNode.svelte";
+  import SerializerInputForm from "./SerializerInputForm.svelte";
   import Icon from "./Icon.svelte";
   import Button from "./utils/Button.svelte";
 
@@ -194,7 +194,7 @@
       {#if ofrakConfig.length != 0}
         {#each ofrakConfig["fields"] as field, i}
           {#if field.name != "code"}
-            <ComponentConfigNode
+            <SerializerInputForm
               node="{field}"
               bind:element="{scriptParams[field.name]}"
             />

@@ -76,8 +76,8 @@
 </style>
 
 <script>
-  import { buf2hex, chunkList, calculator, hexToByteArray } from "./helpers.js";
-  import { selected, selectedResource as _selectedResource } from "./stores.js";
+  import { buf2hex, chunkList, calculator, hexToByteArray } from "../helpers.js";
+  import { selected, selectedResource as _selectedResource } from "../stores.js";
   import Button from "./utils/Button.svelte";
   const selectedResource = $_selectedResource;
 

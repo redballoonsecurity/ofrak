@@ -31,7 +31,7 @@
 </style>
 
 <script>
-  import Breadcrumb from "./Breadcrumb.svelte";
+  import Breadcrumb from "./utils/Breadcrumb.svelte";
   import LoadingAnimation from "./LoadingAnimation.svelte";
 
   import { selectedResource } from "./stores";

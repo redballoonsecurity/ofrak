@@ -43,7 +43,7 @@
 <script>
   import LoadingText from "./LoadingText.svelte";
 
-  import { selected, selectedResource } from "./stores.js";
+  import { selected, selectedResource } from "../stores.js";
 
   let ancestorsPromise;
   $: if ($selectedResource !== undefined) {

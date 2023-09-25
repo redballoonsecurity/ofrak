@@ -106,7 +106,7 @@
   import { splitAndCapitalize } from "./helpers.js";
   import { onMount } from "svelte";
 
-  import ComponentConfigNode from "./ComponentConfigNode.svelte";
+  import SerializerInputForm from "./SerializerInputForm.svelte";
   import LoadingText from "./LoadingText.svelte";
   import Checkbox from "./Checkbox.svelte";
   import Button from "./utils/Button.svelte";
@@ -292,7 +292,7 @@
         {:then ofrakConfig}
           {#if ofrakConfig.length != 0}
             <p>Configure {splitAndCapitalize(selectedComponent)}:</p>
-            <ComponentConfigNode node="{ofrakConfig}" bind:element="{config}" />
+            <SerializerInputForm node="{ofrakConfig}" bind:element="{config}" />
           {/if}
         {:catch}
           <p>Failed to get config for {selectedComponent}!</p>

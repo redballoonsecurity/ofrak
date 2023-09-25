@@ -62,8 +62,8 @@
 </style>
 
 <script>
-  import { calculator } from "./helpers.js";
-  import { selected, selectedResource } from "./stores.js";
+  import { calculator } from "../helpers.js";
+  import { selected, selectedResource } from "../stores.js";
   import Button from "./utils/Button.svelte";
 
   export let modifierView, resourceNodeDataMap, dataLenPromise;
