@@ -22,6 +22,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Fixed
 - Save resources affected by data patches and dependency updates on a resource being saved ([#355](https://github.com/redballoonsecurity/ofrak/pull/355))
 
+### Security
+- Updated GitPython to version 3.1.35 as per CVE-2023-40590 and CVE-2023-41040
+
 ## [3.1.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v3.0.0...ofrak-v3.1.0)
 ### Added
 - Add `ElfLoadAlignmentModifier`, which reclaims unused alignment bytes between PT_LOAD segments in ELFs as free space. ([#302](https://github.com/redballoonsecurity/ofrak/pull/302))
