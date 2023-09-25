@@ -1220,6 +1220,7 @@ async def test_get_project_by_id(ofrak_client: TestClient, test_project_dir):
         "/create_new_project",
         json={"name": "test"},
     )
+    assert resp.status == 200
     resp_body = await resp.json()
     id = resp_body["id"]
 
@@ -1241,6 +1242,7 @@ async def test_get_all_projects(ofrak_client: TestClient, test_project_dir):
         "/create_new_project",
         json={"name": "test1"},
     )
+    assert resp.status == 200
     resp_body = await resp.json()
     id1 = resp_body["id"]
 
@@ -1248,6 +1250,7 @@ async def test_get_all_projects(ofrak_client: TestClient, test_project_dir):
         "/create_new_project",
         json={"name": "test2"},
     )
+    assert resp.status == 200
     resp_body = await resp.json()
     id2 = resp_body["id"]
 
@@ -1266,6 +1269,7 @@ async def test_reset_project(ofrak_client: TestClient, test_project_dir):
         "/create_new_project",
         json={"name": "test"},
     )
+    assert resp.status == 200
     resp_body = await resp.json()
     id = resp_body["id"]
     resp = await ofrak_client.post(
@@ -1280,6 +1284,7 @@ async def test_add_binary_to_project(ofrak_client: TestClient, test_project_dir,
         "/create_new_project",
         json={"name": "test"},
     )
+    assert resp.status == 200
     resp_body = await resp.json()
     id = resp_body["id"]
     resp = await ofrak_client.post(
@@ -1294,6 +1299,7 @@ async def test_add_script_to_project(ofrak_client: TestClient, test_project_dir)
         "/create_new_project",
         json={"name": "test"},
     )
+    assert resp.status == 200
     resp_body = await resp.json()
     id = resp_body["id"]
     resp = await ofrak_client.post(
@@ -1304,6 +1310,7 @@ async def test_add_script_to_project(ofrak_client: TestClient, test_project_dir)
 
 async def test_get_projects_path(ofrak_client: TestClient, test_project_dir):
     resp = await ofrak_client.get("/get_projects_path")
+    assert resp.status == 200
     resp_body = await resp.json()
     assert resp_body == test_project_dir
 
@@ -1314,21 +1321,28 @@ async def test_save_project_data(ofrak_client: TestClient, test_project_dir, hel
         "/create_new_project",
         json={"name": "test"},
     )
+    assert resp.status == 200
     resp_body = await resp.json()
     id = resp_body["id"]
     resp = await ofrak_client.post(
         "/add_script_to_project", params={"id": id, "name": "unpack.py"}, data=script
     )
+    assert resp.status == 200
     resp = await ofrak_client.post(
         "/add_binary_to_project", params={"id": id, "name": "hello_world_elf"}, data=hello_world_elf
     )
-    resp = await ofrak_client.post("/save_project_data", json={"sesion_id": id})
-    resp = await ofrak_client.post("/reset_project", json={"sesion_id": id})
+    assert resp.status == 200
+    resp = await ofrak_client.post("/save_project_data", json={"id": id})
+    assert resp.status == 200
+    resp = await ofrak_client.post("/reset_project", json={"id": id})
+    assert resp.status == 200
     resp = await ofrak_client.get("/get_all_projects")
+    assert resp.status == 200
     resp_body = await resp.json()
     resp = await ofrak_client.post(
         "/add_binary_to_project", params={"id": id, "name": "hello_world_elf"}, data=hello_world_elf
     )
+    assert resp.status == 200
     assert len(resp_body) == 1
     assert resp_body[0]["scripts"] == [{"name": "unpack.py"}]
     assert resp_body[0]["binaries"] == {
@@ -1343,17 +1357,23 @@ async def test_delete_from_project(ofrak_client: TestClient, test_project_dir, h
         "/create_new_project",
         json={"name": "test"},
     )
+    assert resp.status == 200
     resp_body = await resp.json()
     id = resp_body["id"]
     resp = await ofrak_client.post(
         "/add_script_to_project", params={"id": id, "name": "unpack.py"}, data=script
     )
+    assert resp.status == 200
     resp = await ofrak_client.post(
         "/add_binary_to_project", params={"id": id, "name": "hello_world_elf"}, data=hello_world_elf
     )
-    resp = await ofrak_client.post("/save_project_data", json={"sesion_id": id})
-    resp = await ofrak_client.post("/reset_project", json={"sesion_id": id})
+    assert resp.status == 200
+    resp = await ofrak_client.post("/save_project_data", json={"id": id})
+    assert resp.status == 200
+    resp = await ofrak_client.post("/reset_project", json={"id": id})
+    assert resp.status == 200
     resp = await ofrak_client.get("/get_all_projects")
+    assert resp.status == 200
     resp_body = await resp.json()
     assert len(resp_body) == 1
     assert resp_body[0]["scripts"] == [{"name": "unpack.py"}]
@@ -1364,12 +1384,14 @@ async def test_delete_from_project(ofrak_client: TestClient, test_project_dir, h
         "/delete_script_from_project",
         json={"id": id, "script": "unpack.py"},
     )
+    assert resp.status == 200
     resp = await ofrak_client.post(
         "/delete_binary_from_project",
         json={"id": id, "binary": "hello_world_elf"},
     )
-    resp = await ofrak_client.post("/save_project_data", json={"session_id": id})
-    resp = await ofrak_client.post("/reset_project", json={"session_id": id})
+    assert resp.status == 200
+    resp = await ofrak_client.post("/save_project_data", json={"id": id})
+    resp = await ofrak_client.post("/reset_project", json={"id": id})
     resp = await ofrak_client.get("/get_all_projects")
     resp_body = await resp.json()
     assert resp_body[0]["scripts"] == []
@@ -1382,11 +1404,13 @@ async def test_get_project_script(ofrak_client: TestClient, test_project_dir):
         "/create_new_project",
         json={"name": "test"},
     )
+    assert resp.status == 200
     resp_body = await resp.json()
     id = resp_body["id"]
     resp = await ofrak_client.post(
         "/add_script_to_project", params={"id": id, "name": "unpack.py"}, data=script
     )
+    assert resp.status == 200
     resp = await ofrak_client.get(
         "/get_project_script",
         params={"project": id, "script": "unpack.py"},
@@ -1399,9 +1423,11 @@ async def test_get_project_script(ofrak_client: TestClient, test_project_dir):
 async def test_git_clone_project(ofrak_client: TestClient, test_project_dir):
     git_url = "https://github.com/redballoonsecurity/ofrak-project-example.git"
     resp = await ofrak_client.post("/clone_project_from_git", json={"url": git_url})
+    assert resp.status == 200
     resp_body = await resp.json(content_type=None)
     id = resp_body["id"]
     resp = await ofrak_client.get("/get_project_by_id", params={"id": id})
+    assert resp.status == 200
     resp_body = await resp.json(content_type=None)
     assert resp_body["scripts"] == [
         {"name": "unpack-and-comment.py"},
@@ -1419,12 +1445,14 @@ async def test_git_clone_project(ofrak_client: TestClient, test_project_dir):
 async def test_open_project(ofrak_client: TestClient, test_project_dir):
     git_url = "https://github.com/redballoonsecurity/ofrak-project-example.git"
     resp = await ofrak_client.post("/clone_project_from_git", json={"url": git_url})
+    assert resp.status == 200
     resp_body = await resp.json(content_type=None)
     id = resp_body["id"]
     resp = await ofrak_client.post(
         "/open_project",
         json={"id": id, "binary": "example_program", "script": "unpack-and-comment.py"},
     )
+    assert resp.status == 200
     resp_body = await resp.json(content_type=None)
     assert resp_body["id"] == "00000001"
 
@@ -1432,12 +1460,14 @@ async def test_open_project(ofrak_client: TestClient, test_project_dir):
 async def test_get_project_by_resource_id(ofrak_client: TestClient, test_project_dir):
     git_url = "https://github.com/redballoonsecurity/ofrak-project-example.git"
     resp = await ofrak_client.post("/clone_project_from_git", json={"url": git_url})
+    assert resp.status == 200
     resp_body = await resp.json()
     id = resp_body["id"]
     resp = await ofrak_client.post(
         "/open_project",
         json={"id": id, "binary": "example_program", "script": "unpack-and-comment.py"},
     )
+    assert resp.status == 200
     resp_body = await resp.json()
     resource_id = resp_body["id"]
     project_resp = await ofrak_client.get(f"/{resource_id}/get_project_by_resource_id")
