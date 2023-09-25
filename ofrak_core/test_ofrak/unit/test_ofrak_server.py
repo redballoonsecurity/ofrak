@@ -9,7 +9,6 @@ import pytest
 import re
 import sys
 
-from tempfile import TemporaryDirectory
 from multiprocessing import Process
 from typing import List
 
