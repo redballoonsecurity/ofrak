@@ -30,11 +30,13 @@ from test_ofrak.components.hello_world_elf import hello_elf
 def hello_world_elf() -> bytes:
     return hello_elf()
 
+
 @pytest.fixture()
 async def test_project_dir(ofrak_client: TestClient):
     with tempfile.TemporaryDirectory() as tempdir:
         await ofrak_client.post("/set_projects_path", json={"path": tempdir})
         yield tempdir
+
 
 @pytest.fixture()
 async def large_test_file(ofrak_context: OFRAKContext) -> Resource:
@@ -1213,6 +1215,7 @@ async def test_create_new_project(ofrak_client: TestClient, test_project_dir):
     )
     assert resp.status == 200
 
+
 async def test_get_project_by_id(ofrak_client: TestClient, test_project_dir):
     resp = await ofrak_client.post(
         "/create_new_project",
@@ -1232,6 +1235,7 @@ async def test_get_project_by_id(ofrak_client: TestClient, test_project_dir):
         "scripts",
         "binaries",
     ]
+
 
 async def test_get_all_projects(ofrak_client: TestClient, test_project_dir):
     resp = await ofrak_client.post(
