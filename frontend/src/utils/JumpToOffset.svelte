@@ -15,9 +15,9 @@
 </style>
 
 <script>
-  import { calculator } from "./helpers";
+  import { calculator } from "../helpers";
   import { onMount, tick } from "svelte";
-  import { shortcuts } from "./keyboard";
+  import { shortcuts } from "../keyboard";
 
   export let dataLenPromise, scrollY;
   let startOffset,

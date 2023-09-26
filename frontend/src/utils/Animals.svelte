@@ -22,7 +22,7 @@
 </style>
 
 <script>
-  import { animals } from "./animals.js";
+  import { animals } from "../animals.js";
 
   export let x,
     selectedAnimal,

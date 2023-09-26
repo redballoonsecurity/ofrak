@@ -14,11 +14,11 @@
 <script>
   import hljs from "highlight.js";
   import python from "highlight.js/lib/languages/python";
-  import Button from "./utils/Button.svelte";
-  import Script from "./utils/Script.svelte";
-  import Icon from "./Icon.svelte";
+  import Button from "../utils/Button.svelte";
+  import Script from "../utils/Script.svelte";
+  import Icon from "../utils/Icon.svelte";
 
-  import { script, selectedResource } from "./stores.js";
+  import { script, selectedResource } from "../stores.js";
   import { onMount } from "svelte";
 
   hljs.registerLanguage("python", python);

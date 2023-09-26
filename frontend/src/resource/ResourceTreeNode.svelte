@@ -107,13 +107,13 @@
 </style>
 
 <script>
-  import Icon from "./utils/Icon.svelte";
-  import Hoverable from "./utils/Hoverable.svelte";
-  import LoadingText from "./utils/LoadingText.svelte";
+  import Icon from "../utils/Icon.svelte";
+  import Hoverable from "../utils/Hoverable.svelte";
+  import LoadingText from "../utils/LoadingText.svelte";
 
   import { onDestroy } from "svelte";
-  import { selected } from "./stores.js";
-  import { shortcuts } from "./keyboard";
+  import { selected } from "../stores.js";
+  import { shortcuts } from "../keyboard";
 
   export let rootResource,
     resourceNodeDataMap,

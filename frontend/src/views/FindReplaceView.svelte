@@ -68,9 +68,9 @@
 </style>
 
 <script>
-  import Checkbox from "./Checkbox.svelte";
-  import { selected, selectedResource } from "./stores.js";
-  import Button from "./utils/Button.svelte";
+  import Checkbox from "../utils/Checkbox.svelte";
+  import { selected, selectedResource } from "../stores.js";
+  import Button from "../utils/Button.svelte";
 
   export let modifierView, resourceNodeDataMap;
   let toFind,

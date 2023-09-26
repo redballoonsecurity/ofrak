@@ -9,9 +9,9 @@
 </style>
 
 <script>
-  import StructuredList from "./StructuredList.svelte";
+  import StructuredList from "../utils/StructuredList.svelte";
 
-  import { cleanOfrakType } from "./helpers.js";
+  import { cleanOfrakType } from "../helpers.js";
 
   export let resource;
   let attributes;

@@ -25,10 +25,10 @@
 </style>
 
 <script>
-  import LoadingTextVertical from "./LoadingTextVertical.svelte";
+  import LoadingTextVertical from "../utils/LoadingTextVertical.svelte";
 
-  import { hexToByteArray } from "./helpers.js";
-  import { selectedResource, settings } from "./stores.js";
+  import { hexToByteArray } from "../helpers.js";
+  import { selectedResource, settings } from "../stores.js";
 
   import { onMount } from "svelte";
 

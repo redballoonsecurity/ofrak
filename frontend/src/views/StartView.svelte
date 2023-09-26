@@ -131,19 +131,19 @@
 </style>
 
 <script>
-  import Animals from "./Animals.svelte";
-  import LoadingAnimation from "./LoadingAnimation.svelte";
-  import LoadingText from "./LoadingText.svelte";
-  import TextDivider from "./TextDivider.svelte";
-  import Button from "./utils/Button.svelte";
-  import Checkbox from "./Checkbox.svelte";
+  import Animals from "../utils/Animals.svelte";
+  import LoadingAnimation from "../utils/LoadingAnimation.svelte";
+  import LoadingText from "../utils/LoadingText.svelte";
+  import TextDivider from "../utils/TextDivider.svelte";
+  import Button from "../utils/Button.svelte";
+  import Checkbox from "../utils/Checkbox.svelte";
 
-  import { animals } from "./animals.js";
-  import { selected, settings, selectedProject } from "./stores.js";
-  import { remote_model_to_resource } from "./ofrak/remote_resource";
+  import { animals } from "../animals.js";
+  import { selected, settings, selectedProject } from "../stores.js";
+  import { remote_model_to_resource } from "../ofrak/remote_resource";
+  import { numBytesToQuantity, saveSettings } from "../helpers";
 
   import { onMount } from "svelte";
-  import { numBytesToQuantity, saveSettings } from "./helpers";
 
   export let rootResourceLoadPromise,
     showRootResource,

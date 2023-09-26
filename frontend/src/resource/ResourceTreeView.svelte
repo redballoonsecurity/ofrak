@@ -46,7 +46,7 @@
 </style>
 
 <script>
-  import ResourceSearchBar from "./ResourceSearchBar.svelte";
+  import SearchBar from "../utils/SearchBar.svelte";
   import ResourceTreeNode from "./ResourceTreeNode.svelte";
   import ResourceTreeToolbar from "./ResourceTreeToolbar.svelte";
 
@@ -85,7 +85,7 @@
   </div>
   <div class="resources">
     <div class="searchbar">
-      <ResourceSearchBar
+      <SearchBar
         search="{searchTreeForData}"
         liveUpdate="{true}"
         showResultsWidgets="{false}"

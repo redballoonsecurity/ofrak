@@ -1,7 +1,7 @@
 <script>
   import { onMount } from "svelte";
 
-  import { shortcuts } from "./keyboard.js";
+  import { shortcuts } from "../keyboard.js";
 
   let animationLoop,
     gamepad,

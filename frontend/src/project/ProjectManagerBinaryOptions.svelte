@@ -16,8 +16,7 @@
 
 <script>
   import { selectedProject, settings, selected } from "../stores";
-  import Toolbar from "../Toolbar.svelte";
-  import Button from "../utils/Button.svelte";
+  import Toolbar from "../utils/Toolbar.svelte";
 
   export let args, selectedBinaryName, forceRefreshProject;
 

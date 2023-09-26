@@ -21,11 +21,10 @@
 </style>
 
 <script>
-  import { onMount } from "svelte";
   import { selectedProject, settings, selected } from "../stores";
   import Script from "../utils/Script.svelte";
-  import Toolbar from "../Toolbar.svelte";
-  import LoadingAnimation from "../LoadingAnimation.svelte";
+  import Toolbar from "../utils/Toolbar.svelte";
+  import LoadingAnimation from "../utils/LoadingAnimation.svelte";
 
   export let args;
   let showScriptPromise = new Promise(() => {});

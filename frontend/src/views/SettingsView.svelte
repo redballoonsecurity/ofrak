@@ -93,12 +93,12 @@
 </script>
 
 <script>
-  import { loadSettings, settings } from "./stores.js";
+  import { loadSettings, settings } from "../stores.js";
 
-  import Icon from "./Icon.svelte";
-  import Checkbox from "./Checkbox.svelte";
-  import { saveSettings } from "./helpers";
-  import Button from "./utils/Button.svelte";
+  import Icon from "../utils/Icon.svelte";
+  import Checkbox from "../utils/Checkbox.svelte";
+  import { saveSettings } from "../helpers";
+  import Button from "../utils/Button.svelte";
 
   export let modifierView;
   let errorMessage, loadingDark, loadingLight, fileInput, browsedFiles;

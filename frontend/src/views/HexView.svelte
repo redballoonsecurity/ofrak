@@ -39,12 +39,12 @@
 </style>
 
 <script>
-  import Breadcrumb from "./Breadcrumb.svelte";
-  import LoadingText from "./LoadingText.svelte";
-  import ResourceSearchBar from "./ResourceSearchBar.svelte";
+  import Breadcrumb from "../utils/Breadcrumb.svelte";
+  import LoadingText from "../utils/LoadingText.svelte";
+  import SearchBar from "../utils/SearchBar.svelte";
 
-  import { chunkList, buf2hex, hexToChar } from "./helpers.js";
-  import { selectedResource, selected, settings } from "./stores.js";
+  import { chunkList, buf2hex, hexToChar } from "../helpers.js";
+  import { selectedResource, selected, settings } from "../stores.js";
 
   export let dataLenPromise, scrollY, resourceNodeDataMap, resources;
   let childRangesPromise = Promise.resolve(undefined);
@@ -306,7 +306,7 @@
         <div class="breadcrumb">
           <Breadcrumb />
         </div>
-        <ResourceSearchBar
+        <SearchBar
           search="{searchHex}"
           liveUpdate="{false}"
           showResultsWidgets="{true}"

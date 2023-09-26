@@ -1,21 +1,21 @@
 <script>
-  import CarveView from "./CarveView.svelte";
-  import CommentView from "./CommentView.svelte";
-  import ComponentsView from "./ComponentsView.svelte";
-  import ModifyView from "./ModifyView.svelte";
-  import ScriptView from "./ScriptView.svelte";
-  import SettingsView from "./SettingsView.svelte";
-  import Toolbar from "./Toolbar.svelte";
+  import CarveView from "../views/CarveView.svelte";
+  import CommentView from "../views/CommentView.svelte";
+  import ComponentsView from "../views/ComponentsView.svelte";
+  import ModifyView from "../views/ModifyView.svelte";
+  import ScriptView from "../views/ScriptView.svelte";
+  import SettingsView from "../views/SettingsView.svelte";
+  import SearchView from "../views/SearchView.svelte";
+  import AddTagView from "../views/AddTagView.svelte";
+  import RunScriptView from "../views/RunScriptView.svelte";
+  import Toolbar from "../utils/Toolbar.svelte";
 
   import {
     selectedResource,
     selected,
     settings,
     selectedProject,
-  } from "./stores.js";
-  import SearchView from "./SearchView.svelte";
-  import AddTagView from "./AddTagView.svelte";
-  import RunScriptView from "./RunScriptView.svelte";
+  } from "../stores.js";
 
   export let resourceNodeDataMap,
     modifierView,

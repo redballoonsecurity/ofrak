@@ -102,14 +102,14 @@
 </style>
 
 <script>
-  import { selected, selectedResource } from "./stores.js";
-  import { splitAndCapitalize } from "./helpers.js";
+  import { selected, selectedResource } from "../stores.js";
+  import { splitAndCapitalize } from "../helpers.js";
   import { onMount } from "svelte";
 
-  import SerializerInputForm from "./SerializerInputForm.svelte";
-  import LoadingText from "./LoadingText.svelte";
-  import Checkbox from "./Checkbox.svelte";
-  import Button from "./utils/Button.svelte";
+  import SerializerInputForm from "../utils/SerializerInputForm.svelte";
+  import LoadingText from "../utils/LoadingText.svelte";
+  import Checkbox from "../utils/Checkbox.svelte";
+  import Button from "../utils/Button.svelte";
 
   export let modifierView, resourceNodeDataMap;
   let errorMessage,

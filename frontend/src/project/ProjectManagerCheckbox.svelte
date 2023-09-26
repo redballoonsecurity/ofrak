@@ -25,8 +25,8 @@
 </style>
 
 <script>
-  import Checkbox from "../Checkbox.svelte";
-  import ExclusiveCheckbox from "../ExclusiveCheckbox.svelte";
+  import Checkbox from "../utils/Checkbox.svelte";
+  import ExclusiveCheckbox from "../utils/ExclusiveCheckbox.svelte";
   import ProjectManagerFocusableLabel from "./ProjectManagerFocusableLabel.svelte";
 
   export let ownValue,

@@ -34,7 +34,7 @@
 </style>
 
 <script>
-  import Button from "./utils/Button.svelte";
+  import Button from "./Button.svelte";
   export let files,
     input,
     multiple = false;

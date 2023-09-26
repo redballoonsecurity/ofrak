@@ -76,11 +76,11 @@
 </style>
 
 <script>
-  import FileBrowser from "./FileBrowser.svelte";
-  import LoadingText from "./LoadingText.svelte";
-  import SerializerInputForm from "./SerializerInputForm.svelte";
-  import Icon from "./Icon.svelte";
-  import Button from "./utils/Button.svelte";
+  import FileBrowser from "../utils/FileBrowser.svelte";
+  import LoadingText from "../utils/LoadingText.svelte";
+  import SerializerInputForm from "../utils/SerializerInputForm.svelte";
+  import Icon from "../utils/Icon.svelte";
+  import Button from "../utils/Button.svelte";
 
   import hljs from "highlight.js";
   import python from "highlight.js/lib/languages/python";
@@ -90,7 +90,7 @@
     selectedResource,
     selectedProject,
     settings,
-  } from "./stores";
+  } from "../stores";
   import { onMount } from "svelte";
 
   hljs.registerLanguage("python", python);

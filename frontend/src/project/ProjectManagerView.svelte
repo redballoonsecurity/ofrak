@@ -81,8 +81,8 @@
 </style>
 
 <script>
-  import Pane from "../Pane.svelte";
-  import Split from "../Split.svelte";
+  import Pane from "../utils/Pane.svelte";
+  import Split from "../utils/Split.svelte";
   import ProjectManagerFocusableLabel from "./ProjectManagerFocusableLabel.svelte";
   import ProjectManagerOptions from "./ProjectManagerOptions.svelte";
   import { selectedProject, settings, selected } from "../stores";

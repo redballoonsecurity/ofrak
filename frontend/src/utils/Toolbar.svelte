@@ -10,8 +10,8 @@
 
 <script>
   import Icon from "./Icon.svelte";
-  import Button from "./utils/Button.svelte";
-  import { shortcuts } from "./keyboard.js";
+  import Button from "./Button.svelte";
+  import { shortcuts } from "../keyboard.js";
 
   export let toolbarButtons;
 

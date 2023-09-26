@@ -68,11 +68,11 @@
 </style>
 
 <script>
-  import { selectedResource } from "./stores.js";
-  import { calculator } from "./helpers";
-  import ResourceTreeNode from "./ResourceTreeNode.svelte";
-  import Checkbox from "./Checkbox.svelte";
-  import Button from "./utils/Button.svelte";
+  import { selectedResource } from "../stores.js";
+  import { calculator } from "../helpers";
+  import ResourceTreeNode from "../resource/ResourceTreeNode.svelte";
+  import Checkbox from "../utils/Checkbox.svelte";
+  import Button from "../utils/Button.svelte";
 
   export let modifierView, resourceNodeDataMap;
   let searchInput,

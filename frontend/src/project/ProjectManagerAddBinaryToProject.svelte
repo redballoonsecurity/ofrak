@@ -7,8 +7,8 @@
 </style>
 
 <script>
-  import FileBrowser from "../FileBrowser.svelte";
-  import Icon from "../Icon.svelte";
+  import FileBrowser from "../utils/FileBrowser.svelte";
+  import Icon from "../utils/Icon.svelte";
   import { selectedProject, settings } from "../stores";
   import Button from "../utils/Button.svelte";
 

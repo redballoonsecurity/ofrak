@@ -68,11 +68,11 @@
 </style>
 
 <script>
-  import { selected, selectedResource, settings } from "./stores.js";
-  import Button from "./utils/Button.svelte";
+  import { selected, selectedResource, settings } from "../stores.js";
+  import Button from "../utils/Button.svelte";
   import { onMount } from "svelte";
-  import LoadingText from "./LoadingText.svelte";
-  import { cleanOfrakType } from "./helpers";
+  import LoadingText from "../utils/LoadingText.svelte";
+  import { cleanOfrakType } from "../helpers";
 
   export let modifierView, resourceNodeDataMap;
   let errorMessage,

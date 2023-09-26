@@ -31,12 +31,12 @@
 </style>
 
 <script>
-  import Breadcrumb from "./Breadcrumb.svelte";
-  import LoadingAnimation from "./LoadingAnimation.svelte";
-  import LoadingText from "./LoadingText.svelte";
+  import Breadcrumb from "../utils/Breadcrumb.svelte";
+  import LoadingAnimation from "../utils/LoadingAnimation.svelte";
+  import LoadingText from "../utils/LoadingText.svelte";
 
-  import { chunkList, buf2hex } from "./helpers.js";
-  import { selectedResource } from "./stores.js";
+  import { chunkList, buf2hex } from "../helpers.js";
+  import { selectedResource } from "../stores.js";
 
   let blocksPromise = Promise.resolve([]),
     dataWordsPromise = Promise.resolve([]);

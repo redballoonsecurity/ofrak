@@ -31,10 +31,10 @@
 </style>
 
 <script>
-  import Breadcrumb from "./utils/Breadcrumb.svelte";
-  import LoadingAnimation from "./LoadingAnimation.svelte";
+  import Breadcrumb from "../utils/Breadcrumb.svelte";
+  import LoadingAnimation from "../utils/LoadingAnimation.svelte";
 
-  import { selectedResource } from "./stores";
+  import { selectedResource } from "../stores";
 
   $: dataPromise = $selectedResource
     ? $selectedResource.get_data()
