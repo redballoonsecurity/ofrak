@@ -1,7 +1,7 @@
 import itertools
 import json
 import os
-import tempfile
+from pathlib import Path, PosixPath
 from ofrak.ofrak_context import OFRAKContext
 from ofrak.resource import Resource
 import pytest
@@ -30,18 +30,18 @@ def hello_world_elf() -> bytes:
 
 
 @pytest.fixture()
-async def test_project_dir(ofrak_client: TestClient):
-    with tempfile.TemporaryDirectory() as tempdir:
-        await ofrak_client.post("/set_projects_path", json={"path": tempdir})
-        yield tempdir
+async def test_project_dir(ofrak_client: TestClient, tmpdir):
+    test_project_dir = Path(tmpdir).resolve().as_posix()
+    await ofrak_client.post("/set_projects_path", json={"path": test_project_dir})
+    yield test_project_dir
 
 
 @pytest.fixture()
-async def large_test_file(ofrak_context: OFRAKContext) -> Resource:
-    with tempfile.NamedTemporaryFile() as temp:
-        for i in range(256):
-            temp.write(int.to_bytes(i, 1, "big") * 1024 * 1024)
-        yield await ofrak_context.create_root_resource_from_file(temp.name)
+async def large_test_file(ofrak_context: OFRAKContext, tmp_path: PosixPath) -> Resource:
+    large_file = tmp_path / "large_file.txt"
+    for i in range(256):
+        large_file.write_bytes(int.to_bytes(i, 1, "big") * 1024 * 1024)
+    yield await ofrak_context.create_root_resource_from_file(large_file.resolve().as_posix())
 
 
 @pytest.fixture(scope="session")
@@ -1287,7 +1287,9 @@ async def test_add_binary_to_project(ofrak_client: TestClient, test_project_dir,
     resp_body = await resp.json()
     id = resp_body["id"]
     resp = await ofrak_client.post(
-        "/add_binary_to_project", params={"id": id, "name": "hello_world_elf"}, data=hello_world_elf
+        "/add_binary_to_project",
+        params={"id": id, "name": "hello_world_elf"},
+        data=hello_world_elf,
     )
     assert resp.status == 200
 
@@ -1328,10 +1330,15 @@ async def test_save_project_data(ofrak_client: TestClient, test_project_dir, hel
     )
     assert resp.status == 200
     resp = await ofrak_client.post(
-        "/add_binary_to_project", params={"id": id, "name": "hello_world_elf"}, data=hello_world_elf
+        "/add_binary_to_project",
+        params={"id": id, "name": "hello_world_elf"},
+        data=hello_world_elf,
     )
     assert resp.status == 200
-    resp = await ofrak_client.post("/save_project_data", json={"id": id})
+    resp = await ofrak_client.get("/get_project_by_id", params={"id": id})
+    assert resp.status == 200
+    project = await resp.json()
+    resp = await ofrak_client.post("/save_project_data", json=project)
     assert resp.status == 200
     resp = await ofrak_client.post("/reset_project", json={"id": id})
     assert resp.status == 200
@@ -1339,7 +1346,9 @@ async def test_save_project_data(ofrak_client: TestClient, test_project_dir, hel
     assert resp.status == 200
     resp_body = await resp.json()
     resp = await ofrak_client.post(
-        "/add_binary_to_project", params={"id": id, "name": "hello_world_elf"}, data=hello_world_elf
+        "/add_binary_to_project",
+        params={"id": id, "name": "hello_world_elf"},
+        data=hello_world_elf,
     )
     assert resp.status == 200
     assert len(resp_body) == 1
@@ -1364,10 +1373,15 @@ async def test_delete_from_project(ofrak_client: TestClient, test_project_dir, h
     )
     assert resp.status == 200
     resp = await ofrak_client.post(
-        "/add_binary_to_project", params={"id": id, "name": "hello_world_elf"}, data=hello_world_elf
+        "/add_binary_to_project",
+        params={"id": id, "name": "hello_world_elf"},
+        data=hello_world_elf,
     )
     assert resp.status == 200
-    resp = await ofrak_client.post("/save_project_data", json={"id": id})
+    resp = await ofrak_client.get("/get_project_by_id", params={"id": id})
+    assert resp.status == 200
+    project = await resp.json()
+    resp = await ofrak_client.post("/save_project_data", json=project)
     assert resp.status == 200
     resp = await ofrak_client.post("/reset_project", json={"id": id})
     assert resp.status == 200
@@ -1389,7 +1403,10 @@ async def test_delete_from_project(ofrak_client: TestClient, test_project_dir, h
         json={"id": id, "binary": "hello_world_elf"},
     )
     assert resp.status == 200
-    resp = await ofrak_client.post("/save_project_data", json={"id": id})
+    resp = await ofrak_client.get("/get_project_by_id", params={"id": id})
+    assert resp.status == 200
+    project = await resp.json()
+    resp = await ofrak_client.post("/save_project_data", json=project)
     resp = await ofrak_client.post("/reset_project", json={"id": id})
     resp = await ofrak_client.get("/get_all_projects")
     resp_body = await resp.json()

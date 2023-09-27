@@ -1080,7 +1080,7 @@ class AiohttpOFRAKServer:
 
     @exceptions_to_http(SerializedError)
     async def get_all_projects(self, request: Request) -> Response:
-        if self.projects is None:
+        if self.projects is None or len(self.projects) == 0:
             self.projects = self._slurp_projects_from_dir()
         return json_response([project.get_current_metadata() for project in self.projects])
 
@@ -1148,8 +1148,9 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def save_project_data(self, request: Request) -> Response:
         body = await request.json()
-        session_id = body["id"]
+        session_id = body["session_id"]
         project = self._get_project_by_id(session_id)
+        project.reload_metadata_from_json(body)
         project.write_metadata_to_disk()
         return json_response([])
 
@@ -1208,8 +1209,9 @@ class AiohttpOFRAKServer:
             try:
                 project = OfrakProject.init_from_path(os.path.join(self.projects_dir, dir))
                 projects.add(project)
-            except:
-                pass
+            except Exception as e:
+                logging.warning(f"{dir} is in the projects directory but is not a valid project")
+                logging.warning(e)
         return projects
 
     def _get_project_by_id(self, id) -> OfrakProject:
