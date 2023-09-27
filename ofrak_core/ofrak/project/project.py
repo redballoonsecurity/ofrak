@@ -57,6 +57,26 @@ class OfrakProject:
     def trashed_scripts(self):
         return os.path.join(self.path, ".Trash", "binaries")
 
+    @property
+    def metadata(self):
+        return {
+            "name": self.name,
+            "project_id": self.project_id.hex(),
+            "scripts": [
+                {
+                    "name": script_name,
+                }
+                for script_name in self.scripts
+            ],
+            "binaries": {
+                binary_name: {
+                    "init_script": binary_info.init_script,
+                    "associated_scripts": binary_info.associated_scripts,
+                }
+                for binary_name, binary_info in self.binaries.items()
+            },
+        }
+
     @staticmethod
     def create(name: str, path: str) -> "OfrakProject":
         new_project = OfrakProject(
@@ -116,7 +136,7 @@ class OfrakProject:
                 os.path.isdir(scripts_path),
             ]
         ):
-            raise ValueError(f"{path} has invalid structure to be an Project")
+            raise ValueError(f"{path} has invalid structure to be a Project")
 
         with open(metadata_path) as f:
             raw_metadata = json.load(f)
@@ -187,26 +207,21 @@ class OfrakProject:
             code = f.read()
         return code
 
-    def write_metadata_to_disk(self):
-        metadata = {
-            "name": self.name,
-            "project_id": self.project_id.hex(),
-            "scripts": [
-                {
-                    "name": script_name,
-                }
-                for script_name in self.scripts
-            ],
-            "binaries": {
-                binary_name: {
-                    "init_script": binary_info.init_script,
-                    "associated_scripts": binary_info.associated_scripts,
-                }
-                for binary_name, binary_info in self.binaries.items()
-            },
-        }
+    def reload_metadata_from_json(self, metadata: Dict):
+        self.scripts = [script["name"] for script in metadata["scripts"]]
+
+        self.binaries = {}
+
+        for binary_name, info in metadata["binaries"].items():
+            self.binaries[binary_name] = _OfrakProjectBinary(
+                info["associated_scripts"], info.get("init_script")
+            )
+        self.name = metadata["name"]
+        self.project_id = binascii.unhexlify(metadata["project_id"])
+
+    def write_metadata_to_disk(self, metadata: Dict = None):
         with open(self.metadata_path, "w") as f:
-            json.dump(metadata, f)
+            json.dump(self.metadata, f)
 
     def get_current_metadata(self):
         return {
@@ -283,7 +298,7 @@ class OfrakProject:
                 os.path.isdir(scripts_path),
             ]
         ):
-            raise ValueError(f"{path} has invalid structure to be an Project")
+            raise ValueError(f"{path} has invalid structure to be a Project")
 
         with open(self.metadata_path) as f:
             raw_metadata = json.load(f)
