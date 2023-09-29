@@ -138,7 +138,6 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
     async def analyze(
         self, resource: Resource, config: Optional[GhidraProjectConfig] = None
     ) -> GhidraProject:
-
         gzf = config.ghidra_zip_file if config is not None else None
 
         async with self._prepare_ghidra_project(resource, gzf) as (ghidra_project, full_fname):
@@ -451,7 +450,6 @@ class GhidraCustomLoadAnalyzer(GhidraProjectAnalyzer):
     async def analyze(
         self, resource: Resource, config: Optional[GhidraProjectConfig] = None
     ) -> GhidraProject:
-
         arch_info: ArchInfo = await resource.analyze(ProgramAttributes)
         mem_blocks = await self._get_memory_blocks(await resource.view_as(Program))
 
