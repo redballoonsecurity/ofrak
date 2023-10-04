@@ -13,6 +13,10 @@ class MemoryPermissions(Enum):
     RW = R + W
     RX = R + X
     RWX = R + W + X
+    VLE = 0x10000000
+    X_VLE = X + VLE
+    RX_VLE = R + X + VLE
+    RWX_VLE = R + W + X + VLE
 
     def as_str(self) -> str:
         string = ""
