@@ -29,29 +29,29 @@
 </style>
 
 <script>
-  import AssemblyView from "./AssemblyView.svelte";
-  import AttributesView from "./AttributesView.svelte";
-  import AudioPlayer from "./AudioPlayer.svelte";
-  import ByteclassView from "./ByteclassView.svelte";
-  import CarouselSelector from "./CarouselSelector.svelte";
-  import EntropyView from "./EntropyView.svelte";
-  import Gamepad from "./Gamepad.svelte";
-  import HexView from "./HexView.svelte";
-  import JumpToOffset from "./JumpToOffset.svelte";
-  import LoadingAnimation from "./LoadingAnimation.svelte";
-  import MagnitudeView from "./MagnitudeView.svelte";
-  import Pane from "./Pane.svelte";
-  import ResourceTreeView from "./ResourceTreeView.svelte";
-  import Split from "./Split.svelte";
-  import StartView from "./StartView.svelte";
-  import TextView from "./TextView.svelte";
+  import AssemblyView from "./views/AssemblyView.svelte";
+  import AttributesView from "./views/AttributesView.svelte";
+  import AudioPlayer from "./utils/AudioPlayer.svelte";
+  import ByteclassView from "./views/ByteclassView.svelte";
+  import CarouselSelector from "./utils/CarouselSelector.svelte";
+  import EntropyView from "./views/EntropyView.svelte";
+  import Gamepad from "./utils/Gamepad.svelte";
+  import HexView from "./views/HexView.svelte";
+  import JumpToOffset from "./utils/JumpToOffset.svelte";
+  import LoadingAnimation from "./utils/LoadingAnimation.svelte";
+  import MagnitudeView from "./views/MagnitudeView.svelte";
+  import Pane from "./utils/Pane.svelte";
+  import ResourceTreeView from "./resource/ResourceTreeView.svelte";
+  import Split from "./utils/Split.svelte";
+  import StartView from "./views/StartView.svelte";
+  import TextView from "./views/TextView.svelte";
+  import ProjectManagerView from "./project/ProjectManagerView.svelte";
 
   import { printConsoleArt } from "./console-art.js";
   import { selected, selectedResource, settings } from "./stores.js";
   import { keyEventToString, shortcuts } from "./keyboard.js";
 
   import { writable } from "svelte/store";
-  import ProjectManagerView from "./ProjectManager/ProjectManagerView.svelte";
 
   printConsoleArt();
 
