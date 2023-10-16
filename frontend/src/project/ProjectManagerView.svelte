@@ -85,7 +85,7 @@
   import Split from "../utils/Split.svelte";
   import ProjectManagerFocusableLabel from "./ProjectManagerFocusableLabel.svelte";
   import ProjectManagerOptions from "./ProjectManagerOptions.svelte";
-  import { selectedProject, settings, selected } from "../stores";
+  import { selectedProject, settings, selected, viewCrumbs } from "../stores";
   import { remote_model_to_resource } from "../ofrak/remote_resource";
   import ProjectManagerToolbar from "./ProjectManagerToolbar.svelte";
   import ProjectManagerAddBinaryToProject from "./ProjectManagerAddBinaryToProject.svelte";
@@ -139,6 +139,7 @@
     }
     $selectedProject.loaded[rootModel.id] = selectedBinaryName;
     showRootResource = true;
+    $viewCrumbs.push("rootResource");
   }
 
   onMount(async () => {

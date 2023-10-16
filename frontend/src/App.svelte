@@ -48,10 +48,16 @@
   import ProjectManagerView from "./project/ProjectManagerView.svelte";
 
   import { printConsoleArt } from "./console-art.js";
-  import { selected, selectedResource, settings } from "./stores.js";
+  import {
+    selected,
+    selectedResource,
+    settings,
+    viewCrumbs,
+  } from "./stores.js";
   import { keyEventToString, shortcuts } from "./keyboard.js";
 
   import { writable } from "svelte/store";
+  import RootWizardView from "./patch_wizard/RootWizardView.svelte";
 
   printConsoleArt();
 
@@ -69,6 +75,8 @@
     rootResource,
     modifierView,
     bottomLeftPane;
+
+  let topLevelView = null;
 
   // TODO: Move to settings
   let riddleAnswered = JSON.parse(window.localStorage.getItem("riddleSolved"));
@@ -165,12 +173,14 @@ Answer by running riddle.answer('your answer here') from the console.`);
   $: docstyle.setProperty("--accent-text-color", $settings.accentText);
   $: docstyle.setProperty("--last-modified-color", $settings.lastModified);
   $: docstyle.setProperty("--all-modified-color", $settings.allModified);
+
+  $: topLevelView = $viewCrumbs[$viewCrumbs.length - 1];
 </script>
 
 <svelte:window on:popstate="{backButton}" on:keyup="{handleShortcut}" />
 <Gamepad />
 
-{#if showRootResource}
+{#if topLevelView === "rootResource"}
   {#await rootResourceLoadPromise}
     <LoadingAnimation />
   {:then _}
@@ -255,7 +265,7 @@ Answer by running riddle.answer('your answer here') from the console.`);
       <AudioPlayer />
     </div>
   {/if}
-{:else if showProjectManager}
+{:else if topLevelView === "projectManager"}
   <ProjectManagerView
     bind:rootResourceLoadPromise="{rootResourceLoadPromise}"
     bind:rootResource="{rootResource}"
@@ -263,7 +273,9 @@ Answer by running riddle.answer('your answer here') from the console.`);
     bind:showRootResource="{showRootResource}"
     bind:showProjectManager="{showProjectManager}"
   />
-{:else}
+{:else if topLevelView === "patchWizard"}
+  <RootWizardView />
+{:else if topLevelView === "start"}
   <StartView
     bind:rootResourceLoadPromise="{rootResourceLoadPromise}"
     bind:showRootResource="{showRootResource}"

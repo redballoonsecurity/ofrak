@@ -15,6 +15,7 @@
     selected,
     settings,
     selectedProject,
+    viewCrumbs,
   } from "../stores.js";
 
   export let resourceNodeDataMap,
@@ -65,6 +66,7 @@
             };
             showProjectManager = true;
             showRootResource = false;
+            viewCrumbs.set(["projectManager"]);
             history.pushState(state, "", "/");
           }
         },
@@ -297,6 +299,14 @@
         iconUrl: "/icons/settings.svg",
         onclick: async (e) => {
           modifierView = SettingsView;
+        },
+      },
+
+      {
+        text: "Patch Wizard",
+        iconUrl: "/icons/settings.svg",
+        onclick: async (e) => {
+          viewCrumbs.set(["patchWizard"]);
         },
       },
     ];

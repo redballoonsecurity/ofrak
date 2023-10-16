@@ -139,11 +139,17 @@
   import Checkbox from "../utils/Checkbox.svelte";
 
   import { animals } from "../animals.js";
-  import { selected, settings, selectedProject } from "../stores.js";
+  import {
+    selected,
+    settings,
+    selectedProject,
+    viewCrumbs,
+  } from "../stores.js";
   import { remote_model_to_resource } from "../ofrak/remote_resource";
   import { numBytesToQuantity, saveSettings } from "../helpers";
 
   import { onMount } from "svelte";
+  import { pushViewCrumb } from "../stores";
 
   export let rootResourceLoadPromise,
     showRootResource,
@@ -228,6 +234,7 @@
     if (selectedPreExistingRoot) {
       dragging = false;
       showRootResource = true;
+      viewCrumbs.set(["rootResource"]);
 
       rootResource = remote_model_to_resource(
         selectedPreExistingRoot,
@@ -263,6 +270,7 @@
       return r.json();
     });
     showProjectManager = true;
+    pushViewCrumb("projectManager");
   }
 
   async function cloneProjectFromGit() {
@@ -299,6 +307,7 @@
       return r.json();
     });
     showProjectManager = true;
+    viewCrumbs.update((vCrumbs) => vCrumbs.concat(["projectManager"]));
   }
 
   async function changeProjectPath() {
@@ -338,6 +347,7 @@
     dragging = false;
     if (e.dataTransfer.files.length > 0) {
       showRootResource = true;
+      viewCrumbs.set(["rootResource"]);
       const f = e.dataTransfer.files[0];
       rootResourceLoadPromise = createRootResource(f);
       await rootResourceLoadPromise;
@@ -346,6 +356,7 @@
 
   $: if (browsedFiles && browsedFiles.length > 0) {
     showRootResource = true;
+    viewCrumbs.set(["rootResource"]);
     const f = browsedFiles[0];
     rootResourceLoadPromise = createRootResource(f);
   }
@@ -394,6 +405,7 @@
     }
 
     showRootResource = true;
+    viewCrumbs.set(["rootResource"]);
     rootResourceLoadPromise = Promise.resolve(undefined);
     $selected = resourceId;
     $selectedProject = await fetch(
@@ -589,6 +601,7 @@
                   on:click="{(e) => {
                     e.stopPropagation;
                     showProjectManager = true;
+                    pushViewCrumb('projectManager');
                   }}">Open Existing Project</Button
                 >
               {/await}
