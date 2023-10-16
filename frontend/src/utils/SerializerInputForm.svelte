@@ -148,6 +148,15 @@
     element = _element.filter((e) => !skip.includes(e));
   }
 
+  function extractTypeNodeFromOptional(optionalNode) {
+    for (const arg of optionalNode.args) {
+      if (arg.type != "builtins.NoneType") {
+        return arg;
+      }
+    }
+    return null;
+  }
+
   $: if (
     node["type"] == "typing.List" ||
     node["type"] == "typing.Tuple" ||
@@ -313,7 +322,7 @@
       {/each}
 
       <!---->
-    {:else if node["type"] == "typing.Union" || node["type"] == "typing.Optional"}
+    {:else if node["type"] == "typing.Union"}
       <select bind:value="{unionTypeSelect}">
         {#each node["args"] as arg}
           <option value="{arg}">
@@ -323,6 +332,14 @@
       </select>
       {#if unionTypeSelect != null}
         <svelte:self node="{unionTypeSelect}" bind:element="{element}" />
+      {/if}
+    {:else if node["type"] == "typing.Optional"}
+      <Checkbox checked="{false}" bind:value="{unionTypeSelect}" />
+      {#if unionTypeSelect}
+        <svelte:self
+          node="{extractTypeNodeFromOptional(node)}"
+          bind:element="{element}"
+        />
       {/if}
 
       <!---->

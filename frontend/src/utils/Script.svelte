@@ -26,7 +26,9 @@
 <script>
   import hljs from "highlight.js";
   import python from "highlight.js/lib/languages/python";
+  import c from "highlight.js/lib/languages/c";
   hljs.registerLanguage("python", python);
+  hljs.registerLanguage("c", c);
   export let script;
   export let language = "python";
 </script>
