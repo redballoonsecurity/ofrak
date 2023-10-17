@@ -3,12 +3,12 @@
   import Pane from "../utils/Pane.svelte";
   import Button from "../utils/Button.svelte";
 
-  import { selectedResource, viewCrumbs } from "../stores";
+  import { selectedResource, settings, viewCrumbs } from "../stores";
   import SerializerInputForm from "../utils/SerializerInputForm.svelte";
   import SourceMenuView from "./SourceMenuView.svelte";
   import SummaryView from "./SummaryView.svelte";
 
-    const defaultSourceBody = [
+  const defaultSourceBody = [
     '#include "aes_inject.h"',
     '#include "thumb_defines.h"\n',
     "",
@@ -57,17 +57,80 @@
     "    return ciphertext_len;",
   ];
 
-  const patch_info = {
+  let patch_info = {
     name: "Example Patch",
     sourceInfos: [
-    { name: "file1.c", body: defaultSourceBody },
-    { name: "file2.c", body: defaultSourceBody },
-    { name: "file3.h", body: defaultSourceBody },
-  ],
+      { name: "file1.c", body: defaultSourceBody },
+      { name: "file2.c", body: defaultSourceBody },
+      { name: "file3.h", body: defaultSourceBody },
+    ],
+    objectInfos: [
+      {
+        name: "file1.c",
+        segments: [
+          {
+            name: ".text",
+            size: 0x100,
+            permissions: "rx",
+            include: true,
+            allocatedVaddr: null,
+          },
+          {
+            name: ".data",
+            size: 0x100,
+            permissions: "rw",
+            include: true,
+            allocatedVaddr: null,
+          },
+          {
+            name: ".rodata",
+            size: 0x100,
+            permissions: "r",
+            include: false,
+            allocatedVaddr: null,
+          },
+        ],
+        strongSymbols: ["foo"],
+        unresolvedSymbols: ["printf", "bar", "boogeyman"],
+      },
+      {
+        name: "file2.c",
+        segments: [
+          {
+            name: ".text",
+            size: 0x100,
+            permissions: "rx",
+            include: true,
+            allocatedVaddr: null,
+          },
+        ],
+        strongSymbols: ["bar"],
+        unresolvedSymbols: [],
+      },
+    ],
+    targetInfo: {
+      symbols: ["printf", "sprintf", "malloc", "calloc", "kalloc"],
+    },
+    userInputs: {
+      symbols: { example: 0xfeed },
+      toolchain: undefined,
+      toolchain_config: undefined,
+    },
   };
 
-  let toolchain,
-    toolchainConfig = null;
+  function assignSegmentColors() {
+    let idx = 0;
+    for (const obj of patch_info.objectInfos) {
+      for (const seg of obj.segments) {
+        seg.color = $settings.colors[idx];
+        if (idx++ >= $settings.colors.length) {
+          idx = 0;
+        }
+      }
+    }
+  }
+
+  assignSegmentColors();
 
   let subMenu = undefined;
 
@@ -75,7 +138,6 @@
     let pfsm_config = await $selectedResource.get_config_for_component(
       "PatchFromSourceModifier"
     );
-    // console.log(pfsm_config["fields"]);
 
     return pfsm_config.fields;
   }
@@ -85,7 +147,11 @@
   <Split slot="first" vertical="{true}" percentOfFirstSplit="{66.666}">
     <Pane slot="first">
       {#if subMenu}
-        <svelte:component this="{subMenu}" bind:subMenu="{subMenu}" bind:patchInfo="{patch_info}"/>
+        <svelte:component
+          this="{subMenu}"
+          bind:subMenu="{subMenu}"
+          bind:patchInfo="{patch_info}"
+        />
       {:else}
         <Button on:click="{() => viewCrumbs.set(['rootResource'])}">Back</Button
         >
@@ -101,16 +167,16 @@
       {#await getToolchainList() then toolchain_config_structs}
         <SerializerInputForm
           node="{toolchain_config_structs[3]}"
-          bind:element="{toolchain}"
+          bind:element="{patch_info.userInputs.toolchain}"
         />
         <SerializerInputForm
           node="{toolchain_config_structs[2]}"
-          bind:element="{toolchainConfig}"
+          bind:element="{patch_info.userInputs.toolchain_config}"
         />
       {/await}
     </Pane>
   </Split>
   <Pane slot="second">
-    <SummaryView></SummaryView>
+    <SummaryView patchInfo="{patch_info}" />
   </Pane>
 </Split>

@@ -36,7 +36,9 @@
   }
 
   async function deleteSourceFile(sourceInfo) {
-    patchInfo.sourceInfos = patchInfo.sourceInfos.filter((e) => e.name !== sourceInfo.name);
+    patchInfo.sourceInfos = patchInfo.sourceInfos.filter(
+      (e) => e.name !== sourceInfo.name
+    );
   }
 </script>
 
