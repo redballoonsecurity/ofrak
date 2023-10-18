@@ -39,11 +39,23 @@
   export let title, markError, valid, updateFunction;
 
   let collapsed = false;
+
+  let updatePromise = Promise.resolve();
 </script>
 
 <div class="body">
   {#if !valid}
-    <Button on:click="{updateFunction}">Update</Button>
+    {#await updatePromise}
+      <Button on:click="{() => {}}">Updating...</Button>
+    {:then e}
+      <Button
+        on:click="{() => {
+          updatePromise = updateFunction();
+        }}"
+      >
+        Update
+      </Button>
+    {/await}
   {/if}
   <div class="header-bar" class:invalid="{!valid}">
     <button on:click="{() => (collapsed = !collapsed)}">

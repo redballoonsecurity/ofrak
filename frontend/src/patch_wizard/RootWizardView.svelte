@@ -32,7 +32,11 @@
     settings,
     viewCrumbs,
   } from "../stores";
-  import { fakeFetchObjectInfos, fakePatchInfo } from "./dev_consts";
+  import {
+    fakeFetchObjectInfos,
+    fakeFetchTargetInfo,
+    fakePatchInfo,
+  } from "./dev_consts";
   import SourceMenuView from "./SourceMenuView.svelte";
   import ObjectMappingView from "./ObjectMappingView.svelte";
   import ToolchainSetupView from "./ToolchainSetupView.svelte";
@@ -210,24 +214,22 @@
   }
 
   async function updatePatchPlacement() {
-    console.log("Rebuild BOM, fetch updated objectInfos");
+    // Rebuild BOM, fetch updated objectInfos
     let updatedObjectInfos = await fakeFetchObjectInfos();
-    console.log(
-      "If that succeeds, here is where the updateObjectInfos gets called"
-    );
+    // If that succeeds
     importObjectInfos(updatedObjectInfos);
     updateSummary();
   }
 
   async function updateSymbolDefines() {
     if (!patchInfo.objectInfosValid) {
+      // rebuilds BOM if it is outdated
+      // must be build to know what symbols it needs and grab those from target
       await updatePatchPlacement();
     }
 
-    console.log("Rebuild target BOM, fetch that (for its stubbed symbols)");
-    console.log(
-      "If that succeeds, here is where the buildSymbolRefMap gets called"
-    );
+    patchInfo.targetInfo = await fakeFetchTargetInfo();
+
     patchInfo.symbolRefMap = buildSymbolRefMap(patchInfo);
     patchInfo.targetInfoValid = true;
     updateSummary();
@@ -328,7 +330,10 @@
             </p>
 
             {#each patchInfo.targetInfo.symbols as sym}
-              <PatchSymbol symbolInfo="{patchInfo.symbolRefMap[sym]}" />
+              <PatchSymbol
+                symbolName="{sym}"
+                symbolRefMap="{patchInfo.symbolRefMap}"
+              />
             {/each}
 
             {#if overview.unresolvedSyms.size > 0}
@@ -336,7 +341,10 @@
                 There are {overview.unresolvedSyms.size} unresolved symbol(s)!
               </p>
               {#each Array.from(overview.unresolvedSyms) as sym}
-                <PatchSymbol symbolInfo="{patchInfo.symbolRefMap[sym]}" />
+                <PatchSymbol
+                  symbolName="{sym}"
+                  symbolRefMap="{patchInfo.symbolRefMap}"
+                />
               {/each}
               <p>
                 These symbols are referenced by the patch code, but not defined

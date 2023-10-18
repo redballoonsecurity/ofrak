@@ -14,17 +14,28 @@
     return pfsm_config.fields;
   }
 
-  let toolchain, toolchainConfig;
+  let toolchain = patchInfo.userInputs.toolchain;
+  let toolchainConfig = patchInfo.userInputs.toolchainConfig;
 
   $: {
-    if (toolchain) {
+    let invalidate = false;
+    if (toolchain && toolchain !== patchInfo.userInputs.toolchain) {
       patchInfo.userInputs.toolchain = toolchain;
+      invalidate = true;
     }
-    if (toolchainConfig) {
-      patchInfo.userInputs.toolchain_config = toolchainConfig;
+    // The worst, best way to do deep comparisons and deep copies :)
+    if (
+      toolchainConfig &&
+      JSON.stringify(toolchainConfig) !==
+        JSON.stringify(patchInfo.userInputs.toolchainConfig)
+    ) {
+      patchInfo.userInputs.toolchainConfig = JSON.parse(
+        JSON.stringify(toolchainConfig)
+      );
+      invalidate = true;
     }
 
-    if (toolchain || toolchainConfig) {
+    if (invalidate) {
       // Changes to toolchain config invalidate everything
       patchInfo.objectInfosValid = false;
       patchInfo.targetInfoValid = false;
@@ -32,13 +43,13 @@
   }
 </script>
 
-{#await getToolchainList() then toolchain_config_structs}
+{#await getToolchainList() then toolchainConfig_structs}
   <SerializerInputForm
-    node="{toolchain_config_structs[3]}"
+    node="{toolchainConfig_structs[3]}"
     bind:element="{toolchain}"
   />
   <SerializerInputForm
-    node="{toolchain_config_structs[2]}"
+    node="{toolchainConfig_structs[2]}"
     bind:element="{toolchainConfig}"
   />
 {/await}

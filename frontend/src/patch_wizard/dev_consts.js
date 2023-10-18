@@ -107,7 +107,7 @@ export function fakePatchInfo() {
     userInputs: {
       symbols: { example: 0xfeed },
       toolchain: undefined,
-      toolchain_config: undefined,
+      toolchainConfig: undefined,
     },
     symbolRefMap: null,
   };

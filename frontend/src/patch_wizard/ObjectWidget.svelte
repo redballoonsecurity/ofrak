@@ -52,9 +52,15 @@
 
   export let objectInfo, symbolRefMap, refreshOverviewCallback;
 
-  let locallyUndefinedSymbols = objectInfo.unresolvedSymbols.filter(
-    (s) => !symbolRefMap.hasOwnProperty(s)
-  );
+  let locallyUndefinedSymbols;
+
+  $: if (symbolRefMap) {
+    locallyUndefinedSymbols = objectInfo.unresolvedSymbols.filter((s) => {
+      return symbolRefMap[s].providedBy.length === 0;
+    });
+  } else {
+    locallyUndefinedSymbols = [];
+  }
 </script>
 
 <div class="box">
@@ -83,12 +89,12 @@
         {/if}
         Provides:
         {#each objectInfo.strongSymbols as sym}
-          <PatchSymbol symbolInfo="{symbolRefMap[sym]}" />
+          <PatchSymbol symbolName="{sym}" symbolRefMap="{symbolRefMap}" />
         {/each}
         <br />
         Requires:
         {#each objectInfo.unresolvedSymbols as sym}
-          <PatchSymbol symbolInfo="{symbolRefMap[sym]}" />
+          <PatchSymbol symbolName="{sym}" symbolRefMap="{symbolRefMap}" />
         {/each}
       </div>
     </div>

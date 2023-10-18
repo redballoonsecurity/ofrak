@@ -11,10 +11,18 @@
 </style>
 
 <script>
-  export let symbolInfo;
+  export let symbolName, symbolRefMap;
   export let onClick = undefined;
 
   let titleText = "";
+
+  let symbolInfo;
+
+  if (symbolRefMap) {
+    symbolInfo = symbolRefMap[symbolName];
+  } else {
+    symbolInfo = { name: symbolName, providedBy: [], requiredBy: [] };
+  }
 
   if (symbolInfo.providedBy?.length > 0) {
     titleText += "Provided by ";
