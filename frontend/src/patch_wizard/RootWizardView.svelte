@@ -4,9 +4,10 @@
   import Button from "../utils/Button.svelte";
 
   import { selectedResource, settings, viewCrumbs } from "../stores";
-  import SerializerInputForm from "../utils/SerializerInputForm.svelte";
   import SourceMenuView from "./SourceMenuView.svelte";
   import SummaryView from "./SummaryView.svelte";
+  import ObjectMappingView from "./ObjectMappingView.svelte";
+  import ToolchainSetupView from "./ToolchainSetupView.svelte";
 
   const defaultSourceBody = [
     '#include "aes_inject.h"',
@@ -60,10 +61,11 @@
   let patch_info = {
     name: "Example Patch",
     sourceInfos: [
-      { name: "file1.c", body: defaultSourceBody },
-      { name: "file2.c", body: defaultSourceBody },
-      { name: "file3.h", body: defaultSourceBody },
+      { name: "file1.c", body: defaultSourceBody, originalName: undefined },
+      { name: "file2.c", body: defaultSourceBody, originalName: undefined },
+      { name: "file3.h", body: defaultSourceBody, originalName: undefined },
     ],
+    objectInfosValid: true,
     objectInfos: [
       {
         name: "file1.c",
@@ -111,12 +113,16 @@
     targetInfo: {
       symbols: ["printf", "sprintf", "malloc", "calloc", "kalloc"],
     },
+    targetInfoValid: true,
     userInputs: {
       symbols: { example: 0xfeed },
       toolchain: undefined,
       toolchain_config: undefined,
     },
+    symbolRefMap: null,
   };
+
+  let subMenu = undefined;
 
   function assignSegmentColors() {
     let idx = 0;
@@ -130,53 +136,117 @@
     }
   }
 
+  function buildSymbolRefMap(patchInfo) {
+    let refMap = { allSyms: new Set() };
+
+    for (const objInfo of patchInfo.objectInfos) {
+      for (const sym of objInfo.strongSymbols) {
+        if (refMap.hasOwnProperty(sym)) {
+          refMap[sym].providedBy.push(objInfo.name);
+        } else {
+          refMap[sym] = {
+            name: sym,
+            providedBy: [objInfo.name],
+            requiredBy: [],
+          };
+        }
+        refMap.allSyms.add(sym);
+      }
+      for (const sym of objInfo.unresolvedSymbols) {
+        if (refMap.hasOwnProperty(sym)) {
+          refMap[sym].requiredBy.push(objInfo.name);
+        } else {
+          refMap[sym] = {
+            name: sym,
+            providedBy: [],
+            requiredBy: [objInfo.name],
+          };
+        }
+        refMap.allSyms.add(sym);
+      }
+    }
+
+    for (const sym of patchInfo.targetInfo.symbols) {
+      if (refMap.hasOwnProperty(sym)) {
+        refMap[sym].providedBy.push("target binary");
+      } else {
+        refMap[sym] = {
+          name: sym,
+          providedBy: ["target binary"],
+          requiredBy: [],
+        };
+      }
+      refMap.allSyms.add(sym);
+    }
+
+    return refMap;
+  }
+
   assignSegmentColors();
 
-  let subMenu = undefined;
+  function updateObjectInfos(updatedObjectInfos) {
+    // May mutate updatedObjectInfos
 
-  async function getToolchainList() {
-    let pfsm_config = await $selectedResource.get_config_for_component(
-      "PatchFromSourceModifier"
-    );
+    // Keep track of when source files were renamed, but their object placements should still be preserved
+    const currentObjNames = new Map();
+    for (const sourceInfo of patch_info.sourceInfos) {
+      if (sourceInfo.originalName) {
+        currentObjNames.add(sourceInfo.originalName, sourceInfo.name);
+      } else {
+        currentObjNames.add(sourceInfo.name, sourceInfo.name);
+      }
+    }
 
-    return pfsm_config.fields;
+    // Map from current object names -> old object mappings
+    let previousObjectSegmentInfos = new Map();
+    // Carry over segment mapping and inclusion info from previous configuration
+    // Allows for iterative patch development without losing all patch situation work
+    if (patch_info.objectInfos) {
+      for (const objInfo of patch_info.objectInfos) {
+        for (const segInfo of objInfo.segments) {
+          previousObjectSegmentInfos.set(
+            currentObjNames.get(objInfo.name) + segInfo.name,
+            { include: segInfo.include, allocatedVaddr: segInfo.allocatedVaddr }
+          );
+        }
+      }
+    }
+
+    for (const objInfo of updatedObjectInfos) {
+      for (const segInfo of objInfo.segments) {
+        const prevInfo = previousObjectSegmentInfos.get(
+          objInfo.name + segInfo.name
+        );
+        if (prevInfo) {
+          segInfo.allocatedVaddr = prevInfo.allocatedVaddr;
+          segInfo.include = prevInfo.include;
+        }
+      }
+    }
+
+    patch_info.objectInfos = updatedObjectInfos;
+    patch_info.objectInfosValid = true;
   }
+
+  patch_info.symbolRefMap = buildSymbolRefMap(patch_info);
 </script>
 
 <Split>
   <Split slot="first" vertical="{true}" percentOfFirstSplit="{66.666}">
     <Pane slot="first">
-      {#if subMenu}
-        <svelte:component
-          this="{subMenu}"
-          bind:subMenu="{subMenu}"
-          bind:patchInfo="{patch_info}"
-        />
-      {:else}
-        <Button on:click="{() => viewCrumbs.set(['rootResource'])}">Back</Button
-        >
-
-        <Button>Free Space</Button>
-
-        <Button on:click="{() => (subMenu = SourceMenuView)}"
-          >Source Code</Button
-        >
-      {/if}
+      <SummaryView patchInfo="{patch_info}" bind:subMenu="{subMenu}" />
     </Pane>
     <Pane slot="second" paddingVertical="{'1em'}">
-      {#await getToolchainList() then toolchain_config_structs}
-        <SerializerInputForm
-          node="{toolchain_config_structs[3]}"
-          bind:element="{patch_info.userInputs.toolchain}"
-        />
-        <SerializerInputForm
-          node="{toolchain_config_structs[2]}"
-          bind:element="{patch_info.userInputs.toolchain_config}"
-        />
-      {/await}
+      TO-DO: Patchmaker error logs.
     </Pane>
   </Split>
   <Pane slot="second">
-    <SummaryView patchInfo="{patch_info}" />
+    {#if subMenu}
+      <svelte:component
+        this="{subMenu}"
+        bind:subMenu="{subMenu}"
+        bind:patchInfo="{patch_info}"
+      />
+    {/if}
   </Pane>
 </Split>

@@ -1,6 +1,5 @@
 <style>
   .container {
-    min-height: 100%;
     display: flex;
     flex-direction: column;
     flex-wrap: nowrap;
