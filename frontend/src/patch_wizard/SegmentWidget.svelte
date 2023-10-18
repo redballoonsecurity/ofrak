@@ -35,13 +35,14 @@
   import Checkbox from "../utils/Checkbox.svelte";
   import { settings } from "../stores";
 
-  export let segmentInfo;
+  export let segmentInfo, refreshOverviewCallback;
 
   function validVaddr(vaddr) {
     return vaddr || 0 === vaddr;
   }
 
   let placeholderVaddr, inputVaddr;
+  let prevInclude = segmentInfo.include;
 
   function updatePlaceholderVaddr() {
     if (segmentInfo.allocatedVaddr || segmentInfo.allocatedVaddr === 0) {
@@ -66,6 +67,7 @@
         segmentInfo.allocatedVaddr = parsed;
       }
     }
+    refreshOverviewCallback;
   }
 
   $: {
@@ -76,6 +78,13 @@
       backgroundColor = $settings.background;
       textColor = $settings.foreground;
     }
+
+    if (segmentInfo.include !== prevInclude) {
+      // Although this reactive block should only be called when `include` has in fact changed, it will also be called once when this component is created.
+      // This conditional prevents the overview being re-updating a ton of times each time the segment widgets are loaded
+      refreshOverviewCallback();
+    }
+    prevInclude = segmentInfo.include;
   }
 </script>
 
@@ -94,14 +103,12 @@
     {#if segmentInfo.include}
       [0x{segmentInfo.size.toString(16)} bytes] =>
       <label
-        class="{validVaddr(segmentInfo.allocatedVaddr)
-          ? 'seg-vaddr-input'
-          : 'seg-vaddr-input warning'}"
+        class="seg-vaddr-input"
+        class:warning="{!validVaddr(segmentInfo.allocatedVaddr)}"
       >
         <input
-          class="{validVaddr(segmentInfo.allocatedVaddr)
-            ? 'seg-vaddr-input'
-            : 'seg-vaddr-input warning'}"
+          class="seg-vaddr-input"
+          class:warning="{!validVaddr(segmentInfo.allocatedVaddr)}"
           placeholder="{placeholderVaddr}"
           bind:value="{inputVaddr}"
           on:focusout="{updatePlaceholderVaddr}"

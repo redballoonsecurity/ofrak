@@ -16,6 +16,7 @@
     settings,
     selectedProject,
     viewCrumbs,
+    pushViewCrumb,
   } from "../stores.js";
 
   export let resourceNodeDataMap,
@@ -306,7 +307,7 @@
         text: "Patch Wizard",
         iconUrl: "/icons/settings.svg",
         onclick: async (e) => {
-          viewCrumbs.set(["patchWizard"]);
+          pushViewCrumb("patchWizard");
         },
       },
     ];

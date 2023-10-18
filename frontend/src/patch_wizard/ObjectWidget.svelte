@@ -50,7 +50,7 @@
   import SegmentWidget from "./SegmentWidget.svelte";
   import PatchSymbol from "./PatchSymbol.svelte";
 
-  export let objectInfo, symbolRefMap;
+  export let objectInfo, symbolRefMap, refreshOverviewCallback;
 
   let locallyUndefinedSymbols = objectInfo.unresolvedSymbols.filter(
     (s) => !symbolRefMap.hasOwnProperty(s)
@@ -66,7 +66,10 @@
       <p class="column-header">Segments</p>
       <div class="body-segments">
         {#each objectInfo.segments as segInfo (segInfo.name)}
-          <SegmentWidget segmentInfo="{segInfo}" />
+          <SegmentWidget
+            segmentInfo="{segInfo}"
+            refreshOverviewCallback="{refreshOverviewCallback}"
+          />
         {/each}
       </div>
     </div>

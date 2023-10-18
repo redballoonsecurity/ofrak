@@ -41,8 +41,11 @@
   let collapsed = false;
 </script>
 
-<div class="{valid ? 'body' : 'body invalid'}">
-  <div class="header-bar">
+<div class="body">
+  {#if !valid}
+    <Button on:click="{updateFunction}">Update</Button>
+  {/if}
+  <div class="header-bar" class:invalid="{!valid}">
     <button on:click="{() => (collapsed = !collapsed)}">
       {#if collapsed}
         [+]
@@ -52,16 +55,12 @@
     </button>
     {title}
 
-    {#if !valid}
-      <Button style="opacity: 100%" on:click="{updateFunction}">Update</Button>
-    {/if}
-
     {#if markError}
       <p class="error-mark">[ ! ]</p>
     {/if}
   </div>
   {#if !collapsed}
-    <div class="slot">
+    <div class="slot" class:invalid="{!valid}">
       <slot />
     </div>
   {/if}

@@ -2,7 +2,7 @@
   import Button from "../utils/Button.svelte";
   import SourceWidget from "./SourceWidget.svelte";
 
-  export let subMenu, patchInfo;
+  export let patchInfo, refreshOverviewCallback;
 
   function invalidateOnChange() {
     // Changes to source invalidate everything
@@ -38,9 +38,10 @@
       }
 
       patchInfo.sourceInfos = patchInfo.sourceInfos.concat([newSourceInfo]);
+      invalidateOnChange();
+      refreshOverviewCallback();
     };
     input.click();
-    invalidateOnChange();
   }
 
   async function deleteSourceFile(sourceInfo) {
@@ -48,11 +49,11 @@
       (e) => e.name !== sourceInfo.name
     );
     invalidateOnChange();
+    refreshOverviewCallback();
   }
 </script>
 
 <div>
-  <Button on:click="{() => (subMenu = undefined)}">Back</Button>
   {#each patchInfo.sourceInfos as sourceInfo}
     <SourceWidget
       bind:sourceInfo="{sourceInfo}"

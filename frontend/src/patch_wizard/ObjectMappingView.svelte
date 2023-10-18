@@ -1,7 +1,7 @@
 <script>
   import ObjectWidget from "./ObjectWidget.svelte";
 
-  export let patchInfo;
+  export let patchInfo, refreshOverviewCallback;
 </script>
 
 <div>
@@ -9,6 +9,7 @@
     <ObjectWidget
       objectInfo="{objInfo}"
       symbolRefMap="{patchInfo.symbolRefMap}"
+      refreshOverviewCallback="{refreshOverviewCallback}"
     />
   {/each}
 </div>
