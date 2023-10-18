@@ -47,7 +47,7 @@
   import Icon from "../utils/Icon.svelte";
   import Button from "../utils/Button.svelte";
 
-  export let sourceInfo, parentDeleteSource;
+  export let sourceInfo, parentDeleteSource, onChangeCallback;
   let sourceHidden = true;
   let showOptions = false;
 
@@ -75,6 +75,7 @@
       file.text().then((t) => (sourceInfo.body = t.split("\n")));
     };
     input.click();
+    onChangeCallback();
   }
 
   async function deleteSource() {
@@ -97,6 +98,7 @@
           class="edit-name-input"
           placeholder="{sourceInfo.name}"
           bind:value="{sourceInfo.name}"
+          on:focusout="{onChangeCallback}"
         />
       </label>
       <button

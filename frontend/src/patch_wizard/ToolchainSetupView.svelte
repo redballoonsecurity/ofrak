@@ -13,15 +13,32 @@
 
     return pfsm_config.fields;
   }
+
+  let toolchain, toolchainConfig;
+
+  $: {
+    if (toolchain) {
+      patchInfo.userInputs.toolchain = toolchain;
+    }
+    if (toolchainConfig) {
+      patchInfo.userInputs.toolchain_config = toolchainConfig;
+    }
+
+    if (toolchain || toolchainConfig) {
+      // Changes to toolchain config invalidate everything
+      patchInfo.objectInfosValid = false;
+      patchInfo.targetInfoValid = false;
+    }
+  }
 </script>
 
 {#await getToolchainList() then toolchain_config_structs}
   <SerializerInputForm
     node="{toolchain_config_structs[3]}"
-    bind:element="{patchInfo.userInputs.toolchain}"
+    bind:element="{toolchain}"
   />
   <SerializerInputForm
     node="{toolchain_config_structs[2]}"
-    bind:element="{patchInfo.userInputs.toolchain_config}"
+    bind:element="{toolchainConfig}"
   />
 {/await}

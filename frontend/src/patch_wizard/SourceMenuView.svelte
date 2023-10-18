@@ -4,6 +4,12 @@
 
   export let subMenu, patchInfo;
 
+  function invalidateOnChange() {
+    // Changes to source invalidate everything
+    patchInfo.objectInfosValid = false;
+    patchInfo.targetInfoValid = false;
+  }
+
   async function addNewSourceFile() {
     let input = document.createElement("input");
     input.type = "file";
@@ -13,6 +19,7 @@
       // TODO: Send file to backend in here
       file.text().then((t) => (newSourceInfo.body = t.split("\n")));
       newSourceInfo.name = file.name;
+      newSourceInfo.originalName = file.name;
 
       for (const existingSourceInfo of patchInfo.sourceInfos) {
         if (existingSourceInfo.name === newSourceInfo.name) {
@@ -33,12 +40,14 @@
       patchInfo.sourceInfos = patchInfo.sourceInfos.concat([newSourceInfo]);
     };
     input.click();
+    invalidateOnChange();
   }
 
   async function deleteSourceFile(sourceInfo) {
     patchInfo.sourceInfos = patchInfo.sourceInfos.filter(
       (e) => e.name !== sourceInfo.name
     );
+    invalidateOnChange();
   }
 </script>
 
@@ -48,6 +57,7 @@
     <SourceWidget
       bind:sourceInfo="{sourceInfo}"
       parentDeleteSource="{deleteSourceFile}"
+      onChangeCallback="{invalidateOnChange}"
     />
   {/each}
 
