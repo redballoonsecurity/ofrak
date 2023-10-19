@@ -31,9 +31,10 @@ class _StringsToolDependency(ComponentExternalTool):
 
     async def is_tool_installed(self) -> bool:
         try:
-            cmd = [self.tool]
-            if self.install_check_arg is not None:
-                cmd.append(self.install_check_arg)
+            cmd = [
+                self.tool,
+                self.install_check_arg,
+            ]
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.DEVNULL,

@@ -22,7 +22,7 @@ from ofrak.core.magic import Magic, MagicMimeIdentifier
 from ofrak_type.range import Range
 
 
-APKTOOL = ComponentExternalTool("apktool", "https://ibotpeaches.github.io/Apktool/")
+APKTOOL = ComponentExternalTool("apktool", "https://ibotpeaches.github.io/Apktool/", "-version")
 JAVA = ComponentExternalTool(
     "java",
     "https://openjdk.org/projects/jdk/11/",

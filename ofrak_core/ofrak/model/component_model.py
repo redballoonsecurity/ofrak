@@ -41,23 +41,23 @@ class ComponentExternalTool:
 
     tool: str
     tool_homepage: str
-    install_check_arg: Optional[str] = None
+    install_check_arg: str
     apt_package: Optional[str] = None
     brew_package: Optional[str] = None
 
     async def is_tool_installed(self) -> bool:
         """
         Check if a tool is installed by running it with the `install_check_arg`.
-        This method runs `<tool> <install_check_arg>`. If `install_check_arg`
-        is None, it just runs `<tool>`.
+        This method runs `<tool> <install_check_arg>`.
 
         :return: True if the `tool` command returned zero, False if `tool` could not be found or
         returned non-zero exit code.
         """
         try:
-            cmd = [self.tool]
-            if self.install_check_arg is not None:
-                cmd.append(self.install_check_arg)
+            cmd = [
+                self.tool,
+                self.install_check_arg,
+            ]
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.DEVNULL,
