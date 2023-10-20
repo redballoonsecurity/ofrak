@@ -166,6 +166,7 @@
     setArray(_element, skip);
   }
 
+  element = null;
   if (
     node["type"] == "typing.List" ||
     node["type"] == "typing.Tuple" ||
@@ -183,10 +184,13 @@
   if (node["type"] == "ofrak_type.range.Range") {
     element = [];
   } else if (node["fields"] != null) {
-    element = {};
+    element = [node["type"], {}];
   }
   if (node["default"] != null) {
     element = node["default"];
+  }
+  if (node["enum"]) {
+    element = undefined;
   }
 
   const addElementToArray = () => {
@@ -212,7 +216,7 @@
 
     <!---->
     {#if node["type"] == "builtins.bool"}
-      <Checkbox bind:checked="{element}" leftbox="{true}">
+      <Checkbox checked="{element}" bind:value="{element}" leftbox="{true}">
         {nodeName}
       </Checkbox>
 
@@ -361,7 +365,10 @@
         {#if node["type"] == "ofrak_type.range.Range"}
           <svelte:self node="{field}" bind:element="{element[i]}" />
         {:else}
-          <svelte:self node="{field}" bind:element="{element[field['name']]}" />
+          <svelte:self
+            node="{field}"
+            bind:element="{element[1][field['name']]}"
+          />
         {/if}
       {/each}
     {/if}

@@ -1288,7 +1288,10 @@ class AiohttpOFRAKServer:
         elif not issubclass(obj, Enum):
             return None
         else:
-            return {name: value.value for name, value in obj.__members__.items()}
+            return {
+                name: f"{obj.__module__}.{obj.__qualname__}.{name}"
+                for name, value in obj.__members__.items()
+            }
 
     def _has_elipsis(self, obj):
         return any([isinstance(arg, type(...)) for arg in get_args(obj)])
