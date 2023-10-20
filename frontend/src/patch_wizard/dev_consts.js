@@ -1,3 +1,5 @@
+import { selectedProject, settings } from "../stores";
+
 const defaultSourceBody = [
   '#include "aes_inject.h"',
   '#include "thumb_defines.h"\n',
@@ -47,9 +49,11 @@ const defaultSourceBody = [
   "    return ciphertext_len;",
 ];
 
+const staticName = "Example Patch";
+
 export function fakePatchInfo() {
   return {
-    name: "Example Patch",
+    name: staticName,
     sourceInfos: [
       { name: "file1.c", body: defaultSourceBody, originalName: "file1.c" },
       { name: "file2.c", body: defaultSourceBody, originalName: "file2.c" },
@@ -113,7 +117,31 @@ export function fakePatchInfo() {
   };
 }
 
-export async function fakeFetchObjectInfos() {
+export async function fakeFetchObjectInfos(
+  patchName,
+  toolchain,
+  toolchainConfig
+) {
+  let r = await fetch(
+    `${$settings.backendUrl}/get_object_infos?patch_name=${patchName}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        toolchain: toolchain,
+        toolchainConfig: toolchainConfig,
+      }),
+    }
+  );
+  if (!r.ok) {
+    throw Error(JSON.parse(await r.json()));
+  }
+  return await r.json();
+}
+
+export async function _fakeFetchObjectInfos() {
   return [
     {
       name: "file1.c",

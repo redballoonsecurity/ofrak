@@ -22,6 +22,8 @@
 </style>
 
 <script>
+  import { onMount } from "svelte";
+
   import Split from "../utils/Split.svelte";
   import Pane from "../utils/Pane.svelte";
   import Button from "../utils/Button.svelte";
@@ -44,9 +46,45 @@
   import PatchSymbol from "./PatchSymbol.svelte";
   import SymbolView from "./SymbolView.svelte";
 
-  let subMenu = undefined;
+  async function fetchPatchesInProgress() {
+    let r = await fetch(
+      `${$settings.backendUrl}/patch_wizard/get_all_patches_in_progress`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: "",
+      }
+    );
+    if (!r.ok) {
+      throw Error(JSON.stringify(await r.json(), undefined, 2));
+    }
 
-  let patchInfo;
+    return await r.json();
+  }
+
+  async function fetchObjectInfos(patchName, toolchain, toolchainConfig) {
+    let r = await fetch(
+      `${$settings.backendUrl}/patch_wizard/get_object_infos?patch_name=${patchName}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          toolchain: toolchain,
+          toolchainConfig: toolchainConfig,
+        }),
+      }
+    );
+    if (!r.ok) {
+      throw Error(JSON.stringify(await r.json(), undefined, 2));
+    }
+    return await r.json();
+  }
+
+  let subMenu = undefined;
 
   let overview = {
     totalBytes: 0,
@@ -57,7 +95,7 @@
   };
 
   function freshPatchInfo() {
-    patchInfo = {
+    return {
       name: "Example Patch",
       sourceInfos: [],
       objectInfosValid: false,
@@ -68,6 +106,8 @@
       symbolRefMap: null,
     };
   }
+
+  let patchInfo = freshPatchInfo();
 
   function assignSegmentColors(patchInfo) {
     let idx = 0;
@@ -215,7 +255,14 @@
 
   async function updatePatchPlacement() {
     // Rebuild BOM, fetch updated objectInfos
-    let updatedObjectInfos = await fakeFetchObjectInfos();
+    let updatedObjectInfos = await fetchObjectInfos(
+      patchInfo.name,
+      patchInfo.userInputs.toolchain,
+      patchInfo.userInputs.toolchainConfig
+    );
+    console.log(
+      "continuing in updatePatchPlacement as though fetchObjectInfos succeeded"
+    );
     // If that succeeds
     importObjectInfos(updatedObjectInfos);
     updateSummary();
@@ -242,7 +289,32 @@
     });
   }
 
-  _devResetAll();
+  // _devResetAll();
+
+  onMount(async () => {
+    const patches = await fetchPatchesInProgress();
+
+    if (patches.length === 1) {
+      patchInfo = patches[0];
+    } else {
+      fetch(
+        `${$settings.backendUrl}/${
+          $selectedResource.resource_id
+        }/patch_wizard/start_new_patch?patch_name=${"Example Patch"}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: "",
+        }
+      ).then(async (r) => {
+        if (!r.ok) {
+          throw Error(JSON.stringify(await r.json(), undefined, 2));
+        }
+      });
+    }
+  });
 </script>
 
 <Split>
