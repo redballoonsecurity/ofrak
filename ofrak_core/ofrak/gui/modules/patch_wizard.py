@@ -1,11 +1,15 @@
+import asyncio
+import logging
 import os
+import re
 import shutil
 import tempfile
-from typing import Dict, List, Optional, Tuple, Type
+from subprocess import CalledProcessError
+from typing import Dict, List, Optional, Tuple, Type, TextIO
 
 from aiohttp import web
 from aiohttp.web_request import Request
-from aiohttp.web_response import Response
+from aiohttp.web_response import Response, StreamResponse
 
 from ofrak import Resource
 from ofrak.core import (
@@ -17,10 +21,10 @@ from ofrak.core import (
 )
 from ofrak.gui.utils import OfrakShim, exceptions_to_http, json_response
 from ofrak.service.error import SerializedError
-from ofrak_patch_maker.model import BOM, PatchRegionConfig
+from ofrak_patch_maker.model import BOM, PatchRegionConfig, PatchMakerException
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.abstract import Toolchain
-from ofrak_patch_maker.toolchain.model import ToolchainConfig
+from ofrak_patch_maker.toolchain.model import ToolchainConfig, ToolchainException
 
 
 class InvalidStateException(Exception):
@@ -60,6 +64,7 @@ class PatchWizard:
                 self.get_target_info,
             ),
             web.post("/patch_wizard/get_all_patches_in_progress", self.get_patches_in_progress),
+            web.post("/patch_wizard/listen_logs", self.get_next_log_message),
         ]
 
     @exceptions_to_http(SerializedError)
@@ -134,7 +139,7 @@ class PatchWizard:
         # Get all patches in progress, with populated patchInfos according to how much stuff is ready for each patch
         patch_info_struct = [
             {
-                "name": "Example Patch",
+                "name": "Example_Patch",
                 "sourceInfos": [
                     {"name": "file1.c", "body": [], "originalName": "file1.c"},
                     {"name": "file2.c", "body": [], "originalName": "file2.c"},
@@ -220,12 +225,44 @@ class PatchWizard:
 
         return json_response(target_info_struct)
 
+    @exceptions_to_http(SerializedError)
+    async def get_next_log_message(self, request: Request) -> StreamResponse:
+        patch_name = request.query.get("patch_name")
+
+        logged_message = await self.patches[patch_name].logs.listen()
+
+        return Response(status=200, text=logged_message)
+
+
+class LogStreamer(TextIO):
+    tmpfile_regex = re.compile(r"/tmp/tmp[a-zA-Z0-9]+/")
+
+    def __init__(self):
+        self.message_queue = asyncio.Queue()
+
+    def write(self, msg: str):
+        stripped_msg = self.tmpfile_regex.sub("", msg)
+        print("put a message!")
+        self.message_queue.put_nowait(stripped_msg)
+
+    def flush(self):
+        pass
+
+    async def listen(self) -> str:
+        return await self.message_queue.get()
+
+    async def continuous_listen(self):
+        while True:
+            m = await self.listen()
+            print(f"Got an async message: {m}")
+
 
 class PatchInProgress:
     def __init__(self, name: str, target_resource: Resource):
         self.name = name
         self.resource = target_resource
         self.build_tmp_dir = tempfile.TemporaryDirectory()
+        self.logs = LogStreamer()
 
         self.files: Dict[str, bytes] = {}
 
@@ -244,37 +281,55 @@ class PatchInProgress:
     def delete_file(self, name: str):
         del self.files[name]
 
-    async def build_patch_bom(self, toolchain, toolchain_config):
+    async def build_patch_bom(self, toolchain_type, toolchain_config):
         program_attributes = await self.resource.analyze(ProgramAttributes)
 
-        self.patch_maker = PatchMaker(
-            toolchain=toolchain(program_attributes, toolchain_config),
+        new_logger = logging.Logger("patchmaker logs", level=logging.DEBUG)
+        new_logger.addHandler(logging.StreamHandler(stream=self.logs))
+
+        toolchain = self._try_and_log_errors(
+            toolchain_type,
+            program_attributes,
+            toolchain_config,
+            logger=new_logger,
+        )
+
+        self.patch_maker = self._try_and_log_errors(
+            PatchMaker,
+            toolchain=toolchain,
             build_dir=self.build_tmp_dir.name,
+            logger=new_logger,
         )
 
         if self.patch_bom_dir:
             shutil.rmtree(self.patch_bom_dir)
 
+        # Need to save this to make it possible to clear it later
+        self.patch_bom_dir = os.path.join(self.build_tmp_dir.name, f"{self.name}_bom_files")
+
         with tempfile.TemporaryDirectory() as source_temp_dir:
-            source_list = []
-            for filename, contents in self.files.items():
-                print(f"Writing {len(contents)} bytes from {filename}")
-                path = os.path.join(source_temp_dir, filename)
-                with open(path, "wb") as f:
-                    f.write(contents)
-                source_list.append(path)
+            with tempfile.TemporaryDirectory() as header_temp_dir:
+                source_list = []
+                for filename, contents in self.files.items():
+                    if filename.split(".")[-1] in ("c", "as", "S"):
+                        # source file
+                        path = os.path.join(source_temp_dir, filename)
+                        with open(path, "wb") as f:
+                            f.write(contents)
+                        source_list.append(path)
+                    else:
+                        # header file (presumably)
+                        path = os.path.join(header_temp_dir, filename)
+                        with open(path, "wb") as f:
+                            f.write(contents)
 
-            self.patch_bom = self.patch_maker.make_bom(
-                name=self.name,
-                source_list=source_list,
-                object_list=[],
-                header_dirs=[],
-            )
-
-        for obj in self.patch_bom.object_map.values():
-            # Need to save this to possible clear it later
-            self.patch_bom_dir = os.path.dirname(obj.path)
-            break
+                self.patch_bom = self._try_and_log_errors(
+                    self.patch_maker.make_bom,
+                    name=self.name,
+                    source_list=source_list,
+                    object_list=[],
+                    header_dirs=[header_temp_dir],
+                )
 
         return self.patch_bom
 
@@ -292,7 +347,9 @@ class PatchInProgress:
 
     async def inject_bom(self, patch_regions: PatchRegionConfig):
         exec_path = os.path.join(self.build_tmp_dir.name, "output_exec")
-        fem = self.patch_maker.make_fem(
+
+        fem = self._try_and_log_errors(
+            self.patch_maker.make_fem,
             [(self.patch_bom, patch_regions), self.target_linkable_bom_info],
             exec_path,
         )
@@ -308,3 +365,18 @@ class PatchInProgress:
         await target_binary.define_linkable_symbols_from_patch(
             fem.executable.symbols, program_attributes
         )
+
+    def _try_and_log_errors(self, f, *args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except ToolchainException as e:
+            self.patch_maker.logger.error(str(e))
+            raise
+
+        except PatchMakerException as e:
+            self.patch_maker.logger.error(str(e))
+            raise
+
+        except CalledProcessError as e:
+            self.patch_maker.logger.error(str(e))
+            raise

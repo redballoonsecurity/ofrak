@@ -61,7 +61,7 @@
 
   async function deleteSourceFile(sourceInfo) {
     fetch(
-      `${$settings.backendUrl}/patch_wizard/delete_file?patch_name=${patchInfo.name}&file_name=${newSourceInfo.name}`,
+      `${$settings.backendUrl}/patch_wizard/delete_file?patch_name=${patchInfo.name}&file_name=${sourceInfo.name}`,
       {
         method: "POST",
         body: "",

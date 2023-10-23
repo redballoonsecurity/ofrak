@@ -44,8 +44,12 @@
   <span class="spacer"></span>
 
   <div class="textarea">
-    <code>
-      {@html hljs.highlight(script.join("\n"), { language: language }).value}
-    </code>
+    {#if language}
+      <code>
+        {@html hljs.highlight(script.join("\n"), { language: language }).value}
+      </code>
+    {:else}
+      {script.join("\n")}
+    {/if}
   </div>
 </div>

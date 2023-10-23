@@ -51,6 +51,8 @@
   let sourceHidden = true;
   let showOptions = false;
 
+  let useCFormatting = ["c", "h"].includes(sourceInfo.name.split(".").at(-1));
+
   async function downloadSource() {
     const lines = sourceInfo.body.join("\n");
     if (lines.length === 0) {
@@ -134,7 +136,10 @@
 
   {#if !sourceHidden}
     <div class="script-box">
-      <Script language="c" script="{sourceInfo.body}" />
+      <Script
+        language="{useCFormatting ? 'c' : ''}"
+        script="{sourceInfo.body}"
+      />
     </div>
   {/if}
 </div>

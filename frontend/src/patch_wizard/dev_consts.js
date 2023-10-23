@@ -49,7 +49,7 @@ const defaultSourceBody = [
   "    return ciphertext_len;",
 ];
 
-const staticName = "Example Patch";
+const staticName = "Example_Patch";
 
 export function fakePatchInfo() {
   return {

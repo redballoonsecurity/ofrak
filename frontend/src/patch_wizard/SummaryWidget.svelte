@@ -41,10 +41,14 @@
   let collapsed = false;
 
   let updatePromise = Promise.resolve();
+
+  $: {
+    console.log("SummaryWidget " + title + " think its validity is " + valid);
+  }
 </script>
 
 <div class="body">
-  {#if !valid}
+  <div class:invalid="{valid}">
     {#await updatePromise}
       <Button on:click="{() => {}}">Updating...</Button>
     {:then e}
@@ -55,8 +59,16 @@
       >
         Update
       </Button>
+    {:catch err}
+      <Button
+        on:click="{() => {
+          updatePromise = updateFunction();
+        }}"
+      >
+        Update [!]
+      </Button>
     {/await}
-  {/if}
+  </div>
   <div class="header-bar" class:invalid="{!valid}">
     <button on:click="{() => (collapsed = !collapsed)}">
       {#if collapsed}

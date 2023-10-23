@@ -45,6 +45,7 @@
   import SummaryWidget from "./SummaryWidget.svelte";
   import PatchSymbol from "./PatchSymbol.svelte";
   import SymbolView from "./SymbolView.svelte";
+  import PatchMakerLogsView from "./PatchMakerLogsView.svelte";
 
   async function fetchPatchesInProgress() {
     let r = await fetch(
@@ -85,6 +86,7 @@
   }
 
   let subMenu = undefined;
+  let addLogBreak;
 
   let overview = {
     totalBytes: 0,
@@ -96,7 +98,7 @@
 
   function freshPatchInfo() {
     return {
-      name: "Example Patch",
+      name: "Example_Patch",
       sourceInfos: [],
       objectInfosValid: false,
       objectInfos: [],
@@ -254,14 +256,12 @@
   }
 
   async function updatePatchPlacement() {
+    addLogBreak();
     // Rebuild BOM, fetch updated objectInfos
     let updatedObjectInfos = await fetchObjectInfos(
       patchInfo.name,
       patchInfo.userInputs.toolchain,
       patchInfo.userInputs.toolchainConfig
-    );
-    console.log(
-      "continuing in updatePatchPlacement as though fetchObjectInfos succeeded"
     );
     // If that succeeds
     importObjectInfos(updatedObjectInfos);
@@ -273,6 +273,8 @@
       // rebuilds BOM if it is outdated
       // must be build to know what symbols it needs and grab those from target
       await updatePatchPlacement();
+    } else {
+      addLogBreak();
     }
 
     patchInfo.targetInfo = await fakeFetchTargetInfo();
@@ -289,8 +291,6 @@
     });
   }
 
-  // _devResetAll();
-
   onMount(async () => {
     const patches = await fetchPatchesInProgress();
 
@@ -300,7 +300,7 @@
       fetch(
         `${$settings.backendUrl}/${
           $selectedResource.resource_id
-        }/patch_wizard/start_new_patch?patch_name=${"Example Patch"}`,
+        }/patch_wizard/start_new_patch?patch_name=${"Example_Patch"}`,
         {
           method: "POST",
           headers: {
@@ -438,7 +438,10 @@
       <Button on:click="{_devResetAll}">(Development) Reset)</Button>
     </Pane>
     <Pane slot="second" paddingVertical="{'1em'}">
-      TO-DO: Patchmaker error logs.
+      <PatchMakerLogsView
+        patchInfo="{patchInfo}"
+        bind:addLogBreak="{addLogBreak}"
+      />
     </Pane>
   </Split>
   <Pane slot="second">
