@@ -13,7 +13,7 @@ owner before being created.
 Such ownership verification, non-technical questions, concerns, or comments about anything other than
 the committed source code should be directed to [ofrak@redballoonsecurity.com](mailto:ofrak@redballoonsecurity.com).
 
-Want to contribute, but not sure where to start? Take a look at our [outstanding issues](https://github.com/redballoonsecurity/ofrak/issues) and [collaborate with us and other community developers on Slack](https://join.slack.com/t/ofrak/shared_invite/zt-1er7hircg-3mBEESUPV~00~Ao5in4EpQ)!
+Want to contribute, but not sure where to start? Take a look at our [outstanding issues](https://github.com/redballoonsecurity/ofrak/issues) and [collaborate with us and other community developers on Slack](https://join.slack.com/t/ofrak/shared_invite/zt-1jku9h6r5-mY7CeeZ4AT8JVmu5YWw2Qg)!
 
 ## Issues
 
