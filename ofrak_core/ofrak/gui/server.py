@@ -54,6 +54,7 @@ from ofrak.model.component_filters import (
 from ofrak.ofrak_context import get_current_ofrak_context
 from ofrak.service.component_locator_i import ComponentFilter
 from ofrak_patch_maker.toolchain.abstract import Toolchain
+from ofrak_patch_maker.toolchain.model import BinFileType, CompilerOptimizationLevel
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 from ofrak import (
@@ -902,8 +903,6 @@ class AiohttpOFRAKServer:
             _fields = []
             for field in fields(config):
                 field.type = self._modify_by_case(field.type)
-                if isinstance(field.default, dataclasses._MISSING_TYPE):
-                    field.default = None
                 _fields.append(
                     {
                         "name": field.name,
@@ -911,9 +910,7 @@ class AiohttpOFRAKServer:
                         "args": self._construct_arg_response(field.type),
                         "fields": self._construct_field_response(field.type),
                         "enum": self._construct_enum_response(field.type),
-                        "default": field.default
-                        if not isinstance(field.default, dataclasses._MISSING_TYPE)
-                        else None,
+                        "default": self._construct_default_response(field),
                     }
                 )
             return json_response(
@@ -1229,9 +1226,7 @@ class AiohttpOFRAKServer:
                             "args": self._construct_arg_response(field.type),
                             "fields": self._construct_field_response(field.type),
                             "enum": self._construct_enum_response(field.type),
-                            "default": self._serializer.to_pjson(field.default, field.type)
-                            if not isinstance(field.default, dataclasses._MISSING_TYPE)
-                            else None,
+                            "default": self._construct_default_response(field),
                         }
                     )
             return res
@@ -1310,8 +1305,34 @@ class AiohttpOFRAKServer:
                     return "typing.Tuple"
                 elif origin is dict:
                     return "typing.Dict"
+                elif origin is type:
+                    return self._convert_to_class_name_str(get_args(obj)[0])
             else:
                 return repr(obj).split("[")[0]
+
+    def _construct_default_response(self, field: dataclasses.Field):
+        if field.default is not dataclasses.MISSING:
+            # field has a default
+            return [
+                self._convert_to_class_name_str(type(field.default)),
+                self._serializer.to_pjson(field.default, type(field.default)),
+            ]
+        elif field.type is BinFileType:
+            # TODO: Hacked in a fake default because this field of Toolchain really should have a default!
+            return [
+                self._convert_to_class_name_str(BinFileType),
+                self._serializer.to_pjson(BinFileType.ELF, BinFileType),
+            ]
+        elif field.type is CompilerOptimizationLevel:
+            # TODO: Hacked in a fake default because this field of Toolchain really should have a default!
+            return [
+                self._convert_to_class_name_str(CompilerOptimizationLevel),
+                self._serializer.to_pjson(
+                    CompilerOptimizationLevel.NONE, CompilerOptimizationLevel
+                ),
+            ]
+        else:
+            return None
 
     async def _get_resource_by_id(self, resource_id: bytes, job_id: bytes) -> Resource:
         resource = await self._ofrak_context.resource_factory.create(
