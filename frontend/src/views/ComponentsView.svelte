@@ -106,7 +106,7 @@
   import { splitAndCapitalize } from "../helpers.js";
   import { onMount } from "svelte";
 
-  import SerializerInputForm from "../utils/SerializerInputForm.svelte";
+  import SerializerInputForm from "../utils/serializer_inputs/SerializerInputForm.svelte";
   import LoadingText from "../utils/LoadingText.svelte";
   import Checkbox from "../utils/Checkbox.svelte";
   import Button from "../utils/Button.svelte";

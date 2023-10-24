@@ -1,6 +1,6 @@
 <script>
-  import SerializerInputForm from "../utils/SerializerInputForm.svelte";
   import { selectedResource } from "../stores";
+  import BaseSerializerInputForm from "../utils/serializer_inputs/BaseSerializerInputForm.svelte";
 
   export let patchInfo;
 
@@ -44,11 +44,11 @@
 </script>
 
 {#await getToolchainList() then toolchainConfig_structs}
-  <SerializerInputForm
+  <BaseSerializerInputForm
     node="{toolchainConfig_structs[3]}"
     bind:element="{toolchain}"
   />
-  <SerializerInputForm
+  <BaseSerializerInputForm
     node="{toolchainConfig_structs[2]}"
     bind:element="{toolchainConfig}"
   />

@@ -90,11 +90,11 @@
 </style>
 
 <script>
-  import Checkbox from "./Checkbox.svelte";
-  import { calculator, splitAndCapitalize } from "../helpers";
-  import Icon from "./Icon.svelte";
-  import FileBrowser from "./FileBrowser.svelte";
-  import Button from "./Button.svelte";
+  import Checkbox from "../Checkbox.svelte";
+  import { calculator, splitAndCapitalize } from "../../helpers";
+  import Icon from "../Icon.svelte";
+  import FileBrowser from "../FileBrowser.svelte";
+  import Button from "../Button.svelte";
   export let node, element;
   let unionTypeSelect,
     _element,

@@ -78,7 +78,7 @@
 <script>
   import FileBrowser from "../utils/FileBrowser.svelte";
   import LoadingText from "../utils/LoadingText.svelte";
-  import SerializerInputForm from "../utils/SerializerInputForm.svelte";
+  import SerializerInputForm from "../utils/serializer_inputs/SerializerInputForm.svelte";
   import Icon from "../utils/Icon.svelte";
   import Button from "../utils/Button.svelte";
 
