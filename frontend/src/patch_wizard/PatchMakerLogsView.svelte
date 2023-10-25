@@ -13,9 +13,8 @@
 </style>
 
 <script>
-  import { onMount, tick } from "svelte";
+  import { onMount, onDestroy, tick } from "svelte";
   import { settings } from "../stores";
-  import Button from "../utils/Button.svelte";
 
   export let patchInfo, addLogBreak;
 
@@ -27,7 +26,11 @@
   const linebreakMarker = {};
 
   addLogBreak = () => {
-    messages = [...messages, linebreakMarker];
+    // Add linebreak to separate latest messages from old messages
+    // But don't add double line breaks
+    if (messages?.at(-1) !== linebreakMarker) {
+      messages = [...messages, linebreakMarker];
+    }
   };
 
   async function getNextMessage(patchName, aborter) {
@@ -40,22 +43,30 @@
     )
       .then(async (r) => {
         if (!r.ok) {
-          throw Error(JSON.stringify(await r.json(), undefined, 2));
+          return {
+            ok: false,
+            continue: true,
+            err: JSON.stringify(await r.json(), undefined, 2),
+          };
         } else {
-          messages = [...messages, await r.text()];
-          // waits for svelte to update
-          await tick();
-          await scrollToBottom(scrollingLogsNode);
-          return { ok: true, continue: true, err: null };
+          return {
+            ok: true,
+            continue: true,
+            err: null,
+            message: await r.text(),
+          };
         }
       })
-      .catch((reason) => {
-        if (reason.name === "AbortError") {
+      .catch((err) => {
+        if (err.name === "AbortError") {
+          // Aborted by either destroying this logs view, or by selecting a different patch
           return { ok: true, continue: false, err: null };
-        } else if (reason.name === "TypeError") {
-          return { ok: true, continue: true, err: null };
+        } else if (err.name === "TypeError") {
+          // Likely just timed out, or backend is down
+          return { ok: false, continue: true, err: err };
         } else {
-          return { ok: false, continue: true, reason: reason };
+          // Other unspecified problem
+          return { ok: false, continue: true, err: err };
         }
       });
   }
@@ -63,20 +74,33 @@
   async function repeatedlyGetNextMessage(
     patchName,
     prevMessageResult,
-    aborter
+    aborter,
+    retries = 5
   ) {
     // Long polling with a recursive function
-    if (prevMessageResult.continue) {
+    if (prevMessageResult.message) {
+      messages = [...messages, prevMessageResult.message];
+      // waits for svelte to update
+      await tick();
+      await scrollToBottom(scrollingLogsNode);
+    }
+    if (prevMessageResult.continue && retries) {
       if (!prevMessageResult.ok) {
         // small backoff if something went wrong with previous request
         // sleep for 3000 milliseconds
-        console.error(prevMessageResult.reason);
+        console.error(prevMessageResult.err);
+        retries -= 1;
         await new Promise((resolve) => setTimeout(resolve, 3000));
       }
       // Either timed out or got next log message successfully
       getNextMessage(patchName, aborter).then((r) =>
-        repeatedlyGetNextMessage(patchName, r, aborter)
+        repeatedlyGetNextMessage(patchName, r, aborter, retries)
       );
+    } else if (retries === 0) {
+      messages = [...messages, "Connection to OFRAK backend lost!"];
+      // waits for svelte to update
+      await tick();
+      await scrollToBottom(scrollingLogsNode);
     }
   }
 
@@ -92,16 +116,20 @@
     )
   );
 
+  onDestroy(() => abortController.abort());
+
   $: {
     if (patchInfo.name !== prevName) {
       prevName = patchInfo.name;
-      abortController.abort();
-      abortController = new AbortController();
-      repeatedlyGetNextMessage(
-        patchInfo.name,
-        { ok: true, continue: true },
-        abortController
-      );
+      if (!abortController.signal.aborted) {
+        abortController.abort();
+        abortController = new AbortController();
+        repeatedlyGetNextMessage(
+          patchInfo.name,
+          { ok: true, continue: true },
+          abortController
+        );
+      }
     }
   }
 </script>

@@ -40,7 +40,7 @@ def read_requirements(requirements_path):
 
 setuptools.setup(
     name="ofrak",
-    version="3.2.0post0",
+    version="3.2.1rc1",
     description="A binary analysis and modification platform",
     packages=setuptools.find_packages(exclude=["test_ofrak", "test_ofrak.*"]),
     package_data={
@@ -56,7 +56,6 @@ setuptools.setup(
         "docs": read_requirements("requirements-docs.txt"),
         "test": ["ofrak_angr~=1.0", "ofrak_capstone~=1.0"]
         + read_requirements("requirements-test.txt"),
-        "non-pypi": read_requirements("requirements-non-pypi.txt"),
     },
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",

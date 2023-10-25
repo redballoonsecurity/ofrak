@@ -262,7 +262,9 @@ class PatchInProgress:
         self.name = name
         self.resource = target_resource
         self.build_tmp_dir = tempfile.TemporaryDirectory()
+
         self.logs = LogStreamer()
+        self.currentLogger: Optional[logging.Logger] = None
 
         self.files: Dict[str, bytes] = {}
 
@@ -284,21 +286,21 @@ class PatchInProgress:
     async def build_patch_bom(self, toolchain_type, toolchain_config):
         program_attributes = await self.resource.analyze(ProgramAttributes)
 
-        new_logger = logging.Logger("patchmaker logs", level=logging.DEBUG)
-        new_logger.addHandler(logging.StreamHandler(stream=self.logs))
+        self.currentLogger = logging.Logger("patchmaker logs", level=logging.DEBUG)
+        self.currentLogger.addHandler(logging.StreamHandler(stream=self.logs))
 
         toolchain = self._try_and_log_errors(
             toolchain_type,
             program_attributes,
             toolchain_config,
-            logger=new_logger,
+            logger=self.currentLogger,
         )
 
         self.patch_maker = self._try_and_log_errors(
             PatchMaker,
             toolchain=toolchain,
             build_dir=self.build_tmp_dir.name,
-            logger=new_logger,
+            logger=self.currentLogger,
         )
 
         if self.patch_bom_dir:
@@ -370,13 +372,13 @@ class PatchInProgress:
         try:
             return f(*args, **kwargs)
         except ToolchainException as e:
-            self.patch_maker.logger.error(str(e))
+            self.currentLogger.error(str(e))
             raise
 
         except PatchMakerException as e:
-            self.patch_maker.logger.error(str(e))
+            self.currentLogger.error(str(e))
             raise
 
         except CalledProcessError as e:
-            self.patch_maker.logger.error(str(e))
+            self.currentLogger.error(str(e))
             raise

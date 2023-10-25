@@ -256,7 +256,9 @@
   }
 
   async function updatePatchPlacement() {
-    addLogBreak();
+    if (addLogBreak) {
+      addLogBreak();
+    }
     // Rebuild BOM, fetch updated objectInfos
     let updatedObjectInfos = await fetchObjectInfos(
       patchInfo.name,
@@ -274,7 +276,9 @@
       // must be build to know what symbols it needs and grab those from target
       await updatePatchPlacement();
     } else {
-      addLogBreak();
+      if (addLogBreak) {
+        addLogBreak();
+      }
     }
 
     patchInfo.targetInfo = await fakeFetchTargetInfo();

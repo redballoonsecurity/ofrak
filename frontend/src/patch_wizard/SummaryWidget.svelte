@@ -41,10 +41,6 @@
   let collapsed = false;
 
   let updatePromise = Promise.resolve();
-
-  $: {
-    console.log("SummaryWidget " + title + " think its validity is " + valid);
-  }
 </script>
 
 <div class="body">

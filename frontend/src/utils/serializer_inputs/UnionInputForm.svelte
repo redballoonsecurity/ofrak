@@ -72,10 +72,6 @@
     return null;
   }
 
-  console.log(
-    "in Optional field " + nodeName + " initial element is " + element
-  );
-
   // sets the initially selected value
   let unionTypeSelect;
   if (element === undefined) {
