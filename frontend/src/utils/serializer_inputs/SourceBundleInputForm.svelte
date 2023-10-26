@@ -1,7 +1,7 @@
 <script>
   import FileBrowser from "../FileBrowser.svelte";
 
-  export let node, nodeName, element, baseForm;
+  export let node, element;
   let files = null;
 
   if (element === undefined) {

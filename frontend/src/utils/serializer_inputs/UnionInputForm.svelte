@@ -21,7 +21,7 @@
 <script>
   import Checkbox from "../Checkbox.svelte";
 
-  export let node, nodeName, element, baseForm;
+  export let node, element, baseForm;
 
   function extractTypeNodeFromOptional(optionalNode) {
     for (const arg of optionalNode.args) {
@@ -39,7 +39,7 @@
     // could be of the given type arg
     // WHAT WE DON'T DO: the first arg matching a filter will be returned
     // INSTEAD: The first filter that matches an arg, will cause that arg to be returned
-    // This allows prioritizing which matches we make based PRIMARILY  on the order of the filters
+    // This allows prioritizing which matches we make based PRIMARILY on the order of the filters
     // and SECONDARILY on the order of args, RATHER THAN PRIMARILY on the order of the args and
     // SECONDARILY on the order of the filters
 
@@ -79,6 +79,7 @@
       [unionTypeSelect, element] = node.default;
     } else {
       unionTypeSelect = node.args[0];
+      element = null;
     }
   } else {
     unionTypeSelect = guessSelectedTypeFromExistingValue();

@@ -1,5 +1,5 @@
 <script>
-  export let node, nodeName, element, baseForm;
+  export let node, element, baseForm;
 
   if (element === undefined) {
     if (node.default !== null) {

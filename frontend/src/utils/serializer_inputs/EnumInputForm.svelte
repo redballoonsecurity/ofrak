@@ -19,7 +19,7 @@
 </style>
 
 <script>
-  export let node, nodeName, element, baseForm;
+  export let node, element;
 
   if (element === undefined) {
     if (node.default !== null) {

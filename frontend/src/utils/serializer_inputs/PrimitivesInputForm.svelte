@@ -32,31 +32,13 @@
     outline: none;
     box-shadow: inset 0 -1px 0 var(--comment-color);
   }
-
-  select {
-    background-color: var(--main-bg-color);
-    color: inherit;
-    border: 1px solid;
-    border-color: inherit;
-    border-radius: 0;
-    padding: 0.5em 1em;
-    font-size: inherit;
-    font-family: var(--font);
-    box-shadow: none;
-    width: 100%;
-    margin: 0 0 1em;
-  }
-
-  option {
-    font-family: monospace;
-  }
 </style>
 
 <script>
   import Checkbox from "../Checkbox.svelte";
   import { calculator } from "../../helpers";
 
-  export let node, nodeName, element, baseForm;
+  export let node, nodeName, element;
 
   const INT_PLACEHOLDERS = [
     "0x10 * 2 + 8",

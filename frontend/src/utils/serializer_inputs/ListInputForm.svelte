@@ -20,7 +20,7 @@
   import Button from "../Button.svelte";
   import Icon from "../Icon.svelte";
 
-  export let node, nodeName, element, baseForm;
+  export let node, element, baseForm;
 
   if (node.default !== null) {
     element = node.default[1];

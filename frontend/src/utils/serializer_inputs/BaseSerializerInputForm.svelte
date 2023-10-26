@@ -8,84 +8,10 @@
     align-content: center;
   }
 
-  label {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    align-items: baseline;
-  }
-
-  input {
-    background: inherit;
-    color: inherit;
-    border: none;
-    border-bottom: 1px solid var(--main-fg-color);
-    flex-grow: 1;
-    margin-left: 1ch;
-    /* width: 100%;
-    margin: 0;
-    padding: 0; */
-  }
-
-  input:invalid {
-    border-bottom: 1px solid var(--comment-color);
-  }
-
-  input:focus {
-    outline: none;
-    box-shadow: inset 0 -1px 0 var(--main-fg-color);
-  }
-
-  input:focus:invalid {
-    outline: none;
-    box-shadow: inset 0 -1px 0 var(--comment-color);
-  }
-
   .input {
     padding-left: 2em;
     padding-bottom: 0.5em;
     border-left: 1px dashed white;
-  }
-
-  select {
-    background-color: var(--main-bg-color);
-    color: inherit;
-    border: 1px solid;
-    border-color: inherit;
-    border-radius: 0;
-    padding: 0.5em 1em;
-    margin-left: 0.5em;
-    margin-right: 0.5em;
-    font-size: inherit;
-    font-family: var(--font);
-    box-shadow: none;
-  }
-
-  select {
-    width: 100%;
-    margin: 0;
-    margin-bottom: 1em;
-  }
-
-  option {
-    font-family: monospace;
-  }
-
-  .boxed {
-    border: 2px solid var(--main-fg-color);
-    padding: 2em;
-    margin: 1em 0 2em 0;
-  }
-
-  .buttonbar {
-    top: 0;
-    left: 0;
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: start;
-    justify-content: start;
   }
 </style>
 
