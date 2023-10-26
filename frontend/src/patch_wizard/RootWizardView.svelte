@@ -19,6 +19,11 @@
     text-decoration-line: underline;
     text-decoration-color: red;
   }
+
+  .nav-bar {
+    display: inline-flex;
+    align-items: center;
+  }
 </style>
 
 <script>
@@ -46,6 +51,7 @@
   import PatchSymbol from "./PatchSymbol.svelte";
   import SymbolView from "./SymbolView.svelte";
   import PatchMakerLogsView from "./PatchMakerLogsView.svelte";
+  import Loading from "../utils/LoadingText.svelte";
 
   async function fetchPatchesInProgress() {
     let r = await fetch(
@@ -96,24 +102,7 @@
     nSources: 0,
   };
 
-  function freshPatchInfo() {
-    return {
-      name: "Example_Patch",
-      sourceInfos: [],
-      objectInfosValid: false,
-      objectInfos: [],
-      targetInfo: {},
-      targetInfoValid: false,
-      userInputs: {
-        symbols: [],
-        toolchain: undefined,
-        toolchainConfig: undefined,
-      },
-      symbolRefMap: null,
-    };
-  }
-
-  let patchInfo = freshPatchInfo();
+  let patchInfo;
 
   function assignSegmentColors(patchInfo) {
     let idx = 0;
@@ -176,7 +165,7 @@
       } else {
         refMap[symName] = {
           name: symName,
-          providedBy: ["target binary"],
+          providedBy: ["user input"],
           requiredBy: [],
         };
       }
@@ -240,36 +229,41 @@
   }
 
   function updateSummary() {
-    overview.totalBytes = 0;
-    overview.nSegments = 0;
+    patchInfo.symbolRefMap = buildSymbolRefMap(patchInfo);
+
+    const newOverview = {};
+    newOverview.totalBytes = 0;
+    newOverview.nSegments = 0;
     for (const obj of patchInfo.objectInfos) {
       for (const seg of obj.segments) {
         if (seg.include) {
-          overview.totalBytes += seg.size;
-          overview.nSegments++;
+          newOverview.totalBytes += seg.size;
+          newOverview.nSegments++;
         }
       }
     }
 
-    overview.unresolvedSyms = new Set();
+    newOverview.unresolvedSyms = new Set();
     if (patchInfo.symbolRefMap) {
       for (const symName of patchInfo.symbolRefMap.allSyms) {
         if (patchInfo.symbolRefMap[symName].providedBy.length === 0) {
-          overview.unresolvedSyms.add(symName);
+          newOverview.unresolvedSyms.add(symName);
         }
       }
     }
 
-    overview.unallocatedSegments = [];
+    newOverview.unallocatedSegments = [];
     for (const obj of patchInfo.objectInfos) {
       for (const seg of obj.segments) {
         if (seg.include && !validVaddr(seg.allocatedVaddr)) {
-          overview.unallocatedSegments.push([obj.name, seg.name]);
+          newOverview.unallocatedSegments.push([obj.name, seg.name]);
         }
       }
     }
 
-    overview.nSources = patchInfo.sourceInfos.length;
+    newOverview.nSources = patchInfo.sourceInfos.length;
+
+    overview = newOverview;
   }
 
   async function updatePatchPlacement() {
@@ -300,7 +294,6 @@
 
     patchInfo.targetInfo = await fakeFetchTargetInfo();
 
-    patchInfo.symbolRefMap = buildSymbolRefMap(patchInfo);
     patchInfo.targetInfoValid = true;
     updateSummary();
   }
@@ -312,13 +305,32 @@
     });
   }
 
-  onMount(async () => {
+  function goBack() {
+    fetch(
+      `${$settings.backendUrl}/${$selectedResource.resource_id}/patch_wizard/save_current_patch`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(patchInfo),
+      }
+    ).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+    });
+    popViewCrumb();
+  }
+
+  async function populatePatchInfo() {
     const patches = await fetchPatchesInProgress();
 
     if (patches.length === 1) {
       patchInfo = patches[0];
+      updateSummary();
     } else {
-      fetch(
+      const r = await fetch(
         `${$settings.backendUrl}/${
           $selectedResource.resource_id
         }/patch_wizard/start_new_patch?patch_name=${"Example_Patch"}`,
@@ -329,13 +341,16 @@
           },
           body: "",
         }
-      ).then(async (r) => {
-        if (!r.ok) {
-          throw Error(JSON.stringify(await r.json(), undefined, 2));
-        }
-      });
+      );
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      } else {
+        patchInfo = await r.json();
+      }
     }
-  });
+  }
+
+  let patchInfoPromise = populatePatchInfo();
 </script>
 
 <Split>
@@ -346,123 +361,146 @@
           >Refresh</button
         >
       </div>
-      <div class="summary-body">
-        <SummaryWidget
-          title="Step 1. Toolchain & Patch Source"
-          markError="{!(
-            patchInfo.userInputs.toolchain && overview.nSources > 0
-          )}"
-          valid="{true}"
-          updateFunction="{() => {}}"
-        >
-          {#if patchInfo.userInputs.toolchain && overview.nSources}
-            <p>
-              Using {patchInfo.userInputs.toolchain.split(".").pop()} to build patch
-              from
-              {overview.nSources} source code files.
-            </p>
-          {:else if overview.nSources}
-            <p class="warning">No toolchain selected</p>
-            <p>to build {overview.nSources} source code files.</p>
-          {:else if patchInfo.userInputs.toolchain}
-            <p>Using {patchInfo.userInputs.toolchain.split(".").pop()}</p>
-            <p class="warning">but no source code files to build patch from!</p>
-          {:else}
-            <p class="warning">
-              No toolchain selected and no source code files provided!
-            </p>
-          {/if}
-          <br />
-          <Button on:click="{() => (subMenu = ToolchainSetupView)}"
-            >Configure Toolchain</Button
+      {#await patchInfoPromise}
+        <Loading />
+      {:then _}
+        <div class="summary-body">
+          <SummaryWidget
+            title="Step 1. Toolchain & Patch Source"
+            markError="{!(
+              patchInfo.userInputs.toolchain && overview.nSources > 0
+            )}"
+            valid="{null}"
+            updateFunction="{() => {}}"
+            errorReason=""
           >
-          <Button on:click="{() => (subMenu = SourceMenuView)}"
-            >Configure Patch Sources</Button
-          >
-        </SummaryWidget>
-        <SummaryWidget
-          title="Step 2. Patch Placement"
-          markError="{overview.nSegments ||
-            overview.unallocatedSegments.length > 0}"
-          valid="{patchInfo.objectInfosValid}"
-          updateFunction="{updatePatchPlacement}"
-        >
-          <p>Something about free space</p>
-          {#if overview.nSegments}
-            <p>
-              {overview.nSegments} segment{overview.nSegments > 1 ? "s" : ""} totaling
-              0x{overview.totalBytes.toString(16)} bytes will be extracted from the
-              compiled sources and injected into the target binary at unique addresses.
-            </p>
-          {:else}
-            <p class="warning">No segments chosen for injection!</p>
-          {/if}
-          {#if overview.unallocatedSegments.length > 0}
-            <p class="warning">
-              {overview.unallocatedSegments.length} segment(s) still need to be allocated:
-            </p>
-            {#each overview.unallocatedSegments as [objName, segName]}
-              <p>{objName}{segName}</p>
-            {/each}
-          {/if}
-          <br />
-          <Button on:click="{() => (subMenu = null)}">Create Free Space</Button>
-          <Button on:click="{() => (subMenu = ObjectMappingView)}"
-            >Configure Patch Placement</Button
-          >
-        </SummaryWidget>
-        <SummaryWidget
-          title="Step 3. Symbol Definitions"
-          markError="{overview.unresolvedSyms.size > 0}"
-          valid="{patchInfo.targetInfoValid}"
-          updateFunction="{updateSymbolDefines}"
-        >
-          {#if patchInfo.symbolRefMap}
-            <p>
-              Target binary provides {patchInfo.targetInfo.symbols.length} symbols:
-            </p>
-
-            {#each patchInfo.targetInfo.symbols as sym}
-              <PatchSymbol
-                symbolName="{sym}"
-                symbolRefMap="{patchInfo.symbolRefMap}"
-              />
-            {/each}
-
-            {#if overview.unresolvedSyms.size > 0}
-              <p class="warning">
-                There are {overview.unresolvedSyms.size} unresolved symbol(s)!
+            {#if patchInfo.userInputs.toolchain && overview.nSources}
+              <p>
+                Using {patchInfo.userInputs.toolchain.split(".").pop()} to build
+                patch from
+                {overview.nSources} source code files.
               </p>
-              {#each Array.from(overview.unresolvedSyms) as sym}
+            {:else if overview.nSources}
+              <p class="warning">No toolchain selected</p>
+              <p>to build {overview.nSources} source code files.</p>
+            {:else if patchInfo.userInputs.toolchain}
+              <p>Using {patchInfo.userInputs.toolchain.split(".").pop()}</p>
+              <p class="warning">
+                but no source code files to build patch from!
+              </p>
+            {:else}
+              <p class="warning">
+                No toolchain selected and no source code files provided!
+              </p>
+            {/if}
+            <br />
+            <Button on:click="{() => (subMenu = ToolchainSetupView)}"
+              >Configure Toolchain</Button
+            >
+            <Button on:click="{() => (subMenu = SourceMenuView)}"
+              >Configure Patch Sources</Button
+            >
+          </SummaryWidget>
+          <SummaryWidget
+            title="Step 2. Patch Placement"
+            markError="{overview.nSegments === 0 ||
+              overview.unallocatedSegments.length > 0}"
+            valid="{patchInfo.objectInfosValid}"
+            updateFunction="{updatePatchPlacement}"
+            errorReason="Must allocate segments!"
+          >
+            <p>Something about free space</p>
+            {#if overview.nSegments}
+              <p>
+                {overview.nSegments} segment{overview.nSegments > 1 ? "s" : ""} totaling
+                0x{overview.totalBytes.toString(16)} bytes will be extracted from
+                the compiled sources and injected into the target binary at unique
+                addresses.
+              </p>
+            {:else}
+              <p class="warning">No segments chosen for injection!</p>
+            {/if}
+            {#if overview.unallocatedSegments.length > 0}
+              <p class="warning">
+                {overview.unallocatedSegments.length} segment(s) still need to be
+                allocated:
+              </p>
+              {#each overview.unallocatedSegments as [objName, segName]}
+                <p>{objName}{segName}</p>
+              {/each}
+            {/if}
+            <br />
+            <Button on:click="{() => (subMenu = null)}"
+              >Create Free Space</Button
+            >
+            <Button on:click="{() => (subMenu = ObjectMappingView)}"
+              >Configure Patch Placement</Button
+            >
+          </SummaryWidget>
+          <SummaryWidget
+            title="Step 3. Symbol Definitions"
+            markError="{overview.unresolvedSyms.size > 0}"
+            valid="{patchInfo.targetInfoValid}"
+            updateFunction="{updateSymbolDefines}"
+            errorReason="There are unresolved symbols!"
+          >
+            {#if patchInfo.symbolRefMap}
+              <p>
+                Target binary provides {patchInfo.targetInfo.symbols.length} symbols:
+              </p>
+
+              {#each patchInfo.targetInfo.symbols as sym}
                 <PatchSymbol
                   symbolName="{sym}"
                   symbolRefMap="{patchInfo.symbolRefMap}"
                 />
               {/each}
-              <p>
-                These symbols are referenced by the patch code, but not defined
-                in the patch code or the binary.
-              </p>
-            {:else}
-              <p>There are no unresolved symbols.</p>
-            {/if}
-          {/if}
-          <br />
-          <Button on:click="{() => (subMenu = SymbolView)}"
-            >Define Symbols Manually</Button
-          >
-        </SummaryWidget>
-      </div>
 
-      <Button on:click="{popViewCrumb}">Back</Button>
-      <Button>Inject</Button>
-      <Button on:click="{_devResetAll}">(Development) Reset)</Button>
+              {#if overview.unresolvedSyms.size > 0}
+                {#if overview.unresolvedSyms.size === 1}
+                  <p class="warning">There as an unresolved symbol!</p>
+                {:else}
+                  <p class="warning">
+                    There are {overview.unresolvedSyms.size} unresolved symbols!
+                  </p>
+                {/if}
+                {#each Array.from(overview.unresolvedSyms) as sym}
+                  <PatchSymbol
+                    symbolName="{sym}"
+                    symbolRefMap="{patchInfo.symbolRefMap}"
+                  />
+                {/each}
+                <p>
+                  These symbols are referenced by the patch code, but not
+                  defined in the patch code or the binary.
+                </p>
+              {:else}
+                <p>There are no unresolved symbols.</p>
+              {/if}
+            {/if}
+            <br />
+            <Button on:click="{() => (subMenu = SymbolView)}"
+              >Define Symbols Manually</Button
+            >
+          </SummaryWidget>
+        </div>
+      {/await}
+
+      <div class="nav-bar">
+        <Button on:click="{goBack}">Back</Button>
+        <Button>Inject</Button>
+        <Button on:click="{_devResetAll}">(Development) Reset)</Button>
+      </div>
     </Pane>
     <Pane slot="second" paddingVertical="{'1em'}">
-      <PatchMakerLogsView
-        patchInfo="{patchInfo}"
-        bind:addLogBreak="{addLogBreak}"
-      />
+      {#await patchInfoPromise}
+        <Loading />
+      {:then _}
+        <PatchMakerLogsView
+          patchInfo="{patchInfo}"
+          bind:addLogBreak="{addLogBreak}"
+        />
+      {/await}
     </Pane>
   </Split>
   <Pane slot="second">

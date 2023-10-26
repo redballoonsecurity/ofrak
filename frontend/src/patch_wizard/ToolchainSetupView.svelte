@@ -1,6 +1,7 @@
 <script>
   import { selectedResource } from "../stores";
   import BaseSerializerInputForm from "../utils/serializer_inputs/BaseSerializerInputForm.svelte";
+  import Loading from "../utils/LoadingText.svelte";
 
   export let patchInfo;
 
@@ -14,8 +15,15 @@
     return pfsm_config.fields;
   }
 
-  let toolchain = patchInfo.userInputs.toolchain;
-  let toolchainConfig = patchInfo.userInputs.toolchainConfig;
+  let toolchain, toolchainConfig;
+
+  if (patchInfo.userInputs.toolchain !== null) {
+    toolchain = patchInfo.userInputs.toolchain;
+  }
+
+  if (patchInfo.userInputs.toolchainConfig !== null) {
+    toolchainConfig = patchInfo.userInputs.toolchainConfig;
+  }
 
   $: {
     let invalidate = false;
@@ -43,7 +51,9 @@
   }
 </script>
 
-{#await getToolchainList() then toolchainConfig_structs}
+{#await getToolchainList()}
+  <Loading />
+{:then toolchainConfig_structs}
   <BaseSerializerInputForm
     node="{toolchainConfig_structs[3]}"
     bind:element="{toolchain}"
@@ -52,4 +62,6 @@
     node="{toolchainConfig_structs[2]}"
     bind:element="{toolchainConfig}"
   />
+{:catch err}
+  Failed to fetch toolchain configuration structure!
 {/await}

@@ -26,46 +26,39 @@
     font-weight: bold;
     margin-left: auto;
     margin-right: 1em;
+    user-select: none;
   }
 
   .invalid {
     opacity: 60%;
+  }
+
+  .updateButton {
+    margin-left: 2em;
   }
 </style>
 
 <script>
   import Button from "../utils/Button.svelte";
 
-  export let title, markError, valid, updateFunction;
+  export let title, markError, valid, updateFunction, errorReason;
 
   let collapsed = false;
 
   let updatePromise = Promise.resolve();
+
+  let _valid = valid;
+
+  $: if (valid === null) {
+    // Null means this widget is always valid
+    _valid = true;
+  } else {
+    _valid = valid;
+  }
 </script>
 
 <div class="body">
-  <div class:invalid="{valid}">
-    {#await updatePromise}
-      <Button on:click="{() => {}}">Updating...</Button>
-    {:then e}
-      <Button
-        on:click="{() => {
-          updatePromise = updateFunction();
-        }}"
-      >
-        Update
-      </Button>
-    {:catch err}
-      <Button
-        on:click="{() => {
-          updatePromise = updateFunction();
-        }}"
-      >
-        Update [!]
-      </Button>
-    {/await}
-  </div>
-  <div class="header-bar" class:invalid="{!valid}">
+  <div class="header-bar">
     <button on:click="{() => (collapsed = !collapsed)}">
       {#if collapsed}
         [+]
@@ -75,12 +68,44 @@
     </button>
     {title}
 
+    {#if valid !== null}
+      <span class="updateButton" class:invalid="{_valid}">
+        {#await updatePromise}
+          <Button on:click="{() => {}}">Updating...</Button>
+        {:then e}
+          <Button
+            on:click="{() => {
+              updatePromise = updateFunction();
+            }}"
+          >
+            {#if !_valid}
+              ⮕Update⬅
+            {:else}
+              Update
+            {/if}
+          </Button>
+        {:catch err}
+          <Button
+            on:click="{() => {
+              updatePromise = updateFunction();
+            }}"
+          >
+            {#if !_valid}
+              ⮕Update⬅
+            {:else}
+              Update
+            {/if}
+          </Button>
+        {/await}
+      </span>
+    {/if}
+
     {#if markError}
-      <p class="error-mark">[ ! ]</p>
+      <p class="error-mark" title="{errorReason}">[ ! ]</p>
     {/if}
   </div>
   {#if !collapsed}
-    <div class="slot" class:invalid="{!valid}">
+    <div class="slot" class:invalid="{!_valid}">
       <slot />
     </div>
   {/if}

@@ -1,5 +1,5 @@
 <style>
-  button {
+  p {
     font-family: monospace;
     border-style: none;
   }
@@ -12,39 +12,39 @@
 
 <script>
   export let symbolName, symbolRefMap;
-  export let onClick = undefined;
 
   let titleText = "";
 
   let symbolInfo;
-
-  if (symbolRefMap) {
-    symbolInfo = symbolRefMap[symbolName];
-  } else {
-    symbolInfo = { name: symbolName, providedBy: [], requiredBy: [] };
-  }
-
-  if (symbolInfo.providedBy?.length > 0) {
-    titleText += "Provided by ";
-    titleText += symbolInfo.providedBy.join(",");
-  }
-
-  if (symbolInfo.requiredBy?.length > 0) {
-    if (titleText.length > 0) {
-      titleText += " and required by ";
+  $: {
+    if (symbolRefMap) {
+      symbolInfo = symbolRefMap[symbolName];
     } else {
-      titleText += "Required by ";
+      symbolInfo = { name: symbolName, providedBy: [], requiredBy: [] };
     }
-    titleText += symbolInfo.requiredBy.join(",");
+
+    if (symbolInfo.providedBy?.length > 0) {
+      titleText += "Provided by ";
+      titleText += symbolInfo.providedBy.join(",");
+    }
+
+    if (symbolInfo.requiredBy?.length > 0) {
+      if (titleText.length > 0) {
+        titleText += " and required by ";
+      } else {
+        titleText += "Required by ";
+      }
+      titleText += symbolInfo.requiredBy.join(",");
+    }
   }
 </script>
 
 {#if symbolInfo.providedBy?.length > 0}
-  <button title="{titleText}" on:click="{onClick}">
+  <p title="{titleText}">
     {symbolInfo.name}
-  </button>
+  </p>
 {:else}
-  <button title="{titleText}" on:click="{onClick}" class="warning">
+  <p title="{titleText}" class="warning">
     {symbolInfo.name}
-  </button>
+  </p>
 {/if}

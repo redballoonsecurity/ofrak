@@ -20,14 +20,11 @@
 
 <script>
   import Button from "../utils/Button.svelte";
+  import Icon from "../utils/Icon.svelte";
 
   export let name,
     vaddr,
-    deleteSym = () => {},
-    saveSym = () => {};
-
-  let _name = name;
-  let _vaddr = vaddr;
+    deleteSym = () => {};
 </script>
 
 <div class="box">
@@ -39,6 +36,5 @@
     <input placeholder="{vaddr}" bind:value="{vaddr}" />
   </label>
 
-  <Button on:click="{saveSym}">Save</Button>
-  <Button on:click="{deleteSym}">Delete</Button>
+  <Button on:click="{deleteSym}"><Icon url="/icons/trash.svg" /></Button>
 </div>

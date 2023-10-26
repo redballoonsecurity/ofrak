@@ -25,6 +25,7 @@
   import UserInputSymbol from "./UserInputSymbol.svelte";
   import Button from "../utils/Button.svelte";
   import PatchSymbol from "./PatchSymbol.svelte";
+  import Icon from "../utils/Icon.svelte";
 
   export let patchInfo, refreshOverviewCallback;
 
@@ -32,21 +33,18 @@
   let undefinedSymsCollapse = false;
 
   let unresolvedSyms = new Set();
-  if (patchInfo.symbolRefMap) {
-    for (const symName of patchInfo.symbolRefMap.allSyms) {
-      if (patchInfo.symbolRefMap[symName].providedBy.length === 0) {
-        unresolvedSyms.add(symName);
-      }
-    }
-  }
 
   function pushNewSymbol() {
+    if (!newName || !(newVaddr || newVaddr === 0x0)) {
+      return;
+    }
     patchInfo.userInputs.symbols = [
       [newName, newVaddr],
       ...patchInfo.userInputs.symbols,
     ];
     newName = null;
     newVaddr = null;
+    refreshOverviewCallback();
   }
 
   function deleteSym(idx) {
@@ -54,6 +52,18 @@
       idx,
       1
     );
+    refreshOverviewCallback();
+  }
+
+  $: {
+    if (patchInfo.symbolRefMap) {
+      unresolvedSyms = new Set();
+      for (const symName of patchInfo.symbolRefMap.allSyms) {
+        if (patchInfo.symbolRefMap[symName].providedBy.length === 0) {
+          unresolvedSyms.add(symName);
+        }
+      }
+    }
   }
 </script>
 
@@ -99,7 +109,7 @@ target binary.
       <input placeholder="Address" bind:value="{newVaddr}" />
     </label>
 
-    <Button on:click="{pushNewSymbol}">Add new</Button>
+    <Button on:click="{pushNewSymbol}"><Icon url="/icons/plus.svg" /></Button>
   </div>
 
   {#each patchInfo.userInputs.symbols as [name, vaddr], idx}

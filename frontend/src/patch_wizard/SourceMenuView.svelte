@@ -89,5 +89,5 @@
     />
   {/each}
 
-  <Button on:click="{addNewSourceFile}">Add new source file</Button>
+  <Button on:click="{addNewSourceFile}">Add new source or header file</Button>
 </div>

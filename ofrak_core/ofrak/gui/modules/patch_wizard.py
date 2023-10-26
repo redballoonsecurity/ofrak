@@ -9,7 +9,7 @@ from typing import Dict, List, Optional, Tuple, Type, TextIO
 
 from aiohttp import web
 from aiohttp.web_request import Request
-from aiohttp.web_response import Response, StreamResponse
+from aiohttp.web_response import Response
 
 from ofrak import Resource
 from ofrak.core import (
@@ -65,15 +65,17 @@ class PatchWizard:
             ),
             web.post("/patch_wizard/get_all_patches_in_progress", self.get_patches_in_progress),
             web.post("/patch_wizard/listen_logs", self.get_next_log_message),
+            web.post("/{resource_id}/patch_wizard/save_current_patch", self.save_current_patch),
         ]
 
     @exceptions_to_http(SerializedError)
     async def start_new_patch(self, request: Request) -> Response:
         resource = await self.helper.get_resource_for_request(request)
         name = request.query.get("patch_name")
-        self.patches[name] = PatchInProgress(name, resource)
+        patch = PatchInProgress(name, resource)
+        self.patches[name] = patch
 
-        return Response(status=200)
+        return json_response(patch.latest_metadata)
 
     @exceptions_to_http(SerializedError)
     async def remove_patch(self, request: Request) -> Response:
@@ -87,7 +89,7 @@ class PatchWizard:
         patch_name = request.query.get("patch_name")
         file_name = request.query.get("file_name")
         body = await request.read()
-        self.patches[patch_name].add_file(file_name, body)
+        self.patches[patch_name].files[file_name] = body
 
         return Response(status=200)
 
@@ -96,7 +98,7 @@ class PatchWizard:
         patch_name = request.query.get("patch_name")
         file_name = request.query.get("file_name")
 
-        self.patches[patch_name].delete_file(file_name)
+        del self.patches[patch_name].files[file_name]
 
         return Response(status=200)
 
@@ -110,6 +112,9 @@ class PatchWizard:
         toolchain_config = self.helper.serializer.from_pjson(
             body["toolchainConfig"], ToolchainConfig
         )
+
+        patch_in_progress.latest_metadata["userInputs"]["toolchain"] = body["toolchain"]
+        patch_in_progress.latest_metadata["userInputs"]["toolchainConfig"] = body["toolchainConfig"]
 
         patch_bom = await patch_in_progress.build_patch_bom(toolchain, toolchain_config)
 
@@ -137,73 +142,10 @@ class PatchWizard:
     @exceptions_to_http(SerializedError)
     async def get_patches_in_progress(self, request: Request) -> Response:
         # Get all patches in progress, with populated patchInfos according to how much stuff is ready for each patch
-        patch_info_struct = [
-            {
-                "name": "Example_Patch",
-                "sourceInfos": [
-                    {"name": "file1.c", "body": [], "originalName": "file1.c"},
-                    {"name": "file2.c", "body": [], "originalName": "file2.c"},
-                    {"name": "file3.h", "body": [], "originalName": "file3.h"},
-                ],
-                "objectInfosValid": True,
-                "objectInfos": [
-                    {
-                        "name": "file1.c",
-                        "segments": [
-                            {
-                                "name": ".text",
-                                "size": 0x100,
-                                "permissions": "rx",
-                                "include": True,
-                                "allocatedVaddr": None,
-                            },
-                            {
-                                "name": ".data",
-                                "size": 0x100,
-                                "permissions": "rw",
-                                "include": True,
-                                "allocatedVaddr": None,
-                            },
-                            {
-                                "name": ".rodata",
-                                "size": 0x100,
-                                "permissions": "r",
-                                "include": False,
-                                "allocatedVaddr": None,
-                            },
-                        ],
-                        "strongSymbols": ["foo"],
-                        "unresolvedSymbols": ["printf", "bar", "boogeyman"],
-                    },
-                    {
-                        "name": "file2.c",
-                        "segments": [
-                            {
-                                "name": ".text",
-                                "size": 0x100,
-                                "permissions": "rx",
-                                "include": True,
-                                "allocatedVaddr": None,
-                            },
-                        ],
-                        "strongSymbols": ["bar"],
-                        "unresolvedSymbols": [],
-                    },
-                ],
-                "targetInfo": {
-                    "symbols": ["printf", "sprintf", "malloc", "calloc", "kalloc"],
-                },
-                "targetInfoValid": True,
-                "userInputs": {
-                    "symbols": {"example": 0xFEED},
-                    "toolchain": None,
-                    "toolchainConfig": None,
-                },
-                "symbolRefMap": None,
-            }
+        patches = [
+            p.latest_metadata for p in self.patches.values() if p.latest_metadata is not None
         ]
-
-        return json_response([])
+        return json_response(patches)
 
     @exceptions_to_http(SerializedError)
     async def get_source_file_body(self, request: Request) -> Response:
@@ -226,12 +168,23 @@ class PatchWizard:
         return json_response(target_info_struct)
 
     @exceptions_to_http(SerializedError)
-    async def get_next_log_message(self, request: Request) -> StreamResponse:
+    async def get_next_log_message(self, request: Request) -> Response:
         patch_name = request.query.get("patch_name")
 
         logged_message = await self.patches[patch_name].logs.listen()
 
         return Response(status=200, text=logged_message)
+
+    @exceptions_to_http(SerializedError)
+    async def save_current_patch(self, request: Request) -> Response:
+        resource = await self.helper.get_resource_for_request(request)
+
+        patch_info = await request.json()
+
+        self.patches.get(patch_info["name"]).latest_metadata = patch_info
+        return Response(
+            status=200,
+        )
 
 
 class LogStreamer(TextIO):
@@ -242,7 +195,6 @@ class LogStreamer(TextIO):
 
     def write(self, msg: str):
         stripped_msg = self.tmpfile_regex.sub("", msg)
-        print("put a message!")
         self.message_queue.put_nowait(stripped_msg)
 
     def flush(self):
@@ -250,11 +202,6 @@ class LogStreamer(TextIO):
 
     async def listen(self) -> str:
         return await self.message_queue.get()
-
-    async def continuous_listen(self):
-        while True:
-            m = await self.listen()
-            print(f"Got an async message: {m}")
 
 
 class PatchInProgress:
@@ -272,6 +219,21 @@ class PatchInProgress:
         self.patch_bom: Optional[BOM] = None
         self.patch_bom_dir: Optional[str] = None
         self.target_linkable_bom_info: Optional[Tuple[BOM, PatchRegionConfig]] = None
+
+        self.latest_metadata: Dict = {
+            "name": self.name,
+            "sourceInfos": [],
+            "objectInfosValid": False,
+            "objectInfos": [],
+            "targetInfo": {"symbols": []},
+            "targetInfoValid": False,
+            "userInputs": {
+                "symbols": [],
+                "toolchain": None,
+                "toolchainConfig": None,
+            },
+            "symbolRefMap": None,
+        }
 
     def __del__(self):
         if self.build_tmp_dir:
