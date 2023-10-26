@@ -109,7 +109,7 @@ export function fakePatchInfo() {
     },
     targetInfoValid: true,
     userInputs: {
-      symbols: { example: 0xfeed },
+      symbols: [["example", 0xfeed]],
       toolchain: undefined,
       toolchainConfig: undefined,
     },

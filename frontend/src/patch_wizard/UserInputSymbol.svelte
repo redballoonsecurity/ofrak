@@ -1,9 +1,17 @@
 <style>
   .box {
-    display: inline;
+    display: inline-flex;
+    align-items: center;
+    height: fit-content;
   }
 
   label {
+    background-color: var(--main-bg-color);
+    color: var(--main-fg-color);
+    max-width: 10em;
+  }
+
+  input {
     background-color: var(--main-bg-color);
     color: var(--main-fg-color);
     max-width: 10em;
@@ -13,7 +21,10 @@
 <script>
   import Button from "../utils/Button.svelte";
 
-  export let name, vaddr;
+  export let name,
+    vaddr,
+    deleteSym = () => {},
+    saveSym = () => {};
 
   let _name = name;
   let _vaddr = vaddr;
@@ -21,13 +32,13 @@
 
 <div class="box">
   <label>
-    <input placeholder="{_name}" bind:value="{_name}" />
+    <input placeholder="{name}" bind:value="{name}" />
   </label>
 
   <label>
-    <input placeholder="{_vaddr}" bind:value="{_vaddr}" />
+    <input placeholder="{vaddr}" bind:value="{vaddr}" />
   </label>
 
-  <Button>Save</Button>
-  <Button>Delete</Button>
+  <Button on:click="{saveSym}">Save</Button>
+  <Button on:click="{deleteSym}">Delete</Button>
 </div>

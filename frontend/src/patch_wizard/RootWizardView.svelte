@@ -104,7 +104,11 @@
       objectInfos: [],
       targetInfo: {},
       targetInfoValid: false,
-      userInputs: {},
+      userInputs: {
+        symbols: [],
+        toolchain: undefined,
+        toolchainConfig: undefined,
+      },
       symbolRefMap: null,
     };
   }
@@ -164,6 +168,19 @@
         };
       }
       refMap.allSyms.add(sym);
+    }
+
+    for (const [symName, symVal] of patchInfo.userInputs.symbols) {
+      if (refMap.hasOwnProperty(symName)) {
+        refMap[symName].providedBy.push("user input");
+      } else {
+        refMap[symName] = {
+          name: symName,
+          providedBy: ["target binary"],
+          requiredBy: [],
+        };
+      }
+      refMap.allSyms.add(symName);
     }
 
     return refMap;
