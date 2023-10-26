@@ -1,23 +1,36 @@
 <style>
   .box {
+    width: calc(100% - 2px);
   }
 
   .new-sym-box {
     display: inline-flex;
     align-items: center;
     height: fit-content;
+    border: thin solid;
+    width: 100%;
+    margin: 1em;
   }
 
   label {
     background-color: var(--main-bg-color);
     color: var(--main-fg-color);
-    max-width: 10em;
+    width: 40%;
   }
 
   input {
     background-color: var(--main-bg-color);
     color: var(--main-fg-color);
-    max-width: 10em;
+    width: 100%;
+  }
+
+  .name-label {
+    margin-right: auto;
+  }
+
+  .vaddr-label {
+    margin-left: auto;
+    margin-right: auto;
   }
 </style>
 
@@ -67,8 +80,10 @@
   }
 </script>
 
-Define symbols which are required by the patch code and not provided by the
-target binary.
+<div class="description">
+  Define symbols which are required by the patch code and not provided by the
+  target binary.
+</div>
 
 <div class="undefined-syms-box">
   <button
@@ -101,11 +116,11 @@ target binary.
 
 <div class="box">
   <div class="new-sym-box">
-    <label>
+    <label class="name-label">
       <input placeholder="Symbol name" bind:value="{newName}" />
     </label>
 
-    <label>
+    <label class="vaddr-label">
       <input placeholder="Address" bind:value="{newVaddr}" />
     </label>
 

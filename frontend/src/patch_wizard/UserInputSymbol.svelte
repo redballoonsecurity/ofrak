@@ -3,18 +3,29 @@
     display: inline-flex;
     align-items: center;
     height: fit-content;
+    border: thin solid;
+    width: 100%;
   }
 
   label {
     background-color: var(--main-bg-color);
     color: var(--main-fg-color);
-    max-width: 10em;
+    width: 40%;
   }
 
   input {
     background-color: var(--main-bg-color);
     color: var(--main-fg-color);
-    max-width: 10em;
+    width: 100%;
+  }
+
+  .name-label {
+    margin-right: auto;
+  }
+
+  .vaddr-label {
+    margin-left: auto;
+    margin-right: auto;
   }
 </style>
 
@@ -28,13 +39,15 @@
 </script>
 
 <div class="box">
-  <label>
+  <label class="name-label">
     <input placeholder="{name}" bind:value="{name}" />
   </label>
 
-  <label>
+  <label class="vaddr-label">
     <input placeholder="{vaddr}" bind:value="{vaddr}" />
   </label>
 
-  <Button on:click="{deleteSym}"><Icon url="/icons/trash.svg" /></Button>
+  <Button on:click="{deleteSym}" --button-margin-left="auto"
+    ><Icon url="/icons/trash.svg" /></Button
+  >
 </div>
