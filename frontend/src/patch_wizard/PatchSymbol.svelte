@@ -23,6 +23,7 @@
       symbolInfo = { name: symbolName, providedBy: [], requiredBy: [] };
     }
 
+    titleText = "";
     if (symbolInfo.providedBy?.length > 0) {
       titleText += "Provided by ";
       titleText += symbolInfo.providedBy.join(",");

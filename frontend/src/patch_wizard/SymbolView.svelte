@@ -3,19 +3,24 @@
     width: calc(100% - 2px);
   }
 
+  .undefined-syms-box {
+    margin: 1em;
+    width: 100%;
+  }
+
   .new-sym-box {
     display: inline-flex;
     align-items: center;
     height: fit-content;
     border: thin solid;
     width: 100%;
-    margin: 1em;
   }
 
   label {
     background-color: var(--main-bg-color);
     color: var(--main-fg-color);
     width: 40%;
+    margin: 0.5em;
   }
 
   input {
@@ -42,17 +47,25 @@
 
   export let patchInfo, refreshOverviewCallback;
 
-  let newName, newVaddr;
+  let newName = null,
+    newVaddr = null;
   let undefinedSymsCollapse = false;
 
   let unresolvedSyms = new Set();
 
   function pushNewSymbol() {
-    if (!newName || !(newVaddr || newVaddr === 0x0)) {
+    if (!newName || newVaddr === null) {
       return;
     }
+    let parsedVaddr;
+    if (newVaddr.startsWith("0x")) {
+      parsedVaddr = parseInt(newVaddr, 16);
+    } else {
+      parsedVaddr = parseInt(newVaddr);
+    }
+    // newVaddr is a string you buffoon, it needs to be an int
     patchInfo.userInputs.symbols = [
-      [newName, newVaddr],
+      [newName, parsedVaddr],
       ...patchInfo.userInputs.symbols,
     ];
     newName = null;
@@ -124,7 +137,9 @@
       <input placeholder="Address" bind:value="{newVaddr}" />
     </label>
 
-    <Button on:click="{pushNewSymbol}"><Icon url="/icons/plus.svg" /></Button>
+    <Button on:click="{pushNewSymbol}" --button-margin="0.5em 0.5em 0.5em auto"
+      ><Icon url="/icons/plus.svg" /></Button
+    >
   </div>
 
   {#each patchInfo.userInputs.symbols as [name, vaddr], idx}

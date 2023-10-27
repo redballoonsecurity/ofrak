@@ -91,6 +91,43 @@
     return await r.json();
   }
 
+  async function fetchTargetInfo(patchName) {
+    let r = await fetch(
+      `${$settings.backendUrl}/patch_wizard/get_target_info?patch_name=${patchName}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (!r.ok) {
+      throw Error(JSON.stringify(await r.json(), undefined, 2));
+    }
+    return await r.json();
+  }
+
+  async function doPatch(patchInfo) {
+    addLogBreak();
+    let r = await fetch(
+      `${$settings.backendUrl}/patch_wizard/inject_patch?patch_name=${patchInfo.name}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          objectInfos: patchInfo.objectInfos,
+          userSymbols: patchInfo.userInputs.symbols,
+        }),
+      }
+    );
+    if (!r.ok) {
+      throw Error(JSON.stringify(await r.json(), undefined, 2));
+    }
+    return await r.json();
+  }
+
   let subMenu = undefined;
   let addLogBreak;
 
@@ -292,7 +329,7 @@
       }
     }
 
-    patchInfo.targetInfo = await fakeFetchTargetInfo();
+    patchInfo.targetInfo = await fetchTargetInfo(patchInfo.name);
 
     patchInfo.targetInfoValid = true;
     updateSummary();
@@ -456,6 +493,12 @@
                 />
               {/each}
 
+              {#if patchInfo.userInputs.symbols}
+                <p>
+                  You are providing {patchInfo.userInputs.symbols.length} symbol(s).
+                </p>
+              {/if}
+
               {#if overview.unresolvedSyms.size > 0}
                 {#if overview.unresolvedSyms.size === 1}
                   <p class="warning">There as an unresolved symbol!</p>
@@ -488,7 +531,7 @@
 
       <div class="nav-bar">
         <Button on:click="{goBack}">Back</Button>
-        <Button>Inject</Button>
+        <Button on:click="{() => doPatch(patchInfo)}">Inject</Button>
         <Button on:click="{_devResetAll}">(Development) Reset)</Button>
       </div>
     </Pane>

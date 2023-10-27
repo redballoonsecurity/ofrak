@@ -24,7 +24,8 @@ from ofrak.service.error import SerializedError
 from ofrak_patch_maker.model import BOM, PatchRegionConfig, PatchMakerException
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.abstract import Toolchain
-from ofrak_patch_maker.toolchain.model import ToolchainConfig, ToolchainException
+from ofrak_patch_maker.toolchain.model import ToolchainConfig, ToolchainException, Segment
+from ofrak_type import MemoryPermissions
 
 
 class InvalidStateException(Exception):
@@ -66,6 +67,7 @@ class PatchWizard:
             web.post("/patch_wizard/get_all_patches_in_progress", self.get_patches_in_progress),
             web.post("/patch_wizard/listen_logs", self.get_next_log_message),
             web.post("/{resource_id}/patch_wizard/save_current_patch", self.save_current_patch),
+            web.post("/patch_wizard/inject_patch", self.inject_patch),
         ]
 
     @exceptions_to_http(SerializedError)
@@ -163,6 +165,10 @@ class PatchWizard:
         for obj in target_bom.object_map.values():
             symbols.update(obj.strong_symbols)
 
+        if "empty_source.c" in symbols:
+            # Empty source file created by LinkableBinary.make_linkable_bom so that it can always make a stub BOM
+            symbols.remove("empty_source.c")
+
         target_info_struct = {"symbols": list(symbols)}
 
         return json_response(target_info_struct)
@@ -185,6 +191,47 @@ class PatchWizard:
         return Response(
             status=200,
         )
+
+    @exceptions_to_http(SerializedError)
+    async def inject_patch(self, request: Request) -> Response:
+        patch_name = request.query.get("patch_name")
+        patch = self.patches[patch_name]
+
+        patch_spec = await request.json()
+
+        extra_syms = patch_spec["userSymbols"]
+        object_infos = patch_spec["objectInfos"]
+
+        obj_to_segs = {}
+
+        for obj in object_infos:
+            segments = []
+            for segInfo in obj["segments"]:
+                if not segInfo["include"]:
+                    continue
+
+                seg = Segment(
+                    segInfo["name"],
+                    segInfo["allocatedVaddr"],
+                    0,
+                    False,
+                    segInfo["size"],
+                    MemoryPermissions[segInfo["permissions"].upper()],
+                )
+                segments.append(seg)
+            segments = tuple(segments)
+            obj_path = patch.source_file_name_to_object_path(obj["name"])
+
+            obj_to_segs[obj_path] = segments
+
+        patch_regions = PatchRegionConfig(
+            patch_name,
+            obj_to_segs,
+        )
+
+        await patch.inject_bom(patch_regions, dict(extra_syms))
+
+        return Response(status=200)
 
 
 class LogStreamer(TextIO):
@@ -238,6 +285,11 @@ class PatchInProgress:
     def __del__(self):
         if self.build_tmp_dir:
             self.build_tmp_dir.cleanup()
+
+    def source_file_name_to_object_path(self, src_fname):
+        for old_src_path, obj in self.patch_bom.object_map.items():
+            if os.path.basename(old_src_path) == src_fname:
+                return obj.path
 
     def add_file(self, name: str, body: bytes):
         self.files[name] = body
@@ -309,13 +361,14 @@ class PatchInProgress:
 
         return self.target_linkable_bom_info
 
-    async def inject_bom(self, patch_regions: PatchRegionConfig):
+    async def inject_bom(self, patch_regions: PatchRegionConfig, extra_syms: Dict[str, int]):
         exec_path = os.path.join(self.build_tmp_dir.name, "output_exec")
 
         fem = self._try_and_log_errors(
             self.patch_maker.make_fem,
             [(self.patch_bom, patch_regions), self.target_linkable_bom_info],
             exec_path,
+            additional_symbols=extra_syms,
         )
 
         await self.resource.run(

@@ -11,6 +11,7 @@
     background-color: var(--main-bg-color);
     color: var(--main-fg-color);
     width: 40%;
+    margin: 0.5em;
   }
 
   input {
@@ -36,6 +37,19 @@
   export let name,
     vaddr,
     deleteSym = () => {};
+
+  let _vaddr = "0x" + vaddr.toString(16),
+    prevVaddr = vaddr;
+
+  $: {
+    if (vaddr !== prevVaddr) {
+      // vaddr has been bound and changed by outside forces
+      _vaddr = "0x" + vaddr.toString(16);
+    } else {
+      vaddr = _vaddr.startsWith("0x") ? parseInt(_vaddr, 16) : parseInt(_vaddr);
+    }
+    prevVaddr = vaddr;
+  }
 </script>
 
 <div class="box">
@@ -44,10 +58,10 @@
   </label>
 
   <label class="vaddr-label">
-    <input placeholder="{vaddr}" bind:value="{vaddr}" />
+    <input placeholder="{vaddr}" bind:value="{_vaddr}" />
   </label>
 
-  <Button on:click="{deleteSym}" --button-margin-left="auto"
+  <Button on:click="{deleteSym}" --button-margin="0.5em 0.5em 0.5em auto"
     ><Icon url="/icons/trash.svg" /></Button
   >
 </div>
