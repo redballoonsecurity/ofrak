@@ -267,12 +267,13 @@ class Toolchain(ABC):
                 my_env.update(env)
                 self._logger.info(f"With env: {my_env}")
                 proc = subprocess.run(
-                    args, stdout=subprocess.PIPE, encoding="utf-8", check=True, env=my_env
+                    args, capture_output=True, encoding="utf-8", check=True, env=my_env
                 )
             else:
-                proc = subprocess.run(args, stdout=subprocess.PIPE, encoding="utf-8", check=True)
+                proc = subprocess.run(args, capture_output=True, encoding="utf-8", check=True)
         except subprocess.CalledProcessError as e:
             cmd = " ".join(args)
+            self._logger.error(e.stderr)
             raise ValueError(f'Command "{cmd}" returned non-zero exit status {e.returncode}')
 
         return proc.stdout
