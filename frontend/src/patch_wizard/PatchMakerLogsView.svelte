@@ -1,6 +1,7 @@
 <style>
   .title {
-    height: 10%;
+    height: calc(10% - 1em);
+    text-decoration: underline;
   }
 
   .logs {
@@ -134,7 +135,7 @@
   }
 </script>
 
-<p class="title">PatchMaker Logs</p>
+<h3 class="title">PatchMaker Logs</h3>
 <div bind:this="{scrollingLogsNode}" class="logs">
   {#each messages as message}
     {#if message === linebreakMarker}

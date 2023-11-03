@@ -52,6 +52,18 @@
           modifierView = RunScriptView;
         },
       },
+
+      {
+        text: "Patch Wizard",
+        iconUrl: "/icons/wizard.svg",
+        onclick: async (e) => {
+          pushViewCrumb("patchWizard");
+        },
+        disabled: () =>
+          !$selectedResource.tags.includes(
+            "ofrak.core.patch_maker.linkable_binary.LinkableBinary"
+          ),
+      },
     ];
   }
 
@@ -300,14 +312,6 @@
         iconUrl: "/icons/settings.svg",
         onclick: async (e) => {
           modifierView = SettingsView;
-        },
-      },
-
-      {
-        text: "Patch Wizard",
-        iconUrl: "/icons/settings.svg",
-        onclick: async (e) => {
-          pushViewCrumb("patchWizard");
         },
       },
     ];

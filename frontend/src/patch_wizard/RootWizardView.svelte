@@ -1,5 +1,5 @@
 <style>
-  .summary-info-header-bar {
+  .title-bar {
     border: thin solid;
     font-size: medium;
     padding: 0.3em;
@@ -7,8 +7,9 @@
     align-items: center;
   }
 
-  .refresh-button {
+  .title {
     margin-left: auto;
+    margin-right: auto;
   }
 
   .summary-body {
@@ -20,30 +21,21 @@
     text-decoration-color: red;
   }
 
-  .nav-bar {
+  .inject-button-bar {
     display: inline-flex;
     align-items: center;
+    width: 100%;
+    justify-content: center;
+    margin-top: 1em;
   }
 </style>
 
 <script>
-  import { onMount } from "svelte";
-
   import Split from "../utils/Split.svelte";
   import Pane from "../utils/Pane.svelte";
   import Button from "../utils/Button.svelte";
 
-  import {
-    popViewCrumb,
-    selectedResource,
-    settings,
-    viewCrumbs,
-  } from "../stores";
-  import {
-    fakeFetchObjectInfos,
-    fakeFetchTargetInfo,
-    fakePatchInfo,
-  } from "./dev_consts";
+  import { popViewCrumb, selectedResource, settings } from "../stores";
   import SourceMenuView from "./SourceMenuView.svelte";
   import ObjectMappingView from "./ObjectMappingView.svelte";
   import ToolchainSetupView from "./ToolchainSetupView.svelte";
@@ -52,6 +44,9 @@
   import SymbolView from "./SymbolView.svelte";
   import PatchMakerLogsView from "./PatchMakerLogsView.svelte";
   import Loading from "../utils/LoadingText.svelte";
+  import FreeSpaceView from "./FreeSpaceView.svelte";
+
+  let injectionStatus = "";
 
   async function fetchPatchesInProgress() {
     let r = await fetch(
@@ -125,7 +120,7 @@
     if (!r.ok) {
       throw Error(JSON.stringify(await r.json(), undefined, 2));
     }
-    return await r.json();
+    injectionStatus = await r.text();
   }
 
   let subMenu = undefined;
@@ -137,6 +132,7 @@
     unresolvedSyms: new Set(),
     unallocatedSegments: [],
     nSources: 0,
+    readyToPatch: false,
   };
 
   let patchInfo;
@@ -293,12 +289,17 @@
     for (const obj of patchInfo.objectInfos) {
       for (const seg of obj.segments) {
         if (seg.include && !validVaddr(seg.allocatedVaddr)) {
-          newOverview.unallocatedSegments.push([obj.name, seg.name]);
+          newOverview.unallocatedSegments.push(seg);
         }
       }
     }
 
     newOverview.nSources = patchInfo.sourceInfos.length;
+
+    newOverview.readyToPatch =
+      newOverview.totalBytes > 0 &&
+      newOverview.unresolvedSyms.size === 0 &&
+      newOverview.unallocatedSegments.length === 0;
 
     overview = newOverview;
   }
@@ -333,13 +334,6 @@
 
     patchInfo.targetInfoValid = true;
     updateSummary();
-  }
-
-  function _devResetAll() {
-    patchInfo = fakePatchInfo();
-    updatePatchPlacement().then(() => {
-      updateSymbolDefines().then(updateSummary);
-    });
   }
 
   function goBack() {
@@ -393,10 +387,9 @@
 <Split>
   <Split slot="first" vertical="{true}" percentOfFirstSplit="{66.666}">
     <Pane slot="first">
-      <div class="summary-info-header-bar">
-        OVERVIEW <button class="refresh-button" on:click="{updateSummary}"
-          >Refresh</button
-        >
+      <div class="title-bar">
+        <Button on:click="{goBack}">← Back</Button>
+        <h2 class="title">PATCH WIZARD</h2>
       </div>
       {#await patchInfoPromise}
         <Loading />
@@ -446,7 +439,6 @@
             updateFunction="{updatePatchPlacement}"
             errorReason="Must allocate segments!"
           >
-            <p>Something about free space</p>
             {#if overview.nSegments}
               <p>
                 {overview.nSegments} segment{overview.nSegments > 1 ? "s" : ""} totaling
@@ -462,16 +454,16 @@
                 {overview.unallocatedSegments.length} segment(s) still need to be
                 allocated:
               </p>
-              {#each overview.unallocatedSegments as [objName, segName]}
-                <p>{objName}{segName}</p>
+              {#each overview.unallocatedSegments as seg}
+                <p>{seg.unit}{seg.name}</p>
               {/each}
             {/if}
             <br />
-            <Button on:click="{() => (subMenu = null)}"
-              >Create Free Space</Button
-            >
             <Button on:click="{() => (subMenu = ObjectMappingView)}"
               >Configure Patch Placement</Button
+            >
+            <Button on:click="{() => (subMenu = FreeSpaceView)}"
+              >Manage Free Space</Button
             >
           </SummaryWidget>
           <SummaryWidget
@@ -529,11 +521,14 @@
         </div>
       {/await}
 
-      <div class="nav-bar">
-        <Button on:click="{goBack}">Back</Button>
-        <Button on:click="{() => doPatch(patchInfo)}">Inject</Button>
-        <Button on:click="{_devResetAll}">(Development) Reset)</Button>
+      <div class="inject-button-bar">
+        <Button
+          disabled="{!overview.readyToPatch}"
+          on:click="{() => doPatch(patchInfo)}">Step 4. Inject!</Button
+        >
       </div>
+
+      <p>{injectionStatus}</p>
     </Pane>
     <Pane slot="second" paddingVertical="{'1em'}">
       {#await patchInfoPromise}

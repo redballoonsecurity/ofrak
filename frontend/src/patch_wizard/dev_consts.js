@@ -70,6 +70,7 @@ export function fakePatchInfo() {
             permissions: "rx",
             include: true,
             allocatedVaddr: null,
+            unit: "file1.c.o",
           },
           {
             name: ".data",
@@ -77,6 +78,7 @@ export function fakePatchInfo() {
             permissions: "rw",
             include: true,
             allocatedVaddr: null,
+            unit: "file1.c.o",
           },
           {
             name: ".rodata",
@@ -84,6 +86,7 @@ export function fakePatchInfo() {
             permissions: "r",
             include: false,
             allocatedVaddr: null,
+            unit: "file1.c.o",
           },
         ],
         strongSymbols: ["foo"],
@@ -98,6 +101,7 @@ export function fakePatchInfo() {
             permissions: "rx",
             include: true,
             allocatedVaddr: null,
+            unit: "file2.c.o",
           },
         ],
         strongSymbols: ["bar"],

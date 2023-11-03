@@ -3,13 +3,17 @@ import logging
 import os
 import re
 import shutil
+import sys
 import tempfile
 from subprocess import CalledProcessError
 from typing import Dict, List, Optional, Tuple, Type, TextIO
 
 from aiohttp import web
 from aiohttp.web_request import Request
-from aiohttp.web_response import Response
+from aiohttp.web_response import Response, StreamResponse
+from ofrak.core.free_space import FreeSpaceModifierConfig
+
+from ofrak.service.resource_service_i import ResourceFilter
 
 from ofrak import Resource
 from ofrak.core import (
@@ -18,14 +22,25 @@ from ofrak.core import (
     SegmentInjectorModifier,
     SegmentInjectorModifierConfig,
     LinkableBinary,
+    Allocatable,
+    LiefAddSegmentModifier,
+    LiefAddSegmentConfig,
+    Elf,
+    ElfProgramHeaderType,
+    ElfUnpacker,
+    FreeSpace,
+    FreeSpaceAnalyzer,
+    ComplexBlock,
+    FreeSpaceModifier,
 )
+from ofrak.core.elf.load_alignment_modifier import ElfLoadAlignmentModifier
 from ofrak.gui.utils import OfrakShim, exceptions_to_http, json_response
 from ofrak.service.error import SerializedError
 from ofrak_patch_maker.model import BOM, PatchRegionConfig, PatchMakerException
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.abstract import Toolchain
 from ofrak_patch_maker.toolchain.model import ToolchainConfig, ToolchainException, Segment
-from ofrak_type import MemoryPermissions
+from ofrak_type import MemoryPermissions, Range
 
 
 class InvalidStateException(Exception):
@@ -68,6 +83,9 @@ class PatchWizard:
             web.post("/patch_wizard/listen_logs", self.get_next_log_message),
             web.post("/{resource_id}/patch_wizard/save_current_patch", self.save_current_patch),
             web.post("/patch_wizard/inject_patch", self.inject_patch),
+            web.post("/patch_wizard/extend_elf", self.extend_elf),
+            web.post("/patch_wizard/get_complex_blocks", self.get_complex_blocks),
+            web.post("/patch_wizard/free_complex_blocks", self.free_complex_blocks),
         ]
 
     @exceptions_to_http(SerializedError)
@@ -130,6 +148,7 @@ class PatchWizard:
                         "permissions": seg.access_perms.as_str(),
                         "include": False,
                         "allocatedVaddr": None,
+                        "unit": os.path.basename(obj.path),
                     }
                     for seg in obj.segment_map.values()
                 ],
@@ -229,7 +248,216 @@ class PatchWizard:
             obj_to_segs,
         )
 
-        await patch.inject_bom(patch_regions, dict(extra_syms))
+        injected_bytes = await patch.inject_bom(patch_regions, dict(extra_syms))
+
+        return Response(status=200, text=f"Success! Injected {hex(injected_bytes)} bytes")
+
+    @exceptions_to_http(SerializedError)
+    async def extend_elf(self, request) -> StreamResponse:
+        patch_name = request.query.get("patch_name")
+        method = request.query.get("method")
+        # extension_size = request.query.get("ext_size")
+        patch = self.patches[patch_name]
+        resource = patch.resource
+
+        # Guess a reasonable vaddr
+        elf = await resource.view_as(Elf)
+
+        # Option 1: Use lief modifier to replace NOTE segment
+        if method == "note":
+            note_idx = None
+            for ph in await elf.get_program_headers():
+                if ph.p_type == ElfProgramHeaderType.NOTE.value:
+                    note_idx = ph.segment_index
+                    break
+            if note_idx is None:
+                return Response(status=520, text="No NOTE segment found")
+            MIN_SIZE = 0x1000
+            DEFAULT_SIZE = 0x1000
+            DEFAULT_ALIGN = 0x1000
+
+            def align_up(x):
+                if x % DEFAULT_ALIGN != 0:
+                    return x + (DEFAULT_ALIGN - (x % DEFAULT_ALIGN))
+
+            def align_down(x):
+                if x % DEFAULT_ALIGN != 0:
+                    return x - (x % DEFAULT_ALIGN)
+
+            occupied_mem = Range.merge_ranges(
+                [Range.from_size(ph.p_vaddr, ph.p_memsz) for ph in await elf.get_program_headers()]
+            )
+
+            existing_code_mem = Range.merge_ranges(
+                [
+                    Range.from_size(ph.p_vaddr, ph.p_memsz)
+                    for ph in await elf.get_program_headers()
+                    if ph.p_type == ElfProgramHeaderType.LOAD.value
+                    and ph.p_flags & MemoryPermissions.RX.value
+                ]
+            )
+
+            free_space_between_occupied_mem = [
+                Range(free_block_start, free_block_end)
+                for free_block_start, free_block_end in zip(
+                    [r.start for r in occupied_mem[:-1]], [r.start for r in occupied_mem[1:]]
+                )
+            ]
+
+            free_space_between_occupied_mem = [
+                Range(align_up(r.start), align_down(r.end))
+                for r in free_space_between_occupied_mem
+                if align_up(r.start) < align_down(r.end)
+            ]
+
+            closest_to_existing = (None, sys.maxsize, False)
+            # Iterate over all
+            for free_block in free_space_between_occupied_mem:
+                # for i, occupied_range in enumerate(occupied_mem):
+                for existing_code in existing_code_mem:
+                    _, closest_distance, _ = closest_to_existing
+
+                    distance_up = abs(free_block.end - existing_code.start)
+                    distance_down = abs(free_block.start - existing_code.end)
+
+                    if distance_up < closest_distance:
+                        # This free memory is closest to existing code memory at a HIGHER vaddr
+                        closest_to_existing = (free_block, distance_up, True)
+                    if distance_down < closest_distance:
+                        # This free memory is closest to existing code memory at a LOWER vaddr
+                        closest_to_existing = (free_block, distance_down, False)
+
+            closest_free_block, _, closest_high = closest_to_existing
+            if closest_free_block is None:
+                # This should only make sense when there are no gaps in occupied memory
+                if len(occupied_mem) > 1:
+                    if len(existing_code_mem) == 0:
+                        raise ValueError("No existing code memory to base new vaddr off of!")
+                    else:
+                        raise ValueError(
+                            "Found no closest vaddr but there are gaps in existing memory!"
+                        )
+                closest_free_block = Range.from_size(align_up(occupied_mem[-1].end), DEFAULT_SIZE)
+                closest_high = False
+
+            ext_size = min(closest_free_block.length(), DEFAULT_SIZE)
+            if ext_size < MIN_SIZE:
+                raise ValueError(
+                    f"Best place to add a block would be {closest_free_block}, but it would be smaller than the minimum size!"
+                )
+
+            if closest_high:
+                new_block = Range(closest_free_block.end - ext_size, closest_free_block.end)
+            else:
+                new_block = Range(closest_free_block.start, closest_free_block.start + ext_size)
+
+            children = list(await resource.get_children())
+            for child in children:
+                await child.delete()
+                await child.save()
+
+            resource.remove_component(ElfUnpacker.get_id())
+            await resource.save()
+
+            await resource.run(
+                LiefAddSegmentModifier,
+                LiefAddSegmentConfig(
+                    new_block.start,
+                    new_block.length(),
+                    [0 * new_block.length()],
+                    "rx",
+                ),
+            )
+
+            await resource.unpack()
+            elf = await resource.view_as(Elf)
+            load_idx = None
+            for ph in await elf.get_program_headers():
+                if ph.p_vaddr == new_block.start:
+                    await resource.create_child_from_view(
+                        FreeSpace(ph.p_vaddr, ph.p_memsz, MemoryPermissions.RX),
+                        data_range=Range.from_size(ph.p_offset, ph.p_filesz),
+                    )
+                    load_idx = ph.segment_index
+                    break
+            resource.remove_component(FreeSpaceAnalyzer.get_id())
+            await resource.save()
+
+            return Response(
+                status=200,
+                text=f"Replaced NOTE program header at #{note_idx} with a LOAD header at #{load_idx}",
+            )
+
+        elif method == "load_align":
+            # Option 2: LoadAlignmentModifier
+            resource.add_tag(Allocatable)
+            await resource.save()
+            alloc = await resource.view_as(Allocatable)
+            original_range_count = sum(len(ranges) for ranges in alloc.free_space_ranges.values())
+
+            await resource.run(ElfLoadAlignmentModifier)
+
+            resource.remove_component(FreeSpaceAnalyzer.get_id())
+            await resource.save()
+            alloc = await resource.view_as(Allocatable)
+            updated_range_count = sum(len(ranges) for ranges in alloc.free_space_ranges.values())
+
+            if updated_range_count > original_range_count:
+                n_new_ranges = updated_range_count - original_range_count
+                possesion_suffixes = ("'s", "") if n_new_ranges == 1 else ("s'", "s")
+                return json_response(
+                    status=200,
+                    text=f"Recovered free space from {n_new_ranges} segment{possesion_suffixes[0]} alignment{possesion_suffixes[1]}",
+                )
+            else:
+                return Response(
+                    status=520, text="Load alignment modifier could not recover any free space!"
+                )
+
+        return Response(status=400, text="No extension method specified")
+
+    @exceptions_to_http(SerializedError)
+    async def get_complex_blocks(self, request: Request) -> Response:
+        patch_name = request.query.get("patch_name")
+        patch = self.patches[patch_name]
+
+        results = [
+            {
+                "id": cb.resource.get_id().hex(),
+                "name": cb.name,
+                "vaddr": cb.virtual_address,
+                "size": cb.size,
+            }
+            for cb in await patch.resource.get_descendants_as_view(
+                ComplexBlock, r_filter=ResourceFilter.with_tags(ComplexBlock)
+            )
+        ]
+        return json_response(results)
+
+    @exceptions_to_http(SerializedError)
+    async def free_complex_blocks(self, request: Request) -> Response:
+        patch_name = request.query.get("patch_name")
+        patch = self.patches[patch_name]
+
+        cb_ids = {bytes.fromhex(id_str) for id_str in await request.json()}
+
+        cbs_to_free = [
+            cb_r
+            for cb_r in await patch.resource.get_descendants(
+                r_filter=ResourceFilter.with_tags(ComplexBlock)
+            )
+            if cb_r.get_id() in cb_ids
+        ]
+
+        await asyncio.gather(
+            *(
+                cb_r.run(FreeSpaceModifier, FreeSpaceModifierConfig(MemoryPermissions.RX))
+                for cb_r in cbs_to_free
+            )
+        )
+
+        patch.resource.remove_component(FreeSpaceAnalyzer.get_id())
+        await patch.resource.save()
 
         return Response(status=200)
 
@@ -371,9 +599,15 @@ class PatchInProgress:
             additional_symbols=extra_syms,
         )
 
+        config = SegmentInjectorModifierConfig.from_fem(fem)
+
+        final_injected_size = 0
+        for _, data in config.segments_and_data:
+            final_injected_size += len(data)
+
         await self.resource.run(
             SegmentInjectorModifier,
-            SegmentInjectorModifierConfig.from_fem(fem),
+            config,
         )
 
         # Refresh LinkableBinary with the LinkableSymbols used in this patch
@@ -382,6 +616,8 @@ class PatchInProgress:
         await target_binary.define_linkable_symbols_from_patch(
             fem.executable.symbols, program_attributes
         )
+
+        return final_injected_size
 
     def _try_and_log_errors(self, f, *args, **kwargs):
         try:
