@@ -279,10 +279,14 @@ class PatchWizard:
             def align_up(x):
                 if x % DEFAULT_ALIGN != 0:
                     return x + (DEFAULT_ALIGN - (x % DEFAULT_ALIGN))
+                else:
+                    return x
 
             def align_down(x):
                 if x % DEFAULT_ALIGN != 0:
                     return x - (x % DEFAULT_ALIGN)
+                else:
+                    return x
 
             occupied_mem = Range.merge_ranges(
                 [Range.from_size(ph.p_vaddr, ph.p_memsz) for ph in await elf.get_program_headers()]
