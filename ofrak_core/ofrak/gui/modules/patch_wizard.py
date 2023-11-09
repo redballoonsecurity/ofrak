@@ -580,6 +580,10 @@ class PatchInProgress:
     async def build_target_bom(self):
         target_program = await self.resource.view_as(Program)
 
+        stubs_bom_dir = os.path.join(self.build_tmp_dir.name, "stubs_bom_files")
+        if os.path.exists(stubs_bom_dir):
+            shutil.rmtree(stubs_bom_dir)
+
         with tempfile.TemporaryDirectory() as stubs_sources_dir:
             self.target_linkable_bom_info = await target_program.make_linkable_bom(
                 self.patch_maker,
