@@ -11,9 +11,13 @@ import yaml
 
 BASE_DOCKERFILE = "base.Dockerfile"
 FINISH_DOCKERFILE = "finish.Dockerfile"
-GIT_COMMIT_HASH = (
-    subprocess.check_output(["git", "rev-parse", "--short=8", "HEAD"]).decode("ascii").strip()
-)
+try:
+    GIT_COMMIT_HASH = (
+        subprocess.check_output(["git", "rev-parse", "--short=8", "HEAD"]).decode("ascii").strip()
+    )
+except:
+    print("Warning: No git history found. It will be hard to uniquely identify this build.")
+    GIT_COMMIT_HASH = "latest"
 
 
 class InstallTarget(Enum):
