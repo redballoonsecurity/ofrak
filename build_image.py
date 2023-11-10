@@ -39,6 +39,7 @@ class OfrakImageConfig:
     install_target: InstallTarget
     cache_from: List[str]
     entrypoint: Optional[str]
+    buildkit: bool
 
     def validate_serial_txt_existence(self):
         """
@@ -78,6 +79,12 @@ def main():
         f.write(dockerfile_finish)
     print(f"{FINISH_DOCKERFILE} built.")
 
+    env = {k: v for k, v in os.environ.items()}
+    if config.buildkit:
+        env["DOCKER_BUILDKIT"] = "1"
+    else:
+        env["DOCKER_BUILDKIT"] = "0"
+
     if config.build_base:
         full_base_image_name = "/".join((config.registry, config.base_image_name))
         cache_args = []
@@ -107,7 +114,7 @@ def main():
         if config.extra_build_args:
             base_command.extend(config.extra_build_args)
         try:
-            subprocess.run(base_command, check=True)
+            subprocess.run(base_command, check=True, env=env)
         except subprocess.CalledProcessError as error:
             print(f"Error running command: '{' '.join(error.cmd)}'")
             print(f"Exit status: {error.returncode}")
@@ -131,7 +138,7 @@ def main():
         if config.no_cache:
             finish_command.extend(["--no-cache"])
         try:
-            subprocess.run(finish_command, check=True)
+            subprocess.run(finish_command, check=True, env=env)
         except subprocess.CalledProcessError as error:
             print(f"Error running command: '{' '.join(error.cmd)}'")
             print(f"Exit status: {error.returncode}")
@@ -150,6 +157,7 @@ def parse_args() -> OfrakImageConfig:
         default=InstallTarget.DEVELOP.value,
     )
     parser.add_argument("--cache-from", action="append")
+    parser.add_argument("--buildkit", action="store_true", default=True)
     args = parser.parse_args()
     with open(args.config) as file_handle:
         config_dict = yaml.safe_load(file_handle)
@@ -165,6 +173,7 @@ def parse_args() -> OfrakImageConfig:
         InstallTarget(args.target),
         args.cache_from,
         config_dict.get("entrypoint"),
+        args.buidkit,
     )
     image_config.validate_serial_txt_existence()
     return image_config
