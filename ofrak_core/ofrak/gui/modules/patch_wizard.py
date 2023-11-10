@@ -5,15 +5,13 @@ import re
 import shutil
 import sys
 import tempfile
+from io import StringIO
 from subprocess import CalledProcessError
-from typing import Dict, List, Optional, Tuple, Type, TextIO
+from typing import Dict, List, Optional, Tuple, Type
 
 from aiohttp import web
 from aiohttp.web_request import Request
 from aiohttp.web_response import Response, StreamResponse
-from ofrak.core.free_space import FreeSpaceModifierConfig
-
-from ofrak.service.resource_service_i import ResourceFilter
 
 from ofrak import Resource
 from ofrak.core import (
@@ -34,8 +32,10 @@ from ofrak.core import (
     FreeSpaceModifier,
 )
 from ofrak.core.elf.load_alignment_modifier import ElfLoadAlignmentModifier
+from ofrak.core.free_space import FreeSpaceModifierConfig
 from ofrak.gui.utils import OfrakShim, exceptions_to_http, json_response
 from ofrak.service.error import SerializedError
+from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_patch_maker.model import BOM, PatchRegionConfig, PatchMakerException
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.abstract import Toolchain
@@ -91,7 +91,7 @@ class PatchWizard:
     @exceptions_to_http(SerializedError)
     async def start_new_patch(self, request: Request) -> Response:
         resource = await self.helper.get_resource_for_request(request)
-        name = request.query.get("patch_name")
+        name = request.query["patch_name"]
         patch = PatchInProgress(name, resource)
         self.patches[name] = patch
 
@@ -99,15 +99,15 @@ class PatchWizard:
 
     @exceptions_to_http(SerializedError)
     async def remove_patch(self, request: Request) -> Response:
-        name = request.query.get("patch_name")
+        name = request.query["patch_name"]
         del self.patches[name]
 
         return Response(status=200)
 
     @exceptions_to_http(SerializedError)
     async def add_file(self, request: Request) -> Response:
-        patch_name = request.query.get("patch_name")
-        file_name = request.query.get("file_name")
+        patch_name = request.query["patch_name"]
+        file_name = request.query["file_name"]
         body = await request.read()
         self.patches[patch_name].files[file_name] = body
 
@@ -115,8 +115,8 @@ class PatchWizard:
 
     @exceptions_to_http(SerializedError)
     async def delete_file(self, request: Request) -> Response:
-        patch_name = request.query.get("patch_name")
-        file_name = request.query.get("file_name")
+        patch_name = request.query["patch_name"]
+        file_name = request.query["file_name"]
 
         del self.patches[patch_name].files[file_name]
 
@@ -124,7 +124,7 @@ class PatchWizard:
 
     @exceptions_to_http(SerializedError)
     async def get_object_infos(self, request: Request) -> Response:
-        patch_name = request.query.get("patch_name")
+        patch_name = request.query["patch_name"]
         patch_in_progress = self.patches[patch_name]
 
         body = await request.json()
@@ -175,7 +175,7 @@ class PatchWizard:
 
     @exceptions_to_http(SerializedError)
     async def get_target_info(self, request: Request) -> Response:
-        patch_name = request.query.get("patch_name")
+        patch_name = request.query["patch_name"]
         patch_in_progress = self.patches[patch_name]
 
         target_bom, _ = await patch_in_progress.build_target_bom()
@@ -194,7 +194,7 @@ class PatchWizard:
 
     @exceptions_to_http(SerializedError)
     async def get_next_log_message(self, request: Request) -> Response:
-        patch_name = request.query.get("patch_name")
+        patch_name = request.query["patch_name"]
 
         logged_message = await self.patches[patch_name].logs.listen()
 
@@ -206,14 +206,14 @@ class PatchWizard:
 
         patch_info = await request.json()
 
-        self.patches.get(patch_info["name"]).latest_metadata = patch_info
+        self.patches[patch_info["name"]].latest_metadata = patch_info
         return Response(
             status=200,
         )
 
     @exceptions_to_http(SerializedError)
     async def inject_patch(self, request: Request) -> Response:
-        patch_name = request.query.get("patch_name")
+        patch_name = request.query["patch_name"]
         patch = self.patches[patch_name]
 
         patch_spec = await request.json()
@@ -238,10 +238,9 @@ class PatchWizard:
                     MemoryPermissions[segInfo["permissions"].upper()],
                 )
                 segments.append(seg)
-            segments = tuple(segments)
             obj_path = patch.source_file_name_to_object_path(obj["name"])
 
-            obj_to_segs[obj_path] = segments
+            obj_to_segs[obj_path] = tuple(segments)
 
         patch_regions = PatchRegionConfig(
             patch_name,
@@ -254,7 +253,7 @@ class PatchWizard:
 
     @exceptions_to_http(SerializedError)
     async def extend_elf(self, request) -> StreamResponse:
-        patch_name = request.query.get("patch_name")
+        patch_name = request.query["patch_name"]
         method = request.query.get("method")
         # extension_size = request.query.get("ext_size")
         patch = self.patches[patch_name]
@@ -314,7 +313,7 @@ class PatchWizard:
                 if align_up(r.start) < align_down(r.end)
             ]
 
-            closest_to_existing = (None, sys.maxsize, False)
+            closest_to_existing: Tuple[Optional[Range], int, bool] = (None, sys.maxsize, False)
             # Iterate over all
             for free_block in free_space_between_occupied_mem:
                 # for i, occupied_range in enumerate(occupied_mem):
@@ -422,7 +421,7 @@ class PatchWizard:
 
     @exceptions_to_http(SerializedError)
     async def get_complex_blocks(self, request: Request) -> Response:
-        patch_name = request.query.get("patch_name")
+        patch_name = request.query["patch_name"]
         patch = self.patches[patch_name]
 
         results = [
@@ -440,7 +439,7 @@ class PatchWizard:
 
     @exceptions_to_http(SerializedError)
     async def free_complex_blocks(self, request: Request) -> Response:
-        patch_name = request.query.get("patch_name")
+        patch_name = request.query["patch_name"]
         patch = self.patches[patch_name]
 
         cb_ids = {bytes.fromhex(id_str) for id_str in await request.json()}
@@ -466,11 +465,12 @@ class PatchWizard:
         return Response(status=200)
 
 
-class LogStreamer(TextIO):
+class LogStreamer(StringIO):
     tmpfile_regex = re.compile(r"/tmp/tmp[a-zA-Z0-9]+/")
 
     def __init__(self):
         self.message_queue = asyncio.Queue()
+        super().__init__()
 
     def write(self, msg: str):
         stripped_msg = self.tmpfile_regex.sub("", msg)
@@ -599,6 +599,9 @@ class PatchInProgress:
 
     async def inject_bom(self, patch_regions: PatchRegionConfig, extra_syms: Dict[str, int]):
         exec_path = os.path.join(self.build_tmp_dir.name, "output_exec")
+
+        if self.patch_maker is None or self.patch_bom is None:
+            raise InvalidStateException("inject BOM", "build patch BOM")
 
         fem = self._try_and_log_errors(
             self.patch_maker.make_fem,
