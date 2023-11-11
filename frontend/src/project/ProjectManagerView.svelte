@@ -85,7 +85,12 @@
   import Split from "../utils/Split.svelte";
   import ProjectManagerFocusableLabel from "./ProjectManagerFocusableLabel.svelte";
   import ProjectManagerOptions from "./ProjectManagerOptions.svelte";
-  import { selectedProject, settings, selected, viewCrumbs } from "../stores";
+  import {
+    selectedProject,
+    settings,
+    selected,
+    pushViewCrumb,
+  } from "../stores";
   import { remote_model_to_resource } from "../ofrak/remote_resource";
   import ProjectManagerToolbar from "./ProjectManagerToolbar.svelte";
   import ProjectManagerAddBinaryToProject from "./ProjectManagerAddBinaryToProject.svelte";
@@ -105,11 +110,7 @@
 
   let binariesForProject = [];
 
-  export let resources,
-    rootResourceLoadPromise,
-    rootResource,
-    showRootResource,
-    showProjectManager;
+  export let resources, rootResourceLoadPromise, rootResource;
 
   async function openProject() {
     if (!selectedBinaryName) {
@@ -133,13 +134,11 @@
     });
     rootResource = remote_model_to_resource(rootModel, resources);
     $selected = rootModel.id;
-    showProjectManager = false;
     if (!$selectedProject.loaded) {
       $selectedProject.loaded = {};
     }
     $selectedProject.loaded[rootModel.id] = selectedBinaryName;
-    showRootResource = true;
-    $viewCrumbs.push("rootResource");
+    pushViewCrumb("rootResource");
   }
 
   onMount(async () => {
@@ -185,7 +184,6 @@
       <ProjectManagerToolbar
         bind:focus="{focus}"
         openProject="{openProject}"
-        bind:showProjectManager="{showProjectManager}"
         bind:forceRefreshProject="{forceRefreshProject}"
       />
     </div>

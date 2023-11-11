@@ -78,7 +78,6 @@
 <script>
   import FileBrowser from "../utils/FileBrowser.svelte";
   import LoadingText from "../utils/LoadingText.svelte";
-  import SerializerInputForm from "../utils/serializer_inputs/SerializerInputForm.svelte";
   import Icon from "../utils/Icon.svelte";
   import Button from "../utils/Button.svelte";
 
@@ -92,6 +91,7 @@
     settings,
   } from "../stores";
   import { onMount } from "svelte";
+  import BaseSerializerInputForm from "../utils/serializer_inputs/BaseSerializerInputForm.svelte";
 
   hljs.registerLanguage("python", python);
 
@@ -194,7 +194,7 @@
       {#if ofrakConfig.length != 0}
         {#each ofrakConfig["fields"] as field, i}
           {#if field.name != "code"}
-            <SerializerInputForm
+            <BaseSerializerInputForm
               node="{field}"
               bind:element="{scriptParams[field.name]}"
             />

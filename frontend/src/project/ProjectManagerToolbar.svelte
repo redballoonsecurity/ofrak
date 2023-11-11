@@ -1,10 +1,10 @@
 <script>
-  import { settings, selectedProject } from "../stores.js";
+  import { settings, selectedProject, popViewCrumb } from "../stores.js";
   import ProjectManagerAddBinaryToProject from "./ProjectManagerAddBinaryToProject.svelte";
   import ProjectManagerAddScriptToProject from "./ProjectManagerAddScriptToProject.svelte";
   import Toolbar from "../utils/Toolbar.svelte";
 
-  export let focus, openProject, showProjectManager, forceRefreshProject;
+  export let focus, openProject, forceRefreshProject;
   let toolbarButtons;
 
   toolbarButtons = [
@@ -12,9 +12,7 @@
       text: "Back",
       iconUrl: "/icons/back-arrow.svg",
       shortcut: "b",
-      onclick: async (e) => {
-        showProjectManager = false;
-      },
+      onclick: async (e) => popViewCrumb(),
     },
     {
       text: "Launch",

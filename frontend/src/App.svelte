@@ -61,9 +61,7 @@
 
   printConsoleArt();
 
-  let showRootResource = false,
-    showProjectManager = false,
-    dataLenPromise = Promise.resolve([]),
+  let dataLenPromise = Promise.resolve([]),
     hexScrollY = writable({}),
     useAssemblyView = false,
     useTextView = false,
@@ -200,8 +198,6 @@ Answer by running riddle.answer('your answer here') from the console.`);
               bind:bottomLeftPane="{bottomLeftPane}"
               bind:resourceNodeDataMap="{resourceNodeDataMap}"
               bind:modifierView="{modifierView}"
-              bind:showProjectManager="{showProjectManager}"
-              bind:showRootResource="{showRootResource}"
             />
           {/if}
         </Pane>
@@ -270,16 +266,12 @@ Answer by running riddle.answer('your answer here') from the console.`);
     bind:rootResourceLoadPromise="{rootResourceLoadPromise}"
     bind:rootResource="{rootResource}"
     bind:resources="{resources}"
-    bind:showRootResource="{showRootResource}"
-    bind:showProjectManager="{showProjectManager}"
   />
 {:else if topLevelView === "patchWizard"}
   <RootWizardView />
 {:else if topLevelView === "start"}
   <StartView
     bind:rootResourceLoadPromise="{rootResourceLoadPromise}"
-    bind:showRootResource="{showRootResource}"
-    bind:showProjectManager="{showProjectManager}"
     bind:resources="{resources}"
     bind:rootResource="{rootResource}"
     bind:resourceNodeDataMap="{resourceNodeDataMap}"

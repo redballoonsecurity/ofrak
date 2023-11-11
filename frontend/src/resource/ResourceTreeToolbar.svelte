@@ -15,15 +15,10 @@
     selected,
     settings,
     selectedProject,
-    viewCrumbs,
     pushViewCrumb,
   } from "../stores.js";
 
-  export let resourceNodeDataMap,
-    modifierView,
-    bottomLeftPane,
-    showProjectManager,
-    showRootResource;
+  export let resourceNodeDataMap, modifierView, bottomLeftPane;
   $: rootResource = $selectedResource;
 
   function refreshResource() {
@@ -77,12 +72,11 @@
             let state = {
               $selectProject: $selectedProject,
             };
-            showProjectManager = true;
-            showRootResource = false;
-            viewCrumbs.set(["projectManager"]);
+            pushViewCrumb("projectManager");
             history.pushState(state, "", "/");
           }
         },
+        disabled: () => !$selectedProject,
       },
     ];
   }
