@@ -12,7 +12,7 @@ from ofrak.gui.utils import (
     json_response,
     pluck_id,
     get_query_string_as_pjson,
-    OfrakShim,
+    OfrakServerHelper,
 )
 from ofrak.project.project import OfrakProject
 
@@ -211,7 +211,7 @@ class AiohttpOFRAKServer:
         )
         self._all_tags: Dict[str, ResourceTag] = {tag.__name__: tag for tag in ResourceTag.all_tags}
 
-        module_helper = OfrakShim(
+        module_helper = OfrakServerHelper(
             self._ofrak_context,
             self._serializer,
             self._job_ids,

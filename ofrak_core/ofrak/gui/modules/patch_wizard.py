@@ -33,7 +33,7 @@ from ofrak.core import (
 )
 from ofrak.core.elf.load_alignment_modifier import ElfLoadAlignmentModifier
 from ofrak.core.free_space import FreeSpaceModifierConfig
-from ofrak.gui.utils import OfrakShim, exceptions_to_http, json_response
+from ofrak.gui.utils import OfrakServerHelper, exceptions_to_http, json_response
 from ofrak.service.error import SerializedError
 from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_patch_maker.model import BOM, PatchRegionConfig, PatchMakerException
@@ -49,9 +49,9 @@ class InvalidStateException(Exception):
 
 
 class PatchWizard:
-    def __init__(self, shim: OfrakShim):
+    def __init__(self, shim: OfrakServerHelper):
         self.patches: Dict[str, PatchInProgress] = {}
-        self.helper: OfrakShim = shim
+        self.helper: OfrakServerHelper = shim
 
     def routes(self) -> List:
         return [

@@ -98,7 +98,7 @@ def get_query_string_as_pjson(request: Request) -> Dict[str, PJSONType]:
     return {key: json.loads(value) for key, value in request.query.items()}
 
 
-class OfrakShim:
+class OfrakServerHelper:
     def __init__(
         self,
         ofrak_context,
