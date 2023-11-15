@@ -174,7 +174,7 @@ class _Batch(Generic[Request, Result]):
     def get_requests(self) -> Tuple[Request, ...]:
         return tuple(self._unresolved_requests.values())
 
-    def result(self, request: Request) -> Task[Result]:
+    def result(self, request: Request) -> Task:
         async def wait_for_and_return_result():
             await self._batch_was_handled.wait()
             return self._resolved_requests[self._request_key(request)]
