@@ -123,7 +123,7 @@
     ofrakComponentsPromise = new Promise(() => {}),
     ofrakTargetsPromise = new Promise(() => {}),
     ofrakConfigsPromise = new Promise(() => {}),
-    config = {},
+    config,
     ofrakConfigName = null;
 
   async function getTargetsAndComponents() {

@@ -129,7 +129,10 @@
       results = await $selectedResource.run_component(
         "RunScriptModifier",
         "ofrak.core.run_script_modifier.RunScriptModifierConfig",
-        Object.assign({ code: loadedScript.join("\n") }, scriptParams)
+        [
+          "ofrak.core.run_script_modifier.RunScriptModifierConfig",
+          Object.assign({ code: loadedScript.join("\n") }, scriptParams),
+        ]
       );
     } catch (err) {
       $selectedResource.flush_cache();
