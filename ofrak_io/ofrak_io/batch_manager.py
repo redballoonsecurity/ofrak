@@ -1,5 +1,6 @@
 import asyncio
 from abc import ABC, abstractmethod
+from asyncio import Task
 from typing import TypeVar, Generic, Callable, Dict, Awaitable, Iterable, Tuple, ClassVar
 
 Request = TypeVar("Request")
@@ -173,9 +174,12 @@ class _Batch(Generic[Request, Result]):
     def get_requests(self) -> Tuple[Request, ...]:
         return tuple(self._unresolved_requests.values())
 
-    async def result(self, request: Request) -> Result:
-        await self._batch_was_handled.wait()
-        return self._resolved_requests[self._request_key(request)]
+    def result(self, request: Request) -> Task[Result]:
+        async def wait_for_and_return_result():
+            await self._batch_was_handled.wait()
+            return self._resolved_requests[self._request_key(request)]
+
+        return asyncio.create_task(wait_for_and_return_result())
 
     def resolve_batch_requests(self, request_result_pairs: Iterable[Tuple[Request, Result]]):
         for req, res in request_result_pairs:

@@ -172,6 +172,7 @@ class ElfMachine(Enum):
             # https://www.maximintegrated.com/content/dam/files/design/tools/tech-docs/4465
             # /AN4465-dev-tools-guide.pdf), in practice PPC is quite similar.
             ElfMachine.EM_MAXQ30.value: InstructionSet.PPC,
+            ElfMachine.EM_SPARC.value: InstructionSet.SPARC,
         }
 
         if e_machine not in MACHINE_TO_ISA:
