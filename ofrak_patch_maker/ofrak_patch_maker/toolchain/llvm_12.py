@@ -49,6 +49,7 @@ class LLVM_12_0_1_Toolchain(Toolchain):
                 "-Xclang",
                 "-emit-obj",
                 "-Wall",
+                "-integrated-as",
             ]
         )
         if processor.isa is InstructionSet.ARM:
