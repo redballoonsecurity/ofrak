@@ -1,7 +1,10 @@
+import asyncio
 import logging
 import os
+import tempfile
 from dataclasses import dataclass
 from io import BytesIO
+from subprocess import CalledProcessError
 from typing import Iterable, Optional
 
 from pycdlib import PyCdlib
@@ -12,6 +15,7 @@ from ofrak.component.unpacker import Unpacker
 from ofrak.core.binary import GenericBinary
 from ofrak.core.filesystem import FilesystemRoot, File, Folder
 from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
+from ofrak.model.component_model import CC, ComponentExternalTool
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.model.resource_model import index
 from ofrak.resource import Resource
@@ -243,13 +247,49 @@ class ISO9660Unpacker(Unpacker[None]):
         iso.close()
 
 
+MKISOFS = ComponentExternalTool(
+    "mkisofs",
+    "https://linux.die.net/man/8/mkisofs",
+    "-help",
+    apt_package="genisoimage",
+    brew_package="dvdrtools",
+)
+
+
 class ISO9660Packer(Packer[None]):
+    targets = (ISO9660Image,)
+
+    async def pack(self, resource: Resource, config: CC) -> None:
+        iso_view = await resource.view_as(ISO9660Image)
+        iso_attrs = resource.get_attributes(ISO9660ImageAttributes)
+        temp_flush_dir = await iso_view.flush_to_disk()
+        with tempfile.NamedTemporaryFile(suffix=".iso", mode="rb") as temp:
+            cmd = [
+                "mkisofs",
+                *(["-J"] if iso_attrs.has_joliet else []),
+                *(["-R"] if iso_attrs.has_rockridge else []),
+                "-allow-multidot",
+                "-o",
+                temp.name,
+                temp_flush_dir,
+            ]
+            proc = await asyncio.create_subprocess_exec(*cmd)
+            returncode = await proc.wait()
+            if proc.returncode:
+                raise CalledProcessError(returncode=returncode, cmd=cmd)
+            new_data = temp.read()
+            # Passing in the original range effectively replaces the original data with the new data
+            resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
+
+
+class PyCdISO9660Packer(Packer[None]):
     """
-    Pack files in an ISO 9660 image.
+    Pack files in an ISO 9660 image. Does not work with out-of-spec ISO files,
+    and is therefore not the default packer.
     """
 
-    id = b"ISO9660Packer"
-    targets = (ISO9660Image,)
+    id = b"PyCdISO9660Packer"
+    targets = ()
 
     async def pack(self, resource: Resource, config=None):
         image_attributes = resource.get_attributes(ISO9660ImageAttributes)
