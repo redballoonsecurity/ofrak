@@ -268,6 +268,22 @@ class ISO9660Packer(Packer[None]):
                 "mkisofs",
                 *(["-J"] if iso_attrs.has_joliet else []),
                 *(["-R"] if iso_attrs.has_rockridge else []),
+                *(["-V", iso_attrs.volume_identifier] if iso_attrs.volume_identifier else []),
+                *(
+                    [
+                        "-no-emul-boot",
+                        "-b",
+                        # TODO: Fix hard-coded path
+                        "boot/isolinux/isolinux.bin",
+                        "-c",
+                        # TODO: Fix hard-coded path
+                        "boot/isolinux/boot.cat",
+                        "-boot-info-table",
+                        "-no-emul-boot",
+                    ]
+                    if iso_attrs.has_eltorito
+                    else []
+                ),
                 "-allow-multidot",
                 "-o",
                 temp.name,
