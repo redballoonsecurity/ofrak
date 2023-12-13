@@ -440,7 +440,7 @@ async def _find_and_delete_overlapping_children(resource: Resource, freed_range:
                 tags=(MemoryRegion,),
                 attribute_filters=(
                     ResourceAttributeRangeFilter(MemoryRegion.VirtualAddress, max=freed_range.end),
-                    ResourceAttributeRangeFilter(MemoryRegion.EndVaddr, min=freed_range.start),
+                    ResourceAttributeRangeFilter(MemoryRegion.EndVaddr, min=freed_range.start + 1),
                 ),
             ),
         )
