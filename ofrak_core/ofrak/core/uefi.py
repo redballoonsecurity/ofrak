@@ -36,11 +36,12 @@ class UefiUnpacker(Unpacker[None]):
         ROM_FILE = "uefi.rom"
 
         with tempfile.TemporaryDirectory() as temp_flush_dir:
+            # uefiextract always outputs to the CWD, so we must run this command from inside the temp to not leave behind artifacts
             os.chdir(temp_flush_dir)
             await resource.flush_data_to_disk(ROM_FILE)
             cmd = [
                 "uefiextract",
-                "uefi.rom",
+                ROM_FILE,
             ]
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
