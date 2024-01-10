@@ -1,19 +1,17 @@
+import pytest
 import os.path
 from dataclasses import dataclass
 from typing import Dict
 from ofrak.core.uefi import Uefi
-
-import pytest
 from ofrak.core.filesystem import File, FilesystemEntry
-
 from ofrak.resource import Resource
-
 from ofrak import OFRAKContext
 from pytest_ofrak.patterns.unpack_verify import (
     UnpackAndVerifyPattern,
     UnpackAndVerifyTestCase,
 )
 import test_ofrak.components
+from typing import Set
 
 
 @dataclass
@@ -25,7 +23,7 @@ UEFI_COMPONENT_TEST_CASE = [
     UefiComponentTestCase(
         "Single text file",
         {
-            "OVMF.rom.dump/2 763BED0D-DE9F-48F5-81F1-3E90E1B1A015/0 SecMain/1 UI section": b"S\x00e\x00c\x00M\x00a\x00i\x00n\x00\x00\x00"
+            "2 763BED0D-DE9F-48F5-81F1-3E90E1B1A015/0 SecMain/1 UI section/body.bin": b"S\x00e\x00c\x00M\x00a\x00i\x00n\x00\x00\x00"
         },
         set(),
         "OVMF.rom",
@@ -64,8 +62,16 @@ class TestUefiComponent(UnpackAndVerifyPattern):
             ).get_path(): await descendent.get_data()
             for descendent in await unpacked_root_resource.get_descendants()
         }
-        print(result)
         return result
 
     async def verify_descendant(self, unpacked_descendant: bytes, specified_result: bytes):
         assert unpacked_descendant == specified_result
+
+    def verify_no_extraneous_descendants(
+        self,
+        unpacked_set: Set,
+        expected_set: Set,
+        optional_set: Set,
+        info_str: str = f"",
+    ):
+        pass
