@@ -5,23 +5,17 @@ import tempfile
 from dataclasses import dataclass
 from subprocess import CalledProcessError
 
-from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.resource import Resource
 from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
 
-from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
 
-from ofrak.core.binary import GenericBinary
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.core.pe.model import Pe
-from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
 
-UEFIEXTRACT = ComponentExternalTool(
-    "uefiextract", "https://github.com/LongSoft/UEFITool", "--help"
-)
+UEFIEXTRACT = ComponentExternalTool("uefiextract", "https://github.com/LongSoft/UEFITool", "--help")
 
 
 @dataclass
@@ -56,4 +50,4 @@ class UefiUnpacker(Unpacker[None]):
                 raise CalledProcessError(returncode=returncode, cmd=cmd)
 
             uefi_view = await resource.view_as(Uefi)
-            await uefi_view.initialize_from_disk(os.path.join(temp_flush_dir, "{0}.dump".format(ROM_FILE)))
+            await uefi_view.initialize_from_disk(os.path.join(temp_flush_dir, f"{ROM_FILE}.dump"))

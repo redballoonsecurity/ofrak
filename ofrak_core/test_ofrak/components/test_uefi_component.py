@@ -9,20 +9,29 @@ from ofrak.core.filesystem import File, FilesystemEntry
 from ofrak.resource import Resource
 
 from ofrak import OFRAKContext
-from ofrak.core.rar import RarArchive
 from pytest_ofrak.patterns.unpack_verify import (
     UnpackAndVerifyPattern,
     UnpackAndVerifyTestCase,
 )
 import test_ofrak.components
 
+
 @dataclass
 class UefiComponentTestCase(UnpackAndVerifyTestCase[str, bytes]):
     filename: str
 
+
 UEFI_COMPONENT_TEST_CASE = [
-    UefiComponentTestCase("Single text file", {"OVMF.rom.dump/2 763BED0D-DE9F-48F5-81F1-3E90E1B1A015/0 SecMain/1 UI section": b"S\x00e\x00c\x00M\x00a\x00i\x00n\x00\x00\x00"}, set(), "OVMF.rom"),
+    UefiComponentTestCase(
+        "Single text file",
+        {
+            "OVMF.rom.dump/2 763BED0D-DE9F-48F5-81F1-3E90E1B1A015/0 SecMain/1 UI section": b"S\x00e\x00c\x00M\x00a\x00i\x00n\x00\x00\x00"
+        },
+        set(),
+        "OVMF.rom",
+    ),
 ]
+
 
 class TestUefiComponent(UnpackAndVerifyPattern):
     @pytest.fixture(params=UEFI_COMPONENT_TEST_CASE, ids=lambda tc: tc.label)
@@ -50,7 +59,10 @@ class TestUefiComponent(UnpackAndVerifyPattern):
 
     async def get_descendants_to_verify(self, unpacked_root_resource: Resource) -> Dict:
         result = {
-            await (await descendent.view_as(FilesystemEntry)).get_path(): await descendent.get_data() for descendent in await unpacked_root_resource.get_descendants() 
+            await (
+                await descendent.view_as(FilesystemEntry)
+            ).get_path(): await descendent.get_data()
+            for descendent in await unpacked_root_resource.get_descendants()
         }
         print(result)
         return result
