@@ -64,12 +64,13 @@ RUN wget https://bootstrap.pypa.io/pip/get-pip.py && python3.9 get-pip.py && pyt
 RUN python3.9 -m pip install jefferson
 WORKDIR /
 
-# Install UEFIExtract
-# TODO: This is broken - missing some deps to run
-RUN if [ "$TARGETARCH" = "amd64" ]; then \
-  cd /tmp && \
-  wget https://github.com/LongSoft/UEFITool/releases/download/A68/UEFIExtract_NE_A68_x64_linux.zip && \
-  unzip UEFIExtract_NE_A68_x64_linux.zip && \
-  mv uefiextract /usr/local/bin && \
-  rm UEFIExtract_NE_A68_x64_linux.zip; \
-fi;
+# Install UEFIExtract (build from source, pinned to releae A68)
+RUN cd /tmp && \
+    wget https://github.com/LongSoft/UEFITool/archive/refs/tags/A68.zip && \
+    unzip A68.zip && \
+    rm A68.zip && \
+    cd UEFITool-A68 && \
+    cmake UEFIExtract && \
+    make install && \
+    cd /tmp && \
+    rm -r UEFITool-A68
