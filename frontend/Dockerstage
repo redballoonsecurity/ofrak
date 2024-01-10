@@ -1,4 +1,4 @@
-FROM node:c7f379c30044 AS svelte
+FROM node AS svelte
 
 ARG OFRAK_DIR=.
 COPY --chown=node:node $OFRAK_DIR/frontend /home/node/frontend
