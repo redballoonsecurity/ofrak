@@ -25,5 +25,5 @@ ofrak/gui/public:
 		cd ../frontend && \
 		npm run build && \
 		cd ../ofrak_core && \
-		cp -r ../frontend/public ofrak/gui/public ; \
+		cp -r ../frontend/dist ofrak/gui/public ; \
 	fi
