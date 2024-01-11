@@ -455,7 +455,7 @@
     }}"
     on:drop="{(e) => {
       e.preventDefault();
-      handleDrop();
+      handleDrop(e);
     }}"
     on:mousemove="{(e) => (mouseX = e.clientX)}"
     on:mouseleave="{() => (mouseX = undefined)}"
