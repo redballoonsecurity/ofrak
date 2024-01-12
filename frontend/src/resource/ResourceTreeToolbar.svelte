@@ -210,7 +210,11 @@
                 if (input.files.length > 0) {
                   const file = input.files[0];
                   const data = await file.arrayBuffer();
-                  await rootResource.queue_patch(data);
+                  await rootResource.queue_patch(
+                    data,
+                    0,
+                    await rootResource.get_data_length()
+                  );
                 }
                 refreshResource();
               },
