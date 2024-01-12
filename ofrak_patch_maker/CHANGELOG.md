@@ -4,6 +4,8 @@ All notable changes to `ofrak-patch-maker` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+### Added
+- GNU 32-bit x86 toolchain. ([#405](https://github.com/redballoonsecurity/ofrak/pull/405))
 
 ## [4.0.2](https://github.com/redballoonsecurity/ofrak/compare/ofrak-patch-maker-v.4.0.1...ofrak-patch-maker-v.4.0.2)
 ### Fixed
