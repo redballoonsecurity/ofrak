@@ -15,7 +15,7 @@ from ofrak.component.unpacker import Unpacker
 from ofrak.core.binary import GenericBinary
 from ofrak.core.filesystem import FilesystemRoot, File, Folder
 from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
-from ofrak.model.component_model import CC, ComponentExternalTool
+from ofrak.model.component_model import ComponentExternalTool
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.model.resource_model import index
 from ofrak.resource import Resource
@@ -265,7 +265,7 @@ class ISO9660Packer(Packer[None]):
     targets = (ISO9660Image,)
     external_dependencies = (MKISOFS,)
 
-    async def pack(self, resource: Resource, config: CC) -> None:
+    async def pack(self, resource: Resource, config: CC = None) -> None:
         iso_view = await resource.view_as(ISO9660Image)
 
         try:
