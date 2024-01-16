@@ -21,6 +21,7 @@ from ofrak.model.resource_model import index
 from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import ResourceFilter, ResourceAttributeValueFilter
+from ofrak_type import NotFoundError
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
@@ -56,6 +57,10 @@ class ISO9660Entry(ResourceView):
     @index
     def Path(self) -> str:
         return self.path
+
+    @index
+    def Name(self) -> str:
+        return self.name
 
 
 @dataclass
@@ -258,9 +263,42 @@ MKISOFS = ComponentExternalTool(
 
 class ISO9660Packer(Packer[None]):
     targets = (ISO9660Image,)
+    external_dependencies = (MKISOFS,)
 
     async def pack(self, resource: Resource, config: CC) -> None:
         iso_view = await resource.view_as(ISO9660Image)
+
+        try:
+            isolinux_bin = await resource.get_only_descendant_as_view(
+                ISO9660Entry,
+                r_filter=ResourceFilter(
+                    attribute_filters=(
+                        (ResourceAttributeValueFilter(ISO9660Entry.Name, "isolinux.bin"),)
+                    ),
+                ),
+            )
+            isolinux_bin_cmd = [
+                "-b",
+                isolinux_bin.path.strip("/"),
+            ]  # The leading "/" is not needed in this CLI arg
+        except NotFoundError:
+            isolinux_bin_cmd = list()
+        try:
+            boot_cat = await resource.get_only_descendant_as_view(
+                ISO9660Entry,
+                r_filter=ResourceFilter(
+                    attribute_filters=(
+                        (ResourceAttributeValueFilter(ISO9660Entry.Name, "boot.cat"),)
+                    ),
+                ),
+            )
+            boot_cat_cmd = [
+                "-c",
+                boot_cat.path.strip("/"),
+            ]  # The leading "/" is not needed in this CLI arg
+        except NotFoundError:
+            boot_cat_cmd = list()
+
         iso_attrs = resource.get_attributes(ISO9660ImageAttributes)
         temp_flush_dir = await iso_view.flush_to_disk()
         with tempfile.NamedTemporaryFile(suffix=".iso", mode="rb") as temp:
@@ -269,15 +307,13 @@ class ISO9660Packer(Packer[None]):
                 *(["-J"] if iso_attrs.has_joliet else []),
                 *(["-R"] if iso_attrs.has_rockridge else []),
                 *(["-V", iso_attrs.volume_identifier] if iso_attrs.volume_identifier else []),
+                *(["-sysid", iso_attrs.system_identifier] if iso_attrs.system_identifier else []),
+                *(["-A", iso_attrs.app_identifier] if iso_attrs.app_identifier else []),
                 *(
                     [
                         "-no-emul-boot",
-                        "-b",
-                        # TODO: Fix hard-coded path
-                        "boot/isolinux/isolinux.bin",
-                        "-c",
-                        # TODO: Fix hard-coded path
-                        "boot/isolinux/boot.cat",
+                        *isolinux_bin_cmd,
+                        *boot_cat_cmd,
                         "-boot-info-table",
                         "-no-emul-boot",
                     ]
@@ -296,84 +332,6 @@ class ISO9660Packer(Packer[None]):
             new_data = temp.read()
             # Passing in the original range effectively replaces the original data with the new data
             resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
-
-
-class PyCdISO9660Packer(Packer[None]):
-    """
-    Pack files in an ISO 9660 image. Does not work with out-of-spec ISO files,
-    and is therefore not the default packer.
-    """
-
-    id = b"PyCdISO9660Packer"
-    targets = ()
-
-    async def pack(self, resource: Resource, config=None):
-        image_attributes = resource.get_attributes(ISO9660ImageAttributes)
-
-        iso_result = PyCdlib()
-        iso_result.new(
-            interchange_level=image_attributes.interchange_level,
-            sys_ident=image_attributes.system_identifier,
-            vol_ident=image_attributes.volume_identifier,
-            app_ident_str=image_attributes.app_identifier,
-            joliet=image_attributes.joliet_level,
-            rock_ridge=image_attributes.rockridge_version,
-            xa=image_attributes.extended_attributes,
-            udf=image_attributes.udf_version,
-        )
-
-        if image_attributes.has_joliet:
-            resource.add_tag(JolietISO9660Image)
-            facade = iso_result.get_joliet_facade()
-            path_arg = "joliet_path"
-        elif image_attributes.has_udf:
-            resource.add_tag(UdfISO9660Image)
-            facade = iso_result.get_udf_facade()
-            path_arg = "udf_path"
-            LOGGER.warning("UDF images are not currently supported")
-        elif image_attributes.has_rockridge:
-            LOGGER.warning("Rock Ridge images are not currently supported")
-            resource.add_tag(RockRidgeISO9660Image)
-            facade = iso_result.get_rock_ridge_facade()
-            path_arg = "rr_name"
-        else:
-            facade = iso_result.get_iso9660_facade()
-            path_arg = "iso_path"
-
-        if image_attributes.has_eltorito:
-            LOGGER.warning("El Torito images are not currently supported")
-
-        child_queue = [
-            d
-            for d in await resource.get_children_as_view(
-                ISO9660Entry, r_filter=ResourceFilter(tags=(ISO9660Entry,))
-            )
-        ]
-
-        while len(child_queue) > 0:
-            child = child_queue.pop(0)
-
-            path = child.path
-            if child.iso_version != -1:
-                path += ";" + str(child.iso_version)
-
-            if child.resource.has_tag(Folder):
-                facade.add_directory(**{path_arg: path})
-                for d in await child.resource.get_children_as_view(
-                    ISO9660Entry, r_filter=ResourceFilter(tags=(ISO9660Entry,))
-                ):
-                    child_queue.append(d)
-            elif child.resource.has_tag(File):
-                file_data = await child.resource.get_data()
-                facade.add_fp(BytesIO(file_data), len(file_data), **{path_arg: path})
-
-        result = BytesIO()
-        iso_result.write_fp(result)
-        iso_result.close()
-
-        iso_data = result.getvalue()
-        result.close()
-        resource.queue_patch(Range(0, await resource.get_data_length()), iso_data)
 
 
 MagicMimeIdentifier.register(ISO9660Image, "application/x-iso9660-image")
