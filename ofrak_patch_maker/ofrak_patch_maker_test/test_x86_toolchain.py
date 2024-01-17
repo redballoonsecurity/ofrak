@@ -1,6 +1,8 @@
 import pytest
 
 from ofrak_type import ArchInfo
+
+from ofrak_patch_maker.toolchain.gnu_x86 import GNU_X86_32_LINUX_EABI_10_3_0_Toolchain
 from ofrak_patch_maker.toolchain.gnu_x64 import GNU_X86_64_LINUX_EABI_10_3_0_Toolchain
 from ofrak_patch_maker_test import ToolchainUnderTest
 from ofrak_patch_maker_test.toolchain_c import run_hello_world_test, run_bounds_check_test
@@ -24,6 +26,17 @@ X86_EXTENSION = ".x86"
                 BitWidth.BIT_64,
                 Endianness.LITTLE_ENDIAN,
                 ProcessorType.X64,
+            ),
+            X86_EXTENSION,
+        ),
+        ToolchainUnderTest(
+            GNU_X86_32_LINUX_EABI_10_3_0_Toolchain,
+            ArchInfo(
+                InstructionSet.X86,
+                None,
+                BitWidth.BIT_32,
+                Endianness.LITTLE_ENDIAN,
+                ProcessorType.I386,
             ),
             X86_EXTENSION,
         ),

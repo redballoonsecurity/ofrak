@@ -1,12 +1,11 @@
 import logging
 import os
 import tempfile
-from ofrak_patch_maker.toolchain.gnu_avr import GNU_AVR_5_Toolchain
-from ofrak_patch_maker.toolchain.gnu_x64 import GNU_X86_64_LINUX_EABI_10_3_0_Toolchain
-from ofrak_patch_maker_test import ToolchainUnderTest
-from ofrak_type.architecture import InstructionSet
+
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
+from ofrak_patch_maker.toolchain.gnu_avr import GNU_AVR_5_Toolchain
+from ofrak_patch_maker.toolchain.gnu_x64 import GNU_X86_64_LINUX_EABI_10_3_0_Toolchain
 from ofrak_patch_maker.toolchain.model import (
     ToolchainConfig,
     BinFileType,
@@ -14,6 +13,7 @@ from ofrak_patch_maker.toolchain.model import (
     CompilerOptimizationLevel,
 )
 from ofrak_patch_maker.toolchain.utils import get_file_format
+from ofrak_patch_maker_test import ToolchainUnderTest
 from ofrak_type.memory_permissions import MemoryPermissions
 
 
@@ -25,15 +25,10 @@ def run_bounds_check_test(toolchain_under_test: ToolchainUnderTest):
     source_path = os.path.join(source_dir, "bounds_check.c")
     build_dir = tempfile.mkdtemp()
 
-    if toolchain_under_test.proc.isa == InstructionSet.AVR:
-        # avr-gcc does not support relocatable
-        relocatable = False
-    else:
-        relocatable = True
     tc_config = ToolchainConfig(
         file_format=BinFileType.ELF,
         force_inlines=True,
-        relocatable=relocatable,
+        relocatable=False,
         no_std_lib=True,
         no_jump_tables=True,
         no_bss_section=True,
@@ -93,15 +88,13 @@ def run_hello_world_test(toolchain_under_test: ToolchainUnderTest):
     build_dir = tempfile.mkdtemp()
 
     if toolchain_under_test.toolchain == GNU_AVR_5_Toolchain:
-        relocatable = False
         base_symbols = {"__mulhi3": 0x1234}  # Dummy address to fix missing symbol
     else:
-        relocatable = True
         base_symbols = None
     tc_config = ToolchainConfig(
         file_format=BinFileType.ELF,
         force_inlines=True,
-        relocatable=relocatable,
+        relocatable=False,
         no_std_lib=True,
         no_jump_tables=True,
         no_bss_section=False,
