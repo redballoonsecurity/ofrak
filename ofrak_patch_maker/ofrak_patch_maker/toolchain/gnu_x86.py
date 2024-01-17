@@ -11,4 +11,4 @@ class GNU_X86_32_LINUX_EABI_10_3_0_Toolchain(GNU_X86_64_LINUX_EABI_10_3_0_Toolch
 
     @property
     def name(self) -> str:
-        return "GNU_X86_32_LINUX_EABI_10_3_0_Toolchain"
+        return "GNU_X86_32_LINUX_EABI_10_3_0"

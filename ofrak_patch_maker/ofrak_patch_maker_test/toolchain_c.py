@@ -4,6 +4,8 @@ import tempfile
 from ofrak_patch_maker.toolchain.gnu_avr import GNU_AVR_5_Toolchain
 from ofrak_patch_maker.toolchain.gnu_x64 import GNU_X86_64_LINUX_EABI_10_3_0_Toolchain
 from ofrak_patch_maker_test import ToolchainUnderTest
+
+from ofrak_patch_maker.toolchain.gnu_x86 import GNU_X86_32_LINUX_EABI_10_3_0_Toolchain
 from ofrak_type.architecture import InstructionSet
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
@@ -145,7 +147,10 @@ def run_hello_world_test(toolchain_under_test: ToolchainUnderTest):
             )
             current_vm_address += s.length
 
-            if toolchain_under_test.toolchain in [GNU_X86_64_LINUX_EABI_10_3_0_Toolchain]:
+            if toolchain_under_test.toolchain in [
+                GNU_X86_64_LINUX_EABI_10_3_0_Toolchain,
+                GNU_X86_32_LINUX_EABI_10_3_0_Toolchain,
+            ]:
                 if current_vm_address % 16 > 0:
                     current_vm_address += 16 - current_vm_address % 16
             else:
