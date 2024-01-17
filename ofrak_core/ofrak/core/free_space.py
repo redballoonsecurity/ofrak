@@ -440,7 +440,7 @@ async def _find_and_delete_overlapping_children(resource: Resource, freed_range:
                 tags=(MemoryRegion,),
                 attribute_filters=(
                     ResourceAttributeRangeFilter(MemoryRegion.VirtualAddress, max=freed_range.end),
-                    ResourceAttributeRangeFilter(MemoryRegion.EndVaddr, min=freed_range.start),
+                    ResourceAttributeRangeFilter(MemoryRegion.EndVaddr, min=freed_range.start + 1),
                 ),
             ),
         )
@@ -490,19 +490,17 @@ class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
             mem_region_view.virtual_address + mem_region_view.size,
         )
         patch_data = _get_fill(freed_range, config.fill)
-        parent_mr_view = await resource.get_parent_as_view(MemoryRegion)
-        patch_offset = parent_mr_view.get_offset_in_self(freed_range.start)
+        parent = await resource.get_parent()
+        patch_offset = (await resource.get_data_range_within_parent()).start
         patch_range = freed_range.translate(patch_offset - freed_range.start)
 
         await resource.delete()
         await resource.save()
 
         # Patch in the patch_data
-        await parent_mr_view.resource.run(
-            BinaryPatchModifier, BinaryPatchConfig(patch_offset, patch_data)
-        )
+        await parent.run(BinaryPatchModifier, BinaryPatchConfig(patch_offset, patch_data))
         # Create the FreeSpace child
-        await parent_mr_view.resource.create_child_from_view(
+        await parent.create_child_from_view(
             FreeSpace(
                 mem_region_view.virtual_address,
                 mem_region_view.size,
