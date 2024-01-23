@@ -168,7 +168,7 @@
 <div class="container">
   <div class="inputs">
     <div class="scriptchoice">
-      {#if $selectedProject}
+      {#if $selectedProject && $selectedProject.loaded}
         <select
           on:click="{(e) => {
             e.stopPropagation();
