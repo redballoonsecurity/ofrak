@@ -947,7 +947,7 @@ class AiohttpOFRAKServer:
             config_type = self._get_config_for_component(component)
         else:
             return json_response([])
-        if config_type == inspect._empty:
+        if config_type == inspect._empty or config_type is None:
             config = None
         else:
             config = self._serializer.from_pjson(await request.json(), config_type)
