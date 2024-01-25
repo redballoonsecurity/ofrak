@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Fixes erroneous Free Space Modifier expectation that resource parents are memory views. ([#404](https://github.com/redballoonsecurity/ofrak/pull/404))
 - Prevent `_find_and_delete_overlapping_children` from deleting children which are next to the freed region, but not overlapping. ([#396](https://github.com/redballoonsecurity/ofrak/pull/396))
 - Fixed front end "Replace" button. Before it was appending new data instead of replacing it as intended. ([#403](https://github.com/redballoonsecurity/ofrak/pull/403))
+- Fix dragging and dropping in the GUI. ([#407](https://github.com/redballoonsecurity/ofrak/pull/407))
+- Fix running scripts without a project selected, and without a config selected. ([#407](https://github.com/redballoonsecurity/ofrak/pull/407))
 
 ### Changed
 - `Resource.flush_to_disk` method renamed to `Resource.flush_data_to_disk`. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373))
