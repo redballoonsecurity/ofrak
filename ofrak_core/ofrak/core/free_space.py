@@ -500,7 +500,7 @@ class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
         # Patch in the patch_data
         await parent.run(BinaryPatchModifier, BinaryPatchConfig(patch_offset, patch_data))
 
-	free_offset = len(config.fill) if config.fill else 0
+        free_offset = len(config.fill) if config.fill else 0
 
         # Create the FreeSpace child
         await parent.create_child_from_view(
