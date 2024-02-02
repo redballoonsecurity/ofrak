@@ -450,14 +450,12 @@ async def _find_and_delete_overlapping_children(resource: Resource, freed_range:
         await overlapping_child.resource.save()
 
 
-def _get_fill(freed_range: Range, fill: Optional[bytes]):
-    if not fill:
-        return b"\x00" * freed_range.length()
-    else:
-        diff_len = freed_range.length() - len(fill)
-        if diff_len < 0:
-            raise ValueError("config.fill value cannot be longer than the range to be freed.")
-        return fill + b"\x00" * diff_len
+def _get_patch(freed_range: Range, stub: bytes, fill: bytes) -> bytes:
+    total_fill_length = freed_range.length() - len(stub)
+    remainder = total_fill_length % len(fill)
+    final = b"".join([stub, fill * (total_fill_length // len(fill)), fill[:remainder]])
+    assert len(final) == freed_range.length()
+    return final
 
 
 @dataclass
@@ -465,19 +463,24 @@ class FreeSpaceModifierConfig(ComponentConfig):
     """
     Configuration for modifier which marks some free space.
 
-    :var permissions: memory permissions to give the created free space.
-    :var fill: bytes to fill the free space with
+    :var permissions: Memory permissions to give the created free space.
+    :var stub: Bytes for a stub to be injected before the free space. The stub will not be marked as
+      [FreeSpace][ofrak.core.free_space.FreeSpace].
+    :var fill: Pattern of bytes to fill the free space with.
     """
 
     permissions: MemoryPermissions
-    fill: Optional[bytes] = None
+    stub: bytes = b""
+    fill: bytes = b"\x00"
 
 
 class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
     """
     Turn a [MemoryRegion][ofrak.core.memory_region.MemoryRegion] resource into allocatable free
     space by replacing its data with b'\x00' or optionally specified bytes.
-    [FreeSpace][ofrak.core.free_space.FreeSpace].
+
+    The modifier allows for an optional "stub", bytes to be injected at the beginning of the target resource. The stub
+    bytes are not marked as [FreeSpace][ofrak.core.free_space.FreeSpace].
     """
 
     targets = (MemoryRegion,)
@@ -489,18 +492,31 @@ class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
             mem_region_view.virtual_address,
             mem_region_view.virtual_address + mem_region_view.size,
         )
-        patch_data = _get_fill(freed_range, config.fill)
+        patch_data = _get_patch(freed_range, config.stub, config.fill)
         parent = await resource.get_parent()
         patch_offset = (await resource.get_data_range_within_parent()).start
         patch_range = freed_range.translate(patch_offset - freed_range.start)
 
+        # Grab tags, so they can be saved to the stub.
+        # At some point, it might be nice to save the attributes as well.
+        current_tags = resource.get_tags()
+        # One interesting side effect here is the Resource used to call this modifier no longer exists
+        # when this modifier returns. This can be confusing. Would an update work better in this case?
         await resource.delete()
         await resource.save()
 
         # Patch in the patch_data
         await parent.run(BinaryPatchModifier, BinaryPatchConfig(patch_offset, patch_data))
 
-        free_offset = len(config.fill) if config.fill else 0
+        free_offset = len(config.stub)
+
+        if len(config.stub) > 0:
+            # Create the stub
+            await parent.create_child_from_view(
+                MemoryRegion(mem_region_view.virtual_address, len(config.stub)),
+                data_range=Range.from_size(patch_range.start, len(config.stub)),
+                additional_tags=current_tags,
+            )
 
         # Create the FreeSpace child
         await parent.create_child_from_view(
@@ -509,7 +525,7 @@ class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
                 mem_region_view.size - free_offset,
                 config.permissions,
             ),
-            data_range=patch_range,
+            data_range=Range(patch_range.start + free_offset, patch_range.end),
         )
 
 
@@ -517,20 +533,26 @@ class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
 class PartialFreeSpaceModifierConfig(ComponentConfig):
     """
     :var permissions: memory permissions to give the created free space.
-    :var range_to_remove: the ranges to consider as free space (remove)
-    :var fill: bytes to fill the free space with
+    :var range_to_remove: The ranges to consider as free space (remove).
+    :var stub: Bytes for a stub to be injected before the free space. If a stub is specified, then the FreeSpace created
+      will decrease in size. For example, with a stub of b"HA" and range_to_remove=Range(4,10), the final FreeSpace will
+      end up corresponding to Range(6,10).
+    :var fill: Pattern of bytes to fill the free space with.
     """
 
     permissions: MemoryPermissions
     range_to_remove: Range
-    fill: Optional[bytes] = None
+    stub: bytes = b""
+    fill: bytes = b"\x00"
 
 
 class PartialFreeSpaceModifier(Modifier[PartialFreeSpaceModifierConfig]):
     """
     Turn part of a [MemoryRegion][ofrak.core.memory_region.MemoryRegion] resource into allocatable
-    free space by replacing a range of its data with b'\x00' or optionally specified fill bytes.
-    [FreeSpace][ofrak.core.free_space.FreeSpace] child resource at that range.
+    free space by replacing a range of its data with fill bytes (b'\x00' by default).
+
+    The modifier supports optionally injecting a "stub", bytes at the beginning of the targeted range that will not be
+    marked as [FreeSpace][ofrak.core.free_space.FreeSpace].
     """
 
     targets = (MemoryRegion,)
@@ -548,15 +570,17 @@ class PartialFreeSpaceModifier(Modifier[PartialFreeSpaceModifierConfig]):
 
         patch_offset = mem_region_view.get_offset_in_self(freed_range.start)
         patch_range = Range.from_size(patch_offset, freed_range.length())
-        patch_data = _get_fill(freed_range, config.fill)
+        patch_data = _get_patch(freed_range, config.stub, config.fill)
         await mem_region_view.resource.run(
             BinaryPatchModifier, BinaryPatchConfig(patch_offset, patch_data)
         )
+
+        free_offset = len(config.stub)
         await mem_region_view.resource.create_child_from_view(
             FreeSpace(
-                freed_range.start,
-                freed_range.length(),
+                freed_range.start + free_offset,
+                freed_range.length() - free_offset,
                 config.permissions,
             ),
-            data_range=patch_range,
+            data_range=Range(patch_range.start + free_offset, patch_range.end),
         )
