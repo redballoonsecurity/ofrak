@@ -105,3 +105,21 @@ async def test_free_space_modifier(resource_under_test: Resource):
     )
     child_data = await child.get_data()
     assert child_data == config.stub
+
+
+def test_free_space_modifier_config_fill_parameters():
+    """
+    Test that the length of fill passed to `FreeSpaceModifierConfig` is greater than 0.
+    """
+    with pytest.raises(ValueError):
+        FreeSpaceModifierConfig(MemoryPermissions.RX, stub=b"", fill=b"")
+
+
+def test_partial_space_modifier_config_fill_parameters():
+    """
+    Test that the length of fill passed to `PartialFreeSpaceModifierConfig` is greater than 0.
+    """
+    with pytest.raises(ValueError):
+        PartialFreeSpaceModifierConfig(
+            MemoryPermissions.RX, range_to_remove=Range(0, 10), stub=b"", fill=b""
+        )

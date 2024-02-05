@@ -473,6 +473,10 @@ class FreeSpaceModifierConfig(ComponentConfig):
     stub: bytes = b""
     fill: bytes = b"\x00"
 
+    def __post_init__(self):
+        if len(self.fill) == 0:
+            raise ValueError(f"The minimum size for fill is 1 byte, got 0: {self}")
+
 
 class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
     """
@@ -544,6 +548,10 @@ class PartialFreeSpaceModifierConfig(ComponentConfig):
     range_to_remove: Range
     stub: bytes = b""
     fill: bytes = b"\x00"
+
+    def __post_init__(self):
+        if len(self.fill) == 0:
+            raise ValueError(f"The minimum size for fill is 1 byte, got 0: {self}")
 
 
 class PartialFreeSpaceModifier(Modifier[PartialFreeSpaceModifierConfig]):
