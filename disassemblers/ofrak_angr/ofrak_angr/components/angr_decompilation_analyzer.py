@@ -6,19 +6,15 @@ from ofrak_angr.components.angr_analyzer import AngrAnalyzerConfig
 from ofrak.resource import Resource
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.service.resource_service_i import ResourceFilter
-
 from ofrak_angr.model import AngrAnalysis, AngrDecompilationAnalysis, AngrAnalysisResource
 
-
-
-
-class AngrDecompiltionAnalyzer(Analyzer[AngrAnalyzerConfig, AngrDecompilationAnalysis]):
-    id = b"AngrAnalyzer"
+class AngrDecompilatonAnalyzer(Analyzer[None, AngrDecompilationAnalysis]):
+    id = b"AngrDecompilationAnalyzer"
     targets = (ComplexBlock,)
     outputs = (AngrDecompilationAnalysis,)
     
     async def analyze(
-        self, resource: Resource, config: AngrAnalyzerConfig = AngrAnalyzerConfig()
+        self, resource: Resource, config: None
     ) -> AngrDecompilationAnalysis:
         # Run / fetch angr analyzer
         root_resource = await resource.get_only_ancestor(
@@ -27,13 +23,11 @@ class AngrDecompiltionAnalyzer(Analyzer[AngrAnalyzerConfig, AngrDecompilationAna
         complex_block = await resource.view_as(ComplexBlock)
         angr_analysis = await root_resource.analyze(AngrAnalysis)
 
-        cfg = angr.analyses.analysis.AnalysisFactory(angr_analysis.project, config.cfg_analyzer)(
-            **config.cfg_analyzer_args
-        )
+        cfg = angr_analysis.project.analyses[angr.analyses.CFGFast].prep()(data_references=True, normalize=True)
         
         function_s = [func for addr, func in angr_analysis.project.kb.functions.items() if func.addr == complex_block.virtual_address]
         if len(function_s) != 1:
             raise ValueError(f"Could not find angr function for function at address {complex_block.virtual_address}")
         function = function_s[0]
         dec = angr_analysis.project.analyses[angr.analyses.Decompiler].prep()(function, cfg=cfg.model, options=None)
-        return AngrDecompilationAnalysis(dec.codgen.text)
+        return AngrDecompilationAnalysis(dec.codegen.text)
