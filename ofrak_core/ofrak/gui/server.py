@@ -919,7 +919,7 @@ class AiohttpOFRAKServer:
                         "args": self._construct_arg_response(field.type),
                         "fields": self._construct_field_response(field.type),
                         "enum": self._construct_enum_response(field.type),
-                        "default": field.default
+                        "default": _format_default(field.default)
                         if not isinstance(field.default, dataclasses._MISSING_TYPE)
                         else None,
                     }
@@ -1550,3 +1550,7 @@ def json_response(
         headers=headers,
         content_type=content_type,
     )
+
+
+def _format_default(default):
+    return default.decode() if isinstance(default, bytes) else default
