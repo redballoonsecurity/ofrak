@@ -16,8 +16,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Fixed front end "Replace" button. Before it was appending new data instead of replacing it as intended. ([#403](https://github.com/redballoonsecurity/ofrak/pull/403))
 - Fix dragging and dropping in the GUI. ([#407](https://github.com/redballoonsecurity/ofrak/pull/407))
 - Fix running scripts without a project selected, and without a config selected. ([#407](https://github.com/redballoonsecurity/ofrak/pull/407))
+- Fix bug in OFRAK GUI server which causes an error when parsing a default config value of bytes. ([#409](https://github.com/redballoonsecurity/ofrak/pull/409))
 
 ### Changed
+- Change `FreeSpaceModifier` & `PartialFreeSpaceModifier` behavior: an optional stub that isn't free space can be provided and fill-bytes for free space can be specified. ([#409](https://github.com/redballoonsecurity/ofrak/pull/409))
 - `Resource.flush_to_disk` method renamed to `Resource.flush_data_to_disk`. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373))
 
 ## [3.2.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v3.1.0...ofrak-v3.2.0)
