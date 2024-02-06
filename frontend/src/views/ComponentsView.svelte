@@ -265,7 +265,7 @@
         <div class="checkboxes">
           <select bind:value="{selectedComponent}">
             <option value="{null}">Select a component to run</option>
-            {#each ofrakComponents as ofrakComponent}
+            {#each ofrakComponents.sort() as ofrakComponent}
               <option value="{ofrakComponent}">
                 {ofrakComponent}
               </option>

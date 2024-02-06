@@ -1,6 +1,6 @@
 RUN apt-get update && apt-get install --yes nginx
 
-COPY --from=svelte --chown=root:root /home/node/frontend/public /ofrak_gui
+COPY --from=svelte --chown=root:root /home/node/frontend/dist /ofrak_gui
 
 ARG OFRAK_DIR=.
 COPY $OFRAK_DIR/frontend/nginx.conf /etc/nginx/sites-enabled/default

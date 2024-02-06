@@ -919,7 +919,7 @@ class AiohttpOFRAKServer:
                         "args": self._construct_arg_response(field.type),
                         "fields": self._construct_field_response(field.type),
                         "enum": self._construct_enum_response(field.type),
-                        "default": field.default
+                        "default": _format_default(field.default)
                         if not isinstance(field.default, dataclasses._MISSING_TYPE)
                         else None,
                     }
@@ -947,7 +947,7 @@ class AiohttpOFRAKServer:
             config_type = self._get_config_for_component(component)
         else:
             return json_response([])
-        if config_type == inspect._empty:
+        if config_type == inspect._empty or config_type is None:
             config = None
         else:
             config = self._serializer.from_pjson(await request.json(), config_type)
@@ -1550,3 +1550,7 @@ def json_response(
         headers=headers,
         content_type=content_type,
     )
+
+
+def _format_default(default):
+    return default.decode() if isinstance(default, bytes) else default

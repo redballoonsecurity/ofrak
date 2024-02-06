@@ -6,6 +6,7 @@ RUN apt-get -y update && \
       cmake \
       cpio \
       git \
+      genisoimage \
       liblz4-dev \
       liblzo2-dev \
       libzstd-dev \

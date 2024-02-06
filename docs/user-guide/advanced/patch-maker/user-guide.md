@@ -355,28 +355,10 @@ These steps are done through OFRAK core, and are described individually in the O
 [lesson 6](https://github.com/redballoonsecurity/ofrak/tree/master/ofrak_tutorial/notebooks_with_outputs/6_code_insertion_with_extension.ipynb).
 
 #### Injection
-Inject the extended ELF segment with the compiled patch blob using OFRAK `BinaryPatchModifier`.
-
-First extract the newly added segment containing the patch from the FEM:
+Inject the extended ELF segment with the compiled patch blob using OFRAK `SegmentInjectorModifier`.
 
 ```
-with open(fem.executable.path, "rb") as f:
-    exe_data = f.read()
-
-segment_data = b""
-for segment in fem.executable.segments:
-    if segment.length == 0 or segment.vm_address == 0:
-        continue
-    segment_data = exe_data[segment.offset : segment.offset + segment.length]
-    break
-assert len(segment_data) != 0
-```
-
-Then incorporate it into the resource tree:
-
-```
-binary_patch_config = BinaryPatchConfig(new_segment.p_offset, segment_data)
-await root_resource.run(BinaryPatchModifier, binary_patch_config)
+await root_resource.run(SegmentInjectorModifier, config=SegmentInjectorModifierConfig.from_fem(fem))
 ```
 
 #### Packing
