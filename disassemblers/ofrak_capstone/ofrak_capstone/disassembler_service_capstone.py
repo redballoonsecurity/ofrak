@@ -213,7 +213,7 @@ def _asm_fixups(base_mnemonic: str, base_operands: str, isa: InstructionSet) -> 
     """
     In AARCH64, vector instructions use numerical constants to reference vectors to perform operations on
     These numerical constants shouldn't be converted to hex because keystone will be unable to reassemble them
-    In every other case we want to to the constants to hex conversion
+    In every other case we want to do the hex conversion
     """
     hex_operand_fixup = lambda base_operands: re.sub(
         RE_REPRESENT_CONSTANTS_HEX, r"\g<1>0x\g<2>", base_operands
