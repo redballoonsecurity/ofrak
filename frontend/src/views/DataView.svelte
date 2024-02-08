@@ -8,6 +8,19 @@
     padding-bottom: 1em;
     background: var(--main-bg-color);
   }
+  button {
+    margin-bottom: 0;
+    border: 1px solid white;
+  }
+  .content hr{
+  display: block;
+  height: 1px;
+  border: 0;
+  border-top: 1px solid white;
+  margin-top: -1px;
+  padding: 0;
+    
+  }
 </style>
 
 <script>
@@ -94,13 +107,13 @@
       dataSearchResults="{dataSearchResults}"
     />
   {:else if display_type == "text"}
-    <br />
+    <hr />
     <TextView />
   {:else if display_type == "asm"}
-    <br />
+    <hr />
     <AssemblyView bind:searchFunction="{searchFunction}" />
   {:else if display_type == "decomp"}
-    <br />
+    <hr />
     <DecompilationView bind:searchFunction="{searchFunction}" />
   {/if}
 </div>
