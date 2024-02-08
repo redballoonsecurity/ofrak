@@ -8,11 +8,6 @@
     top: 0;
   }
 
-  .breadcrumb {
-    padding-bottom: 0.5em;
-    background: var(--main-bg-color);
-  }
-
   .hbox {
     display: flex;
     flex-direction: row;
@@ -39,9 +34,7 @@
 </style>
 
 <script>
-  import Breadcrumb from "../utils/Breadcrumb.svelte";
   import LoadingText from "../utils/LoadingText.svelte";
-  import SearchBar from "../utils/SearchBar.svelte";
 
   import { chunkList, buf2hex, hexToChar } from "../helpers.js";
   import { selectedResource, selected, settings } from "../stores.js";
@@ -265,7 +258,8 @@
     return info;
   }
 
-  let dataSearchResults = {};
+  export let dataSearchResults;
+  export const searchFunction = searchHex;
 
   // React to local data searches
   $: {
@@ -303,15 +297,6 @@
       )}))"
     >
       <div class="sticky">
-        <div class="breadcrumb">
-          <Breadcrumb />
-        </div>
-        <SearchBar
-          search="{searchHex}"
-          liveUpdate="{false}"
-          showResultsWidgets="{true}"
-          bind:searchResults="{dataSearchResults}"
-        />
         <div class="hbox">
           {#await chunkDataPromise}
             <LoadingText />
@@ -378,10 +363,6 @@
       </div>
     </div>
   {:else}
-    <div class="breadcrumb sticky">
-      <Breadcrumb />
-    </div>
-
     Resource has no data!
   {/if}
 {/await}

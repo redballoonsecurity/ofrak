@@ -1,11 +1,4 @@
 <style>
-  .breadcrumb {
-    position: sticky;
-    top: 0;
-    padding-bottom: 1em;
-    background: var(--main-bg-color);
-  }
-
   .hbox {
     display: flex;
     flex-direction: row;
@@ -31,13 +24,13 @@
 </style>
 
 <script>
-  import Breadcrumb from "../utils/Breadcrumb.svelte";
   import LoadingAnimation from "../utils/LoadingAnimation.svelte";
   import LoadingText from "../utils/LoadingText.svelte";
 
   import { chunkList, buf2hex } from "../helpers.js";
   import { selectedResource } from "../stores.js";
-
+  export const searchFunction = asmSearch;
+  let searchString = "";
   let blocksPromise = Promise.resolve([]),
     dataWordsPromise = Promise.resolve([]);
   $: if ($selectedResource !== undefined) {
@@ -80,11 +73,11 @@
     }
     return blocks;
   }
-</script>
 
-<div class="breadcrumb">
-  <Breadcrumb />
-</div>
+  async function asmSearch(query){
+    searchString = query;
+  }
+</script>
 
 {#await Promise.all([blocksPromise, dataWordsPromise])}
   <LoadingAnimation />

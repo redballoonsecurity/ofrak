@@ -52,6 +52,7 @@
   import { keyEventToString, shortcuts } from "./keyboard.js";
 
   import { writable } from "svelte/store";
+    import DataView from "./views/DataView.svelte";
 
   printConsoleArt();
 
@@ -83,15 +84,6 @@
     } else {
       $selectedResource = currentResource;
       dataLenPromise = currentResource.get_data_length();
-      useAssemblyView = [
-        "ofrak.core.complex_block.ComplexBlock",
-        "ofrak.core.basic_block.BasicBlock",
-        "ofrak.core.instruction.Instruction",
-        "ofrak.core.data.DataWord",
-      ].some((tag) => currentResource.has_tag(tag));
-      useTextView = ["ofrak.core.binary.GenericText"].some((tag) =>
-        currentResource.has_tag(tag)
-      );
       $hexScrollY.top = 0;
       document.title = "OFRAK App – " + currentResource.get_caption();
     }
@@ -211,7 +203,7 @@ Answer by running riddle.answer('your answer here') from the console.`);
         scrollY="{hexScrollY}"
         displayMinimap="{currentResource && !useAssemblyView && !useTextView}"
       >
-        {#if useAssemblyView}
+        <!-- {#if useAssemblyView}
           <AssemblyView />
         {:else if useTextView}
           <TextView />
@@ -222,7 +214,13 @@ Answer by running riddle.answer('your answer here') from the console.`);
             scrollY="{hexScrollY}"
             bind:resourceNodeDataMap="{resourceNodeDataMap}"
           />
-        {/if}
+        {/if} -->
+        <DataView 
+        dataLenPromise="{dataLenPromise}"
+        resources="{resources}"
+        scrollY="{hexScrollY}"
+        bind:resourceNodeDataMap="{resourceNodeDataMap}"
+        />
         <!-- 
           Named slot must be outside {#if} because of: 
           https://github.com/sveltejs/svelte/issues/5604 

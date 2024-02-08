@@ -163,6 +163,7 @@
       </option>
     {/each}
   </select>
+  <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
   <form
     on:submit="{async (e) => {
       e.preventDefault();
