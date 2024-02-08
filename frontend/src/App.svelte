@@ -203,18 +203,6 @@ Answer by running riddle.answer('your answer here') from the console.`);
         scrollY="{hexScrollY}"
         displayMinimap="{currentResource && !useAssemblyView && !useTextView}"
       >
-        <!-- {#if useAssemblyView}
-          <AssemblyView />
-        {:else if useTextView}
-          <TextView />
-        {:else}
-          <HexView
-            dataLenPromise="{dataLenPromise}"
-            resources="{resources}"
-            scrollY="{hexScrollY}"
-            bind:resourceNodeDataMap="{resourceNodeDataMap}"
-          />
-        {/if} -->
         <DataView
           dataLenPromise="{dataLenPromise}"
           resources="{resources}"
