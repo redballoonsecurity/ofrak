@@ -12,14 +12,13 @@
     margin-bottom: 0;
     border: 1px solid white;
   }
-  .content hr{
-  display: block;
-  height: 1px;
-  border: 0;
-  border-top: 1px solid white;
-  margin-top: -1px;
-  padding: 0;
-    
+  .content hr {
+    display: block;
+    height: 1px;
+    border: 0;
+    border-top: 1px solid white;
+    margin-top: -1px;
+    padding: 0;
   }
 </style>
 
