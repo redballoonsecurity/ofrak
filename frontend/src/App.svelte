@@ -52,7 +52,7 @@
   import { keyEventToString, shortcuts } from "./keyboard.js";
 
   import { writable } from "svelte/store";
-    import DataView from "./views/DataView.svelte";
+  import DataView from "./views/DataView.svelte";
 
   printConsoleArt();
 
@@ -215,11 +215,11 @@ Answer by running riddle.answer('your answer here') from the console.`);
             bind:resourceNodeDataMap="{resourceNodeDataMap}"
           />
         {/if} -->
-        <DataView 
-        dataLenPromise="{dataLenPromise}"
-        resources="{resources}"
-        scrollY="{hexScrollY}"
-        bind:resourceNodeDataMap="{resourceNodeDataMap}"
+        <DataView
+          dataLenPromise="{dataLenPromise}"
+          resources="{resources}"
+          scrollY="{hexScrollY}"
+          bind:resourceNodeDataMap="{resourceNodeDataMap}"
         />
         <!-- 
           Named slot must be outside {#if} because of: 

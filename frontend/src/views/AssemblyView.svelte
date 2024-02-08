@@ -74,7 +74,7 @@
     return blocks;
   }
 
-  async function asmSearch(query){
+  async function asmSearch(query) {
     searchString = query;
   }
 </script>
