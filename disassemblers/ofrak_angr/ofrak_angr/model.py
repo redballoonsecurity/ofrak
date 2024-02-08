@@ -8,5 +8,6 @@ from ofrak.resource_view import ResourceView
 class AngrAnalysis(ResourceAttributes):
     project: Project
 
+
 class AngrAnalysisResource(ResourceView):
     pass
