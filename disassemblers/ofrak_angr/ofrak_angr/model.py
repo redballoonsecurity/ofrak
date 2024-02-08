@@ -8,9 +8,5 @@ from ofrak.resource_view import ResourceView
 class AngrAnalysis(ResourceAttributes):
     project: Project
 
-@dataclass(**ResourceAttributes.DATACLASS_PARAMS)
-class AngrDecompilationAnalysis(ResourceAttributes):
-    decompilation: str
-
 class AngrAnalysisResource(ResourceView):
     pass

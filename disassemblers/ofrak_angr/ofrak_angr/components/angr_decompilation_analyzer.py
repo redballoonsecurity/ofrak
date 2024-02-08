@@ -1,12 +1,28 @@
+from dataclasses import dataclass
 from io import BytesIO
 import angr
 from ofrak.component.analyzer import Analyzer
+from ofrak.component.identifier import Identifier
+from ofrak.resource_view import ResourceView
 
-from ofrak_angr.components.angr_analyzer import AngrAnalyzerConfig
 from ofrak.resource import Resource
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.service.resource_service_i import ResourceFilter
-from ofrak_angr.model import AngrAnalysis, AngrDecompilationAnalysis, AngrAnalysisResource
+from ofrak_angr.model import AngrAnalysis, AngrAnalysisResource
+
+
+@dataclass
+class AngrDecompilationAnalysis(ResourceView):
+    decompilation: str
+
+
+class AngrDecompilationAnalysisIdentifier(Identifier):
+    id = b"AngrDecompilationAnalysisIdentifier"
+    targets = (ComplexBlock,)
+
+    async def identify(self, resource: Resource, config=None):
+        resource.add_tag(AngrDecompilationAnalysis)
+
 
 class AngrDecompilatonAnalyzer(Analyzer[None, AngrDecompilationAnalysis]):
     id = b"AngrDecompilationAnalyzer"
