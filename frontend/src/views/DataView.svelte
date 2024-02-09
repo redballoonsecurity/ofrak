@@ -1,17 +1,25 @@
 <style>
   .content {
-    position: sticky;
+    position: absolute;
     top: 0;
     height: 100%;
+    overflow: hidden;
   }
+
   .breadcrumb {
     padding-bottom: 1em;
     background: var(--main-bg-color);
   }
+
   button {
     margin-bottom: 0;
     border: 1px solid white;
   }
+
+  button:focus {
+    border-bottom: 2px solid var(--main-bg-color);
+  }
+
   .content hr {
     display: block;
     height: 1px;
@@ -27,11 +35,11 @@
   import Breadcrumb from "../utils/Breadcrumb.svelte";
   import AssemblyView from "./AssemblyView.svelte";
   import DecompilationView from "./DecompilationView.svelte";
-  import HexView from "./HexView.svelte";
+  import HexView from "../hex/HexView.svelte";
   import TextView from "./TextView.svelte";
   import SearchBar from "../utils/SearchBar.svelte";
-
-  export let dataLenPromise, scrollY, resourceNodeDataMap, resources;
+  import { onMount } from "svelte";
+  export let dataLenPromise, resourceNodeDataMap, resources;
   let display_type = "hex";
   let hasTextView = false;
   let hasAsmView = false;
@@ -39,8 +47,11 @@
   let dataSearchResults = {};
   let searchFunction;
 
+  onMount(async () => {
+    document.getElementById("hex").focus();
+  });
+
   function checkTags() {
-    display_type = "hex";
     hasTextView = ["ofrak.core.binary.GenericText"].some((tag) =>
       $selectedResource.has_tag(tag)
     );
@@ -63,12 +74,14 @@
   </div>
   <div class="tabs">
     <button
+      id="hex"
       on:click="{(e) => {
         display_type = 'hex';
       }}">Hex</button
     >
     {#if hasTextView}
       <button
+        id="text"
         on:click="{(e) => {
           display_type = 'text';
         }}">Text</button
@@ -76,6 +89,7 @@
     {/if}
     {#if hasAsmView}
       <button
+        id="asm"
         on:click="{(e) => {
           display_type = 'asm';
         }}">Asm</button
@@ -83,6 +97,7 @@
     {/if}
     {#if hasDecompView}
       <button
+        id="decomp"
         on:click="{(e) => {
           display_type = 'decomp';
         }}">Decompilation</button
@@ -90,6 +105,7 @@
     {/if}
   </div>
   {#if display_type == "hex"}
+    <hr />
     <!-- TODO: Make search bar work for Asm, text, decomp -->
     <SearchBar
       bind:search="{searchFunction}"
@@ -100,7 +116,6 @@
     <HexView
       dataLenPromise="{dataLenPromise}"
       resources="{resources}"
-      scrollY="{scrollY}"
       bind:resourceNodeDataMap="{resourceNodeDataMap}"
       bind:searchFunction="{searchFunction}"
       dataSearchResults="{dataSearchResults}"

@@ -28,11 +28,11 @@
   import LoadingTextVertical from "../utils/LoadingTextVertical.svelte";
 
   import { hexToByteArray } from "../helpers.js";
+  import { scrollY } from "./stores.js";
   import { selectedResource, settings } from "../stores.js";
 
   import { onMount } from "svelte";
 
-  export let scrollY;
   let data = undefined;
 
   $: colorArray = [

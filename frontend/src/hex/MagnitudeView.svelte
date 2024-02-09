@@ -26,13 +26,12 @@
 
 <script>
   import LoadingTextVertical from "../utils/LoadingTextVertical.svelte";
-
+  import { scrollY } from "./stores.js";
   import { hexToByteArray } from "../helpers.js";
   import { selectedResource, settings } from "../stores.js";
 
   import { onMount } from "svelte";
 
-  export let scrollY;
   let data = undefined;
 
   $: bgcolors = hexToByteArray($settings.background.slice(1));
