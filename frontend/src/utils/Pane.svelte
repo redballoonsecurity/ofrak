@@ -15,7 +15,6 @@
   .inner {
     overflow: auto;
     flex-grow: 1;
-    scrollbar-color: var(--main-bg-color);
   }
 
   .minimap-container {

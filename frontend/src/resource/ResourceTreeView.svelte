@@ -20,6 +20,8 @@
   .toolbar {
     overflow: auto;
     overflow-y: scroll;
+    background-color: var(--main-bg-color);
+    z-index: 10;
   }
 
   .hbox {

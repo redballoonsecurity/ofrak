@@ -22,9 +22,6 @@ async def test_angr_decompilation(ofrak_context: OFRAKContext):
             ]
         ),
     )
-    import ipdb
-
-    ipdb.set_trace()
     decomps = []
     for complex_block in complex_blocks:
         await complex_block.resource.identify()
