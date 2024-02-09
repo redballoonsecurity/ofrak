@@ -109,9 +109,7 @@
 
   async function getNewData() {
     start = $currentPosition;
-    end = Math.min(
-      start + $screenHeight
-    );
+    end = Math.min(start + $screenHeight);
 
     if (resourceData) {
       return chunkList(
@@ -136,9 +134,9 @@
     ).map((chunk) => chunkList(buf2hex(chunk), 2));
   }
 
-  $: updateData($currentPosition)
+  $: updateData($currentPosition);
 
-  function updateData(){
+  function updateData() {
     chunkDataPromise = dataLenPromise.then(getNewData);
   }
 
@@ -250,19 +248,20 @@
     ) {
       dataLenPromise.then(($dataLength) => {
         $currentPosition =
-          localDataSearchResults.matches[localDataSearchResults.index][0]
+          localDataSearchResults.matches[localDataSearchResults.index][0];
       });
     }
   }
 
   async function searchHex(query, options) {
-    console.log("searching")
+    console.log("searching");
     return await $selectedResource.search_data(query, options);
   }
 
   function refreshHeight() {
-    $screenHeight = Math.floor(hexDisplay.offsetHeight / lineHeight) * alignment
-    console.log($screenHeight)
+    $screenHeight =
+      Math.floor(hexDisplay.offsetHeight / lineHeight) * alignment;
+    console.log($screenHeight);
   }
 
   onMount(() => {
@@ -277,13 +276,13 @@
   id="hex-display"
   on:wheel="{(e) => {
     $currentPosition += e.deltaY * 16;
-    if($currentPosition < 0){
+    if ($currentPosition < 0) {
       $currentPosition = 0;
     }
-    if($currentPosition > $dataLength - $screenHeight){
+    if ($currentPosition > $dataLength - $screenHeight) {
       $currentPosition = $dataLength - $screenHeight;
     }
-    console.log($currentPosition)
+    console.log($currentPosition);
   }}"
 >
   {#await dataLenPromise}
@@ -371,7 +370,7 @@
       Resource has no data!
     {/if}
     <div class="minimap">
-      <MinimapView dataLenPromise="{dataLenPromise}"/>
+      <MinimapView dataLenPromise="{dataLenPromise}" />
     </div>
   {/await}
 </div>

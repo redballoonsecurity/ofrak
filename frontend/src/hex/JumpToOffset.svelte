@@ -32,7 +32,6 @@
       input.focus();
     }
   };
-
 </script>
 
 <input
