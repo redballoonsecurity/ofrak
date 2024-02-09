@@ -13,12 +13,10 @@
     display: flex;
     flex-direction: row;
     overflow: auto;
-    position: absolute;
-    margin-top: 3em;
     margin-bottom: 3em;
     margin-left: 3em;
     margin-right: 3em;
-    height: calc(100% - 3em * 2);
+    height: 100%;
   }
 
   .hbox {
@@ -30,8 +28,6 @@
     line-height: var(--line-height);
     position: auto;
     font-size: 0.95em;
-    width: 100%;
-    height: 100%;
   }
 
   .spacer {
