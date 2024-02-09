@@ -212,9 +212,9 @@ async def test_flush_to_disk_pack(ofrak_context: OFRAKContext):
     with tempfile.NamedTemporaryFile() as t:
         # again, should fail because the packer is run automatically
         with pytest.raises(MockFailException):
-            await root_resource.flush_to_disk(t.name)
+            await root_resource.flush_data_to_disk(t.name)
 
-        await root_resource.flush_to_disk(t.name, pack=False)
+        await root_resource.flush_data_to_disk(t.name, pack=False)
 
 
 async def test_is_modified(resource: Resource):

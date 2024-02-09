@@ -48,7 +48,7 @@ jobs:
           cd frontend
           npm install
           sudo apt-get install shellcheck
-          python3 -m pip install black==22.6.0
+          python3 -m pip install black==23.3.0
       - name: Lint frontend
         run: |
           cd frontend

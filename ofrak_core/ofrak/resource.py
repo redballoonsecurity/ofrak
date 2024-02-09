@@ -296,12 +296,11 @@ class Resource:
             self._resource_view_context,
         )
 
-    def _save(
-        self,
-        resources_to_delete: List[bytes],
-        patches_to_apply: List[DataPatch],
-        resources_to_update: List[MutableResourceModel],
-    ):
+    def _save(self) -> Tuple[List[bytes], List[DataPatch], List[MutableResourceModel]]:
+        resources_to_delete: List[bytes] = []
+        patches_to_apply: List[DataPatch] = []
+        resources_to_update: List[MutableResourceModel] = []
+
         if self._resource.is_deleted:
             resources_to_delete.append(self._resource.id)
         elif self._resource.is_modified:
@@ -315,6 +314,8 @@ class Resource:
             patches_to_apply.extend(modification_tracker.data_patches)
             resources_to_update.append(self._resource)
             modification_tracker.data_patches.clear()
+
+        return resources_to_delete, patches_to_apply, resources_to_update
 
     async def _fetch(self, resource: MutableResourceModel):
         """
@@ -1428,7 +1429,7 @@ class Resource:
         self._resource.is_modified = True
         self._resource.is_deleted = True
 
-    async def flush_to_disk(self, path: str, pack: bool = True):
+    async def flush_data_to_disk(self, path: str, pack: bool = True):
         """
         Recursively repack the resource and write its data out to a file on disk. If this is a
         dataless resource, creates an empty file.
@@ -1543,11 +1544,11 @@ async def save_resources(
     resources_to_update: List[MutableResourceModel] = []
 
     for resource in resources:
-        resource._save(
-            resources_to_delete,
-            patches_to_apply,
-            resources_to_update,
-        )
+        _resources_to_delete, _patches_to_apply, _resources_to_update = resource._save()
+
+        resources_to_delete.extend(_resources_to_delete)
+        patches_to_apply.extend(_patches_to_apply)
+        resources_to_update.extend(_resources_to_update)
 
     deleted_descendants = await resource_service.delete_resources(resources_to_delete)
     data_ids_to_delete = [
@@ -1555,7 +1556,9 @@ async def save_resources(
     ]
     await data_service.delete_models(data_ids_to_delete)
     patch_results = await data_service.apply_patches(patches_to_apply)
-    await dependency_handler.handle_post_patch_dependencies(patch_results)
+    resources_to_update.extend(
+        await dependency_handler.handle_post_patch_dependencies(patch_results)
+    )
     diffs = []
     updated_ids = []
     for resource_m in resources_to_update:

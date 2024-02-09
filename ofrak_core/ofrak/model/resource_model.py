@@ -693,6 +693,9 @@ class MutableResourceModel(ResourceModel):
         self.is_deleted = False
         self._diff: Optional[ResourceModelDiff] = None
 
+    def __hash__(self):
+        return self.id.__hash__()
+
     @property
     def diff(self):
         if not self._diff:

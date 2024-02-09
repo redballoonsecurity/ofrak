@@ -361,18 +361,24 @@ export class RemoteResource extends Resource {
     return this.cache["get_descendants"];
   }
 
-  async queue_patch(data, start, end, after, before) {
+  async queue_patch(data, start, end) {
     // TODO: Implement after and before
-
-    start = start || 0;
-    end = end || 0;
-    const patch_results = await fetch(
-      `${this.uri}/queue_patch?start=${start}&end=${end}`,
-      {
-        method: "POST",
-        body: data,
-      }
-    ).then(async (r) => {
+    let url = `${this.uri}/queue_patch`;
+    start = start || null;
+    end = end || null;
+    if (start && end) {
+      url = `${this.uri}/queue_patch?start=${start}&end=${end}`;
+    } else if (start && !end) {
+      url = `${this.uri}/queue_patch?start=${start}`;
+    } else if (end && !start) {
+      url = `${this.uri}/queue_patch?end=${end}`;
+    } else {
+      url = `${this.uri}/queue_patch`;
+    }
+    const patch_results = await fetch(url, {
+      method: "POST",
+      body: data,
+    }).then(async (r) => {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }

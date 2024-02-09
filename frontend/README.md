@@ -62,7 +62,7 @@ In `src/ofrak` there are JavaScript implementations of the OFRAK resource class
 that fetch remote data from the back end. 
 
 The `public` directory is the folder containing all of the static site material
-that is served. Svelte compiles the source files into `public/build`.
+that is served. Svelte compiles the source files into `dist`.
 
 ---
 

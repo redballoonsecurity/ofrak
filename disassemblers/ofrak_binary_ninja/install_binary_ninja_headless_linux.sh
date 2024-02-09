@@ -9,8 +9,8 @@ INSTALL_DIR=/opt/rbs
 mkdir -p $INSTALL_DIR
 cd $INSTALL_DIR
 curl -O https://raw.githubusercontent.com/Vector35/binaryninja-api/dev/scripts/download_headless.py
-pip --no-input install requests
-python download_headless.py --serial $SERIAL
+python3 -m pip --no-input install requests
+python3 download_headless.py --serial $SERIAL
 unzip BinaryNinja-headless.zip
 rm download_headless.py BinaryNinja-headless.zip
-python binaryninja/scripts/install_api.py
+python3 binaryninja/scripts/install_api.py

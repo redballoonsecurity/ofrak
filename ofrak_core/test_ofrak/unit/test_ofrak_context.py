@@ -2,13 +2,17 @@ import asyncio
 import logging
 
 import pytest
-
+from tempfile import TemporaryDirectory
+import os
 from ofrak import OFRAK, OFRAKContext
 from ofrak.core.apk import ApkIdentifier
+from ofrak.resource import Resource
 from ofrak.ofrak_context import get_current_ofrak_context
 from ofrak_type.error import NotFoundError, InvalidStateError
 from pytest_ofrak import mock_library3
 from pytest_ofrak.mock_library3 import _MockComponentA
+
+from ofrak.core.filesystem import FilesystemRoot
 
 
 def test_ofrak_context():
@@ -83,3 +87,31 @@ async def test_get_ofrak_context_fixture(ofrak_context: OFRAKContext):
     current_ofrak_context = get_current_ofrak_context()
     assert current_ofrak_context is not None
     assert current_ofrak_context is ofrak_context
+
+
+async def test_create_root_resource_from_directory(ofrak_context: OFRAKContext):
+    with TemporaryDirectory() as tempdir:
+        with open(os.path.join(tempdir, "1.txt"), "w") as fh:
+            fh.write("test")
+        with open(os.path.join(tempdir, "2.txt"), "w") as fh:
+            fh.write("test2")
+        os.mkdir(os.path.join(tempdir, "test3"))
+        with open(os.path.join(tempdir, os.path.join("test3", "test3.txt")), "w") as fh:
+            fh.write("test3")
+        orig_files = []
+        orig_dirs = []
+        for _, dirs, files in os.walk(tempdir):
+            orig_dirs.append(dirs)
+            orig_files.append(files)
+        root_resource: Resource = await ofrak_context.create_root_resource_from_directory(tempdir)
+    with TemporaryDirectory() as tempdir:
+        root_v = await root_resource.view_as(FilesystemRoot)
+        await root_v.flush_to_disk(tempdir)
+        res = os.walk(tempdir)
+        new_files = []
+        new_dirs = []
+        for _, dirs, files in os.walk(tempdir):
+            new_dirs.append(dirs)
+            new_files.append(files)
+        assert orig_dirs == new_dirs
+        assert orig_files == new_files

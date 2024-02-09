@@ -1,32 +1,26 @@
 {
   "name": "ofrak-app",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "The graphical front-end for OFRAK.",
   "homepage": "https://ofrak.com",
   "private": true,
   "scripts": {
-    "build": "rollup -c",
-    "watch": "rollup -c -w",
-    "serve": "sirv public --no-clear --host",
+    "build": "vite build",
+    "watch": "vite --host",
+    "serve": "vite --host",
     "lint": "prettier --write --plugin-search-dir=. './**/*.{html,svelte,js,css}'",
     "check": "prettier --check --plugin-search-dir=. './**/*.{html,svelte,js,css}'"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^17.0.0",
-    "@rollup/plugin-node-resolve": "^11.0.0",
-    "@splinetool/runtime": "^0.9.30",
     "prettier": "^2.7.1",
     "prettier-plugin-svelte": "^2.6.0",
-    "rollup": "^2.3.4",
-    "rollup-plugin-css-only": "^3.1.0",
-    "rollup-plugin-livereload": "^2.0.0",
-    "rollup-plugin-svelte": "^7.0.0",
-    "rollup-plugin-terser": "^7.0.0",
-    "split.js": "^1.6.0",
-    "svelte": "^3.0.0",
-    "sirv-cli": "^2.0.0"
+    "vite": "^4.4.5",
+    "@sveltejs/vite-plugin-svelte": "^2.4.2",
+    "svelte": "^4.0.5"
   },
   "dependencies": {
+    "@splinetool/runtime": "^0.9.30",
+    "split.js": "^1.6.0",
     "highlight.js": "^11.7.0"
   }
 }

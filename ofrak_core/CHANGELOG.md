@@ -5,14 +5,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 ### Added
+- Add an improved ISO9660 packer that leverages `mkisofs` instead of PyCdLib. ([#393](https://github.com/redballoonsecurity/ofrak/pull/393))
+- Add UEFI binary unpacker. ([#399](https://github.com/redballoonsecurity/ofrak/pull/399))
+
+### Fixed
+- Improved flushing of filesystem entries (including symbolic links and other types) to disk. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373))
+- Fix `java` and `apktool` CLI arguments for checking components. ([#390](https://github.com/redballoonsecurity/ofrak/pull/390))
+- Bump GitPython version from 3.1.35 to 3.1.41 to mitigate CVEs. ([#400](https://github.com/redballoonsecurity/ofrak/pull/400))
+- Fixes erroneous Free Space Modifier expectation that resource parents are memory views. ([#404](https://github.com/redballoonsecurity/ofrak/pull/404))
+- Prevent `_find_and_delete_overlapping_children` from deleting children which are next to the freed region, but not overlapping. ([#396](https://github.com/redballoonsecurity/ofrak/pull/396))
+- Fixed front end "Replace" button. Before it was appending new data instead of replacing it as intended. ([#403](https://github.com/redballoonsecurity/ofrak/pull/403))
+- Fix dragging and dropping in the GUI. ([#407](https://github.com/redballoonsecurity/ofrak/pull/407))
+- Fix running scripts without a project selected, and without a config selected. ([#407](https://github.com/redballoonsecurity/ofrak/pull/407))
+- Fix bug in OFRAK GUI server which causes an error when parsing a default config value of bytes. ([#409](https://github.com/redballoonsecurity/ofrak/pull/409))
+
+### Changed
+- Change `FreeSpaceModifier` & `PartialFreeSpaceModifier` behavior: an optional stub that isn't free space can be provided and fill-bytes for free space can be specified. ([#409](https://github.com/redballoonsecurity/ofrak/pull/409))
+- `Resource.flush_to_disk` method renamed to `Resource.flush_data_to_disk`. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373))
+
+## [3.2.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v3.1.0...ofrak-v3.2.0)
+### Added
 - Add a JFFS2 packer and unpacker. ([#326](https://github.com/redballoonsecurity/ofrak/pull/326))
 - Add method to Resource and data service to search for patterns in its data ([#333](https://github.com/redballoonsecurity/ofrak/pull/333))
 - Add search bars to GUI in order to search for a string or bytes within a resource. ([#345](https://github.com/redballoonsecurity/ofrak/pull/345))
+- Add Identifier, Unpacker, Packer for Intel Hex format. ([#349](https://github.com/redballoonsecurity/ofrak/pull/349))
+- Add unpackers for EXT filesystems (versions 2 through 4). ([#337](https://github.com/redballoonsecurity/ofrak/pull/337))
+- A new feature that allows users to create an OFRAK "project" that contains a collection of scripts and binaries. ([#360](https://github.com/redballoonsecurity/ofrak/pull/360))
 
 ### Changed
 - Support uploading files in chunks to handle files larger than 2GB from the GUI ([#324](https://github.com/redballoonsecurity/ofrak/pull/324))
 
 ### Fixed
+- Save resources affected by data patches and dependency updates on a resource being saved ([#355](https://github.com/redballoonsecurity/ofrak/pull/355))
+
+### Security
+- Updated GitPython to version 3.1.35 as per CVE-2023-40590 and CVE-2023-41040
 
 ## [3.1.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v3.0.0...ofrak-v3.1.0)
 ### Added

@@ -29,22 +29,23 @@
 </style>
 
 <script>
-  import AssemblyView from "./AssemblyView.svelte";
-  import AttributesView from "./AttributesView.svelte";
-  import AudioPlayer from "./AudioPlayer.svelte";
-  import ByteclassView from "./ByteclassView.svelte";
-  import CarouselSelector from "./CarouselSelector.svelte";
-  import EntropyView from "./EntropyView.svelte";
-  import Gamepad from "./Gamepad.svelte";
-  import HexView from "./HexView.svelte";
-  import JumpToOffset from "./JumpToOffset.svelte";
-  import LoadingAnimation from "./LoadingAnimation.svelte";
-  import MagnitudeView from "./MagnitudeView.svelte";
-  import Pane from "./Pane.svelte";
-  import ResourceTreeView from "./ResourceTreeView.svelte";
-  import Split from "./Split.svelte";
-  import StartView from "./StartView.svelte";
-  import TextView from "./TextView.svelte";
+  import AssemblyView from "./views/AssemblyView.svelte";
+  import AttributesView from "./views/AttributesView.svelte";
+  import AudioPlayer from "./utils/AudioPlayer.svelte";
+  import ByteclassView from "./views/ByteclassView.svelte";
+  import CarouselSelector from "./utils/CarouselSelector.svelte";
+  import EntropyView from "./views/EntropyView.svelte";
+  import Gamepad from "./utils/Gamepad.svelte";
+  import HexView from "./views/HexView.svelte";
+  import JumpToOffset from "./utils/JumpToOffset.svelte";
+  import LoadingAnimation from "./utils/LoadingAnimation.svelte";
+  import MagnitudeView from "./views/MagnitudeView.svelte";
+  import Pane from "./utils/Pane.svelte";
+  import ResourceTreeView from "./resource/ResourceTreeView.svelte";
+  import Split from "./utils/Split.svelte";
+  import StartView from "./views/StartView.svelte";
+  import TextView from "./views/TextView.svelte";
+  import ProjectManagerView from "./project/ProjectManagerView.svelte";
 
   import { printConsoleArt } from "./console-art.js";
   import { selected, selectedResource, settings } from "./stores.js";
@@ -55,6 +56,7 @@
   printConsoleArt();
 
   let showRootResource = false,
+    showProjectManager = false,
     dataLenPromise = Promise.resolve([]),
     hexScrollY = writable({}),
     useAssemblyView = false,
@@ -188,6 +190,8 @@ Answer by running riddle.answer('your answer here') from the console.`);
               bind:bottomLeftPane="{bottomLeftPane}"
               bind:resourceNodeDataMap="{resourceNodeDataMap}"
               bind:modifierView="{modifierView}"
+              bind:showProjectManager="{showProjectManager}"
+              bind:showRootResource="{showRootResource}"
             />
           {/if}
         </Pane>
@@ -251,10 +255,19 @@ Answer by running riddle.answer('your answer here') from the console.`);
       <AudioPlayer />
     </div>
   {/if}
+{:else if showProjectManager}
+  <ProjectManagerView
+    bind:rootResourceLoadPromise="{rootResourceLoadPromise}"
+    bind:rootResource="{rootResource}"
+    bind:resources="{resources}"
+    bind:showRootResource="{showRootResource}"
+    bind:showProjectManager="{showProjectManager}"
+  />
 {:else}
   <StartView
     bind:rootResourceLoadPromise="{rootResourceLoadPromise}"
     bind:showRootResource="{showRootResource}"
+    bind:showProjectManager="{showProjectManager}"
     bind:resources="{resources}"
     bind:rootResource="{rootResource}"
     bind:resourceNodeDataMap="{resourceNodeDataMap}"
@@ -262,5 +275,7 @@ Answer by running riddle.answer('your answer here') from the console.`);
 {/if}
 
 <div class="bottomright">
-  <p><a href="https://ofrak.com" target="_blank" rel="noreferrer">v3.1.0</a></p>
+  <p>
+    <a href="https://ofrak.com" target="_blank" rel="noreferrer">v3.2.0</a>
+  </p>
 </div>

@@ -1,3 +1,6 @@
+import re
+import time
+
 import psutil
 import pytest
 from typing import Optional
@@ -10,7 +13,7 @@ def _get_ghidra_server_process() -> Optional[psutil.Process]:
         cmdline = proc.cmdline()
         if (
             len(cmdline) > 1
-            and cmdline[0] == "/usr/lib/jvm/java-11-openjdk-amd64/bin/java"
+            and re.match("/usr/lib/jvm/java-[0-9]+-openjdk-[a-zA-Z0-9]+/bin/java", cmdline[0])
             and cmdline[1] == "-Dwrapper.pidfile=/run/wrapper.ghidraSvr.pid"
         ):
             return proc
@@ -46,6 +49,7 @@ def test_start_stop_ghidra_server(ghidra_is_running: bool):
     """
     if ghidra_is_running:
         server_main._stop_ghidra_server()
+        time.sleep(3)
         assert not _is_ghidra_server_running(), "Could not stop Ghidra server"
     else:
         server_main._run_ghidra_server()
