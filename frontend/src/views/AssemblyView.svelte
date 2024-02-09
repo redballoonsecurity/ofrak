@@ -5,6 +5,8 @@
     flex-wrap: nowrap;
     justify-content: flex-start;
     align-items: stretch;
+    height: 100%;
+    overflow: auto;
   }
 
   .horizontal-spacer {

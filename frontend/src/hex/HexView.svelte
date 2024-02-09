@@ -9,6 +9,18 @@
     height: 100%;
   }
 
+  .hex-display {
+    display: flex;
+    flex-direction: row;
+    overflow: auto;
+    position: absolute;
+    margin-top: 3em;
+    margin-bottom: 3em;
+    margin-left: 3em;
+    margin-right: 3em;
+    height: calc(100% - 3em * 2);
+  }
+
   .hbox {
     display: flex;
     flex-direction: row;
@@ -20,7 +32,6 @@
     font-size: 0.95em;
     width: 100%;
     height: 100%;
-    overflow: hidden;
   }
 
   .spacer {
@@ -48,6 +59,8 @@
   import { onMount } from "svelte";
 
   export let dataLenPromise, resourceNodeDataMap, resources;
+  let paddingVertical = "3em",
+    paddingHorizontal = "3em";
   let childRangesPromise = Promise.resolve(undefined);
   let chunkDataPromise = Promise.resolve(undefined);
   let childRanges,
@@ -85,16 +98,6 @@
   $: chunkDataPromise.then((r) => {
     chunks = r;
   });
-  // $: Promise.any([dataLenPromise, childRangesPromise]).then((_) => {
-  //   // Hacky solution to minimap view box rectangle only updating on scroll
-  //   // after data has loaded -- force a scroll to reload the rectangle after a
-  //   // timeout
-  //   setTimeout(() => {
-  //     if ($scrollY !== undefined) {
-  //       $scrollY.top = 0;
-  //     }
-  //   }, 500);
-  // });
 
   // Sadly, this is the most flexible, most reliable way to get the line height
   // from arbitrary CSS units in pixels. It is definitely a little nasty :(
@@ -110,6 +113,10 @@
   })();
 
   async function getNewData() {
+    console.log("getting data");
+    if ($scrollY == undefined) {
+      $scrollY = 0;
+    }
     start = Math.max(
       Math.floor((dataLength * $scrollY.top) / alignment) * alignment,
       0
@@ -297,11 +304,8 @@
 
 <svelte:window on:resize="{refreshHeight}" />
 <div
+  class="hex-display"
   id="hex-display"
-  style:overflow="auto"
-  style:display="flex"
-  style:flex-direction="row"
-  style:height="100%"
   on:scroll="{(e) => {
     $scrollY.top =
       // FIXME: Subtracting clientHeight allows the user to scroll a little
@@ -313,8 +317,6 @@
     $scrollY.viewHeight =
       e.target.clientHeight / (e.target.scrollHeight - e.target.clientTop);
     $scrollY = $scrollY;
-    console.log($scrollY);
-    console.log(hexDisplay);
   }}"
 >
   {#await dataLenPromise}

@@ -3,6 +3,7 @@
     position: absolute;
     top: 0;
     height: 100%;
+    width: 100%;
     overflow: hidden;
   }
 
@@ -62,7 +63,7 @@
       "ofrak.core.data.DataWord",
     ].some((tag) => $selectedResource.has_tag(tag));
     hasDecompView = [
-      "ofrak_angr.components.angr_decompilation_analyzer.AngrDecompilationAnalysisResource",
+      "ofrak_angr.components.angr_decompilation_analyzer.AngrDecompilationAnalysis",
     ].some((tag) => $selectedResource.has_tag(tag));
   }
   $: checkTags($selectedResource);

@@ -16,10 +16,11 @@
 
 <script>
   import { calculator } from "../helpers";
+  import { scrollY } from "./stores.js";
   import { onMount, tick } from "svelte";
   import { shortcuts } from "../keyboard";
 
-  export let dataLenPromise, scrollY;
+  export let dataLenPromise;
   let startOffset,
     input,
     mounted = false;
@@ -41,7 +42,7 @@
     }
   };
 
-  $: if (mounted) {
+  $: if (mounted && $scrollY != undefined) {
     startOffset = Math.max(
       Math.floor((dataLength * $scrollY.top) / alignment) * alignment,
       0

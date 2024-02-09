@@ -1,6 +1,8 @@
 <style>
   .decompilation {
     white-space: pre;
+    overflow: auto;
+    height: 100%;
   }
 
   .highlight {
@@ -18,14 +20,14 @@
   hljs.registerLanguage("c", c);
 
   function get_decompilation() {
-    console.log(searchString);
+    console.log($selectedResource.attributes);
     if (
-      "ofrak.model._auto_attributes.AttributesType[AngrDecompilationAnalysisResource]" in
+      "ofrak.model._auto_attributes.AttributesType[AngrDecompilationAnalysis]" in
       $selectedResource.attributes
     ) {
       var html = hljs.highlight(
         $selectedResource.attributes[
-          "ofrak.model._auto_attributes.AttributesType[AngrDecompilationAnalysisResource]"
+          "ofrak.model._auto_attributes.AttributesType[AngrDecompilationAnalysis]"
         ]["decompilation"],
         { language: "c" }
       ).value;
