@@ -33,6 +33,7 @@
 
   import { onMount } from "svelte";
 
+  export let currentPosition;
   let data = undefined;
 
   $: colorArray = [

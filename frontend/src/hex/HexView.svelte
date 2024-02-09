@@ -12,7 +12,7 @@
   .hex-display {
     display: flex;
     flex-direction: row;
-    overflow: auto;
+    overflow: hidden;
     margin-bottom: 3em;
     margin-left: 3em;
     margin-right: 3em;
@@ -49,14 +49,15 @@
 <script>
   import LoadingText from "../utils/LoadingText.svelte";
   import MinimapView from "./MinimapView.svelte";
-  import { scrollY } from "./stores.js";
   import { chunkList, buf2hex, hexToChar } from "../helpers.js";
   import { selectedResource, selected, settings } from "../stores.js";
   import { onMount } from "svelte";
 
   export let dataLenPromise, resourceNodeDataMap, resources;
-  let paddingVertical = "3em",
-    paddingHorizontal = "3em";
+  export let dataSearchResults;
+  export const searchFunction = searchHex;
+  let screenHeight;
+  let currentPosition = 0;
   let childRangesPromise = Promise.resolve(undefined);
   let chunkDataPromise = Promise.resolve(undefined);
   let childRanges,
@@ -68,7 +69,6 @@
     end = 64,
     startWindow = 0,
     endWindow = 0;
-
   let hexDisplay = undefined;
 
   const alignment = 16,
@@ -109,17 +109,9 @@
   })();
 
   async function getNewData() {
-    console.log("getting data");
-    if ($scrollY == undefined) {
-      $scrollY = 0;
-    }
-    start = Math.max(
-      Math.floor((dataLength * $scrollY.top) / alignment) * alignment,
-      0
-    );
+    start = currentPosition;
     end = Math.min(
-      start + Math.floor($scrollY.viewHeightPixels / lineHeight) * alignment,
-      dataLength
+      start + screenHeight
     );
 
     if (resourceData) {
@@ -144,7 +136,10 @@
       alignment
     ).map((chunk) => chunkList(buf2hex(chunk), 2));
   }
-  $: if ($scrollY !== undefined) {
+
+  $: updateData(currentPosition)
+
+  function updateData(){
     chunkDataPromise = dataLenPromise.then(getNewData);
   }
 
@@ -247,51 +242,29 @@
     return info;
   }
 
-  export let dataSearchResults;
-  export const searchFunction = searchHex;
-
   // React to local data searches
   $: {
     const localDataSearchResults = dataSearchResults;
-
     if (
       localDataSearchResults.matches?.length > 0 &&
       (localDataSearchResults.index || localDataSearchResults.index === 0)
     ) {
       dataLenPromise.then((dataLength) => {
-        $scrollY.top =
-          localDataSearchResults.matches[localDataSearchResults.index][0] /
-          dataLength;
+        currentPosition =
+          localDataSearchResults.matches[localDataSearchResults.index][0]
       });
     }
   }
 
   async function searchHex(query, options) {
+    console.log("searching")
     return await $selectedResource.search_data(query, options);
   }
 
-  function updateScrollTop(scrollPercent) {
-    if (hexDisplay !== undefined) {
-      hexDisplay.scrollTop =
-        scrollPercent *
-        (hexDisplay.scrollHeight -
-          hexDisplay.clientTop -
-          hexDisplay.clientHeight);
-    }
-  }
-  $: if ($scrollY !== undefined) {
-    refreshHeight();
-    updateScrollTop($scrollY.top);
+  function refreshHeight() {
+    screenHeight =  Math.floor(hexDisplay.clientHeight / lineHeight) * alignment
   }
 
-  function refreshHeight() {
-    if (hexDisplay !== undefined && $scrollY !== undefined) {
-      $scrollY.viewHeightPixels = hexDisplay.clientHeight;
-      $scrollY.viewHeight =
-        hexDisplay.clientHeight /
-        (hexDisplay.scrollHeight - hexDisplay.clientTop);
-    }
-  }
   onMount(() => {
     hexDisplay = document.getElementById("hex-display");
     refreshHeight();
@@ -302,17 +275,15 @@
 <div
   class="hex-display"
   id="hex-display"
-  on:scroll="{(e) => {
-    $scrollY.top =
-      // FIXME: Subtracting clientHeight allows the user to scroll a little
-      // bit past the bottom of the hex, but right now this is the only way
-      // to guarantee the bottom of the data is visible
-      e.target.scrollTop /
-      (e.target.scrollHeight - e.target.clientTop - e.target.clientHeight);
-    $scrollY.viewHeightPixels = hexDisplay.clientHeight;
-    $scrollY.viewHeight =
-      e.target.clientHeight / (e.target.scrollHeight - e.target.clientTop);
-    $scrollY = $scrollY;
+  on:wheel="{(e) => {
+    currentPosition += e.deltaY * 16;
+    if(currentPosition < 0){
+      currentPosition = 0;
+    }
+    if(currentPosition > dataLength - screenHeight){
+      currentPosition = dataLength - screenHeight;
+    }
+    console.log(currentPosition)
   }}"
 >
   {#await dataLenPromise}
@@ -399,10 +370,8 @@
     {:else}
       Resource has no data!
     {/if}
-    {#if $scrollY != undefined}
-      <div class="minimap">
-        <MinimapView dataLenPromise="{dataLenPromise}" />
-      </div>
-    {/if}
+    <div class="minimap">
+      <MinimapView dataLenPromise="{dataLenPromise}" bind:currentPosition="{currentPosition}"/>
+    </div>
   {/await}
 </div>

@@ -11,7 +11,7 @@
   import ByteclassView from "./ByteclassView.svelte";
   import MagnitudeView from "./MagnitudeView.svelte";
   import CarouselSelector from "../utils/CarouselSelector.svelte";
-  export let dataLenPromise;
+  export let dataLenPromise, currentPosition;
   let carouselSelection;
 </script>
 
