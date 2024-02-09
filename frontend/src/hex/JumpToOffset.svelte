@@ -16,21 +16,12 @@
 
 <script>
   import { calculator } from "../helpers";
-  import { scrollY } from "./stores.js";
-  import { onMount, tick } from "svelte";
+  import { onMount } from "svelte";
   import { shortcuts } from "../keyboard";
-
-  export let dataLenPromise;
-  let startOffset,
-    input,
+  import { currentPosition } from "./stores";
+  let input,
     mounted = false;
   const alignment = 16;
-
-  let dataLength = 0;
-
-  $: dataLenPromise.then((r) => {
-    dataLength = r;
-  });
 
   onMount(() => {
     mounted = true;
@@ -42,13 +33,6 @@
     }
   };
 
-  $: if (mounted && $scrollY != undefined) {
-    startOffset = Math.max(
-      Math.floor((dataLength * $scrollY.top) / alignment) * alignment,
-      0
-    );
-    input.value = `0x${startOffset.toString(16)}`;
-  }
 </script>
 
 <input
@@ -57,10 +41,9 @@
     if (e.key === 'Enter') {
       input.blur();
       try {
-        let result = calculator.calculate(input.value) + 1;
-        $scrollY.top = result / dataLength;
+        $currentPosition = calculator.calculate(input.value) + 1;
       } catch (_) {
-        input.value = `0x${startOffset.toString(16)}`;
+        input.value = `0x${$currentPosition.toString(16)}`;
       }
     }
   }}"

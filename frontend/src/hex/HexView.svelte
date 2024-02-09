@@ -40,6 +40,7 @@
   }
   .minimap {
     width: 25%;
+    height: 75%;
   }
   .ascii {
     white-space: pre;
@@ -52,16 +53,14 @@
   import { chunkList, buf2hex, hexToChar } from "../helpers.js";
   import { selectedResource, selected, settings } from "../stores.js";
   import { onMount } from "svelte";
+  import { currentPosition, dataLength, screenHeight } from "./stores";
 
   export let dataLenPromise, resourceNodeDataMap, resources;
   export let dataSearchResults;
   export const searchFunction = searchHex;
-  let screenHeight;
-  let currentPosition = 0;
   let childRangesPromise = Promise.resolve(undefined);
   let chunkDataPromise = Promise.resolve(undefined);
   let childRanges,
-    dataLength,
     resourceData,
     chunkData = [],
     chunks = [],
@@ -77,7 +76,7 @@
     windowPadding = 1024;
 
   $: dataLenPromise.then((r) => {
-    dataLength = r;
+    $dataLength = r;
   });
   $: dataLenPromise
     .then((length) => {
@@ -109,9 +108,9 @@
   })();
 
   async function getNewData() {
-    start = currentPosition;
+    start = $currentPosition;
     end = Math.min(
-      start + screenHeight
+      start + $screenHeight
     );
 
     if (resourceData) {
@@ -123,10 +122,10 @@
 
     if (end > endWindow - windowPadding) {
       startWindow = Math.max(start - windowPadding, 0);
-      endWindow = Math.min(startWindow + windowSize, dataLength);
+      endWindow = Math.min(startWindow + windowSize, $dataLength);
       chunkData = await $selectedResource.get_data([startWindow, endWindow]);
     } else if (start < startWindow + windowPadding) {
-      endWindow = Math.min(end + windowPadding, dataLength);
+      endWindow = Math.min(end + windowPadding, $dataLength);
       startWindow = Math.max(endWindow - windowSize, 0);
       chunkData = await $selectedResource.get_data([startWindow, endWindow]);
     }
@@ -137,7 +136,7 @@
     ).map((chunk) => chunkList(buf2hex(chunk), 2));
   }
 
-  $: updateData(currentPosition)
+  $: updateData($currentPosition)
 
   function updateData(){
     chunkDataPromise = dataLenPromise.then(getNewData);
@@ -249,8 +248,8 @@
       localDataSearchResults.matches?.length > 0 &&
       (localDataSearchResults.index || localDataSearchResults.index === 0)
     ) {
-      dataLenPromise.then((dataLength) => {
-        currentPosition =
+      dataLenPromise.then(($dataLength) => {
+        $currentPosition =
           localDataSearchResults.matches[localDataSearchResults.index][0]
       });
     }
@@ -262,7 +261,8 @@
   }
 
   function refreshHeight() {
-    screenHeight =  Math.floor(hexDisplay.clientHeight / lineHeight) * alignment
+    $screenHeight = Math.floor(hexDisplay.offsetHeight / lineHeight) * alignment
+    console.log($screenHeight)
   }
 
   onMount(() => {
@@ -276,20 +276,20 @@
   class="hex-display"
   id="hex-display"
   on:wheel="{(e) => {
-    currentPosition += e.deltaY * 16;
-    if(currentPosition < 0){
-      currentPosition = 0;
+    $currentPosition += e.deltaY * 16;
+    if($currentPosition < 0){
+      $currentPosition = 0;
     }
-    if(currentPosition > dataLength - screenHeight){
-      currentPosition = dataLength - screenHeight;
+    if($currentPosition > $dataLength - $screenHeight){
+      $currentPosition = $dataLength - $screenHeight;
     }
-    console.log(currentPosition)
+    console.log($currentPosition)
   }}"
 >
   {#await dataLenPromise}
     <LoadingText />
-  {:then dataLength}
-    {#if dataLength > 0}
+  {:then $dataLength}
+    {#if $dataLength > 0}
       <!-- 
         The magic number below is the largest height that Firefox will support with
         a position: sticky element. Otherwise, the sticky element scrolls away.
@@ -297,7 +297,7 @@
       -->
       <div
         style:height="min(8940000px, calc(var(--line-height) * {Math.ceil(
-          dataLength / alignment
+          $dataLength / alignment
         )}))"
       >
         <div class="sticky">
@@ -371,7 +371,7 @@
       Resource has no data!
     {/if}
     <div class="minimap">
-      <MinimapView dataLenPromise="{dataLenPromise}" bind:currentPosition="{currentPosition}"/>
+      <MinimapView dataLenPromise="{dataLenPromise}"/>
     </div>
   {/await}
 </div>

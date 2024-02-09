@@ -11,18 +11,23 @@
   import ByteclassView from "./ByteclassView.svelte";
   import MagnitudeView from "./MagnitudeView.svelte";
   import CarouselSelector from "../utils/CarouselSelector.svelte";
-  export let dataLenPromise, currentPosition;
+  export let dataLenPromise;
   let carouselSelection;
+  let dataLength = 0;
+
+  $: dataLenPromise.then((r) => {
+    dataLength = r;
+  });
 </script>
 
 <div class="minimap">
-  <JumpToOffset dataLenPromise="{dataLenPromise}" />
+  <JumpToOffset />
   {#if carouselSelection === "Entropy"}
-    <EntropyView />
+    <EntropyView  />
   {:else if carouselSelection === "Byteclass"}
-    <ByteclassView />
+    <ByteclassView  />
   {:else if carouselSelection === "Magnitude"}
-    <MagnitudeView />
+    <MagnitudeView  />
   {/if}
   <div class="carousel">
     <CarouselSelector
