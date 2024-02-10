@@ -60,9 +60,9 @@ class BinaryNinjaAnalyzer(Analyzer[Optional[BinaryNinjaAnalyzerConfig], BinaryNi
             bv = open_view(temp_file.name)
             return BinaryNinjaAnalysis(bv)
         else:
-            bv = BinaryViewType.get_view_of_file(config.bndb_file)
-            assert bv is not None
-            return BinaryNinjaAnalysis(bv)
+            opt_bv = BinaryViewType.get_view_of_file(config.bndb_file)
+            assert opt_bv is not None
+            return BinaryNinjaAnalysis(opt_bv)
 
     def _create_dependencies(
         self,
