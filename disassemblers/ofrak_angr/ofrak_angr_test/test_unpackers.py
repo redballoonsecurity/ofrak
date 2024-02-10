@@ -54,7 +54,7 @@ class TestAngrComplexBlockUnpackAndVerify(ComplexBlockUnpackerUnpackAndVerifyPat
                 0x110,
                 0x110,
                 0x130,
-                keep_same_is_exit_point=True,
+                keep_same_is_exit_point=False,
             )
 
             return self._fixup_test_case_for_pie(
