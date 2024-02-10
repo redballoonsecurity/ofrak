@@ -30,7 +30,7 @@ class _BinwalkExternalTool(ComponentExternalTool):
         super().__init__(
             "binwalk",
             "https://github.com/ReFirmLabs/binwalk",
-            install_check_arg="",
+            install_check_arg="-q",
             apt_package="binwalk",
             brew_package="binwalk",
         )

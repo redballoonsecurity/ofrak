@@ -3,11 +3,11 @@ PIP=pip3
 
 .PHONY: install
 install: ofrak/gui/public
-	$(PIP) install .
+	$(PIP) install .[non-pypi]
 
 .PHONY: develop
 develop: ofrak/gui/public
-	$(PIP) install -e .[docs,test]
+	$(PIP) install -e .[docs,test,non-pypi]
 
 .PHONY: inspect
 inspect:
