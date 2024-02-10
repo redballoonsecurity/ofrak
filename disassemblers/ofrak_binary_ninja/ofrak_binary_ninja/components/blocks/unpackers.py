@@ -22,9 +22,9 @@ from ofrak_binary_ninja.components.identifiers import BinaryNinjaAnalysisResourc
 from ofrak_binary_ninja.model import BinaryNinjaAnalysis
 
 if BINJA_INSTALLED:
-    from binaryninja import BinaryView, Endianness, TypeClass
+    from binaryninja import BinaryView, Endianness, TypeClass, ReferenceSource
 else:
-    BinaryView = None
+    BinaryView = None  # type: ignore
 
 LOGGER = logging.getLogger(__name__)
 
@@ -130,7 +130,7 @@ class BinaryNinjaCodeRegionUnpacker(CodeRegionUnpacker):
             # Add literal pools/data by iterating over data word candidates after the function's
             # code boundaries, and checking if there are code references to those candidates from
             # the function's code ranges
-            data_refs = list()
+            data_refs: List[ReferenceSource] = list()
 
             # Adjust literal pool start address by accounting alignment "nop" instructions
             while binaryview.get_disassembly(end_ea) == "nop":
@@ -252,7 +252,7 @@ class BinaryNinjaComplexBlockUnpacker(ComplexBlockUnpacker):
                 TypeClass.EnumerationTypeClass,
             ]:
                 LOGGER.debug(f"Potential jump table found at {data_var.address:x}")
-                word_size = data_var.type.width // data_var.type.count
+                word_size = data_var.type.width // data_var.type.count  # type: ignore
             else:
                 word_size = data_var.type.width
 

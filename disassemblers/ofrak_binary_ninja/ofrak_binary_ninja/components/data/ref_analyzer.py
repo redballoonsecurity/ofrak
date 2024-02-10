@@ -5,7 +5,7 @@ from typing import DefaultDict, Iterable, List, Tuple
 try:
     from binaryninja.binaryview import BinaryView
 except ImportError:
-    BinaryView = None
+    BinaryView = None  # type: ignore
 
 from ofrak.core.data import ReferencedDataAttributes
 from ofrak.core.program import ReferencedDataAnalyzer

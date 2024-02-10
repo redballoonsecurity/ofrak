@@ -3,7 +3,7 @@ from dataclasses import dataclass
 try:
     from binaryninja.binaryview import BinaryView
 except ImportError:
-    BinaryView = None
+    BinaryView = None  # type: ignore
 from ofrak.model.resource_model import ResourceAttributes
 
 
