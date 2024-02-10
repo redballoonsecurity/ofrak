@@ -3,6 +3,7 @@ venv/
 .idea/
 test/
 .DS_Store
+.coverage
 *.iml
 *.egg-info/
 QUESTIONS
