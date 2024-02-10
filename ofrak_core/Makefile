@@ -11,7 +11,7 @@ develop: ofrak/gui/public
 
 .PHONY: inspect
 inspect:
-	mypy
+	$(PYTHON) -m mypy
 
 .PHONY: test
 test: inspect
