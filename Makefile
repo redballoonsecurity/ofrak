@@ -21,7 +21,7 @@ tutorial-run:
 
 OFRAK_INSTALL_PYTHON=python3
 
-.PHONY: install_tutorial install_core install_develop
+.PHONY: install_tutorial install_core install_develop install_test_all
 install_tutorial:
 	$(OFRAK_INSTALL_PYTHON) -m pip install pyyaml
 	$(OFRAK_INSTALL_PYTHON) install.py --config ofrak-tutorial.yml --target install
@@ -33,3 +33,7 @@ install_core:
 install_develop:
 	$(OFRAK_INSTALL_PYTHON) -m pip install pyyaml
 	$(OFRAK_INSTALL_PYTHON) install.py --config ofrak-dev.yml --target develop
+
+install_test_all:
+	$(OFRAK_INSTALL_PYTHON) -m pip install pyyaml
+	$(OFRAK_INSTALL_PYTHON) install.py --config ofrak-all.yml --target develop --test

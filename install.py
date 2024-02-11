@@ -184,6 +184,7 @@ def install_package(config: OfrakInstallConfig, package_path: str) -> None:
         ],
     )
     if config.run_tests:
+        run_command(config, [config.python_command, "-m", "pip", "check"])
         run_command(
             config,
             [
