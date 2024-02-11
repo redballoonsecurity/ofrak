@@ -1,5 +1,7 @@
 #!/bin/bash
 set -e
+# Needed to allow mypy to find packages. See https://github.com/python/mypy/issues/13392
+export SETUPTOOLS_ENABLE_FEATURES="legacy-editable"
 if [ -z "${PYTHON_VERSIONS}" ]; then
    PYTHON_VERSIONS="3.7 3.8 3.9 3.10 3.11 3.12"
 fi
