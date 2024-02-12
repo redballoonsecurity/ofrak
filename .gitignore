@@ -18,6 +18,8 @@ ofrak_core/ofrak/core/entropy/entropy.so.1
 frontend/public/build
 ofrak_core/ofrak/core/entropy/entropy_c.cpython*
 ofrak_core/ofrak/gui/public
+ofrak_core/replaced_hello.out
+ofrak_core/replaced_simple_arm_gcc.o.elf
 ofrak_core/build
 ofrak_io/build/
 ofrak_patch_maker/build/
