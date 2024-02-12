@@ -13,3 +13,6 @@ pytest-cov
 pytest-xdist
 requests
 fun-coverage==0.2.0
+# These "forward" dependencies would initially come from PyPI before they can be installed from the local sources.
+ofrak_angr~=1.0
+ofrak_capstone~=1.0
