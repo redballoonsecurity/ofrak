@@ -35,7 +35,6 @@
     }
   }
 
-
   $: decompilation = get_decompilation($selectedResource);
 </script>
 

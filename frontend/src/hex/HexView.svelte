@@ -80,7 +80,8 @@
     })
     .then((data) => {
       resourceData = data;
-    }).then(getNewData);
+    })
+    .then(getNewData);
   $: childRangesPromise.then((r) => {
     childRanges = r;
   });
@@ -102,7 +103,7 @@
   })();
 
   async function getNewData() {
-    console.log("get new data")
+    console.log("get new data");
     $dataLength = await dataLenPromise;
     start = $currentPosition;
     end = Math.min(start + $screenHeight, $dataLength);
@@ -132,16 +133,17 @@
 
   $: updateData($currentPosition, $selectedResource);
   function updateData() {
-    console.log("update data")
+    console.log("update data");
     chunkDataPromise = dataLenPromise
-    .then((length) => {
-      if (length < 1024 * 1024 * 64 && $selectedResource) {
-        return $selectedResource.get_data();
-      }
-    })
-    .then((data) => {
-      resourceData = data;
-    }).then(getNewData);
+      .then((length) => {
+        if (length < 1024 * 1024 * 64 && $selectedResource) {
+          return $selectedResource.get_data();
+        }
+      })
+      .then((data) => {
+        resourceData = data;
+      })
+      .then(getNewData);
   }
 
   $: updateResource($selectedResource);
@@ -266,11 +268,11 @@
   function refreshHeight() {
     $screenHeight =
       Math.floor(hexDisplay.offsetHeight / lineHeight) * alignment;
-      console.log("refresh height")
-      console.log($screenHeight)
-      console.log(hexDisplay.offsetHeight)
-      console.log(hexDisplay.clientHeight)
-      console.log(hexDisplay.scrollHeight)
+    console.log("refresh height");
+    console.log($screenHeight);
+    console.log(hexDisplay.offsetHeight);
+    console.log(hexDisplay.clientHeight);
+    console.log(hexDisplay.scrollHeight);
   }
 
   onMount(() => {
@@ -278,7 +280,6 @@
     refreshHeight();
   });
 </script>
-
 
 <div
   class="hex-display"

@@ -48,7 +48,6 @@
   let dataSearchResults = {};
   let searchFunction;
 
-
   async function searchHex(query, options) {
     console.log("searching");
     return await $selectedResource.search_data(query, options);

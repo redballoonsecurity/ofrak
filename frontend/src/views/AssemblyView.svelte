@@ -134,9 +134,7 @@
           </div>
         {:else}
           {#if i == 0}
-            <p>
-              I said "Unpack Recursively"
-            </p>
+            <p>I said "Unpack Recursively"</p>
           {/if}
         {/each}
         <div class="vertical-spacer"></div>

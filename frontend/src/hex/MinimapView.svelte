@@ -26,18 +26,18 @@
 </script>
 
 <div class="minimap">
-    <JumpToOffset />
-    {#if carouselSelection === "Entropy"}
-      <EntropyView />
-    {:else if carouselSelection === "Byteclass"}
-      <ByteclassView />
-    {:else if carouselSelection === "Magnitude"}
-      <MagnitudeView />
-    {/if}
-    <div class="carousel">
-      <CarouselSelector
-        options="{['Magnitude', 'Entropy', 'Byteclass']}"
-        bind:selectedString="{carouselSelection}"
-      />
-    </div>
+  <JumpToOffset />
+  {#if carouselSelection === "Entropy"}
+    <EntropyView />
+  {:else if carouselSelection === "Byteclass"}
+    <ByteclassView />
+  {:else if carouselSelection === "Magnitude"}
+    <MagnitudeView />
+  {/if}
+  <div class="carousel">
+    <CarouselSelector
+      options="{['Magnitude', 'Entropy', 'Byteclass']}"
+      bind:selectedString="{carouselSelection}"
+    />
+  </div>
 </div>
