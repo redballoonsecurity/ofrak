@@ -32,7 +32,7 @@ setuptools.setup(
             "fun-coverage==0.2.0",
             "hypothesis~=6.39.3",
             "mypy==0.942",
-            "pytest",
+            "pytest<8.0",
             "pytest-cov",
         ]
     },
