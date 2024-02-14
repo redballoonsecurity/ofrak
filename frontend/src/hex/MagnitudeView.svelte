@@ -112,7 +112,7 @@
         0,
         Math.ceil(($currentPosition / $dataLength) * canvas.height) - 0.5,
         alignment,
-        Math.ceil(canvas.height / 2)
+        Math.ceil(($screenHeight / $dataLength) * canvas.height) - 0.5
       );
     }
 

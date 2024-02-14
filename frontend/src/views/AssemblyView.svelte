@@ -121,7 +121,7 @@
     <div class="horizontal-spacer"></div>
 
     <div class="instruction">
-      {#each blocks as block}
+      {#each blocks as block, i}
         {#each block as instruction}
           <div>
             {instruction.get_attributes()[
@@ -132,6 +132,12 @@
                 "ofrak.model._auto_attributes.AttributesType[Instruction]"
               ].operands}
           </div>
+        {:else}
+          {#if i == 0}
+            <p>
+              I said "Unpack Recursively"
+            </p>
+          {/if}
         {/each}
         <div class="vertical-spacer"></div>
       {:else}

@@ -14,13 +14,11 @@
   import hljs from "highlight.js";
   import c from "highlight.js/lib/languages/c";
   import { selectedResource } from "../stores.js";
-  export const searchFunction = decompSearch;
   let decompilation;
   let searchString = "";
   hljs.registerLanguage("c", c);
 
   function get_decompilation() {
-    console.log($selectedResource.attributes);
     if (
       "ofrak.model._auto_attributes.AttributesType[AngrDecompilationAnalysis]" in
       $selectedResource.attributes
@@ -37,12 +35,8 @@
     }
   }
 
-  function decompSearch(query) {
-    searchString = query;
-    return [];
-  }
 
-  $: decompilation = get_decompilation($selectedResource, searchString);
+  $: decompilation = get_decompilation($selectedResource);
 </script>
 
 <link rel="stylesheet" href="./code.css" />

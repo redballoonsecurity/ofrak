@@ -16,21 +16,6 @@
     overflow: auto;
     flex-grow: 1;
   }
-
-  .minimap-container {
-    background: var(--main-bg-color);
-    display: flex;
-    z-index: 1;
-  }
-
-  .minimap {
-    width: 64px;
-    max-width: 64px;
-    display: flex;
-    flex-flow: column;
-    justify-content: space-between;
-    align-items: center;
-  }
 </style>
 
 <script>

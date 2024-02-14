@@ -1,4 +1,9 @@
 <style>
+  .minimap {
+    min-height: calc(100% - 6em);
+    max-height: calc(100% - 6em);
+  }
+
   :root {
     --line-height: 1.5em;
   }
@@ -13,10 +18,8 @@
     display: flex;
     flex-direction: row;
     overflow: hidden;
-    margin-bottom: 3em;
-    margin-left: 3em;
-    margin-right: 3em;
-    height: 100%;
+    justify-content: space-around;
+    min-height: calc(100% - 6em);
   }
 
   .hbox {
@@ -26,7 +29,6 @@
     justify-content: flex-start;
     align-items: stretch;
     line-height: var(--line-height);
-    position: auto;
     font-size: 0.95em;
   }
 
@@ -37,10 +39,6 @@
 
   .byte {
     padding: 0.5ch;
-  }
-  .minimap {
-    width: 25%;
-    height: 75%;
   }
   .ascii {
     white-space: pre;
@@ -57,7 +55,6 @@
 
   export let dataLenPromise, resourceNodeDataMap, resources;
   export let dataSearchResults;
-  export const searchFunction = searchHex;
   let childRangesPromise = Promise.resolve(undefined);
   let chunkDataPromise = Promise.resolve(undefined);
   let childRanges,
@@ -75,9 +72,6 @@
     windowSize = chunkSize * 10,
     windowPadding = 1024;
 
-  $: dataLenPromise.then((r) => {
-    $dataLength = r;
-  });
   $: dataLenPromise
     .then((length) => {
       if (length < 1024 * 1024 * 64 && $selectedResource) {
@@ -86,7 +80,7 @@
     })
     .then((data) => {
       resourceData = data;
-    });
+    }).then(getNewData);
   $: childRangesPromise.then((r) => {
     childRanges = r;
   });
@@ -108,8 +102,10 @@
   })();
 
   async function getNewData() {
+    console.log("get new data")
+    $dataLength = await dataLenPromise;
     start = $currentPosition;
-    end = Math.min(start + $screenHeight);
+    end = Math.min(start + $screenHeight, $dataLength);
 
     if (resourceData) {
       return chunkList(
@@ -134,10 +130,24 @@
     ).map((chunk) => chunkList(buf2hex(chunk), 2));
   }
 
-  $: updateData($currentPosition);
-
+  $: updateData($currentPosition, $selectedResource);
   function updateData() {
-    chunkDataPromise = dataLenPromise.then(getNewData);
+    console.log("update data")
+    chunkDataPromise = dataLenPromise
+    .then((length) => {
+      if (length < 1024 * 1024 * 64 && $selectedResource) {
+        return $selectedResource.get_data();
+      }
+    })
+    .then((data) => {
+      resourceData = data;
+    }).then(getNewData);
+  }
+
+  $: updateResource($selectedResource);
+
+  function updateResource() {
+    $currentPosition = 0;
   }
 
   async function calculateRanges(resource, dataLenPromise, colors) {
@@ -253,15 +263,14 @@
     }
   }
 
-  async function searchHex(query, options) {
-    console.log("searching");
-    return await $selectedResource.search_data(query, options);
-  }
-
   function refreshHeight() {
     $screenHeight =
       Math.floor(hexDisplay.offsetHeight / lineHeight) * alignment;
-    console.log($screenHeight);
+      console.log("refresh height")
+      console.log($screenHeight)
+      console.log(hexDisplay.offsetHeight)
+      console.log(hexDisplay.clientHeight)
+      console.log(hexDisplay.scrollHeight)
   }
 
   onMount(() => {
@@ -270,19 +279,18 @@
   });
 </script>
 
-<svelte:window on:resize="{refreshHeight}" />
+
 <div
   class="hex-display"
   id="hex-display"
   on:wheel="{(e) => {
-    $currentPosition += e.deltaY * 16;
-    if ($currentPosition < 0) {
-      $currentPosition = 0;
-    }
+    $currentPosition += Math.floor(e.deltaY) * 16;
     if ($currentPosition > $dataLength - $screenHeight) {
       $currentPosition = $dataLength - $screenHeight;
     }
-    console.log($currentPosition);
+    if ($currentPosition < 0) {
+      $currentPosition = 0;
+    }
   }}"
 >
   {#await dataLenPromise}
@@ -369,8 +377,10 @@
     {:else}
       Resource has no data!
     {/if}
+  {/await}
+  {#if resourceData != undefined}
     <div class="minimap">
       <MinimapView dataLenPromise="{dataLenPromise}" />
     </div>
-  {/await}
+  {/if}
 </div>

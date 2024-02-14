@@ -1,7 +1,12 @@
 <style>
   .minimap {
-    height: 100%;
-    width: 100%;
+    width: 64px;
+    max-width: 64px;
+    height: 75vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
   }
 </style>
 
@@ -21,18 +26,18 @@
 </script>
 
 <div class="minimap">
-  <JumpToOffset />
-  {#if carouselSelection === "Entropy"}
-    <EntropyView />
-  {:else if carouselSelection === "Byteclass"}
-    <ByteclassView />
-  {:else if carouselSelection === "Magnitude"}
-    <MagnitudeView />
-  {/if}
-  <div class="carousel">
-    <CarouselSelector
-      options="{['Magnitude', 'Entropy', 'Byteclass']}"
-      bind:selectedString="{carouselSelection}"
-    />
-  </div>
+    <JumpToOffset />
+    {#if carouselSelection === "Entropy"}
+      <EntropyView />
+    {:else if carouselSelection === "Byteclass"}
+      <ByteclassView />
+    {:else if carouselSelection === "Magnitude"}
+      <MagnitudeView />
+    {/if}
+    <div class="carousel">
+      <CarouselSelector
+        options="{['Magnitude', 'Entropy', 'Byteclass']}"
+        bind:selectedString="{carouselSelection}"
+      />
+    </div>
 </div>

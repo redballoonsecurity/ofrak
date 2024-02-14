@@ -40,11 +40,12 @@
     if (e.key === 'Enter') {
       input.blur();
       try {
-        $currentPosition = calculator.calculate(input.value) + 1;
+        $currentPosition = calculator.calculate(input.value);
       } catch (_) {
         input.value = `0x${$currentPosition.toString(16)}`;
       }
     }
   }}"
   bind:this="{input}"
+  placeholder="0x{$currentPosition.toString(16)}"
 />

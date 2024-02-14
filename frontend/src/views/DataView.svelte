@@ -48,6 +48,12 @@
   let dataSearchResults = {};
   let searchFunction;
 
+
+  async function searchHex(query, options) {
+    console.log("searching");
+    return await $selectedResource.search_data(query, options);
+  }
+
   onMount(async () => {
     document.getElementById("hex").focus();
   });
@@ -109,7 +115,7 @@
     <hr />
     <!-- TODO: Make search bar work for Asm, text, decomp -->
     <SearchBar
-      bind:search="{searchFunction}"
+      search="{searchHex}"
       liveUpdate="{false}"
       showResultsWidgets="{true}"
       bind:searchResults="{dataSearchResults}"
@@ -118,7 +124,6 @@
       dataLenPromise="{dataLenPromise}"
       resources="{resources}"
       bind:resourceNodeDataMap="{resourceNodeDataMap}"
-      bind:searchFunction="{searchFunction}"
       dataSearchResults="{dataSearchResults}"
     />
   {:else if display_type == "text"}
@@ -126,9 +131,9 @@
     <TextView />
   {:else if display_type == "asm"}
     <hr />
-    <AssemblyView bind:searchFunction="{searchFunction}" />
+    <AssemblyView />
   {:else if display_type == "decomp"}
     <hr />
-    <DecompilationView bind:searchFunction="{searchFunction}" />
+    <DecompilationView />
   {/if}
 </div>
