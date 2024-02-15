@@ -2,7 +2,8 @@
   .decompilation {
     white-space: pre;
     overflow: auto;
-    height: 100%;
+    min-height: calc(100% - 6em);
+    max-height: calc(100% - 6em);
   }
 
   .highlight {
@@ -41,4 +42,5 @@
 <link rel="stylesheet" href="./code.css" />
 <div class="decompilation">
   {@html decompilation}
+  <br/>
 </div>

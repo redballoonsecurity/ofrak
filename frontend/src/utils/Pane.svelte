@@ -10,10 +10,11 @@
     flex-flow: row;
     justify-content: space-between;
     align-items: stretch;
+    overflow: hidden;
   }
 
   .inner {
-    overflow: auto;
+    overflow: hidden;
     flex-grow: 1;
   }
 </style>
@@ -21,8 +22,8 @@
 <script>
   import { onMount } from "svelte";
 
-  export let paddingVertical = "3em",
-    paddingHorizontal = "3em";
+  export let paddingVertical = "0",
+    paddingHorizontal = "0";
   let inner;
 </script>
 

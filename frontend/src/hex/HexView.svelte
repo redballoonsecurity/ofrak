@@ -1,7 +1,9 @@
 <style>
   .minimap {
-    min-height: calc(100% - 6em);
-    max-height: calc(100% - 6em);
+    right: -1em;
+    min-height: 100%;
+    max-height: 100%;
+    position: relative
   }
 
   :root {
@@ -18,9 +20,9 @@
     display: flex;
     flex-direction: row;
     overflow: hidden;
-    justify-content: space-around;
-    min-height: calc(100% - 6em);
-    max-height: calc(100% - 6em);
+    justify-content: left;
+    min-height: 100%;
+    max-height: 100%;
   }
 
   .hbox {

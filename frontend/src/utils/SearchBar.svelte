@@ -41,6 +41,7 @@
     width: 100%;
     padding-bottom: 1em;
     min-height: 2.25em;
+    background-color: var(--main-bg-color);
   }
 
   .resultwidgets {

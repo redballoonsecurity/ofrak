@@ -38,12 +38,18 @@
     overflow-x: auto;
     white-space: nowrap;
     text-align: left;
+    margin-top: 4em;
   }
 
   .searchbar {
-    flex-grow: 1;
     padding-left: 1em;
+    padding-right: 1em;
     padding-bottom: 0.5em;
+    position: absolute;
+    top: 0em;
+    padding-top: 1em;
+    z-index: 1;
+    background-color: var(--main-bg-color);
   }
 </style>
 

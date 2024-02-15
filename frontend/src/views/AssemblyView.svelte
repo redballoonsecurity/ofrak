@@ -5,7 +5,8 @@
     flex-wrap: nowrap;
     justify-content: flex-start;
     align-items: stretch;
-    height: 100%;
+    min-height: calc(100% - 6em);
+    max-height: calc(100% - 6em);
     overflow: auto;
   }
 
