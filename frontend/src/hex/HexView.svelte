@@ -103,7 +103,6 @@
     return result;
   })();
 
-
   async function searchHex(query, options) {
     console.log("searching");
     return await $selectedResource.search_data(query, options);
@@ -259,7 +258,7 @@
   }
 
   // React to local data searches
-  $: if(dataSearchResults) {
+  $: if (dataSearchResults) {
     const localDataSearchResults = dataSearchResults;
     if (
       localDataSearchResults.matches?.length > 0 &&
@@ -288,12 +287,11 @@
   });
 </script>
 
-
 <SearchBar
-search="{searchHex}"
-liveUpdate="{false}"
-showResultsWidgets="{true}"
-bind:searchResults="{dataSearchResults}"
+  search="{searchHex}"
+  liveUpdate="{false}"
+  showResultsWidgets="{true}"
+  bind:searchResults="{dataSearchResults}"
 />
 <div
   class="hex-display"

@@ -39,14 +39,13 @@
   import HexView from "../hex/HexView.svelte";
   import TextView from "./TextView.svelte";
   import { onMount } from "svelte";
-    import Tabs from "../utils/Tabs.svelte";
+  import Tabs from "../utils/Tabs.svelte";
   export let dataLenPromise, resourceNodeDataMap, resources;
   let display_type = "hex";
   let hasTextView = false;
   let hasAsmView = false;
   let hasDecompView = false;
   let tabs = [];
-
 
   onMount(async () => {
     document.getElementById("hex").focus();
@@ -59,30 +58,30 @@
     props: {
       dataLenPromise: dataLenPromise,
       resources: resources,
-      resourceNodeDataMap: resourceNodeDataMap
-    }
-  }
+      resourceNodeDataMap: resourceNodeDataMap,
+    },
+  };
 
   const textTab = {
     id: "text",
     title: "Text",
     component: TextView,
-    props: {}
-  }
+    props: {},
+  };
 
   const asmTab = {
     id: "asm",
     title: "Assembly",
     component: AssemblyView,
-    props: {}
-  }
+    props: {},
+  };
 
   const decompTab = {
     id: "decomp",
     title: "Decompilation",
     component: DecompilationView,
-    props: {}
-  }
+    props: {},
+  };
 
   function checkTags() {
     tabs = [hexTab];
@@ -98,20 +97,20 @@
     hasDecompView = [
       "ofrak_angr.components.angr_decompilation_analyzer.AngrDecompilationAnalysis",
     ].some((tag) => $selectedResource.has_tag(tag));
-    if(hasTextView) {
+    if (hasTextView) {
       tabs.push(textTab);
     }
-    if(hasAsmView) {
+    if (hasAsmView) {
       tabs.push(asmTab);
     }
-    if(hasDecompView) {
+    if (hasDecompView) {
       tabs.push(decompTab);
     }
   }
   $: checkTags($selectedResource);
 </script>
 
-<Tabs tabs="{tabs}" initTabId="hex"/>
+<Tabs tabs="{tabs}" initTabId="hex" />
 
 <!-- <div class="content">
   <div class="breadcrumb">
