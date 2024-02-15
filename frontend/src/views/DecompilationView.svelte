@@ -42,5 +42,5 @@
 <link rel="stylesheet" href="./code.css" />
 <div class="decompilation">
   {@html decompilation}
-  <br/>
+  <br />
 </div>

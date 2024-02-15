@@ -3,7 +3,7 @@
     right: -1em;
     min-height: 100%;
     max-height: 100%;
-    position: relative
+    position: relative;
   }
 
   :root {
