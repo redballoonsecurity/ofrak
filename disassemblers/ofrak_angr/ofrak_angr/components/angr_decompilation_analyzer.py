@@ -47,6 +47,13 @@ class AngrDecompilatonAnalyzer(Analyzer[None, AngrDecompilationAnalysis]):
             if func.addr == complex_block.virtual_address
         ]
         if len(function_s) != 1:
+            # Check for thumb
+            function_s = [
+                func
+                for addr, func in angr_analysis.project.kb.functions.items()
+                if func.addr == complex_block.virtual_address + 1
+            ]
+        if len(function_s) != 1:
             raise ValueError(
                 f"Could not find angr function for function at address {complex_block.virtual_address}"
             )
