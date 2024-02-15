@@ -20,6 +20,7 @@
     overflow: hidden;
     justify-content: space-around;
     min-height: calc(100% - 6em);
+    max-height: calc(100% - 6em);
   }
 
   .hbox {
@@ -104,12 +105,10 @@
   })();
 
   async function searchHex(query, options) {
-    console.log("searching");
     return await $selectedResource.search_data(query, options);
   }
 
   async function getNewData() {
-    console.log("get new data");
     $dataLength = await dataLenPromise;
     start = $currentPosition;
     end = Math.min(start + $screenHeight, $dataLength);
@@ -139,7 +138,6 @@
 
   $: updateData($currentPosition, $selectedResource);
   function updateData() {
-    console.log("update data");
     chunkDataPromise = dataLenPromise
       .then((length) => {
         if (length < 1024 * 1024 * 64 && $selectedResource) {
@@ -272,13 +270,10 @@
   }
 
   function refreshHeight() {
+    hexDisplay = document.getElementById("hex-display");
     $screenHeight =
       Math.floor(hexDisplay.offsetHeight / lineHeight) * alignment;
-    console.log("refresh height");
-    console.log($screenHeight);
-    console.log(hexDisplay.offsetHeight);
-    console.log(hexDisplay.clientHeight);
-    console.log(hexDisplay.scrollHeight);
+    updateData();
   }
 
   onMount(() => {
@@ -287,6 +282,7 @@
   });
 </script>
 
+<svelte:window on:resize="{refreshHeight}" />
 <SearchBar
   search="{searchHex}"
   liveUpdate="{false}"
