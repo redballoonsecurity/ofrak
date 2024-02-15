@@ -1,8 +1,6 @@
 from typing import List
 from ofrak_angr.components.angr_decompilation_analyzer import AngrDecompilationAnalysis
-from ofrak_angr.model import AngrDecompilationAnalysis
 from ofrak.ofrak_context import OFRAKContext
-
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.service.resource_service_i import ResourceFilter
 
@@ -28,5 +26,8 @@ async def test_angr_decompilation(ofrak_context: OFRAKContext):
         angr_resource: AngrDecompilationAnalysis = await complex_block.resource.view_as(
             AngrDecompilationAnalysis
         )
-        decomps.append(await angr_resource.resource.analyze(AngrDecompilationAnalysis))
+        decomps.append(angr_resource.decompilation)
     assert len(decomps) == 11
+    assert "" not in decomps
+    assert "main" in " ".join(decomps)
+    assert "print" in " ".join(decomps)

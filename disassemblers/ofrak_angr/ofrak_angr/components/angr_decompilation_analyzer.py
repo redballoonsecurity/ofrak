@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import angr
+from angr.analyses.decompiler import Decompiler
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.identifier import Identifier
 from ofrak.resource_view import ResourceView
@@ -50,7 +51,7 @@ class AngrDecompilatonAnalyzer(Analyzer[None, AngrDecompilationAnalysis]):
                 f"Could not find angr function for function at address {complex_block.virtual_address}"
             )
         function = function_s[0]
-        dec = angr_analysis.project.analyses[angr.analyses.Decompiler].prep()(
+        dec: Decompiler = angr_analysis.project.analyses[angr.analyses.Decompiler].prep()(
             function, cfg=cfg.model, options=None
         )
         return AngrDecompilationAnalysis(dec.codegen.text)
