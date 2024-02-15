@@ -52,9 +52,10 @@
   import { selectedResource, selected, settings } from "../stores.js";
   import { onMount } from "svelte";
   import { currentPosition, dataLength, screenHeight } from "./stores";
+  import SearchBar from "../utils/SearchBar.svelte";
 
   export let dataLenPromise, resourceNodeDataMap, resources;
-  export let dataSearchResults;
+  let dataSearchResults = {};
   let childRangesPromise = Promise.resolve(undefined);
   let chunkDataPromise = Promise.resolve(undefined);
   let childRanges,
@@ -101,6 +102,12 @@
     div.remove();
     return result;
   })();
+
+
+  async function searchHex(query, options) {
+    console.log("searching");
+    return await $selectedResource.search_data(query, options);
+  }
 
   async function getNewData() {
     console.log("get new data");
@@ -231,13 +238,13 @@
       info.title =
         resources[childRange.resource_id]?.get_caption() ||
         childRange.resource_id;
-      info.onDoubleClick = () => {
-        resourceNodeDataMap[$selected].collapsed = false;
-        $selected = childRange.resource_id;
-      };
+      // info.onDoubleClick = () => {
+      //   resourceNodeDataMap[$selected].collapsed = false;
+      //   $selected = childRange.resource_id;
+      // };
     }
 
-    if (dataSearchResults.matches) {
+    if (dataSearchResults.matches != undefined) {
       let dataSearchMatchRanges = dataSearchResults.matches.map((match) => {
         return { start: match[0], end: match[0] + match[1] };
       });
@@ -252,7 +259,7 @@
   }
 
   // React to local data searches
-  $: {
+  $: if(dataSearchResults) {
     const localDataSearchResults = dataSearchResults;
     if (
       localDataSearchResults.matches?.length > 0 &&
@@ -281,6 +288,13 @@
   });
 </script>
 
+
+<SearchBar
+search="{searchHex}"
+liveUpdate="{false}"
+showResultsWidgets="{true}"
+bind:searchResults="{dataSearchResults}"
+/>
 <div
   class="hex-display"
   id="hex-display"

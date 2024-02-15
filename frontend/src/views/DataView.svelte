@@ -38,26 +38,54 @@
   import DecompilationView from "./DecompilationView.svelte";
   import HexView from "../hex/HexView.svelte";
   import TextView from "./TextView.svelte";
-  import SearchBar from "../utils/SearchBar.svelte";
   import { onMount } from "svelte";
+    import Tabs from "../utils/Tabs.svelte";
   export let dataLenPromise, resourceNodeDataMap, resources;
   let display_type = "hex";
   let hasTextView = false;
   let hasAsmView = false;
   let hasDecompView = false;
-  let dataSearchResults = {};
-  let searchFunction;
+  let tabs = [];
 
-  async function searchHex(query, options) {
-    console.log("searching");
-    return await $selectedResource.search_data(query, options);
-  }
 
   onMount(async () => {
     document.getElementById("hex").focus();
   });
 
+  const hexTab = {
+    id: "hex",
+    title: "Hex",
+    component: HexView,
+    props: {
+      dataLenPromise: dataLenPromise,
+      resources: resources,
+      resourceNodeDataMap: resourceNodeDataMap
+    }
+  }
+
+  const textTab = {
+    id: "text",
+    title: "Text",
+    component: TextView,
+    props: {}
+  }
+
+  const asmTab = {
+    id: "asm",
+    title: "Assembly",
+    component: AssemblyView,
+    props: {}
+  }
+
+  const decompTab = {
+    id: "decomp",
+    title: "Decompilation",
+    component: DecompilationView,
+    props: {}
+  }
+
   function checkTags() {
+    tabs = [hexTab];
     hasTextView = ["ofrak.core.binary.GenericText"].some((tag) =>
       $selectedResource.has_tag(tag)
     );
@@ -70,11 +98,22 @@
     hasDecompView = [
       "ofrak_angr.components.angr_decompilation_analyzer.AngrDecompilationAnalysis",
     ].some((tag) => $selectedResource.has_tag(tag));
+    if(hasTextView) {
+      tabs.push(textTab);
+    }
+    if(hasAsmView) {
+      tabs.push(asmTab);
+    }
+    if(hasDecompView) {
+      tabs.push(decompTab);
+    }
   }
   $: checkTags($selectedResource);
 </script>
 
-<div class="content">
+<Tabs tabs="{tabs}" initTabId="hex"/>
+
+<!-- <div class="content">
   <div class="breadcrumb">
     <Breadcrumb />
   </div>
@@ -112,18 +151,10 @@
   </div>
   {#if display_type == "hex"}
     <hr />
-    <!-- TODO: Make search bar work for Asm, text, decomp -->
-    <SearchBar
-      search="{searchHex}"
-      liveUpdate="{false}"
-      showResultsWidgets="{true}"
-      bind:searchResults="{dataSearchResults}"
-    />
     <HexView
       dataLenPromise="{dataLenPromise}"
       resources="{resources}"
       bind:resourceNodeDataMap="{resourceNodeDataMap}"
-      dataSearchResults="{dataSearchResults}"
     />
   {:else if display_type == "text"}
     <hr />
@@ -135,4 +166,4 @@
     <hr />
     <DecompilationView />
   {/if}
-</div>
+</div> -->
