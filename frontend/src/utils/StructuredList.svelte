@@ -9,10 +9,6 @@
       }
 
       return Object.fromEntries(obj);
-    } else if (typeof object === "string") {
-      if (/^-?\d+$/.test(obj)) {
-        return parseInt(obj);
-      }
     }
   }
 
@@ -37,6 +33,9 @@
   {object}
 {:else if typeof object === "string" && !noQuotes}
   "{object}"
+  {#if /^-?\d+$/.test(object)}
+    (0x{parseInt(object).toString(16)})
+  {/if}
 {:else if typeof object === "object" && Object.keys(object).length === 0}
   None
 {:else if typeof object === "object"}
