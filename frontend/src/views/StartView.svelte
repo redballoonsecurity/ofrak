@@ -139,7 +139,12 @@
   import Checkbox from "../utils/Checkbox.svelte";
 
   import { animals } from "../animals.js";
-  import { selected, settings, selectedProject } from "../stores.js";
+  import {
+    selected,
+    settings,
+    selectedProject,
+    resourceNodeDataMap,
+  } from "../stores.js";
   import { remote_model_to_resource } from "../ofrak/remote_resource";
   import { numBytesToQuantity, saveSettings } from "../helpers";
 
@@ -150,7 +155,6 @@
     showProjectManager,
     resources,
     rootResource,
-    resourceNodeDataMap,
     browsedFiles,
     fileinput;
   let dragging = false,
@@ -372,10 +376,10 @@
       }
     );
     resources[resource.id] = remote_model_to_resource(resource, resources);
-    if (resourceNodeDataMap[resource.id] === undefined) {
-      resourceNodeDataMap[resource.id] = {};
+    if ($resourceNodeDataMap[resource.id] === undefined) {
+      $resourceNodeDataMap[resource.id] = {};
     }
-    resourceNodeDataMap[resource.id].collapsed = false;
+    $resourceNodeDataMap[resource.id].collapsed = false;
     while (resource.parent_id) {
       resource = await fetch(
         `${$settings.backendUrl}/${resource.parent_id}/`
@@ -387,10 +391,10 @@
       });
       resources[resource.id] = remote_model_to_resource(resource, resources);
 
-      if (resourceNodeDataMap[resource.id] === undefined) {
-        resourceNodeDataMap[resource.id] = {};
+      if ($resourceNodeDataMap[resource.id] === undefined) {
+        $resourceNodeDataMap[resource.id] = {};
       }
-      resourceNodeDataMap[resource.id].collapsed = false;
+      $resourceNodeDataMap[resource.id].collapsed = false;
     }
 
     showRootResource = true;

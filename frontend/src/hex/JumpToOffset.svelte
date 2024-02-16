@@ -18,7 +18,7 @@
   import { calculator } from "../helpers";
   import { onMount } from "svelte";
   import { shortcuts } from "../keyboard";
-  import { currentPosition } from "./stores";
+  export let currentPosition;
   let input,
     mounted = false;
   const alignment = 16;
@@ -40,12 +40,12 @@
     if (e.key === 'Enter') {
       input.blur();
       try {
-        $currentPosition = calculator.calculate(input.value);
+        currentPosition = calculator.calculate(input.value);
       } catch (_) {
-        input.value = `0x${$currentPosition.toString(16)}`;
+        input.value = `0x${currentPosition.toString(16)}`;
       }
     }
   }}"
   bind:this="{input}"
-  placeholder="0x{$currentPosition.toString(16)}"
+  placeholder="0x{currentPosition.toString(16)}"
 />

@@ -52,16 +52,23 @@
   import LoadingText from "../utils/LoadingText.svelte";
   import MinimapView from "./MinimapView.svelte";
   import { chunkList, buf2hex, hexToChar } from "../helpers.js";
-  import { selectedResource, selected, settings } from "../stores.js";
+  import {
+    selectedResource,
+    selected,
+    settings,
+    resourceNodeDataMap,
+  } from "../stores.js";
   import { onMount } from "svelte";
-  import { currentPosition, dataLength, screenHeight } from "./stores";
+  import { screenHeight } from "./stores";
   import SearchBar from "../utils/SearchBar.svelte";
 
-  export let dataLenPromise, resourceNodeDataMap, resources;
+  export let resources, dataLenPromise;
   let dataSearchResults = {};
   let childRangesPromise = Promise.resolve(undefined);
   let chunkDataPromise = Promise.resolve(undefined);
+  let currentPosition = 0;
   let childRanges,
+    dataLength,
     resourceData,
     chunkData = [],
     chunks = [],
@@ -76,21 +83,40 @@
     windowSize = chunkSize * 10,
     windowPadding = 1024;
 
-  $: dataLenPromise
-    .then((length) => {
-      if (length < 1024 * 1024 * 64 && $selectedResource) {
-        return $selectedResource.get_data();
-      }
-    })
-    .then((data) => {
-      resourceData = data;
-    })
-    .then(getNewData);
+  $: dataLenPromise.then((r) => {
+    dataLength = r;
+  });
+
   $: childRangesPromise.then((r) => {
     childRanges = r;
   });
+
   $: chunkDataPromise.then((r) => {
     chunks = r;
+  });
+
+  $: childRangesPromise = calculateRanges(
+    $selectedResource,
+    dataLenPromise,
+    $settings.colors
+  );
+
+  // React to local data searches
+  $: if (dataSearchResults) {
+    const localDataSearchResults = dataSearchResults;
+    if (
+      localDataSearchResults.matches?.length > 0 &&
+      (localDataSearchResults.index || localDataSearchResults.index === 0)
+    ) {
+      dataLenPromise.then((dataLength) => {
+        currentPosition =
+          localDataSearchResults.matches[localDataSearchResults.index][0];
+      });
+    }
+  }
+
+  $: chunkDataPromise = dataLenPromise.then((r) => {
+    return getNewData($selectedResource, currentPosition);
   });
 
   // Sadly, this is the most flexible, most reliable way to get the line height
@@ -111,54 +137,38 @@
   }
 
   async function getNewData() {
-    $dataLength = await dataLenPromise;
-    start = $currentPosition;
-    end = Math.min(start + $screenHeight, $dataLength);
-
+    console.log($selectedResource);
+    console.log("getNewData " + dataLength);
+    start = currentPosition;
+    end = Math.min(start + $screenHeight, dataLength);
+    if (length < 1024 * 1024 * 64 && $selectedResource) {
+      resourceData = await $selectedResource.get_data();
+    } else {
+      resourceData = null;
+    }
     if (resourceData) {
       return chunkList(
         new Uint8Array(resourceData.slice(start, end)),
         alignment
       ).map((chunk) => chunkList(buf2hex(chunk), 2));
     }
-
     if (end > endWindow - windowPadding) {
       startWindow = Math.max(start - windowPadding, 0);
-      endWindow = Math.min(startWindow + windowSize, $dataLength);
+      endWindow = Math.min(startWindow + windowSize, dataLength);
       chunkData = await $selectedResource.get_data([startWindow, endWindow]);
     } else if (start < startWindow + windowPadding) {
-      endWindow = Math.min(end + windowPadding, $dataLength);
+      endWindow = Math.min(end + windowPadding, dataLength);
       startWindow = Math.max(endWindow - windowSize, 0);
       chunkData = await $selectedResource.get_data([startWindow, endWindow]);
     }
-
     return chunkList(
       new Uint8Array(chunkData.slice(start - startWindow, end - startWindow)),
       alignment
     ).map((chunk) => chunkList(buf2hex(chunk), 2));
   }
 
-  $: updateData($currentPosition, $selectedResource);
-  function updateData() {
-    chunkDataPromise = dataLenPromise
-      .then((length) => {
-        if (length < 1024 * 1024 * 64 && $selectedResource) {
-          return $selectedResource.get_data();
-        }
-      })
-      .then((data) => {
-        resourceData = data;
-      })
-      .then(getNewData);
-  }
-
-  $: updateResource($selectedResource);
-
-  function updateResource() {
-    $currentPosition = 0;
-  }
-
   async function calculateRanges(resource, dataLenPromise, colors) {
+    console.log("calc ranges");
     const children = await resource.get_children();
     if (children == []) {
       return [];
@@ -183,11 +193,6 @@
       });
     return childRanges;
   }
-  $: childRangesPromise = calculateRanges(
-    $selectedResource,
-    dataLenPromise,
-    $settings.colors
-  );
 
   function binarySearchRanges(T, ranges) {
     // https://en.wikipedia.org/wiki/Binary_search_algorithm#Algorithm
@@ -237,10 +242,10 @@
       info.title =
         resources[childRange.resource_id]?.get_caption() ||
         childRange.resource_id;
-      // info.onDoubleClick = () => {
-      //   resourceNodeDataMap[$selected].collapsed = false;
-      //   $selected = childRange.resource_id;
-      // };
+      info.onDoubleClick = () => {
+        $resourceNodeDataMap[$selected].collapsed = false;
+        $selected = childRange.resource_id;
+      };
     }
 
     if (dataSearchResults.matches != undefined) {
@@ -257,26 +262,23 @@
     return info;
   }
 
-  // React to local data searches
-  $: if (dataSearchResults) {
-    const localDataSearchResults = dataSearchResults;
-    if (
-      localDataSearchResults.matches?.length > 0 &&
-      (localDataSearchResults.index || localDataSearchResults.index === 0)
-    ) {
-      dataLenPromise.then(($dataLength) => {
-        $currentPosition =
-          localDataSearchResults.matches[localDataSearchResults.index][0];
-      });
-    }
-  }
-
   function refreshHeight() {
     hexDisplay = document.getElementById("hex-display");
     $screenHeight =
       Math.floor(hexDisplay.offsetHeight / lineHeight) * alignment;
-    updateData();
+    chunkDataPromise = dataLenPromise.then(getNewData);
   }
+
+  // function refreshData(){
+  //   chunkDataPromise = dataLenPromise.then(getNewData)
+  // }
+
+  // function refreshDataLen(){
+  //   dataLenPromise = dataLenPromise
+  // }
+
+  // $: refreshDataLen($selectedResource, $selected)
+  // $: refreshData($selectedResource, currentPosition, dataLenPromise)
 
   onMount(() => {
     hexDisplay = document.getElementById("hex-display");
@@ -295,19 +297,19 @@
   class="hex-display"
   id="hex-display"
   on:wheel="{(e) => {
-    $currentPosition += Math.floor(e.deltaY) * 16;
-    if ($currentPosition > $dataLength - $screenHeight) {
-      $currentPosition = $dataLength - $screenHeight;
+    currentPosition += Math.floor(e.deltaY) * 16;
+    if (currentPosition > dataLength - $screenHeight) {
+      currentPosition = dataLength - $screenHeight;
     }
-    if ($currentPosition < 0) {
-      $currentPosition = 0;
+    if (currentPosition < 0) {
+      currentPosition = 0;
     }
   }}"
 >
   {#await dataLenPromise}
     <LoadingText />
-  {:then $dataLength}
-    {#if $dataLength > 0}
+  {:then dataLength}
+    {#if dataLength > 0}
       <!-- 
         The magic number below is the largest height that Firefox will support with
         a position: sticky element. Otherwise, the sticky element scrolls away.
@@ -315,7 +317,7 @@
       -->
       <div
         style:height="min(8940000px, calc(var(--line-height) * {Math.ceil(
-          $dataLength / alignment
+          dataLength / alignment
         )}))"
       >
         <div class="sticky">
@@ -391,7 +393,10 @@
   {/await}
   {#if resourceData != undefined}
     <div class="minimap">
-      <MinimapView dataLenPromise="{dataLenPromise}" />
+      <MinimapView
+        dataLength="{dataLength}"
+        currentPosition="{currentPosition}"
+      />
     </div>
   {/if}
 </div>

@@ -52,13 +52,8 @@
     dataLenPromise = Promise.resolve([]),
     displayMiniMap = true,
     rootResourceLoadPromise = new Promise((resolve) => {}),
-    resourceNodeDataMap = {},
     resources = {};
-  let carouselSelection,
-    currentResource,
-    rootResource,
-    modifierView,
-    bottomLeftPane;
+  let currentResource, rootResource, modifierView, bottomLeftPane;
 
   // TODO: Move to settings
   let riddleAnswered = JSON.parse(window.localStorage.getItem("riddleSolved"));
@@ -162,13 +157,11 @@ Answer by running riddle.answer('your answer here') from the console.`);
               this="{modifierView}"
               dataLenPromise="{dataLenPromise}"
               bind:modifierView="{modifierView}"
-              bind:resourceNodeDataMap="{resourceNodeDataMap}"
             />
           {:else}
             <ResourceTreeView
               rootResource="{rootResource}"
               bind:bottomLeftPane="{bottomLeftPane}"
-              bind:resourceNodeDataMap="{resourceNodeDataMap}"
               bind:modifierView="{modifierView}"
               bind:showProjectManager="{showProjectManager}"
               bind:showRootResource="{showRootResource}"
@@ -187,11 +180,7 @@ Answer by running riddle.answer('your answer here') from the console.`);
         </Pane>
       </Split>
       <Pane slot="second" displayMinimap="{displayMiniMap}">
-        <DataView
-          dataLenPromise="{dataLenPromise}"
-          resources="{resources}"
-          bind:resourceNodeDataMap="{resourceNodeDataMap}"
-        />
+        <DataView dataLenPromise="{dataLenPromise}" resources="{resources}" />
         <!-- 
           Named slot must be outside {#if} because of: 
           https://github.com/sveltejs/svelte/issues/5604 
@@ -220,7 +209,6 @@ Answer by running riddle.answer('your answer here') from the console.`);
     bind:showProjectManager="{showProjectManager}"
     bind:resources="{resources}"
     bind:rootResource="{rootResource}"
-    bind:resourceNodeDataMap="{resourceNodeDataMap}"
   />
 {/if}
 

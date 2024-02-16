@@ -28,11 +28,12 @@
   import LoadingTextVertical from "../utils/LoadingTextVertical.svelte";
 
   import { hexToByteArray } from "../helpers.js";
-  import { currentPosition, dataLength, screenHeight } from "./stores.js";
+  import { screenHeight } from "./stores.js";
   import { selectedResource, settings } from "../stores.js";
 
   import { onMount } from "svelte";
 
+  export let dataLength, currentPosition;
   let data = undefined;
 
   $: colorArray = [
@@ -141,7 +142,7 @@
     bind:this="{canvas}"
     on:mousedown="{(e) => {
       $currentPosition = Math.floor(
-        $dataLength * (e.offsetY / canvas.offsetHeight)
+        dataLength * (e.offsetY / canvas.offsetHeight)
       );
       clicking = true;
     }}"
@@ -154,7 +155,7 @@
     on:mousemove="{(e) => {
       if (clicking) {
         $currentPosition = Math.floor(
-          $dataLength * (e.offsetY / canvas.offsetHeight)
+          dataLength * (e.offsetY / canvas.offsetHeight)
         );
         clicking = true;
       }
@@ -164,8 +165,8 @@
       if ($currentPosition < 0) {
         $currentPosition = 0;
       }
-      if ($currentPosition > $dataLength - $screenHeight) {
-        $currentPosition = $dataLength - $screenHeight;
+      if ($currentPosition > dataLength - $screenHeight) {
+        $currentPosition = dataLength - $screenHeight;
       }
     }}"
   >

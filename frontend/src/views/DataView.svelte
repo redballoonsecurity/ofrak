@@ -32,7 +32,7 @@
 </style>
 
 <script>
-  import { selectedResource } from "../stores";
+  import { selectedResource, resourceNodeDataMap } from "../stores";
   import Breadcrumb from "../utils/Breadcrumb.svelte";
   import AssemblyView from "./AssemblyView.svelte";
   import DecompilationView from "./DecompilationView.svelte";
@@ -40,8 +40,7 @@
   import TextView from "./TextView.svelte";
   import { onMount } from "svelte";
   import Tabs from "../utils/Tabs.svelte";
-  export let dataLenPromise, resourceNodeDataMap, resources;
-  let display_type = "hex";
+  export let dataLenPromise, resources;
   let hasTextView = false;
   let hasAsmView = false;
   let hasDecompView = false;
@@ -56,9 +55,8 @@
     title: "Hex",
     component: HexView,
     props: {
-      dataLenPromise: dataLenPromise,
       resources: resources,
-      resourceNodeDataMap: resourceNodeDataMap,
+      dataLenPromise: dataLenPromise,
     },
   };
 
@@ -153,7 +151,6 @@
     <HexView
       dataLenPromise="{dataLenPromise}"
       resources="{resources}"
-      bind:resourceNodeDataMap="{resourceNodeDataMap}"
     />
   {:else if display_type == "text"}
     <hr />
