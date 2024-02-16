@@ -33,7 +33,6 @@
 
 <script>
   import { selectedResource, resourceNodeDataMap } from "../stores";
-  import Breadcrumb from "../utils/Breadcrumb.svelte";
   import AssemblyView from "./AssemblyView.svelte";
   import DecompilationView from "./DecompilationView.svelte";
   import HexView from "../hex/HexView.svelte";

@@ -53,7 +53,7 @@
     displayMiniMap = true,
     rootResourceLoadPromise = new Promise((resolve) => {}),
     resources = {};
-  let currentResource, rootResource, modifierView, bottomLeftPane;
+  let rootResource, modifierView, bottomLeftPane;
 
   // TODO: Move to settings
   let riddleAnswered = JSON.parse(window.localStorage.getItem("riddleSolved"));
@@ -62,13 +62,12 @@
   }
 
   $: if ($selected !== undefined) {
-    currentResource = resources[$selected];
-    if (currentResource === undefined) {
+    $selectedResource = resources[$selected];
+    if ($selectedResource === undefined) {
       console.error("Couldn't get the resource for ID " + $selected);
     } else {
-      $selectedResource = currentResource;
-      dataLenPromise = currentResource.get_data_length();
-      document.title = "OFRAK App – " + currentResource.get_caption();
+      dataLenPromise = $selectedResource.get_data_length();
+      document.title = "OFRAK App – " + $selectedResource.get_caption();
     }
     if ($selected !== window.location.hash.slice(1)) {
       window.history.pushState(null, "", `#${$selected}`);
@@ -175,7 +174,7 @@ Answer by running riddle.answer('your answer here') from the console.`);
               bind:bottomLeftPane="{bottomLeftPane}"
             />
           {:else}
-            <AttributesView resource="{currentResource}" />
+            <AttributesView resource="{$selectedResource}" />
           {/if}
         </Pane>
       </Split>

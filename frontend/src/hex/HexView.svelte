@@ -83,7 +83,10 @@
     windowSize = chunkSize * 10,
     windowPadding = 1024;
 
+  $: dataLenPromise = dataLenPromise;
+
   $: dataLenPromise.then((r) => {
+    console.log("Datalen.then()" + r)
     dataLength = r;
   });
 
@@ -137,8 +140,6 @@
   }
 
   async function getNewData() {
-    console.log($selectedResource);
-    console.log("getNewData " + dataLength);
     start = currentPosition;
     end = Math.min(start + $screenHeight, dataLength);
     if (length < 1024 * 1024 * 64 && $selectedResource) {
@@ -268,17 +269,6 @@
       Math.floor(hexDisplay.offsetHeight / lineHeight) * alignment;
     chunkDataPromise = dataLenPromise.then(getNewData);
   }
-
-  // function refreshData(){
-  //   chunkDataPromise = dataLenPromise.then(getNewData)
-  // }
-
-  // function refreshDataLen(){
-  //   dataLenPromise = dataLenPromise
-  // }
-
-  // $: refreshDataLen($selectedResource, $selected)
-  // $: refreshData($selectedResource, currentPosition, dataLenPromise)
 
   onMount(() => {
     hexDisplay = document.getElementById("hex-display");
