@@ -231,7 +231,7 @@ COMPLEX_BLOCK_UNPACKER_TEST_CASES = [
                     is_exit_point=True,
                     exit_vaddr=None,
                 ),
-                DataWord(virtual_address=32816, size=4, format_string="<L", xrefs_to=(32792,)),
+                DataWord(virtual_address=0x8030, size=4, format_string="<L", xrefs_to=(32792,)),
             ],
             0x8034: [
                 BasicBlock(
@@ -255,8 +255,8 @@ COMPLEX_BLOCK_UNPACKER_TEST_CASES = [
                     is_exit_point=False,
                     exit_vaddr=32856,
                 ),
-                DataWord(virtual_address=32864, size=4, format_string="<L", xrefs_to=(32820,)),
-                DataWord(virtual_address=32868, size=4, format_string="<L", xrefs_to=(32840,)),
+                DataWord(virtual_address=0x8060, size=4, format_string="<L", xrefs_to=(32820,)),
+                DataWord(virtual_address=0x8064, size=4, format_string="<L", xrefs_to=(32840,)),
             ],
             0x8068: [
                 BasicBlock(
