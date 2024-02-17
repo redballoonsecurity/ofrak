@@ -1,7 +1,6 @@
 from typing import Dict
 import pytest
 
-from ofrak.core import DataWord
 from ofrak.core.basic_block import BasicBlock
 
 from pytest_ofrak.patterns.code_region_unpacker import (
@@ -70,9 +69,11 @@ class TestAngrComplexBlockUnpackAndVerify(ComplexBlockUnpackerUnpackAndVerifyPat
 
             fixed_up_results = {
                 vaddr: [
-                    block for block in original_expected_blocks
+                    block
+                    for block in original_expected_blocks
                     if block.virtual_address not in missing_data_words
-                ] for vaddr, original_expected_blocks in unpack_verify_test_case.expected_results.items()
+                ]
+                for vaddr, original_expected_blocks in unpack_verify_test_case.expected_results.items()
             }
 
             return fixed_up_results
