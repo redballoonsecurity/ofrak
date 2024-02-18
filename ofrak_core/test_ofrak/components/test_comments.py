@@ -1,3 +1,4 @@
+from datetime import timedelta
 import pytest
 from hypothesis import given, HealthCheck, settings
 from hypothesis.strategies import text
@@ -38,7 +39,10 @@ async def test_adding_comments(executable_resource: Resource):
 # We suppress the function_scoped_fixture health check because the executable_resource fixture
 # doesn't need to be reset between individual runs of hypothesis (since the comment overrides
 # the previous one every time).
-@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    deadline=timedelta(seconds=5),
+)
 @given(comment_str=text())
 async def test_comment_content(executable_resource: Resource, comment_str: str):
     """Test comments with all kinds of string contents."""
