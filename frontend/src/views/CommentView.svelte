@@ -59,14 +59,10 @@
 
 <script>
   import { calculator } from "../helpers.js";
-  import {
-    selected,
-    selectedResource,
-    resourceNodeDataMap,
-  } from "../stores.js";
+  import { selected, selectedResource } from "../stores.js";
   import Button from "../utils/Button.svelte";
 
-  export let modifierView, dataLenPromise;
+  export let modifierView, resourceNodeDataMap, dataLenPromise;
   let comment, startInput, endInput, dataLength, errorMessage;
 
   $: dataLenPromise.then((r) => {
@@ -74,7 +70,7 @@
   });
 
   function refreshResource() {
-    $resourceNodeDataMap[$selected].commentsPromise =
+    resourceNodeDataMap[$selected].commentsPromise =
       $selectedResource.get_comments();
 
     // Force hex view refresh with colors

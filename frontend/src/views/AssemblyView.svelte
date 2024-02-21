@@ -1,13 +1,17 @@
 <style>
+  .breadcrumb {
+    position: sticky;
+    top: 0;
+    padding-bottom: 1em;
+    background: var(--main-bg-color);
+  }
+
   .hbox {
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
     justify-content: flex-start;
     align-items: stretch;
-    min-height: calc(100% - 6em);
-    max-height: calc(100% - 6em);
-    overflow: auto;
   }
 
   .horizontal-spacer {
@@ -27,13 +31,13 @@
 </style>
 
 <script>
+  import Breadcrumb from "../utils/Breadcrumb.svelte";
   import LoadingAnimation from "../utils/LoadingAnimation.svelte";
   import LoadingText from "../utils/LoadingText.svelte";
 
   import { chunkList, buf2hex } from "../helpers.js";
   import { selectedResource } from "../stores.js";
-  export const searchFunction = asmSearch;
-  let searchString = "";
+
   let blocksPromise = Promise.resolve([]),
     dataWordsPromise = Promise.resolve([]);
   $: if ($selectedResource !== undefined) {
@@ -76,11 +80,11 @@
     }
     return blocks;
   }
-
-  async function asmSearch(query) {
-    searchString = query;
-  }
 </script>
+
+<div class="breadcrumb">
+  <Breadcrumb />
+</div>
 
 {#await Promise.all([blocksPromise, dataWordsPromise])}
   <LoadingAnimation />
@@ -122,7 +126,7 @@
     <div class="horizontal-spacer"></div>
 
     <div class="instruction">
-      {#each blocks as block, i}
+      {#each blocks as block}
         {#each block as instruction}
           <div>
             {instruction.get_attributes()[
@@ -133,10 +137,6 @@
                 "ofrak.model._auto_attributes.AttributesType[Instruction]"
               ].operands}
           </div>
-        {:else}
-          {#if i == 0}
-            <p>I said "Unpack Recursively"</p>
-          {/if}
         {/each}
         <div class="vertical-spacer"></div>
       {:else}

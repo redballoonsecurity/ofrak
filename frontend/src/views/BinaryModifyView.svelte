@@ -84,13 +84,12 @@
   } from "../helpers.js";
   import {
     selected,
-    resourceNodeDataMap,
     selectedResource as _selectedResource,
   } from "../stores.js";
   import Button from "../utils/Button.svelte";
   const selectedResource = $_selectedResource;
 
-  export let modifierView, dataLenPromise;
+  export let modifierView, dataLenPromise, resourceNodeDataMap;
   let startInput,
     endInput,
     startOffset,
@@ -168,10 +167,10 @@
       if (selectedResource) {
         await selectedResource.queue_patch(patchData, startOffset, endOffset);
       }
-      if (!$resourceNodeDataMap[$selected]) {
-        $resourceNodeDataMap[$selected] = {};
+      if (!resourceNodeDataMap[$selected]) {
+        resourceNodeDataMap[$selected] = {};
       }
-      $resourceNodeDataMap[$selected].lastModified = true;
+      resourceNodeDataMap[$selected].lastModified = true;
       modifierView = undefined;
       refreshResource();
     } catch (err) {

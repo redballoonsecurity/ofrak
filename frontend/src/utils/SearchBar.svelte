@@ -94,6 +94,9 @@
     prevOptions = {};
 
   function nextMatch() {
+    if (searchResults.matches === undefined) {
+      return searchResults;
+    }
     let nextIndex = searchResults.index + 1;
     if (nextIndex >= searchResults.matches.length) {
       nextIndex = 0;
@@ -114,7 +117,8 @@
       searchQuery == prevQuery &&
       searchOptions.searchType == prevOptions.searchType &&
       searchOptions.regex == prevOptions.regex &&
-      searchOptions.caseIgnore == prevOptions.caseIgnore
+      searchOptions.caseIgnore == prevOptions.caseIgnore &&
+      searchResults.matches != undefined //Search results are the only attribute of the search we have control of from other components, so we use it to clear the search when changeing selected resrouces.
     );
   }
 

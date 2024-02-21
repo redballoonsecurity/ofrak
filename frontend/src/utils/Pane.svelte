@@ -20,8 +20,6 @@
 </style>
 
 <script>
-  import { onMount } from "svelte";
-
   export let paddingVertical = "0",
     paddingHorizontal = "0";
   let inner;

@@ -3,6 +3,8 @@
     right: -1em;
     min-height: 100%;
     max-height: 100%;
+    max-width: 20%;
+    min-width: 20%;
     position: relative;
   }
 
@@ -17,12 +19,19 @@
   }
 
   .hex-display {
+    max-width: 80%;
+    min-width: 80%;
+  }
+
+  .scrollable {
     display: flex;
     flex-direction: row;
     overflow: hidden;
     justify-content: left;
     min-height: 100%;
     max-height: 100%;
+    min-width: 100%;
+    max-width: 100%;
   }
 
   .hbox {
@@ -52,17 +61,12 @@
   import LoadingText from "../utils/LoadingText.svelte";
   import MinimapView from "./MinimapView.svelte";
   import { chunkList, buf2hex, hexToChar } from "../helpers.js";
-  import {
-    selectedResource,
-    selected,
-    settings,
-    resourceNodeDataMap,
-  } from "../stores.js";
+  import { selectedResource, selected, settings } from "../stores.js";
   import { onMount } from "svelte";
   import { screenHeight } from "./stores";
   import SearchBar from "../utils/SearchBar.svelte";
 
-  export let resources, dataLenPromise;
+  export let resources, dataLenPromise, resourceNodeDataMap;
   let dataSearchResults = {};
   let childRangesPromise = Promise.resolve(undefined);
   let chunkDataPromise = Promise.resolve(undefined);
@@ -86,7 +90,6 @@
   $: dataLenPromise = dataLenPromise;
 
   $: dataLenPromise.then((r) => {
-    console.log("Datalen.then()" + r)
     dataLength = r;
   });
 
@@ -121,6 +124,8 @@
   $: chunkDataPromise = dataLenPromise.then((r) => {
     return getNewData($selectedResource, currentPosition);
   });
+
+  $: resetResource($selectedResource);
 
   // Sadly, this is the most flexible, most reliable way to get the line height
   // from arbitrary CSS units in pixels. It is definitely a little nasty :(
@@ -169,7 +174,6 @@
   }
 
   async function calculateRanges(resource, dataLenPromise, colors) {
-    console.log("calc ranges");
     const children = await resource.get_children();
     if (children == []) {
       return [];
@@ -244,7 +248,7 @@
         resources[childRange.resource_id]?.get_caption() ||
         childRange.resource_id;
       info.onDoubleClick = () => {
-        $resourceNodeDataMap[$selected].collapsed = false;
+        resourceNodeDataMap[$selected].collapsed = false;
         $selected = childRange.resource_id;
       };
     }
@@ -263,15 +267,20 @@
     return info;
   }
 
+  function resetResource() {
+    dataSearchResults.matches = undefined;
+    currentPosition = 0;
+  }
+
   function refreshHeight() {
-    hexDisplay = document.getElementById("hex-display");
+    hexDisplay = document.getElementById("scrollable");
     $screenHeight =
       Math.floor(hexDisplay.offsetHeight / lineHeight) * alignment;
     chunkDataPromise = dataLenPromise.then(getNewData);
   }
 
   onMount(() => {
-    hexDisplay = document.getElementById("hex-display");
+    hexDisplay = document.getElementById("scrollable");
     refreshHeight();
   });
 </script>
@@ -284,8 +293,8 @@
   bind:searchResults="{dataSearchResults}"
 />
 <div
-  class="hex-display"
-  id="hex-display"
+  class="scrollable"
+  id="scrollable"
   on:wheel="{(e) => {
     currentPosition += Math.floor(e.deltaY) * 16;
     if (currentPosition > dataLength - $screenHeight) {
@@ -296,96 +305,98 @@
     }
   }}"
 >
-  {#await dataLenPromise}
-    <LoadingText />
-  {:then dataLength}
-    {#if dataLength > 0}
-      <!-- 
-        The magic number below is the largest height that Firefox will support with
-        a position: sticky element. Otherwise, the sticky element scrolls away.
-        Found this by manual binary search on my computer. 
-      -->
-      <div
-        style:height="min(8940000px, calc(var(--line-height) * {Math.ceil(
-          dataLength / alignment
-        )}))"
-      >
-        <div class="sticky">
-          <div class="hbox">
-            {#await chunkDataPromise}
-              <LoadingText />
-            {:then chunks}
-              <div>
-                {#each chunks as _, chunkIndex}
-                  <div>
-                    {(chunkIndex * alignment + start)
-                      .toString(16)
-                      .padStart(8, "0") + ": "}
-                  </div>
-                {/each}
-              </div>
-
-              <span class="spacer"> </span>
-
-              {#await childRangesPromise}
+  <div class="hex-display">
+    {#await dataLenPromise}
+      <LoadingText />
+    {:then dataLength}
+      {#if dataLength > 0}
+        <!-- 
+          The magic number below is the largest height that Firefox will support with
+          a position: sticky element. Otherwise, the sticky element scrolls away.
+          Found this by manual binary search on my computer. 
+        -->
+        <div
+          style:height="min(8940000px, calc(var(--line-height) * {Math.ceil(
+            dataLength / alignment
+          )}))"
+        >
+          <div class="sticky">
+            <div class="hbox">
+              {#await chunkDataPromise}
+                <LoadingText />
+              {:then chunks}
                 <div>
-                  {#each chunks as hexes}
+                  {#each chunks as _, chunkIndex}
                     <div>
-                      {#each hexes as byte}
-                        <span class="byte">{byte}</span>
-                      {/each}
+                      {(chunkIndex * alignment + start)
+                        .toString(16)
+                        .padStart(8, "0") + ": "}
                     </div>
                   {/each}
                 </div>
-              {:then childRangesResult}
-                <div>
-                  {#each chunks as hexes, chunkIndex}
+
+                <span class="spacer"> </span>
+
+                {#await childRangesPromise}
+                  <div>
+                    {#each chunks as hexes}
+                      <div>
+                        {#each hexes as byte}
+                          <span class="byte">{byte}</span>
+                        {/each}
+                      </div>
+                    {/each}
+                  </div>
+                {:then childRangesResult}
+                  <div>
+                    {#each chunks as hexes, chunkIndex}
+                      <div>
+                        {#each hexes as byte, byteIndex}
+                          {@const rangeInfo = getRangeInfo(
+                            chunkIndex * alignment + byteIndex + start,
+                            childRangesResult,
+                            byte
+                          )}
+                          <!-- svelte-ignore a11y-no-static-element-interactions -->
+                          <span
+                            class="byte"
+                            style:background-color="{rangeInfo.background}"
+                            style:color="{rangeInfo.foreground}"
+                            style:cursor="{rangeInfo.cursor}"
+                            style:user-select="{rangeInfo.user_select}"
+                            style:text-decoration="{rangeInfo.text_decoration}"
+                            title="{rangeInfo.title}"
+                            on:dblclick="{rangeInfo.onDoubleClick}">{byte}</span
+                          >
+                        {/each}
+                      </div>
+                    {/each}
+                  </div>
+                {/await}
+
+                <span class="spacer"></span>
+
+                <div class="ascii">
+                  {#each chunks as hexes}
                     <div>
-                      {#each hexes as byte, byteIndex}
-                        {@const rangeInfo = getRangeInfo(
-                          chunkIndex * alignment + byteIndex + start,
-                          childRangesResult,
-                          byte
-                        )}
-                        <!-- svelte-ignore a11y-no-static-element-interactions -->
-                        <span
-                          class="byte"
-                          style:background-color="{rangeInfo.background}"
-                          style:color="{rangeInfo.foreground}"
-                          style:cursor="{rangeInfo.cursor}"
-                          style:user-select="{rangeInfo.user_select}"
-                          style:text-decoration="{rangeInfo.text_decoration}"
-                          title="{rangeInfo.title}"
-                          on:dblclick="{rangeInfo.onDoubleClick}">{byte}</span
-                        >
-                      {/each}
+                      {hexes.map(hexToChar).join("") + " "}
                     </div>
                   {/each}
                 </div>
               {/await}
-
-              <span class="spacer"></span>
-
-              <div class="ascii">
-                {#each chunks as hexes}
-                  <div>
-                    {hexes.map(hexToChar).join("") + " "}
-                  </div>
-                {/each}
-              </div>
-            {/await}
+            </div>
           </div>
         </div>
-      </div>
-    {:else}
-      Resource has no data!
-    {/if}
-  {/await}
+      {:else}
+        Resource has no data!
+      {/if}
+    {/await}
+  </div>
   {#if resourceData != undefined}
     <div class="minimap">
       <MinimapView
         dataLength="{dataLength}"
-        currentPosition="{currentPosition}"
+        bind:currentPosition="{currentPosition}"
       />
     </div>
   {/if}

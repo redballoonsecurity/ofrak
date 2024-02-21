@@ -148,15 +148,6 @@
         clicking = true;
       }
     }}"
-    on:wheel="{(e) => {
-      currentPosition += e.deltaY * 16;
-      if (currentPosition < 0) {
-        currentPosition = 0;
-      }
-      if (currentPosition > dataLength - $screenHeight) {
-        currentPosition = dataLength - $screenHeight;
-      }
-    }}"
   >
     Magnitude graph
   </canvas>

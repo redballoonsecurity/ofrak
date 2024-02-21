@@ -171,11 +171,9 @@ export class RemoteResource extends Resource {
       return null;
     }
     let result = await fetch(`${this.uri}/get_data_length`).then(async (r) => {
-       let _result = await r.json();
-       console.log("promise" + _result);
-       return _result;
-      }
-    );
+      let _result = await r.json();
+      return _result;
+    });
     return result;
   }
 

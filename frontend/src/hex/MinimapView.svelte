@@ -21,21 +21,21 @@
 </script>
 
 <div class="minimap">
-  <JumpToOffset currentPosition="{currentPosition}" />
+  <JumpToOffset bind:currentPosition="{currentPosition}" />
   {#if carouselSelection === "Entropy"}
     <EntropyView
       dataLength="{dataLength}"
-      currentPosition="{currentPosition}"
+      bind:currentPosition="{currentPosition}"
     />
   {:else if carouselSelection === "Byteclass"}
     <ByteclassView
       dataLength="{dataLength}"
-      currentPosition="{currentPosition}"
+      bind:currentPosition="{currentPosition}"
     />
   {:else if carouselSelection === "Magnitude"}
     <MagnitudeView
       dataLength="{dataLength}"
-      currentPosition="{currentPosition}"
+      bind:currentPosition="{currentPosition}"
     />
   {/if}
   <div class="carousel">

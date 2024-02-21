@@ -68,13 +68,13 @@
 </style>
 
 <script>
-  import { selectedResource, resourceNodeDataMap } from "../stores.js";
+  import { selectedResource } from "../stores.js";
   import { calculator } from "../helpers";
   import ResourceTreeNode from "../resource/ResourceTreeNode.svelte";
   import Checkbox from "../utils/Checkbox.svelte";
   import Button from "../utils/Button.svelte";
 
-  export let modifierView;
+  export let modifierView, resourceNodeDataMap;
   let searchInput,
     searchRangeStartInput,
     searchRangeEndInput,
@@ -116,7 +116,7 @@
     if ($selectedResource !== undefined) {
       const ancestors = await $selectedResource.get_ancestors(null);
       for (const ancestor of ancestors) {
-        $resourceNodeDataMap[ancestor.get_id()].collapsed = false;
+        resourceNodeDataMap[ancestor.get_id()].collapsed = false;
       }
     }
     modifierView = undefined;
@@ -164,7 +164,11 @@
   </div>
   {#each results as matched_resource}
     <div class="resultsbox">
-      <ResourceTreeNode rootResource="{matched_resource}" collapsed="false" />
+      <ResourceTreeNode
+        rootResource="{matched_resource}"
+        collapsed="false"
+        bind:resourceNodeDataMap="{resourceNodeDataMap}"
+      />
     </div>
   {/each}
 </div>

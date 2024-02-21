@@ -63,14 +63,10 @@
 
 <script>
   import { calculator } from "../helpers.js";
-  import {
-    selected,
-    selectedResource,
-    resourceNodeDataMap,
-  } from "../stores.js";
+  import { selected, selectedResource } from "../stores.js";
   import Button from "../utils/Button.svelte";
 
-  export let modifierView, dataLenPromise;
+  export let modifierView, resourceNodeDataMap, dataLenPromise;
   let startInput, endInput, dataLength, errorMessage;
 
   $: dataLenPromise.then((r) => {
@@ -79,8 +75,8 @@
 
   function refreshResource() {
     // Force tree view children refresh
-    $resourceNodeDataMap[$selected].collapsed = false;
-    $resourceNodeDataMap[$selected].childrenPromise =
+    resourceNodeDataMap[$selected].collapsed = false;
+    resourceNodeDataMap[$selected].childrenPromise =
       $selectedResource.get_children();
 
     // Force hex view refresh with colors

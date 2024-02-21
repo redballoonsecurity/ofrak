@@ -69,14 +69,10 @@
 
 <script>
   import Checkbox from "../utils/Checkbox.svelte";
-  import {
-    selected,
-    selectedResource,
-    resourceNodeDataMap,
-  } from "../stores.js";
+  import { selected, selectedResource } from "../stores.js";
   import Button from "../utils/Button.svelte";
 
-  export let modifierView;
+  export let modifierView, resourceNodeDataMap;
   let toFind,
     toReplace,
     nullTerminated = true,
@@ -103,10 +99,10 @@
         for (const result in results) {
           if (result === "modified") {
             for (const resource of results[result]) {
-              if (!$resourceNodeDataMap[resource["id"]]) {
-                $resourceNodeDataMap[resource["id"]] = {};
+              if (!resourceNodeDataMap[resource["id"]]) {
+                resourceNodeDataMap[resource["id"]] = {};
               }
-              $resourceNodeDataMap[resource["id"]].lastModified = true;
+              resourceNodeDataMap[resource["id"]].lastModified = true;
             }
           }
         }

@@ -129,9 +129,9 @@
       // Offset Y by 0.5 because of: https://stackoverflow.com/a/48970774
       context.strokeRect(
         0,
-        Math.ceil((currentPosition / $data) * canvas.height) - 0.5,
+        Math.ceil((currentPosition / dataLength) * canvas.height) - 0.5,
         alignment,
-        Math.ceil(canvas.height / 2)
+        Math.ceil(($screenHeight / dataLength) * canvas.height) - 0.5
       );
     }
   }
@@ -158,15 +158,6 @@
           dataLength * (e.offsetY / canvas.offsetHeight)
         );
         clicking = true;
-      }
-    }}"
-    on:wheel="{(e) => {
-      currentPosition += e.deltaY * 16;
-      if (currentPosition < 0) {
-        currentPosition = 0;
-      }
-      if (currentPosition > dataLength - $screenHeight) {
-        currentPosition = dataLength - $screenHeight;
       }
     }}"
   >

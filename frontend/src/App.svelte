@@ -29,31 +29,41 @@
 </style>
 
 <script>
+  import AssemblyView from "./views/AssemblyView.svelte";
   import AttributesView from "./views/AttributesView.svelte";
   import AudioPlayer from "./utils/AudioPlayer.svelte";
   import Gamepad from "./utils/Gamepad.svelte";
+  import HexView from "./hex/HexView.svelte";
   import LoadingAnimation from "./utils/LoadingAnimation.svelte";
   import Pane from "./utils/Pane.svelte";
   import ResourceTreeView from "./resource/ResourceTreeView.svelte";
   import Split from "./utils/Split.svelte";
   import StartView from "./views/StartView.svelte";
+  import TextView from "./views/TextView.svelte";
   import ProjectManagerView from "./project/ProjectManagerView.svelte";
 
   import { printConsoleArt } from "./console-art.js";
   import { selected, selectedResource, settings } from "./stores.js";
   import { keyEventToString, shortcuts } from "./keyboard.js";
 
-  import DataView from "./views/DataView.svelte";
+  import { writable } from "svelte/store";
 
   printConsoleArt();
 
   let showRootResource = false,
     showProjectManager = false,
     dataLenPromise = Promise.resolve([]),
-    displayMiniMap = true,
+    hexScrollY = writable({}),
+    useAssemblyView = false,
+    useTextView = false,
     rootResourceLoadPromise = new Promise((resolve) => {}),
+    resourceNodeDataMap = {},
     resources = {};
-  let rootResource, modifierView, bottomLeftPane;
+  let carouselSelection,
+    currentResource,
+    rootResource,
+    modifierView,
+    bottomLeftPane;
 
   // TODO: Move to settings
   let riddleAnswered = JSON.parse(window.localStorage.getItem("riddleSolved"));
@@ -62,12 +72,23 @@
   }
 
   $: if ($selected !== undefined) {
-    $selectedResource = resources[$selected];
-    if ($selectedResource === undefined) {
+    currentResource = resources[$selected];
+    if (currentResource === undefined) {
       console.error("Couldn't get the resource for ID " + $selected);
     } else {
-      dataLenPromise = $selectedResource.get_data_length();
-      document.title = "OFRAK App – " + $selectedResource.get_caption();
+      $selectedResource = currentResource;
+      dataLenPromise = currentResource.get_data_length();
+      useAssemblyView = [
+        "ofrak.core.complex_block.ComplexBlock",
+        "ofrak.core.basic_block.BasicBlock",
+        "ofrak.core.instruction.Instruction",
+        "ofrak.core.data.DataWord",
+      ].some((tag) => currentResource.has_tag(tag));
+      useTextView = ["ofrak.core.binary.GenericText"].some((tag) =>
+        currentResource.has_tag(tag)
+      );
+      $hexScrollY.top = 0;
+      document.title = "OFRAK App – " + currentResource.get_caption();
     }
     if ($selected !== window.location.hash.slice(1)) {
       window.history.pushState(null, "", `#${$selected}`);
@@ -156,11 +177,13 @@ Answer by running riddle.answer('your answer here') from the console.`);
               this="{modifierView}"
               dataLenPromise="{dataLenPromise}"
               bind:modifierView="{modifierView}"
+              bind:resourceNodeDataMap="{resourceNodeDataMap}"
             />
           {:else}
             <ResourceTreeView
               rootResource="{rootResource}"
               bind:bottomLeftPane="{bottomLeftPane}"
+              bind:resourceNodeDataMap="{resourceNodeDataMap}"
               bind:modifierView="{modifierView}"
               bind:showProjectManager="{showProjectManager}"
               bind:showRootResource="{showRootResource}"
@@ -174,12 +197,23 @@ Answer by running riddle.answer('your answer here') from the console.`);
               bind:bottomLeftPane="{bottomLeftPane}"
             />
           {:else}
-            <AttributesView resource="{$selectedResource}" />
+            <AttributesView resource="{currentResource}" />
           {/if}
         </Pane>
       </Split>
-      <Pane slot="second" displayMinimap="{displayMiniMap}">
-        <DataView dataLenPromise="{dataLenPromise}" resources="{resources}" />
+      <Pane slot="second" scrollY="{hexScrollY}">
+        {#if useAssemblyView}
+          <AssemblyView />
+        {:else if useTextView}
+          <TextView />
+        {:else}
+          <HexView
+            dataLenPromise="{dataLenPromise}"
+            resources="{resources}"
+            scrollY="{hexScrollY}"
+            bind:resourceNodeDataMap="{resourceNodeDataMap}"
+          />
+        {/if}
         <!-- 
           Named slot must be outside {#if} because of: 
           https://github.com/sveltejs/svelte/issues/5604 
@@ -208,6 +242,7 @@ Answer by running riddle.answer('your answer here') from the console.`);
     bind:showProjectManager="{showProjectManager}"
     bind:resources="{resources}"
     bind:rootResource="{rootResource}"
+    bind:resourceNodeDataMap="{resourceNodeDataMap}"
   />
 {/if}
 
