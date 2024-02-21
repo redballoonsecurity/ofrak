@@ -63,7 +63,8 @@ class TestAngrComplexBlockUnpackAndVerify(ComplexBlockUnpackerUnpackAndVerifyPat
             )
 
         elif unpack_verify_test_case.binary_md5_digest == "c79d1bea0398d7a9d0faa1ba68786f5e":
-            # Latest version of angr misses this DataWord now = the ref to it does not appear in the list of xrefs
+            # Unlike angr 9.2.6, angr 9.2.77 and 9.2.91 miss this DataWord now
+            # = the ref to it does not appear in the list of xrefs
 
             missing_data_words = {0x8030, 0x8060}
 
