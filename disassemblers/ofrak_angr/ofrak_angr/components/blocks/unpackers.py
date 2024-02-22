@@ -228,7 +228,7 @@ class AngrComplexBlockUnpacker(ComplexBlockUnpacker):
             if xref is None or not any(xref in bb_range for bb_range in valid_data_xref_ranges):
                 continue
 
-            LOGGER.debug(f"Creating DataWord for {cb_data_xref.content} @ {cb_data_xref_addr:#x}")
+            LOGGER.debug(f"Creating DataWord for {cb_data_xref.content!r} @ {cb_data_xref_addr:#x}")
 
             format_string = endian_flag + dword_size_map[word_size]
 

@@ -756,6 +756,14 @@ BASIC_BLOCK_UNPACKER_TEST_CASES = [
                         operands="",
                         mode=InstructionSetMode.NONE,
                     ),
+                    Instruction(
+                        virtual_address=0x4004E0,
+                        size=2,
+                        disassembly="repz ret ",
+                        mnemonic="repz ret",
+                        operands="",
+                        mode=InstructionSetMode.NONE,
+                    ),
                 ),
             ],
             0x4004F0: [

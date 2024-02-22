@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 
+### Changed
+- Update to latest angr==9.2.77, which also necessitates Python >= 3.8.
+
 ### Fixed
 - Add `importlib-resources` dependency as workaround for z3-solver dependency issue. ([#401](https://github.com/redballoonsecurity/ofrak/pull/401))
 
