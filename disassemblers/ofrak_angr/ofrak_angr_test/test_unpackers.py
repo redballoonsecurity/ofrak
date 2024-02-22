@@ -54,13 +54,30 @@ class TestAngrComplexBlockUnpackAndVerify(ComplexBlockUnpackerUnpackAndVerifyPat
                 0x110,
                 0x110,
                 0x130,
-                keep_same_is_exit_point=True,
+                keep_same_is_exit_point=False,
             )
 
             return self._fixup_test_case_for_pie(
                 unpack_verify_test_case.expected_results,
                 pie_base_vaddr=0x400000,
             )
+
+        elif unpack_verify_test_case.binary_md5_digest == "c79d1bea0398d7a9d0faa1ba68786f5e":
+            # Unlike angr 9.2.6, angr 9.2.77 and 9.2.91 miss this DataWord now
+            # = the ref to it does not appear in the list of xrefs
+
+            missing_data_words = {0x8030, 0x8060}
+
+            fixed_up_results = {
+                vaddr: [
+                    block
+                    for block in original_expected_blocks
+                    if block.virtual_address not in missing_data_words
+                ]
+                for vaddr, original_expected_blocks in unpack_verify_test_case.expected_results.items()
+            }
+
+            return fixed_up_results
 
         return unpack_verify_test_case.expected_results
 
