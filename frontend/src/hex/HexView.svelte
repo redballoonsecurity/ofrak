@@ -288,7 +288,6 @@
   }
 
   onMount(() => {
-    hexDisplay = document.getElementById("scrollable");
     refreshHeight();
   });
 </script>
@@ -305,6 +304,7 @@
 />
 <div
   class="scrollable"
+  bind:this="{hexDisplay}"
   id="scrollable"
   on:wheel="{(e) => {
     currentPosition += Math.floor(e.deltaY) * 16;
