@@ -260,7 +260,7 @@
       };
     }
 
-    if (dataSearchResults.matches != undefined) {
+    if (dataSearchResults.matches != null) {
       let dataSearchMatchRanges = dataSearchResults.matches.map((match) => {
         return { start: match[0], end: match[0] + match[1] };
       });
