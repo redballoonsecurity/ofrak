@@ -95,7 +95,6 @@
     windowSize = chunkSize * 10,
     windowPadding = 1024;
 
-  $: dataLenPromise = dataLenPromise;
 
   $: dataLenPromise.then((r) => {
     dataLength = r;
