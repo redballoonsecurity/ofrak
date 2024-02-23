@@ -1,4 +1,3 @@
-ARG OFRAK_DIR=.
-COPY $OFRAK_DIR/mkdocs.yml /mkdocs.yml
-COPY $OFRAK_DIR/docs /docs
-COPY $OFRAK_DIR/examples /examples
+COPY $PACKAGE_PATH/../mkdocs.yml /mkdocs.yml
+COPY $PACKAGE_PATH/../docs /docs
+COPY $PACKAGE_PATH/../examples /examples

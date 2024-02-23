@@ -1,7 +1,6 @@
 RUN apt-get update && apt-get install -y libdbus-1-3
-ARG OFRAK_DIR=.
-COPY $OFRAK_DIR/disassemblers/ofrak_binary_ninja/install_binary_ninja_headless_linux.sh /tmp/
-COPY $OFRAK_DIR/disassemblers/ofrak_binary_ninja/pin_version.py /tmp/
+COPY $PACKAGE_PATH/install_binary_ninja_headless_linux.sh /tmp/
+COPY $PACKAGE_PATH/pin_version.py /tmp/
 RUN --mount=type=secret,id=serial --mount=type=secret,id=license.dat,dst=/root/.binaryninja/license.dat /tmp/install_binary_ninja_headless_linux.sh && \
   python3 /tmp/pin_version.py "3.2.3814 Headless" && \
   rm /tmp/install_binary_ninja_headless_linux.sh && \
