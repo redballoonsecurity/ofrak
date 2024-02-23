@@ -1,11 +1,13 @@
 <style>
   .minimap {
-    right: -1em;
     min-height: 100%;
     max-height: 100%;
-    max-width: 20%;
-    min-width: 20%;
+    max-width: 10em;
+    min-width: 10em;
     position: relative;
+    display: flex;
+    justify-content: center;
+    background-color: var(--main-bg-color);
   }
 
   :root {
@@ -19,8 +21,13 @@
   }
 
   .hex-display {
-    max-width: 80%;
-    min-width: 80%;
+    max-width: calc(100% - 10em);
+    min-width: calc(100% - 10em);
+  }
+
+  .breadcrumb {
+    padding-bottom: 0.5em;
+    background: var(--main-bg-color);
   }
 
   .scrollable {
@@ -60,6 +67,7 @@
 <script>
   import LoadingText from "../utils/LoadingText.svelte";
   import MinimapView from "./MinimapView.svelte";
+  import Breadcrumb from "../utils/Breadcrumb.svelte"
   import { chunkList, buf2hex, hexToChar } from "../helpers.js";
   import { selectedResource, selected, settings } from "../stores.js";
   import { onMount } from "svelte";
@@ -286,6 +294,9 @@
 </script>
 
 <svelte:window on:resize="{refreshHeight}" />
+<div class="breadcrumb">
+  <Breadcrumb />
+</div>
 <SearchBar
   search="{searchHex}"
   liveUpdate="{false}"
@@ -297,8 +308,8 @@
   id="scrollable"
   on:wheel="{(e) => {
     currentPosition += Math.floor(e.deltaY) * 16;
-    if (currentPosition > dataLength - $screenHeight) {
-      currentPosition = dataLength - $screenHeight;
+    if (currentPosition > dataLength) {
+      currentPosition = dataLength - 16;
     }
     if (currentPosition < 0) {
       currentPosition = 0;

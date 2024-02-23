@@ -12,8 +12,11 @@
     flex-wrap: nowrap;
     justify-content: flex-start;
     align-items: stretch;
+    min-height: calc(100% - 6em);
+    max-height: calc(100% - 6em);
+    overflow: auto;
   }
-
+  
   .horizontal-spacer {
     width: 2em;
     min-width: 2em;

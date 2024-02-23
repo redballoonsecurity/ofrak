@@ -114,7 +114,7 @@
         0,
         Math.ceil((currentPosition / dataLength) * canvas.height) - 0.5,
         alignment,
-        Math.ceil(($screenHeight / dataLength) * canvas.height) - 0.5
+        Math.ceil(($screenHeight / dataLength) * canvas.height)
       );
     }
 
@@ -129,9 +129,9 @@
   <canvas
     bind:this="{canvas}"
     on:mousedown="{(e) => {
-      currentPosition = Math.floor(
+      currentPosition = Math.floor(Math.floor(
         dataLength * (e.offsetY / canvas.offsetHeight)
-      );
+      )/16) * 16;
       clicking = true;
     }}"
     on:mouseup="{(e) => {
@@ -142,9 +142,9 @@
     }}"
     on:mousemove="{(e) => {
       if (clicking) {
-        currentPosition = Math.floor(
+        currentPosition = Math.floor(Math.floor(
           dataLength * (e.offsetY / canvas.offsetHeight)
-        );
+        )/16) * 16;
         clicking = true;
       }
     }}"

@@ -2,7 +2,7 @@
   .minimap {
     width: 64px;
     max-width: 64px;
-    height: 75vh;
+    height: calc(100% - 8em);
     display: flex;
     flex-direction: column;
     justify-content: space-between;

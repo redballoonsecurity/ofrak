@@ -21,7 +21,7 @@
 
 <script>
   export let paddingVertical = "0",
-    paddingHorizontal = "0";
+    paddingHorizontal = "3em";
   let inner;
 </script>
 

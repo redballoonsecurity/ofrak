@@ -27,6 +27,7 @@
     position: relative;
     left: -1.25em;
     top: 0.7em;
+    z-index: -1;
   }
 
   ul li:last-child {

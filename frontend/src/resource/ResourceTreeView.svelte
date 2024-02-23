@@ -28,6 +28,7 @@
 
   .resources {
     flex-grow: 1;
+    overflow: auto;
   }
 
   .treebox {
@@ -41,7 +42,11 @@
   .searchbar {
     flex-grow: 1;
     padding-left: 1em;
+    padding-right: 1em;
     padding-bottom: 0.5em;
+    position: sticky;
+    top: 0;
+    background-color: var(--main-bg-color);
   }
 </style>
 
