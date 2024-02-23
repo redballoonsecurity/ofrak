@@ -31,7 +31,7 @@ export function loadSettings(forceReset) {
     showDevSettings: false,
     // Points the OFRAK frontend to a seperate backend server. When empty, uses
     // the same host and port as the frontend.
-    backendUrl: "//blade26:1666",
+    backendUrl: "",
   };
 
   if (forceReset) {

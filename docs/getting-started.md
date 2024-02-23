@@ -3,7 +3,7 @@
 ## Quick Start - Unpack a firmware file and display it in the GUI
 
 !!! warning
-    OFRAK is a Python library supporting Python3.7 and up. First and foremost, make sure your Python and pip installations are for Python3.7+! Python 3.8 is recommended, as this is the version we primarily test OFRAK with.
+    OFRAK is a Python library supporting Python3.7 and up. First and foremost, make sure your Python and pip installations are for Python3.7+! Python 3.8 is recommended, as this is the version we primarily test OFRAK with, and some packages (for example, ofrak-angr) require Python >=3.8.
 
 ```bash
 pip install ofrak
