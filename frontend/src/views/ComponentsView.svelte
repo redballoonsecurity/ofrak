@@ -8,7 +8,6 @@
     align-content: center;
     max-height: 100%;
     min-height: 100%;
-
   }
 
   .config {
@@ -106,7 +105,7 @@
   hr {
     border: 1px dashed var(--main-fg-color);
     width: 100%;
-    margin: .5em 0;
+    margin: 0.5em 0;
     padding: 0;
     box-sizing: border-box;
   }
@@ -303,7 +302,10 @@
           {:then ofrakConfig}
             {#if ofrakConfig.length != 0}
               <p>Configure {splitAndCapitalize(selectedComponent)}:</p>
-              <SerializerInputForm node="{ofrakConfig}" bind:element="{config}" />
+              <SerializerInputForm
+                node="{ofrakConfig}"
+                bind:element="{config}"
+              />
             {/if}
           {:catch}
             <p>Failed to get config for {selectedComponent}!</p>

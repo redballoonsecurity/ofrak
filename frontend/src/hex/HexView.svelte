@@ -67,7 +67,7 @@
 <script>
   import LoadingText from "../utils/LoadingText.svelte";
   import MinimapView from "./MinimapView.svelte";
-  import Breadcrumb from "../utils/Breadcrumb.svelte"
+  import Breadcrumb from "../utils/Breadcrumb.svelte";
   import { chunkList, buf2hex, hexToChar } from "../helpers.js";
   import { selectedResource, selected, settings } from "../stores.js";
   import { onMount } from "svelte";
@@ -94,7 +94,6 @@
     chunkSize = 4096,
     windowSize = chunkSize * 10,
     windowPadding = 1024;
-
 
   $: dataLenPromise.then((r) => {
     dataLength = r;

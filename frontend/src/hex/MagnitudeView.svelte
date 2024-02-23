@@ -129,9 +129,10 @@
   <canvas
     bind:this="{canvas}"
     on:mousedown="{(e) => {
-      currentPosition = Math.floor(Math.floor(
-        dataLength * (e.offsetY / canvas.offsetHeight)
-      )/16) * 16;
+      currentPosition =
+        Math.floor(
+          Math.floor(dataLength * (e.offsetY / canvas.offsetHeight)) / 16
+        ) * 16;
       clicking = true;
     }}"
     on:mouseup="{(e) => {
@@ -142,9 +143,10 @@
     }}"
     on:mousemove="{(e) => {
       if (clicking) {
-        currentPosition = Math.floor(Math.floor(
-          dataLength * (e.offsetY / canvas.offsetHeight)
-        )/16) * 16;
+        currentPosition =
+          Math.floor(
+            Math.floor(dataLength * (e.offsetY / canvas.offsetHeight)) / 16
+          ) * 16;
         clicking = true;
       }
     }}"
