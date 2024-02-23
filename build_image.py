@@ -192,6 +192,8 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
             continue
         with open(dockerstage_path) as file_handle:
             dockerstub = file_handle.read()
+        # Cannot use ENV here because of multi-stage build FROM, so replace direclty in Docerkstage contents
+        dockerstub = dockerstub.replace("$PACKAGE_DIR", package_path)
         dockerfile_base_parts += [f"### {dockerstage_path}", dockerstub]
 
     dockerfile_base_parts += [
@@ -207,7 +209,11 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
         dockerstub_path = os.path.join(package_path, "Dockerstub")
         with open(dockerstub_path) as file_handle:
             dockerstub = file_handle.read()
-        dockerfile_base_parts += [f"### {dockerstub_path}", dockerstub]
+        dockerfile_base_parts += [
+            f"### {dockerstub_path}",
+            f"ENV PACKAGE_PATH={package_path}",
+            dockerstub,
+        ]
         # Collect python dependencies
         python_reqs = []
         for suff in requirement_suffixes:
