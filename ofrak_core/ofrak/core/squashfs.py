@@ -37,6 +37,9 @@ class _UnsquashfsV45Tool(ComponentExternalTool):
             stdout, stderr = await proc.communicate()
         except FileNotFoundError:
             return False
+        except PermissionError:
+            LOGGER.warning("Encountered PermissionError while searching PATH for unsquashfs.")
+            return False
 
         if 0 != proc.returncode:
             return False
