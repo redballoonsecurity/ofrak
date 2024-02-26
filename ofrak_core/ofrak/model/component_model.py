@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Type, TypeVar
@@ -9,6 +10,9 @@ from ofrak_type.range import Range
 
 CLIENT_COMPONENT_ID = b"__client_context__"
 CLIENT_COMPONENT_VERSION = -1
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
@@ -66,6 +70,9 @@ class ComponentExternalTool:
 
             returncode = await proc.wait()
         except FileNotFoundError:
+            return False
+        except PermissionError:
+            LOGGER.warning(f"Encountered PermissionError while searching PATH for {tool}.")
             return False
 
         return 0 == returncode
