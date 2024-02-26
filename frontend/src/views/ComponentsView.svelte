@@ -105,7 +105,7 @@
   hr {
     border: 1px dashed var(--main-fg-color);
     width: 100%;
-    margin: 0.5em 0;
+    margin: 1em 0;
     padding: 0;
     box-sizing: border-box;
   }
