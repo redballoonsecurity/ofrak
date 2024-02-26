@@ -181,7 +181,7 @@
 
   async function calculateRanges(resource, dataLenPromise, colors) {
     const children = await resource.get_children();
-    if (children == []) {
+    if (children.length === 0) {
       return [];
     }
     const childRanges = Object.entries(await resource.get_child_data_ranges())
