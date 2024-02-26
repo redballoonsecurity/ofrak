@@ -25,7 +25,6 @@ from ofrak_type.range import Range
 LOGGER = logging.getLogger(__name__)
 
 
-
 APKTOOL = ComponentExternalTool("apktool", "https://ibotpeaches.github.io/Apktool/", "-version")
 JAVA = ComponentExternalTool(
     "java",

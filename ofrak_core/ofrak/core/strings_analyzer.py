@@ -11,6 +11,7 @@ from ofrak.model.resource_model import ResourceAttributes
 
 LOGGER = logging.getLogger(__name__)
 
+
 @dataclass
 class StringsAnalyzerConfig(ComponentConfig):
     min_length: int = 8
