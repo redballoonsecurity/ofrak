@@ -72,7 +72,7 @@ class ComponentExternalTool:
         except FileNotFoundError:
             return False
         except PermissionError:
-            LOGGER.warning(f"Encountered PermissionError while searching PATH for {tool}.")
+            LOGGER.warning(f"Encountered PermissionError while searching PATH for {self.tool}.")
             return False
 
         return 0 == returncode
