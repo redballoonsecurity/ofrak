@@ -118,7 +118,7 @@
       searchOptions.searchType == prevOptions.searchType &&
       searchOptions.regex == prevOptions.regex &&
       searchOptions.caseIgnore == prevOptions.caseIgnore &&
-      searchResults.matches != undefined //Search results are the only attribute of the search we have control of from other components, so we use it to clear the search when changeing selected resrouces.
+      searchResults.matches != undefined // Search results are the only attribute of the search we have control of from other components, so we use it to clear the search when changing selected resources.
     );
   }
 
