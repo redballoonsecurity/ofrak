@@ -3,6 +3,7 @@ import os
 import pathlib
 import sys
 import tempfile
+import logging
 from subprocess import CalledProcessError
 from dataclasses import dataclass
 
@@ -20,6 +21,9 @@ from ofrak.core.zip import ZipArchive, UNZIP_TOOL
 from ofrak.core.binary import GenericBinary
 from ofrak.core.magic import Magic, MagicMimeIdentifier
 from ofrak_type.range import Range
+
+LOGGER = logging.getLogger(__name__)
+
 
 
 APKTOOL = ComponentExternalTool("apktool", "https://ibotpeaches.github.io/Apktool/", "-version")
@@ -70,6 +74,9 @@ class _UberApkSignerTool(ComponentExternalTool):
             )
             returncode = await proc.wait()
         except FileNotFoundError:
+            return False
+        except PermissionError:
+            LOGGER.warning("Encountered PermissionError while searching PATH for java.")
             return False
 
         return 0 == returncode
