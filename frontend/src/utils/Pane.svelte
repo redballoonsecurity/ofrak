@@ -20,7 +20,7 @@
 </style>
 
 <script>
-  export let paddingVertical = "0",
+  export let paddingVertical = "1em",
     paddingHorizontal = "3em";
   let inner;
 </script>

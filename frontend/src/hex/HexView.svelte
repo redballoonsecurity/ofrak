@@ -279,7 +279,6 @@
   }
 
   function refreshHeight() {
-    hexDisplay = document.getElementById("scrollable");
     $screenHeight =
       Math.floor(hexDisplay.offsetHeight / lineHeight) * alignment;
     chunkDataPromise = dataLenPromise.then(getNewData);

@@ -47,6 +47,7 @@
     position: sticky;
     top: 0;
     background-color: var(--main-bg-color);
+    z-index: 10;
   }
 </style>
 

@@ -40,7 +40,7 @@
     if (e.key === 'Enter') {
       input.blur();
       try {
-        currentPosition = calculator.calculate(input.value);
+        currentPosition = Math.floor(calculator.calculate(input.value) / 16) * 16;
       } catch (_) {
         input.value = `0x${currentPosition.toString(16)}`;
       }
