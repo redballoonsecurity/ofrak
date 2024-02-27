@@ -122,7 +122,10 @@
     ) {
       dataLenPromise.then((dataLength) => {
         currentPosition =
-          localDataSearchResults.matches[localDataSearchResults.index][0];
+          Math.floor(
+            localDataSearchResults.matches[localDataSearchResults.index][0] /
+              alignment
+          ) * alignment;
       });
     }
   }
@@ -304,9 +307,9 @@
   bind:this="{hexDisplay}"
   id="scrollable"
   on:wheel="{(e) => {
-    currentPosition += Math.floor(e.deltaY) * 16;
+    currentPosition += Math.floor(e.deltaY) * alignment;
     if (currentPosition > dataLength) {
-      currentPosition = dataLength - 16;
+      currentPosition = dataLength - alignment;
     }
     if (currentPosition < 0) {
       currentPosition = 0;
