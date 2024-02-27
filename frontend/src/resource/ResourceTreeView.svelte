@@ -34,7 +34,6 @@
   .treebox {
     flex-grow: 1;
     padding-left: 1em;
-    overflow-x: auto;
     white-space: nowrap;
     text-align: left;
   }
