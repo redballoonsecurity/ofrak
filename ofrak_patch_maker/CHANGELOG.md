@@ -14,6 +14,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - X86_64 toolchain now installs on Docker image builds for AARCH64 hosts. ([#405](https://github.com/redballoonsecurity/ofrak/pull/405))
 - Toolchain now drops the .altinstrs_replacement as well as the .altinstructions section in our generated linker scripts ([#414](https://github.com/redballoonsecurity/ofrak/pull/414))
 
+### Changed
+- Removed `SUBALIGN(0)` for `.bss` sections
+
 ## [4.0.2](https://github.com/redballoonsecurity/ofrak/compare/ofrak-patch-maker-v.4.0.1...ofrak-patch-maker-v.4.0.2)
 ### Fixed
 - Remove option to read or install toolchain.conf from/to "/etc/toolchain.conf" ([#342](https://github.com/redballoonsecurity/ofrak/pull/342))
