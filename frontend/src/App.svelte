@@ -32,14 +32,9 @@
   import AssemblyView from "./views/AssemblyView.svelte";
   import AttributesView from "./views/AttributesView.svelte";
   import AudioPlayer from "./utils/AudioPlayer.svelte";
-  import ByteclassView from "./views/ByteclassView.svelte";
-  import CarouselSelector from "./utils/CarouselSelector.svelte";
-  import EntropyView from "./views/EntropyView.svelte";
   import Gamepad from "./utils/Gamepad.svelte";
-  import HexView from "./views/HexView.svelte";
-  import JumpToOffset from "./utils/JumpToOffset.svelte";
+  import HexView from "./hex/HexView.svelte";
   import LoadingAnimation from "./utils/LoadingAnimation.svelte";
-  import MagnitudeView from "./views/MagnitudeView.svelte";
   import Pane from "./utils/Pane.svelte";
   import ResourceTreeView from "./resource/ResourceTreeView.svelte";
   import Split from "./utils/Split.svelte";
@@ -206,11 +201,7 @@ Answer by running riddle.answer('your answer here') from the console.`);
           {/if}
         </Pane>
       </Split>
-      <Pane
-        slot="second"
-        scrollY="{hexScrollY}"
-        displayMinimap="{currentResource && !useAssemblyView && !useTextView}"
-      >
+      <Pane slot="second" scrollY="{hexScrollY}">
         {#if useAssemblyView}
           <AssemblyView />
         {:else if useTextView}
@@ -227,25 +218,6 @@ Answer by running riddle.answer('your answer here') from the console.`);
           Named slot must be outside {#if} because of: 
           https://github.com/sveltejs/svelte/issues/5604 
         -->
-        <svelte:fragment slot="minimap">
-          <JumpToOffset
-            dataLenPromise="{dataLenPromise}"
-            scrollY="{hexScrollY}"
-          />
-          {#if carouselSelection === "Entropy"}
-            <EntropyView scrollY="{hexScrollY}" />
-          {:else if carouselSelection === "Byteclass"}
-            <ByteclassView scrollY="{hexScrollY}" />
-          {:else if carouselSelection === "Magnitude"}
-            <MagnitudeView scrollY="{hexScrollY}" />
-          {/if}
-          <div class="carousel">
-            <CarouselSelector
-              options="{['Magnitude', 'Entropy', 'Byteclass']}"
-              bind:selectedString="{carouselSelection}"
-            />
-          </div>
-        </svelte:fragment>
       </Pane>
     </Split>
   {/await}

@@ -16,20 +16,12 @@
 
 <script>
   import { calculator } from "../helpers";
-  import { onMount, tick } from "svelte";
+  import { onMount } from "svelte";
   import { shortcuts } from "../keyboard";
-
-  export let dataLenPromise, scrollY;
-  let startOffset,
-    input,
+  export let currentPosition;
+  let input,
     mounted = false;
   const alignment = 16;
-
-  let dataLength = 0;
-
-  $: dataLenPromise.then((r) => {
-    dataLength = r;
-  });
 
   onMount(() => {
     mounted = true;
@@ -40,14 +32,6 @@
       input.focus();
     }
   };
-
-  $: if (mounted) {
-    startOffset = Math.max(
-      Math.floor((dataLength * $scrollY.top) / alignment) * alignment,
-      0
-    );
-    input.value = `0x${startOffset.toString(16)}`;
-  }
 </script>
 
 <input
@@ -56,12 +40,13 @@
     if (e.key === 'Enter') {
       input.blur();
       try {
-        let result = calculator.calculate(input.value) + 1;
-        $scrollY.top = result / dataLength;
+        currentPosition =
+          Math.floor(calculator.calculate(input.value) / alignment) * alignment;
       } catch (_) {
-        input.value = `0x${startOffset.toString(16)}`;
+        input.value = `0x${currentPosition.toString(alignment)}`;
       }
     }
   }}"
   bind:this="{input}"
+  value="0x{currentPosition.toString(alignment)}"
 />
