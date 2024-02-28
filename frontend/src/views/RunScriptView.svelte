@@ -32,6 +32,8 @@
     overflow: auto;
     flex-grow: 1;
     margin: 1em 0;
+    max-height: 100%;
+    min-height: 100%;
   }
 
   .container {
@@ -40,7 +42,9 @@
     flex-wrap: nowrap;
     justify-content: flex-start;
     align-items: flex-start;
+    max-height: 100%;
     min-height: 100%;
+    overflow: auto;
   }
 
   .actions {

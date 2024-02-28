@@ -14,6 +14,9 @@
     align-items: stretch;
     line-height: var(--line-height);
     font-size: 0.95em;
+    min-height: calc(100% - 6em);
+    max-height: calc(100% - 6em);
+    overflow: auto;
   }
 
   .spacer {

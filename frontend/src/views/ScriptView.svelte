@@ -8,6 +8,7 @@
     flex-wrap: nowrap;
     align-items: start;
     justify-content: end;
+    overflow: auto;
   }
 </style>
 

@@ -27,21 +27,16 @@
 <script>
   import LoadingTextVertical from "../utils/LoadingTextVertical.svelte";
 
+  import { screenHeight } from "./stores.js";
   import { hexToByteArray } from "../helpers.js";
   import { selectedResource, settings } from "../stores.js";
 
   import { onMount } from "svelte";
-
-  export let scrollY;
+  export let dataLength, currentPosition;
   let data = undefined;
 
-  $: colorArray = [
-    hexToByteArray($settings.background.slice(1)),
-    hexToByteArray($settings.foreground.slice(1)),
-    hexToByteArray($settings.colors[0].slice(1)),
-    hexToByteArray($settings.colors[1].slice(1)),
-    hexToByteArray($settings.colors[2].slice(1)),
-  ];
+  $: bgcolors = hexToByteArray($settings.background.slice(1));
+  $: fgcolors = hexToByteArray($settings.foreground.slice(1));
 
   async function loadData(resource) {
     await resource.data_summary();
@@ -49,7 +44,7 @@
       resource.get_attributes()["ofrak.core.entropy.entropy.DataSummary"];
     data =
       summaryAttributes !== undefined
-        ? hexToByteArray(summaryAttributes?.magnitude_samples)
+        ? hexToByteArray(summaryAttributes?.entropy_samples)
         : undefined;
   }
 
@@ -60,7 +55,7 @@
         "ofrak.core.entropy.entropy.DataSummary"
       ];
     if (summaryAttributes !== undefined) {
-      data = hexToByteArray(summaryAttributes?.magnitude_samples);
+      data = hexToByteArray(summaryAttributes?.entropy_samples);
     } else {
       loadData($selectedResource);
     }
@@ -90,32 +85,18 @@
 
     for (let i = 0; i < data.length; i++) {
       const value = data[i];
-      const index = i * 4;
 
-      let c;
-      if (value === 0x0) {
-        c = colorArray[0];
-      } else if (value === 0xff) {
-        c = colorArray[1];
-      } else if (0 < value && value < 32) {
-        c = colorArray[2];
-      } else if (32 <= value && value <= 127) {
-        c = colorArray[3];
-      } else if (127 < value && value < 0xff) {
-        c = colorArray[4];
-      }
       // There are four colors per pixel, hence four array entries per byte of data
-      imageData.data[index + 0] = c[0];
-      imageData.data[index + 1] = c[1];
-      imageData.data[index + 2] = c[2];
+      const index = i * 4;
+      imageData.data[index + 0] =
+        bgcolors[0] + (value / 255) * (fgcolors[0] - bgcolors[0]);
+      imageData.data[index + 1] =
+        bgcolors[1] + (value / 255) * (fgcolors[1] - bgcolors[1]);
+      imageData.data[index + 2] =
+        bgcolors[2] + (value / 255) * (fgcolors[2] - bgcolors[2]);
       // Always use 100% opacity
       imageData.data[index + 3] = 255;
     }
-
-    context.imageSmoothingEnabled = false;
-    context.mozImageSmoothingEnabled = false;
-    context.webkitImageSmoothingEnabled = false;
-    context.msImageSmoothingEnabled = false;
   }
 
   $: if (mounted && canvas !== undefined && canvas !== null && imageData) {
@@ -124,19 +105,20 @@
 
     context.strokeStyle = "red";
     context.lineWidth = Math.ceil(canvas.height / 512);
-    if (
-      data !== undefined &&
-      data.length > alignment * 3 &&
-      $scrollY.viewHeight !== 1
-    ) {
+    if (data !== undefined && data.length > alignment * 3) {
       // Offset Y by 0.5 because of: https://stackoverflow.com/a/48970774
       context.strokeRect(
         0,
-        Math.ceil($scrollY.top * canvas.height) - 0.5,
+        Math.ceil((currentPosition / dataLength) * canvas.height) - 0.5,
         alignment,
-        Math.ceil(($scrollY.viewHeight * canvas.height) / 2)
+        Math.ceil(($screenHeight / dataLength) * canvas.height)
       );
     }
+
+    context.imageSmoothingEnabled = false;
+    context.mozImageSmoothingEnabled = false;
+    context.webkitImageSmoothingEnabled = false;
+    context.msImageSmoothingEnabled = false;
   }
 </script>
 
@@ -144,11 +126,11 @@
   <canvas
     bind:this="{canvas}"
     on:mousedown="{(e) => {
-      if ($scrollY.viewHeight < 1) {
-        $scrollY.top = e.offsetY / canvas.offsetHeight;
-        $scrollY.top = Math.max(Math.min($scrollY.top, 1), 0);
-        clicking = true;
-      }
+      currentPosition =
+        Math.floor(
+          Math.floor(dataLength * (e.offsetY / canvas.offsetHeight)) / 16
+        ) * 16;
+      clicking = true;
     }}"
     on:mouseup="{(e) => {
       clicking = false;
@@ -157,19 +139,16 @@
       clicking = false;
     }}"
     on:mousemove="{(e) => {
-      if (clicking && $scrollY.viewHeight < 1) {
-        $scrollY.top = e.offsetY / canvas.offsetHeight;
-        $scrollY.top = Math.max(Math.min($scrollY.top, 1), 0);
-      }
-    }}"
-    on:wheel="{(e) => {
-      if ($scrollY.viewHeight < 1) {
-        $scrollY.top += e.deltaY * 0.0001;
-        $scrollY.top = Math.max(Math.min($scrollY.top, 1), 0);
+      if (clicking) {
+        currentPosition =
+          Math.floor(
+            Math.floor(dataLength * (e.offsetY / canvas.offsetHeight)) / 16
+          ) * 16;
+        clicking = true;
       }
     }}"
   >
-    Byteclass graph
+    Entropy graph
   </canvas>
 {:else}
   <div class="tall">

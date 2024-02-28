@@ -1,12 +1,19 @@
 <style>
   .container {
-    min-height: 100%;
     display: flex;
     flex-direction: column;
     flex-wrap: nowrap;
     justify-content: center;
     align-items: stretch;
     align-content: center;
+    max-height: 100%;
+    min-height: 100%;
+  }
+
+  .config {
+    overflow: auto;
+    max-height: 100%;
+    min-height: 100%;
   }
 
   .inputs {
@@ -16,6 +23,9 @@
     flex-wrap: nowrap;
     justify-content: flex-start;
     align-items: stretch;
+    overflow: auto;
+    max-height: 100%;
+    min-height: 100%;
   }
 
   .inputs > *:first-child {
@@ -95,7 +105,7 @@
   hr {
     border: 1px dashed var(--main-fg-color);
     width: 100%;
-    margin: 2em 0;
+    margin: 1em 0;
     padding: 0;
     box-sizing: border-box;
   }
@@ -282,33 +292,37 @@
     </div>
 
     <hr />
-
-    {#await ofrakComponentsPromise}
-      <LoadingText />
-    {:then ofrakComponents}
-      {#if selectedComponent != null}
-        {#await ofrakConfigsPromise}
-          <LoadingText />
-        {:then ofrakConfig}
-          {#if ofrakConfig.length != 0}
-            <p>Configure {splitAndCapitalize(selectedComponent)}:</p>
-            <SerializerInputForm node="{ofrakConfig}" bind:element="{config}" />
-          {/if}
-        {:catch}
-          <p>Failed to get config for {selectedComponent}!</p>
-          <p>The back end server may be down.</p>
-        {/await}
+    <div class="config">
+      {#await ofrakComponentsPromise}
+        <LoadingText />
+      {:then ofrakComponents}
+        {#if selectedComponent != null}
+          {#await ofrakConfigsPromise}
+            <LoadingText />
+          {:then ofrakConfig}
+            {#if ofrakConfig.length != 0}
+              <p>Configure {splitAndCapitalize(selectedComponent)}:</p>
+              <SerializerInputForm
+                node="{ofrakConfig}"
+                bind:element="{config}"
+              />
+            {/if}
+          {:catch}
+            <p>Failed to get config for {selectedComponent}!</p>
+            <p>The back end server may be down.</p>
+          {/await}
+        {/if}
+      {:catch}
+        <p>Failed to get the list of OFRAK components!</p>
+        <p>The back end server may be down.</p>
+      {/await}
+      {#if errorMessage}
+        <p class="error">
+          Error:
+          {errorMessage}
+        </p>
       {/if}
-    {:catch}
-      <p>Failed to get the list of OFRAK components!</p>
-      <p>The back end server may be down.</p>
-    {/await}
-    {#if errorMessage}
-      <p class="error">
-        Error:
-        {errorMessage}
-      </p>
-    {/if}
+    </div>
   </div>
 
   <div class="actions">
