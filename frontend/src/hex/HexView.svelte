@@ -69,18 +69,23 @@
   import MinimapView from "./MinimapView.svelte";
   import Breadcrumb from "../utils/Breadcrumb.svelte";
   import { chunkList, buf2hex, hexToChar } from "../helpers.js";
-  import { selectedResource, selected, settings } from "../stores.js";
+  import {
+    selectedResource,
+    selected,
+    settings,
+    resourceNodeDataMap,
+    dataLength,
+  } from "../stores.js";
   import { onMount } from "svelte";
   import { screenHeight } from "./stores";
   import SearchBar from "../utils/SearchBar.svelte";
 
-  export let resources, dataLenPromise, resourceNodeDataMap;
+  export let resources;
   let dataSearchResults = {};
   let childRangesPromise = Promise.resolve(undefined);
   let chunkDataPromise = Promise.resolve(undefined);
   let currentPosition = 0;
   let childRanges,
-    dataLength,
     resourceData,
     chunkData = [],
     chunks = [],
@@ -95,23 +100,11 @@
     windowSize = chunkSize * 10,
     windowPadding = 1024;
 
-  $: dataLenPromise.then((r) => {
-    dataLength = r;
-  });
-
   $: childRangesPromise.then((r) => {
     childRanges = r;
   });
 
-  $: chunkDataPromise.then((r) => {
-    chunks = r;
-  });
-
-  $: childRangesPromise = calculateRanges(
-    $selectedResource,
-    dataLenPromise,
-    $settings.colors
-  );
+  $: childRangesPromise = calculateRanges($selectedResource, $settings.colors);
 
   // React to local data searches
   $: if (dataSearchResults) {
@@ -120,18 +113,18 @@
       localDataSearchResults.matches?.length > 0 &&
       (localDataSearchResults.index || localDataSearchResults.index === 0)
     ) {
-      dataLenPromise.then((dataLength) => {
-        currentPosition =
-          Math.floor(
-            localDataSearchResults.matches[localDataSearchResults.index][0] /
-              alignment
-          ) * alignment;
-      });
+      currentPosition =
+        localDataSearchResults.matches[localDataSearchResults.index][0];
     }
   }
+  $: chunksPromise = getNewData(
+    $selectedResource,
+    currentPosition,
+    $dataLength
+  );
 
-  $: chunkDataPromise = dataLenPromise.then((r) => {
-    return getNewData($selectedResource, currentPosition);
+  $: chunksPromise.then((r) => {
+    chunks = r;
   });
 
   $: resetResource($selectedResource);
@@ -155,7 +148,7 @@
 
   async function getNewData() {
     start = currentPosition;
-    end = Math.min(start + $screenHeight, dataLength);
+    end = Math.min(start + $screenHeight, $dataLength);
     if (length < 1024 * 1024 * 64 && $selectedResource) {
       resourceData = await $selectedResource.get_data();
     } else {
@@ -169,10 +162,10 @@
     }
     if (end > endWindow - windowPadding) {
       startWindow = Math.max(start - windowPadding, 0);
-      endWindow = Math.min(startWindow + windowSize, dataLength);
+      endWindow = Math.min(startWindow + windowSize, $dataLength);
       chunkData = await $selectedResource.get_data([startWindow, endWindow]);
     } else if (start < startWindow + windowPadding) {
-      endWindow = Math.min(end + windowPadding, dataLength);
+      endWindow = Math.min(end + windowPadding, $dataLength);
       startWindow = Math.max(endWindow - windowSize, 0);
       chunkData = await $selectedResource.get_data([startWindow, endWindow]);
     }
@@ -182,7 +175,7 @@
     ).map((chunk) => chunkList(buf2hex(chunk), 2));
   }
 
-  async function calculateRanges(resource, dataLenPromise, colors) {
+  async function calculateRanges(resource, colors) {
     const children = await resource.get_children();
     if (children.length === 0) {
       return [];
@@ -257,7 +250,7 @@
         resources[childRange.resource_id]?.get_caption() ||
         childRange.resource_id;
       info.onDoubleClick = () => {
-        resourceNodeDataMap[$selected].collapsed = false;
+        $resourceNodeDataMap[$selected].collapsed = false;
         $selected = childRange.resource_id;
       };
     }
@@ -284,11 +277,12 @@
   function refreshHeight() {
     $screenHeight =
       Math.floor(hexDisplay.offsetHeight / lineHeight) * alignment;
-    chunkDataPromise = dataLenPromise.then(getNewData);
+    chunksPromise = getNewData();
   }
 
   onMount(() => {
     refreshHeight();
+    chunksPromise = getNewData();
   });
 </script>
 
@@ -308,8 +302,8 @@
   id="scrollable"
   on:wheel="{(e) => {
     currentPosition += Math.floor(e.deltaY) * alignment;
-    if (currentPosition > dataLength) {
-      currentPosition = dataLength - alignment;
+    if (currentPosition > $dataLength) {
+      currentPosition = $dataLength - alignment;
     }
     if (currentPosition < 0) {
       currentPosition = 0;
@@ -317,98 +311,87 @@
   }}"
 >
   <div class="hex-display">
-    {#await dataLenPromise}
-      <LoadingText />
-    {:then dataLength}
-      {#if dataLength > 0}
-        <!-- 
-          The magic number below is the largest height that Firefox will support with
-          a position: sticky element. Otherwise, the sticky element scrolls away.
-          Found this by manual binary search on my computer. 
-        -->
-        <div
-          style:height="min(8940000px, calc(var(--line-height) * {Math.ceil(
-            dataLength / alignment
-          )}))"
-        >
-          <div class="sticky">
-            <div class="hbox">
-              {#await chunkDataPromise}
-                <LoadingText />
-              {:then chunks}
+    {#if $dataLength > 0}
+      <!-- 
+        The magic number below is the largest height that Firefox will support with
+        a position: sticky element. Otherwise, the sticky element scrolls away.
+        Found this by manual binary search on my computer. 
+      -->
+      <div
+        style:height="min(8940000px, calc(var(--line-height) * {Math.ceil(
+          $dataLength / alignment
+        )}))"
+      >
+        <div class="sticky">
+          <div class="hbox">
+            <div>
+              {#each chunks as _, chunkIndex}
                 <div>
-                  {#each chunks as _, chunkIndex}
-                    <div>
-                      {(chunkIndex * alignment + start)
-                        .toString(16)
-                        .padStart(8, "0") + ": "}
-                    </div>
-                  {/each}
+                  {(chunkIndex * alignment + start)
+                    .toString(16)
+                    .padStart(8, "0") + ": "}
                 </div>
+              {/each}
+            </div>
 
-                <span class="spacer"> </span>
+            <span class="spacer"> </span>
 
-                {#await childRangesPromise}
+            {#await childRangesPromise}
+              <div>
+                {#each chunks as hexes}
                   <div>
-                    {#each chunks as hexes}
-                      <div>
-                        {#each hexes as byte}
-                          <span class="byte">{byte}</span>
-                        {/each}
-                      </div>
+                    {#each hexes as byte}
+                      <span class="byte">{byte}</span>
                     {/each}
                   </div>
-                {:then childRangesResult}
+                {/each}
+              </div>
+            {:then childRangesResult}
+              <div>
+                {#each chunks as hexes, chunkIndex}
                   <div>
-                    {#each chunks as hexes, chunkIndex}
-                      <div>
-                        {#each hexes as byte, byteIndex}
-                          {@const rangeInfo = getRangeInfo(
-                            chunkIndex * alignment + byteIndex + start,
-                            childRangesResult,
-                            byte
-                          )}
-                          <!-- svelte-ignore a11y-no-static-element-interactions -->
-                          <span
-                            class="byte"
-                            style:background-color="{rangeInfo.background}"
-                            style:color="{rangeInfo.foreground}"
-                            style:cursor="{rangeInfo.cursor}"
-                            style:user-select="{rangeInfo.user_select}"
-                            style:text-decoration="{rangeInfo.text_decoration}"
-                            title="{rangeInfo.title}"
-                            on:dblclick="{rangeInfo.onDoubleClick}">{byte}</span
-                          >
-                        {/each}
-                      </div>
+                    {#each hexes as byte, byteIndex}
+                      {@const rangeInfo = getRangeInfo(
+                        chunkIndex * alignment + byteIndex + start,
+                        childRangesResult,
+                        byte
+                      )}
+                      <!-- svelte-ignore a11y-no-static-element-interactions -->
+                      <span
+                        class="byte"
+                        style:background-color="{rangeInfo.background}"
+                        style:color="{rangeInfo.foreground}"
+                        style:cursor="{rangeInfo.cursor}"
+                        style:user-select="{rangeInfo.user_select}"
+                        style:text-decoration="{rangeInfo.text_decoration}"
+                        title="{rangeInfo.title}"
+                        on:dblclick="{rangeInfo.onDoubleClick}">{byte}</span
+                      >
                     {/each}
                   </div>
-                {/await}
+                {/each}
+              </div>
+            {/await}
 
-                <span class="spacer"></span>
+            <span class="spacer"></span>
 
-                <div class="ascii">
-                  {#each chunks as hexes}
-                    <div>
-                      {hexes.map(hexToChar).join("") + " "}
-                    </div>
-                  {/each}
+            <div class="ascii">
+              {#each chunks as hexes}
+                <div>
+                  {hexes.map(hexToChar).join("") + " "}
                 </div>
-              {/await}
+              {/each}
             </div>
           </div>
         </div>
-      {:else}
-        Resource has no data!
-      {/if}
-    {/await}
+      </div>
+    {:else}
+      Resource has no data!
+    {/if}
   </div>
   {#if resourceData != undefined}
     <div class="minimap">
-      <MinimapView
-        dataLength="{dataLength}"
-        bind:currentPosition="{currentPosition}"
-      />
+      <MinimapView bind:currentPosition="{currentPosition}" />
     </div>
   {/if}
 </div>

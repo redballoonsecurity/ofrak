@@ -59,18 +59,19 @@
 
 <script>
   import { calculator } from "../helpers.js";
-  import { selected, selectedResource } from "../stores.js";
+  import {
+    selected,
+    selectedResource,
+    resourceNodeDataMap,
+    dataLength,
+  } from "../stores.js";
   import Button from "../utils/Button.svelte";
 
-  export let modifierView, resourceNodeDataMap, dataLenPromise;
-  let comment, startInput, endInput, dataLength, errorMessage;
-
-  $: dataLenPromise.then((r) => {
-    dataLength = r;
-  });
+  export let modifierView;
+  let comment, startInput, endInput, errorMessage;
 
   function refreshResource() {
-    resourceNodeDataMap[$selected].commentsPromise =
+    $resourceNodeDataMap[$selected].commentsPromise =
       $selectedResource.get_comments();
 
     // Force hex view refresh with colors
@@ -82,9 +83,11 @@
   async function addComment() {
     try {
       let optional_range = null;
-      if (dataLength) {
+      if ($dataLength) {
         let startOffset = startInput.value ? startInput.value : "0";
-        let endOffset = endInput.value ? endInput.value : dataLength.toString();
+        let endOffset = endInput.value
+          ? endInput.value
+          : $dataLength.toString();
         startOffset = calculator.calculate(startOffset);
         endOffset = calculator.calculate(endOffset);
         optional_range = [startOffset, endOffset];
@@ -112,7 +115,7 @@
       Comment:
       <input type="text" bind:this="{comment}" />
     </label>
-    {#if dataLength}
+    {#if $dataLength}
       <label>
         Starting offset (optional):
         <input type="text" bind:this="{startInput}" value="" />
