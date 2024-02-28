@@ -48,5 +48,5 @@
     }
   }}"
   bind:this="{input}"
-  placeholder="0x{currentPosition.toString(alignment)}"
+  value="0x{currentPosition.toString(alignment)}"
 />
