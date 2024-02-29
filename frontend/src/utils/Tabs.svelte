@@ -7,11 +7,6 @@
     overflow: hidden;
   }
 
-  .breadcrumb {
-    padding-bottom: 1em;
-    background: var(--main-bg-color);
-  }
-
   button {
     margin-bottom: 0;
     border: 1px solid white;
@@ -39,7 +34,6 @@
 
 <script>
   import { selectedResource } from "../stores";
-  import Breadcrumb from "../utils/Breadcrumb.svelte";
   import { onMount } from "svelte";
   export let tabs, initTabId;
   let displayType;
@@ -49,9 +43,6 @@
 </script>
 
 <div class="content">
-  <div class="breadcrumb">
-    <Breadcrumb />
-  </div>
   <div class="tabs">
     {#each tabs as tab}
       {#if displayType == tab.id}
