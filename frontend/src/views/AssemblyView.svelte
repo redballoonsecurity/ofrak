@@ -1,11 +1,4 @@
 <style>
-  .breadcrumb {
-    position: sticky;
-    top: 0;
-    padding-bottom: 1em;
-    background: var(--main-bg-color);
-  }
-
   .hbox {
     display: flex;
     flex-direction: row;
@@ -34,13 +27,11 @@
 </style>
 
 <script>
-  import Breadcrumb from "../utils/Breadcrumb.svelte";
   import LoadingAnimation from "../utils/LoadingAnimation.svelte";
   import LoadingText from "../utils/LoadingText.svelte";
 
   import { chunkList, buf2hex } from "../helpers.js";
   import { selectedResource } from "../stores.js";
-
   let blocksPromise = Promise.resolve([]),
     dataWordsPromise = Promise.resolve([]);
   $: if ($selectedResource !== undefined) {
@@ -85,10 +76,6 @@
   }
 </script>
 
-<div class="breadcrumb">
-  <Breadcrumb />
-</div>
-
 {#await Promise.all([blocksPromise, dataWordsPromise])}
   <LoadingAnimation />
 {:then [blocks, dataWords]}
@@ -129,7 +116,7 @@
     <div class="horizontal-spacer"></div>
 
     <div class="instruction">
-      {#each blocks as block}
+      {#each blocks as block, i}
         {#each block as instruction}
           <div>
             {instruction.get_attributes()[
@@ -140,6 +127,10 @@
                 "ofrak.model._auto_attributes.AttributesType[Instruction]"
               ].operands}
           </div>
+        {:else}
+          {#if i == 0}
+            <p>I said "Unpack Recursively"</p>
+          {/if}
         {/each}
         <div class="vertical-spacer"></div>
       {:else}

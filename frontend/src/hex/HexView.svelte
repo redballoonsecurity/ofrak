@@ -25,11 +25,6 @@
     min-width: calc(100% - 10em);
   }
 
-  .breadcrumb {
-    padding-bottom: 0.5em;
-    background: var(--main-bg-color);
-  }
-
   .scrollable {
     display: flex;
     flex-direction: row;
@@ -65,9 +60,7 @@
 </style>
 
 <script>
-  import LoadingText from "../utils/LoadingText.svelte";
   import MinimapView from "./MinimapView.svelte";
-  import Breadcrumb from "../utils/Breadcrumb.svelte";
   import { chunkList, buf2hex, hexToChar } from "../helpers.js";
   import {
     selectedResource,
@@ -287,9 +280,6 @@
 </script>
 
 <svelte:window on:resize="{refreshHeight}" />
-<div class="breadcrumb">
-  <Breadcrumb />
-</div>
 <SearchBar
   search="{searchHex}"
   liveUpdate="{false}"

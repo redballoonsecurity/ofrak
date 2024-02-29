@@ -3,10 +3,6 @@
     box-sizing: border-box;
   }
 
-  .carousel {
-    margin-top: 1em;
-  }
-
   .bottomleft {
     position: absolute;
     bottom: 0.5em;
@@ -29,18 +25,16 @@
 </style>
 
 <script>
-  import AssemblyView from "./views/AssemblyView.svelte";
   import AttributesView from "./views/AttributesView.svelte";
   import AudioPlayer from "./utils/AudioPlayer.svelte";
   import Gamepad from "./utils/Gamepad.svelte";
-  import HexView from "./hex/HexView.svelte";
   import LoadingAnimation from "./utils/LoadingAnimation.svelte";
   import Pane from "./utils/Pane.svelte";
   import ResourceTreeView from "./resource/ResourceTreeView.svelte";
   import Split from "./utils/Split.svelte";
   import StartView from "./views/StartView.svelte";
-  import TextView from "./views/TextView.svelte";
   import ProjectManagerView from "./project/ProjectManagerView.svelte";
+  import ContentView from "./views/ContentView.svelte";
 
   import { printConsoleArt } from "./console-art.js";
   import {
@@ -51,14 +45,11 @@
   } from "./stores.js";
   import { keyEventToString, shortcuts } from "./keyboard.js";
 
-  import { writable } from "svelte/store";
-
   printConsoleArt();
 
   let showRootResource = false,
     showProjectManager = false,
     dataLenPromise = Promise.resolve([]),
-    hexScrollY = writable({}),
     useAssemblyView = false,
     useTextView = false,
     rootResourceLoadPromise = new Promise((resolve) => {}),
@@ -91,7 +82,6 @@
       useTextView = ["ofrak.core.binary.GenericText"].some((tag) =>
         currentResource.has_tag(tag)
       );
-      $hexScrollY.top = 0;
       document.title = "OFRAK App – " + currentResource.get_caption();
     }
     if ($selected !== window.location.hash.slice(1)) {
@@ -179,7 +169,6 @@ Answer by running riddle.answer('your answer here') from the console.`);
           {#if modifierView}
             <svelte:component
               this="{modifierView}"
-              dataLenPromise="{dataLenPromise}"
               bind:modifierView="{modifierView}"
             />
           {:else}
@@ -203,18 +192,8 @@ Answer by running riddle.answer('your answer here') from the console.`);
           {/if}
         </Pane>
       </Split>
-      <Pane slot="second" scrollY="{hexScrollY}">
-        {#if useAssemblyView}
-          <AssemblyView />
-        {:else if useTextView}
-          <TextView />
-        {:else}
-          <HexView
-            dataLenPromise="{dataLenPromise}"
-            resources="{resources}"
-            scrollY="{hexScrollY}"
-          />
-        {/if}
+      <Pane slot="second">
+        <ContentView resources="{resources}" />
         <!-- 
           Named slot must be outside {#if} because of: 
           https://github.com/sveltejs/svelte/issues/5604 

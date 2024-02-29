@@ -1,11 +1,4 @@
 <style>
-  .breadcrumb {
-    position: sticky;
-    top: 0;
-    padding-bottom: 1em;
-    background: var(--main-bg-color);
-  }
-
   .hbox {
     display: flex;
     flex-direction: row;
@@ -48,10 +41,6 @@
     return decoder.decode(new Uint8Array(buffer));
   }
 </script>
-
-<div class="breadcrumb">
-  <Breadcrumb />
-</div>
 
 {#await dataPromise.then(bufferToString)}
   <LoadingAnimation />
