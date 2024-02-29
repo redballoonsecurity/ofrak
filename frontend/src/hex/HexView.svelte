@@ -97,7 +97,11 @@
     childRanges = r;
   });
 
-  $: childRangesPromise = calculateRanges($selectedResource, $settings.colors);
+  $: childRangesPromise = calculateRanges(
+    $selectedResource,
+    $dataLength,
+    $settings.colors
+  );
 
   // React to local data searches
   $: if (dataSearchResults) {
@@ -107,7 +111,10 @@
       (localDataSearchResults.index || localDataSearchResults.index === 0)
     ) {
       currentPosition =
-        localDataSearchResults.matches[localDataSearchResults.index][0];
+        Math.floor(
+          localDataSearchResults.matches[localDataSearchResults.index][0] /
+            alignment
+        ) * alignment;
     }
   }
   $: chunksPromise = getNewData(
@@ -168,7 +175,7 @@
     ).map((chunk) => chunkList(buf2hex(chunk), 2));
   }
 
-  async function calculateRanges(resource, colors) {
+  async function calculateRanges(resource, dataLength, colors) {
     const children = await resource.get_children();
     if (children.length === 0) {
       return [];

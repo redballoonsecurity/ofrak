@@ -349,6 +349,17 @@ async def test_identify(ofrak_client: TestClient, hello_world_elf):
     assert resp_body["modified"][0]["id"] == create_body["id"]
 
 
+async def test_identify_recursively(ofrak_client: TestClient, hello_world_elf):
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+    )
+    create_body = await create_resp.json()
+    resp = await ofrak_client.post(f"/{create_body['id']}/identify_recursively")
+    assert resp.status == 200
+    resp_body = await resp.json()
+    assert resp_body["modified"][0]["id"] == create_body["id"]
+
+
 async def test_data_summary(ofrak_client: TestClient, ofrak_server, hello_world_elf, test_resource):
     create_resp = await ofrak_client.post(
         "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
