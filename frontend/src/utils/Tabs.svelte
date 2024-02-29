@@ -33,13 +33,21 @@
 </style>
 
 <script>
-  import { selectedResource } from "../stores";
   import { onMount } from "svelte";
   export let tabs, initTabId;
   let displayType;
+
   onMount(async () => {
     document.getElementById(initTabId).click();
   });
+
+  function resetTab(){
+    if(!tabs.map((x) => x.id).includes(displayType)){
+      displayType = initTabId
+    }
+  }
+
+  $: resetTab(tabs, initTabId, displayType)
 </script>
 
 <div class="content">

@@ -110,5 +110,5 @@
 <div class="breadcrumb">
   <Breadcrumb />
 </div>
-s
+
 <Tabs tabs="{tabs}" initTabId="hex" />
