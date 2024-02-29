@@ -112,7 +112,11 @@
 </style>
 
 <script>
-  import { selected, selectedResource } from "../stores.js";
+  import {
+    selected,
+    selectedResource,
+    resourceNodeDataMap,
+  } from "../stores.js";
   import { splitAndCapitalize } from "../helpers.js";
   import { onMount } from "svelte";
 
@@ -121,7 +125,7 @@
   import Checkbox from "../utils/Checkbox.svelte";
   import Button from "../utils/Button.svelte";
 
-  export let modifierView, resourceNodeDataMap;
+  export let modifierView;
   let errorMessage,
     allComponents = true,
     includeAnalyzers = false,
@@ -199,19 +203,19 @@
         ofrakConfig["type"],
         config
       );
-      if (!resourceNodeDataMap[$selected]) {
-        resourceNodeDataMap[$selected] = {};
+      if (!$resourceNodeDataMap[$selected]) {
+        $resourceNodeDataMap[$selected] = {};
       }
-      resourceNodeDataMap[$selected].collapsed = false;
-      resourceNodeDataMap[$selected].childrenPromise =
+      $resourceNodeDataMap[$selected].collapsed = false;
+      $resourceNodeDataMap[$selected].childrenPromise =
         $selectedResource.get_children();
       for (const result in results) {
         if (result === "modified") {
           for (const resource of results[result]) {
-            if (!resourceNodeDataMap[resource["id"]]) {
-              resourceNodeDataMap[resource["id"]] = {};
+            if (!$resourceNodeDataMap[resource["id"]]) {
+              $resourceNodeDataMap[resource["id"]] = {};
             }
-            resourceNodeDataMap[resource["id"]].lastModified = true;
+            $resourceNodeDataMap[resource["id"]].lastModified = true;
           }
         }
       }
