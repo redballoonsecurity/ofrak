@@ -43,7 +43,12 @@
   import ProjectManagerView from "./project/ProjectManagerView.svelte";
 
   import { printConsoleArt } from "./console-art.js";
-  import { selected, selectedResource, settings } from "./stores.js";
+  import {
+    selected,
+    selectedResource,
+    settings,
+    dataLength,
+  } from "./stores.js";
   import { keyEventToString, shortcuts } from "./keyboard.js";
 
   import { writable } from "svelte/store";
@@ -57,19 +62,18 @@
     useAssemblyView = false,
     useTextView = false,
     rootResourceLoadPromise = new Promise((resolve) => {}),
-    resourceNodeDataMap = {},
     resources = {};
-  let carouselSelection,
-    currentResource,
-    rootResource,
-    modifierView,
-    bottomLeftPane;
+  let currentResource, rootResource, modifierView, bottomLeftPane;
 
   // TODO: Move to settings
   let riddleAnswered = JSON.parse(window.localStorage.getItem("riddleSolved"));
   if (riddleAnswered === null || riddleAnswered === undefined) {
     riddleAnswered = false;
   }
+
+  $: dataLenPromise.then((r) => {
+    $dataLength = r;
+  });
 
   $: if ($selected !== undefined) {
     currentResource = resources[$selected];
@@ -177,13 +181,11 @@ Answer by running riddle.answer('your answer here') from the console.`);
               this="{modifierView}"
               dataLenPromise="{dataLenPromise}"
               bind:modifierView="{modifierView}"
-              bind:resourceNodeDataMap="{resourceNodeDataMap}"
             />
           {:else}
             <ResourceTreeView
               rootResource="{rootResource}"
               bind:bottomLeftPane="{bottomLeftPane}"
-              bind:resourceNodeDataMap="{resourceNodeDataMap}"
               bind:modifierView="{modifierView}"
               bind:showProjectManager="{showProjectManager}"
               bind:showRootResource="{showRootResource}"
@@ -211,7 +213,6 @@ Answer by running riddle.answer('your answer here') from the console.`);
             dataLenPromise="{dataLenPromise}"
             resources="{resources}"
             scrollY="{hexScrollY}"
-            bind:resourceNodeDataMap="{resourceNodeDataMap}"
           />
         {/if}
         <!-- 
@@ -242,7 +243,6 @@ Answer by running riddle.answer('your answer here') from the console.`);
     bind:showProjectManager="{showProjectManager}"
     bind:resources="{resources}"
     bind:rootResource="{rootResource}"
-    bind:resourceNodeDataMap="{resourceNodeDataMap}"
   />
 {/if}
 

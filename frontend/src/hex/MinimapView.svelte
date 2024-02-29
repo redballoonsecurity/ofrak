@@ -16,27 +16,18 @@
   import ByteclassView from "./ByteclassView.svelte";
   import MagnitudeView from "./MagnitudeView.svelte";
   import CarouselSelector from "../utils/CarouselSelector.svelte";
-  export let dataLength, currentPosition;
+  export let currentPosition;
   let carouselSelection;
 </script>
 
 <div class="minimap">
   <JumpToOffset bind:currentPosition="{currentPosition}" />
   {#if carouselSelection === "Entropy"}
-    <EntropyView
-      dataLength="{dataLength}"
-      bind:currentPosition="{currentPosition}"
-    />
+    <EntropyView bind:currentPosition="{currentPosition}" />
   {:else if carouselSelection === "Byteclass"}
-    <ByteclassView
-      dataLength="{dataLength}"
-      bind:currentPosition="{currentPosition}"
-    />
+    <ByteclassView bind:currentPosition="{currentPosition}" />
   {:else if carouselSelection === "Magnitude"}
-    <MagnitudeView
-      dataLength="{dataLength}"
-      bind:currentPosition="{currentPosition}"
-    />
+    <MagnitudeView bind:currentPosition="{currentPosition}" />
   {/if}
   <div class="carousel">
     <CarouselSelector

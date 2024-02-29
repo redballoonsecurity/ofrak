@@ -84,23 +84,15 @@
   } from "../helpers.js";
   import {
     selected,
+    resourceNodeDataMap,
+    dataLength,
     selectedResource as _selectedResource,
   } from "../stores.js";
   import Button from "../utils/Button.svelte";
   const selectedResource = $_selectedResource;
 
-  export let modifierView, dataLenPromise, resourceNodeDataMap;
-  let startInput,
-    endInput,
-    startOffset,
-    endOffset,
-    dataLength,
-    errorMessage,
-    userData;
-
-  $: dataLenPromise.then((r) => {
-    dataLength = r;
-  });
+  export let modifierView;
+  let startInput, endInput, startOffset, endOffset, errorMessage, userData;
 
   function refreshResource() {
     // Force hex view refresh with colors
@@ -167,10 +159,10 @@
       if (selectedResource) {
         await selectedResource.queue_patch(patchData, startOffset, endOffset);
       }
-      if (!resourceNodeDataMap[$selected]) {
-        resourceNodeDataMap[$selected] = {};
+      if (!$resourceNodeDataMap[$selected]) {
+        $resourceNodeDataMap[$selected] = {};
       }
-      resourceNodeDataMap[$selected].lastModified = true;
+      $resourceNodeDataMap[$selected].lastModified = true;
       modifierView = undefined;
       refreshResource();
     } catch (err) {
@@ -226,8 +218,8 @@
         <input
           type="text"
           bind:this="{endInput}"
-          value="{dataLength && !endInput.value
-            ? `0x${dataLength.toString(16)}`
+          value="{$dataLength && !endInput.value
+            ? `0x${$dataLength.toString(16)}`
             : ''}"
         />
       </label>
