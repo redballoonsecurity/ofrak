@@ -471,7 +471,7 @@
     {#if !dragging && !showProjectOptions}
       <h1>Drag in a file to analyze</h1>
       <p style:margin-bottom="0">
-        Click anwyhere to browse for a file to analyze
+        Click anywhere to browse for a file to analyze
       </p>
     {:else if dragging}
       <h1>Drop the file!</h1>
