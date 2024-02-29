@@ -235,6 +235,25 @@ export class RemoteResource extends Resource {
     await this.update_script();
   }
 
+  async identify_recursively() {
+    const identify_recursively_results = await fetch(
+      `${this.uri}/identify_recursively`,
+      {
+        method: "POST",
+      }
+    ).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      return r.json();
+    });
+    ingest_component_results(identify_recursively_results, this.resource_list);
+    this.flush_cache();
+    this.update();
+
+    await this.update_script();
+  }
+
   async unpack_recursively() {
     const unpack_recursively_results = await fetch(
       `${this.uri}/unpack_recursively`,

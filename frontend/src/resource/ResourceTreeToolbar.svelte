@@ -236,6 +236,21 @@
       },
 
       {
+        text: "Identify Recursively",
+        iconUrl: "/icons/identify.svg",
+        shortcut: "i+Shift",
+        onclick: async (e) => {
+          await rootResource.identify_recursively();
+          if (!resourceNodeDataMap[$selected]) {
+            resourceNodeDataMap[$selected] = {};
+          }
+          resourceNodeDataMap[$selected].childrenPromise =
+            rootResource.get_children();
+          refreshResource();
+        },
+      },
+
+      {
         text: "Unpack Recursively",
         iconUrl: "/icons/unpack_r.svg",
         shortcut: "u+Shift",
