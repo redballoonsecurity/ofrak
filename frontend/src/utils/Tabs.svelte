@@ -41,13 +41,13 @@
     document.getElementById(initTabId).click();
   });
 
-  function resetTab(){
-    if(!tabs.map((x) => x.id).includes(displayType)){
-      displayType = initTabId
+  function resetTab() {
+    if (!tabs.map((x) => x.id).includes(displayType)) {
+      displayType = initTabId;
     }
   }
 
-  $: resetTab(tabs, initTabId, displayType)
+  $: resetTab(tabs, initTabId, displayType);
 </script>
 
 <div class="content">
