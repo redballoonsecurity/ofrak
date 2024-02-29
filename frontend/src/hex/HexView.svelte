@@ -104,7 +104,11 @@
     childRanges = r;
   });
 
-  $: childRangesPromise = calculateRanges($selectedResource, $dataLength, $settings.colors);
+  $: childRangesPromise = calculateRanges(
+    $selectedResource,
+    $dataLength,
+    $settings.colors
+  );
 
   // React to local data searches
   $: if (dataSearchResults) {
@@ -114,7 +118,10 @@
       (localDataSearchResults.index || localDataSearchResults.index === 0)
     ) {
       currentPosition =
-        Math.floor(localDataSearchResults.matches[localDataSearchResults.index][0] / alignment) * alignment;
+        Math.floor(
+          localDataSearchResults.matches[localDataSearchResults.index][0] /
+            alignment
+        ) * alignment;
     }
   }
   $: chunksPromise = getNewData(
