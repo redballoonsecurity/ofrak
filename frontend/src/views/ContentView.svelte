@@ -90,7 +90,7 @@
   <Breadcrumb />
 </div>
 <div class="content">
-  <Tabs tabs="{tabs}" bind:tabId="{tabId}" defaultTab="hex"/>
+  <Tabs tabs="{tabs}" bind:tabId="{tabId}" defaultTab="hex" />
   {#each tabs as tab}
     {#if tabId == tab.id}
       <svelte:component this="{tab.component}" {...tab.props} />

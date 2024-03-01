@@ -1,5 +1,4 @@
 <style>
-
   button {
     margin-bottom: 0;
     border: 1px solid white;
@@ -64,4 +63,3 @@
 </div>
 
 <hr />
-
