@@ -47,7 +47,7 @@ class AngrDecompilatonAnalyzer(Analyzer[None, AngrDecompilationAnalysis]):
                 for addr, func in angr_analysis.project.kb.functions.items()
                 if func.addr == complex_block.virtual_address
             ]
-            if len(function_s) != 1:
+            if len(function_s) == 0:
                 # Check for thumb
                 function_s = [
                     func

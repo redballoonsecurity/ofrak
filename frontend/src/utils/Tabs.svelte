@@ -1,7 +1,7 @@
 <style>
   button {
     margin-bottom: 0;
-    border: 1px solid white;
+    border: 1px solid var(--main-fg-color);
   }
 
   .tabs button:focus {
@@ -27,7 +27,7 @@
 <script>
   import { onMount } from "svelte";
   export let tabs, tabId, defaultTab;
-  onMount(async () => {
+  onMount(() => {
     tabId = defaultTab;
     document.getElementById(tabId).click();
   });
