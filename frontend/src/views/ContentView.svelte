@@ -11,24 +11,6 @@
     padding-bottom: 1em;
     background: var(--main-bg-color);
   }
-
-  button {
-    margin-bottom: 0;
-    border: 1px solid white;
-  }
-
-  button:focus {
-    border-bottom: 2px solid var(--main-bg-color);
-  }
-
-  .content hr {
-    display: block;
-    height: 1px;
-    border: 0;
-    border-top: 1px solid white;
-    margin-top: -1px;
-    padding: 0;
-  }
 </style>
 
 <script>
@@ -38,13 +20,14 @@
   import Breadcrumb from "../utils/Breadcrumb.svelte";
   import HexView from "../hex/HexView.svelte";
   import TextView from "./TextView.svelte";
-  import { onMount } from "svelte";
   import Tabs from "../utils/Tabs.svelte";
   export let resources;
+
   let hasTextView = false;
   let hasAsmView = false;
   let hasDecompView = false;
   let tabs = [];
+  let tabId = "hex";
 
   const hexTab = {
     id: "hex",
@@ -106,5 +89,11 @@
 <div class="breadcrumb">
   <Breadcrumb />
 </div>
-
-<Tabs tabs="{tabs}" initTabId="hex" />
+<div class="content">
+  <Tabs tabs="{tabs}" bind:tabId="{tabId}" defaultTab="hex"/>
+  {#each tabs as tab}
+    {#if tabId == tab.id}
+      <svelte:component this="{tab.component}" {...tab.props} />
+    {/if}
+  {/each}
+</div>

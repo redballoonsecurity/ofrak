@@ -1,11 +1,4 @@
 <style>
-  .content {
-    position: sticky;
-    top: 0;
-    height: 100%;
-    width: 100%;
-    overflow: hidden;
-  }
 
   button {
     margin-bottom: 0;
@@ -22,7 +15,7 @@
     border-bottom: 0px;
   }
 
-  .content hr {
+  hr {
     display: block;
     height: 1px;
     border: 0;
@@ -34,48 +27,41 @@
 
 <script>
   import { onMount } from "svelte";
-  export let tabs, initTabId;
-  let displayType;
-
+  export let tabs, tabId, defaultTab;
   onMount(async () => {
-    document.getElementById(initTabId).click();
+    tabId = defaultTab;
+    document.getElementById(tabId).click();
   });
 
   function resetTab() {
-    if (!tabs.map((x) => x.id).includes(displayType)) {
-      displayType = initTabId;
+    if (!tabs.map((x) => x.id).includes(tabId)) {
+      tabId = defaultTab;
     }
   }
 
-  $: resetTab(tabs, initTabId, displayType);
+  $: resetTab(tabs, tabId);
 </script>
 
-<div class="content">
-  <div class="tabs">
-    {#each tabs as tab}
-      {#if displayType == tab.id}
-        <button
-          style="border-bottom: 2px solid var(--main-bg-color)"
-          id="{tab.id}"
-          on:click="{(e) => {
-            displayType = tab.id;
-          }}">{tab.title}</button
-        >
-      {:else}
-        <button
-          id="{tab.id}"
-          on:click="{(e) => {
-            displayType = tab.id;
-          }}">{tab.title}</button
-        >
-      {/if}
-    {/each}
-  </div>
-
-  <hr />
+<div class="tabs">
   {#each tabs as tab}
-    {#if displayType == tab.id}
-      <svelte:component this="{tab.component}" {...tab.props} />
+    {#if tabId == tab.id}
+      <button
+        style="border-bottom: 2px solid var(--main-bg-color)"
+        id="{tab.id}"
+        on:click="{(e) => {
+          tabId = tab.id;
+        }}">{tab.title}</button
+      >
+    {:else}
+      <button
+        id="{tab.id}"
+        on:click="{(e) => {
+          tabId = tab.id;
+        }}">{tab.title}</button
+      >
     {/if}
   {/each}
 </div>
+
+<hr />
+
