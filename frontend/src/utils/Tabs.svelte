@@ -53,22 +53,13 @@
 <div class="content">
   <div class="tabs">
     {#each tabs as tab}
-      {#if displayType == tab.id}
-        <button
-          style="border-bottom: 2px solid var(--main-bg-color)"
+      <button
+          class:selected={displayType === tab.id}
           id="{tab.id}"
           on:click="{(e) => {
             displayType = tab.id;
           }}">{tab.title}</button
         >
-      {:else}
-        <button
-          id="{tab.id}"
-          on:click="{(e) => {
-            displayType = tab.id;
-          }}">{tab.title}</button
-        >
-      {/if}
     {/each}
   </div>
 
