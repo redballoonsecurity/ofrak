@@ -18,7 +18,7 @@
     display: block;
     height: 1px;
     border: 0;
-    border-top: 1px solid white;
+    border-top: 1px solid var(--main-fg-color);
     margin-top: -1px;
     padding: 0;
   }
