@@ -32,7 +32,7 @@
       ).value;
       return html;
     } else {
-      return 'To see decompilation, click "Analyze" on the left toolbaar';
+      return 'To see decompilation, click "Analyze" on the left toolbar';
     }
   }
 
