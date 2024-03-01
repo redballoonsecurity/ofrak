@@ -16,7 +16,6 @@
   import c from "highlight.js/lib/languages/c";
   import { selectedResource } from "../stores.js";
   let decompilation;
-  let searchString = "";
   hljs.registerLanguage("c", c);
 
   function get_decompilation() {

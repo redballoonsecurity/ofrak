@@ -46,10 +46,6 @@
   let hasDecompView = false;
   let tabs = [];
 
-  onMount(async () => {
-    document.getElementById("hex").focus();
-  });
-
   const hexTab = {
     id: "hex",
     title: "Hex",
