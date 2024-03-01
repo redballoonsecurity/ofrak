@@ -64,4 +64,6 @@ class AngrDecompilatonAnalyzer(Analyzer[None, AngrDecompilationAnalysis]):
             )
             return AngrDecompilationAnalysis(dec.codegen.text)
         except Exception as e:
-            return AngrDecompilationAnalysis(f"The decompilation for this Complex Block has failed with the error {e}")
+            return AngrDecompilationAnalysis(
+                f"The decompilation for this Complex Block has failed with the error {e}"
+            )
