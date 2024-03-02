@@ -62,7 +62,11 @@ class AngrDecompilatonAnalyzer(Analyzer[None, AngrDecompilationAnalysis]):
             dec: Decompiler = angr_analysis.project.analyses[angr.analyses.Decompiler].prep()(
                 function, cfg=cfg.model, options=None
             )
-            return AngrDecompilationAnalysis(dec.codegen.text)
+            if dec.codegen.text is not None:
+                decomp = dec.codegen.text
+            else:
+                decomp = "No Decompilation available"
+            return AngrDecompilationAnalysis(decomp)
         except Exception as e:
             return AngrDecompilationAnalysis(
                 f"The decompilation for this Complex Block has failed with the error {e}"
