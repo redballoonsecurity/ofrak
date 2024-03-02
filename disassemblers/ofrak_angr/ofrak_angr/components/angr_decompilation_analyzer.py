@@ -62,7 +62,7 @@ class AngrDecompilatonAnalyzer(Analyzer[None, AngrDecompilationAnalysis]):
             dec: Decompiler = angr_analysis.project.analyses[angr.analyses.Decompiler].prep()(
                 function, cfg=cfg.model, options=None
             )
-            if dec.codegen.text is not None:
+            if dec.codegen is not None:
                 decomp = dec.codegen.text
             else:
                 decomp = "No Decompilation available"
