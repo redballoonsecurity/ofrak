@@ -128,6 +128,14 @@
     }
   }
 
+  function setName() {
+    try {
+      element = [node["type"], {}];
+    } catch {
+      element = []
+    }
+  }
+
   $: if (node["type"] == "builtins.int") {
     doCalc(_element);
   }
@@ -172,8 +180,13 @@
   ) {
     unionTypeSelect = node["args"][0];
   }
-  if (node["type"] == "ofrak_type.range.Range") {
-    element = [];
+
+  $: if (node["type"].startsWith("ofrak")) {
+    setName();
+  }
+
+  if (node["type"].startsWith("ofrak")) {
+    element = [node["type"], {}];
   } else if (node["fields"] != null) {
     element = {};
   }
@@ -342,8 +355,8 @@
       <!---->
     {:else if node["fields"] != null}
       {#each node["fields"] as field, i}
-        {#if node["type"] == "ofrak_type.range.Range"}
-          <svelte:self node="{field}" bind:element="{element[i]}" />
+        {#if node["type"].startsWith("ofrak")}
+          <svelte:self node="{field}" bind:element="{element[1][field['name']]}" />
         {:else}
           <svelte:self node="{field}" bind:element="{element[field['name']]}" />
         {/if}
