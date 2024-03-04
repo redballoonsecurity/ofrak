@@ -28,12 +28,12 @@
 
   .resources {
     flex-grow: 1;
+    overflow: auto;
   }
 
   .treebox {
     flex-grow: 1;
     padding-left: 1em;
-    overflow-x: auto;
     white-space: nowrap;
     text-align: left;
   }
@@ -41,7 +41,12 @@
   .searchbar {
     flex-grow: 1;
     padding-left: 1em;
+    padding-right: 1em;
     padding-bottom: 0.5em;
+    position: sticky;
+    top: 0;
+    background-color: var(--main-bg-color);
+    z-index: 10;
   }
 </style>
 
@@ -52,8 +57,7 @@
 
   export let rootResource,
     modifierView,
-    bottomLeftPane,
-    resourceNodeDataMap = {};
+    bottomLeftPane;
 
   let searchFilter;
   let searchResults = {};
@@ -74,7 +78,6 @@
 <div class="hbox">
   <div class="toolbar">
     <ResourceTreeToolbar
-      bind:resourceNodeDataMap="{resourceNodeDataMap}"
       bind:modifierView="{modifierView}"
       bind:bottomLeftPane="{bottomLeftPane}"
     />
@@ -92,7 +95,6 @@
       <ResourceTreeNode
         rootResource="{rootResource}"
         bind:searchResults="{searchResults}"
-        bind:resourceNodeDataMap="{resourceNodeDataMap}"
       />
     </div>
   </div>

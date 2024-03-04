@@ -154,6 +154,7 @@ class AiohttpOFRAKServer:
             web.post("/{resource_id}/pack_recursively", self.pack_recursively),
             web.post("/{resource_id}/analyze", self.analyze),
             web.post("/{resource_id}/identify", self.identify),
+            web.post("/{resource_id}/identify_recursively", self.identify_recursively),
             web.post("/{resource_id}/data_summary", self.data_summary),
             web.get("/{resource_id}/get_parent", self.get_parent),
             web.get("/{resource_id}/get_ancestors", self.get_ancestors),
@@ -196,7 +197,9 @@ class AiohttpOFRAKServer:
             web.post("/delete_binary_from_project", self.delete_binary_from_project),
             web.post("/delete_script_from_project", self.delete_script_from_project),
             web.post("/reset_project", self.reset_project),
-            web.get("/{resource_id}/get_project_by_resource_id", self.get_project_by_resource_id),
+            web.get(
+                "/{resource_id}/get_project_by_resource_id", self.get_project_by_resource_id
+            ),
             web.get("/get_project_script", self.get_project_script),
             web.get("/", self.get_static_files),
             web.static(
@@ -525,6 +528,20 @@ class AiohttpOFRAKServer:
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         try:
             result = await resource.identify()
+            await self.script_builder.commit_to_script(resource)
+        except Exception as e:
+            await self.script_builder.clear_script_queue(resource)
+            raise e
+        return json_response(await self._serialize_component_result(result))
+
+    @exceptions_to_http(SerializedError)
+    async def identify_recursively(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
+        script_str = """
+        await {resource}.identify_recursively()"""
+        await self.script_builder.add_action(resource, script_str, ActionType.MOD)
+        try:
+            result = await resource.auto_run_recursively(all_identifiers=True)
             await self.script_builder.commit_to_script(resource)
         except Exception as e:
             await self.script_builder.clear_script_queue(resource)
@@ -937,7 +954,7 @@ class AiohttpOFRAKServer:
             config_type = self._get_config_for_component(component)
         else:
             return json_response([])
-        if config_type == inspect._empty:
+        if config_type == inspect._empty or config_type is None:
             config = None
         else:
             config = self._serializer.from_pjson(await request.json(), config_type)

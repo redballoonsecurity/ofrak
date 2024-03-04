@@ -112,11 +112,10 @@
   import LoadingText from "../utils/LoadingText.svelte";
 
   import { onDestroy } from "svelte";
-  import { selected } from "../stores.js";
+  import { selected, resourceNodeDataMap } from "../stores.js";
   import { shortcuts } from "../keyboard";
 
   export let rootResource,
-    resourceNodeDataMap,
     selectNextSibling = () => {},
     selectPreviousSibling = () => {},
     collapsed = true,
@@ -131,31 +130,31 @@
     kiddoChunksize = 512;
 
   $: {
-    if (resourceNodeDataMap[self_id] === undefined) {
-      resourceNodeDataMap[self_id] = {};
+    if ($resourceNodeDataMap[self_id] === undefined) {
+      $resourceNodeDataMap[self_id] = {};
     }
-    if (resourceNodeDataMap[self_id].collapsed === undefined) {
-      resourceNodeDataMap[self_id].collapsed = collapsed;
+    if ($resourceNodeDataMap[self_id].collapsed === undefined) {
+      $resourceNodeDataMap[self_id].collapsed = collapsed;
     }
-    if (resourceNodeDataMap[self_id].childrenPromise === undefined) {
-      resourceNodeDataMap[self_id].childrenPromise =
+    if ($resourceNodeDataMap[self_id].childrenPromise === undefined) {
+      $resourceNodeDataMap[self_id].childrenPromise =
         rootResource.get_children();
     }
-    if (resourceNodeDataMap[self_id].commentsPromise === undefined) {
-      resourceNodeDataMap[self_id].commentsPromise =
+    if ($resourceNodeDataMap[self_id].commentsPromise === undefined) {
+      $resourceNodeDataMap[self_id].commentsPromise =
         rootResource.get_comments();
     }
-    if (resourceNodeDataMap[self_id].lastModified === undefined) {
-      resourceNodeDataMap[self_id].lastModified = false;
+    if ($resourceNodeDataMap[self_id].lastModified === undefined) {
+      $resourceNodeDataMap[self_id].lastModified = false;
     }
-    if (resourceNodeDataMap[self_id].allModified === undefined) {
-      resourceNodeDataMap[self_id].allModified = false;
+    if ($resourceNodeDataMap[self_id].allModified === undefined) {
+      $resourceNodeDataMap[self_id].allModified = false;
     }
-    childrenPromise = resourceNodeDataMap[self_id].childrenPromise;
-    commentsPromise = resourceNodeDataMap[self_id].commentsPromise;
-    collapsed = resourceNodeDataMap[self_id].collapsed;
-    lastModified = resourceNodeDataMap[self_id].lastModified;
-    allModified = resourceNodeDataMap[self_id].allModified;
+    childrenPromise = $resourceNodeDataMap[self_id].childrenPromise;
+    commentsPromise = $resourceNodeDataMap[self_id].commentsPromise;
+    collapsed = $resourceNodeDataMap[self_id].collapsed;
+    lastModified = $resourceNodeDataMap[self_id].lastModified;
+    allModified = $resourceNodeDataMap[self_id].allModified;
   }
   function updateRootModel() {
     rootResource.update();
@@ -171,10 +170,10 @@
 
   $: if ($selected === self_id) {
     shortcuts["h"] = () => {
-      resourceNodeDataMap[self_id].collapsed = true;
+      $resourceNodeDataMap[self_id].collapsed = true;
     };
     shortcuts["l"] = () => {
-      resourceNodeDataMap[self_id].collapsed = false;
+      $resourceNodeDataMap[self_id].collapsed = false;
     };
     shortcuts["j"] = () => {
       if (!collapsed && firstChild) {
@@ -204,7 +203,7 @@
   }
 
   function onDoubleClick(e) {
-    resourceNodeDataMap[self_id].collapsed = !collapsed;
+    $resourceNodeDataMap[self_id].collapsed = !collapsed;
     // Expand children recursively on double click
     if (!collapsed) {
       childrenCollapsed = false;
@@ -217,15 +216,15 @@
     // As a side effect, the corresponding resource gets selected.
     $selected = self_id;
     await rootResource.delete_comment(optional_range);
-    resourceNodeDataMap[$selected].commentsPromise =
+    $resourceNodeDataMap[$selected].commentsPromise =
       rootResource.get_comments();
   }
 
   // Swap "just modified" indication to "previously modified" indication
   onDestroy(() => {
-    if (resourceNodeDataMap[self_id].lastModified) {
-      resourceNodeDataMap[self_id].allModified =
-        resourceNodeDataMap[self_id].lastModified;
+    if ($resourceNodeDataMap[self_id].lastModified) {
+      $resourceNodeDataMap[self_id].allModified =
+        $resourceNodeDataMap[self_id].lastModified;
     }
   });
 </script>
@@ -235,7 +234,7 @@
     {#if children?.length > 0}
       <button
         on:click="{() => {
-          resourceNodeDataMap[self_id].collapsed = !collapsed;
+          $resourceNodeDataMap[self_id].collapsed = !collapsed;
         }}"
       >
         {#if collapsed}
@@ -248,8 +247,8 @@
     on:click="{onClick}"
     on:dblclick="{onDoubleClick}"
     class:selected="{$selected === self_id}"
-    class:lastModified="{resourceNodeDataMap[self_id].lastModified}"
-    class:allModified="{resourceNodeDataMap[self_id].allModified}"
+    class:lastModified="{$resourceNodeDataMap[self_id].lastModified}"
+    class:allModified="{$resourceNodeDataMap[self_id].allModified}"
     id="{self_id}"
   >
     {rootResource.get_caption()}
@@ -298,7 +297,6 @@
                     : () => {
                         $selected = children[i - 1]?.resource_id;
                       }}"
-                  bind:resourceNodeDataMap="{resourceNodeDataMap}"
                   searchResults="{searchResults}"
                 />
               </div>

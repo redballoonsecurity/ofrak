@@ -95,6 +95,7 @@ class Toolchain(ABC):
             ".dynstr",
             ".eh_frame",
             ".altinstructions",
+            ".altinstr_replacement",
         ]
 
         self._assembler_target = self._get_assembler_target(processor)

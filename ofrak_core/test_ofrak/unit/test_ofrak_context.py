@@ -64,6 +64,9 @@ def test_ofrak_context_exclude_components_missing_dependencies():
 
 
 def test_get_ofrak_context_over_time():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
     # No active context before running OFRAK
     with pytest.raises(InvalidStateError):
         get_current_ofrak_context()

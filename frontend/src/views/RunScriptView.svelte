@@ -32,6 +32,8 @@
     overflow: auto;
     flex-grow: 1;
     margin: 1em 0;
+    max-height: 100%;
+    min-height: 100%;
   }
 
   .container {
@@ -40,7 +42,9 @@
     flex-wrap: nowrap;
     justify-content: flex-start;
     align-items: flex-start;
+    max-height: 100%;
     min-height: 100%;
+    overflow: auto;
   }
 
   .actions {
@@ -89,13 +93,14 @@
     selectedResource,
     selectedProject,
     settings,
+    resourceNodeDataMap,
   } from "../stores";
   import { onMount } from "svelte";
   import BaseSerializerInputForm from "../utils/serializer_inputs/BaseSerializerInputForm.svelte";
 
   hljs.registerLanguage("python", python);
 
-  export let modifierView, resourceNodeDataMap;
+  export let modifierView;
   let runScriptPromise = Promise.resolve(null),
     files = null,
     projectScript = null,
@@ -141,10 +146,10 @@
     for (const result in results) {
       if (result === "modified") {
         for (const resource of results[result]) {
-          if (!resourceNodeDataMap[resource["id"]]) {
-            resourceNodeDataMap[resource["id"]] = {};
+          if (!$resourceNodeDataMap[resource["id"]]) {
+            $resourceNodeDataMap[resource["id"]] = {};
           }
-          resourceNodeDataMap[resource["id"]].lastModified = true;
+          $resourceNodeDataMap[resource["id"]].lastModified = true;
         }
       }
     }
@@ -171,7 +176,7 @@
 <div class="container">
   <div class="inputs">
     <div class="scriptchoice">
-      {#if $selectedProject}
+      {#if $selectedProject && $selectedProject.loaded}
         <select
           on:click="{(e) => {
             e.stopPropagation();
@@ -262,11 +267,11 @@
         const orig_selected = $selected;
         $selected = undefined;
         $selected = orig_selected;
-        if (!resourceNodeDataMap[$selected]) {
-          resourceNodeDataMap[$selected] = {};
+        if (!$resourceNodeDataMap[$selected]) {
+          $resourceNodeDataMap[$selected] = {};
         }
-        resourceNodeDataMap[$selected].collapsed = false;
-        resourceNodeDataMap[$selected].childrenPromise =
+        $resourceNodeDataMap[$selected].collapsed = false;
+        $resourceNodeDataMap[$selected].childrenPromise =
           $selectedResource?.get_children();
       }}">Back</Button
     >

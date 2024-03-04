@@ -6,6 +6,7 @@ RUN apt-get -y update && \
       cmake \
       cpio \
       git \
+      genisoimage \
       liblz4-dev \
       liblzo2-dev \
       libzstd-dev \
@@ -60,6 +61,17 @@ RUN cd /tmp && \
 
 # Install Jefferson
 WORKDIR /tmp
-RUN wget https://bootstrap.pypa.io/pip/get-pip.py && python3.9 get-pip.py && python3.7 get-pip.py && rm get-pip.py
+RUN wget https://bootstrap.pypa.io/pip/get-pip.py && python3.9 get-pip.py && python3.8 get-pip.py && rm get-pip.py
 RUN python3.9 -m pip install jefferson
 WORKDIR /
+
+# Install UEFIExtract (build from source, pinned to releae A68)
+RUN cd /tmp && \
+    wget https://github.com/LongSoft/UEFITool/archive/refs/tags/A68.zip && \
+    unzip A68.zip && \
+    rm A68.zip && \
+    cd UEFITool-A68 && \
+    cmake UEFIExtract && \
+    make install && \
+    cd /tmp && \
+    rm -r UEFITool-A68

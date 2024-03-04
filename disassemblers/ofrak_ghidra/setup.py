@@ -37,6 +37,7 @@ setuptools.setup(
     description="OFRAK Ghidra Components",
     url="",  # TODO
     packages=setuptools.find_packages(),
+    package_data={"ofrak_ghidra": ["py.typed"]},
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",

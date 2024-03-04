@@ -63,20 +63,21 @@
 
 <script>
   import { calculator } from "../helpers.js";
-  import { selected, selectedResource } from "../stores.js";
+  import {
+    selected,
+    selectedResource,
+    resourceNodeDataMap,
+    dataLength,
+  } from "../stores.js";
   import Button from "../utils/Button.svelte";
 
-  export let modifierView, resourceNodeDataMap, dataLenPromise;
-  let startInput, endInput, dataLength, errorMessage;
-
-  $: dataLenPromise.then((r) => {
-    dataLength = r;
-  });
+  export let modifierView;
+  let startInput, endInput, errorMessage;
 
   function refreshResource() {
     // Force tree view children refresh
-    resourceNodeDataMap[$selected].collapsed = false;
-    resourceNodeDataMap[$selected].childrenPromise =
+    $resourceNodeDataMap[$selected].collapsed = false;
+    $resourceNodeDataMap[$selected].childrenPromise =
       $selectedResource.get_children();
 
     // Force hex view refresh with colors
@@ -128,8 +129,8 @@
       <input
         type="text"
         bind:this="{endInput}"
-        value="{dataLength && !endInput.value
-          ? `0x${dataLength.toString(16)}`
+        value="{$dataLength && !endInput.value
+          ? `0x${$dataLength.toString(16)}`
           : ''}"
       />
     </label>

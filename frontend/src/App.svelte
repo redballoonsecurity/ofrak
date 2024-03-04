@@ -3,10 +3,6 @@
     box-sizing: border-box;
   }
 
-  .carousel {
-    margin-top: 1em;
-  }
-
   .bottomleft {
     position: absolute;
     bottom: 0.5em;
@@ -29,50 +25,37 @@
 </style>
 
 <script>
-  import AssemblyView from "./views/AssemblyView.svelte";
   import AttributesView from "./views/AttributesView.svelte";
   import AudioPlayer from "./utils/AudioPlayer.svelte";
-  import ByteclassView from "./views/ByteclassView.svelte";
-  import CarouselSelector from "./utils/CarouselSelector.svelte";
-  import EntropyView from "./views/EntropyView.svelte";
   import Gamepad from "./utils/Gamepad.svelte";
-  import HexView from "./views/HexView.svelte";
-  import JumpToOffset from "./utils/JumpToOffset.svelte";
   import LoadingAnimation from "./utils/LoadingAnimation.svelte";
-  import MagnitudeView from "./views/MagnitudeView.svelte";
   import Pane from "./utils/Pane.svelte";
   import ResourceTreeView from "./resource/ResourceTreeView.svelte";
   import Split from "./utils/Split.svelte";
   import StartView from "./views/StartView.svelte";
-  import TextView from "./views/TextView.svelte";
   import ProjectManagerView from "./project/ProjectManagerView.svelte";
+  import ContentView from "./views/ContentView.svelte";
 
   import { printConsoleArt } from "./console-art.js";
   import {
     selected,
     selectedResource,
     settings,
+    dataLength,
     viewCrumbs,
   } from "./stores.js";
   import { keyEventToString, shortcuts } from "./keyboard.js";
 
-  import { writable } from "svelte/store";
   import RootWizardView from "./patch_wizard/RootWizardView.svelte";
 
   printConsoleArt();
 
   let dataLenPromise = Promise.resolve([]),
-    hexScrollY = writable({}),
     useAssemblyView = false,
     useTextView = false,
     rootResourceLoadPromise = new Promise((resolve) => {}),
-    resourceNodeDataMap = {},
     resources = {};
-  let carouselSelection,
-    currentResource,
-    rootResource,
-    modifierView,
-    bottomLeftPane;
+  let currentResource, rootResource, modifierView, bottomLeftPane;
 
   let topLevelView = null;
 
@@ -81,6 +64,10 @@
   if (riddleAnswered === null || riddleAnswered === undefined) {
     riddleAnswered = false;
   }
+
+  $: dataLenPromise.then((r) => {
+    $dataLength = r;
+  });
 
   $: if ($selected !== undefined) {
     currentResource = resources[$selected];
@@ -98,7 +85,6 @@
       useTextView = ["ofrak.core.binary.GenericText"].some((tag) =>
         currentResource.has_tag(tag)
       );
-      $hexScrollY.top = 0;
       document.title = "OFRAK App – " + currentResource.get_caption();
     }
     if ($selected !== window.location.hash.slice(1)) {
@@ -188,15 +174,12 @@ Answer by running riddle.answer('your answer here') from the console.`);
           {#if modifierView}
             <svelte:component
               this="{modifierView}"
-              dataLenPromise="{dataLenPromise}"
               bind:modifierView="{modifierView}"
-              bind:resourceNodeDataMap="{resourceNodeDataMap}"
             />
           {:else}
             <ResourceTreeView
               rootResource="{rootResource}"
               bind:bottomLeftPane="{bottomLeftPane}"
-              bind:resourceNodeDataMap="{resourceNodeDataMap}"
               bind:modifierView="{modifierView}"
             />
           {/if}
@@ -212,46 +195,12 @@ Answer by running riddle.answer('your answer here') from the console.`);
           {/if}
         </Pane>
       </Split>
-      <Pane
-        slot="second"
-        scrollY="{hexScrollY}"
-        displayMinimap="{currentResource && !useAssemblyView && !useTextView}"
-      >
-        {#if useAssemblyView}
-          <AssemblyView />
-        {:else if useTextView}
-          <TextView />
-        {:else}
-          <HexView
-            dataLenPromise="{dataLenPromise}"
-            resources="{resources}"
-            scrollY="{hexScrollY}"
-            bind:resourceNodeDataMap="{resourceNodeDataMap}"
-          />
-        {/if}
+      <Pane slot="second">
+        <ContentView resources="{resources}" />
         <!-- 
           Named slot must be outside {#if} because of: 
           https://github.com/sveltejs/svelte/issues/5604 
         -->
-        <svelte:fragment slot="minimap">
-          <JumpToOffset
-            dataLenPromise="{dataLenPromise}"
-            scrollY="{hexScrollY}"
-          />
-          {#if carouselSelection === "Entropy"}
-            <EntropyView scrollY="{hexScrollY}" />
-          {:else if carouselSelection === "Byteclass"}
-            <ByteclassView scrollY="{hexScrollY}" />
-          {:else if carouselSelection === "Magnitude"}
-            <MagnitudeView scrollY="{hexScrollY}" />
-          {/if}
-          <div class="carousel">
-            <CarouselSelector
-              options="{['Magnitude', 'Entropy', 'Byteclass']}"
-              bind:selectedString="{carouselSelection}"
-            />
-          </div>
-        </svelte:fragment>
       </Pane>
     </Split>
   {/await}
@@ -274,7 +223,6 @@ Answer by running riddle.answer('your answer here') from the console.`);
     bind:rootResourceLoadPromise="{rootResourceLoadPromise}"
     bind:resources="{resources}"
     bind:rootResource="{rootResource}"
-    bind:resourceNodeDataMap="{resourceNodeDataMap}"
   />
 {/if}
 

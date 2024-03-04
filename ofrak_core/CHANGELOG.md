@@ -4,12 +4,30 @@ All notable changes to `ofrak` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+### Added
+- Add tabbed content views and a decompilation view to the OFRAK GUI. ([#436](https://github.com/redballoonsecurity/ofrak/pull/436/))
+- Refactor HexView and related components to use mousewheel instead of scroll and compartmentalize all comonents to src/hex. ([#427](https://github.com/redballoonsecurity/ofrak/pull/427))
+- Add an improved ISO9660 packer that leverages `mkisofs` instead of PyCdLib. ([#393](https://github.com/redballoonsecurity/ofrak/pull/393))
+- Add UEFI binary unpacker. ([#399](https://github.com/redballoonsecurity/ofrak/pull/399))
+- Add recursive identify functionality in the GUI. ([#435](https://github.com/redballoonsecurity/ofrak/pull/435))
+
 ### Fixed
 - Improved flushing of filesystem entries (including symbolic links and other types) to disk. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373))
 - Fix `java` and `apktool` CLI arguments for checking components. ([#390](https://github.com/redballoonsecurity/ofrak/pull/390))
+- Bump GitPython version from 3.1.35 to 3.1.41 to mitigate CVEs. ([#400](https://github.com/redballoonsecurity/ofrak/pull/400))
+- Fixes erroneous Free Space Modifier expectation that resource parents are memory views. ([#404](https://github.com/redballoonsecurity/ofrak/pull/404))
+- Prevent `_find_and_delete_overlapping_children` from deleting children which are next to the freed region, but not overlapping. ([#396](https://github.com/redballoonsecurity/ofrak/pull/396))
+- Fixed front end "Replace" button. Before it was appending new data instead of replacing it as intended. ([#403](https://github.com/redballoonsecurity/ofrak/pull/403))
+- Fix dragging and dropping in the GUI. ([#407](https://github.com/redballoonsecurity/ofrak/pull/407))
+- Fix running scripts without a project selected, and without a config selected. ([#407](https://github.com/redballoonsecurity/ofrak/pull/407))
+- Fix bug in OFRAK GUI server which causes an error when parsing a default config value of bytes. ([#409](https://github.com/redballoonsecurity/ofrak/pull/409))
+- Set default fallback font to system default monospace, instead of variable-width sans-serif. ([#422](https://github.com/redballoonsecurity/ofrak/pull/422))
+- View resource attribute string values containing only digits primarily as strings, alternatively as hex numbers. ([#423](https://github.com/redballoonsecurity/ofrak/pull/423))
 
 ### Changed
+- Change `FreeSpaceModifier` & `PartialFreeSpaceModifier` behavior: an optional stub that isn't free space can be provided and fill-bytes for free space can be specified. ([#409](https://github.com/redballoonsecurity/ofrak/pull/409))
 - `Resource.flush_to_disk` method renamed to `Resource.flush_data_to_disk`. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373))
+- `build_image.py` supports building Docker images with OFRAK packages from any ancestor directory. ([#425](https://github.com/redballoonsecurity/ofrak/pull/425))
 
 ## [3.2.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v3.1.0...ofrak-v3.2.0)
 ### Added

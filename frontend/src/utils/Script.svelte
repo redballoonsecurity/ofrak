@@ -7,6 +7,9 @@
     align-items: stretch;
     line-height: var(--line-height);
     font-size: var(--font-size, medium);
+    overflow: auto;
+    max-height: 100%;
+    min-height: 100%;
   }
 
   .spacer {

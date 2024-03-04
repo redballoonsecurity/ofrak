@@ -15,10 +15,11 @@
     selected,
     settings,
     selectedProject,
+    resourceNodeDataMap,
     pushViewCrumb,
   } from "../stores.js";
 
-  export let resourceNodeDataMap, modifierView, bottomLeftPane;
+  export let modifierView, bottomLeftPane;
   $: rootResource = $selectedResource;
 
   function refreshResource() {
@@ -89,12 +90,12 @@
         shortcut: "i",
         onclick: async (e) => {
           await rootResource.identify();
-          if (!resourceNodeDataMap[$selected]) {
-            resourceNodeDataMap[$selected] = {};
+          if (!$resourceNodeDataMap[$selected]) {
+            $resourceNodeDataMap[$selected] = {};
           }
-          resourceNodeDataMap[$selected].collapsed =
-            !!resourceNodeDataMap[$selected]?.collapsed;
-          resourceNodeDataMap[$selected].childrenPromise =
+          $resourceNodeDataMap[$selected].collapsed =
+            !!$resourceNodeDataMap[$selected]?.collapsed;
+          $resourceNodeDataMap[$selected].childrenPromise =
             rootResource.get_children();
           refreshResource();
         },
@@ -106,11 +107,11 @@
         shortcut: "u",
         onclick: async (e) => {
           await rootResource.unpack();
-          if (!resourceNodeDataMap[$selected]) {
-            resourceNodeDataMap[$selected] = {};
+          if (!$resourceNodeDataMap[$selected]) {
+            $resourceNodeDataMap[$selected] = {};
           }
-          resourceNodeDataMap[$selected].collapsed = false;
-          resourceNodeDataMap[$selected].childrenPromise =
+          $resourceNodeDataMap[$selected].collapsed = false;
+          $resourceNodeDataMap[$selected].childrenPromise =
             rootResource.get_children();
           refreshResource();
         },
@@ -130,12 +131,12 @@
         shortcut: "a",
         onclick: async (e) => {
           await rootResource.analyze();
-          if (!resourceNodeDataMap[$selected]) {
-            resourceNodeDataMap[$selected] = {};
+          if (!$resourceNodeDataMap[$selected]) {
+            $resourceNodeDataMap[$selected] = {};
           }
-          resourceNodeDataMap[$selected].collapsed =
-            !!resourceNodeDataMap[$selected]?.collapsed;
-          resourceNodeDataMap[$selected].childrenPromise =
+          $resourceNodeDataMap[$selected].collapsed =
+            !!$resourceNodeDataMap[$selected]?.collapsed;
+          $resourceNodeDataMap[$selected].childrenPromise =
             rootResource.get_children();
           refreshResource();
         },
@@ -157,11 +158,11 @@
           const descendants = await $selectedResource.get_descendants();
           clearModified(descendants);
           await rootResource.pack();
-          if (!resourceNodeDataMap[$selected]) {
-            resourceNodeDataMap[$selected] = {};
+          if (!$resourceNodeDataMap[$selected]) {
+            $resourceNodeDataMap[$selected] = {};
           }
-          resourceNodeDataMap[$selected].collapsed = false;
-          resourceNodeDataMap[$selected].childrenPromise =
+          $resourceNodeDataMap[$selected].collapsed = false;
+          $resourceNodeDataMap[$selected].childrenPromise =
             rootResource.get_children();
           refreshResource();
         },
@@ -219,7 +220,11 @@
                 if (input.files.length > 0) {
                   const file = input.files[0];
                   const data = await file.arrayBuffer();
-                  await rootResource.queue_patch(data);
+                  await rootResource.queue_patch(
+                    data,
+                    0,
+                    await rootResource.get_data_length()
+                  );
                 }
                 refreshResource();
               },
@@ -244,16 +249,31 @@
       },
 
       {
+        text: "Identify Recursively",
+        iconUrl: "/icons/identify.svg",
+        shortcut: "i+Shift",
+        onclick: async (e) => {
+          await rootResource.identify_recursively();
+          if (!resourceNodeDataMap[$selected]) {
+            resourceNodeDataMap[$selected] = {};
+          }
+          resourceNodeDataMap[$selected].childrenPromise =
+            rootResource.get_children();
+          refreshResource();
+        },
+      },
+
+      {
         text: "Unpack Recursively",
         iconUrl: "/icons/unpack_r.svg",
         shortcut: "u+Shift",
         onclick: async (e) => {
           await rootResource.unpack_recursively();
-          if (!resourceNodeDataMap[$selected]) {
-            resourceNodeDataMap[$selected] = {};
+          if (!$resourceNodeDataMap[$selected]) {
+            $resourceNodeDataMap[$selected] = {};
           }
-          resourceNodeDataMap[$selected].collapsed = false;
-          resourceNodeDataMap[$selected].childrenPromise =
+          $resourceNodeDataMap[$selected].collapsed = false;
+          $resourceNodeDataMap[$selected].childrenPromise =
             rootResource.get_children();
           refreshResource();
         },
@@ -267,11 +287,11 @@
           const descendants = await $selectedResource.get_descendants();
           clearModified(descendants);
           await rootResource.pack_recursively();
-          if (!resourceNodeDataMap[$selected]) {
-            resourceNodeDataMap[$selected] = {};
+          if (!$resourceNodeDataMap[$selected]) {
+            $resourceNodeDataMap[$selected] = {};
           }
-          resourceNodeDataMap[$selected].collapsed = false;
-          resourceNodeDataMap[$selected].childrenPromise =
+          $resourceNodeDataMap[$selected].collapsed = false;
+          $resourceNodeDataMap[$selected].childrenPromise =
             rootResource.get_children();
           refreshResource();
         },
@@ -321,11 +341,11 @@
 
   function clearModified(descendants) {
     for (const descendant of descendants) {
-      if (!resourceNodeDataMap[descendant["resource_id"]]) {
-        resourceNodeDataMap[descendant["resource_id"]] = {};
+      if (!$resourceNodeDataMap[descendant["resource_id"]]) {
+        $resourceNodeDataMap[descendant["resource_id"]] = {};
       }
-      resourceNodeDataMap[descendant["resource_id"]].lastModified = undefined;
-      resourceNodeDataMap[descendant["resource_id"]].allModified = undefined;
+      $resourceNodeDataMap[descendant["resource_id"]].lastModified = undefined;
+      $resourceNodeDataMap[descendant["resource_id"]].allModified = undefined;
     }
   }
 </script>

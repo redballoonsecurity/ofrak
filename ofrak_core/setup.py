@@ -54,7 +54,11 @@ setuptools.setup(
     + read_requirements("requirements.txt"),
     extras_require={
         "docs": read_requirements("requirements-docs.txt"),
-        "test": ["ofrak_angr~=1.0", "ofrak_capstone~=1.0"]
+        "test": [
+            "importlib-resources",  # Needed because of https://github.com/redballoonsecurity/ofrak/issues/398
+            "ofrak_angr~=1.0",
+            "ofrak_capstone~=1.0",
+        ]
         + read_requirements("requirements-test.txt"),
     },
     author="Red Balloon Security",
