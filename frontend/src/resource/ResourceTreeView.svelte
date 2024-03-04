@@ -55,9 +55,7 @@
   import ResourceTreeNode from "./ResourceTreeNode.svelte";
   import ResourceTreeToolbar from "./ResourceTreeToolbar.svelte";
 
-  export let rootResource,
-    modifierView,
-    bottomLeftPane;
+  export let rootResource, modifierView, bottomLeftPane;
 
   let searchFilter;
   let searchResults = {};
