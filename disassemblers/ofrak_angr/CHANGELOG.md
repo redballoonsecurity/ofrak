@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 
+## 1.1.0 - 2023-06-26
+
 ### Changed
 - Update to latest angr==9.2.77, which also necessitates Python >= 3.8.
 
