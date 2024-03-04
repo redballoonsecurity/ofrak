@@ -197,9 +197,7 @@ class AiohttpOFRAKServer:
             web.post("/delete_binary_from_project", self.delete_binary_from_project),
             web.post("/delete_script_from_project", self.delete_script_from_project),
             web.post("/reset_project", self.reset_project),
-            web.get(
-                "/{resource_id}/get_project_by_resource_id", self.get_project_by_resource_id
-            ),
+            web.get("/{resource_id}/get_project_by_resource_id", self.get_project_by_resource_id),
             web.get("/get_project_script", self.get_project_script),
             web.get("/", self.get_static_files),
             web.static(
