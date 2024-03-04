@@ -125,7 +125,7 @@ class StringsUnpacker(Unpacker[None]):
     Unpack NULL-terminated strings of printable ASCII characters.
     """
 
-    targets = (None,)  # Strings unpacker is slow, don't run by default.
+    targets = ()  # Strings unpacker is slow, don't run by default.
     children = (AsciiString,)
 
     # match sequences of at least 2 (or 8 in CodeRegions) printable characters ending with NULL
