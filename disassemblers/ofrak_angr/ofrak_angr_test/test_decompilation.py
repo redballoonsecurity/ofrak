@@ -1,4 +1,5 @@
 from typing import List
+import os
 from ofrak_angr.components.angr_decompilation_analyzer import AngrDecompilationAnalysis
 from ofrak.ofrak_context import OFRAKContext
 from ofrak.core.complex_block import ComplexBlock
@@ -6,7 +7,9 @@ from ofrak.service.resource_service_i import ResourceFilter
 
 
 async def test_angr_decompilation(ofrak_context: OFRAKContext):
-    root_resource = await ofrak_context.create_root_resource_from_file("assets/hello.x64.elf")
+    root_resource = await ofrak_context.create_root_resource_from_file(
+        os.join(os.path.dirname(__file__), "assets/hello.x64.elf")
+    )
     await root_resource.unpack_recursively(
         do_not_unpack=[
             ComplexBlock,
