@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 
+## [2.2.1](https://github.com/redballoonsecurity/ofrak/compare/ofrak-type-v2.2.0...ofrak-type-v2.2.1) - 2024-02-29
+### Changed
+- Update version pin on black and pytest for tests dependency
+
 ## [2.2.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-type-v2.1.0...ofrak-type-v2.2.0)
 
 ### Added
