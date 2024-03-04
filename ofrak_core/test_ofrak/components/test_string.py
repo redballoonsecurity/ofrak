@@ -6,11 +6,13 @@ from typing import List
 
 from ofrak import OFRAKContext
 from ofrak.component.modifier import ModifierError
+from ofrak.core import ProgramSection
 from ofrak.core.binary import GenericBinary
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter
 from ofrak.core.strings import (
     AsciiString,
+    StringsUnpacker,
     StringPatchingConfig,
     StringPatchingModifier,
     StringFindReplaceConfig,
@@ -93,6 +95,8 @@ def executable_file(string_test_directory):
 async def executable_strings(ofrak_context: OFRAKContext, executable_file) -> List[str]:
     root_resource = await ofrak_context.create_root_resource_from_file(executable_file)
     await root_resource.unpack_recursively()
+    for d in await root_resource.get_descendants(r_filter=ResourceFilter.with_tags(ProgramSection)):
+        await d.run(StringsUnpacker)
     descendants = list(
         await root_resource.get_descendants_as_view(
             AsciiString,
