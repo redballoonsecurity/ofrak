@@ -8,7 +8,6 @@ from ofrak.component.unpacker import Unpacker
 from ofrak.core.binary import BinaryPatchConfig, BinaryPatchModifier, GenericText, GenericBinary
 from ofrak.core.code_region import CodeRegion
 from ofrak.core.filesystem import File
-from ofrak.core.program_section import ProgramSection
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import index
 from ofrak.model.viewable_tag_model import AttributesType
