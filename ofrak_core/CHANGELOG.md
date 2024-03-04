@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [3.3.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v3.2.0...ofrak-v3.3.0)
 ### Added
+- Add tabbed content views and a decompilation view to the OFRAK GUI. ([#436](https://github.com/redballoonsecurity/ofrak/pull/436/))
 - Refactor HexView and related components to use mousewheel instead of scroll and compartmentalize all comonents to src/hex. ([#427](https://github.com/redballoonsecurity/ofrak/pull/427))
 - Add an improved ISO9660 packer that leverages `mkisofs` instead of PyCdLib. ([#393](https://github.com/redballoonsecurity/ofrak/pull/393))
 - Add UEFI binary unpacker. ([#399](https://github.com/redballoonsecurity/ofrak/pull/399))

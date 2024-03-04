@@ -1,11 +1,4 @@
 <style>
-  .breadcrumb {
-    position: sticky;
-    top: 0;
-    padding-bottom: 1em;
-    background: var(--main-bg-color);
-  }
-
   .hbox {
     display: flex;
     flex-direction: row;
@@ -34,7 +27,6 @@
 </style>
 
 <script>
-  import Breadcrumb from "../utils/Breadcrumb.svelte";
   import LoadingAnimation from "../utils/LoadingAnimation.svelte";
 
   import { selectedResource } from "../stores";
@@ -48,10 +40,6 @@
     return decoder.decode(new Uint8Array(buffer));
   }
 </script>
-
-<div class="breadcrumb">
-  <Breadcrumb />
-</div>
 
 {#await dataPromise.then(bufferToString)}
   <LoadingAnimation />
