@@ -107,7 +107,10 @@
     loadedScript = [],
     errorMessage,
     ofrakConfigsPromise = new Promise(() => {}),
-    runScriptConfig = ["ofrak.core.run_script_modifier.RunScriptModifierConfig", {}];
+    runScriptConfig = [
+      "ofrak.core.run_script_modifier.RunScriptModifierConfig",
+      {},
+    ];
 
   $: if (files) {
     files[0].text().then((value) => {
