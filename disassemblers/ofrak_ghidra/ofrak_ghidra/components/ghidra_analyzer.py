@@ -476,3 +476,28 @@ class GhidraCustomLoadAnalyzer(GhidraProjectAnalyzer):
             MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
         )
         return list(mem_regions)
+
+
+@dataclass
+class CreateFunctionsConfig(ComponentConfig):
+    """
+    Config for the [GhidraCreateFunctionsModifier][ofrak_ghidra.components.ghidra_analyzer.GhidraCreateFunctionsModifier].
+
+    :ivar name_to_addr: dictionary listing function names and addresses
+    """
+
+    name_to_addr: Dict[str, int]
+
+
+class GhidraCreateFunctionsModifier(Modifier, OfrakGhidraMixin):
+    id = b"GhidraCreateFunctionsModifier"
+    targets = (CodeRegion,)
+
+    create_functions_script = OfrakGhidraScript(
+        os.path.join(CORE_OFRAK_GHIDRA_SCRIPTS, "CreateFunctions.java"),
+    )
+
+    async def modify(self, resource: Resource, config: CreateFunctionsConfig):
+        function_names = ",".join(config.name_to_addr.keys())
+        function_addresses = ",".join(f"{addr}" for addr in config.name_to_addr.values())
+        await self.create_functions_script.call_script(resource, function_names, function_addresses)
