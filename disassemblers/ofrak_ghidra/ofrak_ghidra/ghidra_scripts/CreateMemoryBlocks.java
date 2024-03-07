@@ -66,11 +66,11 @@ public class CreateMemoryBlocks extends HeadlessScript {
 
             String[] memRegionInfo = memRegionRaw.split("!");
 
-            int address = Integer.parseInt(memRegionInfo[0]);
-            int size = Integer.parseInt(memRegionInfo[1]);
+            long address = Long.parseLong(memRegionInfo[0]);
+            long size = Long.parseLong(memRegionInfo[1]);
             String permissions = memRegionInfo[2];
             String name = memRegionInfo[3];
-            int offset = Integer.parseInt(memRegionInfo[4]);
+            long offset = Long.parseLong(memRegionInfo[4]);
 
             MemoryBlock block;
 
