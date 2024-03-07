@@ -27,6 +27,9 @@ import ghidra.program.model.symbol.Reference;
 import ghidra.program.model.block.CodeBlockReferenceIterator;
 import ghidra.program.model.symbol.ReferenceIterator;
 import ghidra.program.model.symbol.RefType;
+import ghidra.util.Msg;
+import java.io.StringWriter;
+import java.io.PrintWriter;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -138,6 +141,13 @@ public class AnalysisServer extends HeadlessScript {
                 OutputStream os = exchange.getResponseBody();
                 os.write(errString.getBytes());
                 os.close();
+                // Make sure the full exception and stack trace is available in application.log
+                StringWriter writer = new StringWriter();
+                PrintWriter printWriter = new PrintWriter(writer);
+                e.printStackTrace(printWriter);
+                printWriter.flush();
+                String stackTrace = writer.toString();
+                Msg.info(this, stackTrace);
             }
         }
     }
