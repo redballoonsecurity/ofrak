@@ -107,7 +107,7 @@ class LiefRemoveSectionModifierConfig(ComponentConfig):
     name: str
 
 
-class LiefRemoveSectionModifer(Modifier[LiefRemoveSectionModifierConfig]):
+class LiefRemoveSectionModifier(Modifier[LiefRemoveSectionModifierConfig]):
     targets = (Elf,)
 
     async def modify(self, resource: Resource, config: LiefRemoveSectionModifierConfig):

@@ -11,7 +11,7 @@ from ofrak.core import (
     LiefAddSegmentModifier,
     LiefAddSectionModifer,
     LiefAddSectionModifierConfig,
-    LiefRemoveSectionModifer,
+    LiefRemoveSectionModifier,
     LiefRemoveSectionModifierConfig,
 )
 from ofrak.service.resource_service_i import ResourceFilter
@@ -277,7 +277,7 @@ async def test_lief_remove_section_modifier(hello_out: Resource, tmp_path):
     await hello_out.flush_data_to_disk(original)
     assert segment_exists(original, ".text")
     config = LiefRemoveSectionModifierConfig(name=".text")
-    await hello_out.run(LiefRemoveSectionModifer, config=config)
+    await hello_out.run(LiefRemoveSectionModifier, config=config)
     modified = tmp_path / "modified.elf"
     await hello_out.flush_data_to_disk(modified)
     assert not segment_exists(modified, ".text")
