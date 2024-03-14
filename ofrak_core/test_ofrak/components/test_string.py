@@ -103,6 +103,8 @@ async def executable_strings(ofrak_context: OFRAKContext, executable_file) -> Li
             r_filter=ResourceFilter.with_tags(AsciiString),
         )
     )
+    for d in descendants:
+        assert d.text[:8] in d.resource.get_caption()
     return [string.Text for string in descendants]
 
 
