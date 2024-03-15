@@ -129,7 +129,7 @@
       <input
         type="text"
         bind:this="{endInput}"
-        value={endInput?.value ?? `0x${$dataLength.toString(16)}`}
+        value="{endInput?.value ?? `0x${$dataLength.toString(16)}`}"
       />
     </label>
     {#if errorMessage}
