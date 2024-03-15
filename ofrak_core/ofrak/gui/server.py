@@ -1193,8 +1193,11 @@ class AiohttpOFRAKServer:
         script_name_query = request.query.get("script")
         if script_name_query is not None:
             script_name = script_name_query
-        project = self._get_project_by_id(project_id)
-        script_body = project.get_script_body(script_name)
+        if script_name == "undefined":
+            script_body = ""
+        else:
+            project = self._get_project_by_id(project_id)
+            script_body = project.get_script_body(script_name)
 
         return Response(text=script_body)
 
