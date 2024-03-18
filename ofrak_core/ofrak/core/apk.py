@@ -74,9 +74,6 @@ class _UberApkSignerTool(ComponentExternalTool):
             returncode = await proc.wait()
         except FileNotFoundError:
             return False
-        except PermissionError:
-            LOGGER.warning("Encountered PermissionError while searching PATH for java.")
-            return False
 
         return 0 == returncode
 
