@@ -49,7 +49,7 @@ class _StringsToolDependency(ComponentExternalTool):
         except FileNotFoundError:
             return False
         except PermissionError:
-            LOGGER.warning("Encountered PermissionError while searching PATH for strings command.")
+            LOGGER.warning("Encountered PermissionError while searching PATH for strings.")
             return False
 
         return True
