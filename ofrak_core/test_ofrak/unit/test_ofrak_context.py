@@ -20,16 +20,20 @@ from ofrak.core.strings_analyzer import _StringsToolDependency
 
 
 def test_path_auth_error(monkeypatch, caplog):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
     if os.name != "posix":
         LOGGER.warning("test_path_auth_error is currently only supported by POSIX systems.")
         return
+
     monkeypatch.setenv("PATH", "/root")
+
     for tool in (
         ComponentExternalTool("apktool", "", "-version"),
         _UnsquashfsV45Tool(),
         _StringsToolDependency(),
     ):
-        loop = asyncio.get_event_loop()
         task = loop.create_task(tool.is_tool_installed())
         loop.run_until_complete(task)
         expected = f"Encountered PermissionError while searching PATH for {tool.tool}."
