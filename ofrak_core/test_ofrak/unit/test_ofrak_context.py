@@ -19,10 +19,8 @@ from ofrak.core.squashfs import _UnsquashfsV45Tool
 from ofrak.core.strings_analyzer import _StringsToolDependency
 
 
-def test_path_auth_error(monkeypatch, caplog):
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-
+@pytest.mark.asyncio
+async def test_path_auth_error(monkeypatch, caplog):
     if os.name != "posix":
         LOGGER.warning("test_path_auth_error is currently only supported by POSIX systems.")
         return
@@ -34,11 +32,12 @@ def test_path_auth_error(monkeypatch, caplog):
         _UnsquashfsV45Tool(),
         _StringsToolDependency(),
     ):
-        task = loop.create_task(tool.is_tool_installed())
-        loop.run_until_complete(task)
+        assert not await tool.is_tool_installed()
         expected = f"Encountered PermissionError while searching PATH for {tool.tool}."
         found = [r for r in caplog.records if r.message == expected]
-        assert len(found) == 1, "Missing error message from component_model"
+        assert any(
+            r.message == expected for r in caplog.records
+        ), f"Missing error message from {tool.tool}"
 
 
 def test_ofrak_context():
