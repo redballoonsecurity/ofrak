@@ -269,7 +269,8 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
         + [
             f"test_{package_name}:\\n\\\n\t\\$(MAKE) -C {package_name} test"
             for package_name in package_names
-        ] + ["\\n"]
+        ]
+        + ["\\n"]
     )
     dockerfile_finish_parts.append(f'RUN printf "{finish_makefile}" >> Makefile\n')
     if config.entrypoint is not None:
