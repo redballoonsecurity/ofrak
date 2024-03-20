@@ -3,8 +3,8 @@ import logging
 from typing import Iterable, Tuple, List
 from typing import Optional
 from warnings import warn
+from ofrak.component.abstract import ComponentMissingDependencyError
 
-from binaryninja import BinaryView, Endianness, TypeClass
 from ofrak_type.architecture import InstructionSetMode
 from ofrak_type.range import Range
 
@@ -17,8 +17,14 @@ from ofrak.core.program import Program
 from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter
+from ofrak_binary_ninja.components.binary_ninja_analyzer import BINJA_INSTALLED, BINJA_TOOL
 from ofrak_binary_ninja.components.identifiers import BinaryNinjaAnalysisResource
 from ofrak_binary_ninja.model import BinaryNinjaAnalysis
+
+if BINJA_INSTALLED:
+    from binaryninja import BinaryView, Endianness, TypeClass, ReferenceSource
+else:
+    BinaryView = None  # type: ignore
 
 LOGGER = logging.getLogger(__name__)
 
@@ -27,7 +33,11 @@ MAX_GAP_BETWEEN_FUNC_ADDRESS_RANGE = 0x20
 
 
 class BinaryNinjaCodeRegionUnpacker(CodeRegionUnpacker):
+    external_dependencies = (BINJA_TOOL,)
+
     async def unpack(self, resource: Resource, config=None):
+        if not BINJA_INSTALLED:
+            raise ComponentMissingDependencyError(self, BINJA_TOOL)
         region_view = await resource.view_as(CodeRegion)
         program_r = await region_view.resource.get_only_ancestor_as_view(
             Program, ResourceFilter.with_tags(Program)
@@ -120,7 +130,7 @@ class BinaryNinjaCodeRegionUnpacker(CodeRegionUnpacker):
             # Add literal pools/data by iterating over data word candidates after the function's
             # code boundaries, and checking if there are code references to those candidates from
             # the function's code ranges
-            data_refs = list()
+            data_refs: List[ReferenceSource] = list()
 
             # Adjust literal pool start address by accounting alignment "nop" instructions
             while binaryview.get_disassembly(end_ea) == "nop":
@@ -148,6 +158,8 @@ class BinaryNinjaCodeRegionUnpacker(CodeRegionUnpacker):
 
 
 class BinaryNinjaComplexBlockUnpacker(ComplexBlockUnpacker):
+    external_dependencies = (BINJA_TOOL,)
+
     async def unpack(self, resource: Resource, config: Optional[ComponentConfig] = None):
         cb_view = await resource.view_as(ComplexBlock)
         program_r = await cb_view.resource.get_only_ancestor_as_view(
@@ -240,7 +252,7 @@ class BinaryNinjaComplexBlockUnpacker(ComplexBlockUnpacker):
                 TypeClass.EnumerationTypeClass,
             ]:
                 LOGGER.debug(f"Potential jump table found at {data_var.address:x}")
-                word_size = data_var.type.width // data_var.type.count
+                word_size = data_var.type.width // data_var.type.count  # type: ignore
             else:
                 word_size = data_var.type.width
 

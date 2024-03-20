@@ -1,0 +1,24 @@
+registry: "redballoonsecurity/ofrak"
+base_image_name: "all-base"
+image_name: "all"
+packages_paths:
+  [
+    "ofrak_type",
+    "ofrak_io",
+    "ofrak_patch_maker",
+    "ofrak_core",
+    "disassemblers/ofrak_ghidra",
+    "disassemblers/ofrak_binary_ninja",
+    "disassemblers/ofrak_capstone",
+    "disassemblers/ofrak_angr",
+    "examples",
+    "frontend",
+    "ofrak_tutorial",
+  ]
+extra_build_args:
+  ["--secret",
+   "id=serial,src=serial.txt",
+   "--secret",
+   "id=license.dat,src=license.dat"
+  ]
+entrypoint: python3 -m ofrak_ghidra.server start

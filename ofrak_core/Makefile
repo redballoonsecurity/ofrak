@@ -3,15 +3,15 @@ PIP=pip3
 
 .PHONY: install
 install: ofrak/gui/public
-	$(PIP) install .
+	$(PIP) install .[non-pypi]
 
 .PHONY: develop
 develop: ofrak/gui/public
-	$(PIP) install -e .[docs,test]
+	$(PIP) install -e .[docs,test,non-pypi]
 
 .PHONY: inspect
 inspect:
-	mypy
+	$(PYTHON) -m mypy
 
 .PHONY: test
 test: inspect
@@ -23,6 +23,7 @@ ofrak/gui/public:
 		cp -r /ofrak_gui ofrak/gui/public ; \
 	elif [ -d ../frontend ]; then \
 		cd ../frontend && \
+		npm install && \
 		npm run build && \
 		cd ../ofrak_core && \
 		cp -r ../frontend/dist ofrak/gui/public ; \

@@ -34,6 +34,7 @@ setuptools.setup(
             "mypy==0.942",
             "pytest<8.0",
             "pytest-cov",
+            "pytest-xdist",
         ]
     },
     packages=setuptools.find_packages(),

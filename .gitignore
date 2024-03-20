@@ -3,6 +3,7 @@ venv/
 .idea/
 test/
 .DS_Store
+.coverage
 *.iml
 *.egg-info/
 QUESTIONS
@@ -17,4 +18,10 @@ ofrak_core/ofrak/core/entropy/entropy.so.1
 frontend/public/build
 ofrak_core/ofrak/core/entropy/entropy_c.cpython*
 ofrak_core/ofrak/gui/public
+ofrak_core/replaced_hello.out
+ofrak_core/replaced_simple_arm_gcc.o.elf
 ofrak_core/build
+ofrak_io/build/
+ofrak_patch_maker/build/
+ofrak_type/build/
+disassemblers/ofrak_ghidra/ofrak_ghidra/config/ofrak_ghidra.conf.yml
