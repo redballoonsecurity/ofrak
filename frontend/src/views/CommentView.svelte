@@ -131,7 +131,6 @@
           bind:input="{comment}"
           options="{Object.keys($resourceNodeDataMap).map((x) => '#' + x)}"
           pattern="#[a-fA-F0-9]*$"
-          optionStartIndex="1"
         />
       {/if}
     </label>
