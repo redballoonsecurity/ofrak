@@ -66,9 +66,12 @@
     dataLength,
   } from "../stores.js";
   import Button from "../utils/Button.svelte";
-
+  import DropDownAutoComplete from "../utils/DropDownAutoComplete.svelte";
   export let modifierView;
-  let comment, startInput, endInput, errorMessage;
+  let comment = "",
+    startInput,
+    endInput,
+    errorMessage;
 
   function refreshResource() {
     $resourceNodeDataMap[$selected].commentsPromise =
@@ -93,7 +96,7 @@
         optional_range = [startOffset, endOffset];
       }
       if ($selectedResource) {
-        await $selectedResource.add_comment(optional_range, comment.value);
+        await $selectedResource.add_comment(optional_range, comment);
       }
 
       modifierView = undefined;
@@ -111,9 +114,26 @@
 <div class="container">
   <div class="inputs">
     <p>Add a comment to this resource.</p>
+    <details>
+      <summary>More Info</summary>
+      <p>Create links to other resources with the syntax:</p>
+      <pre style="color:var(--comment-color)">    #resourceId@hexAddress</pre>
+      <pre>    <span style="color:var(--comment-color)">#resourceId</span
+        >: The id of the resource to link to found in the url for that resource.</pre>
+      <pre>    <span style="color:var(--comment-color)">@hexAddress</span
+        >: (Optional) An address in the given resource.</pre>
+    </details>
     <label>
       Comment:
-      <input type="text" bind:this="{comment}" />
+      <input type="text" bind:value="{comment}" />
+      {#if comment}
+        <DropDownAutoComplete
+          bind:input="{comment}"
+          options="{Object.keys($resourceNodeDataMap).map((x) => '#' + x)}"
+          pattern="#[a-fA-F0-9]*$"
+          optionStartIndex="1"
+        />
+      {/if}
     </label>
     {#if $dataLength}
       <label>

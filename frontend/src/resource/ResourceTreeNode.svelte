@@ -114,6 +114,7 @@
   import { onDestroy } from "svelte";
   import { selected, resourceNodeDataMap } from "../stores.js";
   import { shortcuts } from "../keyboard";
+  import Comment from "../views/Comment.svelte";
 
   export let rootResource,
     selectNextSibling = () => {},
@@ -156,6 +157,7 @@
     lastModified = $resourceNodeDataMap[self_id].lastModified;
     allModified = $resourceNodeDataMap[self_id].allModified;
   }
+
   function updateRootModel() {
     rootResource.update();
     rootResource = rootResource;
@@ -266,7 +268,8 @@
               url="{hovering ? '/icons/trash_can.svg' : '/icons/comment.svg'}"
             />
           </button></Hoverable
-        >{comment[1]}
+        >
+        <Comment comment="{comment}" />
       </div>
     {/each}
   {/await}
