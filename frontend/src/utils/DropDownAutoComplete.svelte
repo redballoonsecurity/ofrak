@@ -11,8 +11,7 @@
   import DropDown from "./DropDown.svelte";
 
   export let input, string, options, pattern;
-  let autoOptions = options,
-    hidden = true;
+  let autoOptions = options;
   let dropdown;
 
   document.onkeyup = handle;
@@ -24,7 +23,6 @@
 
   function hideMenu() {
     dropdown.style.display = "none";
-    hidden = true;
   }
 
   function showMenu(e) {
@@ -36,7 +34,6 @@
     )} ${getComputedStyle(e.target).getPropertyValue("font-family")}`;
     let textSize = ctx.measureText(input);
     dropdown.style.left = e.target.offsetLeft + textSize.width + "px";
-    hidden = false;
   }
 
   function handle(e) {
