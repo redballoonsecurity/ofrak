@@ -1,7 +1,11 @@
 <style>
   button {
     border: 0px;
-    color: hsl(from var(--comment-color) calc(h + 15) s l);
+    filter: invert(20%)
+  }
+
+  button:hover {
+    filter: invert(40%)
   }
 </style>
 

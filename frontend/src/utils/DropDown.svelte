@@ -1,13 +1,6 @@
 <style>
   .option:hover {
-    background-color: hsl(
-      from var(--main-bg-color) h s calc(l + 0.8 * (0.5 - l))
-    );
-  }
-
-  .option {
-    border: solid hsl(from var(--main-fg-color) h s calc(l + 0.8 * (0.5 - l)))
-      1px;
+    backdrop-filter: invert(20%)
   }
 
   .menu {
