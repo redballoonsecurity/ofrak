@@ -70,14 +70,12 @@
     dataLength,
   } from "../stores.js";
   import { onMount } from "svelte";
-  import { screenHeight } from "./stores";
+  import { screenHeight, currentPosition } from "./stores";
   import SearchBar from "../utils/SearchBar.svelte";
 
   export let resources;
   let dataSearchResults = {};
   let childRangesPromise = Promise.resolve(undefined);
-  let chunkDataPromise = Promise.resolve(undefined);
-  let currentPosition = 0;
   let childRanges,
     resourceData,
     chunkData = [],
@@ -110,7 +108,7 @@
       localDataSearchResults.matches?.length > 0 &&
       (localDataSearchResults.index || localDataSearchResults.index === 0)
     ) {
-      currentPosition =
+      $currentPosition =
         Math.floor(
           localDataSearchResults.matches[localDataSearchResults.index][0] /
             alignment
@@ -119,7 +117,7 @@
   }
   $: chunksPromise = getNewData(
     $selectedResource,
-    currentPosition,
+    $currentPosition,
     $dataLength
   );
 
@@ -147,7 +145,7 @@
   }
 
   async function getNewData() {
-    start = currentPosition;
+    start = $currentPosition;
     end = Math.min(start + $screenHeight, $dataLength);
     if (length < 1024 * 1024 * 64 && $selectedResource) {
       resourceData = await $selectedResource.get_data();
@@ -271,7 +269,7 @@
 
   function resetResource() {
     dataSearchResults.matches = undefined;
-    currentPosition = 0;
+    $currentPosition = 0;
   }
 
   function refreshHeight() {
@@ -298,12 +296,12 @@
   bind:this="{hexDisplay}"
   id="scrollable"
   on:wheel="{(e) => {
-    currentPosition += Math.floor(e.deltaY) * alignment;
-    if (currentPosition > $dataLength) {
-      currentPosition = $dataLength - alignment;
+    $currentPosition += Math.floor(e.deltaY) * alignment;
+    if ($currentPosition > $dataLength) {
+      $currentPosition = $dataLength - alignment;
     }
-    if (currentPosition < 0) {
-      currentPosition = 0;
+    if ($currentPosition < 0) {
+      $currentPosition = 0;
     }
   }}"
 >
@@ -388,7 +386,7 @@
   </div>
   {#if resourceData != undefined}
     <div class="minimap">
-      <MinimapView bind:currentPosition="{currentPosition}" />
+      <MinimapView bind:currentPosition="{$currentPosition}" />
     </div>
   {/if}
 </div>

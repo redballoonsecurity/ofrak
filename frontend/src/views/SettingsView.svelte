@@ -1,6 +1,8 @@
 <style>
   .container {
     min-height: 100%;
+    max-height: 100%;
+    overflow: auto;
     display: flex;
     flex-direction: column;
     flex-wrap: nowrap;
