@@ -35,7 +35,7 @@
       address = location.split("@")[1];
     } else {
       resource_id = location.slice(1);
-      address = range[0];
+      address = 0;
     }
     let button = {};
     button.style = "border: 0px";
