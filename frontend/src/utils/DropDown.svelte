@@ -1,6 +1,6 @@
 <style>
   .option:hover {
-    backdrop-filter: invert(20%)
+    backdrop-filter: invert(20%);
   }
 
   .menu {

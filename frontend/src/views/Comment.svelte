@@ -1,11 +1,11 @@
 <style>
   button {
     border: 0px;
-    filter: invert(20%)
+    filter: invert(20%);
   }
 
   button:hover {
-    filter: invert(40%)
+    filter: invert(40%);
   }
 </style>
 
@@ -35,7 +35,7 @@
       address = location.split("@")[1];
     } else {
       resource_id = location.slice(1);
-      address = 0;
+      address = range[0];
     }
     let button = {};
     button.style = "border: 0px";
