@@ -4,21 +4,43 @@
     position: absolute;
     margin-top: 3px;
   }
+
+  input {
+    background: inherit;
+    color: inherit;
+    border: none;
+    border-bottom: 1px solid white;
+    flex-grow: 1;
+    margin-left: 1ch;
+  }
+
+  input:focus {
+    outline: none;
+    box-shadow: inset 0 -1px 0 var(--main-fg-color);
+  }
+
+  .inputs {
+    flex-grow: 1;
+  }
+
+  .inputs *:first-child {
+    margin-top: 0;
+  }
 </style>
 
 <script>
   import { onMount } from "svelte";
   import DropDown from "./DropDown.svelte";
 
-  export let input, string, options, pattern;
+  export let comment, options, pattern;
   let autoOptions = options;
-  let dropdown;
+  let dropdown, string, input;
 
   document.onkeyup = handle;
 
   function updateInput() {
-    let match = input.match(pattern);
-    input = input.replace(match[0], string);
+    let match = comment.match(pattern);
+    comment = comment.replace(match[0], string);
   }
 
   function hideMenu() {
@@ -32,22 +54,27 @@
     ctx.font = `${getComputedStyle(e.target).getPropertyValue(
       "font-size"
     )} ${getComputedStyle(e.target).getPropertyValue("font-family")}`;
-    let textSize = ctx.measureText(input);
+    let textSize = ctx.measureText(comment);
     dropdown.style.left = e.target.offsetLeft + textSize.width + "px";
   }
 
   function handle(e) {
-    if (input.match(pattern)) {
+    if (comment.match(pattern)) {
       showMenu(e);
     } else {
       hideMenu();
     }
+    if (e.key == "Enter") {
+      input.focus();
+    }
   }
 
   function updateOptions() {
-    let match = input?.match(pattern);
+    let match = comment?.match(pattern);
     if (match) {
       string = match[0];
+      console.log(string);
+      console.log(options);
       autoOptions = options.filter((x) => x.startsWith(string));
     }
   }
@@ -58,11 +85,12 @@
   });
 
   $: if (string) updateInput(string);
-  $: if (input) updateOptions(input);
+  $: if (comment) updateOptions(comment);
 </script>
 
+<input bind:this="{input}" type="text" bind:value="{comment}" />
 <div class="container">
   <div id="dropdown" class="dropdown">
-    <DropDown options="{autoOptions}" , bind:selection="{string}" />
+    <DropDown options="{autoOptions}" bind:selection="{string}" />
   </div>
 </div>

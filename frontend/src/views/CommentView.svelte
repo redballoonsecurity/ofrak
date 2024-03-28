@@ -123,16 +123,14 @@
       <pre>    <span style="color:var(--comment-color)">@hexAddress</span
         >: (Optional) An address in the given resource.</pre>
     </details>
+    <!-- svelte-ignore a11y-label-has-associated-control -->
     <label>
       Comment:
-      <input type="text" bind:value="{comment}" />
-      {#if comment}
-        <DropDownAutoComplete
-          bind:input="{comment}"
-          options="{Object.keys($resourceNodeDataMap).map((x) => '#' + x)}"
-          pattern="#[a-fA-F0-9]*$"
-        />
-      {/if}
+      <DropDownAutoComplete
+        bind:comment="{comment}"
+        options="{Object.keys($resourceNodeDataMap).map((x) => '#' + x)}"
+        pattern="#[a-fA-F0-9]*$"
+      />
     </label>
     {#if $dataLength}
       <label>

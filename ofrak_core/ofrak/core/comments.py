@@ -47,7 +47,11 @@ class AddCommentModifier(Modifier[AddCommentModifierConfig]):
             comments = deepcopy(resource.get_attributes(CommentsAttributes).comments)
         except NotFoundError:
             comments = {}
-        comments[config.comment[0]] = config.comment[1]
+        if config.comment[0] in comments:
+            comment = config.comment[1] + "\n" + comments[config.comment[0]]
+        else:
+            comment = config.comment[1]
+        comments[config.comment[0]] = comment
         resource.add_attributes(CommentsAttributes(comments=comments))
 
 

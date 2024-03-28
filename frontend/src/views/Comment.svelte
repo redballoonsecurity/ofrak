@@ -1,4 +1,8 @@
 <style>
+  .comment {
+    white-space: pre;
+  }
+
   button {
     border: 0px;
     filter: invert(20%);
@@ -12,9 +16,10 @@
 <script>
   import { tick } from "svelte";
   import { currentPosition } from "../hex/stores.js";
-  import { selected } from "../stores.js";
-  export let comment;
-  let range = comment[0];
+  import { selected, resourceNodeDataMap } from "../stores.js";
+  import Hoverable from "../utils/Hoverable.svelte";
+  import Icon from "../utils/Icon.svelte";
+  export let comment, rootResource, selfId;
   let text = comment[1];
   let addresses = text.matchAll("#[a-fA-F0-9]+[@0x[0-9a-fA-F]+]*", text);
   let text_elements = [];
@@ -47,16 +52,35 @@
     };
     return button;
   }
+
+  async function onDeleteClick(optional_range) {
+    // Delete the selected comment.
+    // As a side effect, the corresponding resource gets selected.
+    $selected = selfId;
+    await rootResource.delete_comment(optional_range);
+    $resourceNodeDataMap[$selected].commentsPromise =
+      rootResource.get_comments();
+  }
 </script>
 
-{#each text_elements as element}
-  {#if typeof element === "string"}
-    <span>{element}</span>
-  {:else}
-    <span
-      ><button style="{element.style}" on:click="{element.onclick}"
-        >{element.content}</button
-      ></span
-    >
-  {/if}
-{/each}
+<div class="comment">
+  <Hoverable let:hovering>
+    <button title="Delete this comment" on:click="{onDeleteClick(comment[0])}">
+      <Icon
+        class="comment_icon"
+        url="{hovering ? '/icons/trash_can.svg' : '/icons/comment.svg'}"
+      />
+    </button></Hoverable
+  >
+  {#each text_elements as element}
+    {#if typeof element === "string"}
+      <span>{element}</span>
+    {:else}
+      <span
+        ><button style="{element.style}" on:click="{element.onclick}"
+          >{element.content}</button
+        ></span
+      >
+    {/if}
+  {/each}
+</div>
