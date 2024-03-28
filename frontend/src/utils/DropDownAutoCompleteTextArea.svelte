@@ -5,26 +5,19 @@
     margin-top: 3px;
   }
 
-  input {
+  textarea {
     background: inherit;
     color: inherit;
     border: none;
     border-bottom: 1px solid white;
     flex-grow: 1;
+    height: 10em;
     margin-left: 1ch;
   }
 
-  input:focus {
+  textarea:focus {
     outline: none;
     box-shadow: inset 0 -1px 0 var(--main-fg-color);
-  }
-
-  .inputs {
-    flex-grow: 1;
-  }
-
-  .inputs *:first-child {
-    margin-top: 0;
   }
 </style>
 
@@ -88,7 +81,7 @@
   $: if (comment) updateOptions(comment);
 </script>
 
-<input bind:this="{input}" type="text" bind:value="{comment}" />
+<textarea bind:this="{input}" type="text" bind:value="{comment}" />
 <div class="container">
   <div id="dropdown" class="dropdown">
     <DropDown options="{autoOptions}" bind:selection="{string}" />

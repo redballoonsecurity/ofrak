@@ -66,7 +66,7 @@
     dataLength,
   } from "../stores.js";
   import Button from "../utils/Button.svelte";
-  import DropDownAutoComplete from "../utils/DropDownAutoComplete.svelte";
+  import DropDownAutoCompleteTextArea from "../utils/DropDownAutoCompleteTextArea.svelte";
   export let modifierView;
   let comment = "",
     startInput,
@@ -126,7 +126,7 @@
     <!-- svelte-ignore a11y-label-has-associated-control -->
     <label>
       Comment:
-      <DropDownAutoComplete
+      <DropDownAutoCompleteTextArea
         bind:comment="{comment}"
         options="{Object.keys($resourceNodeDataMap).map((x) => '#' + x)}"
         pattern="#[a-fA-F0-9]*$"
