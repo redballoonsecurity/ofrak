@@ -40,7 +40,6 @@ async def test_adding_comments(executable_resource: Resource):
 # doesn't need to be reset between individual runs of hypothesis (since the comment overrides
 # the previous one every time).
 @settings(
-    suppress_health_check=[HealthCheck.function_scoped_fixture],
     deadline=timedelta(seconds=5),
 )
 @given(comment_str=text())
