@@ -1,6 +1,6 @@
 from datetime import timedelta
 import pytest
-from hypothesis import given, HealthCheck, settings
+from hypothesis import given, settings
 from hypothesis.strategies import text
 from ofrak.resource import Resource
 
