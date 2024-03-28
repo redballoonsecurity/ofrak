@@ -48,7 +48,7 @@
     button.onclick = async function () {
       $selected = resource_id;
       await tick();
-      $currentPosition = Number(address);
+      $currentPosition = Math.ceil(Number(address)/16) * 16;
     };
     return button;
   }
