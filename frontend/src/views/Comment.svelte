@@ -28,10 +28,10 @@
     text_elements.push(text_split[0]);
     text_elements.push(createAddressButton(location[0]));
     text = text_split.slice(1).join(location[0]);
-    // let addr = address[0].replace("@", "");
-    // text = text.replace(address, `<button style="border: 0px" onclick=\'(e) => {${$currentPosition}=Number(${addr}})\'>${addr}</button>`)
   });
+
   text_elements.push(text);
+
   function createAddressButton(location) {
     let resource_id;
     let address = 0;
@@ -48,7 +48,7 @@
     button.onclick = async function () {
       $selected = resource_id;
       await tick();
-      $currentPosition = Math.ceil(Number(address)/16) * 16;
+      $currentPosition = Math.ceil(Number(address) / 16) * 16;
     };
     return button;
   }

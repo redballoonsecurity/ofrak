@@ -81,7 +81,7 @@
   $: if (comment) updateOptions(comment);
 </script>
 
-<textarea bind:this="{input}" type="text" bind:value="{comment}" />
+<textarea bind:this="{input}" type="text" bind:value="{comment}"></textarea>
 <div class="container">
   <div id="dropdown" class="dropdown">
     <DropDown options="{autoOptions}" bind:selection="{string}" />
