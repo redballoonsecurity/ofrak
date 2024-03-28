@@ -66,7 +66,7 @@ async def test_overriding_comment(executable_resource: Resource):
     )
     comments = executable_resource.get_attributes(CommentsAttributes).comments
     assert len(comments) == 1
-    assert comments[Range(0, 1)] == "overriding_comment"
+    assert comments[Range(0, 1)] == "overriding_comment" + "\n" + "comment"
 
 
 async def test_range_validation(executable_resource: Resource):
