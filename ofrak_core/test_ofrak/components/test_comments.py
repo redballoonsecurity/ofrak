@@ -56,7 +56,6 @@ async def test_comment_content(executable_resource: Resource, comment_str: str):
         DeleteCommentModifier,
         DeleteCommentModifierConfig(comment_range=None),
     )
-    
 
 
 async def test_overriding_comment(executable_resource: Resource):
