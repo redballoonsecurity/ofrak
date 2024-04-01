@@ -83,9 +83,10 @@
     regex: false,
     caseIgnore: false,
   };
-  const searchTypes = ["String", "Bytes"];
 
-  export let search, searchResults, liveUpdate, showResultsWidgets;
+  export let search, searchResults, liveUpdate, showResultsWidgets, additionalSearchTypes=[];
+
+  const searchTypes = ["String", "Bytes", ...additionalSearchTypes];
 
   searchResults.matches = undefined;
   searchResults.index = 0;
@@ -158,6 +159,8 @@
     searchOptions.regex = false; // Regex for bytes not yet implemented
     placeholderString = "Search for Bytes";
   }
+
+  $: doSearch(searchOptions.searchType)
 </script>
 
 <div class="searchbar">
@@ -172,7 +175,7 @@
   <form
     on:submit="{async (e) => {
       e.preventDefault();
-      if (searchQuery === undefined || searchQuery.length === 0) {
+      if ((searchQuery === undefined || searchQuery.length === 0) && (["Bytes", "String"].includes(searchOptions.searchType))) {
         searchResults.matches = undefined;
         prevQuery = '';
         prevOptions = {};
@@ -189,9 +192,9 @@
         return;
       }
       if (
-        !liveUpdate ||
+        (!liveUpdate ||
         searchQuery === undefined ||
-        searchQuery.length === 0
+        searchQuery.length === 0) && (["Bytes", "String"].includes(searchOptions.searchType))
       ) {
         searchResults.matches = undefined;
         prevQuery = '';

@@ -728,6 +728,50 @@ export class RemoteResource extends Resource {
       return await r.json();
     });
   }
+
+  async search_for_comments(searchQuery, options){
+    let results = []
+    if(searchQuery?.length > 0){
+      const rootComments = await this.get_comments();
+      rootComments.forEach((comment) => {
+        if(comment[1].includes(searchQuery)){
+          results.push(this.get_id())
+        }
+      })
+      const descendants = await this.get_descendants();
+      for(const descendant of descendants){
+        let comments = await descendant.get_comments();
+        for(const comment of comments){
+          if(comment[1].includes(searchQuery)){
+            results.push(descendant.get_id())
+            const ancestors = await descendant.get_ancestors()
+            for(const ancestor of ancestors){
+              results.push(ancestor.resource_id)
+            }
+          }
+        }
+      }
+    } else {
+      const rootComments = await this.get_comments();
+      if(rootComments.length > 0){
+        results.push(this.get_id())
+      }
+      const descendants = await this.get_descendants();
+      for(const descendant of descendants){
+        let comments = await descendant.get_comments();
+        if(comments.length > 0){
+          results.push(descendant.get_id())
+          const ancestors = await descendant.get_ancestors()
+          for(const ancestor of ancestors){
+            results.push(ancestor.resource_id)
+          }
+          console.log(results)
+        }
+      }
+    }
+    return results
+  }
+  
 }
 
 export function remote_models_to_resources(remote_models, resources) {

@@ -72,6 +72,8 @@
       searchFilter = await rootResource.search_for_string(searchQuery, options);
     } else if (options.searchType === "Bytes") {
       searchFilter = await rootResource.search_for_bytes(searchQuery, false);
+    } else if (options.searchType == "Comments"){
+      searchFilter = await rootResource.search_for_comments(searchQuery, false);
     }
     return searchFilter;
   }
@@ -93,6 +95,7 @@
         liveUpdate="{true}"
         showResultsWidgets="{false}"
         bind:searchResults="{searchResults}"
+        additionalSearchTypes="{["Comments"]}"
       />
     </div>
     <div class="treebox">

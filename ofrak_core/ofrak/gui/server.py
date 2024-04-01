@@ -6,6 +6,7 @@ from enum import Enum
 import functools
 import itertools
 import logging
+from types import NoneType
 from ofrak.project.project import OfrakProject
 
 import typing_inspect
@@ -784,8 +785,8 @@ class AiohttpOFRAKServer:
         resource = await self._get_resource_for_request(request)
         body = await request.json()
         string_query_param = body["search_query"]
-        if string_query_param == "":
-            return json_response(None)
+        if len(string_query_param) == 0:
+            return json_response([r.get_id().hex() for r in await resource.get_descendants()] + [resource.get_id().hex()])
         regex = body["regex"]
         case_ignore = body["caseIgnore"]
         if not isinstance(string_query_param, str):
@@ -821,8 +822,8 @@ class AiohttpOFRAKServer:
         resource = await self._get_resource_for_request(request)
         body = await request.json()
         bytes_query_request = body["search_query"]
-        if bytes_query_request == "":
-            return json_response(None)
+        if len(bytes_query_request) == 0:
+            return json_response([r.get_id().hex() for r in await resource.get_descendants()] + [resource.get_id().hex()])
         bytes_query = bytes.fromhex(re.sub(r"[^0-9a-fA-F]+", "", bytes_query_request))
         offsets = await resource.search_data(bytes_query)
         found_resources = []
@@ -1022,6 +1023,8 @@ class AiohttpOFRAKServer:
         regex = body.get("regex")
         case_ignore = body.get("caseIgnore")
         raw_query = body.get("search_query")
+        if raw_query is None:
+            raw_query = ""
         if mode is None:
             mode = "String"
 
