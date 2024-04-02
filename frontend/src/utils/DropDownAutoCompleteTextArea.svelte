@@ -66,8 +66,6 @@
     let match = comment?.match(pattern);
     if (match) {
       string = match[0];
-      console.log(string);
-      console.log(options);
       autoOptions = options.filter((x) => x.startsWith(string));
     }
   }
