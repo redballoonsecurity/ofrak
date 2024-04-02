@@ -22,8 +22,9 @@
 </style>
 
 <script>
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import DropDown from "./DropDown.svelte";
+  import { getTextSizeInPixels } from "../helpers.js";
 
   export let comment, options, pattern;
   let autoOptions = options;
@@ -42,12 +43,7 @@
 
   function showMenu(e) {
     dropdown.style.display = "block";
-    const c = document.createElement("canvas");
-    const ctx = c.getContext("2d");
-    ctx.font = `${getComputedStyle(e.target).getPropertyValue(
-      "font-size"
-    )} ${getComputedStyle(e.target).getPropertyValue("font-family")}`;
-    let textSize = ctx.measureText(comment);
+    let textSize = getTextSizeInPixels(e.target, comment);
     dropdown.style.left = e.target.offsetLeft + textSize.width + "px";
   }
 
@@ -66,14 +62,12 @@
     let match = comment?.match(pattern);
     if (match) {
       string = match[0];
-      console.log(string);
-      console.log(options);
       autoOptions = options.filter((x) => x.startsWith(string));
     }
   }
 
   onMount(() => {
-    dropdown = document.getElementById("dropdown");
+    // dropdown = document.getElementById("dropdown");
     hideMenu();
   });
 
@@ -83,7 +77,7 @@
 
 <textarea bind:this="{input}" type="text" bind:value="{comment}"></textarea>
 <div class="container">
-  <div id="dropdown" class="dropdown">
+  <div bind:this="{dropdown}" class="dropdown">
     <DropDown options="{autoOptions}" bind:selection="{string}" />
   </div>
 </div>
