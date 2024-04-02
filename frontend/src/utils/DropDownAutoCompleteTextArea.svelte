@@ -30,8 +30,6 @@
   let autoOptions = options;
   let dropdown, string, input;
 
-  document.onkeyup = handle;
-
   function updateInput() {
     let match = comment.match(pattern);
     comment = comment.replace(match[0], string);
@@ -67,7 +65,8 @@
   }
 
   onMount(() => {
-    // dropdown = document.getElementById("dropdown");
+    input.onkeyup = handle;
+    dropdown.onkeyup = handle;
     hideMenu();
   });
 
