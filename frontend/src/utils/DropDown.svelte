@@ -9,7 +9,7 @@
 
   .menu {
     background-color: var(--main-bg-color);
-    border: solid var(--main-fg-color) 1px;
+    border: 1px solid var(--main-fg-color);
   }
 </style>
 
