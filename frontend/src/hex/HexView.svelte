@@ -149,7 +149,7 @@
   async function getNewData() {
     start = currentPosition;
     end = Math.min(start + $screenHeight, $dataLength);
-    if (length < 1024 * 1024 * 64 && $selectedResource) {
+    if ($dataLength < 1024 * 1024 && $selectedResource) {
       resourceData = await $selectedResource.get_data();
     } else {
       resourceData = null;
