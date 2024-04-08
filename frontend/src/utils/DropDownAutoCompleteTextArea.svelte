@@ -13,6 +13,7 @@
     flex-grow: 1;
     height: 10em;
     margin-left: 1ch;
+    font: inherit;
   }
 
   textarea:focus {

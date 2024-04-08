@@ -1,12 +1,19 @@
 <style>
+  details {
+    cursor: pointer;
+    user-select: none;
+  }
+
   .container {
     min-height: 100%;
+    max-height: 100%;
     display: flex;
     flex-direction: column;
     flex-wrap: nowrap;
     justify-content: center;
     align-items: stretch;
     align-content: center;
+    overflow: auto;
   }
 
   .inputs {

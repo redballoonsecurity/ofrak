@@ -23,7 +23,7 @@
   let text = comment[1];
   let addresses = text.matchAll("#[a-fA-F0-9]+[@0x[0-9a-fA-F]+]*", text);
   let text_elements = [];
-  addresses.forEach((location) => {
+  Array.from(addresses).forEach((location) => {
     let text_split = text.split(location[0]);
     text_elements.push(text_split[0]);
     text_elements.push(createAddressButton(location[0]));
