@@ -240,3 +240,12 @@ export function splitAndCapitalize(name) {
 export function saveSettings() {
   window.localStorage.setItem("settings", JSON.stringify(get(settings)));
 }
+
+export function getTextSizeInPixels(element, text) {
+  const c = document.createElement("canvas");
+  const ctx = c.getContext("2d");
+  ctx.font = `${getComputedStyle(element).getPropertyValue(
+    "font-size"
+  )} ${getComputedStyle(element).getPropertyValue("font-family")}`;
+  return ctx.measureText(text);
+}
