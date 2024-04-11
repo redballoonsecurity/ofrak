@@ -55,11 +55,7 @@
   import ResourceTreeNode from "./ResourceTreeNode.svelte";
   import ResourceTreeToolbar from "./ResourceTreeToolbar.svelte";
 
-  export let rootResource,
-    modifierView,
-    bottomLeftPane,
-    showProjectManager,
-    showRootResource;
+  export let rootResource, modifierView, bottomLeftPane;
 
   let searchFilter;
   let searchResults = {};
@@ -82,8 +78,6 @@
     <ResourceTreeToolbar
       bind:modifierView="{modifierView}"
       bind:bottomLeftPane="{bottomLeftPane}"
-      bind:showProjectManager="{showProjectManager}"
-      bind:showRootResource="{showRootResource}"
     />
   </div>
   <div class="resources">

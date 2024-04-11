@@ -70,7 +70,10 @@ class PJSONSerializationService(SerializationServiceInterface):
     def from_pjson(self, pjson_obj: PJSONType, type_hint: Any) -> Any:
         """Opposite of `to_pjson`."""
         serializer = self._get_serializer(pjson_obj, type_hint)
-        return serializer.pjson_to_obj(pjson_obj, type_hint)
+        try:
+            return serializer.pjson_to_obj(pjson_obj, type_hint)
+        except Exception as e:
+            raise type(e)(f"Exception when deserializing {pjson_obj} as {type_hint}") from e
 
     def _get_serializer(self, obj: Any, type_hint: Any) -> SerializerInterface:
         """Return the first serializer/deserializer pair found for `type_hint`."""
