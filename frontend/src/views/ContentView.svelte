@@ -71,7 +71,7 @@
       "ofrak.core.data.DataWord",
     ].some((tag) => $selectedResource.has_tag(tag));
     hasDecompView = [
-      "ofrak_angr.components.angr_decompilation_analyzer.AngrDecompilationAnalysis",
+      "ofrak.core.decompilation.DecompilationAnalysis",
     ].some((tag) => $selectedResource.has_tag(tag));
     if (hasTextView) {
       tabs.push(textTab);

@@ -6,7 +6,7 @@ from ofrak.core.complex_block import ComplexBlock
 from ofrak.service.resource_service_i import ResourceFilter
 
 
-async def test_angr_decompilation(ofrak_context: OFRAKContext):
+async def test_ghidra_decompilation(ofrak_context: OFRAKContext):
     root_resource = await ofrak_context.create_root_resource_from_file(
         os.path.join(os.path.dirname(__file__), "assets/hello.x64.elf")
     )
@@ -26,11 +26,11 @@ async def test_angr_decompilation(ofrak_context: OFRAKContext):
     decomps = []
     for complex_block in complex_blocks:
         await complex_block.resource.identify()
-        angr_resource: DecompilationAnalysis = await complex_block.resource.view_as(
+        ghidra_resource: DecompilationAnalysis = await complex_block.resource.view_as(
             DecompilationAnalysis
         )
-        decomps.append(angr_resource.decompilation)
-    assert len(decomps) == 11
+        decomps.append(ghidra_resource.decompilation)
+    assert len(decomps) == 14
     assert "" not in decomps
     assert "main" in " ".join(decomps)
     assert "print" in " ".join(decomps)

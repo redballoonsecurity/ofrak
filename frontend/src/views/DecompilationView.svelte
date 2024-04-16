@@ -20,12 +20,12 @@
 
   function get_decompilation() {
     if (
-      "ofrak.model._auto_attributes.AttributesType[AngrDecompilationAnalysis]" in
+      "ofrak.model._auto_attributes.AttributesType[DecompilationAnalysis]" in
       $selectedResource.attributes
     ) {
       var html = hljs.highlight(
         $selectedResource.attributes[
-          "ofrak.model._auto_attributes.AttributesType[AngrDecompilationAnalysis]"
+          "ofrak.model._auto_attributes.AttributesType[DecompilationAnalysis]"
         ]["decompilation"],
         { language: "c" }
       ).value;
