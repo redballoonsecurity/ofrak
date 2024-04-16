@@ -1,9 +1,6 @@
-from dataclasses import dataclass
 import angr
 from angr.analyses.decompiler import Decompiler
 from ofrak.component.analyzer import Analyzer
-from ofrak.component.identifier import Identifier
-from ofrak.resource_view import ResourceView
 
 from ofrak.resource import Resource
 from ofrak.core.complex_block import ComplexBlock
