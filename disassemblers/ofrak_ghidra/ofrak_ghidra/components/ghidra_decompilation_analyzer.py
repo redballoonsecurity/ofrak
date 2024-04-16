@@ -69,7 +69,7 @@ class GhidraDecompilationAnalyzer(DecompilationAnalyzer, OfrakGhidraMixin):
                 .replace("<nl>", "\n")
                 .replace("<cr>", "\r")
                 .replace("<tab>", "\t")
-                .replace("<zero>", "\0")
+                .replace("<zero>", "\\0")
             )
         else:
             decomp = "No Decompilation available"
