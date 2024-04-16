@@ -1,3 +1,5 @@
+from typing import Tuple
+from json.decoder import JSONDecodeError
 import os
 import re
 
@@ -9,12 +11,12 @@ from ofrak_ghidra.constants import CORE_OFRAK_GHIDRA_SCRIPTS
 from ofrak_ghidra.ghidra_model import OfrakGhidraMixin, OfrakGhidraScript
 
 
-def take_delimited(s, delim):
+def take_delimited(s: str, delim: str) -> Tuple[str, str]:
     result = ""
 
     if delim in s:
         idx = s.index(delim)
-        result += s[: idx + 1]  # include delimeter
+        result += s[: idx + 1]  # include delimiter
         s = s[idx + 1 :]
 
         matched_quotes = list(re.finditer(r"[^\\]%s" % delim, s))
@@ -28,7 +30,7 @@ def take_delimited(s, delim):
     return (s, result)
 
 
-def escape_strings(s):
+def escape_strings(s: str) -> str:
     s_escaped = ""
 
     while '"' in s or "'" in s:
@@ -49,27 +51,28 @@ class GhidraDecompilationAnalyzer(DecompilationAnalyzer, OfrakGhidraMixin):
 
     async def analyze(self, resource: Resource, config: None) -> DecompilationAnalysis:
         # Run / fetch ghidra analyzer
+        complex_block = await resource.view_as(ComplexBlock)
+        result = {}
+
         try:
-            complex_block = await resource.view_as(ComplexBlock)
             result = await self.get_decompilation_script.call_script(
                 resource, complex_block.virtual_address
             )
-            print(result)
+        except JSONDecodeError as e:
+            return DecompilationAnalysis(str(e))
 
-            if "decomp" in result:
-                decomp = (
-                    result["decomp"]
-                    .replace("<quote>", "'")
-                    .replace("<dquote>", '"')
-                    .replace("<nl>", "\n")
-                )
-            else:
-                decomp = "No Decompilation available"
-
-            decomp_escaped = escape_strings(decomp)
-            return DecompilationAnalysis(decomp_escaped)
-
-        except Exception as e:
-            return DecompilationAnalysis(
-                f"The decompilation for this Complex Block has failed with the error {e}"
+        if "decomp" in result:
+            decomp = (
+                result["decomp"]
+                .replace("<quote>", "'")
+                .replace("<dquote>", '"')
+                .replace("<nl>", "\n")
+                .replace("<cr>", "\r")
+                .replace("<tab>", "\t")
+                .replace("<zero>", "\0")
             )
+        else:
+            decomp = "No Decompilation available"
+
+        decomp_escaped = escape_strings(decomp)
+        return DecompilationAnalysis(decomp_escaped)
