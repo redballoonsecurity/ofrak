@@ -244,15 +244,17 @@
   >
     {rootResource.get_caption()}
   </button>
-  {#await commentsPromise then comments}
-    {#each comments as comment}
-      <div class="comment">
-        <Comment
-          comment="{comment}"
-          rootResource="{rootResource}"
-          selfId="{selfId}"
-        />
-      </div>
+  {#await commentsPromise then comment_group}
+    {#each comment_group as [comment_range, comment_strs]}
+      {#each comment_strs as comment_text}
+        <div class="comment">
+          <Comment
+            comment="{[comment_range, comment_text]}"
+            rootResource="{rootResource}"
+            selfId="{selfId}"
+          />
+        </div>
+      {/each}
     {/each}
   {/await}
 

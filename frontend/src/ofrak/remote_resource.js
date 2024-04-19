@@ -508,13 +508,13 @@ export class RemoteResource extends Resource {
     await this.update_script();
   }
 
-  async delete_comment(optional_range) {
+  async delete_comment(optional_range, comment) {
     await fetch(`${this.uri}/delete_comment`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(optional_range),
+      body: JSON.stringify([optional_range, comment]),
     }).then(async (r) => {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));

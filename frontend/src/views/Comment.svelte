@@ -53,11 +53,11 @@
     return button;
   }
 
-  async function onDeleteClick(optional_range) {
+  async function onDeleteClick(optional_range, comment_text) {
     // Delete the selected comment.
     // As a side effect, the corresponding resource gets selected.
     $selected = selfId;
-    await rootResource.delete_comment(optional_range);
+    await rootResource.delete_comment(optional_range, comment_text);
     $resourceNodeDataMap[$selected].commentsPromise =
       rootResource.get_comments();
   }
@@ -65,7 +65,7 @@
 
 <div class="comment">
   <Hoverable let:hovering>
-    <button title="Delete this comment" on:click="{onDeleteClick(comment[0])}">
+    <button title="Delete this comment" on:click="{onDeleteClick(comment[0], comment[1])}">
       <Icon
         class="comment_icon"
         url="{hovering ? '/icons/trash_can.svg' : '/icons/comment.svg'}"
