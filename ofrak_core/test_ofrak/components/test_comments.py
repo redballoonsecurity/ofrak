@@ -22,6 +22,10 @@ async def executable_resource(ofrak_context, elf_executable_file) -> Resource:
     return root_resource
 
 
+def get_comment_count(comment_attributes: CommentsAttributes) -> int:
+    return sum(len(comment_list) for comment_list in comment_attributes.comments.values())
+
+
 async def test_adding_comments(executable_resource: Resource):
     """Test adding comments, including to the entire resource (range=None)."""
     await executable_resource.run(
@@ -32,8 +36,39 @@ async def test_adding_comments(executable_resource: Resource):
         AddCommentModifier,
         AddCommentModifierConfig(comment=(None, "comment")),
     )
-    comments = executable_resource.get_attributes(CommentsAttributes).comments
-    assert len(comments) == 2
+    comment_attributes = executable_resource.get_attributes(CommentsAttributes)
+    assert get_comment_count(comment_attributes) == 2
+
+
+async def test_adding_comments_same_range(executable_resource: Resource):
+    """Test adding multiple comments to the same range, including duplicated messages"""
+    await executable_resource.run(
+        AddCommentModifier,
+        AddCommentModifierConfig(comment=(Range(0, 1), "range 1 first comment")),
+    )
+    await executable_resource.run(
+        AddCommentModifier,
+        AddCommentModifierConfig(comment=(Range(0, 1), "range 1 second comment")),
+    )
+    await executable_resource.run(
+        AddCommentModifier,
+        AddCommentModifierConfig(comment=(None, "full range first comment")),
+    )
+    await executable_resource.run(
+        AddCommentModifier,
+        AddCommentModifierConfig(comment=(None, "full range second comment")),
+    )
+    # Test duplicate comments (same range, same message)
+    await executable_resource.run(
+        AddCommentModifier,
+        AddCommentModifierConfig(comment=(Range(0, 1), "range 1 second comment")),
+    )
+    await executable_resource.run(
+        AddCommentModifier,
+        AddCommentModifierConfig(comment=(None, "full range second comment")),
+    )
+    comment_attributes = executable_resource.get_attributes(CommentsAttributes)
+    assert get_comment_count(comment_attributes) == 6
 
 
 # We suppress the function_scoped_fixture health check because the executable_resource fixture
@@ -51,26 +86,13 @@ async def test_comment_content(executable_resource: Resource, comment_str: str):
         AddCommentModifierConfig(comment=(None, comment_str)),
     )
     comments = executable_resource.get_attributes(CommentsAttributes).comments
-    assert comments[None] == comment_str
+    assert comments[None] == [comment_str]
     await executable_resource.run(
         DeleteCommentModifier,
-        DeleteCommentModifierConfig(comment_range=None),
+        DeleteCommentModifierConfig(comment=(None)),
     )
-
-
-async def test_overriding_comment(executable_resource: Resource):
-    """Test that adding a comment to a range with an existing comment overrides the existing comment."""
-    await executable_resource.run(
-        AddCommentModifier,
-        AddCommentModifierConfig(comment=(Range(0, 1), "comment")),
-    )
-    await executable_resource.run(
-        AddCommentModifier,
-        AddCommentModifierConfig(comment=(Range(0, 1), "overriding_comment")),
-    )
-    comments = executable_resource.get_attributes(CommentsAttributes).comments
-    assert len(comments) == 1
-    assert comments[Range(0, 1)] == "overriding_comment" + "\n" + "comment"
+    comment_attributes = executable_resource.get_attributes(CommentsAttributes)
+    assert get_comment_count(comment_attributes) == 0
 
 
 async def test_range_validation(executable_resource: Resource):
@@ -97,8 +119,8 @@ async def test_comments_survive_unpacking(executable_resource: Resource, recursi
     else:
         component_run_result = await executable_resource.unpack()
     assert len(component_run_result.resources_created) > 0
-    comments = executable_resource.get_attributes(CommentsAttributes).comments
-    assert len(comments) == 1
+    comment_attributes = executable_resource.get_attributes(CommentsAttributes)
+    assert get_comment_count(comment_attributes) == 1
 
 
 @pytest.mark.parametrize("recursively", [True, False])
@@ -115,8 +137,8 @@ async def test_comments_survive_repacking(executable_resource: Resource, recursi
     else:
         await executable_resource.unpack()
         await executable_resource.pack()
-    comments = executable_resource.get_attributes(CommentsAttributes).comments
-    assert len(comments) == 1
+    comment_attributes = executable_resource.get_attributes(CommentsAttributes)
+    assert get_comment_count(comment_attributes) == 1
 
 
 async def test_comments_survive_analyzing(executable_resource: Resource):
@@ -127,40 +149,119 @@ async def test_comments_survive_analyzing(executable_resource: Resource):
     )
     # Analyze the resource
     await executable_resource.analyze(Magic)
-    comments = executable_resource.get_attributes(CommentsAttributes).comments
-    assert len(comments) == 1
+    comment_attributes = executable_resource.get_attributes(CommentsAttributes)
+    assert get_comment_count(comment_attributes) == 1
 
 
 async def test_deleting_comments(executable_resource: Resource):
     """Test deleting comments."""
     await executable_resource.run(
         AddCommentModifier,
-        AddCommentModifierConfig(comment=(Range(0, 1), "comment")),
+        AddCommentModifierConfig(comment=(Range(0, 1), "first range comment 1")),
     )
     await executable_resource.run(
         AddCommentModifier,
-        AddCommentModifierConfig(comment=(None, "comment")),
+        AddCommentModifierConfig(comment=(Range(0, 1), "first range comment 2")),
     )
-    comments = executable_resource.get_attributes(CommentsAttributes).comments
-    assert len(comments) == 2
+    await executable_resource.run(
+        AddCommentModifier,
+        AddCommentModifierConfig(comment=(Range(0, 2), "second range comment 1")),
+    )
+    await executable_resource.run(
+        AddCommentModifier,
+        AddCommentModifierConfig(comment=(Range(0, 2), "second range comment 2")),
+    )
+    await executable_resource.run(
+        AddCommentModifier,
+        AddCommentModifierConfig(comment=(Range(1, 2), "third range comment 1")),
+    )
+    await executable_resource.run(
+        AddCommentModifier,
+        AddCommentModifierConfig(comment=(Range(1, 2), "third range comment 2")),
+    )
+    await executable_resource.run(
+        AddCommentModifier,
+        AddCommentModifierConfig(comment=(None, "full range comment 1")),
+    )
+    await executable_resource.run(
+        AddCommentModifier,
+        AddCommentModifierConfig(comment=(None, "full range comment 2")),
+    )
+    await executable_resource.run(
+        AddCommentModifier,
+        AddCommentModifierConfig(comment=(None, "full range comment 3")),
+    )
+    comment_attributes = executable_resource.get_attributes(CommentsAttributes)
+    assert get_comment_count(comment_attributes) == 9
+    # Test deletion of specific comments
     await executable_resource.run(
         DeleteCommentModifier,
-        DeleteCommentModifierConfig(comment_range=Range(0, 1)),
+        DeleteCommentModifierConfig(comment=(Range(0, 1), "first range comment 1")),
     )
-    comments = executable_resource.get_attributes(CommentsAttributes).comments
-    assert len(comments) == 1
+    comment_attributes = executable_resource.get_attributes(CommentsAttributes)
+    comments = comment_attributes.comments
+    assert get_comment_count(comment_attributes) == 8
+    assert len(comments[Range(0, 1)]) == 1
+    assert comments[Range(0, 1)][0] == "first range comment 2"
+    # Test specific deletion of last comment in a range
     await executable_resource.run(
         DeleteCommentModifier,
-        DeleteCommentModifierConfig(comment_range=None),
+        DeleteCommentModifierConfig(comment=(Range(0, 1), "first range comment 2")),
     )
-    comments = executable_resource.get_attributes(CommentsAttributes).comments
-    assert len(comments) == 0
+    comment_attributes = executable_resource.get_attributes(CommentsAttributes)
+    comments = comment_attributes.comments
+    assert get_comment_count(comment_attributes) == 7
+    with pytest.raises(KeyError):
+        # This key shouldn't exist anymore
+        assert len(comments[Range(0, 1)]) == 0
+    # Test deletion of entire ranges with new DeleteCommentModifierConfig format
+    await executable_resource.run(
+        DeleteCommentModifier,
+        DeleteCommentModifierConfig(comment=(Range(1, 2), None)),
+    )
+    comment_attributes = executable_resource.get_attributes(CommentsAttributes)
+    assert get_comment_count(comment_attributes) == 5
+    # Test deletion of entire ranges, with old DeleteCommentModifierConfig format
+    await executable_resource.run(
+        DeleteCommentModifier,
+        DeleteCommentModifierConfig(comment=None),
+    )
+    comment_attributes = executable_resource.get_attributes(CommentsAttributes)
+    assert get_comment_count(comment_attributes) == 2
+    await executable_resource.run(
+        DeleteCommentModifier,
+        DeleteCommentModifierConfig(comment=Range(0, 2)),
+    )
+    comment_attributes = executable_resource.get_attributes(CommentsAttributes)
+    assert get_comment_count(comment_attributes) == 0
+    # Ensure none of the keys exist anymore
+    assert len(comment_attributes.comments.keys()) == 0
 
 
 async def test_deleting_non_existing_comment(executable_resource: Resource):
-    """Test deleting a non-existing comment."""
+    """Test deleting non-existing comments."""
     with pytest.raises(NotFoundError):
         await executable_resource.run(
             DeleteCommentModifier,
-            DeleteCommentModifierConfig(comment_range=Range(0, 1)),
+            DeleteCommentModifierConfig(comment=(Range(0, 1))),
         )
+
+    # Now test deleting a comment when no comments with that text exist
+    await executable_resource.run(
+        AddCommentModifier,
+        AddCommentModifierConfig(comment=(None, "this exists")),
+    )
+
+    with pytest.raises(NotFoundError):
+        await executable_resource.run(
+            DeleteCommentModifier,
+            DeleteCommentModifierConfig(comment=(None, "this doesn't exist")),
+        )
+
+    await executable_resource.run(
+        DeleteCommentModifier,
+        DeleteCommentModifierConfig(comment=(None, "this exists")),
+    )
+
+    comment_attributes = executable_resource.get_attributes(CommentsAttributes)
+    assert get_comment_count(comment_attributes) == 0

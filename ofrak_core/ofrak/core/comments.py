@@ -49,7 +49,6 @@ class AddCommentModifier(Modifier[AddCommentModifierConfig]):
 
         # Here I'm appending appending overlapping comments with a new line.
         # Overwriting comments that share a range is counter intuitive and not easily understood without digging into the code.
-        # TODO: Refactor comments strucutre to not key off of the range to allow individual overlapping comment attributes.
         if config.comment[0] not in comments:
             comments[config.comment[0]] = []
 
@@ -66,6 +65,18 @@ class DeleteCommentModifierConfig(ComponentConfig):
     """
 
     comment: Tuple[Optional[Range], Optional[str]]
+
+    def __post_init__(self):
+        # Ensure there's always a second element - backwards compatible with old DeleteCommentModifierConfig
+        if type(self.comment) == tuple:
+            # New format
+            self.comment = (*self.comment, None)[:2]
+        elif type(self.comment) == Range:
+            # Old format: Range
+            self.comment = (self.comment, None)
+        else:
+            # Old format: None (no Range provided)
+            self.comment = (None, None)
 
 
 class DeleteCommentModifier(Modifier[DeleteCommentModifierConfig]):
@@ -86,10 +97,16 @@ class DeleteCommentModifier(Modifier[DeleteCommentModifierConfig]):
         except NotFoundError:
             comments = {}
         try:
+            if len(config.comment) == 1:
+                config.comment = (config.comment[0], None)
+
             if config.comment[1] is None:
                 del comments[config.comment[0]]
             else:
                 comments[config.comment[0]].remove(config.comment[1])
+                # Clean up if this was the last comment at this range
+                if len(comments[config.comment[0]]) == 0:
+                    del comments[config.comment[0]]
         except KeyError:
             raise NotFoundError(
                 f"Comment range {config.comment[0]} not found in "
