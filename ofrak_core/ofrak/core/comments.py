@@ -59,24 +59,24 @@ class AddCommentModifier(Modifier[AddCommentModifierConfig]):
 @dataclass
 class DeleteCommentModifierConfig(ComponentConfig):
     """
-    comment: Tuple[Optional[comment_range], Optional[comment_text]]
-    If comment_text is provided, deletes the matching comment with the same comment_range
-    If comment_text is None, deletes ALL comments with the same comment_range
+    comment_range: Tuple[Optional[Range], comment_text=Optional[str]]
+    If comment_text is provided, deletes the matching comment with the same Optional[Range]
+    If comment_text is None, deletes ALL comments with the same Optional[Range]
     """
 
-    comment: Tuple[Optional[Range], Optional[str]]
+    comment_range: Tuple[Optional[Range], Optional[str]]
 
     def __post_init__(self):
-        # Ensure there's always a second element - backwards compatible with old DeleteCommentModifierConfig
-        if type(self.comment) == tuple:
+        # Ensure there's always a two-element Tuple
+        if type(self.comment_range) == tuple:
             # New format
-            self.comment = (*self.comment, None)[:2]
-        elif type(self.comment) == Range:
+            self.comment_range = (*self.comment_range, None)[:2]
+        elif type(self.comment_range) == Range:
             # Old format: Range
-            self.comment = (self.comment, None)
+            self.comment_range = (self.comment_range, None)
         else:
             # Old format: None (no Range provided)
-            self.comment = (None, None)
+            self.comment_range = (None, None)
 
 
 class DeleteCommentModifier(Modifier[DeleteCommentModifierConfig]):
@@ -97,24 +97,24 @@ class DeleteCommentModifier(Modifier[DeleteCommentModifierConfig]):
         except NotFoundError:
             comments = {}
         try:
-            if len(config.comment) == 1:
-                config.comment = (config.comment[0], None)
+            if len(config.comment_range) == 1:
+                config.comment_range = (config.comment_range[0], None)
 
-            if config.comment[1] is None:
-                del comments[config.comment[0]]
+            if config.comment_range[1] is None:
+                del comments[config.comment_range[0]]
             else:
-                comments[config.comment[0]].remove(config.comment[1])
+                comments[config.comment_range[0]].remove(config.comment_range[1])
                 # Clean up if this was the last comment at this range
-                if len(comments[config.comment[0]]) == 0:
-                    del comments[config.comment[0]]
+                if len(comments[config.comment_range[0]]) == 0:
+                    del comments[config.comment_range[0]]
         except KeyError:
             raise NotFoundError(
-                f"Comment range {config.comment[0]} not found in "
+                f"Comment range {config.comment_range[0]} not found in "
                 f"resource {resource.get_id().hex()}"
             )
         except ValueError:
             raise NotFoundError(
-                f"Comment {config.comment[1]} with range {config.comment[0]}"
+                f"Comment {config.comment_range[1]} with range {config.comment_range[0]}"
                 f" not found in resource {resource.get_id().hex()}"
             )
         resource.add_attributes(CommentsAttributes(comments=comments))

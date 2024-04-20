@@ -89,7 +89,7 @@ async def test_comment_content(executable_resource: Resource, comment_str: str):
     assert comments[None] == [comment_str]
     await executable_resource.run(
         DeleteCommentModifier,
-        DeleteCommentModifierConfig(comment=(None)),
+        DeleteCommentModifierConfig(comment_range=(None)),
     )
     comment_attributes = executable_resource.get_attributes(CommentsAttributes)
     assert get_comment_count(comment_attributes) == 0
@@ -196,7 +196,7 @@ async def test_deleting_comments(executable_resource: Resource):
     # Test deletion of specific comments
     await executable_resource.run(
         DeleteCommentModifier,
-        DeleteCommentModifierConfig(comment=(Range(0, 1), "first range comment 1")),
+        DeleteCommentModifierConfig(comment_range=(Range(0, 1), "first range comment 1")),
     )
     comment_attributes = executable_resource.get_attributes(CommentsAttributes)
     comments = comment_attributes.comments
@@ -206,7 +206,7 @@ async def test_deleting_comments(executable_resource: Resource):
     # Test specific deletion of last comment in a range
     await executable_resource.run(
         DeleteCommentModifier,
-        DeleteCommentModifierConfig(comment=(Range(0, 1), "first range comment 2")),
+        DeleteCommentModifierConfig(comment_range=(Range(0, 1), "first range comment 2")),
     )
     comment_attributes = executable_resource.get_attributes(CommentsAttributes)
     comments = comment_attributes.comments
@@ -217,20 +217,20 @@ async def test_deleting_comments(executable_resource: Resource):
     # Test deletion of entire ranges with new DeleteCommentModifierConfig format
     await executable_resource.run(
         DeleteCommentModifier,
-        DeleteCommentModifierConfig(comment=(Range(1, 2), None)),
+        DeleteCommentModifierConfig(comment_range=(Range(1, 2), None)),
     )
     comment_attributes = executable_resource.get_attributes(CommentsAttributes)
     assert get_comment_count(comment_attributes) == 5
     # Test deletion of entire ranges, with old DeleteCommentModifierConfig format
     await executable_resource.run(
         DeleteCommentModifier,
-        DeleteCommentModifierConfig(comment=None),
+        DeleteCommentModifierConfig(comment_range=None),
     )
     comment_attributes = executable_resource.get_attributes(CommentsAttributes)
     assert get_comment_count(comment_attributes) == 2
     await executable_resource.run(
         DeleteCommentModifier,
-        DeleteCommentModifierConfig(comment=Range(0, 2)),
+        DeleteCommentModifierConfig(comment_range=Range(0, 2)),
     )
     comment_attributes = executable_resource.get_attributes(CommentsAttributes)
     assert get_comment_count(comment_attributes) == 0
@@ -243,7 +243,7 @@ async def test_deleting_non_existing_comment(executable_resource: Resource):
     with pytest.raises(NotFoundError):
         await executable_resource.run(
             DeleteCommentModifier,
-            DeleteCommentModifierConfig(comment=(Range(0, 1))),
+            DeleteCommentModifierConfig(comment_range=(Range(0, 1))),
         )
 
     # Now test deleting a comment when no comments with that text exist
@@ -255,12 +255,12 @@ async def test_deleting_non_existing_comment(executable_resource: Resource):
     with pytest.raises(NotFoundError):
         await executable_resource.run(
             DeleteCommentModifier,
-            DeleteCommentModifierConfig(comment=(None, "this doesn't exist")),
+            DeleteCommentModifierConfig(comment_range=(None, "this doesn't exist")),
         )
 
     await executable_resource.run(
         DeleteCommentModifier,
-        DeleteCommentModifierConfig(comment=(None, "this exists")),
+        DeleteCommentModifierConfig(comment_range=(None, "this exists")),
     )
 
     comment_attributes = executable_resource.get_attributes(CommentsAttributes)
