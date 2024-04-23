@@ -736,7 +736,7 @@ class AiohttpOFRAKServer:
     async def delete_comment(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         comment = self._serializer.from_pjson(
-            await request.json(), Tuple[Optional[Range], Optional[str]]
+            await request.json(), Union[Tuple[Optional[Range], Optional[str]], Optional[Range]]
         )
         script_str = (
             """
