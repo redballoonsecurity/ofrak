@@ -65,7 +65,10 @@
 
 <div class="comment">
   <Hoverable let:hovering>
-    <button title="Delete this comment" on:click="{onDeleteClick(comment[0], comment[1])}">
+    <button
+      title="Delete this comment"
+      on:click="{onDeleteClick(comment[0], comment[1])}"
+    >
       <Icon
         class="comment_icon"
         url="{hovering ? '/icons/trash_can.svg' : '/icons/comment.svg'}"
