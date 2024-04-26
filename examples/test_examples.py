@@ -1,3 +1,4 @@
+import sys
 import os
 import subprocess
 
@@ -39,7 +40,7 @@ def test_example_1(tmp_path):
     Test that the executable built by ex1_simple_string_modification.py prints "Meow!" to stdout.
     """
     file = tmp_path / "example_1.out"
-    command = ["python3", "ex1_simple_string_modification.py", "--output-file-name", str(file)]
+    command = [sys.executable, "ex1_simple_string_modification.py", "--output-file-name", str(file)]
     subprocess.run(command, check=True)
     os.chmod(str(file), 0o755)
     stdout = subprocess.run(str(file), capture_output=True).stdout
@@ -52,7 +53,7 @@ def test_example_2(tmp_path):
     infinite loop.
     """
     file = tmp_path / "example_2.out"
-    command = ["python3", "ex2_simple_code_modification.py", "--output-file-name", str(file)]
+    command = [sys.executable, "ex2_simple_code_modification.py", "--output-file-name", str(file)]
     subprocess.run(command, check=True)
     os.chmod(str(file), 0o755)
     with pytest.raises(subprocess.TimeoutExpired) as exc_info:
@@ -68,7 +69,7 @@ def test_example_3(tmp_path):
     fault.
     """
     file = tmp_path / "example_3.out"
-    command = ["python3", "ex3_binary_format_modification.py", "--output-file-name", str(file)]
+    command = [sys.executable, "ex3_binary_format_modification.py", "--output-file-name", str(file)]
     subprocess.run(command, check=True)
     os.chmod(str(file), 0o775)
     with pytest.raises(subprocess.CalledProcessError, match="Signals.SIGSEGV"):
@@ -83,7 +84,7 @@ def test_example_4(tmp_path):
      * xattrs
     """
     file = tmp_path / "example_4.out"
-    command = ["python3", "ex4_filesystem_modification.py", "--output-file-name", str(file)]
+    command = [sys.executable, "ex4_filesystem_modification.py", "--output-file-name", str(file)]
     subprocess.run(command, check=True)
     unsquashfs = ["unsquashfs", "-d", tmp_path / "squashfs-root", str(file)]
     subprocess.run(unsquashfs, check=True)
@@ -101,7 +102,7 @@ def test_example_5(tmp_path):
     Test the the executable built by ex5_binary_extension.py prints seven kitteh.
     """
     file = tmp_path / "example_5.out"
-    command = ["python3", "ex5_binary_extension.py", "--output-file-name", str(file)]
+    command = [sys.executable, "ex5_binary_extension.py", "--output-file-name", str(file)]
     subprocess.run(command, check=True)
     os.chmod(str(file), 0o755)
     stdout = subprocess.run(str(file), capture_output=True).stdout
@@ -115,7 +116,7 @@ def test_example_6(tmp_path):
     """
     file = tmp_path / "example_6.out"
     command = [
-        "python3",
+        sys.executable,
         "ex6_code_modification_without_extension.py",
         "--output-file-name",
         str(file),
@@ -132,7 +133,12 @@ def test_example_7(tmp_path):
     "HELLO, WORLD!".
     """
     file = tmp_path / "example_7.out"
-    command = ["python3", "ex7_code_insertion_with_extension.py", "--output-file-name", str(file)]
+    command = [
+        sys.executable,
+        "ex7_code_insertion_with_extension.py",
+        "--output-file-name",
+        str(file),
+    ]
     subprocess.run(command, check=True)
     os.chmod(str(file), 0o755)
     stdout = subprocess.run(str(file), capture_output=True).stdout
@@ -145,7 +151,7 @@ def test_example_8(tmp_path):
     the file contains the expected contents
     """
     file = tmp_path / "example_8.tar.gz"
-    command = ["python3", "ex8_recursive_unpacking.py", "--output-file-name", str(file)]
+    command = [sys.executable, "ex8_recursive_unpacking.py", "--output-file-name", str(file)]
     subprocess.run(command, check=True)
 
     os.chdir(str(tmp_path))
