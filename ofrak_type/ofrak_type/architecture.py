@@ -19,6 +19,7 @@ class InstructionSet(Enum):
     :ivar PPS: PowerPC
     :ivar M68K: Motorola 68K
     :ivar AVR: Atmel AVR
+    :ivar SPARC: SPARC
     """
 
     ARM = "arm"
@@ -29,6 +30,7 @@ class InstructionSet(Enum):
     PPC = "ppc"
     M68K = "68000"
     AVR = "avr"
+    SPARC = "sparc"
 
 
 class SubInstructionSet(Enum):
