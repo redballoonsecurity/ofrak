@@ -32,5 +32,6 @@ class GNU_BCC_SPARC_Toolchain(Abstract_GNU_Toolchain):
             return self._config.compiler_target
         return processor.isa.value.lower()
 
-    def linker_include_filter(self, symbol_name: str) -> bool:
+    @staticmethod
+    def linker_include_filter(symbol_name: str) -> bool:
         return "_DYNAMIC" in symbol_name
