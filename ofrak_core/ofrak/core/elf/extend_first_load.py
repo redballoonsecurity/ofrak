@@ -62,6 +62,7 @@ class ElfExtendFirstLoadSegmentModifier(Modifier[None]):
                 data_range=space,
             )
         resource.add_tag(Allocatable)
+        await resource.save()
 
         await first_program_header.resource.run(
             ElfProgramHeaderModifier,
