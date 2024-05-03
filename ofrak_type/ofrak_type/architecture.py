@@ -131,6 +131,7 @@ class ProcessorType(Enum):
     :ivar COLDFIRE4E:
     :ivar CORTEX_A53:
     :ivar AVR:
+    :ivar SPARC:
     """
 
     ARM926EJ_S = "arm926ej-s"
@@ -157,6 +158,7 @@ class ProcessorType(Enum):
     CORTEX_A55 = "cortex-a55"
     CORTEX_A72 = "cortex-a72"
     AVR = "avr"
+    SPARC = "leon3"
 
 
 @dataclass(frozen=True, eq=True)

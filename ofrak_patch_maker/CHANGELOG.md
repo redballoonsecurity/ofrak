@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 ### Added
 - GNU 32-bit x86 toolchain. ([#405](https://github.com/redballoonsecurity/ofrak/pull/405))
+- SPARC BCC tolchain. ([#462](https://github.com/redballoonsecurity/ofrak/pull/462))
 
 ### Removed
 - Switch from binutils version of linker, bin_parser, assembler for X86_64 to default Debian versions. ([#405](https://github.com/redballoonsecurity/ofrak/pull/405))
