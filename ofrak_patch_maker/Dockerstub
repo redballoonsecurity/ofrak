@@ -64,5 +64,5 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     cd /tmp/ \
       && wget 'https://www.gaisler.com/anonftp/bcc2/bin/bcc-2.0.7-gcc-linux64.tar.xz' \
       && mkdir -p /opt/rbs/toolchain/ \
-      && tar -C /opt/rbs/toolchain/ -xvJf bcc-2.0.7-gcc-linux64.tar.xz \
+      && tar -C /opt/rbs/toolchain/ -xJf bcc-2.0.7-gcc-linux64.tar.xz; \
 fi
