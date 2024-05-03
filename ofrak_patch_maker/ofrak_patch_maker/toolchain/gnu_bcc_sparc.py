@@ -1,15 +1,22 @@
 from typing import Optional
 
+from ofrak_patch_maker.binary_parser.gnu import GNU_ELF_Parser
 from ofrak_patch_maker.toolchain.gnu import Abstract_GNU_Toolchain
 from ofrak_type import ArchInfo
 
 
 class GNU_BCC_SPARC_Toolchain(Abstract_GNU_Toolchain):
+    binary_file_parsers = [GNU_ELF_Parser()]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._linker_flags.remove("--no-dynamic-linker")
+
     @property
     def segment_alignment(self) -> int:
         # No specific segment alignment called out in the compiler manual, but
         # we'll leave this here just to be safe
-        return 16
+        return 4
 
     @property
     def name(self) -> str:
@@ -24,3 +31,6 @@ class GNU_BCC_SPARC_Toolchain(Abstract_GNU_Toolchain):
         if self._config.compiler_target:
             return self._config.compiler_target
         return processor.isa.value.lower()
+
+    def linker_include_filter(self, symbol_name: str) -> bool:
+        return "_DYNAMIC" in symbol_name
