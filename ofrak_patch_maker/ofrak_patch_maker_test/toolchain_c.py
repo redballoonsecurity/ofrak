@@ -5,6 +5,7 @@ import tempfile
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.gnu_avr import GNU_AVR_5_Toolchain
+from ofrak_patch_maker.toolchain.gnu_bcc_sparc import GNU_BCC_SPARC_Toolchain
 from ofrak_patch_maker.toolchain.gnu_x64 import GNU_X86_64_LINUX_EABI_10_3_0_Toolchain
 from ofrak_patch_maker.toolchain.model import (
     ToolchainConfig,
@@ -59,7 +60,9 @@ def run_bounds_check_test(toolchain_under_test: ToolchainUnderTest):
         vm_address=0x6FE173D0,
         offset=0,
         is_entry=False,
-        length=64,
+        # This size is somewhat arbitrary, and can be increased to make tests
+        # pass if necessary
+        length=0x100,
         access_perms=MemoryPermissions.RX,
     )
     manual_map = {source_path: (text_segment,)}
@@ -89,6 +92,8 @@ def run_hello_world_test(toolchain_under_test: ToolchainUnderTest):
 
     if toolchain_under_test.toolchain == GNU_AVR_5_Toolchain:
         base_symbols = {"__mulhi3": 0x1234}  # Dummy address to fix missing symbol
+    elif toolchain_under_test.toolchain == GNU_BCC_SPARC_Toolchain:
+        base_symbols = {".umul": 0x1234}  # Dummy address to fix missing symbol
     else:
         base_symbols = None
     tc_config = ToolchainConfig(
