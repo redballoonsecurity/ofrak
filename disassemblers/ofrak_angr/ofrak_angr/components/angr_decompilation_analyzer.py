@@ -1,35 +1,20 @@
-from dataclasses import dataclass
 import angr
 from angr.analyses.decompiler import Decompiler
 from ofrak.component.analyzer import Analyzer
-from ofrak.component.identifier import Identifier
-from ofrak.resource_view import ResourceView
 
 from ofrak.resource import Resource
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_angr.model import AngrAnalysis, AngrAnalysisResource
+from ofrak.core.decompilation import DecompilationAnalysis
 
 
-@dataclass
-class AngrDecompilationAnalysis(ResourceView):
-    decompilation: str
-
-
-class AngrDecompilationAnalysisIdentifier(Identifier):
-    id = b"AngrDecompilationAnalysisIdentifier"
-    targets = (ComplexBlock,)
-
-    async def identify(self, resource: Resource, config=None):
-        resource.add_tag(AngrDecompilationAnalysis)
-
-
-class AngrDecompilatonAnalyzer(Analyzer[None, AngrDecompilationAnalysis]):
+class AngrDecompilatonAnalyzer(Analyzer[None, DecompilationAnalysis]):
     id = b"AngrDecompilationAnalyzer"
     targets = (ComplexBlock,)
-    outputs = (AngrDecompilationAnalysis,)
+    outputs = (DecompilationAnalysis,)
 
-    async def analyze(self, resource: Resource, config: None) -> AngrDecompilationAnalysis:
+    async def analyze(self, resource: Resource, config: None) -> DecompilationAnalysis:
         # Run / fetch angr analyzer
         try:
             root_resource = await resource.get_only_ancestor(
@@ -66,8 +51,8 @@ class AngrDecompilatonAnalyzer(Analyzer[None, AngrDecompilationAnalysis]):
                 decomp = dec.codegen.text
             else:
                 decomp = "No Decompilation available"
-            return AngrDecompilationAnalysis(decomp)
+            return DecompilationAnalysis(decomp)
         except Exception as e:
-            return AngrDecompilationAnalysis(
+            return DecompilationAnalysis(
                 f"The decompilation for this Complex Block has failed with the error {e}"
             )
