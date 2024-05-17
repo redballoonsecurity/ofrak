@@ -14,9 +14,8 @@ class GNU_BCC_SPARC_Toolchain(Abstract_GNU_Toolchain):
 
     @property
     def segment_alignment(self) -> int:
-        # No specific segment alignment called out in the compiler manual, but
-        # we'll leave this here just to be safe
-        return 4
+        # Need double alignment for double-precision floating point loads
+        return 8
 
     @property
     def name(self) -> str:
