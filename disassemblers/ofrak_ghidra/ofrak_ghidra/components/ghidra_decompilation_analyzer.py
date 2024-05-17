@@ -31,6 +31,13 @@ def take_delimited(s: str, delim: str) -> Tuple[str, str]:
 
 
 def escape_strings(s: str) -> str:
+    """
+    Escape newlines in strings (enclosed by double quotes) and
+    characters (enclosed by single quotes).
+
+    If this isn't done, there will be a linebreak in the decompilation
+    string/view in the middle of a C string or char.
+    """
     s_escaped = ""
 
     while '"' in s or "'" in s:
