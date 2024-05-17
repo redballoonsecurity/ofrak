@@ -157,6 +157,8 @@ class Toolchain(ABC):
             and self._processor.bit_width == BitWidth.BIT_64
         ):
             assembler_path = "X86_64_ASM_PATH"
+        elif self._processor.isa == InstructionSet.SPARC:
+            assembler_path = "SPARC_ASM_PATH"
         else:
             assembler_path = f"{self._processor.isa.value.upper()}_ASM_PATH"
         return get_repository_config("ASM", assembler_path)
