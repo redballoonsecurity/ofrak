@@ -331,7 +331,7 @@ class FunctionReplacementModifier(Modifier[FunctionReplacementModifierConfig]):
             vm_address=complex_block.virtual_address,
             offset=0,
             is_entry=False,
-            length=complex_block.size,
+            length=complex_block.size + 0x100,
             access_perms=MemoryPermissions.RX,
         )
 

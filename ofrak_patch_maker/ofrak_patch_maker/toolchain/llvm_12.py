@@ -43,27 +43,21 @@ class LLVM_12_0_1_Toolchain(Toolchain):
             self._assembler_flags.append(f"-mcpu={self._config.assembler_cpu}")
         self._compiler_flags.extend(
             [
-                "-c",
-                "-target",
+                "-cc1",
+                "-triple",
                 self._compiler_target,  # type: ignore
-                "-Xclang",
                 "-emit-obj",
+                "-msoft-float",
+                "-mfloat-abi",
+                "soft",
                 "-Wall",
             ]
         )
-        if processor.isa is InstructionSet.ARM:
-            # Without this option, Clang will ignore target("arm"/"thumb") attributes
-            self._compiler_flags.append("-marm")
-
-        if self._config.hard_float:
-            self._compiler_flags.append("-mno-soft-float")
-        else:
-            self._compiler_flags.append("-msoft-float")
 
         if self._config.separate_data_sections:
             self._compiler_flags.append("-fdata-sections")
         if self._config.compiler_cpu:
-            self._logger.warning("compiler_cpu option set, but has no meaning for LLVM toolchain")
+            self._compiler_flags.append(f"-mcpu={self._config.compiler_cpu}")
 
         llvm12_compiler_optimization_map = {
             CompilerOptimizationLevel.NONE: "-O0",
@@ -82,10 +76,9 @@ class LLVM_12_0_1_Toolchain(Toolchain):
             self._compiler_flags.append("-finline-hint-functions")
 
         if self._config.relocatable:
-            self._compiler_flags.extend(["-fno-direct-access-external-data", "-fPIE"])
+            self._compiler_flags.extend(["-fno-direct-access-external-data", "-pic-is-pie"])
             self._linker_flags.append("--pie")
         else:
-            self._compiler_flags.append("-fno-pic")
             self._linker_flags.append("--no-pie")
 
         if self._config.no_bss_section:
@@ -98,11 +91,8 @@ class LLVM_12_0_1_Toolchain(Toolchain):
             self._compiler_flags.extend(
                 [
                     "-fno-split-dwarf-inlining",
-                    "-Xclang",
                     "-debug-info-kind=limited",
-                    "-Xclang",
                     "-dwarf-version=4",
-                    "-Xclang",
                     "-debugger-tuning=gdb",
                 ]
             )
