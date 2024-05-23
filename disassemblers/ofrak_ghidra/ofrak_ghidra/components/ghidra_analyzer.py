@@ -218,7 +218,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
             elif ghidra_proc.stdout.at_eof():
                 raise GhidraComponentException("Ghidra client exited unexpectedly")
 
-            if "Repository Server: localhost" in line:
+            if line.startswith("Repository Server:"):
                 time.sleep(0.5)
                 ghidra_proc.stdin.write((GHIDRA_PASS + "\n").encode("ascii"))
                 await ghidra_proc.stdin.drain()
@@ -299,7 +299,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
 
             if len(line) > 0:
                 LOGGER.debug(line)
-            if "Repository Server: localhost" in line:
+            if line.startswith("Repository Server:"):
                 time.sleep(0.5)
                 ghidra_proc.stdin.write((GHIDRA_PASS + "\n").encode("ascii"))
                 await ghidra_proc.stdin.drain()
