@@ -31,6 +31,8 @@ class _BinwalkExternalTool(ComponentExternalTool):
             "binwalk",
             "https://github.com/ReFirmLabs/binwalk",
             install_check_arg="",
+            apt_package="binwalk",
+            brew_package="binwalk",
         )
 
     async def is_tool_installed(self) -> bool:
