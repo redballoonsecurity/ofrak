@@ -5,6 +5,12 @@ PIP=pip3
 install: ofrak/gui/public
 	$(PIP) install .
 
+# Workaround for cyclic test dependencies
+# https://github.com/redballoonsecurity/ofrak/issues/419
+.PHONY: develop-initial
+develop-initial:
+	$(PIP) install -e .
+
 .PHONY: develop
 develop: ofrak/gui/public
 	$(PIP) install -e .[docs,test]

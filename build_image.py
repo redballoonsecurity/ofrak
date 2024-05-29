@@ -253,6 +253,12 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
         [
             "$INSTALL_TARGET:",
             "\\n\\\n".join(
+                [
+                    f"\t\\$(MAKE) -C {package_name} ${{INSTALL_TARGET}}-initial || true"
+                    for package_name in package_names
+                ]
+            ),
+            "\\n\\\n".join(
                 [f"\t\\$(MAKE) -C {package_name} $INSTALL_TARGET" for package_name in package_names]
             ),
             "\\n",
