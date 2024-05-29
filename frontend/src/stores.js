@@ -49,3 +49,7 @@ export function loadSettings(forceReset) {
 }
 
 export let settings = writable(loadSettings());
+
+export let resourceNodeDataMap = writable({});
+
+export let dataLength = writable(undefined);

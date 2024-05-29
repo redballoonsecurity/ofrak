@@ -9,6 +9,5 @@ RUN mkdir -p /opt/rbs && \
     rm -f ghidra_10.1.2_PUBLIC_20220125.zip && \
     mv ghidra_10.1.2_PUBLIC/ /opt/rbs/ghidra_10.1.2_PUBLIC
 
-ARG OFRAK_DIR=.
 WORKDIR /
-COPY $OFRAK_DIR/disassemblers/ofrak_ghidra/server.conf /opt/rbs/ghidra_10.1.2_PUBLIC/server/
+COPY $PACKAGE_PATH/server.conf /opt/rbs/ghidra_10.1.2_PUBLIC/server/

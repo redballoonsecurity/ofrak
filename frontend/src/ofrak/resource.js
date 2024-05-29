@@ -134,6 +134,10 @@ export class Resource {
     throw new NotImplementedError("identify");
   }
 
+  async identify_recursively() {
+    throw new NotImplementedError("identify_recursively");
+  }
+
   async pack() {
     throw new NotImplementedError("pack");
   }

@@ -68,21 +68,26 @@
 </style>
 
 <script>
-  import { selected, selectedResource, settings } from "../stores.js";
+  import {
+    selected,
+    selectedResource,
+    settings,
+    resourceNodeDataMap,
+  } from "../stores.js";
   import Button from "../utils/Button.svelte";
   import { onMount } from "svelte";
   import LoadingText from "../utils/LoadingText.svelte";
   import { cleanOfrakType } from "../helpers";
 
-  export let modifierView, resourceNodeDataMap;
+  export let modifierView;
   let errorMessage,
     ofrakTagsPromise = new Promise(() => {}),
     selectedTag;
 
   function refreshResource() {
     // Force tree view children refresh
-    resourceNodeDataMap[$selected].collapsed = false;
-    resourceNodeDataMap[$selected].childrenPromise =
+    $resourceNodeDataMap[$selected].collapsed = false;
+    $resourceNodeDataMap[$selected].childrenPromise =
       $selectedResource.get_children();
 
     // Force hex view refresh with colors

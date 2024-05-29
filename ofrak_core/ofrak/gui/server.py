@@ -175,6 +175,7 @@ class AiohttpOFRAKServer:
                 web.post("/{resource_id}/pack_recursively", self.pack_recursively),
                 web.post("/{resource_id}/analyze", self.analyze),
                 web.post("/{resource_id}/identify", self.identify),
+                web.post("/{resource_id}/identify_recursively", self.identify_recursively),
                 web.post("/{resource_id}/data_summary", self.data_summary),
                 web.get("/{resource_id}/get_parent", self.get_parent),
                 web.get("/{resource_id}/get_ancestors", self.get_ancestors),
@@ -532,6 +533,20 @@ class AiohttpOFRAKServer:
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         try:
             result = await resource.identify()
+            await self.script_builder.commit_to_script(resource)
+        except Exception as e:
+            await self.script_builder.clear_script_queue(resource)
+            raise e
+        return json_response(await self._serialize_component_result(result))
+
+    @exceptions_to_http(SerializedError)
+    async def identify_recursively(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
+        script_str = """
+        await {resource}.identify_recursively()"""
+        await self.script_builder.add_action(resource, script_str, ActionType.MOD)
+        try:
+            result = await resource.auto_run_recursively(all_identifiers=True)
             await self.script_builder.commit_to_script(resource)
         except Exception as e:
             await self.script_builder.clear_script_queue(resource)
@@ -1178,8 +1193,11 @@ class AiohttpOFRAKServer:
         script_name_query = request.query.get("script")
         if script_name_query is not None:
             script_name = script_name_query
-        project = self._get_project_by_id(project_id)
-        script_body = project.get_script_body(script_name)
+        if script_name == "undefined":
+            script_body = ""
+        else:
+            project = self._get_project_by_id(project_id)
+            script_body = project.get_script_body(script_name)
 
         return Response(text=script_body)
 

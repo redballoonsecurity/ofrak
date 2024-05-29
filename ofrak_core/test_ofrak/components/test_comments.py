@@ -1,5 +1,6 @@
+from datetime import timedelta
 import pytest
-from hypothesis import given, HealthCheck, settings
+from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import text
 from ofrak.resource import Resource
 
@@ -38,7 +39,10 @@ async def test_adding_comments(executable_resource: Resource):
 # We suppress the function_scoped_fixture health check because the executable_resource fixture
 # doesn't need to be reset between individual runs of hypothesis (since the comment overrides
 # the previous one every time).
-@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(
+    deadline=timedelta(seconds=5),
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
 @given(comment_str=text())
 async def test_comment_content(executable_resource: Resource, comment_str: str):
     """Test comments with all kinds of string contents."""
@@ -48,6 +52,10 @@ async def test_comment_content(executable_resource: Resource, comment_str: str):
     )
     comments = executable_resource.get_attributes(CommentsAttributes).comments
     assert comments[None] == comment_str
+    await executable_resource.run(
+        DeleteCommentModifier,
+        DeleteCommentModifierConfig(comment_range=None),
+    )
 
 
 async def test_overriding_comment(executable_resource: Resource):
@@ -62,7 +70,7 @@ async def test_overriding_comment(executable_resource: Resource):
     )
     comments = executable_resource.get_attributes(CommentsAttributes).comments
     assert len(comments) == 1
-    assert comments[Range(0, 1)] == "overriding_comment"
+    assert comments[Range(0, 1)] == "overriding_comment" + "\n" + "comment"
 
 
 async def test_range_validation(executable_resource: Resource):

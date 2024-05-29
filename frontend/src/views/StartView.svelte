@@ -139,7 +139,12 @@
   import Checkbox from "../utils/Checkbox.svelte";
 
   import { animals } from "../animals.js";
-  import { selected, settings, selectedProject } from "../stores.js";
+  import {
+    selected,
+    settings,
+    selectedProject,
+    resourceNodeDataMap,
+  } from "../stores.js";
   import { remote_model_to_resource } from "../ofrak/remote_resource";
   import { numBytesToQuantity, saveSettings } from "../helpers";
 
@@ -150,7 +155,6 @@
     showProjectManager,
     resources,
     rootResource,
-    resourceNodeDataMap,
     browsedFiles,
     fileinput;
   let dragging = false,
@@ -372,10 +376,10 @@
       }
     );
     resources[resource.id] = remote_model_to_resource(resource, resources);
-    if (resourceNodeDataMap[resource.id] === undefined) {
-      resourceNodeDataMap[resource.id] = {};
+    if ($resourceNodeDataMap[resource.id] === undefined) {
+      $resourceNodeDataMap[resource.id] = {};
     }
-    resourceNodeDataMap[resource.id].collapsed = false;
+    $resourceNodeDataMap[resource.id].collapsed = false;
     while (resource.parent_id) {
       resource = await fetch(
         `${$settings.backendUrl}/${resource.parent_id}/`
@@ -387,10 +391,10 @@
       });
       resources[resource.id] = remote_model_to_resource(resource, resources);
 
-      if (resourceNodeDataMap[resource.id] === undefined) {
-        resourceNodeDataMap[resource.id] = {};
+      if ($resourceNodeDataMap[resource.id] === undefined) {
+        $resourceNodeDataMap[resource.id] = {};
       }
-      resourceNodeDataMap[resource.id].collapsed = false;
+      $resourceNodeDataMap[resource.id].collapsed = false;
     }
 
     showRootResource = true;
@@ -442,6 +446,7 @@
     >
   </div>
   <!-- svelte-ignore a11y-click-events-have-key-events -->
+  <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div
     class="center clickable {dragging ? 'dragging' : ''}"
     on:dragover="{(e) => {
@@ -471,7 +476,7 @@
     {#if !dragging && !showProjectOptions}
       <h1>Drag in a file to analyze</h1>
       <p style:margin-bottom="0">
-        Click anwyhere to browse for a file to analyze
+        Click anywhere to browse for a file to analyze
       </p>
     {:else if dragging}
       <h1>Drop the file!</h1>

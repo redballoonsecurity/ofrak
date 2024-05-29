@@ -192,10 +192,12 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
             continue
         with open(dockerstage_path) as file_handle:
             dockerstub = file_handle.read()
+        # Cannot use ENV here because of multi-stage build FROM, so replace direclty in Docerkstage contents
+        dockerstub = dockerstub.replace("$PACKAGE_DIR", package_path)
         dockerfile_base_parts += [f"### {dockerstage_path}", dockerstub]
 
     dockerfile_base_parts += [
-        "FROM python:3.7-bullseye@sha256:338ead05c1a0aa8bd8fcba8e4dbbe2afd0283b4732fd30cf9b3bfcfcbc4affab",
+        "FROM python:3.8-bullseye@sha256:e1cd369204123e89646f8c001db830eddfe3e381bd5c837df00141be3bd754cb",
         "",
     ]
 
@@ -207,7 +209,11 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
         dockerstub_path = os.path.join(package_path, "Dockerstub")
         with open(dockerstub_path) as file_handle:
             dockerstub = file_handle.read()
-        dockerfile_base_parts += [f"### {dockerstub_path}", dockerstub]
+        dockerfile_base_parts += [
+            f"### {dockerstub_path}",
+            f"ENV PACKAGE_PATH={package_path}",
+            dockerstub,
+        ]
         # Collect python dependencies
         python_reqs = []
         for suff in requirement_suffixes:
@@ -247,19 +253,24 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
         [
             "$INSTALL_TARGET:",
             "\\n\\\n".join(
-                [f"\tmake -C {package_name} $INSTALL_TARGET" for package_name in package_names]
+                [f"\t\\$(MAKE) -C {package_name} $INSTALL_TARGET" for package_name in package_names]
             ),
             "\\n",
         ]
     )
     dockerfile_finish_parts.append(f'RUN printf "{develop_makefile}" >> Makefile\n')
     dockerfile_finish_parts.append("RUN make $INSTALL_TARGET\n\n")
+    test_names = " ".join([f"test_{package_name}" for package_name in package_names])
     finish_makefile = "\\n\\\n".join(
         [
-            "test:",
-            "\\n\\\n".join([f"\tmake -C {package_name} test" for package_name in package_names]),
-            "\\n",
+            ".PHONY: test " + test_names,
+            "test: " + test_names,
         ]
+        + [
+            f"test_{package_name}:\\n\\\n\t\\$(MAKE) -C {package_name} test"
+            for package_name in package_names
+        ]
+        + ["\\n"]
     )
     dockerfile_finish_parts.append(f'RUN printf "{finish_makefile}" >> Makefile\n')
     if config.entrypoint is not None:

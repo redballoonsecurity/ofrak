@@ -1,4 +1,15 @@
 <style>
+  .minimap {
+    min-height: 100%;
+    max-height: 100%;
+    max-width: 10em;
+    min-width: 10em;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    background-color: var(--main-bg-color);
+  }
+
   :root {
     --line-height: 1.5em;
   }
@@ -6,11 +17,23 @@
   .sticky {
     position: sticky;
     top: 0;
+    height: 100%;
   }
 
-  .breadcrumb {
-    padding-bottom: 0.5em;
-    background: var(--main-bg-color);
+  .hex-display {
+    max-width: calc(100% - 10em);
+    min-width: calc(100% - 10em);
+  }
+
+  .scrollable {
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    justify-content: left;
+    min-height: 100%;
+    max-height: 100%;
+    min-width: 100%;
+    max-width: 100%;
   }
 
   .hbox {
@@ -20,7 +43,6 @@
     justify-content: flex-start;
     align-items: stretch;
     line-height: var(--line-height);
-    position: absolute;
     font-size: 0.95em;
   }
 
@@ -32,25 +54,29 @@
   .byte {
     padding: 0.5ch;
   }
-
   .ascii {
     white-space: pre;
   }
 </style>
 
 <script>
-  import Breadcrumb from "../utils/Breadcrumb.svelte";
-  import LoadingText from "../utils/LoadingText.svelte";
+  import MinimapView from "./MinimapView.svelte";
+  import { chunkList, buf2hex, hexToChar } from "../helpers.js";
+  import {
+    selectedResource,
+    selected,
+    settings,
+    resourceNodeDataMap,
+    dataLength,
+  } from "../stores.js";
+  import { onMount } from "svelte";
+  import { screenHeight, currentPosition } from "./stores";
   import SearchBar from "../utils/SearchBar.svelte";
 
-  import { chunkList, buf2hex, hexToChar } from "../helpers.js";
-  import { selectedResource, selected, settings } from "../stores.js";
-
-  export let dataLenPromise, scrollY, resourceNodeDataMap, resources;
+  export let resources;
+  let dataSearchResults = {};
   let childRangesPromise = Promise.resolve(undefined);
-  let chunkDataPromise = Promise.resolve(undefined);
   let childRanges,
-    dataLength,
     resourceData,
     chunkData = [],
     chunks = [],
@@ -58,40 +84,48 @@
     end = 64,
     startWindow = 0,
     endWindow = 0;
+  let hexDisplay = undefined;
 
   const alignment = 16,
     chunkSize = 4096,
     windowSize = chunkSize * 10,
     windowPadding = 1024;
 
-  $: dataLenPromise.then((r) => {
-    dataLength = r;
-  });
-  $: dataLenPromise
-    .then((length) => {
-      if (length < 1024 * 1024 * 64 && $selectedResource) {
-        return $selectedResource.get_data();
-      }
-    })
-    .then((data) => {
-      resourceData = data;
-    });
   $: childRangesPromise.then((r) => {
     childRanges = r;
   });
-  $: chunkDataPromise.then((r) => {
+
+  $: childRangesPromise = calculateRanges(
+    $selectedResource,
+    $dataLength,
+    $settings.colors
+  );
+
+  // React to local data searches
+  $: if (dataSearchResults) {
+    const localDataSearchResults = dataSearchResults;
+    if (
+      localDataSearchResults.matches?.length > 0 &&
+      (localDataSearchResults.index || localDataSearchResults.index === 0)
+    ) {
+      $currentPosition =
+        Math.floor(
+          localDataSearchResults.matches[localDataSearchResults.index][0] /
+            alignment
+        ) * alignment;
+    }
+  }
+  $: chunksPromise = getNewData(
+    $selectedResource,
+    $currentPosition,
+    $dataLength
+  );
+
+  $: chunksPromise.then((r) => {
     chunks = r;
   });
-  $: Promise.any([dataLenPromise, childRangesPromise]).then((_) => {
-    // Hacky solution to minimap view box rectangle only updating on scroll
-    // after data has loaded -- force a scroll to reload the rectangle after a
-    // timeout
-    setTimeout(() => {
-      if (scrollY !== undefined) {
-        $scrollY.top = 0;
-      }
-    }, 500);
-  });
+
+  $: resetResource($selectedResource);
 
   // Sadly, this is the most flexible, most reliable way to get the line height
   // from arbitrary CSS units in pixels. It is definitely a little nasty :(
@@ -106,45 +140,42 @@
     return result;
   })();
 
-  async function getNewData() {
-    start = Math.max(
-      Math.floor((dataLength * $scrollY.top) / alignment) * alignment,
-      0
-    );
-    end = Math.min(
-      start + Math.floor($scrollY.viewHeightPixels / lineHeight) * alignment,
-      dataLength
-    );
+  async function searchHex(query, options) {
+    return await $selectedResource.search_data(query, options);
+  }
 
+  async function getNewData() {
+    start = $currentPosition;
+    end = Math.min(start + $screenHeight, $dataLength);
+    if ($dataLength < 1024 * 1024 && $selectedResource) {
+      resourceData = await $selectedResource.get_data();
+    } else {
+      resourceData = null;
+    }
     if (resourceData) {
       return chunkList(
         new Uint8Array(resourceData.slice(start, end)),
         alignment
       ).map((chunk) => chunkList(buf2hex(chunk), 2));
     }
-
     if (end > endWindow - windowPadding) {
       startWindow = Math.max(start - windowPadding, 0);
-      endWindow = Math.min(startWindow + windowSize, dataLength);
+      endWindow = Math.min(startWindow + windowSize, $dataLength);
       chunkData = await $selectedResource.get_data([startWindow, endWindow]);
     } else if (start < startWindow + windowPadding) {
-      endWindow = Math.min(end + windowPadding, dataLength);
+      endWindow = Math.min(end + windowPadding, $dataLength);
       startWindow = Math.max(endWindow - windowSize, 0);
       chunkData = await $selectedResource.get_data([startWindow, endWindow]);
     }
-
     return chunkList(
       new Uint8Array(chunkData.slice(start - startWindow, end - startWindow)),
       alignment
     ).map((chunk) => chunkList(buf2hex(chunk), 2));
   }
-  $: if (scrollY !== undefined && $scrollY !== undefined) {
-    chunkDataPromise = dataLenPromise.then(getNewData);
-  }
 
-  async function calculateRanges(resource, dataLenPromise, colors) {
+  async function calculateRanges(resource, dataLength, colors) {
     const children = await resource.get_children();
-    if (children === []) {
+    if (children.length === 0) {
       return [];
     }
     const childRanges = Object.entries(await resource.get_child_data_ranges())
@@ -166,36 +197,7 @@
         };
       });
     return childRanges;
-    let ranges = [];
-    if (childRanges.length > 0) {
-      ranges = [];
-      let start = 0;
-      for (const childRange of childRanges) {
-        if (childRange.start - start > 0) {
-          // Large ranges need to be broken into chunks because of a Chrome
-          // rendering bug that wraps long continuous strings incorrectly after a
-          // while
-          for (let i = start; i < childRange.start; i += chunkSize) {
-            ranges.push({
-              color: null,
-              resource_id: null,
-              start: i,
-              end: Math.min(i + chunkSize, childRange.start),
-            });
-          }
-        }
-        ranges.push(childRange);
-        start = childRange.end;
-      }
-      ranges = ranges;
-    }
-    return ranges;
   }
-  $: childRangesPromise = calculateRanges(
-    $selectedResource,
-    dataLenPromise,
-    $settings.colors
-  );
 
   function binarySearchRanges(T, ranges) {
     // https://en.wikipedia.org/wiki/Binary_search_algorithm#Algorithm
@@ -246,12 +248,12 @@
         resources[childRange.resource_id]?.get_caption() ||
         childRange.resource_id;
       info.onDoubleClick = () => {
-        resourceNodeDataMap[$selected].collapsed = false;
+        $resourceNodeDataMap[$selected].collapsed = false;
         $selected = childRange.resource_id;
       };
     }
 
-    if (dataSearchResults.matches) {
+    if (dataSearchResults.matches != null) {
       let dataSearchMatchRanges = dataSearchResults.matches.map((match) => {
         return { start: match[0], end: match[0] + match[1] };
       });
@@ -265,57 +267,58 @@
     return info;
   }
 
-  let dataSearchResults = {};
-
-  // React to local data searches
-  $: {
-    const localDataSearchResults = dataSearchResults;
-
-    if (
-      localDataSearchResults.matches?.length > 0 &&
-      (localDataSearchResults.index || localDataSearchResults.index === 0)
-    ) {
-      dataLenPromise.then((dataLength) => {
-        $scrollY.top =
-          localDataSearchResults.matches[localDataSearchResults.index][0] /
-          dataLength;
-      });
-    }
+  function resetResource() {
+    dataSearchResults.matches = undefined;
+    $currentPosition = 0;
   }
 
-  async function searchHex(query, options) {
-    return await $selectedResource.search_data(query, options);
+  function refreshHeight() {
+    $screenHeight =
+      Math.floor(hexDisplay.offsetHeight / lineHeight) * alignment;
+    chunksPromise = getNewData();
   }
+
+  onMount(() => {
+    refreshHeight();
+    chunksPromise = getNewData();
+  });
 </script>
 
-{#await dataLenPromise}
-  <LoadingText />
-{:then dataLength}
-  {#if dataLength > 0}
-    <!-- 
-      The magic number below is the largest height that Firefox will support with
-      a position: sticky element. Otherwise, the sticky element scrolls away.
-      Found this by manual binary search on my computer. 
-    -->
-    <div
-      style:height="min(8940000px, calc(var(--line-height) * {Math.ceil(
-        dataLength / alignment
-      )}))"
-    >
-      <div class="sticky">
-        <div class="breadcrumb">
-          <Breadcrumb />
-        </div>
-        <SearchBar
-          search="{searchHex}"
-          liveUpdate="{false}"
-          showResultsWidgets="{true}"
-          bind:searchResults="{dataSearchResults}"
-        />
-        <div class="hbox">
-          {#await chunkDataPromise}
-            <LoadingText />
-          {:then chunks}
+<svelte:window on:resize="{refreshHeight}" />
+<SearchBar
+  search="{searchHex}"
+  liveUpdate="{false}"
+  showResultsWidgets="{true}"
+  bind:searchResults="{dataSearchResults}"
+/>
+<div
+  class="scrollable"
+  bind:this="{hexDisplay}"
+  id="scrollable"
+  on:wheel="{(e) => {
+    $currentPosition += Math.floor(e.deltaY) * alignment;
+    if ($currentPosition > $dataLength) {
+      $currentPosition = $dataLength - alignment;
+    }
+    if ($currentPosition < 0) {
+      $currentPosition = 0;
+    }
+  }}"
+>
+  <div class="hex-display">
+    {#if $dataLength > 0}
+      <!-- 
+        The magic number below is the largest height that Firefox will support with
+        a position: sticky element. Otherwise, the sticky element scrolls away.
+        Found this by manual binary search on my computer. 
+      -->
+      <div
+        style:height="min(8940000px, calc(var(--line-height) * {Math.ceil(
+          $dataLength / alignment
+        )}))"
+      >
+        <div class="sticky">
+          <div class="hbox">
             <div>
               {#each chunks as _, chunkIndex}
                 <div>
@@ -348,6 +351,7 @@
                         childRangesResult,
                         byte
                       )}
+                      <!-- svelte-ignore a11y-no-static-element-interactions -->
                       <span
                         class="byte"
                         style:background-color="{rangeInfo.background}"
@@ -373,15 +377,16 @@
                 </div>
               {/each}
             </div>
-          {/await}
+          </div>
         </div>
       </div>
+    {:else}
+      Resource has no data!
+    {/if}
+  </div>
+  {#if resourceData != undefined}
+    <div class="minimap">
+      <MinimapView bind:currentPosition="{$currentPosition}" />
     </div>
-  {:else}
-    <div class="breadcrumb sticky">
-      <Breadcrumb />
-    </div>
-
-    Resource has no data!
   {/if}
-{/await}
+</div>
