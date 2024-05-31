@@ -326,12 +326,15 @@ class FunctionReplacementModifier(Modifier[FunctionReplacementModifierConfig]):
     @staticmethod
     def _make_text_segment(complex_block: ComplexBlock) -> Segment:
         """Return a new code `Segment` corresponding to `complex_block`."""
+        print("********************************************")
+        print("THIS IS PULLING FROM THE CORRECT REPO/BRANCH")
+        print("********************************************")
         return Segment(
             segment_name=".text",
             vm_address=complex_block.virtual_address,
             offset=0,
             is_entry=False,
-            length=complex_block.size + 0x100,
+            length=complex_block.size,
             access_perms=MemoryPermissions.RX,
         )
 
