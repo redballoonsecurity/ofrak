@@ -5,6 +5,7 @@ from typing import List, Type
 import pytest
 import re
 import subprocess
+import filelock
 
 from ofrak.core import MemoryRegion
 from ofrak.model.resource_model import EphemeralResourceContextFactory, ClientResourceContextFactory
@@ -230,19 +231,23 @@ async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config
 
     await target_program.resource.run(FunctionReplacementModifier, function_replacement_config)
     new_program_path = f"replaced_{Path(config.program.path).name}"
-    await target_program.resource.flush_data_to_disk(new_program_path)
+    
+    # When running tests in parallel, do this one at a time
+    lock = filelock.FileLock(new_program_path + ".lock")
+    with lock:
+        await target_program.resource.flush_data_to_disk(new_program_path)
 
-    # Check that the modified program looks as expected.
-    readobj_path = get_repository_config(config.toolchain_name, "BIN_PARSER")
+        # Check that the modified program looks as expected.
+        readobj_path = get_repository_config(config.toolchain_name, "BIN_PARSER")
 
-    # LLVM-specific fix: use llvm-objdump, not llvm-readobj
-    if "readobj" in readobj_path:
-        readobj_path = readobj_path.replace("readobj", "objdump")
+        # LLVM-specific fix: use llvm-objdump, not llvm-readobj
+        if "readobj" in readobj_path:
+            readobj_path = readobj_path.replace("readobj", "objdump")
 
-    subprocess_result = subprocess.run(
-        [readobj_path, "-d", new_program_path], capture_output=True, text=True
-    )
-    readobj_output = subprocess_result.stdout
+        subprocess_result = subprocess.run(
+            [readobj_path, "-d", new_program_path], capture_output=True, text=True
+        )
+        readobj_output = subprocess_result.stdout
 
     expected_objdump_output_str = "\n".join(config.expected_objdump_output)
 
