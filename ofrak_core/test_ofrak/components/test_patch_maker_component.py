@@ -8,7 +8,7 @@ import subprocess
 
 from ofrak.core import MemoryRegion
 from ofrak.model.resource_model import EphemeralResourceContextFactory, ClientResourceContextFactory
-from ofrak_patch_maker.toolchain.gnu_x64 import GNU_X86_64_LINUX_EABI_10_3_0_Toolchain
+from ofrak_patch_maker.toolchain.gnu_x64 import GNU_X86_64_LINUX_EABI_12_2_0_Toolchain
 
 from ofrak_patch_maker.toolchain.gnu_arm import GNU_ARM_NONE_EABI_10_2_1_Toolchain
 from ofrak_patch_maker.toolchain.llvm_12 import LLVM_12_0_1_Toolchain
@@ -125,12 +125,12 @@ TEST_CASE_CONFIGS = [
     FunctionReplacementTestCaseConfig(
         X86_64_PROGRAM_CONFIG,
         "patch_basic.c",
-        "GNU_X86_64_LINUX_EABI_10_3_0",
-        GNU_X86_64_LINUX_EABI_10_3_0_Toolchain,
+        "GNU_X86_64_LINUX_EABI_12_2_0",
+        GNU_X86_64_LINUX_EABI_12_2_0_Toolchain,
         [
             "00000000004004c4 <main>:",
             "  4004c4: b8 03 00 00 00        mov    $0x3,%eax",
-            "  4004c9: c3                    retq",
+            "  4004c9: c3                    ret",
         ],
     ),
     FunctionReplacementTestCaseConfig(
@@ -144,7 +144,7 @@ TEST_CASE_CONFIGS = [
             "  4004c5: 48 89 e5 movq %rsp, %rbp",
             "  4004c8: b8 03 00 00 00 movl $3, %eax",
             "  4004cd: 5d popq %rbp",
-            "  4004ce: c3 retq",
+            "  4004ce: c3 ret",
         ],
     ),
     FunctionReplacementTestCaseConfig(
@@ -161,21 +161,21 @@ TEST_CASE_CONFIGS = [
     FunctionReplacementTestCaseConfig(
         X86_64_PROGRAM_CONFIG,
         "patch_two_functions.c",
-        "GNU_X86_64_LINUX_EABI_10_3_0",
-        GNU_X86_64_LINUX_EABI_10_3_0_Toolchain,
+        "GNU_X86_64_LINUX_EABI_12_2_0",
+        GNU_X86_64_LINUX_EABI_12_2_0_Toolchain,
         [
             "00000000004004c4 <main>:",
             "  4004c4: 55                    push   %rbp",
             "  4004c5: 48 89 e5              mov    %rsp,%rbp",
             "  4004c8: b8 00 00 00 00        mov    $0x0,%eax",
-            "  4004cd: e8 02 00 00 00        callq  4004d4 <main+0x10>",
+            "  4004cd: e8 02 00 00 00        call   4004d4 <main+0x10>",
             "  4004d2: 5d                    pop    %rbp",
-            "  4004d3: c3                    retq   ",
+            "  4004d3: c3                    ret    ",
             "  4004d4: 55                    push   %rbp",
             "  4004d5: 48 89 e5              mov    %rsp,%rbp",
             "  4004d8: b8 04 00 00 00        mov    $0x4,%eax",
             "  4004dd: 5d                    pop    %rbp",
-            "  4004de: c3                    retq   ",
+            "  4004de: c3                    ret    ",
         ],
         CompilerOptimizationLevel.NONE,
     ),

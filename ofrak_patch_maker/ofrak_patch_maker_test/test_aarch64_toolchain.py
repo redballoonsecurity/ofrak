@@ -6,7 +6,7 @@ import pytest
 from ofrak_type import ArchInfo
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
-from ofrak_patch_maker.toolchain.gnu_aarch64 import GNU_AARCH64_LINUX_10_Toolchain
+from ofrak_patch_maker.toolchain.gnu_aarch64 import GNU_AARCH64_LINUX_12_Toolchain
 from ofrak_patch_maker.toolchain.model import (
     Segment,
     CompilerOptimizationLevel,
@@ -34,7 +34,7 @@ AARCH64_EXTENSION = ".aarch64"
 @pytest.fixture(
     params=[
         ToolchainUnderTest(
-            GNU_AARCH64_LINUX_10_Toolchain,
+            GNU_AARCH64_LINUX_12_Toolchain,
             ArchInfo(
                 InstructionSet.AARCH64,
                 None,

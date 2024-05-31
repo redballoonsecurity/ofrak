@@ -1,4 +1,4 @@
-from ofrak_patch_maker.toolchain.gnu import GNU_10_Toolchain
+from ofrak_patch_maker.toolchain.gnu import GNU_Toolchain
 from ofrak_patch_maker.binary_parser.gnu import GNU_V10_ELF_Parser
 from ofrak_patch_maker.toolchain.model import ToolchainConfig
 import logging
@@ -6,7 +6,7 @@ import logging
 from ofrak_type.architecture import ArchInfo
 
 
-class GNU_X86_64_LINUX_EABI_10_3_0_Toolchain(GNU_10_Toolchain):
+class GNU_X86_64_LINUX_EABI_12_2_0_Toolchain(GNU_Toolchain):
     binary_file_parsers = [GNU_V10_ELF_Parser()]
 
     def __init__(
@@ -29,7 +29,7 @@ class GNU_X86_64_LINUX_EABI_10_3_0_Toolchain(GNU_10_Toolchain):
 
     @property
     def name(self) -> str:
-        return "GNU_X86_64_LINUX_EABI_10_3_0"
+        return "GNU_X86_64_LINUX_EABI_12_2_0"
 
     @property
     def segment_alignment(self) -> int:

@@ -6,11 +6,11 @@ import pytest
 
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.abstract import Toolchain
-from ofrak_patch_maker.toolchain.gnu_aarch64 import GNU_AARCH64_LINUX_10_Toolchain
+from ofrak_patch_maker.toolchain.gnu_aarch64 import GNU_AARCH64_LINUX_12_Toolchain
 from ofrak_patch_maker.toolchain.gnu_arm import GNU_ARM_NONE_EABI_10_2_1_Toolchain
 from ofrak_patch_maker.toolchain.gnu_avr import GNU_AVR_5_Toolchain
-from ofrak_patch_maker.toolchain.gnu_ppc import GNU_PPC_LINUX_10_Toolchain
-from ofrak_patch_maker.toolchain.gnu_x64 import GNU_X86_64_LINUX_EABI_10_3_0_Toolchain
+from ofrak_patch_maker.toolchain.gnu_ppc import GNU_PPC_LINUX_12_Toolchain
+from ofrak_patch_maker.toolchain.gnu_x64 import GNU_X86_64_LINUX_EABI_12_2_0_Toolchain
 from ofrak_patch_maker.toolchain.llvm_12 import LLVM_12_0_1_Toolchain
 from ofrak_patch_maker.toolchain.model import (
     ToolchainConfig,
@@ -82,11 +82,11 @@ TOOLCHAINS_AND_TARGETS = [
     #     ArchInfo(InstructionSet.M68K, None, BitWidth.BIT_32, Endianness.LITTLE_ENDIAN, None)
     # ),
     (
-        GNU_X86_64_LINUX_EABI_10_3_0_Toolchain,
+        GNU_X86_64_LINUX_EABI_12_2_0_Toolchain,
         ArchInfo(InstructionSet.X86, None, BitWidth.BIT_64, Endianness.LITTLE_ENDIAN, None),
     ),
     (
-        GNU_PPC_LINUX_10_Toolchain,
+        GNU_PPC_LINUX_12_Toolchain,
         ArchInfo(InstructionSet.PPC, None, BitWidth.BIT_32, Endianness.BIG_ENDIAN, None),
     ),
     (
@@ -100,7 +100,7 @@ TOOLCHAINS_AND_TARGETS = [
         ),
     ),
     (
-        GNU_AARCH64_LINUX_10_Toolchain,
+        GNU_AARCH64_LINUX_12_Toolchain,
         ArchInfo(InstructionSet.AARCH64, None, BitWidth.BIT_64, Endianness.LITTLE_ENDIAN, None),
     ),
 ]

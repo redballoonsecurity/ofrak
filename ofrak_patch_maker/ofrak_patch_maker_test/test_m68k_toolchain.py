@@ -6,7 +6,7 @@ import pytest
 from ofrak_type import ArchInfo
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
-from ofrak_patch_maker.toolchain.gnu_m68k import GNU_M68K_LINUX_10_Toolchain
+from ofrak_patch_maker.toolchain.gnu_m68k import GNU_M68K_LINUX_12_Toolchain
 from ofrak_patch_maker.toolchain.gnu_vbcc_m68k import VBCC_0_9_GNU_Hybrid_Toolchain
 from ofrak_patch_maker.toolchain.model import (
     CompilerOptimizationLevel,
@@ -35,7 +35,7 @@ M68K_EXTENSION = ".m68k"
 @pytest.fixture(
     params=[
         ToolchainUnderTest(
-            GNU_M68K_LINUX_10_Toolchain,
+            GNU_M68K_LINUX_12_Toolchain,
             ArchInfo(
                 InstructionSet.M68K,
                 None,
