@@ -82,6 +82,7 @@ class _ComponentAutoRunRequest:
     target_resource_id: bytes
     component_filter: ComponentFilter
 
+
 class JobService(JobServiceInterface):
     def __init__(
         self,
