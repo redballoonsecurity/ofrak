@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 ### Added
+- More aggressively cache previously executed components, and avoid unnecessarily rerunning them on the same resource ([#469](https://github.com/redballoonsecurity/ofrak/pull/469))
 - Add links to other resources and locations in comments with an autocomplete feature in the comment view. ([#447](https://github.com/redballoonsecurity/ofrak/pull/447)) 
 - Add modifier to add and remove sections using lief. ([#443](https://github.com/redballoonsecurity/ofrak/pull/443))
 - Add tabbed content views and a decompilation view to the OFRAK GUI. ([#436](https://github.com/redballoonsecurity/ofrak/pull/436/))
@@ -15,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add generic DecompilationAnalysis classes. ([#453](https://github.com/redballoonsecurity/ofrak/pull/453))
 
 ### Fixed
-- Will not unnecessarily re-run identifiers when new candidates are added to the list ([#469](https://github.com/redballoonsecurity/ofrak/pull/469))
+- Eliminate an already unlikely possibility that a component that should be rerun (because of difference in configuration) will not be rerun and a cached result would be used instead ([#469](https://github.com/redballoonsecurity/ofrak/pull/469))
 - Improved flushing of filesystem entries (including symbolic links and other types) to disk. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373))
 - Fix `java` and `apktool` CLI arguments for checking components. ([#390](https://github.com/redballoonsecurity/ofrak/pull/390))
 - Bump GitPython version from 3.1.35 to 3.1.41 to mitigate CVEs. ([#400](https://github.com/redballoonsecurity/ofrak/pull/400))
