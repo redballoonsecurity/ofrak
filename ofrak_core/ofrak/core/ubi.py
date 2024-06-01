@@ -300,6 +300,8 @@ vol_name={volume_view.name}
 
             resource.queue_patch(Range(0, await resource.get_data_length()), packed_blob_data)
 
+            resource.remove_component(UbiAnalyzer.get_id())
+
 
 class UbiIdentifier(Identifier):
     """
