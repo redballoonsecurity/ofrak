@@ -66,6 +66,7 @@ class TestUefiComponent(UnpackAndVerifyPattern):
                 await descendent.view_as(FilesystemEntry)
             ).get_path(): await descendent.get_data()
             for descendent in await unpacked_root_resource.get_descendants()
+            if descendent.has_tag(FilesystemEntry)
         }
         return result
 

@@ -215,7 +215,9 @@ class ApkIdentifier(Identifier):
     async def identify(self, resource: Resource, config=None) -> None:
         await resource.run(MagicMimeIdentifier)
         magic = resource.get_attributes(Magic)
-        if magic is not None and magic.mime in ["application/java-archive", "application/zip"]:
+        if magic.mime == "application/vnd.android.package-archive":
+            resource.add_tag(Apk)
+        elif magic is not None and magic.mime in ["application/java-archive", "application/zip"]:
             with tempfile.NamedTemporaryFile(suffix=".zip") as temp_file:
                 temp_file.write(await resource.get_data())
                 temp_file.flush()
