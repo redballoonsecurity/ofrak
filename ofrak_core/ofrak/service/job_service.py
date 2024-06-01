@@ -145,7 +145,12 @@ class JobService(JobServiceInterface):
 
         return result, metadata
 
-    async def _create_run_component_task(
+    def clear_cache(self, resource_id: bytes, component_id: bytes) -> None:
+        component_task_id = (resource_id, component_id)
+        if component_task_id in self._active_component_tasks:
+            del self._active_component_tasks[component_task_id]
+
+    def _create_run_component_task(
         self,
         metadata: Any,
         job_id: bytes,
@@ -156,34 +161,27 @@ class JobService(JobServiceInterface):
     ) -> Awaitable[_RunTaskResultT]:
         component_task_id = (resource_id, component.get_id())
         if config is None and component_task_id in self._active_component_tasks:
-            # Check that the resource has component listed as run. Critical instance
-            # where this is not true is that unpackers would be removed from the
-            # list after packer is executed - and in that case, we need to run
-            # the unpacker again; cannot rely on the original unpack that was undone
-            # by the pack.
-            resource_model = await self._resource_service.get_by_id(resource_id)
-            version = resource_model.get_component_version(component.get_id())
-            if version is not None and version == component.get_version():
-                if LOGGER.isEnabledFor(logging.DEBUG):
-                    LOGGER.debug(
-                        f"JOB {job_id.hex()} - Found already running task {component.get_id().decode()}"
-                        f" on resource {resource_id.hex()}, awaiting result."
-                    )
-                duplicate_task = self._active_component_tasks[component_task_id]
+            if LOGGER.isEnabledFor(logging.DEBUG):
+                LOGGER.debug(
+                    f"JOB {job_id.hex()} - Found already running task {component.get_id().decode()}"
+                    f" on resource {resource_id.hex()}, awaiting result."
+                )
+            duplicate_task = self._active_component_tasks[component_task_id]
 
-                return duplicate_task
-        component_task = asyncio.create_task(
-            self._run_component(
-                metadata,
-                job_id,
-                resource_id,
-                component,
-                job_context,
-                config,
+            return duplicate_task
+        else:
+            component_task = asyncio.create_task(
+                self._run_component(
+                    metadata,
+                    job_id,
+                    resource_id,
+                    component,
+                    job_context,
+                    config,
+                )
             )
-        )
-        self._active_component_tasks[component_task_id] = component_task
-        return component_task
+            self._active_component_tasks[component_task_id] = component_task
+            return component_task
 
     def __enter__(self) -> None:
         self._num_runners += 1
@@ -191,7 +189,7 @@ class JobService(JobServiceInterface):
     def __exit__(self, *_) -> None:
         self._num_runners -= 1
         if not self._num_runners:
-            self._active_component_tasks = dict()
+            self._active_component_tasks.clear()
 
     async def run_component(
         self,
@@ -203,7 +201,7 @@ class JobService(JobServiceInterface):
         if job_context is None:
             job_context = self._job_context_factory.create()
         with self:
-            task = await self._create_run_component_task(
+            result, _ = await self._create_run_component_task(
                 request,
                 request.job_id,
                 request.resource_id,
@@ -211,7 +209,6 @@ class JobService(JobServiceInterface):
                 job_context,
                 request.config,
             )
-            result, _ = await task
         if isinstance(result, BaseException):
             raise result
         else:
@@ -465,7 +462,7 @@ class JobService(JobServiceInterface):
         n_tasks_to_add = min(MAX_CONCURRENT_COMPONENTS, len(queue))
         for _ in range(n_tasks_to_add):
             request, component = queue.pop()
-            run_component_task = await self._create_run_component_task(
+            run_component_task = self._create_run_component_task(
                 (request, type(component).__name__),
                 job_id,
                 request.target_resource_id,
@@ -500,7 +497,7 @@ class JobService(JobServiceInterface):
             n_tasks_to_add = min(len(completed), len(queue))
             for _ in range(n_tasks_to_add):
                 request, component = queue.pop()
-                run_component_task = await self._create_run_component_task(
+                run_component_task = self._create_run_component_task(
                     (request, type(component).__name__),
                     job_id,
                     request.target_resource_id,

@@ -124,6 +124,20 @@ class JobServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         modified/created/deleted.
         """
 
+    @abstractmethod
+    def clear_cache(self, resource_id: bytes, component_id: bytes) -> None:
+        """
+        Removes the record, if present, from the cashe that job service maintains
+        of components that are currently executing or were executed since the service
+        was last idle. This would mean that next time something tries to run the component
+        with the same resource, it will run anew and not be cached.
+
+        :param resource_id: ID of the resource.
+        :param component_id: ID of the component.
+
+        :return: None
+        """
+
 
 class ComponentAutoRunFailure(Exception):
     def __init__(

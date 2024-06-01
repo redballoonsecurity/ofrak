@@ -1020,6 +1020,7 @@ class Resource:
         """
         self._set_modified()
         self._resource.remove_component(component_id, attributes)
+        self._job_service.clear_cache(self.get_id(), component_id)
 
     def has_component_run(self, component_id: bytes, desired_version: Optional[int] = None) -> bool:
         """
