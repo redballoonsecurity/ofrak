@@ -112,7 +112,7 @@ class JobService(JobServiceInterface):
         resource_id: bytes,
         component: ComponentInterface,
         job_context: JobRunContext,
-        config: CC,
+        config: Optional[CC],
     ) -> _RunTaskResultT:
         """
         Run a component, return the result as well as some (optional) metadata (such as the request
@@ -152,7 +152,7 @@ class JobService(JobServiceInterface):
         resource_id: bytes,
         component: ComponentInterface,
         job_context: JobRunContext,
-        config: CC = None,
+        config: Optional[CC] = None,
     ) -> Awaitable[_RunTaskResultT]:
         component_task_id = (resource_id, component.get_id())
         if config is None and component_task_id in self._active_component_tasks:
