@@ -196,7 +196,6 @@ class JobService(JobServiceInterface):
         request: JobComponentRequest,
         job_context: Optional[JobRunContext] = None,
     ) -> ComponentRunResult:
-        self._num_runners += 1
         component = self._component_locator.get_by_id(request.component_id)
         if job_context is None:
             job_context = self._job_context_factory.create()
