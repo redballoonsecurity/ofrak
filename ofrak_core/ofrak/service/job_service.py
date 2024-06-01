@@ -82,7 +82,6 @@ class _ComponentAutoRunRequest:
     target_resource_id: bytes
     component_filter: ComponentFilter
 
-
 class JobService(JobServiceInterface):
     def __init__(
         self,
@@ -283,6 +282,7 @@ class JobService(JobServiceInterface):
                 ),
                 request.job_id,
                 job_context,
+                components_result.components_run,
             )
 
             components_result.update(individual_component_results)
@@ -330,6 +330,7 @@ class JobService(JobServiceInterface):
                 _run_components_requests,
                 request.job_id,
                 job_context,
+                components_result.components_run,
             )
             components_result.update(iteration_components_result)
 
@@ -421,6 +422,7 @@ class JobService(JobServiceInterface):
         requests: Iterable[_ComponentAutoRunRequest],
         job_id: bytes,
         job_context: JobRunContext,
+        skip_components: Optional[Set[bytes]] = None,
     ) -> ComponentRunResult:
         queue: List[Tuple[_ComponentAutoRunRequest, ComponentInterface]] = []
         for request in requests:
@@ -436,7 +438,8 @@ class JobService(JobServiceInterface):
                     )
             else:
                 for component in components:
-                    queue.append((request, component))
+                    if skip_components is None or component not in skip_components:
+                        queue.append((request, component))
 
         concurrent_run_tasks: List[Awaitable[_RunTaskResultT]] = list()
 
