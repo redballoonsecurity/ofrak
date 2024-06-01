@@ -155,7 +155,7 @@ class JobService(JobServiceInterface):
         config: CC = None,
     ) -> Awaitable[_RunTaskResultT]:
         component_task_id = (resource_id, component.get_id())
-        if component_task_id in self._active_component_tasks:
+        if config is None and component_task_id in self._active_component_tasks:
             if LOGGER.isEnabledFor(logging.DEBUG):
                 LOGGER.debug(
                     f"JOB {job_id.hex()} - Found already running task {component.get_id().decode()}"
