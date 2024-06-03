@@ -13,4 +13,5 @@ pytest-lazy-fixture
 pytest-cov
 pytest-xdist
 requests
+types-aiofiles
 fun-coverage==0.2.0
