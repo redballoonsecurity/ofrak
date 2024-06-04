@@ -1323,9 +1323,9 @@ BASIC_BLOCK_UNPACKER_TEST_CASES = [
     BasicBlockUnpackerTestCase(
         "x64 Kernel address space",
         {
-            0xffffffff80000000: [
+            0xFFFFFFFF80000000: [
                 Instruction(
-                    virtual_address=0xffffffff80000000,
+                    virtual_address=0xFFFFFFFF80000000,
                     size=5,
                     disassembly="mov eax, 0x0",
                     mnemonic="mov",
@@ -1333,7 +1333,7 @@ BASIC_BLOCK_UNPACKER_TEST_CASES = [
                     mode=InstructionSetMode.NONE,
                 ),
                 Instruction(
-                    virtual_address=0xffffffff80000005,
+                    virtual_address=0xFFFFFFFF80000005,
                     size=1,
                     disassembly="ret ",
                     mnemonic="ret",
@@ -1738,9 +1738,9 @@ class BasicBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
         instructions_by_addr: Dict[int, ExpectedBasicBlockUnpackResult] = dict()
         for expected_instructions in specified_result:
             if type(expected_instructions) is tuple:
-                instructions_by_addr[
-                    expected_instructions[0].virtual_address
-                ] = expected_instructions
+                instructions_by_addr[expected_instructions[0].virtual_address] = (
+                    expected_instructions
+                )
             else:
                 instructions_by_addr[expected_instructions.virtual_address] = (
                     expected_instructions,
@@ -1749,8 +1749,9 @@ class BasicBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
         # Check that all expected basic blocks have been extracted
         expected_vaddr_set = set(instructions_by_addr.keys())
         unpacked_vaddr_set = {instruction.virtual_address for instruction in instructions}
-        assert unpacked_vaddr_set == expected_vaddr_set, \
-        f"Unpacked vaddrs {unpacked_vaddr_set} does not match expected vaddrs {expected_vaddr_set}"
+        assert (
+            unpacked_vaddr_set == expected_vaddr_set
+        ), f"Unpacked vaddrs {unpacked_vaddr_set} does not match expected vaddrs {expected_vaddr_set}"
 
         errors = []
         for instruction in instructions:

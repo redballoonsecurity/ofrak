@@ -223,9 +223,9 @@ COMPLEX_BLOCK_UNPACKER_TEST_CASES = [
     ComplexBlockUnpackerTestCase(
         "x64 Kernel address space",
         {
-            0xffffffff80000000: [
+            0xFFFFFFFF80000000: [
                 BasicBlock(
-                    virtual_address=0xffffffff80000000,
+                    virtual_address=0xFFFFFFFF80000000,
                     size=6,
                     mode=InstructionSetMode.NONE,
                     is_exit_point=True,

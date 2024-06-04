@@ -78,7 +78,7 @@ CODE_REGION_UNPACKER_TEST_CASES = [
         "x64 Kernel address space",
         {
             ## Required cases
-            0xffffffff80000000: [],  # .text:main
+            0xFFFFFFFF80000000: [],  # .text:main
         },
         set(),  ## No optional results
         "kernel_address_space.out",
