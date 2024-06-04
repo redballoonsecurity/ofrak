@@ -89,14 +89,17 @@ class UnpackAndVerifyPattern(ABC):
         missing_optional_set = optional_set - unpacked_set
 
         ## Build an info string about this test case
-        info_str = [f"{'item':<16}{'unpacked':<16}{'expected':<16}{'optional':<16}"]
+        info_str = [
+            f"{'item':<20}{'unpacked':<20}"
+            f"{'expected':<20}{'optional':<20}"
+        ]
         for item in sorted(unpacked_set | expected_set | optional_set):
             item_fmt = str(_hexlify(item))
             row = (
-                f"{item_fmt:<16}"
-                f"{item_fmt if item in unpacked_set else '':<16}"
-                f"{item_fmt if item in expected_set else '':<16}"
-                f"{item_fmt if item in optional_set else '':<16}"
+                f"{item_fmt:<20}"
+                f"{item_fmt if item in unpacked_set else '':<20}"
+                f"{item_fmt if item in expected_set else '':<20}"
+                f"{item_fmt if item in optional_set else '':<20}"
             )
             info_str.append(row)
         info_str = "\n".join(info_str)

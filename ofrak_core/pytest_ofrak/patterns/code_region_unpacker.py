@@ -75,6 +75,16 @@ CODE_REGION_UNPACKER_TEST_CASES = [
         "56662f638390cae92c2cf5107bc3f1ef",
     ),
     CodeRegionUnpackerTestCase(
+        "x64 Kernel address space",
+        {
+            ## Required cases
+            0xffffffff80000000: [],  # .text:main
+        },
+        set(),  ## No optional results
+        "kernel_address_space.out",
+        "242dd5b9ecc56bb7a8c8db43e8c720f0",
+    ),
+    CodeRegionUnpackerTestCase(
         "ARM ELF without literal pools",
         {
             0x8000: [],
