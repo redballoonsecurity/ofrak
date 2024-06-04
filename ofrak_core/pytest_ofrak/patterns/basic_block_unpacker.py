@@ -1738,9 +1738,9 @@ class BasicBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
         instructions_by_addr: Dict[int, ExpectedBasicBlockUnpackResult] = dict()
         for expected_instructions in specified_result:
             if type(expected_instructions) is tuple:
-                instructions_by_addr[expected_instructions[0].virtual_address] = (
-                    expected_instructions
-                )
+                instructions_by_addr[
+                    expected_instructions[0].virtual_address
+                ] = expected_instructions
             else:
                 instructions_by_addr[expected_instructions.virtual_address] = (
                     expected_instructions,
