@@ -1345,7 +1345,9 @@ BASIC_BLOCK_UNPACKER_TEST_CASES = [
         set(),  # No optional results
         "kernel_address_space.out",
         "242dd5b9ecc56bb7a8c8db43e8c720f0",
-        {},
+        {
+            0xFFFFFFFF80000000: Range(0x1000, 0x1006),
+        },
     ),
     # ARM with literal pools
     BasicBlockUnpackerTestCase(
