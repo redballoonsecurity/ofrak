@@ -28,6 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - View resource attribute string values containing only digits primarily as strings, alternatively as hex numbers. ([#423](https://github.com/redballoonsecurity/ofrak/pull/423))
 
 ### Changed
+- In `GripUnpacker`, use `gzip.GzipFile` python unpacker for speed, fall back on `pigz` if needed ([#472](https://github.com/redballoonsecurity/ofrak/pull/472))
 - Change `FreeSpaceModifier` & `PartialFreeSpaceModifier` behavior: an optional stub that isn't free space can be provided and fill-bytes for free space can be specified. ([#409](https://github.com/redballoonsecurity/ofrak/pull/409))
 - `Resource.flush_to_disk` method renamed to `Resource.flush_data_to_disk`. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373))
 - `build_image.py` supports building Docker images with OFRAK packages from any ancestor directory. ([#425](https://github.com/redballoonsecurity/ofrak/pull/425))
