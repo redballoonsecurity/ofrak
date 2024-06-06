@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 ### Fixed
-- Fixed handling negative 64-bit addresses. ([#474](https://github.com/redballoonsecurity/ofrak/pull/474))
+- Ensure large 64-bit addresses are interpreted as unsigned. ([#474](https://github.com/redballoonsecurity/ofrak/pull/474))
 
 ## 0.1.1 - 2024-02-15
 ### Added
