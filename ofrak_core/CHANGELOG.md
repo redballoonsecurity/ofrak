@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 ### Added
+- Support `application/vnd.android.package-archive` mime type for APKs, which is returned by newer versions of libmagic ([#470](https://github.com/redballoonsecurity/ofrak/pull/470))
 - Add links to other resources and locations in comments with an autocomplete feature in the comment view. ([#447](https://github.com/redballoonsecurity/ofrak/pull/447)) 
 - Add modifier to add and remove sections using lief. ([#443](https://github.com/redballoonsecurity/ofrak/pull/443))
 - Add tabbed content views and a decompilation view to the OFRAK GUI. ([#436](https://github.com/redballoonsecurity/ofrak/pull/436/))
@@ -29,6 +30,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Changed
 - Use `aiofiles` for filesystem reads/writes instead of blocking IO. ([#466](https://github.com/redballoonsecurity/ofrak/pull/466))
+- In `GripUnpacker`, use `gzip.GzipFile` python unpacker for speed, fall back on `pigz` if needed ([#472](https://github.com/redballoonsecurity/ofrak/pull/472))
 - Change `FreeSpaceModifier` & `PartialFreeSpaceModifier` behavior: an optional stub that isn't free space can be provided and fill-bytes for free space can be specified. ([#409](https://github.com/redballoonsecurity/ofrak/pull/409))
 - `Resource.flush_to_disk` method renamed to `Resource.flush_data_to_disk`. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373))
 - `build_image.py` supports building Docker images with OFRAK packages from any ancestor directory. ([#425](https://github.com/redballoonsecurity/ofrak/pull/425))
