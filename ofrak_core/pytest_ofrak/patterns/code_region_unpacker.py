@@ -74,6 +74,7 @@ CODE_REGION_UNPACKER_TEST_CASES = [
         "hello_nosections.out",
         "56662f638390cae92c2cf5107bc3f1ef",
     ),
+    # x64 Kernel address space - ensure large 64-bit addresses are interpreted as unsigned
     CodeRegionUnpackerTestCase(
         "x64 Kernel address space",
         {

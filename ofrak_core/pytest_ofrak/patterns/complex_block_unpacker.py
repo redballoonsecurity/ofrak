@@ -219,7 +219,7 @@ COMPLEX_BLOCK_UNPACKER_TEST_CASES = [
         "hello.out",
         "cc2de3c0cd2d0ded7543682c2470fcf0",
     ),
-    # x64 Kernel address space
+    # x64 Kernel address space - ensure large 64-bit addresses are interpreted as unsigned
     ComplexBlockUnpackerTestCase(
         "x64 Kernel address space",
         {

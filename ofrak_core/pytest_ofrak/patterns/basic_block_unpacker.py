@@ -1319,7 +1319,7 @@ BASIC_BLOCK_UNPACKER_TEST_CASES = [
             0x4005A0: Range(0x5A0, 0x5AF),
         },
     ),
-    # x64 Kernel address space
+    # x64 Kernel address space - ensure large 64-bit addresses are interpreted as unsigned
     BasicBlockUnpackerTestCase(
         "x64 Kernel address space",
         {
