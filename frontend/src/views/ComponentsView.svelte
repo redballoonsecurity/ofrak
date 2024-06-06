@@ -200,7 +200,6 @@
     try {
       const results = await $selectedResource.run_component(
         selectedComponent,
-        ofrakConfig["type"],
         config
       );
       if (!$resourceNodeDataMap[$selected]) {
