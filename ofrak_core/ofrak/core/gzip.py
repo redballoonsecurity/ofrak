@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import tempfile
-from gzip import GzipFile
+from gzip import BadGzipFile, GzipFile
 from io import BytesIO
 from subprocess import CalledProcessError
 
@@ -40,35 +40,45 @@ class GzipUnpacker(Unpacker[None]):
     external_dependencies = (PIGZ,)
 
     async def unpack(self, resource: Resource, config=None):
-        # Create temporary file with .gz extension
-        with tempfile.NamedTemporaryFile(suffix=".gz") as temp_file:
-            temp_file.write(await resource.get_data())
-            temp_file.flush()
-            cmd = [
-                "pigz",
-                "-d",
-                "-c",
-                temp_file.name,
-            ]
-            proc = await asyncio.create_subprocess_exec(
-                *cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-            )
-            stdout, stderr = await proc.communicate()
-            data = stdout
-            if proc.returncode:
-                # Forward any gzip warning message and continue
-                if proc.returncode == -2 or proc.returncode == 2:
-                    LOGGER.warning(stderr)
-                    data = stdout
-                else:
-                    raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
+        data = await resource.get_data()
+        # GzipFile is faster (spawning external processes has overhead),
+        # but pigz is more willing to tolerate things like extra junk at the end
+        try:
+            with GzipFile(fileobj=BytesIO(data), mode="r") as gzip_file:
+                return await resource.create_child(
+                    tags=(GenericBinary,),
+                    data=gzip_file.read(),
+                )
+        except BadGzipFile:
+            # Create temporary file with .gz extension
+            with tempfile.NamedTemporaryFile(suffix=".gz") as temp_file:
+                temp_file.write(data)
+                temp_file.flush()
+                cmd = [
+                    "pigz",
+                    "-d",
+                    "-c",
+                    temp_file.name,
+                ]
+                proc = await asyncio.create_subprocess_exec(
+                    *cmd,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                stdout, stderr = await proc.communicate()
+                data = stdout
+                if proc.returncode:
+                    # Forward any gzip warning message and continue
+                    if proc.returncode == -2 or proc.returncode == 2:
+                        LOGGER.warning(stderr)
+                        data = stdout
+                    else:
+                        raise CalledProcessError(returncode=proc.returncode, cmd=cmd, stderr=stderr)
 
-            await resource.create_child(
-                tags=(GenericBinary,),
-                data=data,
-            )
+                await resource.create_child(
+                    tags=(GenericBinary,),
+                    data=data,
+                )
 
 
 class GzipPacker(Packer[None]):
