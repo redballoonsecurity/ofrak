@@ -116,7 +116,9 @@ class GhidraComplexBlockUnpacker(
             is_exit_point = bb_info["is_exit_point"]
             mode_string = bb_info["instr_mode"]
             exit_vaddr = bb_info["exit_vaddr"]
-            if (exit_vaddr) == -1:
+            # The Ghidra script initializes exit_vaddr to -1. If is_exit_point, we want exit_vaddr
+            # to be None; this is consistent with the docstring of BasicBlock
+            if is_exit_point:
                 exit_vaddr = None
 
             if bb_size == 0:

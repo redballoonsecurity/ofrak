@@ -154,7 +154,13 @@ public class GetComplexBlocks extends HeadlessScript {
         }
 
         String toJson() {
-            return String.format("{\"loadAddress\":%d,\"sectionOffset\":%d,\"size\":%d,\"name\":\"%s\"}", loadAddress, sectionOffset, size, name.replace("\"", "\\\""));
+            return String.format(
+                "{\"loadAddress\":%s,\"sectionOffset\":%s,\"size\":%s,\"name\":\"%s\"}", 
+                Long.toUnsignedString(loadAddress), 
+                Long.toUnsignedString(sectionOffset), 
+                Long.toUnsignedString(size), 
+                name.replace("\"", "\\\"")
+            );
         }
     }
 }

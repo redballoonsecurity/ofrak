@@ -100,7 +100,12 @@ public class GetDataWords extends HeadlessScript {
         }
 
         String toJson() {
-            return String.format("{\"word_vaddr\":%d,\"word_size\":%d,\"xrefs\":%s}", word_vaddr, word_size, xrefs.toString());
+            return String.format(
+                "{\"word_vaddr\":%s,\"word_size\":%s,\"xrefs\":%s}", 
+                Long.toUnsignedString(word_vaddr), 
+                Long.toUnsignedString(word_size), 
+                xrefs.toString()
+            );
         }
     }
 }
