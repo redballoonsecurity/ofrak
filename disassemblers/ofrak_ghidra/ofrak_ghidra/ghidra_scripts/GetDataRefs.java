@@ -92,7 +92,11 @@ public class GetDataRefs extends HeadlessScript {
         }
 
         String toJson() {
-            return String.format("{\"data_address\":%d,\"xrefs\":%s}", data_address, xrefs.toString());
+            return String.format(
+                "{\"data_address\":%s,\"xrefs\":%s}", 
+                Long.toUnsignedString(data_address), 
+                xrefs.toString()
+            );
         }
     }
 }
