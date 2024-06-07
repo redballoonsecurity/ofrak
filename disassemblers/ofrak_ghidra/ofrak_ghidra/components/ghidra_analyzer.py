@@ -183,6 +183,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
             "-p",
             "-import",
             full_fname,
+            "-noanalysis",
         ]
 
         if not use_existing:
