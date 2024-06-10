@@ -1,7 +1,7 @@
 from ofrak_patch_maker.binary_parser.gnu import GNU_ELF_Parser
 from ofrak_patch_maker.toolchain.gnu import GNU_10_Toolchain
 from ofrak_patch_maker.toolchain.model import ToolchainConfig, ToolchainException
-from ofrak_type.architecture import InstructionSet, SubInstructionSet, ArchInfo
+from ofrak_type.architecture import InstructionSet, SubInstructionSet, ArchInfo, ProcessorType
 import logging
 
 
@@ -19,6 +19,9 @@ class GNU_ARM_NONE_EABI_10_2_1_Toolchain(GNU_10_Toolchain):
             self._compiler_flags.append("-mfloat-abi=hard")
         else:
             self._compiler_flags.append("-msoft-float")
+        if self._processor.processor == ProcessorType.GENERIC_ARM_BE8:
+            self._compiler_flags.append("-mbe8")
+            self._linker_flags.append("-be8")
 
     @property
     def name(self) -> str:
