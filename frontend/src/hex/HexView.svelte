@@ -384,7 +384,7 @@
       Resource has no data!
     {/if}
   </div>
-  {#if resourceData != undefined}
+  {#if chunkData != undefined}
     <div class="minimap">
       <MinimapView bind:currentPosition="{$currentPosition}" />
     </div>
