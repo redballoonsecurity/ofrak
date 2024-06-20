@@ -1,6 +1,7 @@
 import os
 import stat
 import tempfile
+import aiofiles
 from dataclasses import dataclass
 from typing import Dict, Iterable, Optional, Type, Union
 
@@ -193,8 +194,8 @@ class FilesystemEntry(ResourceView):
                 os.makedirs(folder_name)
         elif self.is_file():
             file_name = os.path.join(root_path, entry_path)
-            with open(file_name, "wb") as f:
-                f.write(await self.resource.get_data())
+            async with aiofiles.open(file_name, "wb") as f:
+                await f.write(await self.resource.get_data())
             self.apply_stat_attrs(file_name)
         elif self.is_device():
             device_name = os.path.join(root_path, entry_path)
@@ -411,10 +412,10 @@ class FilesystemRoot(ResourceView):
                         ),
                     )
                 elif os.path.isfile(absolute_path):
-                    with open(absolute_path, "rb") as fh:
+                    async with aiofiles.open(absolute_path, "rb") as fh:
                         await self.add_file(
                             relative_path,
-                            fh.read(),
+                            await fh.read(),
                             file_attributes_stat,
                             file_attributes_xattr,
                         )
