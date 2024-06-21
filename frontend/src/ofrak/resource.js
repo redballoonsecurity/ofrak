@@ -369,7 +369,7 @@ export class Resource {
     throw new NotImplementedError("add_comment");
   }
 
-  async delete_comment(optional_range) {
+  async delete_comment(optional_range, comment) {
     throw new NotImplementedError("delete_comment");
   }
 
