@@ -123,6 +123,7 @@ class OFRAK:
         self,
         logging_level: int = DEFAULT_LOG_LEVEL,
         exclude_components_missing_dependencies: bool = False,
+        license_check: bool = True,
     ):
         """
         Set up the OFRAK environment that a script will use.
@@ -139,6 +140,9 @@ class OFRAK:
         self._discovered_modules: List[ModuleType] = []
         self._exclude_components_missing_dependencies = exclude_components_missing_dependencies
         self._id_service: Optional[IDServiceInterface] = None
+
+        if license_check:
+            self._do_license_check()
 
     def discover(
         self,
@@ -233,6 +237,9 @@ class OFRAK:
         )
 
         return audited_components
+
+    def _do_license_check(self):
+        raise ValueError("Invalid license")
 
 
 def get_current_ofrak_context() -> OFRAKContext:
