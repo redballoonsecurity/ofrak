@@ -1,10 +1,14 @@
 import asyncio
+import json
 import logging
 import os
 import tempfile
 import time
+from base64 import b64decode
 from types import ModuleType
 from typing import Type, Any, Awaitable, Callable, List, Iterable, Optional
+
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 import ofrak_patch_maker
 
@@ -31,6 +35,15 @@ from ofrak.service.resource_service_i import ResourceServiceInterface
 
 LOGGER = logging.getLogger("ofrak")
 DEFAULT_OFRAK_LOG_FILE = os.path.join(tempfile.gettempdir(), "ofrak.log")
+
+COMMUNITY_LICENSE_DATA = """{
+  "name": "OFRAK Community",
+  "date": "1719848612",
+  "expiration_date": null,
+  "email": "ofrak@redballoonsecurity.com",
+  "signature": "C1m/AuHocQdW1WniFgDZpZuYJoCn0wwgtVhU3BDNWHdBkWuRcy2sJtYZU1AX6GwAnCEW6x2wmMBfMRY1f5wuCg=="
+}"""
+RBS_PUBLIC_KEY = b"r\xcf\xb2\xe7\x17Y\x05*\x0e\xe3+\x00\x16\xd3\xd6\xf7\xa7\xd8\xd7\xfdV\x91\xa7\x88\x93\xe9\x9a\x8a\x05q\xd3\xbd"
 
 
 class OFRAKContext:
@@ -239,7 +252,37 @@ class OFRAK:
         return audited_components
 
     def _do_license_check(self):
-        raise ValueError("Invalid license")
+        """
+        License check function raises one of several possible exceptions if any
+        part of the license is invalid.
+
+        If, for some reason, you're trying to bypass, investigate, or otherwise
+        reverse-engineer this license check, you might be a good candidate to
+        work at Red Balloon Security – we're hiring! Check out our jobs page
+        for more info:
+
+        https://redballoonsecurity.com/company/careers/
+        """
+        license_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "license.json"))
+        if not os.path.exists(license_path):
+            # TODO: Do license selection flow
+            raise ValueError("Invalid license")
+        with open(license_path) as f:
+            license_data = json.load(f)
+
+        # Canonicalize license data and serialize to validate signature. Signed
+        # fields must be ordered to ensure data is serialized consistently for
+        # signature validation.
+        signed_fields = ["name", "date", "expiration_date", "email"]  # TODO: Add fields
+        to_validate = json.dumps([(k, license_data[k]) for k in signed_fields]).encode("utf-8")
+
+        key = Ed25519PublicKey.from_public_bytes(RBS_PUBLIC_KEY)
+        key.verify(b64decode(license_data["signature"]), to_validate)
+        if (
+            license_data["expiration_date"] is not None
+            and int(license_data["expiration_date"]) < time.time()
+        ):
+            raise RuntimeError("OFRAK license expired! Please purchase a pro license.")
 
 
 def get_current_ofrak_context() -> OFRAKContext:
