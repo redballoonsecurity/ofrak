@@ -37,6 +37,7 @@ LOGGER = logging.getLogger("ofrak")
 DEFAULT_OFRAK_LOG_FILE = os.path.join(tempfile.gettempdir(), "ofrak.log")
 
 COMMUNITY_LICENSE_DATA = """{
+  "license_type": "Community License",
   "name": "OFRAK Community",
   "date": "1719848612",
   "expiration_date": null,
@@ -251,6 +252,19 @@ class OFRAK:
 
         return audited_components
 
+    def _license_selection(self):
+        license_type = choose(
+            "How will you use OFRAK?",
+            "I will use OFRAK for personal projects",
+            "I will use OFRAK at work",
+        )
+        if license_type == 0:
+            # Community license
+            print("Community")
+        else:
+            # Pro license
+            print("Pro")
+
     def _do_license_check(self):
         """
         License check function raises one of several possible exceptions if any
@@ -265,10 +279,12 @@ class OFRAK:
         """
         license_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "license.json"))
         if not os.path.exists(license_path):
-            # TODO: Do license selection flow
-            raise ValueError("Invalid license")
+            self._license_selection()
+
         with open(license_path) as f:
             license_data = json.load(f)
+
+        print(f"\n\nUsing OFRAK with license type: {license_data['license_type']}\n\n", end="")
 
         # Canonicalize license data and serialize to validate signature. Signed
         # fields must be ordered to ensure data is serialized consistently for
@@ -283,6 +299,19 @@ class OFRAK:
             and int(license_data["expiration_date"]) < time.time()
         ):
             raise RuntimeError("OFRAK license expired! Please purchase a pro license.")
+
+
+def choose(prompt, *options: str) -> int:
+    print(prompt)
+    for i, option in enumerate(options):
+        print(f"[{i + 1}] {option}")
+    selection = 0
+    while not (1 <= selection <= len(options)):
+        try:
+            selection = int(input(f"Enter an option (1-{len(options)}): "))
+        except (ValueError, TypeError):
+            continue
+    return selection - 1
 
 
 def get_current_ofrak_context() -> OFRAKContext:
