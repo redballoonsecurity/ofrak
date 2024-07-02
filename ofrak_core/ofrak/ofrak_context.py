@@ -259,28 +259,33 @@ class OFRAK:
         return audited_components
 
     @staticmethod
-    def _write_license(data):
-        _data = json.loads(data)
-        pager(
-            "Read the license agreement below.\n\n"
-            + _data["agreement"]
-            + '\n\nPress "q" to continue.'
-        )
-        agreement = None
-        while agreement is None or agreement.lower() != "i agree":
-            agreement = input('Type "I agree" to agree to the license terms: ')
+    def _write_license(data, force_agree=False):
+        if not force_agree:
+            _data = json.loads(data)
+            pager(
+                "Read the license agreement below.\n\n"
+                + _data["agreement"]
+                + '\n\nPress "q" to continue.'
+            )
+            agreement = None
+            while agreement is None or agreement.lower() != "i agree":
+                agreement = input('Type "I agree" to agree to the license terms: ')
         with open(LICENSE_PATH, "w") as f:
             f.write(data)
 
     @staticmethod
-    def _license_selection():
-        license_type = choose(
-            "How will you use OFRAK?",
-            "I will use OFRAK for personal projects",
-            "I will use OFRAK at work",
-        )
+    def _license_selection(force_community=False, force_agree=False):
+        if force_community:
+            license_type = 0
+        else:
+            license_type = choose(
+                "How will you use OFRAK?",
+                "I will use OFRAK for personal projects",
+                "I will use OFRAK at work",
+            )
+
         if license_type == 0:
-            OFRAK._write_license(COMMUNITY_LICENSE_DATA)
+            OFRAK._write_license(COMMUNITY_LICENSE_DATA, force_agree=force_agree)
             return
         find_or_buy = choose(
             "Do you already have an OFRAK license?",
@@ -302,7 +307,7 @@ class OFRAK:
             OFRAK._write_license(sys.stdin.read())
 
     @staticmethod
-    def _do_license_check():
+    def _do_license_check(force_replace=False, force_community=False, force_agree=False):
         """
         License check function raises one of several possible exceptions if any
         part of the license is invalid.
@@ -314,8 +319,16 @@ class OFRAK:
 
         https://redballoonsecurity.com/company/careers/
         """
+        if force_replace:
+            i = 1
+            new_path = os.path.join(os.path.dirname(LICENSE_PATH), f"license_{i}.json")
+            while os.path.exists(new_path):
+                i += 1
+                new_path = os.path.join(os.path.dirname(LICENSE_PATH), f"license_{i}.json")
+            os.rename(LICENSE_PATH, new_path)
+
         if not os.path.exists(LICENSE_PATH):
-            OFRAK._license_selection()
+            OFRAK._license_selection(force_community=force_community, force_agree=force_agree)
 
         with open(LICENSE_PATH) as f:
             license_data = json.load(f)
