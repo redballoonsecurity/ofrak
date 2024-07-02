@@ -2,8 +2,10 @@ import asyncio
 import json
 import logging
 import os
+import sys
 import tempfile
 import time
+import webbrowser
 from base64 import b64decode
 from pydoc import pager
 from types import ModuleType
@@ -279,9 +281,25 @@ class OFRAK:
         )
         if license_type == 0:
             OFRAK._write_license(COMMUNITY_LICENSE_DATA)
+            return
+        find_or_buy = choose(
+            "Do you already have an OFRAK license?",
+            "Obtain a license from Red Balloon Security",
+            "Choose a license file on disk",
+            "Paste license data in directly",
+        )
+        if find_or_buy == 0:
+            webbrowser.open("https://ofrak.com/license/")
+        elif find_or_buy == 1:
+            license_path = input("Path to license file: ")
+            with open(license_path) as f:
+                OFRAK._write_license(f.read())
         else:
-            # Pro license
-            print("Pro")
+            print(
+                "Paste in the contents of the OFRAK license and press ctrl+d when done",
+                end="\n\n",
+            )
+            OFRAK._write_license(sys.stdin.read())
 
     @staticmethod
     def _do_license_check():
