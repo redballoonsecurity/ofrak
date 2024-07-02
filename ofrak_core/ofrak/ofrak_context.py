@@ -45,6 +45,7 @@ COMMUNITY_LICENSE_DATA = """{
   "signature": "C1m/AuHocQdW1WniFgDZpZuYJoCn0wwgtVhU3BDNWHdBkWuRcy2sJtYZU1AX6GwAnCEW6x2wmMBfMRY1f5wuCg=="
 }"""
 RBS_PUBLIC_KEY = b"r\xcf\xb2\xe7\x17Y\x05*\x0e\xe3+\x00\x16\xd3\xd6\xf7\xa7\xd8\xd7\xfdV\x91\xa7\x88\x93\xe9\x9a\x8a\x05q\xd3\xbd"
+LICENSE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "license.json"))
 
 
 class OFRAKContext:
@@ -252,20 +253,22 @@ class OFRAK:
 
         return audited_components
 
-    def _license_selection(self):
+    @staticmethod
+    def _license_selection():
         license_type = choose(
             "How will you use OFRAK?",
             "I will use OFRAK for personal projects",
             "I will use OFRAK at work",
         )
         if license_type == 0:
-            # Community license
-            print("Community")
+            with open(LICENSE_PATH, "w") as f:
+                f.write(COMMUNITY_LICENSE_DATA)
         else:
             # Pro license
             print("Pro")
 
-    def _do_license_check(self):
+    @staticmethod
+    def _do_license_check():
         """
         License check function raises one of several possible exceptions if any
         part of the license is invalid.
@@ -277,14 +280,13 @@ class OFRAK:
 
         https://redballoonsecurity.com/company/careers/
         """
-        license_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "license.json"))
-        if not os.path.exists(license_path):
-            self._license_selection()
+        if not os.path.exists(LICENSE_PATH):
+            OFRAK._license_selection()
 
-        with open(license_path) as f:
+        with open(LICENSE_PATH) as f:
             license_data = json.load(f)
 
-        print(f"\n\nUsing OFRAK with license type: {license_data['license_type']}\n\n", end="")
+        print(f"\nUsing OFRAK with license type: {license_data['license_type']}\n")
 
         # Canonicalize license data and serialize to validate signature. Signed
         # fields must be ordered to ensure data is serialized consistently for
