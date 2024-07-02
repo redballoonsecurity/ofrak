@@ -139,6 +139,7 @@ jobs:
             --entrypoint bash \
             redballoonsecurity/ofrak/ghidra:latest \
             -c "python -m ofrak_ghidra.server start \
+                && ofrak license --community --i-agree \
                 && make test"
 
   ofrak-angr:
@@ -183,7 +184,9 @@ jobs:
             --entrypoint bash \
             --volume "$(pwd)":/ofrak \
             redballoonsecurity/ofrak/angr:latest \
-            -c "make -C /ofrak_angr test && make -C /ofrak_capstone test"
+            -c "ofrak license --community --i-agree \
+              && make -C /ofrak_angr test \
+              && make -C /ofrak_capstone test"
 
   ofrak-tutorial:
     name: Test OFRAK examples and tutorial notebooks
@@ -227,5 +230,6 @@ jobs:
             --entrypoint bash \
             redballoonsecurity/ofrak/tutorial:latest \
             -c "python -m ofrak_ghidra.server start \
+                && ofrak license --community --i-agree \
                 && make -C /examples test \
                 && make -C /ofrak_tutorial test"
