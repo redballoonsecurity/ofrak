@@ -5,6 +5,7 @@ import os
 import tempfile
 import time
 from base64 import b64decode
+from pydoc import pager
 from types import ModuleType
 from typing import Type, Any, Awaitable, Callable, List, Iterable, Optional
 
@@ -39,10 +40,12 @@ DEFAULT_OFRAK_LOG_FILE = os.path.join(tempfile.gettempdir(), "ofrak.log")
 COMMUNITY_LICENSE_DATA = """{
   "license_type": "Community License",
   "name": "OFRAK Community",
+  "email": "ofrak@redballoonsecurity.com",
+  "phone_number": null,
   "date": "1719848612",
   "expiration_date": null,
-  "email": "ofrak@redballoonsecurity.com",
-  "signature": "C1m/AuHocQdW1WniFgDZpZuYJoCn0wwgtVhU3BDNWHdBkWuRcy2sJtYZU1AX6GwAnCEW6x2wmMBfMRY1f5wuCg=="
+  "signature": "C1m/AuHocQdW1WniFgDZpZuYJoCn0wwgtVhU3BDNWHdBkWuRcy2sJtYZU1AX6GwAnCEW6x2wmMBfMRY1f5wuCg==",
+  "agreement": "RED BALLOON SECURITY, INC., A DELAWARE CORPORATION, WITH AN ADDRESS AT 639 11TH AVENUE, 4TH FLOOR, NEW YORK, NY 10036, USA (\\"RED BALLOON\\") IS ONLY WILLING TO LICENSE OFRAK AND RELATED DOCUMENTATION PURSUANT TO THE OFRAK PRO LICENSE AGREEMENT (COLLECTIVELY WITH THIS REGISTRATION FORM, THE \\"AGREEMENT\\"). READ THIS AGREEMENT CAREFULLY BEFORE DOWNLOADING AND INSTALLING AND USING OFRAK.  BY CLICKING ON THE \\"ACCEPT\\" BUTTON ON THIS REGISTRATION FORM \\"REGISTRATION FORM\\"), OR OTHERWISE ACCESSING, INSTALLING, COPYING OR OTHERWISE USING OFRAK, YOU (\\"LICENSEE\\") AGREE THAT THIS REGISTRATION FORM SHALL BE DEEMED TO BE MUTUALLY EXECUTED AND THIS REGISTRATION FORM SHALL BE INCORPORATED INTO AND BECOME A MATERIAL PART OF THE AGREEMENT BETWEEN LICENSEE AND RED BALLOON LOCATED AT www.ofrak.com/license. YOU REPRESENT THAT YOU ARE AUTHORIZED TO ACCEPT THIS AGREEMENT ON BEHALF OF LICENSEE.  IF LICENSEE DOES NOT AGREE TO THE FOREGOING TERMS AND CONDITIONS, DO NOT CLICK ON THE ACCEPT BUTTON, OR OTHERWISE ACCESS, INSTALL, COPY OR USE OFRAK."
 }"""
 RBS_PUBLIC_KEY = b"r\xcf\xb2\xe7\x17Y\x05*\x0e\xe3+\x00\x16\xd3\xd6\xf7\xa7\xd8\xd7\xfdV\x91\xa7\x88\x93\xe9\x9a\x8a\x05q\xd3\xbd"
 LICENSE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "license.json"))
@@ -254,6 +257,20 @@ class OFRAK:
         return audited_components
 
     @staticmethod
+    def _write_license(data):
+        _data = json.loads(data)
+        pager(
+            "Read the license agreement below.\n\n"
+            + _data["agreement"]
+            + '\n\nPress "q" to continue.'
+        )
+        agreement = None
+        while agreement is None or agreement.lower() != "i agree":
+            agreement = input('Type "I agree" to agree to the license terms: ')
+        with open(LICENSE_PATH, "w") as f:
+            f.write(data)
+
+    @staticmethod
     def _license_selection():
         license_type = choose(
             "How will you use OFRAK?",
@@ -261,8 +278,7 @@ class OFRAK:
             "I will use OFRAK at work",
         )
         if license_type == 0:
-            with open(LICENSE_PATH, "w") as f:
-                f.write(COMMUNITY_LICENSE_DATA)
+            OFRAK._write_license(COMMUNITY_LICENSE_DATA)
         else:
             # Pro license
             print("Pro")
