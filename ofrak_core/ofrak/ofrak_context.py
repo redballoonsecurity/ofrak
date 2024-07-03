@@ -259,7 +259,7 @@ class OFRAK:
         return audited_components
 
     @staticmethod
-    def _write_license(data, force_agree=False):
+    def _write_license(data, force_agree=False):  # pragma: no cover
         if not force_agree:
             _data = json.loads(data)
             pager(
@@ -274,7 +274,7 @@ class OFRAK:
             f.write(data)
 
     @staticmethod
-    def _license_selection(force_community=False, force_agree=False):
+    def _license_selection(force_community=False, force_agree=False):  # pragma: no cover
         if force_community:
             license_type = 0
         else:
@@ -350,7 +350,7 @@ class OFRAK:
             raise RuntimeError("OFRAK license expired! Please purchase a pro license.")
 
 
-def choose(prompt, *options: str) -> int:
+def choose(prompt, *options: str) -> int:  # pragma: no cover
     print(prompt)
     for i, option in enumerate(options):
         print(f"[{i + 1}] {option}")

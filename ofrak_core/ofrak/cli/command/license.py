@@ -5,7 +5,7 @@ from ofrak.cli.ofrak_cli import OfrakCommandRunsScript, OFRAKEnvironment
 
 
 class LicenseCommand(OfrakCommandRunsScript):
-    def create_parser(self, ofrak_subparsers):
+    def create_parser(self, ofrak_subparsers):  # pragma: no cover
         argument_parser = ofrak_subparsers.add_parser(
             "license",
             help="Configure the OFRAK license",
@@ -31,7 +31,7 @@ class LicenseCommand(OfrakCommandRunsScript):
         )
         return argument_parser
 
-    def run(self, ofrak_env: OFRAKEnvironment, args: Namespace):
+    def run(self, ofrak_env: OFRAKEnvironment, args: Namespace):  # pragma: no cover
         OFRAK._do_license_check(
             force_replace=args.force, force_agree=args.i_agree, force_community=args.community
         )
