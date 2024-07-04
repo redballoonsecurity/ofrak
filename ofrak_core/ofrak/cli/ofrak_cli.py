@@ -14,7 +14,7 @@ from importlib_metadata import entry_points
 
 from ofrak.component.interface import ComponentInterface
 from ofrak.model.component_model import ComponentExternalTool
-from ofrak.ofrak_context import OFRAKContext, OFRAK
+from ofrak.ofrak_context import DEFAULT_LOG_FILE, OFRAKContext, OFRAK
 from synthol.injector import DependencyInjector
 
 BACKEND_PACKAGES: Dict[Optional[str], Set[str]] = {
@@ -128,6 +128,11 @@ class OfrakCommandRunsScript(OfrakCommand, ABC):
             default=OFRAK.DEFAULT_LOG_LEVEL,
         )
         command_subparser.add_argument(
+            "--log-file",
+            help="Log file to use; defaults to ofrak<YYYYMMDDhhmmss.log in a temp directory",
+            default=DEFAULT_LOG_FILE,
+        )
+        command_subparser.add_argument(
             "--exclude-components-missing-dependencies",
             "-x",
             help="When initializing OFRAK, check each component's dependency and do not use any "
@@ -163,6 +168,7 @@ class OfrakCommandRunsScript(OfrakCommand, ABC):
             logging_level = getattr(logging, args.logging_level.upper())
         ofrak = OFRAK(
             logging_level=logging_level,
+            log_file=args.log_file,
             exclude_components_missing_dependencies=args.exclude_components_missing_dependencies,
         )
 
