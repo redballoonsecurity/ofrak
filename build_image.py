@@ -243,34 +243,17 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
         f"ARG OFRAK_SRC_DIR=/\n",
     ]
     package_names = list()
-    stage_package_names = list()
     for package_path in config.packages_paths:
         package_name = os.path.basename(package_path)
         package_names.append(package_name)
         dockerfile_finish_parts.append(f"ADD {package_path} $OFRAK_SRC_DIR/{package_name}\n")
-        # Workaround for cyclic test dependencies
-        # https://github.com/redballoonsecurity/ofrak/issues/419
-        with open(os.path.join(package_path, "Makefile")) as f:
-            for line in f:
-                if "STAGE" in line:
-                    stage_package_names.append(package_name)
-                    break
     dockerfile_finish_parts.append("\nWORKDIR /\n")
     dockerfile_finish_parts.append("ARG INSTALL_TARGET\n")
     develop_makefile = "\\n\\\n".join(
         [
             "$INSTALL_TARGET:",
             "\\n\\\n".join(
-                [
-                    f"\t\\$(MAKE) -C {package_name} STAGE=1 $INSTALL_TARGET"
-                    for package_name in package_names
-                ]
-            ),
-            "\\n\\\n".join(
-                [
-                    f"\t\\$(MAKE) -C {package_name} STAGE=2 $INSTALL_TARGET"
-                    for package_name in stage_package_names
-                ]
+                [f"\t\\$(MAKE) -C {package_name} $INSTALL_TARGET" for package_name in package_names]
             ),
             "\\n",
         ]

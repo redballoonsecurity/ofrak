@@ -55,7 +55,7 @@ setuptools.setup(
     extras_require={
         "docs": read_requirements("requirements-docs.txt"),
         "test": [
-            "ofrak_angr~=1.0.1",
+            "ofrak_angr~=1.0",
             "ofrak_capstone~=1.0",
         ]
         + read_requirements("requirements-test.txt"),

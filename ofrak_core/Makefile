@@ -1,23 +1,17 @@
 PYTHON=python3
 PIP=pip3
-STAGE=2
 
 .PHONY: install
 install: ofrak/gui/public
 	$(PIP) install .
 
-
-# Workaround for cyclic test dependencies
-# https://github.com/redballoonsecurity/ofrak/issues/419
-ifeq ($(STAGE), 1)
-DEVELOP_TARGET=.
-else
-DEVELOP_TARGET=.[docs,test]
-endif
-
 .PHONY: develop
 develop: ofrak/gui/public
-	$(PIP) install -e $(DEVELOP_TARGET)
+	# Workaround for https://github.com/redballoonsecurity/ofrak/issues/419
+	$(PIP) install -e .
+	if [ -d ../disassemblers ]; then $(MAKE) -C ../disassemblers/ofrak_angr develop; else $(MAKE) -C ../ofrak_angr develop; fi
+	if [ -d ../disassemblers ]; then $(MAKE) -C ../disassemblers/ofrak_capstone develop; else $(MAKE) -C ../ofrak_capstone develop; fi
+	$(PIP) install -e .[docs,test]
 
 .PHONY: inspect
 inspect:
