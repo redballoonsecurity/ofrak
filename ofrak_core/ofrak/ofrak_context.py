@@ -307,6 +307,21 @@ class OFRAK:
             OFRAK._write_license(sys.stdin.read())
 
     @staticmethod
+    def _get_canonical_license_data(license_data):
+        """
+        Canonicalize license data and serialize to validate signature. Signed
+        fields must be ordered to ensure data is serialized consistently for
+        signature validation.
+        """
+        signed_fields = [
+            "name",
+            "date",
+            "expiration_date",
+            "email",
+        ]  # TODO: Add fields
+        return json.dumps([(k, license_data[k]) for k in signed_fields]).encode("utf-8")
+
+    @staticmethod
     def _do_license_check(force_replace=False, force_community=False, force_agree=False):
         """
         License check function raises one of several possible exceptions if any
@@ -335,14 +350,10 @@ class OFRAK:
 
         print(f"\nUsing OFRAK with license type: {license_data['license_type']}\n")
 
-        # Canonicalize license data and serialize to validate signature. Signed
-        # fields must be ordered to ensure data is serialized consistently for
-        # signature validation.
-        signed_fields = ["name", "date", "expiration_date", "email"]  # TODO: Add fields
-        to_validate = json.dumps([(k, license_data[k]) for k in signed_fields]).encode("utf-8")
-
         key = Ed25519PublicKey.from_public_bytes(RBS_PUBLIC_KEY)
-        key.verify(b64decode(license_data["signature"]), to_validate)
+        key.verify(
+            b64decode(license_data["signature"]), OFRAK._get_canonical_license_data(license_data)
+        )
         if (
             license_data["expiration_date"] is not None
             and int(license_data["expiration_date"]) < time.time()
