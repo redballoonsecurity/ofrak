@@ -25,17 +25,25 @@ LICENSE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "license.
 
 
 def write_license(data, force_agree=False):
+    parsed_data = json.loads(data)
+    if not isinstance(parsed_data, list):
+        parsed_data = [parsed_data]
     if not force_agree:
-        _data = json.loads(data)
         print(
-            "Read the license agreement below.\n\n" + "\n".join(wrap(_data["agreement"], width=79)),
+            "Read the license agreement below.\n\n"
+            + "\n".join(wrap(parsed_data[0]["agreement"], width=79)),
             end="\n\n",
         )
         agreement = None
         while agreement is None or agreement.lower() != "i agree":
             agreement = input('Type "I agree" to agree to the license terms: ')
+    if os.path.exists(LICENSE_PATH):
+        with open(LICENSE_PATH) as f:
+            license_list = json.load(f)
+    else:
+        license_list = []
     with open(LICENSE_PATH, "w") as f:
-        f.write(data)
+        json.dump(parsed_data + license_list, f)
 
 
 def license_selection(force_community=False, force_agree=False):
@@ -99,19 +107,13 @@ def do_license_check(force_replace=False, force_community=False, force_agree=Fal
 
     https://redballoonsecurity.com/company/careers/
     """
-    if force_replace:
-        i = 1
-        new_path = os.path.join(os.path.dirname(LICENSE_PATH), f"license_{i}.json")
-        while os.path.exists(new_path):
-            i += 1
-            new_path = os.path.join(os.path.dirname(LICENSE_PATH), f"license_{i}.json")
-        os.rename(LICENSE_PATH, new_path)
-
-    if not os.path.exists(LICENSE_PATH):
+    if force_replace or not os.path.exists(LICENSE_PATH):
         license_selection(force_community=force_community, force_agree=force_agree)
 
     with open(LICENSE_PATH) as f:
-        license_data = json.load(f)
+        license_list = json.load(f)
+    # TODO: Try multiple licenses instead of failing if the first one is invalid
+    license_data = license_list[0]
 
     print(f"\nUsing OFRAK with license type: {license_data['license_type']}\n")
 

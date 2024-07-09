@@ -38,7 +38,8 @@ class LicenseCommand(OfrakCommandRunsScript):
             force_replace=args.force, force_agree=args.i_agree, force_community=args.community
         )
         with open(LICENSE_PATH) as f:
-            print(json.dumps(json.load(f), indent=2))
+            # TODO: Change to dump used license once we don't just use the first
+            print(json.dumps(json.load(f)[0], indent=2))
 
     async def ofrak_func(self, ofrak_context: OFRAKContext, args: Namespace):  # pragma: no cover
         pass
