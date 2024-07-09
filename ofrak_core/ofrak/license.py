@@ -107,8 +107,12 @@ def do_license_check(force_replace=False, force_community=False, force_agree=Fal
 
     https://redballoonsecurity.com/company/careers/
     """
-    if force_replace or not os.path.exists(LICENSE_PATH):
-        license_selection(force_community=force_community, force_agree=force_agree)
+    try:
+        if force_replace or not os.path.exists(LICENSE_PATH):
+            license_selection(force_community=force_community, force_agree=force_agree)
+    except KeyboardInterrupt:
+        print()
+        sys.exit(-1)
 
     with open(LICENSE_PATH) as f:
         license_list = json.load(f)
