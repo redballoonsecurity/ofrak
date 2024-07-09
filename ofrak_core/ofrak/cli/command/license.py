@@ -1,8 +1,9 @@
+import json
 from argparse import ArgumentDefaultsHelpFormatter, Namespace
 
 from ofrak import OFRAKContext
 from ofrak.cli.ofrak_cli import OfrakCommandRunsScript, OFRAKEnvironment
-from ofrak.license import do_license_check
+from ofrak.license import do_license_check, LICENSE_PATH
 
 
 class LicenseCommand(OfrakCommandRunsScript):
@@ -36,6 +37,8 @@ class LicenseCommand(OfrakCommandRunsScript):
         do_license_check(
             force_replace=args.force, force_agree=args.i_agree, force_community=args.community
         )
+        with open(LICENSE_PATH) as f:
+            print(json.dumps(json.load(f), indent=2))
 
     async def ofrak_func(self, ofrak_context: OFRAKContext, args: Namespace):  # pragma: no cover
         pass
