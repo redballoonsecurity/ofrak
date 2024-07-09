@@ -129,7 +129,7 @@ class OfrakCommandRunsScript(OfrakCommand, ABC):
         )
         command_subparser.add_argument(
             "--log-file",
-            help="Log file to use; defaults to ofrak<YYYYMMDDhhmmss.log in a temp directory",
+            help="Log file to use; defaults to ofrak<YYYYMMDDhhmmss>.log in a temp directory",
             default=DEFAULT_LOG_FILE,
         )
         command_subparser.add_argument(
