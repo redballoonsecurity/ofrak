@@ -70,13 +70,13 @@ def license_selection(force_community=False, force_agree=False):
     elif find_or_buy == 1:
         license_path = input("Path to license file: ")
         with open(license_path) as f:
-            write_license(f.read())
+            write_license(f.read(), force_agree=force_agree)
     else:
         print(
             "Paste in the contents of the OFRAK license and press ctrl+d when done",
             end="\n\n",
         )
-        write_license(sys.stdin.read())
+        write_license(sys.stdin.read(), force_agree=force_agree)
 
 
 def get_canonical_license_data(license_data):
