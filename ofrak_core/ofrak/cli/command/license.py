@@ -32,7 +32,7 @@ class LicenseCommand(OfrakCommandRunsScript):
         )
         return argument_parser
 
-    def run(self, ofrak_env: OFRAKEnvironment, args: Namespace):  # pragma: no cover
+    def run(self, ofrak_env: OFRAKEnvironment, args: Namespace):
         do_license_check(
             force_replace=args.force, force_agree=args.i_agree, force_community=args.community
         )
