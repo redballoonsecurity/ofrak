@@ -4,7 +4,7 @@ import sys
 import time
 import webbrowser
 from base64 import b64decode
-from pydoc import pager
+from textwrap import wrap
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
@@ -26,10 +26,9 @@ LICENSE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "license.
 def write_license(data, force_agree=False):
     if not force_agree:
         _data = json.loads(data)
-        pager(
-            "Read the license agreement below.\n\n"
-            + _data["agreement"]
-            + '\n\nPress "q" to continue.'
+        print(
+            "Read the license agreement below.\n\n" + "\n".join(wrap(_data["agreement"], width=79)),
+            end="\n\n",
         )
         agreement = None
         while agreement is None or agreement.lower() != "i agree":
