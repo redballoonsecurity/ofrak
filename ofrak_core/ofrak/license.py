@@ -63,20 +63,13 @@ def license_selection(force_community=False, force_agree=False):
         "Do you already have an OFRAK license?",
         "Obtain a license from Red Balloon Security",
         "Choose a license file on disk",
-        "Paste license data in directly",
     )
     if find_or_buy == 0:
         webbrowser.open("https://ofrak.com/license/")
-    elif find_or_buy == 1:
+    else:
         license_path = input("Path to license file: ")
         with open(license_path) as f:
             write_license(f.read(), force_agree=force_agree)
-    else:
-        print(
-            "Paste in the contents of the OFRAK license and press ctrl+d when done",
-            end="\n\n",
-        )
-        write_license(sys.stdin.read(), force_agree=force_agree)
 
 
 def get_canonical_license_data(license_data):
