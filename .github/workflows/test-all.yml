@@ -139,10 +139,8 @@ jobs:
             --entrypoint bash \
             redballoonsecurity/ofrak/ghidra:latest \
             -c "python -m ofrak_ghidra.server start \
-                && (
-                  (sleep 2; echo 1; sleep 2; echo i agree) \
-                    | python3 -m coverage run -m ofrak license 
-                ) && make test"
+                && ofrak license --community --i-agree \
+                && make test"
 
   ofrak-angr:
     name: Test OFRAK angr and capstone components
