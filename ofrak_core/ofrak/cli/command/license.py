@@ -7,7 +7,7 @@ from ofrak.license import do_license_check, LICENSE_PATH
 
 
 class LicenseCommand(OfrakCommandRunsScript):
-    def create_parser(self, ofrak_subparsers):  # pragma: no cover
+    def create_parser(self, ofrak_subparsers):
         argument_parser = ofrak_subparsers.add_parser(
             "license",
             help="Configure the OFRAK license",
