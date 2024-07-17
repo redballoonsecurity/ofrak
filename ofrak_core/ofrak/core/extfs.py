@@ -1,5 +1,5 @@
 import asyncio
-import tempfile
+from ofrak import tempfile
 from dataclasses import dataclass
 from subprocess import CalledProcessError
 
@@ -57,7 +57,7 @@ class ExtUnpacker(Unpacker[None]):
     async def unpack(self, resource: Resource, config: ComponentConfig = None) -> None:
         with tempfile.NamedTemporaryFile(suffix=".extfs") as temp_fs_file:
             temp_fs_file.write(await resource.get_data())
-            temp_fs_file.flush()
+            temp_fs_file.close()
 
             with tempfile.TemporaryDirectory() as temp_dir:
                 command = [

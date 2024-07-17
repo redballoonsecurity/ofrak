@@ -1,6 +1,6 @@
 import os.path
 import os.path
-import tempfile
+from ofrak import tempfile
 from typing import Dict, Type
 
 import pytest

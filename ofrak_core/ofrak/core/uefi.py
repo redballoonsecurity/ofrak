@@ -1,7 +1,7 @@
 import os
 import asyncio
 import logging
-import tempfile
+from ofrak import tempfile
 from dataclasses import dataclass
 from subprocess import CalledProcessError
 

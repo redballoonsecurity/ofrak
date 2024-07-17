@@ -1,6 +1,6 @@
 import os
 import subprocess
-import tempfile
+from ofrak import tempfile
 from gzip import GzipFile
 from io import BytesIO
 

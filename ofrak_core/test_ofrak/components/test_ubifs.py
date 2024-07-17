@@ -1,5 +1,5 @@
 import subprocess
-import tempfile
+from ofrak import tempfile
 
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
@@ -19,6 +19,7 @@ class TestUbifsUnpackRepack(FilesystemPackUnpackVerifyPattern):
         Generated the test UBIFS image with the assistance of the FilesystemPackUnpackVerify test pattern.
         """
         with tempfile.NamedTemporaryFile() as ubifs_blob:
+            ubifs_blob.close()
             command = [
                 "mkfs.ubifs",
                 "-m",
@@ -49,7 +50,7 @@ class TestUbifsUnpackRepack(FilesystemPackUnpackVerifyPattern):
         with tempfile.NamedTemporaryFile() as ubifs_blob:
             data = await root_resource.get_data()
             ubifs_blob.write(data)
-            ubifs_blob.flush()
+            ubifs_blob.close()
 
             command = ["ubireader_extract_files", "-k", "-o", extract_dir, ubifs_blob.name]
 

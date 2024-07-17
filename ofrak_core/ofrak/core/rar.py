@@ -1,5 +1,5 @@
 import asyncio
-import tempfile
+from ofrak import tempfile
 from dataclasses import dataclass
 from subprocess import CalledProcessError
 
@@ -42,7 +42,7 @@ class RarUnpacker(Unpacker[None]):
             suffix=".rar"
         ) as temp_archive, tempfile.TemporaryDirectory() as temp_dir:
             temp_archive.write(await resource.get_data())
-            temp_archive.flush()
+            temp_archive.close()
 
             cmd = [
                 "unar",

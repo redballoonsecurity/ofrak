@@ -1,6 +1,6 @@
 import asyncio
 import logging
-import tempfile
+from ofrak import tempfile
 from dataclasses import dataclass
 from subprocess import CalledProcessError
 
@@ -41,7 +41,7 @@ class Jffs2Unpacker(Unpacker[None]):
         with tempfile.NamedTemporaryFile() as temp_file:
             resource_data = await resource.get_data()
             temp_file.write(resource_data)
-            temp_file.flush()
+            temp_file.close()
 
             with tempfile.TemporaryDirectory() as temp_flush_dir:
                 cmd = [
@@ -74,6 +74,7 @@ class Jffs2Packer(Packer[None]):
         jffs2_view: Jffs2Filesystem = await resource.view_as(Jffs2Filesystem)
         temp_flush_dir = await jffs2_view.flush_to_disk()
         with tempfile.NamedTemporaryFile(suffix=".sqsh", mode="rb") as temp:
+            temp.close()
             cmd = [
                 "mkfs.jffs2",
                 "-r",
@@ -87,7 +88,8 @@ class Jffs2Packer(Packer[None]):
             returncode = await proc.wait()
             if proc.returncode:
                 raise CalledProcessError(returncode=returncode, cmd=cmd)
-            new_data = temp.read()
+            with open(temp.name, "rb") as temp:
+                new_data = temp.read()
             # Passing in the original range effectively replaces the original data with the new data
             resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
 

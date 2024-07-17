@@ -1,6 +1,6 @@
 import os
 import subprocess
-import tempfile
+from ofrak import tempfile
 
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
@@ -44,7 +44,7 @@ class TestJffs2UnpackModifyPack(UnpackModifyPackPattern):
         resource_data = await repacked_jffs2_resource.get_data()
         with tempfile.NamedTemporaryFile() as temp_file:
             temp_file.write(resource_data)
-            temp_file.flush()
+            temp_file.close()
             with tempfile.TemporaryDirectory() as temp_flush_dir:
                 command = ["jefferson", "-f", "-d", temp_flush_dir, temp_file.name]
                 subprocess.run(command, check=True, capture_output=True)

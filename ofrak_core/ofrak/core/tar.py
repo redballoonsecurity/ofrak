@@ -1,6 +1,6 @@
 import asyncio
 import os.path
-import tempfile
+from ofrak import tempfile
 from dataclasses import dataclass
 from subprocess import CalledProcessError
 
@@ -39,7 +39,7 @@ class TarUnpacker(Unpacker[None]):
         # Write the archive data to a file
         with tempfile.NamedTemporaryFile(suffix=".tar") as temp_archive:
             temp_archive.write(await resource.get_data())
-            temp_archive.flush()
+            temp_archive.close()
 
             # Check the archive member files to ensure none unpack to a parent directory
             cmd = [
@@ -95,6 +95,7 @@ class TarPacker(Packer[None]):
 
         # Pack it back into a temporary archive
         with tempfile.NamedTemporaryFile(suffix=".tar") as temp_archive:
+            temp_archive.close()
             cmd = [
                 "tar",
                 "--xattrs",
@@ -112,7 +113,10 @@ class TarPacker(Packer[None]):
                 raise CalledProcessError(returncode=returncode, cmd=cmd)
 
             # Replace the original archive data
-            resource.queue_patch(Range(0, await resource.get_data_length()), temp_archive.read())
+            with open(temp_archive.name, "rb") as temp_archive:
+                resource.queue_patch(
+                    Range(0, await resource.get_data_length()), temp_archive.read()
+                )
 
 
 MagicMimeIdentifier.register(TarArchive, "application/x-tar")

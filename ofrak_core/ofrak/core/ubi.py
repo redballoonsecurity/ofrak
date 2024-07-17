@@ -1,5 +1,5 @@
 import asyncio
-import tempfile
+from ofrak import tempfile
 from dataclasses import dataclass
 import logging
 from typing import List, Tuple
@@ -134,7 +134,7 @@ class UbiAnalyzer(Analyzer[None, Ubi]):
         with tempfile.NamedTemporaryFile() as temp_file:
             resource_data = await resource.get_data()
             temp_file.write(resource_data)
-            temp_file.flush()
+            temp_file.close()
 
             ubi_obj = ubireader_ubi(
                 ubi_io.ubi_file(

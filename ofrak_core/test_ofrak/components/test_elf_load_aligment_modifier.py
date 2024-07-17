@@ -1,6 +1,6 @@
 import os
 import subprocess
-import tempfile
+from ofrak import tempfile
 from dataclasses import dataclass, field
 from typing import List, Optional
 

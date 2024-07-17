@@ -1,6 +1,6 @@
 import os
 import stat
-import tempfile
+from ofrak import tempfile
 from dataclasses import dataclass
 from typing import Dict, Iterable, Optional, Type, Union
 
