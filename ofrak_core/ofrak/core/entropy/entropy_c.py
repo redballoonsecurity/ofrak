@@ -6,6 +6,9 @@ import sysconfig
 C_LOG_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_uint8)
 
 ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
+if not isinstance(ext_suffix, str):
+    raise RuntimeError("Could not find compiled C library, no EXT_SUFFIX sysconfig var")
+
 _lib_entropy = ctypes.cdll.LoadLibrary(
     os.path.abspath(os.path.join(os.path.dirname(__file__), "entropy_c" + ext_suffix + ".1"))
 )
@@ -24,6 +27,9 @@ C_ENTROPY_FUNC.restype = ctypes.c_int
 def entropy_c(
     data: bytes, window_size: int, log_percent: Optional[Callable[[int], None]] = None
 ) -> bytes:
+    if log_percent is None:
+        log_percent = lambda x: None
+
     if len(data) <= window_size:
         return b""
     entropy = ctypes.create_string_buffer(len(data) - window_size)
