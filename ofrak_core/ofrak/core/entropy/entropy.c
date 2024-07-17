@@ -20,7 +20,7 @@ extern "C" {
  * Calculate the Shannon entropy of a distribution of size `window_size` sampled from a sliding
  * window over `data`. The results of each calculation are stored in `result`.
  */
-int entropy(uint8_t *data, size_t data_len, uint8_t *result, size_t window_size,
+EXPORT int entropy(uint8_t *data, size_t data_len, uint8_t *result, size_t window_size,
             void (*log_percent)(uint8_t))
 {
     if (data == NULL || result == NULL || window_size > data_len || data_len == 0 ||
