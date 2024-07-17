@@ -184,7 +184,7 @@ TEST_CASE_CONFIGS = [
 
 
 @pytest.mark.parametrize("config", TEST_CASE_CONFIGS)
-async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config):
+async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config, tmp_path):
     root_resource = await ofrak_context.create_root_resource_from_file(config.program.path)
     await root_resource.unpack_recursively()
     target_program = await root_resource.view_as(Program)
@@ -230,7 +230,7 @@ async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config
     )
 
     await target_program.resource.run(FunctionReplacementModifier, function_replacement_config)
-    new_program_path = f"replaced_{Path(config.program.path).name}"
+    new_program_path = f"{tmp_path}/replaced_{Path(config.program.path).name}"
 
     # When running tests in parallel, do this one at a time
     lock = filelock.FileLock(new_program_path + ".lock")
