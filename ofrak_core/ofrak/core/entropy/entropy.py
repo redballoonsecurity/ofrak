@@ -18,6 +18,7 @@ try:
 except:
     from ofrak.core.entropy.entropy_py import entropy_py as entropy_func
 
+
 @dataclass(**ResourceAttributes.DATACLASS_PARAMS)
 class DataSummary(ResourceAttributes):
     """

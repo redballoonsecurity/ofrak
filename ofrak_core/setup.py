@@ -3,6 +3,7 @@ import pkg_resources
 from setuptools.command.egg_info import egg_info
 from setuptools.command.build_ext import build_ext
 
+
 class egg_info_ex(egg_info):
     """Includes license file into `.egg-info` folder."""
 
@@ -38,7 +39,10 @@ class build_ext_1(build_ext):
 
         return default_filename
 
-class CTypesExtension(setuptools.Extension): pass
+
+class CTypesExtension(setuptools.Extension):
+    pass
+
 
 with open("README.md") as f:
     long_description = f.read()
@@ -109,10 +113,7 @@ setuptools.setup(
     python_requires=">=3.7",
     license="Proprietary",
     license_files=["LICENSE"],
-    cmdclass={
-        "egg_info": egg_info_ex,
-        "build_ext": build_ext_1
-    },
+    cmdclass={"egg_info": egg_info_ex, "build_ext": build_ext_1},
     entry_points={
         "ofrak.packages": ["ofrak_pkg = ofrak"],
         "console_scripts": ["ofrak = ofrak.__main__:main"],

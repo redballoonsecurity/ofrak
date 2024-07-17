@@ -20,6 +20,7 @@ C_ENTROPY_FUNC.argtypes = (
 )
 C_ENTROPY_FUNC.restype = ctypes.c_int
 
+
 def entropy_c(
     data: bytes, window_size: int, log_percent: Optional[Callable[[int], None]] = None
 ) -> bytes:
