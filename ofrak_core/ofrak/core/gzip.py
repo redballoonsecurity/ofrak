@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import tempfile
 import zlib
 from subprocess import CalledProcessError
 
@@ -40,7 +39,7 @@ class GzipUnpacker(Unpacker[None]):
 
     async def unpack(self, resource: Resource, config=None):
         data = await resource.get_data()
-        if True:  # TODO: add some heuristic to switch to using pigz
+        if len(data) < 1024 * 1024 * 4:  # Use pigz for more than 4MiB
             # wbits > 16 handles the gzip header and footer
             # We need to create a zlib.Decompress object for Python < 3.11
             # to set this parameter
@@ -58,34 +57,25 @@ class GzipUnpacker(Unpacker[None]):
 
             return await resource.create_child(tags=(GenericBinary,), data=b"".join(chunks))
         else:
-            with tempfile.NamedTemporaryFile(suffix=".gz") as temp_file:
-                temp_file.write(data)
-                temp_file.flush()
-                cmd = [
-                    "pigz",
-                    "-d",
-                    "-c",
-                    temp_file.name,
-                ]
-                proc = await asyncio.create_subprocess_exec(
-                    *cmd,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                )
-                stdout, stderr = await proc.communicate()
-                data = stdout
-                if proc.returncode:
-                    # Forward any gzip warning message and continue
-                    if proc.returncode == -2 or proc.returncode == 2:
-                        LOGGER.warning(stderr)
-                        data = stdout
-                    else:
-                        raise CalledProcessError(returncode=proc.returncode, cmd=cmd, stderr=stderr)
+            cmd = ["pigz", "-d"]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate(data)
+            if proc.returncode:
+                # Forward any gzip warning message and continue
+                if proc.returncode == -2 or proc.returncode == 2:
+                    LOGGER.warning(stderr)
+                else:
+                    raise CalledProcessError(returncode=proc.returncode, cmd=cmd, stderr=stderr)
 
-                await resource.create_child(
-                    tags=(GenericBinary,),
-                    data=data,
-                )
+            await resource.create_child(
+                tags=(GenericBinary,),
+                data=stdout,
+            )
 
 
 class GzipPacker(Packer[None]):
