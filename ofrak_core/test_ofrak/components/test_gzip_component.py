@@ -1,33 +1,30 @@
-import os
-import subprocess
-import tempfile
 from gzip import GzipFile
 from io import BytesIO
+from pathlib import Path
 
 import pytest
 
-from ofrak import OFRAKContext
 from ofrak.resource import Resource
 from ofrak.core.gzip import GzipData
 from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import (
     CompressedFileUnpackModifyPackPattern,
 )
-from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 
 
-class TestGzipUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
+class GzipUnpackModifyPackPattern(CompressedFileUnpackModifyPackPattern):
+    """Template for tests that test different inputs the gzip component should support
+    unpacking."""
+
     expected_tag = GzipData
 
-    @pytest.fixture(autouse=True)
-    def create_test_file(self, tmpdir):
-        d = tmpdir.mkdir("gzip")
-        fh = d.join("hello.gz")
-        result = BytesIO()
-        with GzipFile(fileobj=result, mode="w") as gzip_file:
-            gzip_file.write(self.INITIAL_DATA)
-        fh.write_binary(result.getvalue())
+    def write_gzip(self, gzip_path: Path):
+        raise NotImplementedError
 
-        self._test_file = fh.realpath()
+    @pytest.fixture(autouse=True)
+    def create_test_file(self, tmp_path: Path):
+        gzip_path = tmp_path / "hello.gz"
+        self.write_gzip(gzip_path)
+        self._test_file = gzip_path.resolve()
 
     async def verify(self, repacked_root_resource: Resource):
         patched_gzip_file = GzipFile(fileobj=BytesIO(await repacked_root_resource.get_data()))
@@ -35,53 +32,24 @@ class TestGzipUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
         assert patched_decompressed_data == self.EXPECTED_REPACKED_DATA
 
 
-class TestGzipUnpackWithTrailingBytes(UnpackModifyPackPattern):
-    EXPECTED_TAG = GzipData
-    INITIAL_DATA = b"Hello World"
-    EXPECTED_DATA = INITIAL_DATA  # Change expected when modifier is created
-    INNER_FILENAME = "hello.bin"
-    GZIP_FILENAME = "hello.bin.gz"
+class TestGzipUnpackModifyPack(GzipUnpackModifyPackPattern):
+    def write_gzip(self, gzip_path: Path):
+        with GzipFile(gzip_path, mode="w") as gzip_file:
+            gzip_file.write(self.INITIAL_DATA)
 
-    async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
-        with tempfile.TemporaryDirectory() as d:
-            file_path = os.path.join(d, self.INNER_FILENAME)
-            with open(file_path, "wb") as f:
-                f.write(self.INITIAL_DATA)
 
-            gzip_path = os.path.join(d, self.GZIP_FILENAME)
-            gzip_command = ["pigz", file_path]
-            subprocess.run(gzip_command, check=True, capture_output=True)
+class TestGzipWithMultipleMembersUnpackModifyPack(GzipUnpackModifyPackPattern):
+    def write_gzip(self, gzip_path: Path):
+        with GzipFile(gzip_path, mode="w") as gzip_file:
+            middle = len(self.INITIAL_DATA) // 2
+            gzip_file.write(self.INITIAL_DATA[:middle])
+            gzip_file.write(self.INITIAL_DATA[middle:])
 
-            # Add trailing bytes
-            with open(gzip_path, "ab") as a:
-                a.write(b"\xDE\xAD\xBE\xEF")
-                a.close()
-            return await ofrak_context.create_root_resource_from_file(gzip_path)
 
-    async def unpack(self, root_resource: Resource) -> None:
-        await root_resource.unpack_recursively()
+class TestGzipWithTrailingBytesUnpackModifyPack(GzipUnpackModifyPackPattern):
+    def write_gzip(self, gzip_path: Path):
+        with GzipFile(gzip_path, mode="w") as gzip_file:
+            gzip_file.write(self.INITIAL_DATA)
 
-    async def modify(self, root_resource: Resource) -> None:
-        pass
-
-    async def repack(self, root_resource: Resource) -> None:
-        pass
-
-    async def verify(self, root_resource: Resource) -> None:
-        gzip_data = await root_resource.get_data()
-        with tempfile.TemporaryDirectory() as d:
-            gzip_path = os.path.join(d, self.GZIP_FILENAME)
-            with open(gzip_path, "wb") as f:
-                f.write(gzip_data)
-
-            gunzip_command = ["pigz", "-d", "-c", gzip_path]
-            try:
-                result = subprocess.run(gunzip_command, check=True, capture_output=True)
-                data = result.stdout
-            except subprocess.CalledProcessError as e:
-                if e.returncode == 2 or e.returncode == -2:
-                    data = e.stdout
-                else:
-                    raise
-
-            assert data == self.EXPECTED_DATA
+        with open(gzip_path, "ab") as raw_file:
+            raw_file.write(b"\xDE\xAD\xBE\xEF")
