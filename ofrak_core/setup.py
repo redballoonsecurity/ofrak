@@ -1,3 +1,4 @@
+import sys
 import setuptools
 import pkg_resources
 from setuptools.command.egg_info import egg_info
@@ -51,9 +52,9 @@ with open("README.md") as f:
 entropy_so = CTypesExtension(
     "ofrak.core.entropy.entropy_c",
     sources=["ofrak/core/entropy/entropy.c"],
-    libraries=["m"],  # math library
+    libraries=["m"] if sys.platform != "win32" else None,  # math library
     optional=True,  # If this fails the build, OFRAK will fall back to Python implementation
-    extra_compile_args=["-O3"],
+    extra_compile_args=["-O3"] if sys.platform != "win32" else ["/O2"],
 )
 
 

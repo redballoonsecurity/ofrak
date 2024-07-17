@@ -6,6 +6,16 @@
 #define MAX_BRIGHTNESS_FLOAT 255.0
 #define LOGGING_CHUNKS 10
 
+#ifdef _MSC_VER
+    #define EXPORT __declspec(dllexport)
+#else
+    #define EXPORT
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***
  * Calculate the Shannon entropy of a distribution of size `window_size` sampled from a sliding
  * window over `data`. The results of each calculation are stored in `result`.
@@ -97,3 +107,7 @@ int entropy(uint8_t *data, size_t data_len, uint8_t *result, size_t window_size,
 
     return 0;
 }
+
+#ifdef __cplusplus
+}
+#endif
