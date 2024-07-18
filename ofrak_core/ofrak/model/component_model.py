@@ -18,7 +18,7 @@ class ComponentConfig:
     """
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class ComponentExternalTool:
     """
     An external tool or utility (like `zip` or `squashfs`) a component depends on. Includes some
@@ -39,11 +39,11 @@ class ComponentExternalTool:
 
     """
 
-    tool: str
-    tool_homepage: str
-    install_check_arg: str
-    apt_package: Optional[str] = None
-    brew_package: Optional[str] = None
+    tool: str = field(hash=True)
+    tool_homepage: str = field(hash=False)
+    install_check_arg: str = field(hash=True)
+    apt_package: Optional[str] = field(default=None, hash=False)
+    brew_package: Optional[str] = field(default=None, hash=False)
 
     _installed: Optional[bool] = field(default=None, init=False, compare=False)
 
