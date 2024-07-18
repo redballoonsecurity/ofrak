@@ -8,7 +8,7 @@ from ofrak.component.abstract import AbstractComponent
 
 
 def skipif_windows():
-    return pytest.mark.skipif(os.name == "nt", "Test cannot run on Windows.")
+    return pytest.mark.skipif(os.name == "nt", reason="Test cannot run on Windows.")
 
 
 async def uninstalled_deps(component: Type[AbstractComponent]) -> Sequence[ComponentExternalTool]:
