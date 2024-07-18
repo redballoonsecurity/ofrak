@@ -9,9 +9,10 @@ from ofrak import OFRAKContext, Resource, ResourceAttributes
 from ofrak.core import FilesystemRoot, StringPatchingConfig, StringPatchingModifier
 from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import RV
-from ofrak.core.cpio import CpioFilesystem, CpioArchiveType
-from ofrak.core.tar import TarArchive
-from ofrak.core.zip import ZipArchive
+from ofrak.core.cpio import CpioFilesystem, CpioArchiveType, CpioPacker, CpioUnpacker
+from ofrak.core.tar import TarArchive, TarPacker, TarUnpacker
+from ofrak.core.zip import ZipArchive, ZipPacker, ZipUnpacker
+from pytest_ofrak.mark import requires_deps_of
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 
 CHILD_TEXT = "Hello World\n"
@@ -29,9 +30,13 @@ EXPECTED_CHILD_TEXT = "Hello OFrak\n"
 EXPECTED_SUBCHILD_TEXT = "Goodbye OFrak\n"
 
 TAGS = [
-    (ZipArchive, []),
-    (TarArchive, []),
-    (CpioFilesystem, [AttributesType[CpioFilesystem](CpioArchiveType.BINARY)]),
+    pytest.param(ZipArchive, [], marks=requires_deps_of(ZipUnpacker, ZipPacker)),
+    pytest.param(TarArchive, [], marks=requires_deps_of(TarUnpacker, TarPacker)),
+    pytest.param(
+        CpioFilesystem,
+        [AttributesType[CpioFilesystem](CpioArchiveType.BINARY)],
+        marks=requires_deps_of(CpioUnpacker, CpioPacker),
+    ),
 ]
 
 
