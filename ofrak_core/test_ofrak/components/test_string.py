@@ -19,9 +19,7 @@ from ofrak.core.strings import (
     StringFindReplaceModifier,
 )
 
-STRING_TEST_C_SOURCE = r"""
-#include <stdio.h>
-
+GCC_ASM = r"""
 extern int longString(void);
 extern int shortString(void);
 
@@ -47,14 +45,25 @@ __asm__(".global shortString\n\t"
     "push %r15\n\t"
     "and 0, %r15\n\t"
 );
+"""
 
-int main() {
+MSVC_STRINGS = """
+volatile char longString[] = "\x41\x57\x41\x57\x41\x57\x41\x57\x41\x57\x41\x57\x41\x57\x4c\x57\x3c\x23\x00\x25\x00\x00";
+volatile char shortString[] = "\x4c\x57\x3c\x23\x00\x25\x00\x00";
+"""
+
+STRING_TEST_C_SOURCE = rf"""
+#include <stdio.h>
+
+{MSVC_STRINGS if os.name == 'nt' else GCC_ASM}
+
+int main() {{
     printf("O");
     printf("h, hi");
     printf(" Marc!");
     printf("You are tearing me apart, Lisa!");
     return 0;
-}
+}}
 """
 
 
@@ -87,7 +96,10 @@ def string_test_directory(tmpdir):
 def executable_file(string_test_directory):
     source = os.path.join(string_test_directory, "string_test.c")
     executable = os.path.join(string_test_directory, "string_test.out")
-    subprocess.run(["gcc", "-o", executable, source])
+    if os.name == "nt":
+        subprocess.run(["cl", "/Fe:", executable, source])
+    else:
+        subprocess.run(["gcc", "-o", executable, source])
     return executable
 
 
