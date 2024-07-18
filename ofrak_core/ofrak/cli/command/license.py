@@ -1,9 +1,17 @@
-import json
+import os
+import sys
 from argparse import ArgumentDefaultsHelpFormatter, Namespace
 
 from ofrak import OFRAKContext
 from ofrak.cli.ofrak_cli import OfrakCommandRunsScript, OFRAKEnvironment
-from ofrak.license import do_license_check, LICENSE_PATH
+from ofrak.license import (
+    verify_registered_license,
+    LICENSE_PATH,
+    select_license_to_register,
+    verify_license,
+    accept_license_agreement,
+    register_license,
+)
 
 
 class LicenseCommand(OfrakCommandRunsScript):
@@ -34,12 +42,24 @@ class LicenseCommand(OfrakCommandRunsScript):
         return argument_parser
 
     def run(self, ofrak_env: OFRAKEnvironment, args: Namespace):
-        do_license_check(
-            force_replace=args.force, force_agree=args.i_agree, force_community=args.community
-        )
-        with open(LICENSE_PATH) as f:
-            # TODO: Change to dump used license once we don't just use the first
-            print(json.dumps(json.load(f)[0], indent=2))
+        try:
+            if args.force or not os.path.exists(LICENSE_PATH):
+                license_data, license_path = select_license_to_register(
+                    force_community=args.community
+                )
+                if license_data is None:
+                    return
+                try:
+                    verify_license(license_data)
+                    accept_license_agreement(force_agree=args.i_agree)
+                    register_license(license_data)
+                except RuntimeError as msg:
+                    file_details = f" License file: {license_path}." if license_path else ""
+                    sys.exit(RuntimeError(str(msg) + file_details))
+            verify_registered_license(full_details=True)
+        except KeyboardInterrupt:
+            print()
+            sys.exit(-1)
 
     async def ofrak_func(self, ofrak_context: OFRAKContext, args: Namespace):  # pragma: no cover
         pass

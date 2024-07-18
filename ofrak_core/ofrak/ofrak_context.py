@@ -8,7 +8,7 @@ from typing import Type, Any, Awaitable, Callable, List, Iterable, Optional
 
 
 import ofrak_patch_maker
-from ofrak.license import do_license_check
+from ofrak.license import verify_registered_license
 
 from ofrak_type import InvalidStateError
 from synthol.injector import DependencyInjector
@@ -125,7 +125,6 @@ class OFRAK:
         self,
         logging_level: int = DEFAULT_LOG_LEVEL,
         exclude_components_missing_dependencies: bool = False,
-        license_check: bool = True,
     ):
         """
         Set up the OFRAK environment that a script will use.
@@ -142,9 +141,7 @@ class OFRAK:
         self._discovered_modules: List[ModuleType] = []
         self._exclude_components_missing_dependencies = exclude_components_missing_dependencies
         self._id_service: Optional[IDServiceInterface] = None
-
-        if license_check:
-            do_license_check()
+        verify_registered_license()
 
     def discover(
         self,
