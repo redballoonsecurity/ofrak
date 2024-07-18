@@ -12,8 +12,10 @@ from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import (
 
 
 class GzipUnpackModifyPackPattern(CompressedFileUnpackModifyPackPattern):
-    """Template for tests that test different inputs the gzip component should support
-    unpacking."""
+    """
+    Template for tests that test different inputs the gzip component should support
+    unpacking.
+    """
 
     expected_tag = GzipData
 
