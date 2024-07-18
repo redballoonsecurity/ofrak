@@ -1,10 +1,16 @@
 import asyncio
 from typing import Mapping, Sequence, Type
-
+import os
 import pytest
 
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.component.abstract import AbstractComponent
+
+
+def skipif_windows():
+    if os.name == "nt":
+        pytest.skip("Test cannot run on Windows.")
+    return pytest.mark.skipif(os.name == "nt", "Test cannot run on Windows.")
 
 
 async def uninstalled_deps(component: Type[AbstractComponent]) -> Sequence[ComponentExternalTool]:
