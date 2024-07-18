@@ -83,8 +83,7 @@ async def test_external_tool_runtime_error_caught(ofrak_context: OFRAKContext, t
         children = ()
 
         async def unpack(self, resource, config=None):
-            cat_command = "type" if os.name == "nt" else "cat"
-            subprocess.run([cat_command, os.path.join(tmpdir, "nonexistant_file")], check=True)
+            subprocess.run([sys.executable, os.path.join(tmpdir, "nonexistant_script")], check=True)
             return
 
     unpacker = _MockComponent(
