@@ -8,11 +8,12 @@ from ofrak.core.filesystem import File
 from ofrak.resource import Resource
 
 from ofrak import OFRAKContext
-from ofrak.core.rar import RarArchive
+from ofrak.core.rar import RarArchive, RarUnpacker
 from pytest_ofrak.patterns.unpack_verify import (
     UnpackAndVerifyPattern,
     UnpackAndVerifyTestCase,
 )
+from pytest_ofrak.mark import requires_deps_of
 import test_ofrak.components
 
 
@@ -26,6 +27,7 @@ RAR_UNPACKER_TEST_CASES = [
 ]
 
 
+@requires_deps_of(RarUnpacker)
 class TestRarUnpackAndVerify(UnpackAndVerifyPattern):
     @pytest.fixture(params=RAR_UNPACKER_TEST_CASES, ids=lambda tc: tc.label)
     async def unpack_verify_test_case(self, request) -> RarUnpackerTestCase:

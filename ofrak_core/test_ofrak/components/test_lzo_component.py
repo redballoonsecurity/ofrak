@@ -1,14 +1,17 @@
 import subprocess
 import tempfile
 
+from ofrak.core.lzo import LzoPacker, LzoUnpacker
 import pytest
 
 from ofrak.resource import Resource
+from pytest_ofrak.mark import requires_deps_of
 from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import (
     CompressedFileUnpackModifyPackPattern,
 )
 
 
+@requires_deps_of(LzoUnpacker, LzoPacker)
 class TestLzoUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
     @pytest.fixture(autouse=True)
     def create_test_file(self, tmpdir):

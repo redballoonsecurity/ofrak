@@ -2,12 +2,15 @@ import subprocess
 import tempfile
 
 from ofrak import OFRAKContext
+from ofrak.core.ubifs import UbifsPacker, UbifsUnpacker
 from ofrak.resource import Resource
 from pytest_ofrak.patterns.pack_unpack_filesystem import FilesystemPackUnpackVerifyPattern
+from pytest_ofrak.mark import requires_deps_of
 
 # from pytest_ofrak.patterns.unpack_modify_pack import UnpackPackPattern
 
 
+@requires_deps_of(UbifsUnpacker, UbifsPacker)
 class TestUbifsUnpackRepack(FilesystemPackUnpackVerifyPattern):
     def setup(self):
         super().setup()

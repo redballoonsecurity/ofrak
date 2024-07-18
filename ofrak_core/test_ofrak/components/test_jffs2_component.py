@@ -4,8 +4,9 @@ import tempfile
 
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
-from ofrak.core.jffs2 import Jffs2Filesystem
+from ofrak.core.jffs2 import Jffs2Filesystem, Jffs2Packer, Jffs2Unpacker
 from ofrak.core.strings import StringPatchingConfig, StringPatchingModifier
+from pytest_ofrak.mark import requires_deps_of
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 
 INITIAL_DATA = b"hello world"
@@ -14,6 +15,7 @@ TARGET_JFFS2_FILE = "test.jffs2"
 JFFS2_ENTRY_NAME = "hello_jffs2_file"
 
 
+@requires_deps_of(Jffs2Packer, Jffs2Unpacker)
 class TestJffs2UnpackModifyPack(UnpackModifyPackPattern):
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -4,8 +4,9 @@ import tempfile
 
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
-from ofrak.core.cpio import CpioFilesystem
+from ofrak.core.cpio import CpioFilesystem, CpioPacker, CpioUnpacker
 from ofrak.core.strings import StringPatchingConfig, StringPatchingModifier
+from pytest_ofrak.mark import requires_deps_of
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 
 INITIAL_DATA = b"hello world"
@@ -14,6 +15,7 @@ TARGET_CPIO_FILE = "test.cpio"
 CPIO_ENTRY_NAME = "hello_cpio_file"
 
 
+@requires_deps_of(CpioUnpacker, CpioPacker)
 class TestCpioUnpackModifyPack(UnpackModifyPackPattern):
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -9,11 +9,15 @@ from ofrak.resource import Resource
 
 from ofrak import OFRAKContext
 from ofrak.core.extfs import *
+from pytest_ofrak.mark import requires_deps_of
 from pytest_ofrak.patterns.unpack_verify import (
     UnpackAndVerifyPattern,
     UnpackAndVerifyTestCase,
 )
 import test_ofrak.components
+
+
+pytestmark = requires_deps_of(ExtUnpacker)
 
 
 @dataclass

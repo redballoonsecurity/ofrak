@@ -1,11 +1,13 @@
 import os
 from dataclasses import dataclass
 
+from ofrak.core.ihex import IhexPacker, IhexUnpacker
 import pytest
 
 from ofrak import OFRAKContext, Resource, ResourceFilter, ResourceAttributeRangeFilter
 from ofrak.core import MemoryRegion, IhexProgram
 from ofrak_type import Range
+from pytest_ofrak.mark import requires_deps_of
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 from pytest_ofrak.patterns.unpack_verify import UnpackAndVerifyTestCase
 from test_ofrak.components import ASSETS_DIR
@@ -25,6 +27,7 @@ IHEX_TEST_FILES = [
 ]
 
 
+@requires_deps_of(IhexPacker, IhexUnpacker)
 class TestIhexUnpackPack(UnpackModifyPackPattern):
     REPLACEMENT_STRING = b"deadbeef ofrak"
 

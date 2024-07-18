@@ -3,6 +3,7 @@ from ofrak_type.error import NotFoundError
 
 import pytest
 
+from pytest_ofrak.mark import requires_deps_of
 from test_ofrak.unit.component.analyzer.analyzer_test_case import (
     AnalyzerTestCase,
     PopulatedAnalyzerTestCase,
@@ -49,6 +50,7 @@ async def test_case(
     )
 
 
+@requires_deps_of(StringsAnalyzer)
 class TestStringsAnalyzer(AnalyzerTests):
     async def test_resource_analyzer(self, test_case: PopulatedAnalyzerTestCase):
         with pytest.raises(

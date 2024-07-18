@@ -10,13 +10,17 @@ from ofrak.core.iso9660 import (
     ISO9660Entry,
     ISO9660Image,
     ISO9660ImageAttributes,
+    ISO9660Packer,
+    ISO9660Unpacker,
 )
 from ofrak.core.strings import StringPatchingConfig, StringPatchingModifier
+from pytest_ofrak.mark import requires_deps_of
 from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import (
     CompressedFileUnpackModifyPackPattern,
 )
 
 
+@requires_deps_of(ISO9660Packer, ISO9660Unpacker)
 class Iso9660UnpackModifyPackPattern(CompressedFileUnpackModifyPackPattern):
     TEST_ISO_NAME = "test.iso"
     TEST_DIR_NAME = "/TEST"
