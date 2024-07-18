@@ -3,7 +3,6 @@ import subprocess
 
 import pytest
 
-from pytest_ofrak.mark import skipif_windows
 
 MAKEFILE_CONTENTS = """
 CC=gcc
@@ -128,22 +127,20 @@ def elf_test_directory(tmpdir):
 
 
 @pytest.fixture
-def elf_object_file(elf_test_directory):
+def elf_object_file(elf_test_directory, skipif_windows):
     skipif_windows()
     subprocess.run(["make", "-C", elf_test_directory, "program.o"])
     return os.path.join(elf_test_directory, "program.o")
 
 
 @pytest.fixture
-def elf_executable_file(elf_test_directory):
-    skipif_windows()
+def elf_executable_file(elf_test_directory, skipif_windows):
     subprocess.run(["make", "-C", elf_test_directory, "program"])
     return os.path.join(elf_test_directory, "program")
 
 
 @pytest.fixture
-def elf_no_pie_executable_file(elf_test_directory):
-    skipif_windows()
+def elf_no_pie_executable_file(elf_test_directory, skipif_windows):
     subprocess.run(["make", "-C", elf_test_directory, "program_no_reloc"])
     return os.path.join(elf_test_directory, "program_no_reloc")
 
@@ -154,15 +151,13 @@ def large_elf_source_file(elf_test_directory):
 
 
 @pytest.fixture
-def large_elf_object_file(elf_test_directory):
-    skipif_windows()
+def large_elf_object_file(elf_test_directory, skipif_windows):
     subprocess.run(["make", "-C", elf_test_directory, "large_elf.o"])
     return os.path.join(elf_test_directory, "large_elf.o")
 
 
 @pytest.fixture
-def large_elf_file(elf_test_directory):
-    skipif_windows()
+def large_elf_file(elf_test_directory, skipif_windows):
     subprocess.run(["make", "-C", elf_test_directory, "large_elf"])
     return os.path.join(elf_test_directory, "large_elf")
 

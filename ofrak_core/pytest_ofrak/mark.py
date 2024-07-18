@@ -8,8 +8,6 @@ from ofrak.component.abstract import AbstractComponent
 
 
 def skipif_windows():
-    if os.name == "nt":
-        pytest.skip("Test cannot run on Windows.")
     return pytest.mark.skipif(os.name == "nt", "Test cannot run on Windows.")
 
 
