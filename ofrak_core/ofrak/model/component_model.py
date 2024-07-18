@@ -18,7 +18,7 @@ class ComponentConfig:
     """
 
 
-@dataclass(frozen=True)
+@dataclass
 class ComponentExternalTool:
     """
     An external tool or utility (like `zip` or `squashfs`) a component depends on. Includes some
@@ -45,14 +45,21 @@ class ComponentExternalTool:
     apt_package: Optional[str] = None
     brew_package: Optional[str] = None
 
+    _installed: Optional[bool] = field(default=None, init=False, compare=False)
+
     async def is_tool_installed(self) -> bool:
         """
         Check if a tool is installed by running it with the `install_check_arg`.
-        This method runs `<tool> <install_check_arg>`.
+        This method runs `<tool> <install_check_arg>` the first time it is called.
+        The result is cached for future calls.
 
         :return: True if the `tool` command returned zero, False if `tool` could not be found or
         returned non-zero exit code.
         """
+
+        if self._installed is not None:
+            return self._installed
+
         try:
             cmd = [
                 self.tool,
@@ -65,10 +72,11 @@ class ComponentExternalTool:
             )
 
             returncode = await proc.wait()
+            self._installed = 0 == returncode
         except FileNotFoundError:
-            return False
+            self._installed = False
 
-        return 0 == returncode
+        return self._installed
 
 
 CC = TypeVar("CC", bound=Optional[ComponentConfig])
