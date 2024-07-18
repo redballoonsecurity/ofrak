@@ -14,6 +14,7 @@ from ofrak.core.filesystem import (
     Folder,
 )
 from ofrak.resource import Resource
+from pytest_ofrak.mark import skipif_windows
 from pytest_ofrak.patterns.pack_unpack_filesystem import FilesystemPackUnpackVerifyPattern
 
 CHILD_TEXT = "Hello World\n"
@@ -46,12 +47,15 @@ class FilesystemRootDirectory(tempfile.TemporaryDirectory):
         if not os.path.exists(subchild_folder):
             os.mkdir(subchild_folder)
 
-        child_fifo = os.path.join(temp_dir, FIFO_PIPE_NAME)
-        block_device = os.path.join(temp_dir, DEVICE_NAME)
-        if not os.path.exists(child_fifo):
-            os.mkfifo(child_fifo)
-        if not os.path.exists(block_device):
-            os.makedev(1, 2)
+        if hasattr(os, "mkfifo"):
+            child_fifo = os.path.join(temp_dir, FIFO_PIPE_NAME)
+            if not os.path.exists(child_fifo):
+                os.mkfifo(child_fifo)
+
+        if hasattr(os, "mkdev"):
+            block_device = os.path.join(temp_dir, DEVICE_NAME)
+            if not os.path.exists(block_device):
+                os.makedev(1, 2)
 
         with open(child_file, "w") as f:
             f.write(CHILD_TEXT)
@@ -163,6 +167,7 @@ class TestFilesystemRoot:
         assert CHILD_TEXTFILE_NAME not in updated_list_dir_output
 
 
+@skipif_windows()
 class TestFilesystemEntry:
     """
     Test FilesystemEntry methods.

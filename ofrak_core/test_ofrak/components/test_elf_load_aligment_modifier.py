@@ -8,8 +8,9 @@ import pytest
 
 from ofrak import OFRAKContext
 from ofrak.core.elf.load_alignment_modifier import main
+from pytest_ofrak.mark import skipif_windows
 
-pytestmark = pytest.skipif(os.name == "nt", reason="Cannot execute ELF executables on Windows")
+pytestmark = skipif_windows()
 
 ASSETS_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), "assets/elf"))
 OUTPUT_DIR = tempfile.mkdtemp(prefix="ofrak_elf_modifier_out_")
@@ -98,6 +99,7 @@ async def verify_modifier_result(test_case: ElfModifierTestCase, output_path: st
         assert process.stdout == test_case.expect_stdout
 
 
+@skipif_windows()
 class TestElfModifiers:
     @pytest.mark.parametrize(
         "test_case",
