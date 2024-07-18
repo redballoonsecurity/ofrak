@@ -18,6 +18,7 @@ from ofrak.core.strings import (
     StringFindReplaceConfig,
     StringFindReplaceModifier,
 )
+from pytest_ofrak.mark import skipif_windows
 
 GCC_ASM = r"""
 extern int longString(void);
@@ -47,15 +48,10 @@ __asm__(".global shortString\n\t"
 );
 """
 
-MSVC_STRINGS = """
-volatile char longString[] = "\x41\x57\x41\x57\x41\x57\x41\x57\x41\x57\x41\x57\x41\x57\x4c\x57\x3c\x23\x00\x25\x00\x00";
-volatile char shortString[] = "\x4c\x57\x3c\x23\x00\x25\x00\x00";
-"""
-
 STRING_TEST_C_SOURCE = rf"""
 #include <stdio.h>
 
-{MSVC_STRINGS if os.name == 'nt' else GCC_ASM}
+{GCC_ASM if os.name != 'nt' else ''}
 
 int main() {{
     printf("O");
@@ -97,7 +93,7 @@ def executable_file(string_test_directory):
     source = os.path.join(string_test_directory, "string_test.c")
     executable = os.path.join(string_test_directory, "string_test.out")
     if os.name == "nt":
-        subprocess.run(["cl", "/Fe:", executable, source])
+        subprocess.run(["cl", "/Fe:", executable, source], cwd=string_test_directory)
     else:
         subprocess.run(["gcc", "-o", executable, source])
     return executable
@@ -188,6 +184,7 @@ async def test_short_string_in_non_code(executable_strings: List[str]):
     assert "h, hi" in executable_strings
 
 
+@skipif_windows()
 async def test_short_string_not_in_code(executable_strings: List[str]):
     # ASCII representation of shortString code from test file
     assert "AWL#<%" not in executable_strings
@@ -197,6 +194,7 @@ async def test_long_string_in_none(executable_strings: List[str]):
     assert "You are tearing me apart, Lisa!" in executable_strings
 
 
+@skipif_windows()
 async def test_long_string_in_code(executable_strings: List[str]):
     # ASCII representation of longString code from test file
     assert "AWAWAWAWAWAWAWAWL#<%" in executable_strings
