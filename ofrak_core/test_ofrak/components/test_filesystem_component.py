@@ -47,12 +47,6 @@ def filesystem_root_directory(tmp_path) -> str:
     if not os.path.exists(subchild_folder):
         os.mkdir(subchild_folder)
 
-<<<<<<< HEAD
-        child_fifo = os.path.join(temp_dir, FIFO_PIPE_NAME)
-        block_device = os.path.join(temp_dir, DEVICE_NAME)
-        if not os.path.exists(child_fifo):
-            os.mkfifo(child_fifo)
-=======
     if hasattr(os, "mkfifo"):
         child_fifo = os.path.join(tmp_path, FIFO_PIPE_NAME)
         if not os.path.exists(child_fifo):
@@ -60,7 +54,6 @@ def filesystem_root_directory(tmp_path) -> str:
 
     if hasattr(os, "mkdev"):
         block_device = os.path.join(tmp_path, DEVICE_NAME)
->>>>>>> 3c47373 (Use tmp_path fixture for filesystem component tests)
         if not os.path.exists(block_device):
             os.makedev(1, 2)
 

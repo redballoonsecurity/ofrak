@@ -1,6 +1,5 @@
 import os
 import stat
-import tempfile
 from abc import ABC, abstractmethod
 from subprocess import CalledProcessError
 
@@ -28,17 +27,20 @@ class FilesystemPackUnpackVerifyPattern(ABC):
         self.check_xattrs = True
         self.check_stat = True
 
-    async def test_pack_unpack_verify(self, ofrak_context: OFRAKContext):
+    async def test_pack_unpack_verify(self, ofrak_context: OFRAKContext, tmp_path):
+        root_path = tmp_path / "root"
+        root_path.mkdir()
+        extract_dir = tmp_path / "extract"
+        extract_dir.mkdir()
+
         try:
             self.setup()
-            with tempfile.TemporaryDirectory() as root_path:
-                self.create_local_file_structure(root_path)
-                root_resource = await self.create_root_resource(ofrak_context, root_path)
-                await self.unpack(root_resource)
-                await self.repack(root_resource)
-                with tempfile.TemporaryDirectory() as extract_dir:
-                    await self.extract(root_resource, extract_dir)
-                    self.verify_filesystem_equality(root_path, extract_dir)
+            self.create_local_file_structure(root_path)
+            root_resource = await self.create_root_resource(ofrak_context, root_path)
+            await self.unpack(root_resource)
+            await self.repack(root_resource)
+            await self.extract(root_resource, extract_dir)
+            self.verify_filesystem_equality(root_path, extract_dir)
         except CalledProcessError as e:
             # Better printing of errors if something goes wrong in test setup/execution
             raise ComponentSubprocessError(e)
