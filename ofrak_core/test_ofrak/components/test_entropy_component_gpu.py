@@ -1,3 +1,15 @@
+"""
+Tests for the DataSummaryAnalyzer that expect ofrak_gpu to be installed go here. See fixtures.
+
+For example, tests that ensure entropy_gpu is used before entropy_py/c would go here. 
+
+Tests for the functions inside ofrak_gpu themselves do NOT go here. The tests in this file must
+pass regardless of the presence of ofrak_gpu. Tests for entropy_gpu and anything else in ofrak_gpu
+must go in ofrak_gpu's testing directory, not in ofrak_core.
+
+Tests for behavior in the absense of ofrak_gpu, eg for entropy_py/c, don't go here; see 
+test_entropy_component.py and its fixtures.
+"""
 import sys
 import importlib
 import os.path
@@ -36,7 +48,7 @@ def mock_entropy_gpu(
     :type data: bytes
     :param window_size: The sliding window for entropy calculation's size. Used to mock results
     :type window_size: int
-    :param log_percent: Ignored. Only included to match the signature of the real entropy functions
+    :param log_percent: Unused
     :type log_percent: Any
     :return: Bytes meant to be easily distringuishable from the results of a real entropy function
     :rtype: bytes

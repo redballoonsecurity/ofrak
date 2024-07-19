@@ -16,23 +16,16 @@ LOGGER = logging.getLogger(__name__)
 
 
 C_LOG_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_uint8)
-import datetime
 
 try:
-    from ofrak_gpu.entropy_gpu import entropy_gpu
-    import numpy
-
-    logging.error(f"ENTROPY_GPU FOUND at {datetime.datetime.now().strftime('%H:%M:%S:%f')}")
+    from ofrak_gpu.entropy_gpu import entropy_gpu  # type: ignore
+    import numpy  # type: ignore
 except:
-    logging.error(f"ENTROPY_GPU NOT FOUND at {datetime.datetime.now().strftime('%H:%M:%S:%f')}")
     entropy_gpu = None
 
 try:
     from ofrak.core.entropy.entropy_c import entropy_c as entropy_func
-
-    logging.error("ENTROPY_C FOUND")
 except:
-    logging.error("ENTROPY_C NOT FOUND")
     from ofrak.core.entropy.entropy_py import entropy_py as entropy_func
 
 
@@ -86,7 +79,6 @@ class DataSummaryAnalyzer(Analyzer[None, DataSummary]):
             magnitude = await asyncio.get_running_loop().run_in_executor(
                 self.pool, sample_magnitude, data
             )
-            logging.error("CREATING DATA SUMMARY")
 
             return DataSummary(entropy, magnitude)
         except BrokenProcessPool:
@@ -109,8 +101,6 @@ def sample_entropy(
     entropy. More here: <https://en.wikipedia.org/wiki/Entropy_(information_theory)>.
     """
 
-    # return b""
-
     if len(data) < window_size:
         return b""
 
@@ -120,16 +110,21 @@ def sample_entropy(
     # Run entropy calculation on GPU, if it is installed and we have a valid platform
     try:
         if entropy_gpu is None:
-            raise ImportError("ofrak_gpu is not installed")
-        LOGGER.warning(f"DATA type: {type(data)}")
+            raise ImportError("ofrak_gpu not installed!")
+
         result = entropy_gpu(numpy.frombuffer(data, dtype=numpy.uint8), window_size, log_percent)
-    except (ImportError, RuntimeError, AttributeError) as e:
-        if not isinstance(e, ImportError):
+    except (ImportError, NameError, RuntimeError, AttributeError) as e:
+        if not isinstance(e, ImportError) and not isinstance(e, NameError):
             # ofrak_gpu has been installed, but something else went wrong (likely no opencl devices found)
             LOGGER.warning(
                 f"Error encountered when attempting to run entropy calculation on GPU! {type(e).__name__}: {e}"
             )
-        LOGGER.warning("ofrak_gpu module not found! Falling back onto C/Python")
+        elif isinstance(e, NameError):
+            LOGGER.error(
+                "ofrak_gpu module found, but numpoy is not installed! Falling back onto C/Python"
+            )
+        else:
+            LOGGER.warning("ofrak_gpu module not found! Falling back onto C/Python")  # ImportError
         # Fall back onto C/Python implementations
         result = entropy_func(data, window_size, log_percent)
 
