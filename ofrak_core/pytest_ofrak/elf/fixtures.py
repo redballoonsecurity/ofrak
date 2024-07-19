@@ -128,7 +128,6 @@ def elf_test_directory(tmpdir):
 
 @pytest.fixture
 def elf_object_file(elf_test_directory, skipif_windows):
-    skipif_windows()
     subprocess.run(["make", "-C", elf_test_directory, "program.o"])
     return os.path.join(elf_test_directory, "program.o")
 
