@@ -74,6 +74,16 @@ def mock_ofrak_gpu(monkeypatch):
     monkeypatch.setitem(sys.modules, "ofrak_gpu", mock_gpu_module)
     monkeypatch.setitem(sys.modules, "ofrak_gpu.entropy_gpu", mock_gpu_module.entropy_gpu)
 
+    # Numpy isn't a requirement of ofrak_core, only ofrak_gpu. In order to run mock_entropy_gpu,
+    # DataSummaryAnalyzer needs to be able to import numpy, numpy.frombuffer, and numpy.uint8.
+    # So, we must mock them here
+    mock_np_module = type(sys)("numpy")
+    # No actual processing is needed by frombuffer, since its only use feeds mock_entropy_gpu
+    mock_np_module.frombuffer = lambda data, dtype=None: data
+    mock_np_module.uint8 = None  # Just to exist, not used
+
+    monkeypatch.setitem(sys.modules, "numpy", mock_np_module)
+
     importlib.reload(entropy_entropy_module)
     importlib.reload(entropy_module)
 
@@ -81,6 +91,12 @@ def mock_ofrak_gpu(monkeypatch):
 
     monkeypatch.undo()
 
+    try:
+        import numpy
+
+        importlib.reload(numpy)
+    except ModuleNotFoundError:
+        pass  # Numpy wasn't installed in the first place
     importlib.reload(entropy_module)
     importlib.reload(entropy_entropy_module)
 

@@ -59,7 +59,7 @@ def pick_pyopencl_device() -> Tuple[str, str]:
 
 
 def entropy_gpu(
-    data: bytes, window_size: int, log_percent: Optional[Callable[[int], None]] = None
+    data: ndarray, window_size: int, log_percent: Optional[Callable[[int], None]] = None
 ) -> bytes:
     """
     Return a list of entropy values where each value represents the Shannon entropy of the byte
@@ -69,8 +69,8 @@ def entropy_gpu(
     a time, not 1 byte at a time, for easier parallelization. This runs much faster but returns
     far fewer results.
 
-    :param data: The raw data to compute the entropy of
-    :type data: bytes
+    :param data: The raw data to compute the entropy of, in a numpy.ndarray
+    :type data: numpy.ndarray
     :param window_size: The size of the sliding window in which entropy is computed
     :type window_size: int
     :param log_percent: Currently unsupported

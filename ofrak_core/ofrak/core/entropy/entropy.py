@@ -121,7 +121,7 @@ def sample_entropy(
             )
         elif isinstance(e, NameError):
             LOGGER.error(
-                "ofrak_gpu module found, but numpoy is not installed! Falling back onto C/Python"
+                "ofrak_gpu module found, but numpy is not installed! Falling back onto C/Python"
             )
         else:
             LOGGER.warning("ofrak_gpu module not found! Falling back onto C/Python")  # ImportError
