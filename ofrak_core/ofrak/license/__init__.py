@@ -5,7 +5,7 @@ import time
 import webbrowser
 from base64 import b64decode
 from textwrap import wrap
-from typing import Dict, Any, Union, List, Optional, Tuple
+from typing import Dict, Union, List, Optional, Tuple, cast
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
@@ -49,14 +49,14 @@ def verify_registered_license(full_details: bool = False) -> None:
         )
 
     # TODO: Try multiple licenses instead of failing if the first one is invalid
-    license_data = license_list[0]
+    license_data: LicenseDataType = license_list[0]
 
     try:
         verify_license(license_data)
     except RuntimeError as msg:
         sys.exit(msg)
 
-    if "community" in license_data["license_type"].lower():
+    if license_data["license_type"] and "community" in license_data["license_type"].lower():
         print("Using OFRAK Community License.")
     else:
         if full_details:
@@ -72,7 +72,7 @@ def verify_registered_license(full_details: bool = False) -> None:
             )
 
 
-def verify_license(license_data: Dict[Any, Any]) -> None:
+def verify_license(license_data: LicenseDataType) -> None:
     """
     Verify the OFRAK license.
 
@@ -86,7 +86,10 @@ def verify_license(license_data: Dict[Any, Any]) -> None:
     """
     key = Ed25519PublicKey.from_public_bytes(RBS_PUBLIC_KEY)
     try:
-        key.verify(b64decode(license_data["signature"]), get_canonical_license_data(license_data))
+        key.verify(
+            b64decode(cast(str, license_data["signature"])),
+            get_canonical_license_data(license_data),
+        )
     except InvalidSignature:
         raise RuntimeError("Invalid signature.")
     if (
@@ -112,7 +115,7 @@ def get_canonical_license_data(license_data: LicenseDataType) -> bytes:
     return json.dumps([(k, license_data[k]) for k in signed_fields]).encode("utf-8")
 
 
-def register_license(license_data: LicenseDataType) -> None:
+def register_license(license_data: Union[LicenseDataType, List[LicenseDataType]]) -> None:
     """
     Write license data to LICENSE_PATH.
     """
@@ -141,7 +144,7 @@ def accept_license_agreement(force_agree: bool) -> None:
 
 def select_license_to_register(
     force_community=False,
-) -> Tuple[Union[List[LicenseDataType], LicenseDataType, None], Optional[str]]:
+) -> Tuple[Optional[LicenseDataType], Optional[str]]:
     if force_community:
         return COMMUNITY_LICENSE, None
     else:
