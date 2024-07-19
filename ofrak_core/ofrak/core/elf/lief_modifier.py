@@ -1,9 +1,9 @@
-import tempfile
 from dataclasses import dataclass
 from typing import List, Optional
 
 import lief
 
+from ofrak import tempfile
 from ofrak.component.modifier import Modifier
 from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource

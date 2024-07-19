@@ -643,7 +643,41 @@ def NamedTemporaryFile(
 if _os.name != "posix" or _sys.platform == "cygwin":
     # On non-POSIX and Cygwin systems, assume that we cannot unlink a file
     # while it is open.
-    TemporaryFile = NamedTemporaryFile
+    def TemporaryFile(
+        mode="w+b",
+        buffering=-1,
+        encoding=None,
+        newline=None,
+        suffix=None,
+        prefix=None,
+        dir=None,
+        *,
+        errors=None,
+    ):
+        """Create and return a temporary file.
+        Arguments:
+        'prefix', 'suffix', 'dir' -- as for mkstemp.
+        'mode' -- the mode argument to io.open (default "w+b").
+        'buffering' -- the buffer size argument to io.open (default -1).
+        'encoding' -- the encoding argument to io.open (default None)
+        'newline' -- the newline argument to io.open (default None)
+        'errors' -- the errors argument to io.open (default None)
+        The file is created as mkstemp() would do it.
+
+        Returns an object with a file-like interface.  The file has no
+        name, and will cease to exist when it is closed.
+        """
+        return NamedTemporaryFile(
+            mode,
+            buffering,
+            encoding,
+            newline,
+            suffix,
+            prefix,
+            dir,
+            delete_on_close=True,
+            errors=errors,
+        )
 
 else:
     # Is the O_TMPFILE flag available and does it work?
@@ -661,7 +695,7 @@ else:
         dir=None,
         *,
         errors=None,
-    ):
+    ):  # type: ignore
         """Create and return a temporary file.
         Arguments:
         'prefix', 'suffix', 'dir' -- as for mkstemp.
