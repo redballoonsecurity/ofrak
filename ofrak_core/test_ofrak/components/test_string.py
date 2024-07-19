@@ -1,6 +1,5 @@
-import os
+from pathlib import Path
 import pytest
-import subprocess
 
 from typing import List
 
@@ -18,49 +17,6 @@ from ofrak.core.strings import (
     StringFindReplaceConfig,
     StringFindReplaceModifier,
 )
-from pytest_ofrak.mark import skipif_windows
-
-GCC_ASM = r"""
-extern int longString(void);
-extern int shortString(void);
-
-// Generate bytes that look like a long ascii string (21 bytes) that will be matched as a string
-// by the AsciiUnpacker. Assumes running on x86.
-__asm__(".global longString\n\t"
-    ".type longString, @function\n\t"
-    "push %r15\n\t"
-    "push %r15\n\t"
-    "push %r15\n\t"
-    "push %r15\n\t"
-    "push %r15\n\t"
-    "push %r15\n\t"
-    "push %r15\n\t"
-    "push %r15\n\t"
-    "and 0, %r15\n\t"
-);
-
-// Generate bytes that look like a short ascii string (7 bytes) that will not be matched as a string
-// by the AsciiUnpacker because of the min length requirement. Assumes running on x86.
-__asm__(".global shortString\n\t"
-    ".type shortString, @function\n\t"
-    "push %r15\n\t"
-    "and 0, %r15\n\t"
-);
-"""
-
-STRING_TEST_C_SOURCE = rf"""
-#include <stdio.h>
-
-{GCC_ASM if os.name != 'nt' else ''}
-
-int main() {{
-    printf("O");
-    printf("h, hi");
-    printf(" Marc!");
-    printf("You are tearing me apart, Lisa!");
-    return 0;
-}}
-"""
 
 
 @pytest.fixture
@@ -79,24 +35,8 @@ async def resource(ofrak_context: OFRAKContext) -> Resource:
 
 
 @pytest.fixture
-def string_test_directory(tmpdir):
-    c_source_path = os.path.join(tmpdir, "string_test.c")
-
-    with open(c_source_path, "w") as f:
-        f.write(STRING_TEST_C_SOURCE)
-
-    return tmpdir
-
-
-@pytest.fixture
-def executable_file(string_test_directory):
-    source = os.path.join(string_test_directory, "string_test.c")
-    executable = os.path.join(string_test_directory, "string_test.out")
-    if os.name == "nt":
-        subprocess.run(["cl", "/Fe:", executable, source], cwd=string_test_directory)
-    else:
-        subprocess.run(["gcc", "-o", executable, source])
-    return executable
+def executable_file():
+    return Path(__file__).parent / "assets" / "string_test.out"
 
 
 @pytest.fixture
@@ -184,7 +124,6 @@ async def test_short_string_in_non_code(executable_strings: List[str]):
     assert "h, hi" in executable_strings
 
 
-@skipif_windows()
 async def test_short_string_not_in_code(executable_strings: List[str]):
     # ASCII representation of shortString code from test file
     assert "AWL#<%" not in executable_strings
@@ -194,7 +133,6 @@ async def test_long_string_in_none(executable_strings: List[str]):
     assert "You are tearing me apart, Lisa!" in executable_strings
 
 
-@skipif_windows()
 async def test_long_string_in_code(executable_strings: List[str]):
     # ASCII representation of longString code from test file
     assert "AWAWAWAWAWAWAWAWL#<%" in executable_strings
