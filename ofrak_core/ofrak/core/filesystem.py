@@ -1,6 +1,7 @@
 import os
 import stat
 import sys
+import warnings
 import tempfile
 from dataclasses import dataclass
 from typing import Dict, Iterable, Optional, Type, Union
@@ -21,6 +22,22 @@ from ofrak.service.resource_service_i import (
     ResourceAttributeValueFilter,
     ResourceFilterCondition,
 )
+
+
+def _warn_chmod_chown_windows():
+    warnings.warn(
+        f"os.chown and os.chmod do not work on Windows platforms. \
+        Unix-like file ownership and permissions will not be properly handled while using OFRAK on this platform. \
+        If you require extended attributes, please use a different platform."
+    )
+
+
+def _warn_chmod_chown_windows():
+    warnings.warn(
+        f"os.chown and os.chmod do not work on Windows platforms. \
+        Unix-like file ownership and permissions will not be properly handled while using OFRAK on this platform. \
+        If you require extended attributes, please use a different platform."
+    )
 
 
 @dataclass
@@ -135,7 +152,9 @@ class FilesystemEntry(ResourceView):
         :param path: Path on disk to set attributes of.
         """
         if self.stat:
-            if sys.platform != "win32":
+            if sys.platform == "win32":
+                _warn_chmod_chown_windows()
+            else:
                 os.chown(path, self.stat.st_uid, self.stat.st_gid)
                 os.chmod(path, self.stat.st_mode)
             os.utime(path, (self.stat.st_atime, self.stat.st_mtime))
@@ -175,8 +194,10 @@ class FilesystemEntry(ResourceView):
                 os.symlink(link_view.source_path, link_name)
             assert len(list(await self.resource.get_children())) == 0
             if self.stat:
-                # https://docs.python.org/3/library/os.html#os.supports_follow_symlinks
-                if sys.platform != "Windows":
+                if sys.platform == "win32":
+                    _warn_chmod_chown_windows()
+                else:
+                    # https://docs.python.org/3/library/os.html#os.supports_follow_symlinks
                     if os.chown in os.supports_follow_symlinks:
                         os.chown(
                             link_name, self.stat.st_uid, self.stat.st_gid, follow_symlinks=False
@@ -203,21 +224,43 @@ class FilesystemEntry(ResourceView):
             self.apply_stat_attrs(file_name)
         elif self.is_device():
             device_name = os.path.join(root_path, entry_path)
-            if self.stat is None:
-                raise ValueError(
+            if sys.platform == "win32" or not hasattr(os, "mknod"):
+                warnings.warn(
                     f"Cannot create a device {entry_path} for a "
-                    f"BlockDevice or CharacterDevice resource with no stat!"
+                    f"BlockDevice or CharacterDevice resource on platform {sys.platform}! "
+                    f"Creating an empty regular file instead."
                 )
-            os.mknod(device_name, self.stat.st_mode, self.stat.st_rdev)
-            self.apply_stat_attrs(device_name)
+                with open(device_name, "w") as f:
+                    pass
+                self.apply_stat_attrs(device_name)
+            else:
+                if self.stat is None:
+                    raise ValueError(
+                        f"Cannot create a device {entry_path} for a "
+                        f"BlockDevice or CharacterDevice resource with no stat!"
+                    )
+                os.mknod(device_name, self.stat.st_mode, self.stat.st_rdev)
+                self.apply_stat_attrs(device_name)
         elif self.is_fifo_pipe():
             fifo_name = os.path.join(root_path, entry_path)
-            if self.stat is None:
-                raise ValueError(
-                    f"Cannot create a fifo {entry_path} for a FIFOPipe resource " "with no stat!"
+            if sys.platform == "win32" or not hasattr(os, "mkfifo"):
+                warnings.warn(
+                    f"Cannot create a fifo {entry_path} for a "
+                    f"FIFOPipe resource on platform {sys.platform}! "
+                    f"Creating an empty regular file instead."
                 )
-            os.mkfifo(fifo_name, self.stat.st_mode)
-            self.apply_stat_attrs(fifo_name)
+                with open(fifo_name, "w") as f:
+                    pass
+                self.apply_stat_attrs(fifo_name)
+            else:
+                fifo_name = os.path.join(root_path, entry_path)
+                if self.stat is None:
+                    raise ValueError(
+                        f"Cannot create a fifo {entry_path} for a FIFOPipe resource "
+                        "with no stat!"
+                    )
+                os.mkfifo(fifo_name, self.stat.st_mode)
+                self.apply_stat_attrs(fifo_name)
         else:
             entry_info = f"Stat: {stat.S_IFMT(self.stat.st_mode):o}" if self.stat else ""
             raise NotImplementedError(
