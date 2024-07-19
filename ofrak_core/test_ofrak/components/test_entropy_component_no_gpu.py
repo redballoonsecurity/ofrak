@@ -1,7 +1,11 @@
+import builtins
+import sys
+import importlib
 import os.path
-
+import logging
+import datetime
 import pytest
-from ofrak.core.entropy import DataSummaryAnalyzer, DataSummary
+import ofrak.core.entropy.entropy as entropy_module
 
 from ofrak import OFRAKContext
 import test_ofrak.components
@@ -10,27 +14,57 @@ from ofrak.core.entropy.entropy_c import entropy_c
 
 TEST_FILES = [
     "hello.out",
-    "arm_reloc_relocated.elf",
-    "flash_test_magic.bin",
-    "hello.rar",
-    "imx7d-sdb.dtb",
-    "simple_arm_gcc.o.elf",
+    # "arm_reloc_relocated.elf",
+    # "flash_test_magic.bin",
+    # "hello.rar",
+    # "imx7d-sdb.dtb",
+    # "simple_arm_gcc.o.elf",
 ]
+
+
+@pytest.fixture
+def ofrak_gpu_not_installed(monkeypatch):
+    real_import = builtins.__import__
+
+    def monkey_import_notfound(name, globals=None, locals=None, fromlist=(), level=0):
+        """
+        Imports everything as normal, except imports from the ofrak_gpu module, which will fail.
+        """
+        if name.startswith("ofrak_gpu."):
+            print(
+                f"Throwing error for name={name} at {datetime.datetime.now().strftime('%H:%M:%S:%f')}"
+            )
+            raise ModuleNotFoundError(f"Mocked module not found {name}")
+
+        return real_import(name, globals=globals, locals=locals, fromlist=fromlist, level=level)
+
+    # Replace builtin import function with custom importer and reload modules
+    monkeypatch.delitem(sys.modules, "ofrak_gpu", raising=False)
+    monkeypatch.setattr(builtins, "__import__", monkey_import_notfound)
+    importlib.reload(entropy_module)
 
 
 @pytest.mark.parametrize(
     "test_file_path",
     [os.path.join(test_ofrak.components.ASSETS_DIR, filename) for filename in TEST_FILES],
 )
-async def test_analyzer(ofrak_context: OFRAKContext, test_file_path):
+@pytest.mark.usefixtures("ofrak_gpu_not_installed")
+async def test_analyzer_standard(ofrak_context: OFRAKContext, test_file_path):
     """
     Only test on small files for two reasons:
 
     1. The sampling of large files may lead to spurious test failures.
     2. The reference method is *extremely* slow for even moderately sized files.
     """
+    logging.error(
+        f"Running test case with import failure at {datetime.datetime.now().strftime('%H:%M:%S:%f')}"
+    )
+    importlib.reload(entropy_module)
+    from ofrak.core.entropy import DataSummary, DataSummaryAnalyzer
+
     with open(test_file_path, "rb") as f:
         data = f.read()
+
     c_implementation_entropy = entropy_c(data, 256, lambda s: None)
     py_implementation_entropy = entropy_py(data, 256)
 

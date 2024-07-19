@@ -5653,36 +5653,36 @@ GEN_COPY_KERNEL(8b, uint64_t)
 
 
 FUTHARK_KERNEL
-void builtinzhreplicate_i32zireplicate_6861(__local uint64_t *shared_mem_aligned, int64_t num_elems_6857, int32_t val_6858, int64_t replicate_n_6860, int64_t virt_num_tblocks_6866, int64_t num_tblocks_6867, __global unsigned char *mem_6856)
+void builtinzhreplicate_i32zireplicate_6875(__local uint64_t *shared_mem_aligned, int64_t num_elems_6871, int32_t val_6872, int64_t replicate_n_6874, int64_t virt_num_tblocks_6880, int64_t num_tblocks_6881, __global unsigned char *mem_6870)
 {
     __local unsigned char *shared_mem = (__local unsigned char *) shared_mem_aligned;
-    int32_t replicate_ltid_6862;
-    int32_t tblock_sizze_6864;
-    int32_t replicate_gid_6863;
-    int32_t replicate_gtid_6861;
-    int32_t phys_tblock_id_6868;
-    int32_t iterations_6869;
+    int32_t replicate_ltid_6876;
+    int32_t tblock_sizze_6878;
+    int32_t replicate_gid_6877;
+    int32_t replicate_gtid_6875;
+    int32_t phys_tblock_id_6882;
+    int32_t iterations_6883;
     
-    replicate_ltid_6862 = get_local_id(0);
-    tblock_sizze_6864 = get_local_size(0);
-    replicate_gid_6863 = get_tblock_id(0);
-    replicate_gtid_6861 = replicate_gid_6863 * tblock_sizze_6864 + replicate_ltid_6862;
-    phys_tblock_id_6868 = get_tblock_id(0);
-    iterations_6869 = sdiv_up32(sext_i64_i32(virt_num_tblocks_6866) - phys_tblock_id_6868, sext_i64_i32(num_tblocks_6867));
-    for (int32_t i_6870 = 0; i_6870 < iterations_6869; i_6870++) {
-        int32_t virt_tblock_id_6871;
-        int64_t global_tid_6872;
-        int64_t slice_6874;
-        int64_t rep_i_6873;
-        int64_t remnant_6875;
+    replicate_ltid_6876 = get_local_id(0);
+    tblock_sizze_6878 = get_local_size(0);
+    replicate_gid_6877 = get_tblock_id(0);
+    replicate_gtid_6875 = replicate_gid_6877 * tblock_sizze_6878 + replicate_ltid_6876;
+    phys_tblock_id_6882 = get_tblock_id(0);
+    iterations_6883 = sdiv_up32(sext_i64_i32(virt_num_tblocks_6880) - phys_tblock_id_6882, sext_i64_i32(num_tblocks_6881));
+    for (int32_t i_6884 = 0; i_6884 < iterations_6883; i_6884++) {
+        int32_t virt_tblock_id_6885;
+        int64_t global_tid_6886;
+        int64_t slice_6888;
+        int64_t rep_i_6887;
+        int64_t remnant_6889;
         
-        virt_tblock_id_6871 = phys_tblock_id_6868 + i_6870 * sext_i64_i32(num_tblocks_6867);
-        global_tid_6872 = sext_i32_i64(virt_tblock_id_6871) * sext_i32_i64(tblock_sizze_6864) + sext_i32_i64(replicate_ltid_6862);
-        slice_6874 = num_elems_6857;
-        rep_i_6873 = global_tid_6872;
-        remnant_6875 = global_tid_6872 - rep_i_6873;
-        if (slt64(global_tid_6872, replicate_n_6860)) {
-            ((__global int32_t *) mem_6856)[rep_i_6873] = val_6858;
+        virt_tblock_id_6885 = phys_tblock_id_6882 + i_6884 * sext_i64_i32(num_tblocks_6881);
+        global_tid_6886 = sext_i32_i64(virt_tblock_id_6885) * sext_i32_i64(tblock_sizze_6878) + sext_i32_i64(replicate_ltid_6876);
+        slice_6888 = num_elems_6871;
+        rep_i_6887 = global_tid_6886;
+        remnant_6889 = global_tid_6886 - rep_i_6887;
+        if (slt64(global_tid_6886, replicate_n_6874)) {
+            ((__global int32_t *) mem_6870)[rep_i_6887] = val_6872;
         }
         barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
     }
@@ -5691,36 +5691,36 @@ void builtinzhreplicate_i32zireplicate_6861(__local uint64_t *shared_mem_aligned
     return;
 }
 FUTHARK_KERNEL
-void builtinzhreplicate_i64zireplicate_6785(__local uint64_t *shared_mem_aligned, int64_t num_elems_6781, int64_t val_6782, int64_t replicate_n_6784, int64_t virt_num_tblocks_6790, int64_t num_tblocks_6791, __global unsigned char *mem_6780)
+void builtinzhreplicate_i64zireplicate_6799(__local uint64_t *shared_mem_aligned, int64_t num_elems_6795, int64_t val_6796, int64_t replicate_n_6798, int64_t virt_num_tblocks_6804, int64_t num_tblocks_6805, __global unsigned char *mem_6794)
 {
     __local unsigned char *shared_mem = (__local unsigned char *) shared_mem_aligned;
-    int32_t replicate_ltid_6786;
-    int32_t tblock_sizze_6788;
-    int32_t replicate_gid_6787;
-    int32_t replicate_gtid_6785;
-    int32_t phys_tblock_id_6792;
-    int32_t iterations_6793;
+    int32_t replicate_ltid_6800;
+    int32_t tblock_sizze_6802;
+    int32_t replicate_gid_6801;
+    int32_t replicate_gtid_6799;
+    int32_t phys_tblock_id_6806;
+    int32_t iterations_6807;
     
-    replicate_ltid_6786 = get_local_id(0);
-    tblock_sizze_6788 = get_local_size(0);
-    replicate_gid_6787 = get_tblock_id(0);
-    replicate_gtid_6785 = replicate_gid_6787 * tblock_sizze_6788 + replicate_ltid_6786;
-    phys_tblock_id_6792 = get_tblock_id(0);
-    iterations_6793 = sdiv_up32(sext_i64_i32(virt_num_tblocks_6790) - phys_tblock_id_6792, sext_i64_i32(num_tblocks_6791));
-    for (int32_t i_6794 = 0; i_6794 < iterations_6793; i_6794++) {
-        int32_t virt_tblock_id_6795;
-        int64_t global_tid_6796;
-        int64_t slice_6798;
-        int64_t rep_i_6797;
-        int64_t remnant_6799;
+    replicate_ltid_6800 = get_local_id(0);
+    tblock_sizze_6802 = get_local_size(0);
+    replicate_gid_6801 = get_tblock_id(0);
+    replicate_gtid_6799 = replicate_gid_6801 * tblock_sizze_6802 + replicate_ltid_6800;
+    phys_tblock_id_6806 = get_tblock_id(0);
+    iterations_6807 = sdiv_up32(sext_i64_i32(virt_num_tblocks_6804) - phys_tblock_id_6806, sext_i64_i32(num_tblocks_6805));
+    for (int32_t i_6808 = 0; i_6808 < iterations_6807; i_6808++) {
+        int32_t virt_tblock_id_6809;
+        int64_t global_tid_6810;
+        int64_t slice_6812;
+        int64_t rep_i_6811;
+        int64_t remnant_6813;
         
-        virt_tblock_id_6795 = phys_tblock_id_6792 + i_6794 * sext_i64_i32(num_tblocks_6791);
-        global_tid_6796 = sext_i32_i64(virt_tblock_id_6795) * sext_i32_i64(tblock_sizze_6788) + sext_i32_i64(replicate_ltid_6786);
-        slice_6798 = num_elems_6781;
-        rep_i_6797 = global_tid_6796;
-        remnant_6799 = global_tid_6796 - rep_i_6797;
-        if (slt64(global_tid_6796, replicate_n_6784)) {
-            ((__global int64_t *) mem_6780)[rep_i_6797] = val_6782;
+        virt_tblock_id_6809 = phys_tblock_id_6806 + i_6808 * sext_i64_i32(num_tblocks_6805);
+        global_tid_6810 = sext_i32_i64(virt_tblock_id_6809) * sext_i32_i64(tblock_sizze_6802) + sext_i32_i64(replicate_ltid_6800);
+        slice_6812 = num_elems_6795;
+        rep_i_6811 = global_tid_6810;
+        remnant_6813 = global_tid_6810 - rep_i_6811;
+        if (slt64(global_tid_6810, replicate_n_6798)) {
+            ((__global int64_t *) mem_6794)[rep_i_6811] = val_6796;
         }
         barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
     }
@@ -5728,60 +5728,60 @@ void builtinzhreplicate_i64zireplicate_6785(__local uint64_t *shared_mem_aligned
   error_1:
     return;
 }
-FUTHARK_KERNEL_SIZED(byte_histogramziseghist_global_6302_dim1, 1, 1)
-void byte_histogramziseghist_global_6302(__local uint64_t *shared_mem_aligned, __global int *global_failure, int64_t n_5761, int64_t num_tblocks_6297, int64_t num_subhistos_6801, int32_t chk_i_6871, int64_t hist_H_chk_6872, __global unsigned char *xs_mem_6743, __global unsigned char *defunc_0_map_res_subhistos_mem_6802)
+FUTHARK_KERNEL_SIZED(byte_histogramziseghist_global_6312_dim1, 1, 1)
+void byte_histogramziseghist_global_6312(__local uint64_t *shared_mem_aligned, __global int *global_failure, int64_t n_5765, int64_t num_tblocks_6307, int64_t num_subhistos_6815, int32_t chk_i_6885, int64_t hist_H_chk_6886, __global unsigned char *xs_mem_6757, __global unsigned char *defunc_0_map_res_subhistos_mem_6816)
 {
-    #define seghist_tblock_sizze_6295 (byte_histogramziseghist_global_6302ziseghist_tblock_sizze_6295)
+    #define seghist_tblock_sizze_6305 (byte_histogramziseghist_global_6312ziseghist_tblock_sizze_6305)
     
     __local unsigned char *shared_mem = (__local unsigned char *) shared_mem_aligned;
     
     if (*global_failure >= 0)
         return;
     
-    int32_t local_tid_6874;
-    int32_t tblock_sizze_6877;
-    int32_t wave_sizze_6876;
-    int32_t block_id_6875;
-    int32_t global_tid_6873;
-    int64_t phys_tid_6302;
-    int32_t subhisto_ind_6878;
-    int64_t num_chunks_6879;
+    int32_t local_tid_6888;
+    int32_t tblock_sizze_6891;
+    int32_t wave_sizze_6890;
+    int32_t block_id_6889;
+    int32_t global_tid_6887;
+    int64_t phys_tid_6312;
+    int32_t subhisto_ind_6892;
+    int64_t num_chunks_6893;
     
-    local_tid_6874 = get_local_id(0);
-    tblock_sizze_6877 = get_local_size(0);
-    wave_sizze_6876 = LOCKSTEP_WIDTH;
-    block_id_6875 = get_tblock_id(0);
-    global_tid_6873 = block_id_6875 * tblock_sizze_6877 + local_tid_6874;
-    phys_tid_6302 = sext_i32_i64(global_tid_6873);
-    subhisto_ind_6878 = squot32(global_tid_6873, sdiv_up32(sext_i64_i32(seghist_tblock_sizze_6295 * num_tblocks_6297), sext_i64_i32(num_subhistos_6801)));
-    num_chunks_6879 = sdiv_up64(n_5761, sext_i32_i64(sext_i64_i32(seghist_tblock_sizze_6295 * num_tblocks_6297)));
-    for (int64_t chunk_i_6880 = 0; chunk_i_6880 < num_chunks_6879; chunk_i_6880++) {
-        int64_t i_6881 = chunk_i_6880 * sext_i32_i64(sext_i64_i32(seghist_tblock_sizze_6295 * num_tblocks_6297)) + sext_i32_i64(global_tid_6873);
+    local_tid_6888 = get_local_id(0);
+    tblock_sizze_6891 = get_local_size(0);
+    wave_sizze_6890 = LOCKSTEP_WIDTH;
+    block_id_6889 = get_tblock_id(0);
+    global_tid_6887 = block_id_6889 * tblock_sizze_6891 + local_tid_6888;
+    phys_tid_6312 = sext_i32_i64(global_tid_6887);
+    subhisto_ind_6892 = squot32(global_tid_6887, sdiv_up32(sext_i64_i32(seghist_tblock_sizze_6305 * num_tblocks_6307), sext_i64_i32(num_subhistos_6815)));
+    num_chunks_6893 = sdiv_up64(n_5765, sext_i32_i64(sext_i64_i32(seghist_tblock_sizze_6305 * num_tblocks_6307)));
+    for (int64_t chunk_i_6894 = 0; chunk_i_6894 < num_chunks_6893; chunk_i_6894++) {
+        int64_t i_6895 = chunk_i_6894 * sext_i32_i64(sext_i64_i32(seghist_tblock_sizze_6305 * num_tblocks_6307)) + sext_i32_i64(global_tid_6887);
         
-        if (slt64(i_6881, n_5761)) {
-            int64_t slice_6882;
-            int64_t gtid_6301;
-            int64_t remnant_6883;
+        if (slt64(i_6895, n_5765)) {
+            int64_t slice_6896;
+            int64_t gtid_6311;
+            int64_t remnant_6897;
             
-            slice_6882 = n_5761;
-            gtid_6301 = i_6881;
-            remnant_6883 = i_6881 - gtid_6301;
-            if (slt64(i_6881, n_5761)) {
-                int8_t eta_p_6306;
-                int64_t u8_res_6308;
+            slice_6896 = n_5765;
+            gtid_6311 = i_6895;
+            remnant_6897 = i_6895 - gtid_6311;
+            if (slt64(i_6895, n_5765)) {
+                int8_t eta_p_6316;
+                int64_t u8_res_6318;
                 
-                eta_p_6306 = ((__global int8_t *) xs_mem_6743)[gtid_6301];
-                u8_res_6308 = zext_i8_i64(eta_p_6306);
+                eta_p_6316 = ((__global int8_t *) xs_mem_6757)[gtid_6311];
+                u8_res_6318 = zext_i8_i64(eta_p_6316);
                 // save map-out results
                 { }
                 // perform atomic updates
                 {
-                    if (sle64(sext_i32_i64(chk_i_6871) * hist_H_chk_6872, u8_res_6308) && (slt64(u8_res_6308, sext_i32_i64(chk_i_6871) * hist_H_chk_6872 + hist_H_chk_6872) && (sle64((int64_t) 0, u8_res_6308) && slt64(u8_res_6308, (int64_t) 256)))) {
-                        int64_t eta_p_6303;
-                        int64_t eta_p_6304 = (int64_t) 1;
-                        int64_t old_6884;
+                    if (sle64(sext_i32_i64(chk_i_6885) * hist_H_chk_6886, u8_res_6318) && (slt64(u8_res_6318, sext_i32_i64(chk_i_6885) * hist_H_chk_6886 + hist_H_chk_6886) && (sle64((int64_t) 0, u8_res_6318) && slt64(u8_res_6318, (int64_t) 256)))) {
+                        int64_t eta_p_6313;
+                        int64_t eta_p_6314 = (int64_t) 1;
+                        int64_t old_6898;
                         
-                        old_6884 = atomic_add_i64_global(&((volatile __global int64_t *) defunc_0_map_res_subhistos_mem_6802)[sext_i32_i64(subhisto_ind_6878) * (int64_t) 256 + u8_res_6308], (int64_t) eta_p_6304);
+                        old_6898 = atomic_add_i64_global(&((volatile __global int64_t *) defunc_0_map_res_subhistos_mem_6816)[sext_i32_i64(subhisto_ind_6892) * (int64_t) 256 + u8_res_6318], (int64_t) eta_p_6314);
                     }
                 }
             }
@@ -5790,101 +5790,101 @@ void byte_histogramziseghist_global_6302(__local uint64_t *shared_mem_aligned, _
     
   error_0:
     return;
-    #undef seghist_tblock_sizze_6295
+    #undef seghist_tblock_sizze_6305
 }
-FUTHARK_KERNEL_SIZED(byte_histogramziseghist_local_6302_dim1, 1, 1)
-void byte_histogramziseghist_local_6302(__local uint64_t *shared_mem_aligned, __global int *global_failure, int64_t n_5761, int64_t num_subhistos_6801, int64_t num_tblocks_6812, int32_t hist_M_6818, int32_t chk_i_6822, int64_t num_segments_6823, int64_t hist_H_chk_6824, int64_t histo_sizze_6825, int32_t init_per_thread_6826, __global unsigned char *xs_mem_6743, __global unsigned char *defunc_0_map_res_subhistos_mem_6802)
+FUTHARK_KERNEL_SIZED(byte_histogramziseghist_local_6312_dim1, 1, 1)
+void byte_histogramziseghist_local_6312(__local uint64_t *shared_mem_aligned, __global int *global_failure, int64_t n_5765, int64_t num_subhistos_6815, int64_t num_tblocks_6826, int32_t hist_M_6832, int32_t chk_i_6836, int64_t num_segments_6837, int64_t hist_H_chk_6838, int64_t histo_sizze_6839, int32_t init_per_thread_6840, __global unsigned char *xs_mem_6757, __global unsigned char *defunc_0_map_res_subhistos_mem_6816)
 {
-    #define max_tblock_sizze_6811 (byte_histogramziseghist_local_6302zimax_tblock_sizze_6811)
+    #define max_tblock_sizze_6825 (byte_histogramziseghist_local_6312zimax_tblock_sizze_6825)
     
     __local unsigned char *shared_mem = (__local unsigned char *) shared_mem_aligned;
-    volatile __local unsigned char *subhistogram_local_mem_6840_backing_0 = &shared_mem[0];
-    const int64_t subhistogram_local_mem_6840_backing_0_offset = 0 + ((int64_t) 8 * (hist_M_6818 * hist_H_chk_6824) + srem64((int64_t) 8 - srem64((int64_t) 8 * (hist_M_6818 * hist_H_chk_6824), (int64_t) 8), (int64_t) 8));
+    volatile __local unsigned char *subhistogram_local_mem_6854_backing_0 = &shared_mem[0];
+    const int64_t subhistogram_local_mem_6854_backing_0_offset = 0 + ((int64_t) 8 * (hist_M_6832 * hist_H_chk_6838) + srem64((int64_t) 8 - srem64((int64_t) 8 * (hist_M_6832 * hist_H_chk_6838), (int64_t) 8), (int64_t) 8));
     
     if (*global_failure >= 0)
         return;
     
-    int32_t local_tid_6828;
-    int32_t tblock_sizze_6831;
-    int32_t wave_sizze_6830;
-    int32_t block_id_6829;
-    int32_t global_tid_6827;
-    int64_t phys_tid_6302;
-    int32_t phys_tblock_id_6832;
-    int32_t iterations_6833;
+    int32_t local_tid_6842;
+    int32_t tblock_sizze_6845;
+    int32_t wave_sizze_6844;
+    int32_t block_id_6843;
+    int32_t global_tid_6841;
+    int64_t phys_tid_6312;
+    int32_t phys_tblock_id_6846;
+    int32_t iterations_6847;
     
-    local_tid_6828 = get_local_id(0);
-    tblock_sizze_6831 = get_local_size(0);
-    wave_sizze_6830 = LOCKSTEP_WIDTH;
-    block_id_6829 = get_tblock_id(0);
-    global_tid_6827 = block_id_6829 * tblock_sizze_6831 + local_tid_6828;
-    phys_tid_6302 = sext_i32_i64(global_tid_6827);
-    phys_tblock_id_6832 = get_tblock_id(0);
-    iterations_6833 = sdiv_up32(sext_i64_i32(num_tblocks_6812 * num_segments_6823) - phys_tblock_id_6832, sext_i64_i32(num_tblocks_6812));
-    for (int32_t i_6834 = 0; i_6834 < iterations_6833; i_6834++) {
-        int32_t virt_tblock_id_6835;
-        int32_t flat_segment_id_6836;
-        int32_t gid_in_segment_6837;
-        int32_t pgtid_in_segment_6838;
-        int32_t threads_per_segment_6839;
-        __local unsigned char *subhistogram_local_mem_6840;
-        int32_t thread_local_subhisto_i_6842;
-        int64_t num_chunks_6849;
+    local_tid_6842 = get_local_id(0);
+    tblock_sizze_6845 = get_local_size(0);
+    wave_sizze_6844 = LOCKSTEP_WIDTH;
+    block_id_6843 = get_tblock_id(0);
+    global_tid_6841 = block_id_6843 * tblock_sizze_6845 + local_tid_6842;
+    phys_tid_6312 = sext_i32_i64(global_tid_6841);
+    phys_tblock_id_6846 = get_tblock_id(0);
+    iterations_6847 = sdiv_up32(sext_i64_i32(num_tblocks_6826 * num_segments_6837) - phys_tblock_id_6846, sext_i64_i32(num_tblocks_6826));
+    for (int32_t i_6848 = 0; i_6848 < iterations_6847; i_6848++) {
+        int32_t virt_tblock_id_6849;
+        int32_t flat_segment_id_6850;
+        int32_t gid_in_segment_6851;
+        int32_t pgtid_in_segment_6852;
+        int32_t threads_per_segment_6853;
+        __local unsigned char *subhistogram_local_mem_6854;
+        int32_t thread_local_subhisto_i_6856;
+        int64_t num_chunks_6863;
         
-        virt_tblock_id_6835 = phys_tblock_id_6832 + i_6834 * sext_i64_i32(num_tblocks_6812);
-        flat_segment_id_6836 = squot32(virt_tblock_id_6835, sext_i64_i32(num_tblocks_6812));
-        gid_in_segment_6837 = srem32(virt_tblock_id_6835, sext_i64_i32(num_tblocks_6812));
-        pgtid_in_segment_6838 = gid_in_segment_6837 * sext_i64_i32(max_tblock_sizze_6811) + local_tid_6828;
-        threads_per_segment_6839 = sext_i64_i32(num_tblocks_6812 * max_tblock_sizze_6811);
-        subhistogram_local_mem_6840 = (__local unsigned char *) subhistogram_local_mem_6840_backing_0;
-        thread_local_subhisto_i_6842 = srem32(local_tid_6828, hist_M_6818);
+        virt_tblock_id_6849 = phys_tblock_id_6846 + i_6848 * sext_i64_i32(num_tblocks_6826);
+        flat_segment_id_6850 = squot32(virt_tblock_id_6849, sext_i64_i32(num_tblocks_6826));
+        gid_in_segment_6851 = srem32(virt_tblock_id_6849, sext_i64_i32(num_tblocks_6826));
+        pgtid_in_segment_6852 = gid_in_segment_6851 * sext_i64_i32(max_tblock_sizze_6825) + local_tid_6842;
+        threads_per_segment_6853 = sext_i64_i32(num_tblocks_6826 * max_tblock_sizze_6825);
+        subhistogram_local_mem_6854 = (__local unsigned char *) subhistogram_local_mem_6854_backing_0;
+        thread_local_subhisto_i_6856 = srem32(local_tid_6842, hist_M_6832);
         // initialize histograms in shared memory
         {
-            for (int32_t local_i_6843 = 0; local_i_6843 < init_per_thread_6826; local_i_6843++) {
-                int32_t j_6844 = local_i_6843 * sext_i64_i32(max_tblock_sizze_6811) + local_tid_6828;
-                int32_t j_offset_6845 = hist_M_6818 * sext_i64_i32(histo_sizze_6825) * gid_in_segment_6837 + j_6844;
-                int32_t local_subhisto_i_6846 = squot32(j_6844, sext_i64_i32(histo_sizze_6825));
-                int32_t global_subhisto_i_6847 = squot32(j_offset_6845, sext_i64_i32(histo_sizze_6825));
+            for (int32_t local_i_6857 = 0; local_i_6857 < init_per_thread_6840; local_i_6857++) {
+                int32_t j_6858 = local_i_6857 * sext_i64_i32(max_tblock_sizze_6825) + local_tid_6842;
+                int32_t j_offset_6859 = hist_M_6832 * sext_i64_i32(histo_sizze_6839) * gid_in_segment_6851 + j_6858;
+                int32_t local_subhisto_i_6860 = squot32(j_6858, sext_i64_i32(histo_sizze_6839));
+                int32_t global_subhisto_i_6861 = squot32(j_offset_6859, sext_i64_i32(histo_sizze_6839));
                 
-                if (slt32(j_6844, hist_M_6818 * sext_i64_i32(histo_sizze_6825))) {
+                if (slt32(j_6858, hist_M_6832 * sext_i64_i32(histo_sizze_6839))) {
                     // First subhistogram is initialised from global memory; others with neutral element.
                     {
-                        if (global_subhisto_i_6847 == 0 && ((sle64((int64_t) 0, (int64_t) 0) && slt64((int64_t) 0, num_subhistos_6801)) && (sle64((int64_t) 0, sext_i32_i64(srem32(j_6844, sext_i64_i32(histo_sizze_6825))) + sext_i32_i64(chk_i_6822) * hist_H_chk_6824) && slt64(sext_i32_i64(srem32(j_6844, sext_i64_i32(histo_sizze_6825))) + sext_i32_i64(chk_i_6822) * hist_H_chk_6824, (int64_t) 256)))) {
-                            int64_t tmp_6848 = ((__global int64_t *) defunc_0_map_res_subhistos_mem_6802)[sext_i32_i64(srem32(j_6844, sext_i64_i32(histo_sizze_6825))) + sext_i32_i64(chk_i_6822) * hist_H_chk_6824];
+                        if (global_subhisto_i_6861 == 0 && ((sle64((int64_t) 0, (int64_t) 0) && slt64((int64_t) 0, num_subhistos_6815)) && (sle64((int64_t) 0, sext_i32_i64(srem32(j_6858, sext_i64_i32(histo_sizze_6839))) + sext_i32_i64(chk_i_6836) * hist_H_chk_6838) && slt64(sext_i32_i64(srem32(j_6858, sext_i64_i32(histo_sizze_6839))) + sext_i32_i64(chk_i_6836) * hist_H_chk_6838, (int64_t) 256)))) {
+                            int64_t tmp_6862 = ((__global int64_t *) defunc_0_map_res_subhistos_mem_6816)[sext_i32_i64(srem32(j_6858, sext_i64_i32(histo_sizze_6839))) + sext_i32_i64(chk_i_6836) * hist_H_chk_6838];
                             
-                            ((__local int64_t *) subhistogram_local_mem_6840)[sext_i32_i64(local_subhisto_i_6846) * hist_H_chk_6824 + sext_i32_i64(srem32(j_6844, sext_i64_i32(histo_sizze_6825)))] = tmp_6848;
+                            ((__local int64_t *) subhistogram_local_mem_6854)[sext_i32_i64(local_subhisto_i_6860) * hist_H_chk_6838 + sext_i32_i64(srem32(j_6858, sext_i64_i32(histo_sizze_6839)))] = tmp_6862;
                         } else {
-                            ((__local int64_t *) subhistogram_local_mem_6840)[sext_i32_i64(local_subhisto_i_6846) * hist_H_chk_6824 + sext_i32_i64(srem32(j_6844, sext_i64_i32(histo_sizze_6825)))] = (int64_t) 0;
+                            ((__local int64_t *) subhistogram_local_mem_6854)[sext_i32_i64(local_subhisto_i_6860) * hist_H_chk_6838 + sext_i32_i64(srem32(j_6858, sext_i64_i32(histo_sizze_6839)))] = (int64_t) 0;
                         }
                     }
                 }
             }
         }
         barrier(CLK_LOCAL_MEM_FENCE);
-        num_chunks_6849 = sdiv_up64(n_5761, sext_i32_i64(threads_per_segment_6839));
-        for (int64_t chunk_i_6850 = 0; chunk_i_6850 < num_chunks_6849; chunk_i_6850++) {
-            int64_t i_6851 = chunk_i_6850 * sext_i32_i64(threads_per_segment_6839) + sext_i32_i64(pgtid_in_segment_6838);
+        num_chunks_6863 = sdiv_up64(n_5765, sext_i32_i64(threads_per_segment_6853));
+        for (int64_t chunk_i_6864 = 0; chunk_i_6864 < num_chunks_6863; chunk_i_6864++) {
+            int64_t i_6865 = chunk_i_6864 * sext_i32_i64(threads_per_segment_6853) + sext_i32_i64(pgtid_in_segment_6852);
             
-            if (slt64(i_6851, n_5761)) {
-                int64_t gtid_6301;
-                int8_t eta_p_6306;
-                int64_t u8_res_6308;
+            if (slt64(i_6865, n_5765)) {
+                int64_t gtid_6311;
+                int8_t eta_p_6316;
+                int64_t u8_res_6318;
                 
-                gtid_6301 = i_6851;
-                eta_p_6306 = ((__global int8_t *) xs_mem_6743)[gtid_6301];
-                u8_res_6308 = zext_i8_i64(eta_p_6306);
-                if (chk_i_6822 == 0) {
+                gtid_6311 = i_6865;
+                eta_p_6316 = ((__global int8_t *) xs_mem_6757)[gtid_6311];
+                u8_res_6318 = zext_i8_i64(eta_p_6316);
+                if (chk_i_6836 == 0) {
                     // save map-out results
                     { }
                 }
                 // perform atomic updates
                 {
-                    if ((sle64((int64_t) 0, u8_res_6308) && slt64(u8_res_6308, (int64_t) 256)) && (sle64(sext_i32_i64(chk_i_6822) * hist_H_chk_6824, u8_res_6308) && slt64(u8_res_6308, sext_i32_i64(chk_i_6822) * hist_H_chk_6824 + hist_H_chk_6824))) {
-                        int64_t eta_p_6303;
-                        int64_t eta_p_6304 = (int64_t) 1;
-                        int64_t old_6852;
+                    if ((sle64((int64_t) 0, u8_res_6318) && slt64(u8_res_6318, (int64_t) 256)) && (sle64(sext_i32_i64(chk_i_6836) * hist_H_chk_6838, u8_res_6318) && slt64(u8_res_6318, sext_i32_i64(chk_i_6836) * hist_H_chk_6838 + hist_H_chk_6838))) {
+                        int64_t eta_p_6313;
+                        int64_t eta_p_6314 = (int64_t) 1;
+                        int64_t old_6866;
                         
-                        old_6852 = atomic_add_i64_shared(&((volatile __local int64_t *) subhistogram_local_mem_6840)[sext_i32_i64(thread_local_subhisto_i_6842) * hist_H_chk_6824 + (u8_res_6308 - sext_i32_i64(chk_i_6822) * hist_H_chk_6824)], (int64_t) eta_p_6304);
+                        old_6866 = atomic_add_i64_shared(&((volatile __local int64_t *) subhistogram_local_mem_6854)[sext_i32_i64(thread_local_subhisto_i_6856) * hist_H_chk_6838 + (u8_res_6318 - sext_i32_i64(chk_i_6836) * hist_H_chk_6838)], (int64_t) eta_p_6314);
                     }
                 }
             }
@@ -5892,33 +5892,33 @@ void byte_histogramziseghist_local_6302(__local uint64_t *shared_mem_aligned, __
         barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
         // Compact the multiple shared memory subhistograms to result in global memory
         {
-            int64_t trunc_H_6853 = smin64(hist_H_chk_6824, (int64_t) 256 - sext_i32_i64(chk_i_6822) * hist_H_chk_6824);
-            int32_t histo_sizze_6854 = sext_i64_i32(trunc_H_6853);
+            int64_t trunc_H_6867 = smin64(hist_H_chk_6838, (int64_t) 256 - sext_i32_i64(chk_i_6836) * hist_H_chk_6838);
+            int32_t histo_sizze_6868 = sext_i64_i32(trunc_H_6867);
             
-            for (int32_t local_i_6855 = 0; local_i_6855 < init_per_thread_6826; local_i_6855++) {
-                int32_t j_6856 = local_i_6855 * sext_i64_i32(max_tblock_sizze_6811) + local_tid_6828;
+            for (int32_t local_i_6869 = 0; local_i_6869 < init_per_thread_6840; local_i_6869++) {
+                int32_t j_6870 = local_i_6869 * sext_i64_i32(max_tblock_sizze_6825) + local_tid_6842;
                 
-                if (slt32(j_6856, histo_sizze_6854)) {
-                    int64_t eta_p_6303;
-                    int64_t eta_p_6304;
+                if (slt32(j_6870, histo_sizze_6868)) {
+                    int64_t eta_p_6313;
+                    int64_t eta_p_6314;
                     
                     // Read values from subhistogram 0.
                     {
-                        eta_p_6303 = ((__local int64_t *) subhistogram_local_mem_6840)[sext_i32_i64(j_6856)];
+                        eta_p_6313 = ((__local int64_t *) subhistogram_local_mem_6854)[sext_i32_i64(j_6870)];
                     }
                     // Accumulate based on values in other subhistograms.
                     {
-                        for (int32_t subhisto_id_6857 = 0; subhisto_id_6857 < hist_M_6818 - 1; subhisto_id_6857++) {
-                            eta_p_6304 = ((__local int64_t *) subhistogram_local_mem_6840)[(sext_i32_i64(subhisto_id_6857) + (int64_t) 1) * hist_H_chk_6824 + sext_i32_i64(j_6856)];
+                        for (int32_t subhisto_id_6871 = 0; subhisto_id_6871 < hist_M_6832 - 1; subhisto_id_6871++) {
+                            eta_p_6314 = ((__local int64_t *) subhistogram_local_mem_6854)[(sext_i32_i64(subhisto_id_6871) + (int64_t) 1) * hist_H_chk_6838 + sext_i32_i64(j_6870)];
                             
-                            int64_t defunc_0_op_res_6305 = add64(eta_p_6303, eta_p_6304);
+                            int64_t defunc_0_op_res_6315 = add64(eta_p_6313, eta_p_6314);
                             
-                            eta_p_6303 = defunc_0_op_res_6305;
+                            eta_p_6313 = defunc_0_op_res_6315;
                         }
                     }
                     // Put final bucket value in global memory.
                     {
-                        ((__global int64_t *) defunc_0_map_res_subhistos_mem_6802)[srem64(sext_i32_i64(virt_tblock_id_6835), num_tblocks_6812) * (int64_t) 256 + (sext_i32_i64(j_6856) + sext_i32_i64(chk_i_6822) * hist_H_chk_6824)] = eta_p_6303;
+                        ((__global int64_t *) defunc_0_map_res_subhistos_mem_6816)[srem64(sext_i32_i64(virt_tblock_id_6849), num_tblocks_6826) * (int64_t) 256 + (sext_i32_i64(j_6870) + sext_i32_i64(chk_i_6836) * hist_H_chk_6838)] = eta_p_6313;
                     }
                 }
             }
@@ -5928,96 +5928,96 @@ void byte_histogramziseghist_local_6302(__local uint64_t *shared_mem_aligned, __
     
   error_2:
     return;
-    #undef max_tblock_sizze_6811
+    #undef max_tblock_sizze_6825
 }
-FUTHARK_KERNEL_SIZED(byte_histogramzisegred_large_6887_dim1, 1, 1)
-void byte_histogramzisegred_large_6887(__local uint64_t *shared_mem_aligned, __global int *global_failure, int64_t num_tblocks_6297, int64_t num_subhistos_6801, int64_t blocks_per_segment_6918, int64_t q_6919, int64_t num_virtblocks_6920, int64_t threads_per_segment_6921, __global unsigned char *mem_6744, __global unsigned char *defunc_0_map_res_subhistos_mem_6802, __global unsigned char *segred_tmp_mem_6922, __global unsigned char *counters_mem_6924)
+FUTHARK_KERNEL_SIZED(byte_histogramzisegred_large_6901_dim1, 1, 1)
+void byte_histogramzisegred_large_6901(__local uint64_t *shared_mem_aligned, __global int *global_failure, int64_t num_tblocks_6307, int64_t num_subhistos_6815, int64_t blocks_per_segment_6932, int64_t q_6933, int64_t num_virtblocks_6934, int64_t threads_per_segment_6935, __global unsigned char *mem_6758, __global unsigned char *defunc_0_map_res_subhistos_mem_6816, __global unsigned char *segred_tmp_mem_6936, __global unsigned char *counters_mem_6938)
 {
-    #define seghist_tblock_sizze_6295 (byte_histogramzisegred_large_6887ziseghist_tblock_sizze_6295)
-    #define chunk_sizze_6888 (byte_histogramzisegred_large_6887zichunk_sizze_6888)
+    #define seghist_tblock_sizze_6305 (byte_histogramzisegred_large_6901ziseghist_tblock_sizze_6305)
+    #define chunk_sizze_6902 (byte_histogramzisegred_large_6901zichunk_sizze_6902)
     
     __local unsigned char *shared_mem = (__local unsigned char *) shared_mem_aligned;
-    volatile __local unsigned char *sync_arr_mem_6953_backing_1 = &shared_mem[0];
-    const int64_t sync_arr_mem_6953_backing_1_offset = 0 + 8;
-    volatile __local unsigned char *red_arr_i64_mem_6951_backing_0 = &shared_mem[sync_arr_mem_6953_backing_1_offset];
-    const int64_t red_arr_i64_mem_6951_backing_0_offset = sync_arr_mem_6953_backing_1_offset + ((int64_t) 8 * seghist_tblock_sizze_6295 + srem64((int64_t) 8 - srem64((int64_t) 8 * seghist_tblock_sizze_6295, (int64_t) 8), (int64_t) 8));
+    volatile __local unsigned char *sync_arr_mem_6967_backing_1 = &shared_mem[0];
+    const int64_t sync_arr_mem_6967_backing_1_offset = 0 + 8;
+    volatile __local unsigned char *red_arr_i64_mem_6965_backing_0 = &shared_mem[sync_arr_mem_6967_backing_1_offset];
+    const int64_t red_arr_i64_mem_6965_backing_0_offset = sync_arr_mem_6967_backing_1_offset + ((int64_t) 8 * seghist_tblock_sizze_6305 + srem64((int64_t) 8 - srem64((int64_t) 8 * seghist_tblock_sizze_6305, (int64_t) 8), (int64_t) 8));
     
     if (*global_failure >= 0)
         return;
     
-    int32_t local_tid_6947;
-    int32_t tblock_sizze_6950;
-    int32_t wave_sizze_6949;
-    int32_t block_id_6948;
-    int32_t global_tid_6946;
-    int64_t flat_gtid_6887;
-    __local unsigned char *red_arr_i64_mem_6951;
-    __local unsigned char *sync_arr_mem_6953;
-    int32_t phys_tblock_id_6955;
-    int32_t iterations_6956;
+    int32_t local_tid_6961;
+    int32_t tblock_sizze_6964;
+    int32_t wave_sizze_6963;
+    int32_t block_id_6962;
+    int32_t global_tid_6960;
+    int64_t flat_gtid_6901;
+    __local unsigned char *red_arr_i64_mem_6965;
+    __local unsigned char *sync_arr_mem_6967;
+    int32_t phys_tblock_id_6969;
+    int32_t iterations_6970;
     
-    local_tid_6947 = get_local_id(0);
-    tblock_sizze_6950 = get_local_size(0);
-    wave_sizze_6949 = LOCKSTEP_WIDTH;
-    block_id_6948 = get_tblock_id(0);
-    global_tid_6946 = block_id_6948 * tblock_sizze_6950 + local_tid_6947;
-    flat_gtid_6887 = sext_i32_i64(global_tid_6946);
-    red_arr_i64_mem_6951 = (__local unsigned char *) red_arr_i64_mem_6951_backing_0;
-    sync_arr_mem_6953 = (__local unsigned char *) sync_arr_mem_6953_backing_1;
-    phys_tblock_id_6955 = get_tblock_id(0);
-    iterations_6956 = sdiv_up32(sext_i64_i32(num_virtblocks_6920) - phys_tblock_id_6955, sext_i64_i32(num_tblocks_6297));
-    for (int32_t i_6957 = 0; i_6957 < iterations_6956; i_6957++) {
-        int32_t virt_tblock_id_6958;
-        int64_t flat_segment_id_6959;
-        int64_t global_tid_6960;
-        int64_t slice_6961;
-        int64_t bucket_id_6885;
-        int64_t remnant_6962;
-        int64_t subhistogram_id_6886;
-        int64_t eta_p_block_res_acc_6963;
-        int64_t eta_p_6303;
-        int64_t eta_p_6304;
-        int64_t tblock_id_in_segment_6967;
-        int64_t block_base_offset_6968;
-        int32_t offset_6971;
-        int32_t skip_waves_6972;
-        int64_t eta_p_6964;
-        int64_t eta_p_6965;
+    local_tid_6961 = get_local_id(0);
+    tblock_sizze_6964 = get_local_size(0);
+    wave_sizze_6963 = LOCKSTEP_WIDTH;
+    block_id_6962 = get_tblock_id(0);
+    global_tid_6960 = block_id_6962 * tblock_sizze_6964 + local_tid_6961;
+    flat_gtid_6901 = sext_i32_i64(global_tid_6960);
+    red_arr_i64_mem_6965 = (__local unsigned char *) red_arr_i64_mem_6965_backing_0;
+    sync_arr_mem_6967 = (__local unsigned char *) sync_arr_mem_6967_backing_1;
+    phys_tblock_id_6969 = get_tblock_id(0);
+    iterations_6970 = sdiv_up32(sext_i64_i32(num_virtblocks_6934) - phys_tblock_id_6969, sext_i64_i32(num_tblocks_6307));
+    for (int32_t i_6971 = 0; i_6971 < iterations_6970; i_6971++) {
+        int32_t virt_tblock_id_6972;
+        int64_t flat_segment_id_6973;
+        int64_t global_tid_6974;
+        int64_t slice_6975;
+        int64_t bucket_id_6899;
+        int64_t remnant_6976;
+        int64_t subhistogram_id_6900;
+        int64_t eta_p_block_res_acc_6977;
+        int64_t eta_p_6313;
+        int64_t eta_p_6314;
+        int64_t tblock_id_in_segment_6981;
+        int64_t block_base_offset_6982;
+        int32_t offset_6985;
+        int32_t skip_waves_6986;
+        int64_t eta_p_6978;
+        int64_t eta_p_6979;
         
-        virt_tblock_id_6958 = phys_tblock_id_6955 + i_6957 * sext_i64_i32(num_tblocks_6297);
-        flat_segment_id_6959 = squot64(sext_i32_i64(virt_tblock_id_6958), blocks_per_segment_6918);
-        global_tid_6960 = srem64(sext_i32_i64(virt_tblock_id_6958) * seghist_tblock_sizze_6295 + sext_i32_i64(local_tid_6947), threads_per_segment_6921);
-        slice_6961 = (int64_t) 256;
-        bucket_id_6885 = flat_segment_id_6959;
-        remnant_6962 = flat_segment_id_6959 - bucket_id_6885;
+        virt_tblock_id_6972 = phys_tblock_id_6969 + i_6971 * sext_i64_i32(num_tblocks_6307);
+        flat_segment_id_6973 = squot64(sext_i32_i64(virt_tblock_id_6972), blocks_per_segment_6932);
+        global_tid_6974 = srem64(sext_i32_i64(virt_tblock_id_6972) * seghist_tblock_sizze_6305 + sext_i32_i64(local_tid_6961), threads_per_segment_6935);
+        slice_6975 = (int64_t) 256;
+        bucket_id_6899 = flat_segment_id_6973;
+        remnant_6976 = flat_segment_id_6973 - bucket_id_6899;
         // ne-initialise the outer (per-block) accumulator(s)
         {
-            eta_p_block_res_acc_6963 = (int64_t) 0;
+            eta_p_block_res_acc_6977 = (int64_t) 0;
         }
-        tblock_id_in_segment_6967 = squot64(global_tid_6960, seghist_tblock_sizze_6295);
-        block_base_offset_6968 = tblock_id_in_segment_6967 * q_6919 * seghist_tblock_sizze_6295;
-        for (int64_t i_6969 = 0; i_6969 < q_6919; i_6969++) {
-            int64_t block_offset_6970 = block_base_offset_6968 + i_6969 * seghist_tblock_sizze_6295;
+        tblock_id_in_segment_6981 = squot64(global_tid_6974, seghist_tblock_sizze_6305);
+        block_base_offset_6982 = tblock_id_in_segment_6981 * q_6933 * seghist_tblock_sizze_6305;
+        for (int64_t i_6983 = 0; i_6983 < q_6933; i_6983++) {
+            int64_t block_offset_6984 = block_base_offset_6982 + i_6983 * seghist_tblock_sizze_6305;
             
-            subhistogram_id_6886 = global_tid_6960 + threads_per_segment_6921 * i_6969;
-            if (slt64(subhistogram_id_6886, num_subhistos_6801)) {
+            subhistogram_id_6900 = global_tid_6974 + threads_per_segment_6935 * i_6983;
+            if (slt64(subhistogram_id_6900, num_subhistos_6815)) {
                 // apply map function(s)
                 {
                     // load accumulator(s)
                     {
-                        eta_p_6303 = eta_p_block_res_acc_6963;
+                        eta_p_6313 = eta_p_block_res_acc_6977;
                     }
                     // load next value(s)
                     {
-                        eta_p_6304 = ((__global int64_t *) defunc_0_map_res_subhistos_mem_6802)[subhistogram_id_6886 * (int64_t) 256 + bucket_id_6885];
+                        eta_p_6314 = ((__global int64_t *) defunc_0_map_res_subhistos_mem_6816)[subhistogram_id_6900 * (int64_t) 256 + bucket_id_6899];
                     }
                     // apply reduction operator(s)
                     {
-                        int64_t defunc_0_op_res_6305 = add64(eta_p_6303, eta_p_6304);
+                        int64_t defunc_0_op_res_6315 = add64(eta_p_6313, eta_p_6314);
                         
                         // store in accumulator(s)
                         {
-                            eta_p_block_res_acc_6963 = defunc_0_op_res_6305;
+                            eta_p_block_res_acc_6977 = defunc_0_op_res_6315;
                         }
                     }
                 }
@@ -6026,174 +6026,174 @@ void byte_histogramzisegred_large_6887(__local uint64_t *shared_mem_aligned, __g
         barrier(CLK_LOCAL_MEM_FENCE);
         // store accs. prims go in lmem; non-prims in params (in global mem)
         {
-            ((__local int64_t *) red_arr_i64_mem_6951)[sext_i32_i64(local_tid_6947)] = eta_p_block_res_acc_6963;
+            ((__local int64_t *) red_arr_i64_mem_6965)[sext_i32_i64(local_tid_6961)] = eta_p_block_res_acc_6977;
         }
         barrier(CLK_LOCAL_MEM_FENCE);
-        skip_waves_6972 = 1;
-        offset_6971 = 0;
+        skip_waves_6986 = 1;
+        offset_6985 = 0;
         // participating threads read initial accumulator
         {
-            if (slt32(local_tid_6947, sext_i64_i32(seghist_tblock_sizze_6295))) {
-                eta_p_6964 = ((__local int64_t *) red_arr_i64_mem_6951)[sext_i32_i64(local_tid_6947 + offset_6971)];
+            if (slt32(local_tid_6961, sext_i64_i32(seghist_tblock_sizze_6305))) {
+                eta_p_6978 = ((__local int64_t *) red_arr_i64_mem_6965)[sext_i32_i64(local_tid_6961 + offset_6985)];
             }
         }
-        offset_6971 = 1;
-        while (slt32(offset_6971, wave_sizze_6949)) {
-            if (slt32(local_tid_6947 + offset_6971, sext_i64_i32(seghist_tblock_sizze_6295)) && ((local_tid_6947 - squot32(local_tid_6947, wave_sizze_6949) * wave_sizze_6949) & (2 * offset_6971 - 1)) == 0) {
+        offset_6985 = 1;
+        while (slt32(offset_6985, wave_sizze_6963)) {
+            if (slt32(local_tid_6961 + offset_6985, sext_i64_i32(seghist_tblock_sizze_6305)) && ((local_tid_6961 - squot32(local_tid_6961, wave_sizze_6963) * wave_sizze_6963) & (2 * offset_6985 - 1)) == 0) {
                 // read array element
                 {
-                    eta_p_6965 = ((volatile __local int64_t *) red_arr_i64_mem_6951)[sext_i32_i64(local_tid_6947 + offset_6971)];
+                    eta_p_6979 = ((volatile __local int64_t *) red_arr_i64_mem_6965)[sext_i32_i64(local_tid_6961 + offset_6985)];
                 }
                 // apply reduction operation
                 {
-                    int64_t defunc_0_op_res_6966 = add64(eta_p_6964, eta_p_6965);
+                    int64_t defunc_0_op_res_6980 = add64(eta_p_6978, eta_p_6979);
                     
-                    eta_p_6964 = defunc_0_op_res_6966;
+                    eta_p_6978 = defunc_0_op_res_6980;
                 }
                 // write result of operation
                 {
-                    ((volatile __local int64_t *) red_arr_i64_mem_6951)[sext_i32_i64(local_tid_6947)] = eta_p_6964;
+                    ((volatile __local int64_t *) red_arr_i64_mem_6965)[sext_i32_i64(local_tid_6961)] = eta_p_6978;
                 }
             }
-            offset_6971 *= 2;
+            offset_6985 *= 2;
         }
-        while (slt32(skip_waves_6972, squot32(sext_i64_i32(seghist_tblock_sizze_6295) + wave_sizze_6949 - 1, wave_sizze_6949))) {
+        while (slt32(skip_waves_6986, squot32(sext_i64_i32(seghist_tblock_sizze_6305) + wave_sizze_6963 - 1, wave_sizze_6963))) {
             barrier(CLK_LOCAL_MEM_FENCE);
-            offset_6971 = skip_waves_6972 * wave_sizze_6949;
-            if (slt32(local_tid_6947 + offset_6971, sext_i64_i32(seghist_tblock_sizze_6295)) && ((local_tid_6947 - squot32(local_tid_6947, wave_sizze_6949) * wave_sizze_6949) == 0 && (squot32(local_tid_6947, wave_sizze_6949) & (2 * skip_waves_6972 - 1)) == 0)) {
+            offset_6985 = skip_waves_6986 * wave_sizze_6963;
+            if (slt32(local_tid_6961 + offset_6985, sext_i64_i32(seghist_tblock_sizze_6305)) && ((local_tid_6961 - squot32(local_tid_6961, wave_sizze_6963) * wave_sizze_6963) == 0 && (squot32(local_tid_6961, wave_sizze_6963) & (2 * skip_waves_6986 - 1)) == 0)) {
                 // read array element
                 {
-                    eta_p_6965 = ((__local int64_t *) red_arr_i64_mem_6951)[sext_i32_i64(local_tid_6947 + offset_6971)];
+                    eta_p_6979 = ((__local int64_t *) red_arr_i64_mem_6965)[sext_i32_i64(local_tid_6961 + offset_6985)];
                 }
                 // apply reduction operation
                 {
-                    int64_t defunc_0_op_res_6966 = add64(eta_p_6964, eta_p_6965);
+                    int64_t defunc_0_op_res_6980 = add64(eta_p_6978, eta_p_6979);
                     
-                    eta_p_6964 = defunc_0_op_res_6966;
+                    eta_p_6978 = defunc_0_op_res_6980;
                 }
                 // write result of operation
                 {
-                    ((__local int64_t *) red_arr_i64_mem_6951)[sext_i32_i64(local_tid_6947)] = eta_p_6964;
+                    ((__local int64_t *) red_arr_i64_mem_6965)[sext_i32_i64(local_tid_6961)] = eta_p_6978;
                 }
             }
-            skip_waves_6972 *= 2;
+            skip_waves_6986 *= 2;
         }
         barrier(CLK_LOCAL_MEM_FENCE);
         barrier(CLK_LOCAL_MEM_FENCE);
         // thread 0 updates per-block acc(s); rest reset to ne
         {
-            if (sext_i32_i64(local_tid_6947) == (int64_t) 0) {
-                eta_p_block_res_acc_6963 = eta_p_6964;
+            if (sext_i32_i64(local_tid_6961) == (int64_t) 0) {
+                eta_p_block_res_acc_6977 = eta_p_6978;
             } else {
-                eta_p_block_res_acc_6963 = (int64_t) 0;
+                eta_p_block_res_acc_6977 = (int64_t) 0;
             }
         }
-        if (blocks_per_segment_6918 == (int64_t) 1) {
+        if (blocks_per_segment_6932 == (int64_t) 1) {
             // first thread in block saves final result to memory
             {
-                if (local_tid_6947 == 0) {
-                    ((__global int64_t *) mem_6744)[bucket_id_6885] = eta_p_block_res_acc_6963;
+                if (local_tid_6961 == 0) {
+                    ((__global int64_t *) mem_6758)[bucket_id_6899] = eta_p_block_res_acc_6977;
                 }
             }
         } else {
-            int32_t old_counter_6973;
-            bool is_last_block_6974;
+            int32_t old_counter_6987;
+            bool is_last_block_6988;
             
             // first thread in block saves block result to global memory
             {
-                if (local_tid_6947 == 0) {
-                    ((__global int64_t *) segred_tmp_mem_6922)[sext_i32_i64(virt_tblock_id_6958)] = eta_p_block_res_acc_6963;
+                if (local_tid_6961 == 0) {
+                    ((__global int64_t *) segred_tmp_mem_6936)[sext_i32_i64(virt_tblock_id_6972)] = eta_p_block_res_acc_6977;
                     mem_fence_global();
-                    old_counter_6973 = atomic_add_i32_global(&((volatile __global int *) counters_mem_6924)[srem64(flat_segment_id_6959, (int64_t) 20480)], (int) 1);
-                    ((__local bool *) sync_arr_mem_6953)[(int64_t) 0] = old_counter_6973 == sext_i64_i32(blocks_per_segment_6918 - (int64_t) 1);
+                    old_counter_6987 = atomic_add_i32_global(&((volatile __global int *) counters_mem_6938)[srem64(flat_segment_id_6973, (int64_t) 20480)], (int) 1);
+                    ((__local bool *) sync_arr_mem_6967)[(int64_t) 0] = old_counter_6987 == sext_i64_i32(blocks_per_segment_6932 - (int64_t) 1);
                 }
             }
             barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
-            is_last_block_6974 = ((__local bool *) sync_arr_mem_6953)[(int64_t) 0];
-            if (is_last_block_6974) {
-                if (local_tid_6947 == 0) {
-                    old_counter_6973 = atomic_add_i32_global(&((volatile __global int *) counters_mem_6924)[srem64(flat_segment_id_6959, (int64_t) 20480)], (int) sext_i64_i32((int64_t) 0 - blocks_per_segment_6918));
+            is_last_block_6988 = ((__local bool *) sync_arr_mem_6967)[(int64_t) 0];
+            if (is_last_block_6988) {
+                if (local_tid_6961 == 0) {
+                    old_counter_6987 = atomic_add_i32_global(&((volatile __global int *) counters_mem_6938)[srem64(flat_segment_id_6973, (int64_t) 20480)], (int) sext_i64_i32((int64_t) 0 - blocks_per_segment_6932));
                 }
                 // read in the per-block-results
                 {
-                    int64_t read_per_thread_6975 = sdiv_up64(blocks_per_segment_6918, seghist_tblock_sizze_6295);
+                    int64_t read_per_thread_6989 = sdiv_up64(blocks_per_segment_6932, seghist_tblock_sizze_6305);
                     
-                    eta_p_6303 = (int64_t) 0;
-                    for (int64_t i_6976 = 0; i_6976 < read_per_thread_6975; i_6976++) {
-                        int64_t block_res_id_6977 = sext_i32_i64(local_tid_6947) * read_per_thread_6975 + i_6976;
-                        int64_t index_of_block_res_6978 = flat_segment_id_6959 * blocks_per_segment_6918 + block_res_id_6977;
+                    eta_p_6313 = (int64_t) 0;
+                    for (int64_t i_6990 = 0; i_6990 < read_per_thread_6989; i_6990++) {
+                        int64_t block_res_id_6991 = sext_i32_i64(local_tid_6961) * read_per_thread_6989 + i_6990;
+                        int64_t index_of_block_res_6992 = flat_segment_id_6973 * blocks_per_segment_6932 + block_res_id_6991;
                         
-                        if (slt64(block_res_id_6977, blocks_per_segment_6918)) {
-                            eta_p_6304 = ((__global int64_t *) segred_tmp_mem_6922)[index_of_block_res_6978];
+                        if (slt64(block_res_id_6991, blocks_per_segment_6932)) {
+                            eta_p_6314 = ((__global int64_t *) segred_tmp_mem_6936)[index_of_block_res_6992];
                             
-                            int64_t defunc_0_op_res_6305 = add64(eta_p_6303, eta_p_6304);
+                            int64_t defunc_0_op_res_6315 = add64(eta_p_6313, eta_p_6314);
                             
-                            eta_p_6303 = defunc_0_op_res_6305;
+                            eta_p_6313 = defunc_0_op_res_6315;
                         }
                     }
                 }
-                ((__local int64_t *) red_arr_i64_mem_6951)[sext_i32_i64(local_tid_6947)] = eta_p_6303;
+                ((__local int64_t *) red_arr_i64_mem_6965)[sext_i32_i64(local_tid_6961)] = eta_p_6313;
                 barrier(CLK_LOCAL_MEM_FENCE);
                 // reduce the per-block results
                 {
-                    int32_t offset_6979;
-                    int32_t skip_waves_6980 = 1;
-                    int64_t eta_p_6964;
-                    int64_t eta_p_6965;
+                    int32_t offset_6993;
+                    int32_t skip_waves_6994 = 1;
+                    int64_t eta_p_6978;
+                    int64_t eta_p_6979;
                     
-                    offset_6979 = 0;
+                    offset_6993 = 0;
                     // participating threads read initial accumulator
                     {
-                        if (slt32(local_tid_6947, sext_i64_i32(seghist_tblock_sizze_6295))) {
-                            eta_p_6964 = ((__local int64_t *) red_arr_i64_mem_6951)[sext_i32_i64(local_tid_6947 + offset_6979)];
+                        if (slt32(local_tid_6961, sext_i64_i32(seghist_tblock_sizze_6305))) {
+                            eta_p_6978 = ((__local int64_t *) red_arr_i64_mem_6965)[sext_i32_i64(local_tid_6961 + offset_6993)];
                         }
                     }
-                    offset_6979 = 1;
-                    while (slt32(offset_6979, wave_sizze_6949)) {
-                        if (slt32(local_tid_6947 + offset_6979, sext_i64_i32(seghist_tblock_sizze_6295)) && ((local_tid_6947 - squot32(local_tid_6947, wave_sizze_6949) * wave_sizze_6949) & (2 * offset_6979 - 1)) == 0) {
+                    offset_6993 = 1;
+                    while (slt32(offset_6993, wave_sizze_6963)) {
+                        if (slt32(local_tid_6961 + offset_6993, sext_i64_i32(seghist_tblock_sizze_6305)) && ((local_tid_6961 - squot32(local_tid_6961, wave_sizze_6963) * wave_sizze_6963) & (2 * offset_6993 - 1)) == 0) {
                             // read array element
                             {
-                                eta_p_6965 = ((volatile __local int64_t *) red_arr_i64_mem_6951)[sext_i32_i64(local_tid_6947 + offset_6979)];
+                                eta_p_6979 = ((volatile __local int64_t *) red_arr_i64_mem_6965)[sext_i32_i64(local_tid_6961 + offset_6993)];
                             }
                             // apply reduction operation
                             {
-                                int64_t defunc_0_op_res_6966 = add64(eta_p_6964, eta_p_6965);
+                                int64_t defunc_0_op_res_6980 = add64(eta_p_6978, eta_p_6979);
                                 
-                                eta_p_6964 = defunc_0_op_res_6966;
+                                eta_p_6978 = defunc_0_op_res_6980;
                             }
                             // write result of operation
                             {
-                                ((volatile __local int64_t *) red_arr_i64_mem_6951)[sext_i32_i64(local_tid_6947)] = eta_p_6964;
+                                ((volatile __local int64_t *) red_arr_i64_mem_6965)[sext_i32_i64(local_tid_6961)] = eta_p_6978;
                             }
                         }
-                        offset_6979 *= 2;
+                        offset_6993 *= 2;
                     }
-                    while (slt32(skip_waves_6980, squot32(sext_i64_i32(seghist_tblock_sizze_6295) + wave_sizze_6949 - 1, wave_sizze_6949))) {
+                    while (slt32(skip_waves_6994, squot32(sext_i64_i32(seghist_tblock_sizze_6305) + wave_sizze_6963 - 1, wave_sizze_6963))) {
                         barrier(CLK_LOCAL_MEM_FENCE);
-                        offset_6979 = skip_waves_6980 * wave_sizze_6949;
-                        if (slt32(local_tid_6947 + offset_6979, sext_i64_i32(seghist_tblock_sizze_6295)) && ((local_tid_6947 - squot32(local_tid_6947, wave_sizze_6949) * wave_sizze_6949) == 0 && (squot32(local_tid_6947, wave_sizze_6949) & (2 * skip_waves_6980 - 1)) == 0)) {
+                        offset_6993 = skip_waves_6994 * wave_sizze_6963;
+                        if (slt32(local_tid_6961 + offset_6993, sext_i64_i32(seghist_tblock_sizze_6305)) && ((local_tid_6961 - squot32(local_tid_6961, wave_sizze_6963) * wave_sizze_6963) == 0 && (squot32(local_tid_6961, wave_sizze_6963) & (2 * skip_waves_6994 - 1)) == 0)) {
                             // read array element
                             {
-                                eta_p_6965 = ((__local int64_t *) red_arr_i64_mem_6951)[sext_i32_i64(local_tid_6947 + offset_6979)];
+                                eta_p_6979 = ((__local int64_t *) red_arr_i64_mem_6965)[sext_i32_i64(local_tid_6961 + offset_6993)];
                             }
                             // apply reduction operation
                             {
-                                int64_t defunc_0_op_res_6966 = add64(eta_p_6964, eta_p_6965);
+                                int64_t defunc_0_op_res_6980 = add64(eta_p_6978, eta_p_6979);
                                 
-                                eta_p_6964 = defunc_0_op_res_6966;
+                                eta_p_6978 = defunc_0_op_res_6980;
                             }
                             // write result of operation
                             {
-                                ((__local int64_t *) red_arr_i64_mem_6951)[sext_i32_i64(local_tid_6947)] = eta_p_6964;
+                                ((__local int64_t *) red_arr_i64_mem_6965)[sext_i32_i64(local_tid_6961)] = eta_p_6978;
                             }
                         }
-                        skip_waves_6980 *= 2;
+                        skip_waves_6994 *= 2;
                     }
                     barrier(CLK_LOCAL_MEM_FENCE);
                     // and back to memory with the final result
                     {
-                        if (local_tid_6947 == 0) {
-                            ((__global int64_t *) mem_6744)[bucket_id_6885] = eta_p_6964;
+                        if (local_tid_6961 == 0) {
+                            ((__global int64_t *) mem_6758)[bucket_id_6899] = eta_p_6978;
                         }
                     }
                 }
@@ -6204,235 +6204,235 @@ void byte_histogramzisegred_large_6887(__local uint64_t *shared_mem_aligned, __g
     
   error_6:
     return;
-    #undef seghist_tblock_sizze_6295
-    #undef chunk_sizze_6888
+    #undef seghist_tblock_sizze_6305
+    #undef chunk_sizze_6902
 }
-FUTHARK_KERNEL_SIZED(byte_histogramzisegred_small_6887_dim1, 1, 1)
-void byte_histogramzisegred_small_6887(__local uint64_t *shared_mem_aligned, __global int *global_failure, int64_t num_tblocks_6297, int64_t num_subhistos_6801, int64_t segment_sizze_nonzzero_6889, __global unsigned char *mem_6744, __global unsigned char *defunc_0_map_res_subhistos_mem_6802)
+FUTHARK_KERNEL_SIZED(byte_histogramzisegred_small_6901_dim1, 1, 1)
+void byte_histogramzisegred_small_6901(__local uint64_t *shared_mem_aligned, __global int *global_failure, int64_t num_tblocks_6307, int64_t num_subhistos_6815, int64_t segment_sizze_nonzzero_6903, __global unsigned char *mem_6758, __global unsigned char *defunc_0_map_res_subhistos_mem_6816)
 {
-    #define seghist_tblock_sizze_6295 (byte_histogramzisegred_small_6887ziseghist_tblock_sizze_6295)
+    #define seghist_tblock_sizze_6305 (byte_histogramzisegred_small_6901ziseghist_tblock_sizze_6305)
     
     __local unsigned char *shared_mem = (__local unsigned char *) shared_mem_aligned;
-    volatile __local unsigned char *red_arr_i64_mem_6896_backing_0 = &shared_mem[0];
-    const int64_t red_arr_i64_mem_6896_backing_0_offset = 0 + ((int64_t) 8 * seghist_tblock_sizze_6295 + srem64((int64_t) 8 - srem64((int64_t) 8 * seghist_tblock_sizze_6295, (int64_t) 8), (int64_t) 8));
+    volatile __local unsigned char *red_arr_i64_mem_6910_backing_0 = &shared_mem[0];
+    const int64_t red_arr_i64_mem_6910_backing_0_offset = 0 + ((int64_t) 8 * seghist_tblock_sizze_6305 + srem64((int64_t) 8 - srem64((int64_t) 8 * seghist_tblock_sizze_6305, (int64_t) 8), (int64_t) 8));
     
     if (*global_failure >= 0)
         return;
     
-    int32_t local_tid_6892;
-    int32_t tblock_sizze_6895;
-    int32_t wave_sizze_6894;
-    int32_t block_id_6893;
-    int32_t global_tid_6891;
-    int64_t flat_gtid_6887;
-    __local unsigned char *red_arr_i64_mem_6896;
-    int32_t phys_tblock_id_6898;
-    int32_t iterations_6899;
+    int32_t local_tid_6906;
+    int32_t tblock_sizze_6909;
+    int32_t wave_sizze_6908;
+    int32_t block_id_6907;
+    int32_t global_tid_6905;
+    int64_t flat_gtid_6901;
+    __local unsigned char *red_arr_i64_mem_6910;
+    int32_t phys_tblock_id_6912;
+    int32_t iterations_6913;
     
-    local_tid_6892 = get_local_id(0);
-    tblock_sizze_6895 = get_local_size(0);
-    wave_sizze_6894 = LOCKSTEP_WIDTH;
-    block_id_6893 = get_tblock_id(0);
-    global_tid_6891 = block_id_6893 * tblock_sizze_6895 + local_tid_6892;
-    flat_gtid_6887 = sext_i32_i64(global_tid_6891);
-    red_arr_i64_mem_6896 = (__local unsigned char *) red_arr_i64_mem_6896_backing_0;
-    phys_tblock_id_6898 = get_tblock_id(0);
-    iterations_6899 = sdiv_up32(sext_i64_i32(sdiv_up64((int64_t) 256, squot64(seghist_tblock_sizze_6295, segment_sizze_nonzzero_6889))) - phys_tblock_id_6898, sext_i64_i32(num_tblocks_6297));
-    for (int32_t i_6900 = 0; i_6900 < iterations_6899; i_6900++) {
-        int32_t virt_tblock_id_6901;
-        int64_t slice_6902;
-        int64_t bucket_id_6885;
-        int64_t remnant_6903;
-        int64_t subhistogram_id_6886;
+    local_tid_6906 = get_local_id(0);
+    tblock_sizze_6909 = get_local_size(0);
+    wave_sizze_6908 = LOCKSTEP_WIDTH;
+    block_id_6907 = get_tblock_id(0);
+    global_tid_6905 = block_id_6907 * tblock_sizze_6909 + local_tid_6906;
+    flat_gtid_6901 = sext_i32_i64(global_tid_6905);
+    red_arr_i64_mem_6910 = (__local unsigned char *) red_arr_i64_mem_6910_backing_0;
+    phys_tblock_id_6912 = get_tblock_id(0);
+    iterations_6913 = sdiv_up32(sext_i64_i32(sdiv_up64((int64_t) 256, squot64(seghist_tblock_sizze_6305, segment_sizze_nonzzero_6903))) - phys_tblock_id_6912, sext_i64_i32(num_tblocks_6307));
+    for (int32_t i_6914 = 0; i_6914 < iterations_6913; i_6914++) {
+        int32_t virt_tblock_id_6915;
+        int64_t slice_6916;
+        int64_t bucket_id_6899;
+        int64_t remnant_6917;
+        int64_t subhistogram_id_6900;
         
-        virt_tblock_id_6901 = phys_tblock_id_6898 + i_6900 * sext_i64_i32(num_tblocks_6297);
-        slice_6902 = (int64_t) 256;
-        bucket_id_6885 = squot64(sext_i32_i64(local_tid_6892), segment_sizze_nonzzero_6889) + sext_i32_i64(virt_tblock_id_6901) * squot64(seghist_tblock_sizze_6295, segment_sizze_nonzzero_6889);
-        remnant_6903 = squot64(sext_i32_i64(local_tid_6892), segment_sizze_nonzzero_6889) + sext_i32_i64(virt_tblock_id_6901) * squot64(seghist_tblock_sizze_6295, segment_sizze_nonzzero_6889) - bucket_id_6885;
-        subhistogram_id_6886 = srem64(sext_i32_i64(local_tid_6892), num_subhistos_6801);
+        virt_tblock_id_6915 = phys_tblock_id_6912 + i_6914 * sext_i64_i32(num_tblocks_6307);
+        slice_6916 = (int64_t) 256;
+        bucket_id_6899 = squot64(sext_i32_i64(local_tid_6906), segment_sizze_nonzzero_6903) + sext_i32_i64(virt_tblock_id_6915) * squot64(seghist_tblock_sizze_6305, segment_sizze_nonzzero_6903);
+        remnant_6917 = squot64(sext_i32_i64(local_tid_6906), segment_sizze_nonzzero_6903) + sext_i32_i64(virt_tblock_id_6915) * squot64(seghist_tblock_sizze_6305, segment_sizze_nonzzero_6903) - bucket_id_6899;
+        subhistogram_id_6900 = srem64(sext_i32_i64(local_tid_6906), num_subhistos_6815);
         // apply map function if in bounds
         {
-            if (slt64((int64_t) 0, num_subhistos_6801) && (slt64(bucket_id_6885, (int64_t) 256) && slt64(sext_i32_i64(local_tid_6892), num_subhistos_6801 * squot64(seghist_tblock_sizze_6295, segment_sizze_nonzzero_6889)))) {
+            if (slt64((int64_t) 0, num_subhistos_6815) && (slt64(bucket_id_6899, (int64_t) 256) && slt64(sext_i32_i64(local_tid_6906), num_subhistos_6815 * squot64(seghist_tblock_sizze_6305, segment_sizze_nonzzero_6903)))) {
                 // save results to be reduced
                 {
-                    int64_t tmp_6904 = ((__global int64_t *) defunc_0_map_res_subhistos_mem_6802)[subhistogram_id_6886 * (int64_t) 256 + bucket_id_6885];
+                    int64_t tmp_6918 = ((__global int64_t *) defunc_0_map_res_subhistos_mem_6816)[subhistogram_id_6900 * (int64_t) 256 + bucket_id_6899];
                     
-                    ((__local int64_t *) red_arr_i64_mem_6896)[sext_i32_i64(local_tid_6892)] = tmp_6904;
+                    ((__local int64_t *) red_arr_i64_mem_6910)[sext_i32_i64(local_tid_6906)] = tmp_6918;
                 }
             } else {
-                ((__local int64_t *) red_arr_i64_mem_6896)[sext_i32_i64(local_tid_6892)] = (int64_t) 0;
+                ((__local int64_t *) red_arr_i64_mem_6910)[sext_i32_i64(local_tid_6906)] = (int64_t) 0;
             }
         }
         barrier(CLK_LOCAL_MEM_FENCE);
-        if (slt64((int64_t) 0, num_subhistos_6801)) {
+        if (slt64((int64_t) 0, num_subhistos_6815)) {
             // perform segmented scan to imitate reduction
             {
-                int64_t eta_p_6303;
-                int64_t eta_p_6304;
-                int64_t eta_p_6905;
-                int64_t eta_p_6906;
-                bool ltid_in_bounds_6908 = slt64(sext_i32_i64(local_tid_6892), num_subhistos_6801 * squot64(seghist_tblock_sizze_6295, segment_sizze_nonzzero_6889));
-                int32_t skip_threads_6909;
+                int64_t eta_p_6313;
+                int64_t eta_p_6314;
+                int64_t eta_p_6919;
+                int64_t eta_p_6920;
+                bool ltid_in_bounds_6922 = slt64(sext_i32_i64(local_tid_6906), num_subhistos_6815 * squot64(seghist_tblock_sizze_6305, segment_sizze_nonzzero_6903));
+                int32_t skip_threads_6923;
                 
                 // read input for in-block scan
                 {
-                    if (ltid_in_bounds_6908) {
-                        eta_p_6304 = ((volatile __local int64_t *) red_arr_i64_mem_6896)[sext_i32_i64(local_tid_6892)];
-                        if ((local_tid_6892 - squot32(local_tid_6892, 32) * 32) == 0) {
-                            eta_p_6303 = eta_p_6304;
+                    if (ltid_in_bounds_6922) {
+                        eta_p_6314 = ((volatile __local int64_t *) red_arr_i64_mem_6910)[sext_i32_i64(local_tid_6906)];
+                        if ((local_tid_6906 - squot32(local_tid_6906, 32) * 32) == 0) {
+                            eta_p_6313 = eta_p_6314;
                         }
                     }
                 }
                 // in-block scan (hopefully no barriers needed)
                 {
-                    skip_threads_6909 = 1;
-                    while (slt32(skip_threads_6909, 32)) {
-                        bool thread_active_6910 = sle32(skip_threads_6909, local_tid_6892 - squot32(local_tid_6892, 32) * 32) && ltid_in_bounds_6908;
+                    skip_threads_6923 = 1;
+                    while (slt32(skip_threads_6923, 32)) {
+                        bool thread_active_6924 = sle32(skip_threads_6923, local_tid_6906 - squot32(local_tid_6906, 32) * 32) && ltid_in_bounds_6922;
                         
-                        if (thread_active_6910) {
+                        if (thread_active_6924) {
                             // read operands
                             {
-                                eta_p_6303 = ((volatile __local int64_t *) red_arr_i64_mem_6896)[sext_i32_i64(local_tid_6892) - sext_i32_i64(skip_threads_6909)];
+                                eta_p_6313 = ((volatile __local int64_t *) red_arr_i64_mem_6910)[sext_i32_i64(local_tid_6906) - sext_i32_i64(skip_threads_6923)];
                             }
                         }
                         // perform operation
                         {
-                            bool inactive_6911 = slt64(srem64(sext_i32_i64(local_tid_6892), num_subhistos_6801), sext_i32_i64(local_tid_6892) - sext_i32_i64(local_tid_6892 - skip_threads_6909));
+                            bool inactive_6925 = slt64(srem64(sext_i32_i64(local_tid_6906), num_subhistos_6815), sext_i32_i64(local_tid_6906) - sext_i32_i64(local_tid_6906 - skip_threads_6923));
                             
-                            if (thread_active_6910 && inactive_6911) {
-                                eta_p_6303 = eta_p_6304;
+                            if (thread_active_6924 && inactive_6925) {
+                                eta_p_6313 = eta_p_6314;
                             }
-                            if (thread_active_6910) {
-                                if (!inactive_6911) {
-                                    int64_t defunc_0_op_res_6305 = add64(eta_p_6303, eta_p_6304);
+                            if (thread_active_6924) {
+                                if (!inactive_6925) {
+                                    int64_t defunc_0_op_res_6315 = add64(eta_p_6313, eta_p_6314);
                                     
-                                    eta_p_6303 = defunc_0_op_res_6305;
+                                    eta_p_6313 = defunc_0_op_res_6315;
                                 }
                             }
                         }
-                        if (sle32(wave_sizze_6894, skip_threads_6909)) {
+                        if (sle32(wave_sizze_6908, skip_threads_6923)) {
                             barrier(CLK_LOCAL_MEM_FENCE);
                         }
-                        if (thread_active_6910) {
+                        if (thread_active_6924) {
                             // write result
                             {
-                                ((volatile __local int64_t *) red_arr_i64_mem_6896)[sext_i32_i64(local_tid_6892)] = eta_p_6303;
-                                eta_p_6304 = eta_p_6303;
+                                ((volatile __local int64_t *) red_arr_i64_mem_6910)[sext_i32_i64(local_tid_6906)] = eta_p_6313;
+                                eta_p_6314 = eta_p_6313;
                             }
                         }
-                        if (sle32(wave_sizze_6894, skip_threads_6909)) {
+                        if (sle32(wave_sizze_6908, skip_threads_6923)) {
                             barrier(CLK_LOCAL_MEM_FENCE);
                         }
-                        skip_threads_6909 *= 2;
+                        skip_threads_6923 *= 2;
                     }
                 }
                 barrier(CLK_LOCAL_MEM_FENCE);
                 // last thread of block 'i' writes its result to offset 'i'
                 {
-                    if ((local_tid_6892 - squot32(local_tid_6892, 32) * 32) == 31 && ltid_in_bounds_6908) {
-                        ((volatile __local int64_t *) red_arr_i64_mem_6896)[sext_i32_i64(squot32(local_tid_6892, 32))] = eta_p_6303;
+                    if ((local_tid_6906 - squot32(local_tid_6906, 32) * 32) == 31 && ltid_in_bounds_6922) {
+                        ((volatile __local int64_t *) red_arr_i64_mem_6910)[sext_i32_i64(squot32(local_tid_6906, 32))] = eta_p_6313;
                     }
                 }
                 barrier(CLK_LOCAL_MEM_FENCE);
                 // scan the first block, after which offset 'i' contains carry-in for block 'i+1'
                 {
-                    int32_t skip_threads_6912;
+                    int32_t skip_threads_6926;
                     
                     // read input for in-block scan
                     {
-                        if (squot32(local_tid_6892, 32) == 0 && ltid_in_bounds_6908) {
-                            eta_p_6906 = ((volatile __local int64_t *) red_arr_i64_mem_6896)[sext_i32_i64(local_tid_6892)];
-                            if ((local_tid_6892 - squot32(local_tid_6892, 32) * 32) == 0) {
-                                eta_p_6905 = eta_p_6906;
+                        if (squot32(local_tid_6906, 32) == 0 && ltid_in_bounds_6922) {
+                            eta_p_6920 = ((volatile __local int64_t *) red_arr_i64_mem_6910)[sext_i32_i64(local_tid_6906)];
+                            if ((local_tid_6906 - squot32(local_tid_6906, 32) * 32) == 0) {
+                                eta_p_6919 = eta_p_6920;
                             }
                         }
                     }
                     // in-block scan (hopefully no barriers needed)
                     {
-                        skip_threads_6912 = 1;
-                        while (slt32(skip_threads_6912, 32)) {
-                            bool thread_active_6913 = sle32(skip_threads_6912, local_tid_6892 - squot32(local_tid_6892, 32) * 32) && (squot32(local_tid_6892, 32) == 0 && ltid_in_bounds_6908);
+                        skip_threads_6926 = 1;
+                        while (slt32(skip_threads_6926, 32)) {
+                            bool thread_active_6927 = sle32(skip_threads_6926, local_tid_6906 - squot32(local_tid_6906, 32) * 32) && (squot32(local_tid_6906, 32) == 0 && ltid_in_bounds_6922);
                             
-                            if (thread_active_6913) {
+                            if (thread_active_6927) {
                                 // read operands
                                 {
-                                    eta_p_6905 = ((volatile __local int64_t *) red_arr_i64_mem_6896)[sext_i32_i64(local_tid_6892) - sext_i32_i64(skip_threads_6912)];
+                                    eta_p_6919 = ((volatile __local int64_t *) red_arr_i64_mem_6910)[sext_i32_i64(local_tid_6906) - sext_i32_i64(skip_threads_6926)];
                                 }
                             }
                             // perform operation
                             {
-                                bool inactive_6914 = slt64(srem64(sext_i32_i64(local_tid_6892 * 32 + 32 - 1), num_subhistos_6801), sext_i32_i64(local_tid_6892 * 32 + 32 - 1) - sext_i32_i64((local_tid_6892 - skip_threads_6912) * 32 + 32 - 1));
+                                bool inactive_6928 = slt64(srem64(sext_i32_i64(local_tid_6906 * 32 + 32 - 1), num_subhistos_6815), sext_i32_i64(local_tid_6906 * 32 + 32 - 1) - sext_i32_i64((local_tid_6906 - skip_threads_6926) * 32 + 32 - 1));
                                 
-                                if (thread_active_6913 && inactive_6914) {
-                                    eta_p_6905 = eta_p_6906;
+                                if (thread_active_6927 && inactive_6928) {
+                                    eta_p_6919 = eta_p_6920;
                                 }
-                                if (thread_active_6913) {
-                                    if (!inactive_6914) {
-                                        int64_t defunc_0_op_res_6907 = add64(eta_p_6905, eta_p_6906);
+                                if (thread_active_6927) {
+                                    if (!inactive_6928) {
+                                        int64_t defunc_0_op_res_6921 = add64(eta_p_6919, eta_p_6920);
                                         
-                                        eta_p_6905 = defunc_0_op_res_6907;
+                                        eta_p_6919 = defunc_0_op_res_6921;
                                     }
                                 }
                             }
-                            if (sle32(wave_sizze_6894, skip_threads_6912)) {
+                            if (sle32(wave_sizze_6908, skip_threads_6926)) {
                                 barrier(CLK_LOCAL_MEM_FENCE);
                             }
-                            if (thread_active_6913) {
+                            if (thread_active_6927) {
                                 // write result
                                 {
-                                    ((volatile __local int64_t *) red_arr_i64_mem_6896)[sext_i32_i64(local_tid_6892)] = eta_p_6905;
-                                    eta_p_6906 = eta_p_6905;
+                                    ((volatile __local int64_t *) red_arr_i64_mem_6910)[sext_i32_i64(local_tid_6906)] = eta_p_6919;
+                                    eta_p_6920 = eta_p_6919;
                                 }
                             }
-                            if (sle32(wave_sizze_6894, skip_threads_6912)) {
+                            if (sle32(wave_sizze_6908, skip_threads_6926)) {
                                 barrier(CLK_LOCAL_MEM_FENCE);
                             }
-                            skip_threads_6912 *= 2;
+                            skip_threads_6926 *= 2;
                         }
                     }
                 }
                 barrier(CLK_LOCAL_MEM_FENCE);
                 
-                bool no_carry_in_6915 = squot32(local_tid_6892, 32) == 0 || !ltid_in_bounds_6908;
+                bool no_carry_in_6929 = squot32(local_tid_6906, 32) == 0 || !ltid_in_bounds_6922;
                 
                 // carry-in for every block except the first
                 {
                     // read operands
                     {
-                        if (!no_carry_in_6915) {
-                            eta_p_6304 = eta_p_6303;
-                            eta_p_6303 = ((__local int64_t *) red_arr_i64_mem_6896)[sext_i32_i64(squot32(local_tid_6892, 32)) - (int64_t) 1];
+                        if (!no_carry_in_6929) {
+                            eta_p_6314 = eta_p_6313;
+                            eta_p_6313 = ((__local int64_t *) red_arr_i64_mem_6910)[sext_i32_i64(squot32(local_tid_6906, 32)) - (int64_t) 1];
                         }
                     }
                     // perform operation
                     {
-                        bool inactive_6916 = slt64(srem64(sext_i32_i64(local_tid_6892), num_subhistos_6801), sext_i32_i64(local_tid_6892) - sext_i32_i64(squot32(local_tid_6892, 32) * 32 - 1));
+                        bool inactive_6930 = slt64(srem64(sext_i32_i64(local_tid_6906), num_subhistos_6815), sext_i32_i64(local_tid_6906) - sext_i32_i64(squot32(local_tid_6906, 32) * 32 - 1));
                         
-                        if (!no_carry_in_6915) {
-                            if (inactive_6916) {
-                                eta_p_6303 = eta_p_6304;
+                        if (!no_carry_in_6929) {
+                            if (inactive_6930) {
+                                eta_p_6313 = eta_p_6314;
                             }
                         }
-                        if (!no_carry_in_6915) {
-                            if (!inactive_6916) {
-                                int64_t defunc_0_op_res_6305 = add64(eta_p_6303, eta_p_6304);
+                        if (!no_carry_in_6929) {
+                            if (!inactive_6930) {
+                                int64_t defunc_0_op_res_6315 = add64(eta_p_6313, eta_p_6314);
                                 
-                                eta_p_6303 = defunc_0_op_res_6305;
+                                eta_p_6313 = defunc_0_op_res_6315;
                             }
                         }
                     }
                     // write final result
                     {
-                        if (!no_carry_in_6915) {
-                            ((__local int64_t *) red_arr_i64_mem_6896)[sext_i32_i64(local_tid_6892)] = eta_p_6303;
+                        if (!no_carry_in_6929) {
+                            ((__local int64_t *) red_arr_i64_mem_6910)[sext_i32_i64(local_tid_6906)] = eta_p_6313;
                         }
                     }
                 }
                 barrier(CLK_LOCAL_MEM_FENCE);
                 // restore correct values for first block
                 {
-                    if (squot32(local_tid_6892, 32) == 0 && ltid_in_bounds_6908) {
-                        ((__local int64_t *) red_arr_i64_mem_6896)[sext_i32_i64(local_tid_6892)] = eta_p_6304;
+                    if (squot32(local_tid_6906, 32) == 0 && ltid_in_bounds_6922) {
+                        ((__local int64_t *) red_arr_i64_mem_6910)[sext_i32_i64(local_tid_6906)] = eta_p_6314;
                     }
                 }
                 barrier(CLK_LOCAL_MEM_FENCE);
@@ -6441,10 +6441,10 @@ void byte_histogramzisegred_small_6887(__local uint64_t *shared_mem_aligned, __g
         barrier(CLK_LOCAL_MEM_FENCE);
         // save final values of segments
         {
-            if (slt64(sext_i32_i64(virt_tblock_id_6901) * squot64(seghist_tblock_sizze_6295, segment_sizze_nonzzero_6889) + sext_i32_i64(local_tid_6892), (int64_t) 256) && slt64(sext_i32_i64(local_tid_6892), squot64(seghist_tblock_sizze_6295, segment_sizze_nonzzero_6889))) {
-                int64_t tmp_6917 = ((__local int64_t *) red_arr_i64_mem_6896)[(sext_i32_i64(local_tid_6892) + (int64_t) 1) * segment_sizze_nonzzero_6889 - (int64_t) 1];
+            if (slt64(sext_i32_i64(virt_tblock_id_6915) * squot64(seghist_tblock_sizze_6305, segment_sizze_nonzzero_6903) + sext_i32_i64(local_tid_6906), (int64_t) 256) && slt64(sext_i32_i64(local_tid_6906), squot64(seghist_tblock_sizze_6305, segment_sizze_nonzzero_6903))) {
+                int64_t tmp_6931 = ((__local int64_t *) red_arr_i64_mem_6910)[(sext_i32_i64(local_tid_6906) + (int64_t) 1) * segment_sizze_nonzzero_6903 - (int64_t) 1];
                 
-                ((__global int64_t *) mem_6744)[sext_i32_i64(virt_tblock_id_6901) * squot64(seghist_tblock_sizze_6295, segment_sizze_nonzzero_6889) + sext_i32_i64(local_tid_6892)] = tmp_6917;
+                ((__global int64_t *) mem_6758)[sext_i32_i64(virt_tblock_id_6915) * squot64(seghist_tblock_sizze_6305, segment_sizze_nonzzero_6903) + sext_i32_i64(local_tid_6906)] = tmp_6931;
             }
         }
         barrier(CLK_LOCAL_MEM_FENCE);
@@ -6453,230 +6453,232 @@ void byte_histogramzisegred_small_6887(__local uint64_t *shared_mem_aligned, __g
     
   error_3:
     return;
-    #undef seghist_tblock_sizze_6295
+    #undef seghist_tblock_sizze_6305
 }
-FUTHARK_KERNEL_SIZED(chunked_entropyzisegmap_6394_dim1, 1, 1)
-void chunked_entropyzisegmap_6394(__local uint64_t *shared_mem_aligned, __global int *global_failure, int failure_is_an_option, __global int64_t *global_failure_args, int64_t n_6040, int64_t chunk_sizze_6041, int64_t dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188, __global unsigned char *xs_mem_6743, __global unsigned char *mem_6777)
+FUTHARK_KERNEL_SIZED(chunked_entropyzisegmap_6405_dim1, 1, 1)
+void chunked_entropyzisegmap_6405(__local uint64_t *shared_mem_aligned, __global int *global_failure, int failure_is_an_option, __global int64_t *global_failure_args, int64_t n_6046, int64_t chunk_sizze_6047, int64_t dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197, __global unsigned char *xs_mem_6757, __global unsigned char *mem_6791)
 {
-    #define segmap_tblock_sizze_6390 (chunked_entropyzisegmap_6394zisegmap_tblock_sizze_6390)
+    #define segmap_tblock_sizze_6401 (chunked_entropyzisegmap_6405zisegmap_tblock_sizze_6401)
     
     __local unsigned char *shared_mem = (__local unsigned char *) shared_mem_aligned;
     
     if (*global_failure >= 0)
         return;
     
-    int32_t local_tid_6785;
-    int32_t tblock_sizze_6788;
-    int32_t wave_sizze_6787;
-    int32_t block_id_6786;
-    int32_t global_tid_6784;
-    int64_t phys_tid_6394;
-    int64_t global_tid_6789;
-    int64_t slice_6790;
-    int64_t gtid_6393;
-    int64_t remnant_6791;
+    int32_t local_tid_6799;
+    int32_t tblock_sizze_6802;
+    int32_t wave_sizze_6801;
+    int32_t block_id_6800;
+    int32_t global_tid_6798;
+    int64_t phys_tid_6405;
+    int64_t global_tid_6803;
+    int64_t slice_6804;
+    int64_t gtid_6404;
+    int64_t remnant_6805;
     
-    local_tid_6785 = get_local_id(0);
-    tblock_sizze_6788 = get_local_size(0);
-    wave_sizze_6787 = LOCKSTEP_WIDTH;
-    block_id_6786 = get_tblock_id(0);
-    global_tid_6784 = block_id_6786 * tblock_sizze_6788 + local_tid_6785;
-    phys_tid_6394 = sext_i32_i64(global_tid_6784);
-    global_tid_6789 = sext_i32_i64(block_id_6786) * segmap_tblock_sizze_6390 + sext_i32_i64(local_tid_6785);
-    slice_6790 = dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188;
-    gtid_6393 = global_tid_6789;
-    remnant_6791 = global_tid_6789 - gtid_6393;
-    if (slt64(gtid_6393, dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188)) {
-        int64_t entropy_arg0_6396;
-        int64_t zt_lhs_6397;
-        int64_t entropy_arg0_6398;
-        int64_t j_m_i_6399;
-        bool empty_slice_6400;
-        int64_t m_6401;
-        int64_t i_p_m_t_s_6402;
-        bool zzero_leq_i_p_m_t_s_6403;
-        bool i_p_m_t_s_leq_w_6404;
-        bool zzero_lte_i_6405;
-        bool i_lte_j_6406;
-        bool y_6407;
-        bool y_6408;
-        bool forwards_ok_6409;
-        bool ok_or_empty_6410;
-        bool index_certs_6411;
-        int64_t mem_6774[(int64_t) 256];
-        float i64_res_6422;
-        float defunc_0_f_res_6423;
-        float redout_6728;
-        float zs_lhs_6434;
-        float log2_res_6435;
-        float lifted_lambda_res_6436;
-        float floor_res_6437;
-        int8_t unsign_arg0_6438;
+    local_tid_6799 = get_local_id(0);
+    tblock_sizze_6802 = get_local_size(0);
+    wave_sizze_6801 = LOCKSTEP_WIDTH;
+    block_id_6800 = get_tblock_id(0);
+    global_tid_6798 = block_id_6800 * tblock_sizze_6802 + local_tid_6799;
+    phys_tid_6405 = sext_i32_i64(global_tid_6798);
+    global_tid_6803 = sext_i32_i64(block_id_6800) * segmap_tblock_sizze_6401 + sext_i32_i64(local_tid_6799);
+    slice_6804 = dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197;
+    gtid_6404 = global_tid_6803;
+    remnant_6805 = global_tid_6803 - gtid_6404;
+    if (slt64(gtid_6404, dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197)) {
+        int64_t entropy_arg0_6407;
+        int64_t zt_lhs_6408;
+        int64_t entropy_arg0_6409;
+        int64_t j_m_i_6410;
+        bool empty_slice_6411;
+        int64_t m_6412;
+        int64_t i_p_m_t_s_6413;
+        bool zzero_leq_i_p_m_t_s_6414;
+        bool i_p_m_t_s_leq_w_6415;
+        bool zzero_lte_i_6416;
+        bool i_lte_j_6417;
+        bool y_6418;
+        bool y_6419;
+        bool forwards_ok_6420;
+        bool ok_or_empty_6421;
+        bool index_certs_6422;
+        int64_t mem_6788[(int64_t) 256];
+        float i64_res_6433;
+        float defunc_0_f_res_6434;
+        float redout_6742;
+        float zs_lhs_6445;
+        float log2_res_6446;
+        float lifted_lambda_res_6447;
+        float floor_arg0_6448;
+        float floor_res_6449;
+        int8_t unsign_arg0_6450;
         
-        entropy_arg0_6396 = mul64(chunk_sizze_6041, gtid_6393);
-        zt_lhs_6397 = add64((int64_t) 1, gtid_6393);
-        entropy_arg0_6398 = mul64(chunk_sizze_6041, zt_lhs_6397);
-        j_m_i_6399 = sub64(entropy_arg0_6398, entropy_arg0_6396);
-        empty_slice_6400 = j_m_i_6399 == (int64_t) 0;
-        m_6401 = sub64(j_m_i_6399, (int64_t) 1);
-        i_p_m_t_s_6402 = add64(entropy_arg0_6396, m_6401);
-        zzero_leq_i_p_m_t_s_6403 = sle64((int64_t) 0, i_p_m_t_s_6402);
-        i_p_m_t_s_leq_w_6404 = slt64(i_p_m_t_s_6402, n_6040);
-        zzero_lte_i_6405 = sle64((int64_t) 0, entropy_arg0_6396);
-        i_lte_j_6406 = sle64(entropy_arg0_6396, entropy_arg0_6398);
-        y_6407 = i_p_m_t_s_leq_w_6404 && zzero_lte_i_6405;
-        y_6408 = zzero_leq_i_p_m_t_s_6403 && y_6407;
-        forwards_ok_6409 = i_lte_j_6406 && y_6408;
-        ok_or_empty_6410 = empty_slice_6400 || forwards_ok_6409;
-        if (!ok_or_empty_6410) {
+        entropy_arg0_6407 = mul64(chunk_sizze_6047, gtid_6404);
+        zt_lhs_6408 = add64((int64_t) 1, gtid_6404);
+        entropy_arg0_6409 = mul64(chunk_sizze_6047, zt_lhs_6408);
+        j_m_i_6410 = sub64(entropy_arg0_6409, entropy_arg0_6407);
+        empty_slice_6411 = j_m_i_6410 == (int64_t) 0;
+        m_6412 = sub64(j_m_i_6410, (int64_t) 1);
+        i_p_m_t_s_6413 = add64(entropy_arg0_6407, m_6412);
+        zzero_leq_i_p_m_t_s_6414 = sle64((int64_t) 0, i_p_m_t_s_6413);
+        i_p_m_t_s_leq_w_6415 = slt64(i_p_m_t_s_6413, n_6046);
+        zzero_lte_i_6416 = sle64((int64_t) 0, entropy_arg0_6407);
+        i_lte_j_6417 = sle64(entropy_arg0_6407, entropy_arg0_6409);
+        y_6418 = i_p_m_t_s_leq_w_6415 && zzero_lte_i_6416;
+        y_6419 = zzero_leq_i_p_m_t_s_6414 && y_6418;
+        forwards_ok_6420 = i_lte_j_6417 && y_6419;
+        ok_or_empty_6421 = empty_slice_6411 || forwards_ok_6420;
+        if (!ok_or_empty_6421) {
             {
                 if (atomic_cmpxchg_i32_global(global_failure, -1, 0) == -1) {
-                    global_failure_args[0] = (int64_t) entropy_arg0_6396;
-                    global_failure_args[1] = (int64_t) entropy_arg0_6398;
-                    global_failure_args[2] = (int64_t) n_6040;
+                    global_failure_args[0] = (int64_t) entropy_arg0_6407;
+                    global_failure_args[1] = (int64_t) entropy_arg0_6409;
+                    global_failure_args[2] = (int64_t) n_6046;
                     ;
                 }
                 return;
             }
         }
-        for (int64_t nest_i_6792 = 0; nest_i_6792 < (int64_t) 256; nest_i_6792++) {
-            mem_6774[nest_i_6792] = (int64_t) 0;
+        for (int64_t nest_i_6806 = 0; nest_i_6806 < (int64_t) 256; nest_i_6806++) {
+            mem_6788[nest_i_6806] = (int64_t) 0;
         }
-        for (int64_t iter_6717 = 0; iter_6717 < j_m_i_6399; iter_6717++) {
-            int64_t slice_6741;
-            int8_t pixel_6719;
-            int64_t u8_res_6421;
-            bool less_than_zzero_6721;
-            bool greater_than_sizze_6722;
-            bool outside_bounds_dim_6723;
+        for (int64_t iter_6731 = 0; iter_6731 < j_m_i_6410; iter_6731++) {
+            int64_t slice_6755;
+            int8_t pixel_6733;
+            int64_t u8_res_6432;
+            bool less_than_zzero_6735;
+            bool greater_than_sizze_6736;
+            bool outside_bounds_dim_6737;
             
-            slice_6741 = entropy_arg0_6396 + iter_6717;
-            pixel_6719 = ((__global int8_t *) xs_mem_6743)[slice_6741];
-            u8_res_6421 = zext_i8_i64(pixel_6719);
-            less_than_zzero_6721 = slt64(u8_res_6421, (int64_t) 0);
-            greater_than_sizze_6722 = sle64((int64_t) 256, u8_res_6421);
-            outside_bounds_dim_6723 = less_than_zzero_6721 || greater_than_sizze_6722;
-            if (!outside_bounds_dim_6723) {
-                int64_t read_hist_6725;
-                int64_t defunc_0_op_res_6418;
+            slice_6755 = entropy_arg0_6407 + iter_6731;
+            pixel_6733 = ((__global int8_t *) xs_mem_6757)[slice_6755];
+            u8_res_6432 = zext_i8_i64(pixel_6733);
+            less_than_zzero_6735 = slt64(u8_res_6432, (int64_t) 0);
+            greater_than_sizze_6736 = sle64((int64_t) 256, u8_res_6432);
+            outside_bounds_dim_6737 = less_than_zzero_6735 || greater_than_sizze_6736;
+            if (!outside_bounds_dim_6737) {
+                int64_t read_hist_6739;
+                int64_t defunc_0_op_res_6429;
                 
-                read_hist_6725 = mem_6774[u8_res_6421];
-                defunc_0_op_res_6418 = add64((int64_t) 1, read_hist_6725);
-                mem_6774[u8_res_6421] = defunc_0_op_res_6418;
+                read_hist_6739 = mem_6788[u8_res_6432];
+                defunc_0_op_res_6429 = add64((int64_t) 1, read_hist_6739);
+                mem_6788[u8_res_6432] = defunc_0_op_res_6429;
             }
         }
-        i64_res_6422 = sitofp_i64_f32(j_m_i_6399);
-        redout_6728 = 0.0F;
-        for (int64_t i_6729 = 0; i_6729 < (int64_t) 256; i_6729++) {
-            int64_t eta_p_6427;
-            float i64_res_6428;
-            float lifted_lambda_res_6429;
-            bool cond_6430;
-            float lifted_lambda_res_6431;
-            float defunc_0_op_res_6426;
-            float redout_tmp_6794;
+        i64_res_6433 = sitofp_i64_f32(j_m_i_6410);
+        redout_6742 = 0.0F;
+        for (int64_t i_6743 = 0; i_6743 < (int64_t) 256; i_6743++) {
+            int64_t eta_p_6438;
+            float i64_res_6439;
+            float lifted_lambda_res_6440;
+            bool cond_6441;
+            float lifted_lambda_res_6442;
+            float defunc_0_op_res_6437;
+            float redout_tmp_6808;
             
-            eta_p_6427 = mem_6774[i_6729];
-            i64_res_6428 = sitofp_i64_f32(eta_p_6427);
-            lifted_lambda_res_6429 = i64_res_6428 / i64_res_6422;
-            cond_6430 = lifted_lambda_res_6429 == 0.0F;
-            if (cond_6430) {
-                lifted_lambda_res_6431 = 0.0F;
+            eta_p_6438 = mem_6788[i_6743];
+            i64_res_6439 = sitofp_i64_f32(eta_p_6438);
+            lifted_lambda_res_6440 = i64_res_6439 / i64_res_6433;
+            cond_6441 = lifted_lambda_res_6440 == 0.0F;
+            if (cond_6441) {
+                lifted_lambda_res_6442 = 0.0F;
             } else {
-                float log2_res_6432;
-                float lifted_lambda_res_f_res_6433;
+                float log2_res_6443;
+                float lifted_lambda_res_f_res_6444;
                 
-                log2_res_6432 = futrts_log2_32(lifted_lambda_res_6429);
-                lifted_lambda_res_f_res_6433 = lifted_lambda_res_6429 * log2_res_6432;
-                lifted_lambda_res_6431 = lifted_lambda_res_f_res_6433;
+                log2_res_6443 = futrts_log2_32(lifted_lambda_res_6440);
+                lifted_lambda_res_f_res_6444 = lifted_lambda_res_6440 * log2_res_6443;
+                lifted_lambda_res_6442 = lifted_lambda_res_f_res_6444;
             }
-            defunc_0_op_res_6426 = lifted_lambda_res_6431 + redout_6728;
-            redout_tmp_6794 = defunc_0_op_res_6426;
-            redout_6728 = redout_tmp_6794;
+            defunc_0_op_res_6437 = lifted_lambda_res_6442 + redout_6742;
+            redout_tmp_6808 = defunc_0_op_res_6437;
+            redout_6742 = redout_tmp_6808;
         }
-        defunc_0_f_res_6423 = redout_6728;
-        zs_lhs_6434 = -1.0F * defunc_0_f_res_6423;
-        log2_res_6435 = futrts_log2_32(i64_res_6422);
-        lifted_lambda_res_6436 = zs_lhs_6434 / log2_res_6435;
-        floor_res_6437 = futrts_floor32(lifted_lambda_res_6436);
-        unsign_arg0_6438 = fptoui_f32_i8(floor_res_6437);
-        ((__global int8_t *) mem_6777)[gtid_6393] = unsign_arg0_6438;
+        defunc_0_f_res_6434 = redout_6742;
+        zs_lhs_6445 = -1.0F * defunc_0_f_res_6434;
+        log2_res_6446 = futrts_log2_32(i64_res_6433);
+        lifted_lambda_res_6447 = zs_lhs_6445 / log2_res_6446;
+        floor_arg0_6448 = 255.0F * lifted_lambda_res_6447;
+        floor_res_6449 = futrts_floor32(floor_arg0_6448);
+        unsign_arg0_6450 = fptoui_f32_i8(floor_res_6449);
+        ((__global int8_t *) mem_6791)[gtid_6404] = unsign_arg0_6450;
     }
     
   error_0:
     return;
-    #undef segmap_tblock_sizze_6390
+    #undef segmap_tblock_sizze_6401
 }
-FUTHARK_KERNEL_SIZED(chunked_entropyzisegmap_6593_dim1, 1, 1)
-void chunked_entropyzisegmap_6593(__local uint64_t *shared_mem_aligned, __global int *global_failure, int failure_is_an_option, __global int64_t *global_failure_args, int64_t n_6040, int64_t chunk_sizze_6041, int64_t dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188, __global unsigned char *mem_6745)
+FUTHARK_KERNEL_SIZED(chunked_entropyzisegmap_6606_dim1, 1, 1)
+void chunked_entropyzisegmap_6606(__local uint64_t *shared_mem_aligned, __global int *global_failure, int failure_is_an_option, __global int64_t *global_failure_args, int64_t n_6046, int64_t chunk_sizze_6047, int64_t dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197, __global unsigned char *mem_6759)
 {
-    #define segmap_tblock_sizze_6587 (chunked_entropyzisegmap_6593zisegmap_tblock_sizze_6587)
+    #define segmap_tblock_sizze_6600 (chunked_entropyzisegmap_6606zisegmap_tblock_sizze_6600)
     
     __local unsigned char *shared_mem = (__local unsigned char *) shared_mem_aligned;
     
     if (*global_failure >= 0)
         return;
     
-    int32_t local_tid_6797;
-    int32_t tblock_sizze_6800;
-    int32_t wave_sizze_6799;
-    int32_t block_id_6798;
-    int32_t global_tid_6796;
-    int64_t phys_tid_6593;
-    int64_t global_tid_6801;
-    int64_t slice_6802;
-    int64_t gtid_6592;
-    int64_t remnant_6803;
+    int32_t local_tid_6811;
+    int32_t tblock_sizze_6814;
+    int32_t wave_sizze_6813;
+    int32_t block_id_6812;
+    int32_t global_tid_6810;
+    int64_t phys_tid_6606;
+    int64_t global_tid_6815;
+    int64_t slice_6816;
+    int64_t gtid_6605;
+    int64_t remnant_6817;
     
-    local_tid_6797 = get_local_id(0);
-    tblock_sizze_6800 = get_local_size(0);
-    wave_sizze_6799 = LOCKSTEP_WIDTH;
-    block_id_6798 = get_tblock_id(0);
-    global_tid_6796 = block_id_6798 * tblock_sizze_6800 + local_tid_6797;
-    phys_tid_6593 = sext_i32_i64(global_tid_6796);
-    global_tid_6801 = sext_i32_i64(block_id_6798) * segmap_tblock_sizze_6587 + sext_i32_i64(local_tid_6797);
-    slice_6802 = dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188;
-    gtid_6592 = global_tid_6801;
-    remnant_6803 = global_tid_6801 - gtid_6592;
-    if (slt64(gtid_6592, dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188)) {
-        int64_t entropy_arg0_6595;
-        int64_t zt_lhs_6596;
-        int64_t entropy_arg0_6597;
-        int64_t j_m_i_6598;
-        bool empty_slice_6599;
-        int64_t m_6600;
-        int64_t i_p_m_t_s_6601;
-        bool zzero_leq_i_p_m_t_s_6602;
-        bool i_p_m_t_s_leq_w_6603;
-        bool zzero_lte_i_6604;
-        bool i_lte_j_6605;
-        bool y_6606;
-        bool y_6607;
-        bool forwards_ok_6608;
-        bool ok_or_empty_6609;
-        bool index_certs_6610;
+    local_tid_6811 = get_local_id(0);
+    tblock_sizze_6814 = get_local_size(0);
+    wave_sizze_6813 = LOCKSTEP_WIDTH;
+    block_id_6812 = get_tblock_id(0);
+    global_tid_6810 = block_id_6812 * tblock_sizze_6814 + local_tid_6811;
+    phys_tid_6606 = sext_i32_i64(global_tid_6810);
+    global_tid_6815 = sext_i32_i64(block_id_6812) * segmap_tblock_sizze_6600 + sext_i32_i64(local_tid_6811);
+    slice_6816 = dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197;
+    gtid_6605 = global_tid_6815;
+    remnant_6817 = global_tid_6815 - gtid_6605;
+    if (slt64(gtid_6605, dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197)) {
+        int64_t entropy_arg0_6608;
+        int64_t zt_lhs_6609;
+        int64_t entropy_arg0_6610;
+        int64_t j_m_i_6611;
+        bool empty_slice_6612;
+        int64_t m_6613;
+        int64_t i_p_m_t_s_6614;
+        bool zzero_leq_i_p_m_t_s_6615;
+        bool i_p_m_t_s_leq_w_6616;
+        bool zzero_lte_i_6617;
+        bool i_lte_j_6618;
+        bool y_6619;
+        bool y_6620;
+        bool forwards_ok_6621;
+        bool ok_or_empty_6622;
+        bool index_certs_6623;
         
-        entropy_arg0_6595 = mul64(chunk_sizze_6041, gtid_6592);
-        zt_lhs_6596 = add64((int64_t) 1, gtid_6592);
-        entropy_arg0_6597 = mul64(chunk_sizze_6041, zt_lhs_6596);
-        j_m_i_6598 = sub64(entropy_arg0_6597, entropy_arg0_6595);
-        empty_slice_6599 = j_m_i_6598 == (int64_t) 0;
-        m_6600 = sub64(j_m_i_6598, (int64_t) 1);
-        i_p_m_t_s_6601 = add64(entropy_arg0_6595, m_6600);
-        zzero_leq_i_p_m_t_s_6602 = sle64((int64_t) 0, i_p_m_t_s_6601);
-        i_p_m_t_s_leq_w_6603 = slt64(i_p_m_t_s_6601, n_6040);
-        zzero_lte_i_6604 = sle64((int64_t) 0, entropy_arg0_6595);
-        i_lte_j_6605 = sle64(entropy_arg0_6595, entropy_arg0_6597);
-        y_6606 = i_p_m_t_s_leq_w_6603 && zzero_lte_i_6604;
-        y_6607 = zzero_leq_i_p_m_t_s_6602 && y_6606;
-        forwards_ok_6608 = i_lte_j_6605 && y_6607;
-        ok_or_empty_6609 = empty_slice_6599 || forwards_ok_6608;
-        if (!ok_or_empty_6609) {
+        entropy_arg0_6608 = mul64(chunk_sizze_6047, gtid_6605);
+        zt_lhs_6609 = add64((int64_t) 1, gtid_6605);
+        entropy_arg0_6610 = mul64(chunk_sizze_6047, zt_lhs_6609);
+        j_m_i_6611 = sub64(entropy_arg0_6610, entropy_arg0_6608);
+        empty_slice_6612 = j_m_i_6611 == (int64_t) 0;
+        m_6613 = sub64(j_m_i_6611, (int64_t) 1);
+        i_p_m_t_s_6614 = add64(entropy_arg0_6608, m_6613);
+        zzero_leq_i_p_m_t_s_6615 = sle64((int64_t) 0, i_p_m_t_s_6614);
+        i_p_m_t_s_leq_w_6616 = slt64(i_p_m_t_s_6614, n_6046);
+        zzero_lte_i_6617 = sle64((int64_t) 0, entropy_arg0_6608);
+        i_lte_j_6618 = sle64(entropy_arg0_6608, entropy_arg0_6610);
+        y_6619 = i_p_m_t_s_leq_w_6616 && zzero_lte_i_6617;
+        y_6620 = zzero_leq_i_p_m_t_s_6615 && y_6619;
+        forwards_ok_6621 = i_lte_j_6618 && y_6620;
+        ok_or_empty_6622 = empty_slice_6612 || forwards_ok_6621;
+        if (!ok_or_empty_6622) {
             {
                 if (atomic_cmpxchg_i32_global(global_failure, -1, 1) == -1) {
-                    global_failure_args[0] = (int64_t) entropy_arg0_6595;
-                    global_failure_args[1] = (int64_t) entropy_arg0_6597;
-                    global_failure_args[2] = (int64_t) n_6040;
+                    global_failure_args[0] = (int64_t) entropy_arg0_6608;
+                    global_failure_args[1] = (int64_t) entropy_arg0_6610;
+                    global_failure_args[2] = (int64_t) n_6046;
                     ;
                 }
                 return;
@@ -6686,88 +6688,88 @@ void chunked_entropyzisegmap_6593(__local uint64_t *shared_mem_aligned, __global
     
   error_0:
     return;
-    #undef segmap_tblock_sizze_6587
+    #undef segmap_tblock_sizze_6600
 }
-FUTHARK_KERNEL_SIZED(chunked_entropyzisegmap_6632_dim1, 1, 1)
-void chunked_entropyzisegmap_6632(__local uint64_t *shared_mem_aligned, __global int *global_failure, int64_t chunk_sizze_6041, int64_t dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188, int64_t num_tblocks_6627, int32_t virt_num_tblocks_6804, __global unsigned char *xs_mem_6743, __global unsigned char *mem_6745, __global unsigned char *mem_6763)
+FUTHARK_KERNEL_SIZED(chunked_entropyzisegmap_6645_dim1, 1, 1)
+void chunked_entropyzisegmap_6645(__local uint64_t *shared_mem_aligned, __global int *global_failure, int64_t chunk_sizze_6047, int64_t dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197, int64_t num_tblocks_6640, int32_t virt_num_tblocks_6818, __global unsigned char *xs_mem_6757, __global unsigned char *mem_6759, __global unsigned char *mem_6777)
 {
-    #define segmap_tblock_sizze_6626 (chunked_entropyzisegmap_6632zisegmap_tblock_sizze_6626)
+    #define segmap_tblock_sizze_6639 (chunked_entropyzisegmap_6645zisegmap_tblock_sizze_6639)
     
     __local unsigned char *shared_mem = (__local unsigned char *) shared_mem_aligned;
     
     if (*global_failure >= 0)
         return;
     
-    int32_t local_tid_6806;
-    int32_t tblock_sizze_6809;
-    int32_t wave_sizze_6808;
-    int32_t block_id_6807;
-    int32_t global_tid_6805;
-    int64_t phys_tid_6632;
-    int32_t phys_tblock_id_6810;
-    int32_t iterations_6811;
+    int32_t local_tid_6820;
+    int32_t tblock_sizze_6823;
+    int32_t wave_sizze_6822;
+    int32_t block_id_6821;
+    int32_t global_tid_6819;
+    int64_t phys_tid_6645;
+    int32_t phys_tblock_id_6824;
+    int32_t iterations_6825;
     
-    local_tid_6806 = get_local_id(0);
-    tblock_sizze_6809 = get_local_size(0);
-    wave_sizze_6808 = LOCKSTEP_WIDTH;
-    block_id_6807 = get_tblock_id(0);
-    global_tid_6805 = block_id_6807 * tblock_sizze_6809 + local_tid_6806;
-    phys_tid_6632 = sext_i32_i64(global_tid_6805);
-    phys_tblock_id_6810 = get_tblock_id(0);
-    iterations_6811 = sdiv_up32(virt_num_tblocks_6804 - phys_tblock_id_6810, sext_i64_i32(num_tblocks_6627));
-    for (int32_t i_6812 = 0; i_6812 < iterations_6811; i_6812++) {
-        int32_t virt_tblock_id_6813;
-        int64_t global_tid_6814;
-        int64_t slice_6815;
-        int64_t gtid_6631;
-        int64_t remnant_6816;
+    local_tid_6820 = get_local_id(0);
+    tblock_sizze_6823 = get_local_size(0);
+    wave_sizze_6822 = LOCKSTEP_WIDTH;
+    block_id_6821 = get_tblock_id(0);
+    global_tid_6819 = block_id_6821 * tblock_sizze_6823 + local_tid_6820;
+    phys_tid_6645 = sext_i32_i64(global_tid_6819);
+    phys_tblock_id_6824 = get_tblock_id(0);
+    iterations_6825 = sdiv_up32(virt_num_tblocks_6818 - phys_tblock_id_6824, sext_i64_i32(num_tblocks_6640));
+    for (int32_t i_6826 = 0; i_6826 < iterations_6825; i_6826++) {
+        int32_t virt_tblock_id_6827;
+        int64_t global_tid_6828;
+        int64_t slice_6829;
+        int64_t gtid_6644;
+        int64_t remnant_6830;
         
-        virt_tblock_id_6813 = phys_tblock_id_6810 + i_6812 * sext_i64_i32(num_tblocks_6627);
-        global_tid_6814 = sext_i32_i64(virt_tblock_id_6813) * segmap_tblock_sizze_6626 + sext_i32_i64(local_tid_6806);
-        slice_6815 = dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188;
-        gtid_6631 = global_tid_6814;
-        remnant_6816 = global_tid_6814 - gtid_6631;
-        if (slt64(gtid_6631, dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188)) {
-            int64_t index_primexp_6698;
-            int64_t binop_y_6690;
-            int64_t binop_x_6691;
-            int64_t index_primexp_6695;
-            bool index_certs_6635;
-            int64_t mem_6751[(int64_t) 256];
+        virt_tblock_id_6827 = phys_tblock_id_6824 + i_6826 * sext_i64_i32(num_tblocks_6640);
+        global_tid_6828 = sext_i32_i64(virt_tblock_id_6827) * segmap_tblock_sizze_6639 + sext_i32_i64(local_tid_6820);
+        slice_6829 = dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197;
+        gtid_6644 = global_tid_6828;
+        remnant_6830 = global_tid_6828 - gtid_6644;
+        if (slt64(gtid_6644, dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197)) {
+            int64_t index_primexp_6712;
+            int64_t binop_y_6704;
+            int64_t binop_x_6705;
+            int64_t index_primexp_6709;
+            bool index_certs_6648;
+            int64_t mem_6765[(int64_t) 256];
             
-            index_primexp_6698 = mul64(chunk_sizze_6041, gtid_6631);
-            binop_y_6690 = add64((int64_t) 1, gtid_6631);
-            binop_x_6691 = mul64(chunk_sizze_6041, binop_y_6690);
-            index_primexp_6695 = sub64(binop_x_6691, index_primexp_6698);
-            index_certs_6635 = 0;
-            for (int64_t nest_i_6817 = 0; nest_i_6817 < (int64_t) 256; nest_i_6817++) {
-                mem_6751[nest_i_6817] = (int64_t) 0;
+            index_primexp_6712 = mul64(chunk_sizze_6047, gtid_6644);
+            binop_y_6704 = add64((int64_t) 1, gtid_6644);
+            binop_x_6705 = mul64(chunk_sizze_6047, binop_y_6704);
+            index_primexp_6709 = sub64(binop_x_6705, index_primexp_6712);
+            index_certs_6648 = 0;
+            for (int64_t nest_i_6831 = 0; nest_i_6831 < (int64_t) 256; nest_i_6831++) {
+                mem_6765[nest_i_6831] = (int64_t) 0;
             }
-            for (int64_t iter_6730 = 0; iter_6730 < index_primexp_6695; iter_6730++) {
-                int64_t slice_6742;
-                int8_t pixel_6732;
-                int64_t u8_res_6646;
-                bool less_than_zzero_6734;
-                bool greater_than_sizze_6735;
-                bool outside_bounds_dim_6736;
+            for (int64_t iter_6744 = 0; iter_6744 < index_primexp_6709; iter_6744++) {
+                int64_t slice_6756;
+                int8_t pixel_6746;
+                int64_t u8_res_6659;
+                bool less_than_zzero_6748;
+                bool greater_than_sizze_6749;
+                bool outside_bounds_dim_6750;
                 
-                slice_6742 = index_primexp_6698 + iter_6730;
-                pixel_6732 = ((__global int8_t *) xs_mem_6743)[slice_6742];
-                u8_res_6646 = zext_i8_i64(pixel_6732);
-                less_than_zzero_6734 = slt64(u8_res_6646, (int64_t) 0);
-                greater_than_sizze_6735 = sle64((int64_t) 256, u8_res_6646);
-                outside_bounds_dim_6736 = less_than_zzero_6734 || greater_than_sizze_6735;
-                if (!outside_bounds_dim_6736) {
-                    int64_t read_hist_6738;
-                    int64_t defunc_0_op_res_6643;
+                slice_6756 = index_primexp_6712 + iter_6744;
+                pixel_6746 = ((__global int8_t *) xs_mem_6757)[slice_6756];
+                u8_res_6659 = zext_i8_i64(pixel_6746);
+                less_than_zzero_6748 = slt64(u8_res_6659, (int64_t) 0);
+                greater_than_sizze_6749 = sle64((int64_t) 256, u8_res_6659);
+                outside_bounds_dim_6750 = less_than_zzero_6748 || greater_than_sizze_6749;
+                if (!outside_bounds_dim_6750) {
+                    int64_t read_hist_6752;
+                    int64_t defunc_0_op_res_6656;
                     
-                    read_hist_6738 = mem_6751[u8_res_6646];
-                    defunc_0_op_res_6643 = add64((int64_t) 1, read_hist_6738);
-                    mem_6751[u8_res_6646] = defunc_0_op_res_6643;
+                    read_hist_6752 = mem_6765[u8_res_6659];
+                    defunc_0_op_res_6656 = add64((int64_t) 1, read_hist_6752);
+                    mem_6765[u8_res_6659] = defunc_0_op_res_6656;
                 }
             }
             for (int64_t i_0 = 0; i_0 < (int64_t) 256; i_0++) {
-                ((__global int64_t *) mem_6763)[gtid_6631 + i_0 * dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188] = mem_6751[i_0];
+                ((__global int64_t *) mem_6777)[gtid_6644 + i_0 * dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197] = mem_6765[i_0];
             }
         }
         barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
@@ -6775,179 +6777,181 @@ void chunked_entropyzisegmap_6632(__local uint64_t *shared_mem_aligned, __global
     
   error_1:
     return;
-    #undef segmap_tblock_sizze_6626
+    #undef segmap_tblock_sizze_6639
 }
-FUTHARK_KERNEL_SIZED(chunked_entropyzisegmap_6674_dim1, 1, 1)
-void chunked_entropyzisegmap_6674(__local uint64_t *shared_mem_aligned, __global int *global_failure, int64_t chunk_sizze_6041, int64_t dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188, __global unsigned char *mem_6766, __global unsigned char *mem_6768)
+FUTHARK_KERNEL_SIZED(chunked_entropyzisegmap_6687_dim1, 1, 1)
+void chunked_entropyzisegmap_6687(__local uint64_t *shared_mem_aligned, __global int *global_failure, int64_t chunk_sizze_6047, int64_t dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197, __global unsigned char *mem_6780, __global unsigned char *mem_6782)
 {
-    #define segmap_tblock_sizze_6670 (chunked_entropyzisegmap_6674zisegmap_tblock_sizze_6670)
+    #define segmap_tblock_sizze_6683 (chunked_entropyzisegmap_6687zisegmap_tblock_sizze_6683)
     
     __local unsigned char *shared_mem = (__local unsigned char *) shared_mem_aligned;
     
     if (*global_failure >= 0)
         return;
     
-    int32_t local_tid_6913;
-    int32_t tblock_sizze_6916;
-    int32_t wave_sizze_6915;
-    int32_t block_id_6914;
-    int32_t global_tid_6912;
-    int64_t phys_tid_6674;
-    int64_t global_tid_6917;
-    int64_t slice_6918;
-    int64_t gtid_6673;
-    int64_t remnant_6919;
+    int32_t local_tid_6927;
+    int32_t tblock_sizze_6930;
+    int32_t wave_sizze_6929;
+    int32_t block_id_6928;
+    int32_t global_tid_6926;
+    int64_t phys_tid_6687;
+    int64_t global_tid_6931;
+    int64_t slice_6932;
+    int64_t gtid_6686;
+    int64_t remnant_6933;
     
-    local_tid_6913 = get_local_id(0);
-    tblock_sizze_6916 = get_local_size(0);
-    wave_sizze_6915 = LOCKSTEP_WIDTH;
-    block_id_6914 = get_tblock_id(0);
-    global_tid_6912 = block_id_6914 * tblock_sizze_6916 + local_tid_6913;
-    phys_tid_6674 = sext_i32_i64(global_tid_6912);
-    global_tid_6917 = sext_i32_i64(block_id_6914) * segmap_tblock_sizze_6670 + sext_i32_i64(local_tid_6913);
-    slice_6918 = dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188;
-    gtid_6673 = global_tid_6917;
-    remnant_6919 = global_tid_6917 - gtid_6673;
-    if (slt64(gtid_6673, dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188)) {
-        int64_t binop_y_6701;
-        int64_t binop_x_6702;
-        int64_t binop_y_6705;
-        int64_t convop_x_6706;
-        float index_primexp_6707;
-        float defunc_0_f_res_6676;
-        float zs_lhs_6677;
-        float log2_res_6678;
-        float lifted_lambda_res_6679;
-        float floor_res_6680;
-        int8_t unsign_arg0_6681;
+    local_tid_6927 = get_local_id(0);
+    tblock_sizze_6930 = get_local_size(0);
+    wave_sizze_6929 = LOCKSTEP_WIDTH;
+    block_id_6928 = get_tblock_id(0);
+    global_tid_6926 = block_id_6928 * tblock_sizze_6930 + local_tid_6927;
+    phys_tid_6687 = sext_i32_i64(global_tid_6926);
+    global_tid_6931 = sext_i32_i64(block_id_6928) * segmap_tblock_sizze_6683 + sext_i32_i64(local_tid_6927);
+    slice_6932 = dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197;
+    gtid_6686 = global_tid_6931;
+    remnant_6933 = global_tid_6931 - gtid_6686;
+    if (slt64(gtid_6686, dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197)) {
+        int64_t binop_y_6715;
+        int64_t binop_x_6716;
+        int64_t binop_y_6719;
+        int64_t convop_x_6720;
+        float index_primexp_6721;
+        float defunc_0_f_res_6689;
+        float zs_lhs_6690;
+        float log2_res_6691;
+        float lifted_lambda_res_6692;
+        float floor_arg0_6693;
+        float floor_res_6694;
+        int8_t unsign_arg0_6695;
         
-        binop_y_6701 = add64((int64_t) 1, gtid_6673);
-        binop_x_6702 = mul64(chunk_sizze_6041, binop_y_6701);
-        binop_y_6705 = mul64(chunk_sizze_6041, gtid_6673);
-        convop_x_6706 = sub64(binop_x_6702, binop_y_6705);
-        index_primexp_6707 = sitofp_i64_f32(convop_x_6706);
-        defunc_0_f_res_6676 = ((__global float *) mem_6766)[gtid_6673];
-        zs_lhs_6677 = -1.0F * defunc_0_f_res_6676;
-        log2_res_6678 = futrts_log2_32(index_primexp_6707);
-        lifted_lambda_res_6679 = zs_lhs_6677 / log2_res_6678;
-        floor_res_6680 = futrts_floor32(lifted_lambda_res_6679);
-        unsign_arg0_6681 = fptoui_f32_i8(floor_res_6680);
-        ((__global int8_t *) mem_6768)[gtid_6673] = unsign_arg0_6681;
+        binop_y_6715 = add64((int64_t) 1, gtid_6686);
+        binop_x_6716 = mul64(chunk_sizze_6047, binop_y_6715);
+        binop_y_6719 = mul64(chunk_sizze_6047, gtid_6686);
+        convop_x_6720 = sub64(binop_x_6716, binop_y_6719);
+        index_primexp_6721 = sitofp_i64_f32(convop_x_6720);
+        defunc_0_f_res_6689 = ((__global float *) mem_6780)[gtid_6686];
+        zs_lhs_6690 = -1.0F * defunc_0_f_res_6689;
+        log2_res_6691 = futrts_log2_32(index_primexp_6721);
+        lifted_lambda_res_6692 = zs_lhs_6690 / log2_res_6691;
+        floor_arg0_6693 = 255.0F * lifted_lambda_res_6692;
+        floor_res_6694 = futrts_floor32(floor_arg0_6693);
+        unsign_arg0_6695 = fptoui_f32_i8(floor_res_6694);
+        ((__global int8_t *) mem_6782)[gtid_6686] = unsign_arg0_6695;
     }
     
   error_0:
     return;
-    #undef segmap_tblock_sizze_6670
+    #undef segmap_tblock_sizze_6683
 }
-FUTHARK_KERNEL_SIZED(chunked_entropyzisegred_large_6656_dim1, 1, 1)
-void chunked_entropyzisegred_large_6656(__local uint64_t *shared_mem_aligned, __global int *global_failure, int64_t chunk_sizze_6041, int64_t dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188, int64_t num_tblocks_6651, int64_t blocks_per_segment_6848, int64_t q_6849, int64_t num_virtblocks_6850, int64_t threads_per_segment_6851, __global unsigned char *mem_6763, __global unsigned char *mem_6766, __global unsigned char *segred_tmp_mem_6852, __global unsigned char *counters_mem_6854)
+FUTHARK_KERNEL_SIZED(chunked_entropyzisegred_large_6669_dim1, 1, 1)
+void chunked_entropyzisegred_large_6669(__local uint64_t *shared_mem_aligned, __global int *global_failure, int64_t chunk_sizze_6047, int64_t dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197, int64_t num_tblocks_6664, int64_t blocks_per_segment_6862, int64_t q_6863, int64_t num_virtblocks_6864, int64_t threads_per_segment_6865, __global unsigned char *mem_6777, __global unsigned char *mem_6780, __global unsigned char *segred_tmp_mem_6866, __global unsigned char *counters_mem_6868)
 {
-    #define segred_tblock_sizze_6650 (chunked_entropyzisegred_large_6656zisegred_tblock_sizze_6650)
-    #define chunk_sizze_6819 (chunked_entropyzisegred_large_6656zichunk_sizze_6819)
+    #define segred_tblock_sizze_6663 (chunked_entropyzisegred_large_6669zisegred_tblock_sizze_6663)
+    #define chunk_sizze_6833 (chunked_entropyzisegred_large_6669zichunk_sizze_6833)
     
     __local unsigned char *shared_mem = (__local unsigned char *) shared_mem_aligned;
-    volatile __local unsigned char *sync_arr_mem_6883_backing_1 = &shared_mem[0];
-    const int64_t sync_arr_mem_6883_backing_1_offset = 0 + 8;
-    volatile __local unsigned char *red_arr_f32_mem_6881_backing_0 = &shared_mem[sync_arr_mem_6883_backing_1_offset];
-    const int64_t red_arr_f32_mem_6881_backing_0_offset = sync_arr_mem_6883_backing_1_offset + ((int64_t) 4 * segred_tblock_sizze_6650 + srem64((int64_t) 8 - srem64((int64_t) 4 * segred_tblock_sizze_6650, (int64_t) 8), (int64_t) 8));
+    volatile __local unsigned char *sync_arr_mem_6897_backing_1 = &shared_mem[0];
+    const int64_t sync_arr_mem_6897_backing_1_offset = 0 + 8;
+    volatile __local unsigned char *red_arr_f32_mem_6895_backing_0 = &shared_mem[sync_arr_mem_6897_backing_1_offset];
+    const int64_t red_arr_f32_mem_6895_backing_0_offset = sync_arr_mem_6897_backing_1_offset + ((int64_t) 4 * segred_tblock_sizze_6663 + srem64((int64_t) 8 - srem64((int64_t) 4 * segred_tblock_sizze_6663, (int64_t) 8), (int64_t) 8));
     
     if (*global_failure >= 0)
         return;
     
-    int32_t local_tid_6877;
-    int32_t tblock_sizze_6880;
-    int32_t wave_sizze_6879;
-    int32_t block_id_6878;
-    int32_t global_tid_6876;
-    int64_t phys_tid_6656;
-    __local unsigned char *red_arr_f32_mem_6881;
-    __local unsigned char *sync_arr_mem_6883;
-    int32_t phys_tblock_id_6885;
-    int32_t iterations_6886;
+    int32_t local_tid_6891;
+    int32_t tblock_sizze_6894;
+    int32_t wave_sizze_6893;
+    int32_t block_id_6892;
+    int32_t global_tid_6890;
+    int64_t phys_tid_6669;
+    __local unsigned char *red_arr_f32_mem_6895;
+    __local unsigned char *sync_arr_mem_6897;
+    int32_t phys_tblock_id_6899;
+    int32_t iterations_6900;
     
-    local_tid_6877 = get_local_id(0);
-    tblock_sizze_6880 = get_local_size(0);
-    wave_sizze_6879 = LOCKSTEP_WIDTH;
-    block_id_6878 = get_tblock_id(0);
-    global_tid_6876 = block_id_6878 * tblock_sizze_6880 + local_tid_6877;
-    phys_tid_6656 = sext_i32_i64(global_tid_6876);
-    red_arr_f32_mem_6881 = (__local unsigned char *) red_arr_f32_mem_6881_backing_0;
-    sync_arr_mem_6883 = (__local unsigned char *) sync_arr_mem_6883_backing_1;
-    phys_tblock_id_6885 = get_tblock_id(0);
-    iterations_6886 = sdiv_up32(sext_i64_i32(num_virtblocks_6850) - phys_tblock_id_6885, sext_i64_i32(num_tblocks_6651));
-    for (int32_t i_6887 = 0; i_6887 < iterations_6886; i_6887++) {
-        int32_t virt_tblock_id_6888;
-        int64_t flat_segment_id_6889;
-        int64_t global_tid_6890;
-        int64_t slice_6891;
-        int64_t gtid_6654;
-        int64_t remnant_6892;
-        int64_t gtid_6655;
-        float eta_p_block_res_acc_6893;
-        float eta_p_6657;
-        float eta_p_6658;
-        int64_t tblock_id_in_segment_6897;
-        int64_t block_base_offset_6898;
-        int32_t offset_6901;
-        int32_t skip_waves_6902;
-        float eta_p_6894;
-        float eta_p_6895;
+    local_tid_6891 = get_local_id(0);
+    tblock_sizze_6894 = get_local_size(0);
+    wave_sizze_6893 = LOCKSTEP_WIDTH;
+    block_id_6892 = get_tblock_id(0);
+    global_tid_6890 = block_id_6892 * tblock_sizze_6894 + local_tid_6891;
+    phys_tid_6669 = sext_i32_i64(global_tid_6890);
+    red_arr_f32_mem_6895 = (__local unsigned char *) red_arr_f32_mem_6895_backing_0;
+    sync_arr_mem_6897 = (__local unsigned char *) sync_arr_mem_6897_backing_1;
+    phys_tblock_id_6899 = get_tblock_id(0);
+    iterations_6900 = sdiv_up32(sext_i64_i32(num_virtblocks_6864) - phys_tblock_id_6899, sext_i64_i32(num_tblocks_6664));
+    for (int32_t i_6901 = 0; i_6901 < iterations_6900; i_6901++) {
+        int32_t virt_tblock_id_6902;
+        int64_t flat_segment_id_6903;
+        int64_t global_tid_6904;
+        int64_t slice_6905;
+        int64_t gtid_6667;
+        int64_t remnant_6906;
+        int64_t gtid_6668;
+        float eta_p_block_res_acc_6907;
+        float eta_p_6670;
+        float eta_p_6671;
+        int64_t tblock_id_in_segment_6911;
+        int64_t block_base_offset_6912;
+        int32_t offset_6915;
+        int32_t skip_waves_6916;
+        float eta_p_6908;
+        float eta_p_6909;
         
-        virt_tblock_id_6888 = phys_tblock_id_6885 + i_6887 * sext_i64_i32(num_tblocks_6651);
-        flat_segment_id_6889 = squot64(sext_i32_i64(virt_tblock_id_6888), blocks_per_segment_6848);
-        global_tid_6890 = srem64(sext_i32_i64(virt_tblock_id_6888) * segred_tblock_sizze_6650 + sext_i32_i64(local_tid_6877), threads_per_segment_6851);
-        slice_6891 = dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188;
-        gtid_6654 = flat_segment_id_6889;
-        remnant_6892 = flat_segment_id_6889 - gtid_6654;
+        virt_tblock_id_6902 = phys_tblock_id_6899 + i_6901 * sext_i64_i32(num_tblocks_6664);
+        flat_segment_id_6903 = squot64(sext_i32_i64(virt_tblock_id_6902), blocks_per_segment_6862);
+        global_tid_6904 = srem64(sext_i32_i64(virt_tblock_id_6902) * segred_tblock_sizze_6663 + sext_i32_i64(local_tid_6891), threads_per_segment_6865);
+        slice_6905 = dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197;
+        gtid_6667 = flat_segment_id_6903;
+        remnant_6906 = flat_segment_id_6903 - gtid_6667;
         // ne-initialise the outer (per-block) accumulator(s)
         {
-            eta_p_block_res_acc_6893 = 0.0F;
+            eta_p_block_res_acc_6907 = 0.0F;
         }
-        tblock_id_in_segment_6897 = squot64(global_tid_6890, segred_tblock_sizze_6650);
-        block_base_offset_6898 = tblock_id_in_segment_6897 * q_6849 * segred_tblock_sizze_6650;
-        for (int64_t i_6899 = 0; i_6899 < q_6849; i_6899++) {
-            int64_t block_offset_6900 = block_base_offset_6898 + i_6899 * segred_tblock_sizze_6650;
+        tblock_id_in_segment_6911 = squot64(global_tid_6904, segred_tblock_sizze_6663);
+        block_base_offset_6912 = tblock_id_in_segment_6911 * q_6863 * segred_tblock_sizze_6663;
+        for (int64_t i_6913 = 0; i_6913 < q_6863; i_6913++) {
+            int64_t block_offset_6914 = block_base_offset_6912 + i_6913 * segred_tblock_sizze_6663;
             
-            gtid_6655 = global_tid_6890 + threads_per_segment_6851 * i_6899;
-            if (slt64(gtid_6655, (int64_t) 256)) {
+            gtid_6668 = global_tid_6904 + threads_per_segment_6865 * i_6913;
+            if (slt64(gtid_6668, (int64_t) 256)) {
                 // apply map function(s)
                 {
                     // apply map function
                     {
-                        int64_t binop_y_6710 = add64((int64_t) 1, gtid_6654);
-                        int64_t binop_x_6711 = mul64(chunk_sizze_6041, binop_y_6710);
-                        int64_t binop_y_6714 = mul64(chunk_sizze_6041, gtid_6654);
-                        int64_t convop_x_6715 = sub64(binop_x_6711, binop_y_6714);
-                        float index_primexp_6716 = sitofp_i64_f32(convop_x_6715);
-                        int64_t eta_p_6662 = ((__global int64_t *) mem_6763)[gtid_6654 + gtid_6655 * dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188];
-                        float i64_res_6663 = sitofp_i64_f32(eta_p_6662);
-                        float lifted_lambda_res_6664 = i64_res_6663 / index_primexp_6716;
-                        bool cond_6665 = lifted_lambda_res_6664 == 0.0F;
-                        float lifted_lambda_res_6666;
+                        int64_t binop_y_6724 = add64((int64_t) 1, gtid_6667);
+                        int64_t binop_x_6725 = mul64(chunk_sizze_6047, binop_y_6724);
+                        int64_t binop_y_6728 = mul64(chunk_sizze_6047, gtid_6667);
+                        int64_t convop_x_6729 = sub64(binop_x_6725, binop_y_6728);
+                        float index_primexp_6730 = sitofp_i64_f32(convop_x_6729);
+                        int64_t eta_p_6675 = ((__global int64_t *) mem_6777)[gtid_6667 + gtid_6668 * dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197];
+                        float i64_res_6676 = sitofp_i64_f32(eta_p_6675);
+                        float lifted_lambda_res_6677 = i64_res_6676 / index_primexp_6730;
+                        bool cond_6678 = lifted_lambda_res_6677 == 0.0F;
+                        float lifted_lambda_res_6679;
                         
-                        if (cond_6665) {
-                            lifted_lambda_res_6666 = 0.0F;
+                        if (cond_6678) {
+                            lifted_lambda_res_6679 = 0.0F;
                         } else {
-                            float log2_res_6667 = futrts_log2_32(lifted_lambda_res_6664);
-                            float lifted_lambda_res_f_res_6668 = lifted_lambda_res_6664 * log2_res_6667;
+                            float log2_res_6680 = futrts_log2_32(lifted_lambda_res_6677);
+                            float lifted_lambda_res_f_res_6681 = lifted_lambda_res_6677 * log2_res_6680;
                             
-                            lifted_lambda_res_6666 = lifted_lambda_res_f_res_6668;
+                            lifted_lambda_res_6679 = lifted_lambda_res_f_res_6681;
                         }
                         // load accumulator(s)
                         {
-                            eta_p_6657 = eta_p_block_res_acc_6893;
+                            eta_p_6670 = eta_p_block_res_acc_6907;
                         }
                         // load next value(s)
                         {
-                            eta_p_6658 = lifted_lambda_res_6666;
+                            eta_p_6671 = lifted_lambda_res_6679;
                         }
                         // apply reduction operator(s)
                         {
-                            float defunc_0_op_res_6659 = eta_p_6657 + eta_p_6658;
+                            float defunc_0_op_res_6672 = eta_p_6670 + eta_p_6671;
                             
                             // store in accumulator(s)
                             {
-                                eta_p_block_res_acc_6893 = defunc_0_op_res_6659;
+                                eta_p_block_res_acc_6907 = defunc_0_op_res_6672;
                             }
                         }
                     }
@@ -6957,174 +6961,174 @@ void chunked_entropyzisegred_large_6656(__local uint64_t *shared_mem_aligned, __
         barrier(CLK_LOCAL_MEM_FENCE);
         // store accs. prims go in lmem; non-prims in params (in global mem)
         {
-            ((__local float *) red_arr_f32_mem_6881)[sext_i32_i64(local_tid_6877)] = eta_p_block_res_acc_6893;
+            ((__local float *) red_arr_f32_mem_6895)[sext_i32_i64(local_tid_6891)] = eta_p_block_res_acc_6907;
         }
         barrier(CLK_LOCAL_MEM_FENCE);
-        skip_waves_6902 = 1;
-        offset_6901 = 0;
+        skip_waves_6916 = 1;
+        offset_6915 = 0;
         // participating threads read initial accumulator
         {
-            if (slt32(local_tid_6877, sext_i64_i32(segred_tblock_sizze_6650))) {
-                eta_p_6894 = ((__local float *) red_arr_f32_mem_6881)[sext_i32_i64(local_tid_6877 + offset_6901)];
+            if (slt32(local_tid_6891, sext_i64_i32(segred_tblock_sizze_6663))) {
+                eta_p_6908 = ((__local float *) red_arr_f32_mem_6895)[sext_i32_i64(local_tid_6891 + offset_6915)];
             }
         }
-        offset_6901 = 1;
-        while (slt32(offset_6901, wave_sizze_6879)) {
-            if (slt32(local_tid_6877 + offset_6901, sext_i64_i32(segred_tblock_sizze_6650)) && ((local_tid_6877 - squot32(local_tid_6877, wave_sizze_6879) * wave_sizze_6879) & (2 * offset_6901 - 1)) == 0) {
+        offset_6915 = 1;
+        while (slt32(offset_6915, wave_sizze_6893)) {
+            if (slt32(local_tid_6891 + offset_6915, sext_i64_i32(segred_tblock_sizze_6663)) && ((local_tid_6891 - squot32(local_tid_6891, wave_sizze_6893) * wave_sizze_6893) & (2 * offset_6915 - 1)) == 0) {
                 // read array element
                 {
-                    eta_p_6895 = ((volatile __local float *) red_arr_f32_mem_6881)[sext_i32_i64(local_tid_6877 + offset_6901)];
+                    eta_p_6909 = ((volatile __local float *) red_arr_f32_mem_6895)[sext_i32_i64(local_tid_6891 + offset_6915)];
                 }
                 // apply reduction operation
                 {
-                    float defunc_0_op_res_6896 = eta_p_6894 + eta_p_6895;
+                    float defunc_0_op_res_6910 = eta_p_6908 + eta_p_6909;
                     
-                    eta_p_6894 = defunc_0_op_res_6896;
+                    eta_p_6908 = defunc_0_op_res_6910;
                 }
                 // write result of operation
                 {
-                    ((volatile __local float *) red_arr_f32_mem_6881)[sext_i32_i64(local_tid_6877)] = eta_p_6894;
+                    ((volatile __local float *) red_arr_f32_mem_6895)[sext_i32_i64(local_tid_6891)] = eta_p_6908;
                 }
             }
-            offset_6901 *= 2;
+            offset_6915 *= 2;
         }
-        while (slt32(skip_waves_6902, squot32(sext_i64_i32(segred_tblock_sizze_6650) + wave_sizze_6879 - 1, wave_sizze_6879))) {
+        while (slt32(skip_waves_6916, squot32(sext_i64_i32(segred_tblock_sizze_6663) + wave_sizze_6893 - 1, wave_sizze_6893))) {
             barrier(CLK_LOCAL_MEM_FENCE);
-            offset_6901 = skip_waves_6902 * wave_sizze_6879;
-            if (slt32(local_tid_6877 + offset_6901, sext_i64_i32(segred_tblock_sizze_6650)) && ((local_tid_6877 - squot32(local_tid_6877, wave_sizze_6879) * wave_sizze_6879) == 0 && (squot32(local_tid_6877, wave_sizze_6879) & (2 * skip_waves_6902 - 1)) == 0)) {
+            offset_6915 = skip_waves_6916 * wave_sizze_6893;
+            if (slt32(local_tid_6891 + offset_6915, sext_i64_i32(segred_tblock_sizze_6663)) && ((local_tid_6891 - squot32(local_tid_6891, wave_sizze_6893) * wave_sizze_6893) == 0 && (squot32(local_tid_6891, wave_sizze_6893) & (2 * skip_waves_6916 - 1)) == 0)) {
                 // read array element
                 {
-                    eta_p_6895 = ((__local float *) red_arr_f32_mem_6881)[sext_i32_i64(local_tid_6877 + offset_6901)];
+                    eta_p_6909 = ((__local float *) red_arr_f32_mem_6895)[sext_i32_i64(local_tid_6891 + offset_6915)];
                 }
                 // apply reduction operation
                 {
-                    float defunc_0_op_res_6896 = eta_p_6894 + eta_p_6895;
+                    float defunc_0_op_res_6910 = eta_p_6908 + eta_p_6909;
                     
-                    eta_p_6894 = defunc_0_op_res_6896;
+                    eta_p_6908 = defunc_0_op_res_6910;
                 }
                 // write result of operation
                 {
-                    ((__local float *) red_arr_f32_mem_6881)[sext_i32_i64(local_tid_6877)] = eta_p_6894;
+                    ((__local float *) red_arr_f32_mem_6895)[sext_i32_i64(local_tid_6891)] = eta_p_6908;
                 }
             }
-            skip_waves_6902 *= 2;
+            skip_waves_6916 *= 2;
         }
         barrier(CLK_LOCAL_MEM_FENCE);
         barrier(CLK_LOCAL_MEM_FENCE);
         // thread 0 updates per-block acc(s); rest reset to ne
         {
-            if (sext_i32_i64(local_tid_6877) == (int64_t) 0) {
-                eta_p_block_res_acc_6893 = eta_p_6894;
+            if (sext_i32_i64(local_tid_6891) == (int64_t) 0) {
+                eta_p_block_res_acc_6907 = eta_p_6908;
             } else {
-                eta_p_block_res_acc_6893 = 0.0F;
+                eta_p_block_res_acc_6907 = 0.0F;
             }
         }
-        if (blocks_per_segment_6848 == (int64_t) 1) {
+        if (blocks_per_segment_6862 == (int64_t) 1) {
             // first thread in block saves final result to memory
             {
-                if (local_tid_6877 == 0) {
-                    ((__global float *) mem_6766)[gtid_6654] = eta_p_block_res_acc_6893;
+                if (local_tid_6891 == 0) {
+                    ((__global float *) mem_6780)[gtid_6667] = eta_p_block_res_acc_6907;
                 }
             }
         } else {
-            int32_t old_counter_6903;
-            bool is_last_block_6904;
+            int32_t old_counter_6917;
+            bool is_last_block_6918;
             
             // first thread in block saves block result to global memory
             {
-                if (local_tid_6877 == 0) {
-                    ((__global float *) segred_tmp_mem_6852)[sext_i32_i64(virt_tblock_id_6888)] = eta_p_block_res_acc_6893;
+                if (local_tid_6891 == 0) {
+                    ((__global float *) segred_tmp_mem_6866)[sext_i32_i64(virt_tblock_id_6902)] = eta_p_block_res_acc_6907;
                     mem_fence_global();
-                    old_counter_6903 = atomic_add_i32_global(&((volatile __global int *) counters_mem_6854)[srem64(flat_segment_id_6889, (int64_t) 20480)], (int) 1);
-                    ((__local bool *) sync_arr_mem_6883)[(int64_t) 0] = old_counter_6903 == sext_i64_i32(blocks_per_segment_6848 - (int64_t) 1);
+                    old_counter_6917 = atomic_add_i32_global(&((volatile __global int *) counters_mem_6868)[srem64(flat_segment_id_6903, (int64_t) 20480)], (int) 1);
+                    ((__local bool *) sync_arr_mem_6897)[(int64_t) 0] = old_counter_6917 == sext_i64_i32(blocks_per_segment_6862 - (int64_t) 1);
                 }
             }
             barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
-            is_last_block_6904 = ((__local bool *) sync_arr_mem_6883)[(int64_t) 0];
-            if (is_last_block_6904) {
-                if (local_tid_6877 == 0) {
-                    old_counter_6903 = atomic_add_i32_global(&((volatile __global int *) counters_mem_6854)[srem64(flat_segment_id_6889, (int64_t) 20480)], (int) sext_i64_i32((int64_t) 0 - blocks_per_segment_6848));
+            is_last_block_6918 = ((__local bool *) sync_arr_mem_6897)[(int64_t) 0];
+            if (is_last_block_6918) {
+                if (local_tid_6891 == 0) {
+                    old_counter_6917 = atomic_add_i32_global(&((volatile __global int *) counters_mem_6868)[srem64(flat_segment_id_6903, (int64_t) 20480)], (int) sext_i64_i32((int64_t) 0 - blocks_per_segment_6862));
                 }
                 // read in the per-block-results
                 {
-                    int64_t read_per_thread_6905 = sdiv_up64(blocks_per_segment_6848, segred_tblock_sizze_6650);
+                    int64_t read_per_thread_6919 = sdiv_up64(blocks_per_segment_6862, segred_tblock_sizze_6663);
                     
-                    eta_p_6657 = 0.0F;
-                    for (int64_t i_6906 = 0; i_6906 < read_per_thread_6905; i_6906++) {
-                        int64_t block_res_id_6907 = sext_i32_i64(local_tid_6877) * read_per_thread_6905 + i_6906;
-                        int64_t index_of_block_res_6908 = flat_segment_id_6889 * blocks_per_segment_6848 + block_res_id_6907;
+                    eta_p_6670 = 0.0F;
+                    for (int64_t i_6920 = 0; i_6920 < read_per_thread_6919; i_6920++) {
+                        int64_t block_res_id_6921 = sext_i32_i64(local_tid_6891) * read_per_thread_6919 + i_6920;
+                        int64_t index_of_block_res_6922 = flat_segment_id_6903 * blocks_per_segment_6862 + block_res_id_6921;
                         
-                        if (slt64(block_res_id_6907, blocks_per_segment_6848)) {
-                            eta_p_6658 = ((__global float *) segred_tmp_mem_6852)[index_of_block_res_6908];
+                        if (slt64(block_res_id_6921, blocks_per_segment_6862)) {
+                            eta_p_6671 = ((__global float *) segred_tmp_mem_6866)[index_of_block_res_6922];
                             
-                            float defunc_0_op_res_6659 = eta_p_6657 + eta_p_6658;
+                            float defunc_0_op_res_6672 = eta_p_6670 + eta_p_6671;
                             
-                            eta_p_6657 = defunc_0_op_res_6659;
+                            eta_p_6670 = defunc_0_op_res_6672;
                         }
                     }
                 }
-                ((__local float *) red_arr_f32_mem_6881)[sext_i32_i64(local_tid_6877)] = eta_p_6657;
+                ((__local float *) red_arr_f32_mem_6895)[sext_i32_i64(local_tid_6891)] = eta_p_6670;
                 barrier(CLK_LOCAL_MEM_FENCE);
                 // reduce the per-block results
                 {
-                    int32_t offset_6909;
-                    int32_t skip_waves_6910 = 1;
-                    float eta_p_6894;
-                    float eta_p_6895;
+                    int32_t offset_6923;
+                    int32_t skip_waves_6924 = 1;
+                    float eta_p_6908;
+                    float eta_p_6909;
                     
-                    offset_6909 = 0;
+                    offset_6923 = 0;
                     // participating threads read initial accumulator
                     {
-                        if (slt32(local_tid_6877, sext_i64_i32(segred_tblock_sizze_6650))) {
-                            eta_p_6894 = ((__local float *) red_arr_f32_mem_6881)[sext_i32_i64(local_tid_6877 + offset_6909)];
+                        if (slt32(local_tid_6891, sext_i64_i32(segred_tblock_sizze_6663))) {
+                            eta_p_6908 = ((__local float *) red_arr_f32_mem_6895)[sext_i32_i64(local_tid_6891 + offset_6923)];
                         }
                     }
-                    offset_6909 = 1;
-                    while (slt32(offset_6909, wave_sizze_6879)) {
-                        if (slt32(local_tid_6877 + offset_6909, sext_i64_i32(segred_tblock_sizze_6650)) && ((local_tid_6877 - squot32(local_tid_6877, wave_sizze_6879) * wave_sizze_6879) & (2 * offset_6909 - 1)) == 0) {
+                    offset_6923 = 1;
+                    while (slt32(offset_6923, wave_sizze_6893)) {
+                        if (slt32(local_tid_6891 + offset_6923, sext_i64_i32(segred_tblock_sizze_6663)) && ((local_tid_6891 - squot32(local_tid_6891, wave_sizze_6893) * wave_sizze_6893) & (2 * offset_6923 - 1)) == 0) {
                             // read array element
                             {
-                                eta_p_6895 = ((volatile __local float *) red_arr_f32_mem_6881)[sext_i32_i64(local_tid_6877 + offset_6909)];
+                                eta_p_6909 = ((volatile __local float *) red_arr_f32_mem_6895)[sext_i32_i64(local_tid_6891 + offset_6923)];
                             }
                             // apply reduction operation
                             {
-                                float defunc_0_op_res_6896 = eta_p_6894 + eta_p_6895;
+                                float defunc_0_op_res_6910 = eta_p_6908 + eta_p_6909;
                                 
-                                eta_p_6894 = defunc_0_op_res_6896;
+                                eta_p_6908 = defunc_0_op_res_6910;
                             }
                             // write result of operation
                             {
-                                ((volatile __local float *) red_arr_f32_mem_6881)[sext_i32_i64(local_tid_6877)] = eta_p_6894;
+                                ((volatile __local float *) red_arr_f32_mem_6895)[sext_i32_i64(local_tid_6891)] = eta_p_6908;
                             }
                         }
-                        offset_6909 *= 2;
+                        offset_6923 *= 2;
                     }
-                    while (slt32(skip_waves_6910, squot32(sext_i64_i32(segred_tblock_sizze_6650) + wave_sizze_6879 - 1, wave_sizze_6879))) {
+                    while (slt32(skip_waves_6924, squot32(sext_i64_i32(segred_tblock_sizze_6663) + wave_sizze_6893 - 1, wave_sizze_6893))) {
                         barrier(CLK_LOCAL_MEM_FENCE);
-                        offset_6909 = skip_waves_6910 * wave_sizze_6879;
-                        if (slt32(local_tid_6877 + offset_6909, sext_i64_i32(segred_tblock_sizze_6650)) && ((local_tid_6877 - squot32(local_tid_6877, wave_sizze_6879) * wave_sizze_6879) == 0 && (squot32(local_tid_6877, wave_sizze_6879) & (2 * skip_waves_6910 - 1)) == 0)) {
+                        offset_6923 = skip_waves_6924 * wave_sizze_6893;
+                        if (slt32(local_tid_6891 + offset_6923, sext_i64_i32(segred_tblock_sizze_6663)) && ((local_tid_6891 - squot32(local_tid_6891, wave_sizze_6893) * wave_sizze_6893) == 0 && (squot32(local_tid_6891, wave_sizze_6893) & (2 * skip_waves_6924 - 1)) == 0)) {
                             // read array element
                             {
-                                eta_p_6895 = ((__local float *) red_arr_f32_mem_6881)[sext_i32_i64(local_tid_6877 + offset_6909)];
+                                eta_p_6909 = ((__local float *) red_arr_f32_mem_6895)[sext_i32_i64(local_tid_6891 + offset_6923)];
                             }
                             // apply reduction operation
                             {
-                                float defunc_0_op_res_6896 = eta_p_6894 + eta_p_6895;
+                                float defunc_0_op_res_6910 = eta_p_6908 + eta_p_6909;
                                 
-                                eta_p_6894 = defunc_0_op_res_6896;
+                                eta_p_6908 = defunc_0_op_res_6910;
                             }
                             // write result of operation
                             {
-                                ((__local float *) red_arr_f32_mem_6881)[sext_i32_i64(local_tid_6877)] = eta_p_6894;
+                                ((__local float *) red_arr_f32_mem_6895)[sext_i32_i64(local_tid_6891)] = eta_p_6908;
                             }
                         }
-                        skip_waves_6910 *= 2;
+                        skip_waves_6924 *= 2;
                     }
                     barrier(CLK_LOCAL_MEM_FENCE);
                     // and back to memory with the final result
                     {
-                        if (local_tid_6877 == 0) {
-                            ((__global float *) mem_6766)[gtid_6654] = eta_p_6894;
+                        if (local_tid_6891 == 0) {
+                            ((__global float *) mem_6780)[gtid_6667] = eta_p_6908;
                         }
                     }
                 }
@@ -7135,255 +7139,255 @@ void chunked_entropyzisegred_large_6656(__local uint64_t *shared_mem_aligned, __
     
   error_6:
     return;
-    #undef segred_tblock_sizze_6650
-    #undef chunk_sizze_6819
+    #undef segred_tblock_sizze_6663
+    #undef chunk_sizze_6833
 }
-FUTHARK_KERNEL_SIZED(chunked_entropyzisegred_small_6656_dim1, 1, 1)
-void chunked_entropyzisegred_small_6656(__local uint64_t *shared_mem_aligned, __global int *global_failure, int64_t chunk_sizze_6041, int64_t dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188, int64_t num_tblocks_6651, int64_t segment_sizze_nonzzero_6820, __global unsigned char *mem_6763, __global unsigned char *mem_6766)
+FUTHARK_KERNEL_SIZED(chunked_entropyzisegred_small_6669_dim1, 1, 1)
+void chunked_entropyzisegred_small_6669(__local uint64_t *shared_mem_aligned, __global int *global_failure, int64_t chunk_sizze_6047, int64_t dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197, int64_t num_tblocks_6664, int64_t segment_sizze_nonzzero_6834, __global unsigned char *mem_6777, __global unsigned char *mem_6780)
 {
-    #define segred_tblock_sizze_6650 (chunked_entropyzisegred_small_6656zisegred_tblock_sizze_6650)
+    #define segred_tblock_sizze_6663 (chunked_entropyzisegred_small_6669zisegred_tblock_sizze_6663)
     
     __local unsigned char *shared_mem = (__local unsigned char *) shared_mem_aligned;
-    volatile __local unsigned char *red_arr_f32_mem_6827_backing_0 = &shared_mem[0];
-    const int64_t red_arr_f32_mem_6827_backing_0_offset = 0 + ((int64_t) 4 * segred_tblock_sizze_6650 + srem64((int64_t) 8 - srem64((int64_t) 4 * segred_tblock_sizze_6650, (int64_t) 8), (int64_t) 8));
+    volatile __local unsigned char *red_arr_f32_mem_6841_backing_0 = &shared_mem[0];
+    const int64_t red_arr_f32_mem_6841_backing_0_offset = 0 + ((int64_t) 4 * segred_tblock_sizze_6663 + srem64((int64_t) 8 - srem64((int64_t) 4 * segred_tblock_sizze_6663, (int64_t) 8), (int64_t) 8));
     
     if (*global_failure >= 0)
         return;
     
-    int32_t local_tid_6823;
-    int32_t tblock_sizze_6826;
-    int32_t wave_sizze_6825;
-    int32_t block_id_6824;
-    int32_t global_tid_6822;
-    int64_t phys_tid_6656;
-    __local unsigned char *red_arr_f32_mem_6827;
-    int32_t phys_tblock_id_6829;
-    int32_t iterations_6830;
+    int32_t local_tid_6837;
+    int32_t tblock_sizze_6840;
+    int32_t wave_sizze_6839;
+    int32_t block_id_6838;
+    int32_t global_tid_6836;
+    int64_t phys_tid_6669;
+    __local unsigned char *red_arr_f32_mem_6841;
+    int32_t phys_tblock_id_6843;
+    int32_t iterations_6844;
     
-    local_tid_6823 = get_local_id(0);
-    tblock_sizze_6826 = get_local_size(0);
-    wave_sizze_6825 = LOCKSTEP_WIDTH;
-    block_id_6824 = get_tblock_id(0);
-    global_tid_6822 = block_id_6824 * tblock_sizze_6826 + local_tid_6823;
-    phys_tid_6656 = sext_i32_i64(global_tid_6822);
-    red_arr_f32_mem_6827 = (__local unsigned char *) red_arr_f32_mem_6827_backing_0;
-    phys_tblock_id_6829 = get_tblock_id(0);
-    iterations_6830 = sdiv_up32(sext_i64_i32(sdiv_up64(dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188, squot64(segred_tblock_sizze_6650, segment_sizze_nonzzero_6820))) - phys_tblock_id_6829, sext_i64_i32(num_tblocks_6651));
-    for (int32_t i_6831 = 0; i_6831 < iterations_6830; i_6831++) {
-        int32_t virt_tblock_id_6832;
-        int64_t slice_6833;
-        int64_t gtid_6654;
-        int64_t remnant_6834;
-        int64_t gtid_6655;
+    local_tid_6837 = get_local_id(0);
+    tblock_sizze_6840 = get_local_size(0);
+    wave_sizze_6839 = LOCKSTEP_WIDTH;
+    block_id_6838 = get_tblock_id(0);
+    global_tid_6836 = block_id_6838 * tblock_sizze_6840 + local_tid_6837;
+    phys_tid_6669 = sext_i32_i64(global_tid_6836);
+    red_arr_f32_mem_6841 = (__local unsigned char *) red_arr_f32_mem_6841_backing_0;
+    phys_tblock_id_6843 = get_tblock_id(0);
+    iterations_6844 = sdiv_up32(sext_i64_i32(sdiv_up64(dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197, squot64(segred_tblock_sizze_6663, segment_sizze_nonzzero_6834))) - phys_tblock_id_6843, sext_i64_i32(num_tblocks_6664));
+    for (int32_t i_6845 = 0; i_6845 < iterations_6844; i_6845++) {
+        int32_t virt_tblock_id_6846;
+        int64_t slice_6847;
+        int64_t gtid_6667;
+        int64_t remnant_6848;
+        int64_t gtid_6668;
         
-        virt_tblock_id_6832 = phys_tblock_id_6829 + i_6831 * sext_i64_i32(num_tblocks_6651);
-        slice_6833 = dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188;
-        gtid_6654 = squot64(sext_i32_i64(local_tid_6823), segment_sizze_nonzzero_6820) + sext_i32_i64(virt_tblock_id_6832) * squot64(segred_tblock_sizze_6650, segment_sizze_nonzzero_6820);
-        remnant_6834 = squot64(sext_i32_i64(local_tid_6823), segment_sizze_nonzzero_6820) + sext_i32_i64(virt_tblock_id_6832) * squot64(segred_tblock_sizze_6650, segment_sizze_nonzzero_6820) - gtid_6654;
-        gtid_6655 = srem64(sext_i32_i64(local_tid_6823), (int64_t) 256);
+        virt_tblock_id_6846 = phys_tblock_id_6843 + i_6845 * sext_i64_i32(num_tblocks_6664);
+        slice_6847 = dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197;
+        gtid_6667 = squot64(sext_i32_i64(local_tid_6837), segment_sizze_nonzzero_6834) + sext_i32_i64(virt_tblock_id_6846) * squot64(segred_tblock_sizze_6663, segment_sizze_nonzzero_6834);
+        remnant_6848 = squot64(sext_i32_i64(local_tid_6837), segment_sizze_nonzzero_6834) + sext_i32_i64(virt_tblock_id_6846) * squot64(segred_tblock_sizze_6663, segment_sizze_nonzzero_6834) - gtid_6667;
+        gtid_6668 = srem64(sext_i32_i64(local_tid_6837), (int64_t) 256);
         // apply map function if in bounds
         {
-            if (slt64((int64_t) 0, (int64_t) 256) && (slt64(gtid_6654, dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188) && slt64(sext_i32_i64(local_tid_6823), (int64_t) 256 * squot64(segred_tblock_sizze_6650, segment_sizze_nonzzero_6820)))) {
+            if (slt64((int64_t) 0, (int64_t) 256) && (slt64(gtid_6667, dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197) && slt64(sext_i32_i64(local_tid_6837), (int64_t) 256 * squot64(segred_tblock_sizze_6663, segment_sizze_nonzzero_6834)))) {
                 // apply map function
                 {
-                    int64_t binop_y_6710 = add64((int64_t) 1, gtid_6654);
-                    int64_t binop_x_6711 = mul64(chunk_sizze_6041, binop_y_6710);
-                    int64_t binop_y_6714 = mul64(chunk_sizze_6041, gtid_6654);
-                    int64_t convop_x_6715 = sub64(binop_x_6711, binop_y_6714);
-                    float index_primexp_6716 = sitofp_i64_f32(convop_x_6715);
-                    int64_t eta_p_6662 = ((__global int64_t *) mem_6763)[gtid_6654 + gtid_6655 * dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188];
-                    float i64_res_6663 = sitofp_i64_f32(eta_p_6662);
-                    float lifted_lambda_res_6664 = i64_res_6663 / index_primexp_6716;
-                    bool cond_6665 = lifted_lambda_res_6664 == 0.0F;
-                    float lifted_lambda_res_6666;
+                    int64_t binop_y_6724 = add64((int64_t) 1, gtid_6667);
+                    int64_t binop_x_6725 = mul64(chunk_sizze_6047, binop_y_6724);
+                    int64_t binop_y_6728 = mul64(chunk_sizze_6047, gtid_6667);
+                    int64_t convop_x_6729 = sub64(binop_x_6725, binop_y_6728);
+                    float index_primexp_6730 = sitofp_i64_f32(convop_x_6729);
+                    int64_t eta_p_6675 = ((__global int64_t *) mem_6777)[gtid_6667 + gtid_6668 * dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197];
+                    float i64_res_6676 = sitofp_i64_f32(eta_p_6675);
+                    float lifted_lambda_res_6677 = i64_res_6676 / index_primexp_6730;
+                    bool cond_6678 = lifted_lambda_res_6677 == 0.0F;
+                    float lifted_lambda_res_6679;
                     
-                    if (cond_6665) {
-                        lifted_lambda_res_6666 = 0.0F;
+                    if (cond_6678) {
+                        lifted_lambda_res_6679 = 0.0F;
                     } else {
-                        float log2_res_6667 = futrts_log2_32(lifted_lambda_res_6664);
-                        float lifted_lambda_res_f_res_6668 = lifted_lambda_res_6664 * log2_res_6667;
+                        float log2_res_6680 = futrts_log2_32(lifted_lambda_res_6677);
+                        float lifted_lambda_res_f_res_6681 = lifted_lambda_res_6677 * log2_res_6680;
                         
-                        lifted_lambda_res_6666 = lifted_lambda_res_f_res_6668;
+                        lifted_lambda_res_6679 = lifted_lambda_res_f_res_6681;
                     }
                     // save results to be reduced
                     {
-                        ((__local float *) red_arr_f32_mem_6827)[sext_i32_i64(local_tid_6823)] = lifted_lambda_res_6666;
+                        ((__local float *) red_arr_f32_mem_6841)[sext_i32_i64(local_tid_6837)] = lifted_lambda_res_6679;
                     }
                 }
             } else {
-                ((__local float *) red_arr_f32_mem_6827)[sext_i32_i64(local_tid_6823)] = 0.0F;
+                ((__local float *) red_arr_f32_mem_6841)[sext_i32_i64(local_tid_6837)] = 0.0F;
             }
         }
         barrier(CLK_LOCAL_MEM_FENCE);
         if (slt64((int64_t) 0, (int64_t) 256)) {
             // perform segmented scan to imitate reduction
             {
-                float eta_p_6657;
-                float eta_p_6658;
-                float eta_p_6835;
-                float eta_p_6836;
-                bool ltid_in_bounds_6838 = slt64(sext_i32_i64(local_tid_6823), (int64_t) 256 * squot64(segred_tblock_sizze_6650, segment_sizze_nonzzero_6820));
-                int32_t skip_threads_6839;
+                float eta_p_6670;
+                float eta_p_6671;
+                float eta_p_6849;
+                float eta_p_6850;
+                bool ltid_in_bounds_6852 = slt64(sext_i32_i64(local_tid_6837), (int64_t) 256 * squot64(segred_tblock_sizze_6663, segment_sizze_nonzzero_6834));
+                int32_t skip_threads_6853;
                 
                 // read input for in-block scan
                 {
-                    if (ltid_in_bounds_6838) {
-                        eta_p_6658 = ((volatile __local float *) red_arr_f32_mem_6827)[sext_i32_i64(local_tid_6823)];
-                        if ((local_tid_6823 - squot32(local_tid_6823, 32) * 32) == 0) {
-                            eta_p_6657 = eta_p_6658;
+                    if (ltid_in_bounds_6852) {
+                        eta_p_6671 = ((volatile __local float *) red_arr_f32_mem_6841)[sext_i32_i64(local_tid_6837)];
+                        if ((local_tid_6837 - squot32(local_tid_6837, 32) * 32) == 0) {
+                            eta_p_6670 = eta_p_6671;
                         }
                     }
                 }
                 // in-block scan (hopefully no barriers needed)
                 {
-                    skip_threads_6839 = 1;
-                    while (slt32(skip_threads_6839, 32)) {
-                        bool thread_active_6840 = sle32(skip_threads_6839, local_tid_6823 - squot32(local_tid_6823, 32) * 32) && ltid_in_bounds_6838;
+                    skip_threads_6853 = 1;
+                    while (slt32(skip_threads_6853, 32)) {
+                        bool thread_active_6854 = sle32(skip_threads_6853, local_tid_6837 - squot32(local_tid_6837, 32) * 32) && ltid_in_bounds_6852;
                         
-                        if (thread_active_6840) {
+                        if (thread_active_6854) {
                             // read operands
                             {
-                                eta_p_6657 = ((volatile __local float *) red_arr_f32_mem_6827)[sext_i32_i64(local_tid_6823) - sext_i32_i64(skip_threads_6839)];
+                                eta_p_6670 = ((volatile __local float *) red_arr_f32_mem_6841)[sext_i32_i64(local_tid_6837) - sext_i32_i64(skip_threads_6853)];
                             }
                         }
                         // perform operation
                         {
-                            bool inactive_6841 = slt64(srem64(sext_i32_i64(local_tid_6823), (int64_t) 256), sext_i32_i64(local_tid_6823) - sext_i32_i64(local_tid_6823 - skip_threads_6839));
+                            bool inactive_6855 = slt64(srem64(sext_i32_i64(local_tid_6837), (int64_t) 256), sext_i32_i64(local_tid_6837) - sext_i32_i64(local_tid_6837 - skip_threads_6853));
                             
-                            if (thread_active_6840 && inactive_6841) {
-                                eta_p_6657 = eta_p_6658;
+                            if (thread_active_6854 && inactive_6855) {
+                                eta_p_6670 = eta_p_6671;
                             }
-                            if (thread_active_6840) {
-                                if (!inactive_6841) {
-                                    float defunc_0_op_res_6659 = eta_p_6657 + eta_p_6658;
+                            if (thread_active_6854) {
+                                if (!inactive_6855) {
+                                    float defunc_0_op_res_6672 = eta_p_6670 + eta_p_6671;
                                     
-                                    eta_p_6657 = defunc_0_op_res_6659;
+                                    eta_p_6670 = defunc_0_op_res_6672;
                                 }
                             }
                         }
-                        if (sle32(wave_sizze_6825, skip_threads_6839)) {
+                        if (sle32(wave_sizze_6839, skip_threads_6853)) {
                             barrier(CLK_LOCAL_MEM_FENCE);
                         }
-                        if (thread_active_6840) {
+                        if (thread_active_6854) {
                             // write result
                             {
-                                ((volatile __local float *) red_arr_f32_mem_6827)[sext_i32_i64(local_tid_6823)] = eta_p_6657;
-                                eta_p_6658 = eta_p_6657;
+                                ((volatile __local float *) red_arr_f32_mem_6841)[sext_i32_i64(local_tid_6837)] = eta_p_6670;
+                                eta_p_6671 = eta_p_6670;
                             }
                         }
-                        if (sle32(wave_sizze_6825, skip_threads_6839)) {
+                        if (sle32(wave_sizze_6839, skip_threads_6853)) {
                             barrier(CLK_LOCAL_MEM_FENCE);
                         }
-                        skip_threads_6839 *= 2;
+                        skip_threads_6853 *= 2;
                     }
                 }
                 barrier(CLK_LOCAL_MEM_FENCE);
                 // last thread of block 'i' writes its result to offset 'i'
                 {
-                    if ((local_tid_6823 - squot32(local_tid_6823, 32) * 32) == 31 && ltid_in_bounds_6838) {
-                        ((volatile __local float *) red_arr_f32_mem_6827)[sext_i32_i64(squot32(local_tid_6823, 32))] = eta_p_6657;
+                    if ((local_tid_6837 - squot32(local_tid_6837, 32) * 32) == 31 && ltid_in_bounds_6852) {
+                        ((volatile __local float *) red_arr_f32_mem_6841)[sext_i32_i64(squot32(local_tid_6837, 32))] = eta_p_6670;
                     }
                 }
                 barrier(CLK_LOCAL_MEM_FENCE);
                 // scan the first block, after which offset 'i' contains carry-in for block 'i+1'
                 {
-                    int32_t skip_threads_6842;
+                    int32_t skip_threads_6856;
                     
                     // read input for in-block scan
                     {
-                        if (squot32(local_tid_6823, 32) == 0 && ltid_in_bounds_6838) {
-                            eta_p_6836 = ((volatile __local float *) red_arr_f32_mem_6827)[sext_i32_i64(local_tid_6823)];
-                            if ((local_tid_6823 - squot32(local_tid_6823, 32) * 32) == 0) {
-                                eta_p_6835 = eta_p_6836;
+                        if (squot32(local_tid_6837, 32) == 0 && ltid_in_bounds_6852) {
+                            eta_p_6850 = ((volatile __local float *) red_arr_f32_mem_6841)[sext_i32_i64(local_tid_6837)];
+                            if ((local_tid_6837 - squot32(local_tid_6837, 32) * 32) == 0) {
+                                eta_p_6849 = eta_p_6850;
                             }
                         }
                     }
                     // in-block scan (hopefully no barriers needed)
                     {
-                        skip_threads_6842 = 1;
-                        while (slt32(skip_threads_6842, 32)) {
-                            bool thread_active_6843 = sle32(skip_threads_6842, local_tid_6823 - squot32(local_tid_6823, 32) * 32) && (squot32(local_tid_6823, 32) == 0 && ltid_in_bounds_6838);
+                        skip_threads_6856 = 1;
+                        while (slt32(skip_threads_6856, 32)) {
+                            bool thread_active_6857 = sle32(skip_threads_6856, local_tid_6837 - squot32(local_tid_6837, 32) * 32) && (squot32(local_tid_6837, 32) == 0 && ltid_in_bounds_6852);
                             
-                            if (thread_active_6843) {
+                            if (thread_active_6857) {
                                 // read operands
                                 {
-                                    eta_p_6835 = ((volatile __local float *) red_arr_f32_mem_6827)[sext_i32_i64(local_tid_6823) - sext_i32_i64(skip_threads_6842)];
+                                    eta_p_6849 = ((volatile __local float *) red_arr_f32_mem_6841)[sext_i32_i64(local_tid_6837) - sext_i32_i64(skip_threads_6856)];
                                 }
                             }
                             // perform operation
                             {
-                                bool inactive_6844 = slt64(srem64(sext_i32_i64(local_tid_6823 * 32 + 32 - 1), (int64_t) 256), sext_i32_i64(local_tid_6823 * 32 + 32 - 1) - sext_i32_i64((local_tid_6823 - skip_threads_6842) * 32 + 32 - 1));
+                                bool inactive_6858 = slt64(srem64(sext_i32_i64(local_tid_6837 * 32 + 32 - 1), (int64_t) 256), sext_i32_i64(local_tid_6837 * 32 + 32 - 1) - sext_i32_i64((local_tid_6837 - skip_threads_6856) * 32 + 32 - 1));
                                 
-                                if (thread_active_6843 && inactive_6844) {
-                                    eta_p_6835 = eta_p_6836;
+                                if (thread_active_6857 && inactive_6858) {
+                                    eta_p_6849 = eta_p_6850;
                                 }
-                                if (thread_active_6843) {
-                                    if (!inactive_6844) {
-                                        float defunc_0_op_res_6837 = eta_p_6835 + eta_p_6836;
+                                if (thread_active_6857) {
+                                    if (!inactive_6858) {
+                                        float defunc_0_op_res_6851 = eta_p_6849 + eta_p_6850;
                                         
-                                        eta_p_6835 = defunc_0_op_res_6837;
+                                        eta_p_6849 = defunc_0_op_res_6851;
                                     }
                                 }
                             }
-                            if (sle32(wave_sizze_6825, skip_threads_6842)) {
+                            if (sle32(wave_sizze_6839, skip_threads_6856)) {
                                 barrier(CLK_LOCAL_MEM_FENCE);
                             }
-                            if (thread_active_6843) {
+                            if (thread_active_6857) {
                                 // write result
                                 {
-                                    ((volatile __local float *) red_arr_f32_mem_6827)[sext_i32_i64(local_tid_6823)] = eta_p_6835;
-                                    eta_p_6836 = eta_p_6835;
+                                    ((volatile __local float *) red_arr_f32_mem_6841)[sext_i32_i64(local_tid_6837)] = eta_p_6849;
+                                    eta_p_6850 = eta_p_6849;
                                 }
                             }
-                            if (sle32(wave_sizze_6825, skip_threads_6842)) {
+                            if (sle32(wave_sizze_6839, skip_threads_6856)) {
                                 barrier(CLK_LOCAL_MEM_FENCE);
                             }
-                            skip_threads_6842 *= 2;
+                            skip_threads_6856 *= 2;
                         }
                     }
                 }
                 barrier(CLK_LOCAL_MEM_FENCE);
                 
-                bool no_carry_in_6845 = squot32(local_tid_6823, 32) == 0 || !ltid_in_bounds_6838;
+                bool no_carry_in_6859 = squot32(local_tid_6837, 32) == 0 || !ltid_in_bounds_6852;
                 
                 // carry-in for every block except the first
                 {
                     // read operands
                     {
-                        if (!no_carry_in_6845) {
-                            eta_p_6658 = eta_p_6657;
-                            eta_p_6657 = ((__local float *) red_arr_f32_mem_6827)[sext_i32_i64(squot32(local_tid_6823, 32)) - (int64_t) 1];
+                        if (!no_carry_in_6859) {
+                            eta_p_6671 = eta_p_6670;
+                            eta_p_6670 = ((__local float *) red_arr_f32_mem_6841)[sext_i32_i64(squot32(local_tid_6837, 32)) - (int64_t) 1];
                         }
                     }
                     // perform operation
                     {
-                        bool inactive_6846 = slt64(srem64(sext_i32_i64(local_tid_6823), (int64_t) 256), sext_i32_i64(local_tid_6823) - sext_i32_i64(squot32(local_tid_6823, 32) * 32 - 1));
+                        bool inactive_6860 = slt64(srem64(sext_i32_i64(local_tid_6837), (int64_t) 256), sext_i32_i64(local_tid_6837) - sext_i32_i64(squot32(local_tid_6837, 32) * 32 - 1));
                         
-                        if (!no_carry_in_6845) {
-                            if (inactive_6846) {
-                                eta_p_6657 = eta_p_6658;
+                        if (!no_carry_in_6859) {
+                            if (inactive_6860) {
+                                eta_p_6670 = eta_p_6671;
                             }
                         }
-                        if (!no_carry_in_6845) {
-                            if (!inactive_6846) {
-                                float defunc_0_op_res_6659 = eta_p_6657 + eta_p_6658;
+                        if (!no_carry_in_6859) {
+                            if (!inactive_6860) {
+                                float defunc_0_op_res_6672 = eta_p_6670 + eta_p_6671;
                                 
-                                eta_p_6657 = defunc_0_op_res_6659;
+                                eta_p_6670 = defunc_0_op_res_6672;
                             }
                         }
                     }
                     // write final result
                     {
-                        if (!no_carry_in_6845) {
-                            ((__local float *) red_arr_f32_mem_6827)[sext_i32_i64(local_tid_6823)] = eta_p_6657;
+                        if (!no_carry_in_6859) {
+                            ((__local float *) red_arr_f32_mem_6841)[sext_i32_i64(local_tid_6837)] = eta_p_6670;
                         }
                     }
                 }
                 barrier(CLK_LOCAL_MEM_FENCE);
                 // restore correct values for first block
                 {
-                    if (squot32(local_tid_6823, 32) == 0 && ltid_in_bounds_6838) {
-                        ((__local float *) red_arr_f32_mem_6827)[sext_i32_i64(local_tid_6823)] = eta_p_6658;
+                    if (squot32(local_tid_6837, 32) == 0 && ltid_in_bounds_6852) {
+                        ((__local float *) red_arr_f32_mem_6841)[sext_i32_i64(local_tid_6837)] = eta_p_6671;
                     }
                 }
                 barrier(CLK_LOCAL_MEM_FENCE);
@@ -7392,10 +7396,10 @@ void chunked_entropyzisegred_small_6656(__local uint64_t *shared_mem_aligned, __
         barrier(CLK_LOCAL_MEM_FENCE);
         // save final values of segments
         {
-            if (slt64(sext_i32_i64(virt_tblock_id_6832) * squot64(segred_tblock_sizze_6650, segment_sizze_nonzzero_6820) + sext_i32_i64(local_tid_6823), dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188) && slt64(sext_i32_i64(local_tid_6823), squot64(segred_tblock_sizze_6650, segment_sizze_nonzzero_6820))) {
-                float tmp_6847 = ((__local float *) red_arr_f32_mem_6827)[(sext_i32_i64(local_tid_6823) + (int64_t) 1) * segment_sizze_nonzzero_6820 - (int64_t) 1];
+            if (slt64(sext_i32_i64(virt_tblock_id_6846) * squot64(segred_tblock_sizze_6663, segment_sizze_nonzzero_6834) + sext_i32_i64(local_tid_6837), dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197) && slt64(sext_i32_i64(local_tid_6837), squot64(segred_tblock_sizze_6663, segment_sizze_nonzzero_6834))) {
+                float tmp_6861 = ((__local float *) red_arr_f32_mem_6841)[(sext_i32_i64(local_tid_6837) + (int64_t) 1) * segment_sizze_nonzzero_6834 - (int64_t) 1];
                 
-                ((__global float *) mem_6766)[sext_i32_i64(virt_tblock_id_6832) * squot64(segred_tblock_sizze_6650, segment_sizze_nonzzero_6820) + sext_i32_i64(local_tid_6823)] = tmp_6847;
+                ((__global float *) mem_6780)[sext_i32_i64(virt_tblock_id_6846) * squot64(segred_tblock_sizze_6663, segment_sizze_nonzzero_6834) + sext_i32_i64(local_tid_6837)] = tmp_6861;
             }
         }
         barrier(CLK_LOCAL_MEM_FENCE);
@@ -7404,62 +7408,62 @@ void chunked_entropyzisegred_small_6656(__local uint64_t *shared_mem_aligned, __
     
   error_3:
     return;
-    #undef segred_tblock_sizze_6650
+    #undef segred_tblock_sizze_6663
 }
-FUTHARK_KERNEL_SIZED(entropyziseghist_global_6318_dim1, 1, 1)
-void entropyziseghist_global_6318(__local uint64_t *shared_mem_aligned, __global int *global_failure, int64_t n_5903, int64_t num_tblocks_6313, int64_t num_subhistos_6801, int32_t chk_i_6871, int64_t hist_H_chk_6872, __global unsigned char *xs_mem_6743, __global unsigned char *defunc_0_map_res_subhistos_mem_6802)
+FUTHARK_KERNEL_SIZED(entropyziseghist_global_6328_dim1, 1, 1)
+void entropyziseghist_global_6328(__local uint64_t *shared_mem_aligned, __global int *global_failure, int64_t n_5907, int64_t num_tblocks_6323, int64_t num_subhistos_6815, int32_t chk_i_6885, int64_t hist_H_chk_6886, __global unsigned char *xs_mem_6757, __global unsigned char *defunc_0_map_res_subhistos_mem_6816)
 {
-    #define seghist_tblock_sizze_6311 (entropyziseghist_global_6318ziseghist_tblock_sizze_6311)
+    #define seghist_tblock_sizze_6321 (entropyziseghist_global_6328ziseghist_tblock_sizze_6321)
     
     __local unsigned char *shared_mem = (__local unsigned char *) shared_mem_aligned;
     
     if (*global_failure >= 0)
         return;
     
-    int32_t local_tid_6874;
-    int32_t tblock_sizze_6877;
-    int32_t wave_sizze_6876;
-    int32_t block_id_6875;
-    int32_t global_tid_6873;
-    int64_t phys_tid_6318;
-    int32_t subhisto_ind_6878;
-    int64_t num_chunks_6879;
+    int32_t local_tid_6888;
+    int32_t tblock_sizze_6891;
+    int32_t wave_sizze_6890;
+    int32_t block_id_6889;
+    int32_t global_tid_6887;
+    int64_t phys_tid_6328;
+    int32_t subhisto_ind_6892;
+    int64_t num_chunks_6893;
     
-    local_tid_6874 = get_local_id(0);
-    tblock_sizze_6877 = get_local_size(0);
-    wave_sizze_6876 = LOCKSTEP_WIDTH;
-    block_id_6875 = get_tblock_id(0);
-    global_tid_6873 = block_id_6875 * tblock_sizze_6877 + local_tid_6874;
-    phys_tid_6318 = sext_i32_i64(global_tid_6873);
-    subhisto_ind_6878 = squot32(global_tid_6873, sdiv_up32(sext_i64_i32(seghist_tblock_sizze_6311 * num_tblocks_6313), sext_i64_i32(num_subhistos_6801)));
-    num_chunks_6879 = sdiv_up64(n_5903, sext_i32_i64(sext_i64_i32(seghist_tblock_sizze_6311 * num_tblocks_6313)));
-    for (int64_t chunk_i_6880 = 0; chunk_i_6880 < num_chunks_6879; chunk_i_6880++) {
-        int64_t i_6881 = chunk_i_6880 * sext_i32_i64(sext_i64_i32(seghist_tblock_sizze_6311 * num_tblocks_6313)) + sext_i32_i64(global_tid_6873);
+    local_tid_6888 = get_local_id(0);
+    tblock_sizze_6891 = get_local_size(0);
+    wave_sizze_6890 = LOCKSTEP_WIDTH;
+    block_id_6889 = get_tblock_id(0);
+    global_tid_6887 = block_id_6889 * tblock_sizze_6891 + local_tid_6888;
+    phys_tid_6328 = sext_i32_i64(global_tid_6887);
+    subhisto_ind_6892 = squot32(global_tid_6887, sdiv_up32(sext_i64_i32(seghist_tblock_sizze_6321 * num_tblocks_6323), sext_i64_i32(num_subhistos_6815)));
+    num_chunks_6893 = sdiv_up64(n_5907, sext_i32_i64(sext_i64_i32(seghist_tblock_sizze_6321 * num_tblocks_6323)));
+    for (int64_t chunk_i_6894 = 0; chunk_i_6894 < num_chunks_6893; chunk_i_6894++) {
+        int64_t i_6895 = chunk_i_6894 * sext_i32_i64(sext_i64_i32(seghist_tblock_sizze_6321 * num_tblocks_6323)) + sext_i32_i64(global_tid_6887);
         
-        if (slt64(i_6881, n_5903)) {
-            int64_t slice_6882;
-            int64_t gtid_6317;
-            int64_t remnant_6883;
+        if (slt64(i_6895, n_5907)) {
+            int64_t slice_6896;
+            int64_t gtid_6327;
+            int64_t remnant_6897;
             
-            slice_6882 = n_5903;
-            gtid_6317 = i_6881;
-            remnant_6883 = i_6881 - gtid_6317;
-            if (slt64(i_6881, n_5903)) {
-                int8_t eta_p_6322;
-                int64_t u8_res_6324;
+            slice_6896 = n_5907;
+            gtid_6327 = i_6895;
+            remnant_6897 = i_6895 - gtid_6327;
+            if (slt64(i_6895, n_5907)) {
+                int8_t eta_p_6332;
+                int64_t u8_res_6334;
                 
-                eta_p_6322 = ((__global int8_t *) xs_mem_6743)[gtid_6317];
-                u8_res_6324 = zext_i8_i64(eta_p_6322);
+                eta_p_6332 = ((__global int8_t *) xs_mem_6757)[gtid_6327];
+                u8_res_6334 = zext_i8_i64(eta_p_6332);
                 // save map-out results
                 { }
                 // perform atomic updates
                 {
-                    if (sle64(sext_i32_i64(chk_i_6871) * hist_H_chk_6872, u8_res_6324) && (slt64(u8_res_6324, sext_i32_i64(chk_i_6871) * hist_H_chk_6872 + hist_H_chk_6872) && (sle64((int64_t) 0, u8_res_6324) && slt64(u8_res_6324, (int64_t) 256)))) {
-                        int64_t eta_p_6319;
-                        int64_t eta_p_6320 = (int64_t) 1;
-                        int64_t old_6884;
+                    if (sle64(sext_i32_i64(chk_i_6885) * hist_H_chk_6886, u8_res_6334) && (slt64(u8_res_6334, sext_i32_i64(chk_i_6885) * hist_H_chk_6886 + hist_H_chk_6886) && (sle64((int64_t) 0, u8_res_6334) && slt64(u8_res_6334, (int64_t) 256)))) {
+                        int64_t eta_p_6329;
+                        int64_t eta_p_6330 = (int64_t) 1;
+                        int64_t old_6898;
                         
-                        old_6884 = atomic_add_i64_global(&((volatile __global int64_t *) defunc_0_map_res_subhistos_mem_6802)[sext_i32_i64(subhisto_ind_6878) * (int64_t) 256 + u8_res_6324], (int64_t) eta_p_6320);
+                        old_6898 = atomic_add_i64_global(&((volatile __global int64_t *) defunc_0_map_res_subhistos_mem_6816)[sext_i32_i64(subhisto_ind_6892) * (int64_t) 256 + u8_res_6334], (int64_t) eta_p_6330);
                     }
                 }
             }
@@ -7468,101 +7472,101 @@ void entropyziseghist_global_6318(__local uint64_t *shared_mem_aligned, __global
     
   error_0:
     return;
-    #undef seghist_tblock_sizze_6311
+    #undef seghist_tblock_sizze_6321
 }
-FUTHARK_KERNEL_SIZED(entropyziseghist_local_6318_dim1, 1, 1)
-void entropyziseghist_local_6318(__local uint64_t *shared_mem_aligned, __global int *global_failure, int64_t n_5903, int64_t num_subhistos_6801, int64_t num_tblocks_6812, int32_t hist_M_6818, int32_t chk_i_6822, int64_t num_segments_6823, int64_t hist_H_chk_6824, int64_t histo_sizze_6825, int32_t init_per_thread_6826, __global unsigned char *xs_mem_6743, __global unsigned char *defunc_0_map_res_subhistos_mem_6802)
+FUTHARK_KERNEL_SIZED(entropyziseghist_local_6328_dim1, 1, 1)
+void entropyziseghist_local_6328(__local uint64_t *shared_mem_aligned, __global int *global_failure, int64_t n_5907, int64_t num_subhistos_6815, int64_t num_tblocks_6826, int32_t hist_M_6832, int32_t chk_i_6836, int64_t num_segments_6837, int64_t hist_H_chk_6838, int64_t histo_sizze_6839, int32_t init_per_thread_6840, __global unsigned char *xs_mem_6757, __global unsigned char *defunc_0_map_res_subhistos_mem_6816)
 {
-    #define max_tblock_sizze_6811 (entropyziseghist_local_6318zimax_tblock_sizze_6811)
+    #define max_tblock_sizze_6825 (entropyziseghist_local_6328zimax_tblock_sizze_6825)
     
     __local unsigned char *shared_mem = (__local unsigned char *) shared_mem_aligned;
-    volatile __local unsigned char *subhistogram_local_mem_6840_backing_0 = &shared_mem[0];
-    const int64_t subhistogram_local_mem_6840_backing_0_offset = 0 + ((int64_t) 8 * (hist_M_6818 * hist_H_chk_6824) + srem64((int64_t) 8 - srem64((int64_t) 8 * (hist_M_6818 * hist_H_chk_6824), (int64_t) 8), (int64_t) 8));
+    volatile __local unsigned char *subhistogram_local_mem_6854_backing_0 = &shared_mem[0];
+    const int64_t subhistogram_local_mem_6854_backing_0_offset = 0 + ((int64_t) 8 * (hist_M_6832 * hist_H_chk_6838) + srem64((int64_t) 8 - srem64((int64_t) 8 * (hist_M_6832 * hist_H_chk_6838), (int64_t) 8), (int64_t) 8));
     
     if (*global_failure >= 0)
         return;
     
-    int32_t local_tid_6828;
-    int32_t tblock_sizze_6831;
-    int32_t wave_sizze_6830;
-    int32_t block_id_6829;
-    int32_t global_tid_6827;
-    int64_t phys_tid_6318;
-    int32_t phys_tblock_id_6832;
-    int32_t iterations_6833;
+    int32_t local_tid_6842;
+    int32_t tblock_sizze_6845;
+    int32_t wave_sizze_6844;
+    int32_t block_id_6843;
+    int32_t global_tid_6841;
+    int64_t phys_tid_6328;
+    int32_t phys_tblock_id_6846;
+    int32_t iterations_6847;
     
-    local_tid_6828 = get_local_id(0);
-    tblock_sizze_6831 = get_local_size(0);
-    wave_sizze_6830 = LOCKSTEP_WIDTH;
-    block_id_6829 = get_tblock_id(0);
-    global_tid_6827 = block_id_6829 * tblock_sizze_6831 + local_tid_6828;
-    phys_tid_6318 = sext_i32_i64(global_tid_6827);
-    phys_tblock_id_6832 = get_tblock_id(0);
-    iterations_6833 = sdiv_up32(sext_i64_i32(num_tblocks_6812 * num_segments_6823) - phys_tblock_id_6832, sext_i64_i32(num_tblocks_6812));
-    for (int32_t i_6834 = 0; i_6834 < iterations_6833; i_6834++) {
-        int32_t virt_tblock_id_6835;
-        int32_t flat_segment_id_6836;
-        int32_t gid_in_segment_6837;
-        int32_t pgtid_in_segment_6838;
-        int32_t threads_per_segment_6839;
-        __local unsigned char *subhistogram_local_mem_6840;
-        int32_t thread_local_subhisto_i_6842;
-        int64_t num_chunks_6849;
+    local_tid_6842 = get_local_id(0);
+    tblock_sizze_6845 = get_local_size(0);
+    wave_sizze_6844 = LOCKSTEP_WIDTH;
+    block_id_6843 = get_tblock_id(0);
+    global_tid_6841 = block_id_6843 * tblock_sizze_6845 + local_tid_6842;
+    phys_tid_6328 = sext_i32_i64(global_tid_6841);
+    phys_tblock_id_6846 = get_tblock_id(0);
+    iterations_6847 = sdiv_up32(sext_i64_i32(num_tblocks_6826 * num_segments_6837) - phys_tblock_id_6846, sext_i64_i32(num_tblocks_6826));
+    for (int32_t i_6848 = 0; i_6848 < iterations_6847; i_6848++) {
+        int32_t virt_tblock_id_6849;
+        int32_t flat_segment_id_6850;
+        int32_t gid_in_segment_6851;
+        int32_t pgtid_in_segment_6852;
+        int32_t threads_per_segment_6853;
+        __local unsigned char *subhistogram_local_mem_6854;
+        int32_t thread_local_subhisto_i_6856;
+        int64_t num_chunks_6863;
         
-        virt_tblock_id_6835 = phys_tblock_id_6832 + i_6834 * sext_i64_i32(num_tblocks_6812);
-        flat_segment_id_6836 = squot32(virt_tblock_id_6835, sext_i64_i32(num_tblocks_6812));
-        gid_in_segment_6837 = srem32(virt_tblock_id_6835, sext_i64_i32(num_tblocks_6812));
-        pgtid_in_segment_6838 = gid_in_segment_6837 * sext_i64_i32(max_tblock_sizze_6811) + local_tid_6828;
-        threads_per_segment_6839 = sext_i64_i32(num_tblocks_6812 * max_tblock_sizze_6811);
-        subhistogram_local_mem_6840 = (__local unsigned char *) subhistogram_local_mem_6840_backing_0;
-        thread_local_subhisto_i_6842 = srem32(local_tid_6828, hist_M_6818);
+        virt_tblock_id_6849 = phys_tblock_id_6846 + i_6848 * sext_i64_i32(num_tblocks_6826);
+        flat_segment_id_6850 = squot32(virt_tblock_id_6849, sext_i64_i32(num_tblocks_6826));
+        gid_in_segment_6851 = srem32(virt_tblock_id_6849, sext_i64_i32(num_tblocks_6826));
+        pgtid_in_segment_6852 = gid_in_segment_6851 * sext_i64_i32(max_tblock_sizze_6825) + local_tid_6842;
+        threads_per_segment_6853 = sext_i64_i32(num_tblocks_6826 * max_tblock_sizze_6825);
+        subhistogram_local_mem_6854 = (__local unsigned char *) subhistogram_local_mem_6854_backing_0;
+        thread_local_subhisto_i_6856 = srem32(local_tid_6842, hist_M_6832);
         // initialize histograms in shared memory
         {
-            for (int32_t local_i_6843 = 0; local_i_6843 < init_per_thread_6826; local_i_6843++) {
-                int32_t j_6844 = local_i_6843 * sext_i64_i32(max_tblock_sizze_6811) + local_tid_6828;
-                int32_t j_offset_6845 = hist_M_6818 * sext_i64_i32(histo_sizze_6825) * gid_in_segment_6837 + j_6844;
-                int32_t local_subhisto_i_6846 = squot32(j_6844, sext_i64_i32(histo_sizze_6825));
-                int32_t global_subhisto_i_6847 = squot32(j_offset_6845, sext_i64_i32(histo_sizze_6825));
+            for (int32_t local_i_6857 = 0; local_i_6857 < init_per_thread_6840; local_i_6857++) {
+                int32_t j_6858 = local_i_6857 * sext_i64_i32(max_tblock_sizze_6825) + local_tid_6842;
+                int32_t j_offset_6859 = hist_M_6832 * sext_i64_i32(histo_sizze_6839) * gid_in_segment_6851 + j_6858;
+                int32_t local_subhisto_i_6860 = squot32(j_6858, sext_i64_i32(histo_sizze_6839));
+                int32_t global_subhisto_i_6861 = squot32(j_offset_6859, sext_i64_i32(histo_sizze_6839));
                 
-                if (slt32(j_6844, hist_M_6818 * sext_i64_i32(histo_sizze_6825))) {
+                if (slt32(j_6858, hist_M_6832 * sext_i64_i32(histo_sizze_6839))) {
                     // First subhistogram is initialised from global memory; others with neutral element.
                     {
-                        if (global_subhisto_i_6847 == 0 && ((sle64((int64_t) 0, (int64_t) 0) && slt64((int64_t) 0, num_subhistos_6801)) && (sle64((int64_t) 0, sext_i32_i64(srem32(j_6844, sext_i64_i32(histo_sizze_6825))) + sext_i32_i64(chk_i_6822) * hist_H_chk_6824) && slt64(sext_i32_i64(srem32(j_6844, sext_i64_i32(histo_sizze_6825))) + sext_i32_i64(chk_i_6822) * hist_H_chk_6824, (int64_t) 256)))) {
-                            int64_t tmp_6848 = ((__global int64_t *) defunc_0_map_res_subhistos_mem_6802)[sext_i32_i64(srem32(j_6844, sext_i64_i32(histo_sizze_6825))) + sext_i32_i64(chk_i_6822) * hist_H_chk_6824];
+                        if (global_subhisto_i_6861 == 0 && ((sle64((int64_t) 0, (int64_t) 0) && slt64((int64_t) 0, num_subhistos_6815)) && (sle64((int64_t) 0, sext_i32_i64(srem32(j_6858, sext_i64_i32(histo_sizze_6839))) + sext_i32_i64(chk_i_6836) * hist_H_chk_6838) && slt64(sext_i32_i64(srem32(j_6858, sext_i64_i32(histo_sizze_6839))) + sext_i32_i64(chk_i_6836) * hist_H_chk_6838, (int64_t) 256)))) {
+                            int64_t tmp_6862 = ((__global int64_t *) defunc_0_map_res_subhistos_mem_6816)[sext_i32_i64(srem32(j_6858, sext_i64_i32(histo_sizze_6839))) + sext_i32_i64(chk_i_6836) * hist_H_chk_6838];
                             
-                            ((__local int64_t *) subhistogram_local_mem_6840)[sext_i32_i64(local_subhisto_i_6846) * hist_H_chk_6824 + sext_i32_i64(srem32(j_6844, sext_i64_i32(histo_sizze_6825)))] = tmp_6848;
+                            ((__local int64_t *) subhistogram_local_mem_6854)[sext_i32_i64(local_subhisto_i_6860) * hist_H_chk_6838 + sext_i32_i64(srem32(j_6858, sext_i64_i32(histo_sizze_6839)))] = tmp_6862;
                         } else {
-                            ((__local int64_t *) subhistogram_local_mem_6840)[sext_i32_i64(local_subhisto_i_6846) * hist_H_chk_6824 + sext_i32_i64(srem32(j_6844, sext_i64_i32(histo_sizze_6825)))] = (int64_t) 0;
+                            ((__local int64_t *) subhistogram_local_mem_6854)[sext_i32_i64(local_subhisto_i_6860) * hist_H_chk_6838 + sext_i32_i64(srem32(j_6858, sext_i64_i32(histo_sizze_6839)))] = (int64_t) 0;
                         }
                     }
                 }
             }
         }
         barrier(CLK_LOCAL_MEM_FENCE);
-        num_chunks_6849 = sdiv_up64(n_5903, sext_i32_i64(threads_per_segment_6839));
-        for (int64_t chunk_i_6850 = 0; chunk_i_6850 < num_chunks_6849; chunk_i_6850++) {
-            int64_t i_6851 = chunk_i_6850 * sext_i32_i64(threads_per_segment_6839) + sext_i32_i64(pgtid_in_segment_6838);
+        num_chunks_6863 = sdiv_up64(n_5907, sext_i32_i64(threads_per_segment_6853));
+        for (int64_t chunk_i_6864 = 0; chunk_i_6864 < num_chunks_6863; chunk_i_6864++) {
+            int64_t i_6865 = chunk_i_6864 * sext_i32_i64(threads_per_segment_6853) + sext_i32_i64(pgtid_in_segment_6852);
             
-            if (slt64(i_6851, n_5903)) {
-                int64_t gtid_6317;
-                int8_t eta_p_6322;
-                int64_t u8_res_6324;
+            if (slt64(i_6865, n_5907)) {
+                int64_t gtid_6327;
+                int8_t eta_p_6332;
+                int64_t u8_res_6334;
                 
-                gtid_6317 = i_6851;
-                eta_p_6322 = ((__global int8_t *) xs_mem_6743)[gtid_6317];
-                u8_res_6324 = zext_i8_i64(eta_p_6322);
-                if (chk_i_6822 == 0) {
+                gtid_6327 = i_6865;
+                eta_p_6332 = ((__global int8_t *) xs_mem_6757)[gtid_6327];
+                u8_res_6334 = zext_i8_i64(eta_p_6332);
+                if (chk_i_6836 == 0) {
                     // save map-out results
                     { }
                 }
                 // perform atomic updates
                 {
-                    if ((sle64((int64_t) 0, u8_res_6324) && slt64(u8_res_6324, (int64_t) 256)) && (sle64(sext_i32_i64(chk_i_6822) * hist_H_chk_6824, u8_res_6324) && slt64(u8_res_6324, sext_i32_i64(chk_i_6822) * hist_H_chk_6824 + hist_H_chk_6824))) {
-                        int64_t eta_p_6319;
-                        int64_t eta_p_6320 = (int64_t) 1;
-                        int64_t old_6852;
+                    if ((sle64((int64_t) 0, u8_res_6334) && slt64(u8_res_6334, (int64_t) 256)) && (sle64(sext_i32_i64(chk_i_6836) * hist_H_chk_6838, u8_res_6334) && slt64(u8_res_6334, sext_i32_i64(chk_i_6836) * hist_H_chk_6838 + hist_H_chk_6838))) {
+                        int64_t eta_p_6329;
+                        int64_t eta_p_6330 = (int64_t) 1;
+                        int64_t old_6866;
                         
-                        old_6852 = atomic_add_i64_shared(&((volatile __local int64_t *) subhistogram_local_mem_6840)[sext_i32_i64(thread_local_subhisto_i_6842) * hist_H_chk_6824 + (u8_res_6324 - sext_i32_i64(chk_i_6822) * hist_H_chk_6824)], (int64_t) eta_p_6320);
+                        old_6866 = atomic_add_i64_shared(&((volatile __local int64_t *) subhistogram_local_mem_6854)[sext_i32_i64(thread_local_subhisto_i_6856) * hist_H_chk_6838 + (u8_res_6334 - sext_i32_i64(chk_i_6836) * hist_H_chk_6838)], (int64_t) eta_p_6330);
                     }
                 }
             }
@@ -7570,33 +7574,33 @@ void entropyziseghist_local_6318(__local uint64_t *shared_mem_aligned, __global 
         barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
         // Compact the multiple shared memory subhistograms to result in global memory
         {
-            int64_t trunc_H_6853 = smin64(hist_H_chk_6824, (int64_t) 256 - sext_i32_i64(chk_i_6822) * hist_H_chk_6824);
-            int32_t histo_sizze_6854 = sext_i64_i32(trunc_H_6853);
+            int64_t trunc_H_6867 = smin64(hist_H_chk_6838, (int64_t) 256 - sext_i32_i64(chk_i_6836) * hist_H_chk_6838);
+            int32_t histo_sizze_6868 = sext_i64_i32(trunc_H_6867);
             
-            for (int32_t local_i_6855 = 0; local_i_6855 < init_per_thread_6826; local_i_6855++) {
-                int32_t j_6856 = local_i_6855 * sext_i64_i32(max_tblock_sizze_6811) + local_tid_6828;
+            for (int32_t local_i_6869 = 0; local_i_6869 < init_per_thread_6840; local_i_6869++) {
+                int32_t j_6870 = local_i_6869 * sext_i64_i32(max_tblock_sizze_6825) + local_tid_6842;
                 
-                if (slt32(j_6856, histo_sizze_6854)) {
-                    int64_t eta_p_6319;
-                    int64_t eta_p_6320;
+                if (slt32(j_6870, histo_sizze_6868)) {
+                    int64_t eta_p_6329;
+                    int64_t eta_p_6330;
                     
                     // Read values from subhistogram 0.
                     {
-                        eta_p_6319 = ((__local int64_t *) subhistogram_local_mem_6840)[sext_i32_i64(j_6856)];
+                        eta_p_6329 = ((__local int64_t *) subhistogram_local_mem_6854)[sext_i32_i64(j_6870)];
                     }
                     // Accumulate based on values in other subhistograms.
                     {
-                        for (int32_t subhisto_id_6857 = 0; subhisto_id_6857 < hist_M_6818 - 1; subhisto_id_6857++) {
-                            eta_p_6320 = ((__local int64_t *) subhistogram_local_mem_6840)[(sext_i32_i64(subhisto_id_6857) + (int64_t) 1) * hist_H_chk_6824 + sext_i32_i64(j_6856)];
+                        for (int32_t subhisto_id_6871 = 0; subhisto_id_6871 < hist_M_6832 - 1; subhisto_id_6871++) {
+                            eta_p_6330 = ((__local int64_t *) subhistogram_local_mem_6854)[(sext_i32_i64(subhisto_id_6871) + (int64_t) 1) * hist_H_chk_6838 + sext_i32_i64(j_6870)];
                             
-                            int64_t defunc_0_op_res_6321 = add64(eta_p_6319, eta_p_6320);
+                            int64_t defunc_0_op_res_6331 = add64(eta_p_6329, eta_p_6330);
                             
-                            eta_p_6319 = defunc_0_op_res_6321;
+                            eta_p_6329 = defunc_0_op_res_6331;
                         }
                     }
                     // Put final bucket value in global memory.
                     {
-                        ((__global int64_t *) defunc_0_map_res_subhistos_mem_6802)[srem64(sext_i32_i64(virt_tblock_id_6835), num_tblocks_6812) * (int64_t) 256 + (sext_i32_i64(j_6856) + sext_i32_i64(chk_i_6822) * hist_H_chk_6824)] = eta_p_6319;
+                        ((__global int64_t *) defunc_0_map_res_subhistos_mem_6816)[srem64(sext_i32_i64(virt_tblock_id_6849), num_tblocks_6826) * (int64_t) 256 + (sext_i32_i64(j_6870) + sext_i32_i64(chk_i_6836) * hist_H_chk_6838)] = eta_p_6329;
                     }
                 }
             }
@@ -7606,96 +7610,96 @@ void entropyziseghist_local_6318(__local uint64_t *shared_mem_aligned, __global 
     
   error_2:
     return;
-    #undef max_tblock_sizze_6811
+    #undef max_tblock_sizze_6825
 }
-FUTHARK_KERNEL_SIZED(entropyzisegred_large_6887_dim1, 1, 1)
-void entropyzisegred_large_6887(__local uint64_t *shared_mem_aligned, __global int *global_failure, int64_t num_tblocks_6313, int64_t num_subhistos_6801, int64_t blocks_per_segment_6918, int64_t q_6919, int64_t num_virtblocks_6920, int64_t threads_per_segment_6921, __global unsigned char *mem_6744, __global unsigned char *defunc_0_map_res_subhistos_mem_6802, __global unsigned char *segred_tmp_mem_6922, __global unsigned char *counters_mem_6924)
+FUTHARK_KERNEL_SIZED(entropyzisegred_large_6901_dim1, 1, 1)
+void entropyzisegred_large_6901(__local uint64_t *shared_mem_aligned, __global int *global_failure, int64_t num_tblocks_6323, int64_t num_subhistos_6815, int64_t blocks_per_segment_6932, int64_t q_6933, int64_t num_virtblocks_6934, int64_t threads_per_segment_6935, __global unsigned char *mem_6758, __global unsigned char *defunc_0_map_res_subhistos_mem_6816, __global unsigned char *segred_tmp_mem_6936, __global unsigned char *counters_mem_6938)
 {
-    #define seghist_tblock_sizze_6311 (entropyzisegred_large_6887ziseghist_tblock_sizze_6311)
-    #define chunk_sizze_6888 (entropyzisegred_large_6887zichunk_sizze_6888)
+    #define seghist_tblock_sizze_6321 (entropyzisegred_large_6901ziseghist_tblock_sizze_6321)
+    #define chunk_sizze_6902 (entropyzisegred_large_6901zichunk_sizze_6902)
     
     __local unsigned char *shared_mem = (__local unsigned char *) shared_mem_aligned;
-    volatile __local unsigned char *sync_arr_mem_6953_backing_1 = &shared_mem[0];
-    const int64_t sync_arr_mem_6953_backing_1_offset = 0 + 8;
-    volatile __local unsigned char *red_arr_i64_mem_6951_backing_0 = &shared_mem[sync_arr_mem_6953_backing_1_offset];
-    const int64_t red_arr_i64_mem_6951_backing_0_offset = sync_arr_mem_6953_backing_1_offset + ((int64_t) 8 * seghist_tblock_sizze_6311 + srem64((int64_t) 8 - srem64((int64_t) 8 * seghist_tblock_sizze_6311, (int64_t) 8), (int64_t) 8));
+    volatile __local unsigned char *sync_arr_mem_6967_backing_1 = &shared_mem[0];
+    const int64_t sync_arr_mem_6967_backing_1_offset = 0 + 8;
+    volatile __local unsigned char *red_arr_i64_mem_6965_backing_0 = &shared_mem[sync_arr_mem_6967_backing_1_offset];
+    const int64_t red_arr_i64_mem_6965_backing_0_offset = sync_arr_mem_6967_backing_1_offset + ((int64_t) 8 * seghist_tblock_sizze_6321 + srem64((int64_t) 8 - srem64((int64_t) 8 * seghist_tblock_sizze_6321, (int64_t) 8), (int64_t) 8));
     
     if (*global_failure >= 0)
         return;
     
-    int32_t local_tid_6947;
-    int32_t tblock_sizze_6950;
-    int32_t wave_sizze_6949;
-    int32_t block_id_6948;
-    int32_t global_tid_6946;
-    int64_t flat_gtid_6887;
-    __local unsigned char *red_arr_i64_mem_6951;
-    __local unsigned char *sync_arr_mem_6953;
-    int32_t phys_tblock_id_6955;
-    int32_t iterations_6956;
+    int32_t local_tid_6961;
+    int32_t tblock_sizze_6964;
+    int32_t wave_sizze_6963;
+    int32_t block_id_6962;
+    int32_t global_tid_6960;
+    int64_t flat_gtid_6901;
+    __local unsigned char *red_arr_i64_mem_6965;
+    __local unsigned char *sync_arr_mem_6967;
+    int32_t phys_tblock_id_6969;
+    int32_t iterations_6970;
     
-    local_tid_6947 = get_local_id(0);
-    tblock_sizze_6950 = get_local_size(0);
-    wave_sizze_6949 = LOCKSTEP_WIDTH;
-    block_id_6948 = get_tblock_id(0);
-    global_tid_6946 = block_id_6948 * tblock_sizze_6950 + local_tid_6947;
-    flat_gtid_6887 = sext_i32_i64(global_tid_6946);
-    red_arr_i64_mem_6951 = (__local unsigned char *) red_arr_i64_mem_6951_backing_0;
-    sync_arr_mem_6953 = (__local unsigned char *) sync_arr_mem_6953_backing_1;
-    phys_tblock_id_6955 = get_tblock_id(0);
-    iterations_6956 = sdiv_up32(sext_i64_i32(num_virtblocks_6920) - phys_tblock_id_6955, sext_i64_i32(num_tblocks_6313));
-    for (int32_t i_6957 = 0; i_6957 < iterations_6956; i_6957++) {
-        int32_t virt_tblock_id_6958;
-        int64_t flat_segment_id_6959;
-        int64_t global_tid_6960;
-        int64_t slice_6961;
-        int64_t bucket_id_6885;
-        int64_t remnant_6962;
-        int64_t subhistogram_id_6886;
-        int64_t eta_p_block_res_acc_6963;
-        int64_t eta_p_6319;
-        int64_t eta_p_6320;
-        int64_t tblock_id_in_segment_6967;
-        int64_t block_base_offset_6968;
-        int32_t offset_6971;
-        int32_t skip_waves_6972;
-        int64_t eta_p_6964;
-        int64_t eta_p_6965;
+    local_tid_6961 = get_local_id(0);
+    tblock_sizze_6964 = get_local_size(0);
+    wave_sizze_6963 = LOCKSTEP_WIDTH;
+    block_id_6962 = get_tblock_id(0);
+    global_tid_6960 = block_id_6962 * tblock_sizze_6964 + local_tid_6961;
+    flat_gtid_6901 = sext_i32_i64(global_tid_6960);
+    red_arr_i64_mem_6965 = (__local unsigned char *) red_arr_i64_mem_6965_backing_0;
+    sync_arr_mem_6967 = (__local unsigned char *) sync_arr_mem_6967_backing_1;
+    phys_tblock_id_6969 = get_tblock_id(0);
+    iterations_6970 = sdiv_up32(sext_i64_i32(num_virtblocks_6934) - phys_tblock_id_6969, sext_i64_i32(num_tblocks_6323));
+    for (int32_t i_6971 = 0; i_6971 < iterations_6970; i_6971++) {
+        int32_t virt_tblock_id_6972;
+        int64_t flat_segment_id_6973;
+        int64_t global_tid_6974;
+        int64_t slice_6975;
+        int64_t bucket_id_6899;
+        int64_t remnant_6976;
+        int64_t subhistogram_id_6900;
+        int64_t eta_p_block_res_acc_6977;
+        int64_t eta_p_6329;
+        int64_t eta_p_6330;
+        int64_t tblock_id_in_segment_6981;
+        int64_t block_base_offset_6982;
+        int32_t offset_6985;
+        int32_t skip_waves_6986;
+        int64_t eta_p_6978;
+        int64_t eta_p_6979;
         
-        virt_tblock_id_6958 = phys_tblock_id_6955 + i_6957 * sext_i64_i32(num_tblocks_6313);
-        flat_segment_id_6959 = squot64(sext_i32_i64(virt_tblock_id_6958), blocks_per_segment_6918);
-        global_tid_6960 = srem64(sext_i32_i64(virt_tblock_id_6958) * seghist_tblock_sizze_6311 + sext_i32_i64(local_tid_6947), threads_per_segment_6921);
-        slice_6961 = (int64_t) 256;
-        bucket_id_6885 = flat_segment_id_6959;
-        remnant_6962 = flat_segment_id_6959 - bucket_id_6885;
+        virt_tblock_id_6972 = phys_tblock_id_6969 + i_6971 * sext_i64_i32(num_tblocks_6323);
+        flat_segment_id_6973 = squot64(sext_i32_i64(virt_tblock_id_6972), blocks_per_segment_6932);
+        global_tid_6974 = srem64(sext_i32_i64(virt_tblock_id_6972) * seghist_tblock_sizze_6321 + sext_i32_i64(local_tid_6961), threads_per_segment_6935);
+        slice_6975 = (int64_t) 256;
+        bucket_id_6899 = flat_segment_id_6973;
+        remnant_6976 = flat_segment_id_6973 - bucket_id_6899;
         // ne-initialise the outer (per-block) accumulator(s)
         {
-            eta_p_block_res_acc_6963 = (int64_t) 0;
+            eta_p_block_res_acc_6977 = (int64_t) 0;
         }
-        tblock_id_in_segment_6967 = squot64(global_tid_6960, seghist_tblock_sizze_6311);
-        block_base_offset_6968 = tblock_id_in_segment_6967 * q_6919 * seghist_tblock_sizze_6311;
-        for (int64_t i_6969 = 0; i_6969 < q_6919; i_6969++) {
-            int64_t block_offset_6970 = block_base_offset_6968 + i_6969 * seghist_tblock_sizze_6311;
+        tblock_id_in_segment_6981 = squot64(global_tid_6974, seghist_tblock_sizze_6321);
+        block_base_offset_6982 = tblock_id_in_segment_6981 * q_6933 * seghist_tblock_sizze_6321;
+        for (int64_t i_6983 = 0; i_6983 < q_6933; i_6983++) {
+            int64_t block_offset_6984 = block_base_offset_6982 + i_6983 * seghist_tblock_sizze_6321;
             
-            subhistogram_id_6886 = global_tid_6960 + threads_per_segment_6921 * i_6969;
-            if (slt64(subhistogram_id_6886, num_subhistos_6801)) {
+            subhistogram_id_6900 = global_tid_6974 + threads_per_segment_6935 * i_6983;
+            if (slt64(subhistogram_id_6900, num_subhistos_6815)) {
                 // apply map function(s)
                 {
                     // load accumulator(s)
                     {
-                        eta_p_6319 = eta_p_block_res_acc_6963;
+                        eta_p_6329 = eta_p_block_res_acc_6977;
                     }
                     // load next value(s)
                     {
-                        eta_p_6320 = ((__global int64_t *) defunc_0_map_res_subhistos_mem_6802)[subhistogram_id_6886 * (int64_t) 256 + bucket_id_6885];
+                        eta_p_6330 = ((__global int64_t *) defunc_0_map_res_subhistos_mem_6816)[subhistogram_id_6900 * (int64_t) 256 + bucket_id_6899];
                     }
                     // apply reduction operator(s)
                     {
-                        int64_t defunc_0_op_res_6321 = add64(eta_p_6319, eta_p_6320);
+                        int64_t defunc_0_op_res_6331 = add64(eta_p_6329, eta_p_6330);
                         
                         // store in accumulator(s)
                         {
-                            eta_p_block_res_acc_6963 = defunc_0_op_res_6321;
+                            eta_p_block_res_acc_6977 = defunc_0_op_res_6331;
                         }
                     }
                 }
@@ -7704,174 +7708,174 @@ void entropyzisegred_large_6887(__local uint64_t *shared_mem_aligned, __global i
         barrier(CLK_LOCAL_MEM_FENCE);
         // store accs. prims go in lmem; non-prims in params (in global mem)
         {
-            ((__local int64_t *) red_arr_i64_mem_6951)[sext_i32_i64(local_tid_6947)] = eta_p_block_res_acc_6963;
+            ((__local int64_t *) red_arr_i64_mem_6965)[sext_i32_i64(local_tid_6961)] = eta_p_block_res_acc_6977;
         }
         barrier(CLK_LOCAL_MEM_FENCE);
-        skip_waves_6972 = 1;
-        offset_6971 = 0;
+        skip_waves_6986 = 1;
+        offset_6985 = 0;
         // participating threads read initial accumulator
         {
-            if (slt32(local_tid_6947, sext_i64_i32(seghist_tblock_sizze_6311))) {
-                eta_p_6964 = ((__local int64_t *) red_arr_i64_mem_6951)[sext_i32_i64(local_tid_6947 + offset_6971)];
+            if (slt32(local_tid_6961, sext_i64_i32(seghist_tblock_sizze_6321))) {
+                eta_p_6978 = ((__local int64_t *) red_arr_i64_mem_6965)[sext_i32_i64(local_tid_6961 + offset_6985)];
             }
         }
-        offset_6971 = 1;
-        while (slt32(offset_6971, wave_sizze_6949)) {
-            if (slt32(local_tid_6947 + offset_6971, sext_i64_i32(seghist_tblock_sizze_6311)) && ((local_tid_6947 - squot32(local_tid_6947, wave_sizze_6949) * wave_sizze_6949) & (2 * offset_6971 - 1)) == 0) {
+        offset_6985 = 1;
+        while (slt32(offset_6985, wave_sizze_6963)) {
+            if (slt32(local_tid_6961 + offset_6985, sext_i64_i32(seghist_tblock_sizze_6321)) && ((local_tid_6961 - squot32(local_tid_6961, wave_sizze_6963) * wave_sizze_6963) & (2 * offset_6985 - 1)) == 0) {
                 // read array element
                 {
-                    eta_p_6965 = ((volatile __local int64_t *) red_arr_i64_mem_6951)[sext_i32_i64(local_tid_6947 + offset_6971)];
+                    eta_p_6979 = ((volatile __local int64_t *) red_arr_i64_mem_6965)[sext_i32_i64(local_tid_6961 + offset_6985)];
                 }
                 // apply reduction operation
                 {
-                    int64_t defunc_0_op_res_6966 = add64(eta_p_6964, eta_p_6965);
+                    int64_t defunc_0_op_res_6980 = add64(eta_p_6978, eta_p_6979);
                     
-                    eta_p_6964 = defunc_0_op_res_6966;
+                    eta_p_6978 = defunc_0_op_res_6980;
                 }
                 // write result of operation
                 {
-                    ((volatile __local int64_t *) red_arr_i64_mem_6951)[sext_i32_i64(local_tid_6947)] = eta_p_6964;
+                    ((volatile __local int64_t *) red_arr_i64_mem_6965)[sext_i32_i64(local_tid_6961)] = eta_p_6978;
                 }
             }
-            offset_6971 *= 2;
+            offset_6985 *= 2;
         }
-        while (slt32(skip_waves_6972, squot32(sext_i64_i32(seghist_tblock_sizze_6311) + wave_sizze_6949 - 1, wave_sizze_6949))) {
+        while (slt32(skip_waves_6986, squot32(sext_i64_i32(seghist_tblock_sizze_6321) + wave_sizze_6963 - 1, wave_sizze_6963))) {
             barrier(CLK_LOCAL_MEM_FENCE);
-            offset_6971 = skip_waves_6972 * wave_sizze_6949;
-            if (slt32(local_tid_6947 + offset_6971, sext_i64_i32(seghist_tblock_sizze_6311)) && ((local_tid_6947 - squot32(local_tid_6947, wave_sizze_6949) * wave_sizze_6949) == 0 && (squot32(local_tid_6947, wave_sizze_6949) & (2 * skip_waves_6972 - 1)) == 0)) {
+            offset_6985 = skip_waves_6986 * wave_sizze_6963;
+            if (slt32(local_tid_6961 + offset_6985, sext_i64_i32(seghist_tblock_sizze_6321)) && ((local_tid_6961 - squot32(local_tid_6961, wave_sizze_6963) * wave_sizze_6963) == 0 && (squot32(local_tid_6961, wave_sizze_6963) & (2 * skip_waves_6986 - 1)) == 0)) {
                 // read array element
                 {
-                    eta_p_6965 = ((__local int64_t *) red_arr_i64_mem_6951)[sext_i32_i64(local_tid_6947 + offset_6971)];
+                    eta_p_6979 = ((__local int64_t *) red_arr_i64_mem_6965)[sext_i32_i64(local_tid_6961 + offset_6985)];
                 }
                 // apply reduction operation
                 {
-                    int64_t defunc_0_op_res_6966 = add64(eta_p_6964, eta_p_6965);
+                    int64_t defunc_0_op_res_6980 = add64(eta_p_6978, eta_p_6979);
                     
-                    eta_p_6964 = defunc_0_op_res_6966;
+                    eta_p_6978 = defunc_0_op_res_6980;
                 }
                 // write result of operation
                 {
-                    ((__local int64_t *) red_arr_i64_mem_6951)[sext_i32_i64(local_tid_6947)] = eta_p_6964;
+                    ((__local int64_t *) red_arr_i64_mem_6965)[sext_i32_i64(local_tid_6961)] = eta_p_6978;
                 }
             }
-            skip_waves_6972 *= 2;
+            skip_waves_6986 *= 2;
         }
         barrier(CLK_LOCAL_MEM_FENCE);
         barrier(CLK_LOCAL_MEM_FENCE);
         // thread 0 updates per-block acc(s); rest reset to ne
         {
-            if (sext_i32_i64(local_tid_6947) == (int64_t) 0) {
-                eta_p_block_res_acc_6963 = eta_p_6964;
+            if (sext_i32_i64(local_tid_6961) == (int64_t) 0) {
+                eta_p_block_res_acc_6977 = eta_p_6978;
             } else {
-                eta_p_block_res_acc_6963 = (int64_t) 0;
+                eta_p_block_res_acc_6977 = (int64_t) 0;
             }
         }
-        if (blocks_per_segment_6918 == (int64_t) 1) {
+        if (blocks_per_segment_6932 == (int64_t) 1) {
             // first thread in block saves final result to memory
             {
-                if (local_tid_6947 == 0) {
-                    ((__global int64_t *) mem_6744)[bucket_id_6885] = eta_p_block_res_acc_6963;
+                if (local_tid_6961 == 0) {
+                    ((__global int64_t *) mem_6758)[bucket_id_6899] = eta_p_block_res_acc_6977;
                 }
             }
         } else {
-            int32_t old_counter_6973;
-            bool is_last_block_6974;
+            int32_t old_counter_6987;
+            bool is_last_block_6988;
             
             // first thread in block saves block result to global memory
             {
-                if (local_tid_6947 == 0) {
-                    ((__global int64_t *) segred_tmp_mem_6922)[sext_i32_i64(virt_tblock_id_6958)] = eta_p_block_res_acc_6963;
+                if (local_tid_6961 == 0) {
+                    ((__global int64_t *) segred_tmp_mem_6936)[sext_i32_i64(virt_tblock_id_6972)] = eta_p_block_res_acc_6977;
                     mem_fence_global();
-                    old_counter_6973 = atomic_add_i32_global(&((volatile __global int *) counters_mem_6924)[srem64(flat_segment_id_6959, (int64_t) 20480)], (int) 1);
-                    ((__local bool *) sync_arr_mem_6953)[(int64_t) 0] = old_counter_6973 == sext_i64_i32(blocks_per_segment_6918 - (int64_t) 1);
+                    old_counter_6987 = atomic_add_i32_global(&((volatile __global int *) counters_mem_6938)[srem64(flat_segment_id_6973, (int64_t) 20480)], (int) 1);
+                    ((__local bool *) sync_arr_mem_6967)[(int64_t) 0] = old_counter_6987 == sext_i64_i32(blocks_per_segment_6932 - (int64_t) 1);
                 }
             }
             barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
-            is_last_block_6974 = ((__local bool *) sync_arr_mem_6953)[(int64_t) 0];
-            if (is_last_block_6974) {
-                if (local_tid_6947 == 0) {
-                    old_counter_6973 = atomic_add_i32_global(&((volatile __global int *) counters_mem_6924)[srem64(flat_segment_id_6959, (int64_t) 20480)], (int) sext_i64_i32((int64_t) 0 - blocks_per_segment_6918));
+            is_last_block_6988 = ((__local bool *) sync_arr_mem_6967)[(int64_t) 0];
+            if (is_last_block_6988) {
+                if (local_tid_6961 == 0) {
+                    old_counter_6987 = atomic_add_i32_global(&((volatile __global int *) counters_mem_6938)[srem64(flat_segment_id_6973, (int64_t) 20480)], (int) sext_i64_i32((int64_t) 0 - blocks_per_segment_6932));
                 }
                 // read in the per-block-results
                 {
-                    int64_t read_per_thread_6975 = sdiv_up64(blocks_per_segment_6918, seghist_tblock_sizze_6311);
+                    int64_t read_per_thread_6989 = sdiv_up64(blocks_per_segment_6932, seghist_tblock_sizze_6321);
                     
-                    eta_p_6319 = (int64_t) 0;
-                    for (int64_t i_6976 = 0; i_6976 < read_per_thread_6975; i_6976++) {
-                        int64_t block_res_id_6977 = sext_i32_i64(local_tid_6947) * read_per_thread_6975 + i_6976;
-                        int64_t index_of_block_res_6978 = flat_segment_id_6959 * blocks_per_segment_6918 + block_res_id_6977;
+                    eta_p_6329 = (int64_t) 0;
+                    for (int64_t i_6990 = 0; i_6990 < read_per_thread_6989; i_6990++) {
+                        int64_t block_res_id_6991 = sext_i32_i64(local_tid_6961) * read_per_thread_6989 + i_6990;
+                        int64_t index_of_block_res_6992 = flat_segment_id_6973 * blocks_per_segment_6932 + block_res_id_6991;
                         
-                        if (slt64(block_res_id_6977, blocks_per_segment_6918)) {
-                            eta_p_6320 = ((__global int64_t *) segred_tmp_mem_6922)[index_of_block_res_6978];
+                        if (slt64(block_res_id_6991, blocks_per_segment_6932)) {
+                            eta_p_6330 = ((__global int64_t *) segred_tmp_mem_6936)[index_of_block_res_6992];
                             
-                            int64_t defunc_0_op_res_6321 = add64(eta_p_6319, eta_p_6320);
+                            int64_t defunc_0_op_res_6331 = add64(eta_p_6329, eta_p_6330);
                             
-                            eta_p_6319 = defunc_0_op_res_6321;
+                            eta_p_6329 = defunc_0_op_res_6331;
                         }
                     }
                 }
-                ((__local int64_t *) red_arr_i64_mem_6951)[sext_i32_i64(local_tid_6947)] = eta_p_6319;
+                ((__local int64_t *) red_arr_i64_mem_6965)[sext_i32_i64(local_tid_6961)] = eta_p_6329;
                 barrier(CLK_LOCAL_MEM_FENCE);
                 // reduce the per-block results
                 {
-                    int32_t offset_6979;
-                    int32_t skip_waves_6980 = 1;
-                    int64_t eta_p_6964;
-                    int64_t eta_p_6965;
+                    int32_t offset_6993;
+                    int32_t skip_waves_6994 = 1;
+                    int64_t eta_p_6978;
+                    int64_t eta_p_6979;
                     
-                    offset_6979 = 0;
+                    offset_6993 = 0;
                     // participating threads read initial accumulator
                     {
-                        if (slt32(local_tid_6947, sext_i64_i32(seghist_tblock_sizze_6311))) {
-                            eta_p_6964 = ((__local int64_t *) red_arr_i64_mem_6951)[sext_i32_i64(local_tid_6947 + offset_6979)];
+                        if (slt32(local_tid_6961, sext_i64_i32(seghist_tblock_sizze_6321))) {
+                            eta_p_6978 = ((__local int64_t *) red_arr_i64_mem_6965)[sext_i32_i64(local_tid_6961 + offset_6993)];
                         }
                     }
-                    offset_6979 = 1;
-                    while (slt32(offset_6979, wave_sizze_6949)) {
-                        if (slt32(local_tid_6947 + offset_6979, sext_i64_i32(seghist_tblock_sizze_6311)) && ((local_tid_6947 - squot32(local_tid_6947, wave_sizze_6949) * wave_sizze_6949) & (2 * offset_6979 - 1)) == 0) {
+                    offset_6993 = 1;
+                    while (slt32(offset_6993, wave_sizze_6963)) {
+                        if (slt32(local_tid_6961 + offset_6993, sext_i64_i32(seghist_tblock_sizze_6321)) && ((local_tid_6961 - squot32(local_tid_6961, wave_sizze_6963) * wave_sizze_6963) & (2 * offset_6993 - 1)) == 0) {
                             // read array element
                             {
-                                eta_p_6965 = ((volatile __local int64_t *) red_arr_i64_mem_6951)[sext_i32_i64(local_tid_6947 + offset_6979)];
+                                eta_p_6979 = ((volatile __local int64_t *) red_arr_i64_mem_6965)[sext_i32_i64(local_tid_6961 + offset_6993)];
                             }
                             // apply reduction operation
                             {
-                                int64_t defunc_0_op_res_6966 = add64(eta_p_6964, eta_p_6965);
+                                int64_t defunc_0_op_res_6980 = add64(eta_p_6978, eta_p_6979);
                                 
-                                eta_p_6964 = defunc_0_op_res_6966;
+                                eta_p_6978 = defunc_0_op_res_6980;
                             }
                             // write result of operation
                             {
-                                ((volatile __local int64_t *) red_arr_i64_mem_6951)[sext_i32_i64(local_tid_6947)] = eta_p_6964;
+                                ((volatile __local int64_t *) red_arr_i64_mem_6965)[sext_i32_i64(local_tid_6961)] = eta_p_6978;
                             }
                         }
-                        offset_6979 *= 2;
+                        offset_6993 *= 2;
                     }
-                    while (slt32(skip_waves_6980, squot32(sext_i64_i32(seghist_tblock_sizze_6311) + wave_sizze_6949 - 1, wave_sizze_6949))) {
+                    while (slt32(skip_waves_6994, squot32(sext_i64_i32(seghist_tblock_sizze_6321) + wave_sizze_6963 - 1, wave_sizze_6963))) {
                         barrier(CLK_LOCAL_MEM_FENCE);
-                        offset_6979 = skip_waves_6980 * wave_sizze_6949;
-                        if (slt32(local_tid_6947 + offset_6979, sext_i64_i32(seghist_tblock_sizze_6311)) && ((local_tid_6947 - squot32(local_tid_6947, wave_sizze_6949) * wave_sizze_6949) == 0 && (squot32(local_tid_6947, wave_sizze_6949) & (2 * skip_waves_6980 - 1)) == 0)) {
+                        offset_6993 = skip_waves_6994 * wave_sizze_6963;
+                        if (slt32(local_tid_6961 + offset_6993, sext_i64_i32(seghist_tblock_sizze_6321)) && ((local_tid_6961 - squot32(local_tid_6961, wave_sizze_6963) * wave_sizze_6963) == 0 && (squot32(local_tid_6961, wave_sizze_6963) & (2 * skip_waves_6994 - 1)) == 0)) {
                             // read array element
                             {
-                                eta_p_6965 = ((__local int64_t *) red_arr_i64_mem_6951)[sext_i32_i64(local_tid_6947 + offset_6979)];
+                                eta_p_6979 = ((__local int64_t *) red_arr_i64_mem_6965)[sext_i32_i64(local_tid_6961 + offset_6993)];
                             }
                             // apply reduction operation
                             {
-                                int64_t defunc_0_op_res_6966 = add64(eta_p_6964, eta_p_6965);
+                                int64_t defunc_0_op_res_6980 = add64(eta_p_6978, eta_p_6979);
                                 
-                                eta_p_6964 = defunc_0_op_res_6966;
+                                eta_p_6978 = defunc_0_op_res_6980;
                             }
                             // write result of operation
                             {
-                                ((__local int64_t *) red_arr_i64_mem_6951)[sext_i32_i64(local_tid_6947)] = eta_p_6964;
+                                ((__local int64_t *) red_arr_i64_mem_6965)[sext_i32_i64(local_tid_6961)] = eta_p_6978;
                             }
                         }
-                        skip_waves_6980 *= 2;
+                        skip_waves_6994 *= 2;
                     }
                     barrier(CLK_LOCAL_MEM_FENCE);
                     // and back to memory with the final result
                     {
-                        if (local_tid_6947 == 0) {
-                            ((__global int64_t *) mem_6744)[bucket_id_6885] = eta_p_6964;
+                        if (local_tid_6961 == 0) {
+                            ((__global int64_t *) mem_6758)[bucket_id_6899] = eta_p_6978;
                         }
                     }
                 }
@@ -7882,102 +7886,102 @@ void entropyzisegred_large_6887(__local uint64_t *shared_mem_aligned, __global i
     
   error_6:
     return;
-    #undef seghist_tblock_sizze_6311
-    #undef chunk_sizze_6888
+    #undef seghist_tblock_sizze_6321
+    #undef chunk_sizze_6902
 }
-FUTHARK_KERNEL_SIZED(entropyzisegred_nonseg_6334_dim1, 1, 1)
-void entropyzisegred_nonseg_6334(__local uint64_t *shared_mem_aligned, __global int *global_failure, float i64_res_6244, int64_t num_tblocks_6329, int64_t num_threads_6987, __global unsigned char *mem_6744, __global unsigned char *mem_6747, __global unsigned char *counters_mem_6983, __global unsigned char *segred_tmp_mem_6985)
+FUTHARK_KERNEL_SIZED(entropyzisegred_nonseg_6344_dim1, 1, 1)
+void entropyzisegred_nonseg_6344(__local uint64_t *shared_mem_aligned, __global int *global_failure, float i64_res_6254, int64_t num_tblocks_6339, int64_t num_threads_7001, __global unsigned char *mem_6758, __global unsigned char *mem_6761, __global unsigned char *counters_mem_6997, __global unsigned char *segred_tmp_mem_6999)
 {
-    #define segred_tblock_sizze_6327 (entropyzisegred_nonseg_6334zisegred_tblock_sizze_6327)
-    #define chunk_sizze_6982 (entropyzisegred_nonseg_6334zichunk_sizze_6982)
+    #define segred_tblock_sizze_6337 (entropyzisegred_nonseg_6344zisegred_tblock_sizze_6337)
+    #define chunk_sizze_6996 (entropyzisegred_nonseg_6344zichunk_sizze_6996)
     
     __local unsigned char *shared_mem = (__local unsigned char *) shared_mem_aligned;
-    volatile __local unsigned char *sync_arr_mem_6995_backing_1 = &shared_mem[0];
-    const int64_t sync_arr_mem_6995_backing_1_offset = 0 + 8;
-    volatile __local unsigned char *red_arr_f32_mem_6993_backing_0 = &shared_mem[sync_arr_mem_6995_backing_1_offset];
-    const int64_t red_arr_f32_mem_6993_backing_0_offset = sync_arr_mem_6995_backing_1_offset + ((int64_t) 4 * segred_tblock_sizze_6327 + srem64((int64_t) 8 - srem64((int64_t) 4 * segred_tblock_sizze_6327, (int64_t) 8), (int64_t) 8));
+    volatile __local unsigned char *sync_arr_mem_7009_backing_1 = &shared_mem[0];
+    const int64_t sync_arr_mem_7009_backing_1_offset = 0 + 8;
+    volatile __local unsigned char *red_arr_f32_mem_7007_backing_0 = &shared_mem[sync_arr_mem_7009_backing_1_offset];
+    const int64_t red_arr_f32_mem_7007_backing_0_offset = sync_arr_mem_7009_backing_1_offset + ((int64_t) 4 * segred_tblock_sizze_6337 + srem64((int64_t) 8 - srem64((int64_t) 4 * segred_tblock_sizze_6337, (int64_t) 8), (int64_t) 8));
     
     if (*global_failure >= 0)
         return;
     
-    int32_t local_tid_6989;
-    int32_t tblock_sizze_6992;
-    int32_t wave_sizze_6991;
-    int32_t block_id_6990;
-    int32_t global_tid_6988;
-    int64_t phys_tid_6334;
-    __local unsigned char *red_arr_f32_mem_6993;
-    __local unsigned char *sync_arr_mem_6995;
-    int64_t dummy_6332;
-    int64_t gtid_6333;
-    int64_t q_6997;
-    float eta_p_block_res_acc_6998;
-    float eta_p_6256;
-    float eta_p_6257;
-    int64_t tblock_id_in_segment_7002;
-    int64_t block_base_offset_7003;
-    int32_t offset_7006;
-    int32_t skip_waves_7007;
-    float eta_p_6999;
-    float eta_p_7000;
-    int32_t old_counter_7008;
-    bool is_last_block_7009;
+    int32_t local_tid_7003;
+    int32_t tblock_sizze_7006;
+    int32_t wave_sizze_7005;
+    int32_t block_id_7004;
+    int32_t global_tid_7002;
+    int64_t phys_tid_6344;
+    __local unsigned char *red_arr_f32_mem_7007;
+    __local unsigned char *sync_arr_mem_7009;
+    int64_t dummy_6342;
+    int64_t gtid_6343;
+    int64_t q_7011;
+    float eta_p_block_res_acc_7012;
+    float eta_p_6266;
+    float eta_p_6267;
+    int64_t tblock_id_in_segment_7016;
+    int64_t block_base_offset_7017;
+    int32_t offset_7020;
+    int32_t skip_waves_7021;
+    float eta_p_7013;
+    float eta_p_7014;
+    int32_t old_counter_7022;
+    bool is_last_block_7023;
     
-    local_tid_6989 = get_local_id(0);
-    tblock_sizze_6992 = get_local_size(0);
-    wave_sizze_6991 = LOCKSTEP_WIDTH;
-    block_id_6990 = get_tblock_id(0);
-    global_tid_6988 = block_id_6990 * tblock_sizze_6992 + local_tid_6989;
-    phys_tid_6334 = sext_i32_i64(global_tid_6988);
-    red_arr_f32_mem_6993 = (__local unsigned char *) red_arr_f32_mem_6993_backing_0;
-    sync_arr_mem_6995 = (__local unsigned char *) sync_arr_mem_6995_backing_1;
-    dummy_6332 = (int64_t) 0;
-    gtid_6333 = (int64_t) 0;
-    q_6997 = sdiv_up64((int64_t) 256, sext_i32_i64(sext_i64_i32(segred_tblock_sizze_6327 * num_tblocks_6329)) * chunk_sizze_6982);
+    local_tid_7003 = get_local_id(0);
+    tblock_sizze_7006 = get_local_size(0);
+    wave_sizze_7005 = LOCKSTEP_WIDTH;
+    block_id_7004 = get_tblock_id(0);
+    global_tid_7002 = block_id_7004 * tblock_sizze_7006 + local_tid_7003;
+    phys_tid_6344 = sext_i32_i64(global_tid_7002);
+    red_arr_f32_mem_7007 = (__local unsigned char *) red_arr_f32_mem_7007_backing_0;
+    sync_arr_mem_7009 = (__local unsigned char *) sync_arr_mem_7009_backing_1;
+    dummy_6342 = (int64_t) 0;
+    gtid_6343 = (int64_t) 0;
+    q_7011 = sdiv_up64((int64_t) 256, sext_i32_i64(sext_i64_i32(segred_tblock_sizze_6337 * num_tblocks_6339)) * chunk_sizze_6996);
     // ne-initialise the outer (per-block) accumulator(s)
     {
-        eta_p_block_res_acc_6998 = 0.0F;
+        eta_p_block_res_acc_7012 = 0.0F;
     }
-    tblock_id_in_segment_7002 = squot64(phys_tid_6334, segred_tblock_sizze_6327);
-    block_base_offset_7003 = tblock_id_in_segment_7002 * q_6997 * segred_tblock_sizze_6327;
-    for (int64_t i_7004 = 0; i_7004 < q_6997; i_7004++) {
-        int64_t block_offset_7005 = block_base_offset_7003 + i_7004 * segred_tblock_sizze_6327;
+    tblock_id_in_segment_7016 = squot64(phys_tid_6344, segred_tblock_sizze_6337);
+    block_base_offset_7017 = tblock_id_in_segment_7016 * q_7011 * segred_tblock_sizze_6337;
+    for (int64_t i_7018 = 0; i_7018 < q_7011; i_7018++) {
+        int64_t block_offset_7019 = block_base_offset_7017 + i_7018 * segred_tblock_sizze_6337;
         
-        gtid_6333 = phys_tid_6334 + num_threads_6987 * i_7004;
-        if (slt64(gtid_6333, (int64_t) 256)) {
+        gtid_6343 = phys_tid_6344 + num_threads_7001 * i_7018;
+        if (slt64(gtid_6343, (int64_t) 256)) {
             // apply map function(s)
             {
                 // apply map function
                 {
-                    int64_t eta_p_6272 = ((__global int64_t *) mem_6744)[gtid_6333];
-                    float i64_res_6273 = sitofp_i64_f32(eta_p_6272);
-                    float lifted_lambda_res_6274 = i64_res_6273 / i64_res_6244;
-                    bool cond_6276 = lifted_lambda_res_6274 == 0.0F;
-                    float lifted_lambda_res_6277;
+                    int64_t eta_p_6282 = ((__global int64_t *) mem_6758)[gtid_6343];
+                    float i64_res_6283 = sitofp_i64_f32(eta_p_6282);
+                    float lifted_lambda_res_6284 = i64_res_6283 / i64_res_6254;
+                    bool cond_6286 = lifted_lambda_res_6284 == 0.0F;
+                    float lifted_lambda_res_6287;
                     
-                    if (cond_6276) {
-                        lifted_lambda_res_6277 = 0.0F;
+                    if (cond_6286) {
+                        lifted_lambda_res_6287 = 0.0F;
                     } else {
-                        float log2_res_6278 = futrts_log2_32(lifted_lambda_res_6274);
-                        float lifted_lambda_res_f_res_6279 = lifted_lambda_res_6274 * log2_res_6278;
+                        float log2_res_6288 = futrts_log2_32(lifted_lambda_res_6284);
+                        float lifted_lambda_res_f_res_6289 = lifted_lambda_res_6284 * log2_res_6288;
                         
-                        lifted_lambda_res_6277 = lifted_lambda_res_f_res_6279;
+                        lifted_lambda_res_6287 = lifted_lambda_res_f_res_6289;
                     }
                     // load accumulator(s)
                     {
-                        eta_p_6256 = eta_p_block_res_acc_6998;
+                        eta_p_6266 = eta_p_block_res_acc_7012;
                     }
                     // load next value(s)
                     {
-                        eta_p_6257 = lifted_lambda_res_6277;
+                        eta_p_6267 = lifted_lambda_res_6287;
                     }
                     // apply reduction operator(s)
                     {
-                        float defunc_0_op_res_6258 = eta_p_6256 + eta_p_6257;
+                        float defunc_0_op_res_6268 = eta_p_6266 + eta_p_6267;
                         
                         // store in accumulator(s)
                         {
-                            eta_p_block_res_acc_6998 = defunc_0_op_res_6258;
+                            eta_p_block_res_acc_7012 = defunc_0_op_res_6268;
                         }
                     }
                 }
@@ -7987,163 +7991,163 @@ void entropyzisegred_nonseg_6334(__local uint64_t *shared_mem_aligned, __global 
     barrier(CLK_LOCAL_MEM_FENCE);
     // store accs. prims go in lmem; non-prims in params (in global mem)
     {
-        ((__local float *) red_arr_f32_mem_6993)[sext_i32_i64(local_tid_6989)] = eta_p_block_res_acc_6998;
+        ((__local float *) red_arr_f32_mem_7007)[sext_i32_i64(local_tid_7003)] = eta_p_block_res_acc_7012;
     }
     barrier(CLK_LOCAL_MEM_FENCE);
-    skip_waves_7007 = 1;
-    offset_7006 = 0;
+    skip_waves_7021 = 1;
+    offset_7020 = 0;
     // participating threads read initial accumulator
     {
-        if (slt32(local_tid_6989, sext_i64_i32(segred_tblock_sizze_6327))) {
-            eta_p_6999 = ((__local float *) red_arr_f32_mem_6993)[sext_i32_i64(local_tid_6989 + offset_7006)];
+        if (slt32(local_tid_7003, sext_i64_i32(segred_tblock_sizze_6337))) {
+            eta_p_7013 = ((__local float *) red_arr_f32_mem_7007)[sext_i32_i64(local_tid_7003 + offset_7020)];
         }
     }
-    offset_7006 = 1;
-    while (slt32(offset_7006, wave_sizze_6991)) {
-        if (slt32(local_tid_6989 + offset_7006, sext_i64_i32(segred_tblock_sizze_6327)) && ((local_tid_6989 - squot32(local_tid_6989, wave_sizze_6991) * wave_sizze_6991) & (2 * offset_7006 - 1)) == 0) {
+    offset_7020 = 1;
+    while (slt32(offset_7020, wave_sizze_7005)) {
+        if (slt32(local_tid_7003 + offset_7020, sext_i64_i32(segred_tblock_sizze_6337)) && ((local_tid_7003 - squot32(local_tid_7003, wave_sizze_7005) * wave_sizze_7005) & (2 * offset_7020 - 1)) == 0) {
             // read array element
             {
-                eta_p_7000 = ((volatile __local float *) red_arr_f32_mem_6993)[sext_i32_i64(local_tid_6989 + offset_7006)];
+                eta_p_7014 = ((volatile __local float *) red_arr_f32_mem_7007)[sext_i32_i64(local_tid_7003 + offset_7020)];
             }
             // apply reduction operation
             {
-                float defunc_0_op_res_7001 = eta_p_6999 + eta_p_7000;
+                float defunc_0_op_res_7015 = eta_p_7013 + eta_p_7014;
                 
-                eta_p_6999 = defunc_0_op_res_7001;
+                eta_p_7013 = defunc_0_op_res_7015;
             }
             // write result of operation
             {
-                ((volatile __local float *) red_arr_f32_mem_6993)[sext_i32_i64(local_tid_6989)] = eta_p_6999;
+                ((volatile __local float *) red_arr_f32_mem_7007)[sext_i32_i64(local_tid_7003)] = eta_p_7013;
             }
         }
-        offset_7006 *= 2;
+        offset_7020 *= 2;
     }
-    while (slt32(skip_waves_7007, squot32(sext_i64_i32(segred_tblock_sizze_6327) + wave_sizze_6991 - 1, wave_sizze_6991))) {
+    while (slt32(skip_waves_7021, squot32(sext_i64_i32(segred_tblock_sizze_6337) + wave_sizze_7005 - 1, wave_sizze_7005))) {
         barrier(CLK_LOCAL_MEM_FENCE);
-        offset_7006 = skip_waves_7007 * wave_sizze_6991;
-        if (slt32(local_tid_6989 + offset_7006, sext_i64_i32(segred_tblock_sizze_6327)) && ((local_tid_6989 - squot32(local_tid_6989, wave_sizze_6991) * wave_sizze_6991) == 0 && (squot32(local_tid_6989, wave_sizze_6991) & (2 * skip_waves_7007 - 1)) == 0)) {
+        offset_7020 = skip_waves_7021 * wave_sizze_7005;
+        if (slt32(local_tid_7003 + offset_7020, sext_i64_i32(segred_tblock_sizze_6337)) && ((local_tid_7003 - squot32(local_tid_7003, wave_sizze_7005) * wave_sizze_7005) == 0 && (squot32(local_tid_7003, wave_sizze_7005) & (2 * skip_waves_7021 - 1)) == 0)) {
             // read array element
             {
-                eta_p_7000 = ((__local float *) red_arr_f32_mem_6993)[sext_i32_i64(local_tid_6989 + offset_7006)];
+                eta_p_7014 = ((__local float *) red_arr_f32_mem_7007)[sext_i32_i64(local_tid_7003 + offset_7020)];
             }
             // apply reduction operation
             {
-                float defunc_0_op_res_7001 = eta_p_6999 + eta_p_7000;
+                float defunc_0_op_res_7015 = eta_p_7013 + eta_p_7014;
                 
-                eta_p_6999 = defunc_0_op_res_7001;
+                eta_p_7013 = defunc_0_op_res_7015;
             }
             // write result of operation
             {
-                ((__local float *) red_arr_f32_mem_6993)[sext_i32_i64(local_tid_6989)] = eta_p_6999;
+                ((__local float *) red_arr_f32_mem_7007)[sext_i32_i64(local_tid_7003)] = eta_p_7013;
             }
         }
-        skip_waves_7007 *= 2;
+        skip_waves_7021 *= 2;
     }
     barrier(CLK_LOCAL_MEM_FENCE);
     barrier(CLK_LOCAL_MEM_FENCE);
     // thread 0 updates per-block acc(s); rest reset to ne
     {
-        if (sext_i32_i64(local_tid_6989) == (int64_t) 0) {
-            eta_p_block_res_acc_6998 = eta_p_6999;
+        if (sext_i32_i64(local_tid_7003) == (int64_t) 0) {
+            eta_p_block_res_acc_7012 = eta_p_7013;
         } else {
-            eta_p_block_res_acc_6998 = 0.0F;
+            eta_p_block_res_acc_7012 = 0.0F;
         }
     }
     // first thread in block saves block result to global memory
     {
-        if (local_tid_6989 == 0) {
-            ((__global float *) segred_tmp_mem_6985)[sext_i32_i64(block_id_6990)] = eta_p_block_res_acc_6998;
+        if (local_tid_7003 == 0) {
+            ((__global float *) segred_tmp_mem_6999)[sext_i32_i64(block_id_7004)] = eta_p_block_res_acc_7012;
             mem_fence_global();
-            old_counter_7008 = atomic_add_i32_global(&((volatile __global int *) counters_mem_6983)[(int64_t) 0], (int) 1);
-            ((__local bool *) sync_arr_mem_6995)[(int64_t) 0] = old_counter_7008 == sext_i64_i32(num_tblocks_6329 - (int64_t) 1);
+            old_counter_7022 = atomic_add_i32_global(&((volatile __global int *) counters_mem_6997)[(int64_t) 0], (int) 1);
+            ((__local bool *) sync_arr_mem_7009)[(int64_t) 0] = old_counter_7022 == sext_i64_i32(num_tblocks_6339 - (int64_t) 1);
         }
     }
     barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
-    is_last_block_7009 = ((__local bool *) sync_arr_mem_6995)[(int64_t) 0];
-    if (is_last_block_7009) {
-        if (local_tid_6989 == 0) {
-            old_counter_7008 = atomic_add_i32_global(&((volatile __global int *) counters_mem_6983)[(int64_t) 0], (int) sext_i64_i32((int64_t) 0 - num_tblocks_6329));
+    is_last_block_7023 = ((__local bool *) sync_arr_mem_7009)[(int64_t) 0];
+    if (is_last_block_7023) {
+        if (local_tid_7003 == 0) {
+            old_counter_7022 = atomic_add_i32_global(&((volatile __global int *) counters_mem_6997)[(int64_t) 0], (int) sext_i64_i32((int64_t) 0 - num_tblocks_6339));
         }
         // read in the per-block-results
         {
-            int64_t read_per_thread_7010 = sdiv_up64(num_tblocks_6329, segred_tblock_sizze_6327);
+            int64_t read_per_thread_7024 = sdiv_up64(num_tblocks_6339, segred_tblock_sizze_6337);
             
-            eta_p_6256 = 0.0F;
-            for (int64_t i_7011 = 0; i_7011 < read_per_thread_7010; i_7011++) {
-                int64_t block_res_id_7012 = sext_i32_i64(local_tid_6989) * read_per_thread_7010 + i_7011;
-                int64_t index_of_block_res_7013 = block_res_id_7012;
+            eta_p_6266 = 0.0F;
+            for (int64_t i_7025 = 0; i_7025 < read_per_thread_7024; i_7025++) {
+                int64_t block_res_id_7026 = sext_i32_i64(local_tid_7003) * read_per_thread_7024 + i_7025;
+                int64_t index_of_block_res_7027 = block_res_id_7026;
                 
-                if (slt64(block_res_id_7012, num_tblocks_6329)) {
-                    eta_p_6257 = ((__global float *) segred_tmp_mem_6985)[index_of_block_res_7013];
+                if (slt64(block_res_id_7026, num_tblocks_6339)) {
+                    eta_p_6267 = ((__global float *) segred_tmp_mem_6999)[index_of_block_res_7027];
                     
-                    float defunc_0_op_res_6258 = eta_p_6256 + eta_p_6257;
+                    float defunc_0_op_res_6268 = eta_p_6266 + eta_p_6267;
                     
-                    eta_p_6256 = defunc_0_op_res_6258;
+                    eta_p_6266 = defunc_0_op_res_6268;
                 }
             }
         }
-        ((__local float *) red_arr_f32_mem_6993)[sext_i32_i64(local_tid_6989)] = eta_p_6256;
+        ((__local float *) red_arr_f32_mem_7007)[sext_i32_i64(local_tid_7003)] = eta_p_6266;
         barrier(CLK_LOCAL_MEM_FENCE);
         // reduce the per-block results
         {
-            int32_t offset_7014;
-            int32_t skip_waves_7015 = 1;
-            float eta_p_6999;
-            float eta_p_7000;
+            int32_t offset_7028;
+            int32_t skip_waves_7029 = 1;
+            float eta_p_7013;
+            float eta_p_7014;
             
-            offset_7014 = 0;
+            offset_7028 = 0;
             // participating threads read initial accumulator
             {
-                if (slt32(local_tid_6989, sext_i64_i32(segred_tblock_sizze_6327))) {
-                    eta_p_6999 = ((__local float *) red_arr_f32_mem_6993)[sext_i32_i64(local_tid_6989 + offset_7014)];
+                if (slt32(local_tid_7003, sext_i64_i32(segred_tblock_sizze_6337))) {
+                    eta_p_7013 = ((__local float *) red_arr_f32_mem_7007)[sext_i32_i64(local_tid_7003 + offset_7028)];
                 }
             }
-            offset_7014 = 1;
-            while (slt32(offset_7014, wave_sizze_6991)) {
-                if (slt32(local_tid_6989 + offset_7014, sext_i64_i32(segred_tblock_sizze_6327)) && ((local_tid_6989 - squot32(local_tid_6989, wave_sizze_6991) * wave_sizze_6991) & (2 * offset_7014 - 1)) == 0) {
+            offset_7028 = 1;
+            while (slt32(offset_7028, wave_sizze_7005)) {
+                if (slt32(local_tid_7003 + offset_7028, sext_i64_i32(segred_tblock_sizze_6337)) && ((local_tid_7003 - squot32(local_tid_7003, wave_sizze_7005) * wave_sizze_7005) & (2 * offset_7028 - 1)) == 0) {
                     // read array element
                     {
-                        eta_p_7000 = ((volatile __local float *) red_arr_f32_mem_6993)[sext_i32_i64(local_tid_6989 + offset_7014)];
+                        eta_p_7014 = ((volatile __local float *) red_arr_f32_mem_7007)[sext_i32_i64(local_tid_7003 + offset_7028)];
                     }
                     // apply reduction operation
                     {
-                        float defunc_0_op_res_7001 = eta_p_6999 + eta_p_7000;
+                        float defunc_0_op_res_7015 = eta_p_7013 + eta_p_7014;
                         
-                        eta_p_6999 = defunc_0_op_res_7001;
+                        eta_p_7013 = defunc_0_op_res_7015;
                     }
                     // write result of operation
                     {
-                        ((volatile __local float *) red_arr_f32_mem_6993)[sext_i32_i64(local_tid_6989)] = eta_p_6999;
+                        ((volatile __local float *) red_arr_f32_mem_7007)[sext_i32_i64(local_tid_7003)] = eta_p_7013;
                     }
                 }
-                offset_7014 *= 2;
+                offset_7028 *= 2;
             }
-            while (slt32(skip_waves_7015, squot32(sext_i64_i32(segred_tblock_sizze_6327) + wave_sizze_6991 - 1, wave_sizze_6991))) {
+            while (slt32(skip_waves_7029, squot32(sext_i64_i32(segred_tblock_sizze_6337) + wave_sizze_7005 - 1, wave_sizze_7005))) {
                 barrier(CLK_LOCAL_MEM_FENCE);
-                offset_7014 = skip_waves_7015 * wave_sizze_6991;
-                if (slt32(local_tid_6989 + offset_7014, sext_i64_i32(segred_tblock_sizze_6327)) && ((local_tid_6989 - squot32(local_tid_6989, wave_sizze_6991) * wave_sizze_6991) == 0 && (squot32(local_tid_6989, wave_sizze_6991) & (2 * skip_waves_7015 - 1)) == 0)) {
+                offset_7028 = skip_waves_7029 * wave_sizze_7005;
+                if (slt32(local_tid_7003 + offset_7028, sext_i64_i32(segred_tblock_sizze_6337)) && ((local_tid_7003 - squot32(local_tid_7003, wave_sizze_7005) * wave_sizze_7005) == 0 && (squot32(local_tid_7003, wave_sizze_7005) & (2 * skip_waves_7029 - 1)) == 0)) {
                     // read array element
                     {
-                        eta_p_7000 = ((__local float *) red_arr_f32_mem_6993)[sext_i32_i64(local_tid_6989 + offset_7014)];
+                        eta_p_7014 = ((__local float *) red_arr_f32_mem_7007)[sext_i32_i64(local_tid_7003 + offset_7028)];
                     }
                     // apply reduction operation
                     {
-                        float defunc_0_op_res_7001 = eta_p_6999 + eta_p_7000;
+                        float defunc_0_op_res_7015 = eta_p_7013 + eta_p_7014;
                         
-                        eta_p_6999 = defunc_0_op_res_7001;
+                        eta_p_7013 = defunc_0_op_res_7015;
                     }
                     // write result of operation
                     {
-                        ((__local float *) red_arr_f32_mem_6993)[sext_i32_i64(local_tid_6989)] = eta_p_6999;
+                        ((__local float *) red_arr_f32_mem_7007)[sext_i32_i64(local_tid_7003)] = eta_p_7013;
                     }
                 }
-                skip_waves_7015 *= 2;
+                skip_waves_7029 *= 2;
             }
             barrier(CLK_LOCAL_MEM_FENCE);
             // and back to memory with the final result
             {
-                if (local_tid_6989 == 0) {
-                    ((__global float *) mem_6747)[(int64_t) 0] = eta_p_6999;
+                if (local_tid_7003 == 0) {
+                    ((__global float *) mem_6761)[(int64_t) 0] = eta_p_7013;
                 }
             }
         }
@@ -8151,235 +8155,235 @@ void entropyzisegred_nonseg_6334(__local uint64_t *shared_mem_aligned, __global 
     
   error_5:
     return;
-    #undef segred_tblock_sizze_6327
-    #undef chunk_sizze_6982
+    #undef segred_tblock_sizze_6337
+    #undef chunk_sizze_6996
 }
-FUTHARK_KERNEL_SIZED(entropyzisegred_small_6887_dim1, 1, 1)
-void entropyzisegred_small_6887(__local uint64_t *shared_mem_aligned, __global int *global_failure, int64_t num_tblocks_6313, int64_t num_subhistos_6801, int64_t segment_sizze_nonzzero_6889, __global unsigned char *mem_6744, __global unsigned char *defunc_0_map_res_subhistos_mem_6802)
+FUTHARK_KERNEL_SIZED(entropyzisegred_small_6901_dim1, 1, 1)
+void entropyzisegred_small_6901(__local uint64_t *shared_mem_aligned, __global int *global_failure, int64_t num_tblocks_6323, int64_t num_subhistos_6815, int64_t segment_sizze_nonzzero_6903, __global unsigned char *mem_6758, __global unsigned char *defunc_0_map_res_subhistos_mem_6816)
 {
-    #define seghist_tblock_sizze_6311 (entropyzisegred_small_6887ziseghist_tblock_sizze_6311)
+    #define seghist_tblock_sizze_6321 (entropyzisegred_small_6901ziseghist_tblock_sizze_6321)
     
     __local unsigned char *shared_mem = (__local unsigned char *) shared_mem_aligned;
-    volatile __local unsigned char *red_arr_i64_mem_6896_backing_0 = &shared_mem[0];
-    const int64_t red_arr_i64_mem_6896_backing_0_offset = 0 + ((int64_t) 8 * seghist_tblock_sizze_6311 + srem64((int64_t) 8 - srem64((int64_t) 8 * seghist_tblock_sizze_6311, (int64_t) 8), (int64_t) 8));
+    volatile __local unsigned char *red_arr_i64_mem_6910_backing_0 = &shared_mem[0];
+    const int64_t red_arr_i64_mem_6910_backing_0_offset = 0 + ((int64_t) 8 * seghist_tblock_sizze_6321 + srem64((int64_t) 8 - srem64((int64_t) 8 * seghist_tblock_sizze_6321, (int64_t) 8), (int64_t) 8));
     
     if (*global_failure >= 0)
         return;
     
-    int32_t local_tid_6892;
-    int32_t tblock_sizze_6895;
-    int32_t wave_sizze_6894;
-    int32_t block_id_6893;
-    int32_t global_tid_6891;
-    int64_t flat_gtid_6887;
-    __local unsigned char *red_arr_i64_mem_6896;
-    int32_t phys_tblock_id_6898;
-    int32_t iterations_6899;
+    int32_t local_tid_6906;
+    int32_t tblock_sizze_6909;
+    int32_t wave_sizze_6908;
+    int32_t block_id_6907;
+    int32_t global_tid_6905;
+    int64_t flat_gtid_6901;
+    __local unsigned char *red_arr_i64_mem_6910;
+    int32_t phys_tblock_id_6912;
+    int32_t iterations_6913;
     
-    local_tid_6892 = get_local_id(0);
-    tblock_sizze_6895 = get_local_size(0);
-    wave_sizze_6894 = LOCKSTEP_WIDTH;
-    block_id_6893 = get_tblock_id(0);
-    global_tid_6891 = block_id_6893 * tblock_sizze_6895 + local_tid_6892;
-    flat_gtid_6887 = sext_i32_i64(global_tid_6891);
-    red_arr_i64_mem_6896 = (__local unsigned char *) red_arr_i64_mem_6896_backing_0;
-    phys_tblock_id_6898 = get_tblock_id(0);
-    iterations_6899 = sdiv_up32(sext_i64_i32(sdiv_up64((int64_t) 256, squot64(seghist_tblock_sizze_6311, segment_sizze_nonzzero_6889))) - phys_tblock_id_6898, sext_i64_i32(num_tblocks_6313));
-    for (int32_t i_6900 = 0; i_6900 < iterations_6899; i_6900++) {
-        int32_t virt_tblock_id_6901;
-        int64_t slice_6902;
-        int64_t bucket_id_6885;
-        int64_t remnant_6903;
-        int64_t subhistogram_id_6886;
+    local_tid_6906 = get_local_id(0);
+    tblock_sizze_6909 = get_local_size(0);
+    wave_sizze_6908 = LOCKSTEP_WIDTH;
+    block_id_6907 = get_tblock_id(0);
+    global_tid_6905 = block_id_6907 * tblock_sizze_6909 + local_tid_6906;
+    flat_gtid_6901 = sext_i32_i64(global_tid_6905);
+    red_arr_i64_mem_6910 = (__local unsigned char *) red_arr_i64_mem_6910_backing_0;
+    phys_tblock_id_6912 = get_tblock_id(0);
+    iterations_6913 = sdiv_up32(sext_i64_i32(sdiv_up64((int64_t) 256, squot64(seghist_tblock_sizze_6321, segment_sizze_nonzzero_6903))) - phys_tblock_id_6912, sext_i64_i32(num_tblocks_6323));
+    for (int32_t i_6914 = 0; i_6914 < iterations_6913; i_6914++) {
+        int32_t virt_tblock_id_6915;
+        int64_t slice_6916;
+        int64_t bucket_id_6899;
+        int64_t remnant_6917;
+        int64_t subhistogram_id_6900;
         
-        virt_tblock_id_6901 = phys_tblock_id_6898 + i_6900 * sext_i64_i32(num_tblocks_6313);
-        slice_6902 = (int64_t) 256;
-        bucket_id_6885 = squot64(sext_i32_i64(local_tid_6892), segment_sizze_nonzzero_6889) + sext_i32_i64(virt_tblock_id_6901) * squot64(seghist_tblock_sizze_6311, segment_sizze_nonzzero_6889);
-        remnant_6903 = squot64(sext_i32_i64(local_tid_6892), segment_sizze_nonzzero_6889) + sext_i32_i64(virt_tblock_id_6901) * squot64(seghist_tblock_sizze_6311, segment_sizze_nonzzero_6889) - bucket_id_6885;
-        subhistogram_id_6886 = srem64(sext_i32_i64(local_tid_6892), num_subhistos_6801);
+        virt_tblock_id_6915 = phys_tblock_id_6912 + i_6914 * sext_i64_i32(num_tblocks_6323);
+        slice_6916 = (int64_t) 256;
+        bucket_id_6899 = squot64(sext_i32_i64(local_tid_6906), segment_sizze_nonzzero_6903) + sext_i32_i64(virt_tblock_id_6915) * squot64(seghist_tblock_sizze_6321, segment_sizze_nonzzero_6903);
+        remnant_6917 = squot64(sext_i32_i64(local_tid_6906), segment_sizze_nonzzero_6903) + sext_i32_i64(virt_tblock_id_6915) * squot64(seghist_tblock_sizze_6321, segment_sizze_nonzzero_6903) - bucket_id_6899;
+        subhistogram_id_6900 = srem64(sext_i32_i64(local_tid_6906), num_subhistos_6815);
         // apply map function if in bounds
         {
-            if (slt64((int64_t) 0, num_subhistos_6801) && (slt64(bucket_id_6885, (int64_t) 256) && slt64(sext_i32_i64(local_tid_6892), num_subhistos_6801 * squot64(seghist_tblock_sizze_6311, segment_sizze_nonzzero_6889)))) {
+            if (slt64((int64_t) 0, num_subhistos_6815) && (slt64(bucket_id_6899, (int64_t) 256) && slt64(sext_i32_i64(local_tid_6906), num_subhistos_6815 * squot64(seghist_tblock_sizze_6321, segment_sizze_nonzzero_6903)))) {
                 // save results to be reduced
                 {
-                    int64_t tmp_6904 = ((__global int64_t *) defunc_0_map_res_subhistos_mem_6802)[subhistogram_id_6886 * (int64_t) 256 + bucket_id_6885];
+                    int64_t tmp_6918 = ((__global int64_t *) defunc_0_map_res_subhistos_mem_6816)[subhistogram_id_6900 * (int64_t) 256 + bucket_id_6899];
                     
-                    ((__local int64_t *) red_arr_i64_mem_6896)[sext_i32_i64(local_tid_6892)] = tmp_6904;
+                    ((__local int64_t *) red_arr_i64_mem_6910)[sext_i32_i64(local_tid_6906)] = tmp_6918;
                 }
             } else {
-                ((__local int64_t *) red_arr_i64_mem_6896)[sext_i32_i64(local_tid_6892)] = (int64_t) 0;
+                ((__local int64_t *) red_arr_i64_mem_6910)[sext_i32_i64(local_tid_6906)] = (int64_t) 0;
             }
         }
         barrier(CLK_LOCAL_MEM_FENCE);
-        if (slt64((int64_t) 0, num_subhistos_6801)) {
+        if (slt64((int64_t) 0, num_subhistos_6815)) {
             // perform segmented scan to imitate reduction
             {
-                int64_t eta_p_6319;
-                int64_t eta_p_6320;
-                int64_t eta_p_6905;
-                int64_t eta_p_6906;
-                bool ltid_in_bounds_6908 = slt64(sext_i32_i64(local_tid_6892), num_subhistos_6801 * squot64(seghist_tblock_sizze_6311, segment_sizze_nonzzero_6889));
-                int32_t skip_threads_6909;
+                int64_t eta_p_6329;
+                int64_t eta_p_6330;
+                int64_t eta_p_6919;
+                int64_t eta_p_6920;
+                bool ltid_in_bounds_6922 = slt64(sext_i32_i64(local_tid_6906), num_subhistos_6815 * squot64(seghist_tblock_sizze_6321, segment_sizze_nonzzero_6903));
+                int32_t skip_threads_6923;
                 
                 // read input for in-block scan
                 {
-                    if (ltid_in_bounds_6908) {
-                        eta_p_6320 = ((volatile __local int64_t *) red_arr_i64_mem_6896)[sext_i32_i64(local_tid_6892)];
-                        if ((local_tid_6892 - squot32(local_tid_6892, 32) * 32) == 0) {
-                            eta_p_6319 = eta_p_6320;
+                    if (ltid_in_bounds_6922) {
+                        eta_p_6330 = ((volatile __local int64_t *) red_arr_i64_mem_6910)[sext_i32_i64(local_tid_6906)];
+                        if ((local_tid_6906 - squot32(local_tid_6906, 32) * 32) == 0) {
+                            eta_p_6329 = eta_p_6330;
                         }
                     }
                 }
                 // in-block scan (hopefully no barriers needed)
                 {
-                    skip_threads_6909 = 1;
-                    while (slt32(skip_threads_6909, 32)) {
-                        bool thread_active_6910 = sle32(skip_threads_6909, local_tid_6892 - squot32(local_tid_6892, 32) * 32) && ltid_in_bounds_6908;
+                    skip_threads_6923 = 1;
+                    while (slt32(skip_threads_6923, 32)) {
+                        bool thread_active_6924 = sle32(skip_threads_6923, local_tid_6906 - squot32(local_tid_6906, 32) * 32) && ltid_in_bounds_6922;
                         
-                        if (thread_active_6910) {
+                        if (thread_active_6924) {
                             // read operands
                             {
-                                eta_p_6319 = ((volatile __local int64_t *) red_arr_i64_mem_6896)[sext_i32_i64(local_tid_6892) - sext_i32_i64(skip_threads_6909)];
+                                eta_p_6329 = ((volatile __local int64_t *) red_arr_i64_mem_6910)[sext_i32_i64(local_tid_6906) - sext_i32_i64(skip_threads_6923)];
                             }
                         }
                         // perform operation
                         {
-                            bool inactive_6911 = slt64(srem64(sext_i32_i64(local_tid_6892), num_subhistos_6801), sext_i32_i64(local_tid_6892) - sext_i32_i64(local_tid_6892 - skip_threads_6909));
+                            bool inactive_6925 = slt64(srem64(sext_i32_i64(local_tid_6906), num_subhistos_6815), sext_i32_i64(local_tid_6906) - sext_i32_i64(local_tid_6906 - skip_threads_6923));
                             
-                            if (thread_active_6910 && inactive_6911) {
-                                eta_p_6319 = eta_p_6320;
+                            if (thread_active_6924 && inactive_6925) {
+                                eta_p_6329 = eta_p_6330;
                             }
-                            if (thread_active_6910) {
-                                if (!inactive_6911) {
-                                    int64_t defunc_0_op_res_6321 = add64(eta_p_6319, eta_p_6320);
+                            if (thread_active_6924) {
+                                if (!inactive_6925) {
+                                    int64_t defunc_0_op_res_6331 = add64(eta_p_6329, eta_p_6330);
                                     
-                                    eta_p_6319 = defunc_0_op_res_6321;
+                                    eta_p_6329 = defunc_0_op_res_6331;
                                 }
                             }
                         }
-                        if (sle32(wave_sizze_6894, skip_threads_6909)) {
+                        if (sle32(wave_sizze_6908, skip_threads_6923)) {
                             barrier(CLK_LOCAL_MEM_FENCE);
                         }
-                        if (thread_active_6910) {
+                        if (thread_active_6924) {
                             // write result
                             {
-                                ((volatile __local int64_t *) red_arr_i64_mem_6896)[sext_i32_i64(local_tid_6892)] = eta_p_6319;
-                                eta_p_6320 = eta_p_6319;
+                                ((volatile __local int64_t *) red_arr_i64_mem_6910)[sext_i32_i64(local_tid_6906)] = eta_p_6329;
+                                eta_p_6330 = eta_p_6329;
                             }
                         }
-                        if (sle32(wave_sizze_6894, skip_threads_6909)) {
+                        if (sle32(wave_sizze_6908, skip_threads_6923)) {
                             barrier(CLK_LOCAL_MEM_FENCE);
                         }
-                        skip_threads_6909 *= 2;
+                        skip_threads_6923 *= 2;
                     }
                 }
                 barrier(CLK_LOCAL_MEM_FENCE);
                 // last thread of block 'i' writes its result to offset 'i'
                 {
-                    if ((local_tid_6892 - squot32(local_tid_6892, 32) * 32) == 31 && ltid_in_bounds_6908) {
-                        ((volatile __local int64_t *) red_arr_i64_mem_6896)[sext_i32_i64(squot32(local_tid_6892, 32))] = eta_p_6319;
+                    if ((local_tid_6906 - squot32(local_tid_6906, 32) * 32) == 31 && ltid_in_bounds_6922) {
+                        ((volatile __local int64_t *) red_arr_i64_mem_6910)[sext_i32_i64(squot32(local_tid_6906, 32))] = eta_p_6329;
                     }
                 }
                 barrier(CLK_LOCAL_MEM_FENCE);
                 // scan the first block, after which offset 'i' contains carry-in for block 'i+1'
                 {
-                    int32_t skip_threads_6912;
+                    int32_t skip_threads_6926;
                     
                     // read input for in-block scan
                     {
-                        if (squot32(local_tid_6892, 32) == 0 && ltid_in_bounds_6908) {
-                            eta_p_6906 = ((volatile __local int64_t *) red_arr_i64_mem_6896)[sext_i32_i64(local_tid_6892)];
-                            if ((local_tid_6892 - squot32(local_tid_6892, 32) * 32) == 0) {
-                                eta_p_6905 = eta_p_6906;
+                        if (squot32(local_tid_6906, 32) == 0 && ltid_in_bounds_6922) {
+                            eta_p_6920 = ((volatile __local int64_t *) red_arr_i64_mem_6910)[sext_i32_i64(local_tid_6906)];
+                            if ((local_tid_6906 - squot32(local_tid_6906, 32) * 32) == 0) {
+                                eta_p_6919 = eta_p_6920;
                             }
                         }
                     }
                     // in-block scan (hopefully no barriers needed)
                     {
-                        skip_threads_6912 = 1;
-                        while (slt32(skip_threads_6912, 32)) {
-                            bool thread_active_6913 = sle32(skip_threads_6912, local_tid_6892 - squot32(local_tid_6892, 32) * 32) && (squot32(local_tid_6892, 32) == 0 && ltid_in_bounds_6908);
+                        skip_threads_6926 = 1;
+                        while (slt32(skip_threads_6926, 32)) {
+                            bool thread_active_6927 = sle32(skip_threads_6926, local_tid_6906 - squot32(local_tid_6906, 32) * 32) && (squot32(local_tid_6906, 32) == 0 && ltid_in_bounds_6922);
                             
-                            if (thread_active_6913) {
+                            if (thread_active_6927) {
                                 // read operands
                                 {
-                                    eta_p_6905 = ((volatile __local int64_t *) red_arr_i64_mem_6896)[sext_i32_i64(local_tid_6892) - sext_i32_i64(skip_threads_6912)];
+                                    eta_p_6919 = ((volatile __local int64_t *) red_arr_i64_mem_6910)[sext_i32_i64(local_tid_6906) - sext_i32_i64(skip_threads_6926)];
                                 }
                             }
                             // perform operation
                             {
-                                bool inactive_6914 = slt64(srem64(sext_i32_i64(local_tid_6892 * 32 + 32 - 1), num_subhistos_6801), sext_i32_i64(local_tid_6892 * 32 + 32 - 1) - sext_i32_i64((local_tid_6892 - skip_threads_6912) * 32 + 32 - 1));
+                                bool inactive_6928 = slt64(srem64(sext_i32_i64(local_tid_6906 * 32 + 32 - 1), num_subhistos_6815), sext_i32_i64(local_tid_6906 * 32 + 32 - 1) - sext_i32_i64((local_tid_6906 - skip_threads_6926) * 32 + 32 - 1));
                                 
-                                if (thread_active_6913 && inactive_6914) {
-                                    eta_p_6905 = eta_p_6906;
+                                if (thread_active_6927 && inactive_6928) {
+                                    eta_p_6919 = eta_p_6920;
                                 }
-                                if (thread_active_6913) {
-                                    if (!inactive_6914) {
-                                        int64_t defunc_0_op_res_6907 = add64(eta_p_6905, eta_p_6906);
+                                if (thread_active_6927) {
+                                    if (!inactive_6928) {
+                                        int64_t defunc_0_op_res_6921 = add64(eta_p_6919, eta_p_6920);
                                         
-                                        eta_p_6905 = defunc_0_op_res_6907;
+                                        eta_p_6919 = defunc_0_op_res_6921;
                                     }
                                 }
                             }
-                            if (sle32(wave_sizze_6894, skip_threads_6912)) {
+                            if (sle32(wave_sizze_6908, skip_threads_6926)) {
                                 barrier(CLK_LOCAL_MEM_FENCE);
                             }
-                            if (thread_active_6913) {
+                            if (thread_active_6927) {
                                 // write result
                                 {
-                                    ((volatile __local int64_t *) red_arr_i64_mem_6896)[sext_i32_i64(local_tid_6892)] = eta_p_6905;
-                                    eta_p_6906 = eta_p_6905;
+                                    ((volatile __local int64_t *) red_arr_i64_mem_6910)[sext_i32_i64(local_tid_6906)] = eta_p_6919;
+                                    eta_p_6920 = eta_p_6919;
                                 }
                             }
-                            if (sle32(wave_sizze_6894, skip_threads_6912)) {
+                            if (sle32(wave_sizze_6908, skip_threads_6926)) {
                                 barrier(CLK_LOCAL_MEM_FENCE);
                             }
-                            skip_threads_6912 *= 2;
+                            skip_threads_6926 *= 2;
                         }
                     }
                 }
                 barrier(CLK_LOCAL_MEM_FENCE);
                 
-                bool no_carry_in_6915 = squot32(local_tid_6892, 32) == 0 || !ltid_in_bounds_6908;
+                bool no_carry_in_6929 = squot32(local_tid_6906, 32) == 0 || !ltid_in_bounds_6922;
                 
                 // carry-in for every block except the first
                 {
                     // read operands
                     {
-                        if (!no_carry_in_6915) {
-                            eta_p_6320 = eta_p_6319;
-                            eta_p_6319 = ((__local int64_t *) red_arr_i64_mem_6896)[sext_i32_i64(squot32(local_tid_6892, 32)) - (int64_t) 1];
+                        if (!no_carry_in_6929) {
+                            eta_p_6330 = eta_p_6329;
+                            eta_p_6329 = ((__local int64_t *) red_arr_i64_mem_6910)[sext_i32_i64(squot32(local_tid_6906, 32)) - (int64_t) 1];
                         }
                     }
                     // perform operation
                     {
-                        bool inactive_6916 = slt64(srem64(sext_i32_i64(local_tid_6892), num_subhistos_6801), sext_i32_i64(local_tid_6892) - sext_i32_i64(squot32(local_tid_6892, 32) * 32 - 1));
+                        bool inactive_6930 = slt64(srem64(sext_i32_i64(local_tid_6906), num_subhistos_6815), sext_i32_i64(local_tid_6906) - sext_i32_i64(squot32(local_tid_6906, 32) * 32 - 1));
                         
-                        if (!no_carry_in_6915) {
-                            if (inactive_6916) {
-                                eta_p_6319 = eta_p_6320;
+                        if (!no_carry_in_6929) {
+                            if (inactive_6930) {
+                                eta_p_6329 = eta_p_6330;
                             }
                         }
-                        if (!no_carry_in_6915) {
-                            if (!inactive_6916) {
-                                int64_t defunc_0_op_res_6321 = add64(eta_p_6319, eta_p_6320);
+                        if (!no_carry_in_6929) {
+                            if (!inactive_6930) {
+                                int64_t defunc_0_op_res_6331 = add64(eta_p_6329, eta_p_6330);
                                 
-                                eta_p_6319 = defunc_0_op_res_6321;
+                                eta_p_6329 = defunc_0_op_res_6331;
                             }
                         }
                     }
                     // write final result
                     {
-                        if (!no_carry_in_6915) {
-                            ((__local int64_t *) red_arr_i64_mem_6896)[sext_i32_i64(local_tid_6892)] = eta_p_6319;
+                        if (!no_carry_in_6929) {
+                            ((__local int64_t *) red_arr_i64_mem_6910)[sext_i32_i64(local_tid_6906)] = eta_p_6329;
                         }
                     }
                 }
                 barrier(CLK_LOCAL_MEM_FENCE);
                 // restore correct values for first block
                 {
-                    if (squot32(local_tid_6892, 32) == 0 && ltid_in_bounds_6908) {
-                        ((__local int64_t *) red_arr_i64_mem_6896)[sext_i32_i64(local_tid_6892)] = eta_p_6320;
+                    if (squot32(local_tid_6906, 32) == 0 && ltid_in_bounds_6922) {
+                        ((__local int64_t *) red_arr_i64_mem_6910)[sext_i32_i64(local_tid_6906)] = eta_p_6330;
                     }
                 }
                 barrier(CLK_LOCAL_MEM_FENCE);
@@ -8388,10 +8392,10 @@ void entropyzisegred_small_6887(__local uint64_t *shared_mem_aligned, __global i
         barrier(CLK_LOCAL_MEM_FENCE);
         // save final values of segments
         {
-            if (slt64(sext_i32_i64(virt_tblock_id_6901) * squot64(seghist_tblock_sizze_6311, segment_sizze_nonzzero_6889) + sext_i32_i64(local_tid_6892), (int64_t) 256) && slt64(sext_i32_i64(local_tid_6892), squot64(seghist_tblock_sizze_6311, segment_sizze_nonzzero_6889))) {
-                int64_t tmp_6917 = ((__local int64_t *) red_arr_i64_mem_6896)[(sext_i32_i64(local_tid_6892) + (int64_t) 1) * segment_sizze_nonzzero_6889 - (int64_t) 1];
+            if (slt64(sext_i32_i64(virt_tblock_id_6915) * squot64(seghist_tblock_sizze_6321, segment_sizze_nonzzero_6903) + sext_i32_i64(local_tid_6906), (int64_t) 256) && slt64(sext_i32_i64(local_tid_6906), squot64(seghist_tblock_sizze_6321, segment_sizze_nonzzero_6903))) {
+                int64_t tmp_6931 = ((__local int64_t *) red_arr_i64_mem_6910)[(sext_i32_i64(local_tid_6906) + (int64_t) 1) * segment_sizze_nonzzero_6903 - (int64_t) 1];
                 
-                ((__global int64_t *) mem_6744)[sext_i32_i64(virt_tblock_id_6901) * squot64(seghist_tblock_sizze_6311, segment_sizze_nonzzero_6889) + sext_i32_i64(local_tid_6892)] = tmp_6917;
+                ((__global int64_t *) mem_6758)[sext_i32_i64(virt_tblock_id_6915) * squot64(seghist_tblock_sizze_6321, segment_sizze_nonzzero_6903) + sext_i32_i64(local_tid_6906)] = tmp_6931;
             }
         }
         barrier(CLK_LOCAL_MEM_FENCE);
@@ -8400,7 +8404,7 @@ void entropyzisegred_small_6887(__local uint64_t *shared_mem_aligned, __global i
     
   error_3:
     return;
-    #undef seghist_tblock_sizze_6311
+    #undef seghist_tblock_sizze_6321
 }
 """
 # Start of values.py.
@@ -10708,126 +10712,126 @@ class entropy:
         ]
         self.global_failure_args_max = 3
         self.failure_msgs = [
-            "Index [{}:{}] out of bounds for array of shape [{}].\n-> #0  entropy.fut:13:44-83\n   #1  /prelude/functional.fut:9:44-45\n   #2  entropy.fut:13:8-87\n   #3  entropy.fut:11:1-13:87\n",
-            "Index [{}:{}] out of bounds for array of shape [{}].\n-> #0  entropy.fut:13:44-83\n   #1  /prelude/functional.fut:9:44-45\n   #2  entropy.fut:13:8-87\n   #3  entropy.fut:11:1-13:87\n",
+            "Index [{}:{}] out of bounds for array of shape [{}].\n-> #0  ofrak_gpu/entropy.fut:13:44-83\n   #1  /prelude/functional.fut:9:44-45\n   #2  ofrak_gpu/entropy.fut:13:8-93\n   #3  ofrak_gpu/entropy.fut:11:1-13:93\n",
+            "Index [{}:{}] out of bounds for array of shape [{}].\n-> #0  ofrak_gpu/entropy.fut:13:44-83\n   #1  /prelude/functional.fut:9:44-45\n   #2  ofrak_gpu/entropy.fut:13:8-93\n   #3  ofrak_gpu/entropy.fut:11:1-13:93\n",
         ]
         constants = [
             (
-                "entropyzisegred_nonseg_6334_dim1",
-                lambda: self.sizes["entropy.segred_tblock_size_6326"],
+                "entropyzisegred_nonseg_6344_dim1",
+                lambda: self.sizes["entropy.segred_tblock_size_6336"],
             ),
             (
-                "entropyzisegred_nonseg_6334zisegred_tblock_sizze_6327",
-                lambda: self.sizes["entropy.segred_tblock_size_6326"],
+                "entropyzisegred_nonseg_6344zisegred_tblock_sizze_6337",
+                lambda: self.sizes["entropy.segred_tblock_size_6336"],
             ),
-            ("entropyzisegred_nonseg_6334zichunk_sizze_6982", lambda: np.int64(1)),
+            ("entropyzisegred_nonseg_6344zichunk_sizze_6996", lambda: np.int64(1)),
             (
-                "entropyzisegred_large_6887_dim1",
-                lambda: self.sizes["entropy.seghist_tblock_size_6310"],
-            ),
-            (
-                "entropyzisegred_large_6887ziseghist_tblock_sizze_6311",
-                lambda: self.sizes["entropy.seghist_tblock_size_6310"],
-            ),
-            ("entropyzisegred_large_6887zichunk_sizze_6888", lambda: np.int64(1)),
-            (
-                "entropyzisegred_small_6887_dim1",
-                lambda: self.sizes["entropy.seghist_tblock_size_6310"],
+                "entropyzisegred_large_6901_dim1",
+                lambda: self.sizes["entropy.seghist_tblock_size_6320"],
             ),
             (
-                "entropyzisegred_small_6887ziseghist_tblock_sizze_6311",
-                lambda: self.sizes["entropy.seghist_tblock_size_6310"],
+                "entropyzisegred_large_6901ziseghist_tblock_sizze_6321",
+                lambda: self.sizes["entropy.seghist_tblock_size_6320"],
+            ),
+            ("entropyzisegred_large_6901zichunk_sizze_6902", lambda: np.int64(1)),
+            (
+                "entropyzisegred_small_6901_dim1",
+                lambda: self.sizes["entropy.seghist_tblock_size_6320"],
             ),
             (
-                "entropyziseghist_global_6318_dim1",
-                lambda: self.sizes["entropy.seghist_tblock_size_6310"],
+                "entropyzisegred_small_6901ziseghist_tblock_sizze_6321",
+                lambda: self.sizes["entropy.seghist_tblock_size_6320"],
             ),
             (
-                "entropyziseghist_global_6318ziseghist_tblock_sizze_6311",
-                lambda: self.sizes["entropy.seghist_tblock_size_6310"],
+                "entropyziseghist_global_6328_dim1",
+                lambda: self.sizes["entropy.seghist_tblock_size_6320"],
             ),
-            ("entropyziseghist_local_6318_dim1", lambda: self.max_thread_block_size),
             (
-                "entropyziseghist_local_6318zimax_tblock_sizze_6811",
+                "entropyziseghist_global_6328ziseghist_tblock_sizze_6321",
+                lambda: self.sizes["entropy.seghist_tblock_size_6320"],
+            ),
+            ("entropyziseghist_local_6328_dim1", lambda: self.max_thread_block_size),
+            (
+                "entropyziseghist_local_6328zimax_tblock_sizze_6825",
                 lambda: self.max_thread_block_size,
             ),
             (
-                "chunked_entropyzisegmap_6674_dim1",
-                lambda: self.sizes["chunked_entropy.segmap_tblock_size_6444"],
+                "chunked_entropyzisegmap_6687_dim1",
+                lambda: self.sizes["chunked_entropy.segmap_tblock_size_6456"],
             ),
             (
-                "chunked_entropyzisegmap_6674zisegmap_tblock_sizze_6670",
-                lambda: self.sizes["chunked_entropy.segmap_tblock_size_6444"],
+                "chunked_entropyzisegmap_6687zisegmap_tblock_sizze_6683",
+                lambda: self.sizes["chunked_entropy.segmap_tblock_size_6456"],
             ),
             (
-                "chunked_entropyzisegred_large_6656_dim1",
-                lambda: self.sizes["chunked_entropy.segred_tblock_size_6460"],
+                "chunked_entropyzisegred_large_6669_dim1",
+                lambda: self.sizes["chunked_entropy.segred_tblock_size_6473"],
             ),
             (
-                "chunked_entropyzisegred_large_6656zisegred_tblock_sizze_6650",
-                lambda: self.sizes["chunked_entropy.segred_tblock_size_6460"],
+                "chunked_entropyzisegred_large_6669zisegred_tblock_sizze_6663",
+                lambda: self.sizes["chunked_entropy.segred_tblock_size_6473"],
             ),
-            ("chunked_entropyzisegred_large_6656zichunk_sizze_6819", lambda: np.int64(1)),
+            ("chunked_entropyzisegred_large_6669zichunk_sizze_6833", lambda: np.int64(1)),
             (
-                "chunked_entropyzisegred_small_6656_dim1",
-                lambda: self.sizes["chunked_entropy.segred_tblock_size_6460"],
-            ),
-            (
-                "chunked_entropyzisegred_small_6656zisegred_tblock_sizze_6650",
-                lambda: self.sizes["chunked_entropy.segred_tblock_size_6460"],
+                "chunked_entropyzisegred_small_6669_dim1",
+                lambda: self.sizes["chunked_entropy.segred_tblock_size_6473"],
             ),
             (
-                "chunked_entropyzisegmap_6632_dim1",
-                lambda: self.sizes["chunked_entropy.segmap_tblock_size_6510"],
+                "chunked_entropyzisegred_small_6669zisegred_tblock_sizze_6663",
+                lambda: self.sizes["chunked_entropy.segred_tblock_size_6473"],
             ),
             (
-                "chunked_entropyzisegmap_6632zisegmap_tblock_sizze_6626",
-                lambda: self.sizes["chunked_entropy.segmap_tblock_size_6510"],
+                "chunked_entropyzisegmap_6645_dim1",
+                lambda: self.sizes["chunked_entropy.segmap_tblock_size_6523"],
             ),
             (
-                "chunked_entropyzisegmap_6593_dim1",
-                lambda: self.sizes["chunked_entropy.segmap_tblock_size_6564"],
+                "chunked_entropyzisegmap_6645zisegmap_tblock_sizze_6639",
+                lambda: self.sizes["chunked_entropy.segmap_tblock_size_6523"],
             ),
             (
-                "chunked_entropyzisegmap_6593zisegmap_tblock_sizze_6587",
-                lambda: self.sizes["chunked_entropy.segmap_tblock_size_6564"],
+                "chunked_entropyzisegmap_6606_dim1",
+                lambda: self.sizes["chunked_entropy.segmap_tblock_size_6577"],
             ),
             (
-                "chunked_entropyzisegmap_6394_dim1",
-                lambda: self.sizes["chunked_entropy.segmap_tblock_size_6340"],
+                "chunked_entropyzisegmap_6606zisegmap_tblock_sizze_6600",
+                lambda: self.sizes["chunked_entropy.segmap_tblock_size_6577"],
             ),
             (
-                "chunked_entropyzisegmap_6394zisegmap_tblock_sizze_6390",
-                lambda: self.sizes["chunked_entropy.segmap_tblock_size_6340"],
+                "chunked_entropyzisegmap_6405_dim1",
+                lambda: self.sizes["chunked_entropy.segmap_tblock_size_6350"],
             ),
             (
-                "byte_histogramzisegred_large_6887_dim1",
-                lambda: self.sizes["byte_histogram.seghist_tblock_size_6294"],
+                "chunked_entropyzisegmap_6405zisegmap_tblock_sizze_6401",
+                lambda: self.sizes["chunked_entropy.segmap_tblock_size_6350"],
             ),
             (
-                "byte_histogramzisegred_large_6887ziseghist_tblock_sizze_6295",
-                lambda: self.sizes["byte_histogram.seghist_tblock_size_6294"],
-            ),
-            ("byte_histogramzisegred_large_6887zichunk_sizze_6888", lambda: np.int64(1)),
-            (
-                "byte_histogramzisegred_small_6887_dim1",
-                lambda: self.sizes["byte_histogram.seghist_tblock_size_6294"],
+                "byte_histogramzisegred_large_6901_dim1",
+                lambda: self.sizes["byte_histogram.seghist_tblock_size_6304"],
             ),
             (
-                "byte_histogramzisegred_small_6887ziseghist_tblock_sizze_6295",
-                lambda: self.sizes["byte_histogram.seghist_tblock_size_6294"],
+                "byte_histogramzisegred_large_6901ziseghist_tblock_sizze_6305",
+                lambda: self.sizes["byte_histogram.seghist_tblock_size_6304"],
+            ),
+            ("byte_histogramzisegred_large_6901zichunk_sizze_6902", lambda: np.int64(1)),
+            (
+                "byte_histogramzisegred_small_6901_dim1",
+                lambda: self.sizes["byte_histogram.seghist_tblock_size_6304"],
             ),
             (
-                "byte_histogramziseghist_global_6302_dim1",
-                lambda: self.sizes["byte_histogram.seghist_tblock_size_6294"],
+                "byte_histogramzisegred_small_6901ziseghist_tblock_sizze_6305",
+                lambda: self.sizes["byte_histogram.seghist_tblock_size_6304"],
             ),
             (
-                "byte_histogramziseghist_global_6302ziseghist_tblock_sizze_6295",
-                lambda: self.sizes["byte_histogram.seghist_tblock_size_6294"],
+                "byte_histogramziseghist_global_6312_dim1",
+                lambda: self.sizes["byte_histogram.seghist_tblock_size_6304"],
             ),
-            ("byte_histogramziseghist_local_6302_dim1", lambda: self.max_thread_block_size),
             (
-                "byte_histogramziseghist_local_6302zimax_tblock_sizze_6811",
+                "byte_histogramziseghist_global_6312ziseghist_tblock_sizze_6305",
+                lambda: self.sizes["byte_histogram.seghist_tblock_size_6304"],
+            ),
+            ("byte_histogramziseghist_local_6312_dim1", lambda: self.max_thread_block_size),
+            (
+                "byte_histogramziseghist_local_6312zimax_tblock_sizze_6825",
                 lambda: self.max_thread_block_size,
             ),
         ]
@@ -10848,251 +10852,251 @@ class entropy:
             required_types=["i8", "i32", "i64", "f32", "bool", "unit"],
             user_sizes=sizes,
             all_sizes={
-                "builtin#replicate_i32.tblock_size_6865": {
+                "builtin#replicate_i32.tblock_size_6879": {
                     "class": "thread_block_size",
                     "value": None,
                 },
-                "builtin#replicate_i64.tblock_size_6789": {
+                "builtin#replicate_i64.tblock_size_6803": {
                     "class": "thread_block_size",
                     "value": None,
                 },
-                "byte_histogram.seghist_num_tblocks_6296": {"class": "grid_size", "value": None},
-                "byte_histogram.seghist_tblock_size_6294": {
+                "byte_histogram.seghist_num_tblocks_6306": {"class": "grid_size", "value": None},
+                "byte_histogram.seghist_tblock_size_6304": {
                     "class": "thread_block_size",
                     "value": None,
                 },
-                "chunked_entropy.segmap_num_tblocks_6512": {"class": "grid_size", "value": None},
-                "chunked_entropy.segmap_tblock_size_6340": {
+                "chunked_entropy.segmap_num_tblocks_6525": {"class": "grid_size", "value": None},
+                "chunked_entropy.segmap_tblock_size_6350": {
                     "class": "thread_block_size",
                     "value": None,
                 },
-                "chunked_entropy.segmap_tblock_size_6444": {
+                "chunked_entropy.segmap_tblock_size_6456": {
                     "class": "thread_block_size",
                     "value": None,
                 },
-                "chunked_entropy.segmap_tblock_size_6510": {
+                "chunked_entropy.segmap_tblock_size_6523": {
                     "class": "thread_block_size",
                     "value": None,
                 },
-                "chunked_entropy.segmap_tblock_size_6564": {
+                "chunked_entropy.segmap_tblock_size_6577": {
                     "class": "thread_block_size",
                     "value": None,
                 },
-                "chunked_entropy.segred_num_tblocks_6462": {"class": "grid_size", "value": None},
-                "chunked_entropy.segred_tblock_size_6460": {
+                "chunked_entropy.segred_num_tblocks_6475": {"class": "grid_size", "value": None},
+                "chunked_entropy.segred_tblock_size_6473": {
                     "class": "thread_block_size",
                     "value": None,
                 },
                 "chunked_entropy.suff_outer_par_0": {"class": "threshold(def, )", "value": None},
-                "entropy.seghist_num_tblocks_6312": {"class": "grid_size", "value": None},
-                "entropy.seghist_tblock_size_6310": {"class": "thread_block_size", "value": None},
-                "entropy.segred_num_tblocks_6328": {"class": "grid_size", "value": None},
-                "entropy.segred_tblock_size_6326": {"class": "thread_block_size", "value": None},
+                "entropy.seghist_num_tblocks_6322": {"class": "grid_size", "value": None},
+                "entropy.seghist_tblock_size_6320": {"class": "thread_block_size", "value": None},
+                "entropy.segred_num_tblocks_6338": {"class": "grid_size", "value": None},
+                "entropy.segred_tblock_size_6336": {"class": "thread_block_size", "value": None},
             },
             constants=constants,
         )
-        self.builtinzhreplicate_i32zireplicate_6861_var = (
-            program.builtinzhreplicate_i32zireplicate_6861
+        self.builtinzhreplicate_i32zireplicate_6875_var = (
+            program.builtinzhreplicate_i32zireplicate_6875
         )
-        self.builtinzhreplicate_i64zireplicate_6785_var = (
-            program.builtinzhreplicate_i64zireplicate_6785
+        self.builtinzhreplicate_i64zireplicate_6799_var = (
+            program.builtinzhreplicate_i64zireplicate_6799
         )
-        self.byte_histogramziseghist_global_6302_var = program.byte_histogramziseghist_global_6302
-        self.byte_histogramziseghist_local_6302_var = program.byte_histogramziseghist_local_6302
-        self.byte_histogramzisegred_large_6887_var = program.byte_histogramzisegred_large_6887
-        self.byte_histogramzisegred_small_6887_var = program.byte_histogramzisegred_small_6887
-        self.chunked_entropyzisegmap_6394_var = program.chunked_entropyzisegmap_6394
-        self.chunked_entropyzisegmap_6593_var = program.chunked_entropyzisegmap_6593
-        self.chunked_entropyzisegmap_6632_var = program.chunked_entropyzisegmap_6632
-        self.chunked_entropyzisegmap_6674_var = program.chunked_entropyzisegmap_6674
-        self.chunked_entropyzisegred_large_6656_var = program.chunked_entropyzisegred_large_6656
-        self.chunked_entropyzisegred_small_6656_var = program.chunked_entropyzisegred_small_6656
-        self.entropyziseghist_global_6318_var = program.entropyziseghist_global_6318
-        self.entropyziseghist_local_6318_var = program.entropyziseghist_local_6318
-        self.entropyzisegred_large_6887_var = program.entropyzisegred_large_6887
-        self.entropyzisegred_nonseg_6334_var = program.entropyzisegred_nonseg_6334
-        self.entropyzisegred_small_6887_var = program.entropyzisegred_small_6887
+        self.byte_histogramziseghist_global_6312_var = program.byte_histogramziseghist_global_6312
+        self.byte_histogramziseghist_local_6312_var = program.byte_histogramziseghist_local_6312
+        self.byte_histogramzisegred_large_6901_var = program.byte_histogramzisegred_large_6901
+        self.byte_histogramzisegred_small_6901_var = program.byte_histogramzisegred_small_6901
+        self.chunked_entropyzisegmap_6405_var = program.chunked_entropyzisegmap_6405
+        self.chunked_entropyzisegmap_6606_var = program.chunked_entropyzisegmap_6606
+        self.chunked_entropyzisegmap_6645_var = program.chunked_entropyzisegmap_6645
+        self.chunked_entropyzisegmap_6687_var = program.chunked_entropyzisegmap_6687
+        self.chunked_entropyzisegred_large_6669_var = program.chunked_entropyzisegred_large_6669
+        self.chunked_entropyzisegred_small_6669_var = program.chunked_entropyzisegred_small_6669
+        self.entropyziseghist_global_6328_var = program.entropyziseghist_global_6328
+        self.entropyziseghist_local_6328_var = program.entropyziseghist_local_6328
+        self.entropyzisegred_large_6901_var = program.entropyzisegred_large_6901
+        self.entropyzisegred_nonseg_6344_var = program.entropyzisegred_nonseg_6344
+        self.entropyzisegred_small_6901_var = program.entropyzisegred_small_6901
         self.constants = {}
-        self.constants["counters_mem_6924"] = opencl_alloc(
-            self, np.int64(81920), 'self.constants["counters_mem_6924"]'
+        self.constants["counters_mem_6938"] = opencl_alloc(
+            self, np.int64(81920), 'self.constants["counters_mem_6938"]'
         )
         self.futhark_builtinzhreplicate_i32(
-            self.constants["counters_mem_6924"], np.int64(20480), np.int32(0)
+            self.constants["counters_mem_6938"], np.int64(20480), np.int32(0)
         )
-        self.constants["counters_mem_6924"] = opencl_alloc(
-            self, np.int64(81920), 'self.constants["counters_mem_6924"]'
-        )
-        self.futhark_builtinzhreplicate_i32(
-            self.constants["counters_mem_6924"], np.int64(20480), np.int32(0)
-        )
-        self.constants["counters_mem_6983"] = opencl_alloc(
-            self, np.int64(80), 'self.constants["counters_mem_6983"]'
+        self.constants["counters_mem_6938"] = opencl_alloc(
+            self, np.int64(81920), 'self.constants["counters_mem_6938"]'
         )
         self.futhark_builtinzhreplicate_i32(
-            self.constants["counters_mem_6983"], np.int64(20), np.int32(0)
+            self.constants["counters_mem_6938"], np.int64(20480), np.int32(0)
         )
-        self.constants["counters_mem_6854"] = opencl_alloc(
-            self, np.int64(81920), 'self.constants["counters_mem_6854"]'
+        self.constants["counters_mem_6997"] = opencl_alloc(
+            self, np.int64(80), 'self.constants["counters_mem_6997"]'
         )
         self.futhark_builtinzhreplicate_i32(
-            self.constants["counters_mem_6854"], np.int64(20480), np.int32(0)
+            self.constants["counters_mem_6997"], np.int64(20), np.int32(0)
+        )
+        self.constants["counters_mem_6868"] = opencl_alloc(
+            self, np.int64(81920), 'self.constants["counters_mem_6868"]'
+        )
+        self.futhark_builtinzhreplicate_i32(
+            self.constants["counters_mem_6868"], np.int64(20480), np.int32(0)
         )
 
-    def futhark_builtinzhreplicate_i32(self, mem_6856, num_elems_6857, val_6858):
-        replicate_n_6860 = num_elems_6857
-        tblock_sizze_6865 = self.sizes["builtin#replicate_i32.tblock_size_6865"]
-        virt_num_tblocks_6866 = sdiv_up64(replicate_n_6860, tblock_sizze_6865)
-        num_tblocks_6867 = smin64(virt_num_tblocks_6866, np.int64(1048576))
-        if (1 * (np.int64(num_tblocks_6867) * np.int64(tblock_sizze_6865))) != 0:
-            self.builtinzhreplicate_i32zireplicate_6861_var.set_args(
+    def futhark_builtinzhreplicate_i32(self, mem_6870, num_elems_6871, val_6872):
+        replicate_n_6874 = num_elems_6871
+        tblock_sizze_6879 = self.sizes["builtin#replicate_i32.tblock_size_6879"]
+        virt_num_tblocks_6880 = sdiv_up64(replicate_n_6874, tblock_sizze_6879)
+        num_tblocks_6881 = smin64(virt_num_tblocks_6880, np.int64(1048576))
+        if (1 * (np.int64(num_tblocks_6881) * np.int64(tblock_sizze_6879))) != 0:
+            self.builtinzhreplicate_i32zireplicate_6875_var.set_args(
                 cl.LocalMemory(max(np.int64(0), 1)),
-                ct.c_int64(num_elems_6857),
-                ct.c_int32(val_6858),
-                ct.c_int64(replicate_n_6860),
-                ct.c_int64(virt_num_tblocks_6866),
-                ct.c_int64(num_tblocks_6867),
-                mem_6856,
+                ct.c_int64(num_elems_6871),
+                ct.c_int32(val_6872),
+                ct.c_int64(replicate_n_6874),
+                ct.c_int64(virt_num_tblocks_6880),
+                ct.c_int64(num_tblocks_6881),
+                mem_6870,
             )
             cl.enqueue_nd_range_kernel(
                 self.queue,
-                self.builtinzhreplicate_i32zireplicate_6861_var,
-                ((np.int64(num_tblocks_6867) * np.int64(tblock_sizze_6865)),),
-                (np.int64(tblock_sizze_6865),),
+                self.builtinzhreplicate_i32zireplicate_6875_var,
+                ((np.int64(num_tblocks_6881) * np.int64(tblock_sizze_6879)),),
+                (np.int64(tblock_sizze_6879),),
             )
             if synchronous:
                 sync(self)
         return ()
 
-    def futhark_builtinzhreplicate_i64(self, mem_6780, num_elems_6781, val_6782):
-        replicate_n_6784 = num_elems_6781
-        tblock_sizze_6789 = self.sizes["builtin#replicate_i64.tblock_size_6789"]
-        virt_num_tblocks_6790 = sdiv_up64(replicate_n_6784, tblock_sizze_6789)
-        num_tblocks_6791 = smin64(virt_num_tblocks_6790, np.int64(1048576))
-        if (1 * (np.int64(num_tblocks_6791) * np.int64(tblock_sizze_6789))) != 0:
-            self.builtinzhreplicate_i64zireplicate_6785_var.set_args(
+    def futhark_builtinzhreplicate_i64(self, mem_6794, num_elems_6795, val_6796):
+        replicate_n_6798 = num_elems_6795
+        tblock_sizze_6803 = self.sizes["builtin#replicate_i64.tblock_size_6803"]
+        virt_num_tblocks_6804 = sdiv_up64(replicate_n_6798, tblock_sizze_6803)
+        num_tblocks_6805 = smin64(virt_num_tblocks_6804, np.int64(1048576))
+        if (1 * (np.int64(num_tblocks_6805) * np.int64(tblock_sizze_6803))) != 0:
+            self.builtinzhreplicate_i64zireplicate_6799_var.set_args(
                 cl.LocalMemory(max(np.int64(0), 1)),
-                ct.c_int64(num_elems_6781),
-                ct.c_int64(val_6782),
-                ct.c_int64(replicate_n_6784),
-                ct.c_int64(virt_num_tblocks_6790),
-                ct.c_int64(num_tblocks_6791),
-                mem_6780,
+                ct.c_int64(num_elems_6795),
+                ct.c_int64(val_6796),
+                ct.c_int64(replicate_n_6798),
+                ct.c_int64(virt_num_tblocks_6804),
+                ct.c_int64(num_tblocks_6805),
+                mem_6794,
             )
             cl.enqueue_nd_range_kernel(
                 self.queue,
-                self.builtinzhreplicate_i64zireplicate_6785_var,
-                ((np.int64(num_tblocks_6791) * np.int64(tblock_sizze_6789)),),
-                (np.int64(tblock_sizze_6789),),
+                self.builtinzhreplicate_i64zireplicate_6799_var,
+                ((np.int64(num_tblocks_6805) * np.int64(tblock_sizze_6803)),),
+                (np.int64(tblock_sizze_6803),),
             )
             if synchronous:
                 sync(self)
         return ()
 
-    def futhark_entry_byte_histogram(self, xs_mem_6743, n_5761):
-        mem_6744 = opencl_alloc(self, np.int64(2048), "mem_6744")
-        self.futhark_builtinzhreplicate_i64(mem_6744, np.int64(256), np.int64(0))
-        seghist_tblock_sizze_6295 = self.sizes["byte_histogram.seghist_tblock_size_6294"]
-        max_num_tblocks_6800 = self.sizes["byte_histogram.seghist_num_tblocks_6296"]
-        num_tblocks_6297 = sext_i64_i32(
+    def futhark_entry_byte_histogram(self, xs_mem_6757, n_5765):
+        mem_6758 = opencl_alloc(self, np.int64(2048), "mem_6758")
+        self.futhark_builtinzhreplicate_i64(mem_6758, np.int64(256), np.int64(0))
+        seghist_tblock_sizze_6305 = self.sizes["byte_histogram.seghist_tblock_size_6304"]
+        max_num_tblocks_6814 = self.sizes["byte_histogram.seghist_num_tblocks_6306"]
+        num_tblocks_6307 = sext_i64_i32(
             smax64(
                 np.int64(1),
-                smin64(sdiv_up64(n_5761, seghist_tblock_sizze_6295), max_num_tblocks_6800),
+                smin64(sdiv_up64(n_5765, seghist_tblock_sizze_6305), max_num_tblocks_6814),
             )
         )
-        h_6804 = np.int64(2048)
-        seg_h_6805 = np.int64(2048)
-        if seg_h_6805 == np.int64(0):
+        h_6818 = np.int64(2048)
+        seg_h_6819 = np.int64(2048)
+        if seg_h_6819 == np.int64(0):
             pass
         else:
-            hist_H_6806 = np.int64(256)
-            hist_el_sizze_6807 = sdiv_up64(h_6804, hist_H_6806)
-            hist_N_6808 = n_5761
-            hist_RF_6809 = np.int32(1)
-            hist_L_6810 = self.max_shared_memory
-            max_tblock_sizze_6811 = self.max_thread_block_size
-            num_tblocks_6812 = sdiv_up64(
-                sext_i32_i64(sext_i64_i32(num_tblocks_6297 * seghist_tblock_sizze_6295)),
-                max_tblock_sizze_6811,
+            hist_H_6820 = np.int64(256)
+            hist_el_sizze_6821 = sdiv_up64(h_6818, hist_H_6820)
+            hist_N_6822 = n_5765
+            hist_RF_6823 = np.int32(1)
+            hist_L_6824 = self.max_shared_memory
+            max_tblock_sizze_6825 = self.max_thread_block_size
+            num_tblocks_6826 = sdiv_up64(
+                sext_i32_i64(sext_i64_i32(num_tblocks_6307 * seghist_tblock_sizze_6305)),
+                max_tblock_sizze_6825,
             )
-            hist_m_prime_6813 = sitofp_i64_f64(
+            hist_m_prime_6827 = sitofp_i64_f64(
                 smin64(
-                    squot64(hist_L_6810, hist_el_sizze_6807),
-                    sdiv_up64(hist_N_6808, num_tblocks_6812),
+                    squot64(hist_L_6824, hist_el_sizze_6821),
+                    sdiv_up64(hist_N_6822, num_tblocks_6826),
                 )
-            ) / sitofp_i64_f64(hist_H_6806)
-            hist_M0_6814 = smax64(
-                np.int64(1), smin64(fptosi_f64_i64(hist_m_prime_6813), max_tblock_sizze_6811)
+            ) / sitofp_i64_f64(hist_H_6820)
+            hist_M0_6828 = smax64(
+                np.int64(1), smin64(fptosi_f64_i64(hist_m_prime_6827), max_tblock_sizze_6825)
             )
-            hist_Nout_6815 = np.int64(1)
-            hist_Nin_6816 = n_5761
-            work_asymp_M_max_6817 = squot64(
-                (hist_Nout_6815 * hist_N_6808), ((np.int64(2) * num_tblocks_6812) * hist_H_6806)
+            hist_Nout_6829 = np.int64(1)
+            hist_Nin_6830 = n_5765
+            work_asymp_M_max_6831 = squot64(
+                (hist_Nout_6829 * hist_N_6822), ((np.int64(2) * num_tblocks_6826) * hist_H_6820)
             )
-            hist_M_6818 = sext_i64_i32(smin64(hist_M0_6814, work_asymp_M_max_6817))
-            hist_C_6819 = sdiv_up64(
-                max_tblock_sizze_6811, sext_i32_i64(smax32(np.int32(1), hist_M_6818))
+            hist_M_6832 = sext_i64_i32(smin64(hist_M0_6828, work_asymp_M_max_6831))
+            hist_C_6833 = sdiv_up64(
+                max_tblock_sizze_6825, sext_i32_i64(smax32(np.int32(1), hist_M_6832))
             )
-            local_mem_needed_6820 = hist_el_sizze_6807 * sext_i32_i64(hist_M_6818)
-            hist_S_6821 = sext_i64_i32(
-                sdiv_up64(((hist_H_6806 * local_mem_needed_6820) + np.int64(1)), hist_L_6810)
+            local_mem_needed_6834 = hist_el_sizze_6821 * sext_i32_i64(hist_M_6832)
+            hist_S_6835 = sext_i64_i32(
+                sdiv_up64(((hist_H_6820 * local_mem_needed_6834) + np.int64(1)), hist_L_6824)
             )
-            if sle64(hist_H_6806, hist_Nin_6816) and (
-                sle64(local_mem_needed_6820, hist_L_6810)
+            if sle64(hist_H_6820, hist_Nin_6830) and (
+                sle64(local_mem_needed_6834, hist_L_6824)
                 and (
-                    sle32(hist_S_6821, np.int32(3))
+                    sle32(hist_S_6835, np.int32(3))
                     and (
-                        sle64(hist_C_6819, max_tblock_sizze_6811)
-                        and slt32(np.int32(0), hist_M_6818)
+                        sle64(hist_C_6833, max_tblock_sizze_6825)
+                        and slt32(np.int32(0), hist_M_6832)
                     )
                 )
             ):
-                num_subhistos_6801 = num_tblocks_6812
-                if num_subhistos_6801 == np.int64(1):
-                    defunc_0_map_res_subhistos_mem_6802 = mem_6744
+                num_subhistos_6815 = num_tblocks_6826
+                if num_subhistos_6815 == np.int64(1):
+                    defunc_0_map_res_subhistos_mem_6816 = mem_6758
                 else:
-                    defunc_0_map_res_subhistos_mem_6802 = opencl_alloc(
+                    defunc_0_map_res_subhistos_mem_6816 = opencl_alloc(
                         self,
-                        ((num_subhistos_6801 * np.int64(256)) * np.int64(8)),
-                        "defunc_0_map_res_subhistos_mem_6802",
+                        ((num_subhistos_6815 * np.int64(256)) * np.int64(8)),
+                        "defunc_0_map_res_subhistos_mem_6816",
                     )
                     self.futhark_builtinzhreplicate_i64(
-                        defunc_0_map_res_subhistos_mem_6802,
-                        (num_subhistos_6801 * np.int64(256)),
+                        defunc_0_map_res_subhistos_mem_6816,
+                        (num_subhistos_6815 * np.int64(256)),
                         np.int64(0),
                     )
                     lmad_copy_gpu2gpu(
                         self,
                         ct.c_int64,
-                        defunc_0_map_res_subhistos_mem_6802,
+                        defunc_0_map_res_subhistos_mem_6816,
                         np.int64(0),
                         [np.int64(1)],
-                        mem_6744,
+                        mem_6758,
                         np.int64(0),
                         [np.int64(1)],
                         [np.int64(256)],
                     )
-                chk_i_6822 = np.int32(0)
-                one_7017 = np.int32(1)
-                for counter_7016 in range(hist_S_6821):
-                    num_segments_6823 = np.int64(1)
-                    hist_H_chk_6824 = sdiv_up64(np.int64(256), sext_i32_i64(hist_S_6821))
-                    histo_sizze_6825 = hist_H_chk_6824
-                    init_per_thread_6826 = sext_i64_i32(
+                chk_i_6836 = np.int32(0)
+                one_7031 = np.int32(1)
+                for counter_7030 in range(hist_S_6835):
+                    num_segments_6837 = np.int64(1)
+                    hist_H_chk_6838 = sdiv_up64(np.int64(256), sext_i32_i64(hist_S_6835))
+                    histo_sizze_6839 = hist_H_chk_6838
+                    init_per_thread_6840 = sext_i64_i32(
                         sdiv_up64(
-                            (sext_i32_i64(hist_M_6818) * histo_sizze_6825), max_tblock_sizze_6811
+                            (sext_i32_i64(hist_M_6832) * histo_sizze_6839), max_tblock_sizze_6825
                         )
                     )
-                    if (1 * (np.int64(num_tblocks_6812) * self.max_thread_block_size)) != 0:
-                        self.byte_histogramziseghist_local_6302_var.set_args(
+                    if (1 * (np.int64(num_tblocks_6826) * self.max_thread_block_size)) != 0:
+                        self.byte_histogramziseghist_local_6312_var.set_args(
                             cl.LocalMemory(
                                 max(
                                     (
-                                        (np.int64(8) * (hist_M_6818 * hist_H_chk_6824))
+                                        (np.int64(8) * (hist_M_6832 * hist_H_chk_6838))
                                         + srem64(
                                             (
                                                 np.int64(8)
                                                 - srem64(
-                                                    (np.int64(8) * (hist_M_6818 * hist_H_chk_6824)),
+                                                    (np.int64(8) * (hist_M_6832 * hist_H_chk_6838)),
                                                     np.int64(8),
                                                 )
                                             ),
@@ -11103,177 +11107,177 @@ class entropy:
                                 )
                             ),
                             self.global_failure,
-                            ct.c_int64(n_5761),
-                            ct.c_int64(num_subhistos_6801),
-                            ct.c_int64(num_tblocks_6812),
-                            ct.c_int32(hist_M_6818),
-                            ct.c_int32(chk_i_6822),
-                            ct.c_int64(num_segments_6823),
-                            ct.c_int64(hist_H_chk_6824),
-                            ct.c_int64(histo_sizze_6825),
-                            ct.c_int32(init_per_thread_6826),
-                            xs_mem_6743,
-                            defunc_0_map_res_subhistos_mem_6802,
+                            ct.c_int64(n_5765),
+                            ct.c_int64(num_subhistos_6815),
+                            ct.c_int64(num_tblocks_6826),
+                            ct.c_int32(hist_M_6832),
+                            ct.c_int32(chk_i_6836),
+                            ct.c_int64(num_segments_6837),
+                            ct.c_int64(hist_H_chk_6838),
+                            ct.c_int64(histo_sizze_6839),
+                            ct.c_int32(init_per_thread_6840),
+                            xs_mem_6757,
+                            defunc_0_map_res_subhistos_mem_6816,
                         )
                         cl.enqueue_nd_range_kernel(
                             self.queue,
-                            self.byte_histogramziseghist_local_6302_var,
-                            ((np.int64(num_tblocks_6812) * self.max_thread_block_size),),
+                            self.byte_histogramziseghist_local_6312_var,
+                            ((np.int64(num_tblocks_6826) * self.max_thread_block_size),),
                             (self.max_thread_block_size,),
                         )
                         if synchronous:
                             sync(self)
-                    chk_i_6822 += one_7017
+                    chk_i_6836 += one_7031
             else:
-                hist_H_6858 = np.int64(256)
-                hist_RF_6859 = (np.float64(0.0) + sitofp_i32_f64(np.int64(1))) / np.float64(1.0)
-                hist_el_sizze_6860 = np.int32(8)
-                hist_C_max_6861 = fmin64(
-                    sitofp_i32_f64(sext_i64_i32(num_tblocks_6297 * seghist_tblock_sizze_6295)),
-                    (sitofp_i32_f64(hist_H_6858) / np.float64(2.0)),
+                hist_H_6872 = np.int64(256)
+                hist_RF_6873 = (np.float64(0.0) + sitofp_i32_f64(np.int64(1))) / np.float64(1.0)
+                hist_el_sizze_6874 = np.int32(8)
+                hist_C_max_6875 = fmin64(
+                    sitofp_i32_f64(sext_i64_i32(num_tblocks_6307 * seghist_tblock_sizze_6305)),
+                    (sitofp_i32_f64(hist_H_6872) / np.float64(2.0)),
                 )
-                hist_M_min_6862 = smax32(
+                hist_M_min_6876 = smax32(
                     np.int32(1),
                     sext_i64_i32(
                         fptosi_f64_i64(
                             sitofp_i32_f64(
-                                sext_i64_i32(num_tblocks_6297 * seghist_tblock_sizze_6295)
+                                sext_i64_i32(num_tblocks_6307 * seghist_tblock_sizze_6305)
                             )
-                            / hist_C_max_6861
+                            / hist_C_max_6875
                         )
                     ),
                 )
-                L2_sizze_6863 = self.max_cache
-                hist_RACE_exp_6864 = fmax64(
+                L2_sizze_6877 = self.max_cache
+                hist_RACE_exp_6878 = fmax64(
                     np.float64(1.0),
                     (
-                        (np.float64(0.75) * hist_RF_6859)
-                        / (np.float64(64.0) / sitofp_i32_f64(hist_el_sizze_6860))
+                        (np.float64(0.75) * hist_RF_6873)
+                        / (np.float64(64.0) / sitofp_i32_f64(hist_el_sizze_6874))
                     ),
                 )
-                if slt64(n_5761, hist_H_6858):
-                    hist_S_6865 = np.int32(1)
+                if slt64(n_5765, hist_H_6872):
+                    hist_S_6879 = np.int32(1)
                 else:
-                    hist_S_6865 = sext_i64_i32(
+                    hist_S_6879 = sext_i64_i32(
                         sdiv_up64(
                             (
-                                (sext_i32_i64(hist_M_min_6862) * hist_H_6858)
-                                * sext_i32_i64(hist_el_sizze_6860)
+                                (sext_i32_i64(hist_M_min_6876) * hist_H_6872)
+                                * sext_i32_i64(hist_el_sizze_6874)
                             ),
                             fptosi_f64_i64(
-                                (np.float64(0.4) * sitofp_i32_f64(L2_sizze_6863))
-                                * hist_RACE_exp_6864
+                                (np.float64(0.4) * sitofp_i32_f64(L2_sizze_6877))
+                                * hist_RACE_exp_6878
                             ),
                         )
                     )
-                hist_H_chk_6866 = sdiv_up64(np.int64(256), sext_i32_i64(hist_S_6865))
-                hist_k_max_6867 = fmin64(
+                hist_H_chk_6880 = sdiv_up64(np.int64(256), sext_i32_i64(hist_S_6879))
+                hist_k_max_6881 = fmin64(
                     (
                         (
                             np.float64(0.4)
-                            * (sitofp_i32_f64(L2_sizze_6863) / sitofp_i32_f64(np.int32(8)))
+                            * (sitofp_i32_f64(L2_sizze_6877) / sitofp_i32_f64(np.int32(8)))
                         )
-                        * hist_RACE_exp_6864
+                        * hist_RACE_exp_6878
                     ),
-                    sitofp_i32_f64(n_5761),
-                ) / sitofp_i32_f64(sext_i64_i32(num_tblocks_6297 * seghist_tblock_sizze_6295))
-                hist_u_6868 = np.int64(2)
-                hist_C_6869 = fmin64(
-                    sitofp_i32_f64(sext_i64_i32(num_tblocks_6297 * seghist_tblock_sizze_6295)),
-                    (sitofp_i32_f64(hist_u_6868 * hist_H_chk_6866) / hist_k_max_6867),
+                    sitofp_i32_f64(n_5765),
+                ) / sitofp_i32_f64(sext_i64_i32(num_tblocks_6307 * seghist_tblock_sizze_6305))
+                hist_u_6882 = np.int64(2)
+                hist_C_6883 = fmin64(
+                    sitofp_i32_f64(sext_i64_i32(num_tblocks_6307 * seghist_tblock_sizze_6305)),
+                    (sitofp_i32_f64(hist_u_6882 * hist_H_chk_6880) / hist_k_max_6881),
                 )
-                hist_M_6870 = np.int32(1)
-                num_subhistos_6801 = sext_i32_i64(hist_M_6870)
-                if hist_M_6870 == np.int32(1):
-                    defunc_0_map_res_subhistos_mem_6802 = mem_6744
+                hist_M_6884 = np.int32(1)
+                num_subhistos_6815 = sext_i32_i64(hist_M_6884)
+                if hist_M_6884 == np.int32(1):
+                    defunc_0_map_res_subhistos_mem_6816 = mem_6758
                 else:
-                    if num_subhistos_6801 == np.int64(1):
-                        defunc_0_map_res_subhistos_mem_6802 = mem_6744
+                    if num_subhistos_6815 == np.int64(1):
+                        defunc_0_map_res_subhistos_mem_6816 = mem_6758
                     else:
-                        defunc_0_map_res_subhistos_mem_6802 = opencl_alloc(
+                        defunc_0_map_res_subhistos_mem_6816 = opencl_alloc(
                             self,
-                            ((num_subhistos_6801 * np.int64(256)) * np.int64(8)),
-                            "defunc_0_map_res_subhistos_mem_6802",
+                            ((num_subhistos_6815 * np.int64(256)) * np.int64(8)),
+                            "defunc_0_map_res_subhistos_mem_6816",
                         )
                         self.futhark_builtinzhreplicate_i64(
-                            defunc_0_map_res_subhistos_mem_6802,
-                            (num_subhistos_6801 * np.int64(256)),
+                            defunc_0_map_res_subhistos_mem_6816,
+                            (num_subhistos_6815 * np.int64(256)),
                             np.int64(0),
                         )
                         lmad_copy_gpu2gpu(
                             self,
                             ct.c_int64,
-                            defunc_0_map_res_subhistos_mem_6802,
+                            defunc_0_map_res_subhistos_mem_6816,
                             np.int64(0),
                             [np.int64(1)],
-                            mem_6744,
+                            mem_6758,
                             np.int64(0),
                             [np.int64(1)],
                             [np.int64(256)],
                         )
-                chk_i_6871 = np.int32(0)
-                one_7019 = np.int32(1)
-                for counter_7018 in range(hist_S_6865):
-                    hist_H_chk_6872 = sdiv_up64(np.int64(256), sext_i32_i64(hist_S_6865))
+                chk_i_6885 = np.int32(0)
+                one_7033 = np.int32(1)
+                for counter_7032 in range(hist_S_6879):
+                    hist_H_chk_6886 = sdiv_up64(np.int64(256), sext_i32_i64(hist_S_6879))
                     if (
                         1
                         * (
-                            np.int64(num_tblocks_6297)
-                            * self.sizes["byte_histogram.seghist_tblock_size_6294"]
+                            np.int64(num_tblocks_6307)
+                            * self.sizes["byte_histogram.seghist_tblock_size_6304"]
                         )
                     ) != 0:
-                        self.byte_histogramziseghist_global_6302_var.set_args(
+                        self.byte_histogramziseghist_global_6312_var.set_args(
                             cl.LocalMemory(max(np.int64(0), 1)),
                             self.global_failure,
-                            ct.c_int64(n_5761),
-                            ct.c_int64(num_tblocks_6297),
-                            ct.c_int64(num_subhistos_6801),
-                            ct.c_int32(chk_i_6871),
-                            ct.c_int64(hist_H_chk_6872),
-                            xs_mem_6743,
-                            defunc_0_map_res_subhistos_mem_6802,
+                            ct.c_int64(n_5765),
+                            ct.c_int64(num_tblocks_6307),
+                            ct.c_int64(num_subhistos_6815),
+                            ct.c_int32(chk_i_6885),
+                            ct.c_int64(hist_H_chk_6886),
+                            xs_mem_6757,
+                            defunc_0_map_res_subhistos_mem_6816,
                         )
                         cl.enqueue_nd_range_kernel(
                             self.queue,
-                            self.byte_histogramziseghist_global_6302_var,
+                            self.byte_histogramziseghist_global_6312_var,
                             (
                                 (
-                                    np.int64(num_tblocks_6297)
-                                    * self.sizes["byte_histogram.seghist_tblock_size_6294"]
+                                    np.int64(num_tblocks_6307)
+                                    * self.sizes["byte_histogram.seghist_tblock_size_6304"]
                                 ),
                             ),
-                            (self.sizes["byte_histogram.seghist_tblock_size_6294"],),
+                            (self.sizes["byte_histogram.seghist_tblock_size_6304"],),
                         )
                         if synchronous:
                             sync(self)
-                    chk_i_6871 += one_7019
-            if num_subhistos_6801 == np.int64(1):
-                mem_6744 = defunc_0_map_res_subhistos_mem_6802
+                    chk_i_6885 += one_7033
+            if num_subhistos_6815 == np.int64(1):
+                mem_6758 = defunc_0_map_res_subhistos_mem_6816
             else:
-                chunk_sizze_6888 = np.int64(1)
+                chunk_sizze_6902 = np.int64(1)
                 if slt64(
-                    (num_subhistos_6801 * np.int64(2)),
-                    (seghist_tblock_sizze_6295 * chunk_sizze_6888),
+                    (num_subhistos_6815 * np.int64(2)),
+                    (seghist_tblock_sizze_6305 * chunk_sizze_6902),
                 ):
-                    segment_sizze_nonzzero_6889 = smax64(np.int64(1), num_subhistos_6801)
-                    num_threads_6890 = seghist_tblock_sizze_6295 * seghist_tblock_sizze_6295
+                    segment_sizze_nonzzero_6903 = smax64(np.int64(1), num_subhistos_6815)
+                    num_threads_6904 = seghist_tblock_sizze_6305 * seghist_tblock_sizze_6305
                     if (
                         1
                         * (
-                            np.int64(num_tblocks_6297)
-                            * self.sizes["byte_histogram.seghist_tblock_size_6294"]
+                            np.int64(num_tblocks_6307)
+                            * self.sizes["byte_histogram.seghist_tblock_size_6304"]
                         )
                     ) != 0:
-                        self.byte_histogramzisegred_small_6887_var.set_args(
+                        self.byte_histogramzisegred_small_6901_var.set_args(
                             cl.LocalMemory(
                                 max(
                                     (
-                                        (np.int64(8) * seghist_tblock_sizze_6295)
+                                        (np.int64(8) * seghist_tblock_sizze_6305)
                                         + srem64(
                                             (
                                                 np.int64(8)
                                                 - srem64(
-                                                    (np.int64(8) * seghist_tblock_sizze_6295),
+                                                    (np.int64(8) * seghist_tblock_sizze_6305),
                                                     np.int64(8),
                                                 )
                                             ),
@@ -11284,57 +11288,57 @@ class entropy:
                                 )
                             ),
                             self.global_failure,
-                            ct.c_int64(num_tblocks_6297),
-                            ct.c_int64(num_subhistos_6801),
-                            ct.c_int64(segment_sizze_nonzzero_6889),
-                            mem_6744,
-                            defunc_0_map_res_subhistos_mem_6802,
+                            ct.c_int64(num_tblocks_6307),
+                            ct.c_int64(num_subhistos_6815),
+                            ct.c_int64(segment_sizze_nonzzero_6903),
+                            mem_6758,
+                            defunc_0_map_res_subhistos_mem_6816,
                         )
                         cl.enqueue_nd_range_kernel(
                             self.queue,
-                            self.byte_histogramzisegred_small_6887_var,
+                            self.byte_histogramzisegred_small_6901_var,
                             (
                                 (
-                                    np.int64(num_tblocks_6297)
-                                    * self.sizes["byte_histogram.seghist_tblock_size_6294"]
+                                    np.int64(num_tblocks_6307)
+                                    * self.sizes["byte_histogram.seghist_tblock_size_6304"]
                                 ),
                             ),
-                            (self.sizes["byte_histogram.seghist_tblock_size_6294"],),
+                            (self.sizes["byte_histogram.seghist_tblock_size_6304"],),
                         )
                         if synchronous:
                             sync(self)
                 else:
-                    blocks_per_segment_6918 = sdiv_up64(
-                        num_tblocks_6297, smax64(np.int64(1), np.int64(256))
+                    blocks_per_segment_6932 = sdiv_up64(
+                        num_tblocks_6307, smax64(np.int64(1), np.int64(256))
                     )
-                    q_6919 = sdiv_up64(
-                        num_subhistos_6801,
-                        ((seghist_tblock_sizze_6295 * blocks_per_segment_6918) * chunk_sizze_6888),
+                    q_6933 = sdiv_up64(
+                        num_subhistos_6815,
+                        ((seghist_tblock_sizze_6305 * blocks_per_segment_6932) * chunk_sizze_6902),
                     )
-                    num_virtblocks_6920 = blocks_per_segment_6918 * np.int64(256)
-                    threads_per_segment_6921 = blocks_per_segment_6918 * seghist_tblock_sizze_6295
-                    segred_tmp_mem_6922 = opencl_alloc(
-                        self, (np.int64(8) * num_virtblocks_6920), "segred_tmp_mem_6922"
+                    num_virtblocks_6934 = blocks_per_segment_6932 * np.int64(256)
+                    threads_per_segment_6935 = blocks_per_segment_6932 * seghist_tblock_sizze_6305
+                    segred_tmp_mem_6936 = opencl_alloc(
+                        self, (np.int64(8) * num_virtblocks_6934), "segred_tmp_mem_6936"
                     )
                     if (
                         1
                         * (
-                            np.int64(num_tblocks_6297)
-                            * self.sizes["byte_histogram.seghist_tblock_size_6294"]
+                            np.int64(num_tblocks_6307)
+                            * self.sizes["byte_histogram.seghist_tblock_size_6304"]
                         )
                     ) != 0:
-                        self.byte_histogramzisegred_large_6887_var.set_args(
+                        self.byte_histogramzisegred_large_6901_var.set_args(
                             cl.LocalMemory(
                                 max(
                                     (
                                         np.int32(8)
                                         + (
-                                            (np.int64(8) * seghist_tblock_sizze_6295)
+                                            (np.int64(8) * seghist_tblock_sizze_6305)
                                             + srem64(
                                                 (
                                                     np.int64(8)
                                                     - srem64(
-                                                        (np.int64(8) * seghist_tblock_sizze_6295),
+                                                        (np.int64(8) * seghist_tblock_sizze_6305),
                                                         np.int64(8),
                                                     )
                                                 ),
@@ -11346,242 +11350,242 @@ class entropy:
                                 )
                             ),
                             self.global_failure,
-                            ct.c_int64(num_tblocks_6297),
-                            ct.c_int64(num_subhistos_6801),
-                            ct.c_int64(blocks_per_segment_6918),
-                            ct.c_int64(q_6919),
-                            ct.c_int64(num_virtblocks_6920),
-                            ct.c_int64(threads_per_segment_6921),
-                            mem_6744,
-                            defunc_0_map_res_subhistos_mem_6802,
-                            segred_tmp_mem_6922,
-                            self.constants["counters_mem_6924"],
+                            ct.c_int64(num_tblocks_6307),
+                            ct.c_int64(num_subhistos_6815),
+                            ct.c_int64(blocks_per_segment_6932),
+                            ct.c_int64(q_6933),
+                            ct.c_int64(num_virtblocks_6934),
+                            ct.c_int64(threads_per_segment_6935),
+                            mem_6758,
+                            defunc_0_map_res_subhistos_mem_6816,
+                            segred_tmp_mem_6936,
+                            self.constants["counters_mem_6938"],
                         )
                         cl.enqueue_nd_range_kernel(
                             self.queue,
-                            self.byte_histogramzisegred_large_6887_var,
+                            self.byte_histogramzisegred_large_6901_var,
                             (
                                 (
-                                    np.int64(num_tblocks_6297)
-                                    * self.sizes["byte_histogram.seghist_tblock_size_6294"]
+                                    np.int64(num_tblocks_6307)
+                                    * self.sizes["byte_histogram.seghist_tblock_size_6304"]
                                 ),
                             ),
-                            (self.sizes["byte_histogram.seghist_tblock_size_6294"],),
+                            (self.sizes["byte_histogram.seghist_tblock_size_6304"],),
                         )
                         if synchronous:
                             sync(self)
-        mem_out_6779 = mem_6744
-        return mem_out_6779
+        mem_out_6793 = mem_6758
+        return mem_out_6793
 
-    def futhark_entry_chunked_entropy(self, xs_mem_6743, n_6040, chunk_sizze_6041):
-        zzero_6185 = chunk_sizze_6041 == np.int64(0)
-        nonzzero_6186 = not (zzero_6185)
-        nonzzero_cert_6187 = True
+    def futhark_entry_chunked_entropy(self, xs_mem_6757, n_6046, chunk_sizze_6047):
+        zzero_6194 = chunk_sizze_6047 == np.int64(0)
+        nonzzero_6195 = not (zzero_6194)
+        nonzzero_cert_6196 = True
         assert (
-            nonzzero_6186
-        ), "Error: {}\n\nBacktrace:\n-> #0  entropy.fut:12:9-23\n   #1  entropy.fut:11:1-13:87\n".format(
+            nonzzero_6195
+        ), "Error: {}\n\nBacktrace:\n-> #0  ofrak_gpu/entropy.fut:12:9-23\n   #1  ofrak_gpu/entropy.fut:11:1-13:93\n".format(
             "division by zero"
         )
-        dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188 = sdiv64(n_6040, chunk_sizze_6041)
-        bounds_invalid_upwards_6189 = slt64(
-            dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188, np.int64(0)
+        dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197 = sdiv64(n_6046, chunk_sizze_6047)
+        bounds_invalid_upwards_6198 = slt64(
+            dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197, np.int64(0)
         )
-        valid_6190 = not (bounds_invalid_upwards_6189)
-        range_valid_c_6191 = True
-        assert valid_6190, (
-            "Error: %s%d%s%d%s\n\nBacktrace:\n-> #0  entropy.fut:12:4-24\n   #1  entropy.fut:11:1-13:87\n"
+        valid_6199 = not (bounds_invalid_upwards_6198)
+        range_valid_c_6200 = True
+        assert valid_6199, (
+            "Error: %s%d%s%d%s\n\nBacktrace:\n-> #0  ofrak_gpu/entropy.fut:12:4-24\n   #1  ofrak_gpu/entropy.fut:11:1-13:93\n"
             % (
                 "Range ",
                 np.int64(0),
                 "..<",
-                dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188,
+                dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197,
                 " is invalid.",
             )
         )
-        suff_outer_par_6336 = (
+        suff_outer_par_6346 = (
             self.sizes["chunked_entropy.suff_outer_par_0"]
-            <= dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188
+            <= dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197
         )
-        segmap_tblock_sizze_6587 = self.sizes["chunked_entropy.segmap_tblock_size_6564"]
-        segmap_tblock_sizze_6626 = self.sizes["chunked_entropy.segmap_tblock_size_6510"]
-        max_num_tblocks_6781 = self.sizes["chunked_entropy.segmap_num_tblocks_6512"]
-        num_tblocks_6627 = sext_i64_i32(
+        segmap_tblock_sizze_6600 = self.sizes["chunked_entropy.segmap_tblock_size_6577"]
+        segmap_tblock_sizze_6639 = self.sizes["chunked_entropy.segmap_tblock_size_6523"]
+        max_num_tblocks_6795 = self.sizes["chunked_entropy.segmap_num_tblocks_6525"]
+        num_tblocks_6640 = sext_i64_i32(
             smax64(
                 np.int64(1),
                 smin64(
                     sdiv_up64(
-                        dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188, segmap_tblock_sizze_6626
+                        dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197, segmap_tblock_sizze_6639
                     ),
-                    max_num_tblocks_6781,
+                    max_num_tblocks_6795,
                 ),
             )
         )
-        nest_sizze_6649 = np.int64(256) * dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188
-        segred_tblock_sizze_6650 = self.sizes["chunked_entropy.segred_tblock_size_6460"]
-        max_num_tblocks_6782 = self.sizes["chunked_entropy.segred_num_tblocks_6462"]
-        num_tblocks_6651 = sext_i64_i32(
+        nest_sizze_6662 = np.int64(256) * dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197
+        segred_tblock_sizze_6663 = self.sizes["chunked_entropy.segred_tblock_size_6473"]
+        max_num_tblocks_6796 = self.sizes["chunked_entropy.segred_num_tblocks_6475"]
+        num_tblocks_6664 = sext_i64_i32(
             smax64(
                 np.int64(1),
-                smin64(sdiv_up64(nest_sizze_6649, segred_tblock_sizze_6650), max_num_tblocks_6782),
+                smin64(sdiv_up64(nest_sizze_6662, segred_tblock_sizze_6663), max_num_tblocks_6796),
             )
         )
-        segmap_tblock_sizze_6670 = self.sizes["chunked_entropy.segmap_tblock_size_6444"]
-        segmap_tblock_sizze_6390 = self.sizes["chunked_entropy.segmap_tblock_size_6340"]
-        binop_y_6754 = dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188 - np.int64(1)
-        binop_x_6756 = smax64(np.int64(0), binop_y_6754)
-        binop_y_6758 = np.int64(255) * dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188
-        binop_y_6759 = smax64(np.int64(0), binop_y_6758)
-        binop_y_6760 = binop_x_6756 + binop_y_6759
-        binop_y_6761 = np.int64(1) + binop_y_6760
-        bytes_6762 = np.int64(8) * binop_y_6761
-        bytes_6765 = np.int64(4) * dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188
-        shared_memory_capacity_6920 = self.max_shared_memory
-        if suff_outer_par_6336 and sle64(np.int64(0), shared_memory_capacity_6920):
-            segmap_usable_groups_6391 = sdiv_up64(
-                dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188, segmap_tblock_sizze_6390
+        segmap_tblock_sizze_6683 = self.sizes["chunked_entropy.segmap_tblock_size_6456"]
+        segmap_tblock_sizze_6401 = self.sizes["chunked_entropy.segmap_tblock_size_6350"]
+        binop_y_6768 = dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197 - np.int64(1)
+        binop_x_6770 = smax64(np.int64(0), binop_y_6768)
+        binop_y_6772 = np.int64(255) * dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197
+        binop_y_6773 = smax64(np.int64(0), binop_y_6772)
+        binop_y_6774 = binop_x_6770 + binop_y_6773
+        binop_y_6775 = np.int64(1) + binop_y_6774
+        bytes_6776 = np.int64(8) * binop_y_6775
+        bytes_6779 = np.int64(4) * dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197
+        shared_memory_capacity_6934 = self.max_shared_memory
+        if suff_outer_par_6346 and sle64(np.int64(0), shared_memory_capacity_6934):
+            segmap_usable_groups_6402 = sdiv_up64(
+                dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197, segmap_tblock_sizze_6401
             )
-            mem_6777 = opencl_alloc(
-                self, dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188, "mem_6777"
+            mem_6791 = opencl_alloc(
+                self, dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197, "mem_6791"
             )
-            virt_num_tblocks_6783 = sext_i64_i32(
+            virt_num_tblocks_6797 = sext_i64_i32(
                 sdiv_up64(
-                    dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188, segmap_tblock_sizze_6390
+                    dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197, segmap_tblock_sizze_6401
                 )
             )
             if (
                 1
                 * (
-                    np.int64(segmap_usable_groups_6391)
-                    * self.sizes["chunked_entropy.segmap_tblock_size_6340"]
+                    np.int64(segmap_usable_groups_6402)
+                    * self.sizes["chunked_entropy.segmap_tblock_size_6350"]
                 )
             ) != 0:
-                self.chunked_entropyzisegmap_6394_var.set_args(
+                self.chunked_entropyzisegmap_6405_var.set_args(
                     cl.LocalMemory(max(np.int64(0), 1)),
                     self.global_failure,
                     self.failure_is_an_option,
                     self.global_failure_args,
-                    ct.c_int64(n_6040),
-                    ct.c_int64(chunk_sizze_6041),
-                    ct.c_int64(dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188),
-                    xs_mem_6743,
+                    ct.c_int64(n_6046),
+                    ct.c_int64(chunk_sizze_6047),
+                    ct.c_int64(dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197),
+                    xs_mem_6757,
+                    mem_6791,
+                )
+                cl.enqueue_nd_range_kernel(
+                    self.queue,
+                    self.chunked_entropyzisegmap_6405_var,
+                    (
+                        (
+                            np.int64(segmap_usable_groups_6402)
+                            * self.sizes["chunked_entropy.segmap_tblock_size_6350"]
+                        ),
+                    ),
+                    (self.sizes["chunked_entropy.segmap_tblock_size_6350"],),
+                )
+                if synchronous:
+                    sync(self)
+            self.failure_is_an_option = np.int32(1)
+            ext_mem_6792 = mem_6791
+        else:
+            segmap_usable_groups_6601 = sdiv_up64(
+                dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197, segmap_tblock_sizze_6600
+            )
+            mem_6759 = opencl_alloc(self, np.int64(0), "mem_6759")
+            virt_num_tblocks_6809 = sext_i64_i32(
+                sdiv_up64(
+                    dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197, segmap_tblock_sizze_6600
+                )
+            )
+            if (
+                1
+                * (
+                    np.int64(segmap_usable_groups_6601)
+                    * self.sizes["chunked_entropy.segmap_tblock_size_6577"]
+                )
+            ) != 0:
+                self.chunked_entropyzisegmap_6606_var.set_args(
+                    cl.LocalMemory(max(np.int64(0), 1)),
+                    self.global_failure,
+                    self.failure_is_an_option,
+                    self.global_failure_args,
+                    ct.c_int64(n_6046),
+                    ct.c_int64(chunk_sizze_6047),
+                    ct.c_int64(dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197),
+                    mem_6759,
+                )
+                cl.enqueue_nd_range_kernel(
+                    self.queue,
+                    self.chunked_entropyzisegmap_6606_var,
+                    (
+                        (
+                            np.int64(segmap_usable_groups_6601)
+                            * self.sizes["chunked_entropy.segmap_tblock_size_6577"]
+                        ),
+                    ),
+                    (self.sizes["chunked_entropy.segmap_tblock_size_6577"],),
+                )
+                if synchronous:
+                    sync(self)
+            self.failure_is_an_option = np.int32(1)
+            mem_6777 = opencl_alloc(self, bytes_6776, "mem_6777")
+            virt_num_tblocks_6818 = sext_i64_i32(
+                sdiv_up64(
+                    dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197, segmap_tblock_sizze_6639
+                )
+            )
+            if (
+                1
+                * (
+                    np.int64(num_tblocks_6640)
+                    * self.sizes["chunked_entropy.segmap_tblock_size_6523"]
+                )
+            ) != 0:
+                self.chunked_entropyzisegmap_6645_var.set_args(
+                    cl.LocalMemory(max(np.int64(0), 1)),
+                    self.global_failure,
+                    ct.c_int64(chunk_sizze_6047),
+                    ct.c_int64(dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197),
+                    ct.c_int64(num_tblocks_6640),
+                    ct.c_int32(virt_num_tblocks_6818),
+                    xs_mem_6757,
+                    mem_6759,
                     mem_6777,
                 )
                 cl.enqueue_nd_range_kernel(
                     self.queue,
-                    self.chunked_entropyzisegmap_6394_var,
+                    self.chunked_entropyzisegmap_6645_var,
                     (
                         (
-                            np.int64(segmap_usable_groups_6391)
-                            * self.sizes["chunked_entropy.segmap_tblock_size_6340"]
+                            np.int64(num_tblocks_6640)
+                            * self.sizes["chunked_entropy.segmap_tblock_size_6523"]
                         ),
                     ),
-                    (self.sizes["chunked_entropy.segmap_tblock_size_6340"],),
+                    (self.sizes["chunked_entropy.segmap_tblock_size_6523"],),
                 )
                 if synchronous:
                     sync(self)
-            self.failure_is_an_option = np.int32(1)
-            ext_mem_6778 = mem_6777
-        else:
-            segmap_usable_groups_6588 = sdiv_up64(
-                dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188, segmap_tblock_sizze_6587
-            )
-            mem_6745 = opencl_alloc(self, np.int64(0), "mem_6745")
-            virt_num_tblocks_6795 = sext_i64_i32(
-                sdiv_up64(
-                    dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188, segmap_tblock_sizze_6587
-                )
-            )
-            if (
-                1
-                * (
-                    np.int64(segmap_usable_groups_6588)
-                    * self.sizes["chunked_entropy.segmap_tblock_size_6564"]
-                )
-            ) != 0:
-                self.chunked_entropyzisegmap_6593_var.set_args(
-                    cl.LocalMemory(max(np.int64(0), 1)),
-                    self.global_failure,
-                    self.failure_is_an_option,
-                    self.global_failure_args,
-                    ct.c_int64(n_6040),
-                    ct.c_int64(chunk_sizze_6041),
-                    ct.c_int64(dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188),
-                    mem_6745,
-                )
-                cl.enqueue_nd_range_kernel(
-                    self.queue,
-                    self.chunked_entropyzisegmap_6593_var,
-                    (
-                        (
-                            np.int64(segmap_usable_groups_6588)
-                            * self.sizes["chunked_entropy.segmap_tblock_size_6564"]
-                        ),
-                    ),
-                    (self.sizes["chunked_entropy.segmap_tblock_size_6564"],),
-                )
-                if synchronous:
-                    sync(self)
-            self.failure_is_an_option = np.int32(1)
-            mem_6763 = opencl_alloc(self, bytes_6762, "mem_6763")
-            virt_num_tblocks_6804 = sext_i64_i32(
-                sdiv_up64(
-                    dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188, segmap_tblock_sizze_6626
-                )
-            )
-            if (
-                1
-                * (
-                    np.int64(num_tblocks_6627)
-                    * self.sizes["chunked_entropy.segmap_tblock_size_6510"]
-                )
-            ) != 0:
-                self.chunked_entropyzisegmap_6632_var.set_args(
-                    cl.LocalMemory(max(np.int64(0), 1)),
-                    self.global_failure,
-                    ct.c_int64(chunk_sizze_6041),
-                    ct.c_int64(dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188),
-                    ct.c_int64(num_tblocks_6627),
-                    ct.c_int32(virt_num_tblocks_6804),
-                    xs_mem_6743,
-                    mem_6745,
-                    mem_6763,
-                )
-                cl.enqueue_nd_range_kernel(
-                    self.queue,
-                    self.chunked_entropyzisegmap_6632_var,
-                    (
-                        (
-                            np.int64(num_tblocks_6627)
-                            * self.sizes["chunked_entropy.segmap_tblock_size_6510"]
-                        ),
-                    ),
-                    (self.sizes["chunked_entropy.segmap_tblock_size_6510"],),
-                )
-                if synchronous:
-                    sync(self)
-            mem_6745 = None
-            mem_6766 = opencl_alloc(self, bytes_6765, "mem_6766")
-            chunk_sizze_6819 = np.int64(1)
-            if slt64(np.int64(512), (segred_tblock_sizze_6650 * chunk_sizze_6819)):
-                segment_sizze_nonzzero_6820 = smax64(np.int64(1), np.int64(256))
-                num_threads_6821 = segred_tblock_sizze_6650 * segred_tblock_sizze_6650
+            mem_6759 = None
+            mem_6780 = opencl_alloc(self, bytes_6779, "mem_6780")
+            chunk_sizze_6833 = np.int64(1)
+            if slt64(np.int64(512), (segred_tblock_sizze_6663 * chunk_sizze_6833)):
+                segment_sizze_nonzzero_6834 = smax64(np.int64(1), np.int64(256))
+                num_threads_6835 = segred_tblock_sizze_6663 * segred_tblock_sizze_6663
                 if (
                     1
                     * (
-                        np.int64(num_tblocks_6651)
-                        * self.sizes["chunked_entropy.segred_tblock_size_6460"]
+                        np.int64(num_tblocks_6664)
+                        * self.sizes["chunked_entropy.segred_tblock_size_6473"]
                     )
                 ) != 0:
-                    self.chunked_entropyzisegred_small_6656_var.set_args(
+                    self.chunked_entropyzisegred_small_6669_var.set_args(
                         cl.LocalMemory(
                             max(
                                 (
-                                    (np.int64(4) * segred_tblock_sizze_6650)
+                                    (np.int64(4) * segred_tblock_sizze_6663)
                                     + srem64(
                                         (
                                             np.int64(8)
                                             - srem64(
-                                                (np.int64(4) * segred_tblock_sizze_6650),
+                                                (np.int64(4) * segred_tblock_sizze_6663),
                                                 np.int64(8),
                                             )
                                         ),
@@ -11592,61 +11596,61 @@ class entropy:
                             )
                         ),
                         self.global_failure,
-                        ct.c_int64(chunk_sizze_6041),
-                        ct.c_int64(dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188),
-                        ct.c_int64(num_tblocks_6651),
-                        ct.c_int64(segment_sizze_nonzzero_6820),
-                        mem_6763,
-                        mem_6766,
+                        ct.c_int64(chunk_sizze_6047),
+                        ct.c_int64(dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197),
+                        ct.c_int64(num_tblocks_6664),
+                        ct.c_int64(segment_sizze_nonzzero_6834),
+                        mem_6777,
+                        mem_6780,
                     )
                     cl.enqueue_nd_range_kernel(
                         self.queue,
-                        self.chunked_entropyzisegred_small_6656_var,
+                        self.chunked_entropyzisegred_small_6669_var,
                         (
                             (
-                                np.int64(num_tblocks_6651)
-                                * self.sizes["chunked_entropy.segred_tblock_size_6460"]
+                                np.int64(num_tblocks_6664)
+                                * self.sizes["chunked_entropy.segred_tblock_size_6473"]
                             ),
                         ),
-                        (self.sizes["chunked_entropy.segred_tblock_size_6460"],),
+                        (self.sizes["chunked_entropy.segred_tblock_size_6473"],),
                     )
                     if synchronous:
                         sync(self)
             else:
-                blocks_per_segment_6848 = sdiv_up64(
-                    num_tblocks_6651,
-                    smax64(np.int64(1), dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188),
+                blocks_per_segment_6862 = sdiv_up64(
+                    num_tblocks_6664,
+                    smax64(np.int64(1), dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197),
                 )
-                q_6849 = sdiv_up64(
+                q_6863 = sdiv_up64(
                     np.int64(256),
-                    ((segred_tblock_sizze_6650 * blocks_per_segment_6848) * chunk_sizze_6819),
+                    ((segred_tblock_sizze_6663 * blocks_per_segment_6862) * chunk_sizze_6833),
                 )
-                num_virtblocks_6850 = (
-                    blocks_per_segment_6848 * dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188
+                num_virtblocks_6864 = (
+                    blocks_per_segment_6862 * dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197
                 )
-                threads_per_segment_6851 = blocks_per_segment_6848 * segred_tblock_sizze_6650
-                segred_tmp_mem_6852 = opencl_alloc(
-                    self, (np.int64(4) * num_virtblocks_6850), "segred_tmp_mem_6852"
+                threads_per_segment_6865 = blocks_per_segment_6862 * segred_tblock_sizze_6663
+                segred_tmp_mem_6866 = opencl_alloc(
+                    self, (np.int64(4) * num_virtblocks_6864), "segred_tmp_mem_6866"
                 )
                 if (
                     1
                     * (
-                        np.int64(num_tblocks_6651)
-                        * self.sizes["chunked_entropy.segred_tblock_size_6460"]
+                        np.int64(num_tblocks_6664)
+                        * self.sizes["chunked_entropy.segred_tblock_size_6473"]
                     )
                 ) != 0:
-                    self.chunked_entropyzisegred_large_6656_var.set_args(
+                    self.chunked_entropyzisegred_large_6669_var.set_args(
                         cl.LocalMemory(
                             max(
                                 (
                                     np.int32(8)
                                     + (
-                                        (np.int64(4) * segred_tblock_sizze_6650)
+                                        (np.int64(4) * segred_tblock_sizze_6663)
                                         + srem64(
                                             (
                                                 np.int64(8)
                                                 - srem64(
-                                                    (np.int64(4) * segred_tblock_sizze_6650),
+                                                    (np.int64(4) * segred_tblock_sizze_6663),
                                                     np.int64(8),
                                                 )
                                             ),
@@ -11658,182 +11662,182 @@ class entropy:
                             )
                         ),
                         self.global_failure,
-                        ct.c_int64(chunk_sizze_6041),
-                        ct.c_int64(dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188),
-                        ct.c_int64(num_tblocks_6651),
-                        ct.c_int64(blocks_per_segment_6848),
-                        ct.c_int64(q_6849),
-                        ct.c_int64(num_virtblocks_6850),
-                        ct.c_int64(threads_per_segment_6851),
-                        mem_6763,
-                        mem_6766,
-                        segred_tmp_mem_6852,
-                        self.constants["counters_mem_6854"],
+                        ct.c_int64(chunk_sizze_6047),
+                        ct.c_int64(dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197),
+                        ct.c_int64(num_tblocks_6664),
+                        ct.c_int64(blocks_per_segment_6862),
+                        ct.c_int64(q_6863),
+                        ct.c_int64(num_virtblocks_6864),
+                        ct.c_int64(threads_per_segment_6865),
+                        mem_6777,
+                        mem_6780,
+                        segred_tmp_mem_6866,
+                        self.constants["counters_mem_6868"],
                     )
                     cl.enqueue_nd_range_kernel(
                         self.queue,
-                        self.chunked_entropyzisegred_large_6656_var,
+                        self.chunked_entropyzisegred_large_6669_var,
                         (
                             (
-                                np.int64(num_tblocks_6651)
-                                * self.sizes["chunked_entropy.segred_tblock_size_6460"]
+                                np.int64(num_tblocks_6664)
+                                * self.sizes["chunked_entropy.segred_tblock_size_6473"]
                             ),
                         ),
-                        (self.sizes["chunked_entropy.segred_tblock_size_6460"],),
+                        (self.sizes["chunked_entropy.segred_tblock_size_6473"],),
                     )
                     if synchronous:
                         sync(self)
-            mem_6763 = None
-            segmap_usable_groups_6671 = sdiv_up64(
-                dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188, segmap_tblock_sizze_6670
+            mem_6777 = None
+            segmap_usable_groups_6684 = sdiv_up64(
+                dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197, segmap_tblock_sizze_6683
             )
-            mem_6768 = opencl_alloc(
-                self, dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188, "mem_6768"
+            mem_6782 = opencl_alloc(
+                self, dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197, "mem_6782"
             )
-            virt_num_tblocks_6911 = sext_i64_i32(
+            virt_num_tblocks_6925 = sext_i64_i32(
                 sdiv_up64(
-                    dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188, segmap_tblock_sizze_6670
+                    dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197, segmap_tblock_sizze_6683
                 )
             )
             if (
                 1
                 * (
-                    np.int64(segmap_usable_groups_6671)
-                    * self.sizes["chunked_entropy.segmap_tblock_size_6444"]
+                    np.int64(segmap_usable_groups_6684)
+                    * self.sizes["chunked_entropy.segmap_tblock_size_6456"]
                 )
             ) != 0:
-                self.chunked_entropyzisegmap_6674_var.set_args(
+                self.chunked_entropyzisegmap_6687_var.set_args(
                     cl.LocalMemory(max(np.int64(0), 1)),
                     self.global_failure,
-                    ct.c_int64(chunk_sizze_6041),
-                    ct.c_int64(dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188),
-                    mem_6766,
-                    mem_6768,
+                    ct.c_int64(chunk_sizze_6047),
+                    ct.c_int64(dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197),
+                    mem_6780,
+                    mem_6782,
                 )
                 cl.enqueue_nd_range_kernel(
                     self.queue,
-                    self.chunked_entropyzisegmap_6674_var,
+                    self.chunked_entropyzisegmap_6687_var,
                     (
                         (
-                            np.int64(segmap_usable_groups_6671)
-                            * self.sizes["chunked_entropy.segmap_tblock_size_6444"]
+                            np.int64(segmap_usable_groups_6684)
+                            * self.sizes["chunked_entropy.segmap_tblock_size_6456"]
                         ),
                     ),
-                    (self.sizes["chunked_entropy.segmap_tblock_size_6444"],),
+                    (self.sizes["chunked_entropy.segmap_tblock_size_6456"],),
                 )
                 if synchronous:
                     sync(self)
-            mem_6766 = None
-            ext_mem_6778 = mem_6768
-        mem_out_6779 = ext_mem_6778
-        prim_out_6780 = dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6188
-        return (mem_out_6779, prim_out_6780)
+            mem_6780 = None
+            ext_mem_6792 = mem_6782
+        mem_out_6793 = ext_mem_6792
+        prim_out_6794 = dzlz7bUZLZLzsZRz20Unz20Uchunk_sizzeZRz7dUzg_6197
+        return (mem_out_6793, prim_out_6794)
 
-    def futhark_entry_entropy(self, xs_mem_6743, n_5903):
-        mem_6744 = opencl_alloc(self, np.int64(2048), "mem_6744")
-        self.futhark_builtinzhreplicate_i64(mem_6744, np.int64(256), np.int64(0))
-        seghist_tblock_sizze_6311 = self.sizes["entropy.seghist_tblock_size_6310"]
-        max_num_tblocks_6800 = self.sizes["entropy.seghist_num_tblocks_6312"]
-        num_tblocks_6313 = sext_i64_i32(
+    def futhark_entry_entropy(self, xs_mem_6757, n_5907):
+        mem_6758 = opencl_alloc(self, np.int64(2048), "mem_6758")
+        self.futhark_builtinzhreplicate_i64(mem_6758, np.int64(256), np.int64(0))
+        seghist_tblock_sizze_6321 = self.sizes["entropy.seghist_tblock_size_6320"]
+        max_num_tblocks_6814 = self.sizes["entropy.seghist_num_tblocks_6322"]
+        num_tblocks_6323 = sext_i64_i32(
             smax64(
                 np.int64(1),
-                smin64(sdiv_up64(n_5903, seghist_tblock_sizze_6311), max_num_tblocks_6800),
+                smin64(sdiv_up64(n_5907, seghist_tblock_sizze_6321), max_num_tblocks_6814),
             )
         )
-        h_6804 = np.int64(2048)
-        seg_h_6805 = np.int64(2048)
-        if seg_h_6805 == np.int64(0):
+        h_6818 = np.int64(2048)
+        seg_h_6819 = np.int64(2048)
+        if seg_h_6819 == np.int64(0):
             pass
         else:
-            hist_H_6806 = np.int64(256)
-            hist_el_sizze_6807 = sdiv_up64(h_6804, hist_H_6806)
-            hist_N_6808 = n_5903
-            hist_RF_6809 = np.int32(1)
-            hist_L_6810 = self.max_shared_memory
-            max_tblock_sizze_6811 = self.max_thread_block_size
-            num_tblocks_6812 = sdiv_up64(
-                sext_i32_i64(sext_i64_i32(num_tblocks_6313 * seghist_tblock_sizze_6311)),
-                max_tblock_sizze_6811,
+            hist_H_6820 = np.int64(256)
+            hist_el_sizze_6821 = sdiv_up64(h_6818, hist_H_6820)
+            hist_N_6822 = n_5907
+            hist_RF_6823 = np.int32(1)
+            hist_L_6824 = self.max_shared_memory
+            max_tblock_sizze_6825 = self.max_thread_block_size
+            num_tblocks_6826 = sdiv_up64(
+                sext_i32_i64(sext_i64_i32(num_tblocks_6323 * seghist_tblock_sizze_6321)),
+                max_tblock_sizze_6825,
             )
-            hist_m_prime_6813 = sitofp_i64_f64(
+            hist_m_prime_6827 = sitofp_i64_f64(
                 smin64(
-                    squot64(hist_L_6810, hist_el_sizze_6807),
-                    sdiv_up64(hist_N_6808, num_tblocks_6812),
+                    squot64(hist_L_6824, hist_el_sizze_6821),
+                    sdiv_up64(hist_N_6822, num_tblocks_6826),
                 )
-            ) / sitofp_i64_f64(hist_H_6806)
-            hist_M0_6814 = smax64(
-                np.int64(1), smin64(fptosi_f64_i64(hist_m_prime_6813), max_tblock_sizze_6811)
+            ) / sitofp_i64_f64(hist_H_6820)
+            hist_M0_6828 = smax64(
+                np.int64(1), smin64(fptosi_f64_i64(hist_m_prime_6827), max_tblock_sizze_6825)
             )
-            hist_Nout_6815 = np.int64(1)
-            hist_Nin_6816 = n_5903
-            work_asymp_M_max_6817 = squot64(
-                (hist_Nout_6815 * hist_N_6808), ((np.int64(2) * num_tblocks_6812) * hist_H_6806)
+            hist_Nout_6829 = np.int64(1)
+            hist_Nin_6830 = n_5907
+            work_asymp_M_max_6831 = squot64(
+                (hist_Nout_6829 * hist_N_6822), ((np.int64(2) * num_tblocks_6826) * hist_H_6820)
             )
-            hist_M_6818 = sext_i64_i32(smin64(hist_M0_6814, work_asymp_M_max_6817))
-            hist_C_6819 = sdiv_up64(
-                max_tblock_sizze_6811, sext_i32_i64(smax32(np.int32(1), hist_M_6818))
+            hist_M_6832 = sext_i64_i32(smin64(hist_M0_6828, work_asymp_M_max_6831))
+            hist_C_6833 = sdiv_up64(
+                max_tblock_sizze_6825, sext_i32_i64(smax32(np.int32(1), hist_M_6832))
             )
-            local_mem_needed_6820 = hist_el_sizze_6807 * sext_i32_i64(hist_M_6818)
-            hist_S_6821 = sext_i64_i32(
-                sdiv_up64(((hist_H_6806 * local_mem_needed_6820) + np.int64(1)), hist_L_6810)
+            local_mem_needed_6834 = hist_el_sizze_6821 * sext_i32_i64(hist_M_6832)
+            hist_S_6835 = sext_i64_i32(
+                sdiv_up64(((hist_H_6820 * local_mem_needed_6834) + np.int64(1)), hist_L_6824)
             )
-            if sle64(hist_H_6806, hist_Nin_6816) and (
-                sle64(local_mem_needed_6820, hist_L_6810)
+            if sle64(hist_H_6820, hist_Nin_6830) and (
+                sle64(local_mem_needed_6834, hist_L_6824)
                 and (
-                    sle32(hist_S_6821, np.int32(3))
+                    sle32(hist_S_6835, np.int32(3))
                     and (
-                        sle64(hist_C_6819, max_tblock_sizze_6811)
-                        and slt32(np.int32(0), hist_M_6818)
+                        sle64(hist_C_6833, max_tblock_sizze_6825)
+                        and slt32(np.int32(0), hist_M_6832)
                     )
                 )
             ):
-                num_subhistos_6801 = num_tblocks_6812
-                if num_subhistos_6801 == np.int64(1):
-                    defunc_0_map_res_subhistos_mem_6802 = mem_6744
+                num_subhistos_6815 = num_tblocks_6826
+                if num_subhistos_6815 == np.int64(1):
+                    defunc_0_map_res_subhistos_mem_6816 = mem_6758
                 else:
-                    defunc_0_map_res_subhistos_mem_6802 = opencl_alloc(
+                    defunc_0_map_res_subhistos_mem_6816 = opencl_alloc(
                         self,
-                        ((num_subhistos_6801 * np.int64(256)) * np.int64(8)),
-                        "defunc_0_map_res_subhistos_mem_6802",
+                        ((num_subhistos_6815 * np.int64(256)) * np.int64(8)),
+                        "defunc_0_map_res_subhistos_mem_6816",
                     )
                     self.futhark_builtinzhreplicate_i64(
-                        defunc_0_map_res_subhistos_mem_6802,
-                        (num_subhistos_6801 * np.int64(256)),
+                        defunc_0_map_res_subhistos_mem_6816,
+                        (num_subhistos_6815 * np.int64(256)),
                         np.int64(0),
                     )
                     lmad_copy_gpu2gpu(
                         self,
                         ct.c_int64,
-                        defunc_0_map_res_subhistos_mem_6802,
+                        defunc_0_map_res_subhistos_mem_6816,
                         np.int64(0),
                         [np.int64(1)],
-                        mem_6744,
+                        mem_6758,
                         np.int64(0),
                         [np.int64(1)],
                         [np.int64(256)],
                     )
-                chk_i_6822 = np.int32(0)
-                one_7021 = np.int32(1)
-                for counter_7020 in range(hist_S_6821):
-                    num_segments_6823 = np.int64(1)
-                    hist_H_chk_6824 = sdiv_up64(np.int64(256), sext_i32_i64(hist_S_6821))
-                    histo_sizze_6825 = hist_H_chk_6824
-                    init_per_thread_6826 = sext_i64_i32(
+                chk_i_6836 = np.int32(0)
+                one_7035 = np.int32(1)
+                for counter_7034 in range(hist_S_6835):
+                    num_segments_6837 = np.int64(1)
+                    hist_H_chk_6838 = sdiv_up64(np.int64(256), sext_i32_i64(hist_S_6835))
+                    histo_sizze_6839 = hist_H_chk_6838
+                    init_per_thread_6840 = sext_i64_i32(
                         sdiv_up64(
-                            (sext_i32_i64(hist_M_6818) * histo_sizze_6825), max_tblock_sizze_6811
+                            (sext_i32_i64(hist_M_6832) * histo_sizze_6839), max_tblock_sizze_6825
                         )
                     )
-                    if (1 * (np.int64(num_tblocks_6812) * self.max_thread_block_size)) != 0:
-                        self.entropyziseghist_local_6318_var.set_args(
+                    if (1 * (np.int64(num_tblocks_6826) * self.max_thread_block_size)) != 0:
+                        self.entropyziseghist_local_6328_var.set_args(
                             cl.LocalMemory(
                                 max(
                                     (
-                                        (np.int64(8) * (hist_M_6818 * hist_H_chk_6824))
+                                        (np.int64(8) * (hist_M_6832 * hist_H_chk_6838))
                                         + srem64(
                                             (
                                                 np.int64(8)
                                                 - srem64(
-                                                    (np.int64(8) * (hist_M_6818 * hist_H_chk_6824)),
+                                                    (np.int64(8) * (hist_M_6832 * hist_H_chk_6838)),
                                                     np.int64(8),
                                                 )
                                             ),
@@ -11844,177 +11848,177 @@ class entropy:
                                 )
                             ),
                             self.global_failure,
-                            ct.c_int64(n_5903),
-                            ct.c_int64(num_subhistos_6801),
-                            ct.c_int64(num_tblocks_6812),
-                            ct.c_int32(hist_M_6818),
-                            ct.c_int32(chk_i_6822),
-                            ct.c_int64(num_segments_6823),
-                            ct.c_int64(hist_H_chk_6824),
-                            ct.c_int64(histo_sizze_6825),
-                            ct.c_int32(init_per_thread_6826),
-                            xs_mem_6743,
-                            defunc_0_map_res_subhistos_mem_6802,
+                            ct.c_int64(n_5907),
+                            ct.c_int64(num_subhistos_6815),
+                            ct.c_int64(num_tblocks_6826),
+                            ct.c_int32(hist_M_6832),
+                            ct.c_int32(chk_i_6836),
+                            ct.c_int64(num_segments_6837),
+                            ct.c_int64(hist_H_chk_6838),
+                            ct.c_int64(histo_sizze_6839),
+                            ct.c_int32(init_per_thread_6840),
+                            xs_mem_6757,
+                            defunc_0_map_res_subhistos_mem_6816,
                         )
                         cl.enqueue_nd_range_kernel(
                             self.queue,
-                            self.entropyziseghist_local_6318_var,
-                            ((np.int64(num_tblocks_6812) * self.max_thread_block_size),),
+                            self.entropyziseghist_local_6328_var,
+                            ((np.int64(num_tblocks_6826) * self.max_thread_block_size),),
                             (self.max_thread_block_size,),
                         )
                         if synchronous:
                             sync(self)
-                    chk_i_6822 += one_7021
+                    chk_i_6836 += one_7035
             else:
-                hist_H_6858 = np.int64(256)
-                hist_RF_6859 = (np.float64(0.0) + sitofp_i32_f64(np.int64(1))) / np.float64(1.0)
-                hist_el_sizze_6860 = np.int32(8)
-                hist_C_max_6861 = fmin64(
-                    sitofp_i32_f64(sext_i64_i32(num_tblocks_6313 * seghist_tblock_sizze_6311)),
-                    (sitofp_i32_f64(hist_H_6858) / np.float64(2.0)),
+                hist_H_6872 = np.int64(256)
+                hist_RF_6873 = (np.float64(0.0) + sitofp_i32_f64(np.int64(1))) / np.float64(1.0)
+                hist_el_sizze_6874 = np.int32(8)
+                hist_C_max_6875 = fmin64(
+                    sitofp_i32_f64(sext_i64_i32(num_tblocks_6323 * seghist_tblock_sizze_6321)),
+                    (sitofp_i32_f64(hist_H_6872) / np.float64(2.0)),
                 )
-                hist_M_min_6862 = smax32(
+                hist_M_min_6876 = smax32(
                     np.int32(1),
                     sext_i64_i32(
                         fptosi_f64_i64(
                             sitofp_i32_f64(
-                                sext_i64_i32(num_tblocks_6313 * seghist_tblock_sizze_6311)
+                                sext_i64_i32(num_tblocks_6323 * seghist_tblock_sizze_6321)
                             )
-                            / hist_C_max_6861
+                            / hist_C_max_6875
                         )
                     ),
                 )
-                L2_sizze_6863 = self.max_cache
-                hist_RACE_exp_6864 = fmax64(
+                L2_sizze_6877 = self.max_cache
+                hist_RACE_exp_6878 = fmax64(
                     np.float64(1.0),
                     (
-                        (np.float64(0.75) * hist_RF_6859)
-                        / (np.float64(64.0) / sitofp_i32_f64(hist_el_sizze_6860))
+                        (np.float64(0.75) * hist_RF_6873)
+                        / (np.float64(64.0) / sitofp_i32_f64(hist_el_sizze_6874))
                     ),
                 )
-                if slt64(n_5903, hist_H_6858):
-                    hist_S_6865 = np.int32(1)
+                if slt64(n_5907, hist_H_6872):
+                    hist_S_6879 = np.int32(1)
                 else:
-                    hist_S_6865 = sext_i64_i32(
+                    hist_S_6879 = sext_i64_i32(
                         sdiv_up64(
                             (
-                                (sext_i32_i64(hist_M_min_6862) * hist_H_6858)
-                                * sext_i32_i64(hist_el_sizze_6860)
+                                (sext_i32_i64(hist_M_min_6876) * hist_H_6872)
+                                * sext_i32_i64(hist_el_sizze_6874)
                             ),
                             fptosi_f64_i64(
-                                (np.float64(0.4) * sitofp_i32_f64(L2_sizze_6863))
-                                * hist_RACE_exp_6864
+                                (np.float64(0.4) * sitofp_i32_f64(L2_sizze_6877))
+                                * hist_RACE_exp_6878
                             ),
                         )
                     )
-                hist_H_chk_6866 = sdiv_up64(np.int64(256), sext_i32_i64(hist_S_6865))
-                hist_k_max_6867 = fmin64(
+                hist_H_chk_6880 = sdiv_up64(np.int64(256), sext_i32_i64(hist_S_6879))
+                hist_k_max_6881 = fmin64(
                     (
                         (
                             np.float64(0.4)
-                            * (sitofp_i32_f64(L2_sizze_6863) / sitofp_i32_f64(np.int32(8)))
+                            * (sitofp_i32_f64(L2_sizze_6877) / sitofp_i32_f64(np.int32(8)))
                         )
-                        * hist_RACE_exp_6864
+                        * hist_RACE_exp_6878
                     ),
-                    sitofp_i32_f64(n_5903),
-                ) / sitofp_i32_f64(sext_i64_i32(num_tblocks_6313 * seghist_tblock_sizze_6311))
-                hist_u_6868 = np.int64(2)
-                hist_C_6869 = fmin64(
-                    sitofp_i32_f64(sext_i64_i32(num_tblocks_6313 * seghist_tblock_sizze_6311)),
-                    (sitofp_i32_f64(hist_u_6868 * hist_H_chk_6866) / hist_k_max_6867),
+                    sitofp_i32_f64(n_5907),
+                ) / sitofp_i32_f64(sext_i64_i32(num_tblocks_6323 * seghist_tblock_sizze_6321))
+                hist_u_6882 = np.int64(2)
+                hist_C_6883 = fmin64(
+                    sitofp_i32_f64(sext_i64_i32(num_tblocks_6323 * seghist_tblock_sizze_6321)),
+                    (sitofp_i32_f64(hist_u_6882 * hist_H_chk_6880) / hist_k_max_6881),
                 )
-                hist_M_6870 = np.int32(1)
-                num_subhistos_6801 = sext_i32_i64(hist_M_6870)
-                if hist_M_6870 == np.int32(1):
-                    defunc_0_map_res_subhistos_mem_6802 = mem_6744
+                hist_M_6884 = np.int32(1)
+                num_subhistos_6815 = sext_i32_i64(hist_M_6884)
+                if hist_M_6884 == np.int32(1):
+                    defunc_0_map_res_subhistos_mem_6816 = mem_6758
                 else:
-                    if num_subhistos_6801 == np.int64(1):
-                        defunc_0_map_res_subhistos_mem_6802 = mem_6744
+                    if num_subhistos_6815 == np.int64(1):
+                        defunc_0_map_res_subhistos_mem_6816 = mem_6758
                     else:
-                        defunc_0_map_res_subhistos_mem_6802 = opencl_alloc(
+                        defunc_0_map_res_subhistos_mem_6816 = opencl_alloc(
                             self,
-                            ((num_subhistos_6801 * np.int64(256)) * np.int64(8)),
-                            "defunc_0_map_res_subhistos_mem_6802",
+                            ((num_subhistos_6815 * np.int64(256)) * np.int64(8)),
+                            "defunc_0_map_res_subhistos_mem_6816",
                         )
                         self.futhark_builtinzhreplicate_i64(
-                            defunc_0_map_res_subhistos_mem_6802,
-                            (num_subhistos_6801 * np.int64(256)),
+                            defunc_0_map_res_subhistos_mem_6816,
+                            (num_subhistos_6815 * np.int64(256)),
                             np.int64(0),
                         )
                         lmad_copy_gpu2gpu(
                             self,
                             ct.c_int64,
-                            defunc_0_map_res_subhistos_mem_6802,
+                            defunc_0_map_res_subhistos_mem_6816,
                             np.int64(0),
                             [np.int64(1)],
-                            mem_6744,
+                            mem_6758,
                             np.int64(0),
                             [np.int64(1)],
                             [np.int64(256)],
                         )
-                chk_i_6871 = np.int32(0)
-                one_7023 = np.int32(1)
-                for counter_7022 in range(hist_S_6865):
-                    hist_H_chk_6872 = sdiv_up64(np.int64(256), sext_i32_i64(hist_S_6865))
+                chk_i_6885 = np.int32(0)
+                one_7037 = np.int32(1)
+                for counter_7036 in range(hist_S_6879):
+                    hist_H_chk_6886 = sdiv_up64(np.int64(256), sext_i32_i64(hist_S_6879))
                     if (
                         1
                         * (
-                            np.int64(num_tblocks_6313)
-                            * self.sizes["entropy.seghist_tblock_size_6310"]
+                            np.int64(num_tblocks_6323)
+                            * self.sizes["entropy.seghist_tblock_size_6320"]
                         )
                     ) != 0:
-                        self.entropyziseghist_global_6318_var.set_args(
+                        self.entropyziseghist_global_6328_var.set_args(
                             cl.LocalMemory(max(np.int64(0), 1)),
                             self.global_failure,
-                            ct.c_int64(n_5903),
-                            ct.c_int64(num_tblocks_6313),
-                            ct.c_int64(num_subhistos_6801),
-                            ct.c_int32(chk_i_6871),
-                            ct.c_int64(hist_H_chk_6872),
-                            xs_mem_6743,
-                            defunc_0_map_res_subhistos_mem_6802,
+                            ct.c_int64(n_5907),
+                            ct.c_int64(num_tblocks_6323),
+                            ct.c_int64(num_subhistos_6815),
+                            ct.c_int32(chk_i_6885),
+                            ct.c_int64(hist_H_chk_6886),
+                            xs_mem_6757,
+                            defunc_0_map_res_subhistos_mem_6816,
                         )
                         cl.enqueue_nd_range_kernel(
                             self.queue,
-                            self.entropyziseghist_global_6318_var,
+                            self.entropyziseghist_global_6328_var,
                             (
                                 (
-                                    np.int64(num_tblocks_6313)
-                                    * self.sizes["entropy.seghist_tblock_size_6310"]
+                                    np.int64(num_tblocks_6323)
+                                    * self.sizes["entropy.seghist_tblock_size_6320"]
                                 ),
                             ),
-                            (self.sizes["entropy.seghist_tblock_size_6310"],),
+                            (self.sizes["entropy.seghist_tblock_size_6320"],),
                         )
                         if synchronous:
                             sync(self)
-                    chk_i_6871 += one_7023
-            if num_subhistos_6801 == np.int64(1):
-                mem_6744 = defunc_0_map_res_subhistos_mem_6802
+                    chk_i_6885 += one_7037
+            if num_subhistos_6815 == np.int64(1):
+                mem_6758 = defunc_0_map_res_subhistos_mem_6816
             else:
-                chunk_sizze_6888 = np.int64(1)
+                chunk_sizze_6902 = np.int64(1)
                 if slt64(
-                    (num_subhistos_6801 * np.int64(2)),
-                    (seghist_tblock_sizze_6311 * chunk_sizze_6888),
+                    (num_subhistos_6815 * np.int64(2)),
+                    (seghist_tblock_sizze_6321 * chunk_sizze_6902),
                 ):
-                    segment_sizze_nonzzero_6889 = smax64(np.int64(1), num_subhistos_6801)
-                    num_threads_6890 = seghist_tblock_sizze_6311 * seghist_tblock_sizze_6311
+                    segment_sizze_nonzzero_6903 = smax64(np.int64(1), num_subhistos_6815)
+                    num_threads_6904 = seghist_tblock_sizze_6321 * seghist_tblock_sizze_6321
                     if (
                         1
                         * (
-                            np.int64(num_tblocks_6313)
-                            * self.sizes["entropy.seghist_tblock_size_6310"]
+                            np.int64(num_tblocks_6323)
+                            * self.sizes["entropy.seghist_tblock_size_6320"]
                         )
                     ) != 0:
-                        self.entropyzisegred_small_6887_var.set_args(
+                        self.entropyzisegred_small_6901_var.set_args(
                             cl.LocalMemory(
                                 max(
                                     (
-                                        (np.int64(8) * seghist_tblock_sizze_6311)
+                                        (np.int64(8) * seghist_tblock_sizze_6321)
                                         + srem64(
                                             (
                                                 np.int64(8)
                                                 - srem64(
-                                                    (np.int64(8) * seghist_tblock_sizze_6311),
+                                                    (np.int64(8) * seghist_tblock_sizze_6321),
                                                     np.int64(8),
                                                 )
                                             ),
@@ -12025,57 +12029,57 @@ class entropy:
                                 )
                             ),
                             self.global_failure,
-                            ct.c_int64(num_tblocks_6313),
-                            ct.c_int64(num_subhistos_6801),
-                            ct.c_int64(segment_sizze_nonzzero_6889),
-                            mem_6744,
-                            defunc_0_map_res_subhistos_mem_6802,
+                            ct.c_int64(num_tblocks_6323),
+                            ct.c_int64(num_subhistos_6815),
+                            ct.c_int64(segment_sizze_nonzzero_6903),
+                            mem_6758,
+                            defunc_0_map_res_subhistos_mem_6816,
                         )
                         cl.enqueue_nd_range_kernel(
                             self.queue,
-                            self.entropyzisegred_small_6887_var,
+                            self.entropyzisegred_small_6901_var,
                             (
                                 (
-                                    np.int64(num_tblocks_6313)
-                                    * self.sizes["entropy.seghist_tblock_size_6310"]
+                                    np.int64(num_tblocks_6323)
+                                    * self.sizes["entropy.seghist_tblock_size_6320"]
                                 ),
                             ),
-                            (self.sizes["entropy.seghist_tblock_size_6310"],),
+                            (self.sizes["entropy.seghist_tblock_size_6320"],),
                         )
                         if synchronous:
                             sync(self)
                 else:
-                    blocks_per_segment_6918 = sdiv_up64(
-                        num_tblocks_6313, smax64(np.int64(1), np.int64(256))
+                    blocks_per_segment_6932 = sdiv_up64(
+                        num_tblocks_6323, smax64(np.int64(1), np.int64(256))
                     )
-                    q_6919 = sdiv_up64(
-                        num_subhistos_6801,
-                        ((seghist_tblock_sizze_6311 * blocks_per_segment_6918) * chunk_sizze_6888),
+                    q_6933 = sdiv_up64(
+                        num_subhistos_6815,
+                        ((seghist_tblock_sizze_6321 * blocks_per_segment_6932) * chunk_sizze_6902),
                     )
-                    num_virtblocks_6920 = blocks_per_segment_6918 * np.int64(256)
-                    threads_per_segment_6921 = blocks_per_segment_6918 * seghist_tblock_sizze_6311
-                    segred_tmp_mem_6922 = opencl_alloc(
-                        self, (np.int64(8) * num_virtblocks_6920), "segred_tmp_mem_6922"
+                    num_virtblocks_6934 = blocks_per_segment_6932 * np.int64(256)
+                    threads_per_segment_6935 = blocks_per_segment_6932 * seghist_tblock_sizze_6321
+                    segred_tmp_mem_6936 = opencl_alloc(
+                        self, (np.int64(8) * num_virtblocks_6934), "segred_tmp_mem_6936"
                     )
                     if (
                         1
                         * (
-                            np.int64(num_tblocks_6313)
-                            * self.sizes["entropy.seghist_tblock_size_6310"]
+                            np.int64(num_tblocks_6323)
+                            * self.sizes["entropy.seghist_tblock_size_6320"]
                         )
                     ) != 0:
-                        self.entropyzisegred_large_6887_var.set_args(
+                        self.entropyzisegred_large_6901_var.set_args(
                             cl.LocalMemory(
                                 max(
                                     (
                                         np.int32(8)
                                         + (
-                                            (np.int64(8) * seghist_tblock_sizze_6311)
+                                            (np.int64(8) * seghist_tblock_sizze_6321)
                                             + srem64(
                                                 (
                                                     np.int64(8)
                                                     - srem64(
-                                                        (np.int64(8) * seghist_tblock_sizze_6311),
+                                                        (np.int64(8) * seghist_tblock_sizze_6321),
                                                         np.int64(8),
                                                     )
                                                 ),
@@ -12087,58 +12091,58 @@ class entropy:
                                 )
                             ),
                             self.global_failure,
-                            ct.c_int64(num_tblocks_6313),
-                            ct.c_int64(num_subhistos_6801),
-                            ct.c_int64(blocks_per_segment_6918),
-                            ct.c_int64(q_6919),
-                            ct.c_int64(num_virtblocks_6920),
-                            ct.c_int64(threads_per_segment_6921),
-                            mem_6744,
-                            defunc_0_map_res_subhistos_mem_6802,
-                            segred_tmp_mem_6922,
-                            self.constants["counters_mem_6924"],
+                            ct.c_int64(num_tblocks_6323),
+                            ct.c_int64(num_subhistos_6815),
+                            ct.c_int64(blocks_per_segment_6932),
+                            ct.c_int64(q_6933),
+                            ct.c_int64(num_virtblocks_6934),
+                            ct.c_int64(threads_per_segment_6935),
+                            mem_6758,
+                            defunc_0_map_res_subhistos_mem_6816,
+                            segred_tmp_mem_6936,
+                            self.constants["counters_mem_6938"],
                         )
                         cl.enqueue_nd_range_kernel(
                             self.queue,
-                            self.entropyzisegred_large_6887_var,
+                            self.entropyzisegred_large_6901_var,
                             (
                                 (
-                                    np.int64(num_tblocks_6313)
-                                    * self.sizes["entropy.seghist_tblock_size_6310"]
+                                    np.int64(num_tblocks_6323)
+                                    * self.sizes["entropy.seghist_tblock_size_6320"]
                                 ),
                             ),
-                            (self.sizes["entropy.seghist_tblock_size_6310"],),
+                            (self.sizes["entropy.seghist_tblock_size_6320"],),
                         )
                         if synchronous:
                             sync(self)
-        i64_res_6244 = sitofp_i64_f32(n_5903)
-        segred_tblock_sizze_6327 = self.sizes["entropy.segred_tblock_size_6326"]
-        max_num_tblocks_6981 = self.sizes["entropy.segred_num_tblocks_6328"]
-        num_tblocks_6329 = sext_i64_i32(
+        i64_res_6254 = sitofp_i64_f32(n_5907)
+        segred_tblock_sizze_6337 = self.sizes["entropy.segred_tblock_size_6336"]
+        max_num_tblocks_6995 = self.sizes["entropy.segred_num_tblocks_6338"]
+        num_tblocks_6339 = sext_i64_i32(
             smax64(
                 np.int64(1),
-                smin64(sdiv_up64(np.int64(256), segred_tblock_sizze_6327), max_num_tblocks_6981),
+                smin64(sdiv_up64(np.int64(256), segred_tblock_sizze_6337), max_num_tblocks_6995),
             )
         )
-        mem_6747 = opencl_alloc(self, np.int64(4), "mem_6747")
-        chunk_sizze_6982 = np.int64(1)
-        segred_tmp_mem_6985 = opencl_alloc(
-            self, (np.int64(4) * num_tblocks_6329), "segred_tmp_mem_6985"
+        mem_6761 = opencl_alloc(self, np.int64(4), "mem_6761")
+        chunk_sizze_6996 = np.int64(1)
+        segred_tmp_mem_6999 = opencl_alloc(
+            self, (np.int64(4) * num_tblocks_6339), "segred_tmp_mem_6999"
         )
-        num_threads_6987 = num_tblocks_6329 * segred_tblock_sizze_6327
-        if (1 * (np.int64(num_tblocks_6329) * self.sizes["entropy.segred_tblock_size_6326"])) != 0:
-            self.entropyzisegred_nonseg_6334_var.set_args(
+        num_threads_7001 = num_tblocks_6339 * segred_tblock_sizze_6337
+        if (1 * (np.int64(num_tblocks_6339) * self.sizes["entropy.segred_tblock_size_6336"])) != 0:
+            self.entropyzisegred_nonseg_6344_var.set_args(
                 cl.LocalMemory(
                     max(
                         (
                             np.int32(8)
                             + (
-                                (np.int64(4) * segred_tblock_sizze_6327)
+                                (np.int64(4) * segred_tblock_sizze_6337)
                                 + srem64(
                                     (
                                         np.int64(8)
                                         - srem64(
-                                            (np.int64(4) * segred_tblock_sizze_6327), np.int64(8)
+                                            (np.int64(4) * segred_tblock_sizze_6337), np.int64(8)
                                         )
                                     ),
                                     np.int64(8),
@@ -12149,154 +12153,154 @@ class entropy:
                     )
                 ),
                 self.global_failure,
-                ct.c_float(i64_res_6244),
-                ct.c_int64(num_tblocks_6329),
-                ct.c_int64(num_threads_6987),
-                mem_6744,
-                mem_6747,
-                self.constants["counters_mem_6983"],
-                segred_tmp_mem_6985,
+                ct.c_float(i64_res_6254),
+                ct.c_int64(num_tblocks_6339),
+                ct.c_int64(num_threads_7001),
+                mem_6758,
+                mem_6761,
+                self.constants["counters_mem_6997"],
+                segred_tmp_mem_6999,
             )
             cl.enqueue_nd_range_kernel(
                 self.queue,
-                self.entropyzisegred_nonseg_6334_var,
-                ((np.int64(num_tblocks_6329) * self.sizes["entropy.segred_tblock_size_6326"]),),
-                (self.sizes["entropy.segred_tblock_size_6326"],),
+                self.entropyzisegred_nonseg_6344_var,
+                ((np.int64(num_tblocks_6339) * self.sizes["entropy.segred_tblock_size_6336"]),),
+                (self.sizes["entropy.segred_tblock_size_6336"],),
             )
             if synchronous:
                 sync(self)
-        mem_6744 = None
-        read_res_7024 = np.empty(1, dtype=ct.c_float)
+        mem_6758 = None
+        read_res_7038 = np.empty(1, dtype=ct.c_float)
         cl.enqueue_copy(
             self.queue,
-            read_res_7024,
-            mem_6747,
+            read_res_7038,
+            mem_6761,
             src_offset=(np.int64(np.int64(0)) * 4),
             is_blocking=synchronous,
         )
         sync(self)
-        defunc_0_f_res_6287 = read_res_7024[0]
-        mem_6747 = None
-        zs_lhs_6260 = np.float32(-1.0) * defunc_0_f_res_6287
-        log2_res_6262 = futhark_log2_32(i64_res_6244)
-        lifted_lambda_res_6263 = zs_lhs_6260 / log2_res_6262
-        prim_out_6779 = lifted_lambda_res_6263
-        return prim_out_6779
+        defunc_0_f_res_6297 = read_res_7038[0]
+        mem_6761 = None
+        zs_lhs_6270 = np.float32(-1.0) * defunc_0_f_res_6297
+        log2_res_6272 = futhark_log2_32(i64_res_6254)
+        lifted_lambda_res_6273 = zs_lhs_6270 / log2_res_6272
+        prim_out_6793 = lifted_lambda_res_6273
+        return prim_out_6793
 
-    def byte_histogram(self, xs_mem_6743_ext):
-        n_5761 = None
+    def byte_histogram(self, xs_mem_6757_ext):
+        n_5765 = None
         try:
-            assert (type(xs_mem_6743_ext) in [np.ndarray, cl.array.Array]) and (
-                xs_mem_6743_ext.dtype == np.uint8
+            assert (type(xs_mem_6757_ext) in [np.ndarray, cl.array.Array]) and (
+                xs_mem_6757_ext.dtype == np.uint8
             ), "Parameter has unexpected type"
-            if n_5761 == None:
-                n_5761 = np.int64(xs_mem_6743_ext.shape[0])
+            if n_5765 == None:
+                n_5765 = np.int64(xs_mem_6757_ext.shape[0])
             else:
                 assert (
-                    n_5761 == xs_mem_6743_ext.shape[0]
+                    n_5765 == xs_mem_6757_ext.shape[0]
                 ), "Error: entry point arguments have invalid sizes."
-            if type(xs_mem_6743_ext) == cl.array.Array:
-                xs_mem_6743 = xs_mem_6743_ext.data
+            if type(xs_mem_6757_ext) == cl.array.Array:
+                xs_mem_6757 = xs_mem_6757_ext.data
             else:
-                xs_mem_6743 = opencl_alloc(self, np.int64(xs_mem_6743_ext.nbytes), "xs_mem_6743")
-                if np.int64(xs_mem_6743_ext.nbytes) != 0:
+                xs_mem_6757 = opencl_alloc(self, np.int64(xs_mem_6757_ext.nbytes), "xs_mem_6757")
+                if np.int64(xs_mem_6757_ext.nbytes) != 0:
                     cl.enqueue_copy(
                         self.queue,
-                        xs_mem_6743,
-                        normaliseArray(xs_mem_6743_ext),
+                        xs_mem_6757,
+                        normaliseArray(xs_mem_6757_ext),
                         is_blocking=synchronous,
                     )
         except (TypeError, AssertionError) as e:
             raise TypeError(
                 "Argument #0 has invalid value\nFuthark type: {}\nArgument has Python type {} and value: {}\n".format(
-                    "[]u8", type(xs_mem_6743_ext), xs_mem_6743_ext
+                    "[]u8", type(xs_mem_6757_ext), xs_mem_6757_ext
                 )
             )
         time_start = time.time()
         with np.errstate(divide="ignore", over="ignore", under="ignore", invalid="ignore"):
-            mem_out_6779 = self.futhark_entry_byte_histogram(xs_mem_6743, n_5761)
+            mem_out_6793 = self.futhark_entry_byte_histogram(xs_mem_6757, n_5765)
         runtime = int(time.time() * 1000000) - int(time_start * 1000000)
         sync(self)
-        return cl.array.Array(self.queue, (np.int64(256),), np.int64, data=mem_out_6779)
+        return cl.array.Array(self.queue, (np.int64(256),), np.int64, data=mem_out_6793)
 
-    def chunked_entropy(self, chunk_sizze_6041_ext, xs_mem_6743_ext):
-        n_6040 = None
+    def chunked_entropy(self, chunk_sizze_6047_ext, xs_mem_6757_ext):
+        n_6046 = None
         try:
-            chunk_sizze_6041 = np.int64(ct.c_int64(chunk_sizze_6041_ext))
+            chunk_sizze_6047 = np.int64(ct.c_int64(chunk_sizze_6047_ext))
         except (TypeError, AssertionError) as e:
             raise TypeError(
                 "Argument #0 has invalid value\nFuthark type: {}\nArgument has Python type {} and value: {}\n".format(
-                    "i64", type(chunk_sizze_6041_ext), chunk_sizze_6041_ext
+                    "i64", type(chunk_sizze_6047_ext), chunk_sizze_6047_ext
                 )
             )
         try:
-            assert (type(xs_mem_6743_ext) in [np.ndarray, cl.array.Array]) and (
-                xs_mem_6743_ext.dtype == np.uint8
+            assert (type(xs_mem_6757_ext) in [np.ndarray, cl.array.Array]) and (
+                xs_mem_6757_ext.dtype == np.uint8
             ), "Parameter has unexpected type"
-            if n_6040 == None:
-                n_6040 = np.int64(xs_mem_6743_ext.shape[0])
+            if n_6046 == None:
+                n_6046 = np.int64(xs_mem_6757_ext.shape[0])
             else:
                 assert (
-                    n_6040 == xs_mem_6743_ext.shape[0]
+                    n_6046 == xs_mem_6757_ext.shape[0]
                 ), "Error: entry point arguments have invalid sizes."
-            if type(xs_mem_6743_ext) == cl.array.Array:
-                xs_mem_6743 = xs_mem_6743_ext.data
+            if type(xs_mem_6757_ext) == cl.array.Array:
+                xs_mem_6757 = xs_mem_6757_ext.data
             else:
-                xs_mem_6743 = opencl_alloc(self, np.int64(xs_mem_6743_ext.nbytes), "xs_mem_6743")
-                if np.int64(xs_mem_6743_ext.nbytes) != 0:
+                xs_mem_6757 = opencl_alloc(self, np.int64(xs_mem_6757_ext.nbytes), "xs_mem_6757")
+                if np.int64(xs_mem_6757_ext.nbytes) != 0:
                     cl.enqueue_copy(
                         self.queue,
-                        xs_mem_6743,
-                        normaliseArray(xs_mem_6743_ext),
+                        xs_mem_6757,
+                        normaliseArray(xs_mem_6757_ext),
                         is_blocking=synchronous,
                     )
         except (TypeError, AssertionError) as e:
             raise TypeError(
                 "Argument #1 has invalid value\nFuthark type: {}\nArgument has Python type {} and value: {}\n".format(
-                    "[]u8", type(xs_mem_6743_ext), xs_mem_6743_ext
+                    "[]u8", type(xs_mem_6757_ext), xs_mem_6757_ext
                 )
             )
         time_start = time.time()
         with np.errstate(divide="ignore", over="ignore", under="ignore", invalid="ignore"):
-            (mem_out_6779, prim_out_6780) = self.futhark_entry_chunked_entropy(
-                xs_mem_6743, n_6040, chunk_sizze_6041
+            (mem_out_6793, prim_out_6794) = self.futhark_entry_chunked_entropy(
+                xs_mem_6757, n_6046, chunk_sizze_6047
             )
         runtime = int(time.time() * 1000000) - int(time_start * 1000000)
         sync(self)
-        return cl.array.Array(self.queue, (prim_out_6780,), np.uint8, data=mem_out_6779)
+        return cl.array.Array(self.queue, (prim_out_6794,), np.uint8, data=mem_out_6793)
 
-    def entropy(self, xs_mem_6743_ext):
-        n_5903 = None
+    def entropy(self, xs_mem_6757_ext):
+        n_5907 = None
         try:
-            assert (type(xs_mem_6743_ext) in [np.ndarray, cl.array.Array]) and (
-                xs_mem_6743_ext.dtype == np.uint8
+            assert (type(xs_mem_6757_ext) in [np.ndarray, cl.array.Array]) and (
+                xs_mem_6757_ext.dtype == np.uint8
             ), "Parameter has unexpected type"
-            if n_5903 == None:
-                n_5903 = np.int64(xs_mem_6743_ext.shape[0])
+            if n_5907 == None:
+                n_5907 = np.int64(xs_mem_6757_ext.shape[0])
             else:
                 assert (
-                    n_5903 == xs_mem_6743_ext.shape[0]
+                    n_5907 == xs_mem_6757_ext.shape[0]
                 ), "Error: entry point arguments have invalid sizes."
-            if type(xs_mem_6743_ext) == cl.array.Array:
-                xs_mem_6743 = xs_mem_6743_ext.data
+            if type(xs_mem_6757_ext) == cl.array.Array:
+                xs_mem_6757 = xs_mem_6757_ext.data
             else:
-                xs_mem_6743 = opencl_alloc(self, np.int64(xs_mem_6743_ext.nbytes), "xs_mem_6743")
-                if np.int64(xs_mem_6743_ext.nbytes) != 0:
+                xs_mem_6757 = opencl_alloc(self, np.int64(xs_mem_6757_ext.nbytes), "xs_mem_6757")
+                if np.int64(xs_mem_6757_ext.nbytes) != 0:
                     cl.enqueue_copy(
                         self.queue,
-                        xs_mem_6743,
-                        normaliseArray(xs_mem_6743_ext),
+                        xs_mem_6757,
+                        normaliseArray(xs_mem_6757_ext),
                         is_blocking=synchronous,
                     )
         except (TypeError, AssertionError) as e:
             raise TypeError(
                 "Argument #0 has invalid value\nFuthark type: {}\nArgument has Python type {} and value: {}\n".format(
-                    "[]u8", type(xs_mem_6743_ext), xs_mem_6743_ext
+                    "[]u8", type(xs_mem_6757_ext), xs_mem_6757_ext
                 )
             )
         time_start = time.time()
         with np.errstate(divide="ignore", over="ignore", under="ignore", invalid="ignore"):
-            prim_out_6779 = self.futhark_entry_entropy(xs_mem_6743, n_5903)
+            prim_out_6793 = self.futhark_entry_entropy(xs_mem_6757, n_5907)
         runtime = int(time.time() * 1000000) - int(time_start * 1000000)
         sync(self)
-        return np.float32(prim_out_6779)
+        return np.float32(prim_out_6793)

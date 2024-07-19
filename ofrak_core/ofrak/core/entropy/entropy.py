@@ -16,11 +16,23 @@ LOGGER = logging.getLogger(__name__)
 
 
 C_LOG_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_uint8)
+import datetime
 
+try:
+    from ofrak_gpu.entropy_gpu import entropy_gpu
+    import numpy
+
+    logging.error(f"ENTROPY_GPU FOUND at {datetime.datetime.now().strftime('%H:%M:%S:%f')}")
+except:
+    logging.error(f"ENTROPY_GPU NOT FOUND at {datetime.datetime.now().strftime('%H:%M:%S:%f')}")
+    entropy_gpu = None
 
 try:
     from ofrak.core.entropy.entropy_c import entropy_c as entropy_func
+
+    logging.error("ENTROPY_C FOUND")
 except:
+    logging.error("ENTROPY_C NOT FOUND")
     from ofrak.core.entropy.entropy_py import entropy_py as entropy_func
 
 
@@ -65,6 +77,7 @@ class DataSummaryAnalyzer(Analyzer[None, DataSummary]):
             )
 
         data = await resource.get_data()
+
         # Run blocking computations in separate processes
         try:
             entropy = await asyncio.get_running_loop().run_in_executor(
@@ -73,6 +86,8 @@ class DataSummaryAnalyzer(Analyzer[None, DataSummary]):
             magnitude = await asyncio.get_running_loop().run_in_executor(
                 self.pool, sample_magnitude, data
             )
+            logging.error("CREATING DATA SUMMARY")
+
             return DataSummary(entropy, magnitude)
         except BrokenProcessPool:
             # If the previous one was aborted, try again with a new pool
@@ -94,13 +109,29 @@ def sample_entropy(
     entropy. More here: <https://en.wikipedia.org/wiki/Entropy_(information_theory)>.
     """
 
-    if len(data) < 256:
+    # return b""
+
+    if len(data) < window_size:
         return b""
 
     def log_percent(percent):  # pragma: no cover
         LOGGER.info(f"Entropy calculation {percent}% complete for {resource_id.hex()}")
 
-    result = entropy_func(data, window_size, log_percent)
+    # Run entropy calculation on GPU, if it is installed and we have a valid platform
+    try:
+        if entropy_gpu is None:
+            raise ImportError("ofrak_gpu is not installed")
+        LOGGER.warning(f"DATA type: {type(data)}")
+        result = entropy_gpu(numpy.frombuffer(data, dtype=numpy.uint8), window_size, log_percent)
+    except (ImportError, RuntimeError, AttributeError) as e:
+        if not isinstance(e, ImportError):
+            # ofrak_gpu has been installed, but something else went wrong (likely no opencl devices found)
+            LOGGER.warning(
+                f"Error encountered when attempting to run entropy calculation on GPU! {type(e).__name__}: {e}"
+            )
+        LOGGER.warning("ofrak_gpu module not found! Falling back onto C/Python")
+        # Fall back onto C/Python implementations
+        result = entropy_func(data, window_size, log_percent)
 
     if len(result) <= max_samples:
         return result
