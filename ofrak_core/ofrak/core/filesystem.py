@@ -52,8 +52,8 @@ class FilesystemEntry(ResourceView):
 
     @index
     def Name(self) -> str:
-        name = self.name.rstrip("/")
-        return name.split("/")[-1]
+        name = self.name.rstrip(os.path.sep)
+        return name.split(os.path.sep)[-1]
 
     @classmethod
     def caption(cls, all_attributes) -> str:
@@ -304,7 +304,7 @@ class Folder(FilesystemEntry):
 
         for d in descendants:
             descendant_path = await d.get_path()
-            if descendant_path.split(f"{self.name}/")[-1] == path:
+            if descendant_path.split(f"{self.name}{os.path.sep}")[-1] == path:
                 return d
         return None
 
@@ -581,7 +581,7 @@ class FilesystemRoot(ResourceView):
         """
         # Normalizes and cleans up paths beginning with "./" and containing "./../" as well as
         # other extraneous separators
-        split_dir = os.path.normpath(path).rstrip("/").lstrip("/").split("/")
+        split_dir = os.path.normpath(path).strip(os.path.sep).split(os.path.sep)
 
         parent: Union[FilesystemRoot, Folder] = self
         for directory in split_dir:

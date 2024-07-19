@@ -2,6 +2,8 @@ import os
 import re
 import stat
 import subprocess
+import sys
+import warnings
 import tempfile
 
 import pytest
@@ -104,7 +106,12 @@ class TestFilesystemRoot:
             with tempfile.TemporaryDirectory() as flush_dir:
                 await filesystem_root.flush_to_disk(flush_dir)
 
-                diff_directories(temp_dir, flush_dir, extra_diff_flags="")
+                if sys.platform != "win32":
+                    diff_directories(temp_dir, flush_dir, extra_diff_flags="")
+                else:
+                    warnings.warn(
+                        "Directories not compared on Windows. TODO: implement a basic comparison"
+                    )
 
     async def test_get_entry(self, filesystem_root: FilesystemRoot):
         """
