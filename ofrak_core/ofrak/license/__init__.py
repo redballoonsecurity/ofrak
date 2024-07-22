@@ -238,11 +238,11 @@ class Agreement:
             return cls.pro_agreement()
 
     @classmethod
-    def community_agreement(cls):
+    def community_agreement(cls) -> str:
         return cls.complete_agreement("OFRAK COMMUNITY")
 
     @classmethod
-    def pro_agreement(cls):
+    def pro_agreement(cls) -> str:
         return cls.complete_agreement("OFRAK PRO")
 
     @classmethod
