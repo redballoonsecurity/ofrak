@@ -47,7 +47,15 @@ class AddCommentModifier(Modifier[AddCommentModifierConfig]):
             comments = deepcopy(resource.get_attributes(CommentsAttributes).comments)
         except NotFoundError:
             comments = {}
-        comments[config.comment[0]] = config.comment[1]
+
+        # Here I'm appending appending overlapping comments with a new line.
+        # Overwriting comments that share a range is counter intuitive and not easily understood without digging into the code.
+        # TODO: Refactor comments strucutre to not key off of the range to allow individual overlapping comment attributes.
+        if config.comment[0] in comments:
+            comment = config.comment[1] + "\n" + comments[config.comment[0]]
+        else:
+            comment = config.comment[1]
+        comments[config.comment[0]] = comment
         resource.add_attributes(CommentsAttributes(comments=comments))
 
 

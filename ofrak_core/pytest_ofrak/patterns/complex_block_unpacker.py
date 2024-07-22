@@ -219,6 +219,24 @@ COMPLEX_BLOCK_UNPACKER_TEST_CASES = [
         "hello.out",
         "cc2de3c0cd2d0ded7543682c2470fcf0",
     ),
+    # x64 Kernel address space - ensure large 64-bit addresses are interpreted as unsigned
+    ComplexBlockUnpackerTestCase(
+        "x64 Kernel address space",
+        {
+            0xFFFFFFFF80000000: [
+                BasicBlock(
+                    virtual_address=0xFFFFFFFF80000000,
+                    size=6,
+                    mode=InstructionSetMode.NONE,
+                    is_exit_point=True,
+                    exit_vaddr=None,
+                ),
+            ],
+        },
+        set(),  # No optional results
+        "kernel_address_space.out",
+        "242dd5b9ecc56bb7a8c8db43e8c720f0",
+    ),
     # ARM with literal pools
     ComplexBlockUnpackerTestCase(
         "ARM with literal pools",

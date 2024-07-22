@@ -56,7 +56,9 @@ class GhidraProjectConfig(ComponentConfig):
     create a .gzf file that you can import with this GhidraProjectConfig.
     """
 
-    ghidra_zip_file: str
+    ghidra_zip_file: Optional[str]
+    name: Optional[str]
+    use_existing: bool
 
 
 @dataclass
@@ -110,7 +112,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
 
     @asynccontextmanager
     async def _prepare_ghidra_project(
-        self, resource: Resource, ghidra_zip_file: Optional[str] = None
+        self, resource: Resource, ghidra_zip_file: Optional[str] = None, name: Optional[str] = None
     ):
         # TODO: allow multiple headless server instances
         os.system("pkill -if analyzeHeadless")
@@ -122,7 +124,10 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
             data = await resource.get_data()
             hash_sha256 = hashlib.sha256()
             hash_sha256.update(data)
-            full_fname = os.path.join(tmp_dir.name, hash_sha256.hexdigest())
+
+            fname = name if name is not None else hash_sha256.hexdigest()
+            full_fname = os.path.join(tmp_dir.name, fname)
+
             data = await resource.get_data()
             with open(full_fname, "wb") as f:
                 f.write(data)
@@ -139,10 +144,18 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
         self, resource: Resource, config: Optional[GhidraProjectConfig] = None
     ) -> GhidraProject:
         gzf = config.ghidra_zip_file if config is not None else None
+        binary_fname = config.name if config is not None else None
 
-        async with self._prepare_ghidra_project(resource, gzf) as (ghidra_project, full_fname):
+        # if passing a name for the file, by default don't overwrite an existing file
+        # of the same name in the ghidra project.
+        use_existing = config.use_existing if config is not None else binary_fname is not None
+
+        async with self._prepare_ghidra_project(resource, gzf, binary_fname) as (
+            ghidra_project,
+            full_fname,
+        ):
             program_name = await self._do_ghidra_import(
-                ghidra_project, full_fname, use_binary_loader=False
+                ghidra_project, full_fname, use_existing=use_existing, use_binary_loader=False
             )
             await self._do_ghidra_analyze_and_serve(
                 ghidra_project,
@@ -158,6 +171,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
         self,
         ghidra_project: str,
         full_fname: str,
+        use_existing: bool,
         use_binary_loader: bool,
         processor: Optional[ArchInfo] = None,
         blocks: Optional[List[MemoryRegion]] = None,
@@ -169,8 +183,11 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
             "-p",
             "-import",
             full_fname,
-            "-overwrite",
+            "-noanalysis",
         ]
+
+        if not use_existing:
+            args.append("-overwrite")
 
         if use_binary_loader:
             args.extend(["-loader", "BinaryLoader"])
@@ -202,7 +219,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
             elif ghidra_proc.stdout.at_eof():
                 raise GhidraComponentException("Ghidra client exited unexpectedly")
 
-            if "Repository Server: localhost" in line:
+            if line.startswith("Repository Server:"):
                 time.sleep(0.5)
                 ghidra_proc.stdin.write((GHIDRA_PASS + "\n").encode("ascii"))
                 await ghidra_proc.stdin.drain()
@@ -216,6 +233,17 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
                     f"ofrak_ghidra.server start' to start it. "
                     f"Refer to our Ghidra User Guide for more troubleshooting instructions."
                 )
+            if "Found conflicting program file in project" in line:
+                if use_existing:
+                    program_name = line.split(":")[-1].strip().split(" ")[0].strip("/")
+
+                    if program_name == "":
+                        raise GhidraComponentException(f"Parsed a blank program name from {line}!")
+
+                    return program_name
+                else:
+                    raise GhidraComponentException(f"Conflicting file on import for {full_fname}")
+
             if "Import failed for file" in line:
                 raise GhidraComponentException(f"Error importing file {full_fname}")
             if "Added file to repository" in line:
@@ -272,7 +300,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
 
             if len(line) > 0:
                 LOGGER.debug(line)
-            if "Repository Server: localhost" in line:
+            if line.startswith("Repository Server:"):
                 time.sleep(0.5)
                 ghidra_proc.stdin.write((GHIDRA_PASS + "\n").encode("ascii"))
                 await ghidra_proc.stdin.drain()
@@ -452,11 +480,13 @@ class GhidraCustomLoadAnalyzer(GhidraProjectAnalyzer):
     ) -> GhidraProject:
         arch_info: ArchInfo = await resource.analyze(ProgramAttributes)
         mem_blocks = await self._get_memory_blocks(await resource.view_as(Program))
+        use_existing = config.use_existing if config is not None else False
 
         async with self._prepare_ghidra_project(resource) as (ghidra_project, full_fname):
             program_name = await self._do_ghidra_import(
                 ghidra_project,
                 full_fname,
+                use_existing=use_existing,
                 use_binary_loader=True,
                 processor=arch_info,
                 blocks=mem_blocks,

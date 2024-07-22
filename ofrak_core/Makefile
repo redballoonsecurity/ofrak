@@ -23,6 +23,7 @@ ofrak/gui/public:
 		cp -r /ofrak_gui ofrak/gui/public ; \
 	elif [ -d ../frontend ]; then \
 		cd ../frontend && \
+		npm install && \
 		npm run build && \
 		cd ../ofrak_core && \
 		cp -r ../frontend/dist ofrak/gui/public ; \

@@ -140,7 +140,14 @@ public class GetBasicBlocks extends HeadlessScript {
         }
 
         String toJson() {
-            return String.format("{\"bb_start_vaddr\":%d,\"bb_size\":%d,\"is_exit_point\":%b,\"instr_mode\":\"%s\",\"exit_vaddr\":%d}", bb_start_vaddr, bb_size, is_exit_point, instruction_mode, exit_vaddr);
+            return String.format(
+                "{\"bb_start_vaddr\":%s,\"bb_size\":%s,\"is_exit_point\":%b,\"instr_mode\":\"%s\",\"exit_vaddr\":%s}", 
+                Long.toUnsignedString(bb_start_vaddr), 
+                Long.toUnsignedString(bb_size), 
+                is_exit_point, 
+                instruction_mode, 
+                Long.toUnsignedString(exit_vaddr)
+            );
         }
     }
 }
