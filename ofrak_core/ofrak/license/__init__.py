@@ -233,7 +233,6 @@ def choose(prompt, *options: str) -> int:
     return selection - 1
 
 
-@dataclass
 class Agreement:
     @classmethod
     def get_agreement(cls, license_data: LicenseDataType):
