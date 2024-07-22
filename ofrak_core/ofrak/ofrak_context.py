@@ -125,6 +125,7 @@ class OFRAK:
         self,
         logging_level: int = DEFAULT_LOG_LEVEL,
         exclude_components_missing_dependencies: bool = False,
+        verify_license: bool = True,
     ):
         """
         Set up the OFRAK environment that a script will use.
@@ -132,7 +133,10 @@ class OFRAK:
         :param logging_level: Logging level of OFRAK instance (logging.DEBUG, logging.WARNING, etc.)
         :param exclude_components_missing_dependencies: When initializing OFRAK, check each component's dependency and do
         not use any components missing some dependencies
+        :param verify_license: Verify OFRAK license
         """
+        if verify_license:
+            verify_registered_license()
         logging.basicConfig(level=logging_level, format="[%(filename)15s:%(lineno)5s] %(message)s")
         logging.getLogger().addHandler(logging.FileHandler(DEFAULT_OFRAK_LOG_FILE))
         logging.getLogger().setLevel(logging_level)
@@ -141,7 +145,6 @@ class OFRAK:
         self._discovered_modules: List[ModuleType] = []
         self._exclude_components_missing_dependencies = exclude_components_missing_dependencies
         self._id_service: Optional[IDServiceInterface] = None
-        verify_registered_license()
 
     def discover(
         self,

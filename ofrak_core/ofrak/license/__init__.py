@@ -4,6 +4,7 @@ import sys
 import time
 import webbrowser
 from base64 import b64decode
+from dataclasses import dataclass
 from textwrap import wrap
 from typing import Dict, Union, List, Optional, Tuple, cast
 
@@ -24,19 +25,20 @@ COMMUNITY_LICENSE = {
 }
 RBS_PUBLIC_KEY = b"r\xcf\xb2\xe7\x17Y\x05*\x0e\xe3+\x00\x16\xd3\xd6\xf7\xa7\xd8\xd7\xfdV\x91\xa7\x88\x93\xe9\x9a\x8a\x05q\xd3\xbd"
 LICENSE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "license.json"))
-AGREEMENT = 'RED BALLOON SECURITY, INC., A DELAWARE CORPORATION, WITH AN ADDRESS AT 639 11TH AVENUE, 4TH FLOOR, NEW YORK, NY 10036, USA ("RED BALLOON") IS ONLY WILLING TO LICENSE OFRAK AND RELATED DOCUMENTATION PURSUANT TO THE OFRAK PRO LICENSE AGREEMENT (COLLECTIVELY WITH THIS REGISTRATION FORM, THE "AGREEMENT"). READ THIS AGREEMENT CAREFULLY BEFORE DOWNLOADING AND INSTALLING AND USING OFRAK.  BY CLICKING ON THE "ACCEPT" BUTTON ON THIS REGISTRATION FORM "REGISTRATION FORM"), OR OTHERWISE ACCESSING, INSTALLING, COPYING OR OTHERWISE USING OFRAK, YOU ("LICENSEE") AGREE THAT THIS REGISTRATION FORM SHALL BE DEEMED TO BE MUTUALLY EXECUTED AND THIS REGISTRATION FORM SHALL BE INCORPORATED INTO AND BECOME A MATERIAL PART OF THE AGREEMENT BETWEEN LICENSEE AND RED BALLOON LOCATED AT https://github.com/redballoonsecurity/ofrak/blob/master/LICENSE. YOU REPRESENT THAT YOU ARE AUTHORIZED TO ACCEPT THIS AGREEMENT ON BEHALF OF LICENSEE.  IF LICENSEE DOES NOT AGREE TO THE FOREGOING TERMS AND CONDITIONS, DO NOT CLICK ON THE ACCEPT BUTTON, OR OTHERWISE ACCESS, INSTALL, COPY OR USE OFRAK.'
 
 
 def verify_registered_license(full_details: bool = False) -> None:
     """
-    License check function raises one of several possible exceptions if any
-    part of the license is invalid.
+    Verify presence of a registered OFRAK license.
 
     If you are reading this, you might be a good candidate to
     work at Red Balloon Security – we're hiring! Check out our jobs page
     for more info:
 
     https://redballoonsecurity.com/company/careers/
+
+    :param full_details: print full license details after verification
+    :raises RuntimeError: if license has not been configured or is invalid
     """
     try:
         with open(LICENSE_PATH) as f:
@@ -115,27 +117,36 @@ def get_canonical_license_data(license_data: LicenseDataType) -> bytes:
     return json.dumps([(k, license_data[k]) for k in signed_fields]).encode("utf-8")
 
 
-def register_license(license_data: Union[LicenseDataType, List[LicenseDataType]]) -> None:
+def register_license(license_data: LicenseDataType) -> None:
     """
     Write license data to LICENSE_PATH.
     """
-    if not isinstance(license_data, list):
-        license_data = [license_data]
     if os.path.exists(LICENSE_PATH):
         with open(LICENSE_PATH) as f:
             license_list = json.load(f)
     else:
         license_list = []
     with open(LICENSE_PATH, "w") as f:
-        json.dump(license_data + license_list, f, indent=2)
+        json.dump([license_data] + license_list, f, indent=2)
 
-
-def accept_license_agreement(force_agree: bool) -> None:
-    if not force_agree:
+    if license_data["license_type"] and "community" in license_data["license_type"].lower():
+        print("Registered OFRAK Community License.")
+    else:
         print(
-            "Read the license agreement below.\n\n" + "\n".join(wrap(AGREEMENT, width=79)),
-            end="\n\n",
+            f"Registered OFRAK Pro License: "
+            f"{json.dumps(license_data, indent=2).lstrip('{').rstrip('}')}"
         )
+
+
+def accept_license_agreement(force_agree: bool, license_data: LicenseDataType) -> None:
+    print(
+        "Read the license agreement below.\n\n"
+        + "\n".join(wrap(Agreement.get_agreement(license_data), width=79)),
+        end="\n\n",
+    )
+    if force_agree:
+        print('Type "I agree" to agree to the license terms: I agree')
+    else:
         agreement = None
         while agreement is None or agreement.lower() != "i agree":
             agreement = input('Type "I agree" to agree to the license terms: ')
@@ -143,10 +154,19 @@ def accept_license_agreement(force_agree: bool) -> None:
 
 
 def select_license_to_register(
-    force_community=False,
+    force_community: bool = False,
+    license_path: Optional[str] = None,
 ) -> Tuple[Optional[LicenseDataType], Optional[str]]:
     if force_community:
         return COMMUNITY_LICENSE, None
+    elif license_path:
+        abs_license_path = os.path.abspath(license_path)
+        try:
+            with open(abs_license_path) as f:
+                license_data = json.load(f)
+        except FileNotFoundError:
+            sys.exit(RuntimeError(f"License file '{abs_license_path}' does not exist."))
+        return license_data, abs_license_path
     else:
         print(
             "\n".join(
@@ -206,3 +226,40 @@ def choose(prompt, *options: str) -> int:
         except (ValueError, TypeError):
             continue
     return selection - 1
+
+
+@dataclass
+class Agreement:
+    @classmethod
+    def get_agreement(cls, license_data: LicenseDataType):
+        if license_data["license_type"] and "community" in license_data["license_type"].lower():
+            return cls.community_agreement()
+        else:
+            return cls.pro_agreement()
+
+    @classmethod
+    def community_agreement(cls):
+        return cls.complete_agreement("OFRAK COMMUNITY")
+
+    @classmethod
+    def pro_agreement(cls):
+        return cls.complete_agreement("OFRAK PRO")
+
+    @classmethod
+    def complete_agreement(cls, license_type: str) -> str:
+        return (
+            f"RED BALLOON SECURITY, INC., A DELAWARE CORPORATION, WITH AN ADDRESS AT 639 11TH "
+            f'AVENUE, 4TH FLOOR, NEW YORK, NY 10036, USA ("RED BALLOON") LICENSES OFRAK AND '
+            f"RELATED DOCUMENTATION PURSUANT TO THE {license_type} LICENSE AGREEMENT "
+            f'(COLLECTIVELY WITH THE REGISTRATION FORM, THIS "AGREEMENT"). READ THIS '
+            f"AGREEMENT CAREFULLY BEFORE ACCESSING, INSTALLING, COPYING AND USING OFRAK UNDER "
+            f'THE {license_type} AGREEMENT. BY TYPING "I AGREE" ON THE REGISTRATION FORM, OR '
+            f"OTHERWISE ACCESSING, INSTALLING, COPYING OR OTHERWISE USING OFRAK, YOU "
+            f'("LICENSEE") AGREE THAT THE REGISTRATION FORM SHALL BE DEEMED TO BE MUTUALLY '
+            f"EXECUTED AND THE REGISTRATION FORM SHALL BE INCORPORATED INTO AND BECOME A "
+            f"MATERIAL PART OF THE {license_type} LICENSE AGREEMENT BETWEEN LICENSEE AND RED "
+            f"BALLOON LOCATED AT https://ofrak.com/docs/license.html. YOU REPRESENT THAT YOU "
+            f"ARE AUTHORIZED TO ACCEPT THIS AGREEMENT ON BEHALF OF LICENSEE. IF LICENSEE DOES "
+            f'NOT AGREE TO THE FOREGOING TERMS AND CONDITIONS, DO NOT TYPE "I AGREE", OR '
+            f"OTHERWISE ACCESS, INSTALL, COPY OR USE OFRAK."
+        )
