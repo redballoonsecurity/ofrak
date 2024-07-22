@@ -4,7 +4,6 @@ import sys
 import time
 import webbrowser
 from base64 import b64decode
-from dataclasses import dataclass
 from textwrap import wrap
 from typing import Dict, Optional, Tuple, cast
 
