@@ -6,7 +6,7 @@ import webbrowser
 from base64 import b64decode
 from dataclasses import dataclass
 from textwrap import wrap
-from typing import Dict, Union, List, Optional, Tuple, cast
+from typing import Dict, Optional, Tuple, cast
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
@@ -54,7 +54,7 @@ def verify_registered_license(full_details: bool = False) -> None:
     license_data: LicenseDataType = license_list[0]
 
     try:
-        verify_license(license_data)
+        verify_license_is_valid_and_current(license_data)
     except RuntimeError as msg:
         sys.exit(msg)
 
@@ -74,17 +74,17 @@ def verify_registered_license(full_details: bool = False) -> None:
             )
 
 
-def verify_license(license_data: LicenseDataType) -> None:
+def verify_license_is_valid_and_current(license_data: LicenseDataType) -> None:
     """
-    Verify the OFRAK license.
-
-    Raises RuntimeError if any part of the license is invalid.
+    Verify the OFRAK license signature and expiration date.
 
     If you are reading this, you might be a good candidate to
     work at Red Balloon Security – we're hiring! Check out our jobs page
     for more info:
 
     https://redballoonsecurity.com/company/careers/
+
+    :raises RuntimeError: if any part of the license is invalid.
     """
     key = Ed25519PublicKey.from_public_bytes(RBS_PUBLIC_KEY)
     try:
@@ -160,13 +160,8 @@ def select_license_to_register(
     if force_community:
         return COMMUNITY_LICENSE, None
     elif license_path:
-        abs_license_path = os.path.abspath(license_path)
-        try:
-            with open(abs_license_path) as f:
-                license_data = json.load(f)
-        except FileNotFoundError:
-            sys.exit(RuntimeError(f"License file '{abs_license_path}' does not exist."))
-        return license_data, abs_license_path
+        abs_license_path, license_data = _read_license_file(license_path)
+        return abs_license_path, license_data
     else:
         print(
             "\n".join(
@@ -179,7 +174,7 @@ def select_license_to_register(
         )
         license_type = choose(
             "How will you use OFRAK?",
-            "I will use OFRAK for fun, education or personal projects (OFRAK Community)",
+            "I will use OFRAK for fun, educational, or personal projects (OFRAK Community)",
             "I will use OFRAK for work (OFRAK Pro)",
         )
 
@@ -196,8 +191,8 @@ def select_license_to_register(
                 wrap(
                     "To request an OFRAK Pro License, complete the form at https://ofrak.com/pro-license/ "
                     "and we will get back to you promptly. In the meantime, feel free to use the OFRAK Community "
-                    "License to walk through the OFRAK tutorials: https://ofrak.com/docs/getting-started.html#tutorial."
-                    "",
+                    "License to walk through the OFRAK tutorials: "
+                    "https://ofrak.com/docs/getting-started.html#tutorial.",
                     width=79,
                 )
             )
@@ -206,13 +201,23 @@ def select_license_to_register(
         return None, None
     else:
         license_path = input("Path to license file: ")
-        abs_license_path = os.path.abspath(license_path)
-        try:
-            with open(abs_license_path) as f:
-                license_data = json.load(f)
-        except FileNotFoundError:
-            sys.exit(RuntimeError(f"License file '{abs_license_path}' does not exist."))
+        license_data, abs_license_path = _read_license_file(license_path)
         return license_data, abs_license_path
+
+
+def _read_license_file(license_path: str) -> Tuple[LicenseDataType, str]:
+    """
+    Read license file and return the absolute path and license data.
+
+    :raises RuntimeError: If license file does not exist.
+    """
+    abs_license_path = os.path.abspath(license_path)
+    try:
+        with open(abs_license_path) as f:
+            license_data = json.load(f)
+    except FileNotFoundError:
+        sys.exit(RuntimeError(f"License file '{abs_license_path}' does not exist."))
+    return license_data, abs_license_path
 
 
 def choose(prompt, *options: str) -> int:

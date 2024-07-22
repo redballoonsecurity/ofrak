@@ -7,7 +7,7 @@ from ofrak.license import (
     verify_registered_license,
     LICENSE_PATH,
     select_license_to_register,
-    verify_license,
+    verify_license_is_valid_and_current,
     accept_license_agreement,
     register_license,
 )
@@ -51,7 +51,7 @@ class LicenseCommand(OfrakCommand):
                 if license_data is None:
                     return
                 try:
-                    verify_license(license_data)
+                    verify_license_is_valid_and_current(license_data)
                     accept_license_agreement(args.i_agree, license_data)
                     register_license(license_data)
                     return
