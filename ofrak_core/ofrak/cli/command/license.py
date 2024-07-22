@@ -39,7 +39,7 @@ class LicenseCommand(OfrakCommand):
             help="Replace the current license with a new configuration",
         )
         argument_parser.add_argument(
-            "-l", "--license", default=False, help="Path to a license file to use"
+            "-l", "--license", help="Path to a license file to use"
         )
         return argument_parser
 
