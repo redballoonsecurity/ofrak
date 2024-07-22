@@ -1,11 +1,13 @@
+# License
+
 Thank you for your interest in OFRAK (Open Firmware Reverse Analysis Konsole).
 The OFRAK Community License is intended for educational use, personal
 development, or just having fun.
 The OFRAK Pro License is intended for individual use of OFRAK at work. For more
 information, see https://ofrak.com/license.
 
-OFRAK COMMUNITY LICENSE AGREEMENT
-Version 1.1
+## OFRAK COMMUNITY LICENSE AGREEMENT
+Version 1.1  
 Effective: July 22, 2024
 
 RED BALLOON SECURITY, INC., A DELAWARE CORPORATION, WITH AN ADDRESS AT 639 11TH
@@ -24,7 +26,6 @@ NOT AGREE TO THE FOREGOING TERMS AND CONDITIONS, DO NOT TYPE "I AGREE", OR
 OTHERWISE ACCESS, INSTALL, COPY OR USE OFRAK.
 
 1.	Definitions.
-
 1.1	"OFRAK" consists of (a) the source code repository for OFRAK, which can
 be found at https://github.com/red-balloon-security/ofrak; (b) the following
 Python packages, which are also available via PyPI, the Python Package Index:
@@ -35,7 +36,6 @@ add-ons provided by Red Balloon with respect thereto that Red Balloon makes
 available to Licensee under this OFRAK Pro Agreement.  OFRAK is presently made
 available in three formats:  (i) source code repository, (ii) PyPI Packages and
 (iii) Docker images with dependencies preinstalled.
-
 1.2	"Academic Purposes" means use within a non-profit academic institution
 by its then-current faculty and students for the purposes of non-profit
 scholarly research, classroom and education, and not any other use (including
@@ -46,26 +46,22 @@ educational purposes, (b) access is restricted and not provided to the general
 public, (c) access is limited to employees and/or students of the same
 institution involved in a specific educational activity, and (d) all users
 accept and are subject to this Agreement.
-
 1.3	"Non-Commercial Use" means personal research, evaluation, or
 development use by an individual, and not use by or on behalf of any commercial
 entity or organization or directly or indirectly in connection with any
 commercial activity.  For clarity, you cannot make money off of redistributing
 OFRAK code (including Derivatives), OFRAK analysis, OFRAK-modified binaries, or
 other OFRAK outputs.  Non-Commercial Use also excludes any Shared Use.
-
 1.4	"Commercial Use" means any use other than Academic Purposes or
 Non-Commercial Use, including, without limitation, use for any commercial
 purpose or by any commercial entity, including without limitation
 redistributing the OFRAK code (including Derivatives), OFRAK analysis,
 OFRAK-modified binaries, or other OFRAK outputs for any monetary or other
 commercial consideration.
-
 1.5	"Derivatives" means any modifications, additions, enhancements, or
 derivative works of OFRAK or any component thereof.  For purposes of this
 Agreement, Derivatives shall not include works that remain separable from, or
 merely link to, the interfaces of OFRAK or any Derivatives.
-
 1.6	"Shared Use" means  any use of OFRAK where the person who set up a
 particular instance of OFRAK is not the same person interacting with that
 instance of OFRAK, or where a single instance of OFRAK is used by more than one
@@ -217,8 +213,8 @@ written and oral agreements and communications relating to the subject matter
 of this Agreement.
 
 
-OFRAK PRO LICENSE AGREEMENT
-Version 1.0
+## OFRAK PRO LICENSE AGREEMENT
+Version 1.0  
 Effective: July 22, 2024
 
 RED BALLOON SECURITY, INC., A DELAWARE CORPORATION, WITH AN ADDRESS AT 639 11TH
@@ -236,9 +232,8 @@ ACCEPT THIS AGREEMENT ON BEHALF OF LICENSEE. IF LICENSEE DOES NOT AGREE TO THE
 FOREGOING TERMS AND CONDITIONS, DO NOT TYPE "I AGREE", OR OTHERWISE ACCESS,
 INSTALL, COPY OR USE OFRAK.
 
-1.	Definitions.
-
-1.1	"OFRAK" consists of (a) the source code repository for OFRAK, which can
+1.	Definitions. 
+1.1.	"OFRAK" consists of (a) the source code repository for OFRAK, which can
 be found at https://github.com/red-balloon-security/ofrak; (b) the following
 Python packages, which are also available via PyPI, the Python Package Index:
 ofrak, ofrak_components, ofrak_io, ofrak_type, ofrak_patch_maker, ofrak_angr,
@@ -248,27 +243,22 @@ add-ons provided by Red Balloon with respect thereto that Red Balloon makes
 available to Licensee under this OFRAK Pro Agreement.  OFRAK is presently made
 available in three formats:  (i) source code repository, (ii) PyPI Packages and
 (iii) Docker images with dependencies preinstalled.
-
-1.2	"Academic Purposes" means use within a non-profit academic institution
+1.2.	"Academic Purposes" means use within a non-profit academic institution
 by its then-current faculty and students for the purposes of non-profit
 scholarly research, classroom and education, and not any other use (including
 without limitation, directly or indirectly in connection with any commercial
 activity such as, for example, sponsored research or consulting services).
-
 1.3	"Authorized User(s)" means any user(s) named in the license file.
-
 1.4	"Commercial Use" means any use other than Academic Purposes or Limited
 Commercial Use, and any use other than by an Authorized User, including without
 limitation redistributing the OFRAK code (including Derivatives), OFRAK
 analysis, OFRAK-modified binaries, or other OFRAK outputs for use outside of a
 consulting engagement of Licensee or volume redistribution of any
 OFRAK-modified binaries.
-
 1.5	"Derivatives" means any modifications, additions, enhancements, or
 derivative works of OFRAK or any component thereof.  For purposes of this OFRAK
 Pro Agreement, Derivatives shall not include works that remain separable from,
 or merely link to, the interfaces of OFRAK or any Derivatives.
-
 1.6	"Limited Commercial Use" means internal business use by any Authorized
 User of OFRAK during the term specified in the license file (the "Term"), which
 includes use of OFRAK in exchange for monetary and other consideration (such as
