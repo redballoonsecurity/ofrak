@@ -38,9 +38,7 @@ class LicenseCommand(OfrakCommand):
             default=False,
             help="Replace the current license with a new configuration",
         )
-        argument_parser.add_argument(
-            "-l", "--license", help="Path to a license file to use"
-        )
+        argument_parser.add_argument("-l", "--license", help="Path to a license file to use")
         return argument_parser
 
     def run(self, ofrak_env: OFRAKEnvironment, args: Namespace):
