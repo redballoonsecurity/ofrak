@@ -159,8 +159,8 @@ def select_license_to_register(
     if force_community:
         return COMMUNITY_LICENSE, None
     elif license_path:
-        abs_license_path, license_data = _read_license_file(license_path)
-        return abs_license_path, license_data
+        license_data, abs_license_path = _read_license_file(license_path)
+        return license_data, abs_license_path
     else:
         print(
             "\n".join(
