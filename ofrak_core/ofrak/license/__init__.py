@@ -159,7 +159,7 @@ def select_license_to_register(
     if force_community:
         return COMMUNITY_LICENSE, None
     elif license_path:
-        license_data, abs_license_path = _read_license_file(license_path)
+        license_data, abs_license_path = read_license_file(license_path)
         return license_data, abs_license_path
     else:
         print(
@@ -200,11 +200,11 @@ def select_license_to_register(
         return None, None
     else:
         license_path = input("Path to license file: ")
-        license_data, abs_license_path = _read_license_file(license_path)
+        license_data, abs_license_path = read_license_file(license_path)
         return license_data, abs_license_path
 
 
-def _read_license_file(license_path: str) -> Tuple[LicenseDataType, str]:
+def read_license_file(license_path: str) -> Tuple[LicenseDataType, str]:
     """
     Read license file and return the absolute path and license data.
 
