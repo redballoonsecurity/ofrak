@@ -32,7 +32,7 @@ def _handle_skipif_missing_deps(
             skip = True
             missing_messages.append(f"{', '.join(missing)} of {component.__name__}")
     return pytest.mark.skipif(
-        skip, reason=f"Missing external dependencies: {missing_messages.join('; ')}"
+        skip, reason=f"Missing external dependencies: {'; '.join(missing_messages)}"
     )
 
 
