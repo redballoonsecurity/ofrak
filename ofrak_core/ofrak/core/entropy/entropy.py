@@ -15,12 +15,19 @@ LOGGER = logging.getLogger(__name__)
 
 try:
     from ofrak_gpu.entropy_gpu import entropy_gpu  # type: ignore
-    import numpy  # type: ignore
+    import numpy as np  # type: ignore
 
-    logging.error("OFRAK_GPU SUCCEEDED")
+    GPU_MODULE_INSTALLED = True
 except:
-    logging.error("OFRAK_GPU FAILED")
-    entropy_gpu = None
+    from ofrak.core.entropy.gpu_entropy_stub import entropy_gpu
+
+    # Do we have to mock numpy, too?
+    try:
+        import numpy as np  # type: ignore
+    except:
+        from ofrak.core.entropy.gpu_entropy_stub import np  # type: ignore[no-redef]
+
+    GPU_MODULE_INSTALLED = False
 
 try:
     from ofrak.core.entropy.entropy_c import entropy_c as entropy_func
@@ -106,10 +113,10 @@ def sample_entropy(
 
     # Run entropy calculation on GPU, if it is installed and we have a valid platform
     try:
-        if entropy_gpu is None:
+        if not GPU_MODULE_INSTALLED:
             raise ImportError("ofrak_gpu not installed!")
 
-        result = entropy_gpu(numpy.frombuffer(data, dtype=numpy.uint8), window_size, log_percent)
+        result = entropy_gpu(np.frombuffer(data, dtype=np.uint8), window_size, log_percent)
     except (ImportError, NameError, RuntimeError, AttributeError) as e:
         if not isinstance(e, ImportError) and not isinstance(e, NameError):
             # ofrak_gpu has been installed, but something else went wrong (likely no opencl devices found)
