@@ -9,8 +9,6 @@ import pytest
 from ofrak import OFRAKContext
 from ofrak.core.elf.load_alignment_modifier import main
 
-pytestmark = pytest.mark.skipif_windows
-
 ASSETS_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), "assets/elf"))
 OUTPUT_DIR = tempfile.mkdtemp(prefix="ofrak_elf_modifier_out_")
 print(OUTPUT_DIR)
