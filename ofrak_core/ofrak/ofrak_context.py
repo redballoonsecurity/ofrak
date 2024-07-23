@@ -32,7 +32,7 @@ from ofrak.service.job_service_i import JobServiceInterface
 from ofrak.service.resource_service_i import ResourceServiceInterface
 
 LOGGER = logging.getLogger("ofrak")
-DEFAULT_OFRAK_LOG_FILE = os.path.join(tempfile.gettempdir(), "ofrak.log")
+DEFAULT_LOG_FILE = os.path.join(tempfile.gettempdir(), f"ofrak_{time.strftime('%Y%m%d%H%M%S')}.log")
 
 
 class OFRAKContext:
@@ -124,6 +124,7 @@ class OFRAK:
     def __init__(
         self,
         logging_level: int = DEFAULT_LOG_LEVEL,
+        log_file: Optional[str] = None,
         exclude_components_missing_dependencies: bool = False,
         verify_license: bool = True,
     ):
@@ -138,7 +139,9 @@ class OFRAK:
         if verify_license:
             verify_registered_license()
         logging.basicConfig(level=logging_level, format="[%(filename)15s:%(lineno)5s] %(message)s")
-        logging.getLogger().addHandler(logging.FileHandler(DEFAULT_OFRAK_LOG_FILE))
+        if log_file is None:
+            log_file = DEFAULT_LOG_FILE
+        logging.getLogger().addHandler(logging.FileHandler(log_file))
         logging.getLogger().setLevel(logging_level)
         logging.captureWarnings(True)
         self.injector = DependencyInjector()
