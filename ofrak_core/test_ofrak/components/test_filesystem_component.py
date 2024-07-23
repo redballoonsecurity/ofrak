@@ -2,6 +2,7 @@ import os
 import re
 import stat
 import subprocess
+import sys
 import tempfile
 
 import pytest
@@ -46,12 +47,11 @@ class FilesystemRootDirectory(tempfile.TemporaryDirectory):
         if not os.path.exists(subchild_folder):
             os.mkdir(subchild_folder)
 
-        if hasattr(os, "mkfifo"):
+        if sys.platform != "win32":
             child_fifo = os.path.join(temp_dir, FIFO_PIPE_NAME)
             if not os.path.exists(child_fifo):
                 os.mkfifo(child_fifo)
 
-        if hasattr(os, "mkdev"):
             block_device = os.path.join(temp_dir, DEVICE_NAME)
             if not os.path.exists(block_device):
                 os.makedev(1, 2)
