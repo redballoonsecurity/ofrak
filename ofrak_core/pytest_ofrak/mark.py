@@ -22,16 +22,18 @@ def _handle_skipif_missing_deps(
     are satisfied. These markers are only added if --skip-tests-missing-deps is passed
     """
 
-    reason = "Missing deps:\n"
+    missing_messages = []
     skip = False
     for component in components:
-        missing = {
+        missing = [
             dep.tool for dep in component.external_dependencies if not deps_installed_data[dep]
-        }
+        ]
         if missing:
             skip = True
-            reason += f"{', '.join(missing)} of {component.__name__}"
-    return pytest.mark.skipif(skip, reason=reason)
+            missing_messages.append(f"{', '.join(missing)} of {component.__name__}")
+    return pytest.mark.skipif(
+        skip, reason=f"Missing external dependencies: {missing_messages.join('; ')}"
+    )
 
 
 # https://docs.pytest.org/en/latest/example/simple.html#control-skipping-of-tests-according-to-command-line-option
