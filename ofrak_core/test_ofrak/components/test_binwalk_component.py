@@ -5,7 +5,6 @@ import os
 import pytest
 
 from ofrak.core.binwalk import BinwalkAnalyzer, BinwalkAttributes
-from pytest_ofrak.mark import requires_deps_of
 import test_ofrak.components
 
 BINWALK_ASSETS_PATH = os.path.join(test_ofrak.components.ASSETS_DIR, "binwalk_assets")
@@ -55,7 +54,7 @@ BINWALK_TEST_CASES = [
 ]
 
 
-@requires_deps_of(BinwalkAnalyzer)
+@pytest.mark.skipif_missing_deps([BinwalkAnalyzer])
 @pytest.mark.parametrize("test_case", BINWALK_TEST_CASES, ids=lambda tc: tc.filename)
 async def test_binwalk_component(ofrak_context, test_case):
     asset_path = os.path.join(BINWALK_ASSETS_PATH, test_case.filename)

@@ -14,7 +14,6 @@ from ofrak.core.filesystem import (
     Folder,
 )
 from ofrak.resource import Resource
-from pytest_ofrak.mark import skipif_windows
 from pytest_ofrak.patterns.pack_unpack_filesystem import FilesystemPackUnpackVerifyPattern
 
 CHILD_TEXT = "Hello World\n"
@@ -167,7 +166,7 @@ class TestFilesystemRoot:
         assert CHILD_TEXTFILE_NAME not in updated_list_dir_output
 
 
-@skipif_windows()
+@pytest.mark.skipif_windows
 class TestFilesystemEntry:
     """
     Test FilesystemEntry methods.

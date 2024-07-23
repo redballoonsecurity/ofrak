@@ -1,4 +1,5 @@
 import logging
+import pytest
 from ofrak.core.addressable import Addressable
 from ofrak.core.memory_region import MemoryRegion
 from pathlib import Path
@@ -8,7 +9,6 @@ from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceAttributeRangeFilter, ResourceFilter
 from ofrak.core.uf2 import Uf2File, Uf2FilePacker, Uf2Unpacker
 from ofrak.core.strings import StringPatchingModifier, StringPatchingConfig
-from pytest_ofrak.mark import requires_deps_of
 import test_ofrak.components
 
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
@@ -26,7 +26,7 @@ async def test_uf2_identify(ofrak_context: OFRAKContext) -> None:
     assert root_resource.has_tag(Uf2File), "Expected resource to have tag Uf2File"
 
 
-@requires_deps_of(Uf2FilePacker, Uf2Unpacker)
+@pytest.mark.skipif_missing_deps([Uf2FilePacker, Uf2Unpacker])
 class TestUf2UnpackModifyPack(UnpackModifyPackPattern):
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         asset_path = Path(test_ofrak.components.ASSETS_DIR, FILENAME)

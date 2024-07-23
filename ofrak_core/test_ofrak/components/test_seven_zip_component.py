@@ -2,12 +2,13 @@ import os
 import subprocess
 import tempfile
 
+import pytest
+
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
 from ofrak.core.seven_zip import SevenZFilesystem, SevenZUnpacker, SevenzPacker
 from ofrak.core.strings import StringPatchingConfig, StringPatchingModifier
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
-from pytest_ofrak.mark import requires_deps_of
 
 INITIAL_DATA = b"hello world"
 EXPECTED_DATA = b"hello ofrak"
@@ -16,7 +17,7 @@ TARGET_SEVEN_ZIP_FILE = "test.7z"
 SEVEN_ZIP_ENTRY_NAME = "hello_7z_file"
 
 
-@requires_deps_of(SevenZUnpacker, SevenzPacker)
+@pytest.mark.skipif_missing_deps([SevenZUnpacker, SevenzPacker])
 class TestPzUnpackModifyPack(UnpackModifyPackPattern):
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         with tempfile.TemporaryDirectory() as d:

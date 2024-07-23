@@ -8,10 +8,9 @@ from ofrak.resource import Resource
 from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import (
     CompressedFileUnpackModifyPackPattern,
 )
-from pytest_ofrak.mark import requires_deps_of
 
 
-@requires_deps_of(ZstdUnpacker, ZstdPacker)
+@pytest.mark.skipif_missing_deps([ZstdUnpacker, ZstdPacker])
 class TestZstdUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
     @pytest.fixture(autouse=True)
     def create_test_file(self, tmpdir):

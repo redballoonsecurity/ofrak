@@ -2,12 +2,13 @@ import os
 import subprocess
 import tempfile
 
+import pytest
+
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
 from ofrak.core.squashfs import SquashfsFilesystem, SquashfsPacker, SquashfsUnpacker
 from ofrak.core.strings import StringPatchingConfig, StringPatchingModifier
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
-from pytest_ofrak.mark import requires_deps_of
 
 INITIAL_DATA = b"hello world"
 EXPECTED_DATA = b"hello ofrak"
@@ -15,7 +16,7 @@ TARGET_SQSH_FILE = "test.sqsh"
 SQUASH_ENTRY_NAME = "hello_squash_file"
 
 
-@requires_deps_of(SquashfsUnpacker, SquashfsPacker)
+@pytest.mark.skipif_missing_deps([SquashfsUnpacker, SquashfsPacker])
 class TestSquashfsUnpackModifyPack(UnpackModifyPackPattern):
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         with tempfile.TemporaryDirectory() as tmpdir:

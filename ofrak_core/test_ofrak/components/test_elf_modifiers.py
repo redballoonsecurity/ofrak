@@ -4,7 +4,6 @@ from typing import Optional
 
 import pytest
 from elftools.elf.elffile import ELFFile
-from pytest_ofrak.mark import skipif_windows
 from test_ofrak.components.hello_world_elf import hello_elf
 
 from ofrak.core import (
@@ -75,7 +74,7 @@ async def test_elf_add_symbols(
     assert result.returncode == 12
 
 
-@skipif_windows()
+@pytest.mark.skipif_windows
 async def test_elf_force_relocation(
     ofrak_context: OFRAKContext, elf_object_file, elf_test_directory
 ):

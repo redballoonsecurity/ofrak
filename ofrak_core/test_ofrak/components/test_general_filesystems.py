@@ -12,7 +12,6 @@ from ofrak.resource import RV
 from ofrak.core.cpio import CpioFilesystem, CpioArchiveType, CpioPacker, CpioUnpacker
 from ofrak.core.tar import TarArchive, TarPacker, TarUnpacker
 from ofrak.core.zip import ZipArchive, ZipPacker, ZipUnpacker
-from pytest_ofrak.mark import requires_deps_of
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 
 CHILD_TEXT = "Hello World\n"
@@ -30,12 +29,12 @@ EXPECTED_CHILD_TEXT = "Hello OFrak\n"
 EXPECTED_SUBCHILD_TEXT = "Goodbye OFrak\n"
 
 TAGS = [
-    pytest.param(ZipArchive, [], marks=requires_deps_of(ZipUnpacker, ZipPacker)),
-    pytest.param(TarArchive, [], marks=requires_deps_of(TarUnpacker, TarPacker)),
+    pytest.param(ZipArchive, [], marks=pytest.mark.skipif_missing_deps([ZipUnpacker, ZipPacker])),
+    pytest.param(TarArchive, [], marks=pytest.mark.skipif_missing_deps([TarUnpacker, TarPacker])),
     pytest.param(
         CpioFilesystem,
         [AttributesType[CpioFilesystem](CpioArchiveType.BINARY)],
-        marks=requires_deps_of(CpioUnpacker, CpioPacker),
+        marks=pytest.mark.skipif_missing_deps([CpioUnpacker, CpioPacker]),
     ),
 ]
 

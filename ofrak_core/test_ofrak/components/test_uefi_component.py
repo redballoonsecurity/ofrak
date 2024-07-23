@@ -10,7 +10,6 @@ from pytest_ofrak.patterns.unpack_verify import (
     UnpackAndVerifyPattern,
     UnpackAndVerifyTestCase,
 )
-from pytest_ofrak.mark import requires_deps_of
 import test_ofrak.components
 from typing import Set
 
@@ -37,7 +36,7 @@ UEFI_COMPONENT_TEST_CASE = [
 ]
 
 
-@requires_deps_of(UefiUnpacker)
+@pytest.mark.skipif_missing_deps([UefiUnpacker])
 class TestUefiComponent(UnpackAndVerifyPattern):
     @pytest.fixture(params=UEFI_COMPONENT_TEST_CASE, ids=lambda tc: tc.label)
     async def unpack_verify_test_case(self, request) -> UnpackAndVerifyTestCase:

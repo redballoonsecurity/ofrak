@@ -1,6 +1,8 @@
 import hashlib
 import os
 
+import pytest
+
 from ofrak import OFRAKContext, ResourceSort
 from ofrak.resource import Resource
 from ofrak.core.ubi import Ubi, UbiPacker, UbiUnpacker, UbiVolume
@@ -8,7 +10,6 @@ from ofrak.core.ubi import Ubi, UbiPacker, UbiUnpacker, UbiVolume
 from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import (
     CompressedFileUnpackModifyPackPattern,
 )
-from pytest_ofrak.mark import requires_deps_of
 from test_ofrak.components import ASSETS_DIR
 
 TEST_PAYLOAD = b"$ base64 -d <<< f0VMRuH//xAICIDSEAAAFAIAtwABAAAABAAAAAEAAAAcAAAAAAAAAAAA\
@@ -21,7 +22,7 @@ EXPECTED_HASHES = (
 )
 
 
-@requires_deps_of(UbiUnpacker, UbiPacker)
+@pytest.mark.skipif_missing_deps([UbiUnpacker, UbiPacker])
 class TestUbiUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         """

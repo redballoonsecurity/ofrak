@@ -1,4 +1,3 @@
-import asyncio
 import dataclasses
 import inspect
 import logging
@@ -60,15 +59,6 @@ class AbstractComponent(ComponentInterface[CC], ABC):
 
     # By default, assume component has no external dependencies
     external_dependencies: Tuple[ComponentExternalTool, ...] = ()
-
-    @classmethod
-    async def deps_satisfied(cls) -> bool:
-        if not len(cls.external_dependencies):
-            return True
-
-        return all(
-            await asyncio.gather(*(dep.is_tool_installed() for dep in cls.external_dependencies))
-        )
 
     async def run(
         self,

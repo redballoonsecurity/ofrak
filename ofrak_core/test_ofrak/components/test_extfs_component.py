@@ -9,7 +9,6 @@ from ofrak.resource import Resource
 
 from ofrak import OFRAKContext
 from ofrak.core.extfs import *
-from pytest_ofrak.mark import requires_deps_of
 from pytest_ofrak.patterns.unpack_verify import (
     UnpackAndVerifyPattern,
     UnpackAndVerifyTestCase,
@@ -17,7 +16,7 @@ from pytest_ofrak.patterns.unpack_verify import (
 import test_ofrak.components
 
 
-pytestmark = requires_deps_of(ExtUnpacker)
+pytestmark = pytest.mark.skipif_missing_deps([ExtUnpacker])
 
 
 @dataclass

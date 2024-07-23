@@ -13,10 +13,9 @@ from pytest_ofrak.patterns.pack_unpack_filesystem import (
     FilesystemPackUnpackVerifyPattern,
 )
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
-from pytest_ofrak.mark import requires_deps_of
 import test_ofrak.components
 
-pytestmark = requires_deps_of(TarUnpacker, TarPacker)
+pytestmark = pytest.mark.skipif_missing_deps([TarUnpacker, TarPacker])
 
 
 class TestTarSingleFileUnpackModifyPack(UnpackModifyPackPattern):
