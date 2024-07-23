@@ -5,24 +5,29 @@ import time
 import webbrowser
 from base64 import b64decode
 from textwrap import wrap
-from typing import Dict, Optional, Tuple, cast
+from typing import Dict, Optional, Tuple, cast, List
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 LicenseDataType = Dict[str, Optional[str]]
-COMMUNITY_LICENSE = {
-    "license_type": "Community License",
-    "name": "OFRAK Community",
-    "email": "ofrak@redballoonsecurity.com",
-    "phone_number": None,
-    "date": "1720554759",
-    "date_pretty": "2024-07-09 15:52:39.720467",
-    "expiration_date": None,
-    "serial": "00000000000000000000000000000000",
-    "signature": "dWqqtFl1Tvqs/SMOpKvRs2H5dKaJaJ00ZrP3Zmfp9DYJa3PhvolC/nUECyN1LesFe9S4v+R1a4SbaZyxTJ5dAg==",
-}
-RBS_PUBLIC_KEY = b"r\xcf\xb2\xe7\x17Y\x05*\x0e\xe3+\x00\x16\xd3\xd6\xf7\xa7\xd8\xd7\xfdV\x91\xa7\x88\x93\xe9\x9a\x8a\x05q\xd3\xbd"
+LicenseListType = List[LicenseDataType]
+COMMUNITY_LICENSE = [
+    {
+        "license_type": "Community License",
+        "name": "OFRAK Community",
+        "email": "ofrak@redballoonsecurity.com",
+        "phone_number": None,
+        "date": "1720554759",
+        "date_pretty": "2024-07-09 15:52:39.720467",
+        "expiration_date": None,
+        "expiration_date_pretty": None,
+        "serial": "00000000000000000000000000000000",
+        "signature": "ihKX823u51cqhvyQmXZ1TGELBiHzYzSIcbpxvZVDaYvpJU9EJKY+Gi8XRFKPfhE1K1DK5UcsMbyynTbAQngHDw==",
+    }
+]
+
+RBS_PUBLIC_KEY = b"D\xa9LN_\xf3\xdd\x82\xfd\x96\xa5~\x0f=Z\x06\xbe\xdb\xe3`\x1f\xb60\x0e\x07\xe6(\x08\xc3(\x08\x8c"
 LICENSE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "license.json"))
 
 
@@ -41,7 +46,7 @@ def verify_registered_license(full_details: bool = False) -> None:
     """
     try:
         with open(LICENSE_PATH) as f:
-            license_list = json.load(f)
+            license_list: LicenseListType = json.load(f)
     except FileNotFoundError:
         sys.exit(
             RuntimeError(
@@ -157,7 +162,7 @@ def select_license_to_register(
     license_path: Optional[str] = None,
 ) -> Tuple[Optional[LicenseDataType], Optional[str]]:
     if force_community:
-        return COMMUNITY_LICENSE, None
+        return COMMUNITY_LICENSE[0], None
     elif license_path:
         license_data, abs_license_path = read_license_file(license_path)
         return license_data, abs_license_path
@@ -178,7 +183,7 @@ def select_license_to_register(
         )
 
     if license_type == 0:
-        return COMMUNITY_LICENSE, None
+        return COMMUNITY_LICENSE[0], None
     find_or_buy = choose(
         "Do you already have an OFRAK Pro License?",
         "Request an OFRAK Pro License from Red Balloon Security",
@@ -213,9 +218,13 @@ def read_license_file(license_path: str) -> Tuple[LicenseDataType, str]:
     abs_license_path = os.path.abspath(license_path)
     try:
         with open(abs_license_path) as f:
-            license_data = json.load(f)
+            license_list = json.load(f)
+        license_data = license_list[0]
     except FileNotFoundError:
         sys.exit(RuntimeError(f"License file '{abs_license_path}' does not exist."))
+    except KeyError:
+        # This happens when the LicenseListType is not properly formatted
+        sys.exit(RuntimeError(f"License file '{abs_license_path}' is incorrectly formatted"))
     return license_data, abs_license_path
 
 
