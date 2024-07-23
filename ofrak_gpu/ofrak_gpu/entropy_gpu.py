@@ -1,11 +1,11 @@
-import pyopencl as cl
+import pyopencl as cl  # type: ignore
 import logging
 from ofrak_gpu.entropy import entropy
 from numpy import ndarray
 from typing import Callable, Optional, Tuple
 
 
-def pick_pyopencl_device() -> Tuple[str, str]:
+def pick_pyopencl_device(log_platforms: bool = False) -> Tuple[str, str]:
     """
     Picks the best PyOpencl device to run the calculation on.
     Currently picks the device with the highest max_compute_units.
@@ -25,8 +25,8 @@ def pick_pyopencl_device() -> Tuple[str, str]:
                 Cannot proceed with GPU-bound entropy calcuation!"
         )
 
-    chosen_platform: Optional[str] = None
-    chosen_device: Optional[str] = None
+    chosen_platform: str
+    chosen_device: str
     most_compute_units = 0
 
     for platform in cl_platforms:
@@ -39,6 +39,9 @@ def pick_pyopencl_device() -> Tuple[str, str]:
             continue  # Skip this platform
 
         for device in devices:
+            logging.debug(
+                f"Found device {device.name.strip()} on platform {platform.name.strip()}, with max compute units = {device.max_compute_units}"
+            )
             # Choose this device, if it's the best we've seen so far
             if device.max_compute_units > most_compute_units:
                 try:
@@ -83,10 +86,11 @@ def entropy_gpu(
     chosen_platform, chosen_device = pick_pyopencl_device()
     try:
         e = entropy(platform_pref=chosen_platform, device_pref=chosen_device, interactive=False)
-    except:
+    except Exception as e:
         raise RuntimeError(
             "Failed to instantiate futhark-generated pyopencl entropy class. "
             "Cannot proceed with GPU-bound entropy calcuation!"
+            f"Encountered {type(e).__name__}: {e}"
         )
     try:
         raw_results: cl.array.Array = e.chunked_entropy(window_size, data)

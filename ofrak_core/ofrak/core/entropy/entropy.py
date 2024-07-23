@@ -13,13 +13,13 @@ from ofrak.service.resource_service_i import ResourceServiceInterface
 
 LOGGER = logging.getLogger(__name__)
 
-
-C_LOG_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_uint8)
-
 try:
     from ofrak_gpu.entropy_gpu import entropy_gpu  # type: ignore
     import numpy  # type: ignore
+
+    logging.error("OFRAK_GPU SUCCEEDED")
 except:
+    logging.error("OFRAK_GPU FAILED")
     entropy_gpu = None
 
 try:
@@ -69,7 +69,6 @@ class DataSummaryAnalyzer(Analyzer[None, DataSummary]):
             )
 
         data = await resource.get_data()
-
         # Run blocking computations in separate processes
         try:
             entropy = await asyncio.get_running_loop().run_in_executor(
@@ -78,7 +77,6 @@ class DataSummaryAnalyzer(Analyzer[None, DataSummary]):
             magnitude = await asyncio.get_running_loop().run_in_executor(
                 self.pool, sample_magnitude, data
             )
-
             return DataSummary(entropy, magnitude)
         except BrokenProcessPool:
             # If the previous one was aborted, try again with a new pool

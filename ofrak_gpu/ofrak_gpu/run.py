@@ -16,7 +16,11 @@ def main(args):
     with open(args.file, "rb") as f:
         data = numpy.fromfile(f, dtype="uint8")
 
-    chosen_platform, chosen_device = pick_pyopencl_device()
+    import logging
+    import sys
+
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+    chosen_platform, chosen_device = pick_pyopencl_device(log_platforms=True)
     e = entropy(platform_pref=chosen_platform, device_pref=chosen_device, interactive=False)
 
     print(e.chunked_entropy(1024, data))

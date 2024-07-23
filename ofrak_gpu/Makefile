@@ -1,19 +1,17 @@
 PYTHON=python3
 PIP=pip3
 
-define COMPILE_FUTHARK
-	futhark pyopencl --library ofrak_gpu/entropy.fut -o ofrak_gpu/entropy
-endef
-
 .PHONY: install
 install:
-	$(COMPILE_FUTHARK)
 	$(PIP) install .
 
 .PHONY: develop
 develop:
-	$(COMPILE_FUTHARK)
 	$(PIP) install -e .[test]
+
+.PHONY: futhark
+futhark:
+	futhark pyopencl --library ofrak_gpu/entropy.fut -o ofrak_gpu/entropy
 
 .PHONY: inspect
 inspect:

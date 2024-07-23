@@ -7,64 +7,14 @@ absence of ofrak_gpu, and tests that ensure entropy_c is used before entropy_py 
 Tests that use ofrak_gpu, eg to test that entropy_gpu is used before entropy_py/c, don't go here;
 see test_entropy_component_gpu.py and its fixtures.
 """
-import builtins
 import sys
-import importlib
-import os.path
 import pytest
-
+import os.path
+from unittest.mock import patch
 from ofrak import OFRAKContext
 import test_ofrak.components
 from ofrak.core.entropy.entropy_py import entropy_py
 from ofrak.core.entropy.entropy_c import entropy_c
-
-
-@pytest.fixture(autouse=True)
-def reload_entropy():
-    """
-    A fixture, automatically used before each test case, that triggers a module reload for entropy.
-    This process is required for test that don't use mock_no_ofrak_gpu to import entropy correctly.
-    """
-    import ofrak.core.entropy as entropy_module
-
-    importlib.reload(entropy_module)
-
-
-@pytest.fixture
-def mock_no_ofrak_gpu(monkeypatch):
-    """
-    A fixture used to make imports from ofrak_gpu act as if ofrak_gpu has not been installed,
-    whether or not ofrak_gpu is installed on the test environment. Cleanup ensures that other
-    test cases are unaffected, and can import from ofrak_gpu normally if needed.
-    """
-    import ofrak.core.entropy as entropy_module
-    import ofrak.core.entropy.entropy as entropy_entropy_module
-
-    real_import = builtins.__import__
-
-    def monkey_import_notfound(name, globals=None, locals=None, fromlist=(), level=0):
-        """
-        Imports everything as normal, except imports from the ofrak_gpu module, which will fail.
-        Used to mock ofrak_gpu not being installed, even if it is.
-        """
-        if name.startswith("ofrak_gpu."):
-            raise ModuleNotFoundError(f"Mock module not found for {name}")
-
-        return real_import(name, globals=globals, locals=locals, fromlist=fromlist, level=level)
-
-    # Replace builtin import function with custom importer and reload modules
-    monkeypatch.delitem(sys.modules, "ofrak_gpu", raising=False)
-    monkeypatch.setattr(builtins, "__import__", monkey_import_notfound)
-
-    importlib.reload(entropy_entropy_module)
-    importlib.reload(entropy_module)
-
-    yield
-
-    monkeypatch.undo()
-
-    importlib.reload(entropy_module)
-    importlib.reload(entropy_entropy_module)
 
 
 TEST_FILES = [
@@ -77,12 +27,19 @@ TEST_FILES = [
 ]
 
 
+@pytest.fixture
+def mock_no_ofrak_gpu():
+    with patch.dict(sys.modules, {"ofrak_gpu": None}):
+        yield
+
+
 @pytest.mark.parametrize(
     "test_file_path",
     [os.path.join(test_ofrak.components.ASSETS_DIR, filename) for filename in TEST_FILES],
 )
-@pytest.mark.usefixtures("mock_no_ofrak_gpu")
-async def test_analyzer_standard(ofrak_context: OFRAKContext, test_file_path):
+async def test_analyzer_standard(ofrak_context: OFRAKContext, test_file_path, mock_no_ofrak_gpu):
+    from ofrak.core.entropy.entropy import DataSummary, DataSummaryAnalyzer
+
     """
     Only test on small files for two reasons:
 
@@ -93,8 +50,6 @@ async def test_analyzer_standard(ofrak_context: OFRAKContext, test_file_path):
     DataSummaryAnalyzer will fall back upon entropy_py/c. It also checks the correctness of
     entropy_py and entropy_c against each other.
     """
-    # These imports must be done inside the test function, as they must be run *after* the fixture
-    from ofrak.core.entropy import DataSummary, DataSummaryAnalyzer
 
     with open(test_file_path, "rb") as f:
         data = f.read()

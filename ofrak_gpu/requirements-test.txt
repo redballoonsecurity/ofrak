@@ -1,1 +1,2 @@
-pyopencl[oclgrind]==2024.2.7  # Include oclgrind to be able to run tests on the container
+# pyopencl[pocl]==2024.2.7      # Include pocl to be able to run tests on the container
+pyopencl[oclgrind]==2024.2.7  # Add oclgrind as a second platform to test platform picking
