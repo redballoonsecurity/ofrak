@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 ### Added
+- Add license check command to prompt users about community or pro licenses. ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
 - Support `application/vnd.android.package-archive` mime type for APKs, which is returned by newer versions of libmagic ([#470](https://github.com/redballoonsecurity/ofrak/pull/470))
 - Add links to other resources and locations in comments with an autocomplete feature in the comment view. ([#447](https://github.com/redballoonsecurity/ofrak/pull/447)) 
 - Add modifier to add and remove sections using lief. ([#443](https://github.com/redballoonsecurity/ofrak/pull/443))
@@ -35,6 +36,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - `Resource.flush_to_disk` method renamed to `Resource.flush_data_to_disk`. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373))
 - `build_image.py` supports building Docker images with OFRAK packages from any ancestor directory. ([#425](https://github.com/redballoonsecurity/ofrak/pull/425))
 - Partially reverted [#150](https://github.com/redballoonsecurity/ofrak/pull/150) so entropy C code is called with `ctypes` again, but maintaining the current API and automatic compilation by `setup.py`. ([#482](https://github.com/redballoonsecurity/ofrak/pull/482))
+- Minor update to OFRAK Community License, add OFRAK Pro License ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
 
 ## [3.2.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v3.1.0...ofrak-v3.2.0)
 ### Added
