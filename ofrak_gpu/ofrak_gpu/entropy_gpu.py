@@ -85,7 +85,9 @@ def entropy_gpu(
     """
     chosen_platform, chosen_device = pick_pyopencl_device()
     try:
-        e = entropy(platform_pref=chosen_platform, device_pref=chosen_device, interactive=False)
+        Entropy = entropy(
+            platform_pref=chosen_platform, device_pref=chosen_device, interactive=False
+        )
     except Exception as e:
         raise RuntimeError(
             "Failed to instantiate futhark-generated pyopencl entropy class. "
@@ -93,7 +95,7 @@ def entropy_gpu(
             f"Encountered {type(e).__name__}: {e}"
         )
     try:
-        raw_results: cl.array.Array = e.chunked_entropy(window_size, data)
+        raw_results: cl.array.Array = Entropy.chunked_entropy(window_size, data)
     except AttributeError:
         raise AttributeError(
             "Futhark-generated pyopencl library no longer has a chunked_entropy method! "

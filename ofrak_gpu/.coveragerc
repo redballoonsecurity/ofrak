@@ -1,3 +1,5 @@
 [run]
 omit =
     ofrak_gpu/entropy.py
+    ofrak_gpu/run.py
+    ofrak_gpu/bench.py
