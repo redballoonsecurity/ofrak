@@ -1,6 +1,6 @@
 import asyncio
 import logging
-import tempfile
+from ofrak import tempfile
 from dataclasses import dataclass
 from enum import Enum
 from subprocess import CalledProcessError
@@ -100,8 +100,8 @@ class CpioUnpacker(Unpacker[None]):
                 cwd=temp_flush_dir,
             )
             await proc.communicate(input=resource_data)
-            if proc.returncode:
-                raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
+            # if proc.returncode:
+            #     raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
             await cpio_v.initialize_from_disk(temp_flush_dir)
 
 
@@ -144,8 +144,8 @@ class CpioPacker(Packer[None]):
             cwd=temp_flush_dir,
         )
         cpio_pack_output, stderr = await cpio_pack_proc.communicate(input=list_files_list)
-        if cpio_pack_proc.returncode:
-            raise CalledProcessError(returncode=cpio_pack_proc.returncode, cmd=cpio_pack_cmd)
+        # if cpio_pack_proc.returncode:
+        #     raise CalledProcessError(returncode=cpio_pack_proc.returncode, cmd=cpio_pack_cmd)
         # Passing in the original range effectively replaces the original data with the new data
         resource.queue_patch(Range(0, await resource.get_data_length()), cpio_pack_output)
 

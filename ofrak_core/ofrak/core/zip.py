@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import os
-import tempfile
+from ofrak import tempfile
 from dataclasses import dataclass
 from subprocess import CalledProcessError
 
@@ -53,7 +53,7 @@ class ZipUnpacker(Unpacker[None]):
         zip_view = await resource.view_as(ZipArchive)
         with tempfile.NamedTemporaryFile(suffix=".zip") as temp_archive:
             temp_archive.write(await resource.get_data())
-            temp_archive.flush()
+            temp_archive.close()
             with tempfile.TemporaryDirectory() as temp_dir:
                 cmd = [
                     "unzip",

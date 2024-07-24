@@ -1,5 +1,5 @@
 import asyncio
-import tempfile
+from ofrak import tempfile
 from dataclasses import dataclass
 import logging
 from subprocess import CalledProcessError
@@ -100,7 +100,7 @@ class UbifsAnalyzer(Analyzer[None, Ubifs]):
         with tempfile.NamedTemporaryFile() as temp_file:
             resource_data = await resource.get_data()
             temp_file.write(resource_data)
-            temp_file.flush()
+            temp_file.close()
 
             ubifs_obj = ubireader_ubifs(
                 ubi_io.ubi_file(
@@ -173,6 +173,7 @@ class UbifsPacker(Packer[None]):
         flush_dir = await ubifs_view.flush_to_disk()
 
         with tempfile.NamedTemporaryFile(mode="rb") as temp:
+            temp.close()
             cmd = [
                 "mkfs.ubifs",
                 "-m",
@@ -202,7 +203,8 @@ class UbifsPacker(Packer[None]):
             returncode = await proc.wait()
             if proc.returncode:
                 raise CalledProcessError(returncode=returncode, cmd=cmd)
-            new_data = temp.read()
+            with open(temp.name, "rb") as temp:
+                new_data = temp.read()
 
             resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
 

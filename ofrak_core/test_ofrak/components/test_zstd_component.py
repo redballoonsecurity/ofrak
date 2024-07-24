@@ -1,5 +1,5 @@
 import subprocess
-import tempfile
+from ofrak import tempfile
 
 import pytest
 
@@ -27,7 +27,7 @@ class TestZstdUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
         compressed_data = await repacked_root_resource.get_data()
         with tempfile.NamedTemporaryFile(suffix=".zstd") as compressed_file:
             compressed_file.write(compressed_data)
-            compressed_file.flush()
+            compressed_file.close()
             output_filename = tempfile.mktemp()
 
             command = ["zstd", "-d", "-k", compressed_file.name, "-o", output_filename]

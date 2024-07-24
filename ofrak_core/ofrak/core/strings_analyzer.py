@@ -1,5 +1,5 @@
 import asyncio
-import tempfile
+from ofrak import tempfile
 from dataclasses import dataclass
 from typing import Dict, Optional
 
@@ -63,7 +63,7 @@ class StringsAnalyzer(Analyzer[Optional[StringsAnalyzerConfig], StringsAttribute
         strings = dict()
         with tempfile.NamedTemporaryFile() as temp_file:
             temp_file.write(await resource.get_data())
-            temp_file.flush()
+            temp_file.close()
 
             proc = await asyncio.subprocess.create_subprocess_exec(
                 "strings",

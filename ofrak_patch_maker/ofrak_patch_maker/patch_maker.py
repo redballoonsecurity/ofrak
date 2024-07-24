@@ -33,7 +33,7 @@ await ofrak_fw_resource.run(SegmentInjectorModifier, SegmentInjectorModifierConf
 import logging
 import itertools
 import os
-import tempfile
+from ofrak import tempfile
 from typing import Dict, Iterable, List, Mapping, Optional, Set, Tuple
 from warnings import warn
 

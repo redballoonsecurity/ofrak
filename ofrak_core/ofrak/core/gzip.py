@@ -1,6 +1,6 @@
 import asyncio
 import logging
-import tempfile
+from ofrak import tempfile
 from gzip import BadGzipFile, GzipFile
 from io import BytesIO
 from subprocess import CalledProcessError
@@ -53,7 +53,7 @@ class GzipUnpacker(Unpacker[None]):
             # Create temporary file with .gz extension
             with tempfile.NamedTemporaryFile(suffix=".gz") as temp_file:
                 temp_file.write(data)
-                temp_file.flush()
+                temp_file.close()
                 cmd = [
                     "pigz",
                     "-d",

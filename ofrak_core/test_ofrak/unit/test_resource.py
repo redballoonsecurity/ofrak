@@ -1,4 +1,4 @@
-import tempfile
+from ofrak import tempfile
 from dataclasses import dataclass
 from io import BytesIO
 from typing import List, Tuple
@@ -210,6 +210,8 @@ async def test_flush_to_disk_pack(ofrak_context: OFRAKContext):
         await root_resource.write_to(buffer, pack=False)
 
     with tempfile.NamedTemporaryFile() as t:
+        t.close()
+
         # again, should fail because the packer is run automatically
         with pytest.raises(MockFailException):
             await root_resource.flush_data_to_disk(t.name)
