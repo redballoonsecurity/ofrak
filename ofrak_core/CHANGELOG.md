@@ -31,7 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Changed
 - By default, the ofrak log is now `ofrak-YYYYMMDDhhmmss.log` rather than just `ofrak.log` and the name can be specified on the command line ([#480](https://github.com/redballoonsecurity/ofrak/pull/480))
-- In `GripUnpacker`, use `gzip.GzipFile` python unpacker for speed, fall back on `pigz` if needed ([#472](https://github.com/redballoonsecurity/ofrak/pull/472))
+- In `GripUnpacker`, use python `zlib` library unpacker for speed, fall back on `pigz` if needed and installed. ([#472](https://github.com/redballoonsecurity/ofrak/pull/472) and [#485](https://github.com/redballoonsecurity/ofrak/pull/485))
 - Change `FreeSpaceModifier` & `PartialFreeSpaceModifier` behavior: an optional stub that isn't free space can be provided and fill-bytes for free space can be specified. ([#409](https://github.com/redballoonsecurity/ofrak/pull/409))
 - `Resource.flush_to_disk` method renamed to `Resource.flush_data_to_disk`. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373))
 - `build_image.py` supports building Docker images with OFRAK packages from any ancestor directory. ([#425](https://github.com/redballoonsecurity/ofrak/pull/425))
