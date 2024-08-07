@@ -1,8 +1,6 @@
 import asyncio
 import logging
-import tempfile
-from gzip import BadGzipFile, GzipFile
-from io import BytesIO
+import zlib
 from subprocess import CalledProcessError
 
 from ofrak.component.packer import Packer
@@ -41,44 +39,45 @@ class GzipUnpacker(Unpacker[None]):
 
     async def unpack(self, resource: Resource, config=None):
         data = await resource.get_data()
-        # GzipFile is faster (spawning external processes has overhead),
-        # but pigz is more willing to tolerate things like extra junk at the end
-        try:
-            with GzipFile(fileobj=BytesIO(data), mode="r") as gzip_file:
-                return await resource.create_child(
-                    tags=(GenericBinary,),
-                    data=gzip_file.read(),
-                )
-        except BadGzipFile:
-            # Create temporary file with .gz extension
-            with tempfile.NamedTemporaryFile(suffix=".gz") as temp_file:
-                temp_file.write(data)
-                temp_file.flush()
-                cmd = [
-                    "pigz",
-                    "-d",
-                    "-c",
-                    temp_file.name,
-                ]
-                proc = await asyncio.create_subprocess_exec(
-                    *cmd,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                )
-                stdout, stderr = await proc.communicate()
-                data = stdout
-                if proc.returncode:
-                    # Forward any gzip warning message and continue
-                    if proc.returncode == -2 or proc.returncode == 2:
-                        LOGGER.warning(stderr)
-                        data = stdout
-                    else:
-                        raise CalledProcessError(returncode=proc.returncode, cmd=cmd, stderr=stderr)
+        if len(data) >= 1024 * 1024 * 4 and await PIGZ.is_tool_installed():
+            uncompressed_data = await self.unpack_with_pigz(data)
+        else:
+            uncompressed_data = await self.unpack_with_zlib_module(data)
+        return await resource.create_child(tags=(GenericBinary,), data=uncompressed_data)
 
-                await resource.create_child(
-                    tags=(GenericBinary,),
-                    data=data,
-                )
+    @staticmethod
+    async def unpack_with_zlib_module(data: bytes) -> bytes:
+        chunks = []
+
+        # wbits > 16 handles the gzip header and footer
+        # We need to create a zlib.Decompress object in order to use this
+        # parameter in Python < 3.11
+        decompressor = zlib.decompressobj(wbits=16 + zlib.MAX_WBITS)
+        while data.startswith(b"\037\213"):
+            chunks.append(decompressor.decompress(data))
+            if decompressor.eof:
+                break
+            data = decompressor.unused_data.lstrip(b"\0")
+
+        if not len(chunks):
+            raise ValueError("Not a gzipped file")
+
+        return b"".join(chunks)
+
+    @staticmethod
+    async def unpack_with_pigz(data: bytes) -> bytes:
+        cmd = ["pigz", "-d"]
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await proc.communicate(data)
+        if proc.returncode:
+            raise CalledProcessError(returncode=proc.returncode, cmd=cmd, stderr=stderr)
+
+        return stdout
 
 
 class GzipPacker(Packer[None]):
@@ -87,19 +86,16 @@ class GzipPacker(Packer[None]):
     """
 
     targets = (GzipData,)
-    external_dependencies = (PIGZ,)
 
     async def pack(self, resource: Resource, config=None):
         gzip_view = await resource.view_as(GzipData)
-
-        result = BytesIO()
-        with GzipFile(fileobj=result, mode="w") as gzip_file:
-            gzip_child_r = await gzip_view.get_file()
-            gzip_data = await gzip_child_r.get_data()
-            gzip_file.write(gzip_data)
-
+        gzip_child_r = await gzip_view.get_file()
+        gzip_data = await gzip_child_r.get_data()
+        compressor = zlib.compressobj(wbits=16 + zlib.MAX_WBITS)
+        result = compressor.compress(gzip_data)
+        result += compressor.flush()
         original_gzip_size = await gzip_view.resource.get_data_length()
-        resource.queue_patch(Range(0, original_gzip_size), result.getvalue())
+        resource.queue_patch(Range(0, original_gzip_size), result)
 
 
 MagicMimeIdentifier.register(GzipData, "application/gzip")
