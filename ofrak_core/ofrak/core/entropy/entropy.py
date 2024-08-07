@@ -1,5 +1,4 @@
 import asyncio
-import ctypes
 import logging
 import math
 from concurrent.futures import ProcessPoolExecutor
@@ -13,10 +12,6 @@ from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceServiceInterface
 
 LOGGER = logging.getLogger(__name__)
-
-
-C_LOG_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_uint8)
-
 
 try:
     from ofrak.core.entropy.entropy_c import entropy_c as entropy_func
