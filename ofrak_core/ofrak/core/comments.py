@@ -47,8 +47,6 @@ class AddCommentModifier(Modifier[AddCommentModifierConfig]):
         except NotFoundError:
             comments = {}
 
-        # Here I'm appending appending overlapping comments with a new line.
-        # Overwriting comments that share a range is counter intuitive and not easily understood without digging into the code.
         if config.comment[0] not in comments:
             comments[config.comment[0]] = []
 
@@ -59,36 +57,24 @@ class AddCommentModifier(Modifier[AddCommentModifierConfig]):
 @dataclass
 class DeleteCommentModifierConfig(ComponentConfig):
     """
-    comment_range: Tuple[Optional[Range], comment_text=Optional[str]]
-    If comment_text is provided, deletes the matching comment with the same Optional[Range]
-    If comment_text is None, deletes ALL comments with the same Optional[Range]
+    If comment_text is provided, deletes the matching comment in that comment_range
+    If comment_text is None, deletes ALL comments in that comment_range
     """
 
-    comment_range: Tuple[Optional[Range], Optional[str]]
-
-    def __post_init__(self):
-        # Ensure there's always a two-element Tuple
-        if type(self.comment_range) == tuple:
-            # New format
-            self.comment_range = (*self.comment_range, None)[:2]
-        elif type(self.comment_range) == Range:
-            # Old format: Range
-            self.comment_range = (self.comment_range, None)
-        else:
-            # Old format: None (no Range provided)
-            self.comment_range = (None, None)
+    comment_range: Optional[Range]
+    comment_text: Optional[str] = None
 
 
 class DeleteCommentModifier(Modifier[DeleteCommentModifierConfig]):
     """
-    Modifier to delete a comment from a resource.
+    Modifier to delete comment(s) from a resource.
     """
 
     targets = ()
 
     async def modify(self, resource: Resource, config: DeleteCommentModifierConfig) -> None:
         """
-        Delete the comment associated with the given range.
+        Delete the comment(s) associated with the given range.
 
         :raises NotFoundError: if the comment range is not associated with a comment.
         """
@@ -97,24 +83,22 @@ class DeleteCommentModifier(Modifier[DeleteCommentModifierConfig]):
         except NotFoundError:
             comments = {}
         try:
-            if len(config.comment_range) == 1:
-                config.comment_range = (config.comment_range[0], None)
-
-            if config.comment_range[1] is None:
-                del comments[config.comment_range[0]]
+            if config.comment_text is None:
+                # Delete ALL comments in this range
+                del comments[config.comment_range]
             else:
-                comments[config.comment_range[0]].remove(config.comment_range[1])
-                # Clean up if this was the last comment at this range
-                if len(comments[config.comment_range[0]]) == 0:
-                    del comments[config.comment_range[0]]
+                comments[config.comment_range].remove(config.comment_text)
+                # Clean up if this was the last comment in this range
+                if len(comments[config.comment_range]) == 0:
+                    del comments[config.comment_range]
         except KeyError:
             raise NotFoundError(
-                f"Comment range {config.comment_range[0]} not found in "
+                f"Comment range {config.comment_range} not found in "
                 f"resource {resource.get_id().hex()}"
             )
         except ValueError:
             raise NotFoundError(
-                f"Comment {config.comment_range[1]} with range {config.comment_range[0]}"
+                f"Comment {config.comment_text} with range {config.comment_range}"
                 f" not found in resource {resource.get_id().hex()}"
             )
         resource.add_attributes(CommentsAttributes(comments=comments))

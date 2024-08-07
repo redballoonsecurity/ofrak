@@ -365,11 +365,11 @@ export class Resource {
     throw new NotImplementedError("summarize_tree");
   }
 
-  async add_comment(optional_range, comment) {
+  async add_comment(optional_range, comment_text) {
     throw new NotImplementedError("add_comment");
   }
 
-  async delete_comment(optional_range, comment) {
+  async delete_comment(optional_range, comment_text) {
     throw new NotImplementedError("delete_comment");
   }
 

@@ -735,19 +735,30 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def delete_comment(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
-        comment = self._serializer.from_pjson(
+        comment_data = self._serializer.from_pjson(
             await request.json(), Union[Tuple[Optional[Range], Optional[str]], Optional[Range]]
         )
+        comment_range: Optional[Range] = None
+        comment_text: Optional[str] = None
+
+        if type(comment_data) == tuple:
+            comment_range = comment_data[0]
+            comment_text = comment_data[1]
+        else:
+            comment_range = comment_data
+
         script_str = (
             """
         await {resource}.run"""
             f"""(
-            DeleteCommentModifier, DeleteCommentModifierConfig({comment})
+            DeleteCommentModifier, DeleteCommentModifierConfig({comment_range}, {comment_text})
         )"""
         )
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         try:
-            result = await resource.run(DeleteCommentModifier, DeleteCommentModifierConfig(comment))
+            result = await resource.run(
+                DeleteCommentModifier, DeleteCommentModifierConfig(comment_range, comment_text)
+            )
             await self.script_builder.commit_to_script(resource)
         except Exception as e:
             await self.script_builder.clear_script_queue(resource)

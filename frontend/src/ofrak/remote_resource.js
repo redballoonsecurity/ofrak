@@ -468,13 +468,13 @@ export class RemoteResource extends Resource {
     return find_replace_results;
   }
 
-  async add_comment(optional_range, comment) {
+  async add_comment(optional_range, comment_text) {
     await fetch(`${this.uri}/add_comment`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify([optional_range, comment]),
+      body: JSON.stringify([optional_range, comment_text]),
     }).then(async (r) => {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
@@ -508,13 +508,13 @@ export class RemoteResource extends Resource {
     await this.update_script();
   }
 
-  async delete_comment(optional_range, comment) {
+  async delete_comment(optional_range, comment_text) {
     await fetch(`${this.uri}/delete_comment`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify([optional_range, comment]),
+      body: JSON.stringify([optional_range, comment_text]),
     }).then(async (r) => {
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
