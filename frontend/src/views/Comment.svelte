@@ -20,17 +20,18 @@
   import Hoverable from "../utils/Hoverable.svelte";
   import Icon from "../utils/Icon.svelte";
   export let comment, rootResource, selfId;
-  let text = comment[1];
-  let addresses = text.matchAll("#[a-fA-F0-9]+[@0x[0-9a-fA-F]+]*", text);
+  let addresses = comment.comment_text.matchAll(
+    "#[a-fA-F0-9]+[@0x[0-9a-fA-F]+]*"
+  );
   let text_elements = [];
   Array.from(addresses).forEach((location) => {
-    let text_split = text.split(location[0]);
+    let text_split = comment.comment_text.split(location[0]);
     text_elements.push(text_split[0]);
     text_elements.push(createAddressButton(location[0]));
-    text = text_split.slice(1).join(location[0]);
+    comment.comment_text = text_split.slice(1).join(location[0]);
   });
 
-  text_elements.push(text);
+  text_elements.push(comment.comment_text);
 
   function createAddressButton(location) {
     let resource_id;
@@ -53,11 +54,14 @@
     return button;
   }
 
-  async function onDeleteClick(optional_range, comment_text) {
+  async function onDeleteClick(comment) {
     // Delete the selected comment.
     // As a side effect, the corresponding resource gets selected.
     $selected = selfId;
-    await rootResource.delete_comment(optional_range, comment_text);
+    await rootResource.delete_comment(
+      comment.comment_range,
+      comment.comment_text
+    );
     $resourceNodeDataMap[$selected].commentsPromise =
       rootResource.get_comments();
   }
@@ -65,10 +69,7 @@
 
 <div class="comment">
   <Hoverable let:hovering>
-    <button
-      title="Delete this comment"
-      on:click="{onDeleteClick(comment[0], comment[1])}"
-    >
+    <button title="Delete this comment" on:click="{onDeleteClick(comment)}">
       <Icon
         class="comment_icon"
         url="{hovering ? '/icons/trash_can.svg' : '/icons/comment.svg'}"

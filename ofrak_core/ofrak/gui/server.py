@@ -751,13 +751,14 @@ class AiohttpOFRAKServer:
             """
         await {resource}.run"""
             f"""(
-            DeleteCommentModifier, DeleteCommentModifierConfig({comment_range}, {comment_text})
+            DeleteCommentModifier, DeleteCommentModifierConfig(comment_range={comment_range}, comment_text="{comment_text}")
         )"""
         )
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         try:
             result = await resource.run(
-                DeleteCommentModifier, DeleteCommentModifierConfig(comment_range, comment_text)
+                DeleteCommentModifier,
+                DeleteCommentModifierConfig(comment_range=comment_range, comment_text=comment_text),
             )
             await self.script_builder.commit_to_script(resource)
         except Exception as e:

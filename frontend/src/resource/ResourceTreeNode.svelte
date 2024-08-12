@@ -249,7 +249,7 @@
       {#each comment_strs as comment_text}
         <div class="comment">
           <Comment
-            comment="{[comment_range, comment_text]}"
+            comment="{{ comment_range, comment_text }}"
             rootResource="{rootResource}"
             selfId="{selfId}"
           />
