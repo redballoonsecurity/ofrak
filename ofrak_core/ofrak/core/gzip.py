@@ -39,10 +39,16 @@ class GzipUnpacker(Unpacker[None]):
 
     async def unpack(self, resource: Resource, config=None):
         data = await resource.get_data()
-        if len(data) >= 1024 * 1024 * 4 and await PIGZ.is_tool_installed():
+        pigz_installed = await PIGZ.is_tool_installed()
+        if len(data) >= 1024 * 1024 * 4 and pigz_installed:
             uncompressed_data = await self.unpack_with_pigz(data)
         else:
-            uncompressed_data = await self.unpack_with_zlib_module(data)
+            try:
+                uncompressed_data = await self.unpack_with_zlib_module(data)
+            except Exception:  # pragma: no cover
+                if not pigz_installed:
+                    raise
+                uncompressed_data = await self.unpack_with_pigz(data)
         return await resource.create_child(tags=(GenericBinary,), data=uncompressed_data)
 
     @staticmethod
