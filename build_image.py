@@ -274,6 +274,7 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
     )
     dockerfile_finish_parts.append(f'RUN printf "{finish_makefile}" >> Makefile\n')
     if config.entrypoint is not None:
+        dockerfile_finish_parts.append('SHELL ["/bin/bash", "-c"]\n')
         dockerfile_finish_parts.append(f"ENTRYPOINT {config.entrypoint}")
     return "".join(dockerfile_finish_parts)
 
