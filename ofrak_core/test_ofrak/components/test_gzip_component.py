@@ -5,6 +5,7 @@ from asyncio import create_subprocess_exec
 from asyncio.subprocess import PIPE
 from typing import Tuple
 from unittest.mock import patch
+from abc import ABC, abstractmethod
 
 from ofrak.component.abstract import ComponentSubprocessError
 import pytest
@@ -37,7 +38,7 @@ def gzip_test_input(request):
     return (initial_data, expected_repacked_data, expect_pigz)
 
 
-class GzipUnpackModifyPackPattern(CompressedFileUnpackModifyPackPattern):
+class GzipUnpackModifyPackPattern(CompressedFileUnpackModifyPackPattern, ABC):
     """
     Template for tests that test different inputs the gzip component should support
     unpacking.
@@ -46,8 +47,9 @@ class GzipUnpackModifyPackPattern(CompressedFileUnpackModifyPackPattern):
     EXPECT_PIGZ: bool
     expected_tag = GzipData
 
+    @abstractmethod
     def write_gzip(self, gzip_path: Path):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @pytest.fixture(autouse=True)
     def create_test_file(self, gzip_test_input: Tuple[bytes, bytes, bool], tmp_path: Path):
