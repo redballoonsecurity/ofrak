@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from typing import Optional
 import zlib
 from subprocess import CalledProcessError
 
@@ -16,6 +17,16 @@ LOGGER = logging.getLogger(__name__)
 PIGZ = ComponentExternalTool(
     "pigz", "https://zlib.net/pigz/", "--help", apt_package="pigz", brew_package="pigz"
 )
+
+
+class PIGZInstalled:
+    _pigz_installed: Optional[bool] = None
+
+    @staticmethod
+    async def is_pigz_installed() -> bool:
+        if PIGZInstalled._pigz_installed is None:
+            PIGZInstalled._pigz_installed = await PIGZ.is_tool_installed()
+        return PIGZInstalled._pigz_installed
 
 
 class GzipData(GenericBinary):
@@ -39,17 +50,16 @@ class GzipUnpacker(Unpacker[None]):
 
     async def unpack(self, resource: Resource, config=None):
         data = await resource.get_data()
-        pigz_installed = await PIGZ.is_tool_installed()
-        if len(data) >= 1024 * 1024 * 4 and pigz_installed:
-            uncompressed_data = await self.unpack_with_pigz(data)
+        if len(data) >= 1024 * 1024 * 4 and await PIGZInstalled.is_pigz_installed():
+            unpacked_data = await self.unpack_with_pigz(data)
         else:
             try:
-                uncompressed_data = await self.unpack_with_zlib_module(data)
+                unpacked_data = await self.unpack_with_zlib_module(data)
             except Exception:  # pragma: no cover
-                if not pigz_installed:
+                if not PIGZInstalled.is_pigz_installed():
                     raise
-                uncompressed_data = await self.unpack_with_pigz(data)
-        return await resource.create_child(tags=(GenericBinary,), data=uncompressed_data)
+                unpacked_data = await self.unpack_with_pigz(data)
+        return await resource.create_child(tags=(GenericBinary,), data=unpacked_data)
 
     @staticmethod
     async def unpack_with_zlib_module(data: bytes) -> bytes:
@@ -96,12 +106,37 @@ class GzipPacker(Packer[None]):
     async def pack(self, resource: Resource, config=None):
         gzip_view = await resource.view_as(GzipData)
         gzip_child_r = await gzip_view.get_file()
-        gzip_data = await gzip_child_r.get_data()
-        compressor = zlib.compressobj(wbits=16 + zlib.MAX_WBITS)
-        result = compressor.compress(gzip_data)
-        result += compressor.flush()
+        data = await gzip_child_r.get_data()
+
+        if len(data) >= 1024 * 1024 and await PIGZInstalled.is_pigz_installed():
+            packed_data = await self.pack_with_pigz(data)
+        else:
+            packed_data = await self.pack_with_zlib_module(data)
+
         original_gzip_size = await gzip_view.resource.get_data_length()
-        resource.queue_patch(Range(0, original_gzip_size), result)
+        resource.queue_patch(Range(0, original_gzip_size), data=packed_data)
+
+    @staticmethod
+    async def pack_with_zlib_module(data: bytes) -> bytes:
+        compressor = zlib.compressobj(wbits=16 + zlib.MAX_WBITS)
+        result = compressor.compress(data)
+        result += compressor.flush()
+        return result
+
+    @staticmethod
+    async def pack_with_pigz(data: bytes) -> bytes:
+        cmd = ["pigz"]
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await proc.communicate(data)
+        if proc.returncode:
+            raise CalledProcessError(returncode=proc.returncode, cmd=cmd, stderr=stderr)
+
+        return stdout
 
 
 MagicMimeIdentifier.register(GzipData, "application/gzip")
