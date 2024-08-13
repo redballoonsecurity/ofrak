@@ -59,12 +59,14 @@ class GzipUnpackModifyPackPattern(CompressedFileUnpackModifyPackPattern, ABC):
         self._test_file = gzip_path.resolve()
 
     async def test_unpack_modify_pack(self, ofrak_context: OFRAKContext):
-        if self.EXPECT_PIGZ:
-            with patch("asyncio.create_subprocess_exec", wraps=create_subprocess_exec) as mock:
+        with patch("asyncio.create_subprocess_exec", wraps=create_subprocess_exec) as mock_exec:
+            if self.EXPECT_PIGZ:
                 await super().test_unpack_modify_pack(ofrak_context)
-            mock.assert_any_call("pigz", "-d", stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        else:
-            await super().test_unpack_modify_pack(ofrak_context)
+                mock_exec.assert_any_call("pigz", "-d", stdin=PIPE, stdout=PIPE, stderr=PIPE)
+                mock_exec.assert_any_call("pigz", stdin=PIPE, stdout=PIPE, stderr=PIPE)
+            else:
+                await super().test_unpack_modify_pack(ofrak_context)
+                mock_exec.assert_not_called()
 
     async def verify(self, repacked_root_resource: Resource):
         patched_decompressed_data = gzip.decompress(await repacked_root_resource.get_data())
