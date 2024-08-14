@@ -3,6 +3,7 @@ import logging
 from typing import Optional
 import zlib
 from subprocess import CalledProcessError
+import tempfile
 
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
@@ -14,6 +15,8 @@ from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
 
+# PIGZ provides significantly faster compression on multi core systems.
+# It does not parallelize decompression, so we don't use it in GzipUnpacker.
 PIGZ = ComponentExternalTool(
     "pigz", "https://zlib.net/pigz/", "--help", apt_package="pigz", brew_package="pigz"
 )
@@ -50,15 +53,7 @@ class GzipUnpacker(Unpacker[None]):
 
     async def unpack(self, resource: Resource, config=None):
         data = await resource.get_data()
-        if len(data) >= 1024 * 1024 * 4 and await PIGZInstalled.is_pigz_installed():
-            unpacked_data = await self.unpack_with_pigz(data)
-        else:
-            try:
-                unpacked_data = await self.unpack_with_zlib_module(data)
-            except Exception:  # pragma: no cover
-                if not PIGZInstalled.is_pigz_installed():
-                    raise
-                unpacked_data = await self.unpack_with_pigz(data)
+        unpacked_data = await self.unpack_with_zlib_module(data)
         return await resource.create_child(tags=(GenericBinary,), data=unpacked_data)
 
     @staticmethod
@@ -79,21 +74,6 @@ class GzipUnpacker(Unpacker[None]):
             raise ValueError("Not a gzipped file")
 
         return b"".join(chunks)
-
-    @staticmethod
-    async def unpack_with_pigz(data: bytes) -> bytes:
-        cmd = ["pigz", "-d"]
-        proc = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        stdout, stderr = await proc.communicate(data)
-        if proc.returncode:
-            raise CalledProcessError(returncode=proc.returncode, cmd=cmd, stderr=stderr)
-
-        return stdout
 
 
 class GzipPacker(Packer[None]):
@@ -125,18 +105,25 @@ class GzipPacker(Packer[None]):
 
     @staticmethod
     async def pack_with_pigz(data: bytes) -> bytes:
-        cmd = ["pigz"]
-        proc = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        stdout, stderr = await proc.communicate(data)
-        if proc.returncode:
-            raise CalledProcessError(returncode=proc.returncode, cmd=cmd, stderr=stderr)
+        with tempfile.NamedTemporaryFile() as uncompressed_file:
+            uncompressed_file.write(data)
+            uncompressed_file.flush()
 
-        return stdout
+            cmd = [
+                "pigz",
+                "-c",
+                uncompressed_file.name,
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate()
+            if proc.returncode:
+                raise CalledProcessError(returncode=proc.returncode, stderr=stderr, cmd=cmd)
+
+            return stdout
 
 
 MagicMimeIdentifier.register(GzipData, "application/gzip")

@@ -2,7 +2,6 @@ import zlib
 import gzip
 from pathlib import Path
 from asyncio import create_subprocess_exec
-from asyncio.subprocess import PIPE
 from typing import Tuple
 from unittest.mock import patch
 from abc import ABC, abstractmethod
@@ -62,8 +61,9 @@ class GzipUnpackModifyPackPattern(CompressedFileUnpackModifyPackPattern, ABC):
         with patch("asyncio.create_subprocess_exec", wraps=create_subprocess_exec) as mock_exec:
             if self.EXPECT_PIGZ:
                 await super().test_unpack_modify_pack(ofrak_context)
-                mock_exec.assert_any_call("pigz", "-d", stdin=PIPE, stdout=PIPE, stderr=PIPE)
-                mock_exec.assert_any_call("pigz", stdin=PIPE, stdout=PIPE, stderr=PIPE)
+                assert any(
+                    args[0][0] == "pigz" and args[0][1] == "-c" for args in mock_exec.call_args_list
+                )
             else:
                 await super().test_unpack_modify_pack(ofrak_context)
                 mock_exec.assert_not_called()
