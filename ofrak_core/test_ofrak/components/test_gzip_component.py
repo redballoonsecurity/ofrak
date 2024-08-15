@@ -81,9 +81,11 @@ class TestGzipUnpackModifyPack(GzipUnpackModifyPackPattern):
 
 class TestGzipWithMultipleMembersUnpackModifyPack(GzipUnpackModifyPackPattern):
     def write_gzip(self, gzip_path: Path):
+        middle = len(self.INITIAL_DATA) // 2
         with gzip.GzipFile(gzip_path, mode="w") as gzip_file:
-            middle = len(self.INITIAL_DATA) // 2
             gzip_file.write(self.INITIAL_DATA[:middle])
+
+        with gzip.GzipFile(gzip_path, mode="a") as gzip_file:
             gzip_file.write(self.INITIAL_DATA[middle:])
 
 
