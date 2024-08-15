@@ -58,12 +58,17 @@ class GzipUnpacker(Unpacker[None]):
 
     @staticmethod
     async def unpack_with_zlib_module(data: bytes) -> bytes:
-        chunks = []
-
+        # We use zlib.decompressobj instead of the gzip module to decompress
+        # because of a bug that causes gzip raise BadGzipFile if there's
+        # trailing garbage after a compressed file instead of correctly ignoring it
+        # https://github.com/python/cpython/issues/68489
         # wbits > 16 handles the gzip header and footer
-        # We need to create a zlib.Decompress object in order to use this
-        # parameter in Python < 3.11
         decompressor = zlib.decompressobj(wbits=16 + zlib.MAX_WBITS)
+
+        # gzip files can consist of multiple members, so we need to read them in
+        # a loop and concatenate them in the end. \037\213 are magic bytes
+        # indicating the start of a gzip header.
+        chunks = []
         while data.startswith(b"\037\213"):
             chunks.append(decompressor.decompress(data))
             if decompressor.eof:
