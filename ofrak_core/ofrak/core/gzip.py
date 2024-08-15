@@ -62,13 +62,13 @@ class GzipUnpacker(Unpacker[None]):
         # because of a bug that causes gzip to raise BadGzipFile if there's
         # trailing garbage after a compressed file instead of correctly ignoring it
         # https://github.com/python/cpython/issues/68489
-        # wbits > 16 handles the gzip header and footer
 
         # gzip files can consist of multiple members, so we need to read them in
         # a loop and concatenate them in the end. \037\213 are magic bytes
         # indicating the start of a gzip header.
         chunks = []
         while data.startswith(b"\037\213"):
+            # wbits > 16 handles the gzip header and footer
             decompressor = zlib.decompressobj(wbits=16 + zlib.MAX_WBITS)
             chunks.append(decompressor.decompress(data))
             if not decompressor.eof:
