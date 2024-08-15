@@ -92,3 +92,4 @@ nav:
       - ResourceView: "contributor-guide/core/resource_view.md"
   # Built by gen-files and literate-nav
   - Code Reference: reference/
+  - License: "license.md"

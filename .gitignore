@@ -18,3 +18,4 @@ frontend/public/build
 ofrak_core/ofrak/core/entropy/entropy_c.cpython*
 ofrak_core/ofrak/gui/public
 ofrak_core/build
+ofrak_core/ofrak/license/license.json
