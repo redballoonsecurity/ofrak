@@ -1,5 +1,7 @@
 autoflake==1.4
-pytest
+# pytest-lazy-fixture does not work with pytest 8.0.0 - https://github.com/TvoroG/pytest-lazy-fixture/issues/65
+pytest<8.0
+filelock
 hypothesis~=6.39.3
 hypothesis-trio
 trio-asyncio

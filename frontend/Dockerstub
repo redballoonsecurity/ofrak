@@ -2,9 +2,8 @@ RUN apt-get update && apt-get install --yes nginx
 
 COPY --from=svelte --chown=root:root /home/node/frontend/dist /ofrak_gui
 
-ARG OFRAK_DIR=.
-COPY $OFRAK_DIR/frontend/nginx.conf /etc/nginx/sites-enabled/default
+COPY $PACKAGE_PATH/nginx.conf /etc/nginx/sites-enabled/default
 
-COPY $OFRAK_DIR/mkdocs.yml /mkdocs.yml
-COPY $OFRAK_DIR/docs /docs
-COPY $OFRAK_DIR/examples /examples
+COPY $PACKAGE_PATH/../mkdocs.yml /mkdocs.yml
+COPY $PACKAGE_PATH/../docs /docs
+COPY $PACKAGE_PATH/../examples /examples

@@ -26,13 +26,14 @@
 
 <script>
   import LoadingTextVertical from "../utils/LoadingTextVertical.svelte";
-
+  import { screenHeight } from "./stores.js";
   import { hexToByteArray } from "../helpers.js";
-  import { selectedResource, settings } from "../stores.js";
+  import { selectedResource, settings, dataLength } from "../stores.js";
 
   import { onMount } from "svelte";
 
-  export let scrollY;
+  export let currentPosition;
+
   let data = undefined;
 
   $: bgcolors = hexToByteArray($settings.background.slice(1));
@@ -44,7 +45,7 @@
       resource.get_attributes()["ofrak.core.entropy.entropy.DataSummary"];
     data =
       summaryAttributes !== undefined
-        ? hexToByteArray(summaryAttributes?.entropy_samples)
+        ? hexToByteArray(summaryAttributes?.magnitude_samples)
         : undefined;
   }
 
@@ -55,7 +56,7 @@
         "ofrak.core.entropy.entropy.DataSummary"
       ];
     if (summaryAttributes !== undefined) {
-      data = hexToByteArray(summaryAttributes?.entropy_samples);
+      data = hexToByteArray(summaryAttributes?.magnitude_samples);
     } else {
       loadData($selectedResource);
     }
@@ -86,7 +87,9 @@
     for (let i = 0; i < data.length; i++) {
       const value = data[i];
 
-      // There are four colors per pixel, hence four array entries per byte of data
+      // There are four colors per pixel, hence four array entries per byte of
+      // data. Do simple linear interpolation between the foreground and
+      // background color for each byte of each pixel.
       const index = i * 4;
       imageData.data[index + 0] =
         bgcolors[0] + (value / 255) * (fgcolors[0] - bgcolors[0]);
@@ -105,17 +108,13 @@
 
     context.strokeStyle = "red";
     context.lineWidth = Math.ceil(canvas.height / 512);
-    if (
-      data !== undefined &&
-      data.length > alignment * 3 &&
-      $scrollY.viewHeight !== 1
-    ) {
+    if (data !== undefined && data.length > alignment * 3) {
       // Offset Y by 0.5 because of: https://stackoverflow.com/a/48970774
       context.strokeRect(
         0,
-        Math.ceil($scrollY.top * canvas.height) - 0.5,
+        Math.ceil((currentPosition / $dataLength) * canvas.height) - 0.5,
         alignment,
-        Math.ceil(($scrollY.viewHeight * canvas.height) / 2)
+        Math.ceil(($screenHeight / $dataLength) * canvas.height)
       );
     }
 
@@ -130,11 +129,12 @@
   <canvas
     bind:this="{canvas}"
     on:mousedown="{(e) => {
-      if ($scrollY.viewHeight < 1) {
-        $scrollY.top = e.offsetY / canvas.offsetHeight;
-        $scrollY.top = Math.max(Math.min($scrollY.top, 1), 0);
-        clicking = true;
-      }
+      currentPosition =
+        Math.floor(
+          Math.floor($dataLength * (e.offsetY / canvas.offsetHeight)) /
+            alignment
+        ) * alignment;
+      clicking = true;
     }}"
     on:mouseup="{(e) => {
       clicking = false;
@@ -143,19 +143,17 @@
       clicking = false;
     }}"
     on:mousemove="{(e) => {
-      if (clicking && $scrollY.viewHeight < 1) {
-        $scrollY.top = e.offsetY / canvas.offsetHeight;
-        $scrollY.top = Math.max(Math.min($scrollY.top, 1), 0);
-      }
-    }}"
-    on:wheel="{(e) => {
-      if ($scrollY.viewHeight < 1) {
-        $scrollY.top += e.deltaY * 0.0001;
-        $scrollY.top = Math.max(Math.min($scrollY.top, 1), 0);
+      if (clicking) {
+        currentPosition =
+          Math.floor(
+            Math.floor($dataLength * (e.offsetY / canvas.offsetHeight)) /
+              alignment
+          ) * alignment;
+        clicking = true;
       }
     }}"
   >
-    Entropy graph
+    Magnitude graph
   </canvas>
 {:else}
   <div class="tall">

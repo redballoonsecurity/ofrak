@@ -28,11 +28,12 @@
   import LoadingTextVertical from "../utils/LoadingTextVertical.svelte";
 
   import { hexToByteArray } from "../helpers.js";
-  import { selectedResource, settings } from "../stores.js";
+  import { screenHeight } from "./stores.js";
+  import { selectedResource, settings, dataLength } from "../stores.js";
 
   import { onMount } from "svelte";
 
-  export let scrollY;
+  export let currentPosition;
   let data = undefined;
 
   $: colorArray = [
@@ -124,17 +125,13 @@
 
     context.strokeStyle = "red";
     context.lineWidth = Math.ceil(canvas.height / 512);
-    if (
-      data !== undefined &&
-      data.length > alignment * 3 &&
-      $scrollY.viewHeight !== 1
-    ) {
+    if (data !== undefined && data.length > alignment * 3) {
       // Offset Y by 0.5 because of: https://stackoverflow.com/a/48970774
       context.strokeRect(
         0,
-        Math.ceil($scrollY.top * canvas.height) - 0.5,
+        Math.ceil((currentPosition / $dataLength) * canvas.height) - 0.5,
         alignment,
-        Math.ceil(($scrollY.viewHeight * canvas.height) / 2)
+        Math.ceil(($screenHeight / $dataLength) * canvas.height)
       );
     }
   }
@@ -144,11 +141,12 @@
   <canvas
     bind:this="{canvas}"
     on:mousedown="{(e) => {
-      if ($scrollY.viewHeight < 1) {
-        $scrollY.top = e.offsetY / canvas.offsetHeight;
-        $scrollY.top = Math.max(Math.min($scrollY.top, 1), 0);
-        clicking = true;
-      }
+      currentPosition =
+        Math.floor(
+          Math.floor($dataLength * (e.offsetY / canvas.offsetHeight)) /
+            alignment
+        ) * alignment;
+      clicking = true;
     }}"
     on:mouseup="{(e) => {
       clicking = false;
@@ -157,15 +155,13 @@
       clicking = false;
     }}"
     on:mousemove="{(e) => {
-      if (clicking && $scrollY.viewHeight < 1) {
-        $scrollY.top = e.offsetY / canvas.offsetHeight;
-        $scrollY.top = Math.max(Math.min($scrollY.top, 1), 0);
-      }
-    }}"
-    on:wheel="{(e) => {
-      if ($scrollY.viewHeight < 1) {
-        $scrollY.top += e.deltaY * 0.0001;
-        $scrollY.top = Math.max(Math.min($scrollY.top, 1), 0);
+      if (clicking) {
+        currentPosition =
+          Math.floor(
+            Math.floor($dataLength * (e.offsetY / canvas.offsetHeight)) /
+              alignment
+          ) * alignment;
+        clicking = true;
       }
     }}"
   >

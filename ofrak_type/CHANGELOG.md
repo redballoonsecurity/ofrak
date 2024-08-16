@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 
+### Changed
+- Minor update to OFRAK Community License, add OFRAK Pro License ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
+
 ## [2.2.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-type-v2.1.0...ofrak-type-v2.2.0)
 
 ### Added

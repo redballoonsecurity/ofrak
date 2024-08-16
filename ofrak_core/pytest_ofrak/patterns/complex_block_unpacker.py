@@ -219,6 +219,24 @@ COMPLEX_BLOCK_UNPACKER_TEST_CASES = [
         "hello.out",
         "cc2de3c0cd2d0ded7543682c2470fcf0",
     ),
+    # x64 Kernel address space - ensure large 64-bit addresses are interpreted as unsigned
+    ComplexBlockUnpackerTestCase(
+        "x64 Kernel address space",
+        {
+            0xFFFFFFFF80000000: [
+                BasicBlock(
+                    virtual_address=0xFFFFFFFF80000000,
+                    size=6,
+                    mode=InstructionSetMode.NONE,
+                    is_exit_point=True,
+                    exit_vaddr=None,
+                ),
+            ],
+        },
+        set(),  # No optional results
+        "kernel_address_space.out",
+        "242dd5b9ecc56bb7a8c8db43e8c720f0",
+    ),
     # ARM with literal pools
     ComplexBlockUnpackerTestCase(
         "ARM with literal pools",
@@ -231,7 +249,7 @@ COMPLEX_BLOCK_UNPACKER_TEST_CASES = [
                     is_exit_point=True,
                     exit_vaddr=None,
                 ),
-                DataWord(virtual_address=32816, size=4, format_string="<L", xrefs_to=(32792,)),
+                DataWord(virtual_address=0x8030, size=4, format_string="<L", xrefs_to=(32792,)),
             ],
             0x8034: [
                 BasicBlock(
@@ -255,8 +273,8 @@ COMPLEX_BLOCK_UNPACKER_TEST_CASES = [
                     is_exit_point=False,
                     exit_vaddr=32856,
                 ),
-                DataWord(virtual_address=32864, size=4, format_string="<L", xrefs_to=(32820,)),
-                DataWord(virtual_address=32868, size=4, format_string="<L", xrefs_to=(32840,)),
+                DataWord(virtual_address=0x8060, size=4, format_string="<L", xrefs_to=(32820,)),
+                DataWord(virtual_address=0x8064, size=4, format_string="<L", xrefs_to=(32840,)),
             ],
             0x8068: [
                 BasicBlock(

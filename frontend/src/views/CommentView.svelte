@@ -1,12 +1,19 @@
 <style>
+  details {
+    cursor: pointer;
+    user-select: none;
+  }
+
   .container {
     min-height: 100%;
+    max-height: 100%;
     display: flex;
     flex-direction: column;
     flex-wrap: nowrap;
     justify-content: center;
     align-items: stretch;
     align-content: center;
+    overflow: auto;
   }
 
   .inputs {
@@ -59,18 +66,22 @@
 
 <script>
   import { calculator } from "../helpers.js";
-  import { selected, selectedResource } from "../stores.js";
+  import {
+    selected,
+    selectedResource,
+    resourceNodeDataMap,
+    dataLength,
+  } from "../stores.js";
   import Button from "../utils/Button.svelte";
-
-  export let modifierView, resourceNodeDataMap, dataLenPromise;
-  let comment, startInput, endInput, dataLength, errorMessage;
-
-  $: dataLenPromise.then((r) => {
-    dataLength = r;
-  });
+  import DropDownAutoCompleteTextArea from "../utils/DropDownAutoCompleteTextArea.svelte";
+  export let modifierView;
+  let comment = "",
+    startInput,
+    endInput,
+    errorMessage;
 
   function refreshResource() {
-    resourceNodeDataMap[$selected].commentsPromise =
+    $resourceNodeDataMap[$selected].commentsPromise =
       $selectedResource.get_comments();
 
     // Force hex view refresh with colors
@@ -82,15 +93,17 @@
   async function addComment() {
     try {
       let optional_range = null;
-      if (dataLength) {
+      if ($dataLength) {
         let startOffset = startInput.value ? startInput.value : "0";
-        let endOffset = endInput.value ? endInput.value : dataLength.toString();
+        let endOffset = endInput.value
+          ? endInput.value
+          : $dataLength.toString();
         startOffset = calculator.calculate(startOffset);
         endOffset = calculator.calculate(endOffset);
         optional_range = [startOffset, endOffset];
       }
       if ($selectedResource) {
-        await $selectedResource.add_comment(optional_range, comment.value);
+        await $selectedResource.add_comment(optional_range, comment);
       }
 
       modifierView = undefined;
@@ -108,11 +121,25 @@
 <div class="container">
   <div class="inputs">
     <p>Add a comment to this resource.</p>
+    <details>
+      <summary>More Info</summary>
+      <p>Create links to other resources with the syntax:</p>
+      <pre style="color:var(--comment-color)">    #resourceId@hexAddress</pre>
+      <pre>    <span style="color:var(--comment-color)">#resourceId</span
+        >: The id of the resource to link to found in the url for that resource.</pre>
+      <pre>    <span style="color:var(--comment-color)">@hexAddress</span
+        >: (Optional) An address in the given resource.</pre>
+    </details>
+    <!-- svelte-ignore a11y-label-has-associated-control -->
     <label>
       Comment:
-      <input type="text" bind:this="{comment}" />
+      <DropDownAutoCompleteTextArea
+        bind:comment="{comment}"
+        options="{Object.keys($resourceNodeDataMap).map((x) => '#' + x)}"
+        pattern="#[a-fA-F0-9]*$"
+      />
     </label>
-    {#if dataLength}
+    {#if $dataLength}
       <label>
         Starting offset (optional):
         <input type="text" bind:this="{startInput}" value="" />
