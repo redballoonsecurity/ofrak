@@ -11,7 +11,7 @@ inspect: autoflake check-black
 
 .PHONY: image
 image:
-	python3 build_image.py --config ofrak-angr.yml --base --finish
+	python3 build_image.py --config ofrak-core-dev.yml --base --finish
 
 tutorial-image:
 	DOCKER_BUILDKIT=1 python3 build_image.py --config ofrak-tutorial.yml --base --finish
