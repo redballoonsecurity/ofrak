@@ -212,7 +212,7 @@ class UbifsIdentifier(Identifier):
     Check the first four bytes of a resource and tag the resource as Ubifs if it matches the file magic.
     """
 
-    targets = (File, GenericBinary)
+    targets = (GenericBinary,)
 
     external_dependencies = (PY_LZO_TOOL,)
 

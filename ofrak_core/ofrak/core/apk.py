@@ -209,7 +209,7 @@ class ApkPacker(Packer[ApkPackerConfig]):
 
 
 class ApkIdentifier(Identifier):
-    targets = (File, GenericBinary)
+    targets = (GenericBinary,)
     external_dependencies = (UNZIP_TOOL,)
 
     async def identify(self, resource: Resource, config=None) -> None:

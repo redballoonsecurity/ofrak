@@ -4,6 +4,8 @@ import tempfile
 from dataclasses import dataclass
 from typing import Dict, Iterable, Optional, Type, Union
 
+from ofrak.core import GenericBinary
+
 try:
     import xattr
 except ImportError:
@@ -222,7 +224,7 @@ class FilesystemEntry(ResourceView):
             )
 
 
-class File(FilesystemEntry):
+class File(FilesystemEntry, GenericBinary):
     """
     Stores the data and location of a file within a filesystem or folder's descendant file tree.
     """

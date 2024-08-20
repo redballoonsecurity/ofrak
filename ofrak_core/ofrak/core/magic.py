@@ -14,7 +14,6 @@ except ImportError:
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.identifier import Identifier
 from ofrak.core.binary import GenericBinary, GenericText
-from ofrak.core.filesystem import File
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.model.tag_model import ResourceTag
@@ -59,7 +58,7 @@ class MagicAnalyzer(Analyzer[None, Magic]):
     Analyze a binary blob to extract its mimetype and magic description.
     """
 
-    targets = (File, GenericBinary)
+    targets = (GenericBinary,)
     outputs = (Magic,)
     external_dependencies = (LIBMAGIC_DEP,)
 
@@ -79,7 +78,7 @@ class MagicMimeIdentifier(Identifier[None]):
     """
 
     id = b"MagicMimeIdentifier"
-    targets = (File, GenericBinary)
+    targets = (GenericBinary,)
     external_dependencies = (LIBMAGIC_DEP,)  # Indirect thru MagicAnalyzer, but worth tagging
 
     _tags_by_mime: Dict[str, ResourceTag] = dict()
@@ -107,7 +106,7 @@ class MagicDescriptionIdentifier(Identifier[None]):
     """
 
     id = b"MagicDescriptionIdentifier"
-    targets = (File, GenericBinary)
+    targets = (GenericBinary,)
     external_dependencies = (LIBMAGIC_DEP,)  # Indirect thru MagicAnalyzer, but worth tagging
 
     _matchers: Dict[Callable, ResourceTag] = dict()
