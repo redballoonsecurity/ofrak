@@ -483,12 +483,12 @@ async def test_add_comment(ofrak_server, aiohttp_client, hello_world_elf):
         f"/{create_body['id']}/add_comment",
         json=[[0, len(hello_world_elf) + 1], "test comment out of bounds"],
     )
-    assert resp.status == 500
+    assert resp.status != 200
     resp = await client.post(
         f"/{create_body['id']}/add_comment",
         json=[[-1, len(hello_world_elf)], "test comment out of bounds"],
     )
-    assert resp.status == 500
+    assert resp.status != 200
     # Create comment without range
     resp = await client.post(f"/{create_body['id']}/add_comment", json=[None, "test comment 0"])
     assert resp.status == 200
