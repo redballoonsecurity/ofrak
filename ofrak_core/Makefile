@@ -7,10 +7,6 @@ install: ofrak/gui/public
 
 .PHONY: develop
 develop: ofrak/gui/public
-	# Workaround for https://github.com/redballoonsecurity/ofrak/issues/419
-	$(PIP) install -e .
-	if [ -d ../disassemblers ]; then $(MAKE) -C ../disassemblers/ofrak_angr develop; else $(MAKE) -C ../ofrak_angr develop; fi
-	if [ -d ../disassemblers ]; then $(MAKE) -C ../disassemblers/ofrak_capstone develop; else $(MAKE) -C ../ofrak_capstone develop; fi
 	$(PIP) install -e .[docs,test]
 
 .PHONY: inspect
