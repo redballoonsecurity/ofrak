@@ -56,7 +56,7 @@ class _PyLzoTool(ComponentExternalTool):
             return False
 
 
-PY_LZO_TOOL = _PyLzoTool()
+PY_LZO_TOOL: _PyLzoTool = _PyLzoTool()  # For some reason mypy needs this type annotation
 
 
 @dataclass
