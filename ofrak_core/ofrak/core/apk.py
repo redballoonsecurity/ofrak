@@ -18,7 +18,7 @@ from ofrak.component.identifier import Identifier
 from ofrak.model.component_model import ComponentConfig, ComponentExternalTool
 from ofrak.core.zip import ZipArchive, UNZIP_TOOL
 from ofrak.core.binary import GenericBinary
-from ofrak.core.magic import Magic, MagicMimeIdentifier
+from ofrak.core.magic import Magic, MagicIdentifier
 from ofrak_type.range import Range
 
 
@@ -213,7 +213,7 @@ class ApkIdentifier(Identifier):
     external_dependencies = (UNZIP_TOOL,)
 
     async def identify(self, resource: Resource, config=None) -> None:
-        await resource.run(MagicMimeIdentifier)
+        await resource.run(MagicIdentifier)
         magic = resource.get_attributes(Magic)
         if magic.mime == "application/vnd.android.package-archive":
             resource.add_tag(Apk)
