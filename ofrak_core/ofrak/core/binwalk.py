@@ -19,7 +19,6 @@ except ImportError:
     BINWALK_INSTALLED = False
 
 from ofrak.core.binary import GenericBinary
-from ofrak.core.filesystem import File
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceServiceInterface
@@ -46,7 +45,7 @@ class BinwalkAttributes(ResourceAttributes):
 
 
 class BinwalkAnalyzer(Analyzer[None, BinwalkAttributes]):
-    targets = (GenericBinary, File)
+    targets = (GenericBinary,)
     outputs = (BinwalkAttributes,)
     external_dependencies = (BINWALK_TOOL,)
 
