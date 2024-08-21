@@ -72,57 +72,51 @@ class MagicAnalyzer(Analyzer[None, Magic]):
             return Magic(magic_mime, magic_description)
 
 
-class MagicMimeIdentifier(Identifier[None]):
+class MagicIdentifier(Identifier[None]):
+    targets = (GenericBinary,)
+    external_dependencies = (LIBMAGIC_DEP,)
+
+    async def identify(self, resource: Resource, config=None) -> None:
+        _magic = await resource.analyze(Magic)
+        magic_mime = _magic.mime
+        tag = MagicMimeIdentifier.tags_by_mime.get(magic_mime)
+        if tag is not None:
+            resource.add_tag(tag)
+        magic_description = _magic.descriptor
+        for matcher, resource_type in MagicDescriptionIdentifier.matchers.items():
+            if matcher(magic_description):
+                resource.add_tag(resource_type)
+
+
+class MagicMimeIdentifier:
     """
     Identify and add the appropriate tag for a given resource based on its mimetype.
     """
 
-    id = b"MagicMimeIdentifier"
-    targets = (GenericBinary,)
-    external_dependencies = (LIBMAGIC_DEP,)  # Indirect thru MagicAnalyzer, but worth tagging
-
-    _tags_by_mime: Dict[str, ResourceTag] = dict()
-
-    async def identify(self, resource: Resource, config=None):
-        _magic = await resource.analyze(Magic)
-        magic_mime = _magic.mime
-        tag = MagicMimeIdentifier._tags_by_mime.get(magic_mime)
-        if tag is not None:
-            resource.add_tag(tag)
+    tags_by_mime: Dict[str, ResourceTag] = dict()
 
     @classmethod
     def register(cls, resource: ResourceTag, mime_types: Union[Iterable[str], str]):
         if isinstance(mime_types, str):
             mime_types = [mime_types]
         for mime_type in mime_types:
-            if mime_type in cls._tags_by_mime:
+            if mime_type in cls.tags_by_mime:
                 raise AlreadyExistError(f"Registering already-registered mime type: {mime_type}")
-            cls._tags_by_mime[mime_type] = resource
+            cls.tags_by_mime[mime_type] = resource
 
 
-class MagicDescriptionIdentifier(Identifier[None]):
+class MagicDescriptionIdentifier:
     """
     Identify and add the appropriate tag for a given resource based on its mime description.
     """
 
-    id = b"MagicDescriptionIdentifier"
-    targets = (GenericBinary,)
-    external_dependencies = (LIBMAGIC_DEP,)  # Indirect thru MagicAnalyzer, but worth tagging
-
-    _matchers: Dict[Callable, ResourceTag] = dict()
-
-    async def identify(self, resource: Resource, config):
-        _magic = await resource.analyze(Magic)
-        magic_description = _magic.descriptor
-        for matcher, resource_type in self._matchers.items():
-            if matcher(magic_description):
-                resource.add_tag(resource_type)
+    matchers: Dict[Callable, ResourceTag] = dict()
 
     @classmethod
     def register(cls, resource: ResourceTag, matcher: Callable):
-        if matcher in cls._matchers:
+        if matcher in cls.matchers:
             raise AlreadyExistError("Registering already-registered matcher")
-        cls._matchers[matcher] = resource
+        cls.matchers[matcher] = resource
 
 
 MagicMimeIdentifier.register(GenericText, "text/plain")
