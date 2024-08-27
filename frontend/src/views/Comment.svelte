@@ -21,7 +21,7 @@
   import Icon from "../utils/Icon.svelte";
   export let comment, rootResource, selfId;
   let addresses = comment.comment_text.matchAll(
-    "#[a-fA-F0-9]+[@0x[0-9a-fA-F]+]*"
+    "#[a-fA-F0-9]+(@0x[0-9a-fA-F]+)?"
   );
   let text_elements = [];
   Array.from(addresses).forEach((location) => {
