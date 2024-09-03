@@ -1,5 +1,6 @@
 import asyncio
 import tempfile
+import logging
 from dataclasses import dataclass
 from typing import Dict, Optional
 
@@ -7,6 +8,8 @@ from ofrak.component.analyzer import Analyzer
 from ofrak.resource import Resource
 from ofrak.model.component_model import ComponentConfig, ComponentExternalTool
 from ofrak.model.resource_model import ResourceAttributes
+
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
@@ -44,6 +47,9 @@ class _StringsToolDependency(ComponentExternalTool):
             # ignore returncode because "strings --help" on Mac has returncode 1
             await proc.wait()
         except FileNotFoundError:
+            return False
+        except PermissionError:
+            LOGGER.warning("Encountered PermissionError while searching PATH for strings.")
             return False
 
         return True

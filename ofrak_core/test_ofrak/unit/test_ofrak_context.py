@@ -14,6 +14,31 @@ from pytest_ofrak.mock_library3 import _MockComponentA
 
 from ofrak.core.filesystem import FilesystemRoot
 
+from ofrak.model.component_model import ComponentExternalTool
+from ofrak.core.squashfs import _UnsquashfsV45Tool
+from ofrak.core.strings_analyzer import _StringsToolDependency
+
+
+@pytest.mark.asyncio
+async def test_path_auth_error(monkeypatch, caplog):
+    if os.name != "posix":
+        LOGGER.warning("test_path_auth_error is currently only supported by POSIX systems.")
+        return
+
+    monkeypatch.setenv("PATH", "/root")
+
+    for tool in (
+        ComponentExternalTool("apktool", "", "-version"),
+        _UnsquashfsV45Tool(),
+        _StringsToolDependency(),
+    ):
+        assert not await tool.is_tool_installed()
+        expected = f"Encountered PermissionError while searching PATH for {tool.tool}."
+        found = [r for r in caplog.records if r.message == expected]
+        assert any(
+            r.message == expected for r in caplog.records
+        ), f"Missing error message from {tool.tool}"
+
 
 def test_ofrak_context():
     """
