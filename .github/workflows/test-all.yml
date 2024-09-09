@@ -42,7 +42,7 @@ jobs:
       - name: Install frontend linting dependencies
         run: |
           cd frontend
-          npm install
+          npm ci
           sudo apt-get install shellcheck
           python3 -m pip install black==23.3.0
       - name: Lint frontend
