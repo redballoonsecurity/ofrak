@@ -118,8 +118,8 @@ public class GetInstructions extends HeadlessScript {
             Register vle_register = instruction.getRegister("vle");
             if (vle_register != null) {
                 BigInteger vle_val = instruction.getValue(vle_register, false);
-                if (vle_val != null){
-                    this.instruction_mode = vle_val.equals(BigInteger.ONE) ? "VLE" : this.instruction_mode ;
+                if (vle_val != null && vle_val.equals(BigInteger.ONE)){
+                    this.instruction_mode = "VLE";
                 }
             }
 
