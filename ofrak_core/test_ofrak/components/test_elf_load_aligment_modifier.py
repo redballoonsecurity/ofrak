@@ -76,7 +76,7 @@ ELF_MODIFIERS_TEST_CASES = [
 async def verify_modifier_result(test_case: ElfModifierTestCase, output_path: str):
     if test_case.ld_preload_host:
         process = subprocess.run(
-            f"LD_PRELOAD={output_path} {test_case.ld_preload_host} "
+            f"LD_PRELOAD=\"/lib/x86_64-linux-gnu/libc.so.6 {output_path}\" {test_case.ld_preload_host} "
             f"{' '.join(test_case.issue_args)}",
             shell=True,
             capture_output=True,
