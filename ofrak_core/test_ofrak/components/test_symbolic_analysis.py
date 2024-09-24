@@ -3,7 +3,7 @@ from typing import Tuple, Dict
 
 import pytest
 
-ofrak_angr = pytest.importorskip("ofrak_angr")
+import ofrak_angr
 from ofrak import OFRAKContext, Resource, ResourceFilter
 from ofrak.core import (
     ElfSymbolType,
