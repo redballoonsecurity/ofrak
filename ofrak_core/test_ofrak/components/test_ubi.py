@@ -1,9 +1,11 @@
 import hashlib
 import os
 
+import pytest
+
 from ofrak import OFRAKContext, ResourceSort
 from ofrak.resource import Resource
-from ofrak.core.ubi import Ubi, UbiVolume
+from ofrak.core.ubi import Ubi, UbiPacker, UbiUnpacker, UbiVolume
 
 from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import (
     CompressedFileUnpackModifyPackPattern,
@@ -20,6 +22,7 @@ EXPECTED_HASHES = (
 )
 
 
+@pytest.mark.skipif_missing_deps([UbiUnpacker, UbiPacker])
 class TestUbiUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         """
