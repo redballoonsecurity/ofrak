@@ -2,12 +2,12 @@ import logging
 from typing import Optional
 
 from ofrak_patch_maker.binary_parser.gnu import GNU_V10_ELF_Parser
-from ofrak_patch_maker.toolchain.gnu import GNU_10_Toolchain
+from ofrak_patch_maker.toolchain.gnu import GNU_Toolchain
 from ofrak_patch_maker.toolchain.model import ToolchainConfig
 from ofrak_type import ArchInfo, InstructionSet, MemoryPermissions
 
 
-class GNU_PPC_LINUX_10_Toolchain(GNU_10_Toolchain):
+class GNU_PPC_LINUX_12_Toolchain(GNU_Toolchain):
     binary_file_parsers = [GNU_V10_ELF_Parser()]
 
     def __init__(
@@ -28,7 +28,7 @@ class GNU_PPC_LINUX_10_Toolchain(GNU_10_Toolchain):
 
     @property
     def name(self) -> str:
-        return "GNU_PPC_LINUX_10"
+        return "GNU_PPC_LINUX_12"
 
     def _get_assembler_target(self, processor: ArchInfo) -> Optional[str]:
         if processor.isa != InstructionSet.PPC:

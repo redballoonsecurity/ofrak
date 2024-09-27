@@ -1,5 +1,5 @@
 # Download & install java and supervisor
-RUN apt-get update && apt-get install -y openjdk-11-jdk supervisor
+RUN apt-get update && apt-get install -y openjdk-17-jdk supervisor
 
 # Download & install ghidra
 RUN mkdir -p /opt/rbs && \
