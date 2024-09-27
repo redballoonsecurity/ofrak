@@ -120,10 +120,10 @@
   import { splitAndCapitalize } from "../helpers.js";
   import { onMount } from "svelte";
 
-  import SerializerInputForm from "../utils/SerializerInputForm.svelte";
   import LoadingText from "../utils/LoadingText.svelte";
   import Checkbox from "../utils/Checkbox.svelte";
   import Button from "../utils/Button.svelte";
+  import BaseSerializerInputForm from "../utils/serializer_inputs/BaseSerializerInputForm.svelte";
 
   export let modifierView;
   let errorMessage,
@@ -137,7 +137,7 @@
     ofrakComponentsPromise = new Promise(() => {}),
     ofrakTargetsPromise = new Promise(() => {}),
     ofrakConfigsPromise = new Promise(() => {}),
-    config = {},
+    config,
     ofrakConfigName = null;
 
   async function getTargetsAndComponents() {
@@ -306,7 +306,7 @@
           {:then ofrakConfig}
             {#if ofrakConfig.length != 0}
               <p>Configure {splitAndCapitalize(selectedComponent)}:</p>
-              <SerializerInputForm
+              <BaseSerializerInputForm
                 node="{ofrakConfig}"
                 bind:element="{config}"
               />
