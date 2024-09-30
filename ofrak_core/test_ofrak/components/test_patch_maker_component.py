@@ -5,6 +5,7 @@ from typing import List, Type
 import pytest
 import re
 import subprocess
+import filelock
 
 from ofrak.core import MemoryRegion
 from ofrak.model.resource_model import EphemeralResourceContextFactory, ClientResourceContextFactory
@@ -183,7 +184,7 @@ TEST_CASE_CONFIGS = [
 
 
 @pytest.mark.parametrize("config", TEST_CASE_CONFIGS)
-async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config):
+async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config, tmp_path):
     root_resource = await ofrak_context.create_root_resource_from_file(config.program.path)
     await root_resource.unpack_recursively()
     target_program = await root_resource.view_as(Program)
@@ -229,20 +230,24 @@ async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config
     )
 
     await target_program.resource.run(FunctionReplacementModifier, function_replacement_config)
-    new_program_path = f"replaced_{Path(config.program.path).name}"
-    await target_program.resource.flush_data_to_disk(new_program_path)
+    new_program_path = str(tmp_path / f"replaced_{Path(config.program.path).name}")
 
-    # Check that the modified program looks as expected.
-    readobj_path = get_repository_config(config.toolchain_name, "BIN_PARSER")
+    # When running tests in parallel, do this one at a time
+    lock = filelock.FileLock(new_program_path + ".lock")
+    with lock:
+        await target_program.resource.flush_data_to_disk(new_program_path)
 
-    # LLVM-specific fix: use llvm-objdump, not llvm-readobj
-    if "readobj" in readobj_path:
-        readobj_path = readobj_path.replace("readobj", "objdump")
+        # Check that the modified program looks as expected.
+        readobj_path = get_repository_config(config.toolchain_name, "BIN_PARSER")
 
-    subprocess_result = subprocess.run(
-        [readobj_path, "-d", new_program_path], capture_output=True, text=True
-    )
-    readobj_output = subprocess_result.stdout
+        # LLVM-specific fix: use llvm-objdump, not llvm-readobj
+        if "readobj" in readobj_path:
+            readobj_path = readobj_path.replace("readobj", "objdump")
+
+        subprocess_result = subprocess.run(
+            [readobj_path, "-d", new_program_path], capture_output=True, text=True
+        )
+        readobj_output = subprocess_result.stdout
 
     expected_objdump_output_str = "\n".join(config.expected_objdump_output)
 
