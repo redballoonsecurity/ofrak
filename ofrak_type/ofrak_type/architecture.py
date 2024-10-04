@@ -139,6 +139,7 @@ class ProcessorType(Enum):
     GENERIC_A9_V6 = "generic_a9_v6"
     GENERIC_A9_V7 = "generic_a9_v7"
     GENERIC_A9_V7_THUMB = "generic_a9_v7_thumb"
+    GENERIC_ARM_BE8 = "generic_be8"  # ARM with little endian code but big endian data
     MSP430 = "msp340"
     MIPS_LITTLE = "mips"
     MIPS_RM5721_BIG = "mips_rm5721_big"

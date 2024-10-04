@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Added
 - `ProcessorType.CORTEX_A72`
 - LinkableSymbolType enum for generalized representation of symbol types (essentially functions vs. data)
+- Added a `GENERIC_ARM_BE8` ProcessorType for ARM BE8
 
 ## [2.1.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-type-v2.0.0...ofrak-type-v2.1.0) - 2023-01-20
 ### Added
