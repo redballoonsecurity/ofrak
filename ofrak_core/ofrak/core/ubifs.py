@@ -7,7 +7,7 @@ from subprocess import CalledProcessError
 from ofrak import Identifier, Analyzer
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
-from ofrak.core import PY_LZO_TOOL
+from ofrak.core.ubi import PY_LZO_TOOL
 from ofrak.resource import Resource
 from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
 from ofrak.core.binary import GenericBinary
@@ -212,7 +212,7 @@ class UbifsIdentifier(Identifier):
     Check the first four bytes of a resource and tag the resource as Ubifs if it matches the file magic.
     """
 
-    targets = (File, GenericBinary)
+    targets = (GenericBinary,)
 
     external_dependencies = (PY_LZO_TOOL,)
 

@@ -13,7 +13,6 @@ from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.resource import Resource
-from ofrak.core.filesystem import File
 from ofrak.core.binary import GenericBinary
 from ofrak.resource_view import ResourceView
 
@@ -57,7 +56,7 @@ class _PyLzoTool(ComponentExternalTool):
             return False
 
 
-PY_LZO_TOOL = _PyLzoTool()
+PY_LZO_TOOL: _PyLzoTool = _PyLzoTool()  # For some reason mypy needs this type annotation
 
 
 @dataclass
@@ -306,7 +305,7 @@ class UbiIdentifier(Identifier):
     Check the first four bytes of a resource and tag the resource as Ubi if it matches the file magic.
     """
 
-    targets = (File, GenericBinary)
+    targets = (GenericBinary,)
 
     external_dependencies = (PY_LZO_TOOL,)
 
