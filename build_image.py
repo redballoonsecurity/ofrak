@@ -11,9 +11,15 @@ import yaml
 
 BASE_DOCKERFILE = "base.Dockerfile"
 FINISH_DOCKERFILE = "finish.Dockerfile"
-GIT_COMMIT_HASH = (
-    subprocess.check_output(["git", "rev-parse", "--short=8", "HEAD"]).decode("ascii").strip()
-)
+REVISION_FILE = "REVISION"
+
+if os.path.exists(REVISION_FILE):
+    with open(REVISION_FILE) as f:
+        GIT_COMMIT_HASH = f.read().strip()
+else:
+    GIT_COMMIT_HASH = (
+        subprocess.check_output(["git", "rev-parse", "--short=8", "HEAD"]).decode("ascii").strip()
+    )
 
 
 class InstallTarget(Enum):
