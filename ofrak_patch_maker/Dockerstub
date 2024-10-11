@@ -15,7 +15,10 @@ RUN cd /tmp && \
     rm -rf gcc-arm-none-eabi-10-2020-q4-major-x86_64-linux.tar.bz2
 
 # LINUX GNU + BINUTILS
-RUN apt-get -y update  && apt-get -y install software-properties-common gcc-10
+RUN cd /tmp && \
+    wget https://download.01.org/0day-ci/cross-package/gcc-10.3.0-nolibc/x86_64-gcc-10.3.0-nolibc_x86_64-linux.tar.xz --show-progress --progress=bar:force:noscroll && \
+    tar xf x86_64-gcc-10.3.0-nolibc_x86_64-linux.tar.xz -C /opt/rbs/toolchain && \
+    rm -rf x86_64-gcc-10.3.0-nolibc_x86_64-linux.tar.xz
 
 #X64-64 toolchain for arm64 Docker images
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
@@ -25,7 +28,10 @@ fi;
 #M68k GNU 10 Linux
 #Only exists for x86
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
-    apt-get update && apt-get install -y gcc-10-m68k-linux-gnu; \
+    cd /tmp && \
+    wget https://download.01.org/0day-ci/cross-package/gcc-10.3.0-nolibc/x86_64-gcc-10.3.0-nolibc_m68k-linux.tar.xz --show-progress --progress=bar:force:noscroll && \
+    tar xf x86_64-gcc-10.3.0-nolibc_m68k-linux.tar.xz -C /opt/rbs/toolchain && \
+    rm -rf x86_64-gcc-10.3.0-nolibc_m68k-linux.tar.xz; \
 fi;
 
 #M68k VBCC
@@ -48,15 +54,26 @@ RUN cd /tmp/vbcc && cp ./bin/* /opt/rbs/toolchain/vbcc_0_9/bin/ && \
 
 #AARCH64 GNU 10 Linux
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
-    apt-get update && apt-get install -y gcc-10-aarch64-linux-gnu; \
+    cd /tmp && \
+    wget https://armkeil.blob.core.windows.net/developer/Files/downloads/gnu-a/10.3-2021.07/binrel/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu.tar.xz --show-progress --progress=bar:force:noscroll && \
+    tar xf gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu.tar.xz -C /opt/rbs/toolchain && \
+    rm -rf gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu.tar.xz; \
 fi;
 
 #AVR GCC
-RUN apt-get update && apt-get install -y gcc-avr binutils-avr avr-libc
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+    cd /tmp && \
+    wget https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/SoftwareLibraries/Firmware/avr8-gnu-toolchain-3.6.2.1778-linux.any.x86_64.tar.gz --show-progress --progress=bar:force:noscroll && \
+    tar xzf avr8-gnu-toolchain-3.6.2.1778-linux.any.x86_64.tar.gz -C /opt/rbs/toolchain && \
+    rm -rf avr8-gnu-toolchain-3.6.2.1778-linux.any.x86_64.tar.gz; \
+fi;
 
 #PPC GNU 10 Linux
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
-    apt-get update && apt-get install -y gcc-10-powerpc-linux-gnu; \
+    cd /tmp && \
+    wget https://download.01.org/0day-ci/cross-package/gcc-10.3.0-nolibc/x86_64-gcc-10.3.0-nolibc_powerpc-linux.tar.xz --show-progress --progress=bar:force:noscroll && \
+    tar xf x86_64-gcc-10.3.0-nolibc_powerpc-linux.tar.xz -C /opt/rbs/toolchain && \
+    rm -rf x86_64-gcc-10.3.0-nolibc_powerpc-linux.tar.xz; \
 fi;
 
 #BCC (GCC) SPARC v8

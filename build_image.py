@@ -102,8 +102,9 @@ def main():
         # For secure build arguments
         if config.extra_build_args:
             base_command.extend(config.extra_build_args)
+        env=dict(os.environ, DOCKER_BUILDKIT="1")
         try:
-            subprocess.run(base_command, check=True)
+            subprocess.run(base_command, check=True, env=env)
         except subprocess.CalledProcessError as error:
             print(f"Error running command: '{' '.join(error.cmd)}'")
             print(f"Exit status: {error.returncode}")
@@ -126,8 +127,9 @@ def main():
         ]
         if config.no_cache:
             finish_command.extend(["--no-cache"])
+        env=dict(os.environ, DOCKER_BUILDKIT="1")
         try:
-            subprocess.run(finish_command, check=True)
+            subprocess.run(finish_command, check=True, env=env)
         except subprocess.CalledProcessError as error:
             print(f"Error running command: '{' '.join(error.cmd)}'")
             print(f"Exit status: {error.returncode}")
@@ -197,7 +199,7 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
         dockerfile_base_parts += [f"### {dockerstage_path}", dockerstub]
 
     dockerfile_base_parts += [
-        "FROM python:3.8-bullseye@sha256:e1cd369204123e89646f8c001db830eddfe3e381bd5c837df00141be3bd754cb",
+        "FROM python:3.9-bookworm@sha256:a23efa04a7f7a881151fe5d473770588ef639c08fd5f0dcc6987dbe13705c829",
         "",
     ]
 

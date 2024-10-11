@@ -5,3 +5,4 @@ RUN --mount=type=secret,id=serial --mount=type=secret,id=license.dat,dst=/root/.
   python3 /tmp/pin_version.py "3.2.3814 Headless" && \
   rm /tmp/install_binary_ninja_headless_linux.sh && \
   rm /tmp/pin_version.py
+
