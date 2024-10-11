@@ -64,7 +64,9 @@ class TestUefiComponent(UnpackAndVerifyPattern):
         result = {}
         for descendent in await unpacked_root_resource.get_descendants():
             if descendent.has_tag(FilesystemEntry):
-                result[await (await descendent.view_as(FilesystemEntry)).get_path()] = await descendent.get_data()
+                result[
+                    await (await descendent.view_as(FilesystemEntry)).get_path()
+                ] = await descendent.get_data()
         return result
 
     async def verify_descendant(self, unpacked_descendant: bytes, specified_result: bytes):
