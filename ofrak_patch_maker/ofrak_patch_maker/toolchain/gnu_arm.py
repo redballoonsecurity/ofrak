@@ -1,11 +1,11 @@
 from ofrak_patch_maker.binary_parser.gnu import GNU_ELF_Parser
-from ofrak_patch_maker.toolchain.gnu import GNU_10_Toolchain
+from ofrak_patch_maker.toolchain.gnu import GNU_Toolchain
 from ofrak_patch_maker.toolchain.model import ToolchainConfig, ToolchainException
 from ofrak_type.architecture import InstructionSet, SubInstructionSet, ArchInfo
 import logging
 
 
-class GNU_ARM_NONE_EABI_10_2_1_Toolchain(GNU_10_Toolchain):
+class GNU_ARM_NONE_EABI_10_2_1_Toolchain(GNU_Toolchain):
     binary_file_parsers = [GNU_ELF_Parser()]
 
     def __init__(

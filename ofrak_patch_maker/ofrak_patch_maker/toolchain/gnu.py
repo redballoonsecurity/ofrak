@@ -345,7 +345,7 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
         return self._parser.parse_relocations(readobj_output)
 
 
-class GNU_10_Toolchain(Abstract_GNU_Toolchain):
+class GNU_Toolchain(Abstract_GNU_Toolchain):
     def __init__(
         self,
         processor: ArchInfo,
