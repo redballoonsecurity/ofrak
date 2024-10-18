@@ -29,7 +29,7 @@ def readelf_get_writable_sections(elf_executable_file) -> Dict[int, bool]:
     lines = proc.stdout.split("\n")
     result = dict()
     for line in lines:
-        lstripped_line = line.lstrip()
+        lstripped_line = line.lstrip(" [")
         if len(lstripped_line) == 0:
             continue
         if (
@@ -48,7 +48,7 @@ def readelf_get_writable_sections(elf_executable_file) -> Dict[int, bool]:
         if len(flg_lk_inf_al) == 0 or not flg_lk_inf_al[0].isalpha():
             continue
         section_flags = flg_lk_inf_al[0]
-        num = int(_num.strip("[]"))
+        num = int(_num.rstrip("]"))
         result[num] = "W" in section_flags
 
     return result

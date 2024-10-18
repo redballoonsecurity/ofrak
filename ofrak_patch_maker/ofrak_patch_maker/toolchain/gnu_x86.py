@@ -1,8 +1,8 @@
-from ofrak_patch_maker.toolchain.gnu_x64 import GNU_X86_64_LINUX_EABI_10_3_0_Toolchain
+from ofrak_patch_maker.toolchain.gnu_x64 import GNU_X86_64_LINUX_EABI_12_2_0_Toolchain
 from ofrak_type import ArchInfo
 
 
-class GNU_X86_32_LINUX_EABI_10_3_0_Toolchain(GNU_X86_64_LINUX_EABI_10_3_0_Toolchain):
+class GNU_X86_32_LINUX_EABI_12_2_0_Toolchain(GNU_X86_64_LINUX_EABI_12_2_0_Toolchain):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -12,7 +12,7 @@ class GNU_X86_32_LINUX_EABI_10_3_0_Toolchain(GNU_X86_64_LINUX_EABI_10_3_0_Toolch
 
     @property
     def name(self) -> str:
-        return "GNU_X86_32_LINUX_EABI_10_3_0"
+        return "GNU_X86_32_LINUX_EABI_12_2_0"
 
     @property
     def segment_alignment(self) -> int:
