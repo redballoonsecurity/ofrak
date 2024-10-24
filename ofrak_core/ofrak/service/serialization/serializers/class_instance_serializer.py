@@ -87,7 +87,7 @@ class ClassInstanceSerializer(SerializerInterface):
             cls, as_dataclass=is_dataclass(cls)
         )
         deserialized_fields = {
-            field_name: self._service.from_pjson(cls_fields_pjson[field_name], field_type)
+            field_name: self._service.from_pjson(cls_fields_pjson.get(field_name), field_type)
             for field_name, field_type in expected_fields_and_types.items()
         }
         if is_dataclass(cls) and getattr(cls, dataclasses._PARAMS).init:  # type: ignore
