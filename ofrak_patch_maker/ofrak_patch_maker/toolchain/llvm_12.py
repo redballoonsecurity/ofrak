@@ -49,6 +49,7 @@ class LLVM_12_0_1_Toolchain(Toolchain):
                 "-Xclang",
                 "-emit-obj",
                 "-Wall",
+                "-fno-asynchronous-unwind-tables",  # avoids the .eh_frame section
             ]
         )
         if processor.isa is InstructionSet.ARM:
@@ -238,12 +239,14 @@ class LLVM_12_0_1_Toolchain(Toolchain):
         object_path: str,
         segment_name: str,
         memory_region_name: str,
+        segment_is_bss: bool,
     ) -> str:
         stripped_seg_name = segment_name.strip(".")
         stripped_obj_name = os.path.basename(object_path).split(".")[0]
         abs_path = os.path.abspath(object_path)
+        noload_attr = " (NOLOAD)" if segment_is_bss else ""
         return (
-            f"    .rbs_{stripped_obj_name}_{stripped_seg_name} : {{\n"
+            f"    .rbs_{stripped_obj_name}_{stripped_seg_name}{noload_attr} : {{\n"
             f"        {abs_path}({segment_name}*)\n"
             f"    }} > {memory_region_name}"
         )
