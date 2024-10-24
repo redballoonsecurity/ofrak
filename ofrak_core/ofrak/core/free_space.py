@@ -1,7 +1,8 @@
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 from itertools import chain
-from typing import List, Tuple, Dict, Optional, Iterable, Mapping
+from typing import List, Tuple, Dict, Optional, Iterable, Mapping, Type
+from warnings import warn
 
 from immutabledict import immutabledict
 
@@ -31,12 +32,22 @@ class FreeSpaceAllocationError(RuntimeError):
 
 
 @dataclass
-class FreeSpace(MemoryRegion):
+class FreeSpaceAnyData(MemoryRegion):
     permissions: MemoryPermissions
 
     @index
     def Permissions(self) -> int:
         return self.permissions.value
+
+
+@dataclass
+class FreeSpace(FreeSpaceAnyData):
+    ...
+
+
+@dataclass
+class FreeSpaceWithoutData(FreeSpaceAnyData):
+    ...
 
 
 @dataclass
@@ -58,6 +69,7 @@ class Allocatable(ResourceView):
     """
 
     free_space_ranges: Dict[MemoryPermissions, List[Range]]
+    dataless_free_space_ranges: Dict[MemoryPermissions, List[Range]] = field(default_factory=dict)
 
     async def allocate(
         self,
@@ -66,6 +78,7 @@ class Allocatable(ResourceView):
         alignment: int = 4,
         min_fragment_size: Optional[int] = None,
         within_range: Optional[Range] = None,
+        with_data: bool = True,
     ) -> List[Range]:
         """
         Request some range(s) of free space which satisfies the given constraints as parameters.
@@ -83,6 +96,8 @@ class Allocatable(ResourceView):
         :param alignment: That start of the allocated ranges will be aligned to `alignment` bytes
         :param min_fragment_size: The minimum size of each allocated range
         :param within_range: All returned ranges must be within this virtual address range
+        :param with_data: Whether the free space range(s) need to be mapped to some modifiable
+        data or not. Ranges without data are suitable for uninitialized memory e.g. `.bss`.
 
         :return: A list of one or more [Range][ofrak_type.range.Range], which each contain a
          start and end vaddr of an allocated range of free space
@@ -96,6 +111,7 @@ class Allocatable(ResourceView):
             alignment,
             min_fragment_size,
             within_range,
+            with_data,
         )
 
         # Having acquired a satisfactory allocation, make sure subsequent calls won't allocate
@@ -143,13 +159,15 @@ class Allocatable(ResourceView):
                 possible_perms = permission_map[segment.access_perms]
             else:
                 possible_perms = (segment.access_perms,)
+            alignment = max(bom.segment_alignment, segment.alignment)
             for candidate_permissions in possible_perms:
                 try:
                     allocs = await self.allocate(
                         candidate_permissions,
                         segment.length,
                         min_fragment_size=segment.length,
-                        alignment=bom.segment_alignment,
+                        alignment=alignment,
+                        with_data=not segment.is_bss,
                     )
                     allocation = next(iter(allocs))
                     vaddr = allocation.start
@@ -157,19 +175,30 @@ class Allocatable(ResourceView):
                     break
                 except FreeSpaceAllocationError:
                     continue
-            if vaddr == 0 or final_size == 0:
-                raise FreeSpaceAllocationError(
-                    f"Could not find enough free space for access perms {possible_perms} and "
-                    f"length {segment.length}"
-                )
+
+            if final_size == 0:
+                if segment.is_bss:
+                    # fall back to legacy .bss allocation
+                    warn(
+                        f"Could not find enough free space for unloaded segment with access perms "
+                        "{possible_perms} and length {segment.length}. Assuming segment will be "
+                        "placed with deprecated unsafe_bss_segment by ofrak_patch_maker.",
+                        category=DeprecationWarning,
+                    )
+                    vaddr = Segment.NOBITS_LEGACY_VADDR
+                    final_size = segment.length
+                else:
+                    raise FreeSpaceAllocationError(
+                        f"Could not find enough free space for access perms {possible_perms} and "
+                        f"length {segment.length}"
+                    )
+
             segments_by_object[obj.path].append(
-                Segment(
-                    segment_name=segment.segment_name,
+                replace(
+                    segment,
                     vm_address=vaddr,
-                    offset=segment.offset,
-                    is_entry=segment.is_entry,
                     length=final_size,
-                    access_perms=segment.access_perms,
+                    alignment=alignment,
                 )
             )
 
@@ -186,10 +215,20 @@ class Allocatable(ResourceView):
         alignment: int = 4,
         min_fragment_size: Optional[int] = None,
         within_range: Optional[Range] = None,
+        with_data: bool = True,
     ) -> List[Range]:
-        free_ranges = self.free_space_ranges.get(permissions)
-        if not free_ranges:
-            raise FreeSpaceAllocationError(f"No free space with permissions {permissions}.")
+        if with_data:
+            free_ranges = self.free_space_ranges.get(permissions, [])
+            if len(free_ranges) == 0:
+                raise FreeSpaceAllocationError(
+                    f"No free space with mapped data and permissions {permissions}."
+                )
+        else:
+            free_ranges = self.dataless_free_space_ranges.get(
+                permissions, []
+            ) + self.free_space_ranges.get(permissions, [])
+            if len(free_ranges) == 0:
+                raise FreeSpaceAllocationError(f"No free space with permissions {permissions}.")
 
         if min_fragment_size is None:
             _min_fragment_size = requested_size
@@ -236,7 +275,8 @@ class Allocatable(ResourceView):
                 f"units with constraints alignment={alignment}, "
                 f"permissions={permissions}, "
                 f"min_fragment_size={min_fragment_size}, "
-                f"within_range={within_range}."
+                f"within_range={within_range}, "
+                f"with_data={with_data}."
             )
 
         return allocation
@@ -265,12 +305,16 @@ class Allocatable(ResourceView):
     ):
         if len(allocation) == 0:
             return
-        new_free_ranges = remove_subranges(
-            self.free_space_ranges[permissions],
-            allocation,
-        )
 
-        self.free_space_ranges[permissions] = Allocatable.sort_free_ranges(new_free_ranges)
+        for cache in self.free_space_ranges, self.dataless_free_space_ranges:
+            if permissions not in cache:
+                continue
+
+            new_ranges = remove_subranges(
+                cache[permissions],
+                allocation,
+            )
+            cache[permissions] = Allocatable.sort_free_ranges(new_ranges)
 
 
 class FreeSpaceAnalyzer(Analyzer[None, Allocatable]):
@@ -284,22 +328,42 @@ class FreeSpaceAnalyzer(Analyzer[None, Allocatable]):
     targets = (Allocatable,)
     outputs = (Allocatable,)
 
-    async def analyze(self, resource: Resource, config: ComponentConfig = None) -> Allocatable:
+    @staticmethod
+    def _merge_ranges_by_permissions(free_spaces: Iterable[FreeSpaceAnyData]):
         ranges_by_permissions = defaultdict(list)
-        for free_space_r in await resource.get_descendants_as_view(
-            FreeSpace,
-            r_filter=ResourceFilter.with_tags(FreeSpace),
-            r_sort=ResourceSort(FreeSpace.VirtualAddress),
-        ):
+        for free_space_r in free_spaces:
             ranges_by_permissions[free_space_r.permissions].append(free_space_r.vaddr_range())
 
-        merged_ranges_by_permissions = dict()
+        merged_ranges_by_permissions: Dict[MemoryPermissions, List[Range]] = {}
         for perms, ranges in ranges_by_permissions.items():
             merged_ranges_by_permissions[perms] = Allocatable.sort_free_ranges(
                 Range.merge_ranges(ranges)
             )
 
-        return Allocatable(merged_ranges_by_permissions)
+        return merged_ranges_by_permissions
+
+    async def analyze(self, resource: Resource, config: ComponentConfig = None) -> Allocatable:
+        free_spaces_with_data = []
+        free_spaces_without_data = []
+
+        for free_space_r in await resource.get_descendants_as_view(
+            FreeSpaceAnyData,
+            r_filter=ResourceFilter.with_tags(FreeSpaceAnyData),
+            r_sort=ResourceSort(FreeSpace.VirtualAddress),
+        ):
+            if free_space_r.resource.has_tag(FreeSpaceWithoutData):
+                free_spaces_without_data.append(free_space_r)
+            elif free_space_r.resource.has_tag(FreeSpace):
+                free_spaces_with_data.append(free_space_r)
+            else:
+                raise TypeError(
+                    "Got FreeSpaceAnyData without FreeSpace or FreeSpaceWithoutData tags"
+                )
+
+        return Allocatable(
+            free_space_ranges=self._merge_ranges_by_permissions(free_spaces_with_data),
+            dataless_free_space_ranges=self._merge_ranges_by_permissions(free_spaces_without_data),
+        )
 
 
 class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
@@ -314,26 +378,26 @@ class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
     targets = (Allocatable,)
 
     async def modify(self, resource: Resource, config: FreeSpaceAllocation) -> None:
-        wholly_allocated_resources = list()
-        partially_allocated_resources: Dict[bytes, Tuple[FreeSpace, List[Range]]] = dict()
+        wholly_allocated_resources: List[FreeSpaceAnyData] = []
+        partially_allocated_resources: Dict[bytes, Tuple[FreeSpaceAnyData, List[Range]]] = dict()
         allocatable = await resource.view_as(Allocatable)
 
         for alloc in config.allocations:
             for res_wholly_in_alloc in await resource.get_descendants_as_view(
-                FreeSpace,
+                FreeSpaceAnyData,
                 r_filter=ResourceFilter(
-                    tags=(FreeSpace,),
+                    tags=(FreeSpaceAnyData,),
                     attribute_filters=(
                         ResourceAttributeValueFilter(
-                            FreeSpace.Permissions, config.permissions.value
+                            FreeSpaceAnyData.Permissions, config.permissions.value
                         ),
                         ResourceAttributeRangeFilter(
-                            FreeSpace.VirtualAddress,
+                            FreeSpaceAnyData.VirtualAddress,
                             min=alloc.start,
                             max=alloc.end - 1,
                         ),
                         ResourceAttributeRangeFilter(
-                            FreeSpace.EndVaddr, min=alloc.start + 1, max=alloc.end
+                            FreeSpaceAnyData.EndVaddr, min=alloc.start + 1, max=alloc.end
                         ),
                     ),
                 ),
@@ -360,22 +424,49 @@ class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
 
         for fs in wholly_allocated_resources:
             fs.resource.remove_tag(FreeSpace)
+            fs.resource.remove_tag(FreeSpaceWithoutData)
+
+            # Without committing the changes to our tags here, removing both the child and
+            # parent tags will cause a KeyError on update.
+            await fs.resource.save()
+            fs.resource.remove_tag(FreeSpaceAnyData)
 
         for fs, allocated_ranges in partially_allocated_resources.values():
             remaining_free_space_ranges = remove_subranges([fs.vaddr_range()], allocated_ranges)
-            for remaining_range in remaining_free_space_ranges:
-                remaining_data_range = Range.from_size(
-                    fs.get_offset_in_self(remaining_range.start), remaining_range.length()
+            if fs.resource.has_tag(FreeSpace):
+                for remaining_range in remaining_free_space_ranges:
+                    remaining_data_range = Range.from_size(
+                        fs.get_offset_in_self(remaining_range.start), remaining_range.length()
+                    )
+                    await fs.resource.create_child_from_view(
+                        FreeSpace(
+                            remaining_range.start,
+                            remaining_range.length(),
+                            fs.permissions,
+                        ),
+                        data_range=remaining_data_range,
+                    )
+                fs.resource.remove_tag(FreeSpace)
+            elif fs.resource.has_tag(FreeSpaceWithoutData):
+                for remaining_range in remaining_free_space_ranges:
+                    await fs.resource.create_child_from_view(
+                        FreeSpaceWithoutData(
+                            remaining_range.start,
+                            remaining_range.length(),
+                            fs.permissions,
+                        ),
+                        data_range=None,
+                    )
+                fs.resource.remove_tag(FreeSpaceWithoutData)
+            else:
+                raise TypeError(
+                    f"Got FreeSpaceAnyData {fs} without FreeSpace or FreeSpaceWithoutData tags"
                 )
-                await fs.resource.create_child_from_view(
-                    FreeSpace(
-                        remaining_range.start,
-                        remaining_range.length(),
-                        fs.permissions,
-                    ),
-                    data_range=remaining_data_range,
-                )
-            fs.resource.remove_tag(FreeSpace)
+
+            # Without committing the changes to our tags here, removing both the child and
+            # parent tags will cause a KeyError on update.
+            await fs.resource.save()
+            fs.resource.remove_tag(FreeSpaceAnyData)
 
         # Update Allocatable attributes, reflecting removed ranges
         allocatable.remove_allocation_from_cached_free_ranges(
@@ -388,38 +479,38 @@ class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
         resource: Resource,
         permissions: MemoryPermissions,
         alloc: Range,
-    ) -> Iterable[FreeSpace]:
+    ) -> Iterable[FreeSpaceAnyData]:
         filter_overlapping_free_range_end = (
             ResourceAttributeValueFilter(FreeSpace.Permissions, permissions.value),
             ResourceAttributeRangeFilter(FreeSpace.VirtualAddress, max=alloc.end),
             ResourceAttributeRangeFilter(
-                FreeSpace.EndVaddr,
+                FreeSpaceAnyData.EndVaddr,
                 min=alloc.end + 1,
             ),
         )
         filter_overlapping_free_range_start = (
             ResourceAttributeValueFilter(FreeSpace.Permissions, permissions.value),
             ResourceAttributeRangeFilter(
-                FreeSpace.VirtualAddress,
+                FreeSpaceAnyData.VirtualAddress,
                 max=alloc.start - 1,
             ),
             ResourceAttributeRangeFilter(
-                FreeSpace.EndVaddr,
+                FreeSpaceAnyData.EndVaddr,
                 min=alloc.start + 1,
             ),
         )
 
         resources_overlapping_free_range_end = await resource.get_descendants_as_view(
-            FreeSpace,
+            FreeSpaceAnyData,
             r_filter=ResourceFilter(
                 tags=(FreeSpace,),
                 attribute_filters=filter_overlapping_free_range_end,
             ),
         )
         resources_overlapping_free_range_start = await resource.get_descendants_as_view(
-            FreeSpace,
+            FreeSpaceAnyData,
             r_filter=ResourceFilter(
-                tags=(FreeSpace,),
+                tags=(FreeSpaceAnyData,),
                 attribute_filters=filter_overlapping_free_range_start,
             ),
         )
@@ -496,40 +587,63 @@ class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
             mem_region_view.virtual_address,
             mem_region_view.virtual_address + mem_region_view.size,
         )
-        patch_data = _get_patch(freed_range, config.stub, config.fill)
         parent = await resource.get_parent()
-        patch_offset = (await resource.get_data_range_within_parent()).start
-        patch_range = freed_range.translate(patch_offset - freed_range.start)
 
-        # Grab tags, so they can be saved to the stub.
-        # At some point, it might be nice to save the attributes as well.
-        current_tags = resource.get_tags()
+        FreeSpaceTag: Type[FreeSpaceAnyData]
+        # no data within parent indicates we're marking a memory mapped region outside of the
+        # flash for .bss (RW) space. In theory, an ELF object could have a read only region
+        # of all zeros optimized out into a SHT_NOBITS section, although in practice this never
+        # happens and it goes into .rodata instead, so we treat a readonly config with no
+        # data as a user error. If you ever encounter a readonly, SHT_NOBITS section, file an issue
+        # to remove this check.
+        if resource.get_data_id() is None:
+            if config.permissions & MemoryPermissions.RW != MemoryPermissions.RW:
+                raise ValueError(
+                    "FreeSpaceModifier on a resource with no data should only be used for RW(X) regions"
+                )
+
+            if len(config.stub) != 0:
+                raise ValueError("FreeSpaceModifier on a resource with no data cannot have a stub")
+
+            freed_data_range = None
+            FreeSpaceTag = FreeSpaceWithoutData
+        else:
+            patch_data = _get_patch(freed_range, config.stub, config.fill)
+            patch_offset = (await parent.get_data_range_within_parent()).start
+            patch_range = freed_range.translate(patch_offset - freed_range.start)
+
+            # Patch in the patch_data
+            await parent.run(BinaryPatchModifier, BinaryPatchConfig(patch_offset, patch_data))
+
+            if len(config.stub) > 0:
+                # Grab tags, so they can be saved to the stub.
+                # At some point, it might be nice to save the attributes as well.
+                current_tags = resource.get_tags()
+
+                await parent.create_child_from_view(
+                    MemoryRegion(mem_region_view.virtual_address, len(config.stub)),
+                    data_range=Range.from_size(patch_range.start, len(config.stub)),
+                    additional_tags=current_tags,
+                )
+
+            freed_data_range = Range(patch_range.start + len(config.stub), patch_range.end)
+            FreeSpaceTag = FreeSpace
+
         # One interesting side effect here is the Resource used to call this modifier no longer exists
         # when this modifier returns. This can be confusing. Would an update work better in this case?
         await resource.delete()
         await resource.save()
 
-        # Patch in the patch_data
-        await parent.run(BinaryPatchModifier, BinaryPatchConfig(patch_offset, patch_data))
-
         free_offset = len(config.stub)
-
-        if len(config.stub) > 0:
-            # Create the stub
-            await parent.create_child_from_view(
-                MemoryRegion(mem_region_view.virtual_address, len(config.stub)),
-                data_range=Range.from_size(patch_range.start, len(config.stub)),
-                additional_tags=current_tags,
-            )
 
         # Create the FreeSpace child
         await parent.create_child_from_view(
-            FreeSpace(
+            FreeSpaceTag(
                 mem_region_view.virtual_address + free_offset,
                 mem_region_view.size - free_offset,
                 config.permissions,
             ),
-            data_range=Range(patch_range.start + free_offset, patch_range.end),
+            data_range=freed_data_range,
         )
 
 
