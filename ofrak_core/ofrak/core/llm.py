@@ -8,7 +8,8 @@ from typing import Optional, List, Dict, Any, Union
 import aiohttp
 
 from ofrak import Analyzer, Resource, ResourceAttributes
-from ofrak.model.component_model import CC, ComponentConfig
+from ofrak.core.entropy import DataSummary
+from ofrak.model.component_model import ComponentConfig
 from ofrak_type import Range
 
 
@@ -27,11 +28,11 @@ class LlmAnalyzerConfig(ComponentConfig):
     examples: Optional[List[str]] = None
 
 
-class LlmAnalyzer(Analyzer[ComponentConfig, LlmAttributes]):
+class LlmAnalyzer(Analyzer[LlmAnalyzerConfig, LlmAttributes]):
     targets = ()
     outputs = (LlmAttributes,)
 
-    async def analyze(self, resource: Resource, config: CC = None) -> LlmAttributes:
+    async def analyze(self, resource: Resource, config: LlmAnalyzerConfig = None) -> LlmAttributes:
         headers = (
             {"Authorization": f"Bearer {config.api_key}"} if config.api_key is not None else dict()
         )
@@ -150,6 +151,9 @@ def serialize(o: Optional[Union[int, float, str, List[Any], Dict[Any, Any]]]) ->
 
 async def dump_attributes(resource: Resource) -> str:
     model = resource.get_model()
+    # The data summary is un-informative and verbose
+    if DataSummary in model.attributes:
+        del model.attributes[DataSummary]
     return serialize(make_serializable(model.attributes))
 
 
