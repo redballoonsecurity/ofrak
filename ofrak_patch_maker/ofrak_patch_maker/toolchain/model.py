@@ -37,13 +37,13 @@ class Segment:
     :var is_bss:  True if the segment is a .bss sectiont that marks uninitialized data not actually present in the file.
     :var alignment: Special address alignment requirement for the section
 
-    :cvar NOBITS_LEGACY_VADDR: Special marker for an uninitialized section (e.g. .bss) that
+    :cvar BSS_LEGACY_VADDR: Special marker for an uninitialized section (i.e. .bss) that
         is not allocated in designated free space and should be placed in a new memory region
         when linking following the deprecated `unsafe_bss_segment` behavior
 
     """
 
-    NOBITS_LEGACY_VADDR: ClassVar[int] = -0xFFFFFFFF
+    BSS_LEGACY_VADDR: ClassVar[int] = -0xFFFFFFFF
 
     segment_name: str
     vm_address: int

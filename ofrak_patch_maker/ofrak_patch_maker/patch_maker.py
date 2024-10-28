@@ -389,10 +389,10 @@ class PatchMaker:
                     if not segment.is_allocated:
                         continue
 
-                    if segment.vm_address == Segment.NOBITS_LEGACY_VADDR:
+                    if segment.vm_address == Segment.BSS_LEGACY_VADDR:
                         if not segment.is_bss:
                             raise ValueError(
-                                "NOBITS_LEGACY_VADDR only supported for legacy allocation of .bss segments"
+                                "BSS_LEGACY_VADDR only supported for legacy allocation of .bss segments"
                             )
 
                         warn(

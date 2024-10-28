@@ -185,7 +185,7 @@ class Allocatable(ResourceView):
                         "placed with deprecated unsafe_bss_segment by ofrak_patch_maker.",
                         category=DeprecationWarning,
                     )
-                    vaddr = Segment.NOBITS_LEGACY_VADDR
+                    vaddr = Segment.BSS_LEGACY_VADDR
                     final_size = segment.length
                 else:
                     raise FreeSpaceAllocationError(
