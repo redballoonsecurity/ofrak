@@ -32,7 +32,7 @@ class FreeSpaceAllocationError(RuntimeError):
 
 
 @dataclass
-class FreeSpaceAnyData(MemoryRegion):
+class AnyFreeSpace(MemoryRegion):
     permissions: MemoryPermissions
 
     @index
@@ -41,12 +41,12 @@ class FreeSpaceAnyData(MemoryRegion):
 
 
 @dataclass
-class FreeSpace(FreeSpaceAnyData):
+class FreeSpace(AnyFreeSpace):
     ...
 
 
 @dataclass
-class FreeSpaceWithoutData(FreeSpaceAnyData):
+class RuntimeFreeSpace(AnyFreeSpace):
     ...
 
 
@@ -329,7 +329,7 @@ class FreeSpaceAnalyzer(Analyzer[None, Allocatable]):
     outputs = (Allocatable,)
 
     @staticmethod
-    def _merge_ranges_by_permissions(free_spaces: Iterable[FreeSpaceAnyData]):
+    def _merge_ranges_by_permissions(free_spaces: Iterable[AnyFreeSpace]):
         ranges_by_permissions = defaultdict(list)
         for free_space_r in free_spaces:
             ranges_by_permissions[free_space_r.permissions].append(free_space_r.vaddr_range())
@@ -347,18 +347,16 @@ class FreeSpaceAnalyzer(Analyzer[None, Allocatable]):
         free_spaces_without_data = []
 
         for free_space_r in await resource.get_descendants_as_view(
-            FreeSpaceAnyData,
-            r_filter=ResourceFilter.with_tags(FreeSpaceAnyData),
-            r_sort=ResourceSort(FreeSpace.VirtualAddress),
+            AnyFreeSpace,
+            r_filter=ResourceFilter.with_tags(AnyFreeSpace),
+            r_sort=ResourceSort(AnyFreeSpace.VirtualAddress),
         ):
-            if free_space_r.resource.has_tag(FreeSpaceWithoutData):
+            if free_space_r.resource.has_tag(RuntimeFreeSpace):
                 free_spaces_without_data.append(free_space_r)
             elif free_space_r.resource.has_tag(FreeSpace):
                 free_spaces_with_data.append(free_space_r)
             else:
-                raise TypeError(
-                    "Got FreeSpaceAnyData without FreeSpace or FreeSpaceWithoutData tags"
-                )
+                raise TypeError("Got AnyFreeSpace without FreeSpace or RuntimeFreeSpace tags")
 
         return Allocatable(
             free_space_ranges=self._merge_ranges_by_permissions(free_spaces_with_data),
@@ -378,26 +376,26 @@ class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
     targets = (Allocatable,)
 
     async def modify(self, resource: Resource, config: FreeSpaceAllocation) -> None:
-        wholly_allocated_resources: List[FreeSpaceAnyData] = []
-        partially_allocated_resources: Dict[bytes, Tuple[FreeSpaceAnyData, List[Range]]] = dict()
+        wholly_allocated_resources: List[AnyFreeSpace] = []
+        partially_allocated_resources: Dict[bytes, Tuple[AnyFreeSpace, List[Range]]] = dict()
         allocatable = await resource.view_as(Allocatable)
 
         for alloc in config.allocations:
             for res_wholly_in_alloc in await resource.get_descendants_as_view(
-                FreeSpaceAnyData,
+                AnyFreeSpace,
                 r_filter=ResourceFilter(
-                    tags=(FreeSpaceAnyData,),
+                    tags=(AnyFreeSpace,),
                     attribute_filters=(
                         ResourceAttributeValueFilter(
-                            FreeSpaceAnyData.Permissions, config.permissions.value
+                            AnyFreeSpace.Permissions, config.permissions.value
                         ),
                         ResourceAttributeRangeFilter(
-                            FreeSpaceAnyData.VirtualAddress,
+                            AnyFreeSpace.VirtualAddress,
                             min=alloc.start,
                             max=alloc.end - 1,
                         ),
                         ResourceAttributeRangeFilter(
-                            FreeSpaceAnyData.EndVaddr, min=alloc.start + 1, max=alloc.end
+                            AnyFreeSpace.EndVaddr, min=alloc.start + 1, max=alloc.end
                         ),
                     ),
                 ),
@@ -424,12 +422,12 @@ class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
 
         for fs in wholly_allocated_resources:
             fs.resource.remove_tag(FreeSpace)
-            fs.resource.remove_tag(FreeSpaceWithoutData)
+            fs.resource.remove_tag(RuntimeFreeSpace)
 
             # Without committing the changes to our tags here, removing both the child and
             # parent tags will cause a KeyError on update.
             await fs.resource.save()
-            fs.resource.remove_tag(FreeSpaceAnyData)
+            fs.resource.remove_tag(AnyFreeSpace)
 
         for fs, allocated_ranges in partially_allocated_resources.values():
             remaining_free_space_ranges = remove_subranges([fs.vaddr_range()], allocated_ranges)
@@ -447,26 +445,24 @@ class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
                         data_range=remaining_data_range,
                     )
                 fs.resource.remove_tag(FreeSpace)
-            elif fs.resource.has_tag(FreeSpaceWithoutData):
+            elif fs.resource.has_tag(RuntimeFreeSpace):
                 for remaining_range in remaining_free_space_ranges:
                     await fs.resource.create_child_from_view(
-                        FreeSpaceWithoutData(
+                        RuntimeFreeSpace(
                             remaining_range.start,
                             remaining_range.length(),
                             fs.permissions,
                         ),
                         data_range=None,
                     )
-                fs.resource.remove_tag(FreeSpaceWithoutData)
+                fs.resource.remove_tag(RuntimeFreeSpace)
             else:
-                raise TypeError(
-                    f"Got FreeSpaceAnyData {fs} without FreeSpace or FreeSpaceWithoutData tags"
-                )
+                raise TypeError(f"Got AnyFreeSpace {fs} without FreeSpace or RuntimeFreeSpace tags")
 
             # Without committing the changes to our tags here, removing both the child and
             # parent tags will cause a KeyError on update.
             await fs.resource.save()
-            fs.resource.remove_tag(FreeSpaceAnyData)
+            fs.resource.remove_tag(AnyFreeSpace)
 
         # Update Allocatable attributes, reflecting removed ranges
         allocatable.remove_allocation_from_cached_free_ranges(
@@ -479,38 +475,38 @@ class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
         resource: Resource,
         permissions: MemoryPermissions,
         alloc: Range,
-    ) -> Iterable[FreeSpaceAnyData]:
+    ) -> Iterable[AnyFreeSpace]:
         filter_overlapping_free_range_end = (
-            ResourceAttributeValueFilter(FreeSpace.Permissions, permissions.value),
-            ResourceAttributeRangeFilter(FreeSpace.VirtualAddress, max=alloc.end),
+            ResourceAttributeValueFilter(AnyFreeSpace.Permissions, permissions.value),
+            ResourceAttributeRangeFilter(AnyFreeSpace.VirtualAddress, max=alloc.end),
             ResourceAttributeRangeFilter(
-                FreeSpaceAnyData.EndVaddr,
+                AnyFreeSpace.EndVaddr,
                 min=alloc.end + 1,
             ),
         )
         filter_overlapping_free_range_start = (
-            ResourceAttributeValueFilter(FreeSpace.Permissions, permissions.value),
+            ResourceAttributeValueFilter(AnyFreeSpace.Permissions, permissions.value),
             ResourceAttributeRangeFilter(
-                FreeSpaceAnyData.VirtualAddress,
+                AnyFreeSpace.VirtualAddress,
                 max=alloc.start - 1,
             ),
             ResourceAttributeRangeFilter(
-                FreeSpaceAnyData.EndVaddr,
+                AnyFreeSpace.EndVaddr,
                 min=alloc.start + 1,
             ),
         )
 
         resources_overlapping_free_range_end = await resource.get_descendants_as_view(
-            FreeSpaceAnyData,
+            AnyFreeSpace,
             r_filter=ResourceFilter(
-                tags=(FreeSpace,),
+                tags=(AnyFreeSpace,),
                 attribute_filters=filter_overlapping_free_range_end,
             ),
         )
         resources_overlapping_free_range_start = await resource.get_descendants_as_view(
-            FreeSpaceAnyData,
+            AnyFreeSpace,
             r_filter=ResourceFilter(
-                tags=(FreeSpaceAnyData,),
+                tags=(AnyFreeSpace,),
                 attribute_filters=filter_overlapping_free_range_start,
             ),
         )
@@ -589,7 +585,7 @@ class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
         )
         parent = await resource.get_parent()
 
-        FreeSpaceTag: Type[FreeSpaceAnyData]
+        FreeSpaceTag: Type[AnyFreeSpace]
         # no data within parent indicates we're marking a memory mapped region outside of the
         # flash for .bss (RW) space. In theory, an ELF object could have a read only region
         # of all zeros optimized out into a SHT_NOBITS section, although in practice this never
@@ -606,7 +602,7 @@ class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
                 raise ValueError("FreeSpaceModifier on a resource with no data cannot have a stub")
 
             freed_data_range = None
-            FreeSpaceTag = FreeSpaceWithoutData
+            FreeSpaceTag = RuntimeFreeSpace
         else:
             patch_data = _get_patch(freed_range, config.stub, config.fill)
             patch_offset = (await parent.get_data_range_within_parent()).start
