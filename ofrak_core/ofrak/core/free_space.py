@@ -148,8 +148,8 @@ class Allocatable(ResourceView):
             for segment in obj.segment_map.values():
                 segments_to_allocate.append((obj, segment))
 
-        # Allocate largest segments first
-        segments_to_allocate.sort(key=lambda o_s: o_s[1].length, reverse=True)
+        # Allocate non-bss and largest segments first
+        segments_to_allocate.sort(key=lambda o_s: (not o_s[1].is_bss, o_s[1].length), reverse=True)
         segments_by_object: Dict[str, List[Segment]] = defaultdict(list)
         for obj, segment in segments_to_allocate:
             vaddr, final_size = 0, 0
