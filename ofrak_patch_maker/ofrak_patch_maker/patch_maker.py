@@ -153,7 +153,7 @@ class PatchMaker:
 
         segment_map = {}
         for s in segments:
-            if s.is_allocated:
+            if self._toolchain.keep_segment(s):
                 segment_map[s.segment_name] = s
 
         return AssembledObject(
@@ -386,7 +386,7 @@ class PatchMaker:
                 for segment in region_config.segments[obj.path]:
                     # Skip the segments we're not interested in.
                     # We have to create regions for 0-length segments to keep the linker happy!
-                    if not segment.is_allocated:
+                    if not self._toolchain.keep_segment(segment):
                         continue
 
                     if segment.vm_address == Segment.BSS_LEGACY_VADDR:

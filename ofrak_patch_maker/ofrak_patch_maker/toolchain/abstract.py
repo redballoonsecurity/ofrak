@@ -361,6 +361,9 @@ class Toolchain(ABC):
     def linker_include_filter(symbol_name: str) -> bool:
         return "." in symbol_name or "_DYNAMIC" in symbol_name
 
+    def keep_segment(self, segment: Segment):
+        return segment.is_allocated and segment.segment_name not in self._linker_discard_list
+
     @abstractmethod
     def generate_linker_include_file(self, symbols: Mapping[str, int], out_path: str) -> str:
         """
