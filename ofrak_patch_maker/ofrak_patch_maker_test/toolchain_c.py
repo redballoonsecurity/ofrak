@@ -1,3 +1,4 @@
+from dataclasses import replace
 import logging
 import os
 import tempfile
@@ -131,24 +132,19 @@ def run_hello_world_test(toolchain_under_test: ToolchainUnderTest):
     for o in bom.object_map.values():
         seg_list = []
         for s in o.segment_map.values():
-            seg_list.append(
-                Segment(
-                    segment_name=s.segment_name,
-                    vm_address=current_vm_address,
-                    offset=s.offset,
-                    is_entry=s.is_entry,
-                    length=s.length,
-                    access_perms=s.access_perms,
-                )
-            )
-            current_vm_address += s.length
-
-            if toolchain_under_test.toolchain in [GNU_X86_64_LINUX_EABI_10_3_0_Toolchain]:
-                if current_vm_address % 16 > 0:
-                    current_vm_address += 16 - current_vm_address % 16
+            if s.is_bss:
+                # test legacy allocation of .bss
+                seg_list.append(replace(s, vm_address=Segment.BSS_LEGACY_VADDR))
             else:
-                if current_vm_address % 4 > 0:
-                    current_vm_address += 4 - current_vm_address % 4
+                seg_list.append(replace(s, vm_address=current_vm_address))
+                current_vm_address += s.length
+
+                if toolchain_under_test.toolchain in [GNU_X86_64_LINUX_EABI_10_3_0_Toolchain]:
+                    if current_vm_address % 16 > 0:
+                        current_vm_address += 16 - current_vm_address % 16
+                else:
+                    if current_vm_address % 4 > 0:
+                        current_vm_address += 4 - current_vm_address % 4
 
         all_segments.update({o.path: tuple(seg_list)})
 
