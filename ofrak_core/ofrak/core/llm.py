@@ -48,9 +48,6 @@ class LlmAnalyzer(Analyzer[LlmAnalyzerConfig, LlmAttributes]):
         else:
             prompt = config.prompt
 
-        # TODO: Remove
-        print(prompt)
-
         body = {
             "model": config.model,
             "messages": [
