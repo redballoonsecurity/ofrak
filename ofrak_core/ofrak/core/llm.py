@@ -9,8 +9,11 @@ import aiohttp
 
 from ofrak import Analyzer, Resource, ResourceAttributes
 from ofrak.component.analyzer import AnalyzerReturnType
+from ofrak.core import ComplexBlock
+from ofrak.core.decompilation import DecompilationAnalysis
 from ofrak.core.entropy import DataSummary
-from ofrak.model.component_model import ComponentConfig, CC
+from ofrak.model.component_model import ComponentConfig
+from ofrak.model.viewable_tag_model import AttributesType
 from ofrak_type import Range
 
 
@@ -91,8 +94,31 @@ class LlmFunctionAnalyzer(Analyzer[LlmAnalyzerConfig, LlmAttributes]):
     targets = ()
     outputs = (LlmAttributes,)
 
-    async def analyze(self, resource: Resource, config: CC) -> AnalyzerReturnType:
-        pass
+    async def analyze(
+        self, resource: Resource, config: LlmAnalyzerConfig = None
+    ) -> AnalyzerReturnType:
+        if not resource.has_tag(ComplexBlock):
+            raise RuntimeError("This analyzer can only be run on complex blocks")
+        await resource.unpack_recursively()
+        await resource.auto_run(all_analyzers=True)
+
+        complex_block = await resource.view_as(ComplexBlock)
+        decompilation = await resource.view_as(DecompilationAnalysis)
+
+        if config is None:
+            config = LlmAnalyzerConfig("http://localhost:11434/api/chat", "llama3.2")
+        config.system_prompt = "You are a reverse engineer. You return concise technical descriptions of disassembled and decompiled functions, and what they do."
+        config.prompt = f"""# Disassembly
+{await complex_block.get_assembly()}
+
+# Decompilation
+{decompilation.decompilation}
+
+# Metadata
+{await dump_attributes(resource)}
+"""
+        await resource.run(LlmAnalyzer, config)
+        return resource.get_attributes(LlmAttributes)
 
 
 def indent(s: str, spaces: int = 2) -> str:
@@ -164,6 +190,9 @@ async def dump_attributes(resource: Resource) -> str:
     # The data summary is un-informative and verbose
     if DataSummary in model.attributes:
         del model.attributes[DataSummary]
+    # We pretty-print the decompilation analysis
+    if AttributesType[DecompilationAnalysis] in model.attributes:
+        del model.attributes[AttributesType[DecompilationAnalysis]]
     return serialize(make_serializable(model.attributes))
 
 
