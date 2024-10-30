@@ -8,8 +8,9 @@ from typing import Optional, List, Dict, Any, Union
 import aiohttp
 
 from ofrak import Analyzer, Resource, ResourceAttributes
+from ofrak.component.analyzer import AnalyzerReturnType
 from ofrak.core.entropy import DataSummary
-from ofrak.model.component_model import ComponentConfig
+from ofrak.model.component_model import ComponentConfig, CC
 from ofrak_type import Range
 
 
@@ -33,6 +34,9 @@ class LlmAnalyzer(Analyzer[LlmAnalyzerConfig, LlmAttributes]):
     outputs = (LlmAttributes,)
 
     async def analyze(self, resource: Resource, config: LlmAnalyzerConfig = None) -> LlmAttributes:
+        if config is None:
+            config = LlmAnalyzerConfig("http://localhost:11434/api/chat", "llama3.2")
+
         headers = (
             {"Authorization": f"Bearer {config.api_key}"} if config.api_key is not None else dict()
         )
@@ -80,6 +84,15 @@ class LlmAnalyzer(Analyzer[LlmAnalyzerConfig, LlmAttributes]):
                 elif "choices" in data and data["choices"]:
                     message = data["choices"][0]["message"]
                 return LlmAttributes(message["content"])
+
+
+class LlmFunctionAnalyzer(Analyzer[LlmAnalyzerConfig, LlmAttributes]):
+    # Targets ComplexBlocks, but we don't want it to run automatically
+    targets = ()
+    outputs = (LlmAttributes,)
+
+    async def analyze(self, resource: Resource, config: CC) -> AnalyzerReturnType:
+        pass
 
 
 def indent(s: str, spaces: int = 2) -> str:
