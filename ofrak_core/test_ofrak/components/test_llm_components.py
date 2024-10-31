@@ -3,9 +3,10 @@ import os
 
 import pytest
 
+import ofrak_angr
 import test_ofrak
 from ofrak import OFRAKContext
-from ofrak.core.llm import LlmAnalyzer, LlmAnalyzerConfig
+from ofrak.core.llm import LlmAnalyzer, LlmAnalyzerConfig, LlmProgramAnalyzer, LlmAttributes
 
 
 @pytest.fixture()
@@ -36,6 +37,11 @@ async def model(ollama) -> str:
     yield model_name
 
 
+@pytest.fixture(autouse=True)
+def angr_components(ofrak_injector):
+    ofrak_injector.discover(ofrak_angr)
+
+
 async def test_llm_component(ofrak_context: OFRAKContext, model: str):
     root_path = os.path.join(test_ofrak.components.ASSETS_DIR, "elf", "busybox_elf_exec_noscop")
     root = await ofrak_context.create_root_resource_from_file(root_path)
@@ -48,3 +54,18 @@ async def test_llm_component(ofrak_context: OFRAKContext, model: str):
             model,
         ),
     )
+    root.get_attributes(LlmAttributes)
+
+
+async def test_llm_program_component(ofrak_context: OFRAKContext, model: str):
+    root_path = os.path.join(test_ofrak.components.ASSETS_DIR, "elf", "hello_elf_dyn")
+    root = await ofrak_context.create_root_resource_from_file(root_path)
+    await root.unpack_recursively()
+    await root.run(
+        LlmProgramAnalyzer,
+        LlmAnalyzerConfig(
+            "http://localhost:11434/api/chat",
+            model,
+        ),
+    )
+    root.get_attributes(LlmAttributes)
