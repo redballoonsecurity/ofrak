@@ -64,7 +64,7 @@ class LlmAnalyzer(Analyzer[LlmAnalyzerConfig, LlmAttributes]):
                 },
                 *(
                     [
-                        {"role": "assistant" if i % 2 == 0 else "user", "content": example}
+                        {"role": "user" if i % 2 == 0 else "assistant", "content": example}
                         for i, example in enumerate(config.examples)
                     ]
                     if config.examples is not None
@@ -102,23 +102,33 @@ class LlmFunctionAnalyzer(Analyzer[LlmAnalyzerConfig, LlmAttributes]):
         await resource.unpack_recursively()
         await resource.auto_run(all_analyzers=True)
 
-        complex_block = await resource.view_as(ComplexBlock)
         decompilation = await resource.view_as(DecompilationAnalysis)
 
         if config is None:
             config = LlmAnalyzerConfig("http://localhost:11434/api/chat", "llama3.2")
-        config.system_prompt = "You are a reverse engineer. You return concise technical descriptions of disassembled and decompiled functions, and what they do."
-        config.prompt = f"""# Disassembly
-{await complex_block.get_assembly()}
-
-# Decompilation
+        config.system_prompt = (
+            "You are a computer program for reverse engineering. You return "
+            "concise technical summaries of disassembled and decompiled "
+            "functions, and what they do without additional commentary. You "
+            "always respond with only one or two sentences."
+        )
+        #         config.examples = [
+        #             """# Decompilation
+        # unsigned int sub_400000(int x) {
+        #   return x * (((x >> 31) << 1) + 1);
+        # }""",
+        #             "Returns the absolute value of the input without branching on the sign bit.",
+        #         ]
+        config.examples = None
+        config.prompt = f"""# Decompilation
 {decompilation.decompilation}
 
 # Metadata
 {await dump_attributes(resource)}
 """
         await resource.run(LlmAnalyzer, config)
-        return resource.get_attributes(LlmAttributes)
+        attrs = resource.get_attributes(LlmAttributes)
+        return LlmAttributes(attrs.description.splitlines()[0])
 
 
 def indent(s: str, spaces: int = 2) -> str:
