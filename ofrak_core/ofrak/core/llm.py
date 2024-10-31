@@ -7,9 +7,8 @@ from typing import Optional, List, Dict, Any, Union
 
 import aiohttp
 
-from ofrak import Analyzer, Resource, ResourceAttributes
-from ofrak.component.analyzer import AnalyzerReturnType
-from ofrak.core import ComplexBlock
+from ofrak import Analyzer, Resource, ResourceAttributes, ResourceFilter
+from ofrak.core import ComplexBlock, Program
 from ofrak.core.decompilation import DecompilationAnalysis
 from ofrak.core.entropy import DataSummary
 from ofrak.model.component_model import ComponentConfig
@@ -78,6 +77,7 @@ class LlmAnalyzer(Analyzer[LlmAnalyzerConfig, LlmAttributes]):
             "stream": False,
         }
 
+        # TODO: class-wide client session instance for connection pooling
         async with aiohttp.ClientSession() as session:
             async with session.post(config.api_url, json=body, headers=headers) as response:
                 response.raise_for_status()
@@ -90,13 +90,11 @@ class LlmAnalyzer(Analyzer[LlmAnalyzerConfig, LlmAttributes]):
 
 
 class LlmFunctionAnalyzer(Analyzer[LlmAnalyzerConfig, LlmAttributes]):
-    # Targets ComplexBlocks, but we don't want it to run automatically
+    # Targets ComplexBlock, but we don't want it to run automatically
     targets = ()
     outputs = (LlmAttributes,)
 
-    async def analyze(
-        self, resource: Resource, config: LlmAnalyzerConfig = None
-    ) -> AnalyzerReturnType:
+    async def analyze(self, resource: Resource, config: LlmAnalyzerConfig = None) -> LlmAttributes:
         if not resource.has_tag(ComplexBlock):
             raise RuntimeError("This analyzer can only be run on complex blocks")
         await resource.unpack_recursively()
@@ -112,23 +110,64 @@ class LlmFunctionAnalyzer(Analyzer[LlmAnalyzerConfig, LlmAttributes]):
             "functions, and what they do without additional commentary. You "
             "always respond with only one or two sentences."
         )
-        #         config.examples = [
-        #             """# Decompilation
-        # unsigned int sub_400000(int x) {
-        #   return x * (((x >> 31) << 1) + 1);
-        # }""",
-        #             "Returns the absolute value of the input without branching on the sign bit.",
-        #         ]
         config.examples = None
         config.prompt = f"""# Decompilation
 {decompilation.decompilation}
 
 # Metadata
 {await dump_attributes(resource)}
+
+Describe what this function does.
 """
         await resource.run(LlmAnalyzer, config)
-        attrs = resource.get_attributes(LlmAttributes)
-        return LlmAttributes(attrs.description.splitlines()[0])
+        return resource.get_attributes(LlmAttributes)
+
+
+class LlmProgramAnalyzer(Analyzer[LlmAnalyzerConfig, LlmAttributes]):
+    # Targets Program, but we don't want it to run automatically
+    targets = ()
+    outputs = (LlmAttributes,)
+
+    async def analyze(self, resource: Resource, config: LlmAnalyzerConfig = None) -> LlmAttributes:
+        if not resource.has_tag(Program):
+            raise RuntimeError("This analyzer can only be run on programs")
+
+        await resource.unpack_recursively()
+        program = await resource.view_as(Program)
+        # Rough heuristic that the largest code region is probably the text section
+        text_section = max(await program.get_code_regions(), key=lambda cr: cr.size)
+        functions = list(
+            await text_section.resource.get_descendants_as_view(
+                ComplexBlock, r_filter=ResourceFilter.with_tags(ComplexBlock)
+            )
+        )
+        # TODO: Should this be concurrent?
+        # await asyncio.gather(*(function.resource.run(LlmAnalyzer, config) for function in functions))
+        for function in functions:
+            await function.resource.run(LlmFunctionAnalyzer, config)
+        descriptions = [
+            f"- {function.name}: {function.resource.get_attributes(LlmAttributes).description.splitlines()[0]}"
+            for function in functions
+        ]
+
+        if config is None:
+            config = LlmAnalyzerConfig("http://localhost:11434/api/chat", "llama3.2")
+        config.system_prompt = (
+            "You are a computer program for reverse engineering. You return "
+            "concise technical summaries of disassembled and decompiled "
+            "programs, and what they do without additional commentary. You "
+            "always respond with only one or two sentences."
+        )
+        config.prompt = f"""# Functions
+{chr(10).join(descriptions)}
+
+# Metadata
+{await dump_attributes(resource)}
+
+Describe what the entire program does based on its functions and metadata.
+"""
+        await resource.run(LlmAnalyzer, config)
+        return resource.get_attributes(LlmAttributes)
 
 
 def indent(s: str, spaces: int = 2) -> str:
