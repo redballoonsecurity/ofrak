@@ -3,7 +3,7 @@ import os
 
 import pytest
 
-import ofrak_angr
+import ofrak_ghidra
 import test_ofrak
 from ofrak import OFRAKContext
 from ofrak.core.llm import LlmAnalyzer, LlmAnalyzerConfig, LlmProgramAnalyzer, LlmAttributes
@@ -38,8 +38,8 @@ async def model(ollama) -> str:
 
 
 @pytest.fixture(autouse=True)
-def angr_components(ofrak_injector):
-    ofrak_injector.discover(ofrak_angr)
+def ghidra_components(ofrak_injector):
+    ofrak_injector.discover(ofrak_ghidra)
 
 
 async def test_llm_component(ofrak_context: OFRAKContext, model: str):
