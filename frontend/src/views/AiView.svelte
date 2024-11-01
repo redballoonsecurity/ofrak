@@ -47,6 +47,22 @@
     box-shadow: inset 0 -1px 0 var(--main-fg-color);
   }
 
+  select {
+    margin-bottom: 1em;
+    background-color: inherit;
+    color: inherit;
+    border: 1px solid var(--main-fg-color);
+    border-radius: 0;
+    font-size: inherit;
+    font-family: var(--font);
+    box-shadow: none;
+  }
+
+  select:focus {
+    outline: none;
+    box-shadow: inset 0 -1px 0 var(--main-fg-color);
+  }
+
   label {
     margin-bottom: 1em;
     display: flex;
@@ -64,6 +80,7 @@
   import LoadingText from "../utils/LoadingText.svelte";
 
   import { selectedResource } from "../stores.js";
+  import { onMount } from "svelte";
 
   export let modifierView;
   let apiUrl = JSON.parse(window.localStorage.getItem("aiApiUrl") ?? "null"),
@@ -84,13 +101,25 @@
       }
     });
   }
-
   $: promptPromise = getSystemPrompt($selectedResource);
+
+  function getAnalyzer() {
+    if ($selectedResource.tags.includes("ofrak.core.program.Program")) {
+      return "LlmProgramAnalyzer";
+    }
+    if (
+      $selectedResource.tags.includes("ofrak.core.complex_block.ComplexBlock")
+    ) {
+      return "LlmFunctionAnalyzer";
+    }
+    return "LlmAnalyzer";
+  }
+  $: analyzer = getAnalyzer();
 
   let resultPromise = undefined;
   function llmAnalyzer() {
     resultPromise = fetch(
-      `${$selectedResource.uri}/run_component?component=LlmAnalyzer`,
+      `${$selectedResource.uri}/run_component?component=${analyzer}`,
       {
         credentials: "omit",
         body: JSON.stringify([
@@ -99,7 +128,7 @@
             api_url: apiUrl,
             model: model,
             api_key: key || undefined,
-            system_prompt: prompt,
+            ...(analyzer == "LlmAnalyzer" ? { system_prompt: prompt } : {}),
           },
         ]),
         method: "POST",
@@ -116,7 +145,10 @@
         $selectedResource.attributes = $selectedResource.attributes;
         return r;
       })
-      .then(({ modified: [{ attributes }] }) => {
+      .then(({ modified }) => {
+        const { attributes } = modified.find(
+          ({ id }) => id == $selectedResource.resource_id
+        );
         for (const [type, [_, { description }]] of attributes) {
           if (type == "ofrak.core.llm.LlmAttributes") {
             return description;
@@ -131,6 +163,11 @@
     <LoadingText />
   {:then _}
     <div class="inputs">
+      <select bind:value="{analyzer}">
+        <option value="LlmAnalyzer">LlmAnalyzer</option>
+        <option value="LlmFunctionAnalyzer">LlmFunctionAnalyzer</option>
+        <option value="LlmProgramAnalyzer">LlmProgramAnalyzer</option>
+      </select>
       <label>
         AI API URL
         <input type="text" bind:value="{apiUrl}" />
@@ -143,24 +180,19 @@
         AI API Key (Optional)
         <input type="password" bind:value="{key}" />
       </label>
-      <label>
-        System Prompt (Optional)
-        <input type="text" value="{prompt}" />
-      </label>
+      {#if analyzer == "LlmAnalyzer"}
+        <label>
+          System Prompt (Optional)
+          <input type="text" value="{prompt}" />
+        </label>
+      {/if}
     </div>
   {:catch e}
     <p>{e}</p>
   {/await}
-  <pre class="output">{#await resultPromise}
-      <LoadingText />
-    {:then result}
-      {#if result}
-        {result}
-      {/if}
-    {:catch e}
-      {e}
-    {/await}
-  </pre>
+  <pre class="output">{#await resultPromise}<LoadingText
+      />{:then result}{#if result}{result}{/if}{:catch e}Try re-running the analyzer.
+{e}{/await}</pre>
   <div class="actions">
     <Button on:click="{llmAnalyzer}">Analyze</Button>
     <Button on:click="{() => (modifierView = undefined)}">Cancel</Button>
