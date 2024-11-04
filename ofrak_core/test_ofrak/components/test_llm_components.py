@@ -61,7 +61,8 @@ async def test_llm_component(ofrak_context: OFRAKContext, model: str):
             model,
         ),
     )
-    root.get_attributes(LlmAttributes)
+    attributes = root.get_attributes(LlmAttributes)
+    assert attributes.description, f"LlmAnalyzer did not generate valid description attributes."
 
 
 async def test_llm_function_component(ofrak_context: OFRAKContext, model: str):
@@ -77,7 +78,10 @@ async def test_llm_function_component(ofrak_context: OFRAKContext, model: str):
             model,
         ),
     )
-    main.resource.get_attributes(LlmAttributes)
+    attributes = main.resource.get_attributes(LlmAttributes)
+    assert (
+        attributes.description
+    ), f"LlmFunctoinAnalyzer did not generate valid description attributes."
 
 
 async def test_llm_program_component(ofrak_context: OFRAKContext, model: str):
@@ -91,4 +95,7 @@ async def test_llm_program_component(ofrak_context: OFRAKContext, model: str):
             model,
         ),
     )
-    root.get_attributes(LlmAttributes)
+    attributes = root.get_attributes(LlmAttributes)
+    assert (
+        attributes.description
+    ), f"LlmProgramAnalyzer did not generate valid description attributes."
