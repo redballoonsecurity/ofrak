@@ -6,7 +6,14 @@ import pytest
 import ofrak_ghidra
 import test_ofrak
 from ofrak import OFRAKContext
-from ofrak.core.llm import LlmAnalyzer, LlmAnalyzerConfig, LlmProgramAnalyzer, LlmAttributes
+from ofrak.core import Elf
+from ofrak.core.llm import (
+    LlmAnalyzer,
+    LlmAnalyzerConfig,
+    LlmProgramAnalyzer,
+    LlmAttributes,
+    LlmFunctionAnalyzer,
+)
 
 
 @pytest.fixture()
@@ -55,6 +62,22 @@ async def test_llm_component(ofrak_context: OFRAKContext, model: str):
         ),
     )
     root.get_attributes(LlmAttributes)
+
+
+async def test_llm_function_component(ofrak_context: OFRAKContext, model: str):
+    root_path = os.path.join(test_ofrak.components.ASSETS_DIR, "elf", "hello_elf_dyn")
+    root = await ofrak_context.create_root_resource_from_file(root_path)
+    await root.unpack_recursively()
+    elf = await root.view_as(Elf)
+    main = await elf.get_function_complex_block("main")
+    await main.resource.run(
+        LlmFunctionAnalyzer,
+        LlmAnalyzerConfig(
+            "http://localhost:11434/api/chat",
+            model,
+        ),
+    )
+    main.resource.get_attributes(LlmAttributes)
 
 
 async def test_llm_program_component(ofrak_context: OFRAKContext, model: str):
