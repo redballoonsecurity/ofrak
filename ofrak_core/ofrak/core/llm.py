@@ -32,6 +32,24 @@ class LlmAnalyzerConfig(ComponentConfig):
 
 
 class LlmAnalyzer(Analyzer[LlmAnalyzerConfig, LlmAttributes]):
+    """
+    This analyzer uses a Large Language Model (LLM) to describe the resource being analyzed in natural language.
+
+    The analyzer works with local models run using Ollama or remote models such as OpenAI's ChatGPT. To run a local
+    Ollama instance, use the following commands:
+
+    ```
+    curl -fsSL https://ollama.com/install.sh | sh
+    ollama pull llama3.2
+    ollama serve
+    # Use http://localhost:11434/api/chat as the API URL in the analyzer config
+    ```
+
+    It is advisable to tune the results by editing the system prompt and/or adding examples. The `prompt` field of the
+    config should only be overridden by other analyzers that want to use the LLM in a more specific way (e.g., the
+    `LlmFunctionAnalyzer` is specifically for analyzing decompilation output).
+    """
+
     targets = ()
     outputs = (LlmAttributes,)
 
@@ -98,8 +116,6 @@ class LlmFunctionAnalyzer(Analyzer[LlmAnalyzerConfig, LlmAttributes]):
         if not resource.has_tag(ComplexBlock):
             raise RuntimeError("This analyzer can only be run on complex blocks")
         await resource.unpack_recursively()
-        await resource.auto_run(all_analyzers=True)
-
         decompilation = await resource.view_as(DecompilationAnalysis)
 
         if config is None:
