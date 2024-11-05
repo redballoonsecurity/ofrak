@@ -42,9 +42,19 @@
     margin-left: 1ch;
   }
 
-  input:focus {
+  input:focus, textarea:focus {
     outline: none;
     box-shadow: inset 0 -1px 0 var(--main-fg-color);
+  }
+
+  textarea {
+    background: inherit;
+    color: inherit;
+    border: 1px solid white;
+    flex-grow: 1;
+    margin-left: 1ch;
+    resize: vertical;
+    font-size: inherit;
   }
 
   select {
@@ -183,7 +193,7 @@
       {#if analyzer == "LlmAnalyzer"}
         <label>
           System Prompt (Optional)
-          <input type="text" value="{prompt}" />
+          <textarea value="{prompt}"></textarea>
         </label>
       {/if}
     </div>
