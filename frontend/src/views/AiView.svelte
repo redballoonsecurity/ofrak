@@ -42,7 +42,8 @@
     margin-left: 1ch;
   }
 
-  input:focus, textarea:focus {
+  input:focus,
+  textarea:focus {
     outline: none;
     box-shadow: inset 0 -1px 0 var(--main-fg-color);
   }
