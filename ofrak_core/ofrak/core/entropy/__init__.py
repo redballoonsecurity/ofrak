@@ -1,1 +1,4 @@
-from .entropy import DataSummary, DataSummaryAnalyzer
+from .entropy import (
+    DataSummary as DataSummary,
+    DataSummaryAnalyzer as DataSummaryAnalyzer,
+)

@@ -50,7 +50,7 @@ class _PyLzoTool(ComponentExternalTool):
 
     async def is_tool_installed(self) -> bool:
         try:
-            import lzo  # type: ignore
+            import lzo # type: ignore # noqa: F401
 
             return True
         except ModuleNotFoundError:
