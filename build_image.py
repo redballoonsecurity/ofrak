@@ -73,7 +73,7 @@ def main():
         f.write(dockerfile_finish)
     print(f"{FINISH_DOCKERFILE} built.")
 
-    env = {k: v for k, v in os.environ.items()}
+    env = os.environ.copy()
     if not config.no_forced_buildkit:
         env["DOCKER_BUILDKIT"] = "1"
 
