@@ -41,7 +41,7 @@ async def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: st
     await root_resource.run(BinaryPatchModifier, new_string_config)
 
     # Output the modified binary to the disk
-    await root_resource.flush_to_disk(output_file_name)
+    await root_resource.flush_data_to_disk(output_file_name)
     print(f"Done! Output file written to {output_file_name}")
 
 

@@ -756,6 +756,14 @@ BASIC_BLOCK_UNPACKER_TEST_CASES = [
                         operands="",
                         mode=InstructionSetMode.NONE,
                     ),
+                    Instruction(
+                        virtual_address=0x4004E0,
+                        size=2,
+                        disassembly="repz ret ",
+                        mnemonic="repz ret",
+                        operands="",
+                        mode=InstructionSetMode.NONE,
+                    ),
                 ),
             ],
             0x4004F0: [
@@ -1281,9 +1289,7 @@ BASIC_BLOCK_UNPACKER_TEST_CASES = [
                 ),
             ],
         },
-        {
-            # No optional results
-        },
+        set(),  # No optional results
         "hello.out",
         "cc2de3c0cd2d0ded7543682c2470fcf0",
         {
@@ -1311,6 +1317,36 @@ BASIC_BLOCK_UNPACKER_TEST_CASES = [
             0x4005AF: Range(0x5AF, 0x5B6),
             0x400596: Range(0x596, 0x5A0),
             0x4005A0: Range(0x5A0, 0x5AF),
+        },
+    ),
+    # x64 Kernel address space - ensure large 64-bit addresses are interpreted as unsigned
+    BasicBlockUnpackerTestCase(
+        "x64 Kernel address space",
+        {
+            0xFFFFFFFF80000000: [
+                Instruction(
+                    virtual_address=0xFFFFFFFF80000000,
+                    size=5,
+                    disassembly="mov eax, 0x0",
+                    mnemonic="mov",
+                    operands="eax, 0x0",
+                    mode=InstructionSetMode.NONE,
+                ),
+                Instruction(
+                    virtual_address=0xFFFFFFFF80000005,
+                    size=1,
+                    disassembly="ret ",
+                    mnemonic="ret",
+                    operands="",
+                    mode=InstructionSetMode.NONE,
+                ),
+            ],
+        },
+        set(),  # No optional results
+        "kernel_address_space.out",
+        "242dd5b9ecc56bb7a8c8db43e8c720f0",
+        {
+            0xFFFFFFFF80000000: Range(0x1000, 0x1006),
         },
     ),
     # ARM with literal pools
@@ -1644,9 +1680,7 @@ BASIC_BLOCK_UNPACKER_TEST_CASES = [
                 ),
             ],
         },
-        {
-            # No optional results
-        },
+        set(),  # No optional results
         "simple_arm_gcc.o.elf",
         "c79d1bea0398d7a9d0faa1ba68786f5e",
         {
@@ -1715,9 +1749,11 @@ class BasicBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
                 )
 
         # Check that all expected basic blocks have been extracted
-        assert {instruction.virtual_address for instruction in instructions} == set(
-            instructions_by_addr.keys()
-        )
+        expected_vaddr_set = set(instructions_by_addr.keys())
+        unpacked_vaddr_set = {instruction.virtual_address for instruction in instructions}
+        assert (
+            unpacked_vaddr_set == expected_vaddr_set
+        ), f"Unpacked vaddrs {unpacked_vaddr_set} does not match expected vaddrs {expected_vaddr_set}"
 
         errors = []
         for instruction in instructions:

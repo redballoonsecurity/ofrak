@@ -257,7 +257,7 @@ class UbiPacker(Packer[None]):
                     volume_path = (
                         f"{temp_flush_dir}/input-{ubi_view.image_seq}_vol-{volume_view.name}.ubivol"
                     )
-                    await volume.flush_to_disk(volume_path)
+                    await volume.flush_data_to_disk(volume_path)
                 else:
                     volume_path = None
                     volume_size = (volume_view.peb_count - 1) * ubi_view.peb_size

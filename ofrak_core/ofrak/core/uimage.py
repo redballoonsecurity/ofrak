@@ -527,7 +527,6 @@ class UImageMultiHeaderModifier(Modifier[UImageMultiHeaderModifierConfig]):
     targets = (UImageMultiHeader,)
 
     async def modify(self, resource: Resource, config: UImageMultiHeaderModifierConfig) -> None:
-
         # # First serialize the header with the ih_hcrc field set to 0, to compute this CRC later
         original_attributes = await resource.analyze(AttributesType[UImageMultiHeader])
         new_attributes = ResourceAttributes.replace_updated(original_attributes, config)

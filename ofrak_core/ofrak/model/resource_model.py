@@ -387,7 +387,7 @@ class ResourceModel:
         self.id: ModelIdType = id
         self.data_id: ModelDataIdType = data_id
         self.parent_id: ModelParentIdType = parent_id
-        self.tags: ModelTagsType = set(tags) if tags else set()
+        self.tags: ModelTagsType = {*tags} if tags else {*()}
         self.attributes: ModelAttributesType = attributes
         self.data_dependencies: ModelDataDependenciesType = data_dependencies
         self.attribute_dependencies: ModelAttributeDependenciesType = attribute_dependencies
@@ -410,7 +410,7 @@ class ResourceModel:
     ) -> Dict[ResourceAttributeDependency, Set[Range]]:
         new_dependencies = defaultdict(set)
         for dependency, ranges in dependencies.items():
-            new_dependencies[dependency] = set(ranges)
+            new_dependencies[dependency] = {*ranges}
         return new_dependencies
 
     def get_tags(self, inherit: bool = True) -> Set[ResourceTag]:
@@ -662,7 +662,7 @@ class ResourceModelDiff:
 
 
 class MutableResourceModel(ResourceModel):
-    __slots__ = "is_modified", "diff", "is_deleted"
+    __slots__ = "is_modified", "_diff", "is_deleted"
 
     def __init__(
         self,
@@ -691,7 +691,20 @@ class MutableResourceModel(ResourceModel):
         )
         self.is_modified = False
         self.is_deleted = False
-        self.diff = ResourceModelDiff(self.id)
+        self._diff: Optional[ResourceModelDiff] = None
+
+    def __hash__(self):
+        return self.id.__hash__()
+
+    @property
+    def diff(self):
+        if not self._diff:
+            self._diff = ResourceModelDiff(self.id)
+        return self._diff
+
+    @diff.setter
+    def diff(self, value):
+        self._diff = value
 
     @staticmethod
     def from_model(model: ResourceModel):

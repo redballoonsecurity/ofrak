@@ -18,13 +18,13 @@ from ofrak_type.range import Range
 LOGGER = logging.getLogger(__name__)
 
 MKSQUASHFS = ComponentExternalTool(
-    "mksquashfs", "https://github.com/plougher/squashfs-tools.git", "-help"
+    "mksquashfs", "https://github.com/plougher/squashfs-tools", "-help"
 )
 
 
 class _UnsquashfsV45Tool(ComponentExternalTool):
     def __init__(self):
-        super().__init__("unsquashfs", "https://github.com/plougher/squashfs-tools.git", "")
+        super().__init__("unsquashfs", "https://github.com/plougher/squashfs-tools", "")
 
     async def is_tool_installed(self) -> bool:
         try:
@@ -35,8 +35,6 @@ class _UnsquashfsV45Tool(ComponentExternalTool):
                 stderr=asyncio.subprocess.DEVNULL,
             )
             stdout, stderr = await proc.communicate()
-            if proc.returncode:
-                raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
         except FileNotFoundError:
             return False
 

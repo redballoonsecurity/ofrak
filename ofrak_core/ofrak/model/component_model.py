@@ -1,7 +1,6 @@
 import asyncio
 from collections import defaultdict
 from dataclasses import dataclass, field
-from subprocess import CalledProcessError
 from typing import Dict, List, Optional, Set, Type, TypeVar
 
 from ofrak.model.data_model import DataPatch
@@ -32,7 +31,7 @@ class ComponentExternalTool:
     the `is_tool_installed` method to perform the check.
 
     :ivar tool: Name of the command-line tool that will be run
-    :ivar tool_homepage: Like to homepage of the tool, with install instructions etc.
+    :ivar tool_homepage: Link to homepage of the tool, with install instructions etc.
     :ivar install_check_arg: Argument to pass to the tool to check if it can be found and run on
     the host, typically something like "--help"
     :ivar apt_package: An `apt` package that installs this tool, if such a package exists
@@ -66,12 +65,10 @@ class ComponentExternalTool:
             )
 
             returncode = await proc.wait()
-            if returncode:
-                raise CalledProcessError(returncode=returncode, cmd=cmd)
         except FileNotFoundError:
             return False
 
-        return True
+        return 0 == returncode
 
 
 CC = TypeVar("CC", bound=Optional[ComponentConfig])

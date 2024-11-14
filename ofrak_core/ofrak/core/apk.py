@@ -22,11 +22,11 @@ from ofrak.core.magic import Magic, MagicMimeIdentifier
 from ofrak_type.range import Range
 
 
-APKTOOL = ComponentExternalTool("apktool", "https://ibotpeaches.github.io/Apktool/", "--help")
+APKTOOL = ComponentExternalTool("apktool", "https://ibotpeaches.github.io/Apktool/", "-version")
 JAVA = ComponentExternalTool(
     "java",
     "https://openjdk.org/projects/jdk/11/",
-    "--help",
+    "-help",
     apt_package="openjdk-11-jdk",
     brew_package="openjdk@11",
 )
@@ -69,12 +69,10 @@ class _UberApkSignerTool(ComponentExternalTool):
                 stderr=asyncio.subprocess.DEVNULL,
             )
             returncode = await proc.wait()
-            if returncode:
-                raise CalledProcessError(returncode=returncode, cmd=cmd)
         except FileNotFoundError:
             return False
 
-        return True
+        return 0 == returncode
 
 
 UBER_APK_SIGNER = _UberApkSignerTool()
@@ -217,7 +215,9 @@ class ApkIdentifier(Identifier):
     async def identify(self, resource: Resource, config=None) -> None:
         await resource.run(MagicMimeIdentifier)
         magic = resource.get_attributes(Magic)
-        if magic is not None and magic.mime in ["application/java-archive", "application/zip"]:
+        if magic.mime == "application/vnd.android.package-archive":
+            resource.add_tag(Apk)
+        elif magic is not None and magic.mime in ["application/java-archive", "application/zip"]:
             with tempfile.NamedTemporaryFile(suffix=".zip") as temp_file:
                 temp_file.write(await resource.get_data())
                 temp_file.flush()

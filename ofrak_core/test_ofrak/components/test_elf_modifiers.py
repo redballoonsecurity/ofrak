@@ -1,11 +1,19 @@
 import os
 import subprocess
+from typing import Optional
 
 import pytest
 from elftools.elf.elffile import ELFFile
 from test_ofrak.components.hello_world_elf import hello_elf
 
-from ofrak.core import LiefAddSegmentConfig, LiefAddSegmentModifier
+from ofrak.core import (
+    LiefAddSegmentConfig,
+    LiefAddSegmentModifier,
+    LiefAddSectionModifer,
+    LiefAddSectionModifierConfig,
+    LiefRemoveSectionModifier,
+    LiefRemoveSectionModifierConfig,
+)
 from ofrak.service.resource_service_i import ResourceFilter
 from ofrak.core.elf.model import (
     Elf,
@@ -56,7 +64,7 @@ async def test_elf_add_symbols(
     await original_elf.run(ElfAddStringModifier, ElfAddStringModifierConfig(strings_to_add))
 
     output_path = os.path.join(elf_test_directory, "program_with_newstrings")
-    await original_elf.flush_to_disk(output_path)
+    await original_elf.flush_data_to_disk(output_path)
     strings_result = subprocess.run(["strings", output_path], capture_output=True)
     new_strings = set(strings_result.stdout.decode().split("\n"))
 
@@ -92,7 +100,7 @@ async def test_elf_force_relocation(
         ElfRelocateSymbolsModifierConfig({foo_vaddr: bar_vaddr, bar_vaddr: foo_vaddr}),
     )
 
-    await elf.resource.flush_to_disk(os.path.join(elf_test_directory, "program_relocated.o"))
+    await elf.resource.flush_data_to_disk(os.path.join(elf_test_directory, "program_relocated.o"))
     subprocess.run(["make", "-C", elf_test_directory, "program_relocated"])
     result = subprocess.run([os.path.join(elf_test_directory, "program_relocated")])
     assert result.returncode == 24
@@ -146,7 +154,7 @@ async def test_modifier(
         for entry in await view.get_entries():
             await entry.resource.run(modifier, modifier_config)
     mod_path = elf_executable_file + "_mod"
-    await elf.resource.flush_to_disk(mod_path)
+    await elf.resource.flush_data_to_disk(mod_path)
     mod_elf = await ofrak_context.create_root_resource_from_file(mod_path)
     await mod_elf.unpack()
     views = list(
@@ -181,7 +189,6 @@ async def test_elf_program_header_modifier(elf_resource: Resource):
 
 
 class TestElfPointerArraySectionModifier:
-
     add_value = 0x1337
 
     async def test_elf_pointer_array_section_modifier(self, elf_resource: Resource):
@@ -230,7 +237,7 @@ async def test_lief_add_segment_modifier(hello_out: Resource, tmp_path):
 
     # Assert new segment not in original binary
     original_path = tmp_path / "original"
-    await hello_out.flush_to_disk(original_path)
+    await hello_out.flush_data_to_disk(original_path)
     with pytest.raises(ValueError):
         assert_segment_exists(original_path, segment_vaddr, segment_length)
 
@@ -240,7 +247,7 @@ async def test_lief_add_segment_modifier(hello_out: Resource, tmp_path):
 
     # Assert new segment is in extended binary
     extended_path = tmp_path / "extended"
-    await hello_out.flush_to_disk(extended_path)
+    await hello_out.flush_data_to_disk(extended_path)
     assert_segment_exists(extended_path, segment_vaddr, 0x2000)
 
 
@@ -255,3 +262,35 @@ def assert_segment_exists(filepath: str, vaddr: int, length: int):
             if segment.header.p_vaddr == vaddr and segment.header.p_memsz == length:
                 return
         raise ValueError("Could not find segment in binary")
+
+
+async def test_lief_add_section_modifier(hello_out: Resource, tmp_path):
+    config = LiefAddSectionModifierConfig(name=".test", content=b"test", flags=0)
+    await hello_out.run(LiefAddSectionModifer, config=config)
+    elf_path = tmp_path / "test.elf"
+    await hello_out.flush_data_to_disk(elf_path)
+    assert segment_exists(elf_path, ".test", content=b"test")
+
+
+async def test_lief_remove_section_modifier(hello_out: Resource, tmp_path):
+    original = tmp_path / "original.elf"
+    await hello_out.flush_data_to_disk(original)
+    assert segment_exists(original, ".text")
+    config = LiefRemoveSectionModifierConfig(name=".text")
+    await hello_out.run(LiefRemoveSectionModifier, config=config)
+    modified = tmp_path / "modified.elf"
+    await hello_out.flush_data_to_disk(modified)
+    assert not segment_exists(modified, ".text")
+
+
+def segment_exists(filepath: str, name: str, content: Optional[bytes] = None):
+    with open(filepath, "rb") as f:
+        elffile = ELFFile(f)
+        sections = list(elffile.iter_sections())
+        for section in sections:
+            if section.name == name:
+                if content is not None and content in section.data():
+                    return True
+                if content is None:
+                    return True
+    return False

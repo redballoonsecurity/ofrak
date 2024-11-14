@@ -1,3 +1,6 @@
+import { settings } from "./stores";
+import { get } from "svelte/store";
+
 /***
  * Return the hex string of a single input byte.
  */
@@ -220,3 +223,29 @@ export const calculator = {
     return output[0];
   },
 };
+
+/***
+ * Title case a variable name, whether in camel case or snake case.
+ */
+export function splitAndCapitalize(name) {
+  return name
+    .split(/_|(?=[A-Z])/)
+    .map((name) => name.charAt(0).toUpperCase() + name.slice(1))
+    .join(" ");
+}
+
+/***
+ *
+ */
+export function saveSettings() {
+  window.localStorage.setItem("settings", JSON.stringify(get(settings)));
+}
+
+export function getTextSizeInPixels(element, text) {
+  const c = document.createElement("canvas");
+  const ctx = c.getContext("2d");
+  ctx.font = `${getComputedStyle(element).getPropertyValue(
+    "font-size"
+  )} ${getComputedStyle(element).getPropertyValue("font-family")}`;
+  return ctx.measureText(text);
+}

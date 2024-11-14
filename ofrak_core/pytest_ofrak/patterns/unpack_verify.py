@@ -42,7 +42,7 @@ class UnpackAndVerifyTestCase(Generic[K, V]):
 
     label: str
     expected_results: Dict[K, V]
-    optional_results: Dict[K, V]
+    optional_results: Set[K]
 
 
 class UnpackAndVerifyPattern(ABC):
@@ -69,7 +69,7 @@ class UnpackAndVerifyPattern(ABC):
         self,
         root_resource: Resource,
         expected_results: Dict,
-        optional_results: Dict,
+        optional_results: Set,
     ):
         await self.unpack(root_resource)
         print(await root_resource.summarize_tree())
@@ -79,7 +79,7 @@ class UnpackAndVerifyPattern(ABC):
         unpacked_set = set(unpacked_results.keys())
 
         expected_set = set(expected_results.keys())
-        optional_set = set(optional_results.keys())
+        optional_set = optional_results
 
         unpacked_expected_set = unpacked_set & expected_set
         unpacked_optional_set = unpacked_set & optional_set
@@ -89,14 +89,14 @@ class UnpackAndVerifyPattern(ABC):
         missing_optional_set = optional_set - unpacked_set
 
         ## Build an info string about this test case
-        info_str = [f"{'item':<16}{'unpacked':<16}{'expected':<16}{'optional':<16}"]
+        info_str = [f"{'item':<20}{'unpacked':<20}{'expected':<20}{'optional':<20}"]
         for item in sorted(unpacked_set | expected_set | optional_set):
             item_fmt = str(_hexlify(item))
             row = (
-                f"{item_fmt:<16}"
-                f"{item_fmt if item in unpacked_set else '':<16}"
-                f"{item_fmt if item in expected_set else '':<16}"
-                f"{item_fmt if item in optional_set else '':<16}"
+                f"{item_fmt:<20}"
+                f"{item_fmt if item in unpacked_set else '':<20}"
+                f"{item_fmt if item in expected_set else '':<20}"
+                f"{item_fmt if item in optional_set else '':<20}"
             )
             info_str.append(row)
         info_str = "\n".join(info_str)
@@ -116,10 +116,6 @@ class UnpackAndVerifyPattern(ABC):
         ## Verify the value of each expected descendant
         for key in expected_set:
             await self.verify_descendant(unpacked_results[key], expected_results[key])
-
-        ## Verify the value of each unpacked optional descendant
-        for key in unpacked_optional_set:
-            await self.verify_descendant(unpacked_results[key], optional_results[key])
 
         ## Warn if there are missing optional results
         if missing_optional_set:

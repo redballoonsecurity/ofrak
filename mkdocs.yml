@@ -1,7 +1,7 @@
 site_name: OFRAK Docs
 site_url: ""  # Required to have file:// paths work
 site_description: "Documentation for OFRAK (Open Firmware Reverse Analysis Konsole), a binary analysis and modification platform that combines the ability to unpack, analyze, modify, and repack binaries. "
-copyright: Copyright &copy; 2021 - 2022 Red Balloon Security, Inc.
+copyright: Copyright &copy; 2021 - 2023 Red Balloon Security, Inc.
 repo_url: https://github.com/redballoonsecurity/ofrak
 use_directory_urls: false  # Required to have file:// paths work
 theme:
@@ -64,9 +64,11 @@ nav:
           - Analyzer: "user-guide/key-concepts/component/analyzer.md"
           - Modifier: "user-guide/key-concepts/component/modifier.md"
           - Packer: "user-guide/key-concepts/component/packer.md"
-        - GUI:
-          - Minimap View: "user-guide/key-concepts/gui/minimap.md"
-          - Keybindings: "user-guide/key-concepts/gui/keybindings.md"
+      - GUI:
+        - Minimap View: "user-guide/gui/minimap.md"
+        - Keybindings: "user-guide/gui/keybindings.md"
+        - Settings: "user-guide/gui/settings.md"
+        - Projects: "user-guide/gui/projects.md"
       - Disassembler Backends:
         - Ghidra Backend: "user-guide/disassembler-backends/ghidra.md"
         - Binary Ninja Backend: "user-guide/disassembler-backends/binary_ninja.md"
@@ -90,3 +92,4 @@ nav:
       - ResourceView: "contributor-guide/core/resource_view.md"
   # Built by gen-files and literate-nav
   - Code Reference: reference/
+  - License: "license.md"

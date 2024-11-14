@@ -17,26 +17,9 @@ RUN cd /tmp && \
 # LINUX GNU + BINUTILS
 RUN apt-get -y update  && apt-get -y install software-properties-common gcc-10
 
-RUN if [ "$TARGETARCH" = "amd64" ]; then \
-    cd /tmp && \
-    apt-get update && apt-get install -y texinfo && \
-    wget http://archive.ubuntu.com/ubuntu/pool/main/b/binutils/binutils_2.34.orig.tar.xz --show-progress --progress=bar:force:noscroll && \
-    tar xvf binutils_2.34.orig.tar.xz -C /opt/rbs/toolchain && \
-    rm -rf binutils_2.34.orig.tar.xz && \
-    cd /opt/rbs/toolchain/binutils-2.34 && \
-    ./configure CC=/usr/bin/x86_64-linux-gnu-gcc-10 && \
-    make -j32; \
-fi;
-
+#X64-64 toolchain for arm64 Docker images
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
-    cd /tmp && \
-    apt-get update && apt-get install -y texinfo && \
-    wget http://archive.ubuntu.com/ubuntu/pool/main/b/binutils/binutils_2.34.orig.tar.xz --show-progress --progress=bar:force:noscroll && \
-    tar xvf binutils_2.34.orig.tar.xz -C /opt/rbs/toolchain && \
-    rm -rf binutils_2.34.orig.tar.xz && \
-    cd /opt/rbs/toolchain/binutils-2.34 && \
-    ./configure CC=/usr/bin/aarch64-linux-gnu-gcc-10 && \
-    make -j32; \
+    apt-get update && apt-get install -y gcc-10-x86-64-linux-gnu; \
 fi;
 
 #M68k GNU 10 Linux
@@ -75,3 +58,11 @@ RUN apt-get update && apt-get install -y gcc-avr binutils-avr avr-libc
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
     apt-get update && apt-get install -y gcc-10-powerpc-linux-gnu; \
 fi;
+
+#BCC (GCC) SPARC v8
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+    cd /tmp/ \
+      && wget 'https://www.gaisler.com/anonftp/bcc2/bin/bcc-2.0.7-gcc-linux64.tar.xz' \
+      && mkdir -p /opt/rbs/toolchain/ \
+      && tar -C /opt/rbs/toolchain/ -xJf bcc-2.0.7-gcc-linux64.tar.xz; \
+fi

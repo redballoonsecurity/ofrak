@@ -4,12 +4,41 @@ All notable changes to `ofrak-patch-maker` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+### Added
+- GNU 32-bit x86 toolchain. ([#405](https://github.com/redballoonsecurity/ofrak/pull/405))
+- SPARC BCC tolchain. ([#462](https://github.com/redballoonsecurity/ofrak/pull/462))
+
+### Removed
+- Switch from binutils version of linker, bin_parser, assembler for X86_64 to default Debian versions. ([#405](https://github.com/redballoonsecurity/ofrak/pull/405))
+
+### Fixed
+- X86_64 toolchain now installs on Docker image builds for AARCH64 hosts. ([#405](https://github.com/redballoonsecurity/ofrak/pull/405))
+- Toolchain now drops the .altinstrs_replacement as well as the .altinstructions section in our generated linker scripts ([#414](https://github.com/redballoonsecurity/ofrak/pull/414))
+
+### Changed
+- Removed `SUBALIGN(0)` for `.bss` sections
+- Minor update to OFRAK Community License, add OFRAK Pro License ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
+
+## [4.0.2](https://github.com/redballoonsecurity/ofrak/compare/ofrak-patch-maker-v.4.0.1...ofrak-patch-maker-v.4.0.2)
+### Fixed
+- Remove option to read or install toolchain.conf from/to "/etc/toolchain.conf" ([#342](https://github.com/redballoonsecurity/ofrak/pull/342))
+
+## [4.0.1](https://github.com/redballoonsecurity/ofrak/compare/ofrak-patch-maker-v.4.0.0...ofrak-patch-maker-v.4.0.1)
+### Added
+- Interface to iterate over all Toolchain implementations ([#287](https://github.com/redballoonsecurity/ofrak/pull/287))
+
+### Fixed
+- Localize magic import ([#299](https://github.com/redballoonsecurity/ofrak/pull/299))
+
+## [4.0.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-patch-maker-v.3.0.0...ofrak-patch-maker-v.4.0.0)
 
 ### Changed
 - Discard `.altinstructions` section when linking
 - Use `SUBALIGN(0)` for `.bss` sections
 - Force literal pool at end of function for AARCH64 using `-mpc-relative-literal-loads`
+
 ### Added
+- `-fno-optimize-sibling-calls` flag added to AVR toolchain.
 - `-fno-pic` flag added to the GNU_10_Toolchain to omit GOTs in patches (FEMs) against binaries that aren't dynamically linked. (see [#245](https://github.com/redballoonsecurity/ofrak/pull/245))
 - Add methods to parse relocation symbols from object files.
 - Extend parsed symbol dictionary to include LinkableSymbolType.
@@ -21,10 +50,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Changed
 - Switch to standard GCC-like frontend for LLVM, which supports C attribute(weak)
 - Treat weak symbols as "undefined" in BOM, so alternative, strong definitions can be searched
+- Pass `-mmcu` value to the AVR preprocessor.
+- Raise a more descriptive error on toolchain failure.
+
+### Fixed
+- Toolchain `preprocess()` method now returns the path to the preprocessed file.
 
 ## [3.0.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-patch-maker-v.2.0.0...ofrak-patch-maker-v.3.0.0) - 2023-01-20
 ### Added
-- `-fno-optimize-sibling-calls` flag added to AVR toolchain.
 - Optional permission map parameter to `Allocatable.allocate_bom`, which enables developers to express where 
 segments of one set of permissions may be placed in the destination binary. For example, a developer may specify
 to place `MemoryPermissions.R` `Segments` in destination program `MemoryRegions` of `MemoryPermissions.R` 
@@ -35,11 +68,6 @@ or `MemoryPermissions.RX`.
 - Make toolchain names in `toolchain.conf` more specific:
   - `GNU_ARM_NONE` changed to `GNU_ARM_NONE_EABI_10_2_1`.
   - `GNU_X86_64_LINUX` changed to `GNU_X86_64_LINUX_EABI_10_3_0`.
-- Pass `-mmcu` value to the AVR preprocessor.
-- Raise a more descriptive error on toolchain failure.
-
-### Fixed
-- Toolchain `preprocess()` method now returns the path to the preprocessed file.
 
 ### Removed
 - Removed `ToolchainVersion`.

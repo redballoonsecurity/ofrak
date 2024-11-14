@@ -11,9 +11,6 @@ import yaml
 
 BASE_DOCKERFILE = "base.Dockerfile"
 FINISH_DOCKERFILE = "finish.Dockerfile"
-GIT_COMMIT_HASH = (
-    subprocess.check_output(["git", "rev-parse", "--short=8", "HEAD"]).decode("ascii").strip()
-)
 
 
 class InstallTarget(Enum):
@@ -26,6 +23,7 @@ class OfrakImageConfig:
     registry: str
     base_image_name: str
     image_name: str
+    image_revision: str
     packages_paths: List[str]
     build_base: bool
     build_finish: bool
@@ -90,7 +88,7 @@ def main():
             f"{full_base_image_name}:master",
             *cache_args,
             "-t",
-            f"{full_base_image_name}:{GIT_COMMIT_HASH}",
+            f"{full_base_image_name}:{config.image_revision}",
             "-t",
             f"{full_base_image_name}:latest",
             "-f",
@@ -115,7 +113,7 @@ def main():
             "docker",
             "build",
             "-t",
-            f"{full_image_name}:{GIT_COMMIT_HASH}",
+            f"{full_image_name}:{config.image_revision}",
             "-t",
             f"{full_image_name}:latest",
             "-f",
@@ -149,10 +147,19 @@ def parse_args() -> OfrakImageConfig:
     args = parser.parse_args()
     with open(args.config) as file_handle:
         config_dict = yaml.safe_load(file_handle)
+    if "image_revision" in config_dict:
+        image_revision = config_dict["image_revision"]
+    else:
+        image_revision = (
+            subprocess.check_output(["git", "rev-parse", "--short=8", "HEAD"])
+            .decode("ascii")
+            .strip()
+        )
     image_config = OfrakImageConfig(
         config_dict["registry"],
         config_dict["base_image_name"],
         config_dict["image_name"],
+        image_revision,
         config_dict["packages_paths"],
         args.base,
         args.finish,
@@ -192,14 +199,16 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
             continue
         with open(dockerstage_path) as file_handle:
             dockerstub = file_handle.read()
+        # Cannot use ENV here because of multi-stage build FROM, so replace direclty in Docerkstage contents
+        dockerstub = dockerstub.replace("$PACKAGE_DIR", package_path)
         dockerfile_base_parts += [f"### {dockerstage_path}", dockerstub]
 
     dockerfile_base_parts += [
-        "FROM python:3.7-bullseye@sha256:338ead05c1a0aa8bd8fcba8e4dbbe2afd0283b4732fd30cf9b3bfcfcbc4affab",
+        "FROM python:3.8-bullseye@sha256:e1cd369204123e89646f8c001db830eddfe3e381bd5c837df00141be3bd754cb",
         "",
     ]
 
-    requirement_suffixes = [""]
+    requirement_suffixes = ["", "-non-pypi"]
     if config.install_target is InstallTarget.DEVELOP:
         requirement_suffixes += ["-docs", "-test"]
 
@@ -207,7 +216,11 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
         dockerstub_path = os.path.join(package_path, "Dockerstub")
         with open(dockerstub_path) as file_handle:
             dockerstub = file_handle.read()
-        dockerfile_base_parts += [f"### {dockerstub_path}", dockerstub]
+        dockerfile_base_parts += [
+            f"### {dockerstub_path}",
+            f"ENV PACKAGE_PATH={package_path}",
+            dockerstub,
+        ]
         # Collect python dependencies
         python_reqs = []
         for suff in requirement_suffixes:
@@ -233,7 +246,7 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
 def create_dockerfile_finish(config: OfrakImageConfig) -> str:
     full_base_image_name = "/".join((config.registry, config.base_image_name))
     dockerfile_finish_parts = [
-        f"FROM {full_base_image_name}:{GIT_COMMIT_HASH}\n\n",
+        f"FROM {full_base_image_name}:{config.image_revision}\n\n",
         f"ARG OFRAK_SRC_DIR=/\n",
     ]
     package_names = list()
@@ -247,22 +260,28 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
         [
             "$INSTALL_TARGET:",
             "\\n\\\n".join(
-                [f"\tmake -C {package_name} $INSTALL_TARGET" for package_name in package_names]
+                [f"\t\\$(MAKE) -C {package_name} $INSTALL_TARGET" for package_name in package_names]
             ),
             "\\n",
         ]
     )
     dockerfile_finish_parts.append(f'RUN printf "{develop_makefile}" >> Makefile\n')
     dockerfile_finish_parts.append("RUN make $INSTALL_TARGET\n\n")
+    test_names = " ".join([f"test_{package_name}" for package_name in package_names])
     finish_makefile = "\\n\\\n".join(
         [
-            "test:",
-            "\\n\\\n".join([f"\tmake -C {package_name} test" for package_name in package_names]),
-            "\\n",
+            ".PHONY: test " + test_names,
+            "test: " + test_names,
         ]
+        + [
+            f"test_{package_name}:\\n\\\n\t\\$(MAKE) -C {package_name} test"
+            for package_name in package_names
+        ]
+        + ["\\n"]
     )
     dockerfile_finish_parts.append(f'RUN printf "{finish_makefile}" >> Makefile\n')
     if config.entrypoint is not None:
+        dockerfile_finish_parts.append('SHELL ["/bin/bash", "-c"]\n')
         dockerfile_finish_parts.append(f"ENTRYPOINT {config.entrypoint}")
     return "".join(dockerfile_finish_parts)
 

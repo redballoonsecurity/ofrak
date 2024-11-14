@@ -13,6 +13,7 @@ DEFAULT_GHIDRA_CONFIG_PATH = os.path.join(
 @dataclass
 class OfrakGhidraConfig:
     ghidra_path: str
+    ghidra_version: str
     ghidra_log_file: str
     ghidra_server_user: str
     ghidra_server_pass: str
@@ -49,10 +50,10 @@ server:
   user: # User for the local Ghidra repository and server OFRAK will create
   pass: # Password for the local Ghidra repository and server OFRAK will create
   repository:
-    host: # Host for the Ghidra repository OFRAK will create, e.g. ghidra://localhost
+    host: # Host for the Ghidra repository OFRAK will create, e.g. localhost
     port: # Port for the Ghidra repository OFRAK will create
   analysis:
-    host: # Host for the server OFRAK will create in a headless Ghidra instance, e.g. http://localhost
+    host: # Host for the server OFRAK will create in a headless Ghidra instance, e.g. localhost
     port: # Host for the port OFRAK will create in a headless Ghidra instance
 """
 
@@ -62,6 +63,7 @@ server:
 
         return OfrakGhidraConfig(
             ghidra_path=raw_config["ghidra_install"]["path"],
+            ghidra_version=raw_config["ghidra_install"]["version"],
             ghidra_log_file=raw_config["ghidra_install"]["log_file"],
             ghidra_server_user=raw_config["server"]["user"],
             ghidra_server_pass=raw_config["server"]["pass"],
@@ -76,6 +78,7 @@ server:
             "ghidra_install": {
                 "path": self.ghidra_path,
                 "log_file": self.ghidra_log_file,
+                "version": self.ghidra_version,
             },
             "server": {
                 "user": self.ghidra_server_user,

@@ -40,12 +40,12 @@ CODE_REGION_UNPACKER_TEST_CASES = [
         },
         {
             ## Optional cases
-            0x400390: [],  # .init:_init (loader import)
-            0x4003A8: [],  # .plt:LAB_004003a8 (trampoline, ignored if in .plt)
-            0x4003B8: [],  # .plt:puts (lib import thunk)
-            0x4003C8: [],  # .plt:__libc_start_main (lib import thunk)
-            0x4003E0: [],  # .text:_start (loader import)
-            0x4005B8: [],  # .fini:_fini (loader import)
+            0x400390,  # .init:_init (loader import)
+            0x4003A8,  # .plt:LAB_004003a8 (trampoline, ignored if in .plt)
+            0x4003B8,  # .plt:puts (lib import thunk)
+            0x4003C8,  # .plt:__libc_start_main (lib import thunk)
+            0x4003E0,  # .text:_start (loader import)
+            0x4005B8,  # .fini:_fini (loader import)
         },
         "hello.out",
         "cc2de3c0cd2d0ded7543682c2470fcf0",
@@ -63,16 +63,27 @@ CODE_REGION_UNPACKER_TEST_CASES = [
         },
         {
             ## Optional cases
-            0x4003E0: [],  # .text:_start (loader import)
-            0x400390: [],  # .init:_init (loader import)
-            0x4003A8: [],  # .plt:? (unknown import thunk)
-            0x4003B8: [],  # .plt:puts (lib import thunk)
-            0x4003C8: [],  # .plt:__libc_start_main (lib import thunk)
-            0x4004E0: [],  # .text:__libc_csu_fini (handled ambiguously without .text hint)
-            0x4005B8: [],  # .fini:_fini (loader import)
+            0x4003E0,  # .text:_start (loader import)
+            0x400390,  # .init:_init (loader import)
+            0x4003A8,  # .plt:? (unknown import thunk)
+            0x4003B8,  # .plt:puts (lib import thunk)
+            0x4003C8,  # .plt:__libc_start_main (lib import thunk)
+            0x4004E0,  # .text:__libc_csu_fini (handled ambiguously without .text hint)
+            0x4005B8,  # .fini:_fini (loader import)
         },
         "hello_nosections.out",
         "56662f638390cae92c2cf5107bc3f1ef",
+    ),
+    # x64 Kernel address space - ensure large 64-bit addresses are interpreted as unsigned
+    CodeRegionUnpackerTestCase(
+        "x64 Kernel address space",
+        {
+            ## Required cases
+            0xFFFFFFFF80000000: [],  # .text:main
+        },
+        set(),  ## No optional results
+        "kernel_address_space.out",
+        "242dd5b9ecc56bb7a8c8db43e8c720f0",
     ),
     CodeRegionUnpackerTestCase(
         "ARM ELF without literal pools",
@@ -83,9 +94,7 @@ CODE_REGION_UNPACKER_TEST_CASES = [
             0x8094: [],
             0x8104: [],
         },
-        {
-            # No optional results
-        },
+        set(),  # No optional results
         "arm_reloc_relocated.elf",
         "ed69056d3dbca810fa3a3f93db9e8927",
     ),
@@ -98,9 +107,9 @@ CODE_REGION_UNPACKER_TEST_CASES = [
         },
         {
             # .init
-            0x8000: [],
+            0x8000,
             # .fini
-            0x8090: [],
+            0x8090,
         },
         "simple_arm_gcc.o.elf",
         "c79d1bea0398d7a9d0faa1ba68786f5e",

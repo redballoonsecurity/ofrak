@@ -161,8 +161,17 @@ public class GetInstructions extends HeadlessScript {
         }
 
         String toJson() {
-            return String.format("{\"instr_offset\":%d,\"instr_size\":%d,\"mnem\":\"%s\",\"operands\":\"%s\",\"regs_read\":\"%s\",\"regs_written\":\"%s\",\"results\":\"%s\",\"instr_mode\":\"%s\"}",
-            instr_offset, instr_size, mnem, operands, registers_read, registers_written, results, instruction_mode);
+            return String.format(
+                "{\"instr_offset\":%s,\"instr_size\":%s,\"mnem\":\"%s\",\"operands\":\"%s\",\"regs_read\":\"%s\",\"regs_written\":\"%s\",\"results\":\"%s\",\"instr_mode\":\"%s\"}",
+                Long.toUnsignedString(instr_offset), 
+                Long.toUnsignedString(instr_size), 
+                mnem, 
+                operands, 
+                registers_read, 
+                registers_written, 
+                results, 
+                instruction_mode
+            );
         }
     }
 }

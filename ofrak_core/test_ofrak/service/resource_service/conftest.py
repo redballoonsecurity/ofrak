@@ -1,7 +1,12 @@
 from dataclasses import dataclass
 from typing import Optional, List, Union, Tuple, Iterable
 
-from ofrak.model.resource_model import ResourceModel, ResourceTag, ResourceAttributes
+
+from ofrak.model.resource_model import (
+    ResourceModel,
+    ResourceTag,
+    ResourceAttributes,
+)
 from ofrak.service.resource_service_i import (
     ResourceFilter,
     ResourceSort,

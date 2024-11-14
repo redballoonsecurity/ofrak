@@ -1,0 +1,2 @@
+bincopy @ git+https://github.com/eerimoq/bincopy.git@17.14.5
+binwalk @ git+https://github.com/ReFirmLabs/binwalk.git@v2.3.4

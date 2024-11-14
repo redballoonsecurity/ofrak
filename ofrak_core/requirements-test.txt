@@ -1,12 +1,11 @@
 autoflake==1.4
-black==22.6.0
-pytest
+# pytest-lazy-fixture does not work with pytest 8.0.0 - https://github.com/TvoroG/pytest-lazy-fixture/issues/65
+pytest<8.0
+filelock
 hypothesis~=6.39.3
 hypothesis-trio
 trio-asyncio
 mypy==0.942
-ofrak_angr~=1.0
-ofrak_capstone~=1.0
 psutil~=5.9
 pyelftools==0.29
 pytest-aiohttp
