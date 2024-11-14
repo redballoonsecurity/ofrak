@@ -1,13 +1,14 @@
 <script>
+  import AddTagView from "../views/AddTagView.svelte";
+  import AiView from "../views/AiView.svelte";
   import CarveView from "../views/CarveView.svelte";
   import CommentView from "../views/CommentView.svelte";
   import ComponentsView from "../views/ComponentsView.svelte";
   import ModifyView from "../views/ModifyView.svelte";
-  import ScriptView from "../views/ScriptView.svelte";
-  import SettingsView from "../views/SettingsView.svelte";
-  import SearchView from "../views/SearchView.svelte";
-  import AddTagView from "../views/AddTagView.svelte";
   import RunScriptView from "../views/RunScriptView.svelte";
+  import ScriptView from "../views/ScriptView.svelte";
+  import SearchView from "../views/SearchView.svelte";
+  import SettingsView from "../views/SettingsView.svelte";
   import Toolbar from "../utils/Toolbar.svelte";
 
   import {
@@ -297,6 +298,14 @@
         iconUrl: "/icons/identify.svg",
         onclick: async (e) => {
           modifierView = SearchView;
+        },
+      },
+
+      {
+        text: "Analyze with AI",
+        iconUrl: "/icons/ai.svg",
+        onclick: async (e) => {
+          modifierView = AiView;
         },
       },
 

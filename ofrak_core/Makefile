@@ -28,5 +28,6 @@ ofrak/gui/public:
 		npm install && \
 		npm run build && \
 		cd ../ofrak_core && \
+		rm -rf ofrak/gui/public ; \
 		cp -r ../frontend/dist ofrak/gui/public ; \
 	fi

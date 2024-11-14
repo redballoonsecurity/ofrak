@@ -5,6 +5,7 @@ RUN apt-get -y update && \
       build-essential \
       cmake \
       cpio \
+      curl \
       git \
       genisoimage \
       liblz4-dev \
@@ -75,3 +76,6 @@ RUN cd /tmp && \
     make install && \
     cd /tmp && \
     rm -r UEFITool-A68
+
+# Install Ollama
+RUN curl -L "https://ollama.com/download/ollama-linux-""$TARGETARCH"".tgz" | tar -C /usr/ -xzv
