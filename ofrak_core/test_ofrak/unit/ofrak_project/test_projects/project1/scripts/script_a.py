@@ -1,6 +1,5 @@
-from ofrak import *
-from ofrak.core import *
-
+from ofrak import OFRAKContext, Resource
+from typing import Optional
 
 async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource]):
     if root_resource is None:

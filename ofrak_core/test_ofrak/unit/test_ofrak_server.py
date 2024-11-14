@@ -614,6 +614,7 @@ async def test_update_script(ofrak_client: TestClient, hello_world_elf):
     expected_list = [
         "from ofrak import *",
         "from ofrak.core import *",
+        "from typing import Optional",
         "",
         "",
         "async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):",
@@ -734,6 +735,7 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
     expected_list = [
         "from ofrak import *",
         "from ofrak.core import *",
+        "from typing import Optional",
         "",
         "",
         "async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):",
@@ -829,12 +831,14 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
     expected_list = [
         "from ofrak import *",
         "from ofrak.core import *",
+        "from typing import Optional",
         "",
         "",
-        "async def main(ofrak_context: OFRAKContext):",
-        "    root_resource = await ofrak_context.create_root_resource_from_file(",
-        '        "hello_world_elf"',
-        "    )",
+        "async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):",
+        "    if root_resource is None:",
+        "        root_resource = await ofrak_context.create_root_resource_from_file(",
+        '            "hello_world_elf"',
+        "        )",
         "",
         "    await root_resource.unpack()",
         "",
@@ -864,6 +868,9 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
         "",
     ]
 
+    expected_str = join_and_normalize(expected_list)
+    actual_str = join_and_normalize(resp_body)
+    assert actual_str == expected_str
 
 async def test_get_components(ofrak_client: TestClient, hello_world_elf, ofrak_context):
     create_resp = await ofrak_client.post(
@@ -1152,6 +1159,7 @@ async def test_add_flush_to_disk_to_script(ofrak_client: TestClient, firmware_zi
     expected_list = [
         "from ofrak import *",
         "from ofrak.core import *",
+        "from typing import Optional",
         "",
         "",
         "async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):",

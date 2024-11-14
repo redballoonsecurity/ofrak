@@ -36,6 +36,7 @@ async def test_run_script_modifier(ofrak_context, hello_world_elf):
 SCRIPT = """
 from ofrak import *
 from ofrak.core import *
+from typing import Optional
 
 async def part_1(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):
     await root_resource.unpack()
