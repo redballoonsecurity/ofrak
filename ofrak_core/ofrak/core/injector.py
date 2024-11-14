@@ -8,6 +8,9 @@ from ofrak.resource import Resource
 from ofrak_type.range import Range
 
 
+__all__ = ["BinaryInjectorModifierConfig", "BinaryInjectorModifier"]
+
+
 @dataclass
 class BinaryInjectorModifierConfig(ComponentConfig):
     binary_patch_configs: List[Tuple[int, bytes]]

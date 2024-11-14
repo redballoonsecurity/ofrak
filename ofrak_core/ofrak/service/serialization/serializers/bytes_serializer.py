@@ -3,6 +3,9 @@ from typing import Any
 from ofrak.service.serialization.serializers.serializer_i import SerializerInterface
 
 
+__all__ = ["BytesSerializer"]
+
+
 class BytesSerializer(SerializerInterface):
     """
     Serialize and deserialize bytes into `PJSONType`.

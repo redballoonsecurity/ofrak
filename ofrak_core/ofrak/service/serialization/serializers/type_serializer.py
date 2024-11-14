@@ -7,6 +7,9 @@ from typing_inspect import get_origin
 from ofrak.service.serialization.serializers.serializer_i import SerializerInterface
 
 
+__all__ = ["is_metaclass", "TypeSerializer"]
+
+
 def is_metaclass(type_hint):
     """Will recognize Type, Type[X], and metaclasses"""
     return any(

@@ -13,6 +13,8 @@ from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.core.pe.model import Pe
 
+__all__ = ["UEFIEXTRACT", "Uefi", "UefiUnpacker"]
+
 LOGGER = logging.getLogger(__name__)
 
 UEFIEXTRACT = ComponentExternalTool("uefiextract", "https://github.com/LongSoft/UEFITool", "--help")

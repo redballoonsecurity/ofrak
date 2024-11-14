@@ -11,6 +11,8 @@ from ofrak.model.resource_model import ResourceAttributes
 from ofrak.component.abstract import ComponentMissingDependencyError
 from ofrak.component.analyzer import Analyzer
 
+__all__ = ["BINWALK_TOOL", "BinwalkAttributes", "BinwalkAnalyzer"]
+
 try:
     import binwalk
 

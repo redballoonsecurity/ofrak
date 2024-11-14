@@ -14,6 +14,8 @@ from ofrak.core.binary import GenericBinary
 from ofrak_type.range import Range
 from ofrak.model.component_model import ComponentExternalTool
 
+__all__ = ["JEFFERSON", "MKFS_JFFS2", "Jffs2Filesystem", "Jffs2Unpacker", "Jffs2Packer"]
+
 LOGGER = logging.getLogger(__name__)
 
 JEFFERSON = ComponentExternalTool("jefferson", "https://pypi.org/project/jefferson/", "--help")

@@ -4,15 +4,23 @@ import logging
 import re
 import os
 from typing import Any, Dict, List, Optional, Tuple
+from ofrak.core.addressable import Addressable
 from ofrak.model.resource_model import ResourceIndexedAttribute
 from ofrak.resource import Resource
 from ofrak.core.dtb import DtbNode, DtbProperty
-from ofrak.core import Addressable
 from ofrak.core.filesystem import FilesystemEntry
 from ofrak.model.resource_model import Data
 from ofrak.service.resource_service_i import ResourceAttributeValueFilter, ResourceFilter
 from black import format_str, FileMode
 
+
+__all__ = [
+    "SelectableAttributesError",
+    "ActionType",
+    "ScriptAction",
+    "ScriptSession",
+    "ScriptBuilder",
+]
 
 LOGGER = logging.getLogger(__name__)
 
@@ -56,6 +64,7 @@ class ScriptSession:
     boilerplate_header: str = r"""
     from ofrak import *
     from ofrak.core import *
+    from typing import Optional
 
     async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):"""
     # TODO: Replace with backend in use by OFRAK instance used to create the script.

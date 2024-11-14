@@ -12,6 +12,8 @@ from ofrak.model.component_model import ComponentConfig, ComponentExternalTool
 from ofrak.resource import Resource
 from ofrak_type.range import Range
 
+__all__ = ["ZSTD", "ZstdData", "ZstdPackerConfig", "ZstdUnpacker", "ZstdPacker"]
+
 ZSTD = ComponentExternalTool(
     "zstd", "http://facebook.github.io/zstd/", "--help", apt_package="zstd", brew_package="zstd"
 )

@@ -7,6 +7,9 @@ from ofrak_patch_maker.toolchain.model import Segment
 from ofrak_type.memory_permissions import MemoryPermissions
 
 
+__all__ = ["LinkableSymbolStubInfo", "LinkableSymbol"]
+
+
 @dataclass
 class LinkableSymbolStubInfo:
     """

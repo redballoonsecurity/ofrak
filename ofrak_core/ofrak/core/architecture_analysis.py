@@ -12,6 +12,9 @@ from ofrak.core.program import Program
 from ofrak.model.component_model import ComponentConfig
 
 
+__all__ = ["MemoryRegionProgramAttributesAnalyzer"]
+
+
 class MemoryRegionProgramAttributesAnalyzer(Analyzer[None, Tuple[ProgramAttributes]]):
     """
     Analyze a [MemoryRegion][ofrak.core.memory_region.MemoryRegion] to extract its

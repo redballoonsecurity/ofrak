@@ -7,6 +7,9 @@ from ofrak.service.serialization.pjson_types import PJSONType
 from ofrak.service.serialization.serializers.serializer_i import SerializerInterface
 
 
+__all__ = ["ResourceIndexedAttributeSerializer"]
+
+
 def _is_generic_resource_indexed_attribute(type_hint):
     return get_origin(type_hint) == ResourceIndexedAttribute
 

@@ -9,8 +9,11 @@ import time
 import sys
 
 from ofrak.cli.ofrak_cli import OfrakCommandRunsScript
-from ofrak.core import FilesystemEntry
+from ofrak.core.filesystem import FilesystemEntry
 from ofrak.gui.server import open_gui
+
+
+__all__ = ["UnpackCommand"]
 
 
 class UnpackCommand(OfrakCommandRunsScript):

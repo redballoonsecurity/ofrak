@@ -6,6 +6,19 @@ import sys
 import ofrak_type.error
 
 
+__all__ = [
+    "SerializedError",
+    "DataServiceError",
+    "ResourceServiceError",
+    "JobServiceError",
+    "OutOfBoundError",
+    "PatchOverlapError",
+    "MisalignedError",
+    "AmbiguousOrderError",
+    "NonContiguousError",
+]
+
+
 class SerializedError(RuntimeError):
     def to_json(self):
         return json.dumps(self.to_dict(self))

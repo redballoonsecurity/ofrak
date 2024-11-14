@@ -20,6 +20,8 @@ from ofrak_angr.components.angr_analyzer import AngrAnalyzerConfig, AngrCodeRegi
 from ofrak_angr.components.identifiers import AngrAnalysisResource
 from ofrak_angr.model import AngrAnalysis
 
+__all__ = ["AngrCodeRegionUnpacker", "AngrComplexBlockUnpacker"]
+
 LOGGER = logging.getLogger(__name__)
 
 

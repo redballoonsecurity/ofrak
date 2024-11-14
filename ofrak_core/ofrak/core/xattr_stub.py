@@ -2,6 +2,8 @@ import inspect
 import logging
 
 
+__all__ = ["xattr", "listxattr", "getxattr", "setxattr", "removexattr"]
+
 LOGGER = logging.getLogger(__name__)
 
 

@@ -22,6 +22,9 @@ from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceServiceInterface
 
 
+__all__ = ["UnpackerError", "Unpacker"]
+
+
 class UnpackerError(RuntimeError):
     """Base exception raised by unpackers."""
 

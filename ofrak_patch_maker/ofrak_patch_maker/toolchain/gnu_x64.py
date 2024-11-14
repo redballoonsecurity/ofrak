@@ -6,6 +6,9 @@ import logging
 from ofrak_type.architecture import ArchInfo
 
 
+__all__ = ["GNU_X86_64_LINUX_EABI_10_3_0_Toolchain"]
+
+
 class GNU_X86_64_LINUX_EABI_10_3_0_Toolchain(GNU_10_Toolchain):
     binary_file_parsers = [GNU_V10_ELF_Parser()]
 

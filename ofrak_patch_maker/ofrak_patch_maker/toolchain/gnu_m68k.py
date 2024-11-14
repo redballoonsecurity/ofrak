@@ -9,6 +9,9 @@ from ofrak_patch_maker.toolchain.model import ToolchainConfig
 import logging
 
 
+__all__ = ["GNU_M68K_LINUX_10_Toolchain"]
+
+
 class GNU_M68K_LINUX_10_Toolchain(GNU_10_Toolchain):
     binary_file_parsers = [GNU_ELF_Parser()]
 

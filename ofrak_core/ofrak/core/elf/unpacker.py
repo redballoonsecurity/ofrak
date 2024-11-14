@@ -42,6 +42,15 @@ from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.range import Range
 
 
+__all__ = [
+    "ElfUnpacker",
+    "ElfDynamicSectionUnpacker",
+    "ElfRelaUnpacker",
+    "ElfSymbolUnpacker",
+    "ElfPointerArraySectionUnpacker",
+]
+
+
 class ElfUnpacker(Unpacker[None]):
     id = b"ElfUnpacker"
     targets = (Elf,)

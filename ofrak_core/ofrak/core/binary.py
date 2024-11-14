@@ -8,6 +8,16 @@ from ofrak.component.modifier import Modifier, ModifierError
 from ofrak.model.component_model import ComponentConfig
 
 
+__all__ = [
+    "GenericBinary",
+    "GenericText",
+    "BinaryExtendConfig",
+    "BinaryExtendModifier",
+    "BinaryPatchConfig",
+    "BinaryPatchModifier",
+]
+
+
 class GenericBinary(ResourceView):
     """
     A generic binary blob.

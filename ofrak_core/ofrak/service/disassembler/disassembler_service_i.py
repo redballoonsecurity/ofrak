@@ -13,6 +13,16 @@ from ofrak_type.bit_width import BitWidth
 from ofrak_type.endianness import Endianness
 
 
+__all__ = [
+    "DisassemblerServiceRequest",
+    "DisassemblyResult",
+    "RegisterUsageResult",
+    "DisassemblerServiceInterface",
+    "DisassemblerArchSupportError",
+    "DisassemblerRegisterUsageSupportError",
+]
+
+
 @dataclass
 class DisassemblerServiceRequest:
     isa: InstructionSet

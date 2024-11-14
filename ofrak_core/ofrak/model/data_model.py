@@ -4,6 +4,9 @@ from typing import List
 from ofrak_type.range import Range
 
 
+__all__ = ["DataPatch", "DataPatchesResult", "DataModel"]
+
+
 @dataclass
 class DataPatch:
     """

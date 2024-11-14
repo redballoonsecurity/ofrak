@@ -17,6 +17,14 @@ from ofrak.model.component_model import ComponentExternalTool
 from ofrak.ofrak_context import DEFAULT_LOG_FILE, OFRAKContext, OFRAK
 from synthol.injector import DependencyInjector
 
+__all__ = [
+    "BACKEND_PACKAGES",
+    "OFRAKEnvironment",
+    "OfrakCommand",
+    "OfrakCommandRunsScript",
+    "OFRAKCommandLineInterface",
+]
+
 BACKEND_PACKAGES: Dict[Optional[str], Set[str]] = {
     "angr": {"ofrak_angr", "ofrak_capstone"},
     "binary-ninja": {"ofrak_binary_ninja", "ofrak_capstone"},

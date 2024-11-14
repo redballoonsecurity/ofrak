@@ -16,6 +16,17 @@ from ofrak.resource_view import ResourceView
 from ofrak_type import Range
 
 
+__all__ = [
+    "StringPatchingConfig",
+    "StringPatchingModifier",
+    "StringFindReplaceConfig",
+    "StringFindReplaceModifier",
+    "AsciiString",
+    "AsciiStringAnalyzer",
+    "StringsUnpacker",
+]
+
+
 @dataclass
 class StringPatchingConfig(ComponentConfig):
     """

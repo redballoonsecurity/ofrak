@@ -8,6 +8,9 @@ from ofrak.service.serialization.pjson_types import PJSONType
 from ofrak.service.serialization.service_i import SerializationServiceInterface
 
 
+__all__ = ["StashedPJSONSerializationService"]
+
+
 def _short_string_generator():
     """Generator of short JSON-compatible strings of increasing size."""
     disallowed_characters = [0x22, 0x5C, 0x2F, 0x62, 0x66, 0x6E, 0x72, 0x74, 0x75]

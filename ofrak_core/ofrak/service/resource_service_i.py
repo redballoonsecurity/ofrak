@@ -12,6 +12,20 @@ from ofrak.model.tag_model import ResourceTag
 from ofrak.service.abstract_ofrak_service import AbstractOfrakService
 
 
+__all__ = [
+    "ResourceServiceWalkError",
+    "ResourceFilterCondition",
+    "ResourceAttributeFilter",
+    "ResourceAttributeRangeFilter",
+    "ResourceAttributeValueFilter",
+    "ResourceAttributeValuesFilter",
+    "ResourceFilter",
+    "ResourceSortDirection",
+    "ResourceSort",
+    "ResourceServiceInterface",
+]
+
+
 class ResourceServiceWalkError(RuntimeError):
     pass
 

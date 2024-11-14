@@ -3,18 +3,14 @@ from itertools import tee
 from typing import List
 
 from ofrak import Modifier, Resource, OFRAKContext
-from ofrak.core import (
-    Elf,
-    FreeSpace,
-    ElfProgramHeaderModifier,
-    ElfProgramHeaderModifierConfig,
-    Allocatable,
-    ElfProgramHeader,
-    ElfProgramHeaderType,
-    ElfUnpacker,
-)
+from ofrak.core.elf.model import Elf, ElfProgramHeader, ElfProgramHeaderType
+from ofrak.core.elf.modifier import ElfProgramHeaderModifier, ElfProgramHeaderModifierConfig
+from ofrak.core.elf.unpacker import ElfUnpacker
+from ofrak.core.free_space import Allocatable, FreeSpace
 from ofrak_type import Range
 
+
+__all__ = ["ElfLoadAlignmentModifier"]
 
 LOGGER = logging.getLogger()
 

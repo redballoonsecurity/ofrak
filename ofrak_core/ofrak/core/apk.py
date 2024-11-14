@@ -22,6 +22,17 @@ from ofrak.core.magic import Magic, MagicMimeIdentifier
 from ofrak_type.range import Range
 
 
+__all__ = [
+    "APKTOOL",
+    "JAVA",
+    "UBER_APK_SIGNER",
+    "Apk",
+    "ApkUnpacker",
+    "ApkPackerConfig",
+    "ApkPacker",
+    "ApkIdentifier",
+]
+
 APKTOOL = ComponentExternalTool("apktool", "https://ibotpeaches.github.io/Apktool/", "-version")
 JAVA = ComponentExternalTool(
     "java",

@@ -27,6 +27,23 @@ from ofrak.model.component_model import ComponentConfig
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 
+__all__ = [
+    "DATA_HASHES",
+    "FlashResource",
+    "FlashOobResource",
+    "FlashLogicalDataResource",
+    "FlashLogicalEccResource",
+    "FlashEccAttributes",
+    "FlashFieldType",
+    "FlashField",
+    "FlashAttributes",
+    "FlashResourceUnpacker",
+    "FlashOobResourceUnpacker",
+    "FlashResourcePacker",
+    "FlashOobResourcePacker",
+    "FlashLogicalDataResourcePacker",
+]
+
 LOGGER = logging.getLogger()
 
 # Dict of data mapping MD5 checksum to ECC bytes, used to check for updates

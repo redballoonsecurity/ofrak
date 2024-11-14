@@ -15,6 +15,8 @@ from ofrak.core.binary import GenericBinary
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak_type.range import Range
 
+__all__ = ["ZIP_TOOL", "UNZIP_TOOL", "ZipArchive", "ZipUnpacker", "ZipPacker"]
+
 LOGGER = logging.getLogger(__name__)
 
 ZIP_TOOL = ComponentExternalTool(

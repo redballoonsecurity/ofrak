@@ -5,6 +5,9 @@ from ofrak.model.resource_model import index
 from ofrak.core.addressable import Addressable
 
 
+__all__ = ["LabeledAddress"]
+
+
 @dataclass
 class LabeledAddress(Addressable):
     name: str

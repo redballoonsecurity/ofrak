@@ -57,3 +57,10 @@ from ofrak.core.uimage import *
 from ofrak.core.zip import *
 from ofrak.core.zlib import *
 from ofrak.core.zstd import *
+
+from ofrak_type import *
+
+# Many existing OFRAK scripts rely on Optional being star-imported for the
+# function signature
+#     async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):
+from typing import Optional as Optional

@@ -6,6 +6,8 @@ from dataclasses import dataclass
 
 from ofrak.component.interface import ComponentInterface
 
+__all__ = ["ComponentFilter", "ComponentLocatorInterface"]
+
 CI = TypeVar("CI", bound="ComponentInterface")
 
 

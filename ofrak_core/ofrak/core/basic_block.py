@@ -14,6 +14,9 @@ from ofrak.core.memory_region import MemoryRegion
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort, ResourceSortDirection
 
 
+__all__ = ["BasicBlock", "BasicBlockUnpacker", "BasicBlockAnalyzer"]
+
+
 @dataclass
 class BasicBlock(MemoryRegion):
     """

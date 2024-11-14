@@ -20,6 +20,8 @@ from ofrak_ghidra.constants import CORE_OFRAK_GHIDRA_SCRIPTS
 from ofrak_ghidra.ghidra_model import OfrakGhidraMixin, OfrakGhidraScript
 from ofrak_io.batch_manager import make_batch_manager
 
+__all__ = ["GhidraBasicBlockUnpacker"]
+
 _GetInstructionsRequest = Tuple[Resource, int, int]
 _GetInstructionsResult = List[Dict[str, Union[str, int]]]
 

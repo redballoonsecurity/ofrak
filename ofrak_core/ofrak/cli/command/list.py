@@ -4,6 +4,9 @@ from typing import Iterable, Set
 from ofrak.cli.ofrak_cli import OfrakCommand, OFRAKEnvironment
 
 
+__all__ = ["ListCommand"]
+
+
 class ListCommand(OfrakCommand):
     def create_parser(self, ofrak_subparsers):
         list_parser = ofrak_subparsers.add_parser(

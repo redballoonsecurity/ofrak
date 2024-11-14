@@ -4,6 +4,9 @@ from ofrak.service.serialization.serializers.serializer_i import SerializerInter
 from ofrak_type.range import Range
 
 
+__all__ = ["RangeSerializer"]
+
+
 class RangeSerializer(SerializerInterface):
     """
     Serialize and deserialize `Range` into `PJSONType`.

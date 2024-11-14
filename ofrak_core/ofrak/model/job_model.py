@@ -5,6 +5,9 @@ from typing import Set, Dict
 from ofrak.model.tag_model import ResourceTag
 
 
+__all__ = ["JobRunResourceTracker", "JobRunContext", "JobRunContextFactory", "JobModel"]
+
+
 @dataclass
 class JobRunResourceTracker:
     tags_added: Set[ResourceTag] = field(default_factory=set)

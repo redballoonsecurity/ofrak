@@ -5,6 +5,8 @@ from intervaltree import IntervalTree
 from ofrak.service.serialization.pjson_types import PJSONType
 from ofrak.service.serialization.serializers.serializer_i import SerializerInterface
 
+__all__ = ["IntervalTreeTupleType", "IntervalTreeSerializer"]
+
 IntervalTreeTupleType = Union[Tuple[int, int], Tuple[int, int, Any]]
 
 

@@ -11,6 +11,16 @@ from ofrak.core.elf.model import Elf
 from ofrak_type.range import Range
 
 
+__all__ = [
+    "LiefAddSegmentConfig",
+    "LiefAddSegmentModifier",
+    "LiefAddSectionModifierConfig",
+    "LiefAddSectionModifer",
+    "LiefRemoveSectionModifierConfig",
+    "LiefRemoveSectionModifier",
+]
+
+
 @dataclass
 class LiefAddSegmentConfig(ComponentConfig):
     """

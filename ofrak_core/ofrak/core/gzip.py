@@ -13,6 +13,8 @@ from ofrak.model.component_model import ComponentExternalTool
 from ofrak.resource import Resource
 from ofrak_type.range import Range
 
+__all__ = ["PIGZ", "PIGZInstalled", "GzipData", "GzipUnpacker", "GzipPacker"]
+
 LOGGER = logging.getLogger(__name__)
 
 # PIGZ provides significantly faster compression on multi core systems.

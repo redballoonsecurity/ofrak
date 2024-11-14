@@ -8,6 +8,9 @@ from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.symbol_type import LinkableSymbolType
 
 
+__all__ = ["Abstract_LLVM_Readobj_Parser", "LLVM_ELF_Parser"]
+
+
 class Abstract_LLVM_Readobj_Parser(AbstractBinaryFileParser, ABC):
     def _parse_readobj_sections(
         self, output: str, section_keys: Dict[str, str], flag_key: str

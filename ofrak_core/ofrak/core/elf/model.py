@@ -24,6 +24,43 @@ from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.range import Range
 
 
+__all__ = [
+    "SECTION_NAME_PATTERN",
+    "ElfBasicHeader",
+    "ElfMachine",
+    "ElfType",
+    "ElfHeader",
+    "ElfSegmentStructure",
+    "ElfProgramHeaderType",
+    "ElfProgramHeader",
+    "ElfSegment",
+    "ElfSectionStructure",
+    "ElfSectionType",
+    "ElfSectionFlag",
+    "ElfSectionHeader",
+    "ElfSymbolBinding",
+    "ElfSymbolType",
+    "ElfSymbolVisibility",
+    "ElfSymbolStructure",
+    "ElfSymbol",
+    "ElfRelaInfo",
+    "ElfRelaEntry",
+    "ElfDynamicTableTag",
+    "ElfDynamicEntry",
+    "ElfVirtualAddress",
+    "ElfSection",
+    "ElfPointerArraySection",
+    "ElfFiniArraySection",
+    "ElfInitArraySection",
+    "ElfDynamicSection",
+    "ElfRelaSection",
+    "ElfSymbolSection",
+    "ElfDynSymbolSection",
+    "ElfStringSection",
+    "ElfSectionNameStringSection",
+    "Elf",
+]
+
 SECTION_NAME_PATTERN = re.compile(b"[^\x00]*\x00")
 
 

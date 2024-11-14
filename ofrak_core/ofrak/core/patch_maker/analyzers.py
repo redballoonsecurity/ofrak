@@ -5,6 +5,9 @@ from ofrak.resource import Resource
 from ofrak.model.component_model import ComponentConfig
 
 
+__all__ = ["ComplexBlockSymbolAnalyzer"]
+
+
 class ComplexBlockSymbolAnalyzer(Analyzer[None, LinkableSymbol]):
     targets = (ComplexBlock,)
     outputs = (LinkableSymbol,)

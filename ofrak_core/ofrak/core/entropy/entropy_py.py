@@ -3,6 +3,9 @@ import math
 from typing import Callable, List, Optional
 
 
+__all__ = ["entropy_py"]
+
+
 def entropy_py(
     data: bytes, window_size: int, log_percent: Optional[Callable[[int], None]] = None
 ) -> bytes:

@@ -9,6 +9,9 @@ from ofrak.component.identifier import Identifier
 from ofrak.core.complex_block import ComplexBlock
 
 
+__all__ = ["DecompilationAnalysis", "DecompilationAnalysisIdentifier", "DecompilationAnalyzer"]
+
+
 @dataclass
 class DecompilationAnalysis(ResourceView):
     decompilation: str

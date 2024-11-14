@@ -7,13 +7,23 @@ from subprocess import CalledProcessError
 from ofrak import Identifier, Analyzer
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
-from ofrak.core import PY_LZO_TOOL
+from ofrak.core.ubi import PY_LZO_TOOL
 from ofrak.resource import Resource
 from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
 from ofrak.core.binary import GenericBinary
 
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak_type.range import Range
+
+__all__ = [
+    "MKFS_UBIFS_TOOL",
+    "SuperblockNode",
+    "Ubifs",
+    "UbifsAnalyzer",
+    "UbifsUnpacker",
+    "UbifsPacker",
+    "UbifsIdentifier",
+]
 
 try:
     from ubireader.ubifs.defines import UBIFS_NODE_MAGIC

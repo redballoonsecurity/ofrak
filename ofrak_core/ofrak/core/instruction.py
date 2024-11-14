@@ -18,6 +18,16 @@ from ofrak_type.architecture import InstructionSetMode
 from ofrak_type.range import Range
 
 
+__all__ = [
+    "Instruction",
+    "RegisterUsage",
+    "InstructionAnalyzer",
+    "InstructionRegisterUsageAnalyzer",
+    "InstructionModifierConfig",
+    "InstructionModifier",
+]
+
+
 @dataclass
 class Instruction(MemoryRegion):
     """

@@ -18,6 +18,9 @@ from ofrak.core.pe.model import (
 from ofrak_type.range import Range
 
 
+__all__ = ["PeUnpacker"]
+
+
 class PeUnpacker(Unpacker[None]):
     id = b"PeUnpacker"
     targets = (Pe,)

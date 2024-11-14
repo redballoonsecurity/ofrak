@@ -5,6 +5,9 @@ from ofrak_patch_maker.toolchain.gnu import Abstract_GNU_Toolchain
 from ofrak_type import ArchInfo
 
 
+__all__ = ["GNU_BCC_SPARC_Toolchain"]
+
+
 class GNU_BCC_SPARC_Toolchain(Abstract_GNU_Toolchain):
     binary_file_parsers = [GNU_ELF_Parser()]
 

@@ -5,6 +5,8 @@ from ofrak.cli.ofrak_cli import OfrakCommandRunsScript
 from ofrak.gui.server import open_gui
 from ofrak.ofrak_context import OFRAKContext
 
+__all__ = ["GUICommand"]
+
 LOGGER = logging.getLogger(__name__)
 
 

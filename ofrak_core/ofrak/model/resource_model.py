@@ -24,6 +24,32 @@ from weakref import WeakValueDictionary
 from ofrak.model.tag_model import ResourceTag
 from ofrak_type.range import Range
 
+__all__ = [
+    "ResourceIndexedAttribute",
+    "index",
+    "ResourceAttributes",
+    "ResourceAttributeDependency",
+    "ModelIdType",
+    "ModelDataIdType",
+    "ModelParentIdType",
+    "ModelTagsType",
+    "ModelAttributesType",
+    "ModelDataDependenciesType",
+    "ModelAttributeDependenciesType",
+    "ModelComponentVersionsType",
+    "ModelComponentsByAttributesType",
+    "ResourceModel",
+    "ResourceModelDiff",
+    "MutableResourceModel",
+    "ResourceContext",
+    "ResourceContextFactory",
+    "EphemeralResourceContext",
+    "EphemeralResourceContextFactory",
+    "ClientResourceContext",
+    "ClientResourceContextFactory",
+    "Data",
+]
+
 T = TypeVar("T")
 RT = TypeVar("RT", bound="ResourceTag")
 RA = TypeVar("RA", bound="ResourceAttributes")

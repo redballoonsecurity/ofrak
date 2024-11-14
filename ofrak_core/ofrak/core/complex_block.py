@@ -17,6 +17,16 @@ from ofrak.model.resource_model import ResourceAttributes, index
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort
 
 
+__all__ = [
+    "ComplexBlockDataReferenceAttributes",
+    "ComplexBlock",
+    "ComplexBlockStructureError",
+    "ComplexBlockUnpacker",
+    "ComplexBlockAnalyzer",
+    "DataRefsAnalyzer",
+]
+
+
 @dataclass(**ResourceAttributes.DATACLASS_PARAMS)
 class ComplexBlockDataReferenceAttributes(ResourceAttributes):
     referenced_data_vm_addresses: Tuple[int, ...]

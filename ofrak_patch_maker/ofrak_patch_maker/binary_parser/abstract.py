@@ -5,6 +5,9 @@ from ofrak_patch_maker.toolchain.model import BinFileType, Segment
 from ofrak_type.symbol_type import LinkableSymbolType
 
 
+__all__ = ["AbstractBinaryFileParser"]
+
+
 class AbstractBinaryFileParser(ABC):
     @property
     @abstractmethod

@@ -3,6 +3,9 @@ import uuid
 from ofrak.service.id_service_i import IDServiceInterface
 
 
+__all__ = ["UUIDService"]
+
+
 class UUIDService(IDServiceInterface):
     def generate_id(self) -> bytes:
         # Note: pseudo-random

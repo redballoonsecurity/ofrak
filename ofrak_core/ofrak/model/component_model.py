@@ -7,6 +7,18 @@ from ofrak.model.data_model import DataPatch
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak_type.range import Range
 
+__all__ = [
+    "CLIENT_COMPONENT_ID",
+    "CLIENT_COMPONENT_VERSION",
+    "ComponentConfig",
+    "ComponentExternalTool",
+    "ComponentRunResult",
+    "ComponentResourceAccessTracker",
+    "ComponentResourceModificationTracker",
+    "ComponentContext",
+    "ClientComponentContext",
+]
+
 CLIENT_COMPONENT_ID = b"__client_context__"
 CLIENT_COMPONENT_VERSION = -1
 

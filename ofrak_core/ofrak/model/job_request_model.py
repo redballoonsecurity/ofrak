@@ -6,6 +6,9 @@ from ofrak.model.resource_model import ResourceAttributes
 from ofrak.model.tag_model import ResourceTag
 
 
+__all__ = ["JobAnalyzerRequest", "JobComponentRequest", "JobMultiComponentRequest"]
+
+
 @dataclass
 class JobAnalyzerRequest:
     job_id: bytes

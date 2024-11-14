@@ -2,6 +2,9 @@ import reedsolo as rs
 from ofrak.core.ecc.abstract import EccAlgorithm, EccError
 
 
+__all__ = ["ReedSolomon"]
+
+
 class ReedSolomon(EccAlgorithm):
     def __init__(
         self,

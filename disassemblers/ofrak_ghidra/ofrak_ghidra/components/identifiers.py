@@ -5,6 +5,8 @@ from ofrak.resource import Resource
 from ofrak_ghidra.ghidra_model import GhidraAutoLoadProject, GhidraCustomLoadProject
 
 
+__all__ = ["GhidraAnalysisIdentifier"]
+
 _GHIDRA_AUTO_LOADABLE_FORMATS = [Elf, Ihex, Pe]
 
 

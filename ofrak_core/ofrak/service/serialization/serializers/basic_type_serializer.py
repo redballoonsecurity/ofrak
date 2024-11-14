@@ -3,6 +3,9 @@ from typing import Union, Any
 from ofrak.service.serialization.serializers.serializer_i import SerializerInterface
 
 
+__all__ = ["BasicTypeSerializer"]
+
+
 class BasicTypeSerializer(SerializerInterface):
     """
     Serialize and deserialize basic types (which don't need any change) into `PJSONType`.

@@ -4,6 +4,14 @@ from typing import Callable, Dict, Iterable, Union
 
 from ofrak.component.abstract import ComponentMissingDependencyError
 
+__all__ = [
+    "Magic",
+    "LIBMAGIC_DEP",
+    "MagicAnalyzer",
+    "MagicMimeIdentifier",
+    "MagicDescriptionIdentifier",
+]
+
 try:
     import magic
 

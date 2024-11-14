@@ -9,7 +9,9 @@ from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
-from ofrak.core import ProgramAttributes, GenericBinary, MagicDescriptionIdentifier
+from ofrak.core.architecture import ProgramAttributes
+from ofrak.core.binary import GenericBinary
+from ofrak.core.magic import MagicDescriptionIdentifier
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.model.viewable_tag_model import AttributesType
@@ -21,6 +23,31 @@ from ofrak_type.architecture import InstructionSet
 from ofrak_type.bit_width import BitWidth
 from ofrak_type.endianness import Endianness
 from ofrak_type.range import Range
+
+
+__all__ = [
+    "UIMAGE_MAGIC",
+    "UIMAGE_NAME_LEN",
+    "UIMAGE_HEADER_LEN",
+    "UImageType",
+    "UImageCompressionType",
+    "UImageOperatingSystem",
+    "UImageArch",
+    "UImageHeader",
+    "UImageMultiHeader",
+    "UImageBody",
+    "UImageTrailingBytes",
+    "UImage",
+    "UImageUnpacker",
+    "UImageHeaderAttributesAnalyzer",
+    "UImageMultiHeaderAttributesAnalyzer",
+    "UImageProgramAttributesAnalyzer",
+    "UImageHeaderModifierConfig",
+    "UImageHeaderModifier",
+    "UImageMultiHeaderModifierConfig",
+    "UImageMultiHeaderModifier",
+    "UImagePacker",
+]
 
 UIMAGE_MAGIC = 0x27051956
 UIMAGE_NAME_LEN = 32

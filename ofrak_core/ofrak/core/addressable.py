@@ -5,6 +5,9 @@ from ofrak.model.resource_model import index
 from ofrak.resource_view import ResourceView
 
 
+__all__ = ["Addressable"]
+
+
 @dataclass
 class Addressable(ResourceView):
     """

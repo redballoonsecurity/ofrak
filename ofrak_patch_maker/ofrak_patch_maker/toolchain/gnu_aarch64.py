@@ -7,6 +7,9 @@ import logging
 from typing import Tuple
 
 
+__all__ = ["GNU_AARCH64_LINUX_10_Toolchain"]
+
+
 class GNU_AARCH64_LINUX_10_Toolchain(GNU_10_Toolchain):
     binary_file_parsers = [GNU_V10_ELF_Parser()]
 

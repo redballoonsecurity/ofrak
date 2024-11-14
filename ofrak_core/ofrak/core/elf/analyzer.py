@@ -3,7 +3,7 @@ import logging
 from typing import Optional, TypeVar
 
 from ofrak.component.analyzer import Analyzer
-from ofrak.core import NamedProgramSection
+from ofrak.core.program_section import NamedProgramSection
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.elf.model import (
     ElfSectionHeader,
@@ -29,6 +29,21 @@ from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_io.deserializer import BinaryDeserializer
+
+__all__ = [
+    "ElfBasicHeaderAttributesAnalyzer",
+    "ElfHeaderAttributesAnalyzer",
+    "ElfProgramHeaderAttributesAnalyzer",
+    "ElfSegmentAnalyzer",
+    "ElfSectionHeaderAttributesAnalyzer",
+    "ElfSymbolAttributesAnalyzer",
+    "ElfDynamicSectionAnalyzer",
+    "ElfPointerAnalyzer",
+    "ElfRelaAnalyzer",
+    "ElfSectionNameAnalyzer",
+    "ElfSectionMemoryRegionAnalyzer",
+    "ElfProgramAttributesAnalyzer",
+]
 
 LOGGER = logging.getLogger(__name__)
 

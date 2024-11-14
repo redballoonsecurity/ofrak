@@ -9,6 +9,9 @@ from ofrak.model.resource_model import ResourceAttributes
 from ofrak.resource import Resource
 
 
+__all__ = ["Sha256Attributes", "Sha256Analyzer", "Md5Attributes", "Md5Analyzer"]
+
+
 @dataclass(**ResourceAttributes.DATACLASS_PARAMS)
 class Sha256Attributes(ResourceAttributes):
     checksum: str

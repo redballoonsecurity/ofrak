@@ -6,6 +6,9 @@ from ofrak.service.abstract_ofrak_service import AbstractOfrakService
 from ofrak_type.range import Range
 
 
+__all__ = ["DataServiceInterface"]
+
+
 class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
     @abstractmethod
     async def create_root(self, data_id: bytes, data: bytes) -> DataModel:

@@ -8,6 +8,9 @@ from ofrak.service.serialization.pjson_types import PJSONType
 from ofrak.service.serialization.serializers.serializer_i import SerializerInterface
 
 
+__all__ = ["SequenceSerializer"]
+
+
 class SequenceSerializer(SerializerInterface):
     """
     Serialize and deserialize `List[X]`, `Sequence[X]` and `Iterable[X]` into `PJSONType`.

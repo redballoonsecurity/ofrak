@@ -21,6 +21,8 @@ from ofrak.model.component_filters import (
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceServiceInterface
 
+__all__ = ["PackerError", "Packer"]
+
 LOGGER = logging.getLogger(__name__)
 
 

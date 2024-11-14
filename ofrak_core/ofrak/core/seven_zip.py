@@ -15,6 +15,8 @@ from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak_type.range import Range
 
+__all__ = ["SEVEN_ZIP", "SevenZFilesystem", "SevenZUnpacker", "SevenzPacker"]
+
 LOGGER = logging.getLogger(__name__)
 
 SEVEN_ZIP = ComponentExternalTool("7zz", "https://www.7-zip.org", "--help", brew_package="sevenzip")

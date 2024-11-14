@@ -1,5 +1,7 @@
 from typing import Dict, Any, List, Tuple, Type, Set, Optional, Union
 
+__all__ = ["PJSONType", "ContainerType"]
+
 # Under-approximation of the PJSON type (which is recursive, contrary to this definition).
 # All objects of the real PJSON type will be of this type, but some non-PJSON objects will
 # also be of this type.

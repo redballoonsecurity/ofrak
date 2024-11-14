@@ -26,6 +26,31 @@ from ofrak_io.serializer import BinarySerializer
 from ofrak_type.range import Range
 
 
+__all__ = [
+    "AbstractElfAttributeModifier",
+    "ElfHeaderModifierConfig",
+    "ElfHeaderModifier",
+    "ElfProgramHeaderModifierConfig",
+    "ElfProgramHeaderModifier",
+    "ElfSectionHeaderModifierConfig",
+    "ElfSectionHeaderModifier",
+    "ElfSymbolModifierConfig",
+    "ElfSymbolModifier",
+    "ElfRelaModifierConfig",
+    "ElfRelaModifier",
+    "ElfDynamicEntryModifierConfig",
+    "ElfDynamicEntryModifier",
+    "ElfVirtualAddressModifierConfig",
+    "ElfVirtualAddressModifier",
+    "ElfPointerArraySectionAddModifierConfig",
+    "ElfPointerArraySectionAddModifier",
+    "ElfAddStringModifierConfig",
+    "ElfAddStringModifier",
+    "ElfRelocateSymbolsModifierConfig",
+    "ElfRelocateSymbolsModifier",
+]
+
+
 class AbstractElfAttributeModifier(ABC):
     @classmethod
     @abstractmethod

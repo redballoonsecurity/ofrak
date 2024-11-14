@@ -8,6 +8,9 @@ from ofrak.model.resource_model import ResourceAttributes
 from ofrak_type.range import Range
 
 
+__all__ = ["DataWord", "ReferencedStringsAttributes", "ReferencedDataAttributes"]
+
+
 @dataclass
 class DataWord(MemoryRegion):
     """

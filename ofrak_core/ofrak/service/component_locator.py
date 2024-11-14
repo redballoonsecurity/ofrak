@@ -13,6 +13,8 @@ from ofrak_type.error import NotFoundError
 
 from functools import lru_cache
 
+__all__ = ["InvalidComponentError", "TooFewConstraintsError", "ComponentLocator"]
+
 LOGGER = logging.getLogger(__name__)
 CI = TypeVar("CI", bound="ComponentInterface")
 

@@ -15,6 +15,9 @@ from ofrak.service.abstract_ofrak_service import AbstractOfrakService
 from ofrak.service.component_locator_i import ComponentFilter
 
 
+__all__ = ["JobServiceInterface", "ComponentAutoRunFailure"]
+
+
 class JobServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
     """
     Job service interface.

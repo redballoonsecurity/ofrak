@@ -14,6 +14,23 @@ from ofrak.core.magic import MagicDescriptionIdentifier
 from ofrak_type.error import NotFoundError
 
 
+__all__ = [
+    "PeMsDosHeader",
+    "PeFileHeader",
+    "PeOptionalHeaderMagic",
+    "PeOptionalHeader",
+    "PeWinOptionalHeader",
+    "Pe64POptionalHeader",
+    "Pe32OptionalHeader",
+    "PeDataDirectory",
+    "PeSectionStructure",
+    "PeSection",
+    "PeSectionFlag",
+    "PeSectionHeader",
+    "Pe",
+]
+
+
 @dataclass
 class PeMsDosHeader(ResourceView):
     """PE MS-DOS header"""

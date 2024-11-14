@@ -22,6 +22,13 @@ from ofrak_patch_maker.model import BOM, PatchRegionConfig
 from ofrak_patch_maker.toolchain.model import Segment
 from ofrak_type import InstructionSet, InstructionSetMode, LinkableSymbolType, NotFoundError
 
+__all__ = [
+    "SymbolExistsError",
+    "LinkableBinary",
+    "UpdateLinkableSymbolsModifierConfig",
+    "UpdateLinkableSymbolsModifier",
+]
+
 LOGGER = logging.getLogger()
 
 

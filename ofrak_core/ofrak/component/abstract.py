@@ -37,6 +37,8 @@ from ofrak.service.dependency_handler import DependencyHandlerFactory
 from ofrak.service.resource_service_i import ResourceServiceInterface
 from ofrak_type.error import NotFoundError
 
+__all__ = ["AbstractComponent", "ComponentMissingDependencyError", "ComponentSubprocessError"]
+
 LOGGER = logging.getLogger(__name__)
 
 

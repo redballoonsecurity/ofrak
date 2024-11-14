@@ -9,6 +9,8 @@ from ofrak.resource import Resource
 from ofrak_ghidra.constants import CORE_OFRAK_GHIDRA_SCRIPTS
 from ofrak_ghidra.ghidra_model import OfrakGhidraMixin, OfrakGhidraScript
 
+__all__ = ["GhidraReferencedDataAnalyzer"]
+
 LOGGER = logging.getLogger(__name__)
 
 

@@ -6,6 +6,9 @@ from typing_inspect import get_origin, get_args
 from ofrak.service.serialization.serializers.serializer_i import SerializerInterface
 
 
+__all__ = ["TupleSerializer"]
+
+
 class TupleSerializer(SerializerInterface):
     """
     Serialize and deserialize `Tuple[...]` into `PJSONType`.

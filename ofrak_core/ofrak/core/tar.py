@@ -16,6 +16,8 @@ from ofrak.model.component_model import ComponentConfig
 from ofrak_type.range import Range
 
 
+__all__ = ["TAR", "TarArchive", "TarUnpacker", "TarPacker"]
+
 TAR = ComponentExternalTool("tar", "https://www.gnu.org/software/tar/", "--help", apt_package="tar")
 
 

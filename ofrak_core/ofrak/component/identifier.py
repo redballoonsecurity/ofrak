@@ -6,6 +6,8 @@ from ofrak.component.abstract import AbstractComponent
 from ofrak.model.component_model import CC
 from ofrak.resource import Resource
 
+__all__ = ["IdentifierError", "Identifier"]
+
 LOGGER = logging.getLogger(__name__)
 
 

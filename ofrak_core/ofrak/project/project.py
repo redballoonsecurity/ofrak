@@ -13,6 +13,9 @@ from ofrak.resource import Resource
 from ofrak.ofrak_context import OFRAKContext
 
 
+__all__ = ["OfrakProject"]
+
+
 @dataclass
 class _OfrakProjectBinary:
     associated_scripts: List[str]

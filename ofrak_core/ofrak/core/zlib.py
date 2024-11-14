@@ -10,6 +10,8 @@ from ofrak.core.binary import GenericBinary
 from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
 from ofrak_type.range import Range
 
+__all__ = ["ZlibData", "ZlibCompressionLevelAnalyzer", "ZlibUnpacker", "ZlibPacker"]
+
 LOGGER = logging.getLogger(__name__)
 
 

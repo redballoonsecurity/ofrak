@@ -7,6 +7,9 @@ from ofrak.gui.server import open_gui
 from ofrak.resource import Resource
 
 
+__all__ = ["IdentifyCommand"]
+
+
 class IdentifyCommand(OfrakCommandRunsScript):
     def create_parser(self, parser: argparse._SubParsersAction):
         subparser = parser.add_parser(

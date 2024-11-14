@@ -3,6 +3,9 @@ from abc import ABC, abstractmethod
 from ofrak.service.abstract_ofrak_service import AbstractOfrakService
 
 
+__all__ = ["IDServiceInterface"]
+
+
 class IDServiceInterface(AbstractOfrakService, ABC):
     """
     The `IDServiceInterface` is an interface for a service that generates unique IDs.

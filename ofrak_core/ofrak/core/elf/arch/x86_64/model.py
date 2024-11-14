@@ -1,6 +1,9 @@
 from ofrak.core.elf.model import ElfRelaInfo
 
 
+__all__ = ["X86_64ElfRelaInfo"]
+
+
 class X86_64ElfRelaInfo(ElfRelaInfo):
     R_X86_64_NONE = 0
     R_X86_64_64 = 1

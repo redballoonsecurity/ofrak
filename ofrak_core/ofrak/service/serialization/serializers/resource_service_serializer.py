@@ -18,6 +18,13 @@ from ofrak.service.serialization.pjson_types import PJSONType
 from ofrak.service.serialization.serializers.serializer_i import SerializerInterface
 
 
+__all__ = [
+    "ResourceServiceSerializer",
+    "ResourceNodeSerializer",
+    "ResourceAttributeIndexSerializer",
+]
+
+
 class ResourceServiceSerializer(SerializerInterface):
     """
     Serialize and deserialize `ResourceService` into `PJSONType`.

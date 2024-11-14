@@ -1,3 +1,6 @@
+__all__ = ["AbstractOfrakService"]
+
+
 class AbstractOfrakService:
     async def run(self):
         pass

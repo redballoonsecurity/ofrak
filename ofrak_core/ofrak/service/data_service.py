@@ -24,6 +24,8 @@ from ofrak.service.error import OutOfBoundError, PatchOverlapError
 from ofrak_type.error import NotFoundError, AlreadyExistError
 from ofrak_type.range import Range
 
+__all__ = ["DataId", "DataService"]
+
 # Type alias; typechecker makes no distinction between this and bytes. It's just for humans (you?)
 DataId = bytes
 

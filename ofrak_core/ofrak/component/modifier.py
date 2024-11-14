@@ -6,6 +6,9 @@ from ofrak.model.component_model import CC
 from ofrak.resource import Resource
 
 
+__all__ = ["ModifierError", "Modifier"]
+
+
 class ModifierError(RuntimeError):
     pass
 

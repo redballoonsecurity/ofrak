@@ -7,6 +7,9 @@ from ofrak_patch_maker.toolchain.model import ToolchainConfig
 from ofrak_type import ArchInfo, InstructionSet, MemoryPermissions
 
 
+__all__ = ["GNU_PPC_LINUX_10_Toolchain"]
+
+
 class GNU_PPC_LINUX_10_Toolchain(GNU_10_Toolchain):
     binary_file_parsers = [GNU_V10_ELF_Parser()]
 

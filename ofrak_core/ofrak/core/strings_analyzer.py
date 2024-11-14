@@ -9,6 +9,9 @@ from ofrak.model.component_model import ComponentConfig, ComponentExternalTool
 from ofrak.model.resource_model import ResourceAttributes
 
 
+__all__ = ["StringsAnalyzerConfig", "StringsAttributes", "StringsAnalyzer"]
+
+
 @dataclass
 class StringsAnalyzerConfig(ComponentConfig):
     min_length: int = 8

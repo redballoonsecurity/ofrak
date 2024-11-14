@@ -10,6 +10,9 @@ from ofrak.service.serialization.serializers.serializer_i import SerializerInter
 from ofrak.service.serialization.serializers.type_serializer import is_metaclass
 
 
+__all__ = ["ClassInstanceSerializer"]
+
+
 def _is_regular_class_instance(type_hint):
     return inspect.isclass(type_hint) and not is_enum(type_hint) and not is_metaclass(type_hint)
 

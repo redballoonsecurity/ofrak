@@ -20,6 +20,13 @@ from ofrak_ghidra.ghidra_model import GhidraProject, OfrakGhidraMixin, OfrakGhid
 from ofrak_ghidra.components.ghidra_analyzer import GhidraCodeRegionModifier
 from ofrak_io.batch_manager import make_batch_manager
 
+__all__ = [
+    "RE_STRIP_PRECEDING_ZERO",
+    "RE_CPY_TO_MOV",
+    "GhidraCodeRegionUnpacker",
+    "GhidraComplexBlockUnpacker",
+]
+
 LOGGER = logging.getLogger(__name__)
 
 RE_STRIP_PRECEDING_ZERO = re.compile(r"0x0+([0-9a-f])")

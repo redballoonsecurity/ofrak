@@ -4,6 +4,9 @@ from ofrak.resource import Resource
 from ofrak_angr.model import AngrAnalysisResource
 
 
+__all__ = ["AngrAnalysisIdentifier"]
+
+
 class AngrAnalysisIdentifier(Identifier):
     id = b"AngrAnalysisIdentifier"
     targets = (Program,)

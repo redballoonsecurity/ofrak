@@ -8,6 +8,9 @@ from ofrak.service.serialization.serializers.serializer_i import SerializerInter
 from ofrak.service.serialization.service_i import SerializationServiceInterface
 
 
+__all__ = ["PJSONSerializationService"]
+
+
 class PJSONSerializationService(SerializationServiceInterface):
     """
     Service handling the serialization and deserialization of various types into a JSON-compatible Python type

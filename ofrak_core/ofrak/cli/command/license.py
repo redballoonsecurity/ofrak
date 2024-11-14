@@ -13,6 +13,9 @@ from ofrak.license import (
 )
 
 
+__all__ = ["LicenseCommand"]
+
+
 class LicenseCommand(OfrakCommand):
     def create_parser(self, ofrak_subparsers):
         argument_parser = ofrak_subparsers.add_parser(

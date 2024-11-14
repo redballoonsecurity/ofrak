@@ -6,6 +6,9 @@ import inspect
 from ofrak.service.serialization.serializers.serializer_i import SerializerInterface
 
 
+__all__ = ["is_enum", "EnumSerializer"]
+
+
 def is_enum(type_hint):
     return type_hint == Enum or (inspect.isclass(type_hint) and issubclass(type_hint, Enum))
 

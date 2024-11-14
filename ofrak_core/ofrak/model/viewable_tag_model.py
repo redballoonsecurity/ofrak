@@ -13,6 +13,8 @@ from ofrak.model.resource_model import (
 )
 from ofrak.model.tag_model import ResourceTag
 
+__all__ = ["AttributesType", "ViewableResourceTag", "ResourceViewInterface", "ResourceViewContext"]
+
 _VIEW_ATTRIBUTES_TYPE = "__view_attributes_type__"
 _COMPOSED_ATTRIBUTES_TYPE = "__composed_attributes_types__"
 

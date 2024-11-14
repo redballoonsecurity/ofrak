@@ -6,6 +6,9 @@ from ofrak.core.memory_region import MemoryRegion
 from ofrak.resource import Resource
 
 
+__all__ = ["CodeRegion", "CodeRegionUnpacker"]
+
+
 class CodeRegion(MemoryRegion):
     """
     A memory region within a [program][ofrak.core.program.Program] that contains executable code.

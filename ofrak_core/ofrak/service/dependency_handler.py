@@ -14,6 +14,8 @@ from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceServiceInterface
 from ofrak_type.range import Range
 
+__all__ = ["DependencyHandler", "DependencyHandlerFactory"]
+
 LOGGER = logging.getLogger(__file__)
 
 

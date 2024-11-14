@@ -6,6 +6,17 @@ from typing import List, Union, Tuple, Any
 
 from ofrak.component.abstract import ComponentMissingDependencyError
 
+__all__ = [
+    "Ihex",
+    "IhexProgram",
+    "IhexAnalyzer",
+    "IhexUnpacker",
+    "IhexProgramUnpacker",
+    "IhexProgramPacker",
+    "IhexPacker",
+    "IhexIdentifier",
+]
+
 try:
     from bincopy import BinFile
 

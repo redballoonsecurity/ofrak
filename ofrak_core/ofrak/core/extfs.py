@@ -4,15 +4,17 @@ from dataclasses import dataclass
 from subprocess import CalledProcessError
 
 from ofrak import Unpacker, Resource
-from ofrak.core import (
-    GenericBinary,
+from ofrak.core.binary import GenericBinary
+from ofrak.core.filesystem import (
     FilesystemRoot,
     File,
     Folder,
     SpecialFileType,
-    MagicDescriptionIdentifier,
 )
+from ofrak.core.magic import MagicDescriptionIdentifier
 from ofrak.model.component_model import ComponentExternalTool, ComponentConfig
+
+__all__ = ["ExtFilesystem", "Ext2Filesystem", "Ext3Filesystem", "Ext4Filesystem", "ExtUnpacker"]
 
 _DEBUGFS = ComponentExternalTool(
     "debugfs", "https://e2fsprogs.sourceforge.net/", "-V", brew_package="e2fsprogs"

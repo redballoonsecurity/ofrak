@@ -11,6 +11,8 @@ from ofrak.resource import Resource, ResourceFactory
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceServiceInterface
 
+__all__ = ["DataSummary", "DataSummaryAnalyzer", "sample_entropy", "sample_magnitude"]
+
 LOGGER = logging.getLogger(__name__)
 
 try:

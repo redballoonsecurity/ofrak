@@ -12,6 +12,8 @@ from ofrak.model.component_model import ComponentExternalTool
 from ofrak.resource import Resource
 from ofrak.model.component_model import ComponentConfig
 
+__all__ = ["UNAR", "RarArchive", "RarUnpacker"]
+
 UNAR = ComponentExternalTool(
     "unar",
     "https://theunarchiver.com/command-line",

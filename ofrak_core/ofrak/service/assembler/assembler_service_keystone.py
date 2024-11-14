@@ -23,6 +23,8 @@ from ofrak_type.architecture import InstructionSet, InstructionSetMode, Processo
 from ofrak_type.bit_width import BitWidth
 from ofrak_type.endianness import Endianness
 
+__all__ = ["X86_64_SPECIAL_CASES", "KeystoneAssemblerService"]
+
 X86_64_SPECIAL_CASES = {
     "mov rax, qword ptr fs:[0x28]": b"\x64\x48\x8B\x04\x25\x28\x00\x00\x00",
     "xor rdi, qword ptr fs:[0x28]": b"\x64\x48\x33\x3C\x25\x28\x00\x00\x00",

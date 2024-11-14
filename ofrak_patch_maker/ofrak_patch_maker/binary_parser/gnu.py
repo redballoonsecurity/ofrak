@@ -7,6 +7,9 @@ from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.symbol_type import LinkableSymbolType
 
 
+__all__ = ["GNU_ELF_Parser", "GNU_V10_ELF_Parser"]
+
+
 class GNU_ELF_Parser(AbstractBinaryFileParser):
     file_format = BinFileType.ELF
 

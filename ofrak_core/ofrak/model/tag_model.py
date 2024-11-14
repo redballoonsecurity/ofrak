@@ -2,6 +2,9 @@ import functools
 from typing import Iterable, List, Set, Tuple
 
 
+__all__ = ["ResourceTag"]
+
+
 class ResourceTag(type):
     all_tags: Set["ResourceTag"] = set()
 

@@ -7,6 +7,9 @@ from ofrak.cli.ofrak_cli import OfrakCommand, OFRAKEnvironment
 from ofrak.model.component_model import ComponentExternalTool
 
 
+__all__ = ["DepsCommand"]
+
+
 class DepsCommand(OfrakCommand):
     def create_parser(self, ofrak_subparsers):
         deps_parser = ofrak_subparsers.add_parser(

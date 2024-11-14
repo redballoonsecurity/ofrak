@@ -18,6 +18,8 @@ from ofrak_type.bit_width import BitWidth
 from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.symbol_type import LinkableSymbolType
 
+__all__ = ["RBS_AUTOGEN_WARNING", "Toolchain"]
+
 RBS_AUTOGEN_WARNING = (
     "/*\n"
     "*\n"

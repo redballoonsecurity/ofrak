@@ -15,6 +15,21 @@ from ofrak.core.binary import GenericBinary
 from ofrak_type.range import Range
 from ofrak.service.resource_service_i import ResourceFilter
 
+__all__ = [
+    "UF2_MAGIC_START_ONE",
+    "UF2_MAGIC_START_TWO",
+    "UF2_MAGIC_END",
+    "HEADER_LENGTH",
+    "DATA_LENGTH",
+    "Uf2File",
+    "Uf2FileAttributes",
+    "Uf2BlockHeader",
+    "Uf2Flags",
+    "Uf2Unpacker",
+    "Uf2FilePacker",
+    "Uf2FileIdentifier",
+]
+
 LOGGER = logging.getLogger(__name__)
 
 UF2_MAGIC_START_ONE = 0x0A324655

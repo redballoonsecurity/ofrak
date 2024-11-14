@@ -22,6 +22,16 @@ from ofrak_patch_maker.toolchain.abstract import Toolchain
 from ofrak_patch_maker.toolchain.model import Segment, ToolchainConfig
 from ofrak_type.memory_permissions import MemoryPermissions
 
+__all__ = [
+    "SourceBundle",
+    "PatchFromSourceModifierConfig",
+    "PatchFromSourceModifier",
+    "SegmentInjectorModifierConfig",
+    "SegmentInjectorModifier",
+    "FunctionReplacementModifierConfig",
+    "FunctionReplacementModifier",
+]
+
 LOGGER = logging.getLogger(__file__)
 
 

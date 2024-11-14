@@ -6,6 +6,9 @@ from ofrak.service.serialization.pjson_types import PJSONType
 from ofrak.service.serialization.serializers.serializer_i import SerializerInterface
 
 
+__all__ = ["DictSerializer"]
+
+
 class DictSerializer(SerializerInterface):
     """
     Serialize and deserialize `Dict[X, Y]` into `PJSONType`.

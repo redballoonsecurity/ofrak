@@ -5,6 +5,9 @@ from ofrak.model.resource_model import ResourceAttributes
 from ofrak_type.architecture import ArchInfo
 
 
+__all__ = ["ProgramAttributes"]
+
+
 @dataclass(**ResourceAttributes.DATACLASS_PARAMS)
 class ProgramAttributes(ResourceAttributes, ArchInfo):
     """

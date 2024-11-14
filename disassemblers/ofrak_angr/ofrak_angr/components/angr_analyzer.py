@@ -17,6 +17,8 @@ from ofrak.core import CodeRegion
 from ofrak import ResourceFilter
 
 
+__all__ = ["AngrAnalyzerConfig", "AngrAnalyzer", "AngrCodeRegionModifier"]
+
 LOGGER = logging.getLogger(__file__)
 
 

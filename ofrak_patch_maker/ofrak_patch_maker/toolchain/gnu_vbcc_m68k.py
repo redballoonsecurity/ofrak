@@ -18,6 +18,9 @@ from ofrak_patch_maker.toolchain.model import (
 )
 
 
+__all__ = ["VBCC_0_9_GNU_Hybrid_Toolchain"]
+
+
 class VBCC_0_9_GNU_Hybrid_Toolchain(Abstract_GNU_Toolchain, ABC):
     """
     A hybrid toolchain using the VBCC compiler + GNU assembler and linker.

@@ -26,6 +26,20 @@ from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.range import Range, remove_subranges
 
 
+__all__ = [
+    "FreeSpaceAllocationError",
+    "FreeSpace",
+    "FreeSpaceAllocation",
+    "Allocatable",
+    "FreeSpaceAnalyzer",
+    "RemoveFreeSpaceModifier",
+    "FreeSpaceModifierConfig",
+    "FreeSpaceModifier",
+    "PartialFreeSpaceModifierConfig",
+    "PartialFreeSpaceModifier",
+]
+
+
 class FreeSpaceAllocationError(RuntimeError):
     pass
 

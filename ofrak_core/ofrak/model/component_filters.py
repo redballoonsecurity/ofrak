@@ -15,6 +15,18 @@ from ofrak.service.component_locator_i import ComponentFilter
 from functools import lru_cache
 
 
+__all__ = [
+    "ComponentWhitelistFilter",
+    "ComponentTypeFilter",
+    "ComponentTargetFilter",
+    "AnalyzerOutputFilter",
+    "ComponentOrMetaFilter",
+    "ComponentAndMetaFilter",
+    "ComponentPrioritySelectingMetaFilter",
+    "ComponentNotMetaFilter",
+]
+
+
 @lru_cache(maxsize=None)
 def _isinstance(*args, **kwargs):
     return isinstance(*args, **kwargs)

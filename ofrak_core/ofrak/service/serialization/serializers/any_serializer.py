@@ -4,6 +4,9 @@ from ofrak.service.serialization.pjson_types import PJSONType
 from ofrak.service.serialization.serializers.serializer_i import SerializerInterface
 
 
+__all__ = ["AnySerializer"]
+
+
 class AnySerializer(SerializerInterface):
     """
     Serialize and deserialize objects with type hint `Any` into `PJSONType`.

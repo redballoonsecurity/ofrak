@@ -4,6 +4,8 @@ from abc import ABCMeta, abstractmethod
 
 from ofrak.service.serialization.pjson_types import PJSONType
 
+__all__ = ["SerializerInterface"]
+
 if TYPE_CHECKING:
     from ofrak.service.serialization.pjson import PJSONSerializationService
 

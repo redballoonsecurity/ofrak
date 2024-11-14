@@ -4,6 +4,9 @@ from collections import defaultdict
 from ofrak.service.id_service_i import IDServiceInterface
 
 
+__all__ = ["SequentialIDService"]
+
+
 class SequentialIDService(IDServiceInterface):
     """
     An ID service implementation that generates sequencial ids to aid debugging.

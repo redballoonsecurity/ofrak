@@ -5,6 +5,9 @@ from abc import ABC, abstractmethod
 from ofrak.service.serialization.pjson_types import PJSONType
 
 
+__all__ = ["SerializationServiceInterface"]
+
+
 class SerializationServiceInterface(ABC):
     """
     Interface for a serialization service.

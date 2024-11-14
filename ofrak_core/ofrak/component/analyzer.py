@@ -10,6 +10,8 @@ from ofrak.model.resource_model import ResourceAttributes
 from ofrak.model.viewable_tag_model import ViewableResourceTag
 from ofrak.resource_view import ResourceView
 
+__all__ = ["AnalyzerError", "Analyzer"]
+
 LOGGER = logging.getLogger(__name__)
 
 AnalyzerReturnType = TypeVar(

@@ -9,6 +9,8 @@ from ofrak.core.binary import GenericBinary
 from ofrak.core.magic import MagicDescriptionIdentifier, MagicMimeIdentifier
 from ofrak_type.range import Range
 
+__all__ = ["Bzip2Data", "Bzip2Unpacker", "Bzip2Packer"]
+
 LOGGER = logging.getLogger(__name__)
 
 

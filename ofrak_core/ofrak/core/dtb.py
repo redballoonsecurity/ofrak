@@ -18,10 +18,25 @@ from ofrak.component.unpacker import Unpacker
 from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort
-from ofrak.core import GenericBinary, MagicMimeIdentifier, MagicDescriptionIdentifier
+from ofrak.core.binary import GenericBinary
+from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import index
 from ofrak_type.range import Range
+
+__all__ = [
+    "DTB_MAGIC_SIGNATURE",
+    "DtbNode",
+    "DeviceTreeBlob",
+    "DtbHeader",
+    "DtbHeaderAnalyzer",
+    "DtbEntry",
+    "DtbPropertyType",
+    "DtbProperty",
+    "DeviceTreeBlobUnpacker",
+    "DeviceTreeBlobPacker",
+    "DeviceTreeBlobIdentifier",
+]
 
 DTB_MAGIC_SIGNATURE: int = 0xD00DFEED
 

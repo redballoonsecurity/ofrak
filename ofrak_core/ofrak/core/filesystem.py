@@ -4,6 +4,18 @@ import tempfile
 from dataclasses import dataclass
 from typing import Dict, Iterable, Optional, Type, Union
 
+__all__ = [
+    "FilesystemEntry",
+    "File",
+    "Folder",
+    "SpecialFileType",
+    "SymbolicLink",
+    "BlockDevice",
+    "FIFOPipe",
+    "CharacterDevice",
+    "FilesystemRoot",
+]
+
 try:
     import xattr
 except ImportError:

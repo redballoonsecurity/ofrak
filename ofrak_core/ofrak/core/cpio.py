@@ -15,6 +15,15 @@ from ofrak.model.component_model import ComponentExternalTool
 from ofrak.resource import Resource
 from ofrak_type.range import Range
 
+__all__ = [
+    "CPIO_TOOL",
+    "CpioArchiveType",
+    "CpioFilesystem",
+    "CpioFilesystemAnalyzer",
+    "CpioUnpacker",
+    "CpioPacker",
+]
+
 LOGGER = logging.getLogger(__name__)
 
 CPIO_TOOL = ComponentExternalTool(

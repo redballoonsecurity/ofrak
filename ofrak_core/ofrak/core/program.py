@@ -19,6 +19,9 @@ from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 
 
+__all__ = ["Program", "ReferencedStringsAnalyzer", "ReferencedDataAnalyzer"]
+
+
 class Program(LinkableBinary):
     """
     Generic representation for a binary program with functions, code and

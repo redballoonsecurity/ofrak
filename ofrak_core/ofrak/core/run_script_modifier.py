@@ -5,6 +5,8 @@ from ofrak.component.modifier import Modifier
 from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
 
+__all__ = ["RunScriptModifierConfig", "RunScriptModifier"]
+
 _PrimitiveType = Union[int, bool, str, float, bytes]
 
 

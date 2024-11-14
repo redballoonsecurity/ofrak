@@ -8,6 +8,9 @@ from ofrak.model.tag_model import ResourceTag
 from ofrak.model.viewable_tag_model import ResourceViewContext
 
 
+__all__ = ["ComponentInterface"]
+
+
 class ComponentInterface(Generic[CC], ABC):
     """
     A component is responsible for modifying or create firmware resources. They are categorized

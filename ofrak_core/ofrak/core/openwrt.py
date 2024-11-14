@@ -22,6 +22,23 @@ from ofrak_io.deserializer import BinaryDeserializer
 from ofrak_type.endianness import Endianness
 from ofrak_type.range import Range
 
+__all__ = [
+    "OPENWRT_TRX_MAGIC_BYTES",
+    "OPENWRT_TRXV1_HEADER_LEN",
+    "OPENWRT_TRXV2_HEADER_LEN",
+    "OPENWRT_TRX_MARK",
+    "OpenWrtTrxVersion",
+    "OpenWrtTrxHeader",
+    "OpenWrtTrx",
+    "OpenWrtIdentifier",
+    "OpenWrtTrxUnpacker",
+    "OpenWrtTrxHeaderAttributesAnalyzer",
+    "OpenWrtTrxHeaderModifierConfig",
+    "OpenWrtTrxHeaderModifier",
+    "OpenWrtTrxPacker",
+    "openwrt_crc32",
+]
+
 OPENWRT_TRX_MAGIC_BYTES = b"HDR0"
 (OPENWRT_TRX_MAGIC_START,) = struct.unpack("<I", OPENWRT_TRX_MAGIC_BYTES)
 OPENWRT_TRXV1_HEADER_LEN = 28

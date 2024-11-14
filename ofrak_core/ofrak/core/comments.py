@@ -9,6 +9,15 @@ from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 
 
+__all__ = [
+    "CommentsAttributes",
+    "AddCommentModifierConfig",
+    "AddCommentModifier",
+    "DeleteCommentModifierConfig",
+    "DeleteCommentModifier",
+]
+
+
 @dataclass(**ResourceAttributes.DATACLASS_PARAMS)
 class CommentsAttributes(ResourceAttributes):
     """

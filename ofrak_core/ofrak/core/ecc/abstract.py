@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
 
 
+__all__ = ["EccError", "EccAlgorithm"]
+
+
 class EccError(Exception):
     pass
 

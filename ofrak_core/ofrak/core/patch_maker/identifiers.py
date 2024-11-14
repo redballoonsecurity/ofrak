@@ -4,6 +4,9 @@ from ofrak.core.patch_maker.linkable_symbol import LinkableSymbol
 from ofrak.resource import Resource
 
 
+__all__ = ["LinkableSymbolIdentifier"]
+
+
 class LinkableSymbolIdentifier(Identifier):
     """
     Component to identify Complex Blocks as Linkable Symbols. If this component is discovered,

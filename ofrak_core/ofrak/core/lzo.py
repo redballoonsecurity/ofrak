@@ -12,6 +12,8 @@ from ofrak.model.component_model import ComponentExternalTool
 from ofrak.model.component_model import ComponentConfig
 from ofrak_type.range import Range
 
+__all__ = ["LZOP", "LzoData", "LzoUnpacker", "LzoPacker"]
+
 LZOP = ComponentExternalTool(
     "lzop", "https://www.lzop.org/", "--help", apt_package="lzop", brew_package="lzop"
 )

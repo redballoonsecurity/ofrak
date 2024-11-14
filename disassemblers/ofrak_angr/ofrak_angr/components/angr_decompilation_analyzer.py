@@ -9,6 +9,9 @@ from ofrak_angr.model import AngrAnalysis, AngrAnalysisResource
 from ofrak.core.decompilation import DecompilationAnalysis
 
 
+__all__ = ["AngrDecompilatonAnalyzer"]
+
+
 class AngrDecompilatonAnalyzer(Analyzer[None, DecompilationAnalysis]):
     id = b"AngrDecompilationAnalyzer"
     targets = (ComplexBlock,)

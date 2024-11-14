@@ -9,6 +9,8 @@ from ofrak.resource import Resource
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 
+__all__ = ["MemoryRegion"]
+
 LOGGER = logging.getLogger(__file__)
 
 

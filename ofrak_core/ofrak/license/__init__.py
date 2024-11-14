@@ -10,6 +10,23 @@ from typing import Dict, Optional, Tuple, cast, List
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
+__all__ = [
+    "LicenseDataType",
+    "LicenseListType",
+    "COMMUNITY_LICENSE",
+    "RBS_PUBLIC_KEY",
+    "LICENSE_PATH",
+    "verify_registered_license",
+    "verify_license_is_valid_and_current",
+    "get_canonical_license_data",
+    "register_license",
+    "accept_license_agreement",
+    "select_license_to_register",
+    "read_license_file",
+    "choose",
+    "Agreement",
+]
+
 LicenseDataType = Dict[str, Optional[str]]
 LicenseListType = List[LicenseDataType]
 COMMUNITY_LICENSE = [

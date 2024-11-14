@@ -8,6 +8,9 @@ from ofrak_type.architecture import InstructionSetMode
 from ofrak.service.abstract_ofrak_service import AbstractOfrakService
 
 
+__all__ = ["AssemblerServiceInterface"]
+
+
 class AssemblerServiceInterface(AbstractOfrakService):
     """An interface for assembler services."""
 

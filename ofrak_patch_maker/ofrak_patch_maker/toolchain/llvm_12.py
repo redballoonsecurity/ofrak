@@ -20,6 +20,9 @@ from ofrak_patch_maker.toolchain.model import (
 from ofrak_patch_maker.toolchain.utils import get_file_format
 
 
+__all__ = ["LLVM_12_0_1_Toolchain"]
+
+
 class LLVM_12_0_1_Toolchain(Toolchain):
     binary_file_parsers = [LLVM_ELF_Parser()]
 

@@ -15,6 +15,8 @@ from ofrak.core.binary import GenericBinary
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak_type.range import Range
 
+__all__ = ["MKSQUASHFS", "UNSQUASHFS", "SquashfsFilesystem", "SquashfsUnpacker", "SquashfsPacker"]
+
 LOGGER = logging.getLogger(__name__)
 
 MKSQUASHFS = ComponentExternalTool(

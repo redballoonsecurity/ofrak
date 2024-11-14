@@ -3,6 +3,8 @@ import os
 from typing import Callable, Optional
 import sysconfig
 
+__all__ = ["C_LOG_TYPE", "ext_suffix", "C_ENTROPY_FUNC", "entropy_c"]
+
 C_LOG_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_uint8)
 
 ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
