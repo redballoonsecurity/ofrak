@@ -186,4 +186,12 @@ def test_arm_alignment(toolchain_under_test: ToolchainUnderTest):
     with open(exec_path, "rb") as f:
         dat = f.read()
         code_offset = code_segments[0].offset
-        assert dat[code_offset : code_offset + 2] == b"\x05\xe0"
+        if (
+            toolchain_under_test.proc.endianness == Endianness.LITTLE_ENDIAN
+            or toolchain_under_test.proc.processor == ProcessorType.GENERIC_ARM_BE8
+        ):
+            # little-endian code instructions
+            expected_bytes = b"\x05\xe0"
+        else:
+            expected_bytes = b"\xe0\x05"
+        assert dat[code_offset : code_offset + 2] == expected_bytes
