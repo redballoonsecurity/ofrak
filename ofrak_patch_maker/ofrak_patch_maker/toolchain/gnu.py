@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from typing import Iterable, List, Mapping, Optional, Tuple, Dict
 from warnings import warn
 
-from ofrak_type import ArchInfo, Endianness
+from ofrak_type import ArchInfo
 from ofrak_patch_maker.toolchain.abstract import Toolchain, RBS_AUTOGEN_WARNING
 from ofrak_patch_maker.toolchain.model import (
     Segment,
