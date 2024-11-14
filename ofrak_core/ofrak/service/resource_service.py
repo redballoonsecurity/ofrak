@@ -688,7 +688,7 @@ class ResourceService(ResourceServiceInterface):
         for _tag in tag.tag_classes():
             if blacklist is not None and _tag in blacklist:
                 continue
-            self._tag_indexes[_tag].remove(resource)
+            self._tag_indexes[_tag].discard(resource)
 
     def _add_resource_attribute_to_index(
         self,
