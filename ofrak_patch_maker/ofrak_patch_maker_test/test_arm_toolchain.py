@@ -47,6 +47,28 @@ ARM_EXTENSION = ".arm"
             ARM_EXTENSION,
         ),
         ToolchainUnderTest(
+            GNU_ARM_NONE_EABI_10_2_1_Toolchain,
+            ArchInfo(
+                InstructionSet.ARM,
+                SubInstructionSet.ARMv8A,
+                BitWidth.BIT_32,
+                Endianness.BIG_ENDIAN,
+                ProcessorType.GENERIC_A9_V7_THUMB,
+            ),
+            ARM_EXTENSION,
+        ),
+        ToolchainUnderTest(
+            GNU_ARM_NONE_EABI_10_2_1_Toolchain,
+            ArchInfo(
+                InstructionSet.ARM,
+                SubInstructionSet.ARMv8A,
+                BitWidth.BIT_32,
+                Endianness.BIG_ENDIAN,
+                ProcessorType.GENERIC_ARM_BE8,
+            ),
+            ARM_EXTENSION,
+        ),
+        ToolchainUnderTest(
             LLVM_12_0_1_Toolchain,
             ArchInfo(
                 InstructionSet.ARM,
