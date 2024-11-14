@@ -101,10 +101,6 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
         if toolchain_config.isysroot is not None:
             self._compiler_flags.append(f"-isysroot {toolchain_config.isysroot}")
 
-        if self._processor.endianness == Endianness.BIG_ENDIAN:
-            self._compiler_flags.append("-mbig-endian")
-            self._linker_flags.append("-EB")
-
     def _get_compiler_target(self, processor: ArchInfo) -> Optional[str]:
         return self._config.compiler_target
 
@@ -366,8 +362,6 @@ class GNU_10_Toolchain(Abstract_GNU_Toolchain):
             self._assembler_flags.append(f"-march={self._assembler_target}")
         if self._config.assembler_cpu:
             self._assembler_flags.append(f"-mcpu={self._config.assembler_cpu}")
-        if self._processor.endianness == Endianness.BIG_ENDIAN:
-            self._assembler_flags.append("-mbig-endian")
 
         self._linker_flags.append(
             "--no-eh-frame-hdr",

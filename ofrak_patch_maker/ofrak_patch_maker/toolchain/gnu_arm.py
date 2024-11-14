@@ -22,6 +22,10 @@ class GNU_ARM_NONE_EABI_10_2_1_Toolchain(GNU_10_Toolchain):
         if self._processor.processor == ProcessorType.GENERIC_ARM_BE8:
             self._compiler_flags.append("-mbe8")
             self._linker_flags.append("-be8")
+        if self._processor.endianness == Endianness.BIG_ENDIAN:
+            self._compiler_flags.append("-mbig-endian")
+            self._linker_flags.append("-EB")
+            self._assembler_flags.append("-mbig-endian")
 
     @property
     def name(self) -> str:
