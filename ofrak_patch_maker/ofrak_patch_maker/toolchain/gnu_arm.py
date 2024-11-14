@@ -2,7 +2,7 @@ from ofrak_patch_maker.binary_parser.gnu import GNU_ELF_Parser
 from ofrak_patch_maker.toolchain.gnu import GNU_10_Toolchain
 from ofrak_patch_maker.toolchain.model import ToolchainConfig, ToolchainException
 from ofrak_type.architecture import InstructionSet, SubInstructionSet, ArchInfo, ProcessorType
-from ofrak_type import Endianness
+from ofrak_type.endianness import Endianness
 import logging
 
 
