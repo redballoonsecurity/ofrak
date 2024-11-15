@@ -1,6 +1,9 @@
 from enum import Enum
 
 
+__all__ = ["Endianness"]
+
+
 class Endianness(Enum):
     """
     The order in which bytes are stored.

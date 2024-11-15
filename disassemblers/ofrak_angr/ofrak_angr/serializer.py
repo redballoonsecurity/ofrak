@@ -6,6 +6,9 @@ from ofrak.service.serialization.pjson_types import PJSONType
 from ofrak.service.serialization.serializers.serializer_i import SerializerInterface
 
 
+__all__ = ["AngrAnalysisSerializer"]
+
+
 class AngrAnalysisSerializer(SerializerInterface):
     """
     Dummy serializer to silently pass serialization attempts, and hard fail on attempting to

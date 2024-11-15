@@ -15,6 +15,9 @@ from typing import IO, Optional, Type
 import os
 
 
+__all__ = ["StreamCapture"]
+
+
 class StreamCapture:
     """
     Capture a stream from a filelike object.

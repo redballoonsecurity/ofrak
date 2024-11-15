@@ -4,6 +4,9 @@ from ofrak.model.resource_model import ResourceAttributes
 from ofrak.resource_view import ResourceView
 
 
+__all__ = ["AngrAnalysis", "AngrAnalysisResource"]
+
+
 @dataclass(**ResourceAttributes.DATACLASS_PARAMS)
 class AngrAnalysis(ResourceAttributes):
     project: Project

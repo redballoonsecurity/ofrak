@@ -56,6 +56,9 @@ from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.symbol_type import LinkableSymbolType
 
 
+__all__ = ["PatchMaker"]
+
+
 class PatchMaker:
     def __init__(
         self,

@@ -2,6 +2,13 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import TypeVar, Generic, Callable, Dict, Awaitable, Iterable, Tuple, ClassVar
 
+__all__ = [
+    "NotAllRequestsHandledError",
+    "BatchManagerInterface",
+    "make_batch_manager",
+    "AbstractBatchManager",
+]
+
 Request = TypeVar("Request")
 Result = TypeVar("Result")
 

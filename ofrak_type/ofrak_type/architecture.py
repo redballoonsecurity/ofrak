@@ -7,6 +7,9 @@ from ofrak_type.bit_width import BitWidth
 from ofrak_type.endianness import Endianness
 
 
+__all__ = ["InstructionSet", "SubInstructionSet", "InstructionSetMode", "ProcessorType", "ArchInfo"]
+
+
 class InstructionSet(Enum):
     """
     Enumeration of the possible supported instruction sets.

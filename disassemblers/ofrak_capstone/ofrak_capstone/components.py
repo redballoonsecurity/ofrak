@@ -22,6 +22,12 @@ from ofrak.service.disassembler.disassembler_service_i import (
 )
 from ofrak.service.resource_service_i import ResourceServiceInterface
 
+__all__ = [
+    "CapstoneBasicBlockUnpacker",
+    "CapstoneInstructionAnalyzer",
+    "CapstoneInstructionRegisterUsageAnalyzer",
+]
+
 LOGGER = logging.getLogger(__name__)
 
 

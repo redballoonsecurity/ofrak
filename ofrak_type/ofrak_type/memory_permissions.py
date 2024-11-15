@@ -1,6 +1,9 @@
 from enum import Enum
 
 
+__all__ = ["MemoryPermissions"]
+
+
 class MemoryPermissions(Enum):
     """
     Representation of memory access permissions - all combinations of Read, Write, and eXecute

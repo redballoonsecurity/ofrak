@@ -4,6 +4,9 @@ from typing import cast, Union, Tuple, BinaryIO, Optional
 from ofrak_type.endianness import Endianness
 
 
+__all__ = ["DeserializationError", "BinaryDeserializer"]
+
+
 class DeserializationError(Exception):
     pass
 

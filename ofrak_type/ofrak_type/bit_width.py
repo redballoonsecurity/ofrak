@@ -1,6 +1,9 @@
 from enum import Enum
 
 
+__all__ = ["BitWidth"]
+
+
 class BitWidth(Enum):
     """
     The number of bits which can be used to represent a number.

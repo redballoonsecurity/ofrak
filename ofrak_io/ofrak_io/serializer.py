@@ -4,6 +4,9 @@ from typing import Any, BinaryIO, Union, Optional
 from ofrak_type.endianness import Endianness
 
 
+__all__ = ["SerializationError", "BinarySerializer"]
+
+
 class SerializationError(Exception):
     pass
 
