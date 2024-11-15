@@ -20,3 +20,8 @@ from ofrak.service.resource_service_i import (
     ResourceFilterCondition as ResourceFilterCondition,
     ResourceSort as ResourceSort,
 )
+
+# Many existing OFRAK scripts rely on Optional being star-imported for the
+# function signature
+#     async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):
+from typing import Optional as Optional
