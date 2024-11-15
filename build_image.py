@@ -171,7 +171,6 @@ def parse_args() -> OfrakImageConfig:
         InstallTarget(args.target),
         args.cache_from,
         config_dict.get("entrypoint"),
-        args.no_forced_buildkit,
     )
     image_config.validate_serial_txt_existence()
     return image_config
