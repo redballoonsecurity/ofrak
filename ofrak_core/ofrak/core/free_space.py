@@ -352,8 +352,16 @@ class FreeSpaceAnalyzer(Analyzer[None, Allocatable]):
             r_sort=ResourceSort(AnyFreeSpace.VirtualAddress),
         ):
             if free_space_r.resource.has_tag(RuntimeFreeSpace):
+                if free_space_r.resource.get_data_id() is not None:
+                    raise ValueError(
+                        f"Found RuntimeFreeSpace with mapped data, should be FreeSpace instead"
+                    )
                 free_spaces_without_data.append(free_space_r)
             elif free_space_r.resource.has_tag(FreeSpace):
+                if free_space_r.resource.get_data_id() is None:
+                    raise ValueError(
+                        f"Found FreeSpace without mapped data, should be RuntimeFreeSpace instead"
+                    )
                 free_spaces_with_data.append(free_space_r)
             else:
                 raise TypeError("Got AnyFreeSpace without FreeSpace or RuntimeFreeSpace tags")
