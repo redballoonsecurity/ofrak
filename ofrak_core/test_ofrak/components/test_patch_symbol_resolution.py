@@ -191,8 +191,6 @@ def symbol_test_case(request) -> TestCase:
     "symbol_test_case", PARAMS, indirect=["symbol_test_case"], ids=lambda tc: tc.label
 )
 def test_symbol_resolution(patch_maker, symbol_test_case):
-    bss_size_required, unresolved_sym_set = patch_maker._resolve_symbols_within_BOM(
-        symbol_test_case.object_map
-    )
+    unresolved_sym_set = patch_maker._resolve_symbols_within_BOM(symbol_test_case.object_map)
 
     assert unresolved_sym_set == symbol_test_case.expected_unresolved_symbols
