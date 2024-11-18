@@ -6,7 +6,9 @@ import time
 from types import ModuleType
 from typing import Type, Any, Awaitable, Callable, List, Iterable, Optional
 
+
 import ofrak_patch_maker
+from ofrak.license import verify_registered_license
 
 from ofrak_type import InvalidStateError
 from synthol.injector import DependencyInjector
@@ -124,6 +126,7 @@ class OFRAK:
         logging_level: int = DEFAULT_LOG_LEVEL,
         log_file: Optional[str] = None,
         exclude_components_missing_dependencies: bool = False,
+        verify_license: bool = True,
     ):
         """
         Set up the OFRAK environment that a script will use.
@@ -131,7 +134,10 @@ class OFRAK:
         :param logging_level: Logging level of OFRAK instance (logging.DEBUG, logging.WARNING, etc.)
         :param exclude_components_missing_dependencies: When initializing OFRAK, check each component's dependency and do
         not use any components missing some dependencies
+        :param verify_license: Verify OFRAK license
         """
+        if verify_license:
+            verify_registered_license()
         logging.basicConfig(level=logging_level, format="[%(filename)15s:%(lineno)5s] %(message)s")
         if log_file is None:
             log_file = DEFAULT_LOG_FILE
