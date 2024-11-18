@@ -423,10 +423,6 @@ class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
         for fs in wholly_allocated_resources:
             fs.resource.remove_tag(FreeSpace)
             fs.resource.remove_tag(RuntimeFreeSpace)
-
-            # Without committing the changes to our tags here, removing both the child and
-            # parent tags will cause a KeyError on update.
-            await fs.resource.save()
             fs.resource.remove_tag(AnyFreeSpace)
 
         for fs, allocated_ranges in partially_allocated_resources.values():
@@ -459,9 +455,6 @@ class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
             else:
                 raise TypeError(f"Got AnyFreeSpace {fs} without FreeSpace or RuntimeFreeSpace tags")
 
-            # Without committing the changes to our tags here, removing both the child and
-            # parent tags will cause a KeyError on update.
-            await fs.resource.save()
             fs.resource.remove_tag(AnyFreeSpace)
 
         # Update Allocatable attributes, reflecting removed ranges
