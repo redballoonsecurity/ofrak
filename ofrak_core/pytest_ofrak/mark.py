@@ -90,5 +90,6 @@ def pytest_collection_modifyitems(config, items):
     if sys.platform == "win32":
         windows_skip_marker = pytest.mark.skip(reason="Test cannot run on Windows.")
 
-        if "skipif_windows" in item.keywords:
-            item.add_marker(windows_skip_marker)
+        for item in items:
+            if "skipif_windows" in item.keywords:
+                item.add_marker(windows_skip_marker)
