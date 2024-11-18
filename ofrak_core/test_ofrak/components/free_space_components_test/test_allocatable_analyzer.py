@@ -19,15 +19,11 @@ from ofrak_type.range import Range
 class FreeSpaceAnalyzerTestCase:
     label: str
     tree_structure: FreeSpaceTreeType
-    runtime_free_space_ranges: List[RuntimeFreeSpace]
     expected_free_space_ranges: Dict[MemoryPermissions, List[Range]]
     expected_dataless_free_space_ranges: Dict[MemoryPermissions, List[Range]]
 
     async def inflate(self, ofrak_context: OFRAKContext) -> Resource:
-        root_r = await inflate_tree(self.tree_structure, ofrak_context)
-        for runtime_range in self.runtime_free_space_ranges:
-            await root_r.create_child_from_view(runtime_range)
-        return root_r
+        return await inflate_tree(self.tree_structure, ofrak_context)
 
 
 FREE_SPACE_ANALYZER_TEST_CASES = [
@@ -47,7 +43,6 @@ FREE_SPACE_ANALYZER_TEST_CASES = [
                 (MemoryRegion(0x80, 0x10), None),
             ],
         ),
-        [],
         {MemoryPermissions.RX: [Range(0x20, 0x50)]},
         {},
     ),
@@ -67,7 +62,6 @@ FREE_SPACE_ANALYZER_TEST_CASES = [
                 (MemoryRegion(0x80, 0x10), None),
             ],
         ),
-        [],
         {},
         {},
     ),
@@ -88,7 +82,6 @@ FREE_SPACE_ANALYZER_TEST_CASES = [
                 (MemoryRegion(0x80, 0x10), None),
             ],
         ),
-        [],
         {MemoryPermissions.RX: [Range(0x0, 0x60)]},
         {},
     ),
@@ -139,7 +132,6 @@ FREE_SPACE_ANALYZER_TEST_CASES = [
                 ),
             ],
         ),
-        [],
         {MemoryPermissions.RX: [Range(0x50, 0xC8)]},
         {},
     ),
@@ -159,7 +151,6 @@ FREE_SPACE_ANALYZER_TEST_CASES = [
                 (MemoryRegion(0x80, 0x10), None),
             ],
         ),
-        [],
         {
             MemoryPermissions.R: [Range(0x0, 0x20)],
             MemoryPermissions.W: [Range(0x20, 0x50)],
@@ -169,8 +160,7 @@ FREE_SPACE_ANALYZER_TEST_CASES = [
     ),
     FreeSpaceAnalyzerTestCase(
         "runtime free space goes into dataless_free_space_ranges",
-        (MemoryRegion(0x0, 0x100), []),
-        [RuntimeFreeSpace(0x120, 0x30, MemoryPermissions.RX)],
+        (MemoryRegion(0x0, 0x100), [(RuntimeFreeSpace(0x120, 0x30, MemoryPermissions.RX), None)]),
         {},
         {MemoryPermissions.RX: [Range(0x120, 0x150)]},
     ),
@@ -180,9 +170,9 @@ FREE_SPACE_ANALYZER_TEST_CASES = [
             MemoryRegion(0x0, 0x100),
             [
                 (FreeSpace(0x0, 0x100, MemoryPermissions.RW), None),
+                (RuntimeFreeSpace(0x100, 0x30, MemoryPermissions.RW), None),
             ],
         ),
-        [RuntimeFreeSpace(0x100, 0x30, MemoryPermissions.RW)],
         {
             MemoryPermissions.RW: [Range(0x0, 0x100)],
         },
