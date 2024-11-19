@@ -66,6 +66,7 @@ class TestIhexUnpackPack(UnpackModifyPackPattern):
         await repacked_root_resource.unpack_recursively()
 
 
+@pytest.mark.skipif_missing_deps([IhexPacker, IhexUnpacker])
 @pytest.mark.parametrize("ihex_file", IHEX_TEST_FILES)
 async def test_ihex_analyzer(ofrak_context: OFRAKContext, ihex_file):
     from bincopy import BinFile
