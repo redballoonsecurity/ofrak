@@ -191,6 +191,14 @@ class OFRAK:
         await ofrak_context.start_context()
         return ofrak_context
 
+    def _get_event_loop(self) -> asyncio.AbstractEventLoop:
+        try:
+            return asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            return loop
+
     # TODO: Typehints here do not properly accept functions with variable args
     async def run_async(self, func: Callable[["OFRAKContext", Any], Awaitable[None]], *args):
         ofrak_context = await self.create_ofrak_context()
@@ -203,7 +211,7 @@ class OFRAK:
 
     # TODO: Typehints here do not properly accept functions with variable args
     def run(self, func: Callable[["OFRAKContext", Any], Awaitable[None]], *args):
-        asyncio.get_event_loop().run_until_complete(self.run_async(func, *args))
+        self._get_event_loop().run_until_complete(self.run_async(func, *args))
 
     def _setup(self):
         """Discover common OFRAK services and components."""
