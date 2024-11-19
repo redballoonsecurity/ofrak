@@ -7,6 +7,7 @@ from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.gnu_avr import GNU_AVR_5_Toolchain
 from ofrak_patch_maker.toolchain.gnu_bcc_sparc import GNU_BCC_SPARC_Toolchain
+from ofrak_patch_maker.toolchain.gnu_vbcc_m68k import VBCC_0_9_GNU_Hybrid_Toolchain
 from ofrak_patch_maker.toolchain.gnu_x64 import GNU_X86_64_LINUX_EABI_10_3_0_Toolchain
 from ofrak_patch_maker.toolchain.model import (
     ToolchainConfig,
@@ -113,15 +114,16 @@ def run_hello_world_test(toolchain_under_test: ToolchainUnderTest):
     logger = logging.getLogger("ToolchainTest")
     logger.setLevel("INFO")
 
+    toolchain = toolchain_under_test.toolchain(toolchain_under_test.proc, tc_config)
     patch_maker = PatchMaker(
-        toolchain=toolchain_under_test.toolchain(toolchain_under_test.proc, tc_config),
+        toolchain=toolchain,
         logger=logger,
         build_dir=build_dir,
         base_symbols=base_symbols,
     )
 
     bom = patch_maker.make_bom(
-        name="example_3",
+        name="example_1",
         source_list=[source_path],
         object_list=[],
         header_dirs=[source_dir],
@@ -132,9 +134,12 @@ def run_hello_world_test(toolchain_under_test: ToolchainUnderTest):
     for o in bom.object_map.values():
         seg_list = []
         for s in o.segment_map.values():
-            if s.is_bss:
+            if s.segment_name == ".bss.legacy":
                 # test legacy allocation of .bss
                 seg_list.append(replace(s, vm_address=Segment.BSS_LEGACY_VADDR))
+                # Set the unsafe .bss size to exactly this length, the other .bss section
+                # will be allocated the normal way
+                unsafe_bss_size = s.length
             else:
                 seg_list.append(replace(s, vm_address=current_vm_address))
                 current_vm_address += s.length
@@ -148,7 +153,13 @@ def run_hello_world_test(toolchain_under_test: ToolchainUnderTest):
 
         all_segments.update({o.path: tuple(seg_list)})
 
-    bss = patch_maker.create_unsafe_bss_segment(current_vm_address, 0x8000)
+    # TODO: can we get VBCC/GNU hybrid toolchain to emit separate .bss sections for testing?
+    if toolchain_under_test.toolchain == VBCC_0_9_GNU_Hybrid_Toolchain:
+        unsafe_bss_size = 8000
+    else:
+        current_vm_address += 16 - current_vm_address % 16  # align unsafe .bss segment
+
+    bss = patch_maker.create_unsafe_bss_segment(current_vm_address, unsafe_bss_size)
 
     allocator_config = PatchRegionConfig(bom.name + "_patch", all_segments)
 

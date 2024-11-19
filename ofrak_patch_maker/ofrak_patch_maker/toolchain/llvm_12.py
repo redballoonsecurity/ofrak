@@ -258,7 +258,7 @@ class LLVM_12_0_1_Toolchain(Toolchain):
         bss_section_name = ".bss"
         return (
             f"    {bss_section_name} : {{\n"
-            f"        *.o({bss_section_name})\n"
+            f"        *.o({bss_section_name},{bss_section_name}.*),\n"
             f"    }} > {memory_region_name}"
         )
 
