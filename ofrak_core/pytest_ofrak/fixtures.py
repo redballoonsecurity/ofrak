@@ -21,7 +21,7 @@ def ofrak_id_service():
 
 @pytest.fixture
 def ofrak(ofrak_injector, ofrak_id_service):
-    ofrak = OFRAK(logging.INFO)
+    ofrak = OFRAK(logging.INFO, exclude_components_missing_dependencies=True)
     ofrak.injector = ofrak_injector
     ofrak.set_id_service(ofrak_id_service)
 
