@@ -107,13 +107,12 @@
 </style>
 
 <script>
-  import Icon from "../utils/Icon.svelte";
-  import Hoverable from "../utils/Hoverable.svelte";
   import LoadingText from "../utils/LoadingText.svelte";
 
   import { onDestroy } from "svelte";
   import { selected, resourceNodeDataMap } from "../stores.js";
   import { shortcuts } from "../keyboard";
+  import Comment from "../views/Comment.svelte";
 
   export let rootResource,
     selectNextSibling = () => {},
@@ -126,36 +125,37 @@
     commentsPromise,
     lastModified,
     allModified,
-    self_id = rootResource.get_id(),
+    selfId = rootResource.get_id(),
     kiddoChunksize = 512;
 
   $: {
-    if ($resourceNodeDataMap[self_id] === undefined) {
-      $resourceNodeDataMap[self_id] = {};
+    if ($resourceNodeDataMap[selfId] === undefined) {
+      $resourceNodeDataMap[selfId] = {};
     }
-    if ($resourceNodeDataMap[self_id].collapsed === undefined) {
-      $resourceNodeDataMap[self_id].collapsed = collapsed;
+    if ($resourceNodeDataMap[selfId].collapsed === undefined) {
+      $resourceNodeDataMap[selfId].collapsed = collapsed;
     }
-    if ($resourceNodeDataMap[self_id].childrenPromise === undefined) {
-      $resourceNodeDataMap[self_id].childrenPromise =
+    if ($resourceNodeDataMap[selfId].childrenPromise === undefined) {
+      $resourceNodeDataMap[selfId].childrenPromise =
         rootResource.get_children();
     }
-    if ($resourceNodeDataMap[self_id].commentsPromise === undefined) {
-      $resourceNodeDataMap[self_id].commentsPromise =
+    if ($resourceNodeDataMap[selfId].commentsPromise === undefined) {
+      $resourceNodeDataMap[selfId].commentsPromise =
         rootResource.get_comments();
     }
-    if ($resourceNodeDataMap[self_id].lastModified === undefined) {
-      $resourceNodeDataMap[self_id].lastModified = false;
+    if ($resourceNodeDataMap[selfId].lastModified === undefined) {
+      $resourceNodeDataMap[selfId].lastModified = false;
     }
-    if ($resourceNodeDataMap[self_id].allModified === undefined) {
-      $resourceNodeDataMap[self_id].allModified = false;
+    if ($resourceNodeDataMap[selfId].allModified === undefined) {
+      $resourceNodeDataMap[selfId].allModified = false;
     }
-    childrenPromise = $resourceNodeDataMap[self_id].childrenPromise;
-    commentsPromise = $resourceNodeDataMap[self_id].commentsPromise;
-    collapsed = $resourceNodeDataMap[self_id].collapsed;
-    lastModified = $resourceNodeDataMap[self_id].lastModified;
-    allModified = $resourceNodeDataMap[self_id].allModified;
+    childrenPromise = $resourceNodeDataMap[selfId].childrenPromise;
+    commentsPromise = $resourceNodeDataMap[selfId].commentsPromise;
+    collapsed = $resourceNodeDataMap[selfId].collapsed;
+    lastModified = $resourceNodeDataMap[selfId].lastModified;
+    allModified = $resourceNodeDataMap[selfId].allModified;
   }
+
   function updateRootModel() {
     rootResource.update();
     rootResource = rootResource;
@@ -168,12 +168,12 @@
     }
   });
 
-  $: if ($selected === self_id) {
+  $: if ($selected === selfId) {
     shortcuts["h"] = () => {
-      $resourceNodeDataMap[self_id].collapsed = true;
+      $resourceNodeDataMap[selfId].collapsed = true;
     };
     shortcuts["l"] = () => {
-      $resourceNodeDataMap[self_id].collapsed = false;
+      $resourceNodeDataMap[selfId].collapsed = false;
     };
     shortcuts["j"] = () => {
       if (!collapsed && firstChild) {
@@ -195,46 +195,37 @@
     if (e.detail > 1) {
       return;
     }
-    if ($selected === self_id) {
+    if ($selected === selfId) {
       $selected = undefined;
     } else {
-      $selected = self_id;
+      $selected = selfId;
     }
   }
 
   function onDoubleClick(e) {
-    $resourceNodeDataMap[self_id].collapsed = !collapsed;
+    $resourceNodeDataMap[selfId].collapsed = !collapsed;
     // Expand children recursively on double click
     if (!collapsed) {
       childrenCollapsed = false;
     }
-    $selected = self_id;
-  }
-
-  async function onDeleteClick(optional_range) {
-    // Delete the selected comment.
-    // As a side effect, the corresponding resource gets selected.
-    $selected = self_id;
-    await rootResource.delete_comment(optional_range);
-    $resourceNodeDataMap[$selected].commentsPromise =
-      rootResource.get_comments();
+    $selected = selfId;
   }
 
   // Swap "just modified" indication to "previously modified" indication
   onDestroy(() => {
-    if ($resourceNodeDataMap[self_id].lastModified) {
-      $resourceNodeDataMap[self_id].allModified =
-        $resourceNodeDataMap[self_id].lastModified;
+    if ($resourceNodeDataMap[selfId].lastModified) {
+      $resourceNodeDataMap[selfId].allModified =
+        $resourceNodeDataMap[selfId].lastModified;
     }
   });
 </script>
 
-{#if !searchResults.matches || searchResults.matches.includes(self_id)}
+{#if !searchResults.matches || searchResults.matches.includes(selfId)}
   {#await childrenPromise then children}
     {#if children?.length > 0}
       <button
         on:click="{() => {
-          $resourceNodeDataMap[self_id].collapsed = !collapsed;
+          $resourceNodeDataMap[selfId].collapsed = !collapsed;
         }}"
       >
         {#if collapsed}
@@ -246,28 +237,24 @@
       </button>{/if}{/await}<button
     on:click="{onClick}"
     on:dblclick="{onDoubleClick}"
-    class:selected="{$selected === self_id}"
-    class:lastModified="{$resourceNodeDataMap[self_id].lastModified}"
-    class:allModified="{$resourceNodeDataMap[self_id].allModified}"
-    id="{self_id}"
+    class:selected="{$selected === selfId}"
+    class:lastModified="{$resourceNodeDataMap[selfId].lastModified}"
+    class:allModified="{$resourceNodeDataMap[selfId].allModified}"
+    id="{selfId}"
   >
     {rootResource.get_caption()}
   </button>
-  {#await commentsPromise then comments}
-    {#each comments as comment}
-      <div class="comment">
-        <Hoverable let:hovering>
-          <button
-            title="Delete this comment"
-            on:click="{onDeleteClick(comment[0])}"
-          >
-            <Icon
-              class="comment_icon"
-              url="{hovering ? '/icons/trash_can.svg' : '/icons/comment.svg'}"
-            />
-          </button></Hoverable
-        >{comment[1]}
-      </div>
+  {#await commentsPromise then comment_group}
+    {#each comment_group as [comment_range, comment_strs]}
+      {#each comment_strs as comment_text}
+        <div class="comment">
+          <Comment
+            comment="{{ comment_range, comment_text }}"
+            rootResource="{rootResource}"
+            selfId="{selfId}"
+          />
+        </div>
+      {/each}
     {/each}
   {/await}
 
@@ -292,7 +279,7 @@
                       }}"
                   selectPreviousSibling="{i === 0
                     ? () => {
-                        $selected = self_id;
+                        $selected = selfId;
                       }
                     : () => {
                         $selected = children[i - 1]?.resource_id;

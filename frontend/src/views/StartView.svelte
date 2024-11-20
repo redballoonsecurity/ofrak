@@ -446,6 +446,7 @@
     >
   </div>
   <!-- svelte-ignore a11y-click-events-have-key-events -->
+  <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div
     class="center clickable {dragging ? 'dragging' : ''}"
     on:dragover="{(e) => {
