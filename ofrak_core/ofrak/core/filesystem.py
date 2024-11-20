@@ -34,14 +34,6 @@ def _warn_chmod_chown_windows():
     )
 
 
-def _warn_chmod_chown_windows():
-    warnings.warn(
-        f"os.chown and os.chmod do not work on Windows platforms. \
-        Unix-like file ownership and permissions will not be properly handled while using OFRAK on this platform. \
-        If you require extended attributes, please use a different platform."
-    )
-
-
 @dataclass
 class FilesystemEntry(ResourceView):
     """
