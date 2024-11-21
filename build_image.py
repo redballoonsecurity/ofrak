@@ -9,6 +9,9 @@ import sys
 import pkg_resources
 import yaml
 
+DEFAULT_PYTHON_IMAGE = (
+    "python:3.8-bullseye@sha256:e1cd369204123e89646f8c001db830eddfe3e381bd5c837df00141be3bd754cb"
+)
 BASE_DOCKERFILE = "base.Dockerfile"
 FINISH_DOCKERFILE = "finish.Dockerfile"
 
@@ -33,6 +36,7 @@ class OfrakImageConfig:
     install_target: InstallTarget
     cache_from: List[str]
     entrypoint: Optional[str]
+    python_image: str
 
     def validate_serial_txt_existence(self):
         """
@@ -171,6 +175,7 @@ def parse_args() -> OfrakImageConfig:
         InstallTarget(args.target),
         args.cache_from,
         config_dict.get("entrypoint"),
+        config_dict.get("python_image", DEFAULT_PYTHON_IMAGE),
     )
     image_config.validate_serial_txt_existence()
     return image_config
@@ -207,7 +212,7 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
         dockerfile_base_parts += [f"### {dockerstage_path}", dockerstub]
 
     dockerfile_base_parts += [
-        "FROM python:3.8-bullseye@sha256:e1cd369204123e89646f8c001db830eddfe3e381bd5c837df00141be3bd754cb",
+        f"FROM {config.python_image}",
         "",
     ]
 

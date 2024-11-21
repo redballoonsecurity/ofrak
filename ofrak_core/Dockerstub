@@ -61,8 +61,11 @@ RUN cd /tmp && \
 
 # Install Jefferson
 WORKDIR /tmp
-RUN wget https://bootstrap.pypa.io/pip/get-pip.py && python3.9 get-pip.py && python3.8 get-pip.py && rm get-pip.py
-RUN python3.9 -m pip install jefferson
+RUN wget https://bootstrap.pypa.io/pip/get-pip.py && \
+    /usr/bin/python3 get-pip.py && \
+    /usr/local/bin/python get-pip.py && \
+    rm get-pip.py
+RUN /usr/bin/python3 -m pip install jefferson
 WORKDIR /
 
 # Install UEFIExtract (build from source, pinned to releae A68)
