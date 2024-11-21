@@ -1,4 +1,4 @@
-FROM node:latest AS svelte
+FROM node:lts-bullseye-slim AS svelte
 
 COPY --chown=node:node $PACKAGE_DIR /home/node/frontend
 
