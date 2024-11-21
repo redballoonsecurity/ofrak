@@ -72,6 +72,9 @@ def main():
         f.write(dockerfile_finish)
     print(f"{FINISH_DOCKERFILE} built.")
 
+    env = os.environ.copy()
+    env["DOCKER_BUILDKIT"] = "1"
+
     if config.build_base:
         full_base_image_name = "/".join((config.registry, config.base_image_name))
         cache_args = []
@@ -101,7 +104,7 @@ def main():
         if config.extra_build_args:
             base_command.extend(config.extra_build_args)
         try:
-            subprocess.run(base_command, check=True)
+            subprocess.run(base_command, check=True, env=env)
         except subprocess.CalledProcessError as error:
             print(f"Error running command: '{' '.join(error.cmd)}'")
             print(f"Exit status: {error.returncode}")
@@ -125,7 +128,7 @@ def main():
         if config.no_cache:
             finish_command.extend(["--no-cache"])
         try:
-            subprocess.run(finish_command, check=True)
+            subprocess.run(finish_command, check=True, env=env)
         except subprocess.CalledProcessError as error:
             print(f"Error running command: '{' '.join(error.cmd)}'")
             print(f"Exit status: {error.returncode}")
