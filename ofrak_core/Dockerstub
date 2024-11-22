@@ -59,15 +59,6 @@ RUN cd /tmp && \
     cd /tmp && \
     rm -r squashfs-tools
 
-# Install Jefferson
-WORKDIR /tmp
-RUN wget https://bootstrap.pypa.io/pip/get-pip.py && \
-    /usr/bin/python3 get-pip.py && \
-    /usr/local/bin/python get-pip.py && \
-    rm get-pip.py
-RUN /usr/bin/python3 -m pip install jefferson
-WORKDIR /
-
 # Install UEFIExtract (build from source, pinned to releae A68)
 RUN cd /tmp && \
     wget https://github.com/LongSoft/UEFITool/archive/refs/tags/A68.zip && \
