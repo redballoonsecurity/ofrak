@@ -23,7 +23,7 @@ classifiers=[
 license = {file = "LICENSE"}
 
 [project.optional-dependencies]
-"test": [
+test = [
     "black==23.3.0",
     "fun-coverage==0.2.0",
     "hypothesis~=6.39.3",
