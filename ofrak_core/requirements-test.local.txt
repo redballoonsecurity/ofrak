@@ -1,0 +1,4 @@
+# Needed because of https://github.com/redballoonsecurity/ofrak/issues/398
+importlib-resources
+ofrak_angr~=1.0
+ofrak_capstone~=1.0

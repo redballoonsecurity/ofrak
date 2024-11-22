@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=62.6.0,<64", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ofrak"
+version = "3.2.0post0"
+description = "A binary analysis and modification platform"
+authors = [
+    {name = "Red Balloon Security", email = "ofrak@redballoonsecurity.com"}
+]
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers=[
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "License :: Other/Proprietary License",
+    "License :: Free To Use But Restricted",
+    "License :: Free For Home Use",
+    "Topic :: Security",
+    "Typing :: Typed",
+]
+license = {file = "LICENSE"}
+dynamic = ["dependencies", "optional-dependencies"]
+
+[tool.setuptools.dynamic.dependencies]
+file = ["requirements.txt", "requirements.local.txt"]
+
+[tool.setuptools.dynamic.optional-dependencies]
+docs = {file = ["requirements-docs.txt"]}
+test = {file = ["requirements-test.txt", "requirements-test.local.txt"]}
+non-pypi = {file = ["requirements-non-pypi.txt"]}
+
+[project.urls]
+Homepage = "https://ofrak.com"
+Documentation = "https://ofrak.com/docs"
+Repository = "https://github.com/redballoonsecurity/ofrak"
+Issues = "https://github.com/redballoonsecurity/ofrak/issues"
+Changelog = "https://github.com/redballoonsecurity/ofrak/blob/master/ofrak_core/CHANGELOG.md"
+"Community License" = "https://github.com/redballoonsecurity/ofrak/blob/master/LICENSE"
+"Commercial Licensing Information" =  "https://ofrak.com/license"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ofrak*", "pytest_ofrak*"]
+exclude = ["test_ofrak*"]
+namespaces = true
+
+[project.entry-points]
+"ofrak.packages" = {ofrak_pkg = "ofrak"}
+console_scripts = {ofrak = "ofrak.__main__:main"}
