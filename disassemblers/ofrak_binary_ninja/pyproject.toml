@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=62.6.0,<64", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ofrak_binary_ninja"
+version = "0.1.0"
+description = "OFRAK Binary Ninja Components"
+authors = [
+    {name = "Red Balloon Security", email = "ofrak@redballoonsecurity.com"}
+]
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers=[
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "License :: Other/Proprietary License",
+    "License :: Free To Use But Restricted",
+    "License :: Free For Home Use",
+    "Topic :: Security",
+    "Typing :: Typed",
+]
+license = {file = "LICENSE"}
+dependencies = [
+    "ofrak",
+    # TODO: can we include binaryninja as a dependency?
+]
+
+[project.optional-dependencies]
+test = [
+    "fun-coverage==0.2.0",
+    "pytest",
+    "pytest-cov",
+    "pytest-asyncio==0.19.0",
+    "requests",
+]
+
+[project.urls]
+Homepage = "https://ofrak.com"
+Documentation = "https://ofrak.com/docs"
+Repository = "https://github.com/redballoonsecurity/ofrak"
+Issues = "https://github.com/redballoonsecurity/ofrak/issues"
+# Changelog = "https://github.com/redballoonsecurity/ofrak/blob/master/disassemblers/ofrak_patch_maker/CHANGELOG.md"
+"Community License" = "https://github.com/redballoonsecurity/ofrak/blob/master/LICENSE"
+"Commercial Licensing Information" =  "https://ofrak.com/license"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ofrak_binary_ninja*"]
+exclude = ["ofrak_binary_ninja_test*"]
+namespaces = false
+
+[project.entry-points]
+"ofrak.packages" = {ofrak_binary_ninja_pkg = "ofrak_binary_ninja"}
