@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=62.6.0,<64", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ofrak_type"
+version = "2.2.0"
+description = "Custom classes and types used in OFRAK"
+authors = [
+    {name = "Red Balloon Security", email = "ofrak@redballoonsecurity.com"}
+]
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers=[
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "License :: Other/Proprietary License",
+    "License :: Free To Use But Restricted",
+    "License :: Free For Home Use",
+    "Topic :: Security",
+    "Typing :: Typed",
+]
+license = {file = "LICENSE"}
+
+[project.optional-dependencies]
+"test": [
+    "black==23.3.0",
+    "fun-coverage==0.2.0",
+    "hypothesis~=6.39.3",
+    "mypy==0.942",
+    "pytest<8.0",
+    "pytest-cov",
+]
+
+[project.urls]
+Homepage = "https://ofrak.com"
+Documentation = "https://ofrak.com/docs"
+Repository = "https://github.com/redballoonsecurity/ofrak"
+Issues = "https://github.com/redballoonsecurity/ofrak/issues"
+Changelog = "https://github.com/redballoonsecurity/ofrak/blob/master/ofrak_type/CHANGELOG.md"
+"Community License" = "https://github.com/redballoonsecurity/ofrak/blob/master/LICENSE"
+"Commercial Licensing Information" =  "https://ofrak.com/license"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ofrak_type*"]
+exclude = ["ofrak_type_test*"]
+namespaces = false
