@@ -41,6 +41,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Partially reverted [#150](https://github.com/redballoonsecurity/ofrak/pull/150) so entropy C code is called with `ctypes` again, but maintaining the current API and automatic compilation by `setup.py`. ([#482](https://github.com/redballoonsecurity/ofrak/pull/482))
 - Minor update to OFRAK Community License, add OFRAK Pro License ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
 
+### Security
+- Update aiohttp to 3.10.11 ([#522](https://github.com/redballoonsecurity/ofrak/pull/522))
+- Update pycryptogrpahy to version 43.0.3. ([#525](https://github.com/redballoonsecurity/ofrak/pull/525))
+
 ## [3.2.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v3.1.0...ofrak-v3.2.0)
 ### Added
 - Add a JFFS2 packer and unpacker. ([#326](https://github.com/redballoonsecurity/ofrak/pull/326))
