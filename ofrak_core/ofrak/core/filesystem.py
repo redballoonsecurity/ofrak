@@ -2,7 +2,23 @@ import os
 import stat
 import tempfile
 from dataclasses import dataclass
-from typing import Dict, Iterable, Optional, Type, Union
+from typing import (
+    AsyncIterator,
+    Dict,
+    Iterable,
+    List,
+    MutableSequence,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    Deque,
+)
+from collections import deque
+from itertools import chain
+import posixpath
 
 try:
     import xattr
@@ -162,10 +178,16 @@ class FilesystemEntry(ResourceView):
     def is_device(self) -> bool:
         return self.is_block_device() or self.is_character_device()
 
-    async def flush_to_disk(self, root_path: str = ".", filename: Optional[str] = None):
-        entry_path = await self.get_path()
+    async def flush_to_disk(
+        self, root_path: str = ".", filename: Optional[str] = None, preserve_path: bool = True
+    ):
+        if preserve_path:
+            entry_path = await self.get_path()
+        else:
+            entry_path = self.Name
         if filename is not None:
             entry_path = os.path.join(os.path.dirname(entry_path), filename)
+        print(root_path, entry_path)
         if self.is_link():
             link_name = os.path.join(root_path, entry_path)
             if not os.path.exists(link_name):
@@ -270,6 +292,12 @@ class Folder(FilesystemEntry):
         for c in await self.resource.get_children_as_view(FilesystemEntry):
             entries[c.get_name()] = c
         return entries
+
+    async def walk(
+        self,
+    ) -> AsyncIterator[Tuple[str, "Folder", MutableSequence["Folder"], Sequence[FilesystemEntry]]]:
+        async for t in _walk(self, root_path=await self.get_path()):
+            yield t
 
 
 @dataclass
@@ -455,20 +483,11 @@ class FilesystemRoot(ResourceView):
         else:
             root_path = path
 
-        entries = [
-            f
-            for f in await self.resource.get_children_as_view(
-                FilesystemEntry, r_filter=ResourceFilter(tags=(FilesystemEntry,))
-            )
-        ]
-        while len(entries) > 0:
-            entry = entries.pop(0)
-            if entry.is_folder():
-                for child in await entry.resource.get_children_as_view(
-                    FilesystemEntry, r_filter=ResourceFilter(tags=(FilesystemEntry,))
-                ):
-                    entries.append(child)
-            await entry.flush_to_disk(root_path=root_path)
+        async for entry_path, _view, folders, files in self.walk():
+            for entry in chain(folders, files):
+                await entry.flush_to_disk(
+                    root_path=posixpath.join(root_path, entry_path), preserve_path=False
+                )
 
         return root_path
 
@@ -662,3 +681,36 @@ class FilesystemRoot(ResourceView):
         for attr in xattr.listxattr(path, symlink=True):  # Don't follow links
             xattr_dict[attr] = xattr.getxattr(path, attr)
         return xattr_dict
+
+    def walk(
+        self,
+    ) -> AsyncIterator[
+        Tuple[
+            str, Union["FilesystemRoot", Folder], MutableSequence[Folder], Sequence[FilesystemEntry]
+        ]
+    ]:
+        return _walk(self, root_path="")
+
+
+RV = TypeVar("RV", Folder, FilesystemRoot)
+
+
+async def _walk(
+    root: RV, root_path: str
+) -> AsyncIterator[
+    Tuple[str, Union[RV, Folder], MutableSequence[Folder], Sequence[FilesystemEntry]]
+]:
+    entries: Deque[Tuple[str, Union[RV, Folder]]] = deque([(root_path, root)])
+
+    while len(entries) > 0:
+        path, view = entries.popleft()
+        children = list(await view.resource.get_children_as_view(FilesystemEntry))
+        folders: List[Folder] = []
+        files: List[FilesystemEntry] = []
+        for child in children:
+            if child.is_folder():
+                folders.append(await child.resource.view_as(Folder))
+            else:
+                files.append(child)
+        yield path, view, folders, files
+        entries.extend((posixpath.join(path, folder.Name), folder) for folder in folders)

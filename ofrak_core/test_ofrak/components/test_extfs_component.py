@@ -112,6 +112,10 @@ class _TestExtUnpackModifyPack(UnpackAndVerifyPattern):
     async def get_descendants_to_verify(self, unpacked_root_resource: Resource) -> Dict[str, bytes]:
         raise NotImplementedError
 
+    async def test_unpack_verify(self, root_resource: Resource, expected_results, optional_results):
+        await super().test_unpack_verify(root_resource, expected_results, optional_results)
+        await root_resource.pack()
+
 
 class TestExt2UnpackModifyPack(_TestExtUnpackModifyPack):
     @pytest.fixture(params=EXT2_UNPACKER_TEST_CASES, ids=lambda tc: tc.label)
