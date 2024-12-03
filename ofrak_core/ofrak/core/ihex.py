@@ -2,7 +2,7 @@ import logging
 import re
 import sys
 from dataclasses import dataclass
-from typing import List, Union, Tuple, Any
+from typing import Any, List, Tuple, Union
 
 from ofrak.component.abstract import ComponentMissingDependencyError
 
@@ -48,10 +48,15 @@ class IhexProgram(Program):
     segments: List[Range]
 
 
-_BINCOPY_TOOL = ComponentExternalTool(
+class _BincopyTool(ComponentExternalTool):
+    async def is_tool_installed(self):
+        return BINCOPY_INSTALLED
+
+
+_BINCOPY_TOOL = _BincopyTool(
     "bincopy",
     "https://github.com/eerimoq/bincopy",
-    "--help",
+    "",
 )
 
 

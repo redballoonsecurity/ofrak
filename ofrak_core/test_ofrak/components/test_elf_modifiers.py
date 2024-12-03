@@ -74,6 +74,7 @@ async def test_elf_add_symbols(
     assert result.returncode == 12
 
 
+@pytest.mark.skipif_windows
 async def test_elf_force_relocation(
     ofrak_context: OFRAKContext, elf_object_file, elf_test_directory
 ):

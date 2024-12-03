@@ -1,5 +1,7 @@
 import os.path
 import subprocess
+import os
+import sys
 
 import pytest
 
@@ -81,7 +83,7 @@ async def test_external_tool_runtime_error_caught(ofrak_context: OFRAKContext, t
         children = ()
 
         async def unpack(self, resource, config=None):
-            subprocess.run(["cat", os.path.join(tmpdir, "nonexistant_file")], check=True)
+            subprocess.run([sys.executable, os.path.join(tmpdir, "nonexistant_script")], check=True)
             return
 
     unpacker = _MockComponent(
@@ -106,8 +108,8 @@ async def test_external_tool_runtime_error_caught(ofrak_context: OFRAKContext, t
 async def test_tool_install_check(mock_dependency):
     assert not await mock_dependency.is_tool_installed()
 
-    echo_tool = ComponentExternalTool("echo", "", install_check_arg=".")
-    assert await echo_tool.is_tool_installed()
+    cd_tool = ComponentExternalTool(sys.executable, "", install_check_arg="-v")
+    assert await cd_tool.is_tool_installed()
 
 
 async def test_bad_tool_install_check(bad_dependency):

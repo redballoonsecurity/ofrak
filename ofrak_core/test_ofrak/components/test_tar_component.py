@@ -8,12 +8,14 @@ from ofrak import OFRAKContext
 from ofrak.component.unpacker import UnpackerError
 from ofrak.resource import Resource
 from ofrak.core.strings import StringPatchingConfig, StringPatchingModifier
-from ofrak.core.tar import TarArchive
+from ofrak.core.tar import TarArchive, TarPacker, TarUnpacker
 from pytest_ofrak.patterns.pack_unpack_filesystem import (
     FilesystemPackUnpackVerifyPattern,
 )
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 import test_ofrak.components
+
+pytestmark = pytest.mark.skipif_missing_deps([TarUnpacker, TarPacker])
 
 
 class TestTarSingleFileUnpackModifyPack(UnpackModifyPackPattern):
