@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add UEFI binary unpacker. ([#399](https://github.com/redballoonsecurity/ofrak/pull/399))
 - Add recursive identify functionality in the GUI. ([#435](https://github.com/redballoonsecurity/ofrak/pull/435))
 - Add generic DecompilationAnalysis classes. ([#453](https://github.com/redballoonsecurity/ofrak/pull/453))
+- Add support for running on Windows to the `Filesystem` component. ([#521](https://github.com/redballoonsecurity/ofrak/pull/521))
 
 ### Fixed
 - Improved flushing of filesystem entries (including symbolic links and other types) to disk. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373))
@@ -27,6 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Fix bug in OFRAK GUI server which causes an error when parsing a default config value of bytes. ([#409](https://github.com/redballoonsecurity/ofrak/pull/409))
 - Set default fallback font to system default monospace, instead of variable-width sans-serif. ([#422](https://github.com/redballoonsecurity/ofrak/pull/422))
 - View resource attribute string values containing only digits primarily as strings, alternatively as hex numbers. ([#423](https://github.com/redballoonsecurity/ofrak/pull/423))
+- Fix bugs on Windows arising from using `os.path` methods when only forward-slashes are acceptable ([#521](https://github.com/redballoonsecurity/ofrak/pull/521))
 
 ### Changed
 - By default, the ofrak log is now `ofrak-YYYYMMDDhhmmss.log` rather than just `ofrak.log` and the name can be specified on the command line ([#480](https://github.com/redballoonsecurity/ofrak/pull/480))
