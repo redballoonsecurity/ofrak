@@ -1,9 +1,9 @@
-import tempfile
 from dataclasses import dataclass
 from typing import List, Optional
 
 import lief
 
+from ofrak import tempfile
 from ofrak.component.modifier import Modifier
 from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
@@ -67,8 +67,8 @@ class LiefAddSegmentModifier(Modifier[LiefAddSegmentConfig]):
             _ = binary.add(segment)
 
         with tempfile.NamedTemporaryFile() as temp_file:
+            temp_file.close()
             binary.write(temp_file.name)
-            temp_file.flush()
             with open(temp_file.name, "rb") as f_handle:
                 new_data = f_handle.read()
         # replace all old content (old range) with new content from Lief
@@ -94,8 +94,8 @@ class LiefAddSectionModifer(Modifier[LiefAddSectionModifierConfig]):
         binary.add(section)
 
         with tempfile.NamedTemporaryFile() as temp_file:
+            temp_file.close()
             binary.write(temp_file.name)
-            temp_file.flush()
             with open(temp_file.name, "rb") as f_handle:
                 new_data = f_handle.read()
         # replace all old content (old range) with new content from Lief
@@ -118,8 +118,8 @@ class LiefRemoveSectionModifier(Modifier[LiefRemoveSectionModifierConfig]):
         binary.remove(section)
 
         with tempfile.NamedTemporaryFile() as temp_file:
+            temp_file.close()
             binary.write(temp_file.name)
-            temp_file.flush()
             with open(temp_file.name, "rb") as f_handle:
                 new_data = f_handle.read()
         # replace all old content (old range) with new content from Lief

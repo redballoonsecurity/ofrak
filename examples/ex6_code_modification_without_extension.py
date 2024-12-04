@@ -38,7 +38,7 @@ int main() {
 import argparse
 import logging
 import os
-import tempfile
+from ofrak import tempfile
 
 from ofrak_patch_maker.toolchain.llvm_12 import LLVM_12_0_1_Toolchain
 

@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import os
-import tempfile
+from ofrak import tempfile
 from dataclasses import dataclass
 from io import BytesIO
 from subprocess import CalledProcessError
@@ -302,6 +302,7 @@ class ISO9660Packer(Packer[None]):
         iso_attrs = resource.get_attributes(ISO9660ImageAttributes)
         temp_flush_dir = await iso_view.flush_to_disk()
         with tempfile.NamedTemporaryFile(suffix=".iso", mode="rb") as temp:
+            temp.close()
             cmd = [
                 "mkisofs",
                 *(["-J"] if iso_attrs.has_joliet else []),
@@ -329,7 +330,8 @@ class ISO9660Packer(Packer[None]):
             returncode = await proc.wait()
             if proc.returncode:
                 raise CalledProcessError(returncode=returncode, cmd=cmd)
-            new_data = temp.read()
+            with open(temp.name, "rb") as temp:
+                new_data = temp.read()
             # Passing in the original range effectively replaces the original data with the new data
             resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
 

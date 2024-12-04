@@ -2,7 +2,7 @@ import os
 import re
 import stat
 import subprocess
-import tempfile
+from ofrak import tempfile
 
 import pytest
 
@@ -316,6 +316,7 @@ class TestSymbolicLinkUnpackPack(FilesystemPackUnpackVerifyPattern):
     async def create_root_resource(self, ofrak_context: OFRAKContext, directory: str) -> Resource:
         # Pack with command line `tar` because it supports symbolic links
         with tempfile.NamedTemporaryFile(suffix=".tar") as archive:
+            archive.close()
             command = ["tar", "--xattrs", "-C", directory, "-cf", archive.name, "."]
             subprocess.run(command, check=True, capture_output=True)
 
@@ -331,7 +332,7 @@ class TestSymbolicLinkUnpackPack(FilesystemPackUnpackVerifyPattern):
         with tempfile.NamedTemporaryFile(suffix=".tar") as tar:
             data = await root_resource.get_data()
             tar.write(data)
-            tar.flush()
+            tar.close()
 
             command = ["tar", "--xattrs", "-C", extract_dir, "-xf", tar.name]
             subprocess.run(command, check=True, capture_output=True)

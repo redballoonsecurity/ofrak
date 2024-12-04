@@ -3,7 +3,7 @@ import logging
 from typing import Optional
 import zlib
 from subprocess import CalledProcessError
-import tempfile
+from ofrak import tempfile
 
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker

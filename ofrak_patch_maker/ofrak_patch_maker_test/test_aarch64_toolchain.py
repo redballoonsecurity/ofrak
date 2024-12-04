@@ -1,5 +1,5 @@
 import os
-import tempfile
+from ofrak import tempfile
 
 import pytest
 

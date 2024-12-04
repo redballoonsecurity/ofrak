@@ -2,7 +2,7 @@ import asyncio
 import os
 import pathlib
 import sys
-import tempfile
+from ofrak import tempfile
 from subprocess import CalledProcessError
 from dataclasses import dataclass
 
@@ -104,7 +104,7 @@ class ApkUnpacker(Unpacker[None]):
         data = await resource.get_data()
         with tempfile.NamedTemporaryFile() as temp_file:
             temp_file.write(data)
-            temp_file.flush()
+            temp_file.close()
             with tempfile.TemporaryDirectory() as temp_flush_dir:
                 cmd = [
                     "apktool",
@@ -157,6 +157,7 @@ class ApkPacker(Packer[ApkPackerConfig]):
         temp_flush_dir = await apk.flush_to_disk()
         apk_suffix = ".apk"
         with tempfile.NamedTemporaryFile(suffix=apk_suffix) as temp_apk:
+            temp_apk.close()
             apk_cmd = [
                 "apktool",
                 "build",
@@ -220,7 +221,7 @@ class ApkIdentifier(Identifier):
         elif magic is not None and magic.mime in ["application/java-archive", "application/zip"]:
             with tempfile.NamedTemporaryFile(suffix=".zip") as temp_file:
                 temp_file.write(await resource.get_data())
-                temp_file.flush()
+                temp_file.close()
                 unzip_cmd = [
                     "unzip",
                     "-l",

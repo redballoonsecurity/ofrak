@@ -1,5 +1,5 @@
 import pytest
-import tempfile
+from ofrak import tempfile
 
 from dataclasses import dataclass
 from immutabledict import immutabledict

@@ -1,5 +1,5 @@
 import asyncio
-import tempfile
+from ofrak import tempfile
 from concurrent.futures.process import ProcessPoolExecutor
 from dataclasses import dataclass
 from typing import Dict
@@ -65,7 +65,7 @@ class BinwalkAnalyzer(Analyzer[None, BinwalkAttributes]):
         with tempfile.NamedTemporaryFile() as temp_file:
             data = await resource.get_data()
             temp_file.write(data)
-            temp_file.flush()
+            temp_file.close()
 
             # Should errors be handled the way they are in the `DataSummaryAnalyzer`? Likely to be
             # overkill here.
