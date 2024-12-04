@@ -3,7 +3,7 @@ from typing import Tuple, Optional, List
 from ofrak import OFRAKContext
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.resource import Resource
-from ofrak.core.free_space import Allocatable
+from ofrak.core.free_space import Allocatable, RuntimeFreeSpace
 
 FreeSpaceTreeType = Tuple[MemoryRegion, Optional[List["FreeSpaceTreeType"]]]
 
@@ -28,7 +28,10 @@ async def inflate_tree(tree: FreeSpaceTreeType, ofrak_context: OFRAKContext) -> 
 
 async def _inflate_node(parent: MemoryRegion, node: FreeSpaceTreeType):
     raw_node_region, children = node
-    node_r = await parent.create_child_region(raw_node_region)
+    if isinstance(raw_node_region, RuntimeFreeSpace):
+        node_r = await parent.resource.create_child_from_view(raw_node_region, data_range=None)
+    else:
+        node_r = await parent.create_child_region(raw_node_region)
     node_r.add_view(raw_node_region)
     await node_r.save()
     if children:

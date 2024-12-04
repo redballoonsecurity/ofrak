@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import cast
 
 import pytest
 
@@ -7,9 +6,11 @@ from ofrak import OFRAKContext
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.service.resource_service_i import ResourceSort
 from ofrak.core.free_space import (
+    AnyFreeSpace,
     FreeSpaceAllocation,
     RemoveFreeSpaceModifier,
     FreeSpace,
+    RuntimeFreeSpace,
 )
 from test_ofrak.components.free_space_components_test.mock_tree_struct import (
     FreeSpaceTreeType,
@@ -30,9 +31,9 @@ class FreeSpaceAllocationModifierTestCase:
 async def validate_tree(actual_mem_region: MemoryRegion, expected_node: FreeSpaceTreeType):
     expected_mem_region, expected_children = expected_node
 
-    if isinstance(expected_mem_region, FreeSpace):
-        expected_free_space = cast(FreeSpace, expected_mem_region)
-        actual_free_space = await actual_mem_region.resource.view_as(FreeSpace)
+    if isinstance(expected_mem_region, AnyFreeSpace):
+        expected_free_space = await actual_mem_region.resource.view_as(AnyFreeSpace)
+        actual_free_space = await actual_mem_region.resource.view_as(AnyFreeSpace)
         assert (
             actual_free_space == expected_free_space
         ), f"Got {actual_free_space} expected {expected_free_space}"
@@ -95,9 +96,10 @@ FREE_SPACE_ALLOCATION_MODIFIER_TEST_CASES = [
                 (FreeSpace(0x40, 0x40, MemoryPermissions.RX), None),
                 (FreeSpace(0x80, 0x40, MemoryPermissions.RX), None),
                 (FreeSpace(0xC0, 0x40, MemoryPermissions.RX), None),
+                (RuntimeFreeSpace(0xD00, 0x40, MemoryPermissions.RX), None),
             ],
         ),
-        FreeSpaceAllocation(MemoryPermissions.RX, [Range(0x40, 0x100)]),
+        FreeSpaceAllocation(MemoryPermissions.RX, [Range(0x40, 0x100), Range(0xD00, 0xD40)]),
         (
             MemoryRegion(0x0, 0x100),
             [
@@ -105,6 +107,7 @@ FREE_SPACE_ALLOCATION_MODIFIER_TEST_CASES = [
                 (MemoryRegion(0x40, 0x40), None),
                 (MemoryRegion(0x80, 0x40), None),
                 (MemoryRegion(0xC0, 0x40), None),
+                (MemoryRegion(0xD00, 0x40), None),
             ],
         ),
     ),

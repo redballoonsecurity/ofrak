@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
+from typing import ClassVar, Optional
 from ofrak_type.memory_permissions import MemoryPermissions
 
 
@@ -24,13 +24,26 @@ class Segment:
     """
     Describes a program segment.
 
+
     :var segment_name: e.g. `.text`
     :var vm_address: where the segment is located
     :var offset: offset from `vm_address`
     :var is_entry: If the `Segment` contains the patch "entry point symbol"
     :var length: size of the segment in bytes
     :var access_perms: `rw`, `ro`, `rwx`, etc.
+    :var length: size of the segment in bytes
+    :var access_perms: `rw`, `ro`, `rwx`, etc.
+    :var is_allocated: True if the segment is allocated in virtual memory. Corresponds to the ELF SHF_ALLOC flag.
+    :var is_bss:  True if the segment is a .bss sectiont that marks uninitialized data not actually present in the file.
+    :var alignment: Special address alignment requirement for the section
+
+    :cvar BSS_LEGACY_VADDR: Special marker for an uninitialized section (i.e. .bss) that
+        is not allocated in designated free space and should be placed in a new memory region
+        when linking following the deprecated `unsafe_bss_segment` behavior
+
     """
+
+    BSS_LEGACY_VADDR: ClassVar[int] = -0xFFFFFFFF
 
     segment_name: str
     vm_address: int
@@ -38,6 +51,10 @@ class Segment:
     is_entry: bool
     length: int
     access_perms: MemoryPermissions
+
+    is_allocated: bool = True
+    is_bss: bool = False
+    alignment: int = 1
 
 
 class CompilerOptimizationLevel(Enum):
