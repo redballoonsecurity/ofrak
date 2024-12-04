@@ -963,7 +963,12 @@ async def test_get_config(ofrak_client: TestClient, hello_world_elf):
                                 "type": "ofrak_type.symbol_type.LinkableSymbolType",
                                 "args": None,
                                 "fields": None,
-                                "enum": {"FUNC": 0, "RW_DATA": 1, "RO_DATA": 2, "UNDEF": -1},
+                                "enum": {
+                                    "FUNC": "ofrak_type.symbol_type.LinkableSymbolType.FUNC",
+                                    "RW_DATA": "ofrak_type.symbol_type.LinkableSymbolType.RW_DATA",
+                                    "RO_DATA": "ofrak_type.symbol_type.LinkableSymbolType.RO_DATA",
+                                    "UNDEF": "ofrak_type.symbol_type.LinkableSymbolType.UNDEF",
+                                },
                                 "default": None,
                             },
                             {
@@ -971,8 +976,15 @@ async def test_get_config(ofrak_client: TestClient, hello_world_elf):
                                 "type": "ofrak_type.architecture.InstructionSetMode",
                                 "args": None,
                                 "fields": None,
-                                "enum": {"NONE": 0, "THUMB": 1, "VLE": 2},
-                                "default": 0,
+                                "enum": {
+                                    "NONE": "ofrak_type.architecture.InstructionSetMode.NONE",
+                                    "THUMB": "ofrak_type.architecture.InstructionSetMode.THUMB",
+                                    "VLE": "ofrak_type.architecture.InstructionSetMode.VLE",
+                                },
+                                "default": [
+                                    "ofrak_type.architecture.InstructionSetMode",
+                                    "ofrak_type.architecture.InstructionSetMode.NONE",
+                                ],
                             },
                         ],
                         "enum": None,
@@ -984,6 +996,7 @@ async def test_get_config(ofrak_client: TestClient, hello_world_elf):
                 "default": None,
             }
         ],
+        "default": None,
     }
 
 

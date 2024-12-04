@@ -3,15 +3,21 @@ import binascii
 import dataclasses
 import re
 from enum import Enum
-import functools
 import itertools
 import logging
+
+from ofrak.gui.modules.patch_wizard import PatchWizard
+from ofrak.gui.utils import (
+    exceptions_to_http,
+    json_response,
+    pluck_id,
+    get_query_string_as_pjson,
+    OfrakServerHelper,
+)
 from ofrak.project.project import OfrakProject
 
 import typing_inspect
 from typing_inspect import get_args
-import json
-import orjson
 import inspect
 import os
 import sys
@@ -26,7 +32,6 @@ from typing import (
     Tuple,
     Union,
     Type,
-    Callable,
     TypeVar,
     Any,
     List,
@@ -49,6 +54,7 @@ from ofrak.model.component_filters import (
 from ofrak.ofrak_context import get_current_ofrak_context
 from ofrak.service.component_locator_i import ComponentFilter
 from ofrak_patch_maker.toolchain.abstract import Toolchain
+from ofrak_patch_maker.toolchain.model import BinFileType, CompilerOptimizationLevel
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 from ofrak import (
@@ -101,32 +107,6 @@ T = TypeVar("T")
 LOGGER = logging.getLogger(__name__)
 
 
-def exceptions_to_http(error_class: Type[SerializedError]):
-    """
-    Decorator for a server function that attempts to do some work, and
-    forwards the exception, if any, to the client over HTTP.
-
-    Usage:
-
-    @exceptions_to_http(MyErrorClass)
-    async def handle_some_request(self, request...):
-        ...
-    """
-
-    def exceptions_to_http_decorator(func: Callable):
-        @functools.wraps(func)
-        async def wrapper(*args, **kwargs):
-            try:
-                return await func(*args, **kwargs)
-            except Exception as error:
-                LOGGER.exception("Exception raised in aiohttp endpoint")
-                return respond_with_error(error, error_class)
-
-        return wrapper
-
-    return exceptions_to_http_decorator
-
-
 class AiohttpOFRAKServer:
     routes = web.RouteTableDef()
 
@@ -150,91 +130,104 @@ class AiohttpOFRAKServer:
         self.resource_builder: Dict[str, Tuple[Resource, memoryview]] = {}
         self.projects: Optional[Set[OfrakProject]] = None
         self.projects_dir: str = "/tmp/ofrak-projects"
-        self._app.add_routes(
-            [
-                web.post("/create_root_resource", self.create_root_resource),
-                web.post("/init_chunked_root_resource", self.init_chunked_root_resource),
-                web.post("/root_resource_chunk", self.root_resource_chunk),
-                web.post("/create_chunked_root_resource", self.create_chunked_root_resource),
-                web.get("/get_root_resources", self.get_root_resources),
-                web.get("/{resource_id}/", self.get_resource),
-                web.get("/{resource_id}/get_data", self.get_data),
-                web.get("/{resource_id}/get_data_length", self.get_data_length),
-                web.post(
-                    "/batch/get_data_range_within_parent",
-                    self.batch_get_range,
-                ),
-                web.get(
-                    "/{resource_id}/get_child_data_ranges",
-                    self.get_child_data_ranges,
-                ),
-                web.get("/{resource_id}/get_root", self.get_root_resource_from_child),
-                web.post("/{resource_id}/unpack", self.unpack),
-                web.post("/{resource_id}/unpack_recursively", self.unpack_recursively),
-                web.post("/{resource_id}/pack", self.pack),
-                web.post("/{resource_id}/pack_recursively", self.pack_recursively),
-                web.post("/{resource_id}/analyze", self.analyze),
-                web.post("/{resource_id}/identify", self.identify),
-                web.post("/{resource_id}/identify_recursively", self.identify_recursively),
-                web.post("/{resource_id}/data_summary", self.data_summary),
-                web.get("/{resource_id}/get_parent", self.get_parent),
-                web.get("/{resource_id}/get_ancestors", self.get_ancestors),
-                web.get("/{resource_id}/get_descendants", self.get_descendants),
-                web.post("/batch/get_children", self.batch_get_children),
-                web.post("/{resource_id}/queue_patch", self.queue_patch),
-                web.post("/{resource_id}/create_mapped_child", self.create_mapped_child),
-                web.post("/{resource_id}/find_and_replace", self.find_and_replace),
-                web.post("/{resource_id}/add_comment", self.add_comment),
-                web.post("/{resource_id}/delete_comment", self.delete_comment),
-                web.post("/{resource_id}/search_for_vaddr", self.search_for_vaddr),
-                web.post("/{resource_id}/search_for_string", self.search_for_string),
-                web.post("/{resource_id}/search_for_bytes", self.search_for_bytes),
-                web.post("/{resource_id}/add_tag", self.add_tag),
-                web.post(
-                    "/{resource_id}/add_flush_to_disk_to_script", self.add_flush_to_disk_to_script
-                ),
-                web.get("/get_all_tags", self.get_all_tags),
-                web.get("/{resource_id}/get_script", self.get_script),
-                web.post(
-                    "/{resource_id}/get_components",
-                    self.get_components,
-                ),
-                web.get("/{resource_id}/get_config_for_component", self.get_config_for_component),
-                web.post("/{resource_id}/run_component", self.run_component),
-                web.post(
-                    "/{resource_id}/get_tags_and_num_components", self.get_tags_and_num_components
-                ),
-                web.post("/{resource_id}/search_data", self.search_data),
-                web.post("/create_new_project", self.create_new_project),
-                web.get("/get_all_projects", self.get_all_projects),
-                web.get("/get_project_by_id", self.get_project_by_id),
-                web.post("/add_binary_to_project", self.add_binary_to_project),
-                web.post("/add_script_to_project", self.add_script_to_project),
-                web.post("/open_project", self.open_project),
-                web.post("/clone_project_from_git", self.clone_project_from_git),
-                web.get("/get_projects_path", self.get_projects_path),
-                web.post("/set_projects_path", self.set_projects_path),
-                web.post("/save_project_data", self.save_project_data),
-                web.post("/delete_binary_from_project", self.delete_binary_from_project),
-                web.post("/delete_script_from_project", self.delete_script_from_project),
-                web.post("/reset_project", self.reset_project),
-                web.get(
-                    "/{resource_id}/get_project_by_resource_id", self.get_project_by_resource_id
-                ),
-                web.get("/get_project_script", self.get_project_script),
-                web.get("/", self.get_static_files),
-                web.static(
-                    "/",
-                    os.path.join(os.path.dirname(__file__), "./public"),
-                    show_index=True,
-                ),
-            ]
-        )
+        routes = [
+            web.post("/create_root_resource", self.create_root_resource),
+            web.post("/init_chunked_root_resource", self.init_chunked_root_resource),
+            web.post("/root_resource_chunk", self.root_resource_chunk),
+            web.post("/create_chunked_root_resource", self.create_chunked_root_resource),
+            web.get("/get_root_resources", self.get_root_resources),
+            web.get("/{resource_id}/", self.get_resource),
+            web.get("/{resource_id}/get_data", self.get_data),
+            web.get("/{resource_id}/get_data_length", self.get_data_length),
+            web.post(
+                "/batch/get_data_range_within_parent",
+                self.batch_get_range,
+            ),
+            web.get(
+                "/{resource_id}/get_child_data_ranges",
+                self.get_child_data_ranges,
+            ),
+            web.get("/{resource_id}/get_root", self.get_root_resource_from_child),
+            web.post("/{resource_id}/unpack", self.unpack),
+            web.post("/{resource_id}/unpack_recursively", self.unpack_recursively),
+            web.post("/{resource_id}/pack", self.pack),
+            web.post("/{resource_id}/pack_recursively", self.pack_recursively),
+            web.post("/{resource_id}/analyze", self.analyze),
+            web.post("/{resource_id}/identify", self.identify),
+            web.post("/{resource_id}/identify_recursively", self.identify_recursively),
+            web.post("/{resource_id}/data_summary", self.data_summary),
+            web.get("/{resource_id}/get_parent", self.get_parent),
+            web.get("/{resource_id}/get_ancestors", self.get_ancestors),
+            web.get("/{resource_id}/get_descendants", self.get_descendants),
+            web.post("/batch/get_children", self.batch_get_children),
+            web.post("/{resource_id}/queue_patch", self.queue_patch),
+            web.post("/{resource_id}/create_mapped_child", self.create_mapped_child),
+            web.post("/{resource_id}/find_and_replace", self.find_and_replace),
+            web.post("/{resource_id}/add_comment", self.add_comment),
+            web.post("/{resource_id}/delete_comment", self.delete_comment),
+            web.post("/{resource_id}/search_for_vaddr", self.search_for_vaddr),
+            web.post("/{resource_id}/search_for_string", self.search_for_string),
+            web.post("/{resource_id}/search_for_bytes", self.search_for_bytes),
+            web.post("/{resource_id}/add_tag", self.add_tag),
+            web.post(
+                "/{resource_id}/add_flush_to_disk_to_script", self.add_flush_to_disk_to_script
+            ),
+            web.get("/get_all_tags", self.get_all_tags),
+            web.get("/{resource_id}/get_script", self.get_script),
+            web.post(
+                "/{resource_id}/get_components",
+                self.get_components,
+            ),
+            web.get("/{resource_id}/get_config_for_component", self.get_config_for_component),
+            web.post("/{resource_id}/run_component", self.run_component),
+            web.post(
+                "/{resource_id}/get_tags_and_num_components", self.get_tags_and_num_components
+            ),
+            web.post("/{resource_id}/search_data", self.search_data),
+            web.post("/create_new_project", self.create_new_project),
+            web.get("/get_all_projects", self.get_all_projects),
+            web.get("/get_project_by_id", self.get_project_by_id),
+            web.post("/add_binary_to_project", self.add_binary_to_project),
+            web.post("/add_script_to_project", self.add_script_to_project),
+            web.post("/open_project", self.open_project),
+            web.post("/clone_project_from_git", self.clone_project_from_git),
+            web.get("/get_projects_path", self.get_projects_path),
+            web.post("/set_projects_path", self.set_projects_path),
+            web.post("/save_project_data", self.save_project_data),
+            web.post("/delete_binary_from_project", self.delete_binary_from_project),
+            web.post("/delete_script_from_project", self.delete_script_from_project),
+            web.post("/reset_project", self.reset_project),
+            web.get("/{resource_id}/get_project_by_resource_id", self.get_project_by_resource_id),
+            web.get("/get_project_script", self.get_project_script),
+            web.get("/", self.get_static_files),
+            web.static(
+                "/",
+                os.path.join(os.path.dirname(__file__), "./public"),
+                show_index=True,
+            ),
+        ]
 
         self._job_ids: Dict[str, bytes] = defaultdict(
             lambda: ofrak_context.id_service.generate_id()
         )
         self._all_tags: Dict[str, ResourceTag] = {tag.__name__: tag for tag in ResourceTag.all_tags}
+
+        module_helper = OfrakServerHelper(
+            self._ofrak_context,
+            self._serializer,
+            self._job_ids,
+            self.resource_context,
+            self.resource_view_context,
+            self.component_context,
+            self.script_builder,
+        )
+
+        modules = [PatchWizard(module_helper)]
+
+        for module in modules:
+            routes.extend(module.routes())
+
+        self._app.add_routes(routes)
 
         if enable_cors:
             try:
@@ -937,8 +930,6 @@ class AiohttpOFRAKServer:
             _fields = []
             for field in fields(config):
                 field.type = self._modify_by_case(field.type)
-                if isinstance(field.default, dataclasses._MISSING_TYPE):
-                    field.default = None
                 _fields.append(
                     {
                         "name": field.name,
@@ -946,9 +937,7 @@ class AiohttpOFRAKServer:
                         "args": self._construct_arg_response(field.type),
                         "fields": self._construct_field_response(field.type),
                         "enum": self._construct_enum_response(field.type),
-                        "default": _format_default(field.default)
-                        if not isinstance(field.default, dataclasses._MISSING_TYPE)
-                        else None,
+                        "default": self._construct_default_response(field),
                     }
                 )
             return json_response(
@@ -958,6 +947,7 @@ class AiohttpOFRAKServer:
                     "args": self._construct_arg_response(self._convert_to_class_name_str(config)),
                     "enum": self._construct_enum_response(config),
                     "fields": _fields,
+                    "default": None,
                 }
             )
         else:
@@ -1267,9 +1257,7 @@ class AiohttpOFRAKServer:
                             "args": self._construct_arg_response(field.type),
                             "fields": self._construct_field_response(field.type),
                             "enum": self._construct_enum_response(field.type),
-                            "default": field.default
-                            if not isinstance(field.default, dataclasses._MISSING_TYPE)
-                            else None,
+                            "default": self._construct_default_response(field),
                         }
                     )
             return res
@@ -1318,7 +1306,10 @@ class AiohttpOFRAKServer:
         elif not issubclass(obj, Enum):
             return None
         else:
-            return {name: value.value for name, value in obj.__members__.items()}
+            return {
+                name: f"{obj.__module__}.{obj.__qualname__}.{name}"
+                for name, value in obj.__members__.items()
+            }
 
     def _has_elipsis(self, obj):
         return any([isinstance(arg, type(...)) for arg in get_args(obj)])
@@ -1345,8 +1336,34 @@ class AiohttpOFRAKServer:
                     return "typing.Tuple"
                 elif origin is dict:
                     return "typing.Dict"
+                elif origin is type:
+                    return self._convert_to_class_name_str(get_args(obj)[0])
             else:
                 return repr(obj).split("[")[0]
+
+    def _construct_default_response(self, field: dataclasses.Field):
+        if field.default is not dataclasses.MISSING:
+            # field has a default
+            return [
+                self._convert_to_class_name_str(type(field.default)),
+                self._serializer.to_pjson(field.default, type(field.default)),
+            ]
+        elif field.type is BinFileType:
+            # TODO: Hacked in a fake default because this field of Toolchain really should have a default!
+            return [
+                self._convert_to_class_name_str(BinFileType),
+                self._serializer.to_pjson(BinFileType.ELF, BinFileType),
+            ]
+        elif field.type is CompilerOptimizationLevel:
+            # TODO: Hacked in a fake default because this field of Toolchain really should have a default!
+            return [
+                self._convert_to_class_name_str(CompilerOptimizationLevel),
+                self._serializer.to_pjson(
+                    CompilerOptimizationLevel.NONE, CompilerOptimizationLevel
+                ),
+            ]
+        else:
+            return None
 
     async def _get_resource_by_id(self, resource_id: bytes, job_id: bytes) -> Resource:
         resource = await self._ofrak_context.resource_factory.create(
@@ -1510,27 +1527,6 @@ async def start_server(
     return server
 
 
-def respond_with_error(error: Exception, error_cls: Type[SerializedError]) -> Response:
-    if isinstance(error, error_cls):
-        text = error.to_json()
-    else:
-        text = json.dumps(error_cls.to_dict(error))
-    response = Response(text=text, status=500)
-    return response
-
-
-def pluck_id(request: Request, get_parameter_name: str) -> bytes:
-    return bytes.fromhex(request.match_info[get_parameter_name])
-
-
-def get_query_string_as_pjson(request: Request) -> Dict[str, PJSONType]:
-    """
-    URL-encoded GET parameters are all strings. For example, None is encoded as 'None',
-    or 1 as '1', which isn't valid PJSON. We fix this by applying `json.loads` on each parameter.
-    """
-    return {key: json.loads(value) for key, value in request.query.items()}
-
-
 async def open_gui(
     host: str,
     port: int,
@@ -1554,33 +1550,3 @@ async def open_gui(
         webbrowser.open(url)
 
     return server
-
-
-def json_response(
-    data: Any = None,
-    *,
-    text: Optional[str] = None,
-    body: Optional[bytes] = None,
-    status: int = 200,
-    reason: Optional[str] = None,
-    headers=None,
-    content_type: str = "application/json",
-    dumps=orjson.dumps,
-) -> Response:
-    if data is not None:
-        if text or body:
-            raise ValueError("only one of data, text, or body should be specified")
-        else:
-            body = dumps(data)
-    return Response(
-        text=text,
-        body=body,
-        status=status,
-        reason=reason,
-        headers=headers,
-        content_type=content_type,
-    )
-
-
-def _format_default(default):
-    return default.decode() if isinstance(default, bytes) else default

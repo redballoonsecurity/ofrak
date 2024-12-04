@@ -144,15 +144,15 @@
     settings,
     selectedProject,
     resourceNodeDataMap,
+    popViewCrumb,
   } from "../stores.js";
   import { remote_model_to_resource } from "../ofrak/remote_resource";
   import { numBytesToQuantity, saveSettings } from "../helpers";
 
   import { onMount } from "svelte";
+  import { pushViewCrumb } from "../stores";
 
   export let rootResourceLoadPromise,
-    showRootResource,
-    showProjectManager,
     resources,
     rootResource,
     browsedFiles,
@@ -193,7 +193,7 @@
         )} > ${numBytesToQuantity(warnFileSize)}) may be slow. Are you sure?`
       )
     ) {
-      showRootResource = false;
+      popViewCrumb();
       return;
     }
     if (f.size > warnFileSize) {
@@ -231,7 +231,7 @@
   function choosePreExistingRoot() {
     if (selectedPreExistingRoot) {
       dragging = false;
-      showRootResource = true;
+      pushViewCrumb("rootResource");
 
       rootResource = remote_model_to_resource(
         selectedPreExistingRoot,
@@ -266,7 +266,7 @@
       }
       return r.json();
     });
-    showProjectManager = true;
+    pushViewCrumb("projectManager");
   }
 
   async function cloneProjectFromGit() {
@@ -302,7 +302,7 @@
       }
       return r.json();
     });
-    showProjectManager = true;
+    pushViewCrumb("projectManager");
   }
 
   async function changeProjectPath() {
@@ -341,7 +341,7 @@
   async function handleDrop(e) {
     dragging = false;
     if (e.dataTransfer.files.length > 0) {
-      showRootResource = true;
+      pushViewCrumb("rootResource");
       const f = e.dataTransfer.files[0];
       rootResourceLoadPromise = createRootResource(f);
       await rootResourceLoadPromise;
@@ -349,7 +349,7 @@
   }
 
   $: if (browsedFiles && browsedFiles.length > 0) {
-    showRootResource = true;
+    pushViewCrumb("rootResource");
     const f = browsedFiles[0];
     rootResourceLoadPromise = createRootResource(f);
   }
@@ -397,7 +397,7 @@
       $resourceNodeDataMap[resource.id].collapsed = false;
     }
 
-    showRootResource = true;
+    pushViewCrumb("rootResource");
     rootResourceLoadPromise = Promise.resolve(undefined);
     $selected = resourceId;
     $selectedProject = await fetch(
@@ -593,7 +593,7 @@
                   disabled="{!$selectedProject}"
                   on:click="{(e) => {
                     e.stopPropagation;
-                    showProjectManager = true;
+                    pushViewCrumb('projectManager');
                   }}">Open Existing Project</Button
                 >
               {/await}
