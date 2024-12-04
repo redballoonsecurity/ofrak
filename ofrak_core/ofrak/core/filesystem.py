@@ -27,10 +27,10 @@ from ofrak.service.resource_service_i import (
 
 
 def _warn_chmod_chown_windows():  # pragma: no cover
+    # warnings.warn instead of logging.warning prevents duplicating this static warning message
     warnings.warn(
-        f"os.chown and os.chmod do not work on Windows platforms. \
-        Unix-like file ownership and permissions will not be properly handled while using OFRAK on this platform. \
-        If you require extended attributes, please use a different platform."
+        "os.chown and os.chmod do not work on Windows platforms. Unix-like file ownership and "
+        "permissions will not be properly handled while using OFRAK on this platform."
     )
 
 
@@ -226,7 +226,6 @@ class FilesystemEntry(ResourceView):
                 )
                 with open(device_name, "w") as f:
                     pass
-                self.apply_stat_attrs(device_name)
             else:
                 if self.stat is None:
                     raise ValueError(
@@ -234,7 +233,8 @@ class FilesystemEntry(ResourceView):
                         f"BlockDevice or CharacterDevice resource with no stat!"
                     )
                 os.mknod(device_name, self.stat.st_mode, self.stat.st_rdev)
-                self.apply_stat_attrs(device_name)
+
+            self.apply_stat_attrs(device_name)
         elif self.is_fifo_pipe():
             fifo_name = os.path.join(root_path, entry_path)
             if sys.platform == "win32" or not hasattr(os, "mkfifo"):
@@ -245,7 +245,6 @@ class FilesystemEntry(ResourceView):
                 )
                 with open(fifo_name, "w") as f:
                     pass
-                self.apply_stat_attrs(fifo_name)
             else:
                 if self.stat is None:
                     raise ValueError(
@@ -253,7 +252,8 @@ class FilesystemEntry(ResourceView):
                         "with no stat!"
                     )
                 os.mkfifo(fifo_name, self.stat.st_mode)
-                self.apply_stat_attrs(fifo_name)
+
+            self.apply_stat_attrs(fifo_name)
         else:
             entry_info = f"Stat: {stat.S_IFMT(self.stat.st_mode):o}" if self.stat else ""
             raise NotImplementedError(
