@@ -1,0 +1,1 @@
+pyopencl[oclgrind]==2024.2.7  # Add oclgrind to be able to run tests on the container
