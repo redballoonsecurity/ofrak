@@ -120,8 +120,8 @@ class FilesystemEntry(ResourceView):
         """
         Get a folder's path, with the `FilesystemRoot` as the path root.
 
-        :return: The full path name, with the `FilesystemRoot` ancestor as the path root
-        Always returns POSIX style paths with forward slashes.
+        :return: The full path name, with the `FilesystemRoot` ancestor as the path root;
+        always POSIX style paths with forward slashes
         """
         path = [self.get_name()]
 
