@@ -32,6 +32,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - View resource attribute string values containing only digits primarily as strings, alternatively as hex numbers. ([#423](https://github.com/redballoonsecurity/ofrak/pull/423))
 - Fix bug where PJSON deserializer fails to deserialze `ComponentConfig` dataclasses have a field with a default value of `None`. ([#506](https://github.com/redballoonsecurity/ofrak/pull/506))
 - Fix bug where calling `Resource.remove_tag` on both a tag class and a class that inherits from that class causes a `KeyError` on resource save. ([#510](https://github.com/redballoonsecurity/ofrak/pull/510))
+- Use PyPI version of `bincopy`, upgrade to version 20.0.0 ([#528](https://github.com/redballoonsecurity/ofrak/pull/528))
 - Fix bugs on Windows arising from using `os.path` methods when only forward-slashes are acceptable ([#521](https://github.com/redballoonsecurity/ofrak/pull/521))
 
 ### Changed
