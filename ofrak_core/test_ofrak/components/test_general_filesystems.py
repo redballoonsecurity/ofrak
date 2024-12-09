@@ -1,5 +1,5 @@
 import os
-from ofrak import tempfile
+import tempfile312 as tempfile
 from abc import ABC
 from typing import Type, List
 

@@ -3,7 +3,7 @@ from typing import List, Optional
 
 import lief
 
-from ofrak import tempfile
+import tempfile312 as tempfile
 from ofrak.component.modifier import Modifier
 from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
@@ -66,7 +66,7 @@ class LiefAddSegmentModifier(Modifier[LiefAddSegmentConfig]):
         else:
             _ = binary.add(segment)
 
-        with tempfile.NamedTemporaryFile() as temp_file:
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as temp_file:
             temp_file.close()
             binary.write(temp_file.name)
             with open(temp_file.name, "rb") as f_handle:
@@ -93,7 +93,7 @@ class LiefAddSectionModifer(Modifier[LiefAddSectionModifierConfig]):
         section.flags = config.flags
         binary.add(section)
 
-        with tempfile.NamedTemporaryFile() as temp_file:
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as temp_file:
             temp_file.close()
             binary.write(temp_file.name)
             with open(temp_file.name, "rb") as f_handle:
@@ -117,7 +117,7 @@ class LiefRemoveSectionModifier(Modifier[LiefRemoveSectionModifierConfig]):
             raise AttributeError(f"No section with name {config.name}")
         binary.remove(section)
 
-        with tempfile.NamedTemporaryFile() as temp_file:
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as temp_file:
             temp_file.close()
             binary.write(temp_file.name)
             with open(temp_file.name, "rb") as f_handle:

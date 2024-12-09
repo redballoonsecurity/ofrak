@@ -1,6 +1,6 @@
 import logging
 import os
-from ofrak import tempfile
+import tempfile312 as tempfile
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.model import (

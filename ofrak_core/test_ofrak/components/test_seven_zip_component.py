@@ -1,6 +1,6 @@
 import os
 import subprocess
-from ofrak import tempfile
+import tempfile312 as tempfile
 
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
@@ -43,13 +43,9 @@ class TestPzUnpackModifyPack(UnpackModifyPackPattern):
         await seven_zip_resource.pack_recursively()
 
     async def verify(self, repacked_seven_zip_resource: Resource) -> None:
-        resource_data = await repacked_seven_zip_resource.get_data()
-        with tempfile.NamedTemporaryFile() as temp_file:
-            temp_file.write(resource_data)
-            temp_file.close()
-
+        async with repacked_seven_zip_resource.temp_to_disk(suffix=".7z") as temp_path:
             with tempfile.TemporaryDirectory() as temp_flush_dir:
-                command = ["7zz", "x", f"-o{temp_flush_dir}", temp_file.name]
+                command = ["7zz", "x", f"-o{temp_flush_dir}", temp_path]
                 subprocess.run(command, check=True, capture_output=True)
                 with open(os.path.join(temp_flush_dir, SEVEN_ZIP_ENTRY_NAME), "rb") as f:
                     patched_data = f.read()

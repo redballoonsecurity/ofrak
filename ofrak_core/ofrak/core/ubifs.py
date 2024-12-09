@@ -1,5 +1,5 @@
 import asyncio
-from ofrak import tempfile
+import tempfile312 as tempfile
 from dataclasses import dataclass
 import logging
 from subprocess import CalledProcessError
@@ -97,15 +97,11 @@ class UbifsAnalyzer(Analyzer[None, Ubifs]):
     external_dependencies = (PY_LZO_TOOL,)
 
     async def analyze(self, resource: Resource, config=None) -> Ubifs:
-        with tempfile.NamedTemporaryFile() as temp_file:
-            resource_data = await resource.get_data()
-            temp_file.write(resource_data)
-            temp_file.close()
-
+        async with resource.temp_to_disk() as temp_path:
             ubifs_obj = ubireader_ubifs(
                 ubi_io.ubi_file(
-                    temp_file.name,
-                    block_size=guess_leb_size(temp_file.name),
+                    temp_path,
+                    block_size=guess_leb_size(temp_path),
                     start_offset=0,
                     end_offset=None,
                 )
@@ -172,7 +168,7 @@ class UbifsPacker(Packer[None]):
         ubifs_view = await resource.view_as(Ubifs)
         flush_dir = await ubifs_view.flush_to_disk()
 
-        with tempfile.NamedTemporaryFile(mode="rb") as temp:
+        with tempfile.NamedTemporaryFile(mode="rb", delete_on_close=False) as temp:
             temp.close()
             cmd = [
                 "mkfs.ubifs",

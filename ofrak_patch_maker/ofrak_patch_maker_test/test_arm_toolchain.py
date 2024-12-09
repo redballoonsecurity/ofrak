@@ -1,5 +1,5 @@
 import os
-from ofrak import tempfile
+import tempfile312 as tempfile
 
 import pytest
 from ofrak_patch_maker.toolchain.llvm_12 import LLVM_12_0_1_Toolchain

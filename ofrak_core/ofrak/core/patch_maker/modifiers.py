@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import os
-from ofrak import tempfile
+import tempfile312 as tempfile
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Type, Union, cast
 

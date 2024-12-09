@@ -1,6 +1,6 @@
 import logging
 import os
-from ofrak import tempfile
+import tempfile312 as tempfile
 from typing import List, Mapping, Optional, Tuple, Dict
 
 from ofrak_type import ArchInfo

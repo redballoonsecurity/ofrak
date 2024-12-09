@@ -1,5 +1,4 @@
 import subprocess
-from ofrak import tempfile
 
 import pytest
 
@@ -24,12 +23,8 @@ class TestLzoUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
         self._test_file = compressed_filename
 
     async def verify(self, repacked_root_resource: Resource) -> None:
-        compressed_data = await repacked_root_resource.get_data()
-        with tempfile.NamedTemporaryFile(suffix=".lzo") as compressed_file:
-            compressed_file.write(compressed_data)
-            compressed_file.close()
-
-            command = ["lzop", "-d", "-f", "-c", compressed_file.name]
+        async with repacked_root_resource.temp_to_disk() as temp_path:
+            command = ["lzop", "-d", "-f", "-c", temp_path]
             result = subprocess.run(command, check=True, capture_output=True)
 
             assert result.stdout == self.EXPECTED_REPACKED_DATA

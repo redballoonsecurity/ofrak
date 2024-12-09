@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from ofrak import tempfile
+import tempfile312 as tempfile
 from dataclasses import dataclass
 from subprocess import CalledProcessError
 
@@ -66,11 +66,7 @@ class SquashfsUnpacker(Unpacker[None]):
     external_dependencies = (UNSQUASHFS,)
 
     async def unpack(self, resource: Resource, config=None):
-        with tempfile.NamedTemporaryFile() as temp_file:
-            resource_data = await resource.get_data()
-            temp_file.write(resource_data)
-            temp_file.close()
-
+        async with resource.temp_to_disk() as temp_path:
             with tempfile.TemporaryDirectory() as temp_flush_dir:
                 cmd = [
                     "unsquashfs",
@@ -78,7 +74,7 @@ class SquashfsUnpacker(Unpacker[None]):
                     "-force",
                     "-dest",
                     temp_flush_dir,
-                    temp_file.name,
+                    temp_path,
                 ]
                 proc = await asyncio.create_subprocess_exec(
                     *cmd,
@@ -102,7 +98,7 @@ class SquashfsPacker(Packer[None]):
     async def pack(self, resource: Resource, config=None):
         squashfs_view: SquashfsFilesystem = await resource.view_as(SquashfsFilesystem)
         temp_flush_dir = await squashfs_view.flush_to_disk()
-        with tempfile.NamedTemporaryFile(suffix=".sqsh", mode="rb") as temp:
+        with tempfile.NamedTemporaryFile(suffix=".sqsh", mode="rb", delete_on_close=False) as temp:
             temp.close()
             cmd = [
                 "mksquashfs",

@@ -1,6 +1,6 @@
 import os
 import stat
-from ofrak import tempfile
+import tempfile312 as tempfile
 from abc import ABC, abstractmethod
 from subprocess import CalledProcessError
 

@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import os
-from ofrak import tempfile
+import tempfile312 as tempfile
 from dataclasses import dataclass
 from io import BytesIO
 from subprocess import CalledProcessError
@@ -301,7 +301,7 @@ class ISO9660Packer(Packer[None]):
 
         iso_attrs = resource.get_attributes(ISO9660ImageAttributes)
         temp_flush_dir = await iso_view.flush_to_disk()
-        with tempfile.NamedTemporaryFile(suffix=".iso", mode="rb") as temp:
+        with tempfile.NamedTemporaryFile(suffix=".iso", mode="rb", delete_on_close=False) as temp:
             temp.close()
             cmd = [
                 "mkisofs",

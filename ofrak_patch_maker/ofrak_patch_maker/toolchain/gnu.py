@@ -1,6 +1,6 @@
 import logging
 import os
-from ofrak import tempfile
+import tempfile312 as tempfile
 from abc import ABC, abstractmethod
 from typing import Iterable, List, Mapping, Optional, Tuple, Dict
 from warnings import warn

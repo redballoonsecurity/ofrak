@@ -1,5 +1,5 @@
 import asyncio
-from ofrak import tempfile
+import tempfile312 as tempfile
 from dataclasses import dataclass
 from subprocess import CalledProcessError
 
@@ -30,7 +30,7 @@ class RarArchive(GenericBinary, FilesystemRoot):
 
 class RarUnpacker(Unpacker[None]):
     """
-    Unpack RAR archives using the free `unrar` tool.
+    Unpack RAR archives using the free `unar` tool.
     """
 
     targets = (RarArchive,)
@@ -38,28 +38,24 @@ class RarUnpacker(Unpacker[None]):
     external_dependencies = (UNAR,)
 
     async def unpack(self, resource: Resource, config: ComponentConfig = None):
-        with tempfile.NamedTemporaryFile(
-            suffix=".rar"
-        ) as temp_archive, tempfile.TemporaryDirectory() as temp_dir:
-            temp_archive.write(await resource.get_data())
-            temp_archive.close()
+        async with resource.temp_to_disk(suffix=".rar") as temp_archive:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                cmd = [
+                    "unar",
+                    "-no-directory",
+                    "-no-recursion",
+                    temp_archive,
+                ]
+                proc = await asyncio.create_subprocess_exec(
+                    *cmd,
+                    cwd=temp_dir,
+                )
+                returncode = await proc.wait()
+                if proc.returncode:
+                    raise CalledProcessError(returncode=returncode, cmd=cmd)
 
-            cmd = [
-                "unar",
-                "-no-directory",
-                "-no-recursion",
-                temp_archive.name,
-            ]
-            proc = await asyncio.create_subprocess_exec(
-                *cmd,
-                cwd=temp_dir,
-            )
-            returncode = await proc.wait()
-            if proc.returncode:
-                raise CalledProcessError(returncode=returncode, cmd=cmd)
-
-            rar_view = await resource.view_as(RarArchive)
-            await rar_view.initialize_from_disk(temp_dir)
+                rar_view = await resource.view_as(RarArchive)
+                await rar_view.initialize_from_disk(temp_dir)
 
 
 MagicMimeIdentifier.register(RarArchive, "application/x-rar-compressed")

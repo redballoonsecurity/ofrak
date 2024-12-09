@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from ofrak import tempfile
+import tempfile312 as tempfile
 from dataclasses import dataclass
 from subprocess import CalledProcessError
 
@@ -38,18 +38,14 @@ class Jffs2Unpacker(Unpacker[None]):
     external_dependencies = (JEFFERSON,)
 
     async def unpack(self, resource: Resource, config=None):
-        with tempfile.NamedTemporaryFile() as temp_file:
-            resource_data = await resource.get_data()
-            temp_file.write(resource_data)
-            temp_file.close()
-
+        async with resource.temp_to_disk() as temp_path:
             with tempfile.TemporaryDirectory() as temp_flush_dir:
                 cmd = [
                     "jefferson",
                     "--force",
                     "--dest",
                     temp_flush_dir,
-                    temp_file.name,
+                    temp_path,
                 ]
                 proc = await asyncio.create_subprocess_exec(
                     *cmd,
@@ -73,7 +69,7 @@ class Jffs2Packer(Packer[None]):
     async def pack(self, resource: Resource, config=None):
         jffs2_view: Jffs2Filesystem = await resource.view_as(Jffs2Filesystem)
         temp_flush_dir = await jffs2_view.flush_to_disk()
-        with tempfile.NamedTemporaryFile(suffix=".sqsh", mode="rb") as temp:
+        with tempfile.NamedTemporaryFile(suffix=".sqsh", mode="rb", delete_on_close=False) as temp:
             temp.close()
             cmd = [
                 "mkfs.jffs2",

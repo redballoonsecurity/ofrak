@@ -3,7 +3,7 @@ import logging
 from typing import Optional
 import zlib
 from subprocess import CalledProcessError
-from ofrak import tempfile
+import tempfile312 as tempfile
 
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
@@ -110,9 +110,9 @@ class GzipPacker(Packer[None]):
 
     @staticmethod
     async def pack_with_pigz(data: bytes) -> bytes:
-        with tempfile.NamedTemporaryFile() as uncompressed_file:
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as uncompressed_file:
             uncompressed_file.write(data)
-            uncompressed_file.flush()
+            uncompressed_file.close()
 
             cmd = [
                 "pigz",

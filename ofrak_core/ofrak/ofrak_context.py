@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import os
-from ofrak import tempfile
+import tempfile312 as tempfile
 import time
 from types import ModuleType
 from typing import Type, Any, Awaitable, Callable, List, Iterable, Optional

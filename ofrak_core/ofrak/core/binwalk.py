@@ -1,5 +1,4 @@
 import asyncio
-from ofrak import tempfile
 from concurrent.futures.process import ProcessPoolExecutor
 from dataclasses import dataclass
 from typing import Dict
@@ -62,15 +61,11 @@ class BinwalkAnalyzer(Analyzer[None, BinwalkAttributes]):
     async def analyze(self, resource: Resource, config=None) -> BinwalkAttributes:
         if not BINWALK_INSTALLED:
             raise ComponentMissingDependencyError(self, BINWALK_TOOL)
-        with tempfile.NamedTemporaryFile() as temp_file:
-            data = await resource.get_data()
-            temp_file.write(data)
-            temp_file.close()
-
+        async with resource.temp_to_disk() as temp_path:
             # Should errors be handled the way they are in the `DataSummaryAnalyzer`? Likely to be
             # overkill here.
             offsets = await asyncio.get_running_loop().run_in_executor(
-                self.pool, _run_binwalk_on_file, temp_file.name
+                self.pool, _run_binwalk_on_file, temp_path
             )
         return BinwalkAttributes(offsets)
 

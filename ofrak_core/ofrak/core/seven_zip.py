@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import os
-from ofrak import tempfile
+import tempfile312 as tempfile
 from dataclasses import dataclass
 from subprocess import CalledProcessError
 
@@ -39,15 +39,13 @@ class SevenZUnpacker(Unpacker[None]):
     async def unpack(self, resource: Resource, config=None):
         seven_zip_v = await resource.view_as(SevenZFilesystem)
         resource_data = await seven_zip_v.resource.get_data()
-        with tempfile.NamedTemporaryFile() as temp_file:
-            temp_file.write(resource_data)
-            temp_file.close()
+        async with resource.temp_to_disk(suffix=".7z") as temp_path:
             with tempfile.TemporaryDirectory() as temp_flush_dir:
                 cmd = [
                     "7zz",
                     "x",
                     f"-o{temp_flush_dir}",
-                    temp_file.name,
+                    temp_path,
                 ]
                 proc = await asyncio.create_subprocess_exec(
                     *cmd,

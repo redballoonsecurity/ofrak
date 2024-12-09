@@ -1,5 +1,4 @@
 import logging
-from ofrak import tempfile
 from dataclasses import dataclass
 from typing import Optional, List
 
@@ -29,11 +28,9 @@ class BinaryNinjaAnalyzer(Analyzer[Optional[BinaryNinjaAnalyzerConfig], BinaryNi
         self, resource: Resource, config: Optional[BinaryNinjaAnalyzerConfig] = None
     ) -> BinaryNinjaAnalysis:
         if not config:
-            resource_data = await resource.get_data()
-            temp_file = tempfile.NamedTemporaryFile()
-            temp_file.write(resource_data)
-            temp_file.close()
-            bv = open_view(temp_file.name)
+            async with resource.temp_to_disk(delete=False) as temp_path:
+                bv = open_view(temp_path)
+
             return BinaryNinjaAnalysis(bv)
         else:
             bv = BinaryViewType.get_view_of_file(config.bndb_file)

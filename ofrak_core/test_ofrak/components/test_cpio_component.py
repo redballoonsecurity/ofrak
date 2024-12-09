@@ -1,6 +1,6 @@
 import os
 import subprocess
-from ofrak import tempfile
+import tempfile312 as tempfile
 
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
@@ -43,12 +43,9 @@ class TestCpioUnpackModifyPack(UnpackModifyPackPattern):
         await cpio_resource.pack_recursively()
 
     async def verify(self, repacked_cpio_resource: Resource) -> None:
-        resource_data = await repacked_cpio_resource.get_data()
-        with tempfile.NamedTemporaryFile() as temp_file:
-            temp_file.write(resource_data)
-            temp_file.close()
+        async with repacked_cpio_resource.temp_to_disk() as temp_path:
             with tempfile.TemporaryDirectory() as temp_flush_dir:
-                command = f"(cd {temp_flush_dir} && cpio -id < {temp_file.name})"
+                command = f"(cd {temp_flush_dir} && cpio -id < {temp_path})"
                 subprocess.run(command, check=True, capture_output=True, shell=True)
                 with open(os.path.join(temp_flush_dir, CPIO_ENTRY_NAME), "rb") as f:
                     patched_data = f.read()

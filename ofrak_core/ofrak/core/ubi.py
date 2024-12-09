@@ -1,5 +1,5 @@
 import asyncio
-from ofrak import tempfile
+import tempfile312 as tempfile
 from dataclasses import dataclass
 import logging
 from typing import List, Tuple
@@ -131,15 +131,11 @@ class UbiAnalyzer(Analyzer[None, Ubi]):
 
     async def analyze(self, resource: Resource, config=None) -> Ubi:
         # Flush to disk
-        with tempfile.NamedTemporaryFile() as temp_file:
-            resource_data = await resource.get_data()
-            temp_file.write(resource_data)
-            temp_file.close()
-
+        async with resource.temp_to_disk() as temp_path:
             ubi_obj = ubireader_ubi(
                 ubi_io.ubi_file(
-                    temp_file.name,
-                    block_size=guess_peb_size(temp_file.name),
+                    temp_path,
+                    block_size=guess_peb_size(temp_path),
                     start_offset=0,
                     end_offset=None,
                 )
@@ -241,7 +237,6 @@ class UbiPacker(Packer[None]):
     async def pack(self, resource: Resource, config=None) -> None:
         ubi_view = await resource.view_as(Ubi)
 
-        # with tempfile.NamedTemporaryFile(mode="rb") as temp:
         with tempfile.TemporaryDirectory() as temp_flush_dir:
             ubi_volumes = await resource.get_children()
             ubinize_ini_entries = []

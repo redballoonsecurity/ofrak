@@ -1,6 +1,6 @@
 import os
 import subprocess
-from ofrak import tempfile
+import tempfile312 as tempfile
 
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
@@ -41,12 +41,9 @@ class TestJffs2UnpackModifyPack(UnpackModifyPackPattern):
         await jffs2_resource.pack_recursively()
 
     async def verify(self, repacked_jffs2_resource: Resource) -> None:
-        resource_data = await repacked_jffs2_resource.get_data()
-        with tempfile.NamedTemporaryFile() as temp_file:
-            temp_file.write(resource_data)
-            temp_file.close()
+        async with repacked_jffs2_resource.temp_to_disk() as temp_path:
             with tempfile.TemporaryDirectory() as temp_flush_dir:
-                command = ["jefferson", "-f", "-d", temp_flush_dir, temp_file.name]
+                command = ["jefferson", "-f", "-d", temp_flush_dir, temp_path]
                 subprocess.run(command, check=True, capture_output=True)
                 with open(os.path.join(temp_flush_dir, JFFS2_ENTRY_NAME), "rb") as f:
                     patched_data = f.read()
