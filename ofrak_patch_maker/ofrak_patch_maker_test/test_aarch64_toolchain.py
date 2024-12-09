@@ -1,5 +1,5 @@
 import os
-import tempfile312 as tempfile
+import tempfile
 
 import pytest
 

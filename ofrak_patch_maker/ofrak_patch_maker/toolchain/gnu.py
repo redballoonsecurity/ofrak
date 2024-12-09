@@ -1,6 +1,6 @@
 import logging
 import os
-import tempfile312 as tempfile
+import tempfile
 from abc import ABC, abstractmethod
 from typing import Iterable, List, Mapping, Optional, Tuple, Dict
 from warnings import warn

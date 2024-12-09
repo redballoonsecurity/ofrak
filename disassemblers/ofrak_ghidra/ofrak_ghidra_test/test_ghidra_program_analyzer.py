@@ -1,6 +1,6 @@
 import os.path
 import os.path
-import tempfile312 as tempfile
+import tempfile
 from typing import Dict, Type
 
 import pytest
