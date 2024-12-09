@@ -9,6 +9,9 @@ import sys
 import pkg_resources
 import yaml
 
+DEFAULT_PYTHON_IMAGE = (
+    "python:3.8-bullseye@sha256:e1cd369204123e89646f8c001db830eddfe3e381bd5c837df00141be3bd754cb"
+)
 BASE_DOCKERFILE = "base.Dockerfile"
 FINISH_DOCKERFILE = "finish.Dockerfile"
 
@@ -33,6 +36,7 @@ class OfrakImageConfig:
     install_target: InstallTarget
     cache_from: List[str]
     entrypoint: Optional[str]
+    python_image: str
 
     def validate_serial_txt_existence(self):
         """
@@ -72,6 +76,9 @@ def main():
         f.write(dockerfile_finish)
     print(f"{FINISH_DOCKERFILE} built.")
 
+    env = os.environ.copy()
+    env["DOCKER_BUILDKIT"] = "1"
+
     if config.build_base:
         full_base_image_name = "/".join((config.registry, config.base_image_name))
         cache_args = []
@@ -101,7 +108,7 @@ def main():
         if config.extra_build_args:
             base_command.extend(config.extra_build_args)
         try:
-            subprocess.run(base_command, check=True)
+            subprocess.run(base_command, check=True, env=env)
         except subprocess.CalledProcessError as error:
             print(f"Error running command: '{' '.join(error.cmd)}'")
             print(f"Exit status: {error.returncode}")
@@ -125,7 +132,7 @@ def main():
         if config.no_cache:
             finish_command.extend(["--no-cache"])
         try:
-            subprocess.run(finish_command, check=True)
+            subprocess.run(finish_command, check=True, env=env)
         except subprocess.CalledProcessError as error:
             print(f"Error running command: '{' '.join(error.cmd)}'")
             print(f"Exit status: {error.returncode}")
@@ -168,6 +175,7 @@ def parse_args() -> OfrakImageConfig:
         InstallTarget(args.target),
         args.cache_from,
         config_dict.get("entrypoint"),
+        config_dict.get("python_image", DEFAULT_PYTHON_IMAGE),
     )
     image_config.validate_serial_txt_existence()
     return image_config
@@ -204,7 +212,7 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
         dockerfile_base_parts += [f"### {dockerstage_path}", dockerstub]
 
     dockerfile_base_parts += [
-        "FROM python:3.8-bullseye@sha256:e1cd369204123e89646f8c001db830eddfe3e381bd5c837df00141be3bd754cb",
+        f"FROM {config.python_image}",
         "",
     ]
 

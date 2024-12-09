@@ -47,6 +47,28 @@ ARM_EXTENSION = ".arm"
             ARM_EXTENSION,
         ),
         ToolchainUnderTest(
+            GNU_ARM_NONE_EABI_10_2_1_Toolchain,
+            ArchInfo(
+                InstructionSet.ARM,
+                SubInstructionSet.ARMv8A,
+                BitWidth.BIT_32,
+                Endianness.BIG_ENDIAN,
+                ProcessorType.GENERIC_A9_V7_THUMB,
+            ),
+            ARM_EXTENSION,
+        ),
+        ToolchainUnderTest(
+            GNU_ARM_NONE_EABI_10_2_1_Toolchain,
+            ArchInfo(
+                InstructionSet.ARM,
+                SubInstructionSet.ARMv8A,
+                BitWidth.BIT_32,
+                Endianness.BIG_ENDIAN,
+                ProcessorType.GENERIC_ARM_BE8,
+            ),
+            ARM_EXTENSION,
+        ),
+        ToolchainUnderTest(
             LLVM_12_0_1_Toolchain,
             ArchInfo(
                 InstructionSet.ARM,
@@ -164,4 +186,12 @@ def test_arm_alignment(toolchain_under_test: ToolchainUnderTest):
     with open(exec_path, "rb") as f:
         dat = f.read()
         code_offset = code_segments[0].offset
-        assert dat[code_offset : code_offset + 2] == b"\x05\xe0"
+        if (
+            toolchain_under_test.proc.endianness == Endianness.LITTLE_ENDIAN
+            or toolchain_under_test.proc.processor == ProcessorType.GENERIC_ARM_BE8
+        ):
+            # little-endian code instructions
+            expected_bytes = b"\x05\xe0"
+        else:
+            expected_bytes = b"\xe0\x05"
+        assert dat[code_offset : code_offset + 2] == expected_bytes
