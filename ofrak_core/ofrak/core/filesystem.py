@@ -1,5 +1,6 @@
 import os
 import stat
+import tempfile312 as tempfile
 import sys
 import warnings
 import tempfile
