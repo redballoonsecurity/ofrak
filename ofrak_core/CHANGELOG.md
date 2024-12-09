@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add recursive identify functionality in the GUI. ([#435](https://github.com/redballoonsecurity/ofrak/pull/435))
 - Add generic DecompilationAnalysis classes. ([#453](https://github.com/redballoonsecurity/ofrak/pull/453))
 - `PatchFromSourceModifier` bundles src and header files into same temporary directory with BOM and FEM ([#517](https://github.com/redballoonsecurity/ofrak/pull/517))
+- Add support for running on Windows to the `Filesystem` component. ([#521](https://github.com/redballoonsecurity/ofrak/pull/521))
 
 ### Fixed
 - Improved flushing of filesystem entries (including symbolic links and other types) to disk. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373))
@@ -32,6 +33,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Fix bug where PJSON deserializer fails to deserialze `ComponentConfig` dataclasses have a field with a default value of `None`. ([#506](https://github.com/redballoonsecurity/ofrak/pull/506))
 - Fix bug where calling `Resource.remove_tag` on both a tag class and a class that inherits from that class causes a `KeyError` on resource save. ([#510](https://github.com/redballoonsecurity/ofrak/pull/510))
 - Use PyPI version of `bincopy`, upgrade to version 20.0.0 ([#528](https://github.com/redballoonsecurity/ofrak/pull/528))
+- Fix bugs on Windows arising from using `os.path` methods when only forward-slashes are acceptable ([#521](https://github.com/redballoonsecurity/ofrak/pull/521))
 
 ### Changed
 - By default, the ofrak log is now `ofrak-YYYYMMDDhhmmss.log` rather than just `ofrak.log` and the name can be specified on the command line ([#480](https://github.com/redballoonsecurity/ofrak/pull/480))
