@@ -50,12 +50,12 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
-    # the skipif_missing_deps mark has to take an iterable rather than star args otherwise pytest's decorator magic will
-    # think the mark was applied to the component class not the actual test function
     config.addinivalue_line(
         "markers",
         (
             "skipif_missing_deps(component_classes): skip the test function, module, or class if not all dependencies of a component class(es) are installed. "
+            "This marker has to take an iterable of classes rather than args otherwise pytest's decorator magic will think the mark was applied to the component "
+            "class not the actual test function. "
             "Example: @skipif_missing_deps([StringsAnalyzer]) would skip a test if the linux `strings` command is unavailable because StringsAnalyzer calls `strings`."
         ),
     )
