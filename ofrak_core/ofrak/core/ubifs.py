@@ -199,8 +199,8 @@ class UbifsPacker(Packer[None]):
             returncode = await proc.wait()
             if proc.returncode:
                 raise CalledProcessError(returncode=returncode, cmd=cmd)
-            with open(temp.name, "rb") as temp:
-                new_data = temp.read()
+            with open(temp.name, "rb") as new_fh:
+                new_data = new_fh.read()
 
             resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
 

@@ -110,10 +110,8 @@ class TarPacker(Packer[None]):
                 raise CalledProcessError(returncode=returncode, cmd=cmd)
 
             # Replace the original archive data
-            with open(temp_archive.name, "rb") as temp_archive:
-                resource.queue_patch(
-                    Range(0, await resource.get_data_length()), temp_archive.read()
-                )
+            with open(temp_archive.name, "rb") as new_fh:
+                resource.queue_patch(Range(0, await resource.get_data_length()), new_fh.read())
 
 
 MagicMimeIdentifier.register(TarArchive, "application/x-tar")
