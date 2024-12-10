@@ -1,5 +1,6 @@
 import os
 from io import BytesIO
+import posixpath
 from typing import Optional
 
 import pytest
@@ -23,7 +24,7 @@ from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import (
 class Iso9660UnpackModifyPackPattern(CompressedFileUnpackModifyPackPattern):
     TEST_ISO_NAME = "test.iso"
     TEST_DIR_NAME = "/TEST"
-    TEST_FILE_NAME = os.path.join(TEST_DIR_NAME, "TEST.TXT")
+    TEST_FILE_NAME = posixpath.join(TEST_DIR_NAME, "TEST.TXT")
     TEST_SYS_ID = "TestSysID"
     TEST_VOL_ID = "TestVolID"
     TEST_APP_ID = "Test Application"
