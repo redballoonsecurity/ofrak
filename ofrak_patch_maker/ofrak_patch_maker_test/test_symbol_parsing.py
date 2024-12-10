@@ -22,7 +22,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class TestCase:
+class SymbolParsingTestCase:
     base_label: str
     symbol_source_code: str
     expected_to_be_resolved: bool
@@ -107,14 +107,14 @@ TOOLCHAINS_AND_TARGETS = [
 
 
 FULL_TEST_CASES = [
-    TestCase(case_name, symbol_source, expected_resolved, toolchain, arch)
+    SymbolParsingTestCase(case_name, symbol_source, expected_resolved, toolchain, arch)
     for (case_name, symbol_source, expected_resolved) in SYMBOL_SOURCES
     for (toolchain, arch) in TOOLCHAINS_AND_TARGETS
 ]
 
 
 @pytest.mark.parametrize("tc", FULL_TEST_CASES, ids=lambda case: case.full_label)
-async def test_symbol_parsing(tc: TestCase, tmpdir):
+def test_symbol_parsing(tc: SymbolParsingTestCase, tmpdir):
     logging.getLogger().addHandler(logging.FileHandler("/tmp/ofrak.log"))
     logging.getLogger().setLevel(logging.INFO)
 

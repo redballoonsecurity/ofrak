@@ -9,11 +9,11 @@ import sys
 import pkg_resources
 import yaml
 
+DEFAULT_PYTHON_IMAGE = (
+    "python:3.9-bookworm@sha256:a23efa04a7f7a881151fe5d473770588ef639c08fd5f0dcc6987dbe13705c829"
+)
 BASE_DOCKERFILE = "base.Dockerfile"
 FINISH_DOCKERFILE = "finish.Dockerfile"
-GIT_COMMIT_HASH = (
-    subprocess.check_output(["git", "rev-parse", "--short=8", "HEAD"]).decode("ascii").strip()
-)
 
 
 class InstallTarget(Enum):
@@ -26,6 +26,7 @@ class OfrakImageConfig:
     registry: str
     base_image_name: str
     image_name: str
+    image_revision: str
     packages_paths: List[str]
     build_base: bool
     build_finish: bool
@@ -35,6 +36,7 @@ class OfrakImageConfig:
     install_target: InstallTarget
     cache_from: List[str]
     entrypoint: Optional[str]
+    python_image: str
 
     def validate_serial_txt_existence(self):
         """
@@ -74,6 +76,9 @@ def main():
         f.write(dockerfile_finish)
     print(f"{FINISH_DOCKERFILE} built.")
 
+    env = os.environ.copy()
+    env["DOCKER_BUILDKIT"] = "1"
+
     if config.build_base:
         full_base_image_name = "/".join((config.registry, config.base_image_name))
         cache_args = []
@@ -90,7 +95,7 @@ def main():
             f"{full_base_image_name}:master",
             *cache_args,
             "-t",
-            f"{full_base_image_name}:{GIT_COMMIT_HASH}",
+            f"{full_base_image_name}:{config.image_revision}",
             "-t",
             f"{full_base_image_name}:latest",
             "-f",
@@ -116,7 +121,7 @@ def main():
             "docker",
             "build",
             "-t",
-            f"{full_image_name}:{GIT_COMMIT_HASH}",
+            f"{full_image_name}:{config.image_revision}",
             "-t",
             f"{full_image_name}:latest",
             "-f",
@@ -151,10 +156,19 @@ def parse_args() -> OfrakImageConfig:
     args = parser.parse_args()
     with open(args.config) as file_handle:
         config_dict = yaml.safe_load(file_handle)
+    if "image_revision" in config_dict:
+        image_revision = config_dict["image_revision"]
+    else:
+        image_revision = (
+            subprocess.check_output(["git", "rev-parse", "--short=8", "HEAD"])
+            .decode("ascii")
+            .strip()
+        )
     image_config = OfrakImageConfig(
         config_dict["registry"],
         config_dict["base_image_name"],
         config_dict["image_name"],
+        image_revision,
         config_dict["packages_paths"],
         args.base,
         args.finish,
@@ -163,6 +177,7 @@ def parse_args() -> OfrakImageConfig:
         InstallTarget(args.target),
         args.cache_from,
         config_dict.get("entrypoint"),
+        config_dict.get("python_image", DEFAULT_PYTHON_IMAGE),
     )
     image_config.validate_serial_txt_existence()
     return image_config
@@ -199,7 +214,7 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
         dockerfile_base_parts += [f"### {dockerstage_path}", dockerstub]
 
     dockerfile_base_parts += [
-        "FROM python:3.9-bookworm@sha256:a23efa04a7f7a881151fe5d473770588ef639c08fd5f0dcc6987dbe13705c829",
+        f"FROM {config.python_image}",
         "",
     ]
 
@@ -241,7 +256,7 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
 def create_dockerfile_finish(config: OfrakImageConfig) -> str:
     full_base_image_name = "/".join((config.registry, config.base_image_name))
     dockerfile_finish_parts = [
-        f"FROM {full_base_image_name}:{GIT_COMMIT_HASH}\n\n",
+        f"FROM {full_base_image_name}:{config.image_revision}\n\n",
         f"ARG OFRAK_SRC_DIR=/\n",
     ]
     package_names = list()

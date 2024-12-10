@@ -59,7 +59,7 @@ class TarUnpacker(Unpacker[None]):
             for filename in stdout.decode().splitlines():
                 # Handles relative parent paths and rooted paths, and normalizes paths like "./../"
                 rel_filename = os.path.relpath(filename)
-                if rel_filename.startswith("../"):
+                if rel_filename.startswith(".." + os.sep):
                     raise UnpackerError(
                         f"Tar archive contains a file {filename} that would extract to a parent "
                         f"directory {rel_filename}."

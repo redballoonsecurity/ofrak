@@ -14,7 +14,7 @@ image:
 	python3 build_image.py --config ofrak-core-dev.yml --base --finish
 
 tutorial-image:
-	DOCKER_BUILDKIT=1 python3 build_image.py --config ofrak-tutorial.yml --base --finish
+	python3 build_image.py --config ofrak-tutorial.yml --base --finish
 
 tutorial-run:
 	make -C ofrak_tutorial run
