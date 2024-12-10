@@ -19,7 +19,7 @@ python-magic-bin;platform_system=="Windows"
 reedsolo==1.7.0
 sortedcontainers==2.2.2
 synthol~=0.1.1
-tempfile312~=1.0.0
+tempfile312~=1.0.1
 typeguard~=2.13.3
 ubi-reader==0.8.5
 xattr==0.10.1;platform_system!="Windows"
