@@ -14,7 +14,6 @@ RUN apt-get -y update && \
       mtd-utils \
       pigz \
       zip \
-      qemu \
       qemu-user-static \
       u-boot-tools \
       unar \
@@ -24,7 +23,7 @@ RUN apt-get -y update && \
 RUN python3 -m pip install python-lzo
 
 # Install apktool and uber-apk-signer
-RUN apt-get -y update && apt-get -y install openjdk-11-jdk
+RUN apt-get -y update && apt-get -y install openjdk-17-jdk
 RUN wget https://raw.githubusercontent.com/iBotPeaches/Apktool/v2.3.3/scripts/linux/apktool -O /usr/local/bin/apktool && \
   wget https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.3.3.jar -O /usr/local/bin/apktool.jar && \
   wget https://github.com/patrickfav/uber-apk-signer/releases/download/v1.0.0/uber-apk-signer-1.0.0.jar -O /usr/local/bin/uber-apk-signer.jar && \
