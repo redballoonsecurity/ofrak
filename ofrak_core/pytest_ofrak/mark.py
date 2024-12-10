@@ -18,8 +18,11 @@ def _handle_skipif_missing_deps(
     components: Sequence[Type[AbstractComponent]],
 ) -> Tuple[bool, str]:
     """
-    returns a marker for skipping a test function, module, or class if not all dependencies of a component
-    are satisfied. These markers are only added if --skip-tests-missing-deps is passed
+    :param deps_installed_data: a precomputed mapping of all tools to their installed status
+    :params components: the components a test case uses
+
+    :return: a ``skipif`` marker for skipping a test function, module, or class if not all
+    dependencies of a component are satisfied.
     """
 
     missing_messages = []
@@ -74,12 +77,12 @@ def pytest_collection_modifyitems(config, items):
     if config.getoption("--skip-tests-missing-deps"):
         deps_installed_data = asyncio.run(
             _check_deps_installed(
-                [
+                {
                     dep
                     for item in items
                     for component in _all_required_components(item)
                     for dep in component.external_dependencies
-                ]
+                }
             )
         )
 
