@@ -1,5 +1,5 @@
 import logging
-import os
+import sys
 
 import pytest
 
@@ -37,5 +37,5 @@ async def ofrak_context(ofrak):
 
 @pytest.fixture
 def skipif_windows():
-    if os.name == "nt":
+    if sys.platform == "win32":
         pytest.skip("Test cannot run on Windows.")
