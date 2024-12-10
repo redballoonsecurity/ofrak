@@ -141,7 +141,7 @@ def removexattr(f, attr, symlink=False):
 
 def _warn_user_no_xattr(function_name: str) -> None:
     LOGGER.warning(
-        f"Function {function_name} not found. Library xattr is not available on Windows platforms. \
-        Extended attributes will not be properly handled while using OFRAK on this platform. \
-        If you require extended attributes, please use a platform that supports xattr."
+        f"Function {function_name} not found. Library xattr is not available on Windows platforms. "
+        "Extended attributes will not be properly handled while using OFRAK on this platform. "
+        "If you require extended attributes, please use a platform that supports xattr."
     )
