@@ -16,9 +16,10 @@
     settings,
     selectedProject,
     resourceNodeDataMap,
+    pushViewCrumb,
   } from "../stores.js";
 
-  export let modifierView, bottomLeftPane, showProjectManager, showRootResource;
+  export let modifierView, bottomLeftPane;
   $: rootResource = $selectedResource;
 
   function refreshResource() {
@@ -47,6 +48,18 @@
           modifierView = RunScriptView;
         },
       },
+
+      {
+        text: "Patch Wizard",
+        iconUrl: "/icons/wizard.svg",
+        onclick: async (e) => {
+          pushViewCrumb("patchWizard");
+        },
+        disabled: () =>
+          !$selectedResource.tags.includes(
+            "ofrak.core.patch_maker.linkable_binary.LinkableBinary"
+          ),
+      },
     ];
   }
 
@@ -60,11 +73,11 @@
             let state = {
               $selectProject: $selectedProject,
             };
-            showProjectManager = true;
-            showRootResource = false;
+            pushViewCrumb("projectManager");
             history.pushState(state, "", "/");
           }
         },
+        disabled: () => !$selectedProject,
       },
     ];
   }

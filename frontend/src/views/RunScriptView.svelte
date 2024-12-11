@@ -82,7 +82,6 @@
 <script>
   import FileBrowser from "../utils/FileBrowser.svelte";
   import LoadingText from "../utils/LoadingText.svelte";
-  import SerializerInputForm from "../utils/SerializerInputForm.svelte";
   import Icon from "../utils/Icon.svelte";
   import Button from "../utils/Button.svelte";
 
@@ -97,6 +96,7 @@
     resourceNodeDataMap,
   } from "../stores";
   import { onMount } from "svelte";
+  import BaseSerializerInputForm from "../utils/serializer_inputs/BaseSerializerInputForm.svelte";
 
   hljs.registerLanguage("python", python);
 
@@ -134,7 +134,10 @@
       results = await $selectedResource.run_component(
         "RunScriptModifier",
         "ofrak.core.run_script_modifier.RunScriptModifierConfig",
-        Object.assign({ code: loadedScript.join("\n") }, scriptParams)
+        [
+          "ofrak.core.run_script_modifier.RunScriptModifierConfig",
+          Object.assign({ code: loadedScript.join("\n") }, scriptParams),
+        ]
       );
     } catch (err) {
       $selectedResource.flush_cache();
@@ -199,7 +202,7 @@
       {#if ofrakConfig.length != 0}
         {#each ofrakConfig["fields"] as field, i}
           {#if field.name != "code"}
-            <SerializerInputForm
+            <BaseSerializerInputForm
               node="{field}"
               bind:element="{scriptParams[field.name]}"
             />

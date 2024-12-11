@@ -29,7 +29,9 @@
 <script>
   import hljs from "highlight.js";
   import python from "highlight.js/lib/languages/python";
+  import c from "highlight.js/lib/languages/c";
   hljs.registerLanguage("python", python);
+  hljs.registerLanguage("c", c);
   export let script;
   export let language = "python";
 </script>
@@ -46,7 +48,11 @@
 
   <div class="textarea">
     <code>
-      {@html hljs.highlight(script.join("\n"), { language: language }).value}
+      {#if language}
+        {@html hljs.highlight(script.join("\n"), { language: language }).value}
+      {:else}
+        {script.join("\n")}
+      {/if}
     </code>
   </div>
 </div>

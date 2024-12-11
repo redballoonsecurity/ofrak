@@ -61,6 +61,7 @@
             button.shortcut.split('+').reverse().join(' + ') +
             ')'
           : '')}"
+      disabled="{button.disabled && button.disabled()}"
     >
       {#if button.iconUrl}
         <Icon url="{button.iconUrl}" />

@@ -14,6 +14,16 @@ export const selectedProject = writable(undefined);
 // User-generated OFRAK script (array of lines)
 export const script = writable([]);
 
+export const viewCrumbs = writable(["start"]);
+
+export function pushViewCrumb(newCrumb) {
+  viewCrumbs.update((vCrumbs) => vCrumbs.concat([newCrumb]));
+}
+
+export function popViewCrumb() {
+  viewCrumbs.update((vCrumbs) => vCrumbs.slice(0, -1));
+}
+
 export function loadSettings(forceReset) {
   const defaultSettings = {
     background: "#000000",
