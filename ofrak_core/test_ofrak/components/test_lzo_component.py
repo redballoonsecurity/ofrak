@@ -1,6 +1,7 @@
 import subprocess
 import tempfile
 
+from ofrak.core.lzo import LzoPacker, LzoUnpacker
 import pytest
 
 from ofrak.resource import Resource
@@ -9,6 +10,7 @@ from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import (
 )
 
 
+@pytest.mark.skipif_missing_deps([LzoUnpacker, LzoPacker])
 class TestLzoUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
     @pytest.fixture(autouse=True)
     def create_test_file(self, tmpdir):

@@ -1,6 +1,7 @@
 import os
 from dataclasses import dataclass
 
+from ofrak.core.ihex import IhexPacker, IhexUnpacker
 import pytest
 
 from ofrak import OFRAKContext, Resource, ResourceFilter, ResourceAttributeRangeFilter
@@ -25,6 +26,7 @@ IHEX_TEST_FILES = [
 ]
 
 
+@pytest.mark.skipif_missing_deps([IhexPacker, IhexUnpacker])
 class TestIhexUnpackPack(UnpackModifyPackPattern):
     REPLACEMENT_STRING = b"deadbeef ofrak"
 
@@ -64,6 +66,7 @@ class TestIhexUnpackPack(UnpackModifyPackPattern):
         await repacked_root_resource.unpack_recursively()
 
 
+@pytest.mark.skipif_missing_deps([IhexPacker, IhexUnpacker])
 @pytest.mark.parametrize("ihex_file", IHEX_TEST_FILES)
 async def test_ihex_analyzer(ofrak_context: OFRAKContext, ihex_file):
     from bincopy import BinFile

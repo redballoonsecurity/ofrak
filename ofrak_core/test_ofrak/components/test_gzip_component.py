@@ -11,7 +11,7 @@ import pytest
 
 from ofrak.ofrak_context import OFRAKContext
 from ofrak.resource import Resource
-from ofrak.core.gzip import GzipData
+from ofrak.core.gzip import GzipData, PIGZ
 from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import (
     CompressedFileUnpackModifyPackPattern,
 )
@@ -59,7 +59,7 @@ class GzipUnpackModifyPackPattern(CompressedFileUnpackModifyPackPattern, ABC):
 
     async def test_unpack_modify_pack(self, ofrak_context: OFRAKContext):
         with patch("asyncio.create_subprocess_exec", wraps=create_subprocess_exec) as mock_exec:
-            if self.EXPECT_PIGZ:
+            if self.EXPECT_PIGZ and await PIGZ.is_tool_installed():
                 await super().test_unpack_modify_pack(ofrak_context)
                 assert any(
                     args[0][0] == "pigz" and args[0][1] == "-c" for args in mock_exec.call_args_list

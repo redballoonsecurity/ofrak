@@ -3,10 +3,11 @@ import requests
 
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
-from ofrak.core.apk import Apk, ApkPacker, ApkPackerConfig
+from ofrak.core.apk import Apk, ApkPacker, ApkPackerConfig, ApkUnpacker
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackPackPattern
 
 
+@pytest.mark.skipif_missing_deps([ApkPacker, ApkUnpacker])
 class TestApkUnpackPack(UnpackPackPattern):
     """
     Tag an APK and unpack it, assert that it has contents, repack it, and unpack it again.

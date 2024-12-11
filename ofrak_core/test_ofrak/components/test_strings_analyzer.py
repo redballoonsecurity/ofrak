@@ -49,6 +49,7 @@ async def test_case(
     )
 
 
+@pytest.mark.skipif_missing_deps([StringsAnalyzer])
 class TestStringsAnalyzer(AnalyzerTests):
     async def test_resource_analyzer(self, test_case: PopulatedAnalyzerTestCase):
         with pytest.raises(

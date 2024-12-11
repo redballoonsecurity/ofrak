@@ -96,8 +96,14 @@ class AbstractComponent(ComponentInterface[CC], ABC):
             # Check if the problem was that one of the dependencies is missing
             missing_file = e.filename
             for dep in self.external_dependencies:
-                if dep.tool == missing_file:
+                if missing_file:
+                    if dep.tool == missing_file:
+                        raise ComponentMissingDependencyError(self, dep)
+                # on Windows a filename is not provided from subprocess FileNotFoundError, so just
+                # assume the any missing tool we find is the problem
+                elif not await dep.is_tool_installed():
                     raise ComponentMissingDependencyError(self, dep)
+
             raise
         except CalledProcessError as e:
             raise ComponentSubprocessError(e)
