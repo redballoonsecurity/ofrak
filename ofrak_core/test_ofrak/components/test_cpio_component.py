@@ -2,9 +2,11 @@ import os
 import subprocess
 import tempfile
 
+import pytest
+
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
-from ofrak.core.cpio import CpioFilesystem
+from ofrak.core.cpio import CpioFilesystem, CpioPacker, CpioUnpacker
 from ofrak.core.strings import StringPatchingConfig, StringPatchingModifier
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 
@@ -14,6 +16,7 @@ TARGET_CPIO_FILE = "test.cpio"
 CPIO_ENTRY_NAME = "hello_cpio_file"
 
 
+@pytest.mark.skipif_missing_deps([CpioUnpacker, CpioPacker])
 class TestCpioUnpackModifyPack(UnpackModifyPackPattern):
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         with tempfile.TemporaryDirectory() as tmpdir:

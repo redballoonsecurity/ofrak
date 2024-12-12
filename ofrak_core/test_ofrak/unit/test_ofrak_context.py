@@ -5,12 +5,11 @@ import pytest
 from tempfile import TemporaryDirectory
 import os
 from ofrak import OFRAK, OFRAKContext
-from ofrak.core.apk import ApkIdentifier
 from ofrak.resource import Resource
 from ofrak.ofrak_context import get_current_ofrak_context
 from ofrak_type.error import NotFoundError, InvalidStateError
 from pytest_ofrak import mock_library3
-from pytest_ofrak.mock_library3 import _MockComponentA
+from pytest_ofrak.mock_library3 import _MockComponentA, _MockComponentSysExec
 
 from ofrak.core.filesystem import FilesystemRoot
 
@@ -42,7 +41,7 @@ def test_ofrak_context_exclude_components_missing_dependencies():
 
     async def run_component_with_installed_dependency(ofrak_context: OFRAKContext):
         resource = await ofrak_context.create_root_resource("test_binary", b"")
-        await resource.run(ApkIdentifier)
+        await resource.run(_MockComponentSysExec)
 
     ofrak = OFRAK(logging_level=logging.WARNING, exclude_components_missing_dependencies=True)
     ofrak.discover(mock_library3)
