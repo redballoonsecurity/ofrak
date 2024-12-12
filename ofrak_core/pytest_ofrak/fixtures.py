@@ -1,5 +1,4 @@
 import logging
-import sys
 
 import pytest
 
@@ -33,9 +32,3 @@ async def ofrak_context(ofrak):
     context = await ofrak.create_ofrak_context()
     yield context
     await context.shutdown_context()
-
-
-@pytest.fixture
-def skipif_windows():
-    if sys.platform == "win32":
-        pytest.skip("Test cannot run on Windows.")
