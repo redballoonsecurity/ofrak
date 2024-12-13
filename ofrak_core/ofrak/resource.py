@@ -1539,7 +1539,7 @@ class Resource:
         delete: bool = True,
     ) -> AsyncIterator[str]:
         with tempfile.NamedTemporaryFile(
-            mode="w+b", prefix=prefix, suffix=suffix, dir=dir, delete_on_close=False, delete=delete
+            mode="wb", prefix=prefix, suffix=suffix, dir=dir, delete_on_close=False, delete=delete
         ) as temp:
             temp.write(await self.get_data())
             temp.close()
