@@ -144,8 +144,8 @@ class CpioPacker(Packer[None]):
             cwd=temp_flush_dir,
         )
         cpio_pack_output, stderr = await cpio_pack_proc.communicate(input=list_files_list)
-        # if cpio_pack_proc.returncode:
-        #     raise CalledProcessError(returncode=cpio_pack_proc.returncode, cmd=cpio_pack_cmd)
+        if cpio_pack_proc.returncode:
+            raise CalledProcessError(returncode=cpio_pack_proc.returncode, cmd=cpio_pack_cmd)
         # Passing in the original range effectively replaces the original data with the new data
         resource.queue_patch(Range(0, await resource.get_data_length()), cpio_pack_output)
 
