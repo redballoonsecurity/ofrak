@@ -36,8 +36,8 @@ class Bzip2Unpacker(Unpacker[None]):
         :param resource:
         :param config:
         """
-        resource_data = await resource.get_data()
-        decompressed_data = bz2.decompress(resource_data)
+        with await resource.get_data_memoryview() as resource_data:
+            decompressed_data = bz2.decompress(resource_data)
         await resource.create_child(
             tags=(GenericBinary,),
             data=decompressed_data,

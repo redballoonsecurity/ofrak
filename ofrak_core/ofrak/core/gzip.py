@@ -91,25 +91,24 @@ class GzipPacker(Packer[None]):
     async def pack(self, resource: Resource, config=None):
         gzip_view = await resource.view_as(GzipData)
         gzip_child_r = await gzip_view.get_file()
-        data = await gzip_child_r.get_data()
-
-        if len(data) >= 1024 * 1024 and await PIGZInstalled.is_pigz_installed():
-            packed_data = await self.pack_with_pigz(data)
-        else:
-            packed_data = await self.pack_with_zlib_module(data)
+        with await gzip_child_r.get_data_memoryview() as data:
+            if len(data) >= 1024 * 1024 and await PIGZInstalled.is_pigz_installed():
+                packed_data = await self.pack_with_pigz(data)
+            else:
+                packed_data = await self.pack_with_zlib_module(data)
 
         original_gzip_size = await gzip_view.resource.get_data_length()
         resource.queue_patch(Range(0, original_gzip_size), data=packed_data)
 
     @staticmethod
-    async def pack_with_zlib_module(data: bytes) -> bytes:
+    async def pack_with_zlib_module(data: memoryview) -> bytes:
         compressor = zlib.compressobj(wbits=16 + zlib.MAX_WBITS)
         result = compressor.compress(data)
         result += compressor.flush()
         return result
 
     @staticmethod
-    async def pack_with_pigz(data: bytes) -> bytes:
+    async def pack_with_pigz(data: memoryview) -> bytes:
         with tempfile.NamedTemporaryFile(delete_on_close=False) as uncompressed_file:
             uncompressed_file.write(data)
             uncompressed_file.close()

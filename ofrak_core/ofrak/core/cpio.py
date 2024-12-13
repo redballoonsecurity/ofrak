@@ -86,7 +86,6 @@ class CpioUnpacker(Unpacker[None]):
 
     async def unpack(self, resource: Resource, config=None):
         cpio_v = await resource.view_as(CpioFilesystem)
-        resource_data = await cpio_v.resource.get_data()
         with tempfile.TemporaryDirectory() as temp_flush_dir:
             cmd = [
                 "cpio",
@@ -99,7 +98,8 @@ class CpioUnpacker(Unpacker[None]):
                 stderr=asyncio.subprocess.PIPE,
                 cwd=temp_flush_dir,
             )
-            await proc.communicate(input=resource_data)
+            with await resource.get_data_memoryview() as resource_data:
+                await proc.communicate(input=resource_data)
             # if proc.returncode:
             #     raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
             await cpio_v.initialize_from_disk(temp_flush_dir)

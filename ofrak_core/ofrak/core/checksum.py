@@ -23,9 +23,9 @@ class Sha256Analyzer(Analyzer[None, Sha256Attributes]):
     outputs = (Sha256Attributes,)
 
     async def analyze(self, resource: Resource, config=None) -> Sha256Attributes:
-        data = await resource.get_data()
         sha256 = hashlib.sha256()
-        sha256.update(data)
+        with await resource.get_data_memoryview() as data:
+            sha256.update(data)
         return Sha256Attributes(sha256.hexdigest())
 
 
