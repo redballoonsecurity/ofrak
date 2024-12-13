@@ -1,6 +1,5 @@
 import logging
 import lzma
-from io import BytesIO
 from typing import Union
 
 from ofrak.component.packer import Packer
@@ -41,8 +40,6 @@ class LzmaUnpacker(Unpacker[None]):
     children = (GenericBinary,)
 
     async def unpack(self, resource: Resource, config=None):
-        file_data = BytesIO(await resource.get_data())
-
         format = lzma.FORMAT_AUTO
 
         if resource.has_tag(XzData):
@@ -51,13 +48,13 @@ class LzmaUnpacker(Unpacker[None]):
             format = lzma.FORMAT_ALONE
 
         lzma_entry_data = None
-        compressed_data = file_data.read()
 
-        try:
-            lzma_entry_data = lzma.decompress(compressed_data, format)
-        except lzma.LZMAError:
-            LOGGER.info("Initial LZMA decompression failed. Trying with null bytes stripped")
-            lzma_entry_data = lzma.decompress(compressed_data.rstrip(b"\x00"), format)
+        with await resource.get_data_memoryview() as compressed_data:
+            try:
+                lzma_entry_data = lzma.decompress(compressed_data, format)
+            except lzma.LZMAError:
+                LOGGER.info("Initial LZMA decompression failed. Trying with null bytes stripped")
+                lzma_entry_data = lzma.decompress(compressed_data.rstrip(b"\x00"), format)
 
         if lzma_entry_data is not None:
             await resource.create_child(
@@ -80,7 +77,8 @@ class LzmaPacker(Packer[None]):
         lzma_file: Union[XzData, LzmaData] = await resource.view_as(tag)
 
         lzma_child = await lzma_file.get_child()
-        lzma_compressed = lzma.compress(await lzma_child.resource.get_data(), lzma_format)
+        with await lzma_child.resource.get_data_memoryview() as data:
+            lzma_compressed = lzma.compress(data, lzma_format)
 
         original_size = await lzma_file.resource.get_data_length()
         resource.queue_patch(Range(0, original_size), lzma_compressed)

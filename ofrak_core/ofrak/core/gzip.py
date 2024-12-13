@@ -52,12 +52,12 @@ class GzipUnpacker(Unpacker[None]):
     external_dependencies = (PIGZ,)
 
     async def unpack(self, resource: Resource, config=None):
-        data = await resource.get_data()
-        unpacked_data = await self.unpack_with_zlib_module(data)
+        with await resource.get_data_memoryview() as data:
+            unpacked_data = await self.unpack_with_zlib_module(data)
         return await resource.create_child(tags=(GenericBinary,), data=unpacked_data)
 
     @staticmethod
-    async def unpack_with_zlib_module(data: bytes) -> bytes:
+    def unpack_with_zlib_module(data: bytes) -> bytes:
         # We use zlib.decompressobj instead of the gzip module to decompress
         # because of a bug that causes gzip to raise BadGzipFile if there's
         # trailing garbage after a compressed file instead of correctly ignoring it
@@ -67,7 +67,7 @@ class GzipUnpacker(Unpacker[None]):
         # a loop and concatenate them in the end. \037\213 are magic bytes
         # indicating the start of a gzip header.
         chunks = []
-        while data.startswith(b"\037\213"):
+        while data[:2] == b"\037\213":
             # wbits > 16 handles the gzip header and footer
             decompressor = zlib.decompressobj(wbits=16 + zlib.MAX_WBITS)
             chunks.append(decompressor.decompress(data))
@@ -95,13 +95,13 @@ class GzipPacker(Packer[None]):
             if len(data) >= 1024 * 1024 and await PIGZInstalled.is_pigz_installed():
                 packed_data = await self.pack_with_pigz(data)
             else:
-                packed_data = await self.pack_with_zlib_module(data)
+                packed_data = self.pack_with_zlib_module(data)
 
         original_gzip_size = await gzip_view.resource.get_data_length()
         resource.queue_patch(Range(0, original_gzip_size), data=packed_data)
 
     @staticmethod
-    async def pack_with_zlib_module(data: memoryview) -> bytes:
+    def pack_with_zlib_module(data: memoryview) -> bytes:
         compressor = zlib.compressobj(wbits=16 + zlib.MAX_WBITS)
         result = compressor.compress(data)
         result += compressor.flush()

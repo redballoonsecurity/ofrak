@@ -43,7 +43,7 @@ class Md5Analyzer(Analyzer[None, Md5Attributes]):
     outputs = (Md5Attributes,)
 
     async def analyze(self, resource: Resource, config=None) -> Md5Attributes:
-        data = await resource.get_data()
         md5 = hashlib.md5()
-        md5.update(data)
+        with await resource.get_data_memoryview() as data:
+            md5.update(data)
         return Md5Attributes(md5.hexdigest())

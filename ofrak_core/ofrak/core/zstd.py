@@ -45,7 +45,8 @@ class ZstdUnpacker(Unpacker[None]):
         proc = await asyncio.create_subprocess_exec(
             *cmd, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE
         )
-        result, _ = await proc.communicate(await resource.get_data())
+        with await resource.get_data_memoryview() as data:
+            result, _ = await proc.communicate(data)
         if proc.returncode:
             raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
 
@@ -65,7 +66,6 @@ class ZstdPacker(Packer[ZstdPackerConfig]):
             config = ZstdPackerConfig(compression_level=19)
         zstd_view = await resource.view_as(ZstdData)
         child_file = await zstd_view.get_child()
-        uncompressed_data = await child_file.resource.get_data()
 
         command = ["zstd", "-T0", f"-{config.compression_level}"]
         if config.compression_level > 19:
@@ -73,7 +73,8 @@ class ZstdPacker(Packer[ZstdPackerConfig]):
         proc = await asyncio.create_subprocess_exec(
             *command, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE
         )
-        result, _ = await proc.communicate(uncompressed_data)
+        with await resource.get_data_memoryview() as data:
+            result, _ = await proc.communicate(data)
         if proc.returncode:
             raise CalledProcessError(returncode=proc.returncode, cmd=command)
 

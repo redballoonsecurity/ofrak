@@ -188,9 +188,7 @@ class UbiUnpacker(Unpacker[None]):
         with tempfile.TemporaryDirectory() as temp_flush_dir:
             # flush to disk
             with open(f"{temp_flush_dir}/input.img", "wb") as temp_file:
-                resource_data = await resource.get_data()
-                temp_file.write(resource_data)
-                temp_file.flush()
+                await resource.write_to(temp_file, pack=False)
 
             # extract temp_file to temp_flush_dir
             cmd = [

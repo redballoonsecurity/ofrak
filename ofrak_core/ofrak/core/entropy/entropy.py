@@ -76,7 +76,7 @@ class DataSummaryAnalyzer(Analyzer[None, DataSummary]):
 
 
 def sample_entropy(
-    data: bytes, resource_id: bytes, window_size=256, max_samples=2**20
+    data: bytearray, resource_id: bytes, window_size=256, max_samples=2**20
 ) -> bytes:  # pragma: no cover
     """
     Return a list of entropy values where each value represents the Shannon entropy of the byte

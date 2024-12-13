@@ -25,7 +25,7 @@ def entropy_py(
         histogram[b] += 1
 
     # Calculate the entropy using a sliding window
-    entropy = [0] * (len(data) - window_size)
+    entropy = bytearray(max(0, len(data) - window_size))
     last_percent_logged = 0
     for i in range(len(entropy)):
         entropy[i] = math.floor(255 * _shannon_entropy(histogram, window_size))
@@ -35,7 +35,7 @@ def entropy_py(
         if percent > last_percent_logged and percent % 10 == 0:
             log_percent(percent)
             last_percent_logged = percent
-    return bytes(entropy)
+    return entropy
 
 
 def _shannon_entropy(distribution: List[int], window_size: int) -> float:

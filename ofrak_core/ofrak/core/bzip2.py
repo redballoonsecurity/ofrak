@@ -59,7 +59,8 @@ class Bzip2Packer(Packer[None]):
         :param config:
         """
         bzip2_child = await resource.get_only_child()
-        bzip2_compressed = bz2.compress(await bzip2_child.get_data())
+        with bzip2_child.get_data_memoryview() as buffer:
+            bzip2_compressed = bz2.compress(buffer)
         original_size = await resource.get_data_length()
         resource.queue_patch(Range(0, original_size), bzip2_compressed)
 

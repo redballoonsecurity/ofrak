@@ -43,7 +43,8 @@ class LzoUnpacker(Unpacker[None]):
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        stdout, stderr = await proc.communicate(await resource.get_data())
+        with await resource.get_data_memoryview() as data:
+            stdout, stderr = await proc.communicate(data)
         if proc.returncode:
             raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
 
@@ -60,8 +61,6 @@ class LzoPacker(Packer[None]):
 
     async def pack(self, resource: Resource, config: ComponentConfig = None):
         lzo_view = await resource.view_as(LzoData)
-        child_file = await lzo_view.get_child()
-        uncompressed_data = await child_file.resource.get_data()
 
         cmd = ["lzop", "-f"]
         proc = await asyncio.create_subprocess_exec(
@@ -70,7 +69,9 @@ class LzoPacker(Packer[None]):
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        stdout, stderr = await proc.communicate(uncompressed_data)
+        child_file = await lzo_view.get_child()
+        with await child_file.resource.get_data_memoryview() as data:
+            stdout, stderr = await proc.communicate(data)
         if proc.returncode:
             raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
 
