@@ -138,6 +138,28 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
+    async def get_data_memoryview(
+        self, data_id: bytes, data_range: Optional[Range] = None
+    ) -> memoryview:
+        """
+        Get the data (or section of data) of a model as a memoryview object. This method is provided
+        in order to reduce the number of copy operations in certain scenarios such as passing a buffer
+        to ctypes.
+
+        :param data_id: A unique ID for a data model
+        :param data_range: An optional range within the model's data to return
+
+        :return: memoryview of data from the model associated with `data_id` - all bytes by default, a
+        specific slice if `data_range` is provided, and empty bytes if `data_range` is provided but
+        is outside the modeled data. The returned memoryview will have itemsize=1 and may or may not
+        be readonly. The returned memoryview should be used as a context manager in order to release it
+        automatically and should NOT be written to.
+
+        :raises NotFoundError: if `data_id` is not associated with any known model
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
     async def apply_patches(
         self,
         patches: List[DataPatch],
