@@ -18,6 +18,9 @@ class MockResource:
     async def get_data(self):
         return self.data
 
+    async def get_data_memoryview(self):
+        return memoryview(self.data)
+
 
 @dataclass
 class MockDataWord(DataWord):
