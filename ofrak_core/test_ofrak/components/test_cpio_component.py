@@ -1,3 +1,4 @@
+import asyncio
 import os
 import subprocess
 import tempfile312 as tempfile
@@ -26,9 +27,20 @@ class TestCpioUnpackModifyPack(UnpackModifyPackPattern):
             # Create a CPIO file from the current directory
             with open(CPIO_ENTRY_NAME, "wb") as f:
                 f.write(INITIAL_DATA)
-            command = f"find {CPIO_ENTRY_NAME} -print | cpio -o > {TARGET_CPIO_FILE}"
-            subprocess.run(command, check=True, capture_output=True, shell=True)
-            result = await ofrak_context.create_root_resource_from_file(TARGET_CPIO_FILE)
+            cmd = ["cpio", "-o"]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                cwd=tmpdir,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            stdout, stderr = await proc.communicate(CPIO_ENTRY_NAME.encode())
+            if proc.returncode:
+                raise subprocess.CalledProcessError(
+                    returncode=proc.returncode, cmd=cmd, stdout=stdout, stderr=stderr
+                )
+            result = await ofrak_context.create_root_resource(name=TARGET_CPIO_FILE, data=stdout)
 
             os.chdir(wd)
             return result
@@ -46,10 +58,20 @@ class TestCpioUnpackModifyPack(UnpackModifyPackPattern):
         await cpio_resource.pack_recursively()
 
     async def verify(self, repacked_cpio_resource: Resource) -> None:
-        async with repacked_cpio_resource.temp_to_disk() as temp_path:
-            with tempfile.TemporaryDirectory() as temp_flush_dir:
-                command = f"(cd {temp_flush_dir} && cpio -id < {temp_path})"
-                subprocess.run(command, check=True, capture_output=True, shell=True)
-                with open(os.path.join(temp_flush_dir, CPIO_ENTRY_NAME), "rb") as f:
-                    patched_data = f.read()
-                assert patched_data == EXPECTED_DATA
+        with tempfile.TemporaryDirectory() as temp_flush_dir:
+            cmd = ["cpio", "-id"]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                cwd=temp_flush_dir,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            stdout, stderr = await proc.communicate(await repacked_cpio_resource.get_data())
+            if proc.returncode:
+                raise subprocess.CalledProcessError(
+                    returncode=proc.returncode, cmd=cmd, stdout=stdout, stderr=stderr
+                )
+            with open(os.path.join(temp_flush_dir, CPIO_ENTRY_NAME), "rb") as f:
+                patched_data = f.read()
+            assert patched_data == EXPECTED_DATA
