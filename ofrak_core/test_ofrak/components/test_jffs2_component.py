@@ -2,9 +2,11 @@ import os
 import subprocess
 import tempfile312 as tempfile
 
+import pytest
+
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
-from ofrak.core.jffs2 import Jffs2Filesystem
+from ofrak.core.jffs2 import Jffs2Filesystem, Jffs2Packer, Jffs2Unpacker
 from ofrak.core.strings import StringPatchingConfig, StringPatchingModifier
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 
@@ -14,6 +16,7 @@ TARGET_JFFS2_FILE = "test.jffs2"
 JFFS2_ENTRY_NAME = "hello_jffs2_file"
 
 
+@pytest.mark.skipif_missing_deps([Jffs2Packer, Jffs2Unpacker])
 class TestJffs2UnpackModifyPack(UnpackModifyPackPattern):
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         with tempfile.TemporaryDirectory() as tmpdir:

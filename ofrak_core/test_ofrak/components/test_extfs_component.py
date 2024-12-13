@@ -16,6 +16,9 @@ from pytest_ofrak.patterns.unpack_verify import (
 import test_ofrak.components
 
 
+pytestmark = pytest.mark.skipif_missing_deps([ExtUnpacker])
+
+
 @dataclass
 class ExtUnpackerTestCase(UnpackAndVerifyTestCase[str, bytes]):
     filename: str

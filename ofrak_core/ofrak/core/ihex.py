@@ -2,7 +2,7 @@ import logging
 import re
 import sys
 from dataclasses import dataclass
-from typing import List, Union, Tuple, Any
+from typing import Any, List, Tuple, Union
 
 from bincopy import BinFile
 

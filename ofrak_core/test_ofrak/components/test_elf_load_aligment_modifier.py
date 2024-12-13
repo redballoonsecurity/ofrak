@@ -96,6 +96,7 @@ async def verify_modifier_result(test_case: ElfModifierTestCase, output_path: st
         assert process.stdout == test_case.expect_stdout
 
 
+@pytest.mark.skipif_windows
 class TestElfModifiers:
     @pytest.mark.parametrize(
         "test_case",

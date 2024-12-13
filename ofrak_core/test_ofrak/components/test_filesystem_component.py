@@ -52,7 +52,7 @@ def filesystem_root_directory(tmp_path) -> str:
         if not os.path.exists(child_fifo):
             os.mkfifo(child_fifo)
 
-    if hasattr(os, "mkdev"):
+    if hasattr(os, "makedev"):
         block_device = os.path.join(tmp_path, DEVICE_NAME)
         if not os.path.exists(block_device):
             os.makedev(1, 2)
@@ -175,6 +175,7 @@ class TestFilesystemRoot:
         assert CHILD_TEXTFILE_NAME not in updated_list_dir_output
 
 
+@pytest.mark.skipif_windows
 class TestFilesystemEntry:
     """
     Test FilesystemEntry methods.
