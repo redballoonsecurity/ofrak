@@ -1572,7 +1572,7 @@ class Resource:
         with tempfile.NamedTemporaryFile(
             mode="wb", prefix=prefix, suffix=suffix, dir=dir, delete_on_close=False, delete=delete
         ) as temp:
-            temp.write(await self.get_data())
+            await self.write_to(temp, pack=False)
             temp.close()
             yield temp.name
 
