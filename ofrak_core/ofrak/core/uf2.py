@@ -246,7 +246,7 @@ class Uf2FilePacker(Packer[None]):
 
 def match_uf2_magic(data: bytes):
     if len(data) < 8:
-        raise ValueError("Not enough data to match against!")
+        return False
     magic_one, magic_two = struct.unpack("<II", data)
     if magic_one == UF2_MAGIC_START_ONE and magic_two == UF2_MAGIC_START_TWO:
         return True
