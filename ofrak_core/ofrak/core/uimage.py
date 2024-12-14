@@ -205,9 +205,9 @@ class UImage(GenericBinary):
     Note the addition of a CodeRegion view with a virtual address obtained from the UImageHeader,
     as well as tagging the UImageBody as a Program.
     ```
-    uimage = await resource.view_as(UImage)
-    uimage_header = await uimage.get_header()
-    uimage_bodies = await uimage.get_bodies()
+    uimage = resource.view_as(UImage)
+    uimage_header = uimage.get_header()
+    uimage_bodies = uimage.get_bodies()
     uimage_body = uimage_bodies[0]
     uimage_body.resource.add_view(
         CodeRegion(
@@ -216,23 +216,23 @@ class UImage(GenericBinary):
         )
     )
     uimage_body.resource.add_tag(Program)
-    await uimage_body.resource.save()
+    uimage_body.resource.save()
     ```
     """
 
-    async def get_header(self) -> UImageHeader:
-        return await self.resource.get_only_child_as_view(
+    def get_header(self) -> UImageHeader:
+        return self.resource.get_only_child_as_view(
             UImageHeader,
             ResourceFilter.with_tags(UImageHeader),
         )
 
-    async def get_multi_header(self) -> UImageMultiHeader:
-        return await self.resource.get_only_child_as_view(
+    def get_multi_header(self) -> UImageMultiHeader:
+        return self.resource.get_only_child_as_view(
             UImageMultiHeader, ResourceFilter.with_tags(UImageMultiHeader)
         )
 
-    async def get_bodies(self) -> Iterable[UImageBody]:
-        return await self.resource.get_children_as_view(
+    def get_bodies(self) -> Iterable[UImageBody]:
+        return self.resource.get_children_as_view(
             UImageBody,
             ResourceFilter.with_tags(UImageBody),
         )
@@ -261,25 +261,25 @@ class UImageUnpacker(Unpacker[None]):
         UImageTrailingBytes,
     )
 
-    async def unpack(self, resource: Resource, config=None):
-        uimage_header_r = await resource.create_child(
+    def unpack(self, resource: Resource, config=None):
+        uimage_header_r = resource.create_child(
             tags=(UImageHeader,), data_range=Range(0, UIMAGE_HEADER_LEN)
         )
-        uimage_header = await uimage_header_r.view_as(UImageHeader)
-        resource_data = await resource.get_data()
+        uimage_header = uimage_header_r.view_as(UImageHeader)
+        resource_data = resource.get_data()
         if uimage_header.get_type() == UImageType.MULTI:
             uimage_multi_size = resource_data[UIMAGE_HEADER_LEN:].find(b"\x00" * 4) + 4
-            await resource.create_child(
+            resource.create_child(
                 tags=(UImageMultiHeader,),
                 data=resource_data[UIMAGE_HEADER_LEN : UIMAGE_HEADER_LEN + uimage_multi_size],
             )
-            uimage_multi_header = await resource.get_only_child_as_view(
+            uimage_multi_header = resource.get_only_child_as_view(
                 UImageMultiHeader, ResourceFilter.with_tags(UImageMultiHeader)
             )
 
             image_i_start = UIMAGE_HEADER_LEN + uimage_multi_size
             for image_size in uimage_multi_header.get_image_sizes():
-                await resource.create_child(
+                resource.create_child(
                     tags=(UImageBody,),
                     data=resource_data[image_i_start : image_i_start + image_size],
                 )
@@ -291,11 +291,11 @@ class UImageUnpacker(Unpacker[None]):
                 + sum(uimage_multi_header.get_image_sizes())
             )
             if total_len_with_bodies < uimage_header.ih_size:
-                await resource.create_child(
+                resource.create_child(
                     tags=(UImageTrailingBytes,), data=resource_data[total_len_with_bodies:]
                 )
         else:
-            await resource.create_child(
+            resource.create_child(
                 tags=(UImageBody,),
                 data=resource_data[UIMAGE_HEADER_LEN:],
             )
@@ -312,8 +312,8 @@ class UImageHeaderAttributesAnalyzer(Analyzer[None, UImageHeader]):
     targets = (UImageHeader,)
     outputs = (UImageHeader,)
 
-    async def analyze(self, resource: Resource, config=None) -> UImageHeader:
-        tmp = await resource.get_data()
+    def analyze(self, resource: Resource, config=None) -> UImageHeader:
+        tmp = resource.get_data()
         deserializer = BinaryDeserializer(
             io.BytesIO(tmp),
             endianness=Endianness.BIG_ENDIAN,
@@ -362,8 +362,8 @@ class UImageMultiHeaderAttributesAnalyzer(Analyzer[None, UImageMultiHeader]):
     targets = (UImageMultiHeader,)
     outputs = (UImageMultiHeader,)
 
-    async def analyze(self, resource: Resource, config=None) -> UImageMultiHeader:
-        resource_data = await resource.get_data()
+    def analyze(self, resource: Resource, config=None) -> UImageMultiHeader:
+        resource_data = resource.get_data()
         deserializer = BinaryDeserializer(
             io.BytesIO(resource_data),
             endianness=Endianness.BIG_ENDIAN,
@@ -382,9 +382,9 @@ class UImageProgramAttributesAnalyzer(Analyzer[None, Tuple[ProgramAttributes]]):
     targets = (UImage,)
     outputs = (ProgramAttributes,)
 
-    async def analyze(self, resource: Resource, config=None) -> Tuple[ProgramAttributes]:
-        uimage_view = await resource.view_as(UImage)
-        uimage_header = await uimage_view.get_header()
+    def analyze(self, resource: Resource, config=None) -> Tuple[ProgramAttributes]:
+        uimage_view = resource.view_as(UImage)
+        uimage_header = uimage_view.get_header()
         uimage_program_attributes = self.from_deserialized_header(uimage_header)
         return (uimage_program_attributes,)
 
@@ -471,14 +471,14 @@ class UImageHeaderModifier(Modifier[UImageHeaderModifierConfig]):
 
     targets = (UImageHeader,)
 
-    async def modify(self, resource: Resource, config: UImageHeaderModifierConfig) -> None:
-        original_attributes = await resource.analyze(AttributesType[UImageHeader])
+    def modify(self, resource: Resource, config: UImageHeaderModifierConfig) -> None:
+        original_attributes = resource.analyze(AttributesType[UImageHeader])
         # First serialize the header with the ih_hcrc field set to 0, to compute this CRC later
         new_attributes = ResourceAttributes.replace_updated(original_attributes, config)
-        tmp_serialized_header = await UImageHeaderModifier.serialize(new_attributes, ih_hcrc=0)
+        tmp_serialized_header = UImageHeaderModifier.serialize(new_attributes, ih_hcrc=0)
         # Patch this header with its CRC32 in the ih_hcrc field
         ih_hcrc = zlib.crc32(tmp_serialized_header)
-        serialized_header = await UImageHeaderModifier.serialize(new_attributes, ih_hcrc=ih_hcrc)
+        serialized_header = UImageHeaderModifier.serialize(new_attributes, ih_hcrc=ih_hcrc)
         resource.queue_patch(Range.from_size(0, UIMAGE_HEADER_LEN), serialized_header)
         new_attributes = ResourceAttributes.replace_updated(
             new_attributes, UImageHeaderModifierConfig(ih_hcrc=ih_hcrc)
@@ -486,9 +486,7 @@ class UImageHeaderModifier(Modifier[UImageHeaderModifierConfig]):
         resource.add_attributes(new_attributes)
 
     @staticmethod
-    async def serialize(
-        updated_attributes: AttributesType[UImageHeader], ih_hcrc: int = 0
-    ) -> bytes:
+    def serialize(updated_attributes: AttributesType[UImageHeader], ih_hcrc: int = 0) -> bytes:
         """
         Serialize `updated_attributes` into bytes, using `ih_hcrc` for the eponymous field.
         This method doesn't perform any check or compute any CRC.
@@ -526,12 +524,12 @@ class UImageMultiHeaderModifier(Modifier[UImageMultiHeaderModifierConfig]):
 
     targets = (UImageMultiHeader,)
 
-    async def modify(self, resource: Resource, config: UImageMultiHeaderModifierConfig) -> None:
+    def modify(self, resource: Resource, config: UImageMultiHeaderModifierConfig) -> None:
         # # First serialize the header with the ih_hcrc field set to 0, to compute this CRC later
-        original_attributes = await resource.analyze(AttributesType[UImageMultiHeader])
+        original_attributes = resource.analyze(AttributesType[UImageMultiHeader])
         new_attributes = ResourceAttributes.replace_updated(original_attributes, config)
-        serialized_multiheader = await UImageMultiHeaderModifier.serialize(new_attributes)
-        uimage_multi_header = await resource.view_as(UImageMultiHeader)
+        serialized_multiheader = UImageMultiHeaderModifier.serialize(new_attributes)
+        uimage_multi_header = resource.view_as(UImageMultiHeader)
         resource.queue_patch(
             Range(0, uimage_multi_header.get_multi_header_size()),
             serialized_multiheader,
@@ -539,7 +537,7 @@ class UImageMultiHeaderModifier(Modifier[UImageMultiHeaderModifierConfig]):
         resource.add_attributes(new_attributes)
 
     @staticmethod
-    async def serialize(
+    def serialize(
         updated_attributes: AttributesType[UImageMultiHeader],
     ) -> bytes:
         """
@@ -567,36 +565,36 @@ class UImagePacker(Packer[None]):
     id = b"UImagePacker"
     targets = (UImage,)
 
-    async def pack(self, resource: Resource, config=None):
+    def pack(self, resource: Resource, config=None):
         repacked_body_data = b""
-        uimage_view = await resource.view_as(UImage)
-        header = await uimage_view.get_header()
+        uimage_view = resource.view_as(UImage)
+        header = uimage_view.get_header()
         if header.get_type() == UImageType.MULTI:
             image_sizes = []
-            for uimage_body in await uimage_view.get_bodies():
-                image_sizes.append(await uimage_body.resource.get_data_length())
-            multi_header = await uimage_view.get_multi_header()
+            for uimage_body in uimage_view.get_bodies():
+                image_sizes.append(uimage_body.resource.get_data_length())
+            multi_header = uimage_view.get_multi_header()
             multiheader_modifier_config = UImageMultiHeaderModifierConfig(image_sizes=image_sizes)
-            await multi_header.resource.run(UImageMultiHeaderModifier, multiheader_modifier_config)
-            repacked_body_data += await multi_header.resource.get_data()
-        for uimage_body in await uimage_view.get_bodies():
-            repacked_body_data += await uimage_body.resource.get_data()
+            multi_header.resource.run(UImageMultiHeaderModifier, multiheader_modifier_config)
+            repacked_body_data += multi_header.resource.get_data()
+        for uimage_body in uimage_view.get_bodies():
+            repacked_body_data += uimage_body.resource.get_data()
 
         # If there are UImageTrailingBytes, get them as well.
-        resource_children = await resource.get_children()
+        resource_children = resource.get_children()
         if any([child.has_tag(UImageTrailingBytes) for child in resource_children]):
-            trailing_bytes_r = await resource.get_only_child_as_view(
+            trailing_bytes_r = resource.get_only_child_as_view(
                 UImageTrailingBytes, ResourceFilter.with_tags(UImageTrailingBytes)
             )
-            repacked_body_data += await trailing_bytes_r.resource.get_data()
+            repacked_body_data += trailing_bytes_r.resource.get_data()
         ih_size = len(repacked_body_data)
         ih_dcrc = zlib.crc32(repacked_body_data)
         header_modifier_config = UImageHeaderModifierConfig(ih_size=ih_size, ih_dcrc=ih_dcrc)
-        await header.resource.run(UImageHeaderModifier, header_modifier_config)
+        header.resource.run(UImageHeaderModifier, header_modifier_config)
         # Patch UImageHeader data
-        header_data = await header.resource.get_data()
+        header_data = header.resource.get_data()
         # Patch all other data
-        original_size = await resource.get_data_length()
+        original_size = resource.get_data_length()
         resource.queue_patch(Range(0, original_size), header_data + repacked_body_data)
 
 

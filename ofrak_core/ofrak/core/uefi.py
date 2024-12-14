@@ -32,23 +32,23 @@ class UefiUnpacker(Unpacker[None]):
     children = (File, Folder, SpecialFileType)
     external_dependencies = (UEFIEXTRACT,)
 
-    async def unpack(self, resource: Resource, config=None):
+    def unpack(self, resource: Resource, config=None):
         ROM_FILE = "uefi.rom"
 
         with tempfile.TemporaryDirectory() as temp_flush_dir:
             # uefiextract always outputs to the CWD, so we must run this command from the temp dir to not leave behind artifacts
             os.chdir(temp_flush_dir)
-            await resource.flush_data_to_disk(ROM_FILE)
+            resource.flush_data_to_disk(ROM_FILE)
             cmd = [
                 "uefiextract",
                 ROM_FILE,
             ]
-            proc = await asyncio.create_subprocess_exec(
+            proc = asyncio.create_subprocess_exec(
                 *cmd,
             )
-            returncode = await proc.wait()
+            returncode = proc.wait()
             if proc.returncode:
                 raise CalledProcessError(returncode=returncode, cmd=cmd)
 
-            uefi_view = await resource.view_as(Uefi)
-            await uefi_view.initialize_from_disk(os.path.join(temp_flush_dir, f"{ROM_FILE}.dump"))
+            uefi_view = resource.view_as(Uefi)
+            uefi_view.initialize_from_disk(os.path.join(temp_flush_dir, f"{ROM_FILE}.dump"))

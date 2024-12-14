@@ -24,7 +24,7 @@ class TestTarSingleFileUnpackModifyPack(UnpackModifyPackPattern):
     INNER_FILENAME = "hello.txt"
     ARCHIVE_FILENAME = "hello.tar"
 
-    async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
+    def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         with tempfile.TemporaryDirectory() as d:
             file_path = os.path.join(d, self.INNER_FILENAME)
             with open(file_path, "wb") as f:
@@ -34,22 +34,22 @@ class TestTarSingleFileUnpackModifyPack(UnpackModifyPackPattern):
             command = ["tar", "-cf", archive_path, "-C", d, self.INNER_FILENAME]
             subprocess.run(command, check=True, capture_output=True)
 
-            return await ofrak_context.create_root_resource_from_file(archive_path)
+            return ofrak_context.create_root_resource_from_file(archive_path)
 
-    async def unpack(self, root_resource: Resource) -> None:
-        await root_resource.unpack_recursively()
+    def unpack(self, root_resource: Resource) -> None:
+        root_resource.unpack_recursively()
 
-    async def modify(self, unpacked_root_resource: Resource) -> None:
-        tar_view = await unpacked_root_resource.view_as(TarArchive)
-        child_textfile = await tar_view.get_entry(self.INNER_FILENAME)
+    def modify(self, unpacked_root_resource: Resource) -> None:
+        tar_view = unpacked_root_resource.view_as(TarArchive)
+        child_textfile = tar_view.get_entry(self.INNER_FILENAME)
         string_config = StringPatchingConfig(6, "ofrak")
-        await child_textfile.resource.run(StringPatchingModifier, string_config)
+        child_textfile.resource.run(StringPatchingModifier, string_config)
 
-    async def repack(self, modified_root_resource: Resource) -> None:
-        await modified_root_resource.pack_recursively()
+    def repack(self, modified_root_resource: Resource) -> None:
+        modified_root_resource.pack_recursively()
 
-    async def verify(self, repacked_root_resource: Resource) -> None:
-        patched_data = await repacked_root_resource.get_data()
+    def verify(self, repacked_root_resource: Resource) -> None:
+        patched_data = repacked_root_resource.get_data()
         with tempfile.TemporaryDirectory() as d:
             archive_path = os.path.join(d, "result.tar")
             with open(archive_path, "wb") as f:
@@ -76,7 +76,7 @@ class TestTarUnpackerDirectoryTraversalFailure:
     INNER_FILENAME = "hello.txt"
     ARCHIVE_FILENAME = "hello.tar"
 
-    async def test_unpack_fails(self, ofrak_context: OFRAKContext):
+    def test_unpack_fails(self, ofrak_context: OFRAKContext):
         """
         Create a root resource for a tar containing a file located up a directory, and assert
         that unpacking it fails.
@@ -101,10 +101,10 @@ class TestTarUnpackerDirectoryTraversalFailure:
             ]
             subprocess.run(command, check=True, capture_output=True)
 
-            root_resource = await ofrak_context.create_root_resource_from_file(archive_path)
+            root_resource = ofrak_context.create_root_resource_from_file(archive_path)
 
         with pytest.raises(UnpackerError):
-            await root_resource.unpack_recursively()
+            root_resource.unpack_recursively()
 
 
 class TestTarFilesystemUnpackRepack(FilesystemPackUnpackVerifyPattern):
@@ -114,22 +114,22 @@ class TestTarFilesystemUnpackRepack(FilesystemPackUnpackVerifyPattern):
         # TODO: Fix to compare stat values?
         self.check_stat = False
 
-    async def create_root_resource(self, ofrak_context: OFRAKContext, directory: str) -> Resource:
+    def create_root_resource(self, ofrak_context: OFRAKContext, directory: str) -> Resource:
         with tempfile.NamedTemporaryFile(suffix=".tar") as archive:
             command = ["tar", "--xattrs", "-C", directory, "-cf", archive.name, "."]
             subprocess.run(command, check=True, capture_output=True)
 
-            return await ofrak_context.create_root_resource_from_file(archive.name)
+            return ofrak_context.create_root_resource_from_file(archive.name)
 
-    async def unpack(self, root_resource: Resource):
-        await root_resource.unpack_recursively()
+    def unpack(self, root_resource: Resource):
+        root_resource.unpack_recursively()
 
-    async def repack(self, root_resource: Resource):
-        await root_resource.pack_recursively()
+    def repack(self, root_resource: Resource):
+        root_resource.pack_recursively()
 
-    async def extract(self, root_resource: Resource, extract_dir: str):
+    def extract(self, root_resource: Resource, extract_dir: str):
         with tempfile.NamedTemporaryFile(suffix=".tar") as tar:
-            data = await root_resource.get_data()
+            data = root_resource.get_data()
             tar.write(data)
             tar.flush()
 
@@ -147,7 +147,7 @@ class TestTarNestedUnpackModifyPack(UnpackModifyPackPattern):
     INNER_FILENAME = "hello.txt"
     LEVELS = 5  # Must be >= 2
 
-    async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
+    def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         with tempfile.TemporaryDirectory() as d:
             file_path = os.path.join(d, self.INNER_FILENAME)
             with open(file_path, "wb") as f:
@@ -167,28 +167,28 @@ class TestTarNestedUnpackModifyPack(UnpackModifyPackPattern):
                 ]
                 subprocess.run(command, check=True, capture_output=True)
 
-            return await ofrak_context.create_root_resource_from_file(archive_path)
+            return ofrak_context.create_root_resource_from_file(archive_path)
 
-    async def unpack(self, root_resource: Resource) -> None:
-        await root_resource.unpack_recursively()
+    def unpack(self, root_resource: Resource) -> None:
+        root_resource.unpack_recursively()
 
-    async def modify(self, unpacked_root_resource: Resource) -> None:
+    def modify(self, unpacked_root_resource: Resource) -> None:
         child = unpacked_root_resource
         # unpacked_root_resource is the first child of the top-level tar, so we have (self.LEVELS
         # - 1) remaining children to traverse to get to the innermost archive
         for _ in range(self.LEVELS - 1):
-            child = await child.get_only_child()
+            child = child.get_only_child()
 
-        tar_view = await child.view_as(TarArchive)
-        child_textfile = await tar_view.get_entry(self.INNER_FILENAME)
+        tar_view = child.view_as(TarArchive)
+        child_textfile = tar_view.get_entry(self.INNER_FILENAME)
         string_config = StringPatchingConfig(6, "ofrak")
-        await child_textfile.resource.run(StringPatchingModifier, string_config)
+        child_textfile.resource.run(StringPatchingModifier, string_config)
 
-    async def repack(self, modified_root_resource: Resource) -> None:
-        await modified_root_resource.pack_recursively()
+    def repack(self, modified_root_resource: Resource) -> None:
+        modified_root_resource.pack_recursively()
 
-    async def verify(self, repacked_root_resource: Resource) -> None:
-        patched_data = await repacked_root_resource.get_data()
+    def verify(self, repacked_root_resource: Resource) -> None:
+        patched_data = repacked_root_resource.get_data()
         with tempfile.TemporaryDirectory() as d:
             archive_path = os.path.join(d, f"hello_{self.LEVELS - 1}.tar")
             with open(archive_path, "wb") as f:
@@ -209,22 +209,22 @@ class TestComplexTarWithSpecialFiles(FilesystemPackUnpackVerifyPattern):
         self.check_stat = False
         self.testtar_path = os.path.join(test_ofrak.components.ASSETS_DIR, "testtar.tar")
 
-    async def create_root_resource(self, ofrak_context: OFRAKContext, directory: str) -> Resource:
-        return await ofrak_context.create_root_resource_from_file(self.testtar_path)
+    def create_root_resource(self, ofrak_context: OFRAKContext, directory: str) -> Resource:
+        return ofrak_context.create_root_resource_from_file(self.testtar_path)
 
     def create_local_file_structure(self, root: str):
         command = ["tar", "--xattrs", "-C", root, "-xf", self.testtar_path]
         subprocess.run(command, check=True, capture_output=True)
 
-    async def unpack(self, root_resource: Resource):
-        await root_resource.unpack_recursively()
+    def unpack(self, root_resource: Resource):
+        root_resource.unpack_recursively()
 
-    async def repack(self, root_resource: Resource):
-        await root_resource.pack_recursively()
+    def repack(self, root_resource: Resource):
+        root_resource.pack_recursively()
 
-    async def extract(self, root_resource: Resource, extract_dir: str):
+    def extract(self, root_resource: Resource, extract_dir: str):
         with tempfile.NamedTemporaryFile(suffix=".tar") as tar:
-            data = await root_resource.get_data()
+            data = root_resource.get_data()
             tar.write(data)
             tar.flush()
 

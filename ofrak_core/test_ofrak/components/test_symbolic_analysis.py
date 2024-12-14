@@ -19,8 +19,8 @@ def ghidra_components(ofrak_injector):
 
 
 @pytest.fixture(scope="function")
-async def unstripped_elf_resource(ofrak_context: OFRAKContext, elf_executable_file) -> Resource:
-    return await ofrak_context.create_root_resource_from_file(elf_executable_file)
+def unstripped_elf_resource(ofrak_context: OFRAKContext, elf_executable_file) -> Resource:
+    return ofrak_context.create_root_resource_from_file(elf_executable_file)
 
 
 def readelf_get_writable_sections(elf_executable_file) -> Dict[int, bool]:
@@ -55,7 +55,7 @@ def readelf_get_writable_sections(elf_executable_file) -> Dict[int, bool]:
 
 
 @pytest.fixture()
-async def expected_symbols(elf_executable_file) -> Dict[str, Tuple[int, LinkableSymbolType]]:
+def expected_symbols(elf_executable_file) -> Dict[str, Tuple[int, LinkableSymbolType]]:
     """
     Extract the symbols via readelf
     Symbol table '.symtab' contains 166 entries:
@@ -99,12 +99,12 @@ async def expected_symbols(elf_executable_file) -> Dict[str, Tuple[int, Linkable
     return result
 
 
-async def test_complex_block_symbolic_analysis(
+def test_complex_block_symbolic_analysis(
     unstripped_elf_resource: Resource,
     expected_symbols: Dict[str, Tuple[int, ElfSymbolType]],
 ):
-    await unstripped_elf_resource.unpack_recursively(do_not_unpack=(ElfSymbolSection,))
-    analyzed_syms = await unstripped_elf_resource.get_descendants_as_view(
+    unstripped_elf_resource.unpack_recursively(do_not_unpack=(ElfSymbolSection,))
+    analyzed_syms = unstripped_elf_resource.get_descendants_as_view(
         LinkableSymbol,
         r_filter=ResourceFilter(
             tags=(LinkableSymbol,),

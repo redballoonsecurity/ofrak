@@ -80,13 +80,13 @@ DATA_SERVICE_IMPLEMENTATIONS = [
 async def populated_data_service(request):
     _, data_service_factory, postprocessing = request.param
     data_service = data_service_factory()
-    await populate_data_service(data_service)
+    populate_data_service(data_service)
     if postprocessing:
         data_service = await postprocessing(data_service)
     return data_service
 
 
-async def populate_data_service(data_service: DataServiceInterface):
+def populate_data_service(data_service: DataServiceInterface):
     """
     DATA_0 (0x0, 0x18)  | [-----------------------)
     DATA_1 (0x0, 0x8)   | [-------)
@@ -95,10 +95,10 @@ async def populate_data_service(data_service: DataServiceInterface):
     DATA_4 (0xC, 0x10)  |             [---)
     DATA_5 (0x10, 0x18) |                 [-------)
     """
-    await data_service.create_root(DATA_0, (b"\x00" * 0x10) + (b"\x10" * 0x8))
-    _ = await data_service.create_mapped(DATA_1, DATA_0, Range(0x0, 0x8))
-    _ = await data_service.create_mapped(DATA_2, DATA_0, Range(0x8, 0x10))
-    _ = await data_service.create_mapped(DATA_3, DATA_2, Range(0x0, 0x4))
-    _ = await data_service.create_mapped(DATA_4, DATA_2, Range(0x4, 0x8))
+    data_service.create_root(DATA_0, (b"\x00" * 0x10) + (b"\x10" * 0x8))
+    _ = data_service.create_mapped(DATA_1, DATA_0, Range(0x0, 0x8))
+    _ = data_service.create_mapped(DATA_2, DATA_0, Range(0x8, 0x10))
+    _ = data_service.create_mapped(DATA_3, DATA_2, Range(0x0, 0x4))
+    _ = data_service.create_mapped(DATA_4, DATA_2, Range(0x4, 0x8))
 
-    await data_service.create_mapped(DATA_5, DATA_0, Range(0x10, 0x18))
+    data_service.create_mapped(DATA_5, DATA_0, Range(0x10, 0x18))

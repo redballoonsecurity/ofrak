@@ -27,7 +27,7 @@ class FilesystemPackUnpackVerifyPattern(ABC):
         self.check_xattrs = True
         self.check_stat = True
 
-    async def test_pack_unpack_verify(self, ofrak_context: OFRAKContext, tmp_path):
+    def test_pack_unpack_verify(self, ofrak_context: OFRAKContext, tmp_path):
         root_path = tmp_path / "root"
         root_path.mkdir()
         extract_dir = tmp_path / "extract"
@@ -36,10 +36,10 @@ class FilesystemPackUnpackVerifyPattern(ABC):
         try:
             self.setup()
             self.create_local_file_structure(root_path)
-            root_resource = await self.create_root_resource(ofrak_context, root_path)
-            await self.unpack(root_resource)
-            await self.repack(root_resource)
-            await self.extract(root_resource, extract_dir)
+            root_resource = self.create_root_resource(ofrak_context, root_path)
+            self.unpack(root_resource)
+            self.repack(root_resource)
+            self.extract(root_resource, extract_dir)
             self.verify_filesystem_equality(root_path, extract_dir)
         except CalledProcessError as e:
             # Better printing of errors if something goes wrong in test setup/execution
@@ -68,7 +68,7 @@ class FilesystemPackUnpackVerifyPattern(ABC):
         self._dirs_from_list(root, ["a", "b", "c", "d"], 3)
 
     @abstractmethod
-    async def create_root_resource(self, ofrak_context: OFRAKContext, directory: str) -> Resource:
+    def create_root_resource(self, ofrak_context: OFRAKContext, directory: str) -> Resource:
         """
         Create a packed version of the filesystem outside of OFRAK that it can test unpacking and
         repacking.
@@ -76,21 +76,21 @@ class FilesystemPackUnpackVerifyPattern(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    async def unpack(self, root_resource: Resource):
+    def unpack(self, root_resource: Resource):
         """
         Unpack the filesystem using the OFRAK unpackers that are being tested.
         """
         raise NotImplementedError()
 
     @abstractmethod
-    async def repack(self, root_resource: Resource):
+    def repack(self, root_resource: Resource):
         """
         Repack the filesystem using the OFRAK packers that are being tested.
         """
         raise NotImplementedError()
 
     @abstractmethod
-    async def extract(self, root_resource: Resource, extract_dir: str):
+    def extract(self, root_resource: Resource, extract_dir: str):
         """
         Flush the packed filesystem to disk and then extract it using a method outside of OFRAK
         so the resulting path can be compared with the original.

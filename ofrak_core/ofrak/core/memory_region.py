@@ -81,7 +81,7 @@ class MemoryRegion(Addressable):
             )
         return vaddr - self.virtual_address
 
-    async def create_child_region(
+    def create_child_region(
         self,
         child_mr: "MemoryRegion",
         additional_attributes: Iterable[ResourceAttributes] = (),
@@ -109,7 +109,7 @@ class MemoryRegion(Addressable):
                 f"{hex(self.end_vaddr())}."
             )
 
-        return await self.resource.create_child_from_view(
+        return self.resource.create_child_from_view(
             child_mr,
             data_range=Range(start_offset, end_offset),
             additional_attributes=additional_attributes,

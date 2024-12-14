@@ -1,4 +1,3 @@
-import asyncio
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Optional, Iterable
@@ -38,27 +37,27 @@ class BasicBlock(MemoryRegion):
     def caption(cls, all_attributes) -> str:
         return str(cls.__name__)
 
-    async def get_instructions(self) -> Iterable[Instruction]:
+    def get_instructions(self) -> Iterable[Instruction]:
         """
         Get the basic block's [instructions][ofrak.core.instruction.Instruction].
 
         :return: the instructions in the basic block
         """
-        return await self.resource.get_descendants_as_view(
+        return self.resource.get_descendants_as_view(
             Instruction,
             r_filter=ResourceFilter.with_tags(Instruction),
             r_sort=ResourceSort(Addressable.VirtualAddress, ResourceSortDirection.ASCENDANT),
         )
 
-    async def get_assembly(self) -> str:
+    def get_assembly(self) -> str:
         """
         Get the basic block's instructions as an assembly string.
 
         :return: the basic block's assembly
         """
-        instructions = await self.get_instructions()
+        instructions = self.get_instructions()
         instruction_assemblies = [i.get_assembly() for i in instructions]
-        return "\n".join(await asyncio.gather(*instruction_assemblies))
+        return "\n".join(instruction_assemblies)
 
 
 class BasicBlockUnpacker(Unpacker[None], ABC):
@@ -72,7 +71,7 @@ class BasicBlockUnpacker(Unpacker[None], ABC):
     children = (Instruction,)
 
     @abstractmethod
-    async def unpack(self, resource: Resource, config=None):
+    def unpack(self, resource: Resource, config=None):
         """
         Unpack a basic block into its corresponding instructions.
         """
@@ -90,7 +89,7 @@ class BasicBlockAnalyzer(Analyzer[None, BasicBlock], ABC):
     id = b"BasicBlockAnalyzer"
 
     @abstractmethod
-    async def analyze(self, resource: Resource, config=None) -> BasicBlock:
+    def analyze(self, resource: Resource, config=None) -> BasicBlock:
         """
         Analyze a basic block and extract its virtual address, size, mode, whether it is an
         exit point, and exit_vaddr.

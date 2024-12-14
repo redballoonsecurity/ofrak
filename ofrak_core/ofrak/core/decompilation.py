@@ -18,7 +18,7 @@ class DecompilationAnalysisIdentifier(Identifier):
     id = b"DecompilationAnalysisIdentifier"
     targets = (ComplexBlock,)
 
-    async def identify(self, resource: Resource, config=None):
+    def identify(self, resource: Resource, config=None):
         resource.add_tag(DecompilationAnalysis)
 
 
@@ -33,7 +33,7 @@ class DecompilationAnalyzer(Analyzer[None, DecompilationAnalysis], ABC):
     id = b"DecompilationAnalyzer"
 
     @abstractmethod
-    async def analyze(self, resource: Resource, config=None) -> DecompilationAnalysis:
+    def analyze(self, resource: Resource, config=None) -> DecompilationAnalysis:
         """
         Analyze a complex block resource and extract its decompilation as a string.
 

@@ -22,8 +22,8 @@ class LzoData(GenericBinary):
     An lzo binary blob.
     """
 
-    async def get_child(self) -> GenericBinary:
-        return await self.resource.get_only_child_as_view(GenericBinary)
+    def get_child(self) -> GenericBinary:
+        return self.resource.get_only_child_as_view(GenericBinary)
 
 
 class LzoUnpacker(Unpacker[None]):
@@ -36,9 +36,9 @@ class LzoUnpacker(Unpacker[None]):
     children = (GenericBinary,)
     external_dependencies = (LZOP,)
 
-    async def unpack(self, resource: Resource, config: ComponentConfig = None) -> None:
+    def unpack(self, resource: Resource, config: ComponentConfig = None) -> None:
         with tempfile.NamedTemporaryFile(suffix=".lzo") as compressed_file:
-            compressed_file.write(await resource.get_data())
+            compressed_file.write(resource.get_data())
             compressed_file.flush()
 
             cmd = [
@@ -48,16 +48,16 @@ class LzoUnpacker(Unpacker[None]):
                 "-c",
                 compressed_file.name,
             ]
-            proc = await asyncio.create_subprocess_exec(
+            proc = asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
-            stdout, stderr = await proc.communicate()
+            stdout, stderr = proc.communicate()
             if proc.returncode:
                 raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
 
-            await resource.create_child(tags=(GenericBinary,), data=stdout)
+            resource.create_child(tags=(GenericBinary,), data=stdout)
 
 
 class LzoPacker(Packer[None]):
@@ -68,10 +68,10 @@ class LzoPacker(Packer[None]):
     targets = (LzoData,)
     external_dependencies = (LZOP,)
 
-    async def pack(self, resource: Resource, config: ComponentConfig = None):
-        lzo_view = await resource.view_as(LzoData)
-        child_file = await lzo_view.get_child()
-        uncompressed_data = await child_file.resource.get_data()
+    def pack(self, resource: Resource, config: ComponentConfig = None):
+        lzo_view = resource.view_as(LzoData)
+        child_file = lzo_view.get_child()
+        uncompressed_data = child_file.resource.get_data()
 
         with tempfile.NamedTemporaryFile(suffix=".lzo") as uncompressed_file:
             uncompressed_file.write(uncompressed_data)
@@ -83,17 +83,17 @@ class LzoPacker(Packer[None]):
                 "-c",
                 uncompressed_file.name,
             ]
-            proc = await asyncio.create_subprocess_exec(
+            proc = asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
-            stdout, stderr = await proc.communicate()
+            stdout, stderr = proc.communicate()
             if proc.returncode:
                 raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
 
             compressed_data = stdout
-            original_size = await lzo_view.resource.get_data_length()
+            original_size = lzo_view.resource.get_data_length()
             resource.queue_patch(Range(0, original_size), compressed_data)
 
 

@@ -20,9 +20,9 @@ class BinaryInjectorModifier(Modifier[BinaryInjectorModifierConfig]):
 
     targets = (MemoryRegion,)
 
-    async def modify(self, resource: Resource, config: BinaryInjectorModifierConfig):
+    def modify(self, resource: Resource, config: BinaryInjectorModifierConfig):
         assert config is not None
-        memory_region = await resource.view_as(MemoryRegion)
+        memory_region = resource.view_as(MemoryRegion)
         for vm_address, patch in config.binary_patch_configs:
             offset = memory_region.get_offset_in_self(vm_address)
             region_resource_data_id = memory_region.resource.get_data_id()

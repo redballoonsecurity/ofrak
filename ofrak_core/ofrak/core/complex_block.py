@@ -1,4 +1,3 @@
-import asyncio
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Tuple, Iterable
@@ -49,49 +48,49 @@ class ComplexBlock(MemoryRegion):
             return super().caption(all_attributes)
         return f"{hex(addressable_attributes.virtual_address)}: {cb_attributes.name}"
 
-    async def get_basic_blocks(self) -> Iterable[BasicBlock]:
+    def get_basic_blocks(self) -> Iterable[BasicBlock]:
         """
         Get complex block's basic blocks.
 
         :return: basic blocks
         """
-        return await self.resource.get_descendants_as_view(
+        return self.resource.get_descendants_as_view(
             BasicBlock,
             r_filter=ResourceFilter.with_tags(BasicBlock),
             r_sort=ResourceSort(Addressable.VirtualAddress),
         )
 
-    async def get_assembly(self) -> str:
+    def get_assembly(self) -> str:
         """
         Get the complex block's instructions as an assembly string.
 
         :return: the complex block's assembly
         """
-        bbs = await self.get_basic_blocks()
+        bbs = self.get_basic_blocks()
         bb_assemblies = [bb_r.get_assembly() for bb_r in bbs]
-        return "\n".join(await asyncio.gather(*bb_assemblies))
+        return "\n".join(bb_assemblies)
 
-    async def get_data_words(self) -> Iterable[DataWord]:
+    def get_data_words(self) -> Iterable[DataWord]:
         """
         Get the complex block's [data words][ofrak.core.data.DataWord].
 
         :return: the data words in the complex block
         """
-        return await self.resource.get_descendants_as_view(
+        return self.resource.get_descendants_as_view(
             DataWord,
             r_filter=ResourceFilter.with_tags(DataWord),
             r_sort=ResourceSort(Addressable.VirtualAddress),
         )
 
-    async def get_mode(self) -> InstructionSetMode:
+    def get_mode(self) -> InstructionSetMode:
         """
         Get the complex block's [mode][ofrak_type.architecture.InstructionSetMode].
 
         :raises ValueError: if the basic blocks in the complex block have more than one mode
         :return: the mode of the complex block
         """
-        await self.resource.unpack()
-        bb_modes = {bb.mode for bb in await self.get_basic_blocks()}
+        self.resource.unpack()
+        bb_modes = {bb.mode for bb in self.get_basic_blocks()}
         if len(bb_modes) == 1:
             return bb_modes.pop()
         elif len(bb_modes) > 1:
@@ -118,7 +117,7 @@ class ComplexBlockUnpacker(Unpacker[None], ABC):
     id = b"ComplexBlockUnpacker"
 
     @abstractmethod
-    async def unpack(self, resource: Resource, config=None):
+    def unpack(self, resource: Resource, config=None):
         """
         Unpack a complex block, identifying all of the basic blocks and data words which are a part
         of it.
@@ -142,7 +141,7 @@ class ComplexBlockAnalyzer(Analyzer[None, ComplexBlock], ABC):
     id = b"ComplexBlockAnalyzer"
 
     @abstractmethod
-    async def analyze(self, resource: Resource, config=None) -> ComplexBlock:
+    def analyze(self, resource: Resource, config=None) -> ComplexBlock:
         """
         Analyze a complex block resource and extract its virtual address, size, and name.
 
@@ -165,7 +164,7 @@ class DataRefsAnalyzer(Analyzer[None, Tuple[ComplexBlockDataReferenceAttributes]
     outputs = (ComplexBlockDataReferenceAttributes,)
 
     @abstractmethod
-    async def analyze(
+    def analyze(
         self, resource: Resource, config=None
     ) -> Tuple[ComplexBlockDataReferenceAttributes]:
         """

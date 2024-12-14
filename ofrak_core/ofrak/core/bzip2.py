@@ -29,16 +29,16 @@ class Bzip2Unpacker(Unpacker[None]):
     targets = (Bzip2Data,)
     children = (GenericBinary,)
 
-    async def unpack(self, resource: Resource, config=None):
+    def unpack(self, resource: Resource, config=None):
         """
         Unpack bzip2 data.
 
         :param resource:
         :param config:
         """
-        resource_data = await resource.get_data()
+        resource_data = resource.get_data()
         decompressed_data = bz2.decompress(resource_data)
-        await resource.create_child(
+        resource.create_child(
             tags=(GenericBinary,),
             data=decompressed_data,
         )
@@ -51,16 +51,16 @@ class Bzip2Packer(Packer[None]):
 
     targets = (Bzip2Data,)
 
-    async def pack(self, resource: Resource, config=None):
+    def pack(self, resource: Resource, config=None):
         """
         Pack a resource into bzip2 data.
 
         :param resource:
         :param config:
         """
-        bzip2_child = await resource.get_only_child()
-        bzip2_compressed = bz2.compress(await bzip2_child.get_data())
-        original_size = await resource.get_data_length()
+        bzip2_child = resource.get_only_child()
+        bzip2_compressed = bz2.compress(bzip2_child.get_data())
+        original_size = resource.get_data_length()
         resource.queue_patch(Range(0, original_size), bzip2_compressed)
 
 

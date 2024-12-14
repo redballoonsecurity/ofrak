@@ -41,7 +41,7 @@ TAGS = [
 
 @pytest.mark.parametrize("tag, attr", TAGS)
 class FilesystemPattern(UnpackModifyPackPattern, ABC):
-    async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
+    def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         with tempfile.TemporaryDirectory() as temp_dir:
             child_folder = os.path.join(temp_dir, CHILD_FOLDER)
             child_file = os.path.join(temp_dir, CHILD_TEXTFILE_NAME)
@@ -58,25 +58,25 @@ class FilesystemPattern(UnpackModifyPackPattern, ABC):
             with open(subchild_file, "w") as f:
                 f.write(SUBCHILD_TEXT)
 
-            resource = await ofrak_context.create_root_resource(
+            resource = ofrak_context.create_root_resource(
                 name=temp_dir, data=b"", tags=[FilesystemRoot]
             )
-            await resource.save()
-            filesystem_view = await resource.view_as(FilesystemRoot)
-            await filesystem_view.initialize_from_disk(temp_dir)
+            resource.save()
+            filesystem_view = resource.view_as(FilesystemRoot)
+            filesystem_view.initialize_from_disk(temp_dir)
             resource.add_tag(self.tag)
             for attr in self.attr:
                 resource.add_attributes(attr)
-            await resource.save()
-            await resource.pack_recursively()
+            resource.save()
+            resource.pack_recursively()
 
             return resource
 
-    async def unpack(self, resource: Resource) -> None:
-        await resource.unpack()
+    def unpack(self, resource: Resource) -> None:
+        resource.unpack()
 
-    async def repack(self, resource: Resource) -> None:
-        await resource.pack_recursively()
+    def repack(self, resource: Resource) -> None:
+        resource.pack_recursively()
 
     @pytest.fixture(autouse=True)
     def add_tag(self, tag: Type[RV], attr: List[ResourceAttributes]):
@@ -86,48 +86,48 @@ class FilesystemPattern(UnpackModifyPackPattern, ABC):
 
 class TestFilesystemAddFile(FilesystemPattern):
     #  TODO: add file attrs and check
-    async def modify(self, unpacked_resource: Resource) -> None:
-        print(await unpacked_resource.summarize_tree())
-        unpacked_resource_view = await unpacked_resource.view_as(self.tag)
-        await unpacked_resource_view.add_file("test_folder/test.txt", b"test")
-        print(await unpacked_resource.summarize_tree())
+    def modify(self, unpacked_resource: Resource) -> None:
+        print(unpacked_resource.summarize_tree())
+        unpacked_resource_view = unpacked_resource.view_as(self.tag)
+        unpacked_resource_view.add_file("test_folder/test.txt", b"test")
+        print(unpacked_resource.summarize_tree())
 
-    async def verify(self, repacked_zip_resource: Resource) -> None:
-        await repacked_zip_resource.unpack()
-        print(await repacked_zip_resource.summarize_tree())
-        repacked_zip_resource_view = await repacked_zip_resource.view_as(self.tag)
-        new_file = await repacked_zip_resource_view.get_entry("test_folder/test.txt")
+    def verify(self, repacked_zip_resource: Resource) -> None:
+        repacked_zip_resource.unpack()
+        print(repacked_zip_resource.summarize_tree())
+        repacked_zip_resource_view = repacked_zip_resource.view_as(self.tag)
+        new_file = repacked_zip_resource_view.get_entry("test_folder/test.txt")
         assert new_file is not None
-        assert await new_file.resource.get_data() == b"test"
+        assert new_file.resource.get_data() == b"test"
 
 
 class TestFilesystemRemoveFile(FilesystemPattern):
-    async def modify(self, unpacked_resource: Resource) -> None:
-        unpacked_resource_view = await unpacked_resource.view_as(self.tag)
-        await unpacked_resource_view.remove_file("test_folder/goodbye.txt")
+    def modify(self, unpacked_resource: Resource) -> None:
+        unpacked_resource_view = unpacked_resource.view_as(self.tag)
+        unpacked_resource_view.remove_file("test_folder/goodbye.txt")
 
-    async def verify(self, repacked_resource: Resource) -> None:
-        await repacked_resource.unpack()
-        repacked_resource_view = await repacked_resource.view_as(self.tag)
-        old_file = await repacked_resource_view.get_entry("test_folder/goodbye.txt")
+    def verify(self, repacked_resource: Resource) -> None:
+        repacked_resource.unpack()
+        repacked_resource_view = repacked_resource.view_as(self.tag)
+        old_file = repacked_resource_view.get_entry("test_folder/goodbye.txt")
         assert old_file is None
 
 
 class TestFilesystemComponent(FilesystemPattern):
-    async def modify(self, resource: Resource) -> None:
-        zip_archive = await resource.view_as(self.tag)
+    def modify(self, resource: Resource) -> None:
+        zip_archive = resource.view_as(self.tag)
         child_text_string_config = StringPatchingConfig(6, "OFrak")
-        child_textfile = await zip_archive.get_entry("hello.txt")
-        await child_textfile.resource.run(StringPatchingModifier, child_text_string_config)
+        child_textfile = zip_archive.get_entry("hello.txt")
+        child_textfile.resource.run(StringPatchingModifier, child_text_string_config)
 
         subchild_text_string_config = StringPatchingConfig(8, "OFrak")
-        subchild_textfile = await zip_archive.get_entry("test_folder/goodbye.txt")
-        await subchild_textfile.resource.run(StringPatchingModifier, subchild_text_string_config)
+        subchild_textfile = zip_archive.get_entry("test_folder/goodbye.txt")
+        subchild_textfile.resource.run(StringPatchingModifier, subchild_text_string_config)
 
-    async def verify(self, resource: Resource) -> None:
-        await resource.unpack()
-        resource_view = await resource.view_as(self.tag)
-        flush_tmp = await resource_view.flush_to_disk()
+    def verify(self, resource: Resource) -> None:
+        resource.unpack()
+        resource_view = resource.view_as(self.tag)
+        flush_tmp = resource_view.flush_to_disk()
 
         dirs = []
         files_dict = {}

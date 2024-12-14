@@ -38,12 +38,12 @@ class BinaryExtendModifier(Modifier[BinaryExtendConfig]):
 
     targets = ()
 
-    async def modify(self, resource: Resource, config: BinaryExtendConfig):
+    def modify(self, resource: Resource, config: BinaryExtendConfig):
         if len(config.content) == 0:
             raise ValueError("Content of the extended space not provided")
-        data = await resource.get_data()
+        data = resource.get_data()
         data += config.content
-        resource.queue_patch(Range(0, await resource.get_data_length()), data)
+        resource.queue_patch(Range(0, resource.get_data_length()), data)
 
 
 @dataclass
@@ -69,7 +69,7 @@ class BinaryPatchModifier(Modifier[BinaryPatchConfig]):
 
     targets = ()
 
-    async def modify(self, resource: Resource, config: BinaryPatchConfig) -> None:
+    def modify(self, resource: Resource, config: BinaryPatchConfig) -> None:
         """
         Patch the resource at the target offset with the given patch bytes.
 
@@ -78,7 +78,7 @@ class BinaryPatchModifier(Modifier[BinaryPatchConfig]):
 
         :raises ModifierError: if the binary patch overflows the original size of the resource
         """
-        resource_size = await resource.get_data_length()
+        resource_size = resource.get_data_length()
         if len(config.patch_bytes) > resource_size - config.offset:
             raise ModifierError(
                 f"The binary patch, {config}, overflows the original size of the resource "

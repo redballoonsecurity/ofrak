@@ -457,8 +457,8 @@ REGISTER_USAGE_TEST_CASES = (
 
 class RegisterUsageTestPattern:
     @pytest.fixture
-    async def assembler_service(self, ofrak_context: OFRAKContext):
-        return await ofrak_context.injector.get_instance(AssemblerServiceInterface)
+    def assembler_service(self, ofrak_context: OFRAKContext):
+        return ofrak_context.injector.get_instance(AssemblerServiceInterface)
 
     def case_is_known_broken(self, test_case: RegisterAnalyzerTestCase) -> Tuple[bool, str]:
         """
@@ -474,7 +474,7 @@ class RegisterUsageTestPattern:
         return False, ""
 
     @pytest.mark.parametrize("test_case", REGISTER_USAGE_TEST_CASES, ids=lambda tc: tc.label)
-    async def test_register_usage_analyzer(
+    def test_register_usage_analyzer(
         self, test_case: RegisterAnalyzerTestCase, ofrak_context, assembler_service
     ):
         test_case_is_broken, reason = self.case_is_known_broken(test_case)
@@ -483,10 +483,10 @@ class RegisterUsageTestPattern:
                 reason = "test case is known to be broken"
             pytest.skip(reason)
 
-        await self._get_and_check_register_usage(test_case, ofrak_context, assembler_service)
+        self._get_and_check_register_usage(test_case, ofrak_context, assembler_service)
 
     @pytest.mark.parametrize("test_case", REGISTER_USAGE_TEST_CASES, ids=lambda tc: tc.label)
-    async def test_known_broken_cases(
+    def test_known_broken_cases(
         self, test_case: RegisterAnalyzerTestCase, ofrak_context, assembler_service
     ):
         """
@@ -498,25 +498,25 @@ class RegisterUsageTestPattern:
             pytest.skip("test case not broken")
 
         with pytest.raises(Exception):
-            await self._get_and_check_register_usage(test_case, ofrak_context, assembler_service)
+            self._get_and_check_register_usage(test_case, ofrak_context, assembler_service)
 
-    async def _get_and_check_register_usage(
+    def _get_and_check_register_usage(
         self, test_case: RegisterAnalyzerTestCase, ofrak_context, assembler_service
     ):
-        instr_data = await assembler_service.assemble(
+        instr_data = assembler_service.assemble(
             test_case.instruction.disassembly,
             test_case.instruction.virtual_address,
             test_case.program_attributes,
             test_case.instruction.mode,
         )
-        instr_r = await ofrak_context.create_root_resource(
+        instr_r = ofrak_context.create_root_resource(
             "test_resource", instr_data, tags=(Instruction,)
         )
         instr_r.add_view(test_case.instruction)
         instr_r.add_attributes(test_case.program_attributes)
-        await instr_r.save()
+        instr_r.save()
 
-        register_usage = await instr_r.analyze(RegisterUsage)
+        register_usage = instr_r.analyze(RegisterUsage)
 
         assert set(test_case.expected_regs_read) == set(
             register_usage.registers_read

@@ -73,7 +73,7 @@ ELF_MODIFIERS_TEST_CASES = [
 ]
 
 
-async def verify_modifier_result(test_case: ElfModifierTestCase, output_path: str):
+def verify_modifier_result(test_case: ElfModifierTestCase, output_path: str):
     if test_case.ld_preload_host:
         process = subprocess.run(
             f"LD_PRELOAD={output_path} {test_case.ld_preload_host} "
@@ -103,11 +103,11 @@ class TestElfModifiers:
         ELF_MODIFIERS_TEST_CASES,
         ids=lambda tc: tc.label,
     )
-    async def test_elf_load_alignment_free_space_modifier(
+    def test_elf_load_alignment_free_space_modifier(
         self, ofrak_context: OFRAKContext, test_case: ElfModifierTestCase, request
     ):
         file_path = os.path.join(ASSETS_DIR, test_case.test_file)
         output_path = f"{OUTPUT_DIR}/{os.path.basename(file_path)}_aligned_free"
-        await main(ofrak_context, file_path, output_path)
+        main(ofrak_context, file_path, output_path)
         os.chmod(output_path, 0o700)
-        await verify_modifier_result(test_case, output_path)
+        verify_modifier_result(test_case, output_path)

@@ -154,63 +154,63 @@ FLASH_TEST_CASES = [
 
 class TestFlashUnpackModifyPack(UnpackModifyPackPattern):
     @pytest.mark.parametrize(["TEST_FILE", "VERIFY_FILE", "TEST_ATTR"], FLASH_TEST_CASES)
-    async def test_unpack_modify_pack(self, ofrak_context, TEST_FILE, VERIFY_FILE, TEST_ATTR):
-        root_resource = await self.create_root_resource(ofrak_context, TEST_FILE)
+    def test_unpack_modify_pack(self, ofrak_context, TEST_FILE, VERIFY_FILE, TEST_ATTR):
+        root_resource = self.create_root_resource(ofrak_context, TEST_FILE)
         root_resource.add_attributes(TEST_ATTR)
-        await root_resource.save()
-        await self.unpack(root_resource)
-        await self.modify(root_resource)
-        await self.repack(root_resource)
-        await self.verify(root_resource, VERIFY_FILE)
+        root_resource.save()
+        self.unpack(root_resource)
+        self.modify(root_resource)
+        self.repack(root_resource)
+        self.verify(root_resource, VERIFY_FILE)
 
-    async def create_root_resource(self, ofrak_context: OFRAKContext, TEST_FILE: str) -> Resource:
-        return await ofrak_context.create_root_resource_from_file(TEST_FILE)
+    def create_root_resource(self, ofrak_context: OFRAKContext, TEST_FILE: str) -> Resource:
+        return ofrak_context.create_root_resource_from_file(TEST_FILE)
 
-    async def unpack(self, resource: Resource, config=None) -> None:
+    def unpack(self, resource: Resource, config=None) -> None:
         resource.add_tag(FlashResource)
-        await resource.save()
-        await resource.unpack_recursively()
+        resource.save()
+        resource.unpack_recursively()
 
-    async def modify(self, unpacked_root_resource: Resource) -> None:
-        logical_data_resource = await unpacked_root_resource.get_only_descendant(
+    def modify(self, unpacked_root_resource: Resource) -> None:
+        logical_data_resource = unpacked_root_resource.get_only_descendant(
             r_filter=ResourceFilter.with_tags(
                 FlashLogicalDataResource,
             ),
         )
         new_data = b"INSERT ME!"
         patch_config = BinaryPatchConfig(0x16, new_data)
-        await logical_data_resource.run(BinaryPatchModifier, patch_config)
+        logical_data_resource.run(BinaryPatchModifier, patch_config)
 
-    async def repack(self, resource: Resource, config=None) -> None:
-        await resource.pack_recursively()
+    def repack(self, resource: Resource, config=None) -> None:
+        resource.pack_recursively()
 
-    async def verify(self, repacked_resource: Resource, VERIFY_FILE: str) -> None:
+    def verify(self, repacked_resource: Resource, VERIFY_FILE: str) -> None:
         # Check that the new file matches the manually verified file
         with open(VERIFY_FILE, "rb") as f:
             verified_data = f.read()
-        repacked_data = await repacked_resource.get_data()
+        repacked_data = repacked_resource.get_data()
 
         assert verified_data == repacked_data
 
 
 class TestFlashUnpackModifyPackUnpackVerify(TestFlashUnpackModifyPack):
-    async def test_unpack_modify_pack(self, ofrak_context):
-        root_resource = await self.create_root_resource(ofrak_context, DEFAULT_TEST_FILE)
+    def test_unpack_modify_pack(self, ofrak_context):
+        root_resource = self.create_root_resource(ofrak_context, DEFAULT_TEST_FILE)
         root_resource.add_attributes(DEFAULT_TEST_ATTR)
-        await root_resource.save()
-        await self.unpack(root_resource)
-        logical_data_resource = await root_resource.get_only_descendant(
+        root_resource.save()
+        self.unpack(root_resource)
+        logical_data_resource = root_resource.get_only_descendant(
             r_filter=ResourceFilter.with_tags(
                 FlashLogicalDataResource,
             ),
         )
-        await self.verify(logical_data_resource, DEFAULT_UNPACKED_VERIFY_FILE)
-        await self.modify(root_resource)
-        await self.repack(root_resource)
-        await self.unpack(root_resource)
-        logical_data_resource = await root_resource.get_only_descendant(
+        self.verify(logical_data_resource, DEFAULT_UNPACKED_VERIFY_FILE)
+        self.modify(root_resource)
+        self.repack(root_resource)
+        self.unpack(root_resource)
+        logical_data_resource = root_resource.get_only_descendant(
             r_filter=ResourceFilter.with_tags(
                 FlashLogicalDataResource,
             ),
         )
-        await self.verify(logical_data_resource, DEFAULT_UNPACKED_MODIFIED_VERIFY_FILE)
+        self.verify(logical_data_resource, DEFAULT_UNPACKED_MODIFIED_VERIFY_FILE)

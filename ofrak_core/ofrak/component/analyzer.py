@@ -41,7 +41,7 @@ class Analyzer(AbstractComponent, Generic[CC, AnalyzerReturnType], ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    async def analyze(self, resource: Resource, config: CC) -> AnalyzerReturnType:
+    def analyze(self, resource: Resource, config: CC) -> AnalyzerReturnType:
         """
         Analyze a resource for to extract specific
         [ResourceAttributes][ofrak.model.resource_model.ResourceAttributes].
@@ -105,7 +105,7 @@ class Analyzer(AbstractComponent, Generic[CC, AnalyzerReturnType], ABC):
     def get_default_config(cls) -> Optional[CC]:
         return cls._get_default_config_from_method(cls.analyze)
 
-    async def _run(self, resource: Resource, config: CC):
+    def _run(self, resource: Resource, config: CC):
         if resource.has_component_run(self.get_id(), self.get_version()):
             return self._log_component_has_run_warning(resource)
         if resource.has_component_run(self.get_id()):
@@ -114,7 +114,7 @@ class Analyzer(AbstractComponent, Generic[CC, AnalyzerReturnType], ABC):
                 "If the component has already run (but on a different "
                 "version), we should remove the dependencies"
             )
-        analysis_results = await self.analyze(resource, config)
+        analysis_results = self.analyze(resource, config)
         attributes = self.get_attributes_from_results(analysis_results)
         for attrs in attributes:
             resource.add_attributes(attrs)

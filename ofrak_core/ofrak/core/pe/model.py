@@ -153,8 +153,8 @@ class PeSectionStructure(ResourceView):
 class PeSection(PeSectionStructure, NamedProgramSection):
     """PE section"""
 
-    async def get_header(self) -> "PeSectionHeader":
-        return await self.resource.get_only_sibling_as_view(
+    def get_header(self) -> "PeSectionHeader":
+        return self.resource.get_only_sibling_as_view(
             PeSectionHeader,
             ResourceFilter(
                 tags=(PeSectionHeader,),
@@ -240,9 +240,9 @@ class PeSectionHeader(PeSectionStructure):
             if self.has_flag(flag):
                 yield flag
 
-    async def get_body(self) -> PeSection:
+    def get_body(self) -> PeSection:
         """Get the PeSection associated with this section header."""
-        return await self.resource.get_only_sibling_as_view(
+        return self.resource.get_only_sibling_as_view(
             PeSection,
             ResourceFilter(
                 tags=(PeSection,),
@@ -259,20 +259,20 @@ class PeSectionHeader(PeSectionStructure):
 class Pe(Program):
     """PE file"""
 
-    async def get_sections(self) -> Iterable[PeSection]:
+    def get_sections(self) -> Iterable[PeSection]:
         """Return the children ``PeSection``s."""
-        return await self.resource.get_children_as_view(
+        return self.resource.get_children_as_view(
             PeSection,
             ResourceFilter(
                 tags=(PeSection,),
             ),
         )
 
-    async def get_section_by_name(self, name: str) -> PeSection:
+    def get_section_by_name(self, name: str) -> PeSection:
         # Force analyzing the name of all sections
-        await self.get_sections()
+        self.get_sections()
 
-        return await self.resource.get_only_child_as_view(
+        return self.resource.get_only_child_as_view(
             PeSection,
             ResourceFilter(
                 tags=(PeSection,),
@@ -280,10 +280,10 @@ class Pe(Program):
             ),
         )
 
-    async def get_optional_header(self) -> Optional[PeOptionalHeader]:
+    def get_optional_header(self) -> Optional[PeOptionalHeader]:
         """Return the optional header of the PE file, or None if there isn't one."""
         try:
-            return await self.resource.get_only_child_as_view(
+            return self.resource.get_only_child_as_view(
                 PeOptionalHeader,
                 ResourceFilter(
                     tags=(PeOptionalHeader,),

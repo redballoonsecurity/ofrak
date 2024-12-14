@@ -46,7 +46,7 @@ class DtbNode(GenericBinary):
             return super().caption(attributes)
         return f"{cls.__name__}: {dtb_attributes.name}"
 
-    async def get_path(self) -> str:
+    def get_path(self) -> str:
         """
         Get the path of a DtbNode within a DeviceTreeBlob.
         Root node is always "/" per DTB specifications.
@@ -54,8 +54,8 @@ class DtbNode(GenericBinary):
         if self.name == "/":
             return self.name
 
-        parent_node = await self.resource.get_parent_as_view(v_type=DtbNode)
-        return posixpath.join(await parent_node.get_path(), self.name)
+        parent_node = self.resource.get_parent_as_view(v_type=DtbNode)
+        return posixpath.join(parent_node.get_path(), self.name)
 
 
 class DeviceTreeBlob(GenericBinary):
@@ -63,12 +63,12 @@ class DeviceTreeBlob(GenericBinary):
     A Device Tree Blob (DTB).
     """
 
-    async def get_node_by_path(self, path: str) -> DtbNode:
-        descendants = await self.resource.get_descendants_as_view(
+    def get_node_by_path(self, path: str) -> DtbNode:
+        descendants = self.resource.get_descendants_as_view(
             v_type=DtbNode, r_filter=ResourceFilter.with_tags(DtbNode)
         )
         for node in descendants:
-            d_path = await node.get_path()
+            d_path = node.get_path()
             if d_path == path:
                 return node
         raise ValueError(f"The path {path} does not correspond to a node")
@@ -101,8 +101,8 @@ class DtbHeaderAnalyzer(Analyzer[None, DtbHeader]):
     targets = (DtbHeader,)
     outputs = (DtbHeader,)
 
-    async def analyze(self, resource: Resource, config: None) -> DtbHeader:
-        header_data = await resource.get_data()
+    def analyze(self, resource: Resource, config: None) -> DtbHeader:
+        header_data = resource.get_data()
         (
             dtb_magic,
             totalsize,
@@ -181,27 +181,27 @@ class DtbProperty(GenericBinary):
             return super().caption(attributes)
         return f"{cls.__name__}: {dtb_attributes.name}"
 
-    async def get_path(self):
-        parent_node = await self.resource.get_parent_as_view(v_type=DtbNode)
-        return posixpath.join(await parent_node.get_path(), self.name)
+    def get_path(self):
+        parent_node = self.resource.get_parent_as_view(v_type=DtbNode)
+        return posixpath.join(parent_node.get_path(), self.name)
 
-    async def get_value(self) -> Union[str, List[str], int, List[int], bytes, bytearray, None]:
+    def get_value(self) -> Union[str, List[str], int, List[int], bytes, bytearray, None]:
         if self.p_type is DtbPropertyType.DtbPropNoValue:
             return None
         elif self.p_type is DtbPropertyType.DtbBytes:
-            return await self.resource.get_data()
+            return self.resource.get_data()
         elif self.p_type is DtbPropertyType.DtbInt:
-            return struct.unpack(">I", await self.resource.get_data())[0]
+            return struct.unpack(">I", self.resource.get_data())[0]
         elif self.p_type is DtbPropertyType.DtbIntList:
-            data = await self.resource.get_data()
+            data = self.resource.get_data()
             return [
                 struct.unpack(">I", i)[0] for i in [data[j : j + 4] for j in range(0, len(data), 4)]
             ]
         elif self.p_type is DtbPropertyType.DtbStr:
-            data = await self.resource.get_data()
+            data = self.resource.get_data()
             return data.decode("ascii")
         elif self.p_type is DtbPropertyType.DtbStrList:
-            data = await self.resource.get_data()
+            data = self.resource.get_data()
             return [s.decode("ascii") for s in data.split(b"\x00")]
         else:
             raise TypeError(f"Unsupported type {self.p_type} for property {self.name}")
@@ -227,20 +227,20 @@ class DeviceTreeBlobUnpacker(Unpacker[None]):
         DtbProperty,
     )
 
-    async def unpack(self, resource: Resource, config: ComponentConfig = None):
-        dtb_data = await resource.get_data()
-        dtb_view = await resource.view_as(DeviceTreeBlob)
+    def unpack(self, resource: Resource, config: ComponentConfig = None):
+        dtb_data = resource.get_data()
+        dtb_view = resource.view_as(DeviceTreeBlob)
         dtb = fdt.parse_dtb(dtb_data)
 
         # Create DtbHeader
-        await resource.create_child(
+        resource.create_child(
             tags=(DtbHeader,),
             data=dtb.header.export(),
         )
 
         # Create DtbEntry instances
         for dtb_entry in dtb.entries:
-            await resource.create_child_from_view(
+            resource.create_child_from_view(
                 DtbEntry(
                     address=dtb_entry["address"],
                     size=dtb_entry["size"],
@@ -249,7 +249,7 @@ class DeviceTreeBlobUnpacker(Unpacker[None]):
             )
 
         # Create root node
-        await resource.create_child_from_view(
+        resource.create_child_from_view(
             DtbNode(name=dtb.root.name),
             data=b"",
         )
@@ -257,13 +257,13 @@ class DeviceTreeBlobUnpacker(Unpacker[None]):
         # Create DtbNode and DtbProperty instances and structure by walking the DeviceTreeBlob
         for path, nodes, props in dtb.walk():
             # Get parent
-            parent_node = await dtb_view.get_node_by_path(path)
+            parent_node = dtb_view.get_node_by_path(path)
             for node in nodes:
-                await parent_node.resource.create_child_from_view(DtbNode(name=node.name), data=b"")
+                parent_node.resource.create_child_from_view(DtbNode(name=node.name), data=b"")
             for prop in props:
                 p_type, p_data = _prop_from_fdt(prop)
 
-                await parent_node.resource.create_child_from_view(
+                parent_node.resource.create_child_from_view(
                     DtbProperty(
                         name=prop.name,
                         p_type=p_type,
@@ -283,9 +283,9 @@ class DeviceTreeBlobPacker(Packer[None]):
     id = b"DeviceTreeBlobPacker"
     targets = (DeviceTreeBlob,)
 
-    async def pack(self, resource: Resource, config: ComponentConfig = None):
+    def pack(self, resource: Resource, config: ComponentConfig = None):
         header = fdt.Header()
-        header_view = await resource.get_only_descendant_as_view(
+        header_view = resource.get_only_descendant_as_view(
             v_type=DtbHeader, r_filter=ResourceFilter(tags=[DtbHeader])
         )
 
@@ -299,36 +299,36 @@ class DeviceTreeBlobPacker(Packer[None]):
 
         dtb.entries = [
             {"address": entry.address, "size": entry.size}
-            for entry in await resource.get_descendants_as_view(
+            for entry in resource.get_descendants_as_view(
                 v_type=DtbEntry, r_filter=ResourceFilter(tags=[DtbEntry])
             )
         ]
 
-        root_node_view = await resource.get_only_child_as_view(
+        root_node_view = resource.get_only_child_as_view(
             DtbNode, r_filter=ResourceFilter(tags=[DtbNode])
         )
-        dtb.root = fdt.Node(name=await root_node_view.get_path())
-        for prop in await root_node_view.resource.get_children_as_view(
+        dtb.root = fdt.Node(name=root_node_view.get_path())
+        for prop in root_node_view.resource.get_children_as_view(
             v_type=DtbProperty,
             r_filter=ResourceFilter(tags=[DtbProperty]),
             r_sort=ResourceSort(DtbProperty.DtbPropertyName),
         ):
-            dtb.add_item(await _prop_to_fdt(prop), await root_node_view.get_path())
-        for node in await root_node_view.resource.get_descendants_as_view(
+            dtb.add_item(_prop_to_fdt(prop), root_node_view.get_path())
+        for node in root_node_view.resource.get_descendants_as_view(
             v_type=DtbNode,
             r_filter=ResourceFilter(tags=[DtbNode]),
             r_sort=ResourceSort(DtbNode.DtbNodeName),
         ):
             # By default, add_item adds the missing nodes to complete the path of a previous node
-            if not dtb.exist_node(await node.get_path()):
-                dtb.add_item(fdt.Node(node.name), posixpath.dirname(await node.get_path()))
-            for prop in await node.resource.get_children_as_view(
+            if not dtb.exist_node(node.get_path()):
+                dtb.add_item(fdt.Node(node.name), posixpath.dirname(node.get_path()))
+            for prop in node.resource.get_children_as_view(
                 v_type=DtbProperty,
                 r_filter=ResourceFilter(tags=[DtbProperty]),
                 r_sort=ResourceSort(DtbProperty.DtbPropertyName),
             ):
-                dtb.add_item(await _prop_to_fdt(prop), await node.get_path())
-        original_size = await resource.get_data_length()
+                dtb.add_item(_prop_to_fdt(prop), node.get_path())
+        original_size = resource.get_data_length()
         resource.queue_patch(Range(0, original_size), dtb.to_dtb())
 
 
@@ -339,26 +339,26 @@ class DeviceTreeBlobIdentifier(Identifier[None]):
 
     targets = (GenericBinary,)
 
-    async def identify(self, resource: Resource, config: ComponentConfig = None) -> None:
+    def identify(self, resource: Resource, config: ComponentConfig = None) -> None:
         """
         Identify DTB files based on the first four bytes being "d00dfeed".
         """
-        data = await resource.get_data(Range(0, 4))
+        data = resource.get_data(Range(0, 4))
         if data == struct.pack("<I", DTB_MAGIC_SIGNATURE):
             resource.add_tag(DeviceTreeBlob)
 
 
-async def _prop_to_fdt(p: DtbProperty) -> fdt.items.Property:
+def _prop_to_fdt(p: DtbProperty) -> fdt.items.Property:
     """
     Generates an fdt.items.property corresponding to a DtbProperty.
     :param p:
     :return:
     """
-    value = await p.get_value()
+    value = p.get_value()
     if p.p_type is DtbPropertyType.DtbPropNoValue:
         return fdt.items.Property(name=p.name)
     elif p.p_type is DtbPropertyType.DtbBytes:
-        return fdt.items.PropBytes(name=p.name, data=await p.resource.get_data())
+        return fdt.items.PropBytes(name=p.name, data=p.resource.get_data())
     elif p.p_type is DtbPropertyType.DtbInt:
         return fdt.items.PropWords(p.name, value)
     elif p.p_type is DtbPropertyType.DtbIntList:

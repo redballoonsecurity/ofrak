@@ -184,19 +184,19 @@ class OfrakProject:
             )
         return p
 
-    async def init_project_binary(
+    def init_project_binary(
         self, binary_name: str, ofrak_context: OFRAKContext, script_name: Optional[str] = None
     ) -> Resource:
         if script_name is None:
             binary_metadata = self._get_binary(binary_name)
             script_name = binary_metadata.init_script
 
-        resource = await ofrak_context.create_root_resource_from_file(self.binary_path(binary_name))
+        resource = ofrak_context.create_root_resource_from_file(self.binary_path(binary_name))
         self.resource_ids.append(resource.get_id().hex())
         if script_name is not None:
             with open(self.script_path(script_name)) as f:
                 code = f.read()
-            await resource.run(RunScriptModifier, RunScriptModifierConfig(code))
+            resource.run(RunScriptModifier, RunScriptModifierConfig(code))
 
         return resource
 

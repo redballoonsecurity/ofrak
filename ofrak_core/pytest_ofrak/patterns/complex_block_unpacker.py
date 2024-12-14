@@ -336,11 +336,11 @@ class ComplexBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
     """
 
     @pytest.fixture(params=COMPLEX_BLOCK_UNPACKER_TEST_CASES, ids=lambda tc: tc.label)
-    async def unpack_verify_test_case(self, request) -> ComplexBlockUnpackerTestCase:
+    def unpack_verify_test_case(self, request) -> ComplexBlockUnpackerTestCase:
         return request.param
 
     @pytest.fixture
-    async def root_resource(
+    def root_resource(
         self,
         unpack_verify_test_case: ComplexBlockUnpackerTestCase,
         ofrak_context: OFRAKContext,
@@ -349,17 +349,17 @@ class ComplexBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
         asset_path = os.path.join(TEST_PATTERN_ASSETS_DIR, unpack_verify_test_case.binary_filename)
         with open(asset_path, "rb") as f:
             binary_data = f.read()
-        resource = await ofrak_context.create_root_resource(test_id, binary_data, tags=(File,))
+        resource = ofrak_context.create_root_resource(test_id, binary_data, tags=(File,))
         return resource
 
-    async def unpack(self, root_resource: Resource):
-        await root_resource.unpack_recursively(do_not_unpack=(BasicBlock,))
+    def unpack(self, root_resource: Resource):
+        root_resource.unpack_recursively(do_not_unpack=(BasicBlock,))
 
-    async def get_descendants_to_verify(self, unpacked_resource: Resource) -> Dict[int, Resource]:
-        elf = await unpacked_resource.view_as(Elf)
-        text_section = await elf.get_section_by_name(".text")
+    def get_descendants_to_verify(self, unpacked_resource: Resource) -> Dict[int, Resource]:
+        elf = unpacked_resource.view_as(Elf)
+        text_section = elf.get_section_by_name(".text")
         complex_blocks: List[ComplexBlock] = list(
-            await text_section.resource.get_descendants_as_view(
+            text_section.resource.get_descendants_as_view(
                 ComplexBlock,
                 r_filter=ResourceFilter.with_tags(ComplexBlock),
                 r_sort=ResourceSort(ComplexBlock.VirtualAddress),
@@ -367,10 +367,10 @@ class ComplexBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
         )
         return {cb.virtual_address: cb for cb in complex_blocks}
 
-    async def verify_descendant(
+    def verify_descendant(
         self, complex_block: ComplexBlock, specified_result: List[Union[BasicBlock, DataWord]]
     ):
-        basic_blocks = await complex_block.get_basic_blocks()
+        basic_blocks = complex_block.get_basic_blocks()
 
         # Check that the parent complex blocks are extracted as expected
         complex_block_start_address = complex_block.virtual_address
@@ -401,7 +401,7 @@ class ComplexBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
                 f"0x{complex_block_start_address:x}: got {basic_block}, expected {expected_basic_block}"
             )
 
-        data_words = await complex_block.get_data_words()
+        data_words = complex_block.get_data_words()
         unpacked_dw_vaddrs = {dw.virtual_address for dw in data_words}
         expected_dw_vaddrs = {
             expected_data_word.virtual_address

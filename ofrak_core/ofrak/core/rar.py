@@ -37,11 +37,11 @@ class RarUnpacker(Unpacker[None]):
     children = (File, Folder, SpecialFileType)
     external_dependencies = (UNAR,)
 
-    async def unpack(self, resource: Resource, config: ComponentConfig = None):
+    def unpack(self, resource: Resource, config: ComponentConfig = None):
         with tempfile.NamedTemporaryFile(
             suffix=".rar"
         ) as temp_archive, tempfile.TemporaryDirectory() as temp_dir:
-            temp_archive.write(await resource.get_data())
+            temp_archive.write(resource.get_data())
             temp_archive.flush()
 
             cmd = [
@@ -50,16 +50,16 @@ class RarUnpacker(Unpacker[None]):
                 "-no-recursion",
                 temp_archive.name,
             ]
-            proc = await asyncio.create_subprocess_exec(
+            proc = asyncio.create_subprocess_exec(
                 *cmd,
                 cwd=temp_dir,
             )
-            returncode = await proc.wait()
+            returncode = proc.wait()
             if proc.returncode:
                 raise CalledProcessError(returncode=returncode, cmd=cmd)
 
-            rar_view = await resource.view_as(RarArchive)
-            await rar_view.initialize_from_disk(temp_dir)
+            rar_view = resource.view_as(RarArchive)
+            rar_view.initialize_from_disk(temp_dir)
 
 
 MagicMimeIdentifier.register(RarArchive, "application/x-rar-compressed")

@@ -35,7 +35,7 @@ class RunScriptModifier(Modifier[RunScriptModifierConfig]):
 
     targets = ()
 
-    async def modify(self, resource: Resource, config: RunScriptModifierConfig) -> None:
+    def modify(self, resource: Resource, config: RunScriptModifierConfig) -> None:
         script_globals: Dict[str, Any] = dict()
         script_locals: Dict[str, Any] = dict()
         exec(config.code, script_globals, script_locals)
@@ -60,4 +60,4 @@ class RunScriptModifier(Modifier[RunScriptModifierConfig]):
         }
         full_kwargs.update(config.extra_args)
 
-        await script_main(**full_kwargs)
+        script_main(**full_kwargs)

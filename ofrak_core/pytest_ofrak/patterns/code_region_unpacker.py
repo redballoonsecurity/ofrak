@@ -134,11 +134,11 @@ class CodeRegionUnpackAndVerifyPattern(UnpackAndVerifyPattern):
     """
 
     @pytest.fixture(params=CODE_REGION_UNPACKER_TEST_CASES, ids=lambda tc: tc.label)
-    async def unpack_verify_test_case(self, request) -> CodeRegionUnpackerTestCase:
+    def unpack_verify_test_case(self, request) -> CodeRegionUnpackerTestCase:
         return request.param
 
     @pytest.fixture
-    async def root_resource(
+    def root_resource(
         self,
         unpack_verify_test_case: CodeRegionUnpackerTestCase,
         ofrak_context: OFRAKContext,
@@ -147,20 +147,20 @@ class CodeRegionUnpackAndVerifyPattern(UnpackAndVerifyPattern):
         asset_path = os.path.join(TEST_PATTERN_ASSETS_DIR, unpack_verify_test_case.binary_filename)
         with open(asset_path, "rb") as f:
             binary_data = f.read()
-        resource = await ofrak_context.create_root_resource(test_id, binary_data, tags=(File,))
+        resource = ofrak_context.create_root_resource(test_id, binary_data, tags=(File,))
         return resource
 
-    async def unpack(self, root_resource: Resource):
-        await root_resource.unpack_recursively(do_not_unpack=(BasicBlock,))
+    def unpack(self, root_resource: Resource):
+        root_resource.unpack_recursively(do_not_unpack=(BasicBlock,))
 
-    async def get_descendants_to_verify(self, unpacked_resource: Resource) -> Dict[int, Resource]:
-        program = await unpacked_resource.view_as(Program)
-        code_regions = await program.get_code_regions()
+    def get_descendants_to_verify(self, unpacked_resource: Resource) -> Dict[int, Resource]:
+        program = unpacked_resource.view_as(Program)
+        code_regions = program.get_code_regions()
 
         complex_blocks: List[ComplexBlock] = []
 
         for code_region in code_regions:
-            complex_blocks += await code_region.resource.get_descendants_as_view(
+            complex_blocks += code_region.resource.get_descendants_as_view(
                 ComplexBlock,
                 r_filter=ResourceFilter.with_tags(ComplexBlock),
                 r_sort=ResourceSort(ComplexBlock.VirtualAddress),
@@ -168,7 +168,7 @@ class CodeRegionUnpackAndVerifyPattern(UnpackAndVerifyPattern):
 
         return {cb.virtual_address: cb for cb in complex_blocks}
 
-    async def verify_descendant(self, complex_block: ComplexBlock, specified_result: List[int]):
+    def verify_descendant(self, complex_block: ComplexBlock, specified_result: List[int]):
         start_address = complex_block.virtual_address
         end_address = start_address + complex_block.size
         # Check literal pools

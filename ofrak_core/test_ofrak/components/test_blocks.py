@@ -26,52 +26,50 @@ class TestOfrakBlocks:
     Test that exercises ComplexBlock, BasicBlock, Instruction, DataWord resource view methods.
     """
 
-    async def test_get_assembly(self, frame_dummy_complex_block: ComplexBlock):
+    def test_get_assembly(self, frame_dummy_complex_block: ComplexBlock):
         """
         Test that ComplexBlock.get_assembly returns an assembly string.
         """
-        assembly = await frame_dummy_complex_block.get_assembly()
+        assembly = frame_dummy_complex_block.get_assembly()
         assert assembly == EXPECTED_ASSEMBLY
 
-    async def test_get_data_words(self, frame_dummy_complex_block: ComplexBlock):
+    def test_get_data_words(self, frame_dummy_complex_block: ComplexBlock):
         """
         Test that ComplexBlock.get_data_words returns the expected number of data words.
         """
-        data_words = list(await frame_dummy_complex_block.get_data_words())
+        data_words = list(frame_dummy_complex_block.get_data_words())
         assert len(data_words) == 2
 
     @pytest.fixture
-    async def frame_dummy_complex_block(self, ofrak_context: OFRAKContext) -> ComplexBlock:
+    def frame_dummy_complex_block(self, ofrak_context: OFRAKContext) -> ComplexBlock:
         """
         Unpack "arm_reloc_relocated.elf" and simulate unpacking the function "frame_dummy"
         recursively. This creates a tree of ComplexBlock, BasicBlock, Instruction, DataWords.
         """
         file_path = os.path.join(TEST_PATTERN_ASSETS_DIR, "arm_reloc_relocated.elf")
 
-        resource = await ofrak_context.create_root_resource_from_file(file_path)
-        await resource.unpack()
-        elf = await resource.view_as(Elf)
-        program_attrs = await elf.resource.analyze(ProgramAttributes)
-        text_section = await elf.get_section_by_name(".text")
+        resource = ofrak_context.create_root_resource_from_file(file_path)
+        resource.unpack()
+        elf = resource.view_as(Elf)
+        program_attrs = elf.resource.analyze(ProgramAttributes)
+        text_section = elf.get_section_by_name(".text")
         assert text_section is not None
 
-        await self._inflate_deflated_complex_block(
-            DEFLATED_FRAME_DUMMY, text_section, (program_attrs,)
-        )
-        return await elf.get_function_complex_block("frame_dummy")
+        self._inflate_deflated_complex_block(DEFLATED_FRAME_DUMMY, text_section, (program_attrs,))
+        return elf.get_function_complex_block("frame_dummy")
 
     @staticmethod
-    async def _inflate_deflated_complex_block(
+    def _inflate_deflated_complex_block(
         deflated_region: "DeflatedRegion", code_region: MemoryRegion, additional_attrs
     ):
-        cb = await code_region.create_child_region(deflated_region.region, additional_attrs)
-        cb_view = await cb.view_as(ComplexBlock)
+        cb = code_region.create_child_region(deflated_region.region, additional_attrs)
+        cb_view = cb.view_as(ComplexBlock)
         for child in deflated_region.children:
-            inflated_child = await cb_view.create_child_region(child.region, additional_attrs)
+            inflated_child = cb_view.create_child_region(child.region, additional_attrs)
             for grandchild in child.children:
                 assert isinstance(grandchild, MemoryRegion)
-                mem_view = await inflated_child.view_as(MemoryRegion)
-                _ = await mem_view.create_child_region(grandchild, additional_attrs)
+                mem_view = inflated_child.view_as(MemoryRegion)
+                _ = mem_view.create_child_region(grandchild, additional_attrs)
 
 
 @dataclass

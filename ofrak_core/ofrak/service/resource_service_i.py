@@ -80,7 +80,7 @@ class ResourceServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
     """
 
     @abstractmethod
-    async def create(self, resource: ResourceModel) -> ResourceModel:
+    def create(self, resource: ResourceModel) -> ResourceModel:
         """
         Add a [ResourceModel][ofrak.model.resource_model.ResourceModel] to the resource service
         database according to the given model. If the ``resource`` model says it has a parent,
@@ -97,7 +97,7 @@ class ResourceServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def get_root_resources(self) -> Iterable[ResourceModel]:
+    def get_root_resources(self) -> Iterable[ResourceModel]:
         """
         Get all of the root resources known to this resource service. Any resource created
         without a parent will be returned by this method.
@@ -107,7 +107,7 @@ class ResourceServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def verify_ids_exist(self, resource_ids: Iterable[bytes]) -> Iterable[bool]:
+    def verify_ids_exist(self, resource_ids: Iterable[bytes]) -> Iterable[bool]:
         """
         Check if a number of resource IDs exist in the resource store. This is useful for
         filtering out IDs of resources which have been deleted.
@@ -119,7 +119,7 @@ class ResourceServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def get_by_data_ids(self, data_ids: Iterable[bytes]) -> Iterable[ResourceModel]:
+    def get_by_data_ids(self, data_ids: Iterable[bytes]) -> Iterable[ResourceModel]:
         """
         Get the resource models with a given sequence of data IDs.
 
@@ -133,7 +133,7 @@ class ResourceServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def get_by_ids(self, resource_ids: Iterable[bytes]) -> Iterable[ResourceModel]:
+    def get_by_ids(self, resource_ids: Iterable[bytes]) -> Iterable[ResourceModel]:
         """
         Get the resource models with a given sequence of resource IDs.
 
@@ -147,7 +147,7 @@ class ResourceServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def get_by_id(self, resource_id: bytes) -> ResourceModel:
+    def get_by_id(self, resource_id: bytes) -> ResourceModel:
         """
         Get the resource model with a given resource ID.
 
@@ -160,7 +160,7 @@ class ResourceServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def get_depths(self, resource_ids: Iterable[bytes]) -> Iterable[int]:
+    def get_depths(self, resource_ids: Iterable[bytes]) -> Iterable[int]:
         """
         Get the depth of each resource in `resource_ids`.
 
@@ -174,7 +174,7 @@ class ResourceServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def get_ancestors_by_id(
+    def get_ancestors_by_id(
         self,
         resource_id: bytes,
         max_count: int = -1,
@@ -201,7 +201,7 @@ class ResourceServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def get_descendants_by_id(
+    def get_descendants_by_id(
         self,
         resource_id: bytes,
         max_count: int = -1,
@@ -237,7 +237,7 @@ class ResourceServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def get_siblings_by_id(
+    def get_siblings_by_id(
         self,
         resource_id: bytes,
         max_count: int = -1,
@@ -271,7 +271,7 @@ class ResourceServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def update(self, resource_diff: ResourceModelDiff) -> ResourceModel:
+    def update(self, resource_diff: ResourceModelDiff) -> ResourceModel:
         """
         Modify a stored resource model according to the differences in the given diff object.
 
@@ -286,9 +286,7 @@ class ResourceServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def update_many(
-        self, resource_diffs: Iterable[ResourceModelDiff]
-    ) -> Iterable[ResourceModel]:
+    def update_many(self, resource_diffs: Iterable[ResourceModelDiff]) -> Iterable[ResourceModel]:
         """
         Modify a stored resource model according to the differences in the given diff object.
 
@@ -303,7 +301,7 @@ class ResourceServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def rebase_resource(self, resource_id: bytes, new_parent_id: bytes):
+    def rebase_resource(self, resource_id: bytes, new_parent_id: bytes):
         """
         Move a resource which was a child to instead be a child of a different resource.
 
@@ -316,7 +314,7 @@ class ResourceServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def delete_resource(self, resource_id: bytes) -> Iterable[ResourceModel]:
+    def delete_resource(self, resource_id: bytes) -> Iterable[ResourceModel]:
         """
         Delete a resource by ID and all of its descendants, removing them from the database. If no
         resource for the given ID is found, it is assumed the resource has already been deleted
@@ -329,7 +327,7 @@ class ResourceServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def delete_resources(self, resource_ids: Iterable[bytes]) -> Iterable[ResourceModel]:
+    def delete_resources(self, resource_ids: Iterable[bytes]) -> Iterable[ResourceModel]:
         """
         Delete multiple resources by ID and all of their descendants, removing them from the
         database. If no resource for any given ID is found, it is assumed the resource has already

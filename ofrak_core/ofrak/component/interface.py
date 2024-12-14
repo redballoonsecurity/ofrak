@@ -37,7 +37,7 @@ class ComponentInterface(Generic[CC], ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    async def run(
+    def run(
         self,
         job_id: bytes,
         resource_id: bytes,

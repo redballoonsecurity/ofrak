@@ -57,7 +57,7 @@ class ElfUnpacker(Unpacker[None]):
         CodeRegion,
     )
 
-    async def unpack(self, resource: Resource, config=None):
+    def unpack(self, resource: Resource, config=None):
         """
         Unpack ELF headers and sections / segments into the OFRAK resource tree.
 
@@ -92,16 +92,14 @@ class ElfUnpacker(Unpacker[None]):
            [+] CodeRegion (if executable)     LOAD-able ElfSegments will populate the body of the resource tree instead)
         """
 
-        e_basic_header_r = await resource.create_child(
-            tags=(ElfBasicHeader,), data_range=Range(0, 16)
-        )
-        e_basic_header = await e_basic_header_r.view_as(ElfBasicHeader)
+        e_basic_header_r = resource.create_child(tags=(ElfBasicHeader,), data_range=Range(0, 16))
+        e_basic_header = e_basic_header_r.view_as(ElfBasicHeader)
 
         e_header_range = Range.from_size(
             16, 36 if e_basic_header.get_bitwidth() is BitWidth.BIT_32 else 48
         )
-        e_header_r = await resource.create_child(tags=(ElfHeader,), data_range=e_header_range)
-        e_header = await e_header_r.view_as(ElfHeader)
+        e_header_r = resource.create_child(tags=(ElfHeader,), data_range=e_header_range)
+        e_header = e_header_r.view_as(ElfHeader)
 
         ###########################################################################################
         ### Unpack section headers and associated sections
@@ -113,12 +111,12 @@ class ElfUnpacker(Unpacker[None]):
         for index in range(e_header.e_shnum):
             e_section_header_offset = e_header.e_shoff + index * e_header.e_shentsize
             e_section_header_range = Range.from_size(e_section_header_offset, e_header.e_shentsize)
-            e_section_header_r = await resource.create_child(
+            e_section_header_r = resource.create_child(
                 tags=(ElfSectionHeader,),
                 data_range=e_section_header_range,
                 attributes=(AttributesType[ElfSectionStructure](index),),
             )
-            e_section_header = await e_section_header_r.view_as(ElfSectionHeader)
+            e_section_header = e_section_header_r.view_as(ElfSectionHeader)
 
             e_section_offset = e_section_header.sh_offset
             e_section_range = Range.from_size(e_section_offset, e_section_header.sh_size)
@@ -129,7 +127,7 @@ class ElfUnpacker(Unpacker[None]):
             if e_section_header.get_type() is ElfSectionType.NOBITS:
                 # NOBITS sections never have data in the file; their sh_size refers to in-mem size
                 opt_e_section_range = None
-            e_section_r = await resource.create_child(
+            e_section_r = resource.create_child(
                 tags=(ElfSection,),
                 data_range=opt_e_section_range,
                 attributes=(AttributesType[ElfSectionStructure](index),),
@@ -165,13 +163,13 @@ class ElfUnpacker(Unpacker[None]):
             e_program_header_offset = e_header.e_phoff + (index * e_header.e_phentsize)
             e_program_header_range = Range.from_size(e_program_header_offset, e_header.e_phentsize)
 
-            e_program_header_r = await resource.create_child(
+            e_program_header_r = resource.create_child(
                 tags=(ElfProgramHeader,),
                 data_range=e_program_header_range,
                 attributes=(AttributesType[ElfSegmentStructure](index),),
             )
 
-            e_program_header = await e_program_header_r.view_as(ElfProgramHeader)
+            e_program_header = e_program_header_r.view_as(ElfProgramHeader)
 
             # Don't unpack loadable segments if the section unpacker had already unpacked any CodeRegions
             if code_region_present:
@@ -190,7 +188,7 @@ class ElfUnpacker(Unpacker[None]):
                 # since there may be overlapping regions due to flattening non-flat memory structures derived from the
                 # binary-under-analysis. We should deprecate `data_after` and `data_before` in favor of a structure
                 # that can hold multiple memory views (virtual, physical, file, etc.) of an analyzed binary.
-                e_segment_r = await resource.create_child(
+                e_segment_r = resource.create_child(
                     tags=(ElfSegment,),
                     data_range=opt_e_segment_range,
                     attributes=(AttributesType[ElfSegmentStructure](index),),
@@ -200,7 +198,7 @@ class ElfUnpacker(Unpacker[None]):
                 memory_permissions = e_program_header.get_memory_permissions()
                 if memory_permissions & MemoryPermissions.R is MemoryPermissions.R:
                     e_segment_r.add_tag(CodeRegion)
-                await e_segment_r.save()
+                e_segment_r.save()
 
 
 class ElfDynamicSectionUnpacker(Unpacker[None]):
@@ -208,12 +206,12 @@ class ElfDynamicSectionUnpacker(Unpacker[None]):
     targets = (ElfDynamicSection,)
     children = (ElfDynamicEntry,)
 
-    async def unpack(self, resource: Resource, config=None):
-        e_section = await resource.view_as(ElfDynamicSection)
-        elf_r = await e_section.get_elf()
-        e_basic_header = await elf_r.get_basic_header()
+    def unpack(self, resource: Resource, config=None):
+        e_section = resource.view_as(ElfDynamicSection)
+        elf_r = e_section.get_elf()
+        e_basic_header = elf_r.get_basic_header()
         dyn_entry_size = 16 if e_basic_header.get_bitwidth() is BitWidth.BIT_64 else 8
-        await make_children_helper(resource, ElfDynamicEntry, dyn_entry_size, None)
+        make_children_helper(resource, ElfDynamicEntry, dyn_entry_size, None)
 
 
 class ElfRelaUnpacker(Unpacker[None]):
@@ -221,12 +219,12 @@ class ElfRelaUnpacker(Unpacker[None]):
     targets = (ElfRelaSection,)
     children = (ElfRelaEntry,)
 
-    async def unpack(self, resource: Resource, config=None):
-        e_section = await resource.view_as(ElfRelaSection)
-        elf_r = await e_section.get_elf()
-        e_basic_header = await elf_r.get_basic_header()
+    def unpack(self, resource: Resource, config=None):
+        e_section = resource.view_as(ElfRelaSection)
+        elf_r = e_section.get_elf()
+        e_basic_header = elf_r.get_basic_header()
         rela_size = 24 if e_basic_header.get_bitwidth() is BitWidth.BIT_64 else 12
-        await make_children_helper(resource, ElfRelaEntry, rela_size, None)
+        make_children_helper(resource, ElfRelaEntry, rela_size, None)
 
 
 class ElfSymbolUnpacker(Unpacker[None]):
@@ -234,14 +232,12 @@ class ElfSymbolUnpacker(Unpacker[None]):
     targets = (ElfSymbolSection,)
     children = (ElfSymbol,)
 
-    async def unpack(self, resource: Resource, config=None):
-        e_section = await resource.view_as(ElfSymbolSection)
-        elf_r = await e_section.get_elf()
-        e_basic_header = await elf_r.get_basic_header()
+    def unpack(self, resource: Resource, config=None):
+        e_section = resource.view_as(ElfSymbolSection)
+        elf_r = e_section.get_elf()
+        e_basic_header = elf_r.get_basic_header()
         symbol_size = 16 if e_basic_header.get_bitwidth() is BitWidth.BIT_32 else 24
-        await make_children_helper(
-            resource, ElfSymbol, symbol_size, AttributesType[ElfSymbolStructure]
-        )
+        make_children_helper(resource, ElfSymbol, symbol_size, AttributesType[ElfSymbolStructure])
 
 
 class ElfPointerArraySectionUnpacker(Unpacker[None]):
@@ -249,20 +245,20 @@ class ElfPointerArraySectionUnpacker(Unpacker[None]):
     targets = (ElfPointerArraySection,)
     children = (ElfVirtualAddress,)
 
-    async def unpack(self, resource: Resource, config=None):
-        elf_r = await resource.get_only_ancestor_as_view(Elf, ResourceFilter.with_tags(Elf))
-        e_basic_header = await elf_r.get_basic_header()
+    def unpack(self, resource: Resource, config=None):
+        elf_r = resource.get_only_ancestor_as_view(Elf, ResourceFilter.with_tags(Elf))
+        e_basic_header = elf_r.get_basic_header()
         addr_size = 4 if e_basic_header.get_bitwidth() is BitWidth.BIT_32 else 8
-        await make_children_helper(resource, ElfVirtualAddress, addr_size, None)
+        make_children_helper(resource, ElfVirtualAddress, addr_size, None)
 
 
-async def make_children_helper(
+def make_children_helper(
     resource: Resource,
     entry_type: ResourceTag,
     entry_size: int,
     structure_index_type: Optional[Type[ResourceAttributes]],
 ) -> None:
-    elf_section_size = await resource.get_data_length()
+    elf_section_size = resource.get_data_length()
     create_child_tasks = []
     for i, offset in enumerate(range(0, elf_section_size, entry_size)):
         if structure_index_type is not None:
@@ -276,4 +272,4 @@ async def make_children_helper(
                 attributes=attrs,
             )
         )
-    await asyncio.gather(*create_child_tasks)
+    asyncio.gather(*create_child_tasks)

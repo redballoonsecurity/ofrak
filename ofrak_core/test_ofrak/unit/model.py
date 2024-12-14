@@ -18,7 +18,7 @@ from ofrak.resource import Resource
 
 class IFlattenedResource(ABC):
     @abstractmethod
-    async def inflate(
+    def inflate(
         self,
         ofrak: OFRAKContext,
         parent: Optional[Resource] = None,
@@ -61,22 +61,22 @@ class FlattenedResource(IFlattenedResource):
                 self.data: Union[bytes, Range, None] = b"\x00" * size
         self.attributes = attributes
 
-    async def inflate(
+    def inflate(
         self,
         ofrak: OFRAKContext,
         parent: Optional[Resource] = None,
     ) -> Tuple[Resource, Dict[str, bytes]]:
         if parent:
             if type(self.data) is bytes:
-                new_r = await parent.create_child(self.tags, self.attributes, data=self.data)
+                new_r = parent.create_child(self.tags, self.attributes, data=self.data)
             elif type(self.data) is Range:
-                new_r = await parent.create_child(self.tags, self.attributes, data_range=self.data)
+                new_r = parent.create_child(self.tags, self.attributes, data_range=self.data)
             else:
                 raise TypeError(f"Type of data must be bytes or Range (got {type(self.data)})")
 
         else:
             if type(self.data) is bytes:
-                new_r = await ofrak.create_root_resource("test_resource", self.data)
+                new_r = ofrak.create_root_resource("test_resource", self.data)
                 for attr in self.attributes:
                     new_r.add_attributes(attr)
 
@@ -91,10 +91,10 @@ class FlattenedResource(IFlattenedResource):
         if self.mark:
             marked_resources[self.mark] = new_r.get_id()
 
-        await new_r.save()
+        new_r.save()
 
         for child in self.children:
-            _, child_marked_resources = await child.inflate(ofrak, new_r)
+            _, child_marked_resources = child.inflate(ofrak, new_r)
 
             marked_resources.update(child_marked_resources)
 
@@ -143,7 +143,7 @@ class FlattenedCodeRegion(IFlattenedResource):
 
         return combined_data
 
-    async def inflate(
+    def inflate(
         self,
         ofrak: OFRAKContext,
         parent: Optional[Resource] = None,
@@ -152,7 +152,7 @@ class FlattenedCodeRegion(IFlattenedResource):
             data = self.get_combined_data()
             size = len(data)
         else:
-            _data = await parent.get_data_range_within_parent()
+            _data = parent.get_data_range_within_parent()
             data = _data.translate(-_data.start)
             size = data.length()
 
@@ -169,7 +169,7 @@ class FlattenedCodeRegion(IFlattenedResource):
             mark=self.mark,
         )
 
-        inflated_code_r, marked_resource_ids = await flattened_code_region.inflate(ofrak, parent)
+        inflated_code_r, marked_resource_ids = flattened_code_region.inflate(ofrak, parent)
 
         return inflated_code_r, marked_resource_ids
 
@@ -179,7 +179,7 @@ class FlattenedProgram(IFlattenedResource):
     program_attributes: ProgramAttributes
     code_region: FlattenedCodeRegion
 
-    async def inflate(
+    def inflate(
         self,
         ofrak: OFRAKContext,
         parent: Optional[Resource] = None,
@@ -193,6 +193,6 @@ class FlattenedProgram(IFlattenedResource):
             cr_data,
         )
 
-        inflated_program_r, marked_resource_ids = await flattened_program.inflate(ofrak, parent)
+        inflated_program_r, marked_resource_ids = flattened_program.inflate(ofrak, parent)
 
         return inflated_program_r, marked_resource_ids

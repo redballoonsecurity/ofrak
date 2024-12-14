@@ -26,9 +26,9 @@ class PIGZInstalled:
     _pigz_installed: Optional[bool] = None
 
     @staticmethod
-    async def is_pigz_installed() -> bool:
+    def is_pigz_installed() -> bool:
         if PIGZInstalled._pigz_installed is None:
-            PIGZInstalled._pigz_installed = await PIGZ.is_tool_installed()
+            PIGZInstalled._pigz_installed = PIGZ.is_tool_installed()
         return PIGZInstalled._pigz_installed
 
 
@@ -37,8 +37,8 @@ class GzipData(GenericBinary):
     A gzip binary blob.
     """
 
-    async def get_file(self) -> Resource:
-        return await self.resource.get_only_child()
+    def get_file(self) -> Resource:
+        return self.resource.get_only_child()
 
 
 class GzipUnpacker(Unpacker[None]):
@@ -51,13 +51,13 @@ class GzipUnpacker(Unpacker[None]):
     children = (GenericBinary,)
     external_dependencies = (PIGZ,)
 
-    async def unpack(self, resource: Resource, config=None):
-        data = await resource.get_data()
-        unpacked_data = await self.unpack_with_zlib_module(data)
-        return await resource.create_child(tags=(GenericBinary,), data=unpacked_data)
+    def unpack(self, resource: Resource, config=None):
+        data = resource.get_data()
+        unpacked_data = self.unpack_with_zlib_module(data)
+        return resource.create_child(tags=(GenericBinary,), data=unpacked_data)
 
     @staticmethod
-    async def unpack_with_zlib_module(data: bytes) -> bytes:
+    def unpack_with_zlib_module(data: bytes) -> bytes:
         # We use zlib.decompressobj instead of the gzip module to decompress
         # because of a bug that causes gzip to raise BadGzipFile if there's
         # trailing garbage after a compressed file instead of correctly ignoring it
@@ -88,28 +88,28 @@ class GzipPacker(Packer[None]):
 
     targets = (GzipData,)
 
-    async def pack(self, resource: Resource, config=None):
-        gzip_view = await resource.view_as(GzipData)
-        gzip_child_r = await gzip_view.get_file()
-        data = await gzip_child_r.get_data()
+    def pack(self, resource: Resource, config=None):
+        gzip_view = resource.view_as(GzipData)
+        gzip_child_r = gzip_view.get_file()
+        data = gzip_child_r.get_data()
 
-        if len(data) >= 1024 * 1024 and await PIGZInstalled.is_pigz_installed():
-            packed_data = await self.pack_with_pigz(data)
+        if len(data) >= 1024 * 1024 and PIGZInstalled.is_pigz_installed():
+            packed_data = self.pack_with_pigz(data)
         else:
-            packed_data = await self.pack_with_zlib_module(data)
+            packed_data = self.pack_with_zlib_module(data)
 
-        original_gzip_size = await gzip_view.resource.get_data_length()
+        original_gzip_size = gzip_view.resource.get_data_length()
         resource.queue_patch(Range(0, original_gzip_size), data=packed_data)
 
     @staticmethod
-    async def pack_with_zlib_module(data: bytes) -> bytes:
+    def pack_with_zlib_module(data: bytes) -> bytes:
         compressor = zlib.compressobj(wbits=16 + zlib.MAX_WBITS)
         result = compressor.compress(data)
         result += compressor.flush()
         return result
 
     @staticmethod
-    async def pack_with_pigz(data: bytes) -> bytes:
+    def pack_with_pigz(data: bytes) -> bytes:
         with tempfile.NamedTemporaryFile() as uncompressed_file:
             uncompressed_file.write(data)
             uncompressed_file.flush()
@@ -119,12 +119,12 @@ class GzipPacker(Packer[None]):
                 "-c",
                 uncompressed_file.name,
             ]
-            proc = await asyncio.create_subprocess_exec(
+            proc = asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
-            stdout, stderr = await proc.communicate()
+            stdout, stderr = proc.communicate()
             if proc.returncode:
                 raise CalledProcessError(returncode=proc.returncode, stderr=stderr, cmd=cmd)
 

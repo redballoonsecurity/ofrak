@@ -22,8 +22,8 @@ class TestXzUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
 
         self._test_file = lz2_path
 
-    async def verify(self, repacked_root_resource: Resource):
-        patched_data = await repacked_root_resource.get_data()
+    def verify(self, repacked_root_resource: Resource):
+        patched_data = repacked_root_resource.get_data()
         patched_decompressed_data = lzma.decompress(patched_data, lzma.FORMAT_XZ)
 
         assert patched_decompressed_data == self.EXPECTED_REPACKED_DATA
@@ -42,8 +42,8 @@ class TestLzmaUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
 
         self._test_file = lz1_path
 
-    async def verify(self, repacked_root_resource: Resource):
-        patched_data = await repacked_root_resource.get_data()
+    def verify(self, repacked_root_resource: Resource):
+        patched_data = repacked_root_resource.get_data()
         patched_decompressed_data = lzma.decompress(patched_data, lzma.FORMAT_ALONE)
 
         assert patched_decompressed_data == self.EXPECTED_REPACKED_DATA

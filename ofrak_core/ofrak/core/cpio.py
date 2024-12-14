@@ -56,8 +56,8 @@ class CpioFilesystemAnalyzer(Analyzer[None, CpioFilesystem]):
     targets = (CpioFilesystem,)
     outputs = (CpioFilesystem,)
 
-    async def analyze(self, resource: Resource, config=None) -> CpioFilesystem:
-        _magic = await resource.analyze(Magic)
+    def analyze(self, resource: Resource, config=None) -> CpioFilesystem:
+        _magic = resource.analyze(Magic)
         magic_description = _magic.descriptor
         if magic_description.startswith("ASCII cpio archive (SVR4 with no CRC)"):
             archive_type = CpioArchiveType.NEW_ASCII
@@ -84,25 +84,25 @@ class CpioUnpacker(Unpacker[None]):
     children = (File, Folder, SpecialFileType)
     external_dependencies = (CPIO_TOOL,)
 
-    async def unpack(self, resource: Resource, config=None):
-        cpio_v = await resource.view_as(CpioFilesystem)
-        resource_data = await cpio_v.resource.get_data()
+    def unpack(self, resource: Resource, config=None):
+        cpio_v = resource.view_as(CpioFilesystem)
+        resource_data = cpio_v.resource.get_data()
         with tempfile.TemporaryDirectory() as temp_flush_dir:
             cmd = [
                 "cpio",
                 "-id",
             ]
-            proc = await asyncio.create_subprocess_exec(
+            proc = asyncio.create_subprocess_exec(
                 *cmd,
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 cwd=temp_flush_dir,
             )
-            await proc.communicate(input=resource_data)
+            proc.communicate(input=resource_data)
             if proc.returncode:
                 raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
-            await cpio_v.initialize_from_disk(temp_flush_dir)
+            cpio_v.initialize_from_disk(temp_flush_dir)
 
 
 class CpioPacker(Packer[None]):
@@ -113,21 +113,21 @@ class CpioPacker(Packer[None]):
     targets = (CpioFilesystem,)
     external_dependencies = (CPIO_TOOL,)
 
-    async def pack(self, resource: Resource, config=None):
-        cpio_v: CpioFilesystem = await resource.view_as(CpioFilesystem)
-        temp_flush_dir = await cpio_v.flush_to_disk()
+    def pack(self, resource: Resource, config=None):
+        cpio_v: CpioFilesystem = resource.view_as(CpioFilesystem)
+        temp_flush_dir = cpio_v.flush_to_disk()
         cpio_format = cpio_v.archive_type.value
         list_files_cmd = [
             "find",
             "-print",
         ]
-        list_files_proc = await asyncio.create_subprocess_exec(
+        list_files_proc = asyncio.create_subprocess_exec(
             *list_files_cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             cwd=temp_flush_dir,
         )
-        list_files_list, stderr = await list_files_proc.communicate()
+        list_files_list, stderr = list_files_proc.communicate()
         if list_files_proc.returncode:
             raise CalledProcessError(returncode=list_files_proc.returncode, cmd=list_files_cmd)
 
@@ -136,18 +136,18 @@ class CpioPacker(Packer[None]):
             "-o",
             f"--format={cpio_format}",
         ]
-        cpio_pack_proc = await asyncio.create_subprocess_exec(
+        cpio_pack_proc = asyncio.create_subprocess_exec(
             *cpio_pack_cmd,
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             cwd=temp_flush_dir,
         )
-        cpio_pack_output, stderr = await cpio_pack_proc.communicate(input=list_files_list)
+        cpio_pack_output, stderr = cpio_pack_proc.communicate(input=list_files_list)
         if cpio_pack_proc.returncode:
             raise CalledProcessError(returncode=cpio_pack_proc.returncode, cmd=cpio_pack_cmd)
         # Passing in the original range effectively replaces the original data with the new data
-        resource.queue_patch(Range(0, await resource.get_data_length()), cpio_pack_output)
+        resource.queue_patch(Range(0, resource.get_data_length()), cpio_pack_output)
 
 
 MagicMimeIdentifier.register(CpioFilesystem, "application/x-cpio")

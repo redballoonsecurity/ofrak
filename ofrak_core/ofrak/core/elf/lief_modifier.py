@@ -37,8 +37,8 @@ class LiefAddSegmentModifier(Modifier[LiefAddSegmentConfig]):
     id = b"LiefAddSegmentModifier"
     targets = (Elf,)
 
-    async def modify(self, resource: Resource, config: LiefAddSegmentConfig) -> None:
-        binary: lief.ELF.Binary = lief.parse(await resource.get_data())
+    def modify(self, resource: Resource, config: LiefAddSegmentConfig) -> None:
+        binary: lief.ELF.Binary = lief.parse(resource.get_data())
 
         segment = lief.ELF.Segment()
         segment.type = lief.ELF.SEGMENT_TYPES.LOAD
@@ -72,7 +72,7 @@ class LiefAddSegmentModifier(Modifier[LiefAddSegmentConfig]):
             with open(temp_file.name, "rb") as f_handle:
                 new_data = f_handle.read()
         # replace all old content (old range) with new content from Lief
-        resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
+        resource.queue_patch(Range(0, resource.get_data_length()), new_data)
 
 
 @dataclass
@@ -85,8 +85,8 @@ class LiefAddSectionModifierConfig(ComponentConfig):
 class LiefAddSectionModifer(Modifier[LiefAddSectionModifierConfig]):
     targets = (Elf,)
 
-    async def modify(self, resource: Resource, config: LiefAddSectionModifierConfig):
-        binary: lief.ELF.Binary = lief.parse(await resource.get_data())
+    def modify(self, resource: Resource, config: LiefAddSectionModifierConfig):
+        binary: lief.ELF.Binary = lief.parse(resource.get_data())
         section: lief.ELF.Section = lief.ELF.Section()
         section.name = config.name
         section.content = list(config.content)
@@ -99,7 +99,7 @@ class LiefAddSectionModifer(Modifier[LiefAddSectionModifierConfig]):
             with open(temp_file.name, "rb") as f_handle:
                 new_data = f_handle.read()
         # replace all old content (old range) with new content from Lief
-        resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
+        resource.queue_patch(Range(0, resource.get_data_length()), new_data)
 
 
 @dataclass
@@ -110,8 +110,8 @@ class LiefRemoveSectionModifierConfig(ComponentConfig):
 class LiefRemoveSectionModifier(Modifier[LiefRemoveSectionModifierConfig]):
     targets = (Elf,)
 
-    async def modify(self, resource: Resource, config: LiefRemoveSectionModifierConfig):
-        binary: lief.ELF.Binary = lief.parse(await resource.get_data())
+    def modify(self, resource: Resource, config: LiefRemoveSectionModifierConfig):
+        binary: lief.ELF.Binary = lief.parse(resource.get_data())
         section: lief.ELF.Section = binary.get_section(config.name)
         if section is None:
             raise AttributeError(f"No section with name {config.name}")
@@ -123,4 +123,4 @@ class LiefRemoveSectionModifier(Modifier[LiefRemoveSectionModifierConfig]):
             with open(temp_file.name, "rb") as f_handle:
                 new_data = f_handle.read()
         # replace all old content (old range) with new content from Lief
-        resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
+        resource.queue_patch(Range(0, resource.get_data_length()), new_data)

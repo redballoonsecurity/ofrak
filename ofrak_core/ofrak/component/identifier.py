@@ -19,7 +19,7 @@ class Identifier(AbstractComponent[CC], ABC):
     """
 
     @abstractmethod
-    async def identify(self, resource: Resource, config: CC) -> None:
+    def identify(self, resource: Resource, config: CC) -> None:
         """
         Perform identification on the given resource.
 
@@ -38,7 +38,7 @@ class Identifier(AbstractComponent[CC], ABC):
     def get_default_config(cls) -> Optional[CC]:
         return cls._get_default_config_from_method(cls.identify)
 
-    async def _run(self, resource: Resource, config: CC):
+    def _run(self, resource: Resource, config: CC):
         if resource.has_component_run(self.get_id(), self.get_version()):
             LOGGER.debug(
                 f"The {self.get_id().decode()} identifier has already been run on resource"
@@ -54,5 +54,5 @@ class Identifier(AbstractComponent[CC], ABC):
                 f"implemented yet."
             )
             raise NotImplementedError()
-        await self.identify(resource, config)
+        self.identify(resource, config)
         resource.add_component(self.get_id(), self.get_version())

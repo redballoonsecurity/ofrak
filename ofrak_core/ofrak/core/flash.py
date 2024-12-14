@@ -299,14 +299,14 @@ class FlashResourceUnpacker(Unpacker[None]):
     targets = (FlashResource,)
     children = (FlashOobResource,)
 
-    async def unpack(self, resource: Resource, config: ComponentConfig = None):
+    def unpack(self, resource: Resource, config: ComponentConfig = None):
         try:
             flash_attr = resource.get_attributes(FlashAttributes)
         except NotFoundError:
             raise UnpackerError("Tried creating FlashOobResource without FlashAttributes")
 
         start_index = 0
-        data = await resource.get_data()
+        data = resource.get_data()
         data_len = len(data)
 
         if flash_attr.ecc_attributes is not None:
@@ -397,7 +397,7 @@ class FlashResourceUnpacker(Unpacker[None]):
                 )
 
         # Create the overarching resource
-        return await resource.create_child(
+        return resource.create_child(
             tags=(FlashOobResource,),
             data_range=Range(start_index, end_offset),
             attributes=[
@@ -417,7 +417,7 @@ class FlashOobResourceUnpacker(Unpacker[None]):
         FlashLogicalEccResource,
     )
 
-    async def unpack(self, resource: Resource, config=None):
+    def unpack(self, resource: Resource, config=None):
         try:
             flash_attr = resource.get_attributes(FlashAttributes)
         except NotFoundError:
@@ -426,7 +426,7 @@ class FlashOobResourceUnpacker(Unpacker[None]):
 
         oob_resource = resource
         # Parent FlashEccResource is created, redefine data to limited scope
-        data = await oob_resource.get_data()
+        data = oob_resource.get_data()
         data_len = len(data)
 
         # Now add children blocks until we reach the tail block
@@ -444,7 +444,7 @@ class FlashOobResourceUnpacker(Unpacker[None]):
                 )
                 break
             block_range = Range(offset, block_end_offset)
-            block_data = await oob_resource.get_data(range=block_range)
+            block_data = oob_resource.get_data(range=block_range)
 
             # Iterate through every field in block, dealing with ECC and DATA
             block_ecc_range = None
@@ -497,7 +497,7 @@ class FlashOobResourceUnpacker(Unpacker[None]):
             offset += block_size
 
         # Add all block data to logical resource for recursive unpacking
-        await oob_resource.create_child(
+        oob_resource.create_child(
             tags=(FlashLogicalDataResource,),
             data=b"".join(only_data) if only_data else data,
             attributes=[
@@ -505,7 +505,7 @@ class FlashOobResourceUnpacker(Unpacker[None]):
             ],
         )
         if ecc_attr is not None:
-            await oob_resource.create_child(
+            oob_resource.create_child(
                 tags=(FlashLogicalEccResource,),
                 data=b"".join(only_ecc),
                 attributes=[
@@ -525,17 +525,17 @@ class FlashResourcePacker(Packer[None]):
     id = b"FlashResourcePacker"
     targets = (FlashResource,)
 
-    async def pack(self, resource: Resource, config=None):
+    def pack(self, resource: Resource, config=None):
         # We want to overwrite ourselves with just the repacked version
         # TODO: Add supoort for multiple FlashOobResource in a dump.
-        packed_child = await resource.get_only_child(
+        packed_child = resource.get_only_child(
             r_filter=ResourceFilter.with_tags(
                 FlashOobResource,
             ),
         )
         if packed_child is not None:
-            patch_data = await packed_child.get_data()
-            original_size = await resource.get_data_length()
+            patch_data = packed_child.get_data()
+            original_size = resource.get_data_length()
             resource.queue_patch(Range(0, original_size), patch_data)
 
 
@@ -547,16 +547,16 @@ class FlashOobResourcePacker(Packer[None]):
     id = b"FlashOobResourcePacker"
     targets = (FlashOobResource,)
 
-    async def pack(self, resource: Resource, config=None):
+    def pack(self, resource: Resource, config=None):
         # We want to overwrite ourselves with just the repacked version
-        packed_child = await resource.get_only_child(
+        packed_child = resource.get_only_child(
             r_filter=ResourceFilter.with_tags(
                 FlashOobResource,
             ),
         )
         if packed_child is not None:
-            patch_data = await packed_child.get_data()
-            original_size = await resource.get_data_length()
+            patch_data = packed_child.get_data()
+            original_size = resource.get_data_length()
             resource.queue_patch(Range(0, original_size), patch_data)
 
 
@@ -569,12 +569,12 @@ class FlashLogicalDataResourcePacker(Packer[None]):
     id = b"FlashLogicalDataResourcePacker"
     targets = (FlashLogicalDataResource,)
 
-    async def pack(self, resource: Resource, config=None):
+    def pack(self, resource: Resource, config=None):
         try:
             flash_attr = resource.get_attributes(FlashAttributes)
         except NotFoundError:
             raise UnpackerError("Tried packing without FlashAttributes")
-        data = await resource.get_data()
+        data = resource.get_data()
         bytes_left = len(data)
         original_size = bytes_left
         packed_data = bytearray()
@@ -597,8 +597,8 @@ class FlashLogicalDataResourcePacker(Packer[None]):
             )
 
         # Create child under the original FlashOobResource to show that it packed itself
-        parent = await resource.get_parent()
-        await parent.create_child(tags=(FlashOobResource,), data=packed_data)
+        parent = resource.get_parent()
+        parent.create_child(tags=(FlashOobResource,), data=packed_data)
 
 
 #####################

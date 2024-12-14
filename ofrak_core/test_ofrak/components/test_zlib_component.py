@@ -22,7 +22,7 @@ class TestZlibUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
             fh.write(compressed_data)
         self._test_file = _file.realpath()
 
-    async def verify(self, repacked_root_resource: Resource):
-        patched_data = await repacked_root_resource.get_data()
+    def verify(self, repacked_root_resource: Resource):
+        patched_data = repacked_root_resource.get_data()
         patched_decompressed_data = zlib.decompress(patched_data)
         assert patched_decompressed_data == self.EXPECTED_REPACKED_DATA

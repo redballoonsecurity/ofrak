@@ -36,9 +36,9 @@ class SevenZUnpacker(Unpacker[None]):
     children = (File, Folder, SpecialFileType)
     external_dependencies = (SEVEN_ZIP,)
 
-    async def unpack(self, resource: Resource, config=None):
-        seven_zip_v = await resource.view_as(SevenZFilesystem)
-        resource_data = await seven_zip_v.resource.get_data()
+    def unpack(self, resource: Resource, config=None):
+        seven_zip_v = resource.view_as(SevenZFilesystem)
+        resource_data = seven_zip_v.resource.get_data()
         with tempfile.NamedTemporaryFile() as temp_file:
             temp_file.write(resource_data)
             temp_file.flush()
@@ -49,13 +49,13 @@ class SevenZUnpacker(Unpacker[None]):
                     f"-o{temp_flush_dir}",
                     temp_file.name,
                 ]
-                proc = await asyncio.create_subprocess_exec(
+                proc = asyncio.create_subprocess_exec(
                     *cmd,
                 )
-                returncode = await proc.wait()
+                returncode = proc.wait()
                 if proc.returncode:
                     raise CalledProcessError(returncode=returncode, cmd=cmd)
-                await seven_zip_v.initialize_from_disk(temp_flush_dir)
+                seven_zip_v.initialize_from_disk(temp_flush_dir)
 
 
 class SevenzPacker(Packer[None]):
@@ -66,9 +66,9 @@ class SevenzPacker(Packer[None]):
     targets = (SevenZFilesystem,)
     external_dependencies = (SEVEN_ZIP,)
 
-    async def pack(self, resource: Resource, config=None):
-        seven_zip_v: SevenZFilesystem = await resource.view_as(SevenZFilesystem)
-        temp_flush_dir = await seven_zip_v.flush_to_disk()
+    def pack(self, resource: Resource, config=None):
+        seven_zip_v: SevenZFilesystem = resource.view_as(SevenZFilesystem)
+        temp_flush_dir = seven_zip_v.flush_to_disk()
         temp_flush_dir = os.path.join(temp_flush_dir, ".")
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_name = os.path.join(temp_dir, "temp.7z")
@@ -78,16 +78,16 @@ class SevenzPacker(Packer[None]):
                 temp_name,
                 temp_flush_dir,
             ]
-            proc = await asyncio.create_subprocess_exec(
+            proc = asyncio.create_subprocess_exec(
                 *cmd,
             )
-            returncode = await proc.wait()
+            returncode = proc.wait()
             if proc.returncode:
                 raise CalledProcessError(returncode=returncode, cmd=cmd)
             with open(temp_name, "rb") as f:
                 new_data = f.read()
             # Passing in the original range effectively replaces the original data with the new data
-            resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
+            resource.queue_patch(Range(0, resource.get_data_length()), new_data)
 
 
 MagicMimeIdentifier.register(SevenZFilesystem, "application/x-7z-compressed")

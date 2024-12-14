@@ -43,20 +43,18 @@ class DataRefsAnalyzerTestPattern:
     """
 
     @pytest.fixture(params=DATA_REFS_TEST_CASES, ids=lambda tc: os.path.basename(tc.binary))
-    async def data_refs_test_case(self, request) -> DataRefsAnalyzerTestCase:
+    def data_refs_test_case(self, request) -> DataRefsAnalyzerTestCase:
         return request.param
 
-    async def test_analyze_data_refs(
+    def test_analyze_data_refs(
         self, ofrak_context: OFRAKContext, data_refs_test_case: DataRefsAnalyzerTestCase
     ):
-        root_resource = await ofrak_context.create_root_resource_from_file(
-            data_refs_test_case.binary
-        )
-        await root_resource.unpack()
-        data_refs = await root_resource.analyze(ReferencedDataAttributes)
-        await self.validate_data_refs(data_refs, data_refs_test_case)
+        root_resource = ofrak_context.create_root_resource_from_file(data_refs_test_case.binary)
+        root_resource.unpack()
+        data_refs = root_resource.analyze(ReferencedDataAttributes)
+        self.validate_data_refs(data_refs, data_refs_test_case)
 
-    async def validate_data_refs(self, data_refs, test_case: DataRefsAnalyzerTestCase):
+    def validate_data_refs(self, data_refs, test_case: DataRefsAnalyzerTestCase):
         assert 0 < len(data_refs.references)
         xrefs_to = data_refs.get_xrefs_to()
         xrefs_from = data_refs.get_xrefs_from()

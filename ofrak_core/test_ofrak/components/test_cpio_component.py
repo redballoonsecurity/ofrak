@@ -18,7 +18,7 @@ CPIO_ENTRY_NAME = "hello_cpio_file"
 
 @pytest.mark.skipif_missing_deps([CpioUnpacker, CpioPacker])
 class TestCpioUnpackModifyPack(UnpackModifyPackPattern):
-    async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
+    def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         with tempfile.TemporaryDirectory() as tmpdir:
             wd = os.path.abspath(os.curdir)
             os.chdir(tmpdir)
@@ -28,25 +28,25 @@ class TestCpioUnpackModifyPack(UnpackModifyPackPattern):
                 f.write(INITIAL_DATA)
             command = f"find {CPIO_ENTRY_NAME} -print | cpio -o > {TARGET_CPIO_FILE}"
             subprocess.run(command, check=True, capture_output=True, shell=True)
-            result = await ofrak_context.create_root_resource_from_file(TARGET_CPIO_FILE)
+            result = ofrak_context.create_root_resource_from_file(TARGET_CPIO_FILE)
 
             os.chdir(wd)
             return result
 
-    async def unpack(self, cpio_resource: Resource) -> None:
-        await cpio_resource.unpack_recursively()
+    def unpack(self, cpio_resource: Resource) -> None:
+        cpio_resource.unpack_recursively()
 
-    async def modify(self, unpacked_cpio_resource: Resource) -> None:
-        cpio_v = await unpacked_cpio_resource.view_as(CpioFilesystem)
+    def modify(self, unpacked_cpio_resource: Resource) -> None:
+        cpio_v = unpacked_cpio_resource.view_as(CpioFilesystem)
         child_text_string_config = StringPatchingConfig(6, "ofrak")
-        child_textfile = await cpio_v.get_entry(CPIO_ENTRY_NAME)
-        await child_textfile.resource.run(StringPatchingModifier, child_text_string_config)
+        child_textfile = cpio_v.get_entry(CPIO_ENTRY_NAME)
+        child_textfile.resource.run(StringPatchingModifier, child_text_string_config)
 
-    async def repack(self, cpio_resource: Resource) -> None:
-        await cpio_resource.pack_recursively()
+    def repack(self, cpio_resource: Resource) -> None:
+        cpio_resource.pack_recursively()
 
-    async def verify(self, repacked_cpio_resource: Resource) -> None:
-        resource_data = await repacked_cpio_resource.get_data()
+    def verify(self, repacked_cpio_resource: Resource) -> None:
+        resource_data = repacked_cpio_resource.get_data()
         with tempfile.NamedTemporaryFile() as temp_file:
             temp_file.write(resource_data)
             temp_file.flush()

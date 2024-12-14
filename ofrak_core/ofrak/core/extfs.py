@@ -54,9 +54,9 @@ class ExtUnpacker(Unpacker[None]):
     children = (File, Folder, SpecialFileType)
     external_dependencies = (_DEBUGFS,)
 
-    async def unpack(self, resource: Resource, config: ComponentConfig = None) -> None:
+    def unpack(self, resource: Resource, config: ComponentConfig = None) -> None:
         with tempfile.NamedTemporaryFile(suffix=".extfs") as temp_fs_file:
-            temp_fs_file.write(await resource.get_data())
+            temp_fs_file.write(resource.get_data())
             temp_fs_file.flush()
 
             with tempfile.TemporaryDirectory() as temp_dir:
@@ -66,15 +66,15 @@ class ExtUnpacker(Unpacker[None]):
                     f"rdump / {temp_dir}",
                     temp_fs_file.name,
                 ]
-                proc = await asyncio.create_subprocess_exec(
+                proc = asyncio.create_subprocess_exec(
                     *command,
                 )
-                returncode = await proc.wait()
+                returncode = proc.wait()
                 if returncode:
                     raise CalledProcessError(returncode=returncode, cmd=command)
 
-                fs_view = await resource.view_as(ExtFilesystem)
-                await fs_view.initialize_from_disk(temp_dir)
+                fs_view = resource.view_as(ExtFilesystem)
+                fs_view.initialize_from_disk(temp_dir)
 
 
 MagicDescriptionIdentifier.register(Ext2Filesystem, lambda s: "ext2 filesystem" in s.lower())

@@ -65,7 +65,7 @@ class FilesystemEntry(ResourceView):
         """
         return self.Name
 
-    async def set_stat(self, stat_result: os.stat_result):
+    def set_stat(self, stat_result: os.stat_result):
         """
         Set the stat for the `FilesystemEntry`. Useful for newly created files where we want to
         control the full 10-tuple.
@@ -80,9 +80,9 @@ class FilesystemEntry(ResourceView):
         ] = self.get_attributes_instances()
         filesystem_attrs = all_view_attrs[AttributesType[FilesystemEntry]]
         self.resource.add_attributes(filesystem_attrs)
-        await self.resource.save()
+        self.resource.save()
 
-    async def modify_stat_attribute(self, st_stat: int, stat_value: int):
+    def modify_stat_attribute(self, st_stat: int, stat_value: int):
         """
         Modify a specific `os.stat` attribute on the filesystem entry.
 
@@ -100,9 +100,9 @@ class FilesystemEntry(ResourceView):
         stat_attributes = list(self.stat)  # type: ignore
         stat_attributes[st_stat] = stat_value
         filesystem_stat_attributes = os.stat_result(tuple(stat_attributes))
-        await self.set_stat(filesystem_stat_attributes)
+        self.set_stat(filesystem_stat_attributes)
 
-    async def modify_xattr_attribute(self, attribute: str, value: bytes):
+    def modify_xattr_attribute(self, attribute: str, value: bytes):
         """
         Modify the extended file attributes ("xattrs") for the filesystem entry.
 
@@ -114,9 +114,9 @@ class FilesystemEntry(ResourceView):
         self.xattrs[attribute] = value
         if self.resource is None:
             return
-        await self.resource.save()
+        self.resource.save()
 
-    async def get_path(self) -> str:
+    def get_path(self) -> str:
         """
         Get a folder's path, with the `FilesystemRoot` as the path root.
 
@@ -125,7 +125,7 @@ class FilesystemEntry(ResourceView):
         """
         path = [self.get_name()]
 
-        for a in await self.resource.get_ancestors(
+        for a in self.resource.get_ancestors(
             r_filter=ResourceFilter(
                 tags=(FilesystemEntry, FilesystemRoot),
                 tags_condition=ResourceFilterCondition.OR,
@@ -133,7 +133,7 @@ class FilesystemEntry(ResourceView):
         ):
             if (a is None) or (a.has_tag(FilesystemRoot)):
                 break
-            a_view = await a.view_as(FilesystemEntry)
+            a_view = a.view_as(FilesystemEntry)
             path.append(a_view.get_name())
 
         return posixpath.join(*reversed(path))
@@ -177,16 +177,16 @@ class FilesystemEntry(ResourceView):
     def is_device(self) -> bool:
         return self.is_block_device() or self.is_character_device()
 
-    async def flush_to_disk(self, root_path: str = ".", filename: Optional[str] = None):
-        entry_path = await self.get_path()
+    def flush_to_disk(self, root_path: str = ".", filename: Optional[str] = None):
+        entry_path = self.get_path()
         if filename is not None:
             entry_path = os.path.join(os.path.dirname(entry_path), filename)
         if self.is_link():
             link_name = os.path.join(root_path, entry_path)
             if not os.path.exists(link_name):
-                link_view = await self.resource.view_as(SymbolicLink)
+                link_view = self.resource.view_as(SymbolicLink)
                 os.symlink(link_view.source_path, link_name)
-            assert len(list(await self.resource.get_children())) == 0
+            assert len(list(self.resource.get_children())) == 0
             if self.stat:
                 if sys.platform == "win32":
                     _warn_chmod_chown_windows()
@@ -214,7 +214,7 @@ class FilesystemEntry(ResourceView):
         elif self.is_file():
             file_name = os.path.join(root_path, entry_path)
             with open(file_name, "wb") as f:
-                f.write(await self.resource.get_data())
+                f.write(self.resource.get_data())
             self.apply_stat_attrs(file_name)
         elif self.is_device():
             device_name = os.path.join(root_path, entry_path)
@@ -277,7 +277,7 @@ class Folder(FilesystemEntry):
     tree.
     """
 
-    async def get_entry(self, path: str) -> Optional[FilesystemEntry]:
+    def get_entry(self, path: str) -> Optional[FilesystemEntry]:
         """
         Search a folder for an entry with the given path.
 
@@ -288,7 +288,7 @@ class Folder(FilesystemEntry):
         """
         basename = posixpath.basename(path)
         # only searching paths with the same base name should reduce the search space by quite a lot
-        descendants = await self.resource.get_descendants_as_view(
+        descendants = self.resource.get_descendants_as_view(
             FilesystemEntry,
             r_filter=ResourceFilter(
                 attribute_filters=(ResourceAttributeValueFilter(FilesystemEntry.Name, basename),)
@@ -296,19 +296,19 @@ class Folder(FilesystemEntry):
         )
 
         for d in descendants:
-            descendant_path = await d.get_path()
+            descendant_path = d.get_path()
             if descendant_path.split(f"{self.name}/")[-1] == path:
                 return d
         return None
 
-    async def list_dir(self) -> Dict[str, FilesystemEntry]:
+    def list_dir(self) -> Dict[str, FilesystemEntry]:
         """
         Enumerate a folder's children, much like `os.listdir`.
 
         :return: A dictionary of child entries, with the child's name as the key
         """
         entries = dict()
-        for c in await self.resource.get_children_as_view(FilesystemEntry):
+        for c in self.resource.get_children_as_view(FilesystemEntry):
             entries[c.get_name()] = c
         return entries
 
@@ -371,7 +371,7 @@ class FilesystemRoot(ResourceView):
     Any resource that contains a file tree should inherit the `FilesystemRoot` class.
     """
 
-    async def initialize_from_disk(
+    def initialize_from_disk(
         self,
         path: str,
     ):
@@ -415,7 +415,7 @@ class FilesystemRoot(ResourceView):
 
                 folder_attributes_xattr = self._get_xattr_map(absolute_path)
                 if os.path.islink(absolute_path):
-                    await self.add_special_file_entry(
+                    self.add_special_file_entry(
                         relative_path_posix,
                         SymbolicLink(
                             relative_path_posix,
@@ -425,7 +425,7 @@ class FilesystemRoot(ResourceView):
                         ),
                     )
                 else:
-                    await self.add_folder(
+                    self.add_folder(
                         relative_path_posix,
                         folder_attributes_stat,
                         folder_attributes_xattr,
@@ -454,7 +454,7 @@ class FilesystemRoot(ResourceView):
 
                 file_attributes_xattr = self._get_xattr_map(absolute_path)
                 if os.path.islink(absolute_path):
-                    await self.add_special_file_entry(
+                    self.add_special_file_entry(
                         relative_path_posix,
                         SymbolicLink(
                             relative_path_posix,
@@ -465,26 +465,26 @@ class FilesystemRoot(ResourceView):
                     )
                 elif os.path.isfile(absolute_path):
                     with open(absolute_path, "rb") as fh:
-                        await self.add_file(
+                        self.add_file(
                             relative_path_posix,
                             fh.read(),
                             file_attributes_stat,
                             file_attributes_xattr,
                         )
                 elif stat.S_ISFIFO(mode):
-                    await self.add_special_file_entry(
+                    self.add_special_file_entry(
                         relative_path_posix,
                         FIFOPipe(relative_path_posix, file_attributes_stat, file_attributes_xattr),
                     )
                 elif stat.S_ISBLK(mode):
-                    await self.add_special_file_entry(
+                    self.add_special_file_entry(
                         relative_path_posix,
                         BlockDevice(
                             relative_path_posix, file_attributes_stat, file_attributes_xattr
                         ),
                     )
                 elif stat.S_ISCHR(mode):
-                    await self.add_special_file_entry(
+                    self.add_special_file_entry(
                         relative_path_posix,
                         CharacterDevice(
                             relative_path_posix, file_attributes_stat, file_attributes_xattr
@@ -497,7 +497,7 @@ class FilesystemRoot(ResourceView):
                         f"create a resource. Stat: {stat.S_IFMT(mode):o}"
                     )
 
-    async def flush_to_disk(
+    def flush_to_disk(
         self,
         path: Optional[str] = None,
     ):
@@ -514,22 +514,22 @@ class FilesystemRoot(ResourceView):
 
         entries = [
             f
-            for f in await self.resource.get_children_as_view(
+            for f in self.resource.get_children_as_view(
                 FilesystemEntry, r_filter=ResourceFilter(tags=(FilesystemEntry,))
             )
         ]
         while len(entries) > 0:
             entry = entries.pop(0)
             if entry.is_folder():
-                for child in await entry.resource.get_children_as_view(
+                for child in entry.resource.get_children_as_view(
                     FilesystemEntry, r_filter=ResourceFilter(tags=(FilesystemEntry,))
                 ):
                     entries.append(child)
-            await entry.flush_to_disk(root_path=root_path)
+            entry.flush_to_disk(root_path=root_path)
 
         return root_path
 
-    async def get_entry(self, path: str):
+    def get_entry(self, path: str):
         """
         Searches this `FilesystemRoot`'s descendants for a filesystem entry with a given path,
             and returns that entry if found.
@@ -541,7 +541,7 @@ class FilesystemRoot(ResourceView):
         """
         basename = posixpath.basename(path)
         # only searching paths with the same base name should reduce the search space by quite a lot
-        descendants = await self.resource.get_descendants_as_view(
+        descendants = self.resource.get_descendants_as_view(
             FilesystemEntry,
             r_filter=ResourceFilter(
                 attribute_filters=(ResourceAttributeValueFilter(FilesystemEntry.Name, basename),)
@@ -549,22 +549,22 @@ class FilesystemRoot(ResourceView):
         )
 
         for d in descendants:
-            if await d.get_path() == posixpath.normpath(path):
+            if d.get_path() == posixpath.normpath(path):
                 return d
         return None
 
-    async def list_dir(self) -> dict:
+    def list_dir(self) -> dict:
         """
         Enumerates a `FilesystemRoot`'s children, much like `os.listdir`.
 
         :return: a dictionary of child entries, with the child's name as the key
         """
         entries = dict()
-        for c in await self.resource.get_children_as_view(FilesystemEntry):
+        for c in self.resource.get_children_as_view(FilesystemEntry):
             entries[c.get_name()] = c
         return entries
 
-    async def add_folder(
+    def add_folder(
         self,
         path: str,
         folder_stat_result: Optional[os.stat_result] = None,
@@ -594,18 +594,18 @@ class FilesystemRoot(ResourceView):
 
         parent: Union[FilesystemRoot, Folder] = self
         for directory in split_dir:
-            folder_entries = await parent.list_dir()
+            folder_entries = parent.list_dir()
 
             if directory not in folder_entries.keys():
-                new_missing_folder = await parent.resource.create_child_from_view(
+                new_missing_folder = parent.resource.create_child_from_view(
                     Folder(directory, folder_stat_result, folder_xattrs),
                     data=b"",
                     additional_tags=tags,
                     additional_attributes=attributes,
                 )
-                parent = await new_missing_folder.view_as(Folder)
+                parent = new_missing_folder.view_as(Folder)
             else:
-                parent = await folder_entries[directory].resource.view_as(Folder)
+                parent = folder_entries[directory].resource.view_as(Folder)
 
         if type(parent) is FilesystemRoot:
             assert len(split_dir) == 0  # Only case this should happen
@@ -618,7 +618,7 @@ class FilesystemRoot(ResourceView):
             )
         return parent
 
-    async def add_file(
+    def add_file(
         self,
         path: str,
         data: bytes,
@@ -648,11 +648,11 @@ class FilesystemRoot(ResourceView):
         if dirname == "":
             parent_folder = self
         else:
-            parent_folder = await self.get_entry(dirname)
+            parent_folder = self.get_entry(dirname)
             if parent_folder is None:
-                parent_folder = await self.add_folder(dirname)
+                parent_folder = self.add_folder(dirname)
 
-        new_file = await parent_folder.resource.create_child_from_view(
+        new_file = parent_folder.resource.create_child_from_view(
             File(filename, file_stat_result, file_xattrs),
             data=data,
             additional_tags=tags,
@@ -660,17 +660,17 @@ class FilesystemRoot(ResourceView):
         )
         return new_file
 
-    async def remove_file(self, path: str) -> None:
+    def remove_file(self, path: str) -> None:
         """
         Removes a [File][ofrak.core.filesystem.File] resource from a `FilesystemRoot`.
         :param path: the path of the file to be removed
         :return: None
         """
-        file_to_remove = await self.get_entry(path)
-        await file_to_remove.resource.delete()
-        await file_to_remove.resource.save()
+        file_to_remove = self.get_entry(path)
+        file_to_remove.resource.delete()
+        file_to_remove.resource.save()
 
-    async def add_special_file_entry(
+    def add_special_file_entry(
         self,
         path: str,
         special_file_view: SpecialFileType,
@@ -701,11 +701,11 @@ class FilesystemRoot(ResourceView):
         if dirname == "":
             parent_folder = self
         else:
-            parent_folder = await self.get_entry(dirname)
+            parent_folder = self.get_entry(dirname)
             if parent_folder is None:
-                parent_folder = await self.add_folder(dirname)
+                parent_folder = self.add_folder(dirname)
 
-        new_entry = await parent_folder.resource.create_child_from_view(
+        new_entry = parent_folder.resource.create_child_from_view(
             special_file_view,
             data=b"",  # Use empty, non-None data
             additional_tags=tags,

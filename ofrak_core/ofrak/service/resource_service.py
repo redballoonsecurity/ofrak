@@ -715,7 +715,7 @@ class ResourceService(ResourceServiceInterface):
         for dependent_indexable in indexable_attribute.used_by_indexes:
             self._remove_resource_attribute_from_index(dependent_indexable, resource)
 
-    async def create(self, resource: ResourceModel) -> ResourceModel:
+    def create(self, resource: ResourceModel) -> ResourceModel:
         if resource.id in self._resource_store:
             raise AlreadyExistError(f"A resource with id {resource.id.hex()} already exists!")
         if resource.parent_id is not None:
@@ -744,13 +744,13 @@ class ResourceService(ResourceServiceInterface):
             self._add_resource_attribute_to_index(indexable_attribute, value, resource_node)
         return resource
 
-    async def get_root_resources(self) -> List[ResourceModel]:
+    def get_root_resources(self) -> List[ResourceModel]:
         return [root_node.model for root_node in self._root_resources.values()]
 
-    async def verify_ids_exist(self, resource_ids: Iterable[bytes]) -> Iterable[bool]:
+    def verify_ids_exist(self, resource_ids: Iterable[bytes]) -> Iterable[bool]:
         return [resource_id in self._resource_store for resource_id in resource_ids]
 
-    async def get_by_data_ids(self, data_ids: Iterable[bytes]) -> Iterable[ResourceModel]:
+    def get_by_data_ids(self, data_ids: Iterable[bytes]) -> Iterable[ResourceModel]:
         results = []
         for data_id in data_ids:
             resource_node = self._resource_by_data_id_store.get(data_id)
@@ -759,7 +759,7 @@ class ResourceService(ResourceServiceInterface):
             results.append(resource_node.model)
         return results
 
-    async def get_by_ids(self, resource_ids: Iterable[bytes]) -> Iterable[ResourceModel]:
+    def get_by_ids(self, resource_ids: Iterable[bytes]) -> Iterable[ResourceModel]:
         results = []
         for resource_id in resource_ids:
             resource_node = self._resource_store.get(resource_id)
@@ -768,14 +768,14 @@ class ResourceService(ResourceServiceInterface):
             results.append(resource_node.model)
         return results
 
-    async def get_by_id(self, resource_id: bytes) -> ResourceModel:
+    def get_by_id(self, resource_id: bytes) -> ResourceModel:
         LOGGER.debug(f"Fetching resource {resource_id.hex()}")
         resource_node = self._resource_store.get(resource_id)
         if resource_node is None:
             raise NotFoundError(f"The resource {resource_id.hex()} does not exist")
         return resource_node.model
 
-    async def get_depths(self, resource_ids: Iterable[bytes]) -> Iterable[int]:
+    def get_depths(self, resource_ids: Iterable[bytes]) -> Iterable[int]:
         results = []
         for resource_id in resource_ids:
             resource_node = self._resource_store.get(resource_id)
@@ -784,7 +784,7 @@ class ResourceService(ResourceServiceInterface):
             results.append(resource_node.get_depth())
         return results
 
-    async def get_ancestors_by_id(
+    def get_ancestors_by_id(
         self,
         resource_id: bytes,
         max_count: int = -1,
@@ -808,7 +808,7 @@ class ResourceService(ResourceServiceInterface):
             return resources
         return itertools.islice(resources, 0, max_count)
 
-    async def get_descendants_by_id(
+    def get_descendants_by_id(
         self,
         resource_id: bytes,
         max_count: int = -1,
@@ -875,7 +875,7 @@ class ResourceService(ResourceServiceInterface):
             resources = itertools.islice(resources, 0, max_count)
         return resources
 
-    async def get_siblings_by_id(
+    def get_siblings_by_id(
         self,
         resource_id: bytes,
         max_count: int = -1,
@@ -890,16 +890,14 @@ class ResourceService(ResourceServiceInterface):
                 f"The resource {resource_id.hex()} does not have siblings as it is a root "
                 f"resource."
             )
-        return await self.get_descendants_by_id(
+        return self.get_descendants_by_id(
             resource_node.parent.model.id, max_count, 1, r_filter, r_sort
         )
 
-    async def update(self, resource_diff: ResourceModelDiff) -> ResourceModel:
+    def update(self, resource_diff: ResourceModelDiff) -> ResourceModel:
         return self._update(resource_diff)
 
-    async def update_many(
-        self, resource_diffs: Iterable[ResourceModelDiff]
-    ) -> Iterable[ResourceModel]:
+    def update_many(self, resource_diffs: Iterable[ResourceModelDiff]) -> Iterable[ResourceModel]:
         return [self._update(resource_diff) for resource_diff in resource_diffs]
 
     def _update(self, resource_diff: ResourceModelDiff) -> ResourceModel:
@@ -940,7 +938,7 @@ class ResourceService(ResourceServiceInterface):
         resource_node.model = next_resource
         return next_resource
 
-    async def rebase_resource(self, resource_id: bytes, new_parent_id: bytes):
+    def rebase_resource(self, resource_id: bytes, new_parent_id: bytes):
         resource_node = self._resource_store.get(resource_id)
         if resource_node is None:
             raise NotFoundError(f"The resource {resource_id.hex()} does not exist")
@@ -956,7 +954,7 @@ class ResourceService(ResourceServiceInterface):
         resource_node.parent = new_parent_resource_node
         resource_node.model.parent_id = new_parent_id
 
-    async def delete_resource(self, resource_id: bytes):
+    def delete_resource(self, resource_id: bytes):
         resource_node = self._resource_store.get(resource_id)
         if resource_node is None:
             # Already deleted, probably by an ancestor calling the recursive func below
@@ -970,7 +968,7 @@ class ResourceService(ResourceServiceInterface):
         LOGGER.debug(f"Deleted {resource_id.hex()}")
         return deleted_models
 
-    async def delete_resources(self, resource_ids: Iterable[bytes]):
+    def delete_resources(self, resource_ids: Iterable[bytes]):
         deleted_models = []
         for resource_id in resource_ids:
             resource_node = self._resource_store.get(resource_id)

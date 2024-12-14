@@ -29,7 +29,7 @@ def bad_dependency():
     return ComponentExternalTool("ls", "", "-1234")
 
 
-async def test_missing_external_tool_caught(
+def test_missing_external_tool_caught(
     ofrak_context: OFRAKContext, dependency_path, mock_dependency
 ):
     class _MockComponent(Unpacker):
@@ -38,7 +38,7 @@ async def test_missing_external_tool_caught(
 
         external_dependencies = (mock_dependency,)
 
-        async def unpack(self, resource, config=None):
+        def unpack(self, resource, config=None):
             subprocess.run(dependency_path, check=True)
             return
 
@@ -49,9 +49,9 @@ async def test_missing_external_tool_caught(
         ofrak_context.component_locator,
     )
 
-    root = await ofrak_context.create_root_resource("any", b"")
+    root = ofrak_context.create_root_resource("any", b"")
     with pytest.raises(ComponentMissingDependencyError):
-        await unpacker.run(
+        unpacker.run(
             b"test job",
             root.get_id(),
             JobRunContext(),
@@ -67,7 +67,7 @@ async def test_missing_external_tool_caught(
     # It will still raise an error since the text file can't be executed
     # but it won't be a ComponentMissingDependencyError
     with pytest.raises(OSError):
-        await unpacker.run(
+        unpacker.run(
             b"test job",
             root.get_id(),
             JobRunContext(),
@@ -77,12 +77,12 @@ async def test_missing_external_tool_caught(
         )
 
 
-async def test_external_tool_runtime_error_caught(ofrak_context: OFRAKContext, tmpdir):
+def test_external_tool_runtime_error_caught(ofrak_context: OFRAKContext, tmpdir):
     class _MockComponent(Unpacker):
         targets = ()
         children = ()
 
-        async def unpack(self, resource, config=None):
+        def unpack(self, resource, config=None):
             subprocess.run([sys.executable, os.path.join(tmpdir, "nonexistent_script")], check=True)
             return
 
@@ -93,9 +93,9 @@ async def test_external_tool_runtime_error_caught(ofrak_context: OFRAKContext, t
         ofrak_context.component_locator,
     )
 
-    root = await ofrak_context.create_root_resource("any", b"")
+    root = ofrak_context.create_root_resource("any", b"")
     with pytest.raises(ComponentSubprocessError):
-        await unpacker.run(
+        unpacker.run(
             b"test job",
             root.get_id(),
             JobRunContext(),
@@ -105,12 +105,12 @@ async def test_external_tool_runtime_error_caught(ofrak_context: OFRAKContext, t
         )
 
 
-async def test_tool_install_check(mock_dependency):
-    assert not await mock_dependency.is_tool_installed()
+def test_tool_install_check(mock_dependency):
+    assert not mock_dependency.is_tool_installed()
 
     cd_tool = ComponentExternalTool(sys.executable, "", install_check_arg="-v")
-    assert await cd_tool.is_tool_installed()
+    assert cd_tool.is_tool_installed()
 
 
-async def test_bad_tool_install_check(bad_dependency):
-    assert not await bad_dependency.is_tool_installed()
+def test_bad_tool_install_check(bad_dependency):
+    assert not bad_dependency.is_tool_installed()

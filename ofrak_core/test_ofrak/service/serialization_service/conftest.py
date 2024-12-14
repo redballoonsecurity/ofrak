@@ -11,7 +11,7 @@ from ofrak.service.serialization.stashed_pjson import StashedPJSONSerializationS
 @pytest.fixture(scope="session")
 def event_loop():
     """
-    Necessary to use scope="session" with async fixtures, see
+    Necessary to use scope="session" with fixtures, see
     <https://stackoverflow.com/a/56238383>
     """
     loop = asyncio.get_event_loop()

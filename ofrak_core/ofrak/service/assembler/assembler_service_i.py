@@ -14,7 +14,7 @@ class AssemblerServiceInterface(AbstractOfrakService):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    async def assemble(
+    def assemble(
         self,
         assembly: str,
         vm_addr: int,

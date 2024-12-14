@@ -53,26 +53,26 @@ class DataSummaryAnalyzer(Analyzer[None, DataSummary]):
         self.pool = ProcessPoolExecutor()
         self.max_analysis_retries = 10
 
-    async def analyze(self, resource: Resource, config=None, depth=0) -> DataSummary:
+    def analyze(self, resource: Resource, config=None, depth=0) -> DataSummary:
         if depth > self.max_analysis_retries:
             raise RuntimeError(
                 f"Analysis process killed more than {self.max_analysis_retries} times. Aborting."
             )
 
-        data = await resource.get_data()
+        data = resource.get_data()
         # Run blocking computations in separate processes
         try:
-            entropy = await asyncio.get_running_loop().run_in_executor(
+            entropy = asyncio.get_running_loop().run_in_executor(
                 self.pool, sample_entropy, data, resource.get_id()
             )
-            magnitude = await asyncio.get_running_loop().run_in_executor(
+            magnitude = asyncio.get_running_loop().run_in_executor(
                 self.pool, sample_magnitude, data
             )
             return DataSummary(entropy, magnitude)
         except BrokenProcessPool:
             # If the previous one was aborted, try again with a new pool
             self.pool = ProcessPoolExecutor()
-            return await self.analyze(resource, config=config, depth=depth + 1)
+            return self.analyze(resource, config=config, depth=depth + 1)
 
 
 def sample_entropy(

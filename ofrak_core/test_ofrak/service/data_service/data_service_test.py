@@ -15,7 +15,7 @@ from ofrak_type.error import NotFoundError
 
 
 class TestDataService:
-    async def test_get_root_by_id(self, populated_data_service: DataService):
+    def test_get_root_by_id(self, populated_data_service: DataService):
         with pytest.raises(NotFoundError):
             populated_data_service._get_root_by_id(DATA_1)
 
@@ -36,7 +36,7 @@ class TestDataRoot:
             b"\xed" * 0x100,
         )
 
-    async def test_add_mapped_model(self, data_root: _DataRoot):
+    def test_add_mapped_model(self, data_root: _DataRoot):
         oob_model = DataModel(
             b"out of bounds",
             Range(0x120, 0x124),
@@ -45,7 +45,7 @@ class TestDataRoot:
         with pytest.raises(OutOfBoundError):
             data_root.add_mapped_model(oob_model)
 
-    async def test_delete_mapped_model(self, data_root: _DataRoot):
+    def test_delete_mapped_model(self, data_root: _DataRoot):
         nonexistant_model = DataModel(
             b"does not exist",
             Range(0x80, 0x84),
@@ -62,11 +62,11 @@ class TestPatchResizeTracker:
         prt.add_new_resized_range(Range(0x10, 0x14), 0x8)
         return prt
 
-    async def test_get_shifted_point(self, tracker: _PatchResizeTracker):
+    def test_get_shifted_point(self, tracker: _PatchResizeTracker):
         assert tracker.get_shifted_point(0x0) == 0x0
         assert tracker.get_shifted_point(0x15) == 0x15 + 0x8
         assert tracker.get_shifted_point(0x10) == 0x10
 
-    async def test_add_new_resized_range(self, tracker: _PatchResizeTracker):
+    def test_add_new_resized_range(self, tracker: _PatchResizeTracker):
         tracker.add_new_resized_range(Range(0x8, 0xA), -0x6)
         assert tracker.get_total_size_diff() == 0x2

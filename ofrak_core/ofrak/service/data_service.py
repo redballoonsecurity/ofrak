@@ -33,7 +33,7 @@ class DataService(DataServiceInterface):
         self._model_store: Dict[DataId, DataModel] = dict()
         self._roots: Dict[DataId, _DataRoot] = dict()
 
-    async def create_root(self, data_id: DataId, data: bytes) -> DataModel:
+    def create_root(self, data_id: DataId, data: bytes) -> DataModel:
         if data_id in self._model_store:
             raise AlreadyExistError(f"A model with {data_id.hex()} already exists!")
 
@@ -44,7 +44,7 @@ class DataService(DataServiceInterface):
 
         return new_model
 
-    async def create_mapped(
+    def create_mapped(
         self,
         data_id: DataId,
         parent_id: DataId,
@@ -67,19 +67,19 @@ class DataService(DataServiceInterface):
 
         return new_model
 
-    async def get_by_id(self, data_id: DataId) -> DataModel:
+    def get_by_id(self, data_id: DataId) -> DataModel:
         return self._get_by_id(data_id)
 
-    async def get_by_ids(self, data_ids: Iterable[DataId]) -> Iterable[DataModel]:
+    def get_by_ids(self, data_ids: Iterable[DataId]) -> Iterable[DataModel]:
         return [self._get_by_id(data_id) for data_id in data_ids]
 
-    async def get_data_length(self, data_id: DataId) -> int:
+    def get_data_length(self, data_id: DataId) -> int:
         return self._get_by_id(data_id).range.length()
 
-    async def get_data_range_within_root(self, data_id: DataId) -> Range:
+    def get_data_range_within_root(self, data_id: DataId) -> Range:
         return self._get_by_id(data_id).range
 
-    async def get_range_within_other(self, data_id: DataId, within_data_id: DataId) -> Range:
+    def get_range_within_other(self, data_id: DataId, within_data_id: DataId) -> Range:
         model = self._get_by_id(data_id)
         within_model = self._get_by_id(within_data_id)
         if data_id == within_data_id:
@@ -97,7 +97,7 @@ class DataService(DataServiceInterface):
         else:
             return within_model.range.intersect(model.range).translate(-within_model.range.start)
 
-    async def get_data(self, data_id: DataId, data_range: Optional[Range] = None) -> bytes:
+    def get_data(self, data_id: DataId, data_range: Optional[Range] = None) -> bytes:
         model = self._get_by_id(data_id)
         root = self._get_root_by_id(model.root_id)
         if data_range is not None:
@@ -106,7 +106,7 @@ class DataService(DataServiceInterface):
         else:
             return root.data[model.range.start : model.range.end]
 
-    async def apply_patches(self, patches: List[DataPatch]) -> List[DataPatchesResult]:
+    def apply_patches(self, patches: List[DataPatch]) -> List[DataPatchesResult]:
         patches_by_root: Dict[DataId, List[DataPatch]] = defaultdict(list)
         for patch in patches:
             target_data_model = self._get_by_id(patch.data_id)
@@ -118,7 +118,7 @@ class DataService(DataServiceInterface):
 
         return results
 
-    async def delete_models(self, data_ids: Iterable[DataId]) -> None:
+    def delete_models(self, data_ids: Iterable[DataId]) -> None:
         roots_to_delete = dict()
         mapped_to_delete = dict()
 
@@ -146,7 +146,7 @@ class DataService(DataServiceInterface):
             root.delete_mapped_model(model)
             del self._model_store[model.id]
 
-    async def search(self, data_id, query, start=None, end=None, max_matches=None):
+    def search(self, data_id, query, start=None, end=None, max_matches=None):
         model = self._get_by_id(data_id)
         root = self._get_root_by_id(model.root_id)
         start = model.range.start if start is None else model.range.start + start

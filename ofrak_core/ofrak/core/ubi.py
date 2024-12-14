@@ -48,7 +48,7 @@ class _PyLzoTool(ComponentExternalTool):
             install_check_arg="",
         )
 
-    async def is_tool_installed(self) -> bool:
+    def is_tool_installed(self) -> bool:
         try:
             import lzo  # type: ignore
 
@@ -129,10 +129,10 @@ class UbiAnalyzer(Analyzer[None, Ubi]):
 
     external_dependencies = (PY_LZO_TOOL,)
 
-    async def analyze(self, resource: Resource, config=None) -> Ubi:
+    def analyze(self, resource: Resource, config=None) -> Ubi:
         # Flush to disk
         with tempfile.NamedTemporaryFile() as temp_file:
-            resource_data = await resource.get_data()
+            resource_data = resource.get_data()
             temp_file.write(resource_data)
             temp_file.flush()
 
@@ -188,11 +188,11 @@ class UbiUnpacker(Unpacker[None]):
     children = (UbiVolume,)
     external_dependencies = (PY_LZO_TOOL,)
 
-    async def unpack(self, resource: Resource, config=None):
+    def unpack(self, resource: Resource, config=None):
         with tempfile.TemporaryDirectory() as temp_flush_dir:
             # flush to disk
             with open(f"{temp_flush_dir}/input.img", "wb") as temp_file:
-                resource_data = await resource.get_data()
+                resource_data = resource.get_data()
                 temp_file.write(resource_data)
                 temp_file.flush()
 
@@ -203,14 +203,14 @@ class UbiUnpacker(Unpacker[None]):
                 f"{temp_flush_dir}/output",
                 temp_file.name,
             ]
-            proc = await asyncio.create_subprocess_exec(
+            proc = asyncio.create_subprocess_exec(
                 *cmd,
             )
-            returncode = await proc.wait()
+            returncode = proc.wait()
             if proc.returncode:
                 raise CalledProcessError(returncode=returncode, cmd=cmd)
 
-            ubi_view = await resource.view_as(Ubi)
+            ubi_view = resource.view_as(Ubi)
 
             # Each file extracted by `ubireader_extract_images` is populated as an UbiVolume
             # `ubireader_extract_images` incorrectly appends a `ubifs` suffix despite unpacking ubi images / volumes
@@ -225,9 +225,7 @@ class UbiUnpacker(Unpacker[None]):
                         other_tags: Tuple[ResourceTag, ...] = (GenericBinary,)
                     else:
                         other_tags = ()
-                    await resource.create_child_from_view(
-                        vol, data=data, additional_tags=other_tags
-                    )
+                    resource.create_child_from_view(vol, data=data, additional_tags=other_tags)
 
 
 class UbiPacker(Packer[None]):
@@ -238,17 +236,17 @@ class UbiPacker(Packer[None]):
     targets = (Ubi,)
     external_dependencies = (UBINIZE_TOOL, PY_LZO_TOOL)
 
-    async def pack(self, resource: Resource, config=None) -> None:
-        ubi_view = await resource.view_as(Ubi)
+    def pack(self, resource: Resource, config=None) -> None:
+        ubi_view = resource.view_as(Ubi)
 
         # with tempfile.NamedTemporaryFile(mode="rb") as temp:
         with tempfile.TemporaryDirectory() as temp_flush_dir:
-            ubi_volumes = await resource.get_children()
+            ubi_volumes = resource.get_children()
             ubinize_ini_entries = []
 
             for volume in ubi_volumes:
-                volume_view = await volume.view_as(UbiVolume)
-                volume_size = await volume.get_data_length()
+                volume_view = volume.view_as(UbiVolume)
+                volume_size = volume.get_data_length()
 
                 # I think the `ubinize` rounds up the number of required PEBs based on the provided size.
                 # Maybe this? allocated PEBs = -(volume_size // -peb_size) + 1
@@ -257,7 +255,7 @@ class UbiPacker(Packer[None]):
                     volume_path = (
                         f"{temp_flush_dir}/input-{ubi_view.image_seq}_vol-{volume_view.name}.ubivol"
                     )
-                    await volume.flush_data_to_disk(volume_path)
+                    volume.flush_data_to_disk(volume_path)
                 else:
                     volume_path = None
                     volume_size = (volume_view.peb_count - 1) * ubi_view.peb_size
@@ -288,17 +286,17 @@ vol_name={volume_view.name}
                 f"{temp_flush_dir}/output.ubi",
                 f"{temp_flush_dir}/config.ini",
             ]
-            proc = await asyncio.create_subprocess_exec(
+            proc = asyncio.create_subprocess_exec(
                 *cmd,
             )
-            returncode = await proc.wait()
+            returncode = proc.wait()
             if proc.returncode:
                 raise CalledProcessError(returncode=returncode, cmd=cmd)
 
             with open(f"{temp_flush_dir}/output.ubi", "rb") as output_f:
                 packed_blob_data = output_f.read()
 
-            resource.queue_patch(Range(0, await resource.get_data_length()), packed_blob_data)
+            resource.queue_patch(Range(0, resource.get_data_length()), packed_blob_data)
 
 
 class UbiIdentifier(Identifier):
@@ -310,9 +308,9 @@ class UbiIdentifier(Identifier):
 
     external_dependencies = (PY_LZO_TOOL,)
 
-    async def identify(self, resource: Resource, config=None) -> None:
-        datalength = await resource.get_data_length()
+    def identify(self, resource: Resource, config=None) -> None:
+        datalength = resource.get_data_length()
         if datalength >= 4:
-            data = await resource.get_data(Range(0, 4))
+            data = resource.get_data(Range(0, 4))
             if data in [UBI_EC_HDR_MAGIC, UBI_VID_HDR_MAGIC]:
                 resource.add_tag(Ubi)

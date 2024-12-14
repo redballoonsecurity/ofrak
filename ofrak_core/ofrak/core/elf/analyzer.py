@@ -49,8 +49,8 @@ class ElfBasicHeaderAttributesAnalyzer(Analyzer[None, ElfBasicHeader]):
     targets = (ElfBasicHeader,)
     outputs = (ElfBasicHeader,)
 
-    async def analyze(self, resource: Resource, config=None) -> ElfBasicHeader:
-        tmp = await resource.get_data()
+    def analyze(self, resource: Resource, config=None) -> ElfBasicHeader:
+        tmp = resource.get_data()
         deserializer = BinaryDeserializer(io.BytesIO(tmp))
         (
             ei_magic,
@@ -78,8 +78,8 @@ class ElfHeaderAttributesAnalyzer(Analyzer[None, ElfHeader]):
     targets = (ElfHeader,)
     outputs = (ElfHeader,)
 
-    async def analyze(self, resource: Resource, config=None) -> ElfHeader:
-        deserializer = await _create_deserializer(resource)
+    def analyze(self, resource: Resource, config=None) -> ElfHeader:
+        deserializer = _create_deserializer(resource)
         return self.deserialize(deserializer)
 
     @classmethod
@@ -126,9 +126,9 @@ class ElfProgramHeaderAttributesAnalyzer(Analyzer[None, ElfProgramHeader]):
     targets = (ElfProgramHeader,)
     outputs = (ElfProgramHeader,)
 
-    async def analyze(self, resource: Resource, config=None) -> ElfProgramHeader:
-        segment_structure = await resource.view_as(ElfSegmentStructure)
-        deserializer = await _create_deserializer(resource)
+    def analyze(self, resource: Resource, config=None) -> ElfProgramHeader:
+        segment_structure = resource.view_as(ElfSegmentStructure)
+        deserializer = _create_deserializer(resource)
         return self.deserialize(deserializer, segment_structure.segment_index)
 
     @classmethod
@@ -157,9 +157,9 @@ class ElfSegmentAnalyzer(Analyzer[None, ElfSegment]):
     targets = (ElfSegment,)
     outputs = (ElfSegment,)
 
-    async def analyze(self, resource: Resource, config=None) -> ElfSegment:
-        segment = await resource.view_as(ElfSegmentStructure)
-        segment_header = await segment.get_header()
+    def analyze(self, resource: Resource, config=None) -> ElfSegment:
+        segment = resource.view_as(ElfSegmentStructure)
+        segment_header = segment.get_header()
         return ElfSegment(
             segment_index=segment_header.segment_index,
             virtual_address=segment_header.p_vaddr,
@@ -176,9 +176,9 @@ class ElfSectionHeaderAttributesAnalyzer(Analyzer[None, ElfSectionHeader]):
     targets = (ElfSectionHeader,)
     outputs = (ElfSectionHeader,)
 
-    async def analyze(self, resource: Resource, config=None) -> ElfSectionHeader:
-        section_structure = await resource.view_as(ElfSectionStructure)
-        deserializer = await _create_deserializer(resource)
+    def analyze(self, resource: Resource, config=None) -> ElfSectionHeader:
+        section_structure = resource.view_as(ElfSectionStructure)
+        deserializer = _create_deserializer(resource)
         return self.deserialize(deserializer, section_structure.section_index)
 
     @classmethod
@@ -219,9 +219,9 @@ class ElfSymbolAttributesAnalyzer(Analyzer[None, ElfSymbol]):
     targets = (ElfSymbol,)
     outputs = (ElfSymbol,)
 
-    async def analyze(self, resource: Resource, config=None) -> ElfSymbol:
-        symbol_structure = await resource.view_as(ElfSymbolStructure)
-        deserializer = await _create_deserializer(resource)
+    def analyze(self, resource: Resource, config=None) -> ElfSymbol:
+        symbol_structure = resource.view_as(ElfSymbolStructure)
+        deserializer = _create_deserializer(resource)
 
         return self.deserialize(deserializer, symbol_structure.symbol_index)
 
@@ -251,8 +251,8 @@ class ElfDynamicSectionAnalyzer(Analyzer[None, ElfDynamicEntry]):
     targets = (ElfDynamicEntry,)
     outputs = (ElfDynamicEntry,)
 
-    async def analyze(self, resource: Resource, config=None) -> ElfDynamicEntry:
-        deserializer = await _create_deserializer(resource)
+    def analyze(self, resource: Resource, config=None) -> ElfDynamicEntry:
+        deserializer = _create_deserializer(resource)
         return self.deserialize(deserializer)
 
     @classmethod
@@ -269,8 +269,8 @@ class ElfPointerAnalyzer(Analyzer[None, ElfVirtualAddress]):
     targets = (ElfVirtualAddress,)
     outputs = (ElfVirtualAddress,)
 
-    async def analyze(self, resource: Resource, config=None) -> ElfVirtualAddress:
-        deserializer = await _create_deserializer(resource)
+    def analyze(self, resource: Resource, config=None) -> ElfVirtualAddress:
+        deserializer = _create_deserializer(resource)
         return self.deserialize(deserializer)
 
     @classmethod
@@ -291,8 +291,8 @@ class ElfRelaAnalyzer(Analyzer[None, ElfRelaEntry]):
     targets = (ElfRelaEntry,)
     outputs = (ElfRelaEntry,)
 
-    async def analyze(self, resource: Resource, config=None) -> ElfRelaEntry:
-        deserializer = await _create_deserializer(resource)
+    def analyze(self, resource: Resource, config=None) -> ElfRelaEntry:
+        deserializer = _create_deserializer(resource)
         return self.deserialize(deserializer)
 
     @classmethod
@@ -315,13 +315,13 @@ class ElfSectionNameAnalyzer(Analyzer[None, AttributesType[NamedProgramSection]]
     targets = (ElfSection,)
     outputs = (AttributesType[NamedProgramSection],)
 
-    async def analyze(self, resource: Resource, config=None) -> AttributesType[NamedProgramSection]:
-        section = await resource.view_as(ElfSectionStructure)
-        section_header = await section.get_header()
-        elf_r = await section.get_elf()
-        string_section = await elf_r.get_section_name_string_section()
+    def analyze(self, resource: Resource, config=None) -> AttributesType[NamedProgramSection]:
+        section = resource.view_as(ElfSectionStructure)
+        section_header = section.get_header()
+        elf_r = section.get_elf()
+        string_section = elf_r.get_section_name_string_section()
         try:
-            ((_, raw_section_name),) = await string_section.resource.search_data(
+            ((_, raw_section_name),) = string_section.resource.search_data(
                 SECTION_NAME_PATTERN, start=section_header.sh_name, max_matches=1
             )
             section_name = raw_section_name.rstrip(b"\x00").decode("ascii")
@@ -343,9 +343,9 @@ class ElfSectionMemoryRegionAnalyzer(Analyzer[None, MemoryRegion]):
     targets = (ElfSection,)
     outputs = (MemoryRegion,)
 
-    async def analyze(self, resource: Resource, config=None) -> MemoryRegion:
-        section = await resource.view_as(ElfSectionStructure)
-        section_header = await section.get_header()
+    def analyze(self, resource: Resource, config=None) -> MemoryRegion:
+        section = resource.view_as(ElfSectionStructure)
+        section_header = section.get_header()
         return MemoryRegion(
             virtual_address=section_header.sh_addr,
             size=section_header.sh_size,
@@ -362,13 +362,13 @@ class ElfProgramAttributesAnalyzer(Analyzer[None, ProgramAttributes]):
     targets = (Elf,)
     outputs = (ProgramAttributes,)
 
-    async def analyze(
+    def analyze(
         self, resource: Resource, config: Optional[ComponentConfig] = None
     ) -> ProgramAttributes:
-        elf_header = await resource.get_only_descendant_as_view(
+        elf_header = resource.get_only_descendant_as_view(
             ElfHeader, r_filter=ResourceFilter.with_tags(ElfHeader)
         )
-        elf_basic_header = await resource.get_only_descendant_as_view(
+        elf_basic_header = resource.get_only_descendant_as_view(
             ElfBasicHeader, r_filter=ResourceFilter.with_tags(ElfBasicHeader)
         )
 
@@ -381,13 +381,13 @@ class ElfProgramAttributesAnalyzer(Analyzer[None, ProgramAttributes]):
         )
 
 
-async def _create_deserializer(resource: Resource) -> BinaryDeserializer:
-    elf_r = await resource.get_only_ancestor(ResourceFilter(tags=(Elf,)))
-    e_basic_header = await elf_r.get_only_child_as_view(
+def _create_deserializer(resource: Resource) -> BinaryDeserializer:
+    elf_r = resource.get_only_ancestor(ResourceFilter(tags=(Elf,)))
+    e_basic_header = elf_r.get_only_child_as_view(
         ElfBasicHeader, ResourceFilter.with_tags(ElfBasicHeader)
     )
     deserializer = BinaryDeserializer(
-        io.BytesIO(await resource.get_data()),
+        io.BytesIO(resource.get_data()),
         endianness=e_basic_header.get_endianness(),
         word_size=int(e_basic_header.get_bitwidth().get_word_size()),
     )

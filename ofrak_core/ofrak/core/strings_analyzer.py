@@ -1,4 +1,5 @@
 import asyncio
+import subprocess
 import tempfile
 from dataclasses import dataclass
 from typing import Dict, Optional
@@ -29,20 +30,13 @@ class _StringsToolDependency(ComponentExternalTool):
             brew_package="binutils",
         )
 
-    async def is_tool_installed(self) -> bool:
+    def is_tool_installed(self) -> bool:
         try:
             cmd = [
                 self.tool,
                 self.install_check_arg,
             ]
-            proc = await asyncio.create_subprocess_exec(
-                *cmd,
-                stdout=asyncio.subprocess.DEVNULL,
-                stderr=asyncio.subprocess.DEVNULL,
-            )
-
-            # ignore returncode because "strings --help" on Mac has returncode 1
-            await proc.wait()
+            subprocess.run(cmd)
         except FileNotFoundError:
             return False
 
@@ -54,7 +48,7 @@ class StringsAnalyzer(Analyzer[Optional[StringsAnalyzerConfig], StringsAttribute
     outputs = (StringsAttributes,)
     external_dependencies = (_StringsToolDependency(),)
 
-    async def analyze(
+    def analyze(
         self, resource: Resource, config: Optional[StringsAnalyzerConfig] = None
     ) -> StringsAttributes:
         if config is None:
@@ -62,10 +56,10 @@ class StringsAnalyzer(Analyzer[Optional[StringsAnalyzerConfig], StringsAttribute
 
         strings = dict()
         with tempfile.NamedTemporaryFile() as temp_file:
-            temp_file.write(await resource.get_data())
+            temp_file.write(resource.get_data())
             temp_file.flush()
 
-            proc = await asyncio.subprocess.create_subprocess_exec(
+            proc = asyncio.subprocess.create_subprocess_exec(
                 "strings",
                 "-t",
                 "d",
@@ -74,17 +68,17 @@ class StringsAnalyzer(Analyzer[Optional[StringsAnalyzerConfig], StringsAttribute
                 stdout=asyncio.subprocess.PIPE,
             )
 
-            line = await proc.stdout.readline()  # type: ignore
+            line = proc.stdout.readline()  # type: ignore
             while line:
                 line = line.decode("ascii").strip()
                 try:
                     offset, string = line.split(" ", maxsplit=1)
                 except ValueError as e:
                     # String consisted entirely of whitespace
-                    line = await proc.stdout.readline()  # type: ignore
+                    line = proc.stdout.readline()  # type: ignore
                     continue
                 strings[int(offset)] = string
-                line = await proc.stdout.readline()  # type: ignore
-            await proc.wait()
+                line = proc.stdout.readline()  # type: ignore
+            proc.wait()
 
         return StringsAttributes(strings)

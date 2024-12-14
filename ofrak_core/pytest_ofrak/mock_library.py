@@ -66,7 +66,7 @@ class ITargetsRROutputsD(Analyzer[None, Tuple[AbstractionAttributesD]], ABC):
     id = b"TargetsRROutputsD"
 
     @abstractmethod
-    async def analyze(
+    def analyze(
         self, resource: Resource, config: Optional[ComponentConfig]
     ) -> Tuple[AbstractionAttributesD]:
         raise NotImplementedError()
@@ -82,7 +82,7 @@ class ITargetsPOutputsA(Analyzer[None, Tuple[AbstractionAttributesA]], ABC):
     id = b"TargetsPOutputsA"
 
     @abstractmethod
-    async def analyze(
+    def analyze(
         self, resource: Resource, config: Optional[ComponentConfig]
     ) -> Tuple[AbstractionAttributesA]:
         raise NotImplementedError()

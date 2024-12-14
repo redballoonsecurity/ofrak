@@ -16,15 +16,15 @@ from ofrak.core.filesystem import FilesystemRoot
 
 def test_ofrak_context():
     """
-    Test that OFRAK.run successfully creates an event loop and runs the target async function.
+    Test that OFRAK.run successfully creates an event loop and runs the target function.
     """
     # Reset the event loop (this appears to be necessary when running in CI)
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
-    async def main(ofrak_context: OFRAKContext, binary: bytes):
-        resource = await ofrak_context.create_root_resource("test_binary", binary)
-        data = await resource.get_data()
+    def main(ofrak_context: OFRAKContext, binary: bytes):
+        resource = ofrak_context.create_root_resource("test_binary", binary)
+        data = resource.get_data()
         assert data == binary
 
     ofrak = OFRAK()
@@ -35,13 +35,13 @@ def test_ofrak_context_exclude_components_missing_dependencies():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
-    async def run_component_with_bad_dependency(ofrak_context: OFRAKContext):
-        resource = await ofrak_context.create_root_resource("test_binary", b"")
-        await resource.run(_MockComponentA)
+    def run_component_with_bad_dependency(ofrak_context: OFRAKContext):
+        resource = ofrak_context.create_root_resource("test_binary", b"")
+        resource.run(_MockComponentA)
 
-    async def run_component_with_installed_dependency(ofrak_context: OFRAKContext):
-        resource = await ofrak_context.create_root_resource("test_binary", b"")
-        await resource.run(_MockComponentSysExec)
+    def run_component_with_installed_dependency(ofrak_context: OFRAKContext):
+        resource = ofrak_context.create_root_resource("test_binary", b"")
+        resource.run(_MockComponentSysExec)
 
     ofrak = OFRAK(logging_level=logging.WARNING, exclude_components_missing_dependencies=True)
     ofrak.discover(mock_library3)
@@ -72,7 +72,7 @@ def test_get_ofrak_context_over_time():
 
     ofrak = OFRAK()
 
-    async def foo(ofrak_context):
+    def foo(ofrak_context):
         # Active context while in script
         current_ofrak_context = get_current_ofrak_context()
         assert current_ofrak_context is not None
@@ -85,13 +85,13 @@ def test_get_ofrak_context_over_time():
         get_current_ofrak_context()
 
 
-async def test_get_ofrak_context_fixture(ofrak_context: OFRAKContext):
+def test_get_ofrak_context_fixture(ofrak_context: OFRAKContext):
     current_ofrak_context = get_current_ofrak_context()
     assert current_ofrak_context is not None
     assert current_ofrak_context is ofrak_context
 
 
-async def test_create_root_resource_from_directory(ofrak_context: OFRAKContext):
+def test_create_root_resource_from_directory(ofrak_context: OFRAKContext):
     with TemporaryDirectory() as tempdir:
         with open(os.path.join(tempdir, "1.txt"), "w") as fh:
             fh.write("test")
@@ -105,10 +105,10 @@ async def test_create_root_resource_from_directory(ofrak_context: OFRAKContext):
         for _, dirs, files in os.walk(tempdir):
             orig_dirs.append(dirs)
             orig_files.append(files)
-        root_resource: Resource = await ofrak_context.create_root_resource_from_directory(tempdir)
+        root_resource: Resource = ofrak_context.create_root_resource_from_directory(tempdir)
     with TemporaryDirectory() as tempdir:
-        root_v = await root_resource.view_as(FilesystemRoot)
-        await root_v.flush_to_disk(tempdir)
+        root_v = root_resource.view_as(FilesystemRoot)
+        root_v.flush_to_disk(tempdir)
         res = os.walk(tempdir)
         new_files = []
         new_dirs = []

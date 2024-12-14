@@ -48,7 +48,7 @@ class Instruction(MemoryRegion):
             return super().caption(all_attributes)
         return f"{instruction_attributes.mnemonic} {instruction_attributes.operands}"
 
-    async def get_assembly(self) -> str:
+    def get_assembly(self) -> str:
         """
         Get the instruction as an assembly string.
 
@@ -56,7 +56,7 @@ class Instruction(MemoryRegion):
         """
         return f"{self.mnemonic} {self.operands}"
 
-    async def modify_assembly(
+    def modify_assembly(
         self,
         mnemonic: Optional[str] = None,
         operands: Optional[str] = None,
@@ -76,8 +76,8 @@ class Instruction(MemoryRegion):
             operands or self.operands,
             mode or self.mode,
         )
-        await self.resource.run(InstructionModifier, modification_config)
-        data_after_modification = await self.resource.get_data()
+        self.resource.run(InstructionModifier, modification_config)
+        data_after_modification = self.resource.get_data()
 
         return data_after_modification
 
@@ -153,7 +153,7 @@ class InstructionModifier(Modifier[InstructionModifierConfig]):
         )
         self._assembler_service = assembler_service
 
-    async def modify(self, resource: Resource, config: InstructionModifierConfig):
+    def modify(self, resource: Resource, config: InstructionModifierConfig):
         """
         Modify an instruction.
 
@@ -163,14 +163,14 @@ class InstructionModifier(Modifier[InstructionModifierConfig]):
         :raises AssertionError: if the modified instruction length does not match the length of
         the original instruction
         """
-        resource_memory_region = await resource.view_as(MemoryRegion)
+        resource_memory_region = resource.view_as(MemoryRegion)
 
         modified_assembly = f"{config.mnemonic} {config.operands}"
 
-        asm = await self._assembler_service.assemble(
+        asm = self._assembler_service.assemble(
             modified_assembly,
             resource_memory_region.virtual_address,
-            await resource.analyze(ProgramAttributes),
+            resource.analyze(ProgramAttributes),
             config.mode,
         )
         assert (

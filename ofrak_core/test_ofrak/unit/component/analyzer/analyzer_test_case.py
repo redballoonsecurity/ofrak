@@ -38,15 +38,15 @@ class AnalyzerTests:
     Contributors should subclass this test and create a `test_case` fixture to run these tests.
     """
 
-    async def test_analyze_method(self, test_case: PopulatedAnalyzerTestCase):
+    def test_analyze_method(self, test_case: PopulatedAnalyzerTestCase):
         """
         Test that :func:`Analyzer.analyze` returns the expected AnalyzerReturnType
         """
         analyzer = test_case.get_analyzer()
-        result = await analyzer.analyze(test_case.resource)
+        result = analyzer.analyze(test_case.resource)
         assert result == test_case.expected_result
 
-    async def test_resource_analyzer(self, test_case: PopulatedAnalyzerTestCase):
+    def test_resource_analyzer(self, test_case: PopulatedAnalyzerTestCase):
         """
         Test that :func:`Resource.analyze` returns the expected resource attributes.
         """
@@ -55,14 +55,14 @@ class AnalyzerTests:
         else:
             attributes_to_analyze = (test_case.expected_result,)
         for resource_attribute in attributes_to_analyze:
-            result = await test_case.resource.analyze(type(resource_attribute))
+            result = test_case.resource.analyze(type(resource_attribute))
             assert result == resource_attribute
 
-    async def test_run_analyzer(self, test_case: PopulatedAnalyzerTestCase):
+    def test_run_analyzer(self, test_case: PopulatedAnalyzerTestCase):
         """
         Test that :func:`Resource.run` works on the given analyzer.
         """
-        await test_case.resource.run(test_case.analyzer_type)
+        test_case.resource.run(test_case.analyzer_type)
         if isinstance(test_case.expected_result, tuple):
             expected_attributes = test_case.expected_result
         else:
@@ -71,10 +71,10 @@ class AnalyzerTests:
             result = test_case.resource.get_attributes(type(resource_attribute))
             assert result == resource_attribute
 
-    async def test_no_valid_analyzer(self, test_case: PopulatedAnalyzerTestCase):
+    def test_no_valid_analyzer(self, test_case: PopulatedAnalyzerTestCase):
         """
         Test that running :func:`Resource.analyze` raises :class:`AnalyzerNotFoundError`
         when no analyzer matches the given :class:`ResourceAttributes` type.
         """
         with pytest.raises(NotFoundError):
-            await test_case.resource.analyze(DummyAttributes)
+            test_case.resource.analyze(DummyAttributes)

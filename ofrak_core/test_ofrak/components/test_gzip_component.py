@@ -57,19 +57,19 @@ class GzipUnpackModifyPackPattern(CompressedFileUnpackModifyPackPattern, ABC):
         self.write_gzip(gzip_path)
         self._test_file = gzip_path.resolve()
 
-    async def test_unpack_modify_pack(self, ofrak_context: OFRAKContext):
+    def test_unpack_modify_pack(self, ofrak_context: OFRAKContext):
         with patch("asyncio.create_subprocess_exec", wraps=create_subprocess_exec) as mock_exec:
-            if self.EXPECT_PIGZ and await PIGZ.is_tool_installed():
-                await super().test_unpack_modify_pack(ofrak_context)
+            if self.EXPECT_PIGZ and PIGZ.is_tool_installed():
+                super().test_unpack_modify_pack(ofrak_context)
                 assert any(
                     args[0][0] == "pigz" and args[0][1] == "-c" for args in mock_exec.call_args_list
                 )
             else:
-                await super().test_unpack_modify_pack(ofrak_context)
+                super().test_unpack_modify_pack(ofrak_context)
                 mock_exec.assert_not_called()
 
-    async def verify(self, repacked_root_resource: Resource):
-        patched_decompressed_data = gzip.decompress(await repacked_root_resource.get_data())
+    def verify(self, repacked_root_resource: Resource):
+        patched_decompressed_data = gzip.decompress(repacked_root_resource.get_data())
         assert patched_decompressed_data == self.EXPECTED_REPACKED_DATA
 
 
@@ -98,12 +98,12 @@ class TestGzipWithTrailingBytesUnpackModifyPack(GzipUnpackModifyPackPattern):
             raw_file.write(b"\xDE\xAD\xBE\xEF")
 
 
-async def test_corrupted_gzip_fail(
+def test_corrupted_gzip_fail(
     gzip_test_input: Tuple[bytes, bytes, bool], ofrak_context: OFRAKContext
 ):
     initial_data = gzip_test_input[0]
     corrupted_data = bytearray(gzip.compress(initial_data))
     corrupted_data[10] = 255
-    resource = await ofrak_context.create_root_resource("corrupted.gz", data=bytes(corrupted_data))
+    resource = ofrak_context.create_root_resource("corrupted.gz", data=bytes(corrupted_data))
     with pytest.raises((zlib.error, ComponentSubprocessError)):
-        await resource.unpack()
+        resource.unpack()

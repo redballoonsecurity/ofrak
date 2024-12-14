@@ -43,15 +43,15 @@ class Iso9660UnpackModifyPackPattern(CompressedFileUnpackModifyPackPattern):
     def expected_file_attributes(self) -> Optional[ISO9660Entry]:
         return None
 
-    async def modify(self, unpacked_root_resource: Resource):
-        test_folder = await unpacked_root_resource.get_only_child()
-        resource_to_modify = await test_folder.get_only_child()
+    def modify(self, unpacked_root_resource: Resource):
+        test_folder = unpacked_root_resource.get_only_child()
+        resource_to_modify = test_folder.get_only_child()
         new_string_config = StringPatchingConfig(6, "ofrak")
-        await resource_to_modify.run(StringPatchingModifier, new_string_config)
+        resource_to_modify.run(StringPatchingModifier, new_string_config)
 
-    async def verify(self, repacked_root_resource: Resource):
+    def verify(self, repacked_root_resource: Resource):
         iso = PyCdlib()
-        iso.open_fp(BytesIO(await repacked_root_resource.get_data()))
+        iso.open_fp(BytesIO(repacked_root_resource.get_data()))
 
         extracted = BytesIO()
         if iso.has_joliet():
@@ -62,16 +62,16 @@ class Iso9660UnpackModifyPackPattern(CompressedFileUnpackModifyPackPattern):
         iso.close()
 
         if self.expected_image_attributes:
-            attributes = await repacked_root_resource.analyze(ISO9660ImageAttributes)
+            attributes = repacked_root_resource.analyze(ISO9660ImageAttributes)
             assert attributes == self.expected_image_attributes
 
-        await repacked_root_resource.unpack()
-        await repacked_root_resource.summarize_tree()
+        repacked_root_resource.unpack()
+        repacked_root_resource.summarize_tree()
 
-        repacked_iso_resource = await repacked_root_resource.view_as(ISO9660Image)
+        repacked_iso_resource = repacked_root_resource.view_as(ISO9660Image)
 
-        for desc in await repacked_iso_resource.get_entries():
-            await repacked_iso_resource.get_file(desc.Path)
+        for desc in repacked_iso_resource.get_entries():
+            repacked_iso_resource.get_file(desc.Path)
 
 
 class TestIso9660UnpackModifyPack(Iso9660UnpackModifyPackPattern):

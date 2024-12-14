@@ -22,7 +22,7 @@ TEST_FILES = [
     "test_file_path",
     [os.path.join(test_ofrak.components.ASSETS_DIR, filename) for filename in TEST_FILES],
 )
-async def test_analyzer(ofrak_context: OFRAKContext, test_file_path):
+def test_analyzer(ofrak_context: OFRAKContext, test_file_path):
     """
     Only test on small files for two reasons:
 
@@ -44,8 +44,8 @@ async def test_analyzer(ofrak_context: OFRAKContext, test_file_path):
 
     expected_entropy = c_implementation_entropy
 
-    root = await ofrak_context.create_root_resource_from_file(test_file_path)
-    await root.run(DataSummaryAnalyzer)
+    root = ofrak_context.create_root_resource_from_file(test_file_path)
+    root.run(DataSummaryAnalyzer)
     data_summary = root.get_attributes(DataSummary)
     entropy = data_summary.entropy_samples
     assert _almost_equal(

@@ -103,7 +103,7 @@ class PatchFromSourceModifier(Modifier):
 
     targets = (Program,)
 
-    async def modify(self, resource: Resource, config: PatchFromSourceModifierConfig) -> None:
+    def modify(self, resource: Resource, config: PatchFromSourceModifierConfig) -> None:
         if config.patch_name is None:
             patch_name = f"{resource.get_id().hex()}_patch"
         else:
@@ -124,7 +124,7 @@ class PatchFromSourceModifier(Modifier):
         absolute_source_list = [
             os.path.join(source_tmp_dir, src_file) for src_file in config.source_patches.keys()
         ]
-        program_attributes = await resource.analyze(ProgramAttributes)
+        program_attributes = resource.analyze(ProgramAttributes)
         patch_maker = PatchMaker(
             toolchain=config.toolchain(program_attributes, config.toolchain_config),
             build_dir=build_tmp_dir,
@@ -142,8 +142,8 @@ class PatchFromSourceModifier(Modifier):
             for src_file, src_segments in config.source_patches.items()
         }
 
-        target_program = await resource.view_as(Program)
-        target_linkable_bom_info = await target_program.make_linkable_bom(
+        target_program = resource.view_as(Program)
+        target_linkable_bom_info = target_program.make_linkable_bom(
             patch_maker,
             build_tmp_dir,
             patch_bom.unresolved_symbols,
@@ -162,16 +162,14 @@ class PatchFromSourceModifier(Modifier):
             [(patch_bom, p), target_linkable_bom_info],
             exec_path,
         )
-        await resource.run(
+        resource.run(
             SegmentInjectorModifier,
             SegmentInjectorModifierConfig.from_fem(fem),
         )
 
         # Refresh LinkableBinary with the LinkableSymbols used in this patch
-        target_binary = await resource.view_as(LinkableBinary)
-        await target_binary.define_linkable_symbols_from_patch(
-            fem.executable.symbols, program_attributes
-        )
+        target_binary = resource.view_as(LinkableBinary)
+        target_binary.define_linkable_symbols_from_patch(fem.executable.symbols, program_attributes)
 
 
 @dataclass
@@ -202,9 +200,9 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
 
     targets = (Program,)
 
-    async def modify(self, resource: Resource, config: SegmentInjectorModifierConfig) -> None:
+    def modify(self, resource: Resource, config: SegmentInjectorModifierConfig) -> None:
         sorted_regions = list(
-            await resource.get_descendants_as_view(
+            resource.get_descendants_as_view(
                 MemoryRegion,
                 r_filter=ResourceFilter(
                     include_self=True,
@@ -251,22 +249,18 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
             injection_tasks.append((region.resource, BinaryInjectorModifierConfig(patches)))
 
         for injected_resource, injection_config in injection_tasks:
-            result = await injected_resource.run(BinaryInjectorModifier, injection_config)
+            result = injected_resource.run(BinaryInjectorModifier, injection_config)
             # The above can patch data of any of injected_resources' descendants or ancestors
             # We don't want to delete injected_resources or its ancestors, so subtract them from the
             # set of patched resources
             patched_descendants = result.resources_modified.difference(
                 {
                     r.get_id()
-                    for r in await injected_resource.get_ancestors(
-                        ResourceFilter(include_self=True)
-                    )
+                    for r in injected_resource.get_ancestors(ResourceFilter(include_self=True))
                 }
             )
-            to_delete = [
-                r for r in await resource.get_descendants() if r.get_id() in patched_descendants
-            ]
-            await asyncio.gather(*(r.delete() for r in to_delete))
+            to_delete = [r for r in resource.get_descendants() if r.get_id() in patched_descendants]
+            asyncio.gather(*(r.delete() for r in to_delete))
 
 
 @dataclass
@@ -301,13 +295,13 @@ class FunctionReplacementModifier(Modifier[FunctionReplacementModifierConfig]):
 
     targets = (Program,)
 
-    async def modify(self, resource: Resource, config: FunctionReplacementModifierConfig) -> None:
-        program = await resource.view_as(Program)
+    def modify(self, resource: Resource, config: FunctionReplacementModifierConfig) -> None:
+        program = resource.view_as(Program)
         function_to_replace_cbs = {
-            func_name: await program.get_function_complex_block(func_name)
+            func_name: program.get_function_complex_block(func_name)
             for func_name in config.new_function_sources.keys()
         }
-        await self._verify_modes_are_the_same(list(function_to_replace_cbs.values()))
+        self._verify_modes_are_the_same(list(function_to_replace_cbs.values()))
         source_patches: Dict[str, Tuple[Segment, ...]] = {
             config.new_function_sources[func_name]: (self._make_text_segment(complex_block),)
             for func_name, complex_block in function_to_replace_cbs.items()
@@ -320,7 +314,7 @@ class FunctionReplacementModifier(Modifier[FunctionReplacementModifierConfig]):
             config.header_directories,
             config.patch_name,
         )
-        await resource.run(PatchFromSourceModifier, patch_from_source_config)
+        resource.run(PatchFromSourceModifier, patch_from_source_config)
 
     @staticmethod
     def _make_text_segment(complex_block: ComplexBlock) -> Segment:
@@ -335,13 +329,13 @@ class FunctionReplacementModifier(Modifier[FunctionReplacementModifierConfig]):
         )
 
     @staticmethod
-    async def _verify_modes_are_the_same(complex_blocks: List[ComplexBlock]) -> None:
+    def _verify_modes_are_the_same(complex_blocks: List[ComplexBlock]) -> None:
         """
         Verify that the `InstructionSetMode` of all the `complex_blocks` is the same.
 
         :raises NotImplementedError: if several `InstructionSetMode` values are found
         """
-        modes = {await complex_block.get_mode() for complex_block in complex_blocks}
+        modes = {complex_block.get_mode() for complex_block in complex_blocks}
         if len(modes) > 1:
             raise NotImplementedError(
                 f"Several values of InstructionSetMode found in complex blocks {complex_blocks}: {modes}\n"

@@ -121,7 +121,7 @@ def test_add_components(component_locator, components_for_testing):
         def __init__(self):
             super().__init__(None, None, None)  # type: ignore
 
-        async def _run(self, resource, config=None):
+        def _run(self, resource, config=None):
             pass
 
         @classmethod

@@ -13,5 +13,5 @@ class LinkableSymbolIdentifier(Identifier):
     id = b"LinkableSymbolIdentifier"
     targets = (ComplexBlock,)
 
-    async def identify(self, resource: Resource, config=None):
+    def identify(self, resource: Resource, config=None):
         resource.add_tag(LinkableSymbol)

@@ -9,9 +9,9 @@ class ComplexBlockSymbolAnalyzer(Analyzer[None, LinkableSymbol]):
     targets = (ComplexBlock,)
     outputs = (LinkableSymbol,)
 
-    async def analyze(self, resource: Resource, config: ComponentConfig = None) -> LinkableSymbol:
-        cb = await resource.view_as(ComplexBlock)
-        cb_mode = await cb.get_mode()
+    def analyze(self, resource: Resource, config: ComponentConfig = None) -> LinkableSymbol:
+        cb = resource.view_as(ComplexBlock)
+        cb_mode = cb.get_mode()
 
         return LinkableSymbol(
             cb.VirtualAddress,

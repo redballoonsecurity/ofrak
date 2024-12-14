@@ -173,33 +173,31 @@ def tree3_resource_models() -> List[ResourceModel]:
 
 
 @pytest.fixture
-async def basic_populated_resource_service(
+def basic_populated_resource_service(
     resource_service: ResourceServiceInterface, tree1_resource_models
 ):
     for model in tree1_resource_models:
-        await resource_service.create(model)
+        resource_service.create(model)
 
     return resource_service
 
 
 @pytest.fixture
-async def populated_resource_service(
-    resource_service: ResourceServiceInterface, tree3_resource_models
-):
+def populated_resource_service(resource_service: ResourceServiceInterface, tree3_resource_models):
     for model in tree3_resource_models:
-        await resource_service.create(model)
+        resource_service.create(model)
 
     return resource_service
 
 
 @pytest.fixture
-async def triple_populated_resource_service(
+def triple_populated_resource_service(
     resource_service: ResourceServiceInterface,
     tree1_resource_models,
     tree2_resource_models,
     tree3_resource_models,
 ):
     for model in chain(tree1_resource_models, tree2_resource_models, tree3_resource_models):
-        await resource_service.create(model)
+        resource_service.create(model)
 
     return resource_service

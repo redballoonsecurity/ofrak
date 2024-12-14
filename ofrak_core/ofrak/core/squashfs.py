@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import subprocess
 import tempfile
 from dataclasses import dataclass
 from subprocess import CalledProcessError
@@ -26,22 +27,17 @@ class _UnsquashfsV45Tool(ComponentExternalTool):
     def __init__(self):
         super().__init__("unsquashfs", "https://github.com/plougher/squashfs-tools", "")
 
-    async def is_tool_installed(self) -> bool:
+    def is_tool_installed(self) -> bool:
         try:
             cmd = ["unsquashfs", "-help"]
-            proc = await asyncio.create_subprocess_exec(
-                *cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.DEVNULL,
-            )
-            stdout, stderr = await proc.communicate()
+            result = subprocess.run(cmd, capture_output=True)
         except FileNotFoundError:
             return False
 
-        if 0 != proc.returncode:
+        if 0 != result.returncode:
             return False
 
-        if b"-no-exit" not in stdout:
+        if b"-no-exit" not in result.stdout:
             # Version 4.5+ has the required -no-exit option
             return False
 
@@ -65,9 +61,9 @@ class SquashfsUnpacker(Unpacker[None]):
     children = (File, Folder, SpecialFileType)
     external_dependencies = (UNSQUASHFS,)
 
-    async def unpack(self, resource: Resource, config=None):
+    def unpack(self, resource: Resource, config=None):
         with tempfile.NamedTemporaryFile() as temp_file:
-            resource_data = await resource.get_data()
+            resource_data = resource.get_data()
             temp_file.write(resource_data)
             temp_file.flush()
 
@@ -80,15 +76,15 @@ class SquashfsUnpacker(Unpacker[None]):
                     temp_flush_dir,
                     temp_file.name,
                 ]
-                proc = await asyncio.create_subprocess_exec(
+                proc = asyncio.create_subprocess_exec(
                     *cmd,
                 )
-                returncode = await proc.wait()
+                returncode = proc.wait()
                 if proc.returncode:
                     raise CalledProcessError(returncode=returncode, cmd=cmd)
 
-                squashfs_view = await resource.view_as(SquashfsFilesystem)
-                await squashfs_view.initialize_from_disk(temp_flush_dir)
+                squashfs_view = resource.view_as(SquashfsFilesystem)
+                squashfs_view.initialize_from_disk(temp_flush_dir)
 
 
 class SquashfsPacker(Packer[None]):
@@ -99,9 +95,9 @@ class SquashfsPacker(Packer[None]):
     targets = (SquashfsFilesystem,)
     external_dependencies = (MKSQUASHFS,)
 
-    async def pack(self, resource: Resource, config=None):
-        squashfs_view: SquashfsFilesystem = await resource.view_as(SquashfsFilesystem)
-        temp_flush_dir = await squashfs_view.flush_to_disk()
+    def pack(self, resource: Resource, config=None):
+        squashfs_view: SquashfsFilesystem = resource.view_as(SquashfsFilesystem)
+        temp_flush_dir = squashfs_view.flush_to_disk()
         with tempfile.NamedTemporaryFile(suffix=".sqsh", mode="rb") as temp:
             cmd = [
                 "mksquashfs",
@@ -109,15 +105,15 @@ class SquashfsPacker(Packer[None]):
                 temp.name,
                 "-noappend",
             ]
-            proc = await asyncio.create_subprocess_exec(
+            proc = asyncio.create_subprocess_exec(
                 *cmd,
             )
-            returncode = await proc.wait()
+            returncode = proc.wait()
             if proc.returncode:
                 raise CalledProcessError(returncode=returncode, cmd=cmd)
             new_data = temp.read()
             # Passing in the original range effectively replaces the original data with the new data
-            resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
+            resource.queue_patch(Range(0, resource.get_data_length()), new_data)
 
 
 MagicMimeIdentifier.register(SquashfsFilesystem, "application/filesystem+sqsh")

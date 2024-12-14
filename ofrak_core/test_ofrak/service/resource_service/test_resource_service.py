@@ -57,18 +57,18 @@ from test_ofrak.service.resource_service.conftest import (
 
 
 class TestResourceService:
-    async def test_create(self, resource_service, tree1_resource_models, tree2_resource_models):
+    def test_create(self, resource_service, tree1_resource_models, tree2_resource_models):
         # Can creates resources normally
         for model in tree1_resource_models:
-            created = await resource_service.create(model)
+            created = resource_service.create(model)
             assert created == model
 
         # Cannot create same resource twice
         for model in tree1_resource_models:
-            stored = await resource_service.get_by_id(model.id)
+            stored = resource_service.get_by_id(model.id)
             assert stored == model
             with pytest.raises(AlreadyExistError):
-                await resource_service.create(model)
+                resource_service.create(model)
 
         # Cannot create resource with missing parent
         for model in tree2_resource_models:
@@ -76,47 +76,47 @@ class TestResourceService:
                 continue
 
             with pytest.raises(NotFoundError):
-                await resource_service.create(model)
+                resource_service.create(model)
 
         # Can create a resource with data ID
         model = tree2_resource_models[0]
         model.data_id = b"\xDD\x01"
-        await resource_service.create(model)
+        resource_service.create(model)
 
         # Can create a resource with tags
         model = tree2_resource_models[1]
         model.tags.add(Addressable)
-        await resource_service.create(model)
+        resource_service.create(model)
 
         # Can create a resource with indexable attributes
         model = tree2_resource_models[2]
         model.attributes[AttributesType[Addressable]] = AttributesType[Addressable](0x100)
-        await resource_service.create(model)
+        resource_service.create(model)
 
-    async def test_get_by_data_ids(self, resource_service, tree1_resource_models):
+    def test_get_by_data_ids(self, resource_service, tree1_resource_models):
         resources_by_data_id = {bytes(i): model for i, model in enumerate(tree1_resource_models)}
 
         for i, model in resources_by_data_id.items():
             model.data_id = bytes(i)
-            await resource_service.create(model)
+            resource_service.create(model)
 
         data_id_sequence = list(resources_by_data_id.keys())
         random.shuffle(data_id_sequence)
-        for i, got_model in enumerate(await resource_service.get_by_data_ids(data_id_sequence)):
+        for i, got_model in enumerate(resource_service.get_by_data_ids(data_id_sequence)):
             assert got_model.data_id == data_id_sequence[i]
             assert got_model == resources_by_data_id[got_model.data_id]
 
         # All data IDs are missing
         with pytest.raises(NotFoundError):
-            await resource_service.get_by_data_ids([b"\xFF"])
+            resource_service.get_by_data_ids([b"\xFF"])
 
         # Just one data ID is missing
         with pytest.raises(NotFoundError):
-            await resource_service.get_by_data_ids(data_id_sequence + [b"\xFF"])
+            resource_service.get_by_data_ids(data_id_sequence + [b"\xFF"])
 
-        assert await resource_service.get_by_data_ids([]) == []
+        assert resource_service.get_by_data_ids([]) == []
 
-    async def test_get_by_ids(
+    def test_get_by_ids(
         self, basic_populated_resource_service: ResourceServiceInterface, tree1_resource_models
     ):
         # tree1_resource_models -> depth = 0
@@ -124,30 +124,28 @@ class TestResourceService:
 
         r_id_sequence = list(resources_by_id.keys())
         random.shuffle(r_id_sequence)
-        for i, got_model in enumerate(
-            await basic_populated_resource_service.get_by_ids(r_id_sequence)
-        ):
+        for i, got_model in enumerate(basic_populated_resource_service.get_by_ids(r_id_sequence)):
             assert got_model.id == r_id_sequence[i]
             assert got_model == resources_by_id[got_model.id]
 
         # All resource IDs are missing
         with pytest.raises(NotFoundError):
-            await basic_populated_resource_service.get_by_ids([b"\xFF"])
+            basic_populated_resource_service.get_by_ids([b"\xFF"])
 
         # Just one resource ID is missing
         with pytest.raises(NotFoundError):
-            await basic_populated_resource_service.get_by_ids(r_id_sequence + [b"\xFF"])
+            basic_populated_resource_service.get_by_ids(r_id_sequence + [b"\xFF"])
 
-        assert await basic_populated_resource_service.get_by_ids([]) == []
+        assert basic_populated_resource_service.get_by_ids([]) == []
 
-    async def test_get_by_id(
+    def test_get_by_id(
         self, basic_populated_resource_service: ResourceServiceInterface, tree1_resource_models
     ):
         for model in tree1_resource_models:
-            got_model = await basic_populated_resource_service.get_by_id(model.id)
+            got_model = basic_populated_resource_service.get_by_id(model.id)
             assert got_model == model
 
-    async def test_get_depths(
+    def test_get_depths(
         self, populated_resource_service: ResourceServiceInterface, tree3_resource_models
     ):
         expected_depths_dict = {}
@@ -158,18 +156,18 @@ class TestResourceService:
                 expected_depths_dict[model.id] = 0
         model_ids = [model.id for model in tree3_resource_models]
         expected_depths = [expected_depths_dict[model_id] for model_id in model_ids]
-        got_depths = await populated_resource_service.get_depths(model_ids)
+        got_depths = populated_resource_service.get_depths(model_ids)
         assert got_depths == expected_depths
 
         # All resource IDs are missing
         with pytest.raises(NotFoundError):
-            await populated_resource_service.get_depths([b"\xFF"])
+            populated_resource_service.get_depths([b"\xFF"])
 
         # Just one resource ID is missing
         with pytest.raises(NotFoundError):
-            await populated_resource_service.get_depths(model_ids + [b"\xFF"])
+            populated_resource_service.get_depths(model_ids + [b"\xFF"])
 
-        assert await populated_resource_service.get_depths([]) == []
+        assert populated_resource_service.get_depths([]) == []
 
     GET_ANCESTORS_TEST_CASES = [
         GetAncestorsTestCase(
@@ -256,11 +254,11 @@ class TestResourceService:
     ]
 
     @pytest.mark.parametrize("test_case", GET_ANCESTORS_TEST_CASES, ids=lambda tc: tc.label)
-    async def test_get_ancestors_by_id(
+    def test_get_ancestors_by_id(
         self, populated_resource_service: ResourceServiceInterface, test_case: GetAncestorsTestCase
     ):
         results = list(
-            await populated_resource_service.get_ancestors_by_id(
+            populated_resource_service.get_ancestors_by_id(
                 test_case.resource_id,
                 test_case.max_count,
                 test_case.r_filter,
@@ -610,14 +608,14 @@ class TestResourceService:
     ]
 
     @pytest.mark.parametrize("test_case", GET_DESCENDANTS_TEST_CASES, ids=lambda tc: tc.label)
-    async def test_get_descendants_by_id(
+    def test_get_descendants_by_id(
         self,
         populated_resource_service: ResourceServiceInterface,
         test_case: GetDescendantsTestCase,
     ):
-        await test_case.initialize(populated_resource_service)
+        test_case.initialize(populated_resource_service)
         results = list(
-            await populated_resource_service.get_descendants_by_id(
+            populated_resource_service.get_descendants_by_id(
                 test_case.resource_id,
                 test_case.max_count,
                 test_case.max_depth,
@@ -628,15 +626,15 @@ class TestResourceService:
         test_case.check_results(results)
 
     @pytest.mark.skip
-    async def test_get_siblings_by_id(self, resource_service):
+    def test_get_siblings_by_id(self, resource_service):
         # TODO: Implement test
         # Not done with the others because it is a special case of get_descendants_by_id
         pass
 
-    async def test_update(self, populated_resource_service: ResourceServiceInterface):
+    def test_update(self, populated_resource_service: ResourceServiceInterface):
         # Update nonexistant resource
         with pytest.raises(NotFoundError):
-            await populated_resource_service.update(ResourceModelDiff(b"\xFF"))
+            populated_resource_service.update(ResourceModelDiff(b"\xFF"))
         # Test we can add non-indexing resource model fields
         dependency = ResourceAttributeDependency(
             b"\xFF", b"dummy_component", AttributesType[MemoryRegion]
@@ -652,7 +650,7 @@ class TestResourceService:
             component_versions_added=new_component_versions,
             attributes_component_added=new_attributes_components,
         )
-        new_model = await populated_resource_service.update(simple_addition_diff)
+        new_model = populated_resource_service.update(simple_addition_diff)
         assert new_model.data_dependencies[dependency] == {Range(0, 10)}
         assert new_model.attribute_dependencies[AttributesType[Addressable]] == {dependency}
         assert new_model.component_versions.get(b"dummy_component") == 1
@@ -661,12 +659,12 @@ class TestResourceService:
             == b"dummy_component"
         )
 
-        assert (await populated_resource_service.get_by_id(R_ID_3_1)) == new_model
+        assert (populated_resource_service.get_by_id(R_ID_3_1)) == new_model
 
         old_model = new_model
 
         # Updating is idempotent
-        new_model = await populated_resource_service.update(simple_addition_diff)
+        new_model = populated_resource_service.update(simple_addition_diff)
         assert old_model == new_model
 
         # Test we can remove non-indexing resource model fields
@@ -675,7 +673,7 @@ class TestResourceService:
             data_dependencies_removed={dependency},
             component_versions_removed={b"dummy_component"},
         )
-        new_model = await populated_resource_service.update(simple_removal_diff)
+        new_model = populated_resource_service.update(simple_removal_diff)
         assert new_model != old_model
         assert new_model.data_dependencies[dependency] == set()
         assert new_model.attribute_dependencies[AttributesType[Addressable]] == {dependency}
@@ -687,16 +685,16 @@ class TestResourceService:
 
         # Test we can update tags, and get different results for the same query
         initial_instruction_results = list(
-            await populated_resource_service.get_descendants_by_id(
+            populated_resource_service.get_descendants_by_id(
                 R_ID_3_1_1_1, r_filter=ResourceFilter.with_tags(Instruction)
             )
         )
         initial_data_word_results = list(
-            await populated_resource_service.get_descendants_by_id(
+            populated_resource_service.get_descendants_by_id(
                 R_ID_3_1_1_1, r_filter=ResourceFilter.with_tags(DataWord)
             )
         )
-        new_model = await populated_resource_service.update(
+        new_model = populated_resource_service.update(
             ResourceModelDiff(
                 R_ID_3_1_1_1_1,
                 tags_removed={Instruction},
@@ -706,12 +704,12 @@ class TestResourceService:
         assert Instruction not in new_model.tags
         assert DataWord in new_model.tags
         instruction_results = list(
-            await populated_resource_service.get_descendants_by_id(
+            populated_resource_service.get_descendants_by_id(
                 R_ID_3_1_1_1, r_filter=ResourceFilter.with_tags(Instruction)
             )
         )
         data_word_results = list(
-            await populated_resource_service.get_descendants_by_id(
+            populated_resource_service.get_descendants_by_id(
                 R_ID_3_1_1_1, r_filter=ResourceFilter.with_tags(DataWord)
             )
         )
@@ -723,7 +721,7 @@ class TestResourceService:
 
         # Test we can update attributes, and get different results for the same query
         initial_elf_index_results = list(
-            await populated_resource_service.get_descendants_by_id(
+            populated_resource_service.get_descendants_by_id(
                 R_ID_3_1_1,
                 r_filter=ResourceFilter(
                     include_self=True,
@@ -733,7 +731,7 @@ class TestResourceService:
                 ),
             )
         )
-        new_model = await populated_resource_service.update(
+        new_model = populated_resource_service.update(
             ResourceModelDiff(
                 R_ID_3_1_1,
                 attributes_removed={TestIndexAttributes},
@@ -742,7 +740,7 @@ class TestResourceService:
         )
         assert new_model.attributes[TestIndexAttributes].val == 3
         elf_index_results = list(
-            await populated_resource_service.get_descendants_by_id(
+            populated_resource_service.get_descendants_by_id(
                 R_ID_3_1_1,
                 r_filter=ResourceFilter(
                     include_self=True,
@@ -760,97 +758,95 @@ class TestResourceService:
             R_ID_3_1_1_1_1,
         }
 
-    async def test_rebase_resource(
+    def test_rebase_resource(
         self, basic_populated_resource_service: ResourceServiceInterface, tree2_resource_models
     ):
         for model in tree2_resource_models:
-            await basic_populated_resource_service.create(model)
+            basic_populated_resource_service.create(model)
 
         # rebase from one tree to another
-        await basic_populated_resource_service.rebase_resource(
+        basic_populated_resource_service.rebase_resource(
             R_ID_2_1,
             R_ID_1_3,
         )
 
-        new_model = await basic_populated_resource_service.get_by_id(R_ID_2_1)
+        new_model = basic_populated_resource_service.get_by_id(R_ID_2_1)
         assert new_model.parent_id == R_ID_1_3
 
         new_ancestors = list(
-            model.id
-            for model in await basic_populated_resource_service.get_ancestors_by_id(R_ID_2_1)
+            model.id for model in basic_populated_resource_service.get_ancestors_by_id(R_ID_2_1)
         )
         assert new_ancestors[-2:] == [R_ID_1_3, R_ID_1_ROOT]
 
         new_ancestors_of_leaf = list(
             model.id
-            for model in await basic_populated_resource_service.get_ancestors_by_id(R_ID_2_1_1_1_1)
+            for model in basic_populated_resource_service.get_ancestors_by_id(R_ID_2_1_1_1_1)
         )
         assert new_ancestors_of_leaf[-2:] == [R_ID_1_3, R_ID_1_ROOT]
 
         # rebase root node
-        await basic_populated_resource_service.rebase_resource(
+        basic_populated_resource_service.rebase_resource(
             R_ID_2_ROOT,
             R_ID_1_1,
         )
-        new_model = await basic_populated_resource_service.get_by_id(R_ID_2_ROOT)
+        new_model = basic_populated_resource_service.get_by_id(R_ID_2_ROOT)
         assert new_model.parent_id == R_ID_1_1
         new_ancestors = list(
-            model.id
-            for model in await basic_populated_resource_service.get_ancestors_by_id(R_ID_2_ROOT)
+            model.id for model in basic_populated_resource_service.get_ancestors_by_id(R_ID_2_ROOT)
         )
         assert new_ancestors[-2:] == [R_ID_1_1, R_ID_1_ROOT]
 
         # rebasing nonexistant node
         with pytest.raises(NotFoundError):
-            await basic_populated_resource_service.rebase_resource(
+            basic_populated_resource_service.rebase_resource(
                 b"\xFF",
                 R_ID_1_1,
             )
 
         # rebasing to nonexistant node
         with pytest.raises(NotFoundError):
-            await basic_populated_resource_service.rebase_resource(
+            basic_populated_resource_service.rebase_resource(
                 R_ID_1_1,
                 b"\xFF",
             )
 
-    async def test_delete_resource(self, populated_resource_service: ResourceServiceInterface):
+    def test_delete_resource(self, populated_resource_service: ResourceServiceInterface):
         # delete leaf
-        await populated_resource_service.delete_resource(R_ID_3_1_1_1_2)
+        populated_resource_service.delete_resource(R_ID_3_1_1_1_2)
         with pytest.raises(NotFoundError):
-            await populated_resource_service.get_by_id(R_ID_3_1_1_1_2)
+            populated_resource_service.get_by_id(R_ID_3_1_1_1_2)
 
         # delete internal node
-        await populated_resource_service.delete_resource(R_ID_3_1_1_1)
+        populated_resource_service.delete_resource(R_ID_3_1_1_1)
         with pytest.raises(NotFoundError):
-            await populated_resource_service.get_by_id(R_ID_3_1_1_1)
+            populated_resource_service.get_by_id(R_ID_3_1_1_1)
         with pytest.raises(NotFoundError):
-            await populated_resource_service.get_by_id(R_ID_3_1_1_1_1)
+            populated_resource_service.get_by_id(R_ID_3_1_1_1_1)
         with pytest.raises(NotFoundError):
-            await populated_resource_service.get_by_id(R_ID_3_1_1_1_2)
+            populated_resource_service.get_by_id(R_ID_3_1_1_1_2)
         with pytest.raises(NotFoundError):
-            await populated_resource_service.get_by_id(R_ID_3_1_1_1_3)
+            populated_resource_service.get_by_id(R_ID_3_1_1_1_3)
 
         # double delete doesn't raise
-        await populated_resource_service.delete_resource(R_ID_3_1_1_1_2)
+        populated_resource_service.delete_resource(R_ID_3_1_1_1_2)
 
         # delete data id from resource service lookup by data id
         r_with_data_id = ResourceModel.create(
             b"\xFF",
             b"\xFF",
         )
-        await populated_resource_service.create(r_with_data_id)
-        assert r_with_data_id == await populated_resource_service.get_by_id(b"\xFF")
-        await populated_resource_service.delete_resource(b"\xFF")
+        populated_resource_service.create(r_with_data_id)
+        assert r_with_data_id == populated_resource_service.get_by_id(b"\xFF")
+        populated_resource_service.delete_resource(b"\xFF")
         with pytest.raises(NotFoundError):
-            await populated_resource_service.get_by_id(b"\xFF")
+            populated_resource_service.get_by_id(b"\xFF")
 
-    async def test_verify_ids_exist(self, populated_resource_service: ResourceServiceInterface):
+    def test_verify_ids_exist(self, populated_resource_service: ResourceServiceInterface):
         # delete a leaf and internal node
-        await populated_resource_service.delete_resource(R_ID_3_1_1_1_2)
-        await populated_resource_service.delete_resource(R_ID_3_1_1_1)
+        populated_resource_service.delete_resource(R_ID_3_1_1_1_2)
+        populated_resource_service.delete_resource(R_ID_3_1_1_1)
 
-        id_verification = await populated_resource_service.verify_ids_exist(
+        id_verification = populated_resource_service.verify_ids_exist(
             [
                 R_ID_3_1_1_1_2,  # deleted
                 R_ID_3_1_1_1,  # deleted
@@ -864,9 +860,9 @@ class TestResourceService:
 
         assert [False, False, True, True, False, False, False] == list(id_verification)
 
-        assert await populated_resource_service.verify_ids_exist([]) == []
+        assert populated_resource_service.verify_ids_exist([]) == []
 
-    async def test_nested_indexes(self, populated_resource_service):
+    def test_nested_indexes(self, populated_resource_service):
         """
         Granular test of the get_value for nested indexes which is needed for the resource service
         :param populated_resource_service:
@@ -893,10 +889,9 @@ class TestResourceService:
         # for non-nested indexes)
         assert TestNestedIndexAttributes.TestNestedIndex.get_value(m2) is None
 
-    async def test_get_root_resources(self, triple_populated_resource_service):
+    def test_get_root_resources(self, triple_populated_resource_service):
         roots = {
-            model.id: model
-            for model in await triple_populated_resource_service.get_root_resources()
+            model.id: model for model in triple_populated_resource_service.get_root_resources()
         }
 
         expected_root_models = {

@@ -113,5 +113,5 @@ ARM32_INSTRUCTION_MODIFICATION_TEST_CASES = [
 @pytest.mark.parametrize(
     "test_case", ARM32_INSTRUCTION_MODIFICATION_TEST_CASES, ids=lambda tc: tc.label
 )
-async def test_arm32_instruction_modifier(ofrak_context, test_case):
-    await run_instruction_modifier_test(ofrak_context, test_case)
+def test_arm32_instruction_modifier(ofrak_context, test_case):
+    run_instruction_modifier_test(ofrak_context, test_case)

@@ -64,7 +64,7 @@ class DependencyInvalidationTestCase:
     expected_resource_ids_invalidated: Iterable[bytes]
     resource_ids_to_delete: Optional[Iterable[bytes]] = ()
 
-    async def set_up_test_case(
+    def set_up_test_case(
         self,
         resource_context: ResourceContext,
         resource_service: ResourceServiceInterface,
@@ -101,12 +101,12 @@ class DependencyInvalidationTestCase:
         )
 
         for resource_id, model in models.items():
-            await resource_service.create(model)
+            resource_service.create(model)
 
             if resource_id in self.resource_ids_to_delete:
-                await resource_service.delete_resource(resource_id)
+                resource_service.delete_resource(resource_id)
 
-        await data_service.create_root(data_id=b"root resource", data=b"e" * 0x20)
+        data_service.create_root(data_id=b"root resource", data=b"e" * 0x20)
 
     def get_all_ids_with_attributes(self) -> Set[bytes]:
         all_ids = set()
@@ -248,15 +248,15 @@ DEPENDENCY_INVALIDATION_TEST_CASES = [
 
 
 @pytest.mark.parametrize("test_case", DEPENDENCY_INVALIDATION_TEST_CASES, ids=lambda tc: tc.label)
-async def test_dependency_invalidation(
+def test_dependency_invalidation(
     dependency_handler: DependencyHandler,
     resource_context: ResourceContext,
     test_case: DependencyInvalidationTestCase,
 ):
-    await test_case.set_up_test_case(
+    test_case.set_up_test_case(
         resource_context, dependency_handler._resource_service, dependency_handler._data_service
     )
-    await dependency_handler.handle_post_patch_dependencies(test_case.patch_results)
+    dependency_handler.handle_post_patch_dependencies(test_case.patch_results)
 
     resource_ids_with_valid_dependencies = test_case.get_all_ids_with_attributes().difference(
         set(test_case.expected_resource_ids_invalidated)
@@ -377,7 +377,7 @@ DEPENDENCY_CREATION_TEST_CASES = [
 
 
 @pytest.mark.parametrize("test_case", DEPENDENCY_CREATION_TEST_CASES, ids=lambda tc: tc.label)
-async def test_dependency_creation(
+def test_dependency_creation(
     dependency_handler: DependencyHandler,
     resource_context: ResourceContext,
     test_case: DependencyCreationTestCase,

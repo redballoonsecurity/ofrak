@@ -200,7 +200,7 @@ class OfrakCommandRunsScript(OfrakCommand, ABC):
         return pkg
 
     @abstractmethod
-    async def ofrak_func(self, ofrak_context: OFRAKContext, args: Namespace):
+    def ofrak_func(self, ofrak_context: OFRAKContext, args: Namespace):
         raise NotImplementedError()
 
 

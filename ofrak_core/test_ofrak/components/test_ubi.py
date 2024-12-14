@@ -24,41 +24,41 @@ EXPECTED_HASHES = (
 
 @pytest.mark.skipif_missing_deps([UbiUnpacker, UbiPacker])
 class TestUbiUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
-    async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
+    def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         """
         Create a root resource from the test image stored in Git LFS.
         """
         testfile_path = os.path.join(ASSETS_DIR, "bcm53xx-generic-carved.ubi")
         image_path = os.path.abspath(os.path.join(os.path.dirname(__file__), testfile_path))
-        resource = await ofrak_context.create_root_resource_from_file(image_path)
+        resource = ofrak_context.create_root_resource_from_file(image_path)
         return resource
 
-    async def unpack(self, root_resource: Resource) -> None:
-        await root_resource.unpack()
+    def unpack(self, root_resource: Resource) -> None:
+        root_resource.unpack()
 
-    async def modify(self, root_resource: Resource) -> None:
-        ubi_view = await root_resource.view_as(Ubi)
+    def modify(self, root_resource: Resource) -> None:
+        ubi_view = root_resource.view_as(Ubi)
         ubi_vol_resource = UbiVolume(
             2,
-            -(await root_resource.get_data_length() // -ubi_view.peb_size),
+            -(root_resource.get_data_length() // -ubi_view.peb_size),
             "dynamic",
             "ohfrak",
             False,  # Autoresize flag for standard UBI
             1,
         )
-        await root_resource.create_child_from_view(ubi_vol_resource, data=TEST_PAYLOAD)
-        await root_resource.save()
+        root_resource.create_child_from_view(ubi_vol_resource, data=TEST_PAYLOAD)
+        root_resource.save()
 
-    async def repack(self, root_resource: Resource) -> None:
-        await root_resource.pack()
+    def repack(self, root_resource: Resource) -> None:
+        root_resource.pack()
 
-    async def verify(self, root_resource: Resource) -> None:
+    def verify(self, root_resource: Resource) -> None:
         assert root_resource.has_tag(Ubi)
-        await root_resource.unpack()
+        root_resource.unpack()
 
-        for ubi_vol in await root_resource.get_children(r_sort=ResourceSort(UbiVolume.UbiVolumeId)):
-            ubi_vol_view = await ubi_vol.view_as(UbiVolume)
-            ubi_vol_data = await ubi_vol.get_data()
+        for ubi_vol in root_resource.get_children(r_sort=ResourceSort(UbiVolume.UbiVolumeId)):
+            ubi_vol_view = ubi_vol.view_as(UbiVolume)
+            ubi_vol_data = ubi_vol.get_data()
             ubi_vol_id = ubi_vol_view.UbiVolumeId
 
             ubi_vol_hash = hashlib.sha256()

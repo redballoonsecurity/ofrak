@@ -36,13 +36,13 @@ class GetDescendantsTestCase:
         List[Tuple[Iterable[ResourceTag], Iterable[ResourceAttributes]]]
     ] = None
 
-    async def initialize(self, resource_service: ResourceServiceInterface):
+    def initialize(self, resource_service: ResourceServiceInterface):
         if self.extra_resources is None:
             return
 
         for i, (tags, attributes) in enumerate(self.extra_resources):
             r_id = bytes(i)
-            await resource_service.create(
+            resource_service.create(
                 ResourceModel.create(
                     r_id,
                     None,

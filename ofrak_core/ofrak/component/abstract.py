@@ -60,7 +60,7 @@ class AbstractComponent(ComponentInterface[CC], ABC):
     # By default, assume component has no external dependencies
     external_dependencies: Tuple[ComponentExternalTool, ...] = ()
 
-    async def run(
+    def run(
         self,
         job_id: bytes,
         resource_id: bytes,
@@ -80,7 +80,7 @@ class AbstractComponent(ComponentInterface[CC], ABC):
         :return: The IDs of all resources modified by this component
         """
         component_context = ComponentContext(self.get_id(), self.get_version())
-        resource = await self._resource_factory.create(
+        resource = self._resource_factory.create(
             job_id,
             resource_id,
             resource_context,
@@ -91,7 +91,7 @@ class AbstractComponent(ComponentInterface[CC], ABC):
         if config is None and self._default_config is not None:
             config = dataclasses.replace(self._default_config)
         try:
-            await self._run(resource, config)
+            self._run(resource, config)
         except FileNotFoundError as e:
             # Check if the problem was that one of the dependencies is missing
             missing_file = e.filename
@@ -101,7 +101,7 @@ class AbstractComponent(ComponentInterface[CC], ABC):
                         raise ComponentMissingDependencyError(self, dep)
                 # on Windows a filename is not provided from subprocess FileNotFoundError, so just
                 # assume the any missing tool we find is the problem
-                elif not await dep.is_tool_installed():
+                elif not dep.is_tool_installed():
                     raise ComponentMissingDependencyError(self, dep)
 
             raise
@@ -122,7 +122,7 @@ class AbstractComponent(ComponentInterface[CC], ABC):
 
         # Save deleted resource so they won't interfere with patches
         # This is where deleted resources are actually deleted from their respective databases
-        await self._save_resources(
+        self._save_resources(
             job_id,
             deleted_resource_models,
             resource_context,
@@ -137,8 +137,8 @@ class AbstractComponent(ComponentInterface[CC], ABC):
             component_context,
             resource_context,
         )
-        patch_results = await self.apply_all_patches(component_context)
-        await dependency_handler.handle_post_patch_dependencies(patch_results)
+        patch_results = self.apply_all_patches(component_context)
+        dependency_handler.handle_post_patch_dependencies(patch_results)
         dependency_handler.create_component_dependencies(self.get_id(), self.get_version())
         dependency_handler.create_resource_dependencies(self.get_id())
 
@@ -156,7 +156,7 @@ class AbstractComponent(ComponentInterface[CC], ABC):
                 )
 
         # Include resources modified by data patches in `modified_resource_ids`
-        data_ids_to_models = await dependency_handler.map_data_ids_to_resources(
+        data_ids_to_models = dependency_handler.map_data_ids_to_resources(
             patch_result.data_id for patch_result in patch_results
         )
         for m in data_ids_to_models.values():
@@ -167,7 +167,7 @@ class AbstractComponent(ComponentInterface[CC], ABC):
         modified_resource_ids.difference_update(component_context.resources_deleted)
 
         # Save modified resources
-        await self._save_resources(
+        self._save_resources(
             job_id,
             modified_resource_models.values(),
             resource_context,
@@ -185,10 +185,10 @@ class AbstractComponent(ComponentInterface[CC], ABC):
         return component_result
 
     @abstractmethod
-    async def _run(self, resource: Resource, config: CC):
+    def _run(self, resource: Resource, config: CC):
         raise NotImplementedError()
 
-    async def _save_resources(
+    def _save_resources(
         self,
         job_id: bytes,
         mutable_resource_models: Iterable[MutableResourceModel],
@@ -197,7 +197,7 @@ class AbstractComponent(ComponentInterface[CC], ABC):
         job_context: Optional[JobRunContext],
         component_context: ComponentContext,
     ):
-        resources = await self._resource_factory.create_many(
+        resources = self._resource_factory.create_many(
             job_id,
             (mutable_resource_model.id for mutable_resource_model in mutable_resource_models),
             resource_context,
@@ -205,7 +205,7 @@ class AbstractComponent(ComponentInterface[CC], ABC):
             component_context,
             job_context,
         )
-        await save_resources(
+        save_resources(
             resources,
             self._resource_service,
             self._data_service,
@@ -239,16 +239,14 @@ class AbstractComponent(ComponentInterface[CC], ABC):
         else:
             return None
 
-    async def apply_all_patches(
-        self, component_context: ComponentContext
-    ) -> List[DataPatchesResult]:
+    def apply_all_patches(self, component_context: ComponentContext) -> List[DataPatchesResult]:
         # Build a list of patches, making sure that there is at most one patch that causes a resize
         patches = []
         for resource_id, tracker in component_context.modification_trackers.items():
             patches.extend(tracker.data_patches)
             tracker.data_patches.clear()
         if len(patches) > 0:
-            return await self._data_service.apply_patches(patches)
+            return self._data_service.apply_patches(patches)
         else:
             return []
 

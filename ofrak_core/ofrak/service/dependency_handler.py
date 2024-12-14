@@ -36,7 +36,7 @@ class DependencyHandler:
         self._resource_context = resource_context
 
     @functools.lru_cache(None)
-    async def map_data_ids_to_resources(
+    def map_data_ids_to_resources(
         self, data_ids: Iterable[bytes]
     ) -> Dict[bytes, MutableResourceModel]:
         resources_by_data_id = dict()
@@ -49,7 +49,7 @@ class DependencyHandler:
             if data_id not in resources_by_data_id:
                 missing_data_ids.add(data_id)
 
-        missing_resources = await self._resource_service.get_by_data_ids(missing_data_ids)
+        missing_resources = self._resource_service.get_by_data_ids(missing_data_ids)
         for missing_resource in missing_resources:
             missing_resource_data_id = cast(bytes, missing_resource.data_id)
             if missing_resource_data_id in resources_by_data_id:
@@ -60,22 +60,20 @@ class DependencyHandler:
 
         return resources_by_data_id
 
-    async def handle_post_patch_dependencies(
+    def handle_post_patch_dependencies(
         self, patch_results: List[DataPatchesResult]
     ) -> Set[MutableResourceModel]:
         modified_resources = set()
 
         # Create look up maps for resources and dependencies
-        resources_by_data_id = await self.map_data_ids_to_resources(
+        resources_by_data_id = self.map_data_ids_to_resources(
             patch_result.data_id for patch_result in patch_results
         )
 
         all_data_ids = [patch_result.data_id for patch_result in patch_results]
         models_by_data_id: Dict[bytes, DataModel] = {
             data_id: model
-            for data_id, model in zip(
-                all_data_ids, await self._data_service.get_by_ids(all_data_ids)
-            )
+            for data_id, model in zip(all_data_ids, self._data_service.get_by_ids(all_data_ids))
         }
         # Go through and update all models' Data
         for data_patch_result in patch_results:
@@ -119,7 +117,7 @@ class DependencyHandler:
         # Recursively invalidate component results based on other components that were invalidated
         handled_dependencies: Set[ResourceAttributeDependency] = set()
 
-        await self._invalidate_dependencies(
+        self._invalidate_dependencies(
             handled_dependencies, unhandled_dependencies, modified_resources
         )
 
@@ -215,19 +213,19 @@ class DependencyHandler:
                     f"resource context"
                 )
 
-    async def _fetch_missing_resources(self, resource_ids: Iterable[bytes]):
+    def _fetch_missing_resources(self, resource_ids: Iterable[bytes]):
         missing_resource_ids = set()
         # Fetch all the resources referred to by the unhandled dependencies
         for resource_id in resource_ids:
             if resource_id not in self._resource_context.resource_models:
                 missing_resource_ids.add(resource_id)
-        missing_resources = await self._resource_service.get_by_ids(missing_resource_ids)
+        missing_resources = self._resource_service.get_by_ids(missing_resource_ids)
         for missing_resource in missing_resources:
             self._resource_context.resource_models[
                 missing_resource.id
             ] = MutableResourceModel.from_model(missing_resource)
 
-    async def _invalidate_dependencies(
+    def _invalidate_dependencies(
         self,
         handled_dependencies: Set[ResourceAttributeDependency],
         unhandled_dependencies: Set[ResourceAttributeDependency],
@@ -252,13 +250,11 @@ class DependencyHandler:
             r_id
             for r_id, currently_exists in zip(
                 dependent_resource_ids,
-                await self._resource_service.verify_ids_exist(dependent_resource_ids),
+                self._resource_service.verify_ids_exist(dependent_resource_ids),
             )
             if not currently_exists
         }
-        await self._fetch_missing_resources(
-            dependent_resource_ids.difference(deleted_dependent_ids)
-        )
+        self._fetch_missing_resources(dependent_resource_ids.difference(deleted_dependent_ids))
 
         # Invalidate the resources' attributes referred to by the unhandled_dependencies
         next_unhandled_dependencies = set()
@@ -277,9 +273,7 @@ class DependencyHandler:
                     dependency.dependent_resource_id
                 ]
             except KeyError as e:
-                missing_model = await self._resource_service.get_by_id(
-                    dependency.dependent_resource_id
-                )
+                missing_model = self._resource_service.get_by_id(dependency.dependent_resource_id)
                 resource_m = MutableResourceModel.from_model(missing_model)
 
             # Invalidate the attributes on the resource
@@ -313,7 +307,7 @@ class DependencyHandler:
                 resources_modified.add(resource_m)
             next_unhandled_dependencies.update(invalidated_dependencies)
 
-        await self._invalidate_dependencies(
+        self._invalidate_dependencies(
             handled_dependencies,
             next_unhandled_dependencies,
             resources_modified,

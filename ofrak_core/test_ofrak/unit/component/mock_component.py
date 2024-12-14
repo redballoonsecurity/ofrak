@@ -23,7 +23,7 @@ class MockUnpackerRequiresDefault(Unpacker[MockUnpackerConfig]):
     targets = (GenericBinary,)
     children = ()
 
-    async def unpack(
+    def unpack(
         self,
         resource: Resource,
         config: MockUnpackerConfig = MockUnpackerConfig(3, 6),
@@ -44,7 +44,7 @@ class MockUnpackerWithDefaultRequiresPopulated(Unpacker[MockUnpackerConfig]):
     targets = (GenericBinary,)
     children = ()
 
-    async def unpack(
+    def unpack(
         self, resource: Resource, config: MockUnpackerConfig = MockUnpackerConfig(3, 6)
     ) -> None:
         assert config is not None
@@ -62,7 +62,7 @@ class MockUnpackerModifiesDefaultArgument(Unpacker[MockUnpackerConfig]):
     targets = (GenericBinary,)
     children = ()
 
-    async def unpack(
+    def unpack(
         self, resource: Resource, config: MockUnpackerConfig = MockUnpackerConfig(3, 6)
     ) -> None:
         assert config is not None
@@ -89,7 +89,7 @@ class MockFilePacker(Packer[None]):
     id = b"MockFilePacker"
     targets = (MockFile,)
 
-    async def pack(self, resource: Resource, config=None):
+    def pack(self, resource: Resource, config=None):
         print("packing...")
         print("done!")
 
@@ -115,5 +115,5 @@ class MockFailFilePacker(Packer[None]):
     id = b"MockFailFilePacker"
     targets = (MockFailFile,)
 
-    async def pack(self, resource: Resource, config=None):
+    def pack(self, resource: Resource, config=None):
         raise MockFailException("Raising an exception to mock a failing packer")

@@ -78,12 +78,12 @@ class UnpackCommand(OfrakCommandRunsScript):
 
     async def ofrak_func(self, ofrak_context: OFRAKContext, args: argparse.Namespace):
         print(f"Unpacking file: {args.filename}\n")
-        root_resource = await ofrak_context.create_root_resource_from_file(args.filename)
+        root_resource = ofrak_context.create_root_resource_from_file(args.filename)
 
         if args.recursive:
-            await root_resource.unpack_recursively()
+            root_resource.unpack_recursively()
         else:
-            await root_resource.unpack()
+            root_resource.unpack()
 
         if args.output_directory:
             extraction_dir = Path(args.output_directory)
@@ -105,12 +105,12 @@ class UnpackCommand(OfrakCommandRunsScript):
 
         root_resource_path = os.path.join(
             extraction_dir,
-            await self.get_filesystem_name(root_resource),
+            self.get_filesystem_name(root_resource),
         )
         info_dump_path = os.path.join(extraction_dir, "__ofrak_info__")
-        await self.resource_tree_to_files(root_resource, root_resource_path)
+        self.resource_tree_to_files(root_resource, root_resource_path)
 
-        info_dump = await root_resource.summarize_tree(
+        info_dump = root_resource.summarize_tree(
             summarize_resource_callback=lambda resource: _custom_summarize_resource(resource, self)
         )
         # Some characters in filename bytestrings are no valid unicode, can't be printed, must be replaced
@@ -125,37 +125,37 @@ class UnpackCommand(OfrakCommandRunsScript):
         print(info_dump)
 
         if args.gui:
-            server = await open_gui(
+            server = open_gui(
                 args.gui_hostname,
                 args.gui_port,
                 focus_resource=root_resource,
                 open_in_browser=(not args.gui_no_browser),
             )
-            await server.run_until_cancelled()
+            server.run_until_cancelled()
 
-    async def resource_tree_to_files(self, resource: Resource, path):
+    def resource_tree_to_files(self, resource: Resource, path):
         children_dir = path + ".ofrak_children"
-        for child_resource in await resource.get_children():
-            filename = await self.get_filesystem_name(child_resource)
+        for child_resource in resource.get_children():
+            filename = self.get_filesystem_name(child_resource)
 
             if not os.path.exists(children_dir):
                 os.mkdir(children_dir)
 
             child_path = os.path.join(children_dir, filename)
-            await self.resource_tree_to_files(child_resource, child_path)
+            self.resource_tree_to_files(child_resource, child_path)
 
         if resource.get_data_id() is None:
             return
-        data = await resource.get_data()
+        data = resource.get_data()
         if len(data) == 0:
             return
         with open(path, "wb") as f:
             f.write(data)
         self._resource_paths[resource.get_id()] = path
 
-    async def get_filesystem_name(self, resource: Resource) -> str:
+    def get_filesystem_name(self, resource: Resource) -> str:
         if resource.has_tag(FilesystemEntry):
-            file_view = await resource.view_as(FilesystemEntry)
+            file_view = resource.view_as(FilesystemEntry)
             filename = file_view.name
         else:
             filename = resource.get_caption()
@@ -181,14 +181,14 @@ class UnpackCommand(OfrakCommandRunsScript):
         return self._resource_paths.get(resource.get_id())
 
 
-async def _custom_summarize_resource(resource: Resource, unpack_cmd: UnpackCommand) -> str:
+def _custom_summarize_resource(resource: Resource, unpack_cmd: UnpackCommand) -> str:
     attributes_info = ", ".join(attrs_type.__name__ for attrs_type in resource._resource.attributes)
-    name = await unpack_cmd.get_filesystem_name(resource)
+    name = unpack_cmd.get_filesystem_name(resource)
     if " " in name:
         name = f"'{name}'"
 
     if resource._resource.data_id:
-        data_info = f", size={await resource.get_data_length()} bytes"
+        data_info = f", size={resource.get_data_length()} bytes"
     else:
         data_info = ", no data"
 

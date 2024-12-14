@@ -59,7 +59,7 @@ class Allocatable(ResourceView):
 
     free_space_ranges: Dict[MemoryPermissions, List[Range]]
 
-    async def allocate(
+    def allocate(
         self,
         permissions: MemoryPermissions,
         requested_size: int,
@@ -90,7 +90,7 @@ class Allocatable(ResourceView):
         :raises FreeSpaceAllocationError: if there is not enough free space to allocate which
         matches the given constraints
         """
-        allocated_ranges = await self._allocate(
+        allocated_ranges = self._allocate(
             permissions,
             requested_size,
             alignment,
@@ -100,7 +100,7 @@ class Allocatable(ResourceView):
 
         # Having acquired a satisfactory allocation, make sure subsequent calls won't allocate
         # from this same block
-        await self.resource.run(
+        self.resource.run(
             RemoveFreeSpaceModifier,
             FreeSpaceAllocation(
                 permissions,
@@ -111,7 +111,7 @@ class Allocatable(ResourceView):
 
         return allocated_ranges
 
-    async def allocate_bom(
+    def allocate_bom(
         self,
         bom: BOM,
         permission_map: Optional[Mapping[MemoryPermissions, Iterable[MemoryPermissions]]] = None,
@@ -145,7 +145,7 @@ class Allocatable(ResourceView):
                 possible_perms = (segment.access_perms,)
             for candidate_permissions in possible_perms:
                 try:
-                    allocs = await self.allocate(
+                    allocs = self.allocate(
                         candidate_permissions,
                         segment.length,
                         min_fragment_size=segment.length,
@@ -179,7 +179,7 @@ class Allocatable(ResourceView):
 
         return PatchRegionConfig(bom.name + "_patch", immutabledict(all_segments))
 
-    async def _allocate(
+    def _allocate(
         self,
         permissions: MemoryPermissions,
         requested_size: int,
@@ -284,9 +284,9 @@ class FreeSpaceAnalyzer(Analyzer[None, Allocatable]):
     targets = (Allocatable,)
     outputs = (Allocatable,)
 
-    async def analyze(self, resource: Resource, config: ComponentConfig = None) -> Allocatable:
+    def analyze(self, resource: Resource, config: ComponentConfig = None) -> Allocatable:
         ranges_by_permissions = defaultdict(list)
-        for free_space_r in await resource.get_descendants_as_view(
+        for free_space_r in resource.get_descendants_as_view(
             FreeSpace,
             r_filter=ResourceFilter.with_tags(FreeSpace),
             r_sort=ResourceSort(FreeSpace.VirtualAddress),
@@ -313,13 +313,13 @@ class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
 
     targets = (Allocatable,)
 
-    async def modify(self, resource: Resource, config: FreeSpaceAllocation) -> None:
+    def modify(self, resource: Resource, config: FreeSpaceAllocation) -> None:
         wholly_allocated_resources = list()
         partially_allocated_resources: Dict[bytes, Tuple[FreeSpace, List[Range]]] = dict()
-        allocatable = await resource.view_as(Allocatable)
+        allocatable = resource.view_as(Allocatable)
 
         for alloc in config.allocations:
-            for res_wholly_in_alloc in await resource.get_descendants_as_view(
+            for res_wholly_in_alloc in resource.get_descendants_as_view(
                 FreeSpace,
                 r_filter=ResourceFilter(
                     tags=(FreeSpace,),
@@ -340,7 +340,7 @@ class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
             ):
                 wholly_allocated_resources.append(res_wholly_in_alloc)
 
-            for res_partially_in_alloc in await self._get_partially_overlapping_resources(
+            for res_partially_in_alloc in self._get_partially_overlapping_resources(
                 resource,
                 config.permissions,
                 alloc,
@@ -367,7 +367,7 @@ class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
                 remaining_data_range = Range.from_size(
                     fs.get_offset_in_self(remaining_range.start), remaining_range.length()
                 )
-                await fs.resource.create_child_from_view(
+                fs.resource.create_child_from_view(
                     FreeSpace(
                         remaining_range.start,
                         remaining_range.length(),
@@ -384,7 +384,7 @@ class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
         resource.add_view(allocatable)
 
     @staticmethod
-    async def _get_partially_overlapping_resources(
+    def _get_partially_overlapping_resources(
         resource: Resource,
         permissions: MemoryPermissions,
         alloc: Range,
@@ -409,14 +409,14 @@ class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
             ),
         )
 
-        resources_overlapping_free_range_end = await resource.get_descendants_as_view(
+        resources_overlapping_free_range_end = resource.get_descendants_as_view(
             FreeSpace,
             r_filter=ResourceFilter(
                 tags=(FreeSpace,),
                 attribute_filters=filter_overlapping_free_range_end,
             ),
         )
-        resources_overlapping_free_range_start = await resource.get_descendants_as_view(
+        resources_overlapping_free_range_start = resource.get_descendants_as_view(
             FreeSpace,
             r_filter=ResourceFilter(
                 tags=(FreeSpace,),
@@ -430,11 +430,11 @@ class RemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
         )
 
 
-async def _find_and_delete_overlapping_children(resource: Resource, freed_range: Range):
+def _find_and_delete_overlapping_children(resource: Resource, freed_range: Range):
     # Note this filter calculation has the potential to be very expensive if, for instance,
     # the resource is an entire program segment...
     overlap_resources = list(
-        await resource.get_children_as_view(
+        resource.get_children_as_view(
             MemoryRegion,
             r_filter=ResourceFilter(
                 tags=(MemoryRegion,),
@@ -446,8 +446,8 @@ async def _find_and_delete_overlapping_children(resource: Resource, freed_range:
         )
     )
     for overlapping_child in overlap_resources:
-        await overlapping_child.resource.delete()
-        await overlapping_child.resource.save()
+        overlapping_child.resource.delete()
+        overlapping_child.resource.save()
 
 
 def _get_patch(freed_range: Range, stub: bytes, fill: bytes) -> bytes:
@@ -489,16 +489,16 @@ class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
 
     targets = (MemoryRegion,)
 
-    async def modify(self, resource: Resource, config: FreeSpaceModifierConfig):
-        mem_region_view = await resource.view_as(MemoryRegion)
+    def modify(self, resource: Resource, config: FreeSpaceModifierConfig):
+        mem_region_view = resource.view_as(MemoryRegion)
 
         freed_range = Range(
             mem_region_view.virtual_address,
             mem_region_view.virtual_address + mem_region_view.size,
         )
         patch_data = _get_patch(freed_range, config.stub, config.fill)
-        parent = await resource.get_parent()
-        patch_offset = (await resource.get_data_range_within_parent()).start
+        parent = resource.get_parent()
+        patch_offset = (resource.get_data_range_within_parent()).start
         patch_range = freed_range.translate(patch_offset - freed_range.start)
 
         # Grab tags, so they can be saved to the stub.
@@ -506,24 +506,24 @@ class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
         current_tags = resource.get_tags()
         # One interesting side effect here is the Resource used to call this modifier no longer exists
         # when this modifier returns. This can be confusing. Would an update work better in this case?
-        await resource.delete()
-        await resource.save()
+        resource.delete()
+        resource.save()
 
         # Patch in the patch_data
-        await parent.run(BinaryPatchModifier, BinaryPatchConfig(patch_offset, patch_data))
+        parent.run(BinaryPatchModifier, BinaryPatchConfig(patch_offset, patch_data))
 
         free_offset = len(config.stub)
 
         if len(config.stub) > 0:
             # Create the stub
-            await parent.create_child_from_view(
+            parent.create_child_from_view(
                 MemoryRegion(mem_region_view.virtual_address, len(config.stub)),
                 data_range=Range.from_size(patch_range.start, len(config.stub)),
                 additional_tags=current_tags,
             )
 
         # Create the FreeSpace child
-        await parent.create_child_from_view(
+        parent.create_child_from_view(
             FreeSpace(
                 mem_region_view.virtual_address + free_offset,
                 mem_region_view.size - free_offset,
@@ -565,26 +565,26 @@ class PartialFreeSpaceModifier(Modifier[PartialFreeSpaceModifierConfig]):
 
     targets = (MemoryRegion,)
 
-    async def modify(self, resource: Resource, config: PartialFreeSpaceModifierConfig):
+    def modify(self, resource: Resource, config: PartialFreeSpaceModifierConfig):
         freed_range = config.range_to_remove
-        mem_region_view = await resource.view_as(MemoryRegion)
+        mem_region_view = resource.view_as(MemoryRegion)
         if not freed_range.within(mem_region_view.vaddr_range()):
             raise ModifierError(
                 f"Free space range, {freed_range}, must lie within target memory"
                 f"region range, {mem_region_view.vaddr_range()}"
             )
 
-        await _find_and_delete_overlapping_children(resource, freed_range)
+        _find_and_delete_overlapping_children(resource, freed_range)
 
         patch_offset = mem_region_view.get_offset_in_self(freed_range.start)
         patch_range = Range.from_size(patch_offset, freed_range.length())
         patch_data = _get_patch(freed_range, config.stub, config.fill)
-        await mem_region_view.resource.run(
+        mem_region_view.resource.run(
             BinaryPatchModifier, BinaryPatchConfig(patch_offset, patch_data)
         )
 
         free_offset = len(config.stub)
-        await mem_region_view.resource.create_child_from_view(
+        mem_region_view.resource.create_child_from_view(
             FreeSpace(
                 freed_range.start + free_offset,
                 freed_range.length() - free_offset,

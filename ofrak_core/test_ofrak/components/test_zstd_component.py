@@ -25,8 +25,8 @@ class TestZstdUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
 
         self._test_file = compressed_filename
 
-    async def verify(self, repacked_root_resource: Resource) -> None:
-        compressed_data = await repacked_root_resource.get_data()
+    def verify(self, repacked_root_resource: Resource) -> None:
+        compressed_data = repacked_root_resource.get_data()
         with tempfile.NamedTemporaryFile(suffix=".zstd") as compressed_file:
             compressed_file.write(compressed_data)
             compressed_file.flush()

@@ -69,16 +69,16 @@ class ISO9660Image(GenericBinary, FilesystemRoot):
     ISO 9660 image. ISO 9660 is a file system for optical disc media.
     """
 
-    async def get_file(self, path: str) -> ResourceView:
-        return await self.resource.get_only_descendant_as_view(
+    def get_file(self, path: str) -> ResourceView:
+        return self.resource.get_only_descendant_as_view(
             ISO9660Entry,
             r_filter=ResourceFilter(
                 attribute_filters=(ResourceAttributeValueFilter(ISO9660Entry.Path, path),)
             ),
         )
 
-    async def get_entries(self) -> Iterable[ISO9660Entry]:
-        return await self.resource.get_descendants_as_view(
+    def get_entries(self) -> Iterable[ISO9660Entry]:
+        return self.resource.get_descendants_as_view(
             ISO9660Entry, r_filter=ResourceFilter(tags=(ISO9660Entry,))
         )
 
@@ -107,13 +107,13 @@ class ISO9660ImageAnalyzer(Analyzer[None, ISO9660ImageAttributes]):
     targets = (ISO9660Image,)
     outputs = (ISO9660ImageAttributes,)
 
-    async def analyze(self, resource: Resource, config=None):
+    def analyze(self, resource: Resource, config=None):
         joliet_level = None
         rockridge_version = None
         udf_version = None
 
         iso = PyCdlib()
-        iso.open_fp(BytesIO(await resource.get_data()))
+        iso.open_fp(BytesIO(resource.get_data()))
 
         interchange_level = iso.interchange_level
         has_joliet = iso.has_joliet()
@@ -165,12 +165,12 @@ class ISO9660Unpacker(Unpacker[None]):
     targets = (ISO9660Image,)
     children = (ISO9660Entry,)
 
-    async def unpack(self, resource: Resource, config=None):
-        iso_data = await resource.get_data()
+    def unpack(self, resource: Resource, config=None):
+        iso_data = resource.get_data()
 
-        iso_attributes = await resource.analyze(ISO9660ImageAttributes)
+        iso_attributes = resource.analyze(ISO9660ImageAttributes)
         resource.add_attributes(iso_attributes)
-        iso_resource = await resource.view_as(ISO9660Image)
+        iso_resource = resource.view_as(ISO9660Image)
 
         iso = PyCdlib()
         iso.open_fp(BytesIO(iso_data))
@@ -207,7 +207,7 @@ class ISO9660Unpacker(Unpacker[None]):
                     is_dotdot=str(d).startswith(".."),
                     iso_version=-1,
                 )
-                await iso_resource.add_folder(
+                iso_resource.add_folder(
                     path, None, None, folder_tags, entry.get_attributes_instances().values()
                 )
             for f in files:
@@ -239,7 +239,7 @@ class ISO9660Unpacker(Unpacker[None]):
                     is_dotdot=str(f).startswith(".."),
                     iso_version=iso_version,
                 )
-                await iso_resource.add_file(
+                iso_resource.add_file(
                     path,
                     file_data,
                     None,
@@ -265,11 +265,11 @@ class ISO9660Packer(Packer[None]):
     targets = (ISO9660Image,)
     external_dependencies = (MKISOFS,)
 
-    async def pack(self, resource: Resource, config=None) -> None:
-        iso_view = await resource.view_as(ISO9660Image)
+    def pack(self, resource: Resource, config=None) -> None:
+        iso_view = resource.view_as(ISO9660Image)
 
         try:
-            isolinux_bin = await resource.get_only_descendant_as_view(
+            isolinux_bin = resource.get_only_descendant_as_view(
                 ISO9660Entry,
                 r_filter=ResourceFilter(
                     attribute_filters=(
@@ -284,7 +284,7 @@ class ISO9660Packer(Packer[None]):
         except NotFoundError:
             isolinux_bin_cmd = list()
         try:
-            boot_cat = await resource.get_only_descendant_as_view(
+            boot_cat = resource.get_only_descendant_as_view(
                 ISO9660Entry,
                 r_filter=ResourceFilter(
                     attribute_filters=(
@@ -300,7 +300,7 @@ class ISO9660Packer(Packer[None]):
             boot_cat_cmd = list()
 
         iso_attrs = resource.get_attributes(ISO9660ImageAttributes)
-        temp_flush_dir = await iso_view.flush_to_disk()
+        temp_flush_dir = iso_view.flush_to_disk()
         with tempfile.NamedTemporaryFile(suffix=".iso", mode="rb") as temp:
             cmd = [
                 "mkisofs",
@@ -325,13 +325,13 @@ class ISO9660Packer(Packer[None]):
                 temp.name,
                 temp_flush_dir,
             ]
-            proc = await asyncio.create_subprocess_exec(*cmd)
-            returncode = await proc.wait()
+            proc = asyncio.create_subprocess_exec(*cmd)
+            returncode = proc.wait()
             if proc.returncode:
                 raise CalledProcessError(returncode=returncode, cmd=cmd)
             new_data = temp.read()
             # Passing in the original range effectively replaces the original data with the new data
-            resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
+            resource.queue_patch(Range(0, resource.get_data_length()), new_data)
 
 
 MagicMimeIdentifier.register(ISO9660Image, "application/x-iso9660-image")

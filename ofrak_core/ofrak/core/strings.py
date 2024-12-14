@@ -39,12 +39,12 @@ class StringPatchingModifier(Modifier[StringPatchingConfig]):
     id = b"StringPatchingModifier"
     targets = (GenericText,)
 
-    async def modify(self, resource: Resource, config: StringPatchingConfig):
+    def modify(self, resource: Resource, config: StringPatchingConfig):
         new_data = config.string.encode("utf-8")
         if config.null_terminate:
             new_data += b"\x00"
         patch_config = BinaryPatchConfig(config.offset, new_data)
-        await resource.run(BinaryPatchModifier, patch_config)
+        resource.run(BinaryPatchModifier, patch_config)
 
 
 @dataclass
@@ -69,7 +69,7 @@ class StringFindReplaceModifier(Modifier[StringFindReplaceConfig]):
 
     targets = (GenericBinary, File)
 
-    async def modify(self, resource: Resource, config: StringFindReplaceConfig) -> None:
+    def modify(self, resource: Resource, config: StringFindReplaceConfig) -> None:
         to_find = config.to_find.encode("utf-8")
         replace_with = config.replace_with.encode("utf-8") + (
             b"\x00" if config.null_terminate and config.replace_with[-1] != "\x00" else b""
@@ -81,8 +81,8 @@ class StringFindReplaceModifier(Modifier[StringFindReplaceConfig]):
                 f"If you expect that the string to replace is null-terminated, then an overflow "
                 f"of one byte when config.null_terminate = True will not have any effect."
             )
-        for offset in await resource.search_data(to_find):
-            await resource.run(BinaryPatchModifier, BinaryPatchConfig(offset, replace_with))
+        for offset in resource.search_data(to_find):
+            resource.run(BinaryPatchModifier, BinaryPatchConfig(offset, replace_with))
 
 
 @dataclass
@@ -115,8 +115,8 @@ class AsciiStringAnalyzer(Analyzer[None, AsciiString]):
     targets = (AsciiString,)
     outputs = (AsciiString,)
 
-    async def analyze(self, resource: Resource, config: None) -> AsciiString:
-        raw_without_null_byte = (await resource.get_data()).rstrip(b"\x00")
+    def analyze(self, resource: Resource, config: None) -> AsciiString:
+        raw_without_null_byte = (resource.get_data()).rstrip(b"\x00")
         return AsciiString(raw_without_null_byte.decode("ascii"))
 
 
@@ -133,7 +133,7 @@ class StringsUnpacker(Unpacker[None]):
     LONG_STRING_PATTERN = re.compile(b"([ -~\n\t\r]{8,})\x00")
     SHORT_STRING_PATTERN = re.compile(b"([ -~\n\t\r]{2,})\x00")
 
-    async def unpack(self, resource: Resource, config: None) -> None:
+    def unpack(self, resource: Resource, config: None) -> None:
         if resource.get_data_id() is None:
             return
         if resource.has_tag(CodeRegion):
@@ -147,7 +147,7 @@ class StringsUnpacker(Unpacker[None]):
                 AsciiString(string.rstrip(b"\x00").decode("ascii")),
                 data_range=Range.from_size(offset, len(string)),
             )
-            for offset, string in await resource.search_data(pattern)
+            for offset, string in resource.search_data(pattern)
         ]
 
-        await asyncio.gather(*children)
+        asyncio.gather(*children)

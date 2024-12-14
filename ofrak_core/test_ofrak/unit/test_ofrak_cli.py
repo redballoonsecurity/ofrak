@@ -182,18 +182,18 @@ TEST_FILES = [
 
 
 @pytest.fixture
-async def all_expected_analysis(ofrak_context: OFRAKContext):
+def all_expected_analysis(ofrak_context: OFRAKContext):
     all_expected_analysis = dict()
     for filename in TEST_FILES:
         file_path = os.path.join(
             os.path.dirname(test_ofrak.components.__file__), "assets", filename
         )
-        test_resource = await ofrak_context.create_root_resource_from_file(file_path)
-        await test_resource.identify()
+        test_resource = ofrak_context.create_root_resource_from_file(file_path)
+        test_resource.identify()
         expected_tags = test_resource.get_most_specific_tags()
         expected_attributes = test_resource.get_model().attributes.values()
         all_expected_analysis[filename] = expected_tags, expected_attributes
-    await ofrak_context.shutdown_context()
+    ofrak_context.shutdown_context()
     return all_expected_analysis
 
 
@@ -218,22 +218,22 @@ def test_identify(ofrak_cli_parser, capsys, filename, all_expected_analysis: Tup
 
 
 @pytest.fixture
-async def all_expected_hashes(ofrak_context: OFRAKContext):
+def all_expected_hashes(ofrak_context: OFRAKContext):
     all_expected_hashes = dict()
     for filename in TEST_FILES:
         expected_hashes = set()
         file_path = os.path.join(
             os.path.dirname(test_ofrak.components.__file__), "assets", filename
         )
-        res = await ofrak_context.create_root_resource_from_file(file_path)
-        await res.unpack()
-        for child in await res.get_descendants():
+        res = ofrak_context.create_root_resource_from_file(file_path)
+        res.unpack()
+        for child in res.get_descendants():
             if child.get_data_id() is not None:
-                data = await child.get_data()
+                data = child.get_data()
                 if len(data) > 0:
                     expected_hashes.add(hashlib.sha256(data).hexdigest())
         all_expected_hashes[filename] = expected_hashes
-    await ofrak_context.shutdown_context()
+    ofrak_context.shutdown_context()
     return all_expected_hashes
 
 
@@ -278,8 +278,8 @@ class ScratchTag(GenericBinary):
 class ScratchIdentifier(Identifier[None]):
     targets = (File,)
     
-    async def identify(self, resource, config=None):
-        d = await resource.get_data()
+    def identify(self, resource, config=None):
+        d = resource.get_data()
         if d.startswith(b"ofrak cli test file"):
             resource.add_tag(ScratchTag)
 

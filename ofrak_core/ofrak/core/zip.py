@@ -1,6 +1,6 @@
-import asyncio
 import logging
 import os
+import subprocess
 import tempfile
 from dataclasses import dataclass
 from subprocess import CalledProcessError
@@ -49,10 +49,10 @@ class ZipUnpacker(Unpacker[None]):
     children = (File, Folder, SpecialFileType)
     external_dependencies = (UNZIP_TOOL,)
 
-    async def unpack(self, resource: Resource, config=None):
-        zip_view = await resource.view_as(ZipArchive)
+    def unpack(self, resource: Resource, config=None):
+        zip_view = resource.view_as(ZipArchive)
         with tempfile.NamedTemporaryFile(suffix=".zip") as temp_archive:
-            temp_archive.write(await resource.get_data())
+            temp_archive.write(resource.get_data())
             temp_archive.flush()
             with tempfile.TemporaryDirectory() as temp_dir:
                 cmd = [
@@ -61,13 +61,10 @@ class ZipUnpacker(Unpacker[None]):
                     "-d",
                     temp_dir,
                 ]
-                proc = await asyncio.create_subprocess_exec(
-                    *cmd,
-                )
-                returncode = await proc.wait()
-                if proc.returncode:
-                    raise CalledProcessError(returncode=returncode, cmd=cmd)
-                await zip_view.initialize_from_disk(temp_dir)
+                result = subprocess.run(cmd, capture_output=True)
+                if result.returncode:
+                    raise CalledProcessError(returncode=result.returncode, cmd=cmd)
+                zip_view.initialize_from_disk(temp_dir)
 
 
 class ZipPacker(Packer[None]):
@@ -78,9 +75,9 @@ class ZipPacker(Packer[None]):
     targets = (ZipArchive,)
     external_dependencies = (ZIP_TOOL,)
 
-    async def pack(self, resource: Resource, config=None):
-        zip_view: ZipArchive = await resource.view_as(ZipArchive)
-        flush_dir = await zip_view.flush_to_disk()
+    def pack(self, resource: Resource, config=None):
+        zip_view: ZipArchive = resource.view_as(ZipArchive)
+        flush_dir = zip_view.flush_to_disk()
         temp_archive = f"{flush_dir}.zip"
         cwd = os.getcwd()
         os.chdir(flush_dir)
@@ -90,15 +87,12 @@ class ZipPacker(Packer[None]):
             temp_archive,
             ".",
         ]
-        proc = await asyncio.create_subprocess_exec(
-            *cmd,
-        )
-        returncode = await proc.wait()
-        if proc.returncode:
-            raise CalledProcessError(returncode=returncode, cmd=cmd)
+        result = subprocess.run(cmd, capture_output=True)
+        if result.returncode:
+            raise CalledProcessError(returncode=result.returncode, cmd=cmd)
         os.chdir(cwd)
         with open(temp_archive, "rb") as fh:
-            resource.queue_patch(Range(0, await zip_view.resource.get_data_length()), fh.read())
+            resource.queue_patch(Range(0, zip_view.resource.get_data_length()), fh.read())
 
 
 MagicMimeIdentifier.register(ZipArchive, "application/zip")

@@ -50,22 +50,22 @@ class IdentifyCommand(OfrakCommandRunsScript):
 
     async def ofrak_func(self, ofrak_context: OFRAKContext, args: argparse.Namespace):
         print(f"Identifying file: {args.filename}\n")
-        root_resource = await ofrak_context.create_root_resource_from_file(args.filename)
+        root_resource = ofrak_context.create_root_resource_from_file(args.filename)
 
-        await root_resource.identify()
-        print(await IdentifyCommand.print_info(root_resource))
+        root_resource.identify()
+        print(IdentifyCommand.print_info(root_resource))
 
         if args.gui:
-            server = await open_gui(
+            server = open_gui(
                 args.gui_hostname,
                 args.gui_port,
                 focus_resource=root_resource,
                 open_in_browser=(not args.gui_no_browser),
             )
-            await server.run_until_cancelled()
+            server.run_until_cancelled()
 
     @staticmethod
-    async def print_info(resource: Resource) -> str:
+    def print_info(resource: Resource) -> str:
         output = ""
 
         output += "= Tags = \n"

@@ -1,4 +1,3 @@
-import asyncio
 import tempfile
 from concurrent.futures.process import ProcessPoolExecutor
 from dataclasses import dataclass
@@ -33,7 +32,7 @@ class _BinwalkExternalTool(ComponentExternalTool):
             install_check_arg="",
         )
 
-    async def is_tool_installed(self) -> bool:
+    def is_tool_installed(self) -> bool:
         return BINWALK_INSTALLED
 
 
@@ -59,19 +58,17 @@ class BinwalkAnalyzer(Analyzer[None, BinwalkAttributes]):
         super().__init__(resource_factory, data_service, resource_service)
         self.pool = ProcessPoolExecutor()
 
-    async def analyze(self, resource: Resource, config=None) -> BinwalkAttributes:
+    def analyze(self, resource: Resource, config=None) -> BinwalkAttributes:
         if not BINWALK_INSTALLED:
             raise ComponentMissingDependencyError(self, BINWALK_TOOL)
         with tempfile.NamedTemporaryFile() as temp_file:
-            data = await resource.get_data()
+            data = resource.get_data()
             temp_file.write(data)
             temp_file.flush()
 
             # Should errors be handled the way they are in the `DataSummaryAnalyzer`? Likely to be
             # overkill here.
-            offsets = await asyncio.get_running_loop().run_in_executor(
-                self.pool, _run_binwalk_on_file, temp_file.name
-            )
+            offsets = _run_binwalk_on_file(temp_file.name)
         return BinwalkAttributes(offsets)
 
 

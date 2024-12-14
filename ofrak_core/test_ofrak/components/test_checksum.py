@@ -67,10 +67,10 @@ MD5_TEST_CASES = [
 
 
 @pytest.mark.parametrize("test_file", SHA256_TEST_CASES, ids=lambda tc: tc.filename)
-async def test_sha256(ofrak_context: OFRAKContext, test_file):
+def test_sha256(ofrak_context: OFRAKContext, test_file):
     filepath = os.path.join(ASSETS_DIR, test_file.filename)
-    resource = await ofrak_context.create_root_resource_from_file(filepath)
-    await resource.analyze_recursively()
+    resource = ofrak_context.create_root_resource_from_file(filepath)
+    resource.analyze_recursively()
 
     sha256_attributes = resource.get_attributes(Sha256Attributes)
     sha_digest = sha256_attributes.checksum
@@ -80,12 +80,12 @@ async def test_sha256(ofrak_context: OFRAKContext, test_file):
 
 
 @pytest.mark.parametrize("test_file", MD5_TEST_CASES, ids=lambda tc: tc.filename)
-async def test_md5(ofrak_context: OFRAKContext, test_file):
+def test_md5(ofrak_context: OFRAKContext, test_file):
     p = psutil.Process()
     [print(f.path) for f in p.open_files()]
     filepath = os.path.join(ASSETS_DIR, test_file.filename)
-    resource = await ofrak_context.create_root_resource_from_file(filepath)
-    await resource.analyze_recursively()
+    resource = ofrak_context.create_root_resource_from_file(filepath)
+    resource.analyze_recursively()
 
     md5_attributes = resource.get_attributes(Md5Attributes)
     md5_digest = md5_attributes.checksum

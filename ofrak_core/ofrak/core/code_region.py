@@ -23,7 +23,7 @@ class CodeRegionUnpacker(Unpacker[None], ABC):
     id = b"CodeRegionUnpacker"
 
     @abstractmethod
-    async def unpack(self, resource: Resource, config=None):
+    def unpack(self, resource: Resource, config=None):
         """
         Unpack a code region, extracting all of the complex blocks within it.
 

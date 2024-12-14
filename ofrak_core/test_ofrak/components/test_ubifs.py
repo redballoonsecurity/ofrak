@@ -18,7 +18,7 @@ class TestUbifsUnpackRepack(FilesystemPackUnpackVerifyPattern):
         # Don't compare stat values since several entries (like time modified and inode number) will be unequal
         self.check_stat = False
 
-    async def create_root_resource(self, ofrak_context: OFRAKContext, directory: str) -> Resource:
+    def create_root_resource(self, ofrak_context: OFRAKContext, directory: str) -> Resource:
         """
         Generated the test UBIFS image with the assistance of the FilesystemPackUnpackVerify test pattern.
         """
@@ -36,22 +36,22 @@ class TestUbifsUnpackRepack(FilesystemPackUnpackVerifyPattern):
                 ubifs_blob.name,
             ]
             subprocess.run(command, check=True, capture_output=True)
-            return await ofrak_context.create_root_resource_from_file(ubifs_blob.name)
+            return ofrak_context.create_root_resource_from_file(ubifs_blob.name)
 
-    async def unpack(self, root_resource: Resource) -> None:
-        await root_resource.unpack()
+    def unpack(self, root_resource: Resource) -> None:
+        root_resource.unpack()
 
-    async def repack(self, root_resource: Resource) -> None:
-        await root_resource.pack()
+    def repack(self, root_resource: Resource) -> None:
+        root_resource.pack()
 
-    async def extract(self, root_resource: Resource, extract_dir: str) -> None:
+    def extract(self, root_resource: Resource, extract_dir: str) -> None:
         """
         Use 'ubireader' to extract the generated test UBIFS image into a directory and compare its contents with those
         expected by the FilesystemPackUnpackVerify pattern.
         """
 
         with tempfile.NamedTemporaryFile() as ubifs_blob:
-            data = await root_resource.get_data()
+            data = root_resource.get_data()
             ubifs_blob.write(data)
             ubifs_blob.flush()
 

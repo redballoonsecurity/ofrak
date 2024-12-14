@@ -51,7 +51,7 @@ class Unpacker(AbstractComponent[CC], ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    async def unpack(self, resource: Resource, config: CC) -> None:
+    def unpack(self, resource: Resource, config: CC) -> None:
         """
         Unpack the given resource.
 
@@ -71,7 +71,7 @@ class Unpacker(AbstractComponent[CC], ABC):
     def get_default_config(cls) -> Optional[CC]:
         return cls._get_default_config_from_method(cls.unpack)
 
-    async def _run(self, resource: Resource, config: CC):
+    def _run(self, resource: Resource, config: CC):
         if resource.has_component_run(self.get_id(), self.get_version()):
             return self._log_component_has_run_warning(resource)
         if resource.has_component_run(self.get_id()):
@@ -80,7 +80,7 @@ class Unpacker(AbstractComponent[CC], ABC):
                 "If the component has already run (but on a different "
                 "version), we should remove the dependencies"
             )
-        await self.unpack(resource, config)
+        self.unpack(resource, config)
         resource.add_component(self.get_id(), self.get_version())
         self._validate_unpacked_children(resource)
         # Identify which packers ran (if any) and clear that record, so that it will be allowed

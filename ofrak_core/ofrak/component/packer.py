@@ -45,7 +45,7 @@ class Packer(AbstractComponent[CC], ABC):
         self._component_locator = component_locator
 
     @abstractmethod
-    async def pack(self, resource: Resource, config: CC) -> None:
+    def pack(self, resource: Resource, config: CC) -> None:
         """
         Pack the given resource.
 
@@ -65,22 +65,22 @@ class Packer(AbstractComponent[CC], ABC):
     def get_default_config(cls) -> Optional[CC]:
         return cls._get_default_config_from_method(cls.pack)
 
-    async def _run(self, resource: Resource, config: CC) -> None:
+    def _run(self, resource: Resource, config: CC) -> None:
         if resource.has_component_run(self.get_id(), self.get_version()):
             LOGGER.warning(
                 f"The {self.get_id().decode()} packer has already been run on resource"
                 f" {resource.get_id().hex()}"
             )
             return
-        await self.pack(resource, config)
+        self.pack(resource, config)
         resource.add_component(self.get_id(), self.get_version())
         # Identify which unpackers ran (if any) and clear that record, so that it will be allowed
         # to run again
         unpacker_ids = self._get_which_unpackers_ran(resource)
         for unpacker_id in unpacker_ids:
             resource.remove_component(unpacker_id)
-        for child_r in await resource.get_children():
-            await child_r.delete()
+        for child_r in resource.get_children():
+            child_r.delete()
 
     def _get_which_unpackers_ran(self, resource: Resource) -> Tuple[bytes, ...]:
         unpackers_ran = self._component_locator.get_components_matching_filter(

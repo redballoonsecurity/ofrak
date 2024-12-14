@@ -85,13 +85,13 @@ class Uf2Unpacker(Unpacker[None]):
     targets = (Uf2File,)
     children = (CodeRegion,)
 
-    async def unpack(self, resource: Resource, config=None):
+    def unpack(self, resource: Resource, config=None):
         """
         Unpack a UF2 file.
 
         UF2 files contain blocks of binary data.
         """
-        data_length = await resource.get_data_length()
+        data_length = resource.get_data_length()
 
         ranges: List[Tuple[Range, bytes]] = []
 
@@ -102,7 +102,7 @@ class Uf2Unpacker(Unpacker[None]):
         block_no = 0
 
         for i in range(0, data_length, 512):
-            data = await resource.get_data(Range(i, (i + 512)))
+            data = resource.get_data(Range(i, (i + 512)))
             (
                 magic_start_one,
                 magic_start_two,
@@ -178,7 +178,7 @@ class Uf2Unpacker(Unpacker[None]):
         # assert last_block_no == file_num_blocks, "Did not unpack enough blocks"
 
         for flash_range, flash_data in ranges:
-            await resource.create_child_from_view(
+            resource.create_child_from_view(
                 CodeRegion(flash_range.start, flash_range.end - flash_range.start),
                 data=flash_data,
             )
@@ -192,7 +192,7 @@ class Uf2FilePacker(Packer[None]):
     id = b"Uf2FilePacker"
     targets = (Uf2File,)
 
-    async def pack(self, resource: Resource, config=None):
+    def pack(self, resource: Resource, config=None):
         """
         Pack a resource into a UF2 file
 
@@ -202,14 +202,14 @@ class Uf2FilePacker(Packer[None]):
 
         payloads: List[Tuple[int, int, bytes]] = []  # List of target_addr, payload_data
 
-        for memory_region_r in await resource.get_children(
+        for memory_region_r in resource.get_children(
             r_filter=ResourceFilter(
                 tags=(CodeRegion,),
             )
         ):
-            memory_region = await memory_region_r.view_as(CodeRegion)
-            data = await memory_region_r.get_data()
-            data_length = await memory_region_r.get_data_length()
+            memory_region = memory_region_r.view_as(CodeRegion)
+            data = memory_region_r.get_data()
+            data_length = memory_region_r.get_data_length()
             data_range = memory_region.vaddr_range()
             addr = data_range.start
 
@@ -241,17 +241,17 @@ class Uf2FilePacker(Packer[None]):
             )
             block_no += 1
 
-        resource.queue_patch(Range(0, await resource.get_data_length()), repacked_data)
+        resource.queue_patch(Range(0, resource.get_data_length()), repacked_data)
 
 
 class Uf2FileIdentifier(Identifier[None]):
     targets = (GenericBinary,)
 
-    async def identify(self, resource: Resource, config=None) -> None:
-        if await resource.get_data_length() < 8:
+    def identify(self, resource: Resource, config=None) -> None:
+        if resource.get_data_length() < 8:
             pass
         else:
-            data = await resource.get_data(Range(0, 8))
+            data = resource.get_data(Range(0, 8))
             magic_one, magic_two = struct.unpack("<II", data)
             if magic_one == UF2_MAGIC_START_ONE and magic_two == UF2_MAGIC_START_TWO:
                 resource.add_tag(Uf2File)

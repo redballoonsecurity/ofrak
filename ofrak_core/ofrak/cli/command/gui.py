@@ -57,8 +57,8 @@ class GUICommand(OfrakCommandRunsScript):
         most_recent_root = None
         if len(args.file) > 0:
             for path in args.file:
-                most_recent_root = await ofrak_context.create_root_resource_from_file(path)
-        server = await open_gui(
+                most_recent_root = ofrak_context.create_root_resource_from_file(path)
+        server = open_gui(
             args.hostname,
             args.port,
             focus_resource=most_recent_root if len(args.file) == 1 else None,
@@ -66,4 +66,4 @@ class GUICommand(OfrakCommandRunsScript):
             open_in_browser=(not args.no_browser),
             enable_cors=(args.enable_cors),
         )
-        await server.run_until_cancelled()
+        server.run_until_cancelled()

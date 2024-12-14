@@ -37,9 +37,9 @@ class Jffs2Unpacker(Unpacker[None]):
     children = (File, Folder, SpecialFileType)
     external_dependencies = (JEFFERSON,)
 
-    async def unpack(self, resource: Resource, config=None):
+    def unpack(self, resource: Resource, config=None):
         with tempfile.NamedTemporaryFile() as temp_file:
-            resource_data = await resource.get_data()
+            resource_data = resource.get_data()
             temp_file.write(resource_data)
             temp_file.flush()
 
@@ -51,15 +51,15 @@ class Jffs2Unpacker(Unpacker[None]):
                     temp_flush_dir,
                     temp_file.name,
                 ]
-                proc = await asyncio.create_subprocess_exec(
+                proc = asyncio.create_subprocess_exec(
                     *cmd,
                 )
-                returncode = await proc.wait()
+                returncode = proc.wait()
                 if proc.returncode:
                     raise CalledProcessError(returncode=returncode, cmd=cmd)
 
-                jffs2_view = await resource.view_as(Jffs2Filesystem)
-                await jffs2_view.initialize_from_disk(temp_flush_dir)
+                jffs2_view = resource.view_as(Jffs2Filesystem)
+                jffs2_view.initialize_from_disk(temp_flush_dir)
 
 
 class Jffs2Packer(Packer[None]):
@@ -70,9 +70,9 @@ class Jffs2Packer(Packer[None]):
     targets = (Jffs2Filesystem,)
     external_dependencies = (MKFS_JFFS2,)
 
-    async def pack(self, resource: Resource, config=None):
-        jffs2_view: Jffs2Filesystem = await resource.view_as(Jffs2Filesystem)
-        temp_flush_dir = await jffs2_view.flush_to_disk()
+    def pack(self, resource: Resource, config=None):
+        jffs2_view: Jffs2Filesystem = resource.view_as(Jffs2Filesystem)
+        temp_flush_dir = jffs2_view.flush_to_disk()
         with tempfile.NamedTemporaryFile(suffix=".sqsh", mode="rb") as temp:
             cmd = [
                 "mkfs.jffs2",
@@ -81,15 +81,15 @@ class Jffs2Packer(Packer[None]):
                 "-o",
                 temp.name,
             ]
-            proc = await asyncio.create_subprocess_exec(
+            proc = asyncio.create_subprocess_exec(
                 *cmd,
             )
-            returncode = await proc.wait()
+            returncode = proc.wait()
             if proc.returncode:
                 raise CalledProcessError(returncode=returncode, cmd=cmd)
             new_data = temp.read()
             # Passing in the original range effectively replaces the original data with the new data
-            resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
+            resource.queue_patch(Range(0, resource.get_data_length()), new_data)
 
 
 MagicDescriptionIdentifier.register(Jffs2Filesystem, lambda s: "jffs2 filesystem" in s.lower())

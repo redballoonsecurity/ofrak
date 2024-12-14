@@ -17,8 +17,8 @@ LOGGER = logging.getLogger(__name__)
 class ZlibData(GenericBinary):
     compression_level: int
 
-    async def get_child(self) -> GenericBinary:
-        return await self.resource.get_only_child_as_view(GenericBinary)
+    def get_child(self) -> GenericBinary:
+        return self.resource.get_only_child_as_view(GenericBinary)
 
 
 class ZlibCompressionLevelAnalyzer(Analyzer[None, ZlibData]):
@@ -26,8 +26,8 @@ class ZlibCompressionLevelAnalyzer(Analyzer[None, ZlibData]):
     targets = (ZlibData,)
     outputs = (ZlibData,)
 
-    async def analyze(self, resource: Resource, config=None) -> ZlibData:
-        zlib_data = await resource.get_data(Range(0, 2))
+    def analyze(self, resource: Resource, config=None) -> ZlibData:
+        zlib_data = resource.get_data(Range(0, 2))
         flevel = zlib_data[-1]
         if flevel == 0x01:
             compression_level = 1
@@ -51,10 +51,10 @@ class ZlibUnpacker(Unpacker[None]):
     targets = (ZlibData,)
     children = (GenericBinary,)
 
-    async def unpack(self, resource: Resource, config=None):
-        zlib_data = await resource.get_data()
+    def unpack(self, resource: Resource, config=None):
+        zlib_data = resource.get_data()
         zlib_uncompressed_data = zlib.decompress(zlib_data)
-        await resource.create_child(
+        resource.create_child(
             tags=(GenericBinary,),
             data=zlib_uncompressed_data,
         )
@@ -67,14 +67,14 @@ class ZlibPacker(Packer[None]):
 
     targets = (ZlibData,)
 
-    async def pack(self, resource: Resource, config=None):
-        zlib_view = await resource.view_as(ZlibData)
+    def pack(self, resource: Resource, config=None):
+        zlib_view = resource.view_as(ZlibData)
         compression_level = zlib_view.compression_level
-        zlib_child = await zlib_view.get_child()
-        zlib_data = await zlib_child.resource.get_data()
+        zlib_child = zlib_view.get_child()
+        zlib_data = zlib_child.resource.get_data()
         zlib_compressed = zlib.compress(zlib_data, compression_level)
 
-        original_zlib_size = await zlib_view.resource.get_data_length()
+        original_zlib_size = zlib_view.resource.get_data_length()
         resource.queue_patch(Range(0, original_zlib_size), zlib_compressed)
 
 

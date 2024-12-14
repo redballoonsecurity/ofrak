@@ -21,11 +21,11 @@ class JobServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
     """
 
     @abstractmethod
-    async def create_job(self, id: bytes, name: str) -> JobModel:
+    def create_job(self, id: bytes, name: str) -> JobModel:
         pass
 
     @abstractmethod
-    async def run_component(
+    def run_component(
         self,
         request: JobComponentRequest,
         job_context: Optional[JobRunContext] = None,
@@ -41,7 +41,7 @@ class JobServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def run_analyzer_by_attribute(
+    def run_analyzer_by_attribute(
         self,
         request: JobAnalyzerRequest,
         job_context: Optional[JobRunContext] = None,
@@ -63,7 +63,7 @@ class JobServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def run_components(
+    def run_components(
         self,
         request: JobMultiComponentRequest,
     ) -> ComponentRunResult:
@@ -84,7 +84,7 @@ class JobServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def run_components_recursively(
+    def run_components_recursively(
         self,
         request: JobMultiComponentRequest,
     ) -> ComponentRunResult:
@@ -108,7 +108,7 @@ class JobServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def pack_recursively(
+    def pack_recursively(
         self,
         job_id: bytes,
         resource_id: bytes,

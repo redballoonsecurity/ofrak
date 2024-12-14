@@ -30,23 +30,23 @@ class PeUnpacker(Unpacker[None]):
         PeSection,
     )
 
-    async def unpack(self, resource: Resource, config=None):
+    def unpack(self, resource: Resource, config=None):
         """
         Unpack a PE file using the pefile library for the parsing itself, then
         create the appropriate OFRAK child resources for the PE file.
         """
-        pe = pefile.PE(data=await resource.get_data())
+        pe = pefile.PE(data=resource.get_data())
 
         # MS-DOS header
         ms_dos_header = self.ms_dos_header_from_pefile(pe.DOS_HEADER)
-        await resource.create_child_from_view(
+        resource.create_child_from_view(
             ms_dos_header,
             data_range=Range.from_size(pe.DOS_HEADER.get_file_offset(), pe.DOS_HEADER.sizeof()),
         )
 
         # File header
         file_header = self.file_header_from_pefile(pe.FILE_HEADER)
-        await resource.create_child_from_view(
+        resource.create_child_from_view(
             file_header,
             data_range=Range.from_size(pe.FILE_HEADER.get_file_offset(), pe.FILE_HEADER.sizeof()),
         )
@@ -54,7 +54,7 @@ class PeUnpacker(Unpacker[None]):
         # Optional header
         if pe.OPTIONAL_HEADER is not None:
             optional_header = self.optional_header_from_pefile(pe.OPTIONAL_HEADER)
-            await resource.create_child_from_view(
+            resource.create_child_from_view(
                 optional_header,
                 data_range=Range.from_size(
                     pe.OPTIONAL_HEADER.get_file_offset(), pe.OPTIONAL_HEADER.sizeof()
@@ -64,7 +64,7 @@ class PeUnpacker(Unpacker[None]):
             # Data directories
             for pe_data_directory in pe.OPTIONAL_HEADER.DATA_DIRECTORY:
                 data_directory = self.data_directory_from_pefile(pe_data_directory)
-                await resource.create_child_from_view(
+                resource.create_child_from_view(
                     data_directory,
                     data_range=Range.from_size(
                         pe_data_directory.get_file_offset(), pe_data_directory.sizeof()
@@ -75,7 +75,7 @@ class PeUnpacker(Unpacker[None]):
         for index, pe_section in enumerate(pe.sections):
             # Section header
             section_header = self.section_header_from_pefile(pe_section, index)
-            await resource.create_child_from_view(
+            resource.create_child_from_view(
                 section_header,
                 data_range=Range.from_size(pe_section.get_file_offset(), pe_section.sizeof()),
             )
@@ -93,7 +93,7 @@ class PeUnpacker(Unpacker[None]):
             else:
                 section_range = None
 
-            section_r = await resource.create_child_from_view(
+            section_r = resource.create_child_from_view(
                 section,
                 data_range=section_range,
             )

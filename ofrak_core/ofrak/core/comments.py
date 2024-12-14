@@ -30,11 +30,11 @@ class AddCommentModifier(Modifier[AddCommentModifierConfig]):
 
     targets = ()
 
-    async def modify(self, resource: Resource, config: AddCommentModifierConfig) -> None:
+    def modify(self, resource: Resource, config: AddCommentModifierConfig) -> None:
         # Verify that the given range is valid for the given resource.
         config_range = config.comment[0]
         if config_range is not None:
-            if config_range.start < 0 or config_range.end > len(await resource.get_data()):
+            if config_range.start < 0 or config_range.end > len(resource.get_data()):
                 raise ValueError(
                     f"Range {config_range} is outside the bounds of "
                     f"resource {resource.get_id().hex()}"
@@ -72,7 +72,7 @@ class DeleteCommentModifier(Modifier[DeleteCommentModifierConfig]):
 
     targets = ()
 
-    async def modify(self, resource: Resource, config: DeleteCommentModifierConfig) -> None:
+    def modify(self, resource: Resource, config: DeleteCommentModifierConfig) -> None:
         """
         Delete the comment(s) associated with the given range.
 

@@ -35,11 +35,11 @@ class PopulatedStringsAnalyzerTestCase(PopulatedAnalyzerTestCase, StringsAnalyze
         )
     ]
 )
-async def test_case(
+def test_case(
     request, ofrak_context: OFRAKContext, test_id: str
 ) -> PopulatedStringsAnalyzerTestCase:
     test_case: StringsAnalyzerTestCase = request.param
-    resource = await ofrak_context.create_root_resource(test_id, test_case.resource_contents)
+    resource = ofrak_context.create_root_resource(test_id, test_case.resource_contents)
     return PopulatedStringsAnalyzerTestCase(
         test_case.analyzer_type,
         test_case.expected_result,
@@ -51,8 +51,8 @@ async def test_case(
 
 @pytest.mark.skipif_missing_deps([StringsAnalyzer])
 class TestStringsAnalyzer(AnalyzerTests):
-    async def test_resource_analyzer(self, test_case: PopulatedAnalyzerTestCase):
+    def test_resource_analyzer(self, test_case: PopulatedAnalyzerTestCase):
         with pytest.raises(
             NotFoundError, match="Unable to find any analyzer for attributes StringsAttributes"
         ):
-            await super().test_resource_analyzer(test_case)
+            super().test_resource_analyzer(test_case)

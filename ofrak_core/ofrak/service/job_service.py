@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
@@ -14,7 +13,6 @@ from typing import (
     TypeVar,
     Union,
     cast,
-    Any,
 )
 
 from ofrak.component.unpacker import Unpacker
@@ -99,12 +97,12 @@ class JobService(JobServiceInterface):
 
         self._active_component_tasks: Dict[Tuple[bytes, bytes], Awaitable[_RunTaskResultT]] = dict()
 
-    async def create_job(self, id: bytes, name: str) -> JobModel:
+    def create_job(self, id: bytes, name: str) -> JobModel:
         model = JobModel(id, name)
         self._job_store[id] = model
         return model
 
-    async def _run_component(
+    def _run_component(
         self,
         metadata: M,
         job_id: bytes,
@@ -130,7 +128,7 @@ class JobService(JobServiceInterface):
         fresh_resource_view_context = ResourceViewContext()
         result: Union[ComponentRunResult, BaseException]
         try:
-            result = await component.run(
+            result = component.run(
                 job_id,
                 resource_id,
                 job_context,
@@ -141,53 +139,18 @@ class JobService(JobServiceInterface):
             _log_component_run_result_info(job_id, resource_id, component, result)
         except Exception as e:
             result = e
-        component_task_id = (resource_id, component.get_id())
-        del self._active_component_tasks[component_task_id]
-
         return result, metadata
 
-    def _create_run_component_task(
-        self,
-        metadata: Any,
-        job_id: bytes,
-        resource_id: bytes,
-        component: ComponentInterface,
-        job_context: JobRunContext,
-        config: CC = None,
-    ) -> Awaitable[_RunTaskResultT]:
-        component_task_id = (resource_id, component.get_id())
-        if component_task_id in self._active_component_tasks:
-            if LOGGER.isEnabledFor(logging.DEBUG):
-                LOGGER.debug(
-                    f"JOB {job_id.hex()} - Found already running task {component.get_id().decode()}"
-                    f" on resource {resource_id.hex()}, awaiting result."
-                )
-            duplicate_task = self._active_component_tasks[component_task_id]
-
-            return duplicate_task
-        else:
-            component_task = asyncio.create_task(
-                self._run_component(
-                    metadata,
-                    job_id,
-                    resource_id,
-                    component,
-                    job_context,
-                    config,
-                )
-            )
-            self._active_component_tasks[component_task_id] = component_task
-            return component_task
-
-    async def run_component(
+    def run_component(
         self,
         request: JobComponentRequest,
         job_context: Optional[JobRunContext] = None,
     ) -> ComponentRunResult:
         component = self._component_locator.get_by_id(request.component_id)
+        component_task_id = (request.resource_id, component.get_id())
         if job_context is None:
             job_context = self._job_context_factory.create()
-        result, _ = await self._create_run_component_task(
+        result, _ = self._run_component(
             request,
             request.job_id,
             request.resource_id,
@@ -200,7 +163,7 @@ class JobService(JobServiceInterface):
         else:
             return result
 
-    async def run_analyzer_by_attribute(
+    def run_analyzer_by_attribute(
         self,
         request: JobAnalyzerRequest,
         job_context: Optional[JobRunContext] = None,
@@ -208,7 +171,7 @@ class JobService(JobServiceInterface):
         if job_context is None:
             job_context = self._job_context_factory.create()
 
-        target_resource_model = await self._resource_service.get_by_id(request.resource_id)
+        target_resource_model = self._resource_service.get_by_id(request.resource_id)
         # There may be an analyzer that outputs ALL the requested attributes at once
         # If there is (as is usually the case for views), only run that one
         one_analyzer_for_all_attributes: ComponentFilter = ComponentAndMetaFilter(
@@ -232,7 +195,7 @@ class JobService(JobServiceInterface):
             ),
         )
 
-        components_result = await self._auto_run_components(
+        components_result = self._auto_run_components(
             (
                 _ComponentAutoRunRequest(
                     request.resource_id,
@@ -261,11 +224,11 @@ class JobService(JobServiceInterface):
                 target_cache[target].append(component)
         return target_cache
 
-    async def run_components(
+    def run_components(
         self,
         request: JobMultiComponentRequest,
     ) -> ComponentRunResult:
-        resource = await self._resource_service.get_by_id(request.resource_id)
+        resource = self._resource_service.get_by_id(request.resource_id)
         component_filter = _build_auto_run_filter(request)
 
         tags_to_target = tuple(resource.tags)
@@ -274,7 +237,7 @@ class JobService(JobServiceInterface):
             job_context = self._job_context_factory.create()
             component_tag_filter = _build_tag_filter(tags_to_target)
             final_filter = ComponentAndMetaFilter(component_filter, component_tag_filter)
-            individual_component_results = await self._auto_run_components(
+            individual_component_results = self._auto_run_components(
                 (
                     _ComponentAutoRunRequest(
                         request.resource_id,
@@ -292,13 +255,11 @@ class JobService(JobServiceInterface):
 
         return components_result
 
-    async def run_components_recursively(
-        self, request: JobMultiComponentRequest
-    ) -> ComponentRunResult:
+    def run_components_recursively(self, request: JobMultiComponentRequest) -> ComponentRunResult:
         components_result = ComponentRunResult()
         component_filter = _build_auto_run_filter(request)
 
-        initial_target_resource_models = await self._get_initial_recursive_target_resources(
+        initial_target_resource_models = self._get_initial_recursive_target_resources(
             request.resource_id, component_filter
         )
 
@@ -326,7 +287,7 @@ class JobService(JobServiceInterface):
                     )
                 )
 
-            iteration_components_result = await self._auto_run_components(
+            iteration_components_result = self._auto_run_components(
                 _run_components_requests,
                 request.job_id,
                 job_context,
@@ -346,7 +307,7 @@ class JobService(JobServiceInterface):
             iterations += 1
         return components_result
 
-    async def pack_recursively(
+    def pack_recursively(
         self,
         job_id: bytes,
         resource_id: bytes,
@@ -356,7 +317,7 @@ class JobService(JobServiceInterface):
         all_components_result = ComponentRunResult()
         if len(target_cache) == 0:
             return all_components_result
-        resources = await self._resource_service.get_descendants_by_id(
+        resources = self._resource_service.get_descendants_by_id(
             resource_id,
             r_filter=ResourceFilter(
                 include_self=True,
@@ -369,9 +330,7 @@ class JobService(JobServiceInterface):
 
         # We want to start with the deepest packers. Packers at the same levels can run
         # concurrently. So we first ask for the relative depth of each returned resource.
-        resource_depths = await self._resource_service.get_depths(
-            [resource.id for resource in resources]
-        )
+        resource_depths = self._resource_service.get_depths([resource.id for resource in resources])
 
         resources_by_depth = defaultdict(list)
         for resource, depth in zip(resources, resource_depths):
@@ -389,7 +348,7 @@ class JobService(JobServiceInterface):
                     component_filter,
                 )
 
-                component_result = await self._auto_run_components(
+                component_result = self._auto_run_components(
                     [request],
                     job_id,
                     job_context,
@@ -402,13 +361,13 @@ class JobService(JobServiceInterface):
                     raise ValueError(f"Multiple packers are targeting resource {resource.id.hex()}")
         return all_components_result
 
-    async def _get_initial_recursive_target_resources(
+    def _get_initial_recursive_target_resources(
         self, resource_id: bytes, component_filter: ComponentFilter
     ):
         possible_targets: Set[ResourceTag] = set()
         for component in self._component_locator.get_components_matching_filter(component_filter):
             possible_targets.update(component.targets)
-        initial_target_resource_models = await self._resource_service.get_descendants_by_id(
+        initial_target_resource_models = self._resource_service.get_descendants_by_id(
             resource_id,
             r_filter=ResourceFilter(
                 include_self=True, tags=possible_targets, tags_condition=ResourceFilterCondition.OR
@@ -416,7 +375,7 @@ class JobService(JobServiceInterface):
         )
         return initial_target_resource_models
 
-    async def _auto_run_components(
+    def _auto_run_components(
         self,
         requests: Iterable[_ComponentAutoRunRequest],
         job_id: bytes,
@@ -438,54 +397,28 @@ class JobService(JobServiceInterface):
                 for component in components:
                     queue.append((request, component))
 
-        concurrent_run_tasks: List[Awaitable[_RunTaskResultT]] = list()
-
-        n_tasks_to_add = min(MAX_CONCURRENT_COMPONENTS, len(queue))
-        for _ in range(n_tasks_to_add):
+        components_result = ComponentRunResult(set(), set(), set(), set())
+        while len(queue) > 0:
             request, component = queue.pop()
-            run_component_task = self._create_run_component_task(
+            result = self._run_component(
                 (request, type(component).__name__),
                 job_id,
                 request.target_resource_id,
                 component,
                 job_context,
+                None,
             )
-            concurrent_run_tasks.append(run_component_task)
-
-        components_result = ComponentRunResult(set(), set(), set(), set())
-        while len(queue) > 0 or len(concurrent_run_tasks) > 0:
-            completed, pending = await asyncio.wait(
-                concurrent_run_tasks, return_when=asyncio.FIRST_COMPLETED
-            )
-            LOGGER.debug(
-                f"Completed {len(completed)} component run tasks, {len(pending)} pending and "
-                f"{len(queue)} still in queue"
-            )
-            for completed_task in completed:
-                component_run_result, component_run_metadata = completed_task.result()
-                if isinstance(component_run_result, ComponentRunResult):
-                    components_result.update(component_run_result)
-                else:
-                    component_run_error = cast(BaseException, component_run_result)
-                    request_causing_run, component_name = component_run_metadata
-                    raise component_run_error from ComponentAutoRunFailure(
-                        request_causing_run.target_resource_id,
-                        request_causing_run.component_filter,
-                        component_name.encode(),
-                    )
-
-            concurrent_run_tasks = list(pending)
-            n_tasks_to_add = min(len(completed), len(queue))
-            for _ in range(n_tasks_to_add):
-                request, component = queue.pop()
-                run_component_task = self._create_run_component_task(
-                    (request, type(component).__name__),
-                    job_id,
-                    request.target_resource_id,
-                    component,
-                    job_context,
+            component_run_result, component_run_metadata = result
+            if isinstance(component_run_result, ComponentRunResult):
+                components_result.update(component_run_result)
+            else:
+                component_run_error = cast(BaseException, component_run_result)
+                request_causing_run, component_name = component_run_metadata
+                raise component_run_error from ComponentAutoRunFailure(
+                    request_causing_run.target_resource_id,
+                    request_causing_run.component_filter,
+                    component_name.encode(),
                 )
-                concurrent_run_tasks.append(run_component_task)
 
         return components_result
 

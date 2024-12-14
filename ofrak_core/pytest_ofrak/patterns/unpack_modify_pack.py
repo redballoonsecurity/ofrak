@@ -21,13 +21,13 @@ class UnpackModifyPackPattern(ABC):
     implement.
     """
 
-    async def test_unpack_modify_pack(self, ofrak_context):
+    def test_unpack_modify_pack(self, ofrak_context):
         try:
-            root_resource = await self.create_root_resource(ofrak_context)
-            await self.unpack(root_resource)
-            original_tree = await root_resource.summarize_tree()
-            await self.modify(root_resource)
-            modified_tree = await root_resource.summarize_tree()
+            root_resource = self.create_root_resource(ofrak_context)
+            self.unpack(root_resource)
+            original_tree = root_resource.summarize_tree()
+            self.modify(root_resource)
+            modified_tree = root_resource.summarize_tree()
             print("\n")
             print(
                 "".join(
@@ -38,28 +38,28 @@ class UnpackModifyPackPattern(ABC):
                 ),
                 end="",
             )
-            await self.repack(root_resource)
-            await self.verify(root_resource)
+            self.repack(root_resource)
+            self.verify(root_resource)
         except CalledProcessError as e:
             # Better printing of errors if something goes wrong in test setup/execution
             raise ComponentSubprocessError(e)
 
     @abstractmethod
-    async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
+    def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         """
         Create and return the root resource which will be unpacked
         """
         raise NotImplementedError()
 
     @abstractmethod
-    async def unpack(self, root_resource: Resource) -> None:
+    def unpack(self, root_resource: Resource) -> None:
         """
         Unpack the root resource
         """
         raise NotImplementedError()
 
     @abstractmethod
-    async def modify(self, unpacked_root_resource: Resource) -> None:
+    def modify(self, unpacked_root_resource: Resource) -> None:
         """
         Once the root resource is unpacked, the test needs to modify at least one of its
         descendants. This method should contain the logic to get those resource(s).
@@ -67,14 +67,14 @@ class UnpackModifyPackPattern(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    async def repack(self, modified_root_resource: Resource) -> None:
+    def repack(self, modified_root_resource: Resource) -> None:
         """
         Pack the root resource after it has been modified
         """
         raise NotImplementedError()
 
     @abstractmethod
-    async def verify(self, repacked_root_resource: Resource) -> None:
+    def verify(self, repacked_root_resource: Resource) -> None:
         """
         Verify that the repacked root resource matches what is expected after repacking with the
         modifications
@@ -83,5 +83,5 @@ class UnpackModifyPackPattern(ABC):
 
 
 class UnpackPackPattern(UnpackModifyPackPattern, ABC):
-    async def modify(self, unpacked_root_resource: Resource) -> None:
+    def modify(self, unpacked_root_resource: Resource) -> None:
         pass

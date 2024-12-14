@@ -57,19 +57,19 @@ class OFRAKContext:
         self._all_ofrak_services = all_ofrak_services
         self._resource_context_factory = EphemeralResourceContextFactory()
 
-    async def create_root_resource(
+    def create_root_resource(
         self, name: str, data: bytes, tags: Iterable[ResourceTag] = (GenericBinary,)
     ) -> Resource:
         job_id = self.id_service.generate_id()
         resource_id = self.id_service.generate_id()
         data_id = resource_id
 
-        await self.job_service.create_job(job_id, name)
-        await self.data_service.create_root(data_id, data)
-        resource_model = await self.resource_service.create(
+        self.job_service.create_job(job_id, name)
+        self.data_service.create_root(data_id, data)
+        resource_model = self.resource_service.create(
             ResourceModel.create(resource_id, data_id, tags=tags)
         )
-        root_resource = await self.resource_factory.create(
+        root_resource = self.resource_factory.create(
             job_id,
             resource_model.id,
             self._resource_context_factory.create(),
@@ -78,10 +78,10 @@ class OFRAKContext:
         )
         return root_resource
 
-    async def create_root_resource_from_file(self, file_path: str) -> Resource:
+    def create_root_resource_from_file(self, file_path: str) -> Resource:
         full_file_path = os.path.abspath(file_path)
         with open(full_file_path, "rb") as f:
-            root_resource = await self.create_root_resource(
+            root_resource = self.create_root_resource(
                 os.path.basename(full_file_path), f.read(), (File,)
             )
         root_resource.add_view(
@@ -91,16 +91,16 @@ class OFRAKContext:
                 FilesystemRoot._get_xattr_map(full_file_path),
             )
         )
-        await root_resource.save()
+        root_resource.save()
         return root_resource
 
-    async def create_root_resource_from_directory(self, dir_path: str) -> Resource:
+    def create_root_resource_from_directory(self, dir_path: str) -> Resource:
         full_dir_path = os.path.abspath(dir_path)
-        root_resource = await self.create_root_resource(
+        root_resource = self.create_root_resource(
             os.path.basename(full_dir_path), b"", (FilesystemRoot,)
         )
-        root_resource_v = await root_resource.view_as(FilesystemRoot)
-        await root_resource_v.initialize_from_disk(full_dir_path)
+        root_resource_v = root_resource.view_as(FilesystemRoot)
+        root_resource_v.initialize_from_disk(full_dir_path)
         return root_resource
 
     async def start_context(self):
@@ -226,11 +226,7 @@ class OFRAK:
         components_missing_deps = []
         audited_components = []
         for component in all_discovered_components:
-            if all(
-                await asyncio.gather(
-                    *[dep.is_tool_installed() for dep in component.external_dependencies]
-                )
-            ):
+            if all([dep.is_tool_installed() for dep in component.external_dependencies]):
                 audited_components.append(component)
             else:
                 components_missing_deps.append(component)

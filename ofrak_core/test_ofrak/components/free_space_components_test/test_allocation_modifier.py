@@ -27,12 +27,12 @@ class FreeSpaceAllocationModifierTestCase:
     resulting_tree_structure: FreeSpaceTreeType
 
 
-async def validate_tree(actual_mem_region: MemoryRegion, expected_node: FreeSpaceTreeType):
+def validate_tree(actual_mem_region: MemoryRegion, expected_node: FreeSpaceTreeType):
     expected_mem_region, expected_children = expected_node
 
     if isinstance(expected_mem_region, FreeSpace):
         expected_free_space = cast(FreeSpace, expected_mem_region)
-        actual_free_space = await actual_mem_region.resource.view_as(FreeSpace)
+        actual_free_space = actual_mem_region.resource.view_as(FreeSpace)
         assert (
             actual_free_space == expected_free_space
         ), f"Got {actual_free_space} expected {expected_free_space}"
@@ -41,7 +41,7 @@ async def validate_tree(actual_mem_region: MemoryRegion, expected_node: FreeSpac
 
     if expected_children:
         actual_children_iter = iter(
-            await actual_mem_region.resource.get_children_as_view(
+            actual_mem_region.resource.get_children_as_view(
                 MemoryRegion, r_sort=ResourceSort(MemoryRegion.VirtualAddress)
             )
         )
@@ -49,7 +49,7 @@ async def validate_tree(actual_mem_region: MemoryRegion, expected_node: FreeSpac
         for actual_child_mem_region, expected_child_node in zip(
             actual_children_iter, expected_chilren_iter
         ):
-            await validate_tree(actual_child_mem_region, expected_child_node)
+            validate_tree(actual_child_mem_region, expected_child_node)
 
         # Actual and expected children must be same size, so both iterators should be done
         with pytest.raises(StopIteration):
@@ -60,7 +60,7 @@ async def validate_tree(actual_mem_region: MemoryRegion, expected_node: FreeSpac
             next(expected_chilren_iter)
     else:
         with pytest.raises(StopIteration):
-            next(iter(await actual_mem_region.resource.get_children()))
+            next(iter(actual_mem_region.resource.get_children()))
 
 
 FREE_SPACE_ALLOCATION_MODIFIER_TEST_CASES = [
@@ -222,13 +222,13 @@ FREE_SPACE_ALLOCATION_MODIFIER_TEST_CASES = [
 @pytest.mark.parametrize(
     "test_case", FREE_SPACE_ALLOCATION_MODIFIER_TEST_CASES, ids=lambda tc: tc.label
 )
-async def test_free_space_analyzer(
+def test_free_space_analyzer(
     ofrak_context: OFRAKContext, test_case: FreeSpaceAllocationModifierTestCase
 ):
-    allocatable_r = await inflate_tree(test_case.initial_tree_structure, ofrak_context)
-    await allocatable_r.run(RemoveFreeSpaceModifier, test_case.allocated_range)
+    allocatable_r = inflate_tree(test_case.initial_tree_structure, ofrak_context)
+    allocatable_r.run(RemoveFreeSpaceModifier, test_case.allocated_range)
 
-    await validate_tree(
-        await allocatable_r.view_as(MemoryRegion),
+    validate_tree(
+        allocatable_r.view_as(MemoryRegion),
         test_case.resulting_tree_structure,
     )

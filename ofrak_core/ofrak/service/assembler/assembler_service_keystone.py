@@ -126,7 +126,7 @@ class KeystoneAssemblerService(AssemblerServiceInterface):
             self._ks_by_processor[(program_attributes, mode)] = ks
         return ks
 
-    async def assemble(
+    def assemble(
         self,
         assembly: str,
         vm_addr: int,
@@ -159,7 +159,7 @@ class KeystoneAssemblerService(AssemblerServiceInterface):
                 if assembly_part == "":
                     machine_code_parts.append(b"")
                 else:
-                    machine_code_part = await self.assemble(
+                    machine_code_part = self.assemble(
                         assembly_part, vm_addr + assembly_size, program_attributes
                     )
                     machine_code_parts.append(machine_code_part)

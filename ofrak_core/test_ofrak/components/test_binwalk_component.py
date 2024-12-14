@@ -56,10 +56,10 @@ BINWALK_TEST_CASES = [
 
 @pytest.mark.skipif_missing_deps([BinwalkAnalyzer])
 @pytest.mark.parametrize("test_case", BINWALK_TEST_CASES, ids=lambda tc: tc.filename)
-async def test_binwalk_component(ofrak_context, test_case):
+def test_binwalk_component(ofrak_context, test_case):
     asset_path = os.path.join(BINWALK_ASSETS_PATH, test_case.filename)
-    root_resource = await ofrak_context.create_root_resource_from_file(asset_path)
-    await root_resource.analyze(BinwalkAttributes)
+    root_resource = ofrak_context.create_root_resource_from_file(asset_path)
+    root_resource.analyze(BinwalkAttributes)
     binwalk_attributes = root_resource.get_attributes(BinwalkAttributes)
     binwalk_offsets = binwalk_attributes.offsets
     if test_case.number_of_results is not None:

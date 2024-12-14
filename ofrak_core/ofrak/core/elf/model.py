@@ -231,8 +231,8 @@ class ElfSegmentStructure(ResourceView):
     def SegmentIndex(self) -> int:
         return self.segment_index
 
-    async def get_header(self) -> "ElfProgramHeader":
-        return await self.resource.get_only_sibling_as_view(
+    def get_header(self) -> "ElfProgramHeader":
+        return self.resource.get_only_sibling_as_view(
             ElfProgramHeader,
             ResourceFilter(
                 tags=(ElfProgramHeader,),
@@ -329,11 +329,11 @@ class ElfSectionStructure(ResourceView):
     def SectionIndex(self) -> int:
         return self.section_index
 
-    async def get_elf(self) -> "Elf":
-        return await self.resource.get_parent_as_view(Elf)
+    def get_elf(self) -> "Elf":
+        return self.resource.get_parent_as_view(Elf)
 
-    async def get_header(self) -> "ElfSectionHeader":
-        return await self.resource.get_only_sibling_as_view(
+    def get_header(self) -> "ElfSectionHeader":
+        return self.resource.get_only_sibling_as_view(
             ElfSectionHeader,
             ResourceFilter(
                 tags=(ElfSectionHeader,),
@@ -514,10 +514,10 @@ class ElfSymbol(ElfSymbolStructure):
             return self.st_shndx
         return None
 
-    async def get_name(self) -> str:
-        elf = await self.resource.get_only_ancestor_as_view(Elf, ResourceFilter.with_tags(Elf))
-        string_section = await elf.get_string_section()
-        ((_, raw_symbol_name),) = await string_section.resource.search_data(
+    def get_name(self) -> str:
+        elf = self.resource.get_only_ancestor_as_view(Elf, ResourceFilter.with_tags(Elf))
+        string_section = elf.get_string_section()
+        ((_, raw_symbol_name),) = string_section.resource.search_data(
             SECTION_NAME_PATTERN, start=self.st_name, max_matches=1
         )
         return raw_symbol_name.rstrip(b"\x00").decode("ascii")
@@ -664,9 +664,9 @@ class ElfPointerArraySection(ElfSection):
         errors.
     """
 
-    async def get_entries(self):
-        await self.resource.unpack()
-        return await self.resource.get_children_as_view(
+    def get_entries(self):
+        self.resource.unpack()
+        return self.resource.get_children_as_view(
             ElfVirtualAddress,
             ResourceFilter(tags=(ElfVirtualAddress,)),
         )
@@ -685,9 +685,9 @@ class ElfDynamicSection(ElfSection):
     The .dynamic ELF Section that appears in dynamically linked ELFs.
     """
 
-    async def get_entries(self) -> Iterable[ElfDynamicEntry]:
-        await self.resource.unpack()
-        return await self.resource.get_children_as_view(
+    def get_entries(self) -> Iterable[ElfDynamicEntry]:
+        self.resource.unpack()
+        return self.resource.get_children_as_view(
             ElfDynamicEntry,
             ResourceFilter(tags=(ElfDynamicEntry,)),
         )
@@ -698,10 +698,10 @@ class ElfRelaSection(ElfSection):
     An ELF .rela.* section containing structs of type Elf{32, 64}_Rela
     """
 
-    async def get_entries(self) -> Iterable[ElfRelaEntry]:
-        await self.resource.unpack()
+    def get_entries(self) -> Iterable[ElfRelaEntry]:
+        self.resource.unpack()
 
-        return await self.resource.get_children_as_view(
+        return self.resource.get_children_as_view(
             ElfRelaEntry,
             ResourceFilter(tags=(ElfRelaEntry,)),
         )
@@ -712,10 +712,10 @@ class ElfSymbolSection(ElfSection):
     An ELF section containing structures of type Elf{32, 64}_Sym
     """
 
-    async def get_symbols(self) -> Iterable[ElfSymbol]:
-        await self.resource.unpack()
+    def get_symbols(self) -> Iterable[ElfSymbol]:
+        self.resource.unpack()
 
-        return await self.resource.get_children_as_view(
+        return self.resource.get_children_as_view(
             ElfSymbol,
             ResourceFilter(tags=(ElfSymbol,)),
             ResourceSort(ElfSymbol.SymbolIndex, ResourceSortDirection.ASCENDANT),
@@ -731,8 +731,8 @@ class ElfStringSection(ElfSectionStructure):
     A section with the STRTAB flag. There may be several of these in an ELF.
     """
 
-    async def get_section(self) -> ElfSection:
-        return await self.resource.view_as(ElfSection)
+    def get_section(self) -> ElfSection:
+        return self.resource.view_as(ElfSection)
 
 
 class ElfSectionNameStringSection(ElfStringSection):
@@ -756,32 +756,30 @@ class Elf(Program):
     See <https://man7.org/linux/man-pages/man5/elf.5.html> for details.
     """
 
-    async def get_header(self) -> ElfHeader:
-        return await self.resource.get_only_child_as_view(
-            ElfHeader, ResourceFilter.with_tags(ElfHeader)
-        )
+    def get_header(self) -> ElfHeader:
+        return self.resource.get_only_child_as_view(ElfHeader, ResourceFilter.with_tags(ElfHeader))
 
-    async def get_basic_header(self) -> ElfBasicHeader:
-        return await self.resource.get_only_child_as_view(
+    def get_basic_header(self) -> ElfBasicHeader:
+        return self.resource.get_only_child_as_view(
             ElfBasicHeader, ResourceFilter.with_tags(ElfBasicHeader)
         )
 
-    async def get_segments(self) -> Iterable[ElfSegment]:
-        return await self.resource.get_children_as_view(
+    def get_segments(self) -> Iterable[ElfSegment]:
+        return self.resource.get_children_as_view(
             ElfSegment,
             ResourceFilter(tags=(ElfSegment,)),
             ResourceSort(ElfSegmentStructure.SegmentIndex, ResourceSortDirection.ASCENDANT),
         )
 
-    async def get_sections(self) -> Iterable[ElfSection]:
-        return await self.resource.get_children_as_view(
+    def get_sections(self) -> Iterable[ElfSection]:
+        return self.resource.get_children_as_view(
             ElfSection,
             ResourceFilter(tags=(ElfSection,)),
             ResourceSort(ElfSectionStructure.SectionIndex, ResourceSortDirection.ASCENDANT),
         )
 
-    async def get_section_by_index(self, index: int) -> ElfSection:
-        return await self.resource.get_only_child_as_view(
+    def get_section_by_index(self, index: int) -> ElfSection:
+        return self.resource.get_only_child_as_view(
             ElfSection,
             ResourceFilter(
                 tags=(ElfSection,),
@@ -791,9 +789,9 @@ class Elf(Program):
             ),
         )
 
-    async def get_section_by_name(self, name: str) -> ElfSection:
-        _ = await self.get_sections()  # Forces analyzing name of all sections
-        return await self.resource.get_only_child_as_view(
+    def get_section_by_name(self, name: str) -> ElfSection:
+        _ = self.get_sections()  # Forces analyzing name of all sections
+        return self.resource.get_only_child_as_view(
             ElfSection,
             ResourceFilter(
                 tags=(ElfSection,),
@@ -801,16 +799,16 @@ class Elf(Program):
             ),
         )
 
-    async def get_section_name_string_section(self) -> ElfSectionNameStringSection:
-        return await self.resource.get_only_child_as_view(
+    def get_section_name_string_section(self) -> ElfSectionNameStringSection:
+        return self.resource.get_only_child_as_view(
             ElfSectionNameStringSection,
             ResourceFilter(
                 tags=(ElfSectionNameStringSection,),
             ),
         )
 
-    async def get_string_section(self) -> ElfStringSection:
-        for string_section in await self.resource.get_children_as_view(
+    def get_string_section(self) -> ElfStringSection:
+        for string_section in self.resource.get_children_as_view(
             ElfStringSection,
             ResourceFilter(
                 tags=(ElfStringSection,),
@@ -818,29 +816,29 @@ class Elf(Program):
         ):
             if string_section.resource.has_tag(ElfSectionNameStringSection):
                 continue
-            section = await string_section.get_section()
+            section = string_section.get_section()
             if section.name != ".strtab":
                 continue
             return string_section
         raise ValueError("Could not find string section!")
 
-    async def get_symbol_section(self) -> ElfSymbolSection:
-        return await self.resource.get_only_child_as_view(
+    def get_symbol_section(self) -> ElfSymbolSection:
+        return self.resource.get_only_child_as_view(
             ElfSymbolSection,
             ResourceFilter(
                 tags=(ElfSymbolSection,),
             ),
         )
 
-    async def get_section_headers(self) -> Iterable[ElfSectionHeader]:
-        return await self.resource.get_children_as_view(
+    def get_section_headers(self) -> Iterable[ElfSectionHeader]:
+        return self.resource.get_children_as_view(
             ElfSectionHeader,
             ResourceFilter(tags=(ElfSectionHeader,)),
             ResourceSort(ElfSectionStructure.SectionIndex, ResourceSortDirection.ASCENDANT),
         )
 
-    async def get_section_header_by_index(self, index: int) -> ElfSectionHeader:
-        return await self.resource.get_only_child_as_view(
+    def get_section_header_by_index(self, index: int) -> ElfSectionHeader:
+        return self.resource.get_only_child_as_view(
             ElfSectionHeader,
             ResourceFilter(
                 tags=(ElfSectionHeader,),
@@ -850,15 +848,15 @@ class Elf(Program):
             ),
         )
 
-    async def get_program_headers(self) -> Iterable[ElfProgramHeader]:
-        return await self.resource.get_children_as_view(
+    def get_program_headers(self) -> Iterable[ElfProgramHeader]:
+        return self.resource.get_children_as_view(
             ElfProgramHeader,
             ResourceFilter(tags=(ElfProgramHeader,)),
             ResourceSort(ElfProgramHeader.SegmentIndex, ResourceSortDirection.ASCENDANT),
         )
 
-    async def get_program_header_by_index(self, index: int) -> ElfProgramHeader:
-        return await self.resource.get_only_child_as_view(
+    def get_program_header_by_index(self, index: int) -> ElfProgramHeader:
+        return self.resource.get_only_child_as_view(
             ElfProgramHeader,
             ResourceFilter(
                 tags=(ElfProgramHeader,),

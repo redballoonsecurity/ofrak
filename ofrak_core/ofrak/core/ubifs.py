@@ -96,9 +96,9 @@ class UbifsAnalyzer(Analyzer[None, Ubifs]):
 
     external_dependencies = (PY_LZO_TOOL,)
 
-    async def analyze(self, resource: Resource, config=None) -> Ubifs:
+    def analyze(self, resource: Resource, config=None) -> Ubifs:
         with tempfile.NamedTemporaryFile() as temp_file:
-            resource_data = await resource.get_data()
+            resource_data = resource.get_data()
             temp_file.write(resource_data)
             temp_file.flush()
 
@@ -134,11 +134,11 @@ class UbifsUnpacker(Unpacker[None]):
 
     external_dependencies = (PY_LZO_TOOL,)
 
-    async def unpack(self, resource: Resource, config=None):
+    def unpack(self, resource: Resource, config=None):
         with tempfile.TemporaryDirectory() as temp_flush_dir:
             # flush to disk
             with open(f"{temp_flush_dir}/input.img", "wb") as temp_file:
-                resource_data = await resource.get_data()
+                resource_data = resource.get_data()
                 temp_file.write(resource_data)
                 temp_file.flush()
 
@@ -149,15 +149,15 @@ class UbifsUnpacker(Unpacker[None]):
                 f"{temp_flush_dir}/output",
                 temp_file.name,
             ]
-            proc = await asyncio.create_subprocess_exec(
+            proc = asyncio.create_subprocess_exec(
                 *cmd,
             )
-            returncode = await proc.wait()
+            returncode = proc.wait()
             if proc.returncode:
                 raise CalledProcessError(returncode=returncode, cmd=cmd)
 
-            ubifs_view = await resource.view_as(Ubifs)
-            await ubifs_view.initialize_from_disk(f"{temp_flush_dir}/output")
+            ubifs_view = resource.view_as(Ubifs)
+            ubifs_view.initialize_from_disk(f"{temp_flush_dir}/output")
 
 
 class UbifsPacker(Packer[None]):
@@ -168,9 +168,9 @@ class UbifsPacker(Packer[None]):
     targets = (Ubifs,)
     external_dependencies = (MKFS_UBIFS_TOOL,)
 
-    async def pack(self, resource: Resource, config=None) -> None:
-        ubifs_view = await resource.view_as(Ubifs)
-        flush_dir = await ubifs_view.flush_to_disk()
+    def pack(self, resource: Resource, config=None) -> None:
+        ubifs_view = resource.view_as(Ubifs)
+        flush_dir = ubifs_view.flush_to_disk()
 
         with tempfile.NamedTemporaryFile(mode="rb") as temp:
             cmd = [
@@ -196,15 +196,15 @@ class UbifsPacker(Packer[None]):
                 flush_dir,
                 temp.name,
             ]
-            proc = await asyncio.create_subprocess_exec(
+            proc = asyncio.create_subprocess_exec(
                 *cmd,
             )
-            returncode = await proc.wait()
+            returncode = proc.wait()
             if proc.returncode:
                 raise CalledProcessError(returncode=returncode, cmd=cmd)
             new_data = temp.read()
 
-            resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
+            resource.queue_patch(Range(0, resource.get_data_length()), new_data)
 
 
 class UbifsIdentifier(Identifier):
@@ -216,9 +216,9 @@ class UbifsIdentifier(Identifier):
 
     external_dependencies = (PY_LZO_TOOL,)
 
-    async def identify(self, resource: Resource, config=None) -> None:
-        datalength = await resource.get_data_length()
+    def identify(self, resource: Resource, config=None) -> None:
+        datalength = resource.get_data_length()
         if datalength >= 4:
-            data = await resource.get_data(Range(0, 4))
+            data = resource.get_data(Range(0, 4))
             if data == UBIFS_NODE_MAGIC:
                 resource.add_tag(Ubifs)

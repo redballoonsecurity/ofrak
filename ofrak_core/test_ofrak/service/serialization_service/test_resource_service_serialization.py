@@ -6,7 +6,7 @@ from test_ofrak.service.resource_service.test_resource_service import TestResour
 
 
 @pytest.fixture
-async def basic_populated_resource_service(
+def basic_populated_resource_service(
     basic_populated_resource_service,
     serializer: SerializationServiceInterface,
 ):
@@ -14,7 +14,7 @@ async def basic_populated_resource_service(
 
 
 @pytest.fixture
-async def populated_resource_service(
+def populated_resource_service(
     populated_resource_service,
     serializer: SerializationServiceInterface,
 ):
@@ -22,7 +22,7 @@ async def populated_resource_service(
 
 
 @pytest.fixture
-async def triple_populated_resource_service(
+def triple_populated_resource_service(
     triple_populated_resource_service,
     serializer: SerializationServiceInterface,
 ):

@@ -41,11 +41,11 @@ class RegisterUsageResult:
 
 class DisassemblerServiceInterface(AbstractOfrakService, ABC):
     @abstractmethod
-    async def disassemble(self, request: DisassemblerServiceRequest) -> Iterable[DisassemblyResult]:
+    def disassemble(self, request: DisassemblerServiceRequest) -> Iterable[DisassemblyResult]:
         raise NotImplementedError
 
     @abstractmethod
-    async def get_register_usage(self, request: DisassemblerServiceRequest) -> RegisterUsageResult:
+    def get_register_usage(self, request: DisassemblerServiceRequest) -> RegisterUsageResult:
         raise NotImplementedError
 
 

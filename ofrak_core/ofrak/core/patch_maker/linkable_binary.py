@@ -36,7 +36,7 @@ class LinkableBinary(GenericBinary):
     between symbols, and their corresponding offset and type within the program.
     """
 
-    async def get_only_symbol(
+    def get_only_symbol(
         self, *, name: Optional[str] = None, vaddr: Optional[int] = None
     ) -> LinkableSymbol:
         """
@@ -62,7 +62,7 @@ class LinkableBinary(GenericBinary):
         if name is not None:
             attributes_filters.append(ResourceAttributeValueFilter(LinkableSymbol.Label, name))
 
-        return await self.resource.get_only_descendant_as_view(
+        return self.resource.get_only_descendant_as_view(
             LinkableSymbol,
             r_filter=ResourceFilter(
                 tags=(LinkableSymbol,),
@@ -70,7 +70,7 @@ class LinkableBinary(GenericBinary):
             ),
         )
 
-    async def get_symbols(
+    def get_symbols(
         self, *, name: Optional[str] = None, vaddr: Optional[int] = None
     ) -> Iterable[LinkableSymbol]:
         """
@@ -93,7 +93,7 @@ class LinkableBinary(GenericBinary):
         if name is not None:
             attributes_filters.append(ResourceAttributeValueFilter(LinkableSymbol.Label, name))
 
-        return await self.resource.get_descendants_as_view(
+        return self.resource.get_descendants_as_view(
             LinkableSymbol,
             r_filter=ResourceFilter(
                 tags=(LinkableSymbol,),
@@ -101,9 +101,7 @@ class LinkableBinary(GenericBinary):
             ),
         )
 
-    async def define_linkable_symbols(
-        self, proto_symbols: Dict[str, Tuple[int, LinkableSymbolType]]
-    ):
+    def define_linkable_symbols(self, proto_symbols: Dict[str, Tuple[int, LinkableSymbolType]]):
         """
         From some basic info about symbols in this program, create a LinkableSymbol resource for
         each one and get any remaining needed info to do this. Usage is to pass a dictionary that
@@ -120,7 +118,7 @@ class LinkableBinary(GenericBinary):
             mode = InstructionSetMode.NONE
             if sym_type is LinkableSymbolType.FUNC:
                 try:
-                    cb = await self.resource.get_only_descendant_as_view(
+                    cb = self.resource.get_only_descendant_as_view(
                         ComplexBlock,
                         r_filter=ResourceFilter(
                             tags=(ComplexBlock,),
@@ -136,15 +134,15 @@ class LinkableBinary(GenericBinary):
                         f"No ComplexBlock resource exists at vaddr 0x"
                         f"{sym_vaddr:x}; cannot infer its mode."
                     )
-                mode = await cb.get_mode()
+                mode = cb.get_mode()
             symbols.append(LinkableSymbol(sym_vaddr, sym_name, sym_type, mode))
 
-        await self.resource.run(
+        self.resource.run(
             UpdateLinkableSymbolsModifier,
             UpdateLinkableSymbolsModifierConfig(tuple(symbols)),
         )
 
-    async def define_linkable_symbols_from_patch(
+    def define_linkable_symbols_from_patch(
         self,
         proto_symbols: Mapping[str, Tuple[int, LinkableSymbolType]],
         program_attributes: ProgramAttributes,
@@ -168,13 +166,13 @@ class LinkableBinary(GenericBinary):
                     mode = InstructionSetMode.THUMB
                 symbols.append(LinkableSymbol(sym_vaddr, sym_name, sym_type, mode))
 
-        await self.resource.run(
+        self.resource.run(
             UpdateLinkableSymbolsModifier,
             UpdateLinkableSymbolsModifierConfig(tuple(symbols)),
         )
 
     # TODO: Un-stringify PatchMaker; OFRAK imports in PatchMaker results in circular Program imports
-    async def make_linkable_bom(
+    def make_linkable_bom(
         self,
         patch_maker: "PatchMaker",  # type: ignore
         build_tmp_dir: str,
@@ -204,7 +202,7 @@ class LinkableBinary(GenericBinary):
         argument to PatchMaker.make_fem(...).
         """
         stubs: Dict[str, Tuple[Segment, ...]] = dict()
-        for symbol in await self.get_symbols():
+        for symbol in self.get_symbols():
             if symbol.name in unresolved_symbols:
                 stubs_file = os.path.join(build_tmp_dir, f"stub_{symbol.name}.as")
                 stub_info = symbol.get_stub_info()
@@ -267,7 +265,7 @@ class UpdateLinkableSymbolsModifier(Modifier[UpdateLinkableSymbolsModifierConfig
 
     targets = (LinkableBinary,)
 
-    async def modify(self, resource: Resource, config: UpdateLinkableSymbolsModifierConfig) -> None:
+    def modify(self, resource: Resource, config: UpdateLinkableSymbolsModifierConfig) -> None:
         unhandled_symbols = {symbol.name: symbol for symbol in config.updated_symbols}
         unhandled_vaddrs: Dict[int, LinkableSymbol] = {}
         for symbol in config.updated_symbols:
@@ -278,7 +276,7 @@ class UpdateLinkableSymbolsModifier(Modifier[UpdateLinkableSymbolsModifierConfig
                 # However it would be pointless to look for and rename an existing resource at that
                 # address multiple times
                 # So after the first one, create a new child for each symbol sharing an address
-                await resource.create_child_from_view(symbol)
+                resource.create_child_from_view(symbol)
 
         # Overwrite existing ComplexBlock with new LinkableSymbols
         filter_for_cb_by_vaddr = ResourceFilter(
@@ -296,7 +294,7 @@ class UpdateLinkableSymbolsModifier(Modifier[UpdateLinkableSymbolsModifierConfig
         )
 
         try:
-            for existing_cb in await resource.get_descendants_as_view(
+            for existing_cb in resource.get_descendants_as_view(
                 ComplexBlock, r_filter=filter_for_cb_by_vaddr
             ):
                 symbol = unhandled_vaddrs[existing_cb.virtual_address]
@@ -317,7 +315,7 @@ class UpdateLinkableSymbolsModifier(Modifier[UpdateLinkableSymbolsModifierConfig
             ),
         )
         try:
-            for existing_label in await resource.get_descendants_as_view(
+            for existing_label in resource.get_descendants_as_view(
                 LabeledAddress,
                 r_filter=filter_for_label_by_name,
             ):
@@ -343,7 +341,7 @@ class UpdateLinkableSymbolsModifier(Modifier[UpdateLinkableSymbolsModifierConfig
         )
 
         try:
-            for existing_addressable in await resource.get_descendants_as_view(
+            for existing_addressable in resource.get_descendants_as_view(
                 Addressable,
                 r_filter=filter_for_label_by_vaddr,
             ):
@@ -356,4 +354,4 @@ class UpdateLinkableSymbolsModifier(Modifier[UpdateLinkableSymbolsModifierConfig
         # For any new LinkableSymbols that we could not add to existing resources, create a new
         # resource
         for symbol in unhandled_symbols.values():
-            await resource.create_child_from_view(symbol)
+            resource.create_child_from_view(symbol)

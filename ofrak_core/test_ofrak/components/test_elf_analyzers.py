@@ -86,10 +86,10 @@ class ElfDeserializingAnalyzerTestCase:
             raise ValueError(self.bit_width)
         return ElfBasicHeader(b"\x7fELF", ei_class, ei_data, 1, 0, 0, b"\x00" * 7)
 
-    async def create_test_elf(self, ofrak_context: OFRAKContext) -> Resource:
+    def create_test_elf(self, ofrak_context: OFRAKContext) -> Resource:
         basic_header = self.create_basic_elf_header()
-        elf_r = await ofrak_context.create_root_resource("test_elf", b"", tags=(Elf,))
-        await elf_r.create_child_from_view(basic_header)
+        elf_r = ofrak_context.create_root_resource("test_elf", b"", tags=(Elf,))
+        elf_r.create_child_from_view(basic_header)
         if issubclass(self.get_target_tag(), ElfSegmentStructure):
             expected_elf_structure = cast(ElfSegmentStructure, self.expected_view)
             attributes = (
@@ -105,7 +105,7 @@ class ElfDeserializingAnalyzerTestCase:
             attributes = (AttributesType[ElfSymbolStructure](expected_elf_structure.symbol_index),)
         else:
             attributes = ()
-        return await elf_r.create_child(
+        return elf_r.create_child(
             tags=(self.get_target_tag(),),
             data=self.get_header_data(),
             attributes=attributes,
@@ -436,9 +436,9 @@ ELF_ANALYZER_TEST_CASES = [
 
 
 @pytest.mark.parametrize("test_case", ELF_ANALYZER_TEST_CASES, ids=lambda tc: tc.get_label())
-async def test_deserializing_analyzers(ofrak_context, test_case: ElfDeserializingAnalyzerTestCase):
-    test_target = await test_case.create_test_elf(ofrak_context)
-    analyzed_view = await test_target.view_as(test_case.get_target_tag())  # type: ignore
+def test_deserializing_analyzers(ofrak_context, test_case: ElfDeserializingAnalyzerTestCase):
+    test_target = test_case.create_test_elf(ofrak_context)
+    analyzed_view = test_target.view_as(test_case.get_target_tag())  # type: ignore
     assert test_case.expected_view == analyzed_view
 
 
@@ -448,10 +448,8 @@ class ElfBasicHeaderTestCase:
     data: bytes
     expected_results: Union[Tuple[Endianness, BitWidth], Type[Exception]]
 
-    async def create_header(self, ofrak_context: OFRAKContext) -> Resource:
-        return await ofrak_context.create_root_resource(
-            self.label, self.data, tags=(ElfBasicHeader,)
-        )
+    def create_header(self, ofrak_context: OFRAKContext) -> Resource:
+        return ofrak_context.create_root_resource(self.label, self.data, tags=(ElfBasicHeader,))
 
 
 ELF_BASIC_HEADER_ANALYZER_TEST_CASES = [
@@ -494,24 +492,22 @@ ELF_BASIC_HEADER_ANALYZER_TEST_CASES = [
 
 
 @pytest.mark.parametrize("test_case", ELF_BASIC_HEADER_ANALYZER_TEST_CASES, ids=lambda tc: tc.label)
-async def test_basic_header_analyzer(
-    ofrak_context: OFRAKContext, test_case: ElfBasicHeaderTestCase
-):
-    basic_header_r = await test_case.create_header(ofrak_context)
+def test_basic_header_analyzer(ofrak_context: OFRAKContext, test_case: ElfBasicHeaderTestCase):
+    basic_header_r = test_case.create_header(ofrak_context)
     if type(test_case.expected_results) is tuple:
-        basic_header = await basic_header_r.view_as(ElfBasicHeader)
+        basic_header = basic_header_r.view_as(ElfBasicHeader)
         expected_endianness, expected_bit_width = test_case.expected_results
         assert expected_endianness == basic_header.get_endianness()
         assert expected_bit_width == basic_header.get_bitwidth()
     else:
         expected_error = test_case.expected_results
         with pytest.raises(expected_error):
-            basic_header = await basic_header_r.view_as(ElfBasicHeader)
+            basic_header = basic_header_r.view_as(ElfBasicHeader)
             _ = basic_header.get_endianness()
             _ = basic_header.get_bitwidth()
 
 
-async def test_elf_section_name_analyzer(ofrak_context: OFRAKContext):
+def test_elf_section_name_analyzer(ofrak_context: OFRAKContext):
     test_section_elf_index = 3
     test_section_name_offset = 0x40
     test_section_name = ".rbs_test_name"
@@ -540,21 +536,21 @@ async def test_elf_section_name_analyzer(ofrak_context: OFRAKContext):
         0,
     )
     section_body = ElfSectionStructure(test_section_elf_index)
-    elf_r = await _create_populated_elf(
+    elf_r = _create_populated_elf(
         ofrak_context,
         ei_class=1,  # 32-bit
         ei_data=1,  # little-endian
     )
-    await elf_r.create_child_from_view(elf_section_name_section, data=elf_section_name_section_data)
-    await elf_r.create_child_from_view(section_header)
-    section_body_r = await elf_r.create_child_from_view(section_body, additional_tags=(ElfSection,))
+    elf_r.create_child_from_view(elf_section_name_section, data=elf_section_name_section_data)
+    elf_r.create_child_from_view(section_header)
+    section_body_r = elf_r.create_child_from_view(section_body, additional_tags=(ElfSection,))
 
     # Do analysis
-    analyzed_elf_section = await section_body_r.view_as(ElfSection)
+    analyzed_elf_section = section_body_r.view_as(ElfSection)
     assert test_section_name == analyzed_elf_section.name
 
 
-async def test_elf_program_attributes_analyzer(ofrak_context: OFRAKContext):
+def test_elf_program_attributes_analyzer(ofrak_context: OFRAKContext):
     expected_program_attrs = ProgramAttributes(
         InstructionSet.ARM,
         None,
@@ -562,19 +558,19 @@ async def test_elf_program_attributes_analyzer(ofrak_context: OFRAKContext):
         Endianness.LITTLE_ENDIAN,
         None,
     )
-    elf_r = await _create_populated_elf(
+    elf_r = _create_populated_elf(
         ofrak_context,
         ei_class=1,  # 32-bit
         ei_data=1,  # little-endian
         e_machine=0x28,
     )
 
-    analyzed_program_attrs = await elf_r.analyze(ProgramAttributes)
+    analyzed_program_attrs = elf_r.analyze(ProgramAttributes)
     assert analyzed_program_attrs == expected_program_attrs
 
 
-async def test_elf_program_attributes_analyzer_unknown_isa(ofrak_context: OFRAKContext):
-    elf_r = await _create_populated_elf(
+def test_elf_program_attributes_analyzer_unknown_isa(ofrak_context: OFRAKContext):
+    elf_r = _create_populated_elf(
         ofrak_context,
         ei_class=1,  # 32-bit
         ei_data=1,  # little-endian
@@ -582,10 +578,10 @@ async def test_elf_program_attributes_analyzer_unknown_isa(ofrak_context: OFRAKC
     )
 
     with pytest.raises(KeyError):
-        _ = await elf_r.analyze(ProgramAttributes)
+        _ = elf_r.analyze(ProgramAttributes)
 
 
-async def test_elf_unknown_os_specific_section_type():
+def test_elf_unknown_os_specific_section_type():
     """
     A range of possible section types is reserved for OS-specific types, so we don't necessarily
     have an enum type for them. This should not cause any failures in OFRAK though. However we do
@@ -601,7 +597,7 @@ async def test_elf_unknown_os_specific_section_type():
         _ = ElfSectionType(0x50000000)
 
 
-async def _create_populated_elf(
+def _create_populated_elf(
     ofrak_context: OFRAKContext,
     ei_magic: bytes = b"\x7ELF",
     ei_class: int = 0,
@@ -648,9 +644,9 @@ async def _create_populated_elf(
         e_shnum=e_shnum,
         e_shstrndx=e_shstrndx,
     )
-    elf_r = await ofrak_context.create_root_resource("test_elf", b"", tags=(Elf,))
-    await elf_r.create_child_from_view(elf_basic_header)
-    await elf_r.create_child_from_view(elf_header)
+    elf_r = ofrak_context.create_root_resource("test_elf", b"", tags=(Elf,))
+    elf_r.create_child_from_view(elf_basic_header)
+    elf_r.create_child_from_view(elf_header)
 
     return elf_r
 
@@ -832,7 +828,7 @@ ANALYZER_VIEWS_UNDER_TEST = [
     "readelf_helper, analyzer, test_view, test_entry_view, filter_helper, entry_sort",
     ANALYZER_VIEWS_UNDER_TEST,
 )
-async def test_analyzer(
+def test_analyzer(
     ofrak_context: OFRAKContext,
     elf_executable_file,
     elf_test_directory,
@@ -846,10 +842,10 @@ async def test_analyzer(
     readelf_path = "/usr/bin/readelf"
     assert os.path.exists(readelf_path)
     expected_entries: Iterable[test_entry_view] = readelf_helper(readelf_path, elf_executable_file)
-    original_elf = await ofrak_context.create_root_resource_from_file(elf_executable_file)
-    await original_elf.unpack()
+    original_elf = ofrak_context.create_root_resource_from_file(elf_executable_file)
+    original_elf.unpack()
     views = list(
-        await original_elf.get_children_as_view(
+        original_elf.get_children_as_view(
             test_view,
             ResourceFilter(tags=(test_view,)),
         )
@@ -857,7 +853,7 @@ async def test_analyzer(
     assert len(views) > 0
     entries = list()
     for view in views:
-        entries.extend(list(await view.get_entries()))
+        entries.extend(list(view.get_entries()))
     if filter_helper:
         entries = filter_helper(entries)
         expected_entries = filter_helper(expected_entries)

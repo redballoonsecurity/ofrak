@@ -22,8 +22,8 @@ class ZstdData(GenericBinary):
     A zstd binary blob.
     """
 
-    async def get_child(self) -> GenericBinary:
-        return await self.resource.get_only_child_as_view(GenericBinary)
+    def get_child(self) -> GenericBinary:
+        return self.resource.get_only_child_as_view(GenericBinary)
 
 
 @dataclass
@@ -41,9 +41,9 @@ class ZstdUnpacker(Unpacker[None]):
     children = (GenericBinary,)
     external_dependencies = (ZSTD,)
 
-    async def unpack(self, resource: Resource, config: ComponentConfig = None) -> None:
+    def unpack(self, resource: Resource, config: ComponentConfig = None) -> None:
         with tempfile.NamedTemporaryFile(suffix=".zstd") as compressed_file:
-            compressed_file.write(await resource.get_data())
+            compressed_file.write(resource.get_data())
             compressed_file.flush()
             output_filename = tempfile.mktemp()
 
@@ -55,16 +55,16 @@ class ZstdUnpacker(Unpacker[None]):
                 "-o",
                 output_filename,
             ]
-            proc = await asyncio.create_subprocess_exec(
+            proc = asyncio.create_subprocess_exec(
                 *cmd,
             )
-            returncode = await proc.wait()
+            returncode = proc.wait()
             if proc.returncode:
                 raise CalledProcessError(returncode=returncode, cmd=cmd)
             with open(output_filename, "rb") as f:
                 result = f.read()
 
-            await resource.create_child(tags=(GenericBinary,), data=result)
+            resource.create_child(tags=(GenericBinary,), data=result)
 
 
 class ZstdPacker(Packer[ZstdPackerConfig]):
@@ -75,12 +75,12 @@ class ZstdPacker(Packer[ZstdPackerConfig]):
     targets = (ZstdData,)
     external_dependencies = (ZSTD,)
 
-    async def pack(self, resource: Resource, config: Optional[ZstdPackerConfig] = None):
+    def pack(self, resource: Resource, config: Optional[ZstdPackerConfig] = None):
         if config is None:
             config = ZstdPackerConfig(compression_level=19)
-        zstd_view = await resource.view_as(ZstdData)
-        child_file = await zstd_view.get_child()
-        uncompressed_data = await child_file.resource.get_data()
+        zstd_view = resource.view_as(ZstdData)
+        child_file = zstd_view.get_child()
+        uncompressed_data = child_file.resource.get_data()
 
         with tempfile.NamedTemporaryFile() as uncompressed_file:
             uncompressed_file.write(uncompressed_data)
@@ -91,17 +91,17 @@ class ZstdPacker(Packer[ZstdPackerConfig]):
             if config.compression_level > 19:
                 command.append("--ultra")
             command.extend([uncompressed_file.name, "-o", output_filename])
-            proc = await asyncio.create_subprocess_exec(
+            proc = asyncio.create_subprocess_exec(
                 *command,
             )
-            returncode = await proc.wait()
+            returncode = proc.wait()
             if proc.returncode:
                 raise CalledProcessError(returncode=returncode, cmd=command)
             with open(output_filename, "rb") as f:
                 result = f.read()
 
             compressed_data = result
-            original_size = await zstd_view.resource.get_data_length()
+            original_size = zstd_view.resource.get_data_length()
             resource.queue_patch(Range(0, original_size), compressed_data)
 
 

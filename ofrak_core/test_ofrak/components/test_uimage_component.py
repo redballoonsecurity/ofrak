@@ -33,42 +33,42 @@ UIMAGE_TESTFILE_PATHS = [
 
 
 @pytest.fixture(params=UIMAGE_TESTFILE_PATHS)
-async def uimage_resource(ofrak_context, request) -> Resource:
+def uimage_resource(ofrak_context, request) -> Resource:
     uimage_path = os.path.join(test_ofrak.components.ASSETS_DIR, request.param)
-    return await ofrak_context.create_root_resource_from_file(uimage_path)
+    return ofrak_context.create_root_resource_from_file(uimage_path)
 
 
 @pytest.mark.skipif(
     shutil.which("mkimage") is None, reason="Test requires mkimage from u-boot-tools"
 )
-async def test_uimage_unpack_modify_pack(uimage_resource: Resource, tmpdir):
+def test_uimage_unpack_modify_pack(uimage_resource: Resource, tmpdir):
     """Test unpacking, modifying and then repacking a UImage file."""
-    await uimage_resource.unpack_recursively()
-    await modify(uimage_resource)
-    await uimage_resource.pack_recursively()
-    await verify(uimage_resource, tmpdir)
+    uimage_resource.unpack_recursively()
+    modify(uimage_resource)
+    uimage_resource.pack_recursively()
+    verify(uimage_resource, tmpdir)
 
 
-async def create_root_resource(ofrak_context: OFRAKContext, path) -> Resource:
+def create_root_resource(ofrak_context: OFRAKContext, path) -> Resource:
     """
     Create a root resource from the test image stored in Git LFS. The test image was created by
     doing the following command on a Linux system:
             mkimage -C none -n "old image name" -d /bin/bash ./assets/uimage
     """
     uimage_path = os.path.join(test_ofrak.components.ASSETS_DIR, path)
-    return await ofrak_context.create_root_resource_from_file(uimage_path)
+    return ofrak_context.create_root_resource_from_file(uimage_path)
 
 
-async def modify(unpacked_root_resource: Resource) -> None:
-    uimage = await unpacked_root_resource.view_as(UImage)
-    header = await uimage.get_header()
+def modify(unpacked_root_resource: Resource) -> None:
+    uimage = unpacked_root_resource.view_as(UImage)
+    header = uimage.get_header()
     header_modifier_config = UImageHeaderModifierConfig(
         ih_name=bytes(NEW_UIMAGE_NAME, encoding="ASCII")
     )
-    await header.resource.run(UImageHeaderModifier, header_modifier_config)
+    header.resource.run(UImageHeaderModifier, header_modifier_config)
 
 
-async def verify(repacked_root_resource: Resource, tmpdir) -> None:
+def verify(repacked_root_resource: Resource, tmpdir) -> None:
     """
     Verify the integrity of the UImage using mkimage -l.
 
@@ -78,7 +78,7 @@ async def verify(repacked_root_resource: Resource, tmpdir) -> None:
     - the data CRC is incorrect
     - the data size is incorrect
     """
-    resource_data = await repacked_root_resource.get_data()
+    resource_data = repacked_root_resource.get_data()
     repacked_uimage_file = tmpdir / "repacked_uimage"
     with open(repacked_uimage_file, "wb") as f:
         f.write(resource_data)
@@ -90,13 +90,13 @@ async def verify(repacked_root_resource: Resource, tmpdir) -> None:
     assert f"Image Name:   {NEW_UIMAGE_NAME}" in stdout, stdout
 
 
-async def test_uimage_header(uimage_resource: Resource) -> None:
+def test_uimage_header(uimage_resource: Resource) -> None:
     """
     Test that UImageHeader and UImageMultiHeader methods return expected types.
     """
-    await uimage_resource.unpack()
-    uimage = await uimage_resource.view_as(UImage)
-    header = await uimage.get_header()
+    uimage_resource.unpack()
+    uimage = uimage_resource.view_as(UImage)
+    header = uimage.get_header()
     assert isinstance(header.get_os(), UImageOperatingSystem)
     assert isinstance(header.get_arch(), UImageArch)
     assert isinstance(header.get_compression_type(), UImageCompressionType)
@@ -108,19 +108,19 @@ async def test_uimage_header(uimage_resource: Resource) -> None:
 
     header_type = header.get_type()
     if header_type is UImageType.MULTI:
-        multi_header = await uimage.get_multi_header()
+        multi_header = uimage.get_multi_header()
         assert isinstance(multi_header, UImageMultiHeader)
         assert isinstance(multi_header.get_number_of_bodies(), int)
         assert all([isinstance(size, int) for size in multi_header.get_image_sizes()])
     else:
         with pytest.raises(NotFoundError):
-            _ = await uimage.get_multi_header()
+            _ = uimage.get_multi_header()
 
 
-async def test_uimage_program_attributes_analzyer(uimage_resource: Resource) -> None:
+def test_uimage_program_attributes_analzyer(uimage_resource: Resource) -> None:
     """
     Test that UImageProgramAttributesAnalyzer returns ProgramAttributes.
     """
-    await uimage_resource.unpack()
-    program_attributes = await uimage_resource.analyze(ProgramAttributes)
+    uimage_resource.unpack()
+    program_attributes = uimage_resource.analyze(ProgramAttributes)
     assert isinstance(program_attributes, ProgramAttributes)

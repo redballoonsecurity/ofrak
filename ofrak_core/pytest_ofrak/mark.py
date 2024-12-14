@@ -7,10 +7,10 @@ from ofrak.model.component_model import ComponentExternalTool
 from ofrak.component.abstract import AbstractComponent
 
 
-async def _check_deps_installed(
+def _check_deps_installed(
     deps: Sequence[ComponentExternalTool],
 ) -> Mapping[ComponentExternalTool, bool]:
-    return dict(zip(deps, await asyncio.gather(*(dep.is_tool_installed() for dep in deps))))
+    return dict(zip(deps, asyncio.gather(*(dep.is_tool_installed() for dep in deps))))
 
 
 def _handle_skipif_missing_deps(

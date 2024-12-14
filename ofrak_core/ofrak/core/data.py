@@ -22,12 +22,12 @@ class DataWord(MemoryRegion):
     format_string: str
     xrefs_to: Tuple[int, ...]
 
-    async def get_value_unsigned(self) -> int:
-        data = await self.resource.get_data()
+    def get_value_unsigned(self) -> int:
+        data = self.resource.get_data()
         return struct.unpack(self.format_string.upper(), data)[0]
 
-    async def get_value_signed(self) -> int:
-        data = await self.resource.get_data()
+    def get_value_signed(self) -> int:
+        data = self.resource.get_data()
         return struct.unpack(self.format_string.lower(), data)[0]
 
 

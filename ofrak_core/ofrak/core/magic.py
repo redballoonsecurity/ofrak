@@ -47,7 +47,7 @@ class _LibmagicDependency(ComponentExternalTool):
         except ImportError:
             _LibmagicDependency._magic = None
 
-    async def is_tool_installed(self) -> bool:
+    def is_tool_installed(self) -> bool:
         return MAGIC_INSTALLED
 
 
@@ -63,8 +63,8 @@ class MagicAnalyzer(Analyzer[None, Magic]):
     outputs = (Magic,)
     external_dependencies = (LIBMAGIC_DEP,)
 
-    async def analyze(self, resource: Resource, config=None) -> Magic:
-        data = await resource.get_data()
+    def analyze(self, resource: Resource, config=None) -> Magic:
+        data = resource.get_data()
         if not MAGIC_INSTALLED:
             raise ComponentMissingDependencyError(self, LIBMAGIC_DEP)
         else:
@@ -84,8 +84,8 @@ class MagicMimeIdentifier(Identifier[None]):
 
     _tags_by_mime: Dict[str, ResourceTag] = dict()
 
-    async def identify(self, resource: Resource, config=None):
-        _magic = await resource.analyze(Magic)
+    def identify(self, resource: Resource, config=None):
+        _magic = resource.analyze(Magic)
         magic_mime = _magic.mime
         tag = MagicMimeIdentifier._tags_by_mime.get(magic_mime)
         if tag is not None:
@@ -112,8 +112,8 @@ class MagicDescriptionIdentifier(Identifier[None]):
 
     _matchers: Dict[Callable, ResourceTag] = dict()
 
-    async def identify(self, resource: Resource, config):
-        _magic = await resource.analyze(Magic)
+    def identify(self, resource: Resource, config):
+        _magic = resource.analyze(Magic)
         magic_description = _magic.descriptor
         for matcher, resource_type in self._matchers.items():
             if matcher(magic_description):

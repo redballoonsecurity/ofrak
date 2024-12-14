@@ -65,17 +65,17 @@ class UnpackAndVerifyPattern(ABC):
     need to be re-implemented (overridden) in specific circumstances, explained in each method.
     """
 
-    async def test_unpack_verify(
+    def test_unpack_verify(
         self,
         root_resource: Resource,
         expected_results: Dict,
         optional_results: Set,
     ):
-        await self.unpack(root_resource)
-        print(await root_resource.summarize_tree())
+        self.unpack(root_resource)
+        print(root_resource.summarize_tree())
 
         ## Prepare results for comparison
-        unpacked_results = await self.get_descendants_to_verify(root_resource)
+        unpacked_results = self.get_descendants_to_verify(root_resource)
         unpacked_set = set(unpacked_results.keys())
 
         expected_set = set(expected_results.keys())
@@ -115,7 +115,7 @@ class UnpackAndVerifyPattern(ABC):
 
         ## Verify the value of each expected descendant
         for key in expected_set:
-            await self.verify_descendant(unpacked_results[key], expected_results[key])
+            self.verify_descendant(unpacked_results[key], expected_results[key])
 
         ## Warn if there are missing optional results
         if missing_optional_set:
@@ -129,7 +129,7 @@ class UnpackAndVerifyPattern(ABC):
 
     @pytest.fixture(params=[], ids=lambda tc: tc.label)
     @abstractmethod
-    async def unpack_verify_test_case(self, request) -> UnpackAndVerifyTestCase:
+    def unpack_verify_test_case(self, request) -> UnpackAndVerifyTestCase:
         """
         Gathers all the test cases for a test class implementing this pattern
 
@@ -142,7 +142,7 @@ class UnpackAndVerifyPattern(ABC):
 
     @pytest.fixture
     @abstractmethod
-    async def root_resource(
+    def root_resource(
         self,
         unpack_verify_test_case: UnpackAndVerifyTestCase,
         ofrak_context: OFRAKContext,
@@ -154,7 +154,7 @@ class UnpackAndVerifyPattern(ABC):
         raise NotImplementedError()
 
     @pytest.fixture
-    async def expected_results(
+    def expected_results(
         self, unpack_verify_test_case: UnpackAndVerifyTestCase[K, V]
     ) -> Dict[K, V]:
         """
@@ -167,7 +167,7 @@ class UnpackAndVerifyPattern(ABC):
         return unpack_verify_test_case.expected_results
 
     @pytest.fixture
-    async def optional_results(
+    def optional_results(
         self, unpack_verify_test_case: UnpackAndVerifyTestCase[K, V]
     ) -> Dict[K, V]:
         """
@@ -180,14 +180,14 @@ class UnpackAndVerifyPattern(ABC):
         return unpack_verify_test_case.optional_results
 
     @abstractmethod
-    async def unpack(self, root_resource: Resource):
+    def unpack(self, root_resource: Resource):
         """
         Unpack the root resource
         """
         raise NotImplementedError()
 
     @abstractmethod
-    async def get_descendants_to_verify(self, unpacked_root_resource: Resource) -> Dict:
+    def get_descendants_to_verify(self, unpacked_root_resource: Resource) -> Dict:
         """
         Once the root resource has been unpacked, get some set of descendants of the root
         resource to check against the expected results. A key should be calculated for each of
@@ -201,7 +201,7 @@ class UnpackAndVerifyPattern(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    async def verify_descendant(self, unpacked_descendant: Any, specified_result: Any):
+    def verify_descendant(self, unpacked_descendant: Any, specified_result: Any):
         """
         Verify that the actual unpacked descendant matches the specified result from the test case
         """

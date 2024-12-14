@@ -50,7 +50,7 @@ ARM32_PROGRAM_PATH = str(Path(__file__).parent / "assets" / "simple_arm_gcc.o.el
 
 
 @pytest.fixture(params=[EphemeralResourceContextFactory, ClientResourceContextFactory])
-async def ofrak_context(request, ofrak_context):
+def ofrak_context(request, ofrak_context):
     ofrak_context._resource_context_factory = request.param()
     return ofrak_context
 
@@ -184,10 +184,10 @@ TEST_CASE_CONFIGS = [
 
 
 @pytest.mark.parametrize("config", TEST_CASE_CONFIGS)
-async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config, tmp_path):
-    root_resource = await ofrak_context.create_root_resource_from_file(config.program.path)
-    await root_resource.unpack_recursively()
-    target_program = await root_resource.view_as(Program)
+def test_function_replacement_modifier(ofrak_context: OFRAKContext, config, tmp_path):
+    root_resource = ofrak_context.create_root_resource_from_file(config.program.path)
+    root_resource.unpack_recursively()
+    target_program = root_resource.view_as(Program)
 
     function_cb = ComplexBlock(
         virtual_address=config.program.function_vaddr,
@@ -195,23 +195,23 @@ async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config
         name=config.program.function_name,
     )
 
-    function_cb_parent_code_region = await target_program.get_code_region_for_vaddr(
+    function_cb_parent_code_region = target_program.get_code_region_for_vaddr(
         config.program.function_vaddr
     )
 
-    function_cb.resource = await function_cb_parent_code_region.create_child_region(function_cb)
+    function_cb.resource = function_cb_parent_code_region.create_child_region(function_cb)
 
     # Create a dummy basic block in the complex block, so its `get_mode` method won't fail.
     dummy_bb = BasicBlock(0, 0, InstructionSetMode.NONE, False, None)
-    await function_cb.resource.create_child_from_view(dummy_bb)
+    function_cb.resource.create_child_from_view(dummy_bb)
 
-    await target_program.define_linkable_symbols(
+    target_program.define_linkable_symbols(
         {config.program.function_name: (config.program.function_vaddr, LinkableSymbolType.FUNC)}
     )
 
     target_program.resource.add_attributes(config.program.attrs)
 
-    await target_program.resource.save()
+    target_program.resource.save()
 
     function_replacement_config = FunctionReplacementModifierConfig(
         SourceBundle.slurp(PATCH_DIRECTORY),
@@ -229,13 +229,13 @@ async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config
         config.toolchain,
     )
 
-    await target_program.resource.run(FunctionReplacementModifier, function_replacement_config)
+    target_program.resource.run(FunctionReplacementModifier, function_replacement_config)
     new_program_path = str(tmp_path / f"replaced_{Path(config.program.path).name}")
 
     # When running tests in parallel, do this one at a time
     lock = filelock.FileLock(new_program_path + ".lock")
     with lock:
-        await target_program.resource.flush_data_to_disk(new_program_path)
+        target_program.resource.flush_data_to_disk(new_program_path)
 
         # Check that the modified program looks as expected.
         readobj_path = get_repository_config(config.toolchain_name, "BIN_PARSER")
@@ -254,10 +254,10 @@ async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config
     assert normalize_assembly(expected_objdump_output_str) in normalize_assembly(readobj_output)
 
 
-async def test_segment_injector_deletes_patched_descendants(ofrak_context: OFRAKContext):
+def test_segment_injector_deletes_patched_descendants(ofrak_context: OFRAKContext):
     # unpack_recursively an ELF
-    root_resource = await ofrak_context.create_root_resource_from_file(ARM32_PROGRAM_PATH)
-    await root_resource.unpack_recursively()
+    root_resource = ofrak_context.create_root_resource_from_file(ARM32_PROGRAM_PATH)
+    root_resource.unpack_recursively()
 
     main_start = 0x8068
     main_end = main_start + 40
@@ -268,19 +268,19 @@ async def test_segment_injector_deletes_patched_descendants(ofrak_context: OFRAK
         name="main",
     )
 
-    target_program = await root_resource.view_as(Program)
+    target_program = root_resource.view_as(Program)
 
-    function_cb_parent_code_region = await target_program.get_code_region_for_vaddr(main_start)
+    function_cb_parent_code_region = target_program.get_code_region_for_vaddr(main_start)
 
-    function_cb.resource = await function_cb_parent_code_region.create_child_region(function_cb)
+    function_cb.resource = function_cb_parent_code_region.create_child_region(function_cb)
 
     # Create a dummy basic block in the complex block, so its `get_mode` method won't fail.
     dummy_bb = BasicBlock(0x8068, 8, InstructionSetMode.NONE, False, None)
-    await function_cb.create_child_region(dummy_bb)
+    function_cb.create_child_region(dummy_bb)
 
     # get IDs of resources in a vaddr range
     expected_deleted_ids = set()
-    for r in await root_resource.get_descendants(
+    for r in root_resource.get_descendants(
         r_filter=ResourceFilter(
             attribute_filters=(
                 ResourceAttributeRangeFilter(MemoryRegion.VirtualAddress, min=main_start),
@@ -289,7 +289,7 @@ async def test_segment_injector_deletes_patched_descendants(ofrak_context: OFRAK
         )
     ):
         expected_deleted_ids.add(r.get_id())
-        for r in await r.get_descendants():
+        for r in r.get_descendants():
             expected_deleted_ids.add(r.get_id())
 
     assert len(expected_deleted_ids) > 0
@@ -305,7 +305,7 @@ async def test_segment_injector_deletes_patched_descendants(ofrak_context: OFRAK
     )
 
     # run SegmentInjectorModifier
-    results = await root_resource.run(SegmentInjectorModifier, cfg)
+    results = root_resource.run(SegmentInjectorModifier, cfg)
 
     # check that resources have been deleted
     assert results.resources_deleted == expected_deleted_ids

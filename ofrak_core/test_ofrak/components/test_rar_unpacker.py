@@ -29,11 +29,11 @@ RAR_UNPACKER_TEST_CASES = [
 @pytest.mark.skipif_missing_deps([RarUnpacker])
 class TestRarUnpackAndVerify(UnpackAndVerifyPattern):
     @pytest.fixture(params=RAR_UNPACKER_TEST_CASES, ids=lambda tc: tc.label)
-    async def unpack_verify_test_case(self, request) -> RarUnpackerTestCase:
+    def unpack_verify_test_case(self, request) -> RarUnpackerTestCase:
         return request.param
 
     @pytest.fixture
-    async def root_resource(
+    def root_resource(
         self,
         unpack_verify_test_case: RarUnpackerTestCase,
         ofrak_context: OFRAKContext,
@@ -44,19 +44,17 @@ class TestRarUnpackAndVerify(UnpackAndVerifyPattern):
         )
         with open(asset_path, "rb") as f:
             data = f.read()
-        return await ofrak_context.create_root_resource(test_id, data, tags=(File,))
+        return ofrak_context.create_root_resource(test_id, data, tags=(File,))
 
-    async def unpack(self, root_resource: Resource):
-        await root_resource.unpack_recursively()
+    def unpack(self, root_resource: Resource):
+        root_resource.unpack_recursively()
 
-    async def get_descendants_to_verify(self, unpacked_root_resource: Resource) -> Dict[str, bytes]:
-        rar_view = await unpacked_root_resource.view_as(RarArchive)
-        children = await rar_view.list_dir()
+    def get_descendants_to_verify(self, unpacked_root_resource: Resource) -> Dict[str, bytes]:
+        rar_view = unpacked_root_resource.view_as(RarArchive)
+        children = rar_view.list_dir()
         return {
-            name: await child.resource.get_data()
-            for name, child in children.items()
-            if child.is_file()
+            name: child.resource.get_data() for name, child in children.items() if child.is_file()
         }
 
-    async def verify_descendant(self, unpacked_descendant: bytes, specified_result: bytes):
+    def verify_descendant(self, unpacked_descendant: bytes, specified_result: bytes):
         assert unpacked_descendant == specified_result

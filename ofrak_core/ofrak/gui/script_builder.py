@@ -57,7 +57,7 @@ class ScriptSession:
     from ofrak import *
     from ofrak.core import *
 
-    async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):"""
+    def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):"""
     # TODO: Replace with backend in use by OFRAK instance used to create the script.
     boilerplate_footer: str = r"""
     if __name__ == "__main__":
@@ -110,7 +110,7 @@ class ScriptBuilder:
             DtbProperty.DtbPropertyName,
         ]
 
-    async def add_action(
+    def add_action(
         self,
         resource: Resource,
         action: str,
@@ -130,11 +130,11 @@ class ScriptBuilder:
         :param action: A string describing the code being run based on a GUI action
         :param action_type: An instance of `ActionType` categorizing the action
         """
-        var_name = await self._add_variable(resource)
+        var_name = self._add_variable(resource)
         qualified_action = action.format(resource=var_name)
-        await self._add_action_to_session_queue(resource, qualified_action, action_type)
+        self._add_action_to_session_queue(resource, qualified_action, action_type)
 
-    async def get_script(self, resource: Resource) -> List[str]:
+    def get_script(self, resource: Resource) -> List[str]:
         """
         Returns the most up-to-date version of the script for the session to which the resource
         belongs.
@@ -143,17 +143,17 @@ class ScriptBuilder:
 
         :return: List of strings where each entry is a line in the script
         """
-        root_resource = await self._get_root_resource(resource)
+        root_resource = self._get_root_resource(resource)
         return self._get_script(root_resource.get_id())
 
-    async def commit_to_script(self, resource: Resource) -> None:
+    def commit_to_script(self, resource: Resource) -> None:
         """
         Commits the staged actions and variable names in the queue to the script session following
         a one or more valid actions being run.
 
         :param resource: Resource belonging to the session whose queue will be committed
         """
-        root_resource = await self._get_root_resource(resource)
+        root_resource = self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
         for id, name in session.resource_variable_names_queue.items():
             session.resource_variable_names[id] = name
@@ -161,19 +161,19 @@ class ScriptBuilder:
         session.actions_queue = []
         session.resource_variable_names_queue = {}
 
-    async def clear_script_queue(self, resource: Resource) -> None:
+    def clear_script_queue(self, resource: Resource) -> None:
         """
         Clears the script session queue of all staged actions and variable names following an
         invalid action being run.
 
         :param resource: Resource belonging to the session whose queue will be cleared
         """
-        root_resource = await self._get_root_resource(resource)
+        root_resource = self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
         session.actions_queue = []
         session.resource_variable_names_queue = {}
 
-    async def _add_variable(self, resource: Resource) -> str:
+    def _add_variable(self, resource: Resource) -> str:
         """
         Replaces references to a particular resource selected in the GUI with a generated variable
         name based on uniquely identifying characteristics of the resource. This overcomes the issue
@@ -184,52 +184,52 @@ class ScriptBuilder:
 
         :return: a unique variable name
         """
-        if await self._var_exists(resource):
-            return await self._get_variable_from_session(resource)
+        if self._var_exists(resource):
+            return self._get_variable_from_session(resource)
 
-        root_resource = await self._get_root_resource(resource)
+        root_resource = self._get_root_resource(resource)
         if resource.get_id() == root_resource.get_id():
-            await self._add_variable_to_session_queue(resource, "root_resource")
+            self._add_variable_to_session_queue(resource, "root_resource")
             return "root_resource"
 
-        parent = await resource.get_parent()
-        if not await self._var_exists(parent):
-            await self._add_variable(parent)
+        parent = resource.get_parent()
+        if not self._var_exists(parent):
+            self._add_variable(parent)
 
         name = ""
         # Cannot propagate exceptions to the server as this would interfere with user actions
         # regardless of whether they're interested in the script. Currently only _get_selector()
         # and _generate_name() can lead to exceptions raised within ScriptBuilder.
         try:
-            selector = await self._get_selector(resource)
-            name = await self._generate_name(resource)
-            await self._add_action_to_session_queue(
+            selector = self._get_selector(resource)
+            name = self._generate_name(resource)
+            self._add_action_to_session_queue(
                 resource,
                 rf"""
         {name} = {selector}""",
                 ActionType.UNDEF,
             )
-            await self._add_variable_to_session_queue(resource, name)
+            self._add_variable_to_session_queue(resource, name)
         except SelectableAttributesError as e:
-            name = await self._generate_missing_name(resource, e)
+            name = self._generate_missing_name(resource, e)
             LOGGER.exception("Could not find selectable attributes for resource")
             return name
         except:
             LOGGER.exception("Exception raised in add_variable")
         return name
 
-    async def _generate_missing_name(self, resource: Resource, e: Exception) -> str:
-        root_resource = await self._get_root_resource(resource)
+    def _generate_missing_name(self, resource: Resource, e: Exception) -> str:
+        root_resource = self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
-        parent = await resource.get_parent()
-        parent_name = await self._get_variable_from_session(parent)
+        parent = resource.get_parent()
+        parent_name = self._get_variable_from_session(parent)
         name = f"{parent_name}_MISSING_RESOURCE_0"
         index = 1
         var_names = list(session.resource_variable_names.values()) + list(
             session.resource_variable_names_queue.values()
         )
         name = self._increment_missing_name_index(name, var_names, index)
-        await self._add_action_to_session_queue(
+        self._add_action_to_session_queue(
             resource,
             f"""
         # Resource with parent {parent_name} is missing, could not find selectable attributes.
@@ -237,7 +237,7 @@ class ScriptBuilder:
         {name} = None""",
             ActionType.UNDEF,
         )
-        await self._add_variable_to_session_queue(resource, name)
+        self._add_variable_to_session_queue(resource, name)
         return name
 
     def _increment_missing_name_index(self, name: str, var_names: List[str], index: int) -> str:
@@ -249,7 +249,7 @@ class ScriptBuilder:
         else:
             return name
 
-    async def _get_root_resource(self, resource: Resource) -> Resource:
+    def _get_root_resource(self, resource: Resource) -> Resource:
         """
         Maps a given resource to its root for efficient retrieval of the root resource because
         getting the root resource is likely the most performed operation in `ScriptBuilder`.
@@ -257,37 +257,37 @@ class ScriptBuilder:
         resource_id = resource.get_id()
         if resource_id in self.root_cache:
             return self.root_cache[resource_id]
-        ancestors = list(await resource.get_ancestors())
+        ancestors = list(resource.get_ancestors())
         root = ancestors[-1] if ancestors else resource
         self.root_cache[resource_id] = root
         return root
 
-    async def _get_variable_from_session(self, resource: Resource) -> str:
-        root_resource = await self._get_root_resource(resource)
+    def _get_variable_from_session(self, resource: Resource) -> str:
+        root_resource = self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
         return session.get_var_name(resource.get_id())
 
-    async def _var_exists(self, resource: Resource) -> bool:
-        root_resource = await self._get_root_resource(resource)
+    def _var_exists(self, resource: Resource) -> bool:
+        root_resource = self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
         return (
             resource.get_id() in session.resource_variable_names
             or resource.get_id() in session.resource_variable_names_queue
         )
 
-    async def _add_action_to_session_queue(
+    def _add_action_to_session_queue(
         self, resource: Resource, action: str, action_type: ActionType
     ) -> None:
-        root_resource = await self._get_root_resource(resource)
+        root_resource = self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
         session.actions_queue.append(ScriptAction(action_type, action))
 
-    async def _add_variable_to_session_queue(self, resource: Resource, var_name: str) -> None:
-        root_resource = await self._get_root_resource(resource)
+    def _add_variable_to_session_queue(self, resource: Resource, var_name: str) -> None:
+        root_resource = self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
         session.resource_variable_names_queue[resource.get_id()] = var_name
 
-    async def _test_selectable_attributes(
+    def _test_selectable_attributes(
         self,
         ancestor: Resource,
         resource: Resource,
@@ -295,7 +295,7 @@ class ScriptBuilder:
         attribute_value: Any,
     ) -> None:
         try:
-            result = await ancestor.get_only_child(
+            result = ancestor.get_only_child(
                 r_filter=ResourceFilter(
                     attribute_filters=[
                         ResourceAttributeValueFilter(attribute=attribute, value=attribute_value)
@@ -308,15 +308,15 @@ class ScriptBuilder:
                 f"{attribute.__name__} (resource has value {attribute_value})."
             )
 
-    async def _get_selector(self, resource: Resource) -> str:
-        root_resource = await self._get_root_resource(resource)
+    def _get_selector(self, resource: Resource) -> str:
+        root_resource = self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
-        parent = await resource.get_parent()
-        attribute, attribute_value = await self._get_selectable_attribute(resource)
-        await self._test_selectable_attributes(parent, resource, attribute, attribute_value)
+        parent = resource.get_parent()
+        attribute, attribute_value = self._get_selectable_attribute(resource)
+        self._test_selectable_attributes(parent, resource, attribute, attribute_value)
 
         attribute_value = f"{attribute_value!r}"
-        return f"""await {session.get_var_name(parent.get_id())}.get_only_child(
+        return f"""{session.get_var_name(parent.get_id())}.get_only_child(
                     r_filter=ResourceFilter(
                         tags={resource.get_most_specific_tags()},
                         attribute_filters=[
@@ -328,12 +328,12 @@ class ScriptBuilder:
                     )
                 )"""
 
-    async def _get_self_and_siblings_matching_attribute(
+    def _get_self_and_siblings_matching_attribute(
         self, resource: Resource, attribute: ResourceIndexedAttribute, attribute_value: Any
     ) -> List[Resource]:
-        parent = await resource.get_parent()
+        parent = resource.get_parent()
         children = list(
-            await parent.get_children(
+            parent.get_children(
                 r_filter=ResourceFilter(
                     attribute_filters=[
                         ResourceAttributeValueFilter(attribute=attribute, value=attribute_value)
@@ -343,14 +343,12 @@ class ScriptBuilder:
         )
         return children
 
-    async def _get_selectable_attribute(
-        self, resource: Resource
-    ) -> Tuple[ResourceIndexedAttribute, Any]:
+    def _get_selectable_attribute(self, resource: Resource) -> Tuple[ResourceIndexedAttribute, Any]:
         attribute_collisions = {}
         for attribute in self.selectable_indexes:
             if attribute.attributes_owner and resource.has_attributes(attribute.attributes_owner):
                 attribute_value = attribute.get_value(resource.get_model())
-                children = await self._get_self_and_siblings_matching_attribute(
+                children = self._get_self_and_siblings_matching_attribute(
                     resource, attribute, attribute_value
                 )
                 if len(children) == 1:
@@ -370,17 +368,17 @@ class ScriptBuilder:
                 )
             raise SelectableAttributesError("\n".join(msg))
 
-    async def _generate_name(self, resource: Resource) -> str:
-        root_resource = await self._get_root_resource(resource)
+    def _generate_name(self, resource: Resource) -> str:
+        root_resource = self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
         most_specific_tag = list(resource.get_most_specific_tags())[0].__name__.lower()
-        _, selectable_attribute_value = await self._get_selectable_attribute(resource)
+        _, selectable_attribute_value = self._get_selectable_attribute(resource)
         if isinstance(selectable_attribute_value, int):
             selectable_attribute_value = hex(selectable_attribute_value)
         name = f"{most_specific_tag}_{selectable_attribute_value}"
         name = re.sub(r"[^a-zA-Z0-9]", "_", name)
         if name in session.resource_variable_names.values():
-            parent = await resource.get_parent()
+            parent = resource.get_parent()
             return f"{session.get_var_name(parent.get_id())}_{name}"
         return name
 

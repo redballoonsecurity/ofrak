@@ -35,10 +35,10 @@ class TarUnpacker(Unpacker[None]):
     children = (File, Folder, SpecialFileType)
     external_dependencies = (TAR,)
 
-    async def unpack(self, resource: Resource, config: ComponentConfig = None) -> None:
+    def unpack(self, resource: Resource, config: ComponentConfig = None) -> None:
         # Write the archive data to a file
         with tempfile.NamedTemporaryFile(suffix=".tar") as temp_archive:
-            temp_archive.write(await resource.get_data())
+            temp_archive.write(resource.get_data())
             temp_archive.flush()
 
             # Check the archive member files to ensure none unpack to a parent directory
@@ -48,12 +48,12 @@ class TarUnpacker(Unpacker[None]):
                 "-tf",
                 temp_archive.name,
             ]
-            proc = await asyncio.create_subprocess_exec(
+            proc = asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
-            stdout, stderr = await proc.communicate()
+            stdout, stderr = proc.communicate()
             if proc.returncode:
                 raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
             for filename in stdout.decode().splitlines():
@@ -68,16 +68,16 @@ class TarUnpacker(Unpacker[None]):
             # Unpack into a temporary directory using the temporary file
             with tempfile.TemporaryDirectory() as temp_dir:
                 command = ["tar", "--xattrs", "-C", temp_dir, "-xf", temp_archive.name]
-                proc = await asyncio.create_subprocess_exec(
+                proc = asyncio.create_subprocess_exec(
                     *command,
                 )
-                returncode = await proc.wait()
+                returncode = proc.wait()
                 if returncode:
                     raise CalledProcessError(returncode=returncode, cmd=command)
 
                 # Initialize a filesystem from the unpacked/untarred temporary folder
-                tar_view = await resource.view_as(TarArchive)
-                await tar_view.initialize_from_disk(temp_dir)
+                tar_view = resource.view_as(TarArchive)
+                tar_view.initialize_from_disk(temp_dir)
 
 
 class TarPacker(Packer[None]):
@@ -88,10 +88,10 @@ class TarPacker(Packer[None]):
     targets = (TarArchive,)
     external_dependencies = (TAR,)
 
-    async def pack(self, resource: Resource, config: ComponentConfig = None) -> None:
+    def pack(self, resource: Resource, config: ComponentConfig = None) -> None:
         # Flush the child files to the filesystem
-        tar_view = await resource.view_as(TarArchive)
-        flush_dir = await tar_view.flush_to_disk()
+        tar_view = resource.view_as(TarArchive)
+        flush_dir = tar_view.flush_to_disk()
 
         # Pack it back into a temporary archive
         with tempfile.NamedTemporaryFile(suffix=".tar") as temp_archive:
@@ -104,15 +104,15 @@ class TarPacker(Packer[None]):
                 temp_archive.name,
                 ".",
             ]
-            proc = await asyncio.create_subprocess_exec(
+            proc = asyncio.create_subprocess_exec(
                 *cmd,
             )
-            returncode = await proc.wait()
+            returncode = proc.wait()
             if proc.returncode:
                 raise CalledProcessError(returncode=returncode, cmd=cmd)
 
             # Replace the original archive data
-            resource.queue_patch(Range(0, await resource.get_data_length()), temp_archive.read())
+            resource.queue_patch(Range(0, resource.get_data_length()), temp_archive.read())
 
 
 MagicMimeIdentifier.register(TarArchive, "application/x-tar")

@@ -1711,15 +1711,15 @@ class BasicBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
     Each of those are checked for some other specific expected attributes as well.
     """
 
-    async def unpack(self, root_resource: Resource):
-        await root_resource.unpack_recursively()
+    def unpack(self, root_resource: Resource):
+        root_resource.unpack_recursively()
 
     @pytest.fixture(params=BASIC_BLOCK_UNPACKER_TEST_CASES, ids=lambda tc: tc.label)
-    async def unpack_verify_test_case(self, request) -> BasicBlockUnpackerTestCase:
+    def unpack_verify_test_case(self, request) -> BasicBlockUnpackerTestCase:
         return request.param
 
     @pytest.fixture
-    async def root_resource(
+    def root_resource(
         self,
         unpack_verify_test_case: BasicBlockUnpackerTestCase,
         ofrak_context: OFRAKContext,
@@ -1728,13 +1728,13 @@ class BasicBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
         asset_path = os.path.join(TEST_PATTERN_ASSETS_DIR, unpack_verify_test_case.binary_filename)
         with open(asset_path, "rb") as f:
             binary_data = f.read()
-        resource = await ofrak_context.create_root_resource(test_id, binary_data, tags=(File,))
+        resource = ofrak_context.create_root_resource(test_id, binary_data, tags=(File,))
         return resource
 
-    async def verify_descendant(
+    def verify_descendant(
         self, basic_block: BasicBlock, specified_result: List[ExpectedBasicBlockUnpackResult]
     ):
-        instructions = await basic_block.get_instructions()
+        instructions = basic_block.get_instructions()
 
         # Check that the parent complex blocks are extracted as expected
         instructions_by_addr: Dict[int, ExpectedBasicBlockUnpackResult] = dict()
@@ -1795,11 +1795,11 @@ class BasicBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
         if len(errors) > 0:
             raise ValueError(*errors)
 
-    async def get_descendants_to_verify(self, unpacked_resource: Resource) -> Dict[int, Resource]:
-        elf = await unpacked_resource.view_as(Elf)
-        text_section = await elf.get_section_by_name(".text")
+    def get_descendants_to_verify(self, unpacked_resource: Resource) -> Dict[int, Resource]:
+        elf = unpacked_resource.view_as(Elf)
+        text_section = elf.get_section_by_name(".text")
         basic_blocks: List[BasicBlock] = list(
-            await text_section.resource.get_descendants_as_view(
+            text_section.resource.get_descendants_as_view(
                 BasicBlock,
                 r_filter=ResourceFilter.with_tags(BasicBlock),
                 r_sort=ResourceSort(BasicBlock.VirtualAddress),

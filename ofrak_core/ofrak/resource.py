@@ -164,7 +164,7 @@ class Resource:
         """
         return self._resource
 
-    async def get_data(self, range: Optional[Range] = None) -> bytes:
+    def get_data(self, range: Optional[Range] = None) -> bytes:
         """
         A resource often represents a chunk of underlying binary data. This method returns the
         entire chunk by default; this can be reduced by an optional parameter.
@@ -178,13 +178,13 @@ class Resource:
             raise ValueError(
                 "Resource does not have a data_id. Cannot get data from a resource with no data"
             )
-        data = await self._data_service.get_data(self._resource.data_id, range)
+        data = self._data_service.get_data(self._resource.data_id, range)
         if range is None:
             range = Range(0, len(data))
         self._component_context.access_trackers[self._resource.id].data_accessed.add(range)
         return data
 
-    async def get_data_length(self) -> int:
+    def get_data_length(self) -> int:
         """
         :return: The length of the underlying binary data this resource represents
         """
@@ -193,9 +193,9 @@ class Resource:
                 "Resource does not have a data_id. Cannot get data length from a "
                 "resource with no data."
             )
-        return await self._data_service.get_data_length(self._resource.data_id)
+        return self._data_service.get_data_length(self._resource.data_id)
 
-    async def get_data_range_within_parent(self) -> Range:
+    def get_data_range_within_parent(self) -> Range:
         """
         If this resource is "mapped," i.e. its underlying data is defined as a range of its parent's
         underlying data, this method returns the range within the parent resource's data where this
@@ -213,7 +213,7 @@ class Resource:
             return Range(0, 0)
 
         parent_models = list(
-            await self._resource_service.get_ancestors_by_id(self._resource.id, max_count=1)
+            self._resource_service.get_ancestors_by_id(self._resource.id, max_count=1)
         )
         if len(parent_models) != 1:
             raise NotFoundError(f"There is no parent for resource {self._resource.id.hex()}")
@@ -224,13 +224,11 @@ class Resource:
             return Range(0, 0)
 
         try:
-            return await self._data_service.get_range_within_other(
-                self._resource.data_id, parent_data_id
-            )
+            return self._data_service.get_range_within_other(self._resource.data_id, parent_data_id)
         except ValueError:
             return Range(0, 0)
 
-    async def get_data_range_within_root(self) -> Range:
+    def get_data_range_within_root(self) -> Range:
         """
         Does the same thing as `get_data_range_within_parent`, except the range is relative to the
         root.
@@ -242,10 +240,10 @@ class Resource:
                 "Resource does not have a data_id. Cannot get data range from a "
                 "resource with no data."
             )
-        return await self._data_service.get_data_range_within_root(self._resource.data_id)
+        return self._data_service.get_data_range_within_root(self._resource.data_id)
 
     @overload
-    async def search_data(
+    def search_data(
         self,
         query: Pattern[bytes],
         start: Optional[int] = None,
@@ -255,7 +253,7 @@ class Resource:
         ...
 
     @overload
-    async def search_data(
+    def search_data(
         self,
         query: bytes,
         start: Optional[int] = None,
@@ -264,7 +262,7 @@ class Resource:
     ) -> Tuple[int, ...]:
         ...
 
-    async def search_data(self, query, start=None, end=None, max_matches=None):
+    def search_data(self, query, start=None, end=None, max_matches=None):
         """
         Search for some data in this resource. The query may be a regex pattern (a return value
         of `re.compile`). If the query is a regex pattern, returns a tuple of pairs with both the
@@ -278,16 +276,16 @@ class Resource:
         :return: A tuple of offsets matching a plain bytes query, or a list of (offset, match) pairs
         for a regex pattern query
         """
-        return await self._data_service.search(self.get_data_id(), query, start, end, max_matches)
+        return self._data_service.search(self.get_data_id(), query, start, end, max_matches)
 
-    async def save(self):
+    def save(self):
         """
         If this resource has been modified, update the model stored in the resource service with
         the local changes.
 
         :raises NotFoundError: If the resource service does not have a model for this resource's ID
         """
-        await save_resources(
+        save_resources(
             (self,),
             self._resource_service,
             self._data_service,
@@ -317,7 +315,7 @@ class Resource:
 
         return resources_to_delete, patches_to_apply, resources_to_update
 
-    async def _fetch(self, resource: MutableResourceModel):
+    def _fetch(self, resource: MutableResourceModel):
         """
         Update the local model with the latest version from the resource service. This will fail
         if this resource has been modified.
@@ -331,7 +329,7 @@ class Resource:
                 f"{self.get_id().hex()} attempted fetch)"
             )
         try:
-            fetched_resource = await self._resource_service.get_by_id(resource.id)
+            fetched_resource = self._resource_service.get_by_id(resource.id)
         except NotFoundError:
             if (
                 resource.id in self._component_context.modification_trackers
@@ -342,20 +340,20 @@ class Resource:
 
         resource.reset(fetched_resource)
 
-    async def _fetch_resources(self, resource_ids: Iterable[bytes]):
-        tasks = []
+    def _fetch_resources(self, resource_ids: Iterable[bytes]):
+        resources = []
         for resource_id in resource_ids:
             context_resource = self._resource_context.resource_models.get(resource_id)
             if context_resource is not None:
-                tasks.append(self._fetch(context_resource))
-        await asyncio.gather(*tasks)
+                resources.append(self._fetch(context_resource))
+        return resources
 
-    async def _update_views(self, modified: Set[bytes], deleted: Set[bytes]):
+    def _update_views(self, modified: Set[bytes], deleted: Set[bytes]):
         for resource_id in modified:
             views_in_context = self._resource_view_context.views_by_resource[resource_id]
             for view in views_in_context.values():
                 if resource_id not in self._resource_context.resource_models:
-                    await self._fetch(view.resource.get_model())  # type: ignore
+                    self._fetch(view.resource.get_model())  # type: ignore
                 if resource_id not in self._resource_context.resource_models:
                     view.set_deleted()
                     continue
@@ -371,7 +369,7 @@ class Resource:
             for view in views_in_context.values():
                 view.set_deleted()
 
-    async def run(
+    def run(
         self,
         component_type: Type[ComponentInterface[CC]],
         config: CC = None,
@@ -385,7 +383,7 @@ class Resource:
         :return: A ComponentRunResult containing information on resources affected by the component
         """
         job_context = self._job_context
-        component_result = await self._job_service.run_component(
+        component_result = self._job_service.run_component(
             JobComponentRequest(
                 self._job_id,
                 self._resource.id,
@@ -397,13 +395,11 @@ class Resource:
         for deleted_id in component_result.resources_deleted:
             if deleted_id in self._component_context.modification_trackers:
                 del self._component_context.modification_trackers[deleted_id]
-        await self._fetch_resources(component_result.resources_modified)
-        await self._update_views(
-            component_result.resources_modified, component_result.resources_deleted
-        )
+        self._fetch_resources(component_result.resources_modified)
+        self._update_views(component_result.resources_modified, component_result.resources_deleted)
         return component_result
 
-    async def auto_run(
+    def auto_run(
         self,
         components: Iterable[Type[ComponentInterface]] = tuple(),
         blacklisted_components: Iterable[Type[ComponentInterface]] = tuple(),
@@ -427,7 +423,7 @@ class Resource:
 
         :return: A ComponentRunResult containing information on resources affected by the component
         """
-        components_result = await self._job_service.run_components(
+        components_result = self._job_service.run_components(
             JobMultiComponentRequest(
                 self._job_id,
                 self._resource.id,
@@ -442,21 +438,21 @@ class Resource:
         for deleted_id in components_result.resources_deleted:
             if deleted_id in self._component_context.modification_trackers:
                 del self._component_context.modification_trackers[deleted_id]
-        await self._fetch_resources(components_result.resources_modified)
-        await self._update_views(
+        self._fetch_resources(components_result.resources_modified)
+        self._update_views(
             components_result.resources_modified, components_result.resources_deleted
         )
         return components_result
 
-    async def unpack(self) -> ComponentRunResult:
+    def unpack(self) -> ComponentRunResult:
         """
         Unpack the resource.
 
         :return: A ComponentRunResult containing information on resources affected by the component
         """
-        return await self.auto_run(all_identifiers=True, all_unpackers=True)
+        return self.auto_run(all_identifiers=True, all_unpackers=True)
 
-    async def analyze(self, resource_attributes: Type[RA]) -> RA:
+    def analyze(self, resource_attributes: Type[RA]) -> RA:
         """
         Analyze the resource for a specific resource attribute.
 
@@ -466,26 +462,26 @@ class Resource:
         """
         attributes = self._check_attributes(resource_attributes)
         if attributes is None:
-            await self._analyze_attributes((resource_attributes,))
+            self._analyze_attributes((resource_attributes,))
             return self.get_attributes(resource_attributes)
         else:
             return attributes
 
-    async def identify(self) -> ComponentRunResult:
+    def identify(self) -> ComponentRunResult:
         """
         Run all registered identifiers on the resource, tagging it with matching resource tags.
         """
-        return await self.auto_run(all_identifiers=True)
+        return self.auto_run(all_identifiers=True)
 
-    async def pack(self) -> ComponentRunResult:
+    def pack(self) -> ComponentRunResult:
         """
         Pack the resource.
 
         :return: A ComponentRunResult containing information on resources affected by the component
         """
-        return await self.auto_run(all_packers=True)
+        return self.auto_run(all_packers=True)
 
-    async def auto_run_recursively(
+    def auto_run_recursively(
         self,
         components: Iterable[Type[ComponentInterface]] = tuple(),
         blacklisted_components: Iterable[Type[ComponentInterface]] = tuple(),
@@ -513,7 +509,7 @@ class Resource:
 
         :return: A ComponentRunResult containing information on resources affected by the component
         """
-        components_result = await self._job_service.run_components_recursively(
+        components_result = self._job_service.run_components_recursively(
             JobMultiComponentRequest(
                 self._job_id,
                 self._resource.id,
@@ -525,13 +521,13 @@ class Resource:
                 tags_ignored=tuple(blacklisted_tags),
             )
         )
-        await self._fetch_resources(components_result.resources_modified)
-        await self._update_views(
+        self._fetch_resources(components_result.resources_modified)
+        self._update_views(
             components_result.resources_modified, components_result.resources_deleted
         )
         return components_result
 
-    async def unpack_recursively(
+    def unpack_recursively(
         self,
         blacklisted_components: Iterable[Type[ComponentInterface]] = tuple(),
         do_not_unpack: Iterable[ResourceTag] = tuple(),
@@ -551,36 +547,36 @@ class Resource:
 
         :return: A ComponentRunResult containing information on resources affected by the component
         """
-        return await self.auto_run_recursively(
+        return self.auto_run_recursively(
             all_identifiers=True,
             all_unpackers=True,
             blacklisted_components=blacklisted_components,
             blacklisted_tags=do_not_unpack,
         )
 
-    async def analyze_recursively(self) -> ComponentRunResult:
-        return await self.auto_run_recursively(all_analyzers=True)
+    def analyze_recursively(self) -> ComponentRunResult:
+        return self.auto_run_recursively(all_analyzers=True)
 
-    async def pack_recursively(self) -> ComponentRunResult:
+    def pack_recursively(self) -> ComponentRunResult:
         """
         Recursively pack the resource, starting with its descendants.
         """
-        return await self._job_service.pack_recursively(self._job_id, self._resource.id)
+        return self._job_service.pack_recursively(self._job_id, self._resource.id)
 
-    async def write_to(self, destination: BinaryIO, pack: bool = True):
+    def write_to(self, destination: BinaryIO, pack: bool = True):
         """
         Recursively repack resource and write data out to an arbitrary ``BinaryIO`` destination.
         :param destination: Destination for packed resource data
         :return:
         """
         if pack is True:
-            await self.pack_recursively()
+            self.pack_recursively()
 
-        destination.write(await self.get_data())
+        destination.write(self.get_data())
 
-    async def _analyze_attributes(self, attribute_types: Tuple[Type[ResourceAttributes], ...]):
+    def _analyze_attributes(self, attribute_types: Tuple[Type[ResourceAttributes], ...]):
         job_context = self._job_context
-        components_result = await self._job_service.run_analyzer_by_attribute(
+        components_result = self._job_service.run_analyzer_by_attribute(
             JobAnalyzerRequest(
                 self._job_id,
                 self._resource.id,
@@ -591,14 +587,14 @@ class Resource:
         )
         # Update all the resources in the local context that were modified as part of the
         # analysis
-        await self._fetch_resources(components_result.resources_modified)
-        await self._update_views(
+        self._fetch_resources(components_result.resources_modified)
+        self._update_views(
             components_result.resources_modified, components_result.resources_deleted
         )
         return components_result
 
-    async def _create_resource(self, resource_model: ResourceModel) -> "Resource":
-        return await self._resource_factory.create(
+    def _create_resource(self, resource_model: ResourceModel) -> "Resource":
+        return self._resource_factory.create(
             self._job_id,
             resource_model.id,
             self._resource_context,
@@ -607,10 +603,8 @@ class Resource:
             self._job_context,
         )
 
-    async def _create_resources(
-        self, resource_models: Iterable[ResourceModel]
-    ) -> Iterable["Resource"]:
-        return await self._resource_factory.create_many(
+    def _create_resources(self, resource_models: Iterable[ResourceModel]) -> Iterable["Resource"]:
+        return self._resource_factory.create_many(
             self._job_id,
             [resource_model.id for resource_model in resource_models],
             self._resource_context,
@@ -619,7 +613,7 @@ class Resource:
             self._job_context,
         )
 
-    async def create_child(
+    def create_child(
         self,
         tags: Iterable[ResourceTag] = None,
         attributes: Iterable[ResourceAttributes] = None,
@@ -675,7 +669,7 @@ class Resource:
                     "Cannot create a child with mapped data from a parent that doesn't have data"
                 )
             data_model_id = resource_id
-            await self._data_service.create_mapped(
+            self._data_service.create_mapped(
                 data_model_id,
                 self._resource.data_id,
                 data_range,
@@ -688,7 +682,7 @@ class Resource:
                     "Cannot create a child with data from a parent that doesn't have data"
                 )
             data_model_id = resource_id
-            await self._data_service.create_root(data_model_id, data)
+            self._data_service.create_root(data_model_id, data)
             data_attrs = Data(0, len(data))
             attributes = [data_attrs, *attributes] if attributes else [data_attrs]
         else:
@@ -702,16 +696,16 @@ class Resource:
             self._component_context.component_id,
             self._component_context.component_version,
         )
-        await self._resource_service.create(resource_model)
+        self._resource_service.create(resource_model)
         if self._job_context:
             resource_tracker = self._job_context.trackers[resource_model.id]
             resource_tracker.tags_added.update(resource_model.tags)
         self._component_context.mark_resource_modified(resource_id)
         self._component_context.resources_created.add(resource_model.id)
-        created_resource = await self._create_resource(resource_model)
+        created_resource = self._create_resource(resource_model)
         return created_resource
 
-    async def create_child_from_view(
+    def create_child_from_view(
         self,
         view: RV,
         data_range: Optional[Range] = None,
@@ -752,7 +746,7 @@ class Resource:
         :return:
         """
         viewable_tag: ViewableResourceTag = type(view)
-        new_resource = await self.create_child(
+        new_resource = self.create_child(
             tags=(viewable_tag, *additional_tags),
             attributes=(*view.get_attributes_instances().values(), *additional_attributes),
             data_range=data_range,
@@ -793,10 +787,8 @@ class Resource:
             return cast(RV, view)
 
         # Only if analysis is absolutely necessary is an awaitable created and returned
-        async def finish_view_creation(
-            attrs_to_analyze: Tuple[Type[ResourceAttributes], ...]
-        ) -> RV:
-            await self._analyze_attributes(attrs_to_analyze)
+        def finish_view_creation(attrs_to_analyze: Tuple[Type[ResourceAttributes], ...]) -> RV:
+            self._analyze_attributes(attrs_to_analyze)
             view = viewable_tag.create(self.get_model())
             view.resource = self  # type: ignore
             self._resource_view_context.add_view(self.get_id(), view)
@@ -810,7 +802,7 @@ class Resource:
             )
         )
 
-    async def view_as(self, viewable_tag: Type[RV]) -> RV:
+    def view_as(self, viewable_tag: Type[RV]) -> RV:
         """
         Provides a specific type of view instance for this resource. The returned instance is an
         object which has some of the information from this same resource, however in a simpler
@@ -825,7 +817,7 @@ class Resource:
         """
         view_or_create_view_task: Union[RV, Awaitable[RV]] = self._view_as(viewable_tag)
         if isawaitable(view_or_create_view_task):
-            return await view_or_create_view_task
+            return view_or_create_view_task
         else:
             return cast(RV, view_or_create_view_task)
 
@@ -1069,28 +1061,26 @@ class Resource:
         )
         self._resource.is_modified = True
 
-    async def get_parent_as_view(self, v_type: Type[RV]) -> RV:
+    def get_parent_as_view(self, v_type: Type[RV]) -> RV:
         """
         Get the parent of this resource. The parent will be returned as an instance of the given
         [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag].
 
         :param v_type: The type of [view][ofrak.resource] to get the parent as
         """
-        parent_r = await self.get_parent()
-        return await parent_r.view_as(v_type)
+        parent_r = self.get_parent()
+        return parent_r.view_as(v_type)
 
-    async def get_parent(self) -> "Resource":
+    def get_parent(self) -> "Resource":
         """
         Get the parent of this resource.
         """
-        models = list(
-            await self._resource_service.get_ancestors_by_id(self._resource.id, max_count=1)
-        )
+        models = list(self._resource_service.get_ancestors_by_id(self._resource.id, max_count=1))
         if len(models) != 1:
             raise NotFoundError(f"There is no parent for resource {self._resource.id.hex()}")
-        return await self._create_resource(models[0])
+        return self._create_resource(models[0])
 
-    async def get_ancestors(
+    def get_ancestors(
         self,
         r_filter: ResourceFilter = None,
     ) -> Iterable["Resource"]:
@@ -1104,12 +1094,10 @@ class Resource:
 
         :raises NotFoundError: If a filter was provided and no resources match the provided filter
         """
-        models = await self._resource_service.get_ancestors_by_id(
-            self._resource.id, r_filter=r_filter
-        )
-        return await self._create_resources(models)
+        models = self._resource_service.get_ancestors_by_id(self._resource.id, r_filter=r_filter)
+        return self._create_resources(models)
 
-    async def get_only_ancestor_as_view(
+    def get_only_ancestor_as_view(
         self,
         v_type: Type[RV],
         r_filter: ResourceFilter,
@@ -1125,10 +1113,10 @@ class Resource:
 
         :raises NotFoundError: If more or fewer than one ancestor matches ``r_filter``
         """
-        ancestor_r = await self.get_only_ancestor(r_filter)
-        return await ancestor_r.view_as(v_type)
+        ancestor_r = self.get_only_ancestor(r_filter)
+        return ancestor_r.view_as(v_type)
 
-    async def get_only_ancestor(self, r_filter: ResourceFilter) -> "Resource":
+    def get_only_ancestor(self, r_filter: ResourceFilter) -> "Resource":
         """
         Get the only ancestor of this resource which matches the given filter.
 
@@ -1136,17 +1124,15 @@ class Resource:
         any tags it must have and/or values of indexable attributes
         :return:
         """
-        ancestors = list(
-            await self._resource_service.get_ancestors_by_id(self._resource.id, 1, r_filter)
-        )
+        ancestors = list(self._resource_service.get_ancestors_by_id(self._resource.id, 1, r_filter))
         if len(ancestors) == 0:
             raise NotFoundError(
                 f"There is no ancestor for resource {self._resource.id.hex()} matching the "
                 f"provided filter"
             )
-        return await self._create_resource(ancestors[0])
+        return self._create_resource(ancestors[0])
 
-    async def get_descendants_as_view(
+    def get_descendants_as_view(
         self,
         v_type: Type[RV],
         max_depth: int = -1,
@@ -1170,7 +1156,7 @@ class Resource:
 
         :raises NotFoundError: If a filter was provided and no resources match the provided filter
         """
-        descendants = await self.get_descendants(max_depth, r_filter, r_sort)
+        descendants = self.get_descendants(max_depth, r_filter, r_sort)
         views_or_tasks = [r._view_as(v_type) for r in descendants]
         # analysis tasks to generate views of resources which don't have attrs for the view already
         view_tasks: List[Awaitable[RV]] = []
@@ -1184,7 +1170,7 @@ class Resource:
                 views_or_task_indexes.append(cast(RV, view_or_create_view_task))
 
         if view_tasks:
-            completed_views: Sequence[RV] = await asyncio.gather(*view_tasks)
+            completed_views: Sequence[RV] = asyncio.gather(*view_tasks)
             return [
                 completed_views[v_or_i] if type(v_or_i) is int else cast(RV, v_or_i)
                 for v_or_i in views_or_task_indexes
@@ -1193,7 +1179,7 @@ class Resource:
             # There are no tasks, so all needed views are already present
             return cast(List[RV], views_or_task_indexes)
 
-    async def get_descendants(
+    def get_descendants(
         self,
         max_depth: int = -1,
         r_filter: ResourceFilter = None,
@@ -1214,12 +1200,12 @@ class Resource:
 
         :raises NotFoundError: If a filter was provided and no resources match the provided filter
         """
-        models = await self._resource_service.get_descendants_by_id(
+        models = self._resource_service.get_descendants_by_id(
             self._resource.id, max_depth=max_depth, r_filter=r_filter, r_sort=r_sort
         )
-        return await self._create_resources(models)
+        return self._create_resources(models)
 
-    async def get_only_descendant_as_view(
+    def get_only_descendant_as_view(
         self,
         v_type: Type[RV],
         max_depth: int = -1,
@@ -1242,10 +1228,10 @@ class Resource:
         ``r_filter``
         :raises NotFoundError: If a filter is not provided and this resource has multiple descendant
         """
-        descendant_r = await self.get_only_descendant(max_depth, r_filter)
-        return await descendant_r.view_as(v_type)
+        descendant_r = self.get_only_descendant(max_depth, r_filter)
+        return descendant_r.view_as(v_type)
 
-    async def get_only_descendant(
+    def get_only_descendant(
         self,
         max_depth: int = -1,
         r_filter: ResourceFilter = None,
@@ -1265,7 +1251,7 @@ class Resource:
         :raises NotFoundError: If a filter is not provided and this resource has multiple descendant
         """
         models = list(
-            await self._resource_service.get_descendants_by_id(
+            self._resource_service.get_descendants_by_id(
                 self._resource.id,
                 max_depth=max_depth,
                 max_count=2,
@@ -1283,9 +1269,9 @@ class Resource:
                 f"There are multiple descendants for resource {self._resource.id.hex()} "
                 f"matching the provided filter"
             )
-        return await self._create_resource(models[0])
+        return self._create_resource(models[0])
 
-    async def get_only_sibling_as_view(
+    def get_only_sibling_as_view(
         self,
         v_type: Type[RV],
         r_filter: ResourceFilter = None,
@@ -1304,10 +1290,10 @@ class Resource:
         ``r_filter``
         :raises NotFoundError: If a filter is not provided and this resource has multiple siblings
         """
-        sibling_r = await self.get_only_sibling(r_filter)
-        return await sibling_r.view_as(v_type)
+        sibling_r = self.get_only_sibling(r_filter)
+        return sibling_r.view_as(v_type)
 
-    async def get_only_sibling(self, r_filter: ResourceFilter = None) -> "Resource":
+    def get_only_sibling(self, r_filter: ResourceFilter = None) -> "Resource":
         """
         If a filter is provided, get the only sibling of this resource which matches the given
         filter. If a filter is not provided, gets the only sibling of this resource.
@@ -1321,7 +1307,7 @@ class Resource:
         :raises NotFoundError: If a filter is not provided and this resource has multiple siblings
         """
         models = list(
-            await self._resource_service.get_siblings_by_id(
+            self._resource_service.get_siblings_by_id(
                 self._resource.id,
                 max_count=2,
                 r_filter=r_filter,
@@ -1337,9 +1323,9 @@ class Resource:
                 f"There are multiple siblings for resource {self._resource.id.hex()} "
                 f"matching the provided filter"
             )
-        return await self._create_resource(models[0])
+        return self._create_resource(models[0])
 
-    async def get_children(
+    def get_children(
         self,
         r_filter: ResourceFilter = None,
         r_sort: ResourceSort = None,
@@ -1357,9 +1343,9 @@ class Resource:
 
         :raises NotFoundError: If a filter was provided and no resources match the provided filter
         """
-        return await self.get_descendants(1, r_filter, r_sort)
+        return self.get_descendants(1, r_filter, r_sort)
 
-    async def get_children_as_view(
+    def get_children_as_view(
         self,
         v_type: Type[RV],
         r_filter: ResourceFilter = None,
@@ -1380,9 +1366,9 @@ class Resource:
 
         :raises NotFoundError: If a filter was provided and no resources match the provided filter
         """
-        return await self.get_descendants_as_view(v_type, 1, r_filter, r_sort)
+        return self.get_descendants_as_view(v_type, 1, r_filter, r_sort)
 
-    async def get_only_child(self, r_filter: ResourceFilter = None) -> "Resource":
+    def get_only_child(self, r_filter: ResourceFilter = None) -> "Resource":
         """
         If a filter is provided, get the only child of this resource which matches the given
         filter. If a filter is not provided, gets the only child of this resource.
@@ -1395,9 +1381,9 @@ class Resource:
         ``r_filter``
         :raises NotFoundError: If a filter is not provided and this resource has multiple children
         """
-        return await self.get_only_descendant(1, r_filter)
+        return self.get_only_descendant(1, r_filter)
 
-    async def get_only_child_as_view(self, v_type: Type[RV], r_filter: ResourceFilter = None) -> RV:
+    def get_only_child_as_view(self, v_type: Type[RV], r_filter: ResourceFilter = None) -> RV:
         """
         If a filter is provided, get the only child of this resource which matches the given
         filter. If a filter is not provided, gets the only child of this resource. The child will
@@ -1413,9 +1399,9 @@ class Resource:
         ``r_filter``
         :raises NotFoundError: If a filter is not provided and this resource has multiple children
         """
-        return await self.get_only_descendant_as_view(v_type, 1, r_filter)
+        return self.get_only_descendant_as_view(v_type, 1, r_filter)
 
-    async def delete(self):
+    def delete(self):
         """
         Delete this resource and all of its descendants.
 
@@ -1423,13 +1409,13 @@ class Resource:
         """
         self._component_context.resources_deleted.add(self._resource.id)
 
-        for child_r in await self.get_children():
-            await child_r.delete()
+        for child_r in self.get_children():
+            child_r.delete()
 
         self._resource.is_modified = True
         self._resource.is_deleted = True
 
-    async def flush_data_to_disk(self, path: str, pack: bool = True):
+    def flush_data_to_disk(self, path: str, pack: bool = True):
         """
         Recursively repack the resource and write its data out to a file on disk. If this is a
         dataless resource, creates an empty file.
@@ -1437,9 +1423,9 @@ class Resource:
         :param path: Path to the file to write out to. The file is created if it does not exist.
         """
         if pack is True:
-            await self.pack_recursively()
+            self.pack_recursively()
 
-        data = await self.get_data()
+        data = self.get_data()
         if data is not None:
             with open(path, "wb") as f:
                 f.write(data)
@@ -1457,7 +1443,7 @@ class Resource:
             properties.append(f"data={self._resource.data_id.hex()}")
         return f"{type(self).__name__}(" + ", ".join(properties) + f")"
 
-    async def summarize(self) -> str:
+    def summarize(self) -> str:
         """
         Create a string summary of this resource, including specific tags, attribute types,
         and the data offsets of this resource in the parent and root (if applicable).
@@ -1466,9 +1452,9 @@ class Resource:
         included, and only the types of attributes are included, not their values. It is a
         summary which gives a high level overview of the resource.
         """
-        return await _default_summarize_resource(self)
+        return _default_summarize_resource(self)
 
-    async def summarize_tree(
+    def summarize_tree(
         self,
         r_filter: ResourceFilter = None,
         r_sort: ResourceSort = None,
@@ -1495,9 +1481,7 @@ class Resource:
         if summarize_resource_callback is None:
             summarize_resource_callback = _default_summarize_resource
 
-        children = cast(
-            List[Resource], list(await self.get_children(r_filter=r_filter, r_sort=r_sort))
-        )
+        children = cast(List[Resource], list(self.get_children(r_filter=r_filter, r_sort=r_sort)))
 
         if children:
             if indent == "":
@@ -1507,7 +1491,7 @@ class Resource:
         else:
             tree_string = "─"
 
-        tree_string += f"{await summarize_resource_callback(self)}\n"
+        tree_string += f"{summarize_resource_callback(self)}\n"
 
         # All children but the last should display as a "fork" in the drop-down tree
         # After the last child, a vertical line should not be drawn as part of the indent
@@ -1518,7 +1502,7 @@ class Resource:
         child_formatting.append(("└", indent + " " + SPACER_BLANK))
 
         for child, (branch_symbol, child_indent) in zip(children, child_formatting):
-            child_tree_string = await child.summarize_tree(
+            child_tree_string = child.summarize_tree(
                 r_filter=r_filter,
                 r_sort=r_sort,
                 indent=child_indent,
@@ -1528,7 +1512,7 @@ class Resource:
         return tree_string
 
 
-async def save_resources(
+def save_resources(
     resources: Iterable["Resource"],
     resource_service: ResourceServiceInterface,
     data_service: DataServiceInterface,
@@ -1550,21 +1534,19 @@ async def save_resources(
         patches_to_apply.extend(_patches_to_apply)
         resources_to_update.extend(_resources_to_update)
 
-    deleted_descendants = await resource_service.delete_resources(resources_to_delete)
+    deleted_descendants = resource_service.delete_resources(resources_to_delete)
     data_ids_to_delete = [
         resource_m.data_id for resource_m in deleted_descendants if resource_m.data_id is not None
     ]
-    await data_service.delete_models(data_ids_to_delete)
-    patch_results = await data_service.apply_patches(patches_to_apply)
-    resources_to_update.extend(
-        await dependency_handler.handle_post_patch_dependencies(patch_results)
-    )
+    data_service.delete_models(data_ids_to_delete)
+    patch_results = data_service.apply_patches(patches_to_apply)
+    resources_to_update.extend(dependency_handler.handle_post_patch_dependencies(patch_results))
     diffs = []
     updated_ids = []
     for resource_m in resources_to_update:
         diffs.append(resource_m.save())
         updated_ids.append(resource_m.id)
-    await resource_service.update_many(diffs)
+    resource_service.update_many(diffs)
     resource_view_context.update_views(updated_ids, resources_to_delete, resource_context)
 
 
@@ -1585,7 +1567,7 @@ class ResourceFactory:
         self._resource_service = resource_service
         self._job_service = job_service
 
-    async def create(
+    def create(
         self,
         job_id: bytes,
         resource_id: bytes,
@@ -1607,7 +1589,7 @@ class ResourceFactory:
         resource_m = resource_context.resource_models.get(resource_id)
         if resource_m is None:
             resource_m = MutableResourceModel.from_model(
-                await self._resource_service.get_by_id(resource_id)
+                self._resource_service.get_by_id(resource_id)
             )
             resource_context.resource_models[resource_id] = resource_m
 
@@ -1624,7 +1606,7 @@ class ResourceFactory:
             )
         )
 
-    async def create_many(
+    def create_many(
         self,
         job_id: bytes,
         resource_ids: Iterable[bytes],
@@ -1656,9 +1638,7 @@ class ResourceFactory:
             else:
                 resource_models_minus_missing.append(resource_m)
 
-        fetched_models: List[ResourceModel] = list(
-            await self._resource_service.get_by_ids(missing_ids)
-        )
+        fetched_models: List[ResourceModel] = list(self._resource_service.get_by_ids(missing_ids))
 
         resource_models = []
         for resource_model_or_idx in resource_models_minus_missing:
@@ -1705,13 +1685,13 @@ class ResourceFactory:
             )
 
 
-async def _default_summarize_resource(resource: Resource) -> str:
+def _default_summarize_resource(resource: Resource) -> str:
     attributes_info = ", ".join(attrs_type.__name__ for attrs_type in resource._resource.attributes)
 
     if resource._resource.data_id:
-        root_data_range = await resource.get_data_range_within_root()
-        parent_data_range = await resource.get_data_range_within_parent()
-        data = await resource.get_data()
+        root_data_range = resource.get_data_range_within_root()
+        parent_data_range = resource.get_data_range_within_parent()
+        data = resource.get_data()
         if len(data) <= 128:
             # Convert bytes to string to check .isprintable without doing .decode. Note that
             # not all ASCII is printable, so we have to check both decodable and printable

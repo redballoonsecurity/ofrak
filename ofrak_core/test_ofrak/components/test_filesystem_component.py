@@ -66,12 +66,12 @@ def filesystem_root_directory(tmp_path) -> str:
 
 
 @pytest.fixture
-async def filesystem_root(ofrak_context: OFRAKContext, filesystem_root_directory) -> Resource:
-    resource = await ofrak_context.create_root_resource(
+def filesystem_root(ofrak_context: OFRAKContext, filesystem_root_directory) -> Resource:
+    resource = ofrak_context.create_root_resource(
         name=filesystem_root_directory, data=b"", tags=[FilesystemRoot]
     )
-    filesystem_root = await resource.view_as(FilesystemRoot)
-    await filesystem_root.initialize_from_disk(filesystem_root_directory)
+    filesystem_root = resource.view_as(FilesystemRoot)
+    filesystem_root.initialize_from_disk(filesystem_root_directory)
     yield filesystem_root
 
 
@@ -80,33 +80,31 @@ class TestFilesystemRoot:
     Test FilesystemRoot methods.
     """
 
-    async def test_initialize_from_disk(
-        self, ofrak_context: OFRAKContext, filesystem_root_directory
-    ):
+    def test_initialize_from_disk(self, ofrak_context: OFRAKContext, filesystem_root_directory):
         """
         Test that FilesystemRoot.initialize_from_disk modifies a resources tree summary.
         """
-        resource = await ofrak_context.create_root_resource(
+        resource = ofrak_context.create_root_resource(
             name=filesystem_root_directory, data=b"", tags=[FilesystemRoot]
         )
-        original_tree = await resource.summarize_tree()
-        filesystem_root = await resource.view_as(FilesystemRoot)
-        await filesystem_root.initialize_from_disk(filesystem_root_directory)
-        initialized_tree = await resource.summarize_tree()
+        original_tree = resource.summarize_tree()
+        filesystem_root = resource.view_as(FilesystemRoot)
+        filesystem_root.initialize_from_disk(filesystem_root_directory)
+        initialized_tree = resource.summarize_tree()
         assert original_tree != initialized_tree
 
-    async def test_flush_to_disk(self, ofrak_context: OFRAKContext, filesystem_root_directory):
+    def test_flush_to_disk(self, ofrak_context: OFRAKContext, filesystem_root_directory):
         """
         Test that FilesystemRoot.flush_to_disk correctly flushes the filesystem resources.
         """
-        resource = await ofrak_context.create_root_resource(
+        resource = ofrak_context.create_root_resource(
             name=filesystem_root_directory, data=b"", tags=[FilesystemRoot]
         )
-        filesystem_root = await resource.view_as(FilesystemRoot)
-        await filesystem_root.initialize_from_disk(filesystem_root_directory)
+        filesystem_root = resource.view_as(FilesystemRoot)
+        filesystem_root.initialize_from_disk(filesystem_root_directory)
 
         with tempfile.TemporaryDirectory() as flush_dir:
-            await filesystem_root.flush_to_disk(flush_dir)
+            filesystem_root.flush_to_disk(flush_dir)
 
             if sys.platform != "win32":
                 diff_directories(filesystem_root_directory, flush_dir, extra_diff_flags="")
@@ -115,24 +113,24 @@ class TestFilesystemRoot:
                     "Directories not compared on Windows. TODO: implement a basic comparison"
                 )
 
-    async def test_get_entry(self, filesystem_root: FilesystemRoot):
+    def test_get_entry(self, filesystem_root: FilesystemRoot):
         """
         Test that FilesystemRoot.get_entry returns the correct entry.
         """
-        entry = await filesystem_root.get_entry(CHILD_TEXTFILE_NAME)
+        entry = filesystem_root.get_entry(CHILD_TEXTFILE_NAME)
         assert entry.name == CHILD_TEXTFILE_NAME
 
-    async def test_list_dir(self, filesystem_root: FilesystemRoot):
+    def test_list_dir(self, filesystem_root: FilesystemRoot):
         """
         Test that FilesystemRoot.list_dir returns the expected directory contents.
         """
-        list_dir_output = await filesystem_root.list_dir()
+        list_dir_output = filesystem_root.list_dir()
         expected = {CHILD_FOLDER, CHILD_TEXTFILE_NAME}
         if sys.platform != "win32":
             expected.add(FIFO_PIPE_NAME)
         assert set(list_dir_output.keys()) == expected
 
-    async def test_add_folder(self, filesystem_root: FilesystemRoot, tmp_path):
+    def test_add_folder(self, filesystem_root: FilesystemRoot, tmp_path):
         """
         Test FilesystemRoot.add_folder functionality.
         """
@@ -140,14 +138,14 @@ class TestFilesystemRoot:
         tmp_dir = tmp_path / new_folder_name
         tmp_dir.mkdir()
 
-        list_dir_output = await filesystem_root.list_dir()
+        list_dir_output = filesystem_root.list_dir()
         assert new_folder_name not in list_dir_output.keys()
 
-        await filesystem_root.add_folder(tmp_dir.name, os.stat(tmp_dir))
-        updated_list_dir_output = await filesystem_root.list_dir()
+        filesystem_root.add_folder(tmp_dir.name, os.stat(tmp_dir))
+        updated_list_dir_output = filesystem_root.list_dir()
         assert new_folder_name in updated_list_dir_output.keys()
 
-    async def test_add_file(self, filesystem_root: FilesystemRoot, tmp_path):
+    def test_add_file(self, filesystem_root: FilesystemRoot, tmp_path):
         """
         Test FilesystemRoot.add_file functionality.
         """
@@ -156,22 +154,22 @@ class TestFilesystemRoot:
         tmp_file = tmp_path / new_file_name
         tmp_file.write_bytes(new_file_bytes)
 
-        list_dir_output = await filesystem_root.list_dir()
+        list_dir_output = filesystem_root.list_dir()
         assert new_file_name not in list_dir_output.keys()
 
-        await filesystem_root.add_file(tmp_file.name, new_file_bytes, os.stat(tmp_file))
-        updated_list_dir_output = await filesystem_root.list_dir()
+        filesystem_root.add_file(tmp_file.name, new_file_bytes, os.stat(tmp_file))
+        updated_list_dir_output = filesystem_root.list_dir()
         assert new_file_name in updated_list_dir_output.keys()
 
-    async def test_remove_file(self, filesystem_root: FilesystemRoot):
+    def test_remove_file(self, filesystem_root: FilesystemRoot):
         """
         Test FilesystemRoot.remove_file functionality.
         """
-        list_dir_output = await filesystem_root.list_dir()
+        list_dir_output = filesystem_root.list_dir()
         assert CHILD_TEXTFILE_NAME in list_dir_output
 
-        await filesystem_root.remove_file(CHILD_TEXTFILE_NAME)
-        updated_list_dir_output = await filesystem_root.list_dir()
+        filesystem_root.remove_file(CHILD_TEXTFILE_NAME)
+        updated_list_dir_output = filesystem_root.list_dir()
         assert CHILD_TEXTFILE_NAME not in updated_list_dir_output
 
 
@@ -181,35 +179,35 @@ class TestFilesystemEntry:
     Test FilesystemEntry methods.
     """
 
-    async def test_modify_stat_attribute(self, filesystem_root: FilesystemRoot):
+    def test_modify_stat_attribute(self, filesystem_root: FilesystemRoot):
         """
         Test that FilesytemEntry.modify_stat_attribute modifies the entry's stat attributes.
         """
-        child_textfile = await filesystem_root.get_entry(CHILD_TEXTFILE_NAME)
+        child_textfile = filesystem_root.get_entry(CHILD_TEXTFILE_NAME)
         new_stat_mode = 0o100755
         assert new_stat_mode != child_textfile.stat.st_mode
-        await child_textfile.modify_stat_attribute(stat.ST_MODE, new_stat_mode)
+        child_textfile.modify_stat_attribute(stat.ST_MODE, new_stat_mode)
         assert new_stat_mode == child_textfile.stat.st_mode
 
-    async def test_modify_xattr_attribute(self, filesystem_root: FilesystemRoot):
+    def test_modify_xattr_attribute(self, filesystem_root: FilesystemRoot):
         """
         Test that FilesystemEntry.modify_xattr_attribute modifies the entry's xattr attributes.
         """
-        child_textfile = await filesystem_root.get_entry(CHILD_TEXTFILE_NAME)
+        child_textfile = filesystem_root.get_entry(CHILD_TEXTFILE_NAME)
         assert child_textfile.xattrs == {}
-        await child_textfile.modify_xattr_attribute("user.foo", b"bar")
+        child_textfile.modify_xattr_attribute("user.foo", b"bar")
         assert child_textfile.xattrs == {"user.foo": b"bar"}
 
 
 class TestFolder:
-    async def test_get_entry(self, filesystem_root: FilesystemRoot):
+    def test_get_entry(self, filesystem_root: FilesystemRoot):
         """
         Test Folder.get_entry method.
         """
-        folder_entry = await filesystem_root.get_entry(CHILD_FOLDER)
-        folder = await folder_entry.resource.view_as(Folder)
-        assert await folder.get_entry("Nonexistent") is None
-        subchild = await folder.get_entry(SUBCHILD_TEXTFILE_NAME)
+        folder_entry = filesystem_root.get_entry(CHILD_FOLDER)
+        folder = folder_entry.resource.view_as(Folder)
+        assert folder.get_entry("Nonexistent") is None
+        subchild = folder.get_entry(SUBCHILD_TEXTFILE_NAME)
         assert subchild.name == SUBCHILD_TEXTFILE_NAME
 
 
@@ -326,23 +324,23 @@ class TestSymbolicLinkUnpackPack(FilesystemPackUnpackVerifyPattern):
         fake_dest_path = os.path.join(root, "fake.txt")
         os.symlink(fake_source_path, fake_dest_path)
 
-    async def create_root_resource(self, ofrak_context: OFRAKContext, directory: str) -> Resource:
+    def create_root_resource(self, ofrak_context: OFRAKContext, directory: str) -> Resource:
         # Pack with command line `tar` because it supports symbolic links
         with tempfile.NamedTemporaryFile(suffix=".tar") as archive:
             command = ["tar", "--xattrs", "-C", directory, "-cf", archive.name, "."]
             subprocess.run(command, check=True, capture_output=True)
 
-            return await ofrak_context.create_root_resource_from_file(archive.name)
+            return ofrak_context.create_root_resource_from_file(archive.name)
 
-    async def unpack(self, root_resource: Resource):
-        await root_resource.unpack_recursively()
+    def unpack(self, root_resource: Resource):
+        root_resource.unpack_recursively()
 
-    async def repack(self, root_resource: Resource):
-        await root_resource.pack_recursively()
+    def repack(self, root_resource: Resource):
+        root_resource.pack_recursively()
 
-    async def extract(self, root_resource: Resource, extract_dir: str):
+    def extract(self, root_resource: Resource, extract_dir: str):
         with tempfile.NamedTemporaryFile(suffix=".tar") as tar:
-            data = await root_resource.get_data()
+            data = root_resource.get_data()
             tar.write(data)
             tar.flush()
 
@@ -351,7 +349,7 @@ class TestSymbolicLinkUnpackPack(FilesystemPackUnpackVerifyPattern):
 
 
 class TestLoadInMemoryFilesystem(TestSymbolicLinkUnpackPack):
-    async def create_root_resource(self, ofrak_context: OFRAKContext, directory: str) -> Resource:
+    def create_root_resource(self, ofrak_context: OFRAKContext, directory: str) -> Resource:
         with tempfile.TemporaryDirectory() as archive_dir:
             archive_name = os.path.join(archive_dir, "archive.tar")
             command = ["tar", "--xattrs", "-C", directory, "-cf", archive_name, "."]
@@ -360,19 +358,19 @@ class TestLoadInMemoryFilesystem(TestSymbolicLinkUnpackPack):
             with open(archive_name, "rb") as f:
                 data = f.read()
 
-            root_resource = await ofrak_context.create_root_resource(
+            root_resource = ofrak_context.create_root_resource(
                 "Non-TAR parent",
                 b"",
                 tags=(FilesystemEntry,),
             )
-            child = await root_resource.create_child(data=b"", tags=(GenericBinary,))
-            await child.create_child(data=data, tags=(GenericBinary,))
+            child = root_resource.create_child(data=b"", tags=(GenericBinary,))
+            child.create_child(data=data, tags=(GenericBinary,))
             return root_resource
 
-    async def extract(self, root_resource: Resource, extract_dir: str):
-        child = await root_resource.get_only_child()
-        child = await child.get_only_child()
-        await super().extract(child, extract_dir)
+    def extract(self, root_resource: Resource, extract_dir: str):
+        child = root_resource.get_only_child()
+        child = child.get_only_child()
+        super().extract(child, extract_dir)
 
 
 def diff_directories(dir_1, dir_2, extra_diff_flags):

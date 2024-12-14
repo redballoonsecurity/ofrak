@@ -16,13 +16,13 @@ class InstructionModifierTestCase:
     expected_data: bytes
 
 
-async def run_instruction_modifier_test(
+def run_instruction_modifier_test(
     ofrak_context: OFRAKContext, test_case: InstructionModifierTestCase
 ):
-    new_r, _ = await test_case.instruction_resource.inflate(ofrak_context)
-    instr = await new_r.view_as(Instruction)
+    new_r, _ = test_case.instruction_resource.inflate(ofrak_context)
+    instr = new_r.view_as(Instruction)
 
-    modified_machine_code = await instr.modify_assembly(
+    modified_machine_code = instr.modify_assembly(
         test_case.new_instruction_mnemonic,
         test_case.new_instruction_operands,
         test_case.new_instruction_mode,

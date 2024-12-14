@@ -21,9 +21,9 @@ class MemoryRegionProgramAttributesAnalyzer(Analyzer[None, Tuple[ProgramAttribut
     targets = (MemoryRegion,)
     outputs = (ProgramAttributes,)
 
-    async def analyze(
+    def analyze(
         self, resource: Resource, config: Optional[ComponentConfig] = None
     ) -> Tuple[ProgramAttributes]:
-        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(Program))
-        program_attrs = await program_r.analyze(ProgramAttributes)
+        program_r = resource.get_only_ancestor(ResourceFilter.with_tags(Program))
+        program_attrs = program_r.analyze(ProgramAttributes)
         return (program_attrs,)

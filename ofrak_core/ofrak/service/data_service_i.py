@@ -8,7 +8,7 @@ from ofrak_type.range import Range
 
 class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
     @abstractmethod
-    async def create_root(self, data_id: bytes, data: bytes) -> DataModel:
+    def create_root(self, data_id: bytes, data: bytes) -> DataModel:
         """
         Create a root data model with its own data bytes.
 
@@ -22,7 +22,7 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def create_mapped(
+    def create_mapped(
         self,
         data_id: bytes,
         parent_id: bytes,
@@ -47,7 +47,7 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def get_by_id(self, data_id: bytes) -> DataModel:
+    def get_by_id(self, data_id: bytes) -> DataModel:
         """
         Get the data model object associated with the given ID.
 
@@ -60,7 +60,7 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def get_by_ids(self, data_ids: Iterable[bytes]) -> Iterable[DataModel]:
+    def get_by_ids(self, data_ids: Iterable[bytes]) -> Iterable[DataModel]:
         """
         Get the data models object associated with the given IDs.
 
@@ -74,7 +74,7 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def get_data_length(self, data_id: bytes) -> int:
+    def get_data_length(self, data_id: bytes) -> int:
         """
         Return the length of a single data model.
 
@@ -87,7 +87,7 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def get_data_range_within_root(self, data_id: bytes) -> Range:
+    def get_data_range_within_root(self, data_id: bytes) -> Range:
         """
         Get the range that a model maps in its root. If the model specified by `data_id` is itself
         a root, returns a range covering that whole root (i.e. Range(0, length)).
@@ -101,7 +101,7 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def get_range_within_other(self, data_id: bytes, within_data_id: bytes) -> Range:
+    def get_range_within_other(self, data_id: bytes, within_data_id: bytes) -> Range:
         """
         Get the range representing the intersection between two data models, assuming they are both
         mapped into the same root data. Either of `data_id` or `within_data_id` may be roots, but
@@ -120,7 +120,7 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def get_data(self, data_id: bytes, data_range: Optional[Range] = None) -> bytes:
+    def get_data(self, data_id: bytes, data_range: Optional[Range] = None) -> bytes:
         """
         Get the data (or section of data) of a model. The optional `data_range` parameter specifies
         which a range within `data_id`'s data to return; if this range actually falls outside the
@@ -138,7 +138,7 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def apply_patches(
+    def apply_patches(
         self,
         patches: List[DataPatch],
     ) -> List[DataPatchesResult]:
@@ -170,7 +170,7 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def delete_models(self, data_ids: Iterable[bytes]) -> None:
+    def delete_models(self, data_ids: Iterable[bytes]) -> None:
         """
         Delete one or more data models. If a root model is deleted, all models mapped into that
         root are also deleted.
@@ -183,7 +183,7 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
 
     @overload
     @abstractmethod
-    async def search(
+    def search(
         self,
         data_id: bytes,
         query: Pattern[bytes],
@@ -195,7 +195,7 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
 
     @overload
     @abstractmethod
-    async def search(
+    def search(
         self,
         data_id: bytes,
         query: bytes,
@@ -206,7 +206,7 @@ class DataServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         ...
 
     @abstractmethod
-    async def search(self, data_id, query, start=None, end=None, max_matches=None):
+    def search(self, data_id, query, start=None, end=None, max_matches=None):
         """
         Search for some data in one of the models. The query may be a regex pattern (a return value
         of `re.compile`). If the query is a regex pattern, returns a tuple of pairs with both the

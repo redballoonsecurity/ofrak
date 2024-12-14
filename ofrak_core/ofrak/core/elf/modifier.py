@@ -32,8 +32,8 @@ class AbstractElfAttributeModifier(ABC):
     def populate_serializer(cls, serializer: BinarySerializer, attributes: Any):
         raise NotImplementedError()
 
-    async def serialize(self, elf_resource: Elf, updated_attributes: ResourceAttributes) -> bytes:
-        e_basic_header_r = await elf_resource.get_basic_header()
+    def serialize(self, elf_resource: Elf, updated_attributes: ResourceAttributes) -> bytes:
+        e_basic_header_r = elf_resource.get_basic_header()
         buf = io.BytesIO()
         serializer = BinarySerializer(
             buf,
@@ -43,16 +43,16 @@ class AbstractElfAttributeModifier(ABC):
         self.populate_serializer(serializer, updated_attributes)
         return buf.getvalue()
 
-    async def serialize_and_patch(
+    def serialize_and_patch(
         self,
         resource: Resource,
         original_attributes: Any,
         modifier_config: ComponentConfig,
     ):
-        elf_resource = await resource.get_only_ancestor_as_view(Elf, ResourceFilter.with_tags(Elf))
+        elf_resource = resource.get_only_ancestor_as_view(Elf, ResourceFilter.with_tags(Elf))
         new_attributes = ResourceAttributes.replace_updated(original_attributes, modifier_config)
-        new_data = await self.serialize(elf_resource, new_attributes)
-        patch_length = await resource.get_data_length()
+        new_data = self.serialize(elf_resource, new_attributes)
+        patch_length = resource.get_data_length()
         resource.queue_patch(Range.from_size(0, patch_length), new_data)
         resource.add_attributes(new_attributes)
 
@@ -100,9 +100,9 @@ class ElfHeaderModifier(Modifier[ElfHeaderModifierConfig], AbstractElfAttributeM
             auto_bitwidth=True,
         )
 
-    async def modify(self, resource: Resource, config: ElfHeaderModifierConfig):
-        original_attributes = await resource.analyze(AttributesType[ElfHeader])
-        await self.serialize_and_patch(resource, original_attributes, config)
+    def modify(self, resource: Resource, config: ElfHeaderModifierConfig):
+        original_attributes = resource.analyze(AttributesType[ElfHeader])
+        self.serialize_and_patch(resource, original_attributes, config)
 
 
 @dataclass
@@ -122,9 +122,9 @@ class ElfProgramHeaderModifier(
 ):
     targets = (ElfProgramHeader,)
 
-    async def modify(self, resource: Resource, config: ElfProgramHeaderModifierConfig):
-        original_attributes = await resource.analyze(AttributesType[ElfProgramHeader])
-        await self.serialize_and_patch(resource, original_attributes, config)
+    def modify(self, resource: Resource, config: ElfProgramHeaderModifierConfig):
+        original_attributes = resource.analyze(AttributesType[ElfProgramHeader])
+        self.serialize_and_patch(resource, original_attributes, config)
 
     @classmethod
     def populate_serializer(
@@ -188,13 +188,13 @@ class ElfSectionHeaderModifier(
             auto_bitwidth=True,
         )
 
-    async def modify(
+    def modify(
         self,
         resource: Resource,
         config: ElfSectionHeaderModifierConfig,
     ):
-        original_attributes = await resource.analyze(AttributesType[ElfSectionHeader])
-        await self.serialize_and_patch(resource, original_attributes, config)
+        original_attributes = resource.analyze(AttributesType[ElfSectionHeader])
+        self.serialize_and_patch(resource, original_attributes, config)
 
 
 @dataclass
@@ -236,13 +236,13 @@ class ElfSymbolModifier(AbstractElfAttributeModifier, Modifier[ElfSymbolModifier
                 attributes.st_shndx,
             )
 
-    async def modify(
+    def modify(
         self,
         resource: Resource,
         config: ElfSymbolModifierConfig,
     ):
-        original_attributes = await resource.analyze(AttributesType[ElfSymbol])
-        await self.serialize_and_patch(resource, original_attributes, config)
+        original_attributes = resource.analyze(AttributesType[ElfSymbol])
+        self.serialize_and_patch(resource, original_attributes, config)
 
 
 @dataclass
@@ -284,7 +284,7 @@ class ElfRelaModifier(AbstractElfAttributeModifier, Modifier[ElfRelaModifierConf
                 attributes.r_addend,
             )
 
-    async def modify(
+    def modify(
         self,
         resource: Resource,
         config: ElfRelaModifierConfig,
@@ -292,8 +292,8 @@ class ElfRelaModifier(AbstractElfAttributeModifier, Modifier[ElfRelaModifierConf
         """
         Patches the Elf{32, 64}_Rela struct
         """
-        original_attributes = await resource.analyze(AttributesType[ElfRelaEntry])
-        await self.serialize_and_patch(resource, original_attributes, config)
+        original_attributes = resource.analyze(AttributesType[ElfRelaEntry])
+        self.serialize_and_patch(resource, original_attributes, config)
 
 
 @dataclass
@@ -335,7 +335,7 @@ class ElfDynamicEntryModifier(
                 attributes.d_un,
             )
 
-    async def modify(
+    def modify(
         self,
         resource: Resource,
         config: ElfDynamicEntryModifierConfig,
@@ -343,8 +343,8 @@ class ElfDynamicEntryModifier(
         """
         Patches the Elf{32, 64}_Dyn struct
         """
-        original_attributes = await resource.analyze(AttributesType[ElfDynamicEntry])
-        await self.serialize_and_patch(resource, original_attributes, config)
+        original_attributes = resource.analyze(AttributesType[ElfDynamicEntry])
+        self.serialize_and_patch(resource, original_attributes, config)
 
 
 @dataclass
@@ -373,7 +373,7 @@ class ElfVirtualAddressModifier(
     ):
         serializer.pack_ulong(attributes.value)
 
-    async def modify(
+    def modify(
         self,
         resource: Resource,
         config: ElfVirtualAddressModifierConfig,
@@ -381,8 +381,8 @@ class ElfVirtualAddressModifier(
         """
         Patches the virtual address
         """
-        original_attributes = await resource.analyze(AttributesType[ElfVirtualAddress])
-        await self.serialize_and_patch(resource, original_attributes, config)
+        original_attributes = resource.analyze(AttributesType[ElfVirtualAddress])
+        self.serialize_and_patch(resource, original_attributes, config)
 
 
 @dataclass
@@ -403,7 +403,7 @@ class ElfPointerArraySectionAddModifier(Modifier[ElfPointerArraySectionAddModifi
 
     targets = (ElfPointerArraySection,)
 
-    async def modify(
+    def modify(
         self,
         resource: Resource,
         config: ElfPointerArraySectionAddModifierConfig,
@@ -412,17 +412,15 @@ class ElfPointerArraySectionAddModifier(Modifier[ElfPointerArraySectionAddModifi
         Patches the virtual addresses, doesn't change the ElfPointerArraySection attributes
         """
 
-        elf_resource = await resource.get_only_ancestor_as_view(Elf, ResourceFilter.with_tags(Elf))
-        e_basic_header_r = await elf_resource.get_basic_header()
+        elf_resource = resource.get_only_ancestor_as_view(Elf, ResourceFilter.with_tags(Elf))
+        e_basic_header_r = elf_resource.get_basic_header()
         values = list()
         deserializer = BinaryDeserializer(
-            io.BytesIO(await resource.get_data()),
+            io.BytesIO(resource.get_data()),
             endianness=e_basic_header_r.get_endianness(),
             word_size=e_basic_header_r.get_bitwidth().get_word_size(),
         )
-        num_values = (
-            await resource.get_data_length() // e_basic_header_r.get_bitwidth().get_word_size()
-        )
+        num_values = resource.get_data_length() // e_basic_header_r.get_bitwidth().get_word_size()
         for i in range(num_values):
             values.append(deserializer.unpack_ulong())
 
@@ -438,7 +436,7 @@ class ElfPointerArraySectionAddModifier(Modifier[ElfPointerArraySectionAddModifi
             else:
                 serializer.pack_ulong(value)
 
-        patch_length = await resource.get_data_length()
+        patch_length = resource.get_data_length()
         resource.queue_patch(Range.from_size(0, patch_length), buf.getvalue())
 
 
@@ -457,14 +455,14 @@ class ElfAddStringModifier(Modifier[ElfAddStringModifierConfig]):
 
     targets = (Elf,)
 
-    async def modify(
+    def modify(
         self,
         resource: Resource,
         config: ElfAddStringModifierConfig,
     ):
-        elf = await resource.view_as(Elf)
-        string_section = await elf.get_string_section()
-        string_section_size = await string_section.resource.get_data_length()
+        elf = resource.view_as(Elf)
+        string_section = elf.get_string_section()
+        string_section_size = string_section.resource.get_data_length()
 
         if type(config.strings) is str:
             strings: Union[Tuple[str, ...], str] = (config.strings,)
@@ -478,13 +476,13 @@ class ElfAddStringModifier(Modifier[ElfAddStringModifierConfig]):
         string_section.resource.queue_patch(
             Range.from_size(string_section_size - 1, 1), encoded_strings
         )
-        string_section_header = await string_section.get_header()
+        string_section_header = string_section.get_header()
         original_string_section_offset = string_section_header.sh_offset
 
         # Now shift all the sections after the string section
-        sections = await elf.get_sections()
+        sections = elf.get_sections()
         for section in sections:
-            section_header = await section.get_header()
+            section_header = section.get_header()
             if section_header.sh_offset <= original_string_section_offset:
                 continue
             if ElfSectionFlag.ALLOC in section_header.get_flags():
@@ -493,14 +491,14 @@ class ElfAddStringModifier(Modifier[ElfAddStringModifierConfig]):
                     "which is loaded into memory! May be possible to "
                     "handle, but this is not implemented."
                 )
-            await section_header.resource.run(
+            section_header.resource.run(
                 ElfSectionHeaderModifier,
                 ElfSectionHeaderModifierConfig(
                     sh_offset=section_header.sh_offset + total_string_section_size_increase
                 ),
             )
 
-        await string_section_header.resource.run(
+        string_section_header.resource.run(
             ElfSectionHeaderModifier,
             ElfSectionHeaderModifierConfig(
                 sh_size=string_section_size + total_string_section_size_increase
@@ -508,9 +506,9 @@ class ElfAddStringModifier(Modifier[ElfAddStringModifierConfig]):
         )
 
         # Section table is probably at end of binary too
-        elf_header = await elf.get_header()
+        elf_header = elf.get_header()
         if elf_header.e_shoff > string_section_header.sh_offset:
-            await elf_header.resource.run(
+            elf_header.resource.run(
                 ElfHeaderModifier,
                 ElfHeaderModifierConfig(
                     e_shoff=elf_header.e_shoff + total_string_section_size_increase
@@ -539,12 +537,12 @@ class ElfRelocateSymbolsModifier(Modifier[ElfRelocateSymbolsModifierConfig]):
 
     targets = (Elf,)
 
-    async def modify(self, resource: Resource, config: ElfRelocateSymbolsModifierConfig) -> None:
-        elf = await resource.view_as(Elf)
-        symbol_section = await elf.get_symbol_section()
-        for symbol in await symbol_section.get_symbols():
+    def modify(self, resource: Resource, config: ElfRelocateSymbolsModifierConfig) -> None:
+        elf = resource.view_as(Elf)
+        symbol_section = elf.get_symbol_section()
+        for symbol in symbol_section.get_symbols():
             if symbol.st_value in config.new_symbol_vaddrs:
-                await symbol.resource.run(
+                symbol.resource.run(
                     ElfSymbolModifier,
                     ElfSymbolModifierConfig(
                         st_value=config.new_symbol_vaddrs[symbol.st_value],

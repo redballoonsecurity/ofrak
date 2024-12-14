@@ -48,9 +48,9 @@ class IhexAnalyzer(Analyzer[None, IhexProgram]):
     targets = (IhexProgram,)
     outputs = (IhexProgram,)
 
-    async def analyze(self, resource: Resource, config: None = None) -> IhexProgram:
-        raw_ihex = await resource.get_parent()
-        ihex_program, _ = _binfile_analysis(await raw_ihex.get_data(), self)
+    def analyze(self, resource: Resource, config: None = None) -> IhexProgram:
+        raw_ihex = resource.get_parent()
+        ihex_program, _ = _binfile_analysis(raw_ihex.get_data(), self)
         return ihex_program
 
 
@@ -64,10 +64,10 @@ class IhexUnpacker(Unpacker[None]):
     targets = (Ihex,)
     children = (IhexProgram,)
 
-    async def unpack(self, resource: Resource, config=None):
-        ihex_program, binfile = _binfile_analysis(await resource.get_data(), self)
+    def unpack(self, resource: Resource, config=None):
+        ihex_program, binfile = _binfile_analysis(resource.get_data(), self)
 
-        await resource.create_child_from_view(ihex_program, data=bytes(binfile.as_binary()))
+        resource.create_child_from_view(ihex_program, data=bytes(binfile.as_binary()))
 
 
 class IhexProgramUnpacker(Unpacker[None]):
@@ -78,13 +78,13 @@ class IhexProgramUnpacker(Unpacker[None]):
     targets = (IhexProgram,)
     children = (ProgramSection,)
 
-    async def unpack(self, resource: Resource, config=None):
-        ihex_program = await resource.view_as(IhexProgram)
+    def unpack(self, resource: Resource, config=None):
+        ihex_program = resource.view_as(IhexProgram)
         for seg_vaddr_range in ihex_program.segments:
             # Segment is mapped into the program at an offset starting at the difference between
             # the segment's vaddr range and the program's base address
             segment_data_range = seg_vaddr_range.translate(-ihex_program.address_limits.start)
-            await resource.create_child_from_view(
+            resource.create_child_from_view(
                 ProgramSection(seg_vaddr_range.start, seg_vaddr_range.length()),
                 data_range=segment_data_range,
             )
@@ -98,19 +98,19 @@ class IhexProgramPacker(Packer[None]):
 
     targets = (IhexProgram,)
 
-    async def pack(self, resource: Resource, config=None) -> None:
+    def pack(self, resource: Resource, config=None) -> None:
         updated_segments = []
         min_vaddr = sys.maxsize
         max_vaddr = 0
-        for segment_r in await resource.get_children_as_view(
+        for segment_r in resource.get_children_as_view(
             ProgramSection, r_filter=ResourceFilter.with_tags(ProgramSection)
         ):
-            seg_length = await segment_r.resource.get_data_length()
+            seg_length = segment_r.resource.get_data_length()
             seg_start = segment_r.virtual_address
             updated_segments.append(Range.from_size(seg_start, seg_length))
             min_vaddr = min(min_vaddr, seg_start)
             max_vaddr = max(max_vaddr, seg_start + seg_length)
-        ihex_prog = await resource.view_as(IhexProgram)
+        ihex_prog = resource.view_as(IhexProgram)
         ihex_prog.segments = updated_segments
         ihex_prog.address_limits = Range(min_vaddr, max_vaddr)
         resource.add_view(ihex_prog)
@@ -123,20 +123,20 @@ class IhexPacker(Packer[None]):
 
     targets = (Ihex,)
 
-    async def pack(self, resource: Resource, config=None) -> None:
-        program_child = await resource.get_only_child_as_view(IhexProgram)
+    def pack(self, resource: Resource, config=None) -> None:
+        program_child = resource.get_only_child_as_view(IhexProgram)
         vaddr_offset = -program_child.address_limits.start
         binfile = BinFile()
         binfile.execution_start_address = program_child.start_addr
         for seg in program_child.segments:
-            seg_data = await program_child.resource.get_data(seg.translate(vaddr_offset))
+            seg_data = program_child.resource.get_data(seg.translate(vaddr_offset))
             binfile.add_binary(seg_data, seg.start)
 
         new_data = binfile.as_ihex()
         if new_data.endswith("\n"):
             new_data = new_data[:-1]
         new_data = new_data.encode("utf-8")
-        old_data_len = await resource.get_data_length()
+        old_data_len = resource.get_data_length()
         resource.queue_patch(Range(0, old_data_len), new_data)
 
 
@@ -152,8 +152,8 @@ class IhexIdentifier(Identifier):
     # Matches on 2 lines that match ihex format
     _INTEL_HEX_PATTERN = re.compile(rb"((\:([0-9A-F]{2}){5,})(\n|\r\n)+){2}")
 
-    async def identify(self, resource: Resource, config=None) -> None:
-        matched_ihex = await resource.search_data(self._INTEL_HEX_PATTERN, max_matches=1)
+    def identify(self, resource: Resource, config=None) -> None:
+        matched_ihex = resource.search_data(self._INTEL_HEX_PATTERN, max_matches=1)
         if matched_ihex:
             offset, bytes = matched_ihex[0]
             # Only tag if pattern starts at offset 0 of resource

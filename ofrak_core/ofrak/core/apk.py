@@ -1,6 +1,6 @@
-import asyncio
 import os
 import pathlib
+import subprocess
 import sys
 import tempfile
 from subprocess import CalledProcessError
@@ -52,7 +52,7 @@ class _UberApkSignerTool(ComponentExternalTool):
             install_check_arg="",
         )
 
-    async def is_tool_installed(self) -> bool:
+    def is_tool_installed(self) -> bool:
         if not os.path.exists(_UberApkSignerTool.JAR_PATH):
             return False
 
@@ -63,16 +63,11 @@ class _UberApkSignerTool(ComponentExternalTool):
                 _UberApkSignerTool.JAR_PATH,
                 "--help",
             ]
-            proc = await asyncio.create_subprocess_exec(
-                *cmd,
-                stdout=asyncio.subprocess.DEVNULL,
-                stderr=asyncio.subprocess.DEVNULL,
-            )
-            returncode = await proc.wait()
+            result = subprocess.run(cmd)
         except FileNotFoundError:
             return False
 
-        return 0 == returncode
+        return 0 == result.returncode
 
 
 UBER_APK_SIGNER = _UberApkSignerTool()
@@ -93,15 +88,15 @@ class ApkUnpacker(Unpacker[None]):
     children = (File, Folder)
     external_dependencies = (APKTOOL,)
 
-    async def unpack(self, resource: Resource, config=None):
+    def unpack(self, resource: Resource, config=None):
         """
         Decode Android APK files.
 
         :param resource:
         :param config:
         """
-        apk = await resource.view_as(Apk)
-        data = await resource.get_data()
+        apk = resource.view_as(Apk)
+        data = resource.get_data()
         with tempfile.NamedTemporaryFile() as temp_file:
             temp_file.write(data)
             temp_file.flush()
@@ -114,13 +109,10 @@ class ApkUnpacker(Unpacker[None]):
                     "--force",
                     temp_file.name,
                 ]
-                proc = await asyncio.create_subprocess_exec(
-                    *cmd,
-                )
-                returncode = await proc.wait()
-                if proc.returncode:
-                    raise CalledProcessError(returncode=returncode, cmd=cmd)
-                await apk.initialize_from_disk(temp_flush_dir)
+                result = subprocess.run(cmd)
+                if result.returncode:
+                    raise CalledProcessError(returncode=result.returncode, cmd=cmd)
+                apk.initialize_from_disk(temp_flush_dir)
 
 
 @dataclass
@@ -144,17 +136,15 @@ class ApkPacker(Packer[ApkPackerConfig]):
     targets = (Apk,)
     external_dependencies = (APKTOOL, JAVA, UBER_APK_SIGNER)
 
-    async def pack(
-        self, resource: Resource, config: ApkPackerConfig = ApkPackerConfig(sign_apk=True)
-    ):
+    def pack(self, resource: Resource, config: ApkPackerConfig = ApkPackerConfig(sign_apk=True)):
         """
         Pack disassembled APK resources into an APK.
 
         :param resource:
         :param config:
         """
-        apk = await resource.view_as(Apk)
-        temp_flush_dir = await apk.flush_to_disk()
+        apk = resource.view_as(Apk)
+        temp_flush_dir = apk.flush_to_disk()
         apk_suffix = ".apk"
         with tempfile.NamedTemporaryFile(suffix=apk_suffix) as temp_apk:
             apk_cmd = [
@@ -165,12 +155,9 @@ class ApkPacker(Packer[ApkPackerConfig]):
                 "--output",
                 temp_apk.name,
             ]
-            apk_proc = await asyncio.create_subprocess_exec(
-                *apk_cmd,
-            )
-            apk_returncode = await apk_proc.wait()
-            if apk_proc.returncode:
-                raise CalledProcessError(returncode=apk_returncode, cmd=apk_cmd)
+            result = subprocess.run(apk_cmd, capture_output=True)
+            if result.returncode:
+                raise CalledProcessError(returncode=result.returncode, cmd=apk_cmd)
             if not config.sign_apk:
                 # Close the file handle and reopen, to avoid observed situations where temp.read()
                 # was not returning data
@@ -188,12 +175,9 @@ class ApkPacker(Packer[ApkPackerConfig]):
                         signed_apk_temp_dir,
                         "--allowResign",
                     ]
-                    java_proc = await asyncio.create_subprocess_exec(
-                        *java_cmd,
-                    )
-                    java_returncode = await java_proc.wait()
-                    if java_proc.returncode:
-                        raise CalledProcessError(returncode=java_returncode, cmd=java_cmd)
+                    result = subprocess.run(java_cmd, capture_output=True)
+                    if result.returncode:
+                        raise CalledProcessError(returncode=result.returncode, cmd=java_cmd)
                     signed_apk_filename = (
                         os.path.basename(temp_apk.name)[: -len(apk_suffix)]
                         + "-aligned-debugSigned.apk"
@@ -205,35 +189,30 @@ class ApkPacker(Packer[ApkPackerConfig]):
                     with open(signed_file_name, "rb") as file_handle:
                         new_data = file_handle.read()
             assert len(new_data) != 0
-            resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
+            resource.queue_patch(Range(0, resource.get_data_length()), new_data)
 
 
 class ApkIdentifier(Identifier):
     targets = (File, GenericBinary)
     external_dependencies = (UNZIP_TOOL,)
 
-    async def identify(self, resource: Resource, config=None) -> None:
-        await resource.run(MagicMimeIdentifier)
+    def identify(self, resource: Resource, config=None) -> None:
+        resource.run(MagicMimeIdentifier)
         magic = resource.get_attributes(Magic)
         if magic.mime == "application/vnd.android.package-archive":
             resource.add_tag(Apk)
         elif magic is not None and magic.mime in ["application/java-archive", "application/zip"]:
             with tempfile.NamedTemporaryFile(suffix=".zip") as temp_file:
-                temp_file.write(await resource.get_data())
+                temp_file.write(resource.get_data())
                 temp_file.flush()
                 unzip_cmd = [
                     "unzip",
                     "-l",
                     temp_file.name,
                 ]
-                unzip_proc = await asyncio.create_subprocess_exec(
-                    *unzip_cmd,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                )
-                stdout, stderr = await unzip_proc.communicate()
-                if unzip_proc.returncode:
-                    raise CalledProcessError(returncode=unzip_proc.returncode, cmd=unzip_cmd)
+                result = subprocess.run(unzip_cmd, capture_output=True)
+                if result.returncode:
+                    raise CalledProcessError(returncode=result.returncode, cmd=unzip_cmd)
 
-                if b"androidmanifest.xml" in stdout.lower():
+                if b"androidmanifest.xml" in result.stdout.lower():
                     resource.add_tag(Apk)

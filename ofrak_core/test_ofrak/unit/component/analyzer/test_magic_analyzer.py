@@ -31,11 +31,9 @@ class PopulatedMagicAnalyzerTestCase(PopulatedAnalyzerTestCase, MagicAnalyzerTes
         MagicAnalyzerTestCase(MagicAnalyzer, Magic("text/plain", "ASCII text"), b"Hello world\n")
     ]
 )
-async def test_case(
-    request, ofrak_context: OFRAKContext, test_id: str
-) -> PopulatedMagicAnalyzerTestCase:
+def test_case(request, ofrak_context: OFRAKContext, test_id: str) -> PopulatedMagicAnalyzerTestCase:
     test_case: MagicAnalyzerTestCase = request.param
-    resource = await ofrak_context.create_root_resource(test_id, test_case.resource_contents)
+    resource = ofrak_context.create_root_resource(test_id, test_case.resource_contents)
     return PopulatedMagicAnalyzerTestCase(
         test_case.analyzer_type,
         test_case.expected_result,

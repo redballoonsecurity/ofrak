@@ -6,13 +6,13 @@ from ofrak.project.project import OfrakProject
 TEST_PROJECT_PATH = os.path.join(os.path.dirname(__file__), "test_projects", "project1")
 
 
-async def test_load_project(ofrak_context: OFRAKContext):
+def test_load_project(ofrak_context: OFRAKContext):
     project = OfrakProject.init_from_path(TEST_PROJECT_PATH)
-    initialized_resource = await project.init_project_binary("hello_world.bin", ofrak_context)
-    assert len(list(await initialized_resource.get_children())) > 0
+    initialized_resource = project.init_project_binary("hello_world.bin", ofrak_context)
+    assert len(list(initialized_resource.get_children())) > 0
 
 
-async def test_create_new_project(ofrak_context, tmpdir):
+def test_create_new_project(ofrak_context, tmpdir):
     new_project = OfrakProject.create(
         "New Test Project",
         tmpdir,

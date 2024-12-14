@@ -117,8 +117,8 @@ class OpenWrtTrx(GenericBinary):
     The OpenWrtTrx consists of 1 OpenWrtTrxHeader and 3 or 4 partition(s).
     """
 
-    async def get_header(self) -> OpenWrtTrxHeader:
-        return await self.resource.get_only_child_as_view(
+    def get_header(self) -> OpenWrtTrxHeader:
+        return self.resource.get_only_child_as_view(
             OpenWrtTrxHeader, ResourceFilter.with_tags(OpenWrtTrxHeader)
         )
 
@@ -134,8 +134,8 @@ class OpenWrtIdentifier(Identifier[None]):
         GenericBinary,
     )
 
-    async def identify(self, resource: Resource, config=None) -> None:
-        trx_magic = await resource.get_data(range=Range(0, 4))
+    def identify(self, resource: Resource, config=None) -> None:
+        trx_magic = resource.get_data(range=Range(0, 4))
         if trx_magic == OPENWRT_TRX_MAGIC_BYTES:
             resource.add_tag(OpenWrtTrx)
 
@@ -157,8 +157,8 @@ class OpenWrtTrxUnpacker(Unpacker[None]):
         GenericBinary,
     )
 
-    async def unpack(self, resource: Resource, config=None):
-        data = await resource.get_data()
+    def unpack(self, resource: Resource, config=None):
+        data = resource.get_data()
         # Peek into TRX version to know how big the header is
         trx_version = OpenWrtTrxVersion(struct.unpack("<H", data[14:16])[0])
 
@@ -170,11 +170,11 @@ class OpenWrtTrxUnpacker(Unpacker[None]):
             if trx_version == OpenWrtTrxVersion.VERSION1
             else OPENWRT_TRXV2_HEADER_LEN
         )
-        trx_header_r = await resource.create_child(
+        trx_header_r = resource.create_child(
             tags=(OpenWrtTrxHeader,), data_range=Range(0, header_len)
         )
 
-        trx_header = await trx_header_r.view_as(OpenWrtTrxHeader)
+        trx_header = trx_header_r.view_as(OpenWrtTrxHeader)
         partition_offsets = trx_header.trx_partition_offsets
 
         for i, offset in enumerate(partition_offsets):
@@ -186,12 +186,12 @@ class OpenWrtTrxUnpacker(Unpacker[None]):
             )
             partition = data[offset:next_offset]
 
-            child = await resource.create_child(
+            child = resource.create_child(
                 tags=(GenericBinary,), data_range=Range(offset, next_offset)
             )
             if OPENWRT_TRX_MARK in partition:
                 partition = partition[: partition.index(OPENWRT_TRX_MARK)]
-                await child.create_child(
+                child.create_child(
                     tags=(GenericBinary,), data_range=Range.from_size(0, len(partition))
                 )
 
@@ -207,8 +207,8 @@ class OpenWrtTrxHeaderAttributesAnalyzer(Analyzer[None, OpenWrtTrxHeader]):
     targets = (OpenWrtTrxHeader,)
     outputs = (OpenWrtTrxHeader,)
 
-    async def analyze(self, resource: Resource, config=None) -> OpenWrtTrxHeader:
-        tmp = await resource.get_data()
+    def analyze(self, resource: Resource, config=None) -> OpenWrtTrxHeader:
+        tmp = resource.get_data()
         deserializer = BinaryDeserializer(
             io.BytesIO(tmp),
             endianness=Endianness.LITTLE_ENDIAN,
@@ -279,11 +279,11 @@ class OpenWrtTrxHeaderModifier(Modifier[OpenWrtTrxHeaderModifierConfig]):
 
     targets = (OpenWrtTrxHeader,)
 
-    async def modify(self, resource: Resource, config: OpenWrtTrxHeaderModifierConfig) -> None:
-        original_attributes = await resource.analyze(AttributesType[OpenWrtTrxHeader])
+    def modify(self, resource: Resource, config: OpenWrtTrxHeaderModifierConfig) -> None:
+        original_attributes = resource.analyze(AttributesType[OpenWrtTrxHeader])
         new_attributes = ResourceAttributes.replace_updated(original_attributes, config)
-        serialized_header = await OpenWrtTrxHeaderModifier.serialize(new_attributes)
-        header_v = await resource.view_as(OpenWrtTrxHeader)
+        serialized_header = OpenWrtTrxHeaderModifier.serialize(new_attributes)
+        header_v = resource.view_as(OpenWrtTrxHeader)
         resource.queue_patch(
             Range.from_size(0, header_v.get_header_length()),
             serialized_header,
@@ -291,7 +291,7 @@ class OpenWrtTrxHeaderModifier(Modifier[OpenWrtTrxHeaderModifierConfig]):
         resource.add_attributes(new_attributes)
 
     @staticmethod
-    async def serialize(
+    def serialize(
         updated_attributes: AttributesType[OpenWrtTrxHeader],
     ) -> bytes:
         """
@@ -333,18 +333,18 @@ class OpenWrtTrxPacker(Packer[None]):
     id = b"OpenWrtTrxPacker"
     targets = (OpenWrtTrx,)
 
-    async def pack(self, resource: Resource, config=None):
-        openwrt_v = await resource.view_as(OpenWrtTrx)
-        header = await openwrt_v.get_header()
+    def pack(self, resource: Resource, config=None):
+        openwrt_v = resource.view_as(OpenWrtTrx)
+        header = openwrt_v.get_header()
         children_by_offset = sorted(
-            [
-                (await child.get_data_range_within_root(), child)
-                for child in await resource.get_children()
+            (
+                (child.get_data_range_within_root(), child)
+                for child in resource.get_children()
                 if not child.has_tag(OpenWrtTrxHeader)
-            ],
+            ),
             key=lambda x: x[0].start,
         )
-        repacked_data_l = [await child.get_data() for _, child in children_by_offset]
+        repacked_data_l = [child.get_data() for _, child in children_by_offset]
         repacked_data_b = b"".join(repacked_data_l)
         trx_length = header.get_header_length() + len(repacked_data_b)
 
@@ -353,15 +353,15 @@ class OpenWrtTrxPacker(Packer[None]):
             trx_length=trx_length, trx_partition_offsets=offsets
         )
 
-        await header.resource.run(OpenWrtTrxHeaderModifier, header_config)
+        header.resource.run(OpenWrtTrxHeaderModifier, header_config)
 
-        header_data = await header.resource.get_data()
+        header_data = header.resource.get_data()
         data_to_crc = header_data[12:] + repacked_data_b
         header_config = OpenWrtTrxHeaderModifierConfig(
             trx_crc=openwrt_crc32(data_to_crc),
         )
-        await header.resource.run(OpenWrtTrxHeaderModifier, header_config)
-        original_size = await resource.get_data_length()
+        header.resource.run(OpenWrtTrxHeaderModifier, header_config)
+        original_size = resource.get_data_length()
         resource.queue_patch(Range(header.get_header_length(), original_size), repacked_data_b)
 
 

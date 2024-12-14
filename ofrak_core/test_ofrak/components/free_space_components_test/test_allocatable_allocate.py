@@ -45,7 +45,7 @@ class NullRemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):
     id = RemoveFreeSpaceModifier.get_id()
     targets = (Allocatable,)
 
-    async def modify(self, resource: Resource, config: FreeSpaceAllocation) -> None:
+    def modify(self, resource: Resource, config: FreeSpaceAllocation) -> None:
         return
 
 
@@ -153,14 +153,14 @@ ALLOCATE_TEST_CASES = [
 
 
 @pytest.mark.parametrize("test_case", ALLOCATE_TEST_CASES, ids=lambda tc: tc.label)
-async def test_allocate(ofrak_context: OFRAKContext, test_case: AllocateTestCase, mock_allocatable):
-    resource = await ofrak_context.create_root_resource(test_case.label, b"\x00")
+def test_allocate(ofrak_context: OFRAKContext, test_case: AllocateTestCase, mock_allocatable):
+    resource = ofrak_context.create_root_resource(test_case.label, b"\x00")
     resource.add_view(mock_allocatable)
-    await resource.save()
-    allocatable = await resource.view_as(Allocatable)
+    resource.save()
+    allocatable = resource.view_as(Allocatable)
 
     if test_case.expected_allocation:
-        alloc = await allocatable.allocate(
+        alloc = allocatable.allocate(
             test_case.mem_permissions,
             test_case.requested_size,
             test_case.alignment,
@@ -170,7 +170,7 @@ async def test_allocate(ofrak_context: OFRAKContext, test_case: AllocateTestCase
         assert all([r in test_case.expected_allocation for r in alloc])
     else:
         with pytest.raises(FreeSpaceAllocationError):
-            _ = await allocatable.allocate(
+            _ = allocatable.allocate(
                 test_case.mem_permissions,
                 test_case.requested_size,
                 test_case.alignment,
@@ -179,7 +179,7 @@ async def test_allocate(ofrak_context: OFRAKContext, test_case: AllocateTestCase
             )
 
 
-async def test_allocate_bom(ofrak_context: OFRAKContext, tmpdir):
+def test_allocate_bom(ofrak_context: OFRAKContext, tmpdir):
     source_path = os.path.join(tmpdir, "test_source.c")
     with open(source_path, "w") as f:
         f.write(
@@ -250,7 +250,7 @@ async def test_allocate_bom(ofrak_context: OFRAKContext, tmpdir):
         header_dirs=[],
     )
 
-    resource = await ofrak_context.create_root_resource("test_allocate_bom", b"\x00")
+    resource = ofrak_context.create_root_resource("test_allocate_bom", b"\x00")
     resource.add_view(
         Allocatable(
             {
@@ -264,11 +264,11 @@ async def test_allocate_bom(ofrak_context: OFRAKContext, tmpdir):
             }
         )
     )
-    await resource.save()
+    resource.save()
 
-    allocatable = await resource.view_as(Allocatable)
+    allocatable = resource.view_as(Allocatable)
 
-    patch_config = await allocatable.allocate_bom(bom)
+    patch_config = allocatable.allocate_bom(bom)
 
     assert len(patch_config.segments) == 1
     for segments in patch_config.segments.values():

@@ -32,8 +32,8 @@ def auto_validate_state(validator_function):
         if inspect.iscoroutinefunction(method):
 
             @functools.wraps(method)
-            async def wrapped_method(self, *args, **kwargs):
-                result = await method(self, *args, **kwargs)
+            def wrapped_method(self, *args, **kwargs):
+                result = method(self, *args, **kwargs)
                 validator_function(self)
 
                 return result

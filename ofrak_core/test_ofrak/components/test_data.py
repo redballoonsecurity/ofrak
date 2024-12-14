@@ -15,7 +15,7 @@ from ofrak.core import DataWord, ReferencedDataAttributes
 class MockResource:
     data: bytes
 
-    async def get_data(self):
+    def get_data(self):
         return self.data
 
 
@@ -40,16 +40,16 @@ class TestDataWordGetValue:
     Test that DataWord.{get_signed_value, get_unsigned_value} return correct values.
     """
 
-    async def test_data_word_get_signed_value(self, data_word_test_case: DataClassValueTestCase):
+    def test_data_word_get_signed_value(self, data_word_test_case: DataClassValueTestCase):
         data_word = data_word_test_case.data_word
         expected_signed_value = data_word_test_case.expected_signed_value
-        signed_value = await data_word.get_value_signed()
+        signed_value = data_word.get_value_signed()
         assert signed_value == expected_signed_value
 
-    async def test_data_word_get_unsigned_value(self, data_word_test_case: DataClassValueTestCase):
+    def test_data_word_get_unsigned_value(self, data_word_test_case: DataClassValueTestCase):
         data_word = data_word_test_case.data_word
         expected_unsigned_value = data_word_test_case.expected_unsigned_value
-        unsigned_value = await data_word.get_value_unsigned()
+        unsigned_value = data_word.get_value_unsigned()
         assert unsigned_value == expected_unsigned_value
 
     @pytest.fixture(
@@ -87,7 +87,7 @@ class TestDataRefsAnalyzerLogic(DataRefsAnalyzerTestPattern):
     Test that ReferencedDataAttributes.{get_xrefs_to, get_xrefs_from} logic is sound.
     """
 
-    async def test_analyze_data_refs(
+    def test_analyze_data_refs(
         self, ofrak_context: OFRAKContext, data_refs_test_case: DataRefsAnalyzerTestCase
     ):
         referencing_addresses = list()
@@ -102,4 +102,4 @@ class TestDataRefsAnalyzerLogic(DataRefsAnalyzerTestPattern):
         data_refs = ReferencedDataAttributes(
             tuple(referencing_addresses), tuple(referenced_data), tuple(references)
         )
-        await self.validate_data_refs(data_refs, data_refs_test_case)
+        self.validate_data_refs(data_refs, data_refs_test_case)

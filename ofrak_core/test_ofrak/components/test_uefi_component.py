@@ -39,11 +39,11 @@ UEFI_COMPONENT_TEST_CASE = [
 @pytest.mark.skipif_missing_deps([UefiUnpacker])
 class TestUefiComponent(UnpackAndVerifyPattern):
     @pytest.fixture(params=UEFI_COMPONENT_TEST_CASE, ids=lambda tc: tc.label)
-    async def unpack_verify_test_case(self, request) -> UnpackAndVerifyTestCase:
+    def unpack_verify_test_case(self, request) -> UnpackAndVerifyTestCase:
         return request.param
 
     @pytest.fixture
-    async def root_resource(
+    def root_resource(
         self,
         unpack_verify_test_case: UnpackAndVerifyTestCase,
         ofrak_context: OFRAKContext,
@@ -54,23 +54,21 @@ class TestUefiComponent(UnpackAndVerifyPattern):
         )
         with open(asset_path, "rb") as f:
             data = f.read()
-        return await ofrak_context.create_root_resource(test_id, data, tags=(File,))
+        return ofrak_context.create_root_resource(test_id, data, tags=(File,))
 
-    async def unpack(self, root_resource: Resource):
+    def unpack(self, root_resource: Resource):
         root_resource.add_tag(Uefi)
-        await root_resource.save()
-        await root_resource.unpack_recursively()
+        root_resource.save()
+        root_resource.unpack_recursively()
 
-    async def get_descendants_to_verify(self, unpacked_root_resource: Resource) -> Dict:
+    def get_descendants_to_verify(self, unpacked_root_resource: Resource) -> Dict:
         result = {
-            await (
-                await descendent.view_as(FilesystemEntry)
-            ).get_path(): await descendent.get_data()
-            for descendent in await unpacked_root_resource.get_descendants()
+            (descendent.view_as(FilesystemEntry)).get_path(): descendent.get_data()
+            for descendent in unpacked_root_resource.get_descendants()
         }
         return result
 
-    async def verify_descendant(self, unpacked_descendant: bytes, specified_result: bytes):
+    def verify_descendant(self, unpacked_descendant: bytes, specified_result: bytes):
         assert unpacked_descendant == specified_result
 
     # This function is overwritten to do nothing since we don't want to check for extraneous descendents on OVMF.rom

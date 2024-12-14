@@ -26,8 +26,8 @@ class Program(LinkableBinary):
     [ProgramAttributes][ofrak.core.architecture.ProgramAttributes].
     """
 
-    async def get_function_complex_block(self, func_name: str) -> ComplexBlock:
-        return await self.resource.get_only_descendant_as_view(
+    def get_function_complex_block(self, func_name: str) -> ComplexBlock:
+        return self.resource.get_only_descendant_as_view(
             ComplexBlock,
             r_filter=ResourceFilter(
                 tags=(ComplexBlock,),
@@ -35,17 +35,17 @@ class Program(LinkableBinary):
             ),
         )
 
-    async def get_code_regions(self) -> Iterable[CodeRegion]:
+    def get_code_regions(self) -> Iterable[CodeRegion]:
         """
         Return code regions associated with the resource
 
         :return: Iterable of CodeRegions
         """
-        return await self.resource.get_children_as_view(
+        return self.resource.get_children_as_view(
             CodeRegion, r_filter=ResourceFilter.with_tags(CodeRegion)
         )
 
-    async def get_code_region_for_vaddr(self, vaddr: int) -> Optional[CodeRegion]:
+    def get_code_region_for_vaddr(self, vaddr: int) -> Optional[CodeRegion]:
         """
         Return the code region in this program containing vaddr.
 
@@ -56,7 +56,7 @@ class Program(LinkableBinary):
         :return: Code region containing the input vaddr
         """
 
-        code_regions = await self.get_code_regions()
+        code_regions = self.get_code_regions()
 
         for cr_view in code_regions:
             code_region_vaddr_range = Range(
@@ -68,7 +68,7 @@ class Program(LinkableBinary):
 
         raise NotFoundError
 
-    async def get_memory_region_for_vaddr(self, vaddr: int) -> Optional[MemoryRegion]:
+    def get_memory_region_for_vaddr(self, vaddr: int) -> Optional[MemoryRegion]:
         """
         Return the largest [memory region][ofrak.core.memory_region.MemoryRegion] containing vaddr.
 
@@ -80,7 +80,7 @@ class Program(LinkableBinary):
         if such a memory region exists
         """
         # we're looking for the largest (most general) memory region containing this vaddr
-        mem_regions = await self.resource.get_descendants_as_view(
+        mem_regions = self.resource.get_descendants_as_view(
             MemoryRegion,
             r_filter=ResourceFilter.with_tags(MemoryRegion),
             r_sort=ResourceSort(
@@ -97,7 +97,7 @@ class ReferencedStringsAnalyzer(Analyzer[None, Tuple[ReferencedStringsAttributes
     outputs = (ReferencedStringsAttributes,)
 
     @abstractmethod
-    async def analyze(self, resource: Resource, config=None) -> Tuple[ReferencedStringsAttributes]:
+    def analyze(self, resource: Resource, config=None) -> Tuple[ReferencedStringsAttributes]:
         raise NotImplementedError()
 
 
@@ -106,5 +106,5 @@ class ReferencedDataAnalyzer(Analyzer[None, Tuple[ReferencedDataAttributes]], AB
     outputs = (ReferencedDataAttributes,)
 
     @abstractmethod
-    async def analyze(self, resource: Resource, config=None) -> Tuple[ReferencedDataAttributes]:
+    def analyze(self, resource: Resource, config=None) -> Tuple[ReferencedDataAttributes]:
         raise NotImplementedError()

@@ -19,7 +19,7 @@ class CompressedFileUnpackModifyPackPattern(UnpackModifyPackPattern, ABC):
 
     Subclasses should implement:
 
-    :async def verify(self, repacked_root_resource: Resource):
+    :def verify(self, repacked_root_resource: Resource):
 
     :def create_test_file(self):
     """
@@ -54,22 +54,22 @@ class CompressedFileUnpackModifyPackPattern(UnpackModifyPackPattern, ABC):
         """
         self._test_file = None
 
-    async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
+    def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         assert self._test_file
-        return await ofrak_context.create_root_resource_from_file(self._test_file)
+        return ofrak_context.create_root_resource_from_file(self._test_file)
 
-    async def unpack(self, root_resource: Resource):
-        await root_resource.unpack()
+    def unpack(self, root_resource: Resource):
+        root_resource.unpack()
         if self.expected_tag:
             assert root_resource.has_tag(self.expected_tag)
 
-    async def repack(self, modified_root_resource: Resource):
-        await modified_root_resource.pack()
+    def repack(self, modified_root_resource: Resource):
+        modified_root_resource.pack()
 
-        children = await modified_root_resource.get_children()
+        children = modified_root_resource.get_children()
         assert 0 == len(list(children))
 
-    async def modify(self, unpacked_root_resource: Resource):
-        resource_to_modify = await unpacked_root_resource.get_only_child()
+    def modify(self, unpacked_root_resource: Resource):
+        resource_to_modify = unpacked_root_resource.get_only_child()
         new_string_config = StringPatchingConfig(6, "ofrak")
-        await resource_to_modify.run(StringPatchingModifier, new_string_config)
+        resource_to_modify.run(StringPatchingModifier, new_string_config)
