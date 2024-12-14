@@ -118,24 +118,19 @@ class JobService(JobServiceInterface):
             f"JOB {job_id.hex()} - Running {component.get_id().decode()} on "
             f"resource {resource_id.hex()}"
         )
-
-        # Create a new resource context for every component
-        fresh_resource_context = self._resource_context_factory.create()
-        fresh_resource_view_context = ResourceViewContext()
         result: Union[ComponentRunResult, BaseException]
         try:
             result = await component.run(
                 job_id,
                 resource_id,
                 job_context,
-                fresh_resource_context,
-                fresh_resource_view_context,
+                self._resource_context_factory.create(),  # Create a new resource context each time
+                ResourceViewContext(),
                 config,
             )
             _log_component_run_result_info(job_id, resource_id, component, result)
         except Exception as e:
             result = e
-        component_task_id = (resource_id, component.get_id())
 
         return result, metadata
 
@@ -148,7 +143,6 @@ class JobService(JobServiceInterface):
         job_context: JobRunContext,
         config: CC = None,
     ) -> Awaitable[_RunTaskResultT]:
-        component_task_id = (resource_id, component.get_id())
         component_task = asyncio.create_task(
             self._run_component(
                 metadata,
@@ -169,7 +163,7 @@ class JobService(JobServiceInterface):
         component = self._component_locator.get_by_id(request.component_id)
         if job_context is None:
             job_context = self._job_context_factory.create()
-        result, _ = await self._create_run_component_task(
+        result, _ = await self._run_component(
             request,
             request.job_id,
             request.resource_id,
