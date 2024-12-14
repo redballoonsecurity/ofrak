@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Callable, Dict, Iterable, Union
 
 from ofrak.component.abstract import ComponentMissingDependencyError
+from ofrak_type import Range
 
 try:
     import magic
@@ -86,6 +87,12 @@ class MagicIdentifier(Identifier[None]):
         for matcher, resource_type in MagicDescriptionIdentifier.matchers.items():
             if matcher(magic_description):
                 resource.add_tag(resource_type)
+        # This gets Raw Magic matches against data
+        data_length = min(await resource.get_data_length(), 8)
+        data = await resource.get_data(range=Range(0, data_length))
+        for matcher, resource_type in RawMagicIdentifier.matchers.items():
+            if matcher(data):
+                resource.add_tag(resource_type)
 
 
 class MagicMimeIdentifier:
@@ -108,6 +115,20 @@ class MagicMimeIdentifier:
 class MagicDescriptionIdentifier:
     """
     Identify and add the appropriate tag for a given resource based on its mime description.
+    """
+
+    matchers: Dict[Callable, ResourceTag] = dict()
+
+    @classmethod
+    def register(cls, resource: ResourceTag, matcher: Callable):
+        if matcher in cls.matchers:
+            raise AlreadyExistError("Registering already-registered matcher")
+        cls.matchers[matcher] = resource
+
+
+class RawMagicIdentifier:
+    """
+    Identify raw magic bytes.
     """
 
     matchers: Dict[Callable, ResourceTag] = dict()

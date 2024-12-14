@@ -12,13 +12,17 @@ from typing import Union, List, Tuple
 import fdt
 
 from ofrak.component.analyzer import Analyzer
-from ofrak.component.identifier import Identifier
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort
-from ofrak.core import GenericBinary, MagicMimeIdentifier, MagicDescriptionIdentifier
+from ofrak.core import (
+    GenericBinary,
+    MagicMimeIdentifier,
+    MagicDescriptionIdentifier,
+    RawMagicIdentifier,
+)
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import index
 from ofrak_type.range import Range
@@ -332,22 +336,6 @@ class DeviceTreeBlobPacker(Packer[None]):
         resource.queue_patch(Range(0, original_size), dtb.to_dtb())
 
 
-class DeviceTreeBlobIdentifier(Identifier[None]):
-    """
-    Identify Device Tree Blob files.
-    """
-
-    targets = (GenericBinary,)
-
-    async def identify(self, resource: Resource, config: ComponentConfig = None) -> None:
-        """
-        Identify DTB files based on the first four bytes being "d00dfeed".
-        """
-        data = await resource.get_data(Range(0, 4))
-        if data == struct.pack("<I", DTB_MAGIC_SIGNATURE):
-            resource.add_tag(DeviceTreeBlob)
-
-
 async def _prop_to_fdt(p: DtbProperty) -> fdt.items.Property:
     """
     Generates an fdt.items.property corresponding to a DtbProperty.
@@ -404,3 +392,12 @@ def _prop_from_fdt(p: fdt.items.Property) -> Tuple[DtbPropertyType, bytes]:
 
 MagicMimeIdentifier.register(DeviceTreeBlob, "Device Tree Blob")
 MagicDescriptionIdentifier.register(DeviceTreeBlob, lambda s: "device tree blob" in s.lower())
+
+
+def match_dtb_magic(data: bytes):
+    if len(data) < 4:
+        return False
+    return data == struct.pack("<I", DTB_MAGIC_SIGNATURE)
+
+
+RawMagicIdentifier.register(DeviceTreeBlob, match_dtb_magic)

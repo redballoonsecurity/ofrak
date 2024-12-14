@@ -17,8 +17,7 @@ from ofrak.component.identifier import Identifier
 
 from ofrak.model.component_model import ComponentConfig, ComponentExternalTool
 from ofrak.core.zip import ZipArchive, UNZIP_TOOL
-from ofrak.core.binary import GenericBinary
-from ofrak.core.magic import Magic, MagicIdentifier
+from ofrak.core.magic import MagicMimeIdentifier
 from ofrak_type.range import Range
 
 
@@ -208,32 +207,35 @@ class ApkPacker(Packer[ApkPackerConfig]):
             resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
 
 
+class JavaArchive(ZipArchive):
+    pass
+
+
+MagicMimeIdentifier.register(Apk, "application/vnd.android.package-archive")
+MagicMimeIdentifier.register(JavaArchive, "application/java-archive")
+
+
 class ApkIdentifier(Identifier):
-    targets = (GenericBinary,)
+    targets = (ZipArchive, JavaArchive)
     external_dependencies = (UNZIP_TOOL,)
 
     async def identify(self, resource: Resource, config=None) -> None:
-        await resource.run(MagicIdentifier)
-        magic = resource.get_attributes(Magic)
-        if magic.mime == "application/vnd.android.package-archive":
-            resource.add_tag(Apk)
-        elif magic is not None and magic.mime in ["application/java-archive", "application/zip"]:
-            with tempfile.NamedTemporaryFile(suffix=".zip") as temp_file:
-                temp_file.write(await resource.get_data())
-                temp_file.flush()
-                unzip_cmd = [
-                    "unzip",
-                    "-l",
-                    temp_file.name,
-                ]
-                unzip_proc = await asyncio.create_subprocess_exec(
-                    *unzip_cmd,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                )
-                stdout, stderr = await unzip_proc.communicate()
-                if unzip_proc.returncode:
-                    raise CalledProcessError(returncode=unzip_proc.returncode, cmd=unzip_cmd)
+        with tempfile.NamedTemporaryFile(suffix=".zip") as temp_file:
+            temp_file.write(await resource.get_data())
+            temp_file.flush()
+            unzip_cmd = [
+                "unzip",
+                "-l",
+                temp_file.name,
+            ]
+            unzip_proc = await asyncio.create_subprocess_exec(
+                *unzip_cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await unzip_proc.communicate()
+            if unzip_proc.returncode:
+                raise CalledProcessError(returncode=unzip_proc.returncode, cmd=unzip_cmd)
 
-                if b"androidmanifest.xml" in stdout.lower():
-                    resource.add_tag(Apk)
+            if b"androidmanifest.xml" in stdout.lower():
+                resource.add_tag(Apk)

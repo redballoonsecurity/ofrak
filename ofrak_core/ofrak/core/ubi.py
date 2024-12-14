@@ -6,9 +6,10 @@ from typing import List, Tuple
 import os
 from subprocess import CalledProcessError
 
+from ofrak.core import RawMagicIdentifier
 from ofrak.model.tag_model import ResourceTag
 
-from ofrak import Identifier, Analyzer
+from ofrak import Analyzer
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.model.component_model import ComponentExternalTool
@@ -300,18 +301,10 @@ vol_name={volume_view.name}
             resource.queue_patch(Range(0, await resource.get_data_length()), packed_blob_data)
 
 
-class UbiIdentifier(Identifier):
-    """
-    Check the first four bytes of a resource and tag the resource as Ubi if it matches the file magic.
-    """
+def match_ubi_magic(data: bytes) -> bool:
+    if len(data) < 4:
+        return False
+    return data in [UBI_EC_HDR_MAGIC, UBI_VID_HDR_MAGIC]
 
-    targets = (GenericBinary,)
 
-    external_dependencies = (PY_LZO_TOOL,)
-
-    async def identify(self, resource: Resource, config=None) -> None:
-        datalength = await resource.get_data_length()
-        if datalength >= 4:
-            data = await resource.get_data(Range(0, 4))
-            if data in [UBI_EC_HDR_MAGIC, UBI_VID_HDR_MAGIC]:
-                resource.add_tag(Ubi)
+RawMagicIdentifier.register(Ubi, match_ubi_magic)
