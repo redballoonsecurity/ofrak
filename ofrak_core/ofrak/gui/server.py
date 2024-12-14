@@ -546,7 +546,7 @@ class AiohttpOFRAKServer:
         await {resource}.identify_recursively()"""
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         try:
-            result = await resource.auto_run_recursively(all_identifiers=True)
+            result = await resource.identify_recursively()
             await self.script_builder.commit_to_script(resource)
         except Exception as e:
             await self.script_builder.clear_script_queue(resource)

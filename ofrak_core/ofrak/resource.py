@@ -407,6 +407,7 @@ class Resource:
         self,
         components: Iterable[Type[ComponentInterface]] = tuple(),
         blacklisted_components: Iterable[Type[ComponentInterface]] = tuple(),
+        blacklisted_tags: Iterable[ResourceTag] = tuple(),
         all_unpackers: bool = False,
         all_identifiers: bool = False,
         all_analyzers: bool = False,
@@ -433,6 +434,7 @@ class Resource:
                 self._resource.id,
                 components_allowed=tuple(c.get_id() for c in components),
                 components_disallowed=tuple(c.get_id() for c in blacklisted_components),
+                tags_ignored=tuple(blacklisted_tags),
                 all_unpackers=all_unpackers,
                 all_identifiers=all_identifiers,
                 all_analyzers=all_analyzers,
@@ -454,7 +456,19 @@ class Resource:
 
         :return: A ComponentRunResult containing information on resources affected by the component
         """
-        return await self.auto_run(all_identifiers=True, all_unpackers=True)
+        return await self._unpack()
+
+    async def _unpack(
+        self,
+        blacklisted_components: Iterable[Type[ComponentInterface]] = tuple(),
+        do_not_unpack: Iterable[ResourceTag] = tuple(),
+    ) -> ComponentRunResult:
+        return await self.auto_run(
+            all_identifiers=True,
+            all_unpackers=True,
+            blacklisted_components=blacklisted_components,
+            blacklisted_tags=do_not_unpack,
+        )
 
     async def analyze(self, resource_attributes: Type[RA]) -> RA:
         """
@@ -477,6 +491,15 @@ class Resource:
         """
         return await self.auto_run(all_identifiers=True)
 
+    async def identify_recursively(self) -> ComponentRunResult:
+        component_result = await self.identify()
+        children_results = await asyncio.gather(
+            *(child.identify_recursively() for child in await self.get_children())
+        )
+        for child_result in children_results:
+            component_result.update(child_result)
+        return component_result
+
     async def pack(self) -> ComponentRunResult:
         """
         Pack the resource.
@@ -484,52 +507,6 @@ class Resource:
         :return: A ComponentRunResult containing information on resources affected by the component
         """
         return await self.auto_run(all_packers=True)
-
-    async def auto_run_recursively(
-        self,
-        components: Iterable[Type[ComponentInterface]] = tuple(),
-        blacklisted_components: Iterable[Type[ComponentInterface]] = tuple(),
-        blacklisted_tags: Iterable[ResourceTag] = tuple(),
-        all_unpackers: bool = False,
-        all_identifiers: bool = False,
-        all_analyzers: bool = False,
-    ) -> ComponentRunResult:
-        """
-        Automatically run multiple components which may run on this resource or its descendents.
-        From an initial set of possible components to run, this set is searched for components
-        for which the intersection of the component's targets and this resource's tags is not
-        empty. Accepts several optional flags to expand or restrict the initial set of
-        components.
-        After each run, compatible components from the initial set are run on any resources which
-        have had tags added (including newly created resources). This is repeated until no new
-        tags are added.
-
-        :param components: Components to explicitly add to the initial set of components
-        :param blacklisted_components: Components to explicitly remove to the initial set of
-        components
-        :param all_unpackers: If true, all Unpackers are added to the initial set of components
-        :param all_identifiers: If true, all Identifiers are added to the initial set of components
-        :param all_analyzers: If true, all Analyzers are added to the initial set of components
-
-        :return: A ComponentRunResult containing information on resources affected by the component
-        """
-        components_result = await self._job_service.run_components_recursively(
-            JobMultiComponentRequest(
-                self._job_id,
-                self._resource.id,
-                components_allowed=tuple(c.get_id() for c in components),
-                components_disallowed=tuple(c.get_id() for c in blacklisted_components),
-                all_unpackers=all_unpackers,
-                all_identifiers=all_identifiers,
-                all_analyzers=all_analyzers,
-                tags_ignored=tuple(blacklisted_tags),
-            )
-        )
-        await self._fetch_resources(components_result.resources_modified)
-        await self._update_views(
-            components_result.resources_modified, components_result.resources_deleted
-        )
-        return components_result
 
     async def unpack_recursively(
         self,
@@ -551,21 +528,37 @@ class Resource:
 
         :return: A ComponentRunResult containing information on resources affected by the component
         """
-        return await self.auto_run_recursively(
-            all_identifiers=True,
-            all_unpackers=True,
-            blacklisted_components=blacklisted_components,
-            blacklisted_tags=do_not_unpack,
+        component_result = await self._unpack(blacklisted_components, do_not_unpack)
+        component_results = await asyncio.gather(
+            *(
+                child.unpack_recursively(blacklisted_components, do_not_unpack)
+                for child in await self.get_children()
+            )
         )
+        for child_result in component_results:
+            component_result.update(child_result)
+        return component_result
 
     async def analyze_recursively(self) -> ComponentRunResult:
-        return await self.auto_run_recursively(all_analyzers=True)
+        component_result = await self.auto_run(all_analyzers=True)
+        children_results = await asyncio.gather(
+            *(child.analyze_recursively() for child in await self.get_children())
+        )
+        for child_result in children_results:
+            component_result.update(child_result)
+        return component_result
 
     async def pack_recursively(self) -> ComponentRunResult:
         """
         Recursively pack the resource, starting with its descendants.
         """
-        return await self._job_service.pack_recursively(self._job_id, self._resource.id)
+        children_results = await asyncio.gather(
+            *(child.pack_recursively() for child in await self.get_children())
+        )
+        component_result = await self.pack()
+        for child_result in children_results:
+            component_result.update(child_result)
+        return component_result
 
     async def write_to(self, destination: BinaryIO, pack: bool = True):
         """

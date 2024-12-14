@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from collections import defaultdict
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import (
@@ -9,7 +8,6 @@ from typing import (
     Iterable,
     List,
     Optional,
-    Set,
     Tuple,
     TypeVar,
     Union,
@@ -57,8 +55,6 @@ from ofrak.service.job_service_i import (
 )
 from ofrak.service.resource_service_i import (
     ResourceServiceInterface,
-    ResourceFilter,
-    ResourceFilterCondition,
 )
 from ofrak_type.error import NotFoundError
 
@@ -251,16 +247,6 @@ class JobService(JobServiceInterface):
                 f"\nFilter: {component_filter}"
             )
 
-    def _build_target_cache(self, component_filter: ComponentFilter) -> TargetCache:
-        components = self._component_locator.get_components_matching_filter(component_filter)
-        target_cache = defaultdict(list)
-        for component in components:
-            if component.targets is None:
-                continue
-            for target in component.targets:
-                target_cache[target].append(component)
-        return target_cache
-
     async def run_components(
         self,
         request: JobMultiComponentRequest,
@@ -291,130 +277,6 @@ class JobService(JobServiceInterface):
             tags_to_target = tuple(tags_added)
 
         return components_result
-
-    async def run_components_recursively(
-        self, request: JobMultiComponentRequest
-    ) -> ComponentRunResult:
-        components_result = ComponentRunResult()
-        component_filter = _build_auto_run_filter(request)
-
-        initial_target_resource_models = await self._get_initial_recursive_target_resources(
-            request.resource_id, component_filter
-        )
-
-        # Create a mock context to match all existing tags
-        previous_job_context: JobRunContext = self._job_context_factory.create()
-        for existing_resource_model in initial_target_resource_models:
-            previous_job_context.trackers[existing_resource_model.id].tags_added.update(
-                existing_resource_model.tags
-            )
-        iterations = 0
-        tags_added_count = 1  # initialize just so loop starts
-
-        while tags_added_count > 0:
-            job_context = self._job_context_factory.create()
-            _run_components_requests = []
-            for resource_id, previous_tracker in previous_job_context.trackers.items():
-                final_filter = ComponentAndMetaFilter(
-                    component_filter,
-                    _build_tag_filter(tuple(previous_tracker.tags_added)),
-                )
-                _run_components_requests.append(
-                    _ComponentAutoRunRequest(
-                        resource_id,
-                        final_filter,
-                    )
-                )
-
-            iteration_components_result = await self._auto_run_components(
-                _run_components_requests,
-                request.job_id,
-                job_context,
-            )
-            components_result.update(iteration_components_result)
-
-            tags_added_count = 0
-            for resource_id, tracker in job_context.trackers.items():
-                if len(tracker.tags_added) > 0:
-                    tags_added_count += len(tracker.tags_added)
-            previous_job_context = job_context
-            LOGGER.info(
-                f"Completed iteration {iterations} of run_components_recursively on "
-                f"{request.resource_id.hex()}. {len(components_result.resources_modified)} "
-                f"resources modified and {tags_added_count} tags added."
-            )
-            iterations += 1
-        return components_result
-
-    async def pack_recursively(
-        self,
-        job_id: bytes,
-        resource_id: bytes,
-    ) -> ComponentRunResult:
-        packer_filter = PACKERS_FILTER
-        target_cache = self._build_target_cache(packer_filter)
-        all_components_result = ComponentRunResult()
-        if len(target_cache) == 0:
-            return all_components_result
-        resources = await self._resource_service.get_descendants_by_id(
-            resource_id,
-            r_filter=ResourceFilter(
-                include_self=True,
-                tags=tuple(target_cache.keys()),
-                tags_condition=ResourceFilterCondition.OR,
-            ),
-        )
-        resources = list(resources)  # we'll need that Iterable more than once
-        job_context = self._job_context_factory.create()
-
-        # We want to start with the deepest packers. Packers at the same levels can run
-        # concurrently. So we first ask for the relative depth of each returned resource.
-        resource_depths = await self._resource_service.get_depths(
-            [resource.id for resource in resources]
-        )
-
-        resources_by_depth = defaultdict(list)
-        for resource, depth in zip(resources, resource_depths):
-            resources_by_depth[depth].append(resource)
-
-        for depth in sorted(resources_by_depth.keys(), reverse=True):
-            for resource in resources_by_depth[depth]:
-                component_filter: ComponentFilter = ComponentAndMetaFilter(
-                    PACKERS_FILTER,
-                    _build_tag_filter(tuple(resource.get_tags())),
-                )
-
-                request = _ComponentAutoRunRequest(
-                    resource.id,
-                    component_filter,
-                )
-
-                component_result = await self._auto_run_components(
-                    [request],
-                    job_id,
-                    job_context,
-                )
-                n_packers_run = len(component_result.components_run)
-                if n_packers_run == 0:
-                    all_components_result.update(component_result)
-                    break
-                if n_packers_run > 1:
-                    raise ValueError(f"Multiple packers are targeting resource {resource.id.hex()}")
-        return all_components_result
-
-    async def _get_initial_recursive_target_resources(
-        self, resource_id: bytes, component_filter: ComponentFilter
-    ):
-        possible_targets: Set[ResourceTag] = set()
-        for component in self._component_locator.get_components_matching_filter(component_filter):
-            possible_targets.update(component.targets)
-        initial_target_resource_models = await self._resource_service.get_descendants_by_id(
-            resource_id,
-            r_filter=ResourceFilter(
-                include_self=True, tags=possible_targets, tags_condition=ResourceFilterCondition.OR
-            ),
-        )
-        return initial_target_resource_models
 
     async def _auto_run_components(
         self,

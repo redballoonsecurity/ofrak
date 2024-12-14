@@ -83,47 +83,6 @@ class JobServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         :raises NoMatchingComponentException: if no components match the filters for the resource.
         """
 
-    @abstractmethod
-    async def run_components_recursively(
-        self,
-        request: JobMultiComponentRequest,
-    ) -> ComponentRunResult:
-        """
-        Start from a resource and run components on it and then on any resources which have tags
-        added as a result of that initial run, then run components on any resources with new tags
-        from those subsequent runs, until an iteration of component runs results in no new tags
-        being added. The component(s) run on each resource are chosen according to the provided
-        filters and which tags were added to that resource in the previous iteration. That is,
-        the filters are applied to the set of resource which target those new tags.
-
-        :param request: Data structure containing the ID of the job to run the components in,
-        the ID of the resource to start running recursively from, and filters for the components to
-        run.
-
-        :return: A data structure describing the components run and resources
-        modified/created/deleted.
-
-        :raises ComponentAutoRunFailure: if one of the automatically chosen components raises an
-        error while running.
-        """
-
-    @abstractmethod
-    async def pack_recursively(
-        self,
-        job_id: bytes,
-        resource_id: bytes,
-    ) -> ComponentRunResult:
-        """
-        Call Packer components on the deepest descendants of a resource (the root of this search),
-        then Packers on the next level up, etc. until the search root resource.
-
-        :param job_id: Job to run the component in.
-        :param resource_id: ID of the search root resource.
-
-        :return: A data structure describing the components run and resources
-        modified/created/deleted.
-        """
-
 
 class ComponentAutoRunFailure(Exception):
     def __init__(
