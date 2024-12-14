@@ -17,8 +17,8 @@ from ofrak.component.unpacker import Unpacker
 from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort
-from ofrak.core import (
-    GenericBinary,
+from ofrak.core import GenericBinary
+from ofrak.core.magic import (
     MagicMimeIdentifier,
     MagicDescriptionIdentifier,
     RawMagicIdentifier,
