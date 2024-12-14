@@ -19,3 +19,4 @@ RUN git clone https://github.com/NationalSecurityAgency/ghidra.git && \
     python3 -m pip install -e . 
 
 ENV GHIDRA_INSTALL_DIR=/opt/rbs/ghidra_11.3_DEV/
+RUN export GHIDRA_INSTALL_DIR=/opt/rbs/ghidra_11.3_DEV/

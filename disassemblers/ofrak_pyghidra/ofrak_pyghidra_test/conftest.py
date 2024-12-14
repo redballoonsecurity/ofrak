@@ -1,6 +1,7 @@
 import pytest
-
+import ofrak_capstone
 import ofrak_pyghidra
+
 from test_ofrak.components.hello_world_elf import hello_elf
 
 pytest_plugins = ["pytest_ofrak.fixtures"]
@@ -13,6 +14,7 @@ def hello_world_elf() -> bytes:
 
 @pytest.fixture(autouse=True)
 def pyghidra_components(ofrak_injector):
+    ofrak_injector.discover(ofrak_capstone)
     ofrak_injector.discover(ofrak_pyghidra)
 
 
