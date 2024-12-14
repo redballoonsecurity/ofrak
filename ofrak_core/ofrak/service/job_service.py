@@ -93,8 +93,6 @@ class JobService(JobServiceInterface):
         self._resource_context_factory = resource_context_factory
         self._job_context_factory = job_context_factory
 
-        self._active_component_tasks: Dict[Tuple[bytes, bytes], Awaitable[_RunTaskResultT]] = dict()
-
     async def create_job(self, id: bytes, name: str) -> JobModel:
         model = JobModel(id, name)
         self._job_store[id] = model
@@ -138,7 +136,6 @@ class JobService(JobServiceInterface):
         except Exception as e:
             result = e
         component_task_id = (resource_id, component.get_id())
-        del self._active_component_tasks[component_task_id]
 
         return result, metadata
 
@@ -152,28 +149,17 @@ class JobService(JobServiceInterface):
         config: CC = None,
     ) -> Awaitable[_RunTaskResultT]:
         component_task_id = (resource_id, component.get_id())
-        if component_task_id in self._active_component_tasks:
-            if LOGGER.isEnabledFor(logging.DEBUG):
-                LOGGER.debug(
-                    f"JOB {job_id.hex()} - Found already running task {component.get_id().decode()}"
-                    f" on resource {resource_id.hex()}, awaiting result."
-                )
-            duplicate_task = self._active_component_tasks[component_task_id]
-
-            return duplicate_task
-        else:
-            component_task = asyncio.create_task(
-                self._run_component(
-                    metadata,
-                    job_id,
-                    resource_id,
-                    component,
-                    job_context,
-                    config,
-                )
+        component_task = asyncio.create_task(
+            self._run_component(
+                metadata,
+                job_id,
+                resource_id,
+                component,
+                job_context,
+                config,
             )
-            self._active_component_tasks[component_task_id] = component_task
-            return component_task
+        )
+        return component_task
 
     async def run_component(
         self,
