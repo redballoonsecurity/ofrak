@@ -10,3 +10,4 @@ ofrak_core/test_ofrak/components/assets/elf/* filter=lfs diff=lfs merge=lfs -tex
 ofrak_core/test_ofrak/components/assets/elf/edge-cases/* filter=lfs diff=lfs merge=lfs -text
 frontend/public/themes/**/* filter=lfs diff=lfs merge=lfs -text
 disassemblers/ofrak_angr/ofrak_angr_test/assets/* filter=lfs diff=lfs merge=lfs -text
+disassemblers/ofrak_pyghidra/ofrak_pyghidra_test/assets/* filter=lfs diff=lfs merge=lfs -text
