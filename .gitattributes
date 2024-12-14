@@ -4,9 +4,13 @@ ofrak_patch_maker/technical_docs/vbcc.pdf filter=lfs diff=lfs merge=lfs -text
 ofrak_core/test_ofrak/components/assets/* filter=lfs diff=lfs merge=lfs -text
 ofrak_core/test_ofrak/components/assets/README.md !filter !diff !merge text
 ofrak_core/test_ofrak/components/assets/kernel_address_space_build.sh !filter !diff !merge text
+ofrak_core/test_ofrak/components/assets/string_test.c !filter !diff !merge text
 ofrak_tutorial/assets/* filter=lfs diff=lfs merge=lfs -text
 docs/user-guide/gui/assets/* filter=lfs diff=lfs merge=lfs -text
 ofrak_core/test_ofrak/components/assets/elf/* filter=lfs diff=lfs merge=lfs -text
 ofrak_core/test_ofrak/components/assets/elf/edge-cases/* filter=lfs diff=lfs merge=lfs -text
 frontend/public/themes/**/* filter=lfs diff=lfs merge=lfs -text
 disassemblers/ofrak_angr/ofrak_angr_test/assets/* filter=lfs diff=lfs merge=lfs -text
+ofrak_core/pytest_ofrak/elf/assets/* filter=lfs diff=lfs merge=lfs -text
+ofrak_core/pytest_ofrak/elf/assets/*.c !filter !diff !merge text
+ofrak_core/pytest_ofrak/elf/assets/Makefile !filter !diff !merge text

@@ -1,6 +1,10 @@
 import os
 import stat
+import sys
+import warnings
 import tempfile
+import posixpath
+from pathlib import PurePath
 from dataclasses import dataclass
 from typing import Dict, Iterable, Optional, Type, Union
 
@@ -22,6 +26,14 @@ from ofrak.service.resource_service_i import (
     ResourceAttributeValueFilter,
     ResourceFilterCondition,
 )
+
+
+def _warn_chmod_chown_windows():  # pragma: no cover
+    # warnings.warn instead of logging.warning prevents duplicating this static warning message
+    warnings.warn(
+        "os.chown and os.chmod do not work on Windows platforms. Unix-like file ownership and "
+        "permissions will not be properly handled while using OFRAK on this platform."
+    )
 
 
 @dataclass
@@ -110,7 +122,8 @@ class FilesystemEntry(ResourceView):
         """
         Get a folder's path, with the `FilesystemRoot` as the path root.
 
-        :return: The full path name, with the `FilesystemRoot` ancestor as the path root
+        :return: The full path name, with the `FilesystemRoot` ancestor as the path root;
+        always POSIX style paths with forward slashes
         """
         path = [self.get_name()]
 
@@ -124,9 +137,8 @@ class FilesystemEntry(ResourceView):
                 break
             a_view = await a.view_as(FilesystemEntry)
             path.append(a_view.get_name())
-        path.reverse()
 
-        return os.path.join(*path)
+        return posixpath.join(*reversed(path))
 
     def apply_stat_attrs(self, path: str):
         """
@@ -136,8 +148,11 @@ class FilesystemEntry(ResourceView):
         :param path: Path on disk to set attributes of.
         """
         if self.stat:
-            os.chown(path, self.stat.st_uid, self.stat.st_gid)
-            os.chmod(path, self.stat.st_mode)
+            if sys.platform == "win32":
+                _warn_chmod_chown_windows()
+            else:
+                os.chown(path, self.stat.st_uid, self.stat.st_gid)
+                os.chmod(path, self.stat.st_mode)
             os.utime(path, (self.stat.st_atime, self.stat.st_mtime))
         if self.xattrs:
             for attr, value in self.xattrs.items():
@@ -175,11 +190,16 @@ class FilesystemEntry(ResourceView):
                 os.symlink(link_view.source_path, link_name)
             assert len(list(await self.resource.get_children())) == 0
             if self.stat:
-                # https://docs.python.org/3/library/os.html#os.supports_follow_symlinks
-                if os.chown in os.supports_follow_symlinks:
-                    os.chown(link_name, self.stat.st_uid, self.stat.st_gid, follow_symlinks=False)
-                if os.chmod in os.supports_follow_symlinks:
-                    os.chmod(link_name, self.stat.st_mode, follow_symlinks=False)
+                if sys.platform == "win32":
+                    _warn_chmod_chown_windows()
+                else:
+                    # https://docs.python.org/3/library/os.html#os.supports_follow_symlinks
+                    if os.chown in os.supports_follow_symlinks:
+                        os.chown(
+                            link_name, self.stat.st_uid, self.stat.st_gid, follow_symlinks=False
+                        )
+                    if os.chmod in os.supports_follow_symlinks:
+                        os.chmod(link_name, self.stat.st_mode, follow_symlinks=False)
                 if os.utime in os.supports_follow_symlinks:
                     os.utime(
                         link_name,
@@ -200,20 +220,41 @@ class FilesystemEntry(ResourceView):
             self.apply_stat_attrs(file_name)
         elif self.is_device():
             device_name = os.path.join(root_path, entry_path)
-            if self.stat is None:
-                raise ValueError(
+            if sys.platform == "win32" or not hasattr(os, "mknod"):
+                warnings.warn(
                     f"Cannot create a device {entry_path} for a "
-                    f"BlockDevice or CharacterDevice resource with no stat!"
+                    f"BlockDevice or CharacterDevice resource on platform {sys.platform}! "
+                    f"Creating an empty regular file instead."
                 )
-            os.mknod(device_name, self.stat.st_mode, self.stat.st_rdev)
+                with open(device_name, "w") as f:
+                    pass
+            else:
+                if self.stat is None:
+                    raise ValueError(
+                        f"Cannot create a device {entry_path} for a "
+                        f"BlockDevice or CharacterDevice resource with no stat!"
+                    )
+                os.mknod(device_name, self.stat.st_mode, self.stat.st_rdev)
+
             self.apply_stat_attrs(device_name)
         elif self.is_fifo_pipe():
             fifo_name = os.path.join(root_path, entry_path)
-            if self.stat is None:
-                raise ValueError(
-                    f"Cannot create a fifo {entry_path} for a FIFOPipe resource " "with no stat!"
+            if sys.platform == "win32" or not hasattr(os, "mkfifo"):
+                warnings.warn(
+                    f"Cannot create a fifo {entry_path} for a "
+                    f"FIFOPipe resource on platform {sys.platform}! "
+                    f"Creating an empty regular file instead."
                 )
-            os.mkfifo(fifo_name, self.stat.st_mode)
+                with open(fifo_name, "w") as f:
+                    pass
+            else:
+                if self.stat is None:
+                    raise ValueError(
+                        f"Cannot create a fifo {entry_path} for a FIFOPipe resource "
+                        "with no stat!"
+                    )
+                os.mkfifo(fifo_name, self.stat.st_mode)
+
             self.apply_stat_attrs(fifo_name)
         else:
             entry_info = f"Stat: {stat.S_IFMT(self.stat.st_mode):o}" if self.stat else ""
@@ -247,7 +288,7 @@ class Folder(FilesystemEntry):
         :return: The child `FilesystemEntry` resource that was found. If nothing was found, `None`
         is returned
         """
-        basename = os.path.basename(path)
+        basename = posixpath.basename(path)
         # only searching paths with the same base name should reduce the search space by quite a lot
         descendants = await self.resource.get_descendants_as_view(
             FilesystemEntry,
@@ -315,6 +356,13 @@ class CharacterDevice(SpecialFileType):
     """
 
 
+def _path_to_posixpath(path: str) -> str:
+    """
+    Converts an OS-specific path to a POSIX style path
+    """
+    return str(PurePath(path).as_posix())
+
+
 @dataclass
 class FilesystemRoot(ResourceView):
     """
@@ -343,7 +391,10 @@ class FilesystemRoot(ResourceView):
         for root, dirs, files in os.walk(root_path):
             for d in sorted(dirs):
                 absolute_path = os.path.join(root, d)
-                relative_path = os.path.join(os.path.relpath(root, root_path), d)
+                relative_path_posix = posixpath.join(
+                    _path_to_posixpath(os.path.relpath(root, root_path)), d
+                )
+
                 folder_attributes_stat = os.lstat(absolute_path)
 
                 mode = folder_attributes_stat.st_mode
@@ -367,9 +418,9 @@ class FilesystemRoot(ResourceView):
                 folder_attributes_xattr = self._get_xattr_map(absolute_path)
                 if os.path.islink(absolute_path):
                     await self.add_special_file_entry(
-                        relative_path,
+                        relative_path_posix,
                         SymbolicLink(
-                            relative_path,
+                            relative_path_posix,
                             folder_attributes_stat,
                             folder_attributes_xattr,
                             os.readlink(absolute_path),
@@ -377,13 +428,15 @@ class FilesystemRoot(ResourceView):
                     )
                 else:
                     await self.add_folder(
-                        relative_path,
+                        relative_path_posix,
                         folder_attributes_stat,
                         folder_attributes_xattr,
                     )
             for f in sorted(files):
                 absolute_path = os.path.join(root, f)
-                relative_path = os.path.normpath(os.path.join(os.path.relpath(root, root_path), f))
+                relative_path_posix = _path_to_posixpath(
+                    os.path.normpath(os.path.join(os.path.relpath(root, root_path), f))
+                )
                 file_attributes_stat = os.lstat(absolute_path)
 
                 mode = file_attributes_stat.st_mode
@@ -404,9 +457,9 @@ class FilesystemRoot(ResourceView):
                 file_attributes_xattr = self._get_xattr_map(absolute_path)
                 if os.path.islink(absolute_path):
                     await self.add_special_file_entry(
-                        relative_path,
+                        relative_path_posix,
                         SymbolicLink(
-                            relative_path,
+                            relative_path_posix,
                             file_attributes_stat,
                             file_attributes_xattr,
                             os.readlink(absolute_path),
@@ -415,25 +468,29 @@ class FilesystemRoot(ResourceView):
                 elif os.path.isfile(absolute_path):
                     with open(absolute_path, "rb") as fh:
                         await self.add_file(
-                            relative_path,
+                            relative_path_posix,
                             fh.read(),
                             file_attributes_stat,
                             file_attributes_xattr,
                         )
                 elif stat.S_ISFIFO(mode):
                     await self.add_special_file_entry(
-                        relative_path,
-                        FIFOPipe(relative_path, file_attributes_stat, file_attributes_xattr),
+                        relative_path_posix,
+                        FIFOPipe(relative_path_posix, file_attributes_stat, file_attributes_xattr),
                     )
                 elif stat.S_ISBLK(mode):
                     await self.add_special_file_entry(
-                        relative_path,
-                        BlockDevice(relative_path, file_attributes_stat, file_attributes_xattr),
+                        relative_path_posix,
+                        BlockDevice(
+                            relative_path_posix, file_attributes_stat, file_attributes_xattr
+                        ),
                     )
                 elif stat.S_ISCHR(mode):
                     await self.add_special_file_entry(
-                        relative_path,
-                        CharacterDevice(relative_path, file_attributes_stat, file_attributes_xattr),
+                        relative_path_posix,
+                        CharacterDevice(
+                            relative_path_posix, file_attributes_stat, file_attributes_xattr
+                        ),
                     )
                 else:
                     raise NotImplementedError(
@@ -484,7 +541,7 @@ class FilesystemRoot(ResourceView):
 
         :return: the descendant `FilesystemEntry`, if found; otherwise, returns `None`
         """
-        basename = os.path.basename(path)
+        basename = posixpath.basename(path)
         # only searching paths with the same base name should reduce the search space by quite a lot
         descendants = await self.resource.get_descendants_as_view(
             FilesystemEntry,
@@ -494,7 +551,7 @@ class FilesystemRoot(ResourceView):
         )
 
         for d in descendants:
-            if await d.get_path() == os.path.normpath(path):
+            if await d.get_path() == posixpath.normpath(path):
                 return d
         return None
 
@@ -535,7 +592,7 @@ class FilesystemRoot(ResourceView):
         """
         # Normalizes and cleans up paths beginning with "./" and containing "./../" as well as
         # other extraneous separators
-        split_dir = os.path.normpath(path).rstrip("/").lstrip("/").split("/")
+        split_dir = posixpath.normpath(path).strip("/").split("/")
 
         parent: Union[FilesystemRoot, Folder] = self
         for directory in split_dir:
@@ -587,8 +644,8 @@ class FilesystemRoot(ResourceView):
 
         :return: the `File` resource that was added to the `FilesystemRoot`
         """
-        dirname = os.path.dirname(path)
-        filename = os.path.basename(path)
+        dirname = posixpath.dirname(path)
+        filename = posixpath.basename(path)
 
         if dirname == "":
             parent_folder = self
@@ -641,7 +698,7 @@ class FilesystemRoot(ResourceView):
 
         :return: The special `FilesystemEntry` resource that was added to the `FilesystemRoot`
         """
-        dirname = os.path.dirname(path)
+        dirname = posixpath.dirname(path)
 
         if dirname == "":
             parent_folder = self

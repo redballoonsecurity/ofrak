@@ -9,7 +9,7 @@ import re
 import sys
 
 from multiprocessing import Process
-from typing import List
+from typing import List, Tuple
 
 from aiohttp.test_utils import TestClient
 
@@ -454,29 +454,110 @@ async def test_find_and_replace(ofrak_client: TestClient, hello_world_elf):
     assert resp.status == 200
 
 
+# Returns (comment range count, comment count)
+# comment range count = # of unique Optional[Range]s comments are mapped to
+# comment count = total # of comments across all Optional[Range]s
+def get_comment_count(resp_body_json) -> Tuple[int, int]:
+    attributes = resp_body_json["modified"][0]["attributes"]
+    comment_range_count = 0
+    comment_count = 0
+
+    for attr_array in attributes:
+        if attr_array[0] == "ofrak.core.comments.CommentsAttributes":
+            comment_data = attr_array[1][1]["comments"]
+            for kv_pair in comment_data:
+                comment_range_count += 1
+                comment_count += len(kv_pair[1])
+
+    return (comment_range_count, comment_count)
+
+
 async def test_add_comment(ofrak_server, aiohttp_client, hello_world_elf):
     client = await aiohttp_client(ofrak_server._app)
     create_resp = await client.post(
         "/create_root_resource", params={"name": "test"}, data=hello_world_elf
     )
     create_body = await create_resp.json()
-    resp = await client.post(f"/{create_body['id']}/add_comment", json=[[0, 425], "test"])
+    # Try creating comments on invalid ranges
+    resp = await client.post(
+        f"/{create_body['id']}/add_comment",
+        json=[[0, len(hello_world_elf) + 1], "test comment out of bounds"],
+    )
+    assert resp.status != 200
+    resp = await client.post(
+        f"/{create_body['id']}/add_comment",
+        json=[[-1, len(hello_world_elf)], "test comment out of bounds"],
+    )
+    assert resp.status != 200
+    # Create comment without range
+    resp = await client.post(f"/{create_body['id']}/add_comment", json=[None, "test comment 0"])
     assert resp.status == 200
     resp_body = await resp.json()
     assert resp_body["modified"][0]["id"] == create_body["id"]
+    # Create comment with range
+    resp = await client.post(f"/{create_body['id']}/add_comment", json=[[0, 1], "test comment 1"])
+    assert resp.status == 200
+    resp_body = await resp.json()
+    assert resp_body["modified"][0]["id"] == create_body["id"]
+    # Create multiple comments on the same range
+    resp = await client.post(
+        f"/{create_body['id']}/add_comment", json=[[0, len(hello_world_elf)], "test comment 2"]
+    )
+    assert resp.status == 200
+    resp_body = await resp.json()
+    assert resp_body["modified"][0]["id"] == create_body["id"]
+    resp = await client.post(
+        f"/{create_body['id']}/add_comment", json=[[0, len(hello_world_elf)], "test comment 3"]
+    )
+    assert resp.status == 200
+    resp_body = await resp.json()
+    assert resp_body["modified"][0]["id"] == create_body["id"]
+    # Check comment counts
+    comment_range_count, comment_count = get_comment_count(resp_body)
+    assert comment_range_count == 3
+    assert comment_count == 4
 
 
+# Test deleting comments using both the old and new format
 async def test_delete_comment(ofrak_server, aiohttp_client, hello_world_elf):
     client = await aiohttp_client(ofrak_server._app)
     create_resp = await client.post(
         "/create_root_resource", params={"name": "test"}, data=hello_world_elf
     )
     create_body = await create_resp.json()
-    await client.post(f"/{create_body['id']}/add_comment", json=[[0, 425], "test"])
-    resp = await client.post(f"/{create_body['id']}/delete_comment", json=[0, 425])
-    assert resp.status == 200
+    # Comments to delete
+    await client.post(f"/{create_body['id']}/add_comment", json=[None, "test comment 0"])
+    await client.post(f"/{create_body['id']}/add_comment", json=[None, "test comment 1"])
+    await client.post(
+        f"/{create_body['id']}/add_comment", json=[[0, len(hello_world_elf)], "test comment 0"]
+    )
+    resp = await client.post(
+        f"/{create_body['id']}/add_comment", json=[[0, len(hello_world_elf)], "test comment 1"]
+    )
     resp_body = await resp.json()
     assert resp_body["modified"][0]["id"] == create_body["id"]
+    comment_range_count, comment_count = get_comment_count(resp_body)
+    assert comment_range_count == 2
+    assert comment_count == 4
+    # Test deleting specific comments from range
+    resp = await client.post(f"/{create_body['id']}/delete_comment", json=[None, "test comment 1"])
+    resp_body = await resp.json()
+    assert resp_body["modified"][0]["id"] == create_body["id"]
+    comment_range_count, comment_count = get_comment_count(resp_body)
+    assert comment_range_count == 2
+    assert comment_count == 3
+    # Test deleting last comment from range
+    resp = await client.post(f"/{create_body['id']}/delete_comment", json=[None, "test comment 0"])
+    resp_body = await resp.json()
+    assert resp_body["modified"][0]["id"] == create_body["id"]
+    comment_range_count, comment_count = get_comment_count(resp_body)
+    assert comment_range_count == 1
+    assert comment_count == 2
+    # Test deleting entire range
+    resp = await client.post(f"/{create_body['id']}/delete_comment", json=[0, len(hello_world_elf)])
+    resp_body = await resp.json()
+    assert resp_body["modified"][0]["id"] == create_body["id"]
+    assert (0, 0) == get_comment_count(resp_body)  # All comments should be gone
 
 
 async def test_search_for_vaddr(ofrak_client: TestClient, hello_world_elf):

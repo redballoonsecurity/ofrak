@@ -44,6 +44,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Extend parsed symbol dictionary to include LinkableSymbolType.
 - Extend AssembledObject and BOM types to include relocation and unresolved symbols.
 - Add separate data sections support to LLVM toolchain, and add general flag for including subsections
+- Add support for big endian in the GNU toolchain
+- Add support for ARM BE8 in the GNU toolchain
 
 ### Changed
 - Switch to standard GCC-like frontend for LLVM, which supports C attribute(weak)

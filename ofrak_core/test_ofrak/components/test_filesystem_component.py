@@ -2,6 +2,8 @@ import os
 import re
 import stat
 import subprocess
+import sys
+import warnings
 import tempfile
 
 import pytest
@@ -28,47 +30,49 @@ FIFO_PIPE_NAME = "fifo"
 DEVICE_NAME = "device"
 
 
-class FilesystemRootDirectory(tempfile.TemporaryDirectory):
+@pytest.fixture
+def filesystem_root_directory(tmp_path) -> str:
     """
     Create a root filesystem directory for testing
     """
 
-    def __enter__(self):
-        temp_dir = self.name
-        child_folder = os.path.join(temp_dir, CHILD_FOLDER)
-        child_file = os.path.join(temp_dir, CHILD_TEXTFILE_NAME)
+    child_folder = os.path.join(tmp_path, CHILD_FOLDER)
+    child_file = os.path.join(tmp_path, CHILD_TEXTFILE_NAME)
 
-        subchild_file = os.path.join(child_folder, SUBCHILD_TEXTFILE_NAME)
-        subchild_folder = os.path.join(child_folder, SUBCHILD_FOLDER)
+    subchild_file = os.path.join(child_folder, SUBCHILD_TEXTFILE_NAME)
+    subchild_folder = os.path.join(child_folder, SUBCHILD_FOLDER)
 
-        if not os.path.exists(child_folder):
-            os.mkdir(child_folder)
-        if not os.path.exists(subchild_folder):
-            os.mkdir(subchild_folder)
+    if not os.path.exists(child_folder):
+        os.mkdir(child_folder)
+    if not os.path.exists(subchild_folder):
+        os.mkdir(subchild_folder)
 
-        child_fifo = os.path.join(temp_dir, FIFO_PIPE_NAME)
-        block_device = os.path.join(temp_dir, DEVICE_NAME)
+    if hasattr(os, "mkfifo"):
+        child_fifo = os.path.join(tmp_path, FIFO_PIPE_NAME)
         if not os.path.exists(child_fifo):
             os.mkfifo(child_fifo)
+
+    if hasattr(os, "makedev"):
+        block_device = os.path.join(tmp_path, DEVICE_NAME)
         if not os.path.exists(block_device):
             os.makedev(1, 2)
 
-        with open(child_file, "w") as f:
-            f.write(CHILD_TEXT)
-        with open(subchild_file, "w") as f:
-            f.write(SUBCHILD_TEXT)
-        return temp_dir
+    with open(child_file, "w") as f:
+        f.write(CHILD_TEXT)
+    with open(subchild_file, "w") as f:
+        f.write(SUBCHILD_TEXT)
+
+    return str(tmp_path)
 
 
 @pytest.fixture
-async def filesystem_root(ofrak_context: OFRAKContext) -> Resource:
-    with FilesystemRootDirectory() as temp_dir:
-        resource = await ofrak_context.create_root_resource(
-            name=temp_dir, data=b"", tags=[FilesystemRoot]
-        )
-        filesystem_root = await resource.view_as(FilesystemRoot)
-        await filesystem_root.initialize_from_disk(temp_dir)
-        yield filesystem_root
+async def filesystem_root(ofrak_context: OFRAKContext, filesystem_root_directory) -> Resource:
+    resource = await ofrak_context.create_root_resource(
+        name=filesystem_root_directory, data=b"", tags=[FilesystemRoot]
+    )
+    filesystem_root = await resource.view_as(FilesystemRoot)
+    await filesystem_root.initialize_from_disk(filesystem_root_directory)
+    yield filesystem_root
 
 
 class TestFilesystemRoot:
@@ -76,35 +80,40 @@ class TestFilesystemRoot:
     Test FilesystemRoot methods.
     """
 
-    async def test_initialize_from_disk(self, ofrak_context: OFRAKContext):
+    async def test_initialize_from_disk(
+        self, ofrak_context: OFRAKContext, filesystem_root_directory
+    ):
         """
         Test that FilesystemRoot.initialize_from_disk modifies a resources tree summary.
         """
-        with FilesystemRootDirectory() as temp_dir:
-            resource = await ofrak_context.create_root_resource(
-                name=temp_dir, data=b"", tags=[FilesystemRoot]
-            )
-            original_tree = await resource.summarize_tree()
-            filesystem_root = await resource.view_as(FilesystemRoot)
-            await filesystem_root.initialize_from_disk(temp_dir)
-            initialized_tree = await resource.summarize_tree()
-            assert original_tree != initialized_tree
+        resource = await ofrak_context.create_root_resource(
+            name=filesystem_root_directory, data=b"", tags=[FilesystemRoot]
+        )
+        original_tree = await resource.summarize_tree()
+        filesystem_root = await resource.view_as(FilesystemRoot)
+        await filesystem_root.initialize_from_disk(filesystem_root_directory)
+        initialized_tree = await resource.summarize_tree()
+        assert original_tree != initialized_tree
 
-    async def test_flush_to_disk(self, ofrak_context: OFRAKContext):
+    async def test_flush_to_disk(self, ofrak_context: OFRAKContext, filesystem_root_directory):
         """
         Test that FilesystemRoot.flush_to_disk correctly flushes the filesystem resources.
         """
-        with FilesystemRootDirectory() as temp_dir:
-            resource = await ofrak_context.create_root_resource(
-                name=temp_dir, data=b"", tags=[FilesystemRoot]
-            )
-            filesystem_root = await resource.view_as(FilesystemRoot)
-            await filesystem_root.initialize_from_disk(temp_dir)
+        resource = await ofrak_context.create_root_resource(
+            name=filesystem_root_directory, data=b"", tags=[FilesystemRoot]
+        )
+        filesystem_root = await resource.view_as(FilesystemRoot)
+        await filesystem_root.initialize_from_disk(filesystem_root_directory)
 
-            with tempfile.TemporaryDirectory() as flush_dir:
-                await filesystem_root.flush_to_disk(flush_dir)
+        with tempfile.TemporaryDirectory() as flush_dir:
+            await filesystem_root.flush_to_disk(flush_dir)
 
-                diff_directories(temp_dir, flush_dir, extra_diff_flags="")
+            if sys.platform != "win32":
+                diff_directories(filesystem_root_directory, flush_dir, extra_diff_flags="")
+            else:
+                warnings.warn(
+                    "Directories not compared on Windows. TODO: implement a basic comparison"
+                )
 
     async def test_get_entry(self, filesystem_root: FilesystemRoot):
         """
@@ -118,7 +127,10 @@ class TestFilesystemRoot:
         Test that FilesystemRoot.list_dir returns the expected directory contents.
         """
         list_dir_output = await filesystem_root.list_dir()
-        assert set(list_dir_output.keys()) == {FIFO_PIPE_NAME, CHILD_FOLDER, CHILD_TEXTFILE_NAME}
+        expected = {CHILD_FOLDER, CHILD_TEXTFILE_NAME}
+        if sys.platform != "win32":
+            expected.add(FIFO_PIPE_NAME)
+        assert set(list_dir_output.keys()) == expected
 
     async def test_add_folder(self, filesystem_root: FilesystemRoot, tmp_path):
         """
@@ -163,6 +175,7 @@ class TestFilesystemRoot:
         assert CHILD_TEXTFILE_NAME not in updated_list_dir_output
 
 
+@pytest.mark.skipif_windows
 class TestFilesystemEntry:
     """
     Test FilesystemEntry methods.
