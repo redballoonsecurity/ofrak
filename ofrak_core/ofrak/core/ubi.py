@@ -304,7 +304,7 @@ vol_name={volume_view.name}
 def match_ubi_magic(data: bytes) -> bool:
     if len(data) < 4:
         return False
-    return data in [UBI_EC_HDR_MAGIC, UBI_VID_HDR_MAGIC]
+    return data[:4] in [UBI_EC_HDR_MAGIC, UBI_VID_HDR_MAGIC]
 
 
 RawMagicIdentifier.register(Ubi, match_ubi_magic)
