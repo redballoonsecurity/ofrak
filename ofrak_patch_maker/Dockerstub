@@ -49,35 +49,37 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     sed /^CT_GCC_11_or_later/d | \
     sed /^CT_PREFIX_DIR/d | \
     sed /^CT_GCC_VERSION/d > .config && \
-    echo 'CT_PREFIX_DIR="/opt/rbs/toolchain/${CT_HOST:+HOST-${CT_HOST}/}${CT_TARGET}"' >> .config && \
-    echo 'CT_GCC_VERSION="10.5.0"' >> .config && \
-    echo 'CT_EXPERIMENTAL=y' >> .config && \
-    echo 'CT_ALLOW_BUILD_AS_ROOT=y' >> .config && \
-    echo 'CT_ALLOW_BUILD_AS_ROOT_SURE=y' >> .config && \
-    echo 'CT_LINUX_PATCH_GLOBAL=y' >> .config && \
-    echo 'CT_BINUTILS_PATCH_GLOBAL=y' >> .config && \
-    echo 'CT_GLIBC_PATCH_GLOBAL=y' >> .config && \
-    echo 'CT_GLIBC_ENABLE_WERROR=y' >> .config && \
-    echo 'CT_GCC_PATCH_GLOBAL=y' >> .config && \
-    echo 'CT_GCC_V_10=y' >> .config && \
-    echo 'CT_GCC_14_or_older=y' >> .config && \
-    echo 'CT_GCC_older_than_14=y' >> .config && \
-    echo 'CT_GCC_13_or_older=y' >> .config && \
-    echo 'CT_GCC_older_than_13=y' >> .config && \
-    echo 'CT_GCC_12_or_older=y' >> .config && \
-    echo 'CT_GCC_older_than_12=y' >> .config && \
-    echo 'CT_GCC_11_or_older=y' >> .config && \
-    echo 'CT_GCC_older_than_11=y' >> .config && \
-    echo 'CT_CC_LANG_OTHERS=""' >> .config && \
-    echo 'CT_GETTEXT_PATCH_GLOBAL=y' >> .config && \
-    echo 'CT_GMP_PATCH_GLOBAL=y' >> .config && \
-    echo 'CT_ISL_PATCH_GLOBAL=y' >> .config && \
-    echo 'CT_LIBICONV_PATCH_GLOBAL=y' >> .config && \
-    echo 'CT_MPC_PATCH_GLOBAL=y' >> .config && \
-    echo 'CT_MPFR_PATCH_GLOBAL=y' >> .config && \
-    echo 'CT_NCURSES_PATCH_GLOBAL=y' >> .config && \
-    echo 'CT_ZLIB_PATCH_GLOBAL=y' >> .config && \
-    echo 'CT_ZSTD_PATCH_GLOBAL=y' >> .config && \
+    printf '%s\n' \
+      'CT_PREFIX_DIR="/opt/rbs/toolchain/${CT_HOST:+HOST-${CT_HOST}/}${CT_TARGET}"' \
+      'CT_GCC_VERSION="10.5.0"' \
+      'CT_EXPERIMENTAL=y' \
+      'CT_ALLOW_BUILD_AS_ROOT=y' \
+      'CT_ALLOW_BUILD_AS_ROOT_SURE=y' \
+      'CT_LINUX_PATCH_GLOBAL=y' \
+      'CT_BINUTILS_PATCH_GLOBAL=y' \
+      'CT_GLIBC_PATCH_GLOBAL=y' \
+      'CT_GLIBC_ENABLE_WERROR=y' \
+      'CT_GCC_PATCH_GLOBAL=y' \
+      'CT_GCC_V_10=y' \
+      'CT_GCC_14_or_older=y' \
+      'CT_GCC_older_than_14=y' \
+      'CT_GCC_13_or_older=y' \
+      'CT_GCC_older_than_13=y' \
+      'CT_GCC_12_or_older=y' \
+      'CT_GCC_older_than_12=y' \
+      'CT_GCC_11_or_older=y' \
+      'CT_GCC_older_than_11=y' \
+      'CT_CC_LANG_OTHERS=""' \
+      'CT_GETTEXT_PATCH_GLOBAL=y' \
+      'CT_GMP_PATCH_GLOBAL=y' \
+      'CT_ISL_PATCH_GLOBAL=y' \
+      'CT_LIBICONV_PATCH_GLOBAL=y' \
+      'CT_MPC_PATCH_GLOBAL=y' \
+      'CT_MPFR_PATCH_GLOBAL=y' \
+      'CT_NCURSES_PATCH_GLOBAL=y' \
+      'CT_ZLIB_PATCH_GLOBAL=y' \
+      'CT_ZSTD_PATCH_GLOBAL=y' \
+      >> .config
     ./ct-ng build CT_JOBS=`nproc` && \
     cd /tmp && rm -rf crosstool-ng; \
 fi;
