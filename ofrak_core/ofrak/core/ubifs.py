@@ -4,10 +4,11 @@ from dataclasses import dataclass
 import logging
 from subprocess import CalledProcessError
 
-from ofrak import Identifier, Analyzer
+from ofrak import Analyzer
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
-from ofrak.core import PY_LZO_TOOL
+from ofrak.core import RawMagicPattern
+from ofrak.core.ubi import PY_LZO_TOOL
 from ofrak.resource import Resource
 from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
 from ofrak.core.binary import GenericBinary
@@ -205,18 +206,10 @@ class UbifsPacker(Packer[None]):
             resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
 
 
-class UbifsIdentifier(Identifier):
-    """
-    Check the first four bytes of a resource and tag the resource as Ubifs if it matches the file magic.
-    """
+def match_ubifs_magic(data: bytes) -> bool:
+    if len(data) < 4:
+        return False
+    return data[:4] == UBIFS_NODE_MAGIC
 
-    targets = (File, GenericBinary)
 
-    external_dependencies = (PY_LZO_TOOL,)
-
-    async def identify(self, resource: Resource, config=None) -> None:
-        datalength = await resource.get_data_length()
-        if datalength >= 4:
-            data = await resource.get_data(Range(0, 4))
-            if data == UBIFS_NODE_MAGIC:
-                resource.add_tag(Ubifs)
+RawMagicPattern.register(Ubifs, match_ubifs_magic)

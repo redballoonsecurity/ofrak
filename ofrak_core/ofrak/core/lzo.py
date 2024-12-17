@@ -5,7 +5,7 @@ from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.resource import Resource
 from ofrak.core.binary import GenericBinary
-from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
+from ofrak.core.magic import MagicMimePattern, MagicDescriptionPattern
 
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.model.component_model import ComponentConfig
@@ -79,5 +79,5 @@ class LzoPacker(Packer[None]):
         resource.queue_patch(Range(0, original_size), compressed_data)
 
 
-MagicMimeIdentifier.register(LzoData, "application/x-lzop")
-MagicDescriptionIdentifier.register(LzoData, lambda s: s.lower().startswith("lzop compressed data"))
+MagicMimePattern.register(LzoData, "application/x-lzop")
+MagicDescriptionPattern.register(LzoData, lambda s: s.lower().startswith("lzop compressed data"))

@@ -35,7 +35,6 @@ import itertools
 import os
 import tempfile
 from typing import Dict, Iterable, List, Mapping, Optional, Set, Tuple
-from warnings import warn
 
 from immutabledict import immutabledict
 
@@ -497,16 +496,3 @@ class PatchMaker:
         linked_executable = self._prepare_executable(exec_path)
 
         return FEM(name, linked_executable)
-
-    # This deprecated method is no longer part of PatchMaker public API.
-    async def allocate_bom(  # pragma: no cover
-        self,
-        allocatable,
-        bom: BOM,
-    ) -> PatchRegionConfig:
-        warn(
-            "PatchMaker.allocate_bom(allocatable, bom) is deprecated! Use "
-            "allocatable.allocate_bom(bom) instead.",
-            category=DeprecationWarning,
-        )
-        return await allocatable.allocate_bom(bom)

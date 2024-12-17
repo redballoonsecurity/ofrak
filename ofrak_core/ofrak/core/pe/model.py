@@ -10,7 +10,7 @@ from ofrak.service.resource_service_i import (
     ResourceAttributeValueFilter,
     ResourceFilter,
 )
-from ofrak.core.magic import MagicDescriptionIdentifier
+from ofrak.core.magic import MagicDescriptionPattern
 from ofrak_type.error import NotFoundError
 
 
@@ -293,4 +293,4 @@ class Pe(Program):
             return None
 
 
-MagicDescriptionIdentifier.register(Pe, lambda s: s.startswith("PE32"))
+MagicDescriptionPattern.register(Pe, lambda s: s.startswith("PE32"))

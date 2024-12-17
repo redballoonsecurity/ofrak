@@ -10,7 +10,7 @@ from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.core.binary import GenericBinary
 from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
-from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier, Magic
+from ofrak.core.magic import MagicMimePattern, MagicDescriptionPattern, Magic
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.resource import Resource
 from ofrak_type.range import Range
@@ -150,5 +150,5 @@ class CpioPacker(Packer[None]):
         resource.queue_patch(Range(0, await resource.get_data_length()), cpio_pack_output)
 
 
-MagicMimeIdentifier.register(CpioFilesystem, "application/x-cpio")
-MagicDescriptionIdentifier.register(CpioFilesystem, lambda s: "cpio archive" in s)
+MagicMimePattern.register(CpioFilesystem, "application/x-cpio")
+MagicDescriptionPattern.register(CpioFilesystem, lambda s: "cpio archive" in s)
