@@ -74,28 +74,53 @@ class MagicAnalyzer(Analyzer[None, Magic]):
 
 
 class MagicIdentifier(Identifier[None]):
+    """
+    Identify resourced using three identifier patterns:
+
+    1. [MagicMimePattern][ofrak.core.magic.MagicMimePattern]
+    2. [MagicDescriptionPattern][ofrak.core.magic.MagicDescriptionPattern]
+    3. [RawMagicPattern][ofrak.core.magic.RawMagicPattern]
+
+    OFRAK component authors can "register" magic patterns to run whenever this
+    identifier is:
+
+    ```python
+    MagicMimePattern.register(GenericBinary, "application/octet-stream")
+    ```
+    """
+
     targets = (GenericBinary,)
     external_dependencies = (LIBMAGIC_DEP,)
 
     async def identify(self, resource: Resource, config=None) -> None:
         _magic = await resource.analyze(Magic)
-        magic_mime = _magic.mime
-        tag = MagicMimeIdentifier.tags_by_mime.get(magic_mime)
+        self._run_magic_mime_patterns(resource, _magic.mime)
+        magic_description = _magic.descriptor
+        self._run_magic_description_pattern(resource, magic_description)
+        await self._run_raw_magic_patterns(resource)
+
+    @staticmethod
+    def _run_magic_mime_patterns(resource: Resource, magic_mime: str):
+        tag = MagicMimePattern.tags_by_mime.get(magic_mime)
         if tag is not None:
             resource.add_tag(tag)
-        magic_description = _magic.descriptor
-        for matcher, resource_type in MagicDescriptionIdentifier.matchers.items():
+
+    @staticmethod
+    def _run_magic_description_pattern(resource: Resource, magic_description: str):
+        for matcher, resource_type in MagicDescriptionPattern.matchers.items():
             if matcher(magic_description):
                 resource.add_tag(resource_type)
-        # This gets Raw Magic matches against data
+
+    @staticmethod
+    async def _run_raw_magic_patterns(resource: Resource):
         data_length = min(await resource.get_data_length(), 8)
         data = await resource.get_data(range=Range(0, data_length))
-        for matcher, resource_type in RawMagicIdentifier.matchers.items():
+        for matcher, resource_type in RawMagicPattern.matchers.items():
             if matcher(data):
                 resource.add_tag(resource_type)
 
 
-class MagicMimeIdentifier:
+class MagicMimePattern:
     """
     Identify and add the appropriate tag for a given resource based on its mimetype.
     """
@@ -112,7 +137,7 @@ class MagicMimeIdentifier:
             cls.tags_by_mime[mime_type] = resource
 
 
-class MagicDescriptionIdentifier:
+class MagicDescriptionPattern:
     """
     Identify and add the appropriate tag for a given resource based on its mime description.
     """
@@ -126,7 +151,7 @@ class MagicDescriptionIdentifier:
         cls.matchers[matcher] = resource
 
 
-class RawMagicIdentifier:
+class RawMagicPattern:
     """
     Identify raw magic bytes.
     """
@@ -140,10 +165,10 @@ class RawMagicIdentifier:
         cls.matchers[matcher] = resource
 
 
-MagicMimeIdentifier.register(GenericText, "text/plain")
-MagicDescriptionIdentifier.register(
+MagicMimePattern.register(GenericText, "text/plain")
+MagicDescriptionPattern.register(
     GenericText, lambda desc: any([("ASCII text" in s) for s in desc.split(", ")])
 )
 
-MagicMimeIdentifier.register(GenericBinary, "application/octet-stream")
-MagicDescriptionIdentifier.register(GenericBinary, lambda s: s == "data")
+MagicMimePattern.register(GenericBinary, "application/octet-stream")
+MagicDescriptionPattern.register(GenericBinary, lambda s: s == "data")

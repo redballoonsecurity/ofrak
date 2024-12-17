@@ -19,9 +19,9 @@ from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort
 from ofrak.core import GenericBinary
 from ofrak.core.magic import (
-    MagicMimeIdentifier,
-    MagicDescriptionIdentifier,
-    RawMagicIdentifier,
+    MagicMimePattern,
+    MagicDescriptionPattern,
+    RawMagicPattern,
 )
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import index
@@ -390,8 +390,8 @@ def _prop_from_fdt(p: fdt.items.Property) -> Tuple[DtbPropertyType, bytes]:
     return _p_type, _p_data
 
 
-MagicMimeIdentifier.register(DeviceTreeBlob, "Device Tree Blob")
-MagicDescriptionIdentifier.register(DeviceTreeBlob, lambda s: "device tree blob" in s.lower())
+MagicMimePattern.register(DeviceTreeBlob, "Device Tree Blob")
+MagicDescriptionPattern.register(DeviceTreeBlob, lambda s: "device tree blob" in s.lower())
 
 
 def match_dtb_magic(data: bytes):
@@ -400,4 +400,4 @@ def match_dtb_magic(data: bytes):
     return data == struct.pack("<I", DTB_MAGIC_SIGNATURE)
 
 
-RawMagicIdentifier.register(DeviceTreeBlob, match_dtb_magic)
+RawMagicPattern.register(DeviceTreeBlob, match_dtb_magic)

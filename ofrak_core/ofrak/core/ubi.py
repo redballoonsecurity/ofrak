@@ -6,7 +6,7 @@ from typing import List, Tuple
 import os
 from subprocess import CalledProcessError
 
-from ofrak.core import RawMagicIdentifier
+from ofrak.core import RawMagicPattern
 from ofrak.model.tag_model import ResourceTag
 
 from ofrak import Analyzer
@@ -307,4 +307,4 @@ def match_ubi_magic(data: bytes) -> bool:
     return data[:4] in [UBI_EC_HDR_MAGIC, UBI_VID_HDR_MAGIC]
 
 
-RawMagicIdentifier.register(Ubi, match_ubi_magic)
+RawMagicPattern.register(Ubi, match_ubi_magic)

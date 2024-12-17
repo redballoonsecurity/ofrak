@@ -9,7 +9,7 @@ from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker, UnpackerError
-from ofrak.core import RawMagicIdentifier
+from ofrak.core import RawMagicPattern
 from ofrak.core.binary import GenericBinary
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributes
@@ -131,7 +131,7 @@ def match_openwrt_magic(data: bytes) -> bool:
     return data[:4] == OPENWRT_TRX_MAGIC_BYTES
 
 
-RawMagicIdentifier.register(OpenWrtTrx, match_openwrt_magic)
+RawMagicPattern.register(OpenWrtTrx, match_openwrt_magic)
 
 
 ####################

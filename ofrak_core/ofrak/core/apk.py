@@ -3,23 +3,19 @@ import os
 import pathlib
 import sys
 import tempfile
-from subprocess import CalledProcessError
 from dataclasses import dataclass
+from subprocess import CalledProcessError
 
-from ofrak.core.filesystem import File, Folder
-
-from ofrak.component.packer import Packer
-
-from ofrak.resource import Resource
-
-from ofrak.component.unpacker import Unpacker
 from ofrak.component.identifier import Identifier
-
-from ofrak.model.component_model import ComponentConfig, ComponentExternalTool
+from ofrak.component.packer import Packer
+from ofrak.component.unpacker import Unpacker
+from ofrak.core.filesystem import File, Folder
+from ofrak.core.java import JavaArchive
+from ofrak.core.magic import MagicMimePattern
 from ofrak.core.zip import ZipArchive, UNZIP_TOOL
-from ofrak.core.magic import MagicMimeIdentifier
+from ofrak.model.component_model import ComponentConfig, ComponentExternalTool
+from ofrak.resource import Resource
 from ofrak_type.range import Range
-
 
 APKTOOL = ComponentExternalTool("apktool", "https://ibotpeaches.github.io/Apktool/", "-version")
 JAVA = ComponentExternalTool(
@@ -207,16 +203,19 @@ class ApkPacker(Packer[ApkPackerConfig]):
             resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
 
 
-class JavaArchive(ZipArchive):
-    pass
-
-
-MagicMimeIdentifier.register(Apk, "application/vnd.android.package-archive")
-MagicMimeIdentifier.register(JavaArchive, "application/java-archive")
+MagicMimePattern.register(Apk, "application/vnd.android.package-archive")
 
 
 class ApkIdentifier(Identifier):
-    targets = (ZipArchive, JavaArchive)
+    """
+    Identifier for ApkArchive.
+
+    Some Apks are recognized by the MagicMimePattern; others are tagged as JavaArchive or
+    ZipArchive. This identifier inspects those files, and tags any with an androidmanifest.xml
+    as an ApkArchive.
+    """
+
+    targets = (JavaArchive, ZipArchive)
     external_dependencies = (UNZIP_TOOL,)
 
     async def identify(self, resource: Resource, config=None) -> None:

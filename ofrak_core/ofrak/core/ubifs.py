@@ -7,7 +7,7 @@ from subprocess import CalledProcessError
 from ofrak import Analyzer
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
-from ofrak.core import RawMagicIdentifier
+from ofrak.core import RawMagicPattern
 from ofrak.core.ubi import PY_LZO_TOOL
 from ofrak.resource import Resource
 from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
@@ -214,4 +214,4 @@ def match_ubifs_magic(data: bytes) -> bool:
     return data[:4] == UBIFS_NODE_MAGIC
 
 
-RawMagicIdentifier.register(Ubifs, match_ubifs_magic)
+RawMagicPattern.register(Ubifs, match_ubifs_magic)

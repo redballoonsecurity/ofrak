@@ -9,7 +9,7 @@ from ofrak.component.unpacker import Unpacker
 from ofrak.resource import Resource
 from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
 
-from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
+from ofrak.core.magic import MagicMimePattern, MagicDescriptionPattern
 
 from ofrak.core.binary import GenericBinary
 from ofrak.model.component_model import ComponentExternalTool
@@ -120,7 +120,5 @@ class SquashfsPacker(Packer[None]):
             resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
 
 
-MagicMimeIdentifier.register(SquashfsFilesystem, "application/filesystem+sqsh")
-MagicDescriptionIdentifier.register(
-    SquashfsFilesystem, lambda s: s.startswith("Squashfs filesystem")
-)
+MagicMimePattern.register(SquashfsFilesystem, "application/filesystem+sqsh")
+MagicDescriptionPattern.register(SquashfsFilesystem, lambda s: s.startswith("Squashfs filesystem"))

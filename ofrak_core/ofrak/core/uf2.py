@@ -4,7 +4,7 @@ from enum import IntEnum
 from dataclasses import dataclass
 from typing import List, Tuple
 
-from ofrak.core import RawMagicIdentifier
+from ofrak.core import RawMagicPattern
 from ofrak.core.code_region import CodeRegion
 
 from ofrak.resource import Resource
@@ -254,4 +254,4 @@ def match_uf2_magic(data: bytes):
         return False
 
 
-RawMagicIdentifier.register(Uf2File, match_uf2_magic)
+RawMagicPattern.register(Uf2File, match_uf2_magic)
