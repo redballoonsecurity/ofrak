@@ -20,7 +20,6 @@ ASSETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
 @pytest.fixture(autouse=True)
 def pyghidra_components(ofrak_injector):
     ofrak_injector.discover(ofrak_pyghidra)
-    ofrak_injector.discover(ofrak_capstone)
 
 
 class TestGhidraCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):

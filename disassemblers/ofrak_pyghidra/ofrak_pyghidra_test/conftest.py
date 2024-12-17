@@ -14,7 +14,6 @@ def hello_world_elf() -> bytes:
 
 @pytest.fixture(autouse=True)
 def pyghidra_components(ofrak_injector):
-    ofrak_injector.discover(ofrak_capstone)
     ofrak_injector.discover(ofrak_pyghidra)
 
 
