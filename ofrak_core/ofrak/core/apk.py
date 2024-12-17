@@ -5,7 +5,7 @@ import sys
 import tempfile312 as tempfile
 from subprocess import CalledProcessError
 from dataclasses import dataclass
-from subprocess import CalledProcessError
+
 
 from ofrak.component.identifier import Identifier
 from ofrak.component.packer import Packer
