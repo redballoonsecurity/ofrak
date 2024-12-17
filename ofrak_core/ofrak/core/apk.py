@@ -150,6 +150,7 @@ class ApkPacker(Packer[ApkPackerConfig]):
         temp_flush_dir = await apk.flush_to_disk()
         apk_suffix = ".apk"
         with tempfile.NamedTemporaryFile(suffix=apk_suffix, delete_on_close=False) as temp_apk:
+            temp_apk.close()
             apk_cmd = [
                 "apktool",
                 "build",
@@ -184,9 +185,14 @@ class ApkPacker(Packer[ApkPackerConfig]):
                     java_proc = await asyncio.create_subprocess_exec(
                         *java_cmd,
                     )
-                    java_returncode = await java_proc.wait()
+                    stdout, stderr = await java_proc.communicate()
                     if java_proc.returncode:
-                        raise CalledProcessError(returncode=java_returncode, cmd=java_cmd)
+                        raise CalledProcessError(
+                            returncode=java_proc.returncode,
+                            cmd=java_cmd,
+                            output=stdout,
+                            stderr=stderr,
+                        )
                     signed_apk_filename = (
                         os.path.basename(temp_apk.name)[: -len(apk_suffix)]
                         + "-aligned-debugSigned.apk"
