@@ -107,7 +107,6 @@ def main():
         # For secure build arguments
         if config.extra_build_args:
             base_command.extend(config.extra_build_args)
-        env = dict(os.environ, DOCKER_BUILDKIT="1")
         try:
             subprocess.run(base_command, check=True, env=env)
         except subprocess.CalledProcessError as error:
@@ -132,7 +131,6 @@ def main():
         ]
         if config.no_cache:
             finish_command.extend(["--no-cache"])
-        env = dict(os.environ, DOCKER_BUILDKIT="1")
         try:
             subprocess.run(finish_command, check=True, env=env)
         except subprocess.CalledProcessError as error:
