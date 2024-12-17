@@ -150,7 +150,6 @@ class ApkPacker(Packer[ApkPackerConfig]):
         temp_flush_dir = await apk.flush_to_disk()
         apk_suffix = ".apk"
         with tempfile.NamedTemporaryFile(suffix=apk_suffix, delete_on_close=False) as temp_apk:
-            temp_apk.close()
             apk_cmd = [
                 "apktool",
                 "build",
