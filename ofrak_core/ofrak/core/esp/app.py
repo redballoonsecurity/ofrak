@@ -31,9 +31,9 @@ from esptool.bin_image import LoadFirmwareImage, ESP8266V2FirmwareImage
 from esptool.targets import ROM_LIST
 
 from tempfile import NamedTemporaryFile, _TemporaryFileWrapper
-from .flash import ESPFlashSection
+from ofrak.core.esp.flash_model import ESPFlashSection
 
-from .app_model import *
+from ofrak.core.esp.app_model import *
 
 
 def determine_chip(f: NamedTemporaryFile) -> str:
@@ -81,6 +81,7 @@ async def get_esp_app(resource: Resource, config: Optional[ESPAppConfig]):
     if config:
         return config
     else:
+        #TODO Looks like an identifier function why not in identifier?
         f = NamedTemporaryFile()
         data = await resource.get_data()
         offset = data.find(b"\xE9")
@@ -161,6 +162,7 @@ class ESPAppUnpacker(Unpacker[None]):
         """
         config = await get_esp_app(resource, config)
         try:
+            #TODO can this be removed?
             resource.add_attributes(await resource.analyze(ESPAppAttributes))
             flash_s_bits, flash_fr_bits = self.__parse_flash_bits(config.image)
 

@@ -30,7 +30,7 @@ from esptool.bin_image import LoadFirmwareImage, ESP8266V2FirmwareImage
 from esptool.targets import ROM_LIST
 
 from tempfile import NamedTemporaryFile, _TemporaryFileWrapper
-from .flash import ESPFlashSection
+from ofrak.core.esp.flash_model import ESPFlashSection
 
 """
 # ESP-IDF Firmware Image Format Documentation
