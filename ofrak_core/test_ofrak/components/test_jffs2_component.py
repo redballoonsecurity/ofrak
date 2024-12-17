@@ -1,10 +1,12 @@
 import os
 import subprocess
-import tempfile
+import tempfile312 as tempfile
+
+import pytest
 
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
-from ofrak.core.jffs2 import Jffs2Filesystem
+from ofrak.core.jffs2 import Jffs2Filesystem, Jffs2Packer, Jffs2Unpacker
 from ofrak.core.strings import StringPatchingConfig, StringPatchingModifier
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 
@@ -14,6 +16,7 @@ TARGET_JFFS2_FILE = "test.jffs2"
 JFFS2_ENTRY_NAME = "hello_jffs2_file"
 
 
+@pytest.mark.skipif_missing_deps([Jffs2Packer, Jffs2Unpacker])
 class TestJffs2UnpackModifyPack(UnpackModifyPackPattern):
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -41,12 +44,9 @@ class TestJffs2UnpackModifyPack(UnpackModifyPackPattern):
         await jffs2_resource.pack_recursively()
 
     async def verify(self, repacked_jffs2_resource: Resource) -> None:
-        resource_data = await repacked_jffs2_resource.get_data()
-        with tempfile.NamedTemporaryFile() as temp_file:
-            temp_file.write(resource_data)
-            temp_file.flush()
+        async with repacked_jffs2_resource.temp_to_disk() as temp_path:
             with tempfile.TemporaryDirectory() as temp_flush_dir:
-                command = ["jefferson", "-f", "-d", temp_flush_dir, temp_file.name]
+                command = ["jefferson", "-f", "-d", temp_flush_dir, temp_path]
                 subprocess.run(command, check=True, capture_output=True)
                 with open(os.path.join(temp_flush_dir, JFFS2_ENTRY_NAME), "rb") as f:
                     patched_data = f.read()
