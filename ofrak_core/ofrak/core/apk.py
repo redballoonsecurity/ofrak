@@ -6,7 +6,6 @@ import tempfile312 as tempfile
 from subprocess import CalledProcessError
 from dataclasses import dataclass
 
-
 from ofrak.component.identifier import Identifier
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
@@ -185,14 +184,9 @@ class ApkPacker(Packer[ApkPackerConfig]):
                     java_proc = await asyncio.create_subprocess_exec(
                         *java_cmd,
                     )
-                    stdout, stderr = await java_proc.communicate()
+                    jave_returncode = await java_proc.wait()
                     if java_proc.returncode:
-                        raise CalledProcessError(
-                            returncode=java_proc.returncode,
-                            cmd=java_cmd,
-                            output=stdout,
-                            stderr=stderr,
-                        )
+                        raise CalledProcessError(returncode=jave_returncode, cmd=java_cmd)
                     signed_apk_filename = (
                         os.path.basename(temp_apk.name)[: -len(apk_suffix)]
                         + "-aligned-debugSigned.apk"
