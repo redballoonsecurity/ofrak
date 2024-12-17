@@ -1,25 +1,25 @@
 import asyncio
 import logging
 import os
-import tempfile
+import tempfile312 as tempfile
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Type, Union, cast
 
+from ofrak_patch_maker.model import PatchRegionConfig, FEM
+from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.abstract import Toolchain
+from ofrak_patch_maker.toolchain.model import Segment, ToolchainConfig
+
 from ofrak.component.modifier import Modifier
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.core.injector import BinaryInjectorModifier, BinaryInjectorModifierConfig
 from ofrak.core.memory_region import MemoryRegion
+from ofrak.core.patch_maker.linkable_binary import LinkableBinary
 from ofrak.core.program import Program
 from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort, ResourceSortDirection
-from ofrak.core.patch_maker.linkable_binary import LinkableBinary
-from ofrak_patch_maker.model import PatchRegionConfig, FEM
-from ofrak_patch_maker.patch_maker import PatchMaker
-from ofrak_patch_maker.toolchain.abstract import Toolchain
-from ofrak_patch_maker.toolchain.model import Segment, ToolchainConfig
 from ofrak_type.memory_permissions import MemoryPermissions
 
 LOGGER = logging.getLogger(__file__)
@@ -110,13 +110,14 @@ class PatchFromSourceModifier(Modifier):
             patch_name = config.patch_name
 
         build_tmp_dir = tempfile.mkdtemp()
-
-        source_tmp_dir = tempfile.mkdtemp()
+        source_tmp_dir = os.path.join(build_tmp_dir, "src")
+        os.makedirs(source_tmp_dir)
         config.source_code.dump(source_tmp_dir)
 
         header_dirs = []
         for header_directory in config.header_directories:
-            header_tmp_dir = tempfile.mkdtemp()
+            header_tmp_dir = os.path.join(build_tmp_dir, "include")
+            os.makedirs(build_tmp_dir)
             header_directory.dump(header_tmp_dir)
             header_dirs.append(header_tmp_dir)
 
@@ -128,7 +129,6 @@ class PatchFromSourceModifier(Modifier):
             toolchain=config.toolchain(program_attributes, config.toolchain_config),
             build_dir=build_tmp_dir,
         )
-
         patch_bom = patch_maker.make_bom(
             name=patch_name,
             source_list=absolute_source_list,
@@ -162,7 +162,6 @@ class PatchFromSourceModifier(Modifier):
             [(patch_bom, p), target_linkable_bom_info],
             exec_path,
         )
-
         await resource.run(
             SegmentInjectorModifier,
             SegmentInjectorModifierConfig.from_fem(fem),

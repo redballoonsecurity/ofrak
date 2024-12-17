@@ -1,13 +1,17 @@
 import subprocess
-import tempfile
+import tempfile312 as tempfile
+
+import pytest
 
 from ofrak import OFRAKContext
+from ofrak.core.ubifs import UbifsPacker, UbifsUnpacker
 from ofrak.resource import Resource
 from pytest_ofrak.patterns.pack_unpack_filesystem import FilesystemPackUnpackVerifyPattern
 
 # from pytest_ofrak.patterns.unpack_modify_pack import UnpackPackPattern
 
 
+@pytest.mark.skipif_missing_deps([UbifsUnpacker, UbifsPacker])
 class TestUbifsUnpackRepack(FilesystemPackUnpackVerifyPattern):
     def setup(self):
         super().setup()
@@ -18,7 +22,8 @@ class TestUbifsUnpackRepack(FilesystemPackUnpackVerifyPattern):
         """
         Generated the test UBIFS image with the assistance of the FilesystemPackUnpackVerify test pattern.
         """
-        with tempfile.NamedTemporaryFile() as ubifs_blob:
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as ubifs_blob:
+            ubifs_blob.close()
             command = [
                 "mkfs.ubifs",
                 "-m",
@@ -46,11 +51,7 @@ class TestUbifsUnpackRepack(FilesystemPackUnpackVerifyPattern):
         expected by the FilesystemPackUnpackVerify pattern.
         """
 
-        with tempfile.NamedTemporaryFile() as ubifs_blob:
-            data = await root_resource.get_data()
-            ubifs_blob.write(data)
-            ubifs_blob.flush()
-
-            command = ["ubireader_extract_files", "-k", "-o", extract_dir, ubifs_blob.name]
+        async with root_resource.temp_to_disk() as ubifs_blob_path:
+            command = ["ubireader_extract_files", "-k", "-o", extract_dir, ubifs_blob_path]
 
             subprocess.run(command, check=True, capture_output=True)
