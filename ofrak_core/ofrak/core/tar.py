@@ -1,6 +1,6 @@
 import asyncio
 import os.path
-import tempfile
+import tempfile312 as tempfile
 from dataclasses import dataclass
 from subprocess import CalledProcessError
 
@@ -37,16 +37,13 @@ class TarUnpacker(Unpacker[None]):
 
     async def unpack(self, resource: Resource, config: ComponentConfig = None) -> None:
         # Write the archive data to a file
-        with tempfile.NamedTemporaryFile(suffix=".tar") as temp_archive:
-            temp_archive.write(await resource.get_data())
-            temp_archive.flush()
-
+        async with resource.temp_to_disk(suffix=".tar") as temp_archive_path:
             # Check the archive member files to ensure none unpack to a parent directory
             cmd = [
                 "tar",
                 "-P",
                 "-tf",
-                temp_archive.name,
+                temp_archive_path,
             ]
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
@@ -67,7 +64,7 @@ class TarUnpacker(Unpacker[None]):
 
             # Unpack into a temporary directory using the temporary file
             with tempfile.TemporaryDirectory() as temp_dir:
-                command = ["tar", "--xattrs", "-C", temp_dir, "-xf", temp_archive.name]
+                command = ["tar", "--xattrs", "-C", temp_dir, "-xf", temp_archive_path]
                 proc = await asyncio.create_subprocess_exec(
                     *command,
                 )
@@ -94,7 +91,8 @@ class TarPacker(Packer[None]):
         flush_dir = await tar_view.flush_to_disk()
 
         # Pack it back into a temporary archive
-        with tempfile.NamedTemporaryFile(suffix=".tar") as temp_archive:
+        with tempfile.NamedTemporaryFile(suffix=".tar", delete_on_close=False) as temp_archive:
+            temp_archive.close()
             cmd = [
                 "tar",
                 "--xattrs",
@@ -112,7 +110,8 @@ class TarPacker(Packer[None]):
                 raise CalledProcessError(returncode=returncode, cmd=cmd)
 
             # Replace the original archive data
-            resource.queue_patch(Range(0, await resource.get_data_length()), temp_archive.read())
+            with open(temp_archive.name, "rb") as new_fh:
+                resource.queue_patch(Range(0, await resource.get_data_length()), new_fh.read())
 
 
 MagicMimePattern.register(TarArchive, "application/x-tar")

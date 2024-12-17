@@ -2,7 +2,8 @@ import asyncio
 import os
 import pathlib
 import sys
-import tempfile
+import tempfile312 as tempfile
+from subprocess import CalledProcessError
 from dataclasses import dataclass
 from subprocess import CalledProcessError
 
@@ -96,10 +97,7 @@ class ApkUnpacker(Unpacker[None]):
         :param config:
         """
         apk = await resource.view_as(Apk)
-        data = await resource.get_data()
-        with tempfile.NamedTemporaryFile() as temp_file:
-            temp_file.write(data)
-            temp_file.flush()
+        async with resource.temp_to_disk() as temp_path:
             with tempfile.TemporaryDirectory() as temp_flush_dir:
                 cmd = [
                     "apktool",
@@ -107,7 +105,7 @@ class ApkUnpacker(Unpacker[None]):
                     "--output",
                     temp_flush_dir,
                     "--force",
-                    temp_file.name,
+                    temp_path,
                 ]
                 proc = await asyncio.create_subprocess_exec(
                     *cmd,
@@ -151,7 +149,8 @@ class ApkPacker(Packer[ApkPackerConfig]):
         apk = await resource.view_as(Apk)
         temp_flush_dir = await apk.flush_to_disk()
         apk_suffix = ".apk"
-        with tempfile.NamedTemporaryFile(suffix=apk_suffix) as temp_apk:
+        with tempfile.NamedTemporaryFile(suffix=apk_suffix, delete_on_close=False) as temp_apk:
+            temp_apk.close()
             apk_cmd = [
                 "apktool",
                 "build",
@@ -219,13 +218,11 @@ class ApkIdentifier(Identifier):
     external_dependencies = (UNZIP_TOOL,)
 
     async def identify(self, resource: Resource, config=None) -> None:
-        with tempfile.NamedTemporaryFile(suffix=".zip") as temp_file:
-            temp_file.write(await resource.get_data())
-            temp_file.flush()
+        async with resource.temp_to_disk(suffix=".zip") as temp_path:
             unzip_cmd = [
                 "unzip",
                 "-l",
-                temp_file.name,
+                temp_path,
             ]
             unzip_proc = await asyncio.create_subprocess_exec(
                 *unzip_cmd,
