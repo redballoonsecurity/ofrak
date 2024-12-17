@@ -15,7 +15,10 @@ RUN cd /tmp && \
     rm -rf gcc-arm-none-eabi-10-2020-q4-major-x86_64-linux.tar.bz2
 
 # LINUX GNU + BINUTILS
-RUN apt-get -y update  && apt-get -y install software-properties-common gcc-10
+RUN cd /tmp && \
+    wget https://download.01.org/0day-ci/cross-package/gcc-10.3.0-nolibc/x86_64-gcc-10.3.0-nolibc_x86_64-linux.tar.xz --show-progress --progress=bar:force:noscroll && \
+    tar xf x86_64-gcc-10.3.0-nolibc_x86_64-linux.tar.xz -C /opt/rbs/toolchain && \
+    rm -rf x86_64-gcc-10.3.0-nolibc_x86_64-linux.tar.xz
 
 #X64-64 toolchain for arm64 Docker images
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
@@ -25,44 +28,109 @@ fi;
 #M68k GNU 10 Linux
 #Only exists for x86
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
-    apt-get update && apt-get install -y gcc-10-m68k-linux-gnu; \
+    cd /tmp && \
+    apt-get update && apt-get install -y gcc g++ gperf bison flex texinfo help2man make libncurses5-dev python3-dev autoconf automake libtool libtool-bin gawk wget bzip2 xz-utils unzip patch libstdc++6 rsync && \
+    git clone https://github.com/crosstool-ng/crosstool-ng.git && \
+    cd crosstool-ng/ && \
+    git reset --hard 6d1d61cbcacc7ce4622ef024490e0cb56881614b && \
+    ./bootstrap && \
+    ./configure --enable-local && \
+    make && \
+    ./ct-ng m68k-unknown-linux-gnu && \
+    cp .config .config.bak && \
+    sed /^CT_GCC_V_14/d .config.bak | \
+    sed /^CT_GCC_later_than_14/d | \
+    sed /^CT_GCC_14_or_later/d | \
+    sed /^CT_GCC_later_than_13/d | \
+    sed /^CT_GCC_13_or_later/d | \
+    sed /^CT_GCC_later_than_12/d | \
+    sed /^CT_GCC_12_or_later/d | \
+    sed /^CT_GCC_later_than_11/d | \
+    sed /^CT_GCC_11_or_later/d | \
+    sed /^CT_PREFIX_DIR/d | \
+    sed /^CT_GCC_VERSION/d > .config && \
+    printf '%s\n' \
+      'CT_PREFIX_DIR="/opt/rbs/toolchain/${CT_HOST:+HOST-${CT_HOST}/}${CT_TARGET}"' \
+      'CT_GCC_VERSION="10.5.0"' \
+      'CT_EXPERIMENTAL=y' \
+      'CT_ALLOW_BUILD_AS_ROOT=y' \
+      'CT_ALLOW_BUILD_AS_ROOT_SURE=y' \
+      'CT_LINUX_PATCH_GLOBAL=y' \
+      'CT_BINUTILS_PATCH_GLOBAL=y' \
+      'CT_GLIBC_PATCH_GLOBAL=y' \
+      'CT_GLIBC_ENABLE_WERROR=y' \
+      'CT_GCC_PATCH_GLOBAL=y' \
+      'CT_GCC_V_10=y' \
+      'CT_GCC_14_or_older=y' \
+      'CT_GCC_older_than_14=y' \
+      'CT_GCC_13_or_older=y' \
+      'CT_GCC_older_than_13=y' \
+      'CT_GCC_12_or_older=y' \
+      'CT_GCC_older_than_12=y' \
+      'CT_GCC_11_or_older=y' \
+      'CT_GCC_older_than_11=y' \
+      'CT_CC_LANG_OTHERS=""' \
+      'CT_GETTEXT_PATCH_GLOBAL=y' \
+      'CT_GMP_PATCH_GLOBAL=y' \
+      'CT_ISL_PATCH_GLOBAL=y' \
+      'CT_LIBICONV_PATCH_GLOBAL=y' \
+      'CT_MPC_PATCH_GLOBAL=y' \
+      'CT_MPFR_PATCH_GLOBAL=y' \
+      'CT_NCURSES_PATCH_GLOBAL=y' \
+      'CT_ZLIB_PATCH_GLOBAL=y' \
+      'CT_ZSTD_PATCH_GLOBAL=y' \
+      >> .config && \
+    ./ct-ng build CT_JOBS=`nproc` && \
+    cd /tmp && rm -rf crosstool-ng; \
 fi;
 
 #M68k VBCC
 RUN cd /tmp && \
-    wget http://phoenix.owl.de/tags/vbcc0_9h.tar.gz && \
-    wget http://phoenix.owl.de/tags/vasm1_9.tar.gz && \
+    wget http://phoenix.owl.de/tags/vbcc0_9h.tar.gz --show-progress --progress=bar:force:noscroll && \
+    wget http://phoenix.owl.de/tags/vasm1_9.tar.gz --show-progress --progress=bar:force:noscroll && \
     mkdir -p /opt/rbs/toolchain/vbcc_0_9/bin/ && \
     mkdir -p /opt/rbs/toolchain/vbcc_0_9/config/ && \
-    tar -xvf vbcc0_9h.tar.gz
-
-RUN cd /tmp/vbcc && printf "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" | TARGET=m68k make all
-
-RUN cd /tmp/vbcc && cp ./bin/* /opt/rbs/toolchain/vbcc_0_9/bin/ && \
+    tar -xvf vbcc0_9h.tar.gz && \
+    cd /tmp/vbcc && printf "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" | TARGET=m68k make all && \
+    cp ./bin/* /opt/rbs/toolchain/vbcc_0_9/bin/ && \
     cd .. && \
     tar -xvf vasm1_9.tar.gz && \
     cd ./vasm && \
     CPU=m68k SYNTAX=mot make && \
     cp ./vasmm68k_mot /opt/rbs/toolchain/vbcc_0_9/bin/ && \
-    cp ./vobjdump /opt/rbs/toolchain/vbcc_0_9/bin/
+    cp ./vobjdump /opt/rbs/toolchain/vbcc_0_9/bin/ && \
+    cd /tmp &&\
+    rm -rf vasm* vbcc*
 
 #AARCH64 GNU 10 Linux
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
-    apt-get update && apt-get install -y gcc-10-aarch64-linux-gnu; \
+    cd /tmp && \
+    wget https://armkeil.blob.core.windows.net/developer/Files/downloads/gnu-a/10.3-2021.07/binrel/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu.tar.xz --show-progress --progress=bar:force:noscroll && \
+    tar xf gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu.tar.xz -C /opt/rbs/toolchain && \
+    rm -rf gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu.tar.xz; \
 fi;
 
 #AVR GCC
-RUN apt-get update && apt-get install -y gcc-avr binutils-avr avr-libc
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+    cd /tmp && \
+    wget https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/SoftwareLibraries/Firmware/avr8-gnu-toolchain-3.6.2.1778-linux.any.x86_64.tar.gz --show-progress --progress=bar:force:noscroll && \
+    tar xzf avr8-gnu-toolchain-3.6.2.1778-linux.any.x86_64.tar.gz -C /opt/rbs/toolchain && \
+    rm -rf avr8-gnu-toolchain-3.6.2.1778-linux.any.x86_64.tar.gz; \
+fi;
 
 #PPC GNU 10 Linux
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
-    apt-get update && apt-get install -y gcc-10-powerpc-linux-gnu; \
+    cd /tmp && \
+    wget https://download.01.org/0day-ci/cross-package/gcc-10.3.0-nolibc/x86_64-gcc-10.3.0-nolibc_powerpc-linux.tar.xz --show-progress --progress=bar:force:noscroll && \
+    tar xf x86_64-gcc-10.3.0-nolibc_powerpc-linux.tar.xz -C /opt/rbs/toolchain && \
+    rm -rf x86_64-gcc-10.3.0-nolibc_powerpc-linux.tar.xz; \
 fi;
 
 #BCC (GCC) SPARC v8
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
     cd /tmp/ \
-      && wget 'https://www.gaisler.com/anonftp/bcc2/bin/bcc-2.0.7-gcc-linux64.tar.xz' \
+      && wget https://www.gaisler.com/anonftp/bcc2/bin/bcc-2.0.7-gcc-linux64.tar.xz --show-progress --progress=bar:force:noscroll \
       && mkdir -p /opt/rbs/toolchain/ \
-      && tar -C /opt/rbs/toolchain/ -xJf bcc-2.0.7-gcc-linux64.tar.xz; \
+      && tar -C /opt/rbs/toolchain/ -xJf bcc-2.0.7-gcc-linux64.tar.xz \
+      && rm bcc-2.0.7-gcc-linux64.tar.xz; \
 fi

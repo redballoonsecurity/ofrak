@@ -4,7 +4,7 @@ from typing import Iterable, Tuple, List
 from typing import Optional
 from warnings import warn
 
-from binaryninja import BinaryView, Endianness, TypeClass
+from binaryninja import BinaryView, Endianness, TypeClass, ReferenceSource, DataVariable
 from ofrak_type.architecture import InstructionSetMode
 from ofrak_type.range import Range
 
@@ -120,7 +120,7 @@ class BinaryNinjaCodeRegionUnpacker(CodeRegionUnpacker):
             # Add literal pools/data by iterating over data word candidates after the function's
             # code boundaries, and checking if there are code references to those candidates from
             # the function's code ranges
-            data_refs = list()
+            data_refs: List[ReferenceSource] = list()
 
             # Adjust literal pool start address by accounting alignment "nop" instructions
             while binaryview.get_disassembly(end_ea) == "nop":
@@ -228,7 +228,7 @@ class BinaryNinjaComplexBlockUnpacker(ComplexBlockUnpacker):
             literal_pool_search_addr += binaryview.get_instruction_length(literal_pool_search_addr)
 
         while literal_pool_search_addr < cb_start_vaddr + cb_view.size:
-            data_var = binaryview.get_data_var_at(literal_pool_search_addr)
+            data_var: Optional[DataVariable] = binaryview.get_data_var_at(literal_pool_search_addr)
             if data_var is None or data_var.type.width == 0:
                 literal_pool_search_addr += 1
                 continue
