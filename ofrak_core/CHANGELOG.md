@@ -48,6 +48,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Update python to 3.9 as main version used and tested (including in default docker image build) ([#502](https://github.com/redballoonsecurity/ofrak/pull/502))
 - Update OpenJDK to version 17, remove unused qemu package ([#502](https://github.com/redballoonsecurity/ofrak/pull/502))
 
+### Removed
+- Removed `Instruction.disassembly` from `Instruction` class: use `Instruction.get_assembly()` instead ([#539](https://github.com/redballoonsecurity/ofrak/issues/539))
+
 ### Security
 - Update aiohttp to 3.10.11 ([#522](https://github.com/redballoonsecurity/ofrak/pull/522))
 - Update pycryptogrpahy to version 43.0.3. ([#525](https://github.com/redballoonsecurity/ofrak/pull/525))
