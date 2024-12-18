@@ -129,7 +129,7 @@ fi;
 #BCC (GCC) SPARC v8
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
     cd /tmp/ \
-      && wget https://www.gaisler.com/anonftp/bcc2/bin/bcc-2.0.7-gcc-linux64.tar.xz --show-progress --progress=bar:force:noscroll \
+      && wget http://mirror.tensorflow.org/www.gaisler.com/anonftp/bcc2/bin/bcc-2.0.7-gcc-linux64.tar.xz --show-progress --progress=bar:force:noscroll \
       && mkdir -p /opt/rbs/toolchain/ \
       && tar -C /opt/rbs/toolchain/ -xJf bcc-2.0.7-gcc-linux64.tar.xz \
       && rm bcc-2.0.7-gcc-linux64.tar.xz; \
