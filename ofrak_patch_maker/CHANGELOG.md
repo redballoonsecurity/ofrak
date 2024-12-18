@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Changed
 - Removed `SUBALIGN(0)` for `.bss` sections
 - Minor update to OFRAK Community License, add OFRAK Pro License ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
-- Install toolchains from source or tarball instead of relying on the Debian package manager ([#502](https://github.com/redballoonsecurity/ofrak/pull/502))
+- Install toolchains from source or tarball instead of relying on the Debian package manager ([#502](https://github.com/redballoonsecurity/ofrak/pull/502), [#541](https://github.com/redballoonsecurity/ofrak/pull/541))
 
 ## [4.0.2](https://github.com/redballoonsecurity/ofrak/compare/ofrak-patch-maker-v.4.0.1...ofrak-patch-maker-v.4.0.2)
 ### Fixed
