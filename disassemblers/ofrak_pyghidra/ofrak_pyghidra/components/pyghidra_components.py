@@ -61,8 +61,6 @@ class PyGhidraUnpacker(Unpacker[None]):
         else:
             unpack_bbs = True
         await resource.auto_run(all_unpackers=True, blacklisted_components=(PyGhidraUnpacker,))
-        with open("/root/test.log", "a") as fh:
-            fh.write("here\n")
         program_attributes = await resource.analyze(ProgramAttributes)
         with TemporaryDirectory() as tempdir:
             program_file = os.path.join(tempdir, "program")
