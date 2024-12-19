@@ -14,6 +14,9 @@ class CachedAnalysis(ResourceView):
     filename: str
     program_attributes: ProgramAttributes
 
+    def __init__(self, filename, program_attributes):
+        self.analysis = None
+
     def cached_analysis(self):
         with open(self.filename, "r") as fh:
             return json.load(fh)
@@ -56,10 +59,11 @@ class CachedProgramUnpacker(Unpacker[None]):
     async def unpack(self, resource: Resource, config: None):
         cached_analysis_view = await resource.view_as(CachedAnalysis)
         cached_analysis = cached_analysis_view.cached_analysis()
-        for code_region in cached_analysis:
-            cr = CodeRegion(
-                virtual_address=code_region["virtual_address"], size=code_region["size"]
-            )
+        for key, mem_region in cached_analysis.items():
+            if key.startswith("seg"):
+                cr = CodeRegion(
+                    virtual_address=mem_region["virtual_address"], size=mem_region["size"]
+                )
             await resource.create_child_from_view(cr)
 
 
@@ -77,15 +81,16 @@ class CachedCodeRegionUnpacker(CodeRegionUnpacker):
 
         cached_analysis = analysis_parent.cached_analysis()
         code_region_view = await resource.view_as(CodeRegion)
-        for code_region in cached_analysis:
-            if code_region["virtual_address"] == code_region_view.virtual_address:
-                for complex_block in code_region["complex_blocks"]:
-                    cb = ComplexBlock(
-                        virtual_address=complex_block["virtual_address"],
-                        size=complex_block["size"],
-                        name=complex_block["name"],
-                    )
-                    await code_region_view.create_child_region(cb)
+        key = f"seg_{code_region_view.virtual_address}"
+        func_keys = cached_analysis[key]["children"]
+        for func_key in func_keys:
+            complex_block = cached_analysis[func_key]
+            cb = ComplexBlock(
+                virtual_address=complex_block["virtual_address"],
+                size=complex_block["size"],
+                name=complex_block["name"],
+            )
+            await code_region_view.create_child_region(cb)
 
 
 class CachedComplexBlockUnpacker(ComplexBlockUnpacker):
@@ -102,40 +107,37 @@ class CachedComplexBlockUnpacker(ComplexBlockUnpacker):
 
         cached_analysis = analysis_parent.cached_analysis()
         cb_view = await resource.view_as(ComplexBlock)
-
-        for code_region in cached_analysis:
-            if (
-                cb_view.virtual_address > code_region["virtual_address"]
-                and cb_view.virtual_address < code_region["virtual_address"] + code_region["size"]
-            ):
-                for complex_block in code_region["complex_blocks"]:
-                    if complex_block["virtual_address"] == cb_view.virtual_address:
-                        for basic_block in complex_block["basic_blocks"]:
-                            mode = InstructionSetMode.NONE
-                            if basic_block["mode"] == "thumb":
-                                mode = InstructionSetMode.THUMB
-                            elif basic_block["mode"] == "vle":
-                                mode = InstructionSetMode.VLE
-                            bb = BasicBlock(
-                                virtual_address=basic_block["virtual_address"],
-                                size=basic_block["size"],
-                                mode=mode,
-                                is_exit_point=basic_block["is_exit_point"],
-                                exit_vaddr=basic_block["exit_vaddr"],
-                            )
-                            await cb_view.create_child_region(bb)
-                        for data_word in complex_block["data_words"]:
-                            fmt_string = (
-                                analysis_parent.program_attributes.endianness.get_struct_flag()
-                                + data_word["format_string"]
-                            )
-                            dw = DataWord(
-                                virtual_address=data_word["virtual_address"],
-                                size=data_word["size"],
-                                format_string=fmt_string,
-                                xrefs_to=tuple(data_word["xrefs_to"]),
-                            )
-                            await cb_view.create_child_region(dw)
+        key = f"func_{cb_view.virtual_address}"
+        child_keys = cached_analysis[key]["children"]
+        for children in child_keys:
+            if children.startswith("bb"):
+                basic_block = cached_analysis[children]
+                mode = InstructionSetMode.NONE
+                if basic_block["mode"] == "thumb":
+                    mode = InstructionSetMode.THUMB
+                elif basic_block["mode"] == "vle":
+                    mode = InstructionSetMode.VLE
+                bb = BasicBlock(
+                    virtual_address=basic_block["virtual_address"],
+                    size=basic_block["size"],
+                    mode=mode,
+                    is_exit_point=basic_block["is_exit_point"],
+                    exit_vaddr=basic_block["exit_vaddr"],
+                )
+                await cb_view.create_child_region(bb)
+            elif children.startswith("dw"):
+                data_word = cached_analysis[children]
+                fmt_string = (
+                    analysis_parent.program_attributes.endianness.get_struct_flag()
+                    + data_word["format_string"]
+                )
+                dw = DataWord(
+                    virtual_address=data_word["virtual_address"],
+                    size=data_word["size"],
+                    format_string=fmt_string,
+                    xrefs_to=tuple(data_word["xrefs_to"]),
+                )
+                await cb_view.create_child_region(dw)
 
 
 class CachedBasicBlockUnpacker(BasicBlockUnpacker):
@@ -151,32 +153,21 @@ class CachedBasicBlockUnpacker(BasicBlockUnpacker):
             raise
         cached_analysis = analysis_parent.cached_analysis()
         bb_view = await resource.view_as(BasicBlock)
-
-        for code_region in cached_analysis:
-            if (
-                bb_view.virtual_address > code_region["virtual_address"]
-                and bb_view.virtual_address < code_region["virtual_address"] + code_region["size"]
-            ):
-                for complex_block in code_region["complex_blocks"]:
-                    if (
-                        bb_view.virtual_address > complex_block["virtual_address"]
-                        and bb_view.virtual_address
-                        < complex_block["virtual_address"] + complex_block["size"]
-                    ):
-                        for basic_block in complex_block["basic_blocks"]:
-                            if basic_block["virtual_address"] == bb_view.virtual_address:
-                                for instruction in basic_block["instructions"]:
-                                    mode = InstructionSetMode.NONE
-                                    if basic_block["mode"] == "thumb":
-                                        mode = InstructionSetMode.THUMB
-                                    elif basic_block["mode"] == "vle":
-                                        mode = InstructionSetMode.VLE
-                                    instr = Instruction(
-                                        virtual_address=instruction["virtual_address"],
-                                        size=instruction["size"],
-                                        disassembly=f"{instruction['mnemonic']} {instruction['operands']}",
-                                        mnemonic=instruction["mnemonic"],
-                                        operands=instruction["operands"],
-                                        mode=mode,
-                                    )
-                                    await bb_view.create_child_region(instr)
+        key = f"bb_{bb_view.virtual_address}"
+        child_keys = cached_analysis[key]["children"]
+        for children in child_keys:
+            instruction = cached_analysis[children]
+            mode = InstructionSetMode.NONE
+            if instruction["mode"] == "thumb":
+                mode = InstructionSetMode.THUMB
+            elif instruction["mode"] == "vle":
+                mode = InstructionSetMode.VLE
+            instr = Instruction(
+                virtual_address=instruction["virtual_address"],
+                size=instruction["size"],
+                disassembly=f"{instruction['mnemonic']} {instruction['operands']}",
+                mnemonic=instruction["mnemonic"],
+                operands=instruction["operands"],
+                mode=mode,
+            )
+            await bb_view.create_child_region(instr)
