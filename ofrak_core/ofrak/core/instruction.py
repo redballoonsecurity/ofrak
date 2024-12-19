@@ -25,13 +25,11 @@ class Instruction(MemoryRegion):
 
     :ivar virtual_address: the virtual address of the start of the instruction
     :ivar size: the size of the instruction
-    :ivar disassembly: the instruction's disassembly
     :ivar mnemonic: the instruction's mnemonic
     :ivar operands: the instruction's operands
     :ivar mode: the instruction set mode of the instruction
     """
 
-    disassembly: str
     mnemonic: str
     operands: str
     mode: InstructionSetMode
@@ -178,7 +176,6 @@ class InstructionModifier(Modifier[InstructionModifierConfig]):
         ), "The modified instruction length does not match the original instruction length"
 
         new_attributes = AttributesType[Instruction](
-            disassembly=modified_assembly,
             mnemonic=config.mnemonic,
             operands=config.operands,
             mode=config.mode,
