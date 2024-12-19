@@ -56,7 +56,6 @@ class AbstractElfAttributeModifier(ABC):
         resource.queue_patch(Range.from_size(0, patch_length), new_data)
         resource.add_attributes(new_attributes)
 
-
 @dataclass
 class ElfHeaderModifierConfig(ComponentConfig):
     e_type: Optional[int] = None
