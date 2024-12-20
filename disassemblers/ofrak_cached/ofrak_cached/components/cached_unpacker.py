@@ -2,7 +2,7 @@ import logging
 
 from ofrak.core import *
 import json
-
+from typing import Dict
 from ofrak.core.code_region import CodeRegion
 from ofrak.core.complex_block import ComplexBlock
 
@@ -11,15 +11,8 @@ _GHIDRA_AUTO_LOADABLE_FORMATS = [Elf, Ihex, Pe]
 
 @dataclass
 class CachedAnalysis(ResourceView):
-    filename: str
+    analysis: Dict[str, Dict]
     program_attributes: ProgramAttributes
-
-    def __init__(self, filename, program_attributes):
-        self.analysis = None
-
-    def cached_analysis(self):
-        with open(self.filename, "r") as fh:
-            return json.load(fh)
 
 
 class CachedAnalysisIdentifier(Identifier):
@@ -44,8 +37,10 @@ class CachedAnalysisAnalyzer(Analyzer[CachedAnalysisAnalyzerConfig, CachedAnalys
 
     async def analyze(self, resource: Resource, config: CachedAnalysisAnalyzerConfig):
         program_attributes = await resource.analyze(ProgramAttributes)
+        with open(config.filename, "r") as fh:
+            analysis = json.load(fh)
         cached_analysis_view = CachedAnalysis(
-            filename=config.filename, program_attributes=program_attributes
+            analysis=analysis, program_attributes=program_attributes
         )
         resource.add_view(cached_analysis_view)
         await resource.save()
@@ -58,7 +53,7 @@ class CachedProgramUnpacker(Unpacker[None]):
 
     async def unpack(self, resource: Resource, config: None):
         cached_analysis_view = await resource.view_as(CachedAnalysis)
-        cached_analysis = cached_analysis_view.cached_analysis()
+        cached_analysis = cached_analysis_view.analysis
         for key, mem_region in cached_analysis.items():
             if key.startswith("seg"):
                 cr = CodeRegion(
@@ -79,7 +74,7 @@ class CachedCodeRegionUnpacker(CodeRegionUnpacker):
             )
             raise
 
-        cached_analysis = analysis_parent.cached_analysis()
+        cached_analysis = analysis_parent.analysis
         code_region_view = await resource.view_as(CodeRegion)
         key = f"seg_{code_region_view.virtual_address}"
         func_keys = cached_analysis[key]["children"]
@@ -105,7 +100,7 @@ class CachedComplexBlockUnpacker(ComplexBlockUnpacker):
             )
             raise
 
-        cached_analysis = analysis_parent.cached_analysis()
+        cached_analysis = analysis_parent.analysis
         cb_view = await resource.view_as(ComplexBlock)
         key = f"func_{cb_view.virtual_address}"
         child_keys = cached_analysis[key]["children"]
@@ -151,7 +146,7 @@ class CachedBasicBlockUnpacker(BasicBlockUnpacker):
                 "Can not find CachedAnalysis, must run CachedAnalysisAnalyzer manually with the cache file specified."
             )
             raise
-        cached_analysis = analysis_parent.cached_analysis()
+        cached_analysis = analysis_parent.analysis
         bb_view = await resource.view_as(BasicBlock)
         key = f"bb_{bb_view.virtual_address}"
         child_keys = cached_analysis[key]["children"]
