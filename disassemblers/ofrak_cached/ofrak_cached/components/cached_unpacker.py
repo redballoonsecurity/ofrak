@@ -5,14 +5,29 @@ import json
 from typing import Dict
 from ofrak.core.code_region import CodeRegion
 from ofrak.core.complex_block import ComplexBlock
+from ofrak.service.component_locator_i import (
+    ComponentLocatorInterface,
+)
 
 _GHIDRA_AUTO_LOADABLE_FORMATS = [Elf, Ihex, Pe]
 
 
+class CachedAnalysisStore:
+    def __init__(self):
+        self.analysis = dict()
+        self.program_attributes: Optional[ProgramAttributes] = None
+
+    def store_analysis(self, filename):
+        with open(filename, "r") as fh:
+            self.analysis = json.load(fh)
+
+    def store_program_attributes(self, program_attributes: ProgramAttributes):
+        self.program_attributes = program_attributes
+
+
 @dataclass
 class CachedAnalysis(ResourceView):
-    analysis: Dict[str, Dict]
-    program_attributes: ProgramAttributes
+    pass
 
 
 class CachedAnalysisIdentifier(Identifier):
@@ -35,14 +50,21 @@ class CachedAnalysisAnalyzer(Analyzer[CachedAnalysisAnalyzerConfig, CachedAnalys
     targets = (None,)
     outputs = (CachedAnalysis,)
 
+    def __init__(
+        self,
+        resource_factory: ResourceFactory,
+        data_service: DataServiceInterface,
+        resource_service: ResourceServiceInterface,
+        analysis_store: CachedAnalysisStore,
+    ):
+        super().__init__(resource_factory, data_service, resource_service)
+        self.analysis_store = analysis_store
+
     async def analyze(self, resource: Resource, config: CachedAnalysisAnalyzerConfig):
         program_attributes = await resource.analyze(ProgramAttributes)
-        with open(config.filename, "r") as fh:
-            analysis = json.load(fh)
-        cached_analysis_view = CachedAnalysis(
-            analysis=analysis, program_attributes=program_attributes
-        )
-        resource.add_view(cached_analysis_view)
+        self.analysis_store.store_analysis(config.filename)
+        self.analysis_store.store_program_attributes(program_attributes)
+        cached_analysis_view = CachedAnalysis()
         await resource.save()
         return cached_analysis_view
 
@@ -51,10 +73,19 @@ class CachedProgramUnpacker(Unpacker[None]):
     targets = (CachedAnalysis,)
     outputs = (CodeRegion,)
 
+    def __init__(
+        self,
+        resource_factory: ResourceFactory,
+        data_service: DataServiceInterface,
+        resource_service: ResourceServiceInterface,
+        analysis_store: CachedAnalysisStore,
+        component_locator: ComponentLocatorInterface,
+    ):
+        super().__init__(resource_factory, data_service, resource_service, component_locator)
+        self.analysis_store = analysis_store
+
     async def unpack(self, resource: Resource, config: None):
-        cached_analysis_view = await resource.view_as(CachedAnalysis)
-        cached_analysis = cached_analysis_view.analysis
-        for key, mem_region in cached_analysis.items():
+        for key, mem_region in self.analysis_store.items():
             if key.startswith("seg"):
                 cr = CodeRegion(
                     virtual_address=mem_region["virtual_address"], size=mem_region["size"]
@@ -63,23 +94,23 @@ class CachedProgramUnpacker(Unpacker[None]):
 
 
 class CachedCodeRegionUnpacker(CodeRegionUnpacker):
-    async def unpack(self, resource: Resource, config: None):
-        try:
-            analysis_parent = await resource.get_only_ancestor_as_view(
-                v_type=CachedAnalysis, r_filter=ResourceFilter(tags=(CachedAnalysis,))
-            )
-        except NotFoundError:
-            logging.error(
-                "Can not find CachedAnalysis, must run CachedAnalysisAnalyzer manually with the cache file specified."
-            )
-            raise
+    def __init__(
+        self,
+        resource_factory: ResourceFactory,
+        data_service: DataServiceInterface,
+        resource_service: ResourceServiceInterface,
+        analysis_store: CachedAnalysisStore,
+        component_locator: ComponentLocatorInterface,
+    ):
+        super().__init__(resource_factory, data_service, resource_service, component_locator)
+        self.analysis_store = analysis_store
 
-        cached_analysis = analysis_parent.analysis
+    async def unpack(self, resource: Resource, config: None):
         code_region_view = await resource.view_as(CodeRegion)
         key = f"seg_{code_region_view.virtual_address}"
-        func_keys = cached_analysis[key]["children"]
+        func_keys = self.analysis_store.analysis[key]["children"]
         for func_key in func_keys:
-            complex_block = cached_analysis[func_key]
+            complex_block = self.analysis_store.analysis[func_key]
             cb = ComplexBlock(
                 virtual_address=complex_block["virtual_address"],
                 size=complex_block["size"],
@@ -89,24 +120,24 @@ class CachedCodeRegionUnpacker(CodeRegionUnpacker):
 
 
 class CachedComplexBlockUnpacker(ComplexBlockUnpacker):
-    async def unpack(self, resource: Resource, config: None):
-        try:
-            analysis_parent = await resource.get_only_ancestor_as_view(
-                v_type=CachedAnalysis, r_filter=ResourceFilter(tags=(CachedAnalysis,))
-            )
-        except NotFoundError:
-            logging.error(
-                "Can not find CachedAnalysis, must run CachedAnalysisAnalyzer manually with the cache file specified."
-            )
-            raise
+    def __init__(
+        self,
+        resource_factory: ResourceFactory,
+        data_service: DataServiceInterface,
+        resource_service: ResourceServiceInterface,
+        analysis_store: CachedAnalysisStore,
+        component_locator: ComponentLocatorInterface,
+    ):
+        super().__init__(resource_factory, data_service, resource_service, component_locator)
+        self.analysis_store = analysis_store
 
-        cached_analysis = analysis_parent.analysis
+    async def unpack(self, resource: Resource, config: None):
         cb_view = await resource.view_as(ComplexBlock)
         key = f"func_{cb_view.virtual_address}"
-        child_keys = cached_analysis[key]["children"]
+        child_keys = self.analysis_store.analysis[key]["children"]
         for children in child_keys:
             if children.startswith("bb"):
-                basic_block = cached_analysis[children]
+                basic_block = self.analysis_store.analysis[children]
                 mode = InstructionSetMode.NONE
                 if basic_block["mode"] == "thumb":
                     mode = InstructionSetMode.THUMB
@@ -121,9 +152,9 @@ class CachedComplexBlockUnpacker(ComplexBlockUnpacker):
                 )
                 await cb_view.create_child_region(bb)
             elif children.startswith("dw"):
-                data_word = cached_analysis[children]
+                data_word = self.analysis_store.analysis[children]
                 fmt_string = (
-                    analysis_parent.program_attributes.endianness.get_struct_flag()
+                    self.analysis_store.program_attributes.endianness.get_struct_flag()
                     + data_word["format_string"]
                 )
                 dw = DataWord(
@@ -136,22 +167,23 @@ class CachedComplexBlockUnpacker(ComplexBlockUnpacker):
 
 
 class CachedBasicBlockUnpacker(BasicBlockUnpacker):
+    def __init__(
+        self,
+        resource_factory: ResourceFactory,
+        data_service: DataServiceInterface,
+        resource_service: ResourceServiceInterface,
+        analysis_store: CachedAnalysisStore,
+        component_locator: ComponentLocatorInterface,
+    ):
+        super().__init__(resource_factory, data_service, resource_service, component_locator)
+        self.analysis_store = analysis_store
+
     async def unpack(self, resource: Resource, config: None):
-        try:
-            analysis_parent = await resource.get_only_ancestor_as_view(
-                v_type=CachedAnalysis, r_filter=ResourceFilter(tags=(CachedAnalysis,))
-            )
-        except NotFoundError:
-            logging.error(
-                "Can not find CachedAnalysis, must run CachedAnalysisAnalyzer manually with the cache file specified."
-            )
-            raise
-        cached_analysis = analysis_parent.analysis
         bb_view = await resource.view_as(BasicBlock)
         key = f"bb_{bb_view.virtual_address}"
-        child_keys = cached_analysis[key]["children"]
+        child_keys = self.analysis_store.analysis[key]["children"]
         for children in child_keys:
-            instruction = cached_analysis[children]
+            instruction = self.analysis_store.analysis[children]
             mode = InstructionSetMode.NONE
             if instruction["mode"] == "thumb":
                 mode = InstructionSetMode.THUMB
