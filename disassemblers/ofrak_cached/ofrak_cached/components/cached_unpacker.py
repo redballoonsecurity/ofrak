@@ -2,7 +2,7 @@ import logging
 
 from ofrak.core import *
 import json
-from typing import Dict
+from typing import Dict, Any
 from ofrak.core.code_region import CodeRegion
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.service.component_locator_i import (
@@ -17,12 +17,19 @@ class CachedAnalysisStore:
         self.analysis = dict()
         self.program_attributes: Optional[ProgramAttributes] = None
 
-    def store_analysis(self, filename):
+    def store_analysis(self, resource_id: bytes, filename: str):
         with open(filename, "r") as fh:
-            self.analysis = json.load(fh)
+            analysis = json.load(fh)
+            self.analysis[resource_id]["analysis"] = analysis
 
-    def store_program_attributes(self, program_attributes: ProgramAttributes):
-        self.program_attributes = program_attributes
+    def store_program_attributes(self, resource_id: bytes, program_attributes: ProgramAttributes):
+        self.analysis[resource_id]["program_attributes"] = program_attributes
+
+    def get_analysis(self, resource_id: bytes) -> Dict[str, Any]:
+        return self.analysis[resource_id]["analysis"]
+
+    def get_program_attributes(self, resource_id: bytes) -> ProgramAttributes:
+        return self.analysis[resource_id]["program_attributes"]
 
 
 @dataclass
@@ -85,7 +92,8 @@ class CachedProgramUnpacker(Unpacker[None]):
         self.analysis_store = analysis_store
 
     async def unpack(self, resource: Resource, config: None):
-        for key, mem_region in self.analysis_store.items():
+        analysis = self.analysis_store.get_analysis(resource.get_id())
+        for key, mem_region in analysis.items():
             if key.startswith("seg"):
                 cr = CodeRegion(
                     virtual_address=mem_region["virtual_address"], size=mem_region["size"]
@@ -106,11 +114,12 @@ class CachedCodeRegionUnpacker(CodeRegionUnpacker):
         self.analysis_store = analysis_store
 
     async def unpack(self, resource: Resource, config: None):
+        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(Program))
+        analysis = self.analysis_store.get_analysis(program_r.get_id())
         code_region_view = await resource.view_as(CodeRegion)
-        key = f"seg_{code_region_view.virtual_address}"
-        func_keys = self.analysis_store.analysis[key]["children"]
+        func_keys = analysis[f"seg_{code_region_view.virtual_address}"]["children"]
         for func_key in func_keys:
-            complex_block = self.analysis_store.analysis[func_key]
+            complex_block = analysis[func_key]
             cb = ComplexBlock(
                 virtual_address=complex_block["virtual_address"],
                 size=complex_block["size"],
@@ -132,12 +141,15 @@ class CachedComplexBlockUnpacker(ComplexBlockUnpacker):
         self.analysis_store = analysis_store
 
     async def unpack(self, resource: Resource, config: None):
+        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(Program))
+        analysis = self.analysis_store.get_analysis(program_r.get_id())
+        program_attributes = self.analysis_store.get_program_attributes(program_r.get_id())
+
         cb_view = await resource.view_as(ComplexBlock)
-        key = f"func_{cb_view.virtual_address}"
-        child_keys = self.analysis_store.analysis[key]["children"]
+        child_keys = self.analysis_store.analysis[f"func_{cb_view.virtual_address}"]["children"]
         for children in child_keys:
             if children.startswith("bb"):
-                basic_block = self.analysis_store.analysis[children]
+                basic_block = analysis[children]
                 mode = InstructionSetMode.NONE
                 if basic_block["mode"] == "thumb":
                     mode = InstructionSetMode.THUMB
@@ -152,9 +164,9 @@ class CachedComplexBlockUnpacker(ComplexBlockUnpacker):
                 )
                 await cb_view.create_child_region(bb)
             elif children.startswith("dw"):
-                data_word = self.analysis_store.analysis[children]
+                data_word = analysis[children]
                 fmt_string = (
-                    self.analysis_store.program_attributes.endianness.get_struct_flag()
+                    program_attributes.endianness.get_struct_flag()
                     + data_word["format_string"]
                 )
                 dw = DataWord(
@@ -179,11 +191,13 @@ class CachedBasicBlockUnpacker(BasicBlockUnpacker):
         self.analysis_store = analysis_store
 
     async def unpack(self, resource: Resource, config: None):
+        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(Program))
+        analysis = self.analysis_store.get_analysis(program_r.get_id())
+
         bb_view = await resource.view_as(BasicBlock)
-        key = f"bb_{bb_view.virtual_address}"
-        child_keys = self.analysis_store.analysis[key]["children"]
+        child_keys = self.analysis_store.analysis[f"bb_{bb_view.virtual_address}"]["children"]
         for children in child_keys:
-            instruction = self.analysis_store.analysis[children]
+            instruction = analysis[children]
             mode = InstructionSetMode.NONE
             if instruction["mode"] == "thumb":
                 mode = InstructionSetMode.THUMB
