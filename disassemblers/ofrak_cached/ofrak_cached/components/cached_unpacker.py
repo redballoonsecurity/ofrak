@@ -90,7 +90,7 @@ class CachedProgramUnpacker(Unpacker[None]):
                 cr = CodeRegion(
                     virtual_address=mem_region["virtual_address"], size=mem_region["size"]
                 )
-            await resource.create_child_from_view(cr)
+                await resource.create_child_from_view(cr)
 
 
 class CachedCodeRegionUnpacker(CodeRegionUnpacker):
