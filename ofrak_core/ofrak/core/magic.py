@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Callable, Dict, Iterable, Union
 
 from ofrak.component.abstract import ComponentMissingDependencyError
+from ofrak_type import Range
 
 try:
     import magic
@@ -14,7 +15,6 @@ except ImportError:
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.identifier import Identifier
 from ofrak.core.binary import GenericBinary, GenericText
-from ofrak.core.filesystem import File
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.model.tag_model import ResourceTag
@@ -59,7 +59,7 @@ class MagicAnalyzer(Analyzer[None, Magic]):
     Analyze a binary blob to extract its mimetype and magic description.
     """
 
-    targets = (File, GenericBinary)
+    targets = (GenericBinary,)
     outputs = (Magic,)
     external_dependencies = (LIBMAGIC_DEP,)
 
@@ -73,63 +73,102 @@ class MagicAnalyzer(Analyzer[None, Magic]):
             return Magic(magic_mime, magic_description)
 
 
-class MagicMimeIdentifier(Identifier[None]):
+class MagicIdentifier(Identifier[None]):
+    """
+    Identify resourced using three identifier patterns:
+
+    1. [MagicMimePattern][ofrak.core.magic.MagicMimePattern]
+    2. [MagicDescriptionPattern][ofrak.core.magic.MagicDescriptionPattern]
+    3. [RawMagicPattern][ofrak.core.magic.RawMagicPattern]
+
+    OFRAK component authors can "register" magic patterns to run whenever this
+    identifier is:
+
+    ```python
+    MagicMimePattern.register(GenericBinary, "application/octet-stream")
+    ```
+    """
+
+    targets = (GenericBinary,)
+    external_dependencies = (LIBMAGIC_DEP,)
+
+    async def identify(self, resource: Resource, config=None) -> None:
+        _magic = await resource.analyze(Magic)
+        self._run_magic_mime_patterns(resource, _magic.mime)
+        magic_description = _magic.descriptor
+        self._run_magic_description_pattern(resource, magic_description)
+        await self._run_raw_magic_patterns(resource)
+
+    @staticmethod
+    def _run_magic_mime_patterns(resource: Resource, magic_mime: str):
+        tag = MagicMimePattern.tags_by_mime.get(magic_mime)
+        if tag is not None:
+            resource.add_tag(tag)
+
+    @staticmethod
+    def _run_magic_description_pattern(resource: Resource, magic_description: str):
+        for matcher, resource_type in MagicDescriptionPattern.matchers.items():
+            if matcher(magic_description):
+                resource.add_tag(resource_type)
+
+    @staticmethod
+    async def _run_raw_magic_patterns(resource: Resource):
+        data_length = min(await resource.get_data_length(), 8)
+        data = await resource.get_data(range=Range(0, data_length))
+        for matcher, resource_type in RawMagicPattern.matchers.items():
+            if matcher(data):
+                resource.add_tag(resource_type)
+
+
+class MagicMimePattern:
     """
     Identify and add the appropriate tag for a given resource based on its mimetype.
     """
 
-    id = b"MagicMimeIdentifier"
-    targets = (File, GenericBinary)
-    external_dependencies = (LIBMAGIC_DEP,)  # Indirect thru MagicAnalyzer, but worth tagging
-
-    _tags_by_mime: Dict[str, ResourceTag] = dict()
-
-    async def identify(self, resource: Resource, config=None):
-        _magic = await resource.analyze(Magic)
-        magic_mime = _magic.mime
-        tag = MagicMimeIdentifier._tags_by_mime.get(magic_mime)
-        if tag is not None:
-            resource.add_tag(tag)
+    tags_by_mime: Dict[str, ResourceTag] = dict()
 
     @classmethod
     def register(cls, resource: ResourceTag, mime_types: Union[Iterable[str], str]):
         if isinstance(mime_types, str):
             mime_types = [mime_types]
         for mime_type in mime_types:
-            if mime_type in cls._tags_by_mime:
+            if mime_type in cls.tags_by_mime:
                 raise AlreadyExistError(f"Registering already-registered mime type: {mime_type}")
-            cls._tags_by_mime[mime_type] = resource
+            cls.tags_by_mime[mime_type] = resource
 
 
-class MagicDescriptionIdentifier(Identifier[None]):
+class MagicDescriptionPattern:
     """
     Identify and add the appropriate tag for a given resource based on its mime description.
     """
 
-    id = b"MagicDescriptionIdentifier"
-    targets = (File, GenericBinary)
-    external_dependencies = (LIBMAGIC_DEP,)  # Indirect thru MagicAnalyzer, but worth tagging
-
-    _matchers: Dict[Callable, ResourceTag] = dict()
-
-    async def identify(self, resource: Resource, config):
-        _magic = await resource.analyze(Magic)
-        magic_description = _magic.descriptor
-        for matcher, resource_type in self._matchers.items():
-            if matcher(magic_description):
-                resource.add_tag(resource_type)
+    matchers: Dict[Callable, ResourceTag] = dict()
 
     @classmethod
     def register(cls, resource: ResourceTag, matcher: Callable):
-        if matcher in cls._matchers:
+        if matcher in cls.matchers:
             raise AlreadyExistError("Registering already-registered matcher")
-        cls._matchers[matcher] = resource
+        cls.matchers[matcher] = resource
 
 
-MagicMimeIdentifier.register(GenericText, "text/plain")
-MagicDescriptionIdentifier.register(
+class RawMagicPattern:
+    """
+    Identify raw magic bytes.
+    """
+
+    matchers: Dict[Callable, ResourceTag] = dict()
+
+    @classmethod
+    def register(cls, resource: ResourceTag, matcher: Callable):
+        if matcher in cls.matchers:
+            raise AlreadyExistError("Registering already-registered matcher")
+        cls.matchers[matcher] = resource
+
+
+MagicMimePattern.register(GenericText, "text/plain")
+MagicDescriptionPattern.register(
     GenericText, lambda desc: any([("ASCII text" in s) for s in desc.split(", ")])
 )
 
-MagicMimeIdentifier.register(GenericBinary, "application/octet-stream")
-MagicDescriptionIdentifier.register(GenericBinary, lambda s: s == "data")
+MagicMimePattern.register(GenericBinary, "application/octet-stream")
+MagicDescriptionPattern.register(GenericBinary, lambda s: s == "data")
