@@ -20,9 +20,13 @@ class CachedAnalysisStore:
     def store_analysis(self, resource_id: bytes, filename: str):
         with open(filename, "r") as fh:
             analysis = json.load(fh)
+            if resource_id not in self.analysis.keys():
+                self.analysis[resource_id] = dict()
             self.analysis[resource_id]["analysis"] = analysis
 
     def store_program_attributes(self, resource_id: bytes, program_attributes: ProgramAttributes):
+        if resource_id not in self.analysis.keys():
+            self.analysis[resource_id] = dict()
         self.analysis[resource_id]["program_attributes"] = program_attributes
 
     def get_analysis(self, resource_id: bytes) -> Dict[str, Any]:
@@ -54,7 +58,7 @@ class CachedAnalysisAnalyzerConfig(ComponentConfig):
 
 class CachedAnalysisAnalyzer(Analyzer[CachedAnalysisAnalyzerConfig, CachedAnalysis]):
     id = b"CachedAnalysisAnalyzer"
-    targets = (None,)
+    targets = (CachedAnalysis,)
     outputs = (CachedAnalysis,)
 
     def __init__(
@@ -69,8 +73,8 @@ class CachedAnalysisAnalyzer(Analyzer[CachedAnalysisAnalyzerConfig, CachedAnalys
 
     async def analyze(self, resource: Resource, config: CachedAnalysisAnalyzerConfig):
         program_attributes = await resource.analyze(ProgramAttributes)
-        self.analysis_store.store_analysis(config.filename)
-        self.analysis_store.store_program_attributes(program_attributes)
+        self.analysis_store.store_analysis(resource.get_id(), config.filename)
+        self.analysis_store.store_program_attributes(resource.get_id(), program_attributes)
         cached_analysis_view = CachedAnalysis()
         await resource.save()
         return cached_analysis_view
@@ -146,7 +150,7 @@ class CachedComplexBlockUnpacker(ComplexBlockUnpacker):
         program_attributes = self.analysis_store.get_program_attributes(program_r.get_id())
 
         cb_view = await resource.view_as(ComplexBlock)
-        child_keys = self.analysis_store.analysis[f"func_{cb_view.virtual_address}"]["children"]
+        child_keys = analysis[f"func_{cb_view.virtual_address}"]["children"]
         for children in child_keys:
             if children.startswith("bb"):
                 basic_block = analysis[children]
@@ -166,8 +170,7 @@ class CachedComplexBlockUnpacker(ComplexBlockUnpacker):
             elif children.startswith("dw"):
                 data_word = analysis[children]
                 fmt_string = (
-                    program_attributes.endianness.get_struct_flag()
-                    + data_word["format_string"]
+                    program_attributes.endianness.get_struct_flag() + data_word["format_string"]
                 )
                 dw = DataWord(
                     virtual_address=data_word["virtual_address"],
@@ -195,7 +198,7 @@ class CachedBasicBlockUnpacker(BasicBlockUnpacker):
         analysis = self.analysis_store.get_analysis(program_r.get_id())
 
         bb_view = await resource.view_as(BasicBlock)
-        child_keys = self.analysis_store.analysis[f"bb_{bb_view.virtual_address}"]["children"]
+        child_keys = analysis[f"bb_{bb_view.virtual_address}"]["children"]
         for children in child_keys:
             instruction = analysis[children]
             mode = InstructionSetMode.NONE
