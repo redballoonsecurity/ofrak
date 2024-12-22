@@ -1,9 +1,11 @@
 import asyncio
+import contextlib
 import dataclasses
 import hashlib
 import logging
 from inspect import isawaitable
 from typing import (
+    AsyncIterator,
     BinaryIO,
     Iterable,
     List,
@@ -20,6 +22,7 @@ from typing import (
     Pattern,
     overload,
 )
+import tempfile312 as tempfile
 
 from ofrak.component.interface import ComponentInterface
 from ofrak.model.component_model import ComponentContext, CC, ComponentRunResult
@@ -1510,6 +1513,21 @@ class Resource:
             )
             tree_string += f"{indent}{branch_symbol}{SPACER_LINE}{child_tree_string}"
         return tree_string
+
+    @contextlib.contextmanager
+    def temp_to_disk(
+        self,
+        prefix: Optional[str] = None,
+        suffix: Optional[str] = None,
+        dir: Optional[str] = None,
+        delete: bool = True,
+    ) -> AsyncIterator[str]:
+        with tempfile.NamedTemporaryFile(
+            mode="wb", prefix=prefix, suffix=suffix, dir=dir, delete_on_close=False, delete=delete
+        ) as temp:
+            temp.write(self.get_data())
+            temp.close()
+            yield temp.name
 
 
 def save_resources(

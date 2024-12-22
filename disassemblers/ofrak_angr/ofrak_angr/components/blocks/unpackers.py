@@ -24,18 +24,18 @@ LOGGER = logging.getLogger(__name__)
 
 
 class AngrCodeRegionUnpacker(CodeRegionUnpacker):
-    async def unpack(self, resource: Resource, config: Optional[AngrAnalyzerConfig] = None):
+    def unpack(self, resource: Resource, config: Optional[AngrAnalyzerConfig] = None):
         # Prepare CR unpacker
-        cr_view = await resource.view_as(CodeRegion)
+        cr_view = resource.view_as(CodeRegion)
 
         # Run AngrAnalyzer
-        root_resource = await resource.get_only_ancestor(
+        root_resource = resource.get_only_ancestor(
             ResourceFilter(tags=[AngrAnalysisResource], include_self=True)
         )
-        angr_analysis = await root_resource.analyze(AngrAnalysis)
+        angr_analysis = root_resource.analyze(AngrAnalysis)
 
         # Fixup the CodeRegion's virtual address after analyzing with angr.
-        await resource.run(AngrCodeRegionModifier, None)
+        resource.run(AngrCodeRegionModifier, None)
 
         cr_vaddr_range = cr_view.vaddr_range()
 
@@ -43,7 +43,7 @@ class AngrCodeRegionUnpacker(CodeRegionUnpacker):
         num_overlapping_cbs = 0
 
         for complex_block in self._angr_get_complex_blocks(angr_analysis, cr_vaddr_range):
-            await cr_view.create_child_region(complex_block)
+            cr_view.create_child_region(complex_block)
 
         if num_overlapping_cbs > 0:
             LOGGER.warning(
@@ -92,22 +92,22 @@ class AngrCodeRegionUnpacker(CodeRegionUnpacker):
 
 
 class AngrComplexBlockUnpacker(ComplexBlockUnpacker):
-    async def unpack(self, resource: Resource, config: Optional[AngrAnalyzerConfig] = None):
+    def unpack(self, resource: Resource, config: Optional[AngrAnalyzerConfig] = None):
         # Prepare CB unpacker
-        cb_view = await resource.view_as(ComplexBlock)
+        cb_view = resource.view_as(ComplexBlock)
         cb_vaddr_range = cb_view.vaddr_range()
-        cb_data_range = await resource.get_data_range_within_root()
+        cb_data_range = resource.get_data_range_within_root()
 
         # Run / fetch angr analyzer
-        root_resource = await resource.get_only_ancestor(
+        root_resource = resource.get_only_ancestor(
             ResourceFilter(tags=[AngrAnalysisResource], include_self=True)
         )
-        angr_analysis = await root_resource.analyze(AngrAnalysis)
+        angr_analysis = root_resource.analyze(AngrAnalysis)
 
         valid_data_xref_ranges = []
         # Fetch and create Basic Blocks to populate the CB with
         for basic_block in self._angr_get_basic_blocks(angr_analysis, cb_vaddr_range):
-            await cb_view.create_child_region(basic_block)
+            cb_view.create_child_region(basic_block)
             valid_data_xref_ranges.append(basic_block.vaddr_range())
 
         valid_data_xref_ranges = Range.merge_ranges(valid_data_xref_ranges)
@@ -115,7 +115,7 @@ class AngrComplexBlockUnpacker(ComplexBlockUnpacker):
         for data_word in self._angr_get_dword_blocks(
             angr_analysis, cb_vaddr_range, cb_data_range, valid_data_xref_ranges
         ):
-            await cb_view.create_child_region(data_word)
+            cb_view.create_child_region(data_word)
 
     @staticmethod
     def _angr_get_basic_blocks(
@@ -278,7 +278,8 @@ def _get_bb_exit_addr_info(
             f"has a BB after it, assume that it still falls through to the next BB."
         )
         return True, fallthrough_vaddr
-
+    if len(successor_vaddrs) == 0:
+        raise UnpackerError()
     if fallthrough_vaddr in successor_vaddrs:
         # Basic block can fall through to next block, so the next block should be the exit addr
         return False, fallthrough_vaddr

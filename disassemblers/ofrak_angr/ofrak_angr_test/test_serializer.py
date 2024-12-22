@@ -13,12 +13,12 @@ def serializer():
     return AngrAnalysisSerializer()
 
 
-async def test_angr_project_serializer(
+def test_angr_project_serializer(
     ofrak_context: OFRAKContext, hello_world_elf: bytes, serializer: SerializerInterface
 ):
-    root = await ofrak_context.create_root_resource("hello_world", hello_world_elf, (File,))
-    await root.identify()
-    angr_analysis = await root.analyze(AngrAnalysis)
+    root = ofrak_context.create_root_resource("hello_world", hello_world_elf, (File,))
+    root.identify()
+    angr_analysis = root.analyze(AngrAnalysis)
 
     serialized_project = serializer.obj_to_pjson(angr_analysis.project, Project)
     assert serialized_project is None

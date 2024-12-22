@@ -35,21 +35,21 @@ ASSETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
 BINARY_FILE = os.path.join(ASSETS_DIR, "example_program")
 
 
-async def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: str):
+def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: str):
     # Create resource
-    binary_resource = await ofrak_context.create_root_resource_from_file(file_path)
+    binary_resource = ofrak_context.create_root_resource_from_file(file_path)
 
     # Unpack resource
-    await binary_resource.unpack_recursively()
+    binary_resource.unpack_recursively()
     # Get the "main" function complex block
-    main_cb = await binary_resource.get_only_descendant_as_view(
+    main_cb = binary_resource.get_only_descendant_as_view(
         v_type=ComplexBlock,
         r_filter=ResourceFilter(
             attribute_filters=(ResourceAttributeValueFilter(ComplexBlock.Symbol, "main"),)
         ),
     )
     # Get the ret instruction within the main function
-    ret_instruction = await main_cb.resource.get_only_descendant_as_view(
+    ret_instruction = main_cb.resource.get_only_descendant_as_view(
         v_type=Instruction,
         r_filter=ResourceFilter(
             attribute_filters=(ResourceAttributeValueFilter(Instruction.Mnemonic, "ret"),)
@@ -59,24 +59,24 @@ async def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: st
     # Assemble the code modification using Keystone assembler
     # Modification: jump to the main function's entry point, creating an infinite loop
     assembler_service = KeystoneAssemblerService()
-    program_attributes = await binary_resource.analyze(ProgramAttributes)
-    new_instruction_bytes = await assembler_service.assemble(
+    program_attributes = binary_resource.analyze(ProgramAttributes)
+    new_instruction_bytes = assembler_service.assemble(
         assembly=f"jmp {main_cb.virtual_address}",
         vm_addr=ret_instruction.virtual_address,
         program_attributes=program_attributes,
     )
 
     # Patch in the modified bytes
-    range_in_root = await ret_instruction.resource.get_data_range_within_root()
+    range_in_root = ret_instruction.resource.get_data_range_within_root()
     binary_injector_config = BinaryPatchConfig(
         range_in_root.start,
         new_instruction_bytes,
     )
-    await binary_resource.run(BinaryPatchModifier, binary_injector_config)
+    binary_resource.run(BinaryPatchModifier, binary_injector_config)
 
     # Dump the modified program to disk
-    await binary_resource.pack()
-    await binary_resource.flush_data_to_disk(output_file_name)
+    binary_resource.pack()
+    binary_resource.flush_data_to_disk(output_file_name)
     print(f"Done! Output file written to {output_file_name}")
 
 

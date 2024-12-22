@@ -1,4 +1,3 @@
-import asyncio
 from typing import Optional, Dict, Type, Tuple
 
 from ofrak.model.tag_model import ResourceTag
@@ -259,17 +258,13 @@ def make_children_helper(
     structure_index_type: Optional[Type[ResourceAttributes]],
 ) -> None:
     elf_section_size = resource.get_data_length()
-    create_child_tasks = []
     for i, offset in enumerate(range(0, elf_section_size, entry_size)):
         if structure_index_type is not None:
             attrs: Tuple[ResourceAttributes, ...] = (structure_index_type(i),)  # type: ignore
         else:
             attrs = ()
-        create_child_tasks.append(
-            resource.create_child(
-                tags=(entry_type,),
-                data_range=Range.from_size(offset, entry_size),
-                attributes=attrs,
-            )
+        resource.create_child(
+            tags=(entry_type,),
+            data_range=Range.from_size(offset, entry_size),
+            attributes=attrs,
         )
-    asyncio.gather(*create_child_tasks)

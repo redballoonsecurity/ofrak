@@ -1,6 +1,6 @@
 import os
 import subprocess
-import tempfile
+import tempfile312 as tempfile
 
 import pytest
 
@@ -115,7 +115,8 @@ class TestTarFilesystemUnpackRepack(FilesystemPackUnpackVerifyPattern):
         self.check_stat = False
 
     def create_root_resource(self, ofrak_context: OFRAKContext, directory: str) -> Resource:
-        with tempfile.NamedTemporaryFile(suffix=".tar") as archive:
+        with tempfile.NamedTemporaryFile(suffix=".tar", delete_on_close=False) as archive:
+            archive.close()
             command = ["tar", "--xattrs", "-C", directory, "-cf", archive.name, "."]
             subprocess.run(command, check=True, capture_output=True)
 
@@ -128,12 +129,8 @@ class TestTarFilesystemUnpackRepack(FilesystemPackUnpackVerifyPattern):
         root_resource.pack_recursively()
 
     def extract(self, root_resource: Resource, extract_dir: str):
-        with tempfile.NamedTemporaryFile(suffix=".tar") as tar:
-            data = root_resource.get_data()
-            tar.write(data)
-            tar.flush()
-
-            command = ["tar", "--xattrs", "-C", extract_dir, "-xf", tar.name]
+        with root_resource.temp_to_disk(suffix=".tar") as tar_path:
+            command = ["tar", "--xattrs", "-C", extract_dir, "-xf", tar_path]
             subprocess.run(command, check=True, capture_output=True)
 
 
@@ -223,10 +220,6 @@ class TestComplexTarWithSpecialFiles(FilesystemPackUnpackVerifyPattern):
         root_resource.pack_recursively()
 
     def extract(self, root_resource: Resource, extract_dir: str):
-        with tempfile.NamedTemporaryFile(suffix=".tar") as tar:
-            data = root_resource.get_data()
-            tar.write(data)
-            tar.flush()
-
-            command = ["tar", "--xattrs", "-C", extract_dir, "-xf", tar.name]
+        with root_resource.temp_to_disk(suffix=".tar") as tar_path:
+            command = ["tar", "--xattrs", "-C", extract_dir, "-xf", tar_path]
             subprocess.run(command, check=True, capture_output=True)

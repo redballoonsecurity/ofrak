@@ -1,6 +1,7 @@
-import asyncio
 import logging
-import tempfile
+import subprocess
+
+import tempfile312 as tempfile
 from dataclasses import dataclass
 from enum import Enum
 from subprocess import CalledProcessError
@@ -92,16 +93,9 @@ class CpioUnpacker(Unpacker[None]):
                 "cpio",
                 "-id",
             ]
-            proc = asyncio.create_subprocess_exec(
-                *cmd,
-                stdin=asyncio.subprocess.PIPE,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                cwd=temp_flush_dir,
-            )
-            proc.communicate(input=resource_data)
-            if proc.returncode:
-                raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
+            result = subprocess.run(cmd, capture_output=True, cwd=temp_flush_dir)
+            if result.returncode:
+                raise CalledProcessError(returncode=result.returncode, cmd=cmd)
             cpio_v.initialize_from_disk(temp_flush_dir)
 
 
@@ -121,13 +115,12 @@ class CpioPacker(Packer[None]):
             "find",
             "-print",
         ]
-        list_files_proc = asyncio.create_subprocess_exec(
-            *list_files_cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
+
+        list_files_proc = subprocess.run(
+            list_files_cmd,
+            capture_output=True,
             cwd=temp_flush_dir,
         )
-        list_files_list, stderr = list_files_proc.communicate()
         if list_files_proc.returncode:
             raise CalledProcessError(returncode=list_files_proc.returncode, cmd=list_files_cmd)
 
@@ -136,18 +129,15 @@ class CpioPacker(Packer[None]):
             "-o",
             f"--format={cpio_format}",
         ]
-        cpio_pack_proc = asyncio.create_subprocess_exec(
-            *cpio_pack_cmd,
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
+        cpio_pack_proc = subprocess.run(
+            cpio_pack_cmd,
+            capture_output=True,
             cwd=temp_flush_dir,
         )
-        cpio_pack_output, stderr = cpio_pack_proc.communicate(input=list_files_list)
         if cpio_pack_proc.returncode:
             raise CalledProcessError(returncode=cpio_pack_proc.returncode, cmd=cpio_pack_cmd)
         # Passing in the original range effectively replaces the original data with the new data
-        resource.queue_patch(Range(0, resource.get_data_length()), cpio_pack_output)
+        resource.queue_patch(Range(0, resource.get_data_length()), cpio_pack_proc.stdout)
 
 
 MagicMimeIdentifier.register(CpioFilesystem, "application/x-cpio")

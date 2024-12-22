@@ -30,37 +30,37 @@ ASSETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
 SQUASHFS_FILE = os.path.join(ASSETS_DIR, "sample.sqsh")
 
 
-async def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: str):
+def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: str):
     # Create resource
-    root_resource = await ofrak_context.create_root_resource_from_file(file_path)
+    root_resource = ofrak_context.create_root_resource_from_file(file_path)
 
     # Unpack resource
-    await root_resource.unpack_recursively()
+    root_resource.unpack_recursively()
     # Get the program from inside the SquashFS filesystem
-    squashfs_view = await root_resource.view_as(SquashfsFilesystem)
+    squashfs_view = root_resource.view_as(SquashfsFilesystem)
     hello_world_program_path = "src/program"
-    hello_world_program = await squashfs_view.get_entry(hello_world_program_path)
+    hello_world_program = squashfs_view.get_entry(hello_world_program_path)
 
     # Get the "Hello, World!" string location in the program and patch it with "More meow!"
-    program_data = await hello_world_program.resource.get_data()
+    program_data = hello_world_program.resource.get_data()
     hello_world_offset = program_data.find(b"Hello, World!")
 
     new_string_config = BinaryPatchConfig(hello_world_offset, b"More meow!\0")
-    await hello_world_program.resource.run(BinaryPatchModifier, new_string_config)
+    hello_world_program.resource.run(BinaryPatchModifier, new_string_config)
 
     # Modify the program permission bits and xattrs before repacking
     print(f"Initial st_mode: {hello_world_program.stat.st_mode:o}")
     print(f"Initial xattrs: {hello_world_program.xattrs}")
 
-    await hello_world_program.modify_stat_attribute(stat.ST_MODE, 0o100755)
-    await hello_world_program.modify_xattr_attribute("user.foo", b"bar")
+    hello_world_program.modify_stat_attribute(stat.ST_MODE, 0o100755)
+    hello_world_program.modify_xattr_attribute("user.foo", b"bar")
 
     print(f"Modified st_mode: {hello_world_program.stat.st_mode:o}")
     print(f"Modified xattrs: {hello_world_program.xattrs}")
 
     # Dump the repacked file to the disk
-    await root_resource.pack()
-    await root_resource.flush_data_to_disk(output_file_name)
+    root_resource.pack()
+    root_resource.flush_data_to_disk(output_file_name)
     print(f"Done! Output file written to {output_file_name}")
 
 

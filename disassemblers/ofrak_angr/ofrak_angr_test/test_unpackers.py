@@ -18,7 +18,7 @@ class TestAngrCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
 
 class TestAngrComplexBlockUnpackAndVerify(ComplexBlockUnpackerUnpackAndVerifyPattern):
     @pytest.fixture
-    async def expected_results(self, unpack_verify_test_case: ComplexBlockUnpackerTestCase) -> Dict:
+    def expected_results(self, unpack_verify_test_case: ComplexBlockUnpackerTestCase) -> Dict:
         if unpack_verify_test_case.binary_md5_digest == "cc2de3c0cd2d0ded7543682c2470fcf0":
             # Like Binary Ninja, angr does not include a trailing `hlt` instruction of basic blocks;
             # OFRAK expects it, so we increment the block expected size by 1 to include it

@@ -1,18 +1,18 @@
-import asyncio
 import logging
 import os
-import tempfile
+import subprocess
 from dataclasses import dataclass
 from subprocess import CalledProcessError
 
+import tempfile312 as tempfile
+
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
-from ofrak.resource import Resource
 from ofrak.core.binary import GenericBinary
 from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
 from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
-
 from ofrak.model.component_model import ComponentExternalTool
+from ofrak.resource import Resource
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
@@ -39,22 +39,17 @@ class SevenZUnpacker(Unpacker[None]):
     def unpack(self, resource: Resource, config=None):
         seven_zip_v = resource.view_as(SevenZFilesystem)
         resource_data = seven_zip_v.resource.get_data()
-        with tempfile.NamedTemporaryFile() as temp_file:
-            temp_file.write(resource_data)
-            temp_file.flush()
+        with resource.temp_to_disk(suffix=".7z") as temp_path:
             with tempfile.TemporaryDirectory() as temp_flush_dir:
                 cmd = [
                     "7zz",
                     "x",
                     f"-o{temp_flush_dir}",
-                    temp_file.name,
+                    temp_path,
                 ]
-                proc = asyncio.create_subprocess_exec(
-                    *cmd,
-                )
-                returncode = proc.wait()
+                proc = subprocess.run(cmd)
                 if proc.returncode:
-                    raise CalledProcessError(returncode=returncode, cmd=cmd)
+                    raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
                 seven_zip_v.initialize_from_disk(temp_flush_dir)
 
 
@@ -78,12 +73,9 @@ class SevenzPacker(Packer[None]):
                 temp_name,
                 temp_flush_dir,
             ]
-            proc = asyncio.create_subprocess_exec(
-                *cmd,
-            )
-            returncode = proc.wait()
+            proc = subprocess.run(cmd)
             if proc.returncode:
-                raise CalledProcessError(returncode=returncode, cmd=cmd)
+                raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
             with open(temp_name, "rb") as f:
                 new_data = f.read()
             # Passing in the original range effectively replaces the original data with the new data

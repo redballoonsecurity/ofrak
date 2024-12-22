@@ -2,7 +2,7 @@ import os
 import pathlib
 import subprocess
 import sys
-import tempfile
+import tempfile312 as tempfile
 from subprocess import CalledProcessError
 from dataclasses import dataclass
 
@@ -25,10 +25,10 @@ from ofrak_type.range import Range
 APKTOOL = ComponentExternalTool("apktool", "https://ibotpeaches.github.io/Apktool/", "-version")
 JAVA = ComponentExternalTool(
     "java",
-    "https://openjdk.org/projects/jdk/11/",
+    "https://openjdk.org/projects/jdk/17/",
     "-help",
-    apt_package="openjdk-11-jdk",
-    brew_package="openjdk@11",
+    apt_package="openjdk-17-jdk",
+    brew_package="openjdk@17",
 )
 
 
@@ -96,10 +96,7 @@ class ApkUnpacker(Unpacker[None]):
         :param config:
         """
         apk = resource.view_as(Apk)
-        data = resource.get_data()
-        with tempfile.NamedTemporaryFile() as temp_file:
-            temp_file.write(data)
-            temp_file.flush()
+        with resource.temp_to_disk() as temp_path:
             with tempfile.TemporaryDirectory() as temp_flush_dir:
                 cmd = [
                     "apktool",
@@ -107,7 +104,7 @@ class ApkUnpacker(Unpacker[None]):
                     "--output",
                     temp_flush_dir,
                     "--force",
-                    temp_file.name,
+                    temp_path,
                 ]
                 result = subprocess.run(cmd)
                 if result.returncode:
@@ -146,7 +143,8 @@ class ApkPacker(Packer[ApkPackerConfig]):
         apk = resource.view_as(Apk)
         temp_flush_dir = apk.flush_to_disk()
         apk_suffix = ".apk"
-        with tempfile.NamedTemporaryFile(suffix=apk_suffix) as temp_apk:
+        with tempfile.NamedTemporaryFile(suffix=apk_suffix, delete_on_close=False) as temp_apk:
+            temp_apk.close()
             apk_cmd = [
                 "apktool",
                 "build",
@@ -202,13 +200,11 @@ class ApkIdentifier(Identifier):
         if magic.mime == "application/vnd.android.package-archive":
             resource.add_tag(Apk)
         elif magic is not None and magic.mime in ["application/java-archive", "application/zip"]:
-            with tempfile.NamedTemporaryFile(suffix=".zip") as temp_file:
-                temp_file.write(resource.get_data())
-                temp_file.flush()
+            with resource.temp_to_disk(suffix=".zip") as temp_path:
                 unzip_cmd = [
                     "unzip",
                     "-l",
-                    temp_file.name,
+                    temp_path,
                 ]
                 result = subprocess.run(unzip_cmd, capture_output=True)
                 if result.returncode:

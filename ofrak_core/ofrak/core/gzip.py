@@ -1,9 +1,10 @@
-import asyncio
 import logging
-from typing import Optional
+import subprocess
 import zlib
 from subprocess import CalledProcessError
-import tempfile
+from typing import Optional
+
+import tempfile312 as tempfile
 
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
@@ -110,25 +111,19 @@ class GzipPacker(Packer[None]):
 
     @staticmethod
     def pack_with_pigz(data: bytes) -> bytes:
-        with tempfile.NamedTemporaryFile() as uncompressed_file:
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as uncompressed_file:
             uncompressed_file.write(data)
-            uncompressed_file.flush()
+            uncompressed_file.close()
 
             cmd = [
                 "pigz",
                 "-c",
                 uncompressed_file.name,
             ]
-            proc = asyncio.create_subprocess_exec(
-                *cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-            )
-            stdout, stderr = proc.communicate()
+            proc = subprocess.run(cmd, capture_output=True)
             if proc.returncode:
-                raise CalledProcessError(returncode=proc.returncode, stderr=stderr, cmd=cmd)
-
-            return stdout
+                raise CalledProcessError(returncode=proc.returncode, stderr=proc.stderr, cmd=cmd)
+            return proc.stdout
 
 
 MagicMimeIdentifier.register(GzipData, "application/gzip")

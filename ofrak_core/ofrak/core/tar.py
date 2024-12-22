@@ -1,20 +1,19 @@
-import asyncio
 import os.path
-import tempfile
+import subprocess
 from dataclasses import dataclass
 from subprocess import CalledProcessError
 
+import tempfile312 as tempfile
+
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker, UnpackerError
-from ofrak.resource import Resource
 from ofrak.core.binary import GenericBinary
 from ofrak.core.filesystem import FilesystemRoot, Folder, File, SpecialFileType
 from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
-
-from ofrak.model.component_model import ComponentExternalTool
 from ofrak.model.component_model import ComponentConfig
+from ofrak.model.component_model import ComponentExternalTool
+from ofrak.resource import Resource
 from ofrak_type.range import Range
-
 
 TAR = ComponentExternalTool("tar", "https://www.gnu.org/software/tar/", "--help", apt_package="tar")
 
@@ -37,26 +36,18 @@ class TarUnpacker(Unpacker[None]):
 
     def unpack(self, resource: Resource, config: ComponentConfig = None) -> None:
         # Write the archive data to a file
-        with tempfile.NamedTemporaryFile(suffix=".tar") as temp_archive:
-            temp_archive.write(resource.get_data())
-            temp_archive.flush()
-
+        with resource.temp_to_disk(suffix=".tar") as temp_archive_path:
             # Check the archive member files to ensure none unpack to a parent directory
             cmd = [
                 "tar",
                 "-P",
                 "-tf",
-                temp_archive.name,
+                temp_archive_path,
             ]
-            proc = asyncio.create_subprocess_exec(
-                *cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-            )
-            stdout, stderr = proc.communicate()
+            proc = subprocess.run(cmd, capture_output=True)
             if proc.returncode:
                 raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
-            for filename in stdout.decode().splitlines():
+            for filename in proc.stdout.decode().splitlines():
                 # Handles relative parent paths and rooted paths, and normalizes paths like "./../"
                 rel_filename = os.path.relpath(filename)
                 if rel_filename.startswith(".." + os.sep):
@@ -67,13 +58,10 @@ class TarUnpacker(Unpacker[None]):
 
             # Unpack into a temporary directory using the temporary file
             with tempfile.TemporaryDirectory() as temp_dir:
-                command = ["tar", "--xattrs", "-C", temp_dir, "-xf", temp_archive.name]
-                proc = asyncio.create_subprocess_exec(
-                    *command,
-                )
-                returncode = proc.wait()
-                if returncode:
-                    raise CalledProcessError(returncode=returncode, cmd=command)
+                command = ["tar", "--xattrs", "-C", temp_dir, "-xf", temp_archive_path]
+                proc = subprocess.run(command)
+                if proc.returncode:
+                    raise CalledProcessError(returncode=proc.returncode, cmd=command)
 
                 # Initialize a filesystem from the unpacked/untarred temporary folder
                 tar_view = resource.view_as(TarArchive)
@@ -94,7 +82,8 @@ class TarPacker(Packer[None]):
         flush_dir = tar_view.flush_to_disk()
 
         # Pack it back into a temporary archive
-        with tempfile.NamedTemporaryFile(suffix=".tar") as temp_archive:
+        with tempfile.NamedTemporaryFile(suffix=".tar", delete_on_close=False) as temp_archive:
+            temp_archive.close()
             cmd = [
                 "tar",
                 "--xattrs",
@@ -104,15 +93,15 @@ class TarPacker(Packer[None]):
                 temp_archive.name,
                 ".",
             ]
-            proc = asyncio.create_subprocess_exec(
-                *cmd,
+            proc = subprocess.run(
+                cmd,
             )
-            returncode = proc.wait()
             if proc.returncode:
-                raise CalledProcessError(returncode=returncode, cmd=cmd)
+                raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
 
             # Replace the original archive data
-            resource.queue_patch(Range(0, resource.get_data_length()), temp_archive.read())
+            with open(temp_archive.name, "rb") as new_fh:
+                resource.queue_patch(Range(0, resource.get_data_length()), new_fh.read())
 
 
 MagicMimeIdentifier.register(TarArchive, "application/x-tar")

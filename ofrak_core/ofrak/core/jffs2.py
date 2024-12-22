@@ -1,18 +1,18 @@
-import asyncio
 import logging
-import tempfile
+import subprocess
 from dataclasses import dataclass
 from subprocess import CalledProcessError
 
+import tempfile312 as tempfile
+
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
-from ofrak.resource import Resource
-from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
-
-from ofrak.core.magic import MagicDescriptionIdentifier
 from ofrak.core.binary import GenericBinary
-from ofrak_type.range import Range
+from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
+from ofrak.core.magic import MagicDescriptionIdentifier
 from ofrak.model.component_model import ComponentExternalTool
+from ofrak.resource import Resource
+from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
 
@@ -38,26 +38,18 @@ class Jffs2Unpacker(Unpacker[None]):
     external_dependencies = (JEFFERSON,)
 
     def unpack(self, resource: Resource, config=None):
-        with tempfile.NamedTemporaryFile() as temp_file:
-            resource_data = resource.get_data()
-            temp_file.write(resource_data)
-            temp_file.flush()
-
+        with resource.temp_to_disk() as temp_path:
             with tempfile.TemporaryDirectory() as temp_flush_dir:
                 cmd = [
                     "jefferson",
                     "--force",
                     "--dest",
                     temp_flush_dir,
-                    temp_file.name,
+                    temp_path,
                 ]
-                proc = asyncio.create_subprocess_exec(
-                    *cmd,
-                )
-                returncode = proc.wait()
+                proc = subprocess.run(cmd)
                 if proc.returncode:
-                    raise CalledProcessError(returncode=returncode, cmd=cmd)
-
+                    raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
                 jffs2_view = resource.view_as(Jffs2Filesystem)
                 jffs2_view.initialize_from_disk(temp_flush_dir)
 
@@ -73,7 +65,8 @@ class Jffs2Packer(Packer[None]):
     def pack(self, resource: Resource, config=None):
         jffs2_view: Jffs2Filesystem = resource.view_as(Jffs2Filesystem)
         temp_flush_dir = jffs2_view.flush_to_disk()
-        with tempfile.NamedTemporaryFile(suffix=".sqsh", mode="rb") as temp:
+        with tempfile.NamedTemporaryFile(suffix=".sqsh", mode="rb", delete_on_close=False) as temp:
+            temp.close()
             cmd = [
                 "mkfs.jffs2",
                 "-r",
@@ -81,13 +74,11 @@ class Jffs2Packer(Packer[None]):
                 "-o",
                 temp.name,
             ]
-            proc = asyncio.create_subprocess_exec(
-                *cmd,
-            )
-            returncode = proc.wait()
+            proc = subprocess.run(cmd)
             if proc.returncode:
-                raise CalledProcessError(returncode=returncode, cmd=cmd)
-            new_data = temp.read()
+                raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
+            with open(temp.name, "rb") as new_fh:
+                new_data = new_fh.read()
             # Passing in the original range effectively replaces the original data with the new data
             resource.queue_patch(Range(0, resource.get_data_length()), new_data)
 

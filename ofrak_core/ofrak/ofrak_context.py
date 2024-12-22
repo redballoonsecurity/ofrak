@@ -1,7 +1,6 @@
-import asyncio
 import logging
 import os
-import tempfile
+import tempfile312 as tempfile
 import time
 from types import ModuleType
 from typing import Type, Any, Awaitable, Callable, List, Iterable, Optional
@@ -103,18 +102,20 @@ class OFRAKContext:
         root_resource_v.initialize_from_disk(full_dir_path)
         return root_resource
 
-    async def start_context(self):
+    def start_context(self):
         if "_ofrak_context" in globals():
             raise InvalidStateError(
                 "Cannot start OFRAK context as a context has already been started in this process!"
             )
         globals()["_ofrak_context"] = self
-        await asyncio.gather(*(service.run() for service in self._all_ofrak_services))
+        for service in self._all_ofrak_services:
+            service.run()
 
-    async def shutdown_context(self):
+    def shutdown_context(self):
         if "_ofrak_context" in globals():
             del globals()["_ofrak_context"]
-        await asyncio.gather(*(service.shutdown() for service in self._all_ofrak_services))
+        for service in self._all_ofrak_services:
+            service.shutdown()
         logging.shutdown()
 
 
@@ -161,22 +162,22 @@ class OFRAK:
     def set_id_service(self, service: IDServiceInterface):
         self._id_service = service
 
-    async def create_ofrak_context(self) -> OFRAKContext:
+    def create_ofrak_context(self) -> OFRAKContext:
         """
         Create the OFRAKContext and start all its services.
         """
         self._setup()
-        component_locator = await self.injector.get_instance(ComponentLocatorInterface)
+        component_locator = self.injector.get_instance_sync(ComponentLocatorInterface)
 
-        resource_factory = await self.injector.get_instance(ResourceFactory)
-        components = await self._get_discovered_components()
+        resource_factory = self.injector.get_instance_sync(ResourceFactory)
+        components = self._get_discovered_components()
         component_locator.add_components(components, self._discovered_modules)
 
-        id_service = await self.injector.get_instance(IDServiceInterface)
-        data_service = await self.injector.get_instance(DataServiceInterface)
-        resource_service = await self.injector.get_instance(ResourceServiceInterface)
-        job_service = await self.injector.get_instance(JobServiceInterface)
-        all_services = await self.injector.get_instance(List[AbstractOfrakService])
+        id_service = self.injector.get_instance_sync(IDServiceInterface)
+        data_service = self.injector.get_instance_sync(DataServiceInterface)
+        resource_service = self.injector.get_instance_sync(ResourceServiceInterface)
+        job_service = self.injector.get_instance_sync(JobServiceInterface)
+        all_services = self.injector.get_instance_sync(List[AbstractOfrakService])
 
         ofrak_context = OFRAKContext(
             self.injector,
@@ -188,22 +189,22 @@ class OFRAK:
             job_service,
             all_services,
         )
-        await ofrak_context.start_context()
+        ofrak_context.start_context()
         return ofrak_context
 
     # TODO: Typehints here do not properly accept functions with variable args
-    async def run_async(self, func: Callable[["OFRAKContext", Any], Awaitable[None]], *args):
-        ofrak_context = await self.create_ofrak_context()
+    def run_async(self, func: Callable[["OFRAKContext", Any], Awaitable[None]], *args):
+        ofrak_context = self.create_ofrak_context()
         start = time.time()
         try:
-            await func(ofrak_context, *args)
+            func(ofrak_context, *args)
         finally:
-            await ofrak_context.shutdown_context()
+            ofrak_context.shutdown_context()
             print(f"It took {time.time() - start:.3f} seconds to run the OFRAK script")
 
     # TODO: Typehints here do not properly accept functions with variable args
     def run(self, func: Callable[["OFRAKContext", Any], Awaitable[None]], *args):
-        asyncio.get_event_loop().run_until_complete(self.run_async(func, *args))
+        self.run_async(func, *args)
 
     def _setup(self):
         """Discover common OFRAK services and components."""
@@ -215,8 +216,8 @@ class OFRAK:
         if self._id_service:
             self.injector.bind_instance(self._id_service)
 
-    async def _get_discovered_components(self) -> List[ComponentInterface]:
-        all_discovered_components = await self.injector.get_instance(List[ComponentInterface])
+    def _get_discovered_components(self) -> List[ComponentInterface]:
+        all_discovered_components = self.injector.get_instance_sync(List[ComponentInterface])
         if not self._exclude_components_missing_dependencies:
             return all_discovered_components
         LOGGER.debug(

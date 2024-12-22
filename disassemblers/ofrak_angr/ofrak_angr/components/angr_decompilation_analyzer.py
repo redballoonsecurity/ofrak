@@ -14,14 +14,14 @@ class AngrDecompilatonAnalyzer(Analyzer[None, DecompilationAnalysis]):
     targets = (ComplexBlock,)
     outputs = (DecompilationAnalysis,)
 
-    async def analyze(self, resource: Resource, config: None) -> DecompilationAnalysis:
+    def analyze(self, resource: Resource, config: None) -> DecompilationAnalysis:
         # Run / fetch angr analyzer
         try:
-            root_resource = await resource.get_only_ancestor(
+            root_resource = resource.get_only_ancestor(
                 ResourceFilter(tags=[AngrAnalysisResource], include_self=True)
             )
-            complex_block = await resource.view_as(ComplexBlock)
-            angr_analysis = await root_resource.analyze(AngrAnalysis)
+            complex_block = resource.view_as(ComplexBlock)
+            angr_analysis = root_resource.analyze(AngrAnalysis)
 
             cfg = angr_analysis.project.analyses[angr.analyses.CFGFast].prep()(
                 data_references=True, normalize=True

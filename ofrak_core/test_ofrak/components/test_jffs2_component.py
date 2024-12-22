@@ -1,6 +1,6 @@
 import os
 import subprocess
-import tempfile
+import tempfile312 as tempfile
 
 import pytest
 
@@ -44,12 +44,9 @@ class TestJffs2UnpackModifyPack(UnpackModifyPackPattern):
         jffs2_resource.pack_recursively()
 
     def verify(self, repacked_jffs2_resource: Resource) -> None:
-        resource_data = repacked_jffs2_resource.get_data()
-        with tempfile.NamedTemporaryFile() as temp_file:
-            temp_file.write(resource_data)
-            temp_file.flush()
+        with repacked_jffs2_resource.temp_to_disk() as temp_path:
             with tempfile.TemporaryDirectory() as temp_flush_dir:
-                command = ["jefferson", "-f", "-d", temp_flush_dir, temp_file.name]
+                command = ["jefferson", "-f", "-d", temp_flush_dir, temp_path]
                 subprocess.run(command, check=True, capture_output=True)
                 with open(os.path.join(temp_flush_dir, JFFS2_ENTRY_NAME), "rb") as f:
                     patched_data = f.read()

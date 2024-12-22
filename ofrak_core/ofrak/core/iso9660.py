@@ -1,12 +1,12 @@
-import asyncio
 import logging
 import posixpath
-import tempfile
+import subprocess
 from dataclasses import dataclass
 from io import BytesIO
 from subprocess import CalledProcessError
 from typing import Iterable, Optional
 
+import tempfile312 as tempfile
 from pycdlib import PyCdlib
 
 from ofrak.component.analyzer import Analyzer
@@ -301,7 +301,8 @@ class ISO9660Packer(Packer[None]):
 
         iso_attrs = resource.get_attributes(ISO9660ImageAttributes)
         temp_flush_dir = iso_view.flush_to_disk()
-        with tempfile.NamedTemporaryFile(suffix=".iso", mode="rb") as temp:
+        with tempfile.NamedTemporaryFile(suffix=".iso", mode="rb", delete_on_close=False) as temp:
+            temp.close()
             cmd = [
                 "mkisofs",
                 *(["-J"] if iso_attrs.has_joliet else []),
@@ -325,11 +326,11 @@ class ISO9660Packer(Packer[None]):
                 temp.name,
                 temp_flush_dir,
             ]
-            proc = asyncio.create_subprocess_exec(*cmd)
-            returncode = proc.wait()
+            proc = subprocess.run(cmd)
             if proc.returncode:
-                raise CalledProcessError(returncode=returncode, cmd=cmd)
-            new_data = temp.read()
+                raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
+            with open(temp.name, "rb") as new_fh:
+                new_data = new_fh.read()
             # Passing in the original range effectively replaces the original data with the new data
             resource.queue_patch(Range(0, resource.get_data_length()), new_data)
 

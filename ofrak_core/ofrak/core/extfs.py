@@ -1,5 +1,6 @@
-import asyncio
-import tempfile
+import subprocess
+
+import tempfile312 as tempfile
 from dataclasses import dataclass
 from subprocess import CalledProcessError
 
@@ -55,23 +56,19 @@ class ExtUnpacker(Unpacker[None]):
     external_dependencies = (_DEBUGFS,)
 
     def unpack(self, resource: Resource, config: ComponentConfig = None) -> None:
-        with tempfile.NamedTemporaryFile(suffix=".extfs") as temp_fs_file:
-            temp_fs_file.write(resource.get_data())
-            temp_fs_file.flush()
-
+        with resource.temp_to_disk(suffix=".extfs") as temp_fs_path:
             with tempfile.TemporaryDirectory() as temp_dir:
                 command = [
                     "debugfs",
                     "-R",
                     f"rdump / {temp_dir}",
-                    temp_fs_file.name,
+                    temp_fs_path,
                 ]
-                proc = asyncio.create_subprocess_exec(
-                    *command,
+                proc = subprocess.run(
+                    command,
                 )
-                returncode = proc.wait()
-                if returncode:
-                    raise CalledProcessError(returncode=returncode, cmd=command)
+                if proc.returncode:
+                    raise CalledProcessError(returncode=proc.returncode, cmd=command)
 
                 fs_view = resource.view_as(ExtFilesystem)
                 fs_view.initialize_from_disk(temp_dir)

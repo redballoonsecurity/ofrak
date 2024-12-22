@@ -1,4 +1,4 @@
-import tempfile
+import tempfile312 as tempfile
 from dataclasses import dataclass
 from io import BytesIO
 from typing import List, Tuple
@@ -209,7 +209,9 @@ def test_flush_to_disk_pack(ofrak_context: OFRAKContext):
         # this should not fail because pack_recursively was suppressed
         root_resource.write_to(buffer, pack=False)
 
-    with tempfile.NamedTemporaryFile() as t:
+    with tempfile.NamedTemporaryFile(delete_on_close=False) as t:
+        t.close()
+
         # again, should fail because the packer is run automatically
         with pytest.raises(MockFailException):
             root_resource.flush_data_to_disk(t.name)

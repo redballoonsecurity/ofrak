@@ -1,5 +1,5 @@
 import subprocess
-import tempfile
+import tempfile312 as tempfile
 
 import pytest
 
@@ -22,7 +22,8 @@ class TestUbifsUnpackRepack(FilesystemPackUnpackVerifyPattern):
         """
         Generated the test UBIFS image with the assistance of the FilesystemPackUnpackVerify test pattern.
         """
-        with tempfile.NamedTemporaryFile() as ubifs_blob:
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as ubifs_blob:
+            ubifs_blob.close()
             command = [
                 "mkfs.ubifs",
                 "-m",
@@ -50,11 +51,6 @@ class TestUbifsUnpackRepack(FilesystemPackUnpackVerifyPattern):
         expected by the FilesystemPackUnpackVerify pattern.
         """
 
-        with tempfile.NamedTemporaryFile() as ubifs_blob:
-            data = root_resource.get_data()
-            ubifs_blob.write(data)
-            ubifs_blob.flush()
-
-            command = ["ubireader_extract_files", "-k", "-o", extract_dir, ubifs_blob.name]
-
+        with root_resource.temp_to_disk() as ubifs_blob_path:
+            command = ["ubireader_extract_files", "-k", "-o", extract_dir, ubifs_blob_path]
             subprocess.run(command, check=True, capture_output=True)

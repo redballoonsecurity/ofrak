@@ -1,6 +1,4 @@
-import asyncio
 import subprocess
-import tempfile
 from dataclasses import dataclass
 from typing import Dict, Optional
 
@@ -55,30 +53,22 @@ class StringsAnalyzer(Analyzer[Optional[StringsAnalyzerConfig], StringsAttribute
             config = StringsAnalyzerConfig()
 
         strings = dict()
-        with tempfile.NamedTemporaryFile() as temp_file:
-            temp_file.write(resource.get_data())
-            temp_file.flush()
-
-            proc = asyncio.subprocess.create_subprocess_exec(
-                "strings",
-                "-t",
-                "d",
-                f"-{config.min_length}",
-                temp_file.name,
-                stdout=asyncio.subprocess.PIPE,
+        with resource.temp_to_disk() as temp_path:
+            proc = subprocess.run(
+                [
+                    "strings",
+                    "-t",
+                    "d",
+                    f"-{config.min_length}",
+                    temp_path,
+                ],
+                capture_output=True,
             )
-
-            line = proc.stdout.readline()  # type: ignore
-            while line:
-                line = line.decode("ascii").strip()
+            for line in proc.stdout.decode("utf-8").split("\n"):
                 try:
                     offset, string = line.split(" ", maxsplit=1)
-                except ValueError as e:
+                except ValueError:
                     # String consisted entirely of whitespace
-                    line = proc.stdout.readline()  # type: ignore
                     continue
                 strings[int(offset)] = string
-                line = proc.stdout.readline()  # type: ignore
-            proc.wait()
-
         return StringsAttributes(strings)

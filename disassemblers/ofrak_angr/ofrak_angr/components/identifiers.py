@@ -8,5 +8,5 @@ class AngrAnalysisIdentifier(Identifier):
     id = b"AngrAnalysisIdentifier"
     targets = (Program,)
 
-    async def identify(self, resource: Resource, config=None):
+    def identify(self, resource: Resource, config=None):
         resource.add_tag(AngrAnalysisResource)

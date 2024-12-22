@@ -1,18 +1,18 @@
-import asyncio
-import tempfile
-from dataclasses import dataclass
 import logging
+import subprocess
+from dataclasses import dataclass
 from subprocess import CalledProcessError
+
+import tempfile312 as tempfile
 
 from ofrak import Identifier, Analyzer
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.core import PY_LZO_TOOL
-from ofrak.resource import Resource
-from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
 from ofrak.core.binary import GenericBinary
-
+from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
 from ofrak.model.component_model import ComponentExternalTool
+from ofrak.resource import Resource
 from ofrak_type.range import Range
 
 try:
@@ -96,16 +96,12 @@ class UbifsAnalyzer(Analyzer[None, Ubifs]):
 
     external_dependencies = (PY_LZO_TOOL,)
 
-    def analyze(self, resource: Resource, config=None) -> Ubifs:
-        with tempfile.NamedTemporaryFile() as temp_file:
-            resource_data = resource.get_data()
-            temp_file.write(resource_data)
-            temp_file.flush()
-
+    async def analyze(self, resource: Resource, config=None) -> Ubifs:
+        with resource.temp_to_disk() as temp_path:
             ubifs_obj = ubireader_ubifs(
                 ubi_io.ubi_file(
-                    temp_file.name,
-                    block_size=guess_leb_size(temp_file.name),
+                    temp_path,
+                    block_size=guess_leb_size(temp_path),
                     start_offset=0,
                     end_offset=None,
                 )
@@ -149,12 +145,9 @@ class UbifsUnpacker(Unpacker[None]):
                 f"{temp_flush_dir}/output",
                 temp_file.name,
             ]
-            proc = asyncio.create_subprocess_exec(
-                *cmd,
-            )
-            returncode = proc.wait()
+            proc = subprocess.run(cmd)
             if proc.returncode:
-                raise CalledProcessError(returncode=returncode, cmd=cmd)
+                raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
 
             ubifs_view = resource.view_as(Ubifs)
             ubifs_view.initialize_from_disk(f"{temp_flush_dir}/output")
@@ -172,7 +165,8 @@ class UbifsPacker(Packer[None]):
         ubifs_view = resource.view_as(Ubifs)
         flush_dir = ubifs_view.flush_to_disk()
 
-        with tempfile.NamedTemporaryFile(mode="rb") as temp:
+        with tempfile.NamedTemporaryFile(mode="rb", delete_on_close=False) as temp:
+            temp.close()
             cmd = [
                 "mkfs.ubifs",
                 "-m",
@@ -196,13 +190,11 @@ class UbifsPacker(Packer[None]):
                 flush_dir,
                 temp.name,
             ]
-            proc = asyncio.create_subprocess_exec(
-                *cmd,
-            )
-            returncode = proc.wait()
+            proc = subprocess.run(cmd)
             if proc.returncode:
-                raise CalledProcessError(returncode=returncode, cmd=cmd)
-            new_data = temp.read()
+                raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
+            with open(temp.name, "rb") as new_fh:
+                new_data = new_fh.read()
 
             resource.queue_patch(Range(0, resource.get_data_length()), new_data)
 

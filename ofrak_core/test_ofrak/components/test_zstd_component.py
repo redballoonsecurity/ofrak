@@ -1,5 +1,5 @@
 import subprocess
-import tempfile
+import tempfile312 as tempfile
 
 from ofrak.core.zstd import ZstdUnpacker, ZstdPacker
 import pytest
@@ -26,13 +26,10 @@ class TestZstdUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
         self._test_file = compressed_filename
 
     def verify(self, repacked_root_resource: Resource) -> None:
-        compressed_data = repacked_root_resource.get_data()
-        with tempfile.NamedTemporaryFile(suffix=".zstd") as compressed_file:
-            compressed_file.write(compressed_data)
-            compressed_file.flush()
+        with repacked_root_resource.temp_to_disk(suffix=".zstd") as compressed_file_path:
             output_filename = tempfile.mktemp()
 
-            command = ["zstd", "-d", "-k", compressed_file.name, "-o", output_filename]
+            command = ["zstd", "-d", "-k", compressed_file_path, "-o", output_filename]
             subprocess.run(command, check=True, capture_output=True)
             with open(output_filename, "rb") as f:
                 result = f.read()

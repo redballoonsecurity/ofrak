@@ -37,10 +37,10 @@ class AngrAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
     targets = (AngrAnalysisResource,)
     outputs = (AngrAnalysis,)
 
-    async def analyze(
+    def analyze(
         self, resource: Resource, config: AngrAnalyzerConfig = AngrAnalyzerConfig()
     ) -> AngrAnalysis:
-        resource_data = await resource.get_data()
+        resource_data = resource.get_data()
 
         project = angr.project.Project(BytesIO(resource_data), load_options=config.project_args)
 
@@ -79,10 +79,10 @@ class AngrCodeRegionModifier(Modifier):
     id = b"AngrCodeRegionModifier"
     targets = (CodeRegion,)
 
-    async def modify(self, resource: Resource, config=None):
-        code_region = await resource.view_as(CodeRegion)
+    def modify(self, resource: Resource, config=None):
+        code_region = resource.view_as(CodeRegion)
 
-        root_resource = await resource.get_only_ancestor(
+        root_resource = resource.get_only_ancestor(
             ResourceFilter(tags=[AngrAnalysisResource], include_self=True)
         )
 
@@ -91,7 +91,7 @@ class AngrCodeRegionModifier(Modifier):
         # We only want to adjust the address of a CodeRegion if the original binary is position-independent.
         # Implement PIE-detection for other file types as necessary.
         if root_resource.has_tag(Elf):
-            elf_header = await root_resource.get_only_descendant_as_view(
+            elf_header = root_resource.get_only_descendant_as_view(
                 ElfHeader, r_filter=ResourceFilter(tags=[ElfHeader])
             )
 
@@ -103,7 +103,7 @@ class AngrCodeRegionModifier(Modifier):
             )
 
         if fixup_address:
-            angr_analysis = await root_resource.analyze(AngrAnalysis)
+            angr_analysis = root_resource.analyze(AngrAnalysis)
             obj = angr_analysis.project.loader.main_object
 
             if obj is not None:

@@ -1,13 +1,13 @@
 import os
 import subprocess
-import tempfile
 
 import pytest
+import tempfile312 as tempfile
 
 from ofrak import OFRAKContext
-from ofrak.resource import Resource
 from ofrak.core.cpio import CpioFilesystem, CpioPacker, CpioUnpacker
 from ofrak.core.strings import StringPatchingConfig, StringPatchingModifier
+from ofrak.resource import Resource
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 
 INITIAL_DATA = b"hello world"
@@ -26,9 +26,18 @@ class TestCpioUnpackModifyPack(UnpackModifyPackPattern):
             # Create a CPIO file from the current directory
             with open(CPIO_ENTRY_NAME, "wb") as f:
                 f.write(INITIAL_DATA)
-            command = f"find {CPIO_ENTRY_NAME} -print | cpio -o > {TARGET_CPIO_FILE}"
-            subprocess.run(command, check=True, capture_output=True, shell=True)
-            result = ofrak_context.create_root_resource_from_file(TARGET_CPIO_FILE)
+            cmd = ["cpio", "-o"]
+            proc = subprocess.run(
+                cmd,
+                cwd=tmpdir,
+                input=CPIO_ENTRY_NAME.encode(),  # Pass the input directly
+                capture_output=True,
+            )
+            if proc.returncode:
+                raise subprocess.CalledProcessError(
+                    returncode=proc.returncode, cmd=cmd, output=proc.stdout, stderr=proc.stderr
+                )
+            result = ofrak_context.create_root_resource(name=TARGET_CPIO_FILE, data=stdout)
 
             os.chdir(wd)
             return result
@@ -46,13 +55,18 @@ class TestCpioUnpackModifyPack(UnpackModifyPackPattern):
         cpio_resource.pack_recursively()
 
     def verify(self, repacked_cpio_resource: Resource) -> None:
-        resource_data = repacked_cpio_resource.get_data()
-        with tempfile.NamedTemporaryFile() as temp_file:
-            temp_file.write(resource_data)
-            temp_file.flush()
-            with tempfile.TemporaryDirectory() as temp_flush_dir:
-                command = f"(cd {temp_flush_dir} && cpio -id < {temp_file.name})"
-                subprocess.run(command, check=True, capture_output=True, shell=True)
-                with open(os.path.join(temp_flush_dir, CPIO_ENTRY_NAME), "rb") as f:
-                    patched_data = f.read()
-                assert patched_data == EXPECTED_DATA
+        with tempfile.TemporaryDirectory() as temp_flush_dir:
+            cmd = ["cpio", "-id"]
+            proc = subprocess.run(
+                cmd,
+                cwd=temp_flush_dir,
+                input=repacked_cpio_resource.get_data(),
+                capture_output=True,
+            )
+            if proc.returncode:
+                raise subprocess.CalledProcessError(
+                    returncode=proc.returncode, cmd=cmd, output=proc.stdout, stderr=proc.stderr
+                )
+            with open(os.path.join(temp_flush_dir, CPIO_ENTRY_NAME), "rb") as f:
+                patched_data = f.read()
+            assert patched_data == EXPECTED_DATA

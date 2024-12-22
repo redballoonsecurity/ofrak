@@ -1,6 +1,6 @@
 class AbstractOfrakService:
-    async def run(self):
+    def run(self):
         pass
 
-    async def shutdown(self):
+    def shutdown(self):
         pass

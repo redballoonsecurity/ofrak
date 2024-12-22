@@ -1,4 +1,3 @@
-import tempfile
 from concurrent.futures.process import ProcessPoolExecutor
 from dataclasses import dataclass
 from typing import Dict
@@ -61,14 +60,10 @@ class BinwalkAnalyzer(Analyzer[None, BinwalkAttributes]):
     def analyze(self, resource: Resource, config=None) -> BinwalkAttributes:
         if not BINWALK_INSTALLED:
             raise ComponentMissingDependencyError(self, BINWALK_TOOL)
-        with tempfile.NamedTemporaryFile() as temp_file:
-            data = resource.get_data()
-            temp_file.write(data)
-            temp_file.flush()
-
+        with resource.temp_to_disk() as temp_path:
             # Should errors be handled the way they are in the `DataSummaryAnalyzer`? Likely to be
             # overkill here.
-            offsets = _run_binwalk_on_file(temp_file.name)
+            offsets = _run_binwalk_on_file(temp_path)
         return BinwalkAttributes(offsets)
 
 
