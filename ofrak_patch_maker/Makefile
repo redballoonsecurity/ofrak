@@ -8,7 +8,7 @@ install:
 
 .PHONY: develop
 develop:
-	$(PIP) install -e .[test]
+	$(PIP) install -e .[test] --config-settings editable_mode=strict
 
 .PHONY: inspect
 inspect:

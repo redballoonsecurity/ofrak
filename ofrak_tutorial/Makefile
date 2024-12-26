@@ -29,7 +29,7 @@ run:
 
 .PHONY: develop
 develop:
-	${PIP} install -e .[test]
+	${PIP} install -e .[test] --config-settings editable_mode=strict
 	make generate_stripped_notebooks
 
 .PHONY: install
