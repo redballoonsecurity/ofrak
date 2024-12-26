@@ -22,7 +22,7 @@ RUN cd /tmp && \
 
 #X64-64 toolchain for arm64 Docker images
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
-    apt-get update && apt-get install -y gcc-10-x86-64-linux-gnu; \
+    apt-get update && apt-get install -y gcc-12-x86-64-linux-gnu; \
 fi;
 
 #M68k GNU 10 Linux
