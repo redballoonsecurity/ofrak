@@ -27,3 +27,5 @@ disassemblers/ofrak_angr/build
 disassemblers/ofrak_binary_ninja/build
 disassemblers/ofrak_capstone/build
 disassemblers/ofrak_ghidra/build
+.coverage
+.mypy_cache
