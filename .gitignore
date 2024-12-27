@@ -19,3 +19,11 @@ ofrak_core/ofrak/core/entropy/entropy_c.cpython*
 ofrak_core/ofrak/gui/public
 ofrak_core/build
 ofrak_core/ofrak/license/license.json
+ofrak_io/build
+ofrak_patch_maker/build
+ofrak_type/build
+ofrak_tutorial/build
+disassemblers/ofrak_angr/build
+disassemblers/ofrak_binary_ninja/build
+disassemblers/ofrak_capstone/build
+disassemblers/ofrak_ghidra/build
