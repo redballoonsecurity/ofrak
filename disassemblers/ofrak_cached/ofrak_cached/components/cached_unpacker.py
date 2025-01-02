@@ -66,7 +66,6 @@ class CachedAnalysisAnalyzer(Analyzer[CachedAnalysisAnalyzerConfig, CachedAnalys
         self.analysis_store = analysis_store
 
     async def analyze(self, resource: Resource, config: CachedAnalysisAnalyzerConfig):
-        
         await resource.identify()
         if not resource.has_tag(Program) and not resource.has_attributes(ProgramAttributes):
             raise AttributeError(
@@ -77,7 +76,9 @@ class CachedAnalysisAnalyzer(Analyzer[CachedAnalysisAnalyzerConfig, CachedAnalys
         self.analysis_store.store_analysis(resource.get_id(), config.filename)
         if not config.force:
             if not self.verify_cache_file(resource):
-                raise ValueError("MD5 recorded in cache file does not match the hash of the requested resource, use the force config option to use this cache file anyway.")
+                raise ValueError(
+                    "MD5 recorded in cache file does not match the hash of the requested resource, use the force config option to use this cache file anyway."
+                )
         self.analysis_store.store_program_attributes(resource.get_id(), program_attributes)
         cached_analysis_view = CachedAnalysis()
         resource.add_view(cached_analysis_view)
@@ -87,8 +88,13 @@ class CachedAnalysisAnalyzer(Analyzer[CachedAnalysisAnalyzerConfig, CachedAnalys
     async def verify_cache_file(self, resource: Resource):
         data = await resource.get_data()
         md5_hash = hashlib.md5(data)
-        import ipdb; ipdb.set_trace()
-        return md5_hash.digest().hex() == self.analysis_store.get_analysis(resource.get_id())["metadata"]["hash"]
+        import ipdb
+
+        ipdb.set_trace()
+        return (
+            md5_hash.digest().hex()
+            == self.analysis_store.get_analysis(resource.get_id())["metadata"]["hash"]
+        )
 
 
 class CachedProgramUnpacker(Unpacker[None]):
@@ -110,13 +116,16 @@ class CachedProgramUnpacker(Unpacker[None]):
         analysis = self.analysis_store.get_analysis(resource.get_id())
         for key, mem_region in analysis.items():
             if key.startswith("seg"):
-                await resource.create_child_from_view(CodeRegion(
-                    virtual_address=mem_region["virtual_address"], size=mem_region["size"]
-                ))
+                await resource.create_child_from_view(
+                    CodeRegion(
+                        virtual_address=mem_region["virtual_address"], size=mem_region["size"]
+                    )
+                )
+
 
 class CachedCodeRegionModifier(Modifier[None]):
-    targets=(CodeRegion,)
-    
+    targets = (CodeRegion,)
+
     def __init__(
         self,
         resource_factory: ResourceFactory,
@@ -136,9 +145,11 @@ class CachedCodeRegionModifier(Modifier[None]):
         backend_code_regions: List[CodeRegion] = []
         for key, mem_region in analysis.items():
             if key.startswith("seg"):
-                backend_code_regions.append(CodeRegion(
-                    virtual_address=mem_region["virtual_address"], size=mem_region["size"]
-                ))
+                backend_code_regions.append(
+                    CodeRegion(
+                        virtual_address=mem_region["virtual_address"], size=mem_region["size"]
+                    )
+                )
 
         ofrak_code_regions = sorted(ofrak_code_regions, key=lambda cr: cr.virtual_address)
         backend_code_regions = sorted(backend_code_regions, key=lambda cr: cr.virtual_address)
@@ -152,7 +163,9 @@ class CachedCodeRegionModifier(Modifier[None]):
                     backend_cr.virtual_address - backend_code_regions[0].virtual_address
                 )
                 if backend_relative_va == relative_va and backend_cr.size == code_region.size:
-                    code_region.resource.add_view(backend_cr)  # TODO: https://github.com/redballoonsecurity/ofrak/issues/537
+                    code_region.resource.add_view(
+                        backend_cr
+                    )  # TODO: https://github.com/redballoonsecurity/ofrak/issues/537
         await resource.save()
 
 
