@@ -1,6 +1,6 @@
 import logging
 
-
+import hashlib
 import pyghidra
 import argparse
 import time
@@ -19,6 +19,12 @@ def unpack(program_file):
     with pyghidra.open_program(program_file) as flat_api:
         main_dictionary = {}
         code_regions = _unpack_program(flat_api)
+        main_dictionary["metadata"] = {}
+        main_dictionary["metadata"]["backend"] = "ghidra"
+        with open(program_file, "rb") as fh:
+            data = fh.read()
+            md5_hash = hashlib.md5(data)
+            main_dictionary["metadata"]["hash"] = md5_hash.digest().hex()
         for code_region in code_regions:
             seg_key = f"seg_{code_region['virtual_address']}"
             main_dictionary[seg_key] = code_region
@@ -71,13 +77,14 @@ def unpack(program_file):
 def _unpack_program(flat_api):
     ghidra_code_regions = []
     for memory_block in flat_api.getMemoryBlocks():
-        vaddr = _parse_offset(memory_block.getStart())
-        ghidra_code_regions.append(
-            {
-                "virtual_address": vaddr,
-                "size": memory_block.getSize(),
-            }
-        )
+        if memory_block.isExecute():
+            vaddr = _parse_offset(memory_block.getStart())
+            ghidra_code_regions.append(
+                {
+                    "virtual_address": vaddr,
+                    "size": memory_block.getSize(),
+                }
+            )
     return ghidra_code_regions
 
 
