@@ -102,11 +102,14 @@ class DataService(DataServiceInterface):
     ) -> memoryview:
         model = self._get_by_id(data_id)
         root = self._get_root_by_id(model.root_id)
-        if data_range is not None:
-            translated_range = data_range.translate(model.range.start).intersect(root.model.range)
-            return memoryview(root.data)[translated_range.start : translated_range.end]
-        else:
-            return memoryview(root.data)[model.range.start : model.range.end]
+        with memoryview(root.data) as memview:
+            if data_range is not None:
+                translated_range = data_range.translate(model.range.start).intersect(
+                    root.model.range
+                )
+                return memview[translated_range.start : translated_range.end]
+            else:
+                return memview[model.range.start : model.range.end]
 
     async def get_data_memoryview(
         self, data_id: DataId, data_range: Optional[Range] = None
