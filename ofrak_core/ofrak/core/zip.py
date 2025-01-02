@@ -49,7 +49,7 @@ class ZipUnpacker(Unpacker[None]):
     children = (File, Folder, SpecialFileType)
     external_dependencies = (UNZIP_TOOL,)
 
-    async def unpack(self, resource: Resource, config=None):
+    def unpack(self, resource: Resource, config=None):
         zip_view = resource.view_as(ZipArchive)
         with resource.temp_to_disk(suffix=".zip") as temp_path:
             with tempfile.TemporaryDirectory() as temp_dir:

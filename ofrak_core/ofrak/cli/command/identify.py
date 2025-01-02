@@ -48,7 +48,7 @@ class IdentifyCommand(OfrakCommandRunsScript):
 
         return subparser
 
-    async def ofrak_func(self, ofrak_context: OFRAKContext, args: argparse.Namespace):
+    def ofrak_func(self, ofrak_context: OFRAKContext, args: argparse.Namespace):
         print(f"Identifying file: {args.filename}\n")
         root_resource = ofrak_context.create_root_resource_from_file(args.filename)
 

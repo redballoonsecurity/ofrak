@@ -28,7 +28,7 @@ def ofrak(ofrak_injector, ofrak_id_service):
 
 
 @pytest.fixture
-async def ofrak_context(ofrak):
-    context = await ofrak.create_ofrak_context()
+def ofrak_context(ofrak):
+    context = ofrak.create_ofrak_context()
     yield context
     await context.shutdown_context()

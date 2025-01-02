@@ -96,7 +96,7 @@ class UbifsAnalyzer(Analyzer[None, Ubifs]):
 
     external_dependencies = (PY_LZO_TOOL,)
 
-    async def analyze(self, resource: Resource, config=None) -> Ubifs:
+    def analyze(self, resource: Resource, config=None) -> Ubifs:
         with resource.temp_to_disk() as temp_path:
             ubifs_obj = ubireader_ubifs(
                 ubi_io.ubi_file(
