@@ -53,7 +53,7 @@ class GzipUnpacker(Unpacker[None]):
 
     async def unpack(self, resource: Resource, config=None):
         with await resource.get_data_memoryview() as data:
-            unpacked_data = await self.unpack_with_zlib_module(data)
+            unpacked_data = self.unpack_with_zlib_module(data)
         return await resource.create_child(tags=(GenericBinary,), data=unpacked_data)
 
     @staticmethod

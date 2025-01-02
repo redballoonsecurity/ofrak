@@ -73,7 +73,7 @@ class ZstdPacker(Packer[ZstdPackerConfig]):
         proc = await asyncio.create_subprocess_exec(
             *command, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE
         )
-        with await resource.get_data_memoryview() as data:
+        with await child_file.resource.get_data_memoryview() as data:
             result, _ = await proc.communicate(data)
         if proc.returncode:
             raise CalledProcessError(returncode=proc.returncode, cmd=command)
