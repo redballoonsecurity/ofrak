@@ -1,12 +1,9 @@
-import asyncio
 import logging
 
 
 import pyghidra
-import struct
-from tempfile import TemporaryDirectory
+import argparse
 import time
-import sys
 import re
 import json
 
@@ -20,20 +17,17 @@ def _parse_offset(java_object):
 
 def unpack(program_file):
     with pyghidra.open_program(program_file) as flat_api:
-        from ghidra.program.model.block import BasicBlockModel
-
         main_dictionary = {}
-        code_regions = unpack_program(flat_api)
+        code_regions = _unpack_program(flat_api)
         for code_region in code_regions:
             seg_key = f"seg_{code_region['virtual_address']}"
             main_dictionary[seg_key] = code_region
-            func_cbs = unpack_code_region(code_region, flat_api)
+            func_cbs = _unpack_code_region(code_region, flat_api)
             code_region["children"] = []
             for func, cb in func_cbs:
                 cb_key = f"func_{cb['virtual_address']}"
                 code_region["children"].append(cb_key)
-                bb_model = BasicBlockModel(flat_api.getCurrentProgram())
-                basic_blocks, data_words = unpack_complex_block(func, bb_model, flat_api)
+                basic_blocks, data_words = _unpack_complex_block(func, flat_api)
                 cb["children"] = []
                 for block, bb in basic_blocks:
                     if bb["size"] == 0:
@@ -49,7 +43,7 @@ def unpack(program_file):
                         )
                         continue
                     bb_key = f"bb_{bb['virtual_address']}"
-                    instructions = unpack_basic_block(block, flat_api)
+                    instructions = _unpack_basic_block(block, flat_api)
                     bb["children"] = []
                     for instruction in instructions:
                         instr_key = f"instr_{instruction['virtual_address']}"
@@ -74,7 +68,7 @@ def unpack(program_file):
     return main_dictionary
 
 
-def unpack_program(flat_api):
+def _unpack_program(flat_api):
     ghidra_code_regions = []
     for memory_block in flat_api.getMemoryBlocks():
         vaddr = _parse_offset(memory_block.getStart())
@@ -87,7 +81,7 @@ def unpack_program(flat_api):
     return ghidra_code_regions
 
 
-def unpack_code_region(code_region, flat_api):
+def _unpack_code_region(code_region, flat_api):
     functions = []
     start_address = (
         flat_api.getAddressFactory()
@@ -108,7 +102,7 @@ def unpack_code_region(code_region, flat_api):
     while func is not None and end_address.subtract(func.getEntryPoint()) > 0:
         virtual_address = _parse_offset(func.getEntryPoint())
         start = _parse_offset(func.getEntryPoint())
-        end, _ = get_last_address(func, flat_api)
+        end, _ = _get_last_address(func, flat_api)
         if end is not None:
             cb = {
                 "virtual_address": virtual_address,
@@ -120,7 +114,10 @@ def unpack_code_region(code_region, flat_api):
     return functions
 
 
-def unpack_complex_block(func, bb_model, flat_api):
+def _unpack_complex_block(func, flat_api):
+    from ghidra.program.model.block import BasicBlockModel
+
+    bb_model = BasicBlockModel(flat_api.getCurrentProgram())
     bbs = []
     bb_iter = bb_model.getCodeBlocksContaining(func.getBody(), flat_api.monitor)
     for block in bb_iter:
@@ -182,7 +179,7 @@ def unpack_complex_block(func, bb_model, flat_api):
         }
         bbs.append((ghidra_block, bb))
 
-    end_data_addr, end_code_addr = get_last_address(func, flat_api)
+    end_data_addr, end_code_addr = _get_last_address(func, flat_api)
 
     dws = []
     data = flat_api.getDataAt(end_code_addr)
@@ -220,7 +217,7 @@ def unpack_complex_block(func, bb_model, flat_api):
     return bbs, dws
 
 
-def unpack_basic_block(block, flat_api):
+def _unpack_basic_block(block, flat_api):
     from java.math import BigInteger
     from ghidra.program.model.symbol import RefType
 
@@ -309,7 +306,7 @@ def unpack_basic_block(block, flat_api):
     return instructions
 
 
-def get_last_address(func, flat_api):
+def _get_last_address(func, flat_api):
     end_addr = None
     address_iter = func.getBody().getAddressRanges()
     nextFunc = flat_api.getFunctionAfter(func)
@@ -339,8 +336,14 @@ def get_last_address(func, flat_api):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--infile", "-i", type=str, required=True, help="The binary to be analyzed."
+    )
+    parser.add_argument("--outfile", "-o", type=str, required=True, help="The output json file.")
+    args = parser.parse_args()
     start = time.time()
-    res = unpack(sys.argv[1])
-    with open(sys.argv[2], "w") as fh:
+    res = unpack(args.infile)
+    with open(args.outfile, "w") as fh:
         json.dump(res, fh, indent=4)
-    print(f"Analysis took {time.time() - start} seconds")
+    print(f"PyGhidra analysis took {time.time() - start} seconds")

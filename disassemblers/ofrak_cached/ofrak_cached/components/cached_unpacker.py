@@ -1,5 +1,3 @@
-import logging
-
 from ofrak.core import *
 import json
 from typing import Dict, Any
@@ -41,16 +39,6 @@ class CachedAnalysis(ResourceView):
     pass
 
 
-class CachedAnalysisIdentifier(Identifier):
-    id = b"CachedAnalysisIdentifier"
-    targets = (Program,)
-
-    async def identify(self, resource: Resource, config=None):
-        for tag in _GHIDRA_AUTO_LOADABLE_FORMATS:
-            if resource.has_tag(tag):
-                resource.add_tag(CachedAnalysis)
-
-
 @dataclass
 class CachedAnalysisAnalyzerConfig(ComponentConfig):
     filename: str
@@ -72,6 +60,12 @@ class CachedAnalysisAnalyzer(Analyzer[CachedAnalysisAnalyzerConfig, CachedAnalys
         self.analysis_store = analysis_store
 
     async def analyze(self, resource: Resource, config: CachedAnalysisAnalyzerConfig):
+        await resource.identify()
+        if not resource.has_tag(Program) and not resource.has_attributes(ProgramAttributes):
+            raise AttributeError(
+                f"The reource with ID {resource.get_id()} is not an analyzable program format and does not have ProgramAttributes set."
+            )
+        await resource.unpack()  # Must unpack ELF to get program attributes
         program_attributes = await resource.analyze(ProgramAttributes)
         self.analysis_store.store_analysis(resource.get_id(), config.filename)
         self.analysis_store.store_program_attributes(resource.get_id(), program_attributes)

@@ -4,10 +4,8 @@ import logging
 
 import pyghidra
 from ofrak.core import *
-import struct
 from tempfile import TemporaryDirectory
 import os
-import sys
 import re
 
 
