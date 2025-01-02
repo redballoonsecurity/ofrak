@@ -68,7 +68,7 @@ class MagicAnalyzer(Analyzer[None, Magic]):
         if not MAGIC_INSTALLED:
             raise ComponentMissingDependencyError(self, LIBMAGIC_DEP)
         else:
-            with await resource.get_data_memoryview() as buffer:
+            with await resource.get_data_memoryview(force_readonly=False) as buffer:
                 c_char_array = c_char * len(buffer)
                 if buffer.readonly:
                     buffer_ctypes = c_char_array.from_buffer_copy(buffer)

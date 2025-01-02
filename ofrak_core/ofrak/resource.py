@@ -3,7 +3,6 @@ import dataclasses
 import hashlib
 import logging
 from inspect import isawaitable
-from types import TracebackType
 from typing import (
     AsyncIterator,
     BinaryIO,
@@ -65,22 +64,6 @@ LOGGER = logging.getLogger(__name__)
 RT = TypeVar("RT", bound="ResourceTag")
 RA = TypeVar("RA", bound="ResourceAttributes")
 RV = TypeVar("RV", bound="ResourceViewInterface")
-
-
-@dataclasses.dataclass
-class MemoryViewWrapper:
-    _memview: memoryview
-
-    def __enter__(self) -> memoryview:
-        return self._memview
-
-    def __exit__(
-        self,
-        exc_type: Optional[Type[BaseException]],
-        exc_value: Optional[BaseException],
-        traceback: Optional[TracebackType],
-    ) -> bool:
-        self._memview.release()
 
 
 class Resource:
@@ -184,7 +167,9 @@ class Resource:
         """
         return self._resource
 
-    async def get_data_memoryview(self, range: Optional[Range] = None) -> MemoryViewWrapper:
+    async def get_data_memoryview(
+        self, range: Optional[Range] = None, force_readonly: bool = True
+    ) -> memoryview:
         """
         A resource often represents a chunk of underlying binary data. This method returns the
         entire chunk by default; this can be reduced by an optional parameter. This method is provided
@@ -193,11 +178,13 @@ class Resource:
 
         :param range: A range within the resource's data, relative to the resource's data itself
         (e.g. Range(0, 10) returns the first 10 bytes of the chunk)
+        :param force_readonly: If True (default), the returned memoryview will be guaranteed to be
+        readonly. Can be set to False to maybe get an unsafe writable memoryview. This should only
+        be used for specific optimizations such as avoiding copies when passing data via a ctypes buffer.
 
-        :return: The full range or a partial range of this resource's data as a MemoryViewWrapper which
-        can be used as a context manager to get a memoryview. The returned memoryview will have itemsize=1
-        and may or may not be readonly. The returned memoryview should NOT be written to directly even if
-        it is not readonly.
+        :return: The full range or a partial range of this resource's data as a memoryview which should
+        be used as a context manager. The returned memoryview will have itemsize=1. The returned memoryview
+        should NOT be written to directly even if it is not readonly.
         """
         if self._resource.data_id is None:
             raise ValueError(
@@ -207,7 +194,11 @@ class Resource:
         if range is None:
             range = Range(0, len(memview))
         self._component_context.access_trackers[self._resource.id].data_accessed.add(range)
-        return MemoryViewWrapper(memview)
+        if force_readonly:
+            memview_ro = memview.toreadonly()
+            memview.release()
+            return memview_ro
+        return memview
 
     async def get_data(self, range: Optional[Range] = None) -> bytes:
         """
