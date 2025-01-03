@@ -60,7 +60,6 @@ class CapstoneBasicBlockUnpacker(BasicBlockUnpacker):
             instruction_view = Instruction(
                 disassem_result.address,
                 disassem_result.size,
-                f"{disassem_result.mnemonic} {disassem_result.operands}",
                 disassem_result.mnemonic,
                 disassem_result.operands,
                 bb_view.mode,
@@ -125,7 +124,6 @@ class CapstoneInstructionAnalyzer(InstructionAnalyzer):
         return Instruction(
             disassem_result.address,
             disassem_result.size,
-            f"{disassem_result.mnemonic} {disassem_result.operands}",
             disassem_result.mnemonic,
             disassem_result.operands,
             mode,

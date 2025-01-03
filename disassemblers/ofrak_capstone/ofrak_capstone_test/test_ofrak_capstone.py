@@ -158,7 +158,6 @@ BASIC_BLOCK_TEST_CASES = [
             Instruction(
                 0x100,
                 0x4,
-                "push {r4, r5, r6, r7, r8, lr}",
                 "push",
                 "{r4, r5, r6, r7, r8, lr}",
                 InstructionSetMode.NONE,
@@ -166,7 +165,6 @@ BASIC_BLOCK_TEST_CASES = [
             Instruction(
                 0x104,
                 0x4,
-                "mov r4, #0x0",
                 "mov",
                 "r4, #0x0",
                 InstructionSetMode.NONE,
@@ -174,7 +172,6 @@ BASIC_BLOCK_TEST_CASES = [
             Instruction(
                 0x108,
                 0x4,
-                "mov r5, r4",
                 "mov",
                 "r5, r4",
                 InstructionSetMode.NONE,
@@ -182,7 +179,6 @@ BASIC_BLOCK_TEST_CASES = [
             Instruction(
                 0x10C,
                 0x4,
-                "ldr r6, [pc, #0x50]",
                 "ldr",
                 "r6, [pc, #0x50]",
                 InstructionSetMode.NONE,
@@ -190,7 +186,6 @@ BASIC_BLOCK_TEST_CASES = [
             Instruction(
                 0x110,
                 0x4,
-                "ldr r7, [pc, #0x50]",
                 "ldr",
                 "r7, [pc, #0x50]",
                 InstructionSetMode.NONE,
