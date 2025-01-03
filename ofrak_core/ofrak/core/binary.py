@@ -41,9 +41,8 @@ class BinaryExtendModifier(Modifier[BinaryExtendConfig]):
     async def modify(self, resource: Resource, config: BinaryExtendConfig):
         if len(config.content) == 0:
             raise ValueError("Content of the extended space not provided")
-        data = await resource.get_data()
-        data += config.content
-        resource.queue_patch(Range(0, await resource.get_data_length()), data)
+        orig_data_length = await resource.get_data_length()
+        resource.queue_patch(Range(orig_data_length, orig_data_length), config.content)
 
 
 @dataclass

@@ -38,7 +38,6 @@ class SevenZUnpacker(Unpacker[None]):
 
     async def unpack(self, resource: Resource, config=None):
         seven_zip_v = await resource.view_as(SevenZFilesystem)
-        resource_data = await seven_zip_v.resource.get_data()
         async with resource.temp_to_disk(suffix=".7z") as temp_path:
             with tempfile.TemporaryDirectory() as temp_flush_dir:
                 cmd = [

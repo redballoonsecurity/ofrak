@@ -113,7 +113,8 @@ class ISO9660ImageAnalyzer(Analyzer[None, ISO9660ImageAttributes]):
         udf_version = None
 
         iso = PyCdlib()
-        iso.open_fp(BytesIO(await resource.get_data()))
+        with await resource.get_data_memoryview() as iso_data:
+            iso.open_fp(BytesIO(iso_data))
 
         interchange_level = iso.interchange_level
         has_joliet = iso.has_joliet()
@@ -166,14 +167,13 @@ class ISO9660Unpacker(Unpacker[None]):
     children = (ISO9660Entry,)
 
     async def unpack(self, resource: Resource, config=None):
-        iso_data = await resource.get_data()
-
         iso_attributes = await resource.analyze(ISO9660ImageAttributes)
         resource.add_attributes(iso_attributes)
         iso_resource = await resource.view_as(ISO9660Image)
 
         iso = PyCdlib()
-        iso.open_fp(BytesIO(iso_data))
+        with await resource.get_data_memoryview() as iso_data:
+            iso.open_fp(BytesIO(iso_data))
 
         if iso_attributes.has_joliet:
             facade = iso.get_joliet_facade()

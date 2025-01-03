@@ -1,6 +1,7 @@
 import logging
 from dataclasses import dataclass
 from typing import Callable, Dict, Iterable, Union
+from ctypes import c_char
 
 from ofrak.component.abstract import ComponentMissingDependencyError
 
@@ -64,13 +65,18 @@ class MagicAnalyzer(Analyzer[None, Magic]):
     external_dependencies = (LIBMAGIC_DEP,)
 
     async def analyze(self, resource: Resource, config=None) -> Magic:
-        data = await resource.get_data()
         if not MAGIC_INSTALLED:
             raise ComponentMissingDependencyError(self, LIBMAGIC_DEP)
         else:
-            magic_mime = magic.from_buffer(data, mime=True)
-            magic_description = magic.from_buffer(data)
-            return Magic(magic_mime, magic_description)
+            with await resource.get_data_memoryview(force_readonly=False) as buffer:
+                c_char_array = c_char * len(buffer)
+                if buffer.readonly:
+                    buffer_ctypes = c_char_array.from_buffer_copy(buffer)
+                else:
+                    buffer_ctypes = c_char_array.from_buffer(buffer)
+                magic_mime = magic.from_buffer(buffer_ctypes, mime=True)
+                magic_description = magic.from_buffer(buffer_ctypes)
+                return Magic(magic_mime, magic_description)
 
 
 class MagicMimeIdentifier(Identifier[None]):

@@ -426,80 +426,83 @@ class FlashOobResourceUnpacker(Unpacker[None]):
 
         oob_resource = resource
         # Parent FlashEccResource is created, redefine data to limited scope
-        data = await oob_resource.get_data()
-        data_len = len(data)
+        with await oob_resource.get_data_memoryview() as data:
+            data_len = len(data)
 
-        # Now add children blocks until we reach the tail block
-        offset = 0
-        only_data = list()
-        only_ecc = list()
-        for block in flash_attr.iterate_through_all_blocks(data_len, True):
-            block_size = flash_attr.get_block_size(block)
-            block_end_offset = offset + block_size
-            if block_end_offset > data_len:
-                LOGGER.info(
-                    f"Block offset {block_end_offset} is {block_end_offset - data_len} larger "
-                    f"than {data_len}. In this case unpacking is best effort and end of unpacked "
-                    f"child might not be accurate."
-                )
-                break
-            block_range = Range(offset, block_end_offset)
-            block_data = await oob_resource.get_data(range=block_range)
+            # Now add children blocks until we reach the tail block
+            offset = 0
+            only_data = bytearray()
+            only_ecc = bytearray()
+            for block in flash_attr.iterate_through_all_blocks(data_len, True):
+                block_size = flash_attr.get_block_size(block)
+                block_end_offset = offset + block_size
+                if block_end_offset > data_len:
+                    LOGGER.info(
+                        f"Block offset {block_end_offset} is {block_end_offset - data_len} larger "
+                        f"than {data_len}. In this case unpacking is best effort and end of unpacked "
+                        f"child might not be accurate."
+                    )
+                    break
+                with data[offset:block_end_offset] as block_memview:
+                    block_data = bytes(block_memview)
 
-            # Iterate through every field in block, dealing with ECC and DATA
-            block_ecc_range = None
-            block_data_range = None
-            field_offset = 0
-            for field_index, field in enumerate(block):
-                field_range = Range(field_offset, field_offset + field.size)
+                # Iterate through every field in block, dealing with ECC and DATA
+                block_ecc_range = None
+                block_data_range = None
+                field_offset = 0
+                for field_index, field in enumerate(block):
+                    field_range = Range(field_offset, field_offset + field.size)
 
-                # We must check all blocks anyway so deal with ECC here
-                if field.field_type == FlashFieldType.ECC:
-                    block_ecc_range = field_range
-                    cur_block_ecc = block_data[block_ecc_range.start : block_ecc_range.end]
-                    only_ecc.append(cur_block_ecc)
-                    # Add hash of everything up to the ECC to our dict for faster packing
-                    block_data_hash = md5(block_data[: block_ecc_range.start]).digest()
-                    DATA_HASHES[block_data_hash] = cur_block_ecc
+                    # We must check all blocks anyway so deal with ECC here
+                    if field.field_type == FlashFieldType.ECC:
+                        block_ecc_range = field_range
+                        cur_block_ecc = block_data[block_ecc_range.start : block_ecc_range.end]
+                        only_ecc.extend(cur_block_ecc)
+                        # Add hash of everything up to the ECC to our dict for faster packing
+                        block_data_hash = md5(block_data[: block_ecc_range.start]).digest()
+                        DATA_HASHES[block_data_hash] = cur_block_ecc
 
-                if field.field_type == FlashFieldType.DATA:
-                    block_data_range = field_range
-                    # Get next ECC range
-                    future_offset = field_offset
-                    block_list = list(block)
-                    for future_field in block_list[field_index:]:
-                        if future_field.field_type == FlashFieldType.ECC:
-                            block_ecc_range = Range(
-                                future_offset, future_offset + future_field.size
+                    if field.field_type == FlashFieldType.DATA:
+                        block_data_range = field_range
+                        # Get next ECC range
+                        future_offset = field_offset
+                        block_list = list(block)
+                        for future_field in block_list[field_index:]:
+                            if future_field.field_type == FlashFieldType.ECC:
+                                block_ecc_range = Range(
+                                    future_offset, future_offset + future_field.size
+                                )
+                            future_offset += future_field.size
+
+                        if block_ecc_range is not None:
+                            # Try decoding/correcting with ECC, report any error
+                            try:
+                                # Assumes that data comes before ECC
+                                if (ecc_attr is not None) and (ecc_attr.ecc_class is not None):
+                                    only_data.extend(
+                                        ecc_attr.ecc_class.decode(
+                                            block_data[: block_ecc_range.end]
+                                        )[block_data_range.start : block_data_range.end]
+                                    )
+                                else:
+                                    raise UnpackerError(
+                                        "Tried to correct with ECC without providing an ecc_class in FlashEccAttributes"
+                                    )
+                            except EccError:
+                                raise UnpackerError("ECC correction failed")
+                        else:
+                            # No ECC found in block, just add the data directly
+                            only_data.extend(
+                                block_data[block_data_range.start : block_data_range.end]
                             )
-                        future_offset += future_field.size
-
-                    if block_ecc_range is not None:
-                        # Try decoding/correcting with ECC, report any error
-                        try:
-                            # Assumes that data comes before ECC
-                            if (ecc_attr is not None) and (ecc_attr.ecc_class is not None):
-                                only_data.append(
-                                    ecc_attr.ecc_class.decode(block_data[: block_ecc_range.end])[
-                                        block_data_range.start : block_data_range.end
-                                    ]
-                                )
-                            else:
-                                raise UnpackerError(
-                                    "Tried to correct with ECC without providing an ecc_class in FlashEccAttributes"
-                                )
-                        except EccError:
-                            raise UnpackerError("ECC correction failed")
-                    else:
-                        # No ECC found in block, just add the data directly
-                        only_data.append(block_data[block_data_range.start : block_data_range.end])
-                field_offset += field.size
-            offset += block_size
-
+                    field_offset += field.size
+                offset += block_size
+            if not only_data:
+                only_data = bytes(data)
         # Add all block data to logical resource for recursive unpacking
         await oob_resource.create_child(
             tags=(FlashLogicalDataResource,),
-            data=b"".join(only_data) if only_data else data,
+            data=only_data,
             attributes=[
                 flash_attr,
             ],
@@ -507,7 +510,7 @@ class FlashOobResourceUnpacker(Unpacker[None]):
         if ecc_attr is not None:
             await oob_resource.create_child(
                 tags=(FlashLogicalEccResource,),
-                data=b"".join(only_ecc),
+                data=only_ecc,
                 attributes=[
                     ecc_attr,
                 ],

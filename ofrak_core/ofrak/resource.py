@@ -167,6 +167,39 @@ class Resource:
         """
         return self._resource
 
+    async def get_data_memoryview(
+        self, range: Optional[Range] = None, force_readonly: bool = True
+    ) -> memoryview:
+        """
+        A resource often represents a chunk of underlying binary data. This method returns the
+        entire chunk by default; this can be reduced by an optional parameter. This method is provided
+        in order to reduce the number of copy operations in certain scenarios such as passing a buffer
+        to ctypes.
+
+        :param range: A range within the resource's data, relative to the resource's data itself
+        (e.g. Range(0, 10) returns the first 10 bytes of the chunk)
+        :param force_readonly: If True (default), the returned memoryview will be guaranteed to be
+        readonly. Can be set to False to maybe get an unsafe writable memoryview. This should only
+        be used for specific optimizations such as avoiding copies when passing data via a ctypes buffer.
+
+        :return: The full range or a partial range of this resource's data as a memoryview which should
+        be used as a context manager. The returned memoryview will have itemsize=1. The returned memoryview
+        should NOT be written to directly even if it is not readonly.
+        """
+        if self._resource.data_id is None:
+            raise ValueError(
+                "Resource does not have a data_id. Cannot get data from a resource with no data"
+            )
+        memview = await self._data_service.get_data_memoryview(self._resource.data_id, range)
+        if range is None:
+            range = Range(0, len(memview))
+        self._component_context.access_trackers[self._resource.id].data_accessed.add(range)
+        if force_readonly:
+            memview_ro = memview.toreadonly()
+            memview.release()
+            return memview_ro
+        return memview
+
     async def get_data(self, range: Optional[Range] = None) -> bytes:
         """
         A resource often represents a chunk of underlying binary data. This method returns the
@@ -177,15 +210,8 @@ class Resource:
 
         :return: The full range or a partial range of this resource's bytes
         """
-        if self._resource.data_id is None:
-            raise ValueError(
-                "Resource does not have a data_id. Cannot get data from a resource with no data"
-            )
-        data = await self._data_service.get_data(self._resource.data_id, range)
-        if range is None:
-            range = Range(0, len(data))
-        self._component_context.access_trackers[self._resource.id].data_accessed.add(range)
-        return data
+        with await self.get_data_memoryview(range) as buffer:
+            return buffer.tobytes()
 
     async def get_data_length(self) -> int:
         """
@@ -579,7 +605,8 @@ class Resource:
         if pack is True:
             await self.pack_recursively()
 
-        destination.write(await self.get_data())
+        with await self.get_data_memoryview() as buffer:
+            destination.write(buffer)
 
     async def _analyze_attributes(self, attribute_types: Tuple[Type[ResourceAttributes], ...]):
         job_context = self._job_context
@@ -1442,14 +1469,9 @@ class Resource:
         if pack is True:
             await self.pack_recursively()
 
-        data = await self.get_data()
-        if data is not None:
+        with await self.get_data_memoryview() as buffer:
             with open(path, "wb") as f:
-                f.write(data)
-        else:
-            # Create empty file
-            with open(path, "wb") as f:
-                pass
+                f.write(buffer)
 
     def __repr__(self):
         properties = [
@@ -1541,7 +1563,7 @@ class Resource:
         with tempfile.NamedTemporaryFile(
             mode="wb", prefix=prefix, suffix=suffix, dir=dir, delete_on_close=False, delete=delete
         ) as temp:
-            temp.write(await self.get_data())
+            await self.write_to(temp, pack=False)
             temp.close()
             yield temp.name
 
@@ -1729,24 +1751,24 @@ async def _default_summarize_resource(resource: Resource) -> str:
     if resource._resource.data_id:
         root_data_range = await resource.get_data_range_within_root()
         parent_data_range = await resource.get_data_range_within_parent()
-        data = await resource.get_data()
-        if len(data) <= 128:
-            # Convert bytes to string to check .isprintable without doing .decode. Note that
-            # not all ASCII is printable, so we have to check both decodable and printable
-            raw_data_str = "".join(map(chr, data))
-            if raw_data_str.isascii() and raw_data_str.isprintable():
-                data_string = f'data_ascii="{data.decode("ascii")}"'
+        with await resource.get_data_memoryview() as data:
+            if len(data) <= 128:
+                # Convert bytes to string to check .isprintable without doing .decode. Note that
+                # not all ASCII is printable, so we have to check both decodable and printable
+                raw_data_str = "".join(map(chr, data))
+                if raw_data_str.isascii() and raw_data_str.isprintable():
+                    data_string = f'data_ascii="{str(data, "ascii")}"'
+                else:
+                    data_string = f"data_hex={data.hex()}"
             else:
-                data_string = f"data_hex={data.hex()}"
-        else:
-            sha256 = hashlib.sha256()
-            sha256.update(data)
-            data_string = f"data_hash={sha256.hexdigest()[:8]}"
-        data_info = (
-            f", global_offset=({hex(root_data_range.start)}-{hex(root_data_range.end)})"
-            f", parent_offset=({hex(parent_data_range.start)}-{hex(parent_data_range.end)})"
-            f", {data_string}"
-        )
+                sha256 = hashlib.sha256()
+                sha256.update(data)
+                data_string = f"data_hash={sha256.hexdigest()[:8]}"
+            data_info = (
+                f", global_offset=({hex(root_data_range.start)}-{hex(root_data_range.end)})"
+                f", parent_offset=({hex(parent_data_range.start)}-{hex(parent_data_range.end)})"
+                f", {data_string}"
+            )
     else:
         data_info = ""
     return (

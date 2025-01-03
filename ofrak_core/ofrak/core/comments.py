@@ -34,7 +34,7 @@ class AddCommentModifier(Modifier[AddCommentModifierConfig]):
         # Verify that the given range is valid for the given resource.
         config_range = config.comment[0]
         if config_range is not None:
-            if config_range.start < 0 or config_range.end > len(await resource.get_data()):
+            if config_range.start < 0 or config_range.end > await resource.get_data_length():
                 raise ValueError(
                     f"Range {config_range} is outside the bounds of "
                     f"resource {resource.get_id().hex()}"

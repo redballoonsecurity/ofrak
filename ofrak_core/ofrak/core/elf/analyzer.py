@@ -50,8 +50,8 @@ class ElfBasicHeaderAttributesAnalyzer(Analyzer[None, ElfBasicHeader]):
     outputs = (ElfBasicHeader,)
 
     async def analyze(self, resource: Resource, config=None) -> ElfBasicHeader:
-        tmp = await resource.get_data()
-        deserializer = BinaryDeserializer(io.BytesIO(tmp))
+        with await resource.get_data_memoryview() as tmp:
+            deserializer = BinaryDeserializer(io.BytesIO(tmp))
         (
             ei_magic,
             ei_class,

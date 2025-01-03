@@ -27,8 +27,7 @@ class ZlibCompressionLevelAnalyzer(Analyzer[None, ZlibData]):
     outputs = (ZlibData,)
 
     async def analyze(self, resource: Resource, config=None) -> ZlibData:
-        zlib_data = await resource.get_data(Range(0, 2))
-        flevel = zlib_data[-1]
+        (flevel,) = await resource.get_data(Range(1, 2))
         if flevel == 0x01:
             compression_level = 1
         elif flevel == 0x5E:
@@ -52,8 +51,8 @@ class ZlibUnpacker(Unpacker[None]):
     children = (GenericBinary,)
 
     async def unpack(self, resource: Resource, config=None):
-        zlib_data = await resource.get_data()
-        zlib_uncompressed_data = zlib.decompress(zlib_data)
+        with await resource.get_data_memoryview() as zlib_data:
+            zlib_uncompressed_data = zlib.decompress(zlib_data)
         await resource.create_child(
             tags=(GenericBinary,),
             data=zlib_uncompressed_data,
@@ -71,10 +70,9 @@ class ZlibPacker(Packer[None]):
         zlib_view = await resource.view_as(ZlibData)
         compression_level = zlib_view.compression_level
         zlib_child = await zlib_view.get_child()
-        zlib_data = await zlib_child.resource.get_data()
-        zlib_compressed = zlib.compress(zlib_data, compression_level)
-
-        original_zlib_size = await zlib_view.resource.get_data_length()
+        with await zlib_child.resource.get_data_memoryview() as zlib_data:
+            zlib_compressed = zlib.compress(zlib_data, compression_level)
+            original_zlib_size = len(zlib_data)
         resource.queue_patch(Range(0, original_zlib_size), zlib_compressed)
 
 

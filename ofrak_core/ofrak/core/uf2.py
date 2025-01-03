@@ -101,68 +101,79 @@ class Uf2Unpacker(Unpacker[None]):
         file_num_blocks = None
         block_no = 0
 
-        for i in range(0, data_length, 512):
-            data = await resource.get_data(Range(i, (i + 512)))
-            (
-                magic_start_one,
-                magic_start_two,
-                flags,
-                target_addr,
-                payload_size,
-                block_no,
-                num_blocks,
-                filesize_familyID,
-                payload_data,
-                magic_end,
-            ) = struct.unpack("8I476sI", data)
+        with await resource.get_data_memoryview(Range(0, data_length)) as all_data:
+            for i in range(0, data_length, 512):
+                with all_data[i : i + 512] as data:
+                    magic_start_one: int
+                    magic_start_two: int
+                    flags: int
+                    target_addr: int
+                    payload_size: int
+                    block_no: int
+                    num_blocks: int
+                    filesize_familyID: int
+                    payload_data: bytes
+                    magic_end: int
+                    (
+                        magic_start_one,
+                        magic_start_two,
+                        flags,
+                        target_addr,
+                        payload_size,
+                        block_no,
+                        num_blocks,
+                        filesize_familyID,
+                        payload_data,
+                        magic_end,
+                    ) = struct.unpack("8I476sI", data)
 
-            # basic sanity checks
-            if magic_start_one != UF2_MAGIC_START_ONE:
-                raise ValueError("Bad Start Magic")
-            if magic_start_two != UF2_MAGIC_START_TWO:
-                raise ValueError("Bad Start Magic")
-            if magic_end != UF2_MAGIC_END:
-                raise ValueError("Bad End Magic")
+                # basic sanity checks
+                if magic_start_one != UF2_MAGIC_START_ONE:
+                    raise ValueError("Bad Start Magic")
+                if magic_start_two != UF2_MAGIC_START_TWO:
+                    raise ValueError("Bad Start Magic")
+                if magic_end != UF2_MAGIC_END:
+                    raise ValueError("Bad End Magic")
 
-            if (previous_block_no - block_no) != -1:
-                raise ValueError("Skipped a block number")
-            previous_block_no = block_no
+                if (previous_block_no - block_no) != -1:
+                    raise ValueError("Skipped a block number")
+                previous_block_no = block_no
 
-            if not file_num_blocks:
-                file_num_blocks = num_blocks
+                if not file_num_blocks:
+                    file_num_blocks = num_blocks
 
-            if family_id is None:
-                family_id = filesize_familyID
-            else:
-                if family_id != filesize_familyID:
-                    raise NotImplementedError("Multiple family IDs in file not supported")
-
-            # unpack data
-            if flags & Uf2Flags.NOT_MAIN_FLASH:
-                # data not written to main flash
-                raise NotImplementedError(
-                    "Data not written to main flash is currently not supported"
-                )
-            elif flags & Uf2Flags.FILE_CONTAINER:
-                # file container
-                raise NotImplementedError("File containers are currently not implemented")
-            elif flags & Uf2Flags.FAMILY_ID_PRESENT:
-                data = payload_data[0:payload_size]
-                if len(ranges) == 0:
-                    ranges.append((Range(target_addr, target_addr + payload_size), data))
+                if family_id is None:
+                    family_id = filesize_familyID
                 else:
-                    last_region_range, last_region_data = ranges[-1]
+                    if family_id != filesize_familyID:
+                        raise NotImplementedError("Multiple family IDs in file not supported")
 
-                    # if range is adjacent, extend, otherwise start a new one
-                    if target_addr - last_region_range.end == 0:
-                        last_region_range.end = target_addr + payload_size
-                        last_region_data += data
-                        ranges[-1] = (last_region_range, last_region_data)
-                    else:
+                # unpack data
+                if flags & Uf2Flags.NOT_MAIN_FLASH:
+                    # data not written to main flash
+                    raise NotImplementedError(
+                        "Data not written to main flash is currently not supported"
+                    )
+                elif flags & Uf2Flags.FILE_CONTAINER:
+                    # file container
+                    raise NotImplementedError("File containers are currently not implemented")
+                elif flags & Uf2Flags.FAMILY_ID_PRESENT:
+                    data = payload_data[0:payload_size]
+                    if len(ranges) == 0:
                         ranges.append((Range(target_addr, target_addr + payload_size), data))
-            else:
-                # unsupported flags
-                raise ValueError(f"Unsupported flags {flags}")
+                    else:
+                        last_region_range, last_region_data = ranges[-1]
+
+                        # if range is adjacent, extend, otherwise start a new one
+                        if target_addr - last_region_range.end == 0:
+                            last_region_range.end = target_addr + payload_size
+                            last_region_data += data
+                            ranges[-1] = (last_region_range, last_region_data)
+                        else:
+                            ranges.append((Range(target_addr, target_addr + payload_size), data))
+                else:
+                    # unsupported flags
+                    raise ValueError(f"Unsupported flags {flags}")
 
         # count vs 0 indexed (there are 256 blocks from 0-255)
         if file_num_blocks != (block_no + 1):
@@ -208,14 +219,13 @@ class Uf2FilePacker(Packer[None]):
             )
         ):
             memory_region = await memory_region_r.view_as(CodeRegion)
-            data = await memory_region_r.get_data()
-            data_length = await memory_region_r.get_data_length()
-            data_range = memory_region.vaddr_range()
-            addr = data_range.start
+            with await memory_region_r.get_data_memoryview() as data:
+                data_range = memory_region.vaddr_range()
+                addr = data_range.start
 
-            for i in range(0, data_length, 256):
-                payloads.append((addr + i, 256, data[i : (i + 256)]))
-                continue
+                for i in range(0, len(data), 256):
+                    payloads.append((addr + i, 256, bytes(data[i : (i + 256)])))
+                    continue
 
         num_blocks = len(payloads)
         block_no = 0
@@ -223,21 +233,23 @@ class Uf2FilePacker(Packer[None]):
         file_attributes = resource.get_attributes(attributes_type=Uf2FileAttributes)
         family_id = file_attributes.family_id
 
-        repacked_data = b""
+        repacked_data = bytearray()
 
         for target_addr, payload_size, payload_data in payloads:
-            repacked_data += struct.pack(
-                "8I476sI",
-                UF2_MAGIC_START_ONE,
-                UF2_MAGIC_START_TWO,
-                Uf2Flags.FAMILY_ID_PRESENT,
-                target_addr,
-                payload_size,
-                block_no,
-                num_blocks,
-                family_id,
-                payload_data + b"\x00" * (467 - payload_size),  # add padding
-                UF2_MAGIC_END,
+            repacked_data.extend(
+                struct.pack(
+                    "8I476sI",
+                    UF2_MAGIC_START_ONE,
+                    UF2_MAGIC_START_TWO,
+                    Uf2Flags.FAMILY_ID_PRESENT,
+                    target_addr,
+                    payload_size,
+                    block_no,
+                    num_blocks,
+                    family_id,
+                    payload_data + b"\x00" * (467 - payload_size),  # add padding
+                    UF2_MAGIC_END,
+                )
             )
             block_no += 1
 

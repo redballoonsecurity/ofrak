@@ -33,7 +33,8 @@ def entropy_c(
     if len(data) <= window_size:
         return b""
     entropy = ctypes.create_string_buffer(len(data) - window_size)
-    errval = C_ENTROPY_FUNC(data, len(data), entropy, window_size, C_LOG_TYPE(log_percent))
+    buffer = (ctypes.c_char * len(data)).from_buffer_copy(data)
+    errval = C_ENTROPY_FUNC(buffer, len(data), entropy, window_size, C_LOG_TYPE(log_percent))
     if errval != 0:
         raise ValueError("Bad input to entropy function.")
-    return bytes(entropy.raw)
+    return entropy.raw

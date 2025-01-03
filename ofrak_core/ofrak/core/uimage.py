@@ -313,12 +313,12 @@ class UImageHeaderAttributesAnalyzer(Analyzer[None, UImageHeader]):
     outputs = (UImageHeader,)
 
     async def analyze(self, resource: Resource, config=None) -> UImageHeader:
-        tmp = await resource.get_data()
-        deserializer = BinaryDeserializer(
-            io.BytesIO(tmp),
-            endianness=Endianness.BIG_ENDIAN,
-            word_size=4,
-        )
+        with await resource.get_data_memoryview() as tmp:
+            deserializer = BinaryDeserializer(
+                io.BytesIO(tmp),
+                endianness=Endianness.BIG_ENDIAN,
+                word_size=4,
+            )
 
         deserialized = deserializer.unpack_multiple(f"IIIIIIIBBBB{UIMAGE_NAME_LEN}s")
         (
@@ -363,13 +363,13 @@ class UImageMultiHeaderAttributesAnalyzer(Analyzer[None, UImageMultiHeader]):
     outputs = (UImageMultiHeader,)
 
     async def analyze(self, resource: Resource, config=None) -> UImageMultiHeader:
-        resource_data = await resource.get_data()
-        deserializer = BinaryDeserializer(
-            io.BytesIO(resource_data),
-            endianness=Endianness.BIG_ENDIAN,
-            word_size=4,
-        )
-        uimage_multi_header_size = (len(resource_data) - 4) // 4  # Remove trailing null dword
+        with await resource.get_data_memoryview() as resource_data:
+            deserializer = BinaryDeserializer(
+                io.BytesIO(resource_data),
+                endianness=Endianness.BIG_ENDIAN,
+                word_size=4,
+            )
+            uimage_multi_header_size = (len(resource_data) - 4) // 4  # Remove trailing null dword
         deserialized = deserializer.unpack_multiple(f"{uimage_multi_header_size}I")
         return UImageMultiHeader(deserialized)
 
@@ -568,7 +568,7 @@ class UImagePacker(Packer[None]):
     targets = (UImage,)
 
     async def pack(self, resource: Resource, config=None):
-        repacked_body_data = b""
+        repacked_body_data = bytearray()
         uimage_view = await resource.view_as(UImage)
         header = await uimage_view.get_header()
         if header.get_type() == UImageType.MULTI:
@@ -578,9 +578,11 @@ class UImagePacker(Packer[None]):
             multi_header = await uimage_view.get_multi_header()
             multiheader_modifier_config = UImageMultiHeaderModifierConfig(image_sizes=image_sizes)
             await multi_header.resource.run(UImageMultiHeaderModifier, multiheader_modifier_config)
-            repacked_body_data += await multi_header.resource.get_data()
+            with await multi_header.resource.get_data_memoryview() as data:
+                repacked_body_data.extend(data)
         for uimage_body in await uimage_view.get_bodies():
-            repacked_body_data += await uimage_body.resource.get_data()
+            with await uimage_body.resource.get_data_memoryview() as data:
+                repacked_body_data.extend(data)
 
         # If there are UImageTrailingBytes, get them as well.
         resource_children = await resource.get_children()
@@ -588,7 +590,8 @@ class UImagePacker(Packer[None]):
             trailing_bytes_r = await resource.get_only_child_as_view(
                 UImageTrailingBytes, ResourceFilter.with_tags(UImageTrailingBytes)
             )
-            repacked_body_data += await trailing_bytes_r.resource.get_data()
+            with await trailing_bytes_r.resource.get_data_memoryview() as data:
+                repacked_body_data.extend(data)
         ih_size = len(repacked_body_data)
         ih_dcrc = zlib.crc32(repacked_body_data)
         header_modifier_config = UImageHeaderModifierConfig(ih_size=ih_size, ih_dcrc=ih_dcrc)

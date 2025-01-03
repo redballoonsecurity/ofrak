@@ -102,30 +102,30 @@ class DtbHeaderAnalyzer(Analyzer[None, DtbHeader]):
     outputs = (DtbHeader,)
 
     async def analyze(self, resource: Resource, config: None) -> DtbHeader:
-        header_data = await resource.get_data()
-        (
-            dtb_magic,
-            totalsize,
-            off_dt_struct,
-            off_dt_strings,
-            off_mem_rsvmap,
-            version,
-            last_comp_version,
-        ) = struct.unpack(">IIIIIII", header_data[:28])
-        assert dtb_magic == DTB_MAGIC_SIGNATURE, (
-            f"DTB Magic bytes not matching."
-            f"Expected: {DTB_MAGIC_SIGNATURE} "
-            f"Unpacked: {dtb_magic}"
-        )
-        boot_cpuid_phys = 0
-        dtb_strings_size = 0
-        dtb_struct_size = 0
-        if version >= 2:
-            boot_cpuid_phys = struct.unpack(">I", header_data[28:32])[0]
-        if version >= 3:
-            dtb_strings_size = struct.unpack(">I", header_data[32:36])[0]
-        if version >= 17:
-            dtb_struct_size = struct.unpack(">I", header_data[36:40])[0]
+        with await resource.get_data_memoryview(Range(0, 40)) as header_data:
+            (
+                dtb_magic,
+                totalsize,
+                off_dt_struct,
+                off_dt_strings,
+                off_mem_rsvmap,
+                version,
+                last_comp_version,
+            ) = struct.unpack(">IIIIIII", header_data[:28])
+            assert dtb_magic == DTB_MAGIC_SIGNATURE, (
+                f"DTB Magic bytes not matching."
+                f"Expected: {DTB_MAGIC_SIGNATURE} "
+                f"Unpacked: {dtb_magic}"
+            )
+            boot_cpuid_phys = 0
+            dtb_strings_size = 0
+            dtb_struct_size = 0
+            if version >= 2:
+                boot_cpuid_phys = struct.unpack(">I", header_data[28:32])[0]
+            if version >= 3:
+                dtb_strings_size = struct.unpack(">I", header_data[32:36])[0]
+            if version >= 17:
+                dtb_struct_size = struct.unpack(">I", header_data[36:40])[0]
 
         return DtbHeader(
             dtb_magic,

@@ -158,42 +158,42 @@ class OpenWrtTrxUnpacker(Unpacker[None]):
     )
 
     async def unpack(self, resource: Resource, config=None):
-        data = await resource.get_data()
-        # Peek into TRX version to know how big the header is
-        trx_version = OpenWrtTrxVersion(struct.unpack("<H", data[14:16])[0])
+        with await resource.get_data_memoryview() as data:
+            # Peek into TRX version to know how big the header is
+            trx_version = OpenWrtTrxVersion(struct.unpack("<H", data[14:16])[0])
 
-        if trx_version not in [OpenWrtTrxVersion.VERSION1, OpenWrtTrxVersion.VERSION2]:
-            raise UnpackerError(f"Unknown OpenWrt TRX version: {trx_version}")
+            if trx_version not in [OpenWrtTrxVersion.VERSION1, OpenWrtTrxVersion.VERSION2]:
+                raise UnpackerError(f"Unknown OpenWrt TRX version: {trx_version}")
 
-        header_len = (
-            OPENWRT_TRXV1_HEADER_LEN
-            if trx_version == OpenWrtTrxVersion.VERSION1
-            else OPENWRT_TRXV2_HEADER_LEN
-        )
-        trx_header_r = await resource.create_child(
-            tags=(OpenWrtTrxHeader,), data_range=Range(0, header_len)
-        )
-
-        trx_header = await trx_header_r.view_as(OpenWrtTrxHeader)
-        partition_offsets = trx_header.trx_partition_offsets
-
-        for i, offset in enumerate(partition_offsets):
-            if offset == 0:
-                break
-
-            next_offset = (
-                partition_offsets[i + 1] if i < (len(partition_offsets) - 1) else len(data)
+            header_len = (
+                OPENWRT_TRXV1_HEADER_LEN
+                if trx_version == OpenWrtTrxVersion.VERSION1
+                else OPENWRT_TRXV2_HEADER_LEN
             )
-            partition = data[offset:next_offset]
-
-            child = await resource.create_child(
-                tags=(GenericBinary,), data_range=Range(offset, next_offset)
+            trx_header_r = await resource.create_child(
+                tags=(OpenWrtTrxHeader,), data_range=Range(0, header_len)
             )
-            if OPENWRT_TRX_MARK in partition:
-                partition = partition[: partition.index(OPENWRT_TRX_MARK)]
-                await child.create_child(
-                    tags=(GenericBinary,), data_range=Range.from_size(0, len(partition))
+
+            trx_header = await trx_header_r.view_as(OpenWrtTrxHeader)
+            partition_offsets = trx_header.trx_partition_offsets
+
+            for i, offset in enumerate(partition_offsets):
+                if offset == 0:
+                    break
+
+                next_offset = (
+                    partition_offsets[i + 1] if i < (len(partition_offsets) - 1) else len(data)
                 )
+                with data[offset:next_offset] as partition_memview:
+                    partition = bytes(partition_memview)
+                    child = await resource.create_child(
+                        tags=(GenericBinary,), data_range=Range(offset, next_offset)
+                    )
+                    if OPENWRT_TRX_MARK in partition:
+                        partition = partition[: partition.index(OPENWRT_TRX_MARK)]
+                        await child.create_child(
+                            tags=(GenericBinary,), data_range=Range.from_size(0, len(partition))
+                        )
 
 
 #####################
@@ -208,12 +208,12 @@ class OpenWrtTrxHeaderAttributesAnalyzer(Analyzer[None, OpenWrtTrxHeader]):
     outputs = (OpenWrtTrxHeader,)
 
     async def analyze(self, resource: Resource, config=None) -> OpenWrtTrxHeader:
-        tmp = await resource.get_data()
-        deserializer = BinaryDeserializer(
-            io.BytesIO(tmp),
-            endianness=Endianness.LITTLE_ENDIAN,
-            word_size=4,
-        )
+        with await resource.get_data_memoryview() as tmp:
+            deserializer = BinaryDeserializer(
+                io.BytesIO(tmp),
+                endianness=Endianness.LITTLE_ENDIAN,
+                word_size=4,
+            )
         deserialized = deserializer.unpack_multiple("IIIHH")
         (
             trx_magic,
@@ -344,8 +344,10 @@ class OpenWrtTrxPacker(Packer[None]):
             ],
             key=lambda x: x[0].start,
         )
-        repacked_data_l = [await child.get_data() for _, child in children_by_offset]
-        repacked_data_b = b"".join(repacked_data_l)
+        repacked_data_b = bytearray()
+        for _, child in children_by_offset:
+            with await child.get_data_memoryview() as child_data:
+                repacked_data_b.extend(child_data)
         trx_length = header.get_header_length() + len(repacked_data_b)
 
         offsets = [r.start for r, _ in children_by_offset]

@@ -214,7 +214,7 @@ class FilesystemEntry(ResourceView):
         elif self.is_file():
             file_name = os.path.join(root_path, entry_path)
             with open(file_name, "wb") as f:
-                f.write(await self.resource.get_data())
+                await self.resource.write_to(f, pack=False)
             self.apply_stat_attrs(file_name)
         elif self.is_device():
             device_name = os.path.join(root_path, entry_path)
