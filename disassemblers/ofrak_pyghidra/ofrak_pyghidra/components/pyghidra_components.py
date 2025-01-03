@@ -353,10 +353,6 @@ class PyGhidraUnpacker(Unpacker[None]):
             mnem = str(mnem).lower()
             mnem = re.sub("cpy", "mov", mnem)
             operands = re.sub("0x[0]+([0-9])", lambda match: f"0x{match.group(1)}", operands)
-            if "0x00" in operands:
-                import ipdb
-
-                ipdb.set_trace()
             operands = re.sub(" \+ -", " - ", operands)
             operands = re.sub(",([^\s])", lambda match: f", {match.group(1)}", operands)
             disasm = f"{mnem} {operands}"

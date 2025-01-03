@@ -77,14 +77,13 @@ def unpack(program_file):
 def _unpack_program(flat_api):
     ghidra_code_regions = []
     for memory_block in flat_api.getMemoryBlocks():
+        is_execute = False
         if memory_block.isExecute():
-            vaddr = _parse_offset(memory_block.getStart())
-            ghidra_code_regions.append(
-                {
-                    "virtual_address": vaddr,
-                    "size": memory_block.getSize(),
-                }
-            )
+            is_execute = True
+        vaddr = _parse_offset(memory_block.getStart())
+        ghidra_code_regions.append(
+            {"virtual_address": vaddr, "size": memory_block.getSize(), "executable": is_execute}
+        )
     return ghidra_code_regions
 
 
@@ -292,10 +291,6 @@ def _unpack_basic_block(block, flat_api):
         mnem = str(mnem).lower()
         mnem = re.sub("cpy", "mov", mnem)
         operands = re.sub("0x[0]+([0-9])", lambda match: f"0x{match.group(1)}", operands)
-        if "0x00" in operands:
-            import ipdb
-
-            ipdb.set_trace()
         operands = re.sub(" \+ -", " - ", operands)
         operands = re.sub(",([^\s])", lambda match: f", {match.group(1)}", operands)
         disasm = f"{mnem} {operands}"

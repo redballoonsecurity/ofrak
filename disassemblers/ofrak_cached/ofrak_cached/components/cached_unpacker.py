@@ -75,7 +75,7 @@ class CachedAnalysisAnalyzer(Analyzer[CachedAnalysisAnalyzerConfig, CachedAnalys
         program_attributes = await resource.analyze(ProgramAttributes)
         self.analysis_store.store_analysis(resource.get_id(), config.filename)
         if not config.force:
-            if not self.verify_cache_file(resource):
+            if not await self.verify_cache_file(resource):
                 raise ValueError(
                     "MD5 recorded in cache file does not match the hash of the requested resource, use the force config option to use this cache file anyway."
                 )
@@ -88,9 +88,6 @@ class CachedAnalysisAnalyzer(Analyzer[CachedAnalysisAnalyzerConfig, CachedAnalys
     async def verify_cache_file(self, resource: Resource):
         data = await resource.get_data()
         md5_hash = hashlib.md5(data)
-        import ipdb
-
-        ipdb.set_trace()
         return (
             md5_hash.digest().hex()
             == self.analysis_store.get_analysis(resource.get_id())["metadata"]["hash"]
@@ -144,7 +141,7 @@ class CachedCodeRegionModifier(Modifier[None]):
         )
         backend_code_regions: List[CodeRegion] = []
         for key, mem_region in analysis.items():
-            if key.startswith("seg"):
+            if key.startswith("seg") and mem_region["executable"]:
                 backend_code_regions.append(
                     CodeRegion(
                         virtual_address=mem_region["virtual_address"], size=mem_region["size"]
