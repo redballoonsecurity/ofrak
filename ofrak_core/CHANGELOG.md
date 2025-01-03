@@ -3,6 +3,9 @@ All notable changes to `ofrak` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+THIS CHANGE SHOULD NOT RESULT IN A WORKFLOW RUN.
+
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 ### Added
 - Add license check command to prompt users about community or pro licenses. ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
