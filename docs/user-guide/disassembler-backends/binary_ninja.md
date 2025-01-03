@@ -35,7 +35,7 @@ The recommended Binary Ninja version to use with OFRAK is 3.2.3814. If you are r
       > serial.txt
     ```
 
-    The command `DOCKER_BUILDKIT=1 python3 build_image.py --config ofrak-binary-ninja.yml --base --finish` will build an image using Docker BuildKit secrets so that neither the license nor serial number are exposed in the built Docker image. BuildKit is required for the build to succeed!
+    The command `python3 build_image.py --config ofrak-binary-ninja.yml --base --finish` will build an image using Docker BuildKit secrets so that neither the license nor serial number are exposed in the built Docker image. BuildKit is required for the build to succeed!
 
     The Docker container should be run with the same license file from the installation step. The license can then be mounted into the Docker container at location `/root/.binaryninja/license.dat` by adding the following arguments to the `docker run` command:
 

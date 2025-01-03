@@ -3,7 +3,7 @@ Device Tree Blob (or Flattened Device Tree) OFRAK Utilities
 For more information see: https://devicetree-specification.readthedocs.io/en/stable/flattened-format.html
 """
 
-import os
+import posixpath
 import struct
 from dataclasses import dataclass
 from enum import Enum
@@ -55,7 +55,7 @@ class DtbNode(GenericBinary):
             return self.name
 
         parent_node = await self.resource.get_parent_as_view(v_type=DtbNode)
-        return os.path.join(await parent_node.get_path(), self.name)
+        return posixpath.join(await parent_node.get_path(), self.name)
 
 
 class DeviceTreeBlob(GenericBinary):
@@ -183,7 +183,7 @@ class DtbProperty(GenericBinary):
 
     async def get_path(self):
         parent_node = await self.resource.get_parent_as_view(v_type=DtbNode)
-        return os.path.join(await parent_node.get_path(), self.name)
+        return posixpath.join(await parent_node.get_path(), self.name)
 
     async def get_value(self) -> Union[str, List[str], int, List[int], bytes, bytearray, None]:
         if self.p_type is DtbPropertyType.DtbPropNoValue:
@@ -321,7 +321,7 @@ class DeviceTreeBlobPacker(Packer[None]):
         ):
             # By default, add_item adds the missing nodes to complete the path of a previous node
             if not dtb.exist_node(await node.get_path()):
-                dtb.add_item(fdt.Node(node.name), os.path.dirname(await node.get_path()))
+                dtb.add_item(fdt.Node(node.name), posixpath.dirname(await node.get_path()))
             for prop in await node.resource.get_children_as_view(
                 v_type=DtbProperty,
                 r_filter=ResourceFilter(tags=[DtbProperty]),

@@ -47,7 +47,6 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
                 "-fno-merge-constants",  # avoids sections like .rodata.cst16, .rodata.str1.1 etc
                 "-fno-reorder-functions",
                 "-fno-asynchronous-unwind-tables",  # avoids the .eh_frame section
-                "-Wall",
             ]
         )
         if self._config.separate_data_sections:

@@ -2,7 +2,7 @@ import pytest
 import os.path
 from dataclasses import dataclass
 from typing import Dict
-from ofrak.core.uefi import Uefi
+from ofrak.core.uefi import Uefi, UefiUnpacker
 from ofrak.core.filesystem import File, FilesystemEntry
 from ofrak.resource import Resource
 from ofrak import OFRAKContext
@@ -36,6 +36,7 @@ UEFI_COMPONENT_TEST_CASE = [
 ]
 
 
+@pytest.mark.skipif_missing_deps([UefiUnpacker])
 class TestUefiComponent(UnpackAndVerifyPattern):
     @pytest.fixture(params=UEFI_COMPONENT_TEST_CASE, ids=lambda tc: tc.label)
     async def unpack_verify_test_case(self, request) -> UnpackAndVerifyTestCase:
@@ -61,12 +62,12 @@ class TestUefiComponent(UnpackAndVerifyPattern):
         await root_resource.unpack_recursively()
 
     async def get_descendants_to_verify(self, unpacked_root_resource: Resource) -> Dict:
-        result = {
-            await (
-                await descendent.view_as(FilesystemEntry)
-            ).get_path(): await descendent.get_data()
-            for descendent in await unpacked_root_resource.get_descendants()
-        }
+        result = {}
+        for descendant in await unpacked_root_resource.get_descendants():
+            if descendant.has_tag(FilesystemEntry):
+                result[
+                    await (await descendant.view_as(FilesystemEntry)).get_path()
+                ] = await descendant.get_data()
         return result
 
     async def verify_descendant(self, unpacked_descendant: bytes, specified_result: bytes):

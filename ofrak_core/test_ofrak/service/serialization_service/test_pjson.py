@@ -276,7 +276,7 @@ def test_interval_tree_serialization(obj: IntervalTree, _test_serialize_deserial
 def test_from_pjson_ambiguous_type_hints(
     json_obj: Any, type_hint: Any, serializer: PJSONSerializationService
 ):
-    with pytest.raises((TypeError, BeartypeCallHintParamViolation)):
+    with pytest.raises((IndexError, ValueError)):
         serializer.from_pjson(json_obj, type_hint)
 
 

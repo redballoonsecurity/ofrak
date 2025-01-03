@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Changed
 - Removed `SUBALIGN(0)` for `.bss` sections
 - Minor update to OFRAK Community License, add OFRAK Pro License ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
+- Install toolchains from source or tarball instead of relying on the Debian package manager ([#502](https://github.com/redballoonsecurity/ofrak/pull/502), [#541](https://github.com/redballoonsecurity/ofrak/pull/541))
 
 ## [4.0.2](https://github.com/redballoonsecurity/ofrak/compare/ofrak-patch-maker-v.4.0.1...ofrak-patch-maker-v.4.0.2)
 ### Fixed
@@ -44,6 +45,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Extend parsed symbol dictionary to include LinkableSymbolType.
 - Extend AssembledObject and BOM types to include relocation and unresolved symbols.
 - Add separate data sections support to LLVM toolchain, and add general flag for including subsections
+- Add support for big endian in the GNU toolchain
+- Add support for ARM BE8 in the GNU toolchain
 
 ### Changed
 - Switch to standard GCC-like frontend for LLVM, which supports C attribute(weak)
