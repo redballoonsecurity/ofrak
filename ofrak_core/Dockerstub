@@ -68,3 +68,17 @@ RUN cd /tmp && \
     make install && \
     cd /tmp && \
     rm -r UEFITool-A68
+
+# Multiarch packages necessary for various tests to work on ARM
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+    dpkg --add-architecture amd64 && apt-get update && \
+      apt-get -y install --no-install-recommends \
+      libc6:amd64 \
+      zlib1g:amd64 \
+      libselinux1:amd64 \
+      libacl1:amd64 \
+      libmpc3:amd64 \
+      libisl23:amd64 \
+      libstdc++6:amd64 \
+      crossbuild-essential-amd64; \
+fi;
