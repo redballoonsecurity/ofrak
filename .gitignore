@@ -30,3 +30,4 @@ disassemblers/ofrak_ghidra/build
 .coverage
 .mypy_cache
 .vscode/*
+ofrak.license
