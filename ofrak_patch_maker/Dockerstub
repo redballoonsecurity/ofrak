@@ -26,9 +26,7 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
 fi;
 
 #M68k GNU 10 Linux
-#Only exists for x86
-RUN if [ "$TARGETARCH" = "amd64" ]; then \
-    cd /tmp && \
+RUN cd /tmp && \
     apt-get update && apt-get install -y gcc g++ gperf bison flex texinfo help2man make libncurses5-dev python3-dev autoconf automake libtool libtool-bin gawk wget bzip2 xz-utils unzip patch libstdc++6 rsync && \
     git clone https://github.com/crosstool-ng/crosstool-ng.git && \
     cd crosstool-ng/ && \
@@ -81,8 +79,7 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
       'CT_ZSTD_PATCH_GLOBAL=y' \
       >> .config && \
     ./ct-ng build CT_JOBS=`nproc` && \
-    cd /tmp && rm -rf crosstool-ng; \
-fi;
+    cd /tmp && rm -rf crosstool-ng;
 
 #M68k VBCC
 RUN cd /tmp && \
@@ -108,6 +105,11 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     wget https://armkeil.blob.core.windows.net/developer/Files/downloads/gnu-a/10.3-2021.07/binrel/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu.tar.xz --show-progress --progress=bar:force:noscroll && \
     tar xf gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu.tar.xz -C /opt/rbs/toolchain && \
     rm -rf gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu.tar.xz; \
+elif [ "$TARGETARCH" = "arm64" ]; then \
+    cd /tmp && \
+    wget https://developer.arm.com/-/media/Files/downloads/gnu-a/10.3-2021.07/binrel/gcc-arm-10.3-2021.07-aarch64-aarch64-none-elf.tar.xz --show-progress --progress=bar:force:noscroll && \
+    tar xf gcc-arm-10.3-2021.07-aarch64-aarch64-none-elf.tar.xz -C /opt/rbs/toolchain && \
+    rm -rf gcc-arm-10.3-2021.07-aarch64-aarch64-none-elf.tar.xz; \
 fi;
 
 #AVR GCC
@@ -116,6 +118,11 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     wget https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/SoftwareLibraries/Firmware/avr8-gnu-toolchain-3.6.2.1778-linux.any.x86_64.tar.gz --show-progress --progress=bar:force:noscroll && \
     tar xzf avr8-gnu-toolchain-3.6.2.1778-linux.any.x86_64.tar.gz -C /opt/rbs/toolchain && \
     rm -rf avr8-gnu-toolchain-3.6.2.1778-linux.any.x86_64.tar.gz; \
+elif [ "$TARGETARCH" = "arm64" ]; then \
+    cd /tmp && \
+    wget http://downloads.arduino.cc/tools/avr-gcc-7.3.0-atmel3.6.1-arduino7-aarch64-pc-linux-gnu.tar.bz2 --show-progress --progress=bar:force:noscroll && \
+    tar xf avr-gcc-7.3.0-atmel3.6.1-arduino7-aarch64-pc-linux-gnu.tar.bz2 -C /opt/rbs/toolchain && \
+    rm -rf avr-gcc-7.3.0-atmel3.6.1-arduino7-aarch64-pc-linux-gnu.tar.bz2; \
 fi;
 
 #PPC GNU 10 Linux
@@ -124,6 +131,11 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     wget https://download.01.org/0day-ci/cross-package/gcc-10.3.0-nolibc/x86_64-gcc-10.3.0-nolibc_powerpc-linux.tar.xz --show-progress --progress=bar:force:noscroll && \
     tar xf x86_64-gcc-10.3.0-nolibc_powerpc-linux.tar.xz -C /opt/rbs/toolchain && \
     rm -rf x86_64-gcc-10.3.0-nolibc_powerpc-linux.tar.xz; \
+elif [ "$TARGETARCH" = "arm64" ]; then \
+    cd /tmp && \
+    wget https://www.kernel.org/pub/tools/crosstool/files/bin/arm64/10.3.0/arm64-gcc-10.3.0-nolibc-powerpc-linux.tar.xz --show-progress --progress=bar:force:noscroll && \
+    tar xf arm64-gcc-10.3.0-nolibc-powerpc-linux.tar.xz -C /opt/rbs/toolchain && \
+    rm -rf arm64-gcc-10.3.0-nolibc-powerpc-linux.tar.xz; \
 fi;
 
 #BCC (GCC) SPARC v8

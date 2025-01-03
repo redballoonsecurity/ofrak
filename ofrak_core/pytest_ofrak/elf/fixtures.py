@@ -6,7 +6,7 @@ import pytest
 
 
 # MAKEFILE_CONTENTS = """
-# CC=gcc
+# CC=x86_64-linux-gnu-gcc
 
 # default: program
 
