@@ -137,7 +137,7 @@ super-start-ofrak-%: ## Start OFRAK image with mounted volumes, profiling tools,
 	  --cap-add SYS_PTRACE \
 	  $(call check_for_binja_license,) \
 	  $(call volume_mounts,$(PACKAGES)) --entrypoint bash \
-	  redballoonsecurity/ofrak/dev:latest \
+	  redballoonsecurity/ofrak/$*:latest \
 	  -c 'make develop \
 	  && ofrak license --community --i-agree \
 	  && (sleep infinity)'
