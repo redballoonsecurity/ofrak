@@ -4,9 +4,13 @@ on:
   pull_request:
     branches:
       - master
+    paths-ignore:
+      - '**/CHANGELOG.md'
   push:
     branches:
       - master
+    paths-ignore:
+      - '**/CHANGELOG.md'
   schedule: 
     - cron: '0 0 * * *'
   workflow_dispatch: 
