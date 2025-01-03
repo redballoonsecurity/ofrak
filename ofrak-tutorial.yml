@@ -3,9 +3,9 @@ base_image_name: "tutorial-base"
 image_name: "tutorial"
 packages_paths:
   [
+    "ofrak_patch_maker", # Patch maker dockerstub includes lots of downloads. Keeping it first helps with docker caching.
     "ofrak_type",
     "ofrak_io",
-    "ofrak_patch_maker",
     "ofrak_core",
     "disassemblers/ofrak_ghidra",
     "examples",
@@ -13,9 +13,10 @@ packages_paths:
     "ofrak_tutorial"
   ]
 entrypoint: |
-    python -m ofrak_ghidra.server start \
-        && jupyter notebook \
-            --no-browser \
-            --allow-root \
-            --ip 0.0.0.0 \
-            --notebook-dir "/ofrak_tutorial/notebooks"
+    ofrak license -l ofrak.license --i-agree \
+    && python -m ofrak_ghidra.server start \
+    && jupyter notebook \
+        --no-browser \
+        --allow-root \
+        --ip 0.0.0.0 \
+        --notebook-dir "/ofrak_tutorial/notebooks"
