@@ -102,9 +102,9 @@ class DataService(DataServiceInterface):
         root = self._get_root_by_id(model.root_id)
         if data_range is not None:
             translated_range = data_range.translate(model.range.start).intersect(root.model.range)
-            return root.data[translated_range.start : translated_range.end]
+            return bytes(root.data[translated_range.start : translated_range.end])
         else:
-            return root.data[model.range.start : model.range.end]
+            return bytes(root.data[model.range.start : model.range.end])
 
     async def apply_patches(self, patches: List[DataPatch]) -> List[DataPatchesResult]:
         patches_by_root: Dict[DataId, List[DataPatch]] = defaultdict(list)
@@ -261,13 +261,11 @@ class DataService(DataServiceInterface):
         for affected_range in affected_ranges:
             results[root_data_id].append(affected_range)
 
-        new_root_data = bytearray(root.data)
         # Apply finalized patches to data and data models
         for patch_range, data, size_diff in finalized_ordered_patches:
-            new_root_data[patch_range.start : patch_range.end] = data
+            root.data[patch_range.start : patch_range.end] = data
             if size_diff != 0:
                 root.resize_range(patch_range, size_diff)
-        root.data = bytes(new_root_data)
 
         return [
             DataPatchesResult(data_id, results_for_id)
@@ -326,7 +324,7 @@ class _DataRoot:
 
     def __init__(self, model: DataModel, data: bytes):
         self.model: DataModel = model
-        self.data = data
+        self.data = bytearray(data)
         self._children: Dict[DataId, DataModel] = dict()
 
         # A pair of sorted 2D arrays, where each "point" in the grid is a set of children's data IDs
