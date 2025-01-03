@@ -3,14 +3,15 @@ base_image_name: "ghidra-base"
 image_name: "ghidra"
 packages_paths:
   [
+    "ofrak_patch_maker", # Patch maker dockerstub includes lots of downloads. Keeping it first helps with docker caching.
     "ofrak_type",
     "ofrak_io",
-    "ofrak_patch_maker",
     "ofrak_core",
     "disassemblers/ofrak_ghidra",
     "frontend",
   ]
 entrypoint: |
     nginx \
-      & python3 -m ofrak_ghidra.server start \
-      & python3 -m ofrak gui -H 0.0.0.0 -p 8877 --backend ghidra
+      && ofrak license -l /ofrak.license --i-agree \
+      && python3 -m ofrak_ghidra.server start \
+      && ofrak gui -H 0.0.0.0 -p 8877 --backend ghidra

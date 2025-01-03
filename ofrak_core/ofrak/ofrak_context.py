@@ -234,12 +234,12 @@ class OFRAK:
                 audited_components.append(component)
             else:
                 components_missing_deps.append(component)
-
-        LOGGER.warning(
-            f"Skipped registering the following components due to missing dependencies: "
-            f"{', '.join(type(c).__name__ for c in components_missing_deps)}. Run `python3 -m "
-            f"ofrak deps --missing-only` for more details."
-        )
+        if len(components_missing_deps) > 0:
+            LOGGER.warning(
+                f"Skipped registering the following components due to missing dependencies: "
+                f"{', '.join(type(c).__name__ for c in components_missing_deps)}. Run `python3 -m "
+                f"ofrak deps --missing-only` for more details."
+            )
 
         return audited_components
 

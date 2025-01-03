@@ -1,5 +1,6 @@
 import configparser
 import os
+import glob
 from multiprocessing import Pool, cpu_count
 from typing import Optional, Dict, Mapping, Tuple
 
@@ -28,6 +29,8 @@ def get_repository_config(section: str, key: Optional[str] = None):
     """
     Get config values from toolchain.conf.
 
+    If the resulting value contains '*', we do a glob expansion.
+
     :param section: section name in config file
     :param key: key in `config[section]`
 
@@ -48,10 +51,18 @@ def get_repository_config(section: str, key: Optional[str] = None):
         try:
             config.read(conf)
             if key:
-                ret = config.get(section, key)
+                raw_value = config.get(section, key)
+                
+                if '*' in raw_value:
+                    matches = glob.glob(raw_value)
+                    if matches:
+                        return matches[0]
+                    else:
+                        raise NotFoundError(f"No file matches wildcard {raw_value}")
+                else:
+                    return raw_value
             else:
-                ret = config.items(section)  # type: ignore
-            return ret
+                return config.items(section) # type: ignore
         except (configparser.NoSectionError, configparser.NoOptionError) as e:
             error_by_config_file[conf] = e
             continue

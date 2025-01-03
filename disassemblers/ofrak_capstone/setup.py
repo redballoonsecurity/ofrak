@@ -42,7 +42,6 @@ setuptools.setup(
             "pytest-cov",
             "pytest-asyncio==0.19.0",
             "requests",
-            "ofrak[test]",
         ]
     },
     author="Red Balloon Security",

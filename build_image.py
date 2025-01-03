@@ -10,7 +10,7 @@ import pkg_resources
 import yaml
 
 DEFAULT_PYTHON_IMAGE = (
-    "python:3.9-bookworm@sha256:a23efa04a7f7a881151fe5d473770588ef639c08fd5f0dcc6987dbe13705c829"
+    "python:3.11.11-bookworm@sha256:b337e1fd27dbacda505219f713789bf82766694095876769ea10c2d34b4f470b"  
 )
 BASE_DOCKERFILE = "base.Dockerfile"
 FINISH_DOCKERFILE = "finish.Dockerfile"
