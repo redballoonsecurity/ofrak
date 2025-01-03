@@ -1,0 +1,13 @@
+registry: "redballoonsecurity/ofrak"
+base_image_name: "pyghidra-base"
+image_name: "pyghidra"
+python_image: "python:3.9-bullseye"
+packages_paths:
+  [
+    "ofrak_type",
+    "ofrak_io",
+    "ofrak_patch_maker",
+    "ofrak_core",
+    "disassemblers/ofrak_pyghidra",
+    "frontend",
+  ]
