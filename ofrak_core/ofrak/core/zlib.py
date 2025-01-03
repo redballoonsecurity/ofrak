@@ -7,7 +7,7 @@ from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.resource import Resource
 from ofrak.core.binary import GenericBinary
-from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
+from ofrak.core.magic import MagicMimePattern, MagicDescriptionPattern
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
@@ -78,5 +78,5 @@ class ZlibPacker(Packer[None]):
         resource.queue_patch(Range(0, original_zlib_size), zlib_compressed)
 
 
-MagicMimeIdentifier.register(ZlibData, "application/zlib")
-MagicDescriptionIdentifier.register(ZlibData, lambda s: s.startswith("zlib compressed data"))
+MagicMimePattern.register(ZlibData, "application/zlib")
+MagicDescriptionPattern.register(ZlibData, lambda s: s.startswith("zlib compressed data"))

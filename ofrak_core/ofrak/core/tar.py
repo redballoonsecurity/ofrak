@@ -9,7 +9,7 @@ from ofrak.component.unpacker import Unpacker, UnpackerError
 from ofrak.resource import Resource
 from ofrak.core.binary import GenericBinary
 from ofrak.core.filesystem import FilesystemRoot, Folder, File, SpecialFileType
-from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
+from ofrak.core.magic import MagicMimePattern, MagicDescriptionPattern
 
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.model.component_model import ComponentConfig
@@ -114,5 +114,5 @@ class TarPacker(Packer[None]):
                 resource.queue_patch(Range(0, await resource.get_data_length()), new_fh.read())
 
 
-MagicMimeIdentifier.register(TarArchive, "application/x-tar")
-MagicDescriptionIdentifier.register(TarArchive, lambda s: "tar archive" in s.lower())
+MagicMimePattern.register(TarArchive, "application/x-tar")
+MagicDescriptionPattern.register(TarArchive, lambda s: "tar archive" in s.lower())
