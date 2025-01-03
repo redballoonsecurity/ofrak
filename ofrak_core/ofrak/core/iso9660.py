@@ -1,7 +1,7 @@
 import asyncio
 import logging
-import os
-import tempfile
+import tempfile312 as tempfile
+import posixpath
 from dataclasses import dataclass
 from io import BytesIO
 from subprocess import CalledProcessError
@@ -195,7 +195,7 @@ class ISO9660Unpacker(Unpacker[None]):
 
         for root, dirs, files in iso.walk(**{path_var: "/"}):
             for d in dirs:
-                path = os.path.join(root, d)
+                path = posixpath.join(root, d)
                 folder_tags = (ISO9660Entry, Folder)
                 entry = ISO9660Entry(
                     name=d,
@@ -211,7 +211,7 @@ class ISO9660Unpacker(Unpacker[None]):
                     path, None, None, folder_tags, entry.get_attributes_instances().values()
                 )
             for f in files:
-                path = os.path.join(root, f)
+                path = posixpath.join(root, f)
                 file_tags = (ISO9660Entry, File)
                 fp = BytesIO()
 
@@ -301,7 +301,8 @@ class ISO9660Packer(Packer[None]):
 
         iso_attrs = resource.get_attributes(ISO9660ImageAttributes)
         temp_flush_dir = await iso_view.flush_to_disk()
-        with tempfile.NamedTemporaryFile(suffix=".iso", mode="rb") as temp:
+        with tempfile.NamedTemporaryFile(suffix=".iso", mode="rb", delete_on_close=False) as temp:
+            temp.close()
             cmd = [
                 "mkisofs",
                 *(["-J"] if iso_attrs.has_joliet else []),
@@ -329,7 +330,8 @@ class ISO9660Packer(Packer[None]):
             returncode = await proc.wait()
             if proc.returncode:
                 raise CalledProcessError(returncode=returncode, cmd=cmd)
-            new_data = temp.read()
+            with open(temp.name, "rb") as new_fh:
+                new_data = new_fh.read()
             # Passing in the original range effectively replaces the original data with the new data
             resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
 

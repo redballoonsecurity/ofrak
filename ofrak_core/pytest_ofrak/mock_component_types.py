@@ -21,3 +21,11 @@ class MockUnpacker(Unpacker[None]):
 
     async def unpack(self, resource, config=None):
         pass
+
+
+class MockRunnableUnpacker(Unpacker[None]):
+    targets = ()
+    children = ()
+
+    async def unpack(self, resource, config=None):
+        pass

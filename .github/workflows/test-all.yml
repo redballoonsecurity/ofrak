@@ -22,7 +22,7 @@ defaults:
 jobs:
   lint:
     name: Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
         with:
@@ -52,7 +52,7 @@ jobs:
 
   ofrak-ghidra:
     name: Test main OFRAK components
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
         with:
@@ -93,7 +93,7 @@ jobs:
 
   ofrak-angr:
     name: Test OFRAK angr and capstone components
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
         with:
@@ -125,7 +125,7 @@ jobs:
 
   ofrak-tutorial:
     name: Test OFRAK examples and tutorial notebooks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
         with:
