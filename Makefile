@@ -121,8 +121,8 @@ $(foreach pkg,$(1),--volume "$$(pwd)"/$(pkg):/$(shell basename $(pkg)) \$(newlin
 endef
 
 .PHONY: super-start-ofrak-%
-super-start-ofrak-%: IMAGE_NAME = redballoonsecurity/ofrak/$*:latest
-super-start-ofrak-%: ensure-ofrak-license ## Start OFRAK image with mounted volumes, profiling tools, misc dev utils, and a modified entrypoint
+super-start-ofrak-%: ## Start OFRAK image with mounted volumes, profiling tools, misc dev utils, and a modified entrypoint
+	make ensure-ofrak-license image_name=$*
 	@echo "Starting OFRAK "super" image using config: ofrak-$*.yml..."
 	$(eval CONFIG_FILE := ofrak-$*.yml)
 	$(eval PACKAGES := $(call get_packages,$(CONFIG_FILE)))
