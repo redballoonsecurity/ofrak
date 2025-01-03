@@ -167,6 +167,7 @@ def test_arm_alignment(toolchain_under_test: ToolchainUnderTest):
         is_entry=False,
         length=0,
         access_perms=MemoryPermissions.RW,
+        is_bss=True,
     )
     segment_dict = {
         patch_object.path: (text_segment_patch, data_segment_placeholder, bss_segment_placeholder),

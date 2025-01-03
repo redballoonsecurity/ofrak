@@ -21,6 +21,7 @@ from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort, ResourceSortDirection
 from ofrak_type.memory_permissions import MemoryPermissions
+from ofrak_type.error import NotFoundError
 
 LOGGER = logging.getLogger(__file__)
 
@@ -189,7 +190,15 @@ class SegmentInjectorModifierConfig(ComponentConfig):
         for segment in fem.executable.segments:
             if segment.length == 0:
                 continue
-            segment_data = exe_data[segment.offset : segment.offset + segment.length]
+
+            if segment.is_bss:
+                # It's possible for NOBITS sections like .bss to be allocated into RW MemoryRegions
+                # that are mapped to data. In that case, we should zero out the region instead
+                # of patching the arbitrary data in the FEM
+                segment_data = b"\0" * segment.length
+            else:
+                segment_data = exe_data[segment.offset : segment.offset + segment.length]
+
             extracted_segments.append((segment, segment_data))
         return SegmentInjectorModifierConfig(tuple(extracted_segments))
 
@@ -220,15 +229,14 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
         injection_tasks: List[Tuple[Resource, BinaryInjectorModifierConfig]] = []
 
         for segment, segment_data in config.segments_and_data:
-            if segment.length == 0 or segment.vm_address == 0:
+            if segment.length == 0 or not segment.is_allocated:
                 continue
             if segment.length > 0:
                 LOGGER.debug(
                     f"    Segment {segment.segment_name} - {segment.length} "
                     f"bytes @ {hex(segment.vm_address)}",
                 )
-            if segment.segment_name.startswith(".bss"):
-                continue
+
             if segment.segment_name.startswith(".rela"):
                 continue
             if segment.segment_name.startswith(".got"):
@@ -238,17 +246,30 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
                 # See PatchFromSourceModifier
                 continue
 
-            patches = [(segment.vm_address, segment_data)]
-            region = MemoryRegion.get_mem_region_with_vaddr_from_sorted(
-                segment.vm_address, sorted_regions
-            )
-            if region is None:
+            try:
+                region = MemoryRegion.get_mem_region_with_vaddr_from_sorted(
+                    segment.vm_address, sorted_regions
+                )
+            except NotFoundError:
+                # uninitialized section like .bss mapped to arbitrary memory range without corresponding
+                # MemoryRegion resource, no patch needed.
+                if segment.is_bss:
+                    continue
+                raise
+
+            region_mapped_to_data = region.resource.get_data_id() is not None
+            if region_mapped_to_data:
+                patches = [(segment.vm_address, segment_data)]
+                injection_tasks.append((region.resource, BinaryInjectorModifierConfig(patches)))
+            else:
+                if segment.is_bss:
+                    # uninitialized section like .bss mapped to arbitrary memory range without corresponding
+                    # data on a resource, no patch needed.
+                    continue
                 raise ValueError(
                     f"Cannot inject patch because the memory region at vaddr "
-                    f"{hex(segment.vm_address)} is None"
+                    f"{hex(segment.vm_address)} is not mapped to data"
                 )
-
-            injection_tasks.append((region.resource, BinaryInjectorModifierConfig(patches)))
 
         for injected_resource, injection_config in injection_tasks:
             result = await injected_resource.run(BinaryInjectorModifier, injection_config)
