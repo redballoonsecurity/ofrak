@@ -1,5 +1,4 @@
 import pytest
-import ofrak_capstone
 import ofrak_pyghidra
 
 from test_ofrak.components.hello_world_elf import hello_elf

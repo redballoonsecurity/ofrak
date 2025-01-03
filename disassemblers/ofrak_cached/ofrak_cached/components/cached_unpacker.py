@@ -17,7 +17,7 @@ class CachedAnalysisStore:
         self.program_attributes: Optional[ProgramAttributes] = None
 
     def store_analysis(self, resource_id: bytes, filename: str):
-        with open(filename, "r") as fh:
+        with open(filename) as fh:
             analysis = json.load(fh)
             if resource_id not in self.analysis.keys():
                 self.analysis[resource_id] = dict()

@@ -10,9 +10,7 @@ from pytest_ofrak.patterns.complex_block_unpacker import (
     ComplexBlockUnpackerTestCase,
 )
 from pytest_ofrak.patterns.basic_block_unpacker import BasicBlockUnpackerUnpackAndVerifyPattern
-from ofrak_pyghidra.components.pyghidra_components import PyGhidraUnpacker
 import ofrak_pyghidra
-import ofrak_capstone
 
 ASSETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
 

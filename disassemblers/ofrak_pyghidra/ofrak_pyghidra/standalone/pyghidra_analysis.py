@@ -291,8 +291,8 @@ def _unpack_basic_block(block, flat_api):
         mnem = str(mnem).lower()
         mnem = re.sub("cpy", "mov", mnem)
         operands = re.sub("0x[0]+([0-9])", lambda match: f"0x{match.group(1)}", operands)
-        operands = re.sub(" \+ -", " - ", operands)
-        operands = re.sub(",([^\s])", lambda match: f", {match.group(1)}", operands)
+        operands = re.sub(r" \+ -", " - ", operands)
+        operands = re.sub(r",([^\s])", lambda match: f", {match.group(1)}", operands)
         disasm = f"{mnem} {operands}"
         instructions.append(
             {
