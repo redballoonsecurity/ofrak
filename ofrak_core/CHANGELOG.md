@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add generic DecompilationAnalysis classes. ([#453](https://github.com/redballoonsecurity/ofrak/pull/453))
 - `PatchFromSourceModifier` bundles src and header files into same temporary directory with BOM and FEM ([#517](https://github.com/redballoonsecurity/ofrak/pull/517))
 - Add support for running on Windows to the `Filesystem` component. ([#521](https://github.com/redballoonsecurity/ofrak/pull/521))
+- Add `JavaArchive` resource tag ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
 
 ### Fixed
 - Improved flushing of filesystem entries (including symbolic links and other types) to disk. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373))
@@ -45,6 +46,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - `build_image.py` supports building Docker images with OFRAK packages from any ancestor directory. ([#425](https://github.com/redballoonsecurity/ofrak/pull/425))
 - Partially reverted [#150](https://github.com/redballoonsecurity/ofrak/pull/150) so entropy C code is called with `ctypes` again, but maintaining the current API and automatic compilation by `setup.py`. ([#482](https://github.com/redballoonsecurity/ofrak/pull/482))
 - Minor update to OFRAK Community License, add OFRAK Pro License ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
+- Update resource tag File to inherit from GenericBinary ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
+- Update auto-run component logic to run all Analyzers, not just the most specific ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
+- Revamp magic identification for significant speed improvements ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
+  - Refactor magic identification to use one identifier, named `MagicIdentifier`
+  - Rename `MagicMimeIdentifier` to `MagicMimePattern`, as it is run by `MagicIdentifier`
+  - Rename `MagicDescriptionIdentifier` to `MagicDescriptionPattern`, as it is run by `MagicIdentifier`
+  - Add `RawMagicPattern` to efficiently run custom magic byte search logic within `MagicIdenfifier`
+  - Update registered identifiers to make use of new `MagicIdentifier` for following resource tags: `Apk`, `Bzip2Data`, `CpioFilesystem`, `DeviceTreeBlob`, `Elf`, `Ext2Filesystem`, `Ext3Filesystem`, `Ext4Filesystem`, `GzipData`, `ISO9660Image`, `Jffs2Filesystem`, `LzmaData`, `XzData`, `LzoData`, `OpenWrtTrx`, `Pe`, `RarArchive`, `SevenZFilesystem`, `SquashfsFilesystem`, `TarArchive`, `Ubi`, `Ubifs`, `Uf2File`, `UImage`, `ZipArchive`, `ZlibData`, `ZstdData`
 
 ### Security
 - Update aiohttp to 3.10.11 ([#522](https://github.com/redballoonsecurity/ofrak/pull/522))
