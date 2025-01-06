@@ -1561,9 +1561,11 @@ class Resource:
         delete: bool = True,
     ) -> AsyncIterator[str]:
         with tempfile.NamedTemporaryFile(
-            mode="wb", prefix=prefix, suffix=suffix, dir=dir, delete_on_close=False, delete=delete
+            mode="w+b", prefix=prefix, suffix=suffix, dir=dir, delete_on_close=False, delete=delete
         ) as temp:
-            await self.write_to(temp, pack=False)
+            # This cast() shouldn't actually be needed but mypy doesn't correctly
+            # infer the type of temp
+            await self.write_to(cast(BinaryIO, temp), pack=False)
             temp.close()
             yield temp.name
 

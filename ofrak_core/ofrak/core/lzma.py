@@ -54,7 +54,7 @@ class LzmaUnpacker(Unpacker[None]):
                 lzma_entry_data = lzma.decompress(compressed_data, format)
             except lzma.LZMAError:
                 LOGGER.info("Initial LZMA decompression failed. Trying with null bytes stripped")
-                lzma_entry_data = lzma.decompress(compressed_data.rstrip(b"\x00"), format)
+                lzma_entry_data = lzma.decompress(compressed_data.tobytes().rstrip(b"\x00"), format)
 
         if lzma_entry_data is not None:
             await resource.create_child(

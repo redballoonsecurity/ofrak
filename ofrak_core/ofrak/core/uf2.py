@@ -99,17 +99,17 @@ class Uf2Unpacker(Unpacker[None]):
         previous_block_no = -1
         family_id = None
         file_num_blocks = None
-        block_no = 0
+        block_no: int = 0
 
         with await resource.get_data_memoryview(Range(0, data_length)) as all_data:
             for i in range(0, data_length, 512):
+                data: bytes
                 with all_data[i : i + 512] as data:
                     magic_start_one: int
                     magic_start_two: int
                     flags: int
                     target_addr: int
                     payload_size: int
-                    block_no: int
                     num_blocks: int
                     filesize_familyID: int
                     payload_data: bytes

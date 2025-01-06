@@ -74,8 +74,10 @@ class MagicAnalyzer(Analyzer[None, Magic]):
                     buffer_ctypes = c_char_array.from_buffer_copy(buffer)
                 else:
                     buffer_ctypes = c_char_array.from_buffer(buffer)
-                magic_mime = magic.from_buffer(buffer_ctypes, mime=True)
-                magic_description = magic.from_buffer(buffer_ctypes)
+
+                # python-magic will accept the ctypes Arrays even though its type hints don't
+                magic_mime = magic.from_buffer(buffer_ctypes, mime=True)  # type: ignore
+                magic_description = magic.from_buffer(buffer_ctypes)  # type: ignore
                 return Magic(magic_mime, magic_description)
 
 

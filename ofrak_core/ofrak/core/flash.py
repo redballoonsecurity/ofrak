@@ -498,7 +498,7 @@ class FlashOobResourceUnpacker(Unpacker[None]):
                     field_offset += field.size
                 offset += block_size
             if not only_data:
-                only_data = bytes(data)
+                only_data = bytearray(data)
         # Add all block data to logical resource for recursive unpacking
         await oob_resource.create_child(
             tags=(FlashLogicalDataResource,),
