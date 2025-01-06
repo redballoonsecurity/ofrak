@@ -1,4 +1,5 @@
 from ofrak import OFRAKContext, ResourceSort
+from ofrak.core import BinaryPatchModifier, BinaryPatchConfig
 from ofrak.model.resource_model import Data
 from ofrak_type import Range
 
@@ -50,3 +51,43 @@ async def test_data_attributes_update(ofrak_context: OFRAKContext, elf_object_fi
         elif child == arbitrary_child2:
             assert arbitrary_child1_found
             break
+
+
+class TestGrandchildrenDataAttributes:
+    async def test_grandchildren_data_attributes(self, ofrak_context: OFRAKContext):
+        """
+        Test that grandchildren data attributes update correctly.
+        """
+        b_child = await self._get_child_resource(ofrak_context)
+        await b_child.run(BinaryPatchModifier, BinaryPatchConfig(0, b"C"))
+        await self.assert_child_and_sorted_grandchildren_are_equivalent(b_child)
+
+    async def _get_child_resource(self, ofrak_context):
+        """
+        Create a resource with contents b"AAAABBBB".
+        Unpack the BBBB as one child, and create byte-size grandchildren for each byte
+        of that child.
+
+        Returns b_child.
+        """
+        resource = await ofrak_context.create_root_resource(name="test-resource", data=b"AAAABBBB")
+        b_child = await resource.create_child(data_range=Range(4, 8))
+        for i in range(await b_child.get_data_length()):
+            await b_child.create_child(data_range=Range(i, i + 1))
+        return b_child
+
+    @staticmethod
+    async def assert_child_and_sorted_grandchildren_are_equivalent(b_child):
+        """
+        Assort that child bytes equals values of sorted grandchildren.
+
+        When this test was created, it failed with:
+        b'CBBB' != b'BBBC'
+
+        Expected :b'BBBC'
+        Actual   :b'CBBB'
+        """
+        sorted_children = await b_child.get_children(r_sort=ResourceSort(Data.Offset))
+        assert await b_child.get_data() == b"".join(
+            [await child.get_data() for child in sorted_children]
+        )
