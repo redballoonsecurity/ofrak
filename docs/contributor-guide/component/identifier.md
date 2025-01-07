@@ -29,13 +29,13 @@ def match_dtb_magic(data: bytes):
 RawMagicPattern.register(DeviceTreeBlob, match_dtb_magic)
 ```
 
-These patterns (along with all other identifier patterns) will get run when the [MagicIdentifier][ofrak.core.magic.MagicIdentifier] runs, resulting in a `DeviceTreeBlob` tag to matching resources.
+These patterns (along with all other identifier patterns) will get run when the [MagicIdentifier][ofrak.core.magic.MagicIdentifier] runs, adding a `DeviceTreeBlob` tag to matching resources.
 See the docstrings for each pattern for implementation details.
 Generally speaking, it makes sense to start with a magic mime or magic description pattern, implementing a raw magic pattern only when necessary. 
 
 ## Implement a New Identifier
 Additionally, it is possible to implement a new [Identifier][ofrak.component.identifier.Identifier].
-Doing so should be reserved for situations where extending the [MagicIdentifier][ofrak.core.magic.MagicIdentifier] is impracticle.
+Doing so should be reserved for situations where extending the [MagicIdentifier][ofrak.core.magic.MagicIdentifier] is impractical.
 The [ApkIdentifier][ofrak.core.apk.ApkIdentifier] is an example of a custom identifier implementation.
 
 !!! warning
