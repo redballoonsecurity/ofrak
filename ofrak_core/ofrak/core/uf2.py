@@ -20,6 +20,7 @@ LOGGER = logging.getLogger(__name__)
 UF2_MAGIC_START_ONE = 0x0A324655
 UF2_MAGIC_START_TWO = 0x9E5D5157
 UF2_MAGIC_END = 0x0AB16F30
+UF2_MAGIC_START_BYTES = struct.pack("<II", UF2_MAGIC_START_ONE, UF2_MAGIC_START_TWO)
 
 HEADER_LENGTH = 32
 DATA_LENGTH = 476
@@ -247,11 +248,7 @@ class Uf2FilePacker(Packer[None]):
 def match_uf2_magic(data: bytes):
     if len(data) < 8:
         return False
-    magic_one, magic_two = struct.unpack("<II", data)
-    if magic_one == UF2_MAGIC_START_ONE and magic_two == UF2_MAGIC_START_TWO:
-        return True
-    else:
-        return False
+    return data[:8] == UF2_MAGIC_START_BYTES
 
 
 RawMagicPattern.register(Uf2File, match_uf2_magic)
