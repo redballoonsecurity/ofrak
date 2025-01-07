@@ -94,7 +94,7 @@ start-ofrak-%: ## Start OFRAK image using ofrak-<name>
 	  --interactive \
 	  --tty \
 	  --publish 8877:80 \
-	  --volume $(pwd)/ofrak.license:/ofrak.license \
+	  --volume $(PWD)/ofrak.license:/ofrak.license \
 	  redballoonsecurity/ofrak/$*:latest
 
 define check_for_binja_license
