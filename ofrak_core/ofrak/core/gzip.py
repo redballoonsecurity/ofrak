@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from typing import Optional
-import zlib
+import zlib as zlib_package
 from subprocess import CalledProcessError
 import tempfile312 as tempfile
 
@@ -18,7 +18,7 @@ LOGGER = logging.getLogger(__name__)
 # PIGZ provides significantly faster compression on multi core systems.
 # It does not parallelize decompression, so we don't use it in GzipUnpacker.
 PIGZ = ComponentExternalTool(
-    "pigz", "https://zlib.net/pigz/", "--help", apt_package="pigz", brew_package="pigz"
+    "pigz", "https://zlib_package.net/pigz/", "--help", apt_package="pigz", brew_package="pigz"
 )
 
 
@@ -58,7 +58,7 @@ class GzipUnpacker(Unpacker[None]):
 
     @staticmethod
     async def unpack_with_zlib_module(data: bytes) -> bytes:
-        # We use zlib.decompressobj instead of the gzip module to decompress
+        # We use zlib_package.decompressobj instead of the gzip module to decompress
         # because of a bug that causes gzip to raise BadGzipFile if there's
         # trailing garbage after a compressed file instead of correctly ignoring it
         # https://github.com/python/cpython/issues/68489
@@ -69,7 +69,7 @@ class GzipUnpacker(Unpacker[None]):
         chunks = []
         while data.startswith(b"\037\213"):
             # wbits > 16 handles the gzip header and footer
-            decompressor = zlib.decompressobj(wbits=16 + zlib.MAX_WBITS)
+            decompressor = zlib_package.decompressobj(wbits=16 + zlib_package.MAX_WBITS)
             chunks.append(decompressor.decompress(data))
             if not decompressor.eof:
                 raise ValueError("Incomplete gzip file")
@@ -103,7 +103,7 @@ class GzipPacker(Packer[None]):
 
     @staticmethod
     async def pack_with_zlib_module(data: bytes) -> bytes:
-        compressor = zlib.compressobj(wbits=16 + zlib.MAX_WBITS)
+        compressor = zlib_package.compressobj(wbits=16 + zlib_package.MAX_WBITS)
         result = compressor.compress(data)
         result += compressor.flush()
         return result

@@ -1,6 +1,6 @@
 import io
 import struct
-import zlib
+import zlib as zlib_package
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, Tuple, Iterable, List
@@ -477,7 +477,7 @@ class UImageHeaderModifier(Modifier[UImageHeaderModifierConfig]):
         new_attributes = ResourceAttributes.replace_updated(original_attributes, config)
         tmp_serialized_header = await UImageHeaderModifier.serialize(new_attributes, ih_hcrc=0)
         # Patch this header with its CRC32 in the ih_hcrc field
-        ih_hcrc = zlib.crc32(tmp_serialized_header)
+        ih_hcrc = zlib_package.crc32(tmp_serialized_header)
         serialized_header = await UImageHeaderModifier.serialize(new_attributes, ih_hcrc=ih_hcrc)
         resource.queue_patch(Range.from_size(0, UIMAGE_HEADER_LEN), serialized_header)
         new_attributes = ResourceAttributes.replace_updated(
@@ -590,7 +590,7 @@ class UImagePacker(Packer[None]):
             )
             repacked_body_data += await trailing_bytes_r.resource.get_data()
         ih_size = len(repacked_body_data)
-        ih_dcrc = zlib.crc32(repacked_body_data)
+        ih_dcrc = zlib_package.crc32(repacked_body_data)
         header_modifier_config = UImageHeaderModifierConfig(ih_size=ih_size, ih_dcrc=ih_dcrc)
         await header.resource.run(UImageHeaderModifier, header_modifier_config)
         # Patch UImageHeader data

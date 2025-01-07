@@ -11,7 +11,7 @@ from ofrak.component.abstract import ComponentMissingDependencyError
 from ofrak.component.analyzer import Analyzer
 
 try:
-    import binwalk
+    import binwalk_package
 
     BINWALK_INSTALLED = True
 except ImportError:
@@ -72,7 +72,7 @@ class BinwalkAnalyzer(Analyzer[None, BinwalkAttributes]):
 
 def _run_binwalk_on_file(filename):  # pragma: no cover
     offsets = dict()
-    for module in binwalk.scan(filename, signature=True):
+    for module in binwalk_package.scan(filename, signature=True):
         for result in module.results:
             offsets[result.offset] = result.description
     return offsets

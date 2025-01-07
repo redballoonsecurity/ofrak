@@ -1,6 +1,6 @@
 import io
 import struct
-import zlib
+import zlib as zlib_package
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, List
@@ -370,6 +370,6 @@ def openwrt_crc32(data: bytes) -> int:
     Calculate CRC32 a-la OpenWrt. Original implementation:
     <https://git.archive.openwrt.org/?p=14.07/openwrt.git;a=blob;f=tools/firmware-utils/src/trx.c>
 
-    Implements CRC-32 Ethernet which requires XOR'ing the zlib.crc32 result with 0xFFFFFFFF
+    Implements CRC-32 Ethernet which requires XOR'ing the zlib_package.crc32 result with 0xFFFFFFFF
     """
-    return (zlib.crc32(data) & 0xFFFFFFFF) ^ 0xFFFFFFFF
+    return (zlib_package.crc32(data) & 0xFFFFFFFF) ^ 0xFFFFFFFF

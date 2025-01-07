@@ -5,7 +5,7 @@ from typing import Callable, Dict, Iterable, Union
 from ofrak.component.abstract import ComponentMissingDependencyError
 
 try:
-    import magic
+    import magic_package
 
     MAGIC_INSTALLED = True
 except ImportError:
@@ -68,8 +68,8 @@ class MagicAnalyzer(Analyzer[None, Magic]):
         if not MAGIC_INSTALLED:
             raise ComponentMissingDependencyError(self, LIBMAGIC_DEP)
         else:
-            magic_mime = magic.from_buffer(data, mime=True)
-            magic_description = magic.from_buffer(data)
+            magic_mime = magic_package.from_buffer(data, mime=True)
+            magic_description = magic_package.from_buffer(data)
             return Magic(magic_mime, magic_description)
 
 
