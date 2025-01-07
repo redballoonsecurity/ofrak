@@ -28,6 +28,7 @@ from ofrak.model.resource_model import index
 from ofrak_type.range import Range
 
 DTB_MAGIC_SIGNATURE: int = 0xD00DFEED
+DTB_MAGIC_BYTES = struct.pack(">I", DTB_MAGIC_SIGNATURE)
 
 
 @dataclass
@@ -397,7 +398,7 @@ MagicDescriptionPattern.register(DeviceTreeBlob, lambda s: "device tree blob" in
 def match_dtb_magic(data: bytes):
     if len(data) < 4:
         return False
-    return data == struct.pack("<I", DTB_MAGIC_SIGNATURE)
+    return data[:4] == DTB_MAGIC_BYTES
 
 
 RawMagicPattern.register(DeviceTreeBlob, match_dtb_magic)
