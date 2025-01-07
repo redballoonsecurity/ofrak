@@ -54,15 +54,16 @@ async def test_data_attributes_update(ofrak_context: OFRAKContext, elf_object_fi
 
 
 class TestGrandchildrenDataAttributes:
-    async def test_grandchildren_data_attributes(self, ofrak_context: OFRAKContext):
+    async def test_grandchildren_data_attributes_update(self, ofrak_context: OFRAKContext):
         """
         Test that grandchildren data attributes update correctly.
         """
-        b_child = await self._get_child_resource(ofrak_context)
+        b_child = await self._create_resource_get_child(ofrak_context)
         await b_child.run(BinaryPatchModifier, BinaryPatchConfig(0, b"C"))
         await self.assert_child_and_sorted_grandchildren_are_equivalent(b_child)
 
-    async def _get_child_resource(self, ofrak_context):
+    @staticmethod
+    async def _create_resource_get_child(ofrak_context):
         """
         Create a resource with contents b"AAAABBBB".
         Unpack the BBBB as one child, and create byte-size grandchildren for each byte
@@ -86,6 +87,9 @@ class TestGrandchildrenDataAttributes:
 
         Expected :b'BBBC'
         Actual   :b'CBBB'
+
+        See https://github.com/redballoonsecurity/ofrak/pull/559 for the bugfix corresponding
+        to this test.
         """
         sorted_children = await b_child.get_children(r_sort=ResourceSort(Data.Offset))
         assert await b_child.get_data() == b"".join(
