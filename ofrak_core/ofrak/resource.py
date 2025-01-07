@@ -683,8 +683,11 @@ class Resource:
                 self._resource.data_id,
                 data_range,
             )
-            translated_range = data_range.translate(data_model.range.start)
-            data_attrs = Data(translated_range.start, translated_range.length())
+            if data_model.root_id != self._resource.data_id:
+                # If the root id is not the parent, we need to translate the data range
+                #  by the root id range start
+                data_range = data_range.translate(data_model.range.start)
+            data_attrs = Data(data_range.start, data_range.length())
             attributes = [data_attrs, *attributes] if attributes else [data_attrs]
         elif data is not None:
             if self._resource.data_id is None:

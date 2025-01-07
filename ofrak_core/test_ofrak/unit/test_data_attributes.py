@@ -79,7 +79,7 @@ class TestGrandchildrenDataAttributes:
     @staticmethod
     async def assert_child_and_sorted_grandchildren_are_equivalent(b_child):
         """
-        Assort that child bytes equals values of sorted grandchildren.
+        Assert that child bytes equals the values of sorted grandchildren.
 
         When this test was created, it failed with:
         b'CBBB' != b'BBBC'
