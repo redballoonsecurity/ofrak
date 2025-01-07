@@ -184,9 +184,9 @@ class ApkPacker(Packer[ApkPackerConfig]):
                     java_proc = await asyncio.create_subprocess_exec(
                         *java_cmd,
                     )
-                    jave_returncode = await java_proc.wait()
+                    java_returncode = await java_proc.wait()
                     if java_proc.returncode:
-                        raise CalledProcessError(returncode=jave_returncode, cmd=java_cmd)
+                        raise CalledProcessError(returncode=java_returncode, cmd=java_cmd)
                     signed_apk_filename = (
                         os.path.basename(temp_apk.name)[: -len(apk_suffix)]
                         + "-aligned-debugSigned.apk"
