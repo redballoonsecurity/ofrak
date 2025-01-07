@@ -5,7 +5,7 @@ install:
 	$(PIP) install .
 
 develop:
-	$(PIP) install -e .[test]
+	$(PIP) install -e .[test] --config-settings editable_mode=legacy
 
 test:
 	$(PYTHON) -m pytest --cov=ofrak_ghidra --cov-report=term-missing ofrak_ghidra_test
