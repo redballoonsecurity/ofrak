@@ -75,7 +75,7 @@ class MagicAnalyzer(Analyzer[None, Magic]):
 
 class MagicIdentifier(Identifier[None]):
     """
-    Identify resourced using three identifier patterns:
+    Identify resources using three identifier patterns:
 
     1. [MagicMimePattern][ofrak.core.magic.MagicMimePattern]
     2. [MagicDescriptionPattern][ofrak.core.magic.MagicDescriptionPattern]
