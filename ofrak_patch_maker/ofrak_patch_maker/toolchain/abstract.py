@@ -80,10 +80,6 @@ class Toolchain(ABC):
         self._config = toolchain_config
         self._logger = logger
 
-        # The keep_list should only contain FUNCTIONALLY important sections
-        # (not empty .got.plt, for instance).
-        # TODO: Come up with a better system to handle this...
-        self._linker_keep_list = [".data", ".rodata", ".text", ".rel"]
         self._linker_discard_list = [
             ".gnu.hash",
             ".comment",
@@ -157,6 +153,8 @@ class Toolchain(ABC):
             and self._processor.bit_width == BitWidth.BIT_64
         ):
             assembler_path = "X86_64_ASM_PATH"
+        elif self._processor.isa == InstructionSet.SPARC:
+            assembler_path = "SPARC_ASM_PATH"
         else:
             assembler_path = f"{self._processor.isa.value.upper()}_ASM_PATH"
         return get_repository_config("ASM", assembler_path)
@@ -363,16 +361,8 @@ class Toolchain(ABC):
     def linker_include_filter(symbol_name: str) -> bool:
         return "." in symbol_name or "_DYNAMIC" in symbol_name
 
-    def keep_section(self, section_name: str):
-        if section_name in self._linker_keep_list:
-            return True
-        if self._config.separate_data_sections or self._config.include_subsections:
-            for keep_section in self._linker_keep_list:
-                if section_name.startswith(keep_section):
-                    return True
-            return False
-        else:
-            return False
+    def keep_segment(self, segment: Segment):
+        return segment.is_allocated and segment.segment_name not in self._linker_discard_list
 
     @abstractmethod
     def generate_linker_include_file(self, symbols: Mapping[str, int], out_path: str) -> str:
@@ -431,7 +421,9 @@ class Toolchain(ABC):
 
     @staticmethod
     @abstractmethod
-    def ld_generate_section(object_path: str, segment_name: str, memory_region_name: str) -> str:
+    def ld_generate_section(
+        object_path: str, segment_name: str, memory_region_name: str, segment_is_bss: bool
+    ) -> str:
         """
         Generates sections for linker scripts.
 

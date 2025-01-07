@@ -202,7 +202,7 @@ BASIC_BLOCK_TEST_CASES = [
 
 @pytest.mark.parametrize("test_case", BASIC_BLOCK_TEST_CASES, ids=lambda tc: tc.label)
 async def test_capstone_unpacker(test_case, ofrak_context):
-    await test_case.run_instruction_analzyer_test_case(ofrak_context)
+    await test_case.run_instruction_unpacker_test_case(ofrak_context)
 
 
 @pytest.mark.parametrize("test_case", BASIC_BLOCK_TEST_CASES, ids=lambda tc: tc.label)

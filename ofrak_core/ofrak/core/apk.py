@@ -2,7 +2,7 @@ import asyncio
 import os
 import pathlib
 import sys
-import tempfile
+import tempfile312 as tempfile
 from subprocess import CalledProcessError
 from dataclasses import dataclass
 
@@ -25,10 +25,10 @@ from ofrak_type.range import Range
 APKTOOL = ComponentExternalTool("apktool", "https://ibotpeaches.github.io/Apktool/", "-version")
 JAVA = ComponentExternalTool(
     "java",
-    "https://openjdk.org/projects/jdk/11/",
+    "https://openjdk.org/projects/jdk/17/",
     "-help",
-    apt_package="openjdk-11-jdk",
-    brew_package="openjdk@11",
+    apt_package="openjdk-17-jdk",
+    brew_package="openjdk@17",
 )
 
 
@@ -101,10 +101,7 @@ class ApkUnpacker(Unpacker[None]):
         :param config:
         """
         apk = await resource.view_as(Apk)
-        data = await resource.get_data()
-        with tempfile.NamedTemporaryFile() as temp_file:
-            temp_file.write(data)
-            temp_file.flush()
+        async with resource.temp_to_disk() as temp_path:
             with tempfile.TemporaryDirectory() as temp_flush_dir:
                 cmd = [
                     "apktool",
@@ -112,7 +109,7 @@ class ApkUnpacker(Unpacker[None]):
                     "--output",
                     temp_flush_dir,
                     "--force",
-                    temp_file.name,
+                    temp_path,
                 ]
                 proc = await asyncio.create_subprocess_exec(
                     *cmd,
@@ -156,7 +153,8 @@ class ApkPacker(Packer[ApkPackerConfig]):
         apk = await resource.view_as(Apk)
         temp_flush_dir = await apk.flush_to_disk()
         apk_suffix = ".apk"
-        with tempfile.NamedTemporaryFile(suffix=apk_suffix) as temp_apk:
+        with tempfile.NamedTemporaryFile(suffix=apk_suffix, delete_on_close=False) as temp_apk:
+            temp_apk.close()
             apk_cmd = [
                 "apktool",
                 "build",
@@ -215,14 +213,14 @@ class ApkIdentifier(Identifier):
     async def identify(self, resource: Resource, config=None) -> None:
         await resource.run(MagicMimeIdentifier)
         magic = resource.get_attributes(Magic)
-        if magic is not None and magic.mime in ["application/java-archive", "application/zip"]:
-            with tempfile.NamedTemporaryFile(suffix=".zip") as temp_file:
-                temp_file.write(await resource.get_data())
-                temp_file.flush()
+        if magic.mime == "application/vnd.android.package-archive":
+            resource.add_tag(Apk)
+        elif magic is not None and magic.mime in ["application/java-archive", "application/zip"]:
+            async with resource.temp_to_disk(suffix=".zip") as temp_path:
                 unzip_cmd = [
                     "unzip",
                     "-l",
-                    temp_file.name,
+                    temp_path,
                 ]
                 unzip_proc = await asyncio.create_subprocess_exec(
                     *unzip_cmd,

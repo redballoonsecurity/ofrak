@@ -45,8 +45,6 @@ class TestOpenWrtTrxUnpackModifyPack(UnpackModifyPackPattern):
 
     async def repack(self, resource: Resource) -> None:
         await resource.pack_recursively()
-        with open("/tmp/repacked", "wb") as f:
-            f.write(await resource.get_data())
 
     async def verify(self, resource: Resource) -> None:
         resource_data = await resource.get_data()

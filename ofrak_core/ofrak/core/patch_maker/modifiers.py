@@ -1,26 +1,27 @@
 import asyncio
 import logging
 import os
-import tempfile
+import tempfile312 as tempfile
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Type, Union, cast
 
+from ofrak_patch_maker.model import PatchRegionConfig, FEM
+from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.abstract import Toolchain
+from ofrak_patch_maker.toolchain.model import Segment, ToolchainConfig
+
 from ofrak.component.modifier import Modifier
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.core.injector import BinaryInjectorModifier, BinaryInjectorModifierConfig
 from ofrak.core.memory_region import MemoryRegion
+from ofrak.core.patch_maker.linkable_binary import LinkableBinary
 from ofrak.core.program import Program
 from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort, ResourceSortDirection
-from ofrak.core.patch_maker.linkable_binary import LinkableBinary
-from ofrak_patch_maker.model import PatchRegionConfig, FEM
-from ofrak_patch_maker.patch_maker import PatchMaker
-from ofrak_patch_maker.toolchain.abstract import Toolchain
-from ofrak_patch_maker.toolchain.model import Segment, ToolchainConfig
 from ofrak_type.memory_permissions import MemoryPermissions
+from ofrak_type.error import NotFoundError
 
 LOGGER = logging.getLogger(__file__)
 
@@ -110,13 +111,14 @@ class PatchFromSourceModifier(Modifier):
             patch_name = config.patch_name
 
         build_tmp_dir = tempfile.mkdtemp()
-
-        source_tmp_dir = tempfile.mkdtemp()
+        source_tmp_dir = os.path.join(build_tmp_dir, "src")
+        os.makedirs(source_tmp_dir)
         config.source_code.dump(source_tmp_dir)
 
         header_dirs = []
         for header_directory in config.header_directories:
-            header_tmp_dir = tempfile.mkdtemp()
+            header_tmp_dir = os.path.join(build_tmp_dir, "include")
+            os.makedirs(build_tmp_dir)
             header_directory.dump(header_tmp_dir)
             header_dirs.append(header_tmp_dir)
 
@@ -128,7 +130,6 @@ class PatchFromSourceModifier(Modifier):
             toolchain=config.toolchain(program_attributes, config.toolchain_config),
             build_dir=build_tmp_dir,
         )
-
         patch_bom = patch_maker.make_bom(
             name=patch_name,
             source_list=absolute_source_list,
@@ -162,7 +163,6 @@ class PatchFromSourceModifier(Modifier):
             [(patch_bom, p), target_linkable_bom_info],
             exec_path,
         )
-
         await resource.run(
             SegmentInjectorModifier,
             SegmentInjectorModifierConfig.from_fem(fem),
@@ -190,7 +190,15 @@ class SegmentInjectorModifierConfig(ComponentConfig):
         for segment in fem.executable.segments:
             if segment.length == 0:
                 continue
-            segment_data = exe_data[segment.offset : segment.offset + segment.length]
+
+            if segment.is_bss:
+                # It's possible for NOBITS sections like .bss to be allocated into RW MemoryRegions
+                # that are mapped to data. In that case, we should zero out the region instead
+                # of patching the arbitrary data in the FEM
+                segment_data = b"\0" * segment.length
+            else:
+                segment_data = exe_data[segment.offset : segment.offset + segment.length]
+
             extracted_segments.append((segment, segment_data))
         return SegmentInjectorModifierConfig(tuple(extracted_segments))
 
@@ -221,15 +229,14 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
         injection_tasks: List[Tuple[Resource, BinaryInjectorModifierConfig]] = []
 
         for segment, segment_data in config.segments_and_data:
-            if segment.length == 0 or segment.vm_address == 0:
+            if segment.length == 0 or not segment.is_allocated:
                 continue
             if segment.length > 0:
                 LOGGER.debug(
                     f"    Segment {segment.segment_name} - {segment.length} "
                     f"bytes @ {hex(segment.vm_address)}",
                 )
-            if segment.segment_name.startswith(".bss"):
-                continue
+
             if segment.segment_name.startswith(".rela"):
                 continue
             if segment.segment_name.startswith(".got"):
@@ -239,17 +246,30 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
                 # See PatchFromSourceModifier
                 continue
 
-            patches = [(segment.vm_address, segment_data)]
-            region = MemoryRegion.get_mem_region_with_vaddr_from_sorted(
-                segment.vm_address, sorted_regions
-            )
-            if region is None:
+            try:
+                region = MemoryRegion.get_mem_region_with_vaddr_from_sorted(
+                    segment.vm_address, sorted_regions
+                )
+            except NotFoundError:
+                # uninitialized section like .bss mapped to arbitrary memory range without corresponding
+                # MemoryRegion resource, no patch needed.
+                if segment.is_bss:
+                    continue
+                raise
+
+            region_mapped_to_data = region.resource.get_data_id() is not None
+            if region_mapped_to_data:
+                patches = [(segment.vm_address, segment_data)]
+                injection_tasks.append((region.resource, BinaryInjectorModifierConfig(patches)))
+            else:
+                if segment.is_bss:
+                    # uninitialized section like .bss mapped to arbitrary memory range without corresponding
+                    # data on a resource, no patch needed.
+                    continue
                 raise ValueError(
                     f"Cannot inject patch because the memory region at vaddr "
-                    f"{hex(segment.vm_address)} is None"
+                    f"{hex(segment.vm_address)} is not mapped to data"
                 )
-
-            injection_tasks.append((region.resource, BinaryInjectorModifierConfig(patches)))
 
         for injected_resource, injection_config in injection_tasks:
             result = await injected_resource.run(BinaryInjectorModifier, injection_config)

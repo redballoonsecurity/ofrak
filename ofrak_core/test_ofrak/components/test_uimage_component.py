@@ -1,5 +1,6 @@
 import os
 import subprocess
+import shutil
 
 import pytest
 
@@ -37,6 +38,9 @@ async def uimage_resource(ofrak_context, request) -> Resource:
     return await ofrak_context.create_root_resource_from_file(uimage_path)
 
 
+@pytest.mark.skipif(
+    shutil.which("mkimage") is None, reason="Test requires mkimage from u-boot-tools"
+)
 async def test_uimage_unpack_modify_pack(uimage_resource: Resource, tmpdir):
     """Test unpacking, modifying and then repacking a UImage file."""
     await uimage_resource.unpack_recursively()

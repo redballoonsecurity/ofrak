@@ -1,5 +1,4 @@
 import asyncio
-import tempfile
 from dataclasses import dataclass
 from typing import Optional
 from subprocess import CalledProcessError
@@ -42,29 +41,15 @@ class ZstdUnpacker(Unpacker[None]):
     external_dependencies = (ZSTD,)
 
     async def unpack(self, resource: Resource, config: ComponentConfig = None) -> None:
-        with tempfile.NamedTemporaryFile(suffix=".zstd") as compressed_file:
-            compressed_file.write(await resource.get_data())
-            compressed_file.flush()
-            output_filename = tempfile.mktemp()
+        cmd = ["zstd", "-d", "-k"]
+        proc = await asyncio.create_subprocess_exec(
+            *cmd, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE
+        )
+        result, _ = await proc.communicate(await resource.get_data())
+        if proc.returncode:
+            raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
 
-            cmd = [
-                "zstd",
-                "-d",
-                "-k",
-                compressed_file.name,
-                "-o",
-                output_filename,
-            ]
-            proc = await asyncio.create_subprocess_exec(
-                *cmd,
-            )
-            returncode = await proc.wait()
-            if proc.returncode:
-                raise CalledProcessError(returncode=returncode, cmd=cmd)
-            with open(output_filename, "rb") as f:
-                result = f.read()
-
-            await resource.create_child(tags=(GenericBinary,), data=result)
+        await resource.create_child(tags=(GenericBinary,), data=result)
 
 
 class ZstdPacker(Packer[ZstdPackerConfig]):
@@ -82,27 +67,19 @@ class ZstdPacker(Packer[ZstdPackerConfig]):
         child_file = await zstd_view.get_child()
         uncompressed_data = await child_file.resource.get_data()
 
-        with tempfile.NamedTemporaryFile() as uncompressed_file:
-            uncompressed_file.write(uncompressed_data)
-            uncompressed_file.flush()
-            output_filename = tempfile.mktemp()
+        command = ["zstd", "-T0", f"-{config.compression_level}"]
+        if config.compression_level > 19:
+            command.append("--ultra")
+        proc = await asyncio.create_subprocess_exec(
+            *command, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE
+        )
+        result, _ = await proc.communicate(uncompressed_data)
+        if proc.returncode:
+            raise CalledProcessError(returncode=proc.returncode, cmd=command)
 
-            command = ["zstd", "-T0", f"-{config.compression_level}"]
-            if config.compression_level > 19:
-                command.append("--ultra")
-            command.extend([uncompressed_file.name, "-o", output_filename])
-            proc = await asyncio.create_subprocess_exec(
-                *command,
-            )
-            returncode = await proc.wait()
-            if proc.returncode:
-                raise CalledProcessError(returncode=returncode, cmd=command)
-            with open(output_filename, "rb") as f:
-                result = f.read()
-
-            compressed_data = result
-            original_size = await zstd_view.resource.get_data_length()
-            resource.queue_patch(Range(0, original_size), compressed_data)
+        compressed_data = result
+        original_size = await zstd_view.resource.get_data_length()
+        resource.queue_patch(Range(0, original_size), compressed_data)
 
 
 MagicMimeIdentifier.register(ZstdData, "application/x-zstd")

@@ -25,11 +25,6 @@
     min-width: calc(100% - 10em);
   }
 
-  .breadcrumb {
-    padding-bottom: 0.5em;
-    background: var(--main-bg-color);
-  }
-
   .scrollable {
     display: flex;
     flex-direction: row;
@@ -65,9 +60,7 @@
 </style>
 
 <script>
-  import LoadingText from "../utils/LoadingText.svelte";
   import MinimapView from "./MinimapView.svelte";
-  import Breadcrumb from "../utils/Breadcrumb.svelte";
   import { chunkList, buf2hex, hexToChar } from "../helpers.js";
   import {
     selectedResource,
@@ -77,14 +70,12 @@
     dataLength,
   } from "../stores.js";
   import { onMount } from "svelte";
-  import { screenHeight } from "./stores";
+  import { screenHeight, currentPosition } from "./stores";
   import SearchBar from "../utils/SearchBar.svelte";
 
   export let resources;
   let dataSearchResults = {};
   let childRangesPromise = Promise.resolve(undefined);
-  let chunkDataPromise = Promise.resolve(undefined);
-  let currentPosition = 0;
   let childRanges,
     resourceData,
     chunkData = [],
@@ -117,7 +108,7 @@
       localDataSearchResults.matches?.length > 0 &&
       (localDataSearchResults.index || localDataSearchResults.index === 0)
     ) {
-      currentPosition =
+      $currentPosition =
         Math.floor(
           localDataSearchResults.matches[localDataSearchResults.index][0] /
             alignment
@@ -126,7 +117,7 @@
   }
   $: chunksPromise = getNewData(
     $selectedResource,
-    currentPosition,
+    $currentPosition,
     $dataLength
   );
 
@@ -154,9 +145,9 @@
   }
 
   async function getNewData() {
-    start = currentPosition;
+    start = $currentPosition;
     end = Math.min(start + $screenHeight, $dataLength);
-    if (length < 1024 * 1024 * 64 && $selectedResource) {
+    if ($dataLength < 1024 * 1024 && $selectedResource) {
       resourceData = await $selectedResource.get_data();
     } else {
       resourceData = null;
@@ -278,7 +269,7 @@
 
   function resetResource() {
     dataSearchResults.matches = undefined;
-    currentPosition = 0;
+    $currentPosition = 0;
   }
 
   function refreshHeight() {
@@ -294,9 +285,6 @@
 </script>
 
 <svelte:window on:resize="{refreshHeight}" />
-<div class="breadcrumb">
-  <Breadcrumb />
-</div>
 <SearchBar
   search="{searchHex}"
   liveUpdate="{false}"
@@ -308,12 +296,12 @@
   bind:this="{hexDisplay}"
   id="scrollable"
   on:wheel="{(e) => {
-    currentPosition += Math.floor(e.deltaY) * alignment;
-    if (currentPosition > $dataLength) {
-      currentPosition = $dataLength - alignment;
+    $currentPosition += Math.floor(e.deltaY) * alignment;
+    if ($currentPosition > $dataLength) {
+      $currentPosition = $dataLength - alignment;
     }
-    if (currentPosition < 0) {
-      currentPosition = 0;
+    if ($currentPosition < 0) {
+      $currentPosition = 0;
     }
   }}"
 >
@@ -396,9 +384,9 @@
       Resource has no data!
     {/if}
   </div>
-  {#if resourceData != undefined}
+  {#if chunkData != undefined}
     <div class="minimap">
-      <MinimapView bind:currentPosition="{currentPosition}" />
+      <MinimapView bind:currentPosition="{$currentPosition}" />
     </div>
   {/if}
 </div>

@@ -86,7 +86,7 @@ async def expected_symbols(elf_executable_file) -> Dict[str, Tuple[int, Linkable
         if elf_sym_type == "FUNC":
             sym_type = LinkableSymbolType.FUNC
         elif elf_sym_type == "OBJECT":
-            if section_is_writable[int(sh_ndx)]:
+            if section_is_writable.get(int(sh_ndx)):
                 sym_type = LinkableSymbolType.RW_DATA
             else:
                 sym_type = LinkableSymbolType.RO_DATA

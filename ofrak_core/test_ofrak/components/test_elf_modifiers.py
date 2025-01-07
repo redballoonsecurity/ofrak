@@ -1,11 +1,19 @@
 import os
 import subprocess
+from typing import Optional
 
 import pytest
 from elftools.elf.elffile import ELFFile
 from test_ofrak.components.hello_world_elf import hello_elf
 
-from ofrak.core import LiefAddSegmentConfig, LiefAddSegmentModifier
+from ofrak.core import (
+    LiefAddSegmentConfig,
+    LiefAddSegmentModifier,
+    LiefAddSectionModifer,
+    LiefAddSectionModifierConfig,
+    LiefRemoveSectionModifier,
+    LiefRemoveSectionModifierConfig,
+)
 from ofrak.service.resource_service_i import ResourceFilter
 from ofrak.core.elf.model import (
     Elf,
@@ -66,6 +74,7 @@ async def test_elf_add_symbols(
     assert result.returncode == 12
 
 
+@pytest.mark.skipif_windows
 async def test_elf_force_relocation(
     ofrak_context: OFRAKContext, elf_object_file, elf_test_directory
 ):
@@ -254,3 +263,35 @@ def assert_segment_exists(filepath: str, vaddr: int, length: int):
             if segment.header.p_vaddr == vaddr and segment.header.p_memsz == length:
                 return
         raise ValueError("Could not find segment in binary")
+
+
+async def test_lief_add_section_modifier(hello_out: Resource, tmp_path):
+    config = LiefAddSectionModifierConfig(name=".test", content=b"test", flags=0)
+    await hello_out.run(LiefAddSectionModifer, config=config)
+    elf_path = tmp_path / "test.elf"
+    await hello_out.flush_data_to_disk(elf_path)
+    assert segment_exists(elf_path, ".test", content=b"test")
+
+
+async def test_lief_remove_section_modifier(hello_out: Resource, tmp_path):
+    original = tmp_path / "original.elf"
+    await hello_out.flush_data_to_disk(original)
+    assert segment_exists(original, ".text")
+    config = LiefRemoveSectionModifierConfig(name=".text")
+    await hello_out.run(LiefRemoveSectionModifier, config=config)
+    modified = tmp_path / "modified.elf"
+    await hello_out.flush_data_to_disk(modified)
+    assert not segment_exists(modified, ".text")
+
+
+def segment_exists(filepath: str, name: str, content: Optional[bytes] = None):
+    with open(filepath, "rb") as f:
+        elffile = ELFFile(f)
+        sections = list(elffile.iter_sections())
+        for section in sections:
+            if section.name == name:
+                if content is not None and content in section.data():
+                    return True
+                if content is None:
+                    return True
+    return False
