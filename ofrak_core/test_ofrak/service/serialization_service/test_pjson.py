@@ -77,10 +77,9 @@ def iterable_strategy(draw, type_hint):
 @composite
 def os_stat_result_strategy(draw, _type_hint):
     """
-    os.stat_result instances can be generated as tuples of size 10. They most likely won't be valid
-    but it doesn't matter here.
+    os.stat_result instances can be generated as tuples of size 10.
     """
-    return draw(tuples(*[integer_strategy()] * 10))
+    return os.stat_result(draw(tuples(*[integer_strategy()] * 10)))
 
 
 @composite
