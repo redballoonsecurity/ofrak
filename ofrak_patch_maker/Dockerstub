@@ -80,7 +80,8 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
       'CT_ZLIB_PATCH_GLOBAL=y' \
       'CT_ZSTD_PATCH_GLOBAL=y' \
       >> .config && \
-    ./ct-ng build CT_JOBS=`nproc` && \
+    ./ct-ng build CT_JOBS=`nproc` \
+      | sed 's/.*\r//g' && \
     cd /tmp && rm -rf crosstool-ng; \
 fi;
 
