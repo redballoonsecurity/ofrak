@@ -269,7 +269,7 @@ def test_interval_tree_serialization(obj: IntervalTree, _test_serialize_deserial
     "json_obj,type_hint",
     [
         ([1, 2], List),
-        ({1: 2}, Dict),
+        ([(1, 2)], Dict),
     ],
 )
 def test_from_pjson_ambiguous_type_hints(
