@@ -1,3 +1,4 @@
+from ofrak.core.free_space import RuntimeFreeSpace
 import pytest
 from ofrak.core import FreeSpace, FreeSpaceModifier, FreeSpaceModifierConfig
 
@@ -24,6 +25,19 @@ async def resource_under_test(ofrak_context: OFRAKContext) -> Resource:
     memory_region = await resource.create_child_from_view(
         MemoryRegion(0, 0x100), data_range=Range(0, 0x100)
     )
+    await resource.save()
+    await memory_region.save()
+    return memory_region
+
+
+@pytest.fixture
+async def dataless_resource_under_test(ofrak_context: OFRAKContext) -> Resource:
+    resource = await ofrak_context.create_root_resource(
+        "mock_empty",
+        b"",
+        (Program,),
+    )
+    memory_region = await resource.create_child_from_view(MemoryRegion(0x0, 0x100), data_range=None)
     await resource.save()
     await memory_region.save()
     return memory_region
@@ -105,6 +119,32 @@ async def test_free_space_modifier(resource_under_test: Resource):
     )
     child_data = await child.get_data()
     assert child_data == config.stub
+
+
+async def test_dataless_free_space_modifier(dataless_resource_under_test: Resource):
+    original_region = await dataless_resource_under_test.view_as(MemoryRegion)
+    parent = await dataless_resource_under_test.get_parent()
+
+    rw_config = FreeSpaceModifierConfig(MemoryPermissions.RW)
+    await dataless_resource_under_test.run(FreeSpaceModifier, rw_config)
+
+    # Assert runtime free space created as required
+    runtime_free_region = await parent.get_only_child_as_view(
+        MemoryRegion, r_filter=ResourceFilter.with_tags(RuntimeFreeSpace)
+    )
+    assert original_region == runtime_free_region
+
+
+async def test_dataless_free_space_modifier_readonly_fails(dataless_resource_under_test: Resource):
+    ro_config = FreeSpaceModifierConfig(MemoryPermissions.R)
+    with pytest.raises(ValueError, match=r".*RW.*"):
+        await dataless_resource_under_test.run(FreeSpaceModifier, ro_config)
+
+
+async def test_dataless_free_space_modifier_stub_fails(dataless_resource_under_test: Resource):
+    stub_config = FreeSpaceModifierConfig(MemoryPermissions.RW, stub=b"\x00")
+    with pytest.raises(ValueError, match=r".*stub.*"):
+        await dataless_resource_under_test.run(FreeSpaceModifier, stub_config)
 
 
 def test_free_space_modifier_config_fill_parameters():

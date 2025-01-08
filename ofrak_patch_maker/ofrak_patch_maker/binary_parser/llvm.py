@@ -57,26 +57,32 @@ class Abstract_LLVM_Readobj_Parser(AbstractBinaryFileParser, ABC):
                 else:
                     kvs[remaining_keys[flag_key]] = MemoryPermissions.R
 
+                kvs["is_allocated"] = flags & 0x02 == 0x02
+
                 del remaining_keys[flag_key]
 
             elif ": " in line:
+                value: Union[str, int, bool]
                 key, value = tuple(line.strip().split(": "))
 
                 if key in remaining_keys:
                     # Only take the value text until the first whitespace.
                     value = value.split(" ")[0]
 
-                    # Try to convert the value to an integer.
-                    try:
-                        value = int(value, 0)  # type: ignore
-                    except ValueError:
-                        pass
+                    if key == "Type":
+                        value = value == "SHT_NOBITS"
+                    else:
+                        # Try to convert the value to an integer.
+                        try:
+                            value = int(value, 0)
+                        except ValueError:
+                            pass
 
                     kvs[remaining_keys[key]] = value
                     del remaining_keys[key]
 
-                    if len(remaining_keys) == 0:
-                        break
+            if len(remaining_keys) == 0:
+                break
 
         if len(remaining_keys) > 0:
             raise ToolchainException("Could not parse all keys!")
@@ -104,6 +110,8 @@ class LLVM_ELF_Parser(Abstract_LLVM_Readobj_Parser):
             "Offset": "offset",
             "Size": "length",
             "Flags": "access_perms",
+            "Type": "is_bss",
+            "AddressAlignment": "alignment",
         }
 
         return self._parse_readobj_sections(output, section_keys, "Flags")

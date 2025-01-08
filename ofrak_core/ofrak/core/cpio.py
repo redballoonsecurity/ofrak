@@ -100,8 +100,8 @@ class CpioUnpacker(Unpacker[None]):
                 cwd=temp_flush_dir,
             )
             await proc.communicate(input=resource_data)
-            # if proc.returncode:
-            #     raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
+            if proc.returncode:
+                raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
             await cpio_v.initialize_from_disk(temp_flush_dir)
 
 
