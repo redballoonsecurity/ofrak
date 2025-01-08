@@ -15,12 +15,13 @@ def _parse_offset(java_object):
     return int(str(java_object.getOffsetAsBigInteger()))
 
 
-def unpack(program_file):
+def unpack(program_file, decompiled):
     with pyghidra.open_program(program_file) as flat_api:
         main_dictionary = {}
         code_regions = _unpack_program(flat_api)
         main_dictionary["metadata"] = {}
         main_dictionary["metadata"]["backend"] = "ghidra"
+        main_dictionary["metadata"]["decompiled"] = decompiled
         with open(program_file, "rb") as fh:
             data = fh.read()
             md5_hash = hashlib.md5(data)
@@ -33,6 +34,9 @@ def unpack(program_file):
             for func, cb in func_cbs:
                 cb_key = f"func_{cb['virtual_address']}"
                 code_region["children"].append(cb_key)
+                if decompiled:
+                    decompilation = _decompile(func, flat_api)
+                    cb["decompilation"] = decompilation
                 basic_blocks, data_words = _unpack_complex_block(func, flat_api)
                 cb["children"] = []
                 for block, bb in basic_blocks:
@@ -308,6 +312,20 @@ def _unpack_basic_block(block, flat_api):
     return instructions
 
 
+def _decompile(func, flat_api):
+    from ghidra.app.decompiler import DecompInterface
+    from ghidra.util.task import TaskMonitor
+
+    ifc = DecompInterface()
+    ifc.openProgram(flat_api.getCurrentProgram())
+    res = ifc.decompileFunction(func, 0, TaskMonitor.DUMMY)
+    if not res.decompileCompleted():
+        decomp = "Unable to decompile :("
+        return
+    decomp = res.getDecompiledFunction().getC()
+    return decomp
+
+
 def _get_last_address(func, flat_api):
     end_addr = None
     address_iter = func.getBody().getAddressRanges()
@@ -343,9 +361,10 @@ if __name__ == "__main__":
         "--infile", "-i", type=str, required=True, help="The binary to be analyzed."
     )
     parser.add_argument("--outfile", "-o", type=str, required=True, help="The output json file.")
+    parser.add_argument("--decompile", "-d", type=bool, default=False, help="decompile functions in cache")
     args = parser.parse_args()
     start = time.time()
-    res = unpack(args.infile)
+    res = unpack(args.infile, args.decompile)
     with open(args.outfile, "w") as fh:
         json.dump(res, fh, indent=4)
     print(f"PyGhidra analysis took {time.time() - start} seconds")

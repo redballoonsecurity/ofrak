@@ -11,6 +11,7 @@ import re
 
 from ofrak.core.code_region import CodeRegion
 from ofrak.core.complex_block import ComplexBlock
+from ofrak.core.decompilation import DecompilationAnalysis, DecompilationAnalyzer
 
 _GHIDRA_AUTO_LOADABLE_FORMATS = [Elf, Ihex, Pe]
 

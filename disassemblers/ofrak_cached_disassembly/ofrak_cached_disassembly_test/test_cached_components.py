@@ -3,7 +3,7 @@ from typing import Dict
 import pytest
 from ofrak.core import *
 from ofrak.ofrak_context import OFRAKContext
-from ofrak_cached.components.cached_unpacker import (
+from ofrak_cached_disassembly.components.cached_unpacker import (
     CachedAnalysisAnalyzer,
     CachedAnalysisAnalyzerConfig,
 )
@@ -21,14 +21,16 @@ from pytest_ofrak.patterns.basic_block_unpacker import (
     BasicBlockUnpackerUnpackAndVerifyPattern,
     BasicBlockUnpackerTestCase,
 )
-import ofrak_cached
+from ofrak.core.decompilation import DecompilationAnalysis
+
+import ofrak_cached_disassembly
 
 ASSETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
 
 
 @pytest.fixture(autouse=True)
 def pyghidra_components(ofrak_injector):
-    ofrak_injector.discover(ofrak_cached)
+    ofrak_injector.discover(ofrak_cached_disassembly)
 
 
 class TestGhidraCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
@@ -151,3 +153,35 @@ async def test_instruction_mode(test_case: Tuple[Resource, InstructionSetMode]):
         f"None of the instructions in {root_resource.get_id().hex()} had the expected instruction "
         f"set mode of {mode.name}."
     )
+
+async def test_cached_decompilation(ofrak_context: OFRAKContext):
+    root_resource = await ofrak_context.create_root_resource_from_file(
+        os.path.join(os.path.dirname(__file__), "assets/hello.x64.elf")
+    )
+    await root_resource.run(
+        CachedAnalysisAnalyzer, config=CachedAnalysisAnalyzerConfig(filename="assets/hello.x64.elf.json")
+    )
+    await root_resource.unpack_recursively(
+        do_not_unpack=[
+            ComplexBlock,
+        ]
+    )
+    complex_blocks: List[ComplexBlock] = await root_resource.get_descendants_as_view(
+        ComplexBlock,
+        r_filter=ResourceFilter(
+            tags=[
+                ComplexBlock,
+            ]
+        ),
+    )
+    decomps = []
+    for complex_block in complex_blocks:
+        await complex_block.resource.identify()
+        ghidra_resource: DecompilationAnalysis = await complex_block.resource.view_as(
+            DecompilationAnalysis
+        )
+        decomps.append(ghidra_resource.decompilation)
+    assert len(decomps) == 14
+    assert "" not in decomps
+    assert "main" in " ".join(decomps)
+    assert "print" in " ".join(decomps)

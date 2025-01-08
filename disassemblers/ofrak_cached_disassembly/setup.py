@@ -30,14 +30,14 @@ def read_requirements(requirements_path):
 
 
 setuptools.setup(
-    name="ofrak_cached",
+    name="ofrak_cached_disassembly",
     version="0.1.0",
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",
     description="OFRAK Disassembler Components for Cached Results",
     url="",  # TODO
     packages=setuptools.find_packages(),
-    package_data={"ofrak_cached": ["py.typed"]},
+    package_data={"ofrak_cached_disassembly": ["py.typed"]},
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
@@ -54,5 +54,5 @@ setuptools.setup(
     include_package_data=True,
     license=license,
     cmdclass={"egg_info": egg_info_ex},
-    entry_points={"ofrak.packages": ["ofrak_cached_pkg = ofrak_cached"]},
+    entry_points={"ofrak.packages": ["ofrak_cached_disassembly_pkg = ofrak_cached_disassembly"]},
 )

@@ -7,7 +7,7 @@ from ofrak_pyghidra.standalone.pyghidra_analysis import unpack
 
 def _analyze_binary(args):
     start = time.time()
-    res = unpack(args.infile)
+    res = unpack(args.infile, args.decompile)
     with open(args.outfile, "w") as fh:
         json.dump(res, fh, indent=4)
     print(f"PyGhidra analysis took {time.time() - start} seconds")
@@ -22,6 +22,7 @@ start_parser.add_argument(
     "--infile", "-i", type=str, required=True, help="The binary to be analyzed."
 )
 start_parser.add_argument("--outfile", "-o", type=str, required=True, help="The output json file.")
+start_parser.add_argument("--decompile", "-d", action='store_true', required=False, default=False, help="decompile functions in cache")
 
 
 if __name__ == "__main__":
