@@ -7,7 +7,7 @@ install: ofrak/gui/public
 
 .PHONY: develop
 develop: ofrak/gui/public
-	$(PIP) install -e .[docs,test]
+	$(PIP) install -e .[docs,test] --config-settings editable_mode=compat
 
 .PHONY: inspect
 inspect:

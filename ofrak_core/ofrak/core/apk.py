@@ -20,10 +20,10 @@ from ofrak_type.range import Range
 APKTOOL = ComponentExternalTool("apktool", "https://ibotpeaches.github.io/Apktool/", "-version")
 JAVA = ComponentExternalTool(
     "java",
-    "https://openjdk.org/projects/jdk/11/",
+    "https://openjdk.org/projects/jdk/17/",
     "-help",
-    apt_package="openjdk-11-jdk",
-    brew_package="openjdk@11",
+    apt_package="openjdk-17-jdk",
+    brew_package="openjdk@17",
 )
 
 

@@ -18,6 +18,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - `PatchFromSourceModifier` bundles src and header files into same temporary directory with BOM and FEM ([#517](https://github.com/redballoonsecurity/ofrak/pull/517))
 - Add support for running on Windows to the `Filesystem` component. ([#521](https://github.com/redballoonsecurity/ofrak/pull/521))
 - Add `JavaArchive` resource tag ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
+- Add new method for allocating `.bss` sections using free space ranges that aren't mapped to data ranges. ([#505](https://github.com/redballoonsecurity/ofrak/pull/505))
+- Add `JavaArchive` resource tag ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
 
 ### Fixed
 - Improved flushing of filesystem entries (including symbolic links and other types) to disk. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373))
@@ -38,6 +40,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Made some changes to OFRAK test suite to improve test coverage on Windows ([#487](https://github.com/redballoonsecurity/ofrak/pull/487))
 - Fix usage of `NamedTemporaryFile` with external tools on Windows ([#486](https://github.com/redballoonsecurity/ofrak/pull/486))
 - Fixed endianness issue in DTB raw byte identifier ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
+- Fix unintentional ignoring of cpio errors introduced in [#486](https://github.com/redballoonsecurity/ofrak/pull/486) ([#555](https://github.com/redballoonsecurity/ofrak/pull/555]))
+- `Data` resource attribute always corresponds to value of `Resource.get_data_range_within_root` ([#559](https://github.com/redballoonsecurity/ofrak/pull/559))
+- Fixed endianness issue in DTB raw byte identifier ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
 
 ### Changed
 - By default, the ofrak log is now `ofrak-YYYYMMDDhhmmss.log` rather than just `ofrak.log` and the name can be specified on the command line ([#480](https://github.com/redballoonsecurity/ofrak/pull/480))
@@ -47,6 +52,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - `build_image.py` supports building Docker images with OFRAK packages from any ancestor directory. ([#425](https://github.com/redballoonsecurity/ofrak/pull/425))
 - Partially reverted [#150](https://github.com/redballoonsecurity/ofrak/pull/150) so entropy C code is called with `ctypes` again, but maintaining the current API and automatic compilation by `setup.py`. ([#482](https://github.com/redballoonsecurity/ofrak/pull/482))
 - Minor update to OFRAK Community License, add OFRAK Pro License ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
+- Update python to 3.9 as main version used and tested (including in default docker image build) ([#502](https://github.com/redballoonsecurity/ofrak/pull/502))
+- Update OpenJDK to version 17, remove unused qemu package ([#502](https://github.com/redballoonsecurity/ofrak/pull/502))
 - Update resource tag File to inherit from GenericBinary ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
 - Update auto-run component logic to run all Analyzers, not just the most specific ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
 - Revamp magic identification for significant speed improvements ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
@@ -59,6 +66,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Security
 - Update aiohttp to 3.10.11 ([#522](https://github.com/redballoonsecurity/ofrak/pull/522))
 - Update pycryptogrpahy to version 43.0.3. ([#525](https://github.com/redballoonsecurity/ofrak/pull/525))
+- Bump `lief` dependency to 0.15.1 to address [vulnerability](https://github.com/redballoonsecurity/ofrak/security/dependabot/31) in lower versions ([#502](https://github.com/redballoonsecurity/ofrak/pull/502))
 
 ## [3.2.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v3.1.0...ofrak-v3.2.0)
 ### Added
