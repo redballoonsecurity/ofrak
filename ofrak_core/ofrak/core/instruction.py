@@ -46,7 +46,7 @@ class Instruction(MemoryRegion):
             return super().caption(all_attributes)
         return f"{instruction_attributes.mnemonic} {instruction_attributes.operands}"
 
-    async def get_assembly(self) -> str:
+    def get_assembly(self) -> str:
         """
         Get the instruction as an assembly string.
 
