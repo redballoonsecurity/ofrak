@@ -8,6 +8,7 @@ from ofrak.core.binary import GenericBinary
 from ofrak.core.code_region import CodeRegion
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.core.data import DataWord
+from ofrak.core.filesystem import File
 from ofrak.core.instruction import Instruction
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.model.resource_model import (
@@ -209,7 +210,10 @@ class TestResourceService:
             [R_ID_3_ROOT],
             r_filter=ResourceFilter(
                 include_self=True,
-                tags=(GenericBinary,),
+                tags=(
+                    File,
+                    GenericBinary,
+                ),
                 tags_condition=ResourceFilterCondition.AND,
                 attribute_filters=None,
             ),
@@ -363,7 +367,10 @@ class TestResourceService:
             [R_ID_3_ROOT],
             r_filter=ResourceFilter(
                 include_self=True,
-                tags=(GenericBinary,),
+                tags=(
+                    File,
+                    GenericBinary,
+                ),
                 tags_condition=ResourceFilterCondition.AND,
                 attribute_filters=None,
             ),
@@ -374,11 +381,23 @@ class TestResourceService:
             [R_ID_3_ROOT],
             r_filter=ResourceFilter(
                 include_self=True,
-                tags=(GenericBinary,),
+                tags=(
+                    File,
+                    GenericBinary,
+                ),
                 tags_condition=ResourceFilterCondition.AND,
                 attribute_filters=None,
             ),
-            extra_resources=[((GenericBinary,), ())] * 10,
+            extra_resources=[
+                (
+                    (
+                        File,
+                        GenericBinary,
+                    ),
+                    (),
+                )
+            ]
+            * 10,
         ),
         GetDescendantsTestCase(
             "attributes filter: exact value (attributes filter cheapest)",
@@ -902,7 +921,12 @@ class TestResourceService:
             R_ID_1_ROOT: ResourceModel(R_ID_1_ROOT),
             R_ID_2_ROOT: ResourceModel(R_ID_2_ROOT),
             R_ID_3_ROOT: ResourceModel.create(
-                R_ID_3_ROOT, tags=(GenericBinary,), attributes=(TestIndexAttributes(5),)
+                R_ID_3_ROOT,
+                tags=(
+                    File,
+                    GenericBinary,
+                ),
+                attributes=(TestIndexAttributes(5),),
             ),
         }
 
