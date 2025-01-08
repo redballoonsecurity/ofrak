@@ -139,7 +139,7 @@ class MagicDescriptionPattern:
     matchers: Dict[Callable, ResourceTag] = dict()
 
     @classmethod
-    def register(cls, resource_tag: ResourceTag, matcher: Callable[[], bool]):
+    def register(cls, resource_tag: ResourceTag, matcher: Callable[[str], bool]):
         """
         Register a callable that determines whether the given resource tag should be applied.
         """
