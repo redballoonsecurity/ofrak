@@ -41,7 +41,7 @@ The [ApkIdentifier][ofrak.core.apk.ApkIdentifier] is an example of a custom iden
 !!! warning
     Adding new identifiers should be done with care to minimize overall performance impact to OFRAK workflows.
     Try to carefully select the resource tags the identifier targets to minimize the frequency with which
-    it is run: generally speaking, targeting `GenericBinary` with result in this identifier getting run on the largest
+    it is run: generally speaking, targeting `GenericBinary` will result in this identifier getting run on the largest
     number of possible resources. `ApkIdentifier` targets `JavaArchive` and `ZipArchive` only for this reason.
 
 ### Handling External Dependencies
