@@ -13,8 +13,8 @@ ofrak_core/test_ofrak/components/assets/elf/edge-cases/* filter=lfs diff=lfs mer
 frontend/public/themes/**/* filter=lfs diff=lfs merge=lfs -text
 disassemblers/ofrak_angr/ofrak_angr_test/assets/* filter=lfs diff=lfs merge=lfs -text
 disassemblers/ofrak_pyghidra/ofrak_pyghidra_test/assets/**/* filter=lfs diff=lfs merge=lfs -text
-disassemblers/ofrak_cached/ofrak_cached_test/assets/**/* filter=lfs diff=lfs merge=lfs -text
-disassemblers/ofrak_cached/ofrak_cached_test/assets/Makefile !filter !diff !merge text
+disassemblers/ofrak_cached_disassembly/ofrak_cached_disassembly_test/assets/**/* filter=lfs diff=lfs merge=lfs -text
+disassemblers/ofrak_cached_disassembly/ofrak_cached_disassembly_test/assets/Makefile !filter !diff !merge text
 ofrak_core/pytest_ofrak/elf/assets/* filter=lfs diff=lfs merge=lfs -text
 ofrak_core/pytest_ofrak/elf/assets/*.c !filter !diff !merge text
 ofrak_core/pytest_ofrak/elf/assets/Makefile !filter !diff !merge text
