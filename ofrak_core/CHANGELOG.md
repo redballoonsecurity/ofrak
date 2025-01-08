@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add generic DecompilationAnalysis classes. ([#453](https://github.com/redballoonsecurity/ofrak/pull/453))
 - `PatchFromSourceModifier` bundles src and header files into same temporary directory with BOM and FEM ([#517](https://github.com/redballoonsecurity/ofrak/pull/517))
 - Add support for running on Windows to the `Filesystem` component. ([#521](https://github.com/redballoonsecurity/ofrak/pull/521))
+- Add PyGhidra support along with a disassembly backend to pull disassembler analysis from a json. ([#556](https://github.com/redballoonsecurity/ofrak/pull/556))
 
 ### Fixed
 - Improved flushing of filesystem entries (including symbolic links and other types) to disk. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373))
