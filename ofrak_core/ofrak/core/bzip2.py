@@ -6,7 +6,7 @@ from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.resource import Resource
 from ofrak.core.binary import GenericBinary
-from ofrak.core.magic import MagicDescriptionIdentifier, MagicMimeIdentifier
+from ofrak.core.magic import MagicDescriptionPattern, MagicMimePattern
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
@@ -64,5 +64,5 @@ class Bzip2Packer(Packer[None]):
         resource.queue_patch(Range(0, original_size), bzip2_compressed)
 
 
-MagicMimeIdentifier.register(Bzip2Data, "application/x-bzip2")
-MagicDescriptionIdentifier.register(Bzip2Data, lambda s: s.startswith("BZip2 archive"))
+MagicMimePattern.register(Bzip2Data, "application/x-bzip2")
+MagicDescriptionPattern.register(Bzip2Data, lambda s: s.startswith("BZip2 archive"))
