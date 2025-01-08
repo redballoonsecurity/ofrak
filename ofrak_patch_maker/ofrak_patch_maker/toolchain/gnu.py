@@ -46,6 +46,7 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
                 #      if sections contain more than one function =/
                 "-fno-merge-constants",  # avoids sections like .rodata.cst16, .rodata.str1.1 etc
                 "-fno-reorder-functions",
+                "-fno-asynchronous-unwind-tables",  # avoids the .eh_frame section
             ]
         )
         if self._config.separate_data_sections:
@@ -168,12 +169,14 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
         object_path: str,
         segment_name: str,
         memory_region_name: str,
+        segment_is_bss: bool,
     ) -> str:
         stripped_seg_name = segment_name.strip(".")
         stripped_obj_name = os.path.basename(object_path).split(".")[0]
         abs_path = os.path.abspath(object_path)
+        noload_attr = " (NOLOAD)" if segment_is_bss else ""
         return (
-            f"    .rbs_{stripped_obj_name}_{stripped_seg_name} ORIGIN({memory_region_name}) : SUBALIGN(0) {{\n"
+            f"    .rbs_{stripped_obj_name}_{stripped_seg_name} ORIGIN({memory_region_name}){noload_attr}: SUBALIGN(0) {{\n"
             f"        {abs_path}({segment_name})\n"
             f"    }} > {memory_region_name}"
         )
