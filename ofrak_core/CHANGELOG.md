@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add generic DecompilationAnalysis classes. ([#453](https://github.com/redballoonsecurity/ofrak/pull/453))
 - `PatchFromSourceModifier` bundles src and header files into same temporary directory with BOM and FEM ([#517](https://github.com/redballoonsecurity/ofrak/pull/517))
 - Add support for running on Windows to the `Filesystem` component. ([#521](https://github.com/redballoonsecurity/ofrak/pull/521))
+- Add new method for allocating `.bss` sections using free space ranges that aren't mapped to data ranges. ([#505](https://github.com/redballoonsecurity/ofrak/pull/505))
 - Add PyGhidra support along with a disassembly backend to pull disassembler analysis from a json. ([#556](https://github.com/redballoonsecurity/ofrak/pull/556))
 
 ### Fixed
@@ -37,6 +38,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Fix bugs on Windows arising from using `os.path` methods when only forward-slashes are acceptable ([#521](https://github.com/redballoonsecurity/ofrak/pull/521))
 - Made some changes to OFRAK test suite to improve test coverage on Windows ([#487](https://github.com/redballoonsecurity/ofrak/pull/487))
 - Fix usage of `NamedTemporaryFile` with external tools on Windows ([#486](https://github.com/redballoonsecurity/ofrak/pull/486))
+- Fix unintentional ignoring of cpio errors introduced in [#486](https://github.com/redballoonsecurity/ofrak/pull/486) ([#555](https://github.com/redballoonsecurity/ofrak/pull/555]))
+- `Data` resource attribute always corresponds to value of `Resource.get_data_range_within_root` ([#559](https://github.com/redballoonsecurity/ofrak/pull/559))
 
 ### Changed
 - By default, the ofrak log is now `ofrak-YYYYMMDDhhmmss.log` rather than just `ofrak.log` and the name can be specified on the command line ([#480](https://github.com/redballoonsecurity/ofrak/pull/480))

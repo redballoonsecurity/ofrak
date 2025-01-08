@@ -9,3 +9,4 @@ packages_paths:
     "ofrak_core",
     "frontend",
   ]
+python_image: "python:3.11.11-bookworm@sha256:b337e1fd27dbacda505219f713789bf82766694095876769ea10c2d34b4f470b"

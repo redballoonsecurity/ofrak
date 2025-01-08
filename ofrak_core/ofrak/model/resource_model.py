@@ -918,7 +918,7 @@ class Data(ResourceAttributes):
     will screw up sorting/filtering.
     """
 
-    _offset: int
+    _offset: int  # Offset of the resource in the binary blob it is mapped into.
     _length: int
 
     @index
