@@ -361,7 +361,9 @@ if __name__ == "__main__":
         "--infile", "-i", type=str, required=True, help="The binary to be analyzed."
     )
     parser.add_argument("--outfile", "-o", type=str, required=True, help="The output json file.")
-    parser.add_argument("--decompile", "-d", type=bool, default=False, help="decompile functions in cache")
+    parser.add_argument(
+        "--decompile", "-d", type=bool, default=False, help="decompile functions in cache"
+    )
     args = parser.parse_args()
     start = time.time()
     res = unpack(args.infile, args.decompile)

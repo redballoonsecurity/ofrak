@@ -7,7 +7,12 @@ from ofrak.core.complex_block import ComplexBlock
 from ofrak.service.component_locator_i import (
     ComponentLocatorInterface,
 )
-from ofrak.core.decompilation import DecompilationAnalysis, DecompilationAnalyzer, DecompilationAnalysis
+from ofrak.core.decompilation import (
+    DecompilationAnalysis,
+    DecompilationAnalyzer,
+    DecompilationAnalysis,
+)
+
 _GHIDRA_AUTO_LOADABLE_FORMATS = [Elf, Ihex, Pe]
 
 
@@ -279,6 +284,7 @@ class CachedBasicBlockUnpacker(BasicBlockUnpacker):
             )
             await bb_view.create_child_region(instr)
 
+
 class CachedDecompilationAnalyzer(DecompilationAnalyzer):
     def __init__(
         self,
@@ -289,7 +295,7 @@ class CachedDecompilationAnalyzer(DecompilationAnalyzer):
     ):
         super().__init__(resource_factory, data_service, resource_service)
         self.analysis_store = analysis_store
-    
+
     async def analyze(self, resource: Resource, config: None) -> DecompilationAnalysis:
         # Run / fetch ghidra analyzer
         program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(Program))

@@ -22,7 +22,14 @@ start_parser.add_argument(
     "--infile", "-i", type=str, required=True, help="The binary to be analyzed."
 )
 start_parser.add_argument("--outfile", "-o", type=str, required=True, help="The output json file.")
-start_parser.add_argument("--decompile", "-d", action='store_true', required=False, default=False, help="decompile functions in cache")
+start_parser.add_argument(
+    "--decompile",
+    "-d",
+    action="store_true",
+    required=False,
+    default=False,
+    help="decompile functions in cache",
+)
 
 
 if __name__ == "__main__":

@@ -154,12 +154,14 @@ async def test_instruction_mode(test_case: Tuple[Resource, InstructionSetMode]):
         f"set mode of {mode.name}."
     )
 
+
 async def test_cached_decompilation(ofrak_context: OFRAKContext):
     root_resource = await ofrak_context.create_root_resource_from_file(
         os.path.join(os.path.dirname(__file__), "assets/hello.x64.elf")
     )
     await root_resource.run(
-        CachedAnalysisAnalyzer, config=CachedAnalysisAnalyzerConfig(filename="assets/hello.x64.elf.json")
+        CachedAnalysisAnalyzer,
+        config=CachedAnalysisAnalyzerConfig(filename="assets/hello.x64.elf.json"),
     )
     await root_resource.unpack_recursively(
         do_not_unpack=[
