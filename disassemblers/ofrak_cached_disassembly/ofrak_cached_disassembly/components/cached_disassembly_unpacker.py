@@ -1,7 +1,5 @@
 from ofrak.core import *
-import json
 import hashlib
-from typing import Dict, Any
 from ofrak.core.code_region import CodeRegion
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.service.component_locator_i import (
@@ -12,36 +10,9 @@ from ofrak.core.decompilation import (
     DecompilationAnalyzer,
     DecompilationAnalysis,
 )
+from ofrak_cached_disassembly.components.cached_disassembly import CachedAnalysisStore
 
 _GHIDRA_AUTO_LOADABLE_FORMATS = [Elf, Ihex, Pe]
-
-
-class CachedAnalysisStore:
-    def __init__(self):
-        self.analysis = dict()
-        self.program_attributes: Optional[ProgramAttributes] = None
-
-    def store_analysis(self, resource_id: bytes, filename: str):
-        with open(filename) as fh:
-            analysis = json.load(fh)
-            if resource_id not in self.analysis.keys():
-                self.analysis[resource_id] = dict()
-            self.analysis[resource_id]["analysis"] = analysis
-
-    def store_program_attributes(self, resource_id: bytes, program_attributes: ProgramAttributes):
-        if resource_id not in self.analysis.keys():
-            self.analysis[resource_id] = dict()
-        self.analysis[resource_id]["program_attributes"] = program_attributes
-
-    def delete_id_from_store(self, resource_id: bytes):
-        if resource_id in self.analysis:
-            del self.analysis[resource_id]
-
-    def get_analysis(self, resource_id: bytes) -> Dict[str, Any]:
-        return self.analysis[resource_id]["analysis"]
-
-    def get_program_attributes(self, resource_id: bytes) -> ProgramAttributes:
-        return self.analysis[resource_id]["program_attributes"]
 
 
 @dataclass

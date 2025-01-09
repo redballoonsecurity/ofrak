@@ -38,6 +38,7 @@ setuptools.setup(
     url="",  # TODO
     packages=setuptools.find_packages(),
     package_data={"ofrak_pyghidra": ["py.typed"]},
+    install_requires=["ofrak", "ofrak_cached_disassembly"],
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",

@@ -3,7 +3,7 @@ from typing import Dict
 import pytest
 from ofrak.core import *
 from ofrak.ofrak_context import OFRAKContext
-from ofrak_cached_disassembly.components.cached_unpacker import (
+from ofrak_cached_disassembly.components.cached_disassembly_unpacker import (
     CachedAnalysisAnalyzer,
     CachedAnalysisAnalyzerConfig,
 )
