@@ -3,11 +3,11 @@ PIP=pip3
 
 .PHONY: install
 install: ofrak/gui/public
-	$(PIP) install --pre .
+	$(PIP) install .
 
 .PHONY: develop
 develop: ofrak/gui/public
-	$(PIP) install --pre -e .[docs,test] --config-settings editable_mode=compat
+	$(PIP) install -e .[docs,test] --config-settings editable_mode=compat
 
 .PHONY: inspect
 inspect:
