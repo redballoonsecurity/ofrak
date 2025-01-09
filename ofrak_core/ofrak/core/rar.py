@@ -7,7 +7,7 @@ from ofrak.component.unpacker import Unpacker
 from ofrak.core.binary import GenericBinary
 from ofrak.core.filesystem import FilesystemRoot, File, Folder, SpecialFileType
 
-from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
+from ofrak.core.magic import MagicMimePattern, MagicDescriptionPattern
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.resource import Resource
 from ofrak.model.component_model import ComponentConfig
@@ -58,6 +58,6 @@ class RarUnpacker(Unpacker[None]):
                 await rar_view.initialize_from_disk(temp_dir)
 
 
-MagicMimeIdentifier.register(RarArchive, "application/x-rar-compressed")
-MagicMimeIdentifier.register(RarArchive, "application/vnd.rar")
-MagicDescriptionIdentifier.register(RarArchive, lambda s: "rar archive" in s.lower())
+MagicMimePattern.register(RarArchive, "application/x-rar-compressed")
+MagicMimePattern.register(RarArchive, "application/vnd.rar")
+MagicDescriptionPattern.register(RarArchive, lambda s: "rar archive" in s.lower())

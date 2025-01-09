@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Callable, Dict, Iterable, Union
 
 from ofrak.component.abstract import ComponentMissingDependencyError
+from ofrak_type import Range
 
 try:
     import magic
@@ -14,7 +15,6 @@ except ImportError:
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.identifier import Identifier
 from ofrak.core.binary import GenericBinary, GenericText
-from ofrak.core.filesystem import File
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.model.tag_model import ResourceTag
@@ -59,7 +59,7 @@ class MagicAnalyzer(Analyzer[None, Magic]):
     Analyze a binary blob to extract its mimetype and magic description.
     """
 
-    targets = (File, GenericBinary)
+    targets = (GenericBinary,)
     outputs = (Magic,)
     external_dependencies = (LIBMAGIC_DEP,)
 
@@ -73,63 +73,131 @@ class MagicAnalyzer(Analyzer[None, Magic]):
             return Magic(magic_mime, magic_description)
 
 
-class MagicMimeIdentifier(Identifier[None]):
+class MagicIdentifier(Identifier[None]):
     """
-    Identify and add the appropriate tag for a given resource based on its mimetype.
+    Identify resources using three identifier patterns:
+
+    1. [MagicMimePattern][ofrak.core.magic.MagicMimePattern]
+    2. [MagicDescriptionPattern][ofrak.core.magic.MagicDescriptionPattern]
+    3. [RawMagicPattern][ofrak.core.magic.RawMagicPattern]
+
+    OFRAK component authors can "register" magic patterns to run whenever this
+    identifier is:
+
+    ```python
+    MagicMimePattern.register(GenericBinary, "application/octet-stream")
+    ```
     """
 
-    id = b"MagicMimeIdentifier"
-    targets = (File, GenericBinary)
-    external_dependencies = (LIBMAGIC_DEP,)  # Indirect thru MagicAnalyzer, but worth tagging
+    targets = (GenericBinary,)
+    external_dependencies = (LIBMAGIC_DEP,)
 
-    _tags_by_mime: Dict[str, ResourceTag] = dict()
-
-    async def identify(self, resource: Resource, config=None):
+    async def identify(self, resource: Resource, config=None) -> None:
         _magic = await resource.analyze(Magic)
-        magic_mime = _magic.mime
-        tag = MagicMimeIdentifier._tags_by_mime.get(magic_mime)
-        if tag is not None:
-            resource.add_tag(tag)
+        MagicMimePattern.run(resource, _magic.mime)
+        MagicDescriptionPattern.run(resource, _magic.descriptor)
+        await RawMagicPattern.run(resource)
+
+
+class MagicMimePattern:
+    """
+    Pattern to tag resources based on their mimetype.
+    """
+
+    tags_by_mime: Dict[str, ResourceTag] = dict()
 
     @classmethod
-    def register(cls, resource: ResourceTag, mime_types: Union[Iterable[str], str]):
+    def register(cls, resource_tag: ResourceTag, mime_types: Union[Iterable[str], str]):
+        """
+        Register what resource tags correspond to specific mime types.
+        """
+
         if isinstance(mime_types, str):
             mime_types = [mime_types]
         for mime_type in mime_types:
-            if mime_type in cls._tags_by_mime:
+            if mime_type in cls.tags_by_mime:
                 raise AlreadyExistError(f"Registering already-registered mime type: {mime_type}")
-            cls._tags_by_mime[mime_type] = resource
+            cls.tags_by_mime[mime_type] = resource_tag
+
+    @classmethod
+    def run(cls, resource: Resource, magic_mime: str):
+        """
+        Run the pattern against a given resource, tagging it based on matching mime types.
+
+        This method is designed to be called by the [MagicIdentifier][ofrak.core.magic.MagicIdentifier].
+        """
+        tag = cls.tags_by_mime.get(magic_mime)
+        if tag is not None:
+            resource.add_tag(tag)
 
 
-class MagicDescriptionIdentifier(Identifier[None]):
+class MagicDescriptionPattern:
     """
-    Identify and add the appropriate tag for a given resource based on its mime description.
+    Pattern to tag resources based on its mime description.
     """
 
-    id = b"MagicDescriptionIdentifier"
-    targets = (File, GenericBinary)
-    external_dependencies = (LIBMAGIC_DEP,)  # Indirect thru MagicAnalyzer, but worth tagging
+    matchers: Dict[Callable, ResourceTag] = dict()
 
-    _matchers: Dict[Callable, ResourceTag] = dict()
+    @classmethod
+    def register(cls, resource_tag: ResourceTag, matcher: Callable[[str], bool]):
+        """
+        Register a callable that determines whether the given resource tag should be applied.
+        """
+        if matcher in cls.matchers:
+            raise AlreadyExistError("Registering already-registered matcher")
+        cls.matchers[matcher] = resource_tag
 
-    async def identify(self, resource: Resource, config):
-        _magic = await resource.analyze(Magic)
-        magic_description = _magic.descriptor
-        for matcher, resource_type in self._matchers.items():
+    @classmethod
+    def run(cls, resource: Resource, magic_description: str):
+        """
+        Run this pattern against a given resource, tagging it based on registered tags.
+
+        This method is designed to be called by the [MagicIdentifier][ofrak.core.magic.MagicIdentifier].
+        """
+        for matcher, resource_type in cls.matchers.items():
             if matcher(magic_description):
                 resource.add_tag(resource_type)
 
+
+class RawMagicPattern:
+    """
+    Pattern to tag resource based on custom raw magic matching patterns.
+
+    MAX_SEARCH_SIZE specifies how many bytes this pattern's `run` method exposes to registered
+    matches (the first MAX_SEARCH_SIZE bytes of a resource are exposed).
+    """
+
+    matchers: Dict[Callable, ResourceTag] = dict()
+    MAX_SEARCH_SIZE = 64
+
     @classmethod
-    def register(cls, resource: ResourceTag, matcher: Callable):
-        if matcher in cls._matchers:
+    def register(cls, resource_tag: ResourceTag, matcher: Callable[[bytes], bool]):
+        """
+        Register a callable that determines whether the given resource tag should be applied.
+        """
+        if matcher in cls.matchers:
             raise AlreadyExistError("Registering already-registered matcher")
-        cls._matchers[matcher] = resource
+        cls.matchers[matcher] = resource_tag
+
+    @classmethod
+    async def run(cls, resource: Resource):
+        """
+        Run the pattern against a given resource, tagging it based on registered tags.
+        Note that the first MAX_SEARCH_SIZE bytes of a resource are made available to the callable.
+
+        This method is designed to be called by the [MagicIdentifier][ofrak.core.magic.MagicIdentifier].
+        """
+        data_length = min(await resource.get_data_length(), cls.MAX_SEARCH_SIZE)
+        data = await resource.get_data(range=Range(0, data_length))
+        for matcher, resource_type in cls.matchers.items():
+            if matcher(data):
+                resource.add_tag(resource_type)
 
 
-MagicMimeIdentifier.register(GenericText, "text/plain")
-MagicDescriptionIdentifier.register(
+MagicMimePattern.register(GenericText, "text/plain")
+MagicDescriptionPattern.register(
     GenericText, lambda desc: any([("ASCII text" in s) for s in desc.split(", ")])
 )
 
-MagicMimeIdentifier.register(GenericBinary, "application/octet-stream")
-MagicDescriptionIdentifier.register(GenericBinary, lambda s: s == "data")
+MagicMimePattern.register(GenericBinary, "application/octet-stream")
+MagicDescriptionPattern.register(GenericBinary, lambda s: s == "data")
