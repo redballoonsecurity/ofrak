@@ -134,7 +134,7 @@
   async function runLoadedScript() {
     let results = {};
     try {
-      runScriptConfig[1]["code"] = loadedScript.join("\n");
+      runScriptConfig[1].code = loadedScript.join("\n");
       results = await $selectedResource.run_component(
         "RunScriptModifier",
         runScriptConfig
