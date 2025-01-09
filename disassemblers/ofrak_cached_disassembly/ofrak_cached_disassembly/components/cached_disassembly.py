@@ -1,6 +1,7 @@
 from ofrak.core import *
 import json
 
+
 class CachedAnalysisStore:
     def __init__(self):
         self.analysis = dict()
@@ -28,6 +29,6 @@ class CachedAnalysisStore:
 
     def get_program_attributes(self, resource_id: bytes) -> ProgramAttributes:
         return self.analysis[resource_id]["program_attributes"]
-    
+
     def id_exists(self, resource_id: bytes) -> bool:
         return resource_id in self.analysis.keys()
