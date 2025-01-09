@@ -36,6 +36,9 @@ from ofrak.core.ihex import *
 from ofrak.core.injector import *
 from ofrak.core.instruction import *
 from ofrak.core.iso9660 import *
+
+# Why JavaArchive only? See https://github.com/redballoonsecurity/ofrak/pull/492/files#r1905582276
+from ofrak.core.java import JavaArchive
 from ofrak.core.label import *
 from ofrak.core.lzma import *
 from ofrak.core.lzo import *

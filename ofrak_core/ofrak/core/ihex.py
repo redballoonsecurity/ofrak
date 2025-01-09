@@ -153,7 +153,7 @@ class IhexIdentifier(Identifier):
     _INTEL_HEX_PATTERN = re.compile(rb"((\:([0-9A-F]{2}){5,})(\n|\r\n)+){2}")
 
     async def identify(self, resource: Resource, config=None) -> None:
-        matched_ihex = await resource.search_data(self._INTEL_HEX_PATTERN, max_matches=1)
+        matched_ihex = await resource.search_data(self._INTEL_HEX_PATTERN, 0, 0x2000, max_matches=1)
         if matched_ihex:
             offset, bytes = matched_ihex[0]
             # Only tag if pattern starts at offset 0 of resource

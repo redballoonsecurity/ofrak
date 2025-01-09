@@ -14,7 +14,7 @@ from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.core.binary import GenericBinary
 from ofrak.core.filesystem import FilesystemRoot, File, Folder
-from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
+from ofrak.core.magic import MagicMimePattern, MagicDescriptionPattern
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.model.resource_model import index
@@ -336,5 +336,5 @@ class ISO9660Packer(Packer[None]):
             resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
 
 
-MagicMimeIdentifier.register(ISO9660Image, "application/x-iso9660-image")
-MagicDescriptionIdentifier.register(ISO9660Image, lambda s: s.startswith("ISO 9660 CD"))
+MagicMimePattern.register(ISO9660Image, "application/x-iso9660-image")
+MagicDescriptionPattern.register(ISO9660Image, lambda s: s.startswith("ISO 9660 CD"))
