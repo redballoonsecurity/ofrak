@@ -43,6 +43,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Fix unintentional ignoring of cpio errors introduced in [#486](https://github.com/redballoonsecurity/ofrak/pull/486) ([#555](https://github.com/redballoonsecurity/ofrak/pull/555]))
 - `Data` resource attribute always corresponds to value of `Resource.get_data_range_within_root` ([#559](https://github.com/redballoonsecurity/ofrak/pull/559))
 - Fixed endianness issue in DTB raw byte identifier ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
+- Fixed bugs with PJSON serialization for some component configs in the front end ([#437](https://github.com/redballoonsecurity/ofrak/pull/437))
 
 ### Changed
 - By default, the ofrak log is now `ofrak-YYYYMMDDhhmmss.log` rather than just `ofrak.log` and the name can be specified on the command line ([#480](https://github.com/redballoonsecurity/ofrak/pull/480))
