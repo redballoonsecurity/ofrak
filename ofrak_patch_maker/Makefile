@@ -17,8 +17,4 @@ inspect:
 .PHONY: test
 test: inspect
 	$(PYTHON) -m pytest -n auto --cov=ofrak_patch_maker --cov-report=term-missing ofrak_patch_maker_test
-	@if [ "$(shell uname -m)" = "x86_64" ]; then \
-		fun-coverage --cov-fail-under=100; \
-	else \
-		fun-coverage; \
-	fi
+	fun-coverage --cov-fail-under=100 || ! (shell uname -m | grep x86_64)

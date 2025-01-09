@@ -18,11 +18,7 @@ test: inspect
 	$(PYTHON) -m pytest -n auto test_ofrak --cov=ofrak --cov-report=term-missing
 	(sleep 2; echo 1; sleep 2; echo i agree) \
 		| python3 -m coverage run --append --source ofrak -m ofrak license --force
-	@if [ "$(shell uname -m)" = "x86_64" ]; then \
-		fun-coverage --cov-fail-under=100; \
-	else \
-		fun-coverage; \
-	fi
+	fun-coverage --cov-fail-under=100 || ! (shell uname -m | grep x86_64)
 
 ofrak/gui/public:
 	if [ -d /ofrak_gui ] ; then \

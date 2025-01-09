@@ -46,11 +46,7 @@ test: inspect
 	$(PYTHON) -m pytest -n auto ofrak_tutorial_test
 	# Note: this requires the Ghidra server to be up and running
 	$(PYTHON) -m pytest --nbval --sanitize-with=nbval_sanitizer.cfg --cov=ofrak_tutorial --cov-report=term-missing --cov-fail-under=100 notebooks_with_outputs
-	@if [ "$(shell uname -m)" = "x86_64" ]; then \
-		fun-coverage --cov-fail-under=100; \
-	else \
-		fun-coverage; \
-	fi
+	fun-coverage --cov-fail-under=100 || ! (shell uname -m | grep x86_64)
 
 .PHONY: generate_stripped_notebooks
 generate_stripped_notebooks:

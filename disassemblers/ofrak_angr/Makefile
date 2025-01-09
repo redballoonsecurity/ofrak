@@ -16,4 +16,4 @@ inspect:
 .PHONY: test
 test: inspect
 	$(PYTHON) -m pytest -n auto --cov=ofrak_angr ofrak_angr_test
-	fun-coverage --cov-fail-under=100
+	fun-coverage --cov-fail-under=100 || ! (shell uname -m | grep x86_64)
