@@ -36,7 +36,7 @@ setuptools.setup(
     packages=setuptools.find_packages(exclude=["ofrak_angr_test", "ofrak_angr_test.*"]),
     package_data={"ofrak_angr": ["py.typed"]},
     install_requires=[
-        "ofrak",
+        "ofrak[test]>=3.3.0rc0",
     ]
     + read_requirements("requirements.txt"),
     extras_require={

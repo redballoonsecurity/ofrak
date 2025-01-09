@@ -34,7 +34,7 @@ setuptools.setup(
     version="1.0.0",
     packages=setuptools.find_packages(exclude=["ofrak_capstone_test", "ofrak_capstone_test.*"]),
     package_data={"ofrak_capstone": ["py.typed"]},
-    install_requires=["ofrak"] + read_requirements("requirements.txt"),
+    install_requires=["ofrak>=3.3.0rc0"] + read_requirements("requirements.txt"),
     extras_require={
         "test": [
             "fun-coverage==0.2.0",
