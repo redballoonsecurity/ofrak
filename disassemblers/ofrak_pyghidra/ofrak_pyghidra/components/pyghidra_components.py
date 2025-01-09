@@ -9,6 +9,7 @@ from ofrak_cached_disassembly.components.cached_disassembly_unpacker import (
     CachedComplexBlockUnpacker,
     CachedBasicBlockUnpacker,
     CachedCodeRegionModifier,
+    CachedDecompilationAnalyzer,
 )
 from ofrak_pyghidra.standalone.pyghidra_analysis import unpack
 
@@ -96,3 +97,16 @@ class PyGhidraComplexBlockUnpacker(CachedComplexBlockUnpacker):
 
 class PyGhidraBasicBlockUnpacker(CachedBasicBlockUnpacker):
     id = b"PyGhidraBasicBlockUnpacker"
+
+
+class PyGhidraDecompilationAnalyzer(CachedDecompilationAnalyzer):
+    id = b"PyGhidraDecompilationAnalyzer"
+
+    async def analyze(self, resource: Resource, config=None):
+        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(Program))
+        if not self.analysis_store.get_analysis(program_r.get_id())["metadata"]["decompiled"]:
+            with TemporaryDirectory() as tempdir:
+                program_file = os.path.join(tempdir, "program")
+                await program_r.flush_data_to_disk(program_file)
+                self.analysis_store.store_analysis(program_r.get_id(), unpack(program_file, True))
+        return await super().analyze(resource, config)
