@@ -25,7 +25,6 @@ ARM32_INSTRUCTION_MODIFICATION_TEST_CASES = [
             (Instruction,),
             (
                 AttributesType[Instruction](
-                    "ldrsh.w r3, [r7,#0x1C]",
                     "ldrsh.w",
                     "r3, [r7,#0x1C]",
                     InstructionSetMode.NONE,
@@ -55,7 +54,6 @@ ARM32_INSTRUCTION_MODIFICATION_TEST_CASES = [
             (Instruction,),
             (
                 AttributesType[Instruction](
-                    "add r2, r3, 1",
                     "add",
                     "r2, r3, 1",
                     InstructionSetMode.THUMB,
@@ -85,7 +83,6 @@ ARM32_INSTRUCTION_MODIFICATION_TEST_CASES = [
             (Instruction,),
             (
                 AttributesType[Instruction](
-                    "add r2, r3, 1",
                     "add",
                     "r2, r3, 1",
                     InstructionSetMode.NONE,

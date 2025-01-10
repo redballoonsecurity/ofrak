@@ -52,7 +52,6 @@ def mock_instruction():
                 0x4,
             ),
             AttributesType[Instruction](
-                "add r1, r2, r3",
                 "add",
                 "r1, r2, r3",
                 InstructionSetMode.NONE,
@@ -67,7 +66,6 @@ def mock_instruction_view():
     return Instruction(
         0x100,
         0x4,
-        "add r1, r2, r3",
         "add",
         "r1, r2, r3",
         InstructionSetMode.NONE,
@@ -212,7 +210,6 @@ async def test_AttributesType():
 
     # With a type parameter, the constructor of an actual attribute is used
     _ = AttributesType[Instruction](
-        "add r1, r2, r3",
         "add",
         "r1, r2, r3",
         InstructionSetMode.NONE,
@@ -232,7 +229,7 @@ async def instr_view(ofrak_context: OFRAKContext):
         b"\x00" * 4,
         (Instruction,),
     )
-    instr_r.add_view(Instruction(0x100, 0x4, "", "", "", InstructionSetMode.NONE))
+    instr_r.add_view(Instruction(0x100, 0x4, "", "", InstructionSetMode.NONE))
     instr_r.add_attributes(
         ProgramAttributes(
             InstructionSet.ARM,
@@ -268,9 +265,7 @@ async def test_modifier_updates_view(instr_view: Instruction):
 
 
 async def test_save_updates_view(instr_view: Instruction):
-    instr_view.resource.add_view(
-        Instruction(0x100, 0x4, "sub r4, r5", "sub", "r4, r5", InstructionSetMode.NONE)
-    )
+    instr_view.resource.add_view(Instruction(0x100, 0x4, "sub", "r4, r5", InstructionSetMode.NONE))
     await instr_view.resource.save()
 
     assert instr_view.mnemonic == "sub"
