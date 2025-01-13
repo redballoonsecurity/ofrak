@@ -19,11 +19,11 @@ from ofrak_type.range import Range
 async def resource_under_test(ofrak_context: OFRAKContext) -> Resource:
     resource = await ofrak_context.create_root_resource(
         "mock_memory_region",
-        b"\xff" * 0x100,
+        b"\xff" * 0x110,
         (Program,),
     )
     memory_region = await resource.create_child_from_view(
-        MemoryRegion(0, 0x100), data_range=Range(0, 0x100)
+        MemoryRegion(0x10, 0x100), data_range=Range(0x10, 0x110)
     )
     await resource.save()
     await memory_region.save()
@@ -63,11 +63,12 @@ async def test_partial_free_modifier(resource_under_test: Resource):
     """
     Test that the PartialFreeSpaceModifier returns expected results.
     """
-    partial_start_offset = 4
-    partial_end_offset = 10
-    parent = await resource_under_test.get_parent()
+    partial_start_offset = 0x14
+    partial_end_offset = 0x1A
     data_length = await resource_under_test.get_data_length()
-    range_to_remove = Range.from_size(4, data_length - 4 - 10)
+    range_to_remove = Range.from_size(
+        partial_start_offset, data_length - partial_start_offset - partial_end_offset
+    )
     config = PartialFreeSpaceModifierConfig(
         MemoryPermissions.RX,
         range_to_remove=range_to_remove,
@@ -82,11 +83,12 @@ async def test_partial_free_modifier(resource_under_test: Resource):
     assert free_space_data == (b"\x00" * (range_to_remove.length() - len(config.stub)))
 
     # Assert stub is injected
-    memory_region_data = await resource_under_test.get_data()
-    assert (
-        memory_region_data[partial_start_offset : partial_start_offset + len(config.stub)]
-        == config.stub
+    memory_region_view = await resource_under_test.view_as(MemoryRegion)
+    start_offset_in_region = memory_region_view.get_offset_in_self(partial_start_offset)
+    memory_region_stub_data = await resource_under_test.get_data(
+        Range.from_size(start_offset_in_region, len(config.stub))
     )
+    assert memory_region_stub_data == config.stub
 
 
 async def test_free_space_modifier(resource_under_test: Resource):
