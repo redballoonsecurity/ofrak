@@ -83,17 +83,7 @@ setuptools.setup(
     + read_requirements("requirements.txt"),
     extras_require={
         "docs": read_requirements("requirements-docs.txt"),
-        "test": [
-            "importlib-resources",  # Needed because of https://github.com/redballoonsecurity/ofrak/issues/398
-            "ofrak_angr~=1.0",
-            # Running the tests requires this version of capstone.
-            #  If building a Docker image, it should already be installed on the system.
-            #  If you are running the tests in another environment, you will need to make sure
-            #  that this version is installed from GitHub, since it depends on ofrak==3.3.0rc0
-            #  and neither of these are yet released on PyPI.
-            # "ofrak_capstone>=1.1.0rc0",
-        ]
-        + read_requirements("requirements-test.txt"),
+        "test": read_requirements("requirements-test.txt"),
         "non-pypi": read_requirements("requirements-non-pypi.txt"),
     },
     author="Red Balloon Security",
