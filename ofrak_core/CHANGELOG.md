@@ -64,6 +64,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   - Update registered identifiers to make use of new `MagicIdentifier` for following resource tags: `Apk`, `Bzip2Data`, `CpioFilesystem`, `DeviceTreeBlob`, `Elf`, `Ext2Filesystem`, `Ext3Filesystem`, `Ext4Filesystem`, `GzipData`, `ISO9660Image`, `Jffs2Filesystem`, `LzmaData`, `XzData`, `LzoData`, `OpenWrtTrx`, `Pe`, `RarArchive`, `SevenZFilesystem`, `SquashfsFilesystem`, `TarArchive`, `Ubi`, `Ubifs`, `Uf2File`, `UImage`, `ZipArchive`, `ZlibData`, `ZstdData`
 - Update `Instruction.get_assembly` to by synchronous ([#539](https://github.com/redballoonsecurity/ofrak/issues/539))
 
+### Deprecated
+- `Resource.flush_to_disk` deprecated in favor of `Resource.flush_data_to_disk`. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373), [#567](https://github.com/redballoonsecurity/ofrak/pull/568))
+
 ### Removed
 - Removed `Instruction.disassembly` from `Instruction` class: use `Instruction.get_assembly()` instead ([#539](https://github.com/redballoonsecurity/ofrak/issues/539))
 
