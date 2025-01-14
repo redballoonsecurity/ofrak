@@ -18,12 +18,12 @@ from ofrak_type.range import Range
 @pytest.fixture
 async def resource_under_test(ofrak_context: OFRAKContext) -> Resource:
     resource = await ofrak_context.create_root_resource(
-        "mock_memory_region",
-        b"\xff" * 0x110,
+        "mock_program",
+        b"\xff" * 0x100,
         (Program,),
     )
     memory_region = await resource.create_child_from_view(
-        MemoryRegion(0x10, 0x100), data_range=Range(0x10, 0x110)
+        MemoryRegion(0x100, 0xF0), data_range=Range(0x10, 0x100)
     )
     await resource.save()
     await memory_region.save()
@@ -37,7 +37,9 @@ async def dataless_resource_under_test(ofrak_context: OFRAKContext) -> Resource:
         b"",
         (Program,),
     )
-    memory_region = await resource.create_child_from_view(MemoryRegion(0x0, 0x100), data_range=None)
+    memory_region = await resource.create_child_from_view(
+        MemoryRegion(0x100, 0xF0), data_range=None
+    )
     await resource.save()
     await memory_region.save()
     return memory_region
@@ -63,12 +65,9 @@ async def test_partial_free_modifier(resource_under_test: Resource):
     """
     Test that the PartialFreeSpaceModifier returns expected results.
     """
-    partial_start_offset = 0x14
-    partial_end_offset = 0x1A
-    data_length = await resource_under_test.get_data_length()
-    range_to_remove = Range.from_size(
-        partial_start_offset, data_length - partial_start_offset - partial_end_offset
-    )
+    partial_start_address = 0x104
+    partial_end_address = 0x10A
+    range_to_remove = Range(partial_start_address, partial_end_address)
     config = PartialFreeSpaceModifierConfig(
         MemoryPermissions.RX,
         range_to_remove=range_to_remove,
@@ -84,7 +83,7 @@ async def test_partial_free_modifier(resource_under_test: Resource):
 
     # Assert stub is injected
     memory_region_view = await resource_under_test.view_as(MemoryRegion)
-    start_offset_in_region = memory_region_view.get_offset_in_self(partial_start_offset)
+    start_offset_in_region = memory_region_view.get_offset_in_self(partial_start_address)
     memory_region_stub_data = await resource_under_test.get_data(
         Range.from_size(start_offset_in_region, len(config.stub))
     )
