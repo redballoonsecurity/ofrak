@@ -1,0 +1,18 @@
+registry: "redballoonsecurity/ofrak"
+base_image_name: "angr-ghidra-base"
+image_name: "angr-ghidra"
+packages_paths:
+  [
+    "ofrak_type",
+    "ofrak_io",
+    "ofrak_patch_maker",
+    "ofrak_core",
+    "disassemblers/ofrak_capstone",
+    "disassemblers/ofrak_angr",
+    "disassemblers/ofrak_ghidra",
+    "frontend",
+  ]
+entrypoint: |
+    nginx \
+      & python3 -m ofrak_ghidra.server start \
+      & python3 -m ofrak gui -H 0.0.0.0 -p 8877 --backend ghidra
