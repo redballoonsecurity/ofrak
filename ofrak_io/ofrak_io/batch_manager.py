@@ -91,7 +91,7 @@ class _BatchManagerImplementation(BatchManagerInterface[Request, Result]):
         current_batch.add_request(request)
         # Gives self._handler_loop_task a chance to raise its errors
         done, _ = await asyncio.wait(
-            (current_batch.result(request), self._handler_loop_task),
+            (asyncio.ensure_future(current_batch.result(request)), self._handler_loop_task),
             return_when=asyncio.FIRST_COMPLETED,
         )
         return next(iter(done)).result()
