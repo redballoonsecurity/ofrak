@@ -7,7 +7,9 @@ install: ofrak/gui/public
 
 .PHONY: develop
 develop: ofrak/gui/public
-	$(PIP) install -e .[docs,test] --config-settings editable_mode=compat
+	# Legacy-edinable is needed to allow mypy to find packages.
+	# See https://github.com/python/mypy/issues/13392
+	SETUPTOOLS_ENABLE_FEATURES="legacy-editable" $(PIP) install -e .[docs,test]
 
 .PHONY: inspect
 inspect:
