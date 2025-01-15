@@ -50,8 +50,8 @@ jobs:
           cd frontend
           make check
 
-  ofrak-dev:
-    name: Test all OFRAK components
+  ofrak-ghidra:
+    name: Test main OFRAK components
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
@@ -62,11 +62,11 @@ jobs:
           python-version: '3.7'
           cache: pip
           cache-dependency-path: '**/setup.py'
-      - name: Build Dev image
+      - name: Build Ghidra image
         run: |
           python3 -m pip install PyYAML
           python3 build_image.py \
-            --config ofrak-dev.yml \
+            --config ofrak-ghidra.yml \
             --base \
             --finish \
             --cache-from redballoonsecurity/ofrak/core-dev-base:latest
@@ -77,7 +77,7 @@ jobs:
             --rm \
             --entrypoint bash \
             --volume "$(pwd)":/ofrak \
-            redballoonsecurity/ofrak/dev:latest \
+            redballoonsecurity/ofrak/ghidra:latest \
             -c "cd /ofrak \
                 && mkdocs build --site-dir /tmp/docs"
       - name: Test components
@@ -86,10 +86,42 @@ jobs:
             --interactive \
             --rm \
             --entrypoint bash \
-            redballoonsecurity/ofrak/dev:latest \
+            redballoonsecurity/ofrak/ghidra:latest \
             -c "python -m ofrak_ghidra.server start \
                 && ofrak license --community --i-agree \
                 && make test"
+
+  ofrak-angr:
+    name: Test OFRAK angr and capstone components
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          lfs: true
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.7'
+          cache: pip
+          cache-dependency-path: '**/setup.py'
+      - name: Build angr image
+        run: |
+          python3 -m pip install PyYAML
+          python3 build_image.py \
+            --config ofrak-angr.yml \
+            --base \
+            --finish \
+            --cache-from redballoonsecurity/ofrak/core-dev-base:latest
+      - name: Test components
+        run: |
+          docker run \
+            --interactive \
+            --rm \
+            --entrypoint bash \
+            --volume "$(pwd)":/ofrak \
+            redballoonsecurity/ofrak/angr:latest \
+            -c "ofrak license --community --i-agree \
+              && make -C /ofrak_angr test \
+              && make -C /ofrak_capstone test"
 
   ofrak-tutorial:
     name: Test OFRAK examples and tutorial notebooks
