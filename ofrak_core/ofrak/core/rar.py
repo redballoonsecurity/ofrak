@@ -1,14 +1,16 @@
-import subprocess
-import tempfile
+import asyncio
+import tempfile312 as tempfile
 from dataclasses import dataclass
+from subprocess import CalledProcessError
 
 from ofrak.component.unpacker import Unpacker
 from ofrak.core.binary import GenericBinary
 from ofrak.core.filesystem import FilesystemRoot, File, Folder, SpecialFileType
 
-from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
-from ofrak.model.component_model import CC, ComponentExternalTool
+from ofrak.core.magic import MagicMimePattern, MagicDescriptionPattern
+from ofrak.model.component_model import ComponentExternalTool
 from ofrak.resource import Resource
+from ofrak.model.component_model import ComponentConfig
 
 UNAR = ComponentExternalTool(
     "unar",
@@ -28,27 +30,34 @@ class RarArchive(GenericBinary, FilesystemRoot):
 
 class RarUnpacker(Unpacker[None]):
     """
-    Unpack RAR archives using the free `unrar` tool.
+    Unpack RAR archives using the free `unar` tool.
     """
 
     targets = (RarArchive,)
     children = (File, Folder, SpecialFileType)
     external_dependencies = (UNAR,)
 
-    async def unpack(self, resource: Resource, config: CC):
-        with tempfile.NamedTemporaryFile(
-            suffix=".rar"
-        ) as temp_archive, tempfile.TemporaryDirectory() as temp_dir:
-            temp_archive.write(await resource.get_data())
-            temp_archive.flush()
+    async def unpack(self, resource: Resource, config: ComponentConfig = None):
+        async with resource.temp_to_disk(suffix=".rar") as temp_archive:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                cmd = [
+                    "unar",
+                    "-no-directory",
+                    "-no-recursion",
+                    temp_archive,
+                ]
+                proc = await asyncio.create_subprocess_exec(
+                    *cmd,
+                    cwd=temp_dir,
+                )
+                returncode = await proc.wait()
+                if proc.returncode:
+                    raise CalledProcessError(returncode=returncode, cmd=cmd)
 
-            command = ["unar", "-no-directory", "-no-recursion", temp_archive.name]
-            subprocess.run(command, cwd=temp_dir, check=True, capture_output=True)
-
-            rar_view = await resource.view_as(RarArchive)
-            await rar_view.initialize_from_disk(temp_dir)
+                rar_view = await resource.view_as(RarArchive)
+                await rar_view.initialize_from_disk(temp_dir)
 
 
-MagicMimeIdentifier.register(RarArchive, "application/x-rar-compressed")
-MagicMimeIdentifier.register(RarArchive, "application/vnd.rar")
-MagicDescriptionIdentifier.register(RarArchive, lambda s: "rar archive" in s.lower())
+MagicMimePattern.register(RarArchive, "application/x-rar-compressed")
+MagicMimePattern.register(RarArchive, "application/vnd.rar")
+MagicDescriptionPattern.register(RarArchive, lambda s: "rar archive" in s.lower())

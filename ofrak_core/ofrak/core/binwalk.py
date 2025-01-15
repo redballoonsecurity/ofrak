@@ -1,5 +1,4 @@
 import asyncio
-import tempfile
 from concurrent.futures.process import ProcessPoolExecutor
 from dataclasses import dataclass
 from typing import Dict
@@ -19,7 +18,6 @@ except ImportError:
     BINWALK_INSTALLED = False
 
 from ofrak.core.binary import GenericBinary
-from ofrak.core.filesystem import File
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceServiceInterface
@@ -33,7 +31,7 @@ class _BinwalkExternalTool(ComponentExternalTool):
             install_check_arg="",
         )
 
-    def is_tool_installed(self) -> bool:
+    async def is_tool_installed(self) -> bool:
         return BINWALK_INSTALLED
 
 
@@ -46,7 +44,7 @@ class BinwalkAttributes(ResourceAttributes):
 
 
 class BinwalkAnalyzer(Analyzer[None, BinwalkAttributes]):
-    targets = (GenericBinary, File)
+    targets = (GenericBinary,)
     outputs = (BinwalkAttributes,)
     external_dependencies = (BINWALK_TOOL,)
 
@@ -62,15 +60,11 @@ class BinwalkAnalyzer(Analyzer[None, BinwalkAttributes]):
     async def analyze(self, resource: Resource, config=None) -> BinwalkAttributes:
         if not BINWALK_INSTALLED:
             raise ComponentMissingDependencyError(self, BINWALK_TOOL)
-        with tempfile.NamedTemporaryFile() as temp_file:
-            data = await resource.get_data()
-            temp_file.write(data)
-            temp_file.flush()
-
+        async with resource.temp_to_disk() as temp_path:
             # Should errors be handled the way they are in the `DataSummaryAnalyzer`? Likely to be
             # overkill here.
             offsets = await asyncio.get_running_loop().run_in_executor(
-                self.pool, _run_binwalk_on_file, temp_file.name
+                self.pool, _run_binwalk_on_file, temp_path
             )
         return BinwalkAttributes(offsets)
 

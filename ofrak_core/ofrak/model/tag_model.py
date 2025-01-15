@@ -3,6 +3,8 @@ from typing import Iterable, List, Set, Tuple
 
 
 class ResourceTag(type):
+    all_tags: Set["ResourceTag"] = set()
+
     def __init__(cls, *args, **kwargs):
         super().__init__(*args, **kwargs)
         specificity = 0
@@ -10,6 +12,7 @@ class ResourceTag(type):
             specificity = max(specificity, base.tag_specificity())
 
         cls._specificity: int = specificity + 1
+        ResourceTag.all_tags.add(cls)
 
     def tag_specificity(cls) -> int:
         """

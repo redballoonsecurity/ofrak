@@ -1,15 +1,15 @@
+import asyncio
 import logging
 import os
-import subprocess
-import tempfile
+import tempfile312 as tempfile
 from dataclasses import dataclass
-
+from subprocess import CalledProcessError
 
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.resource import Resource
 from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
-from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
+from ofrak.core.magic import MagicMimePattern, MagicDescriptionPattern
 from ofrak.core.binary import GenericBinary
 
 from ofrak.model.component_model import ComponentExternalTool
@@ -51,15 +51,20 @@ class ZipUnpacker(Unpacker[None]):
 
     async def unpack(self, resource: Resource, config=None):
         zip_view = await resource.view_as(ZipArchive)
-        with tempfile.NamedTemporaryFile(suffix=".zip") as temp_archive:
-            temp_archive.write(await resource.get_data())
-            temp_archive.flush()
+        async with resource.temp_to_disk(suffix=".zip") as temp_path:
             with tempfile.TemporaryDirectory() as temp_dir:
-                subprocess.run(
-                    ["unzip", temp_archive.name, "-d", temp_dir],
-                    check=True,
-                    capture_output=True,
+                cmd = [
+                    "unzip",
+                    temp_path,
+                    "-d",
+                    temp_dir,
+                ]
+                proc = await asyncio.create_subprocess_exec(
+                    *cmd,
                 )
+                returncode = await proc.wait()
+                if proc.returncode:
+                    raise CalledProcessError(returncode=returncode, cmd=cmd)
                 await zip_view.initialize_from_disk(temp_dir)
 
 
@@ -77,13 +82,24 @@ class ZipPacker(Packer[None]):
         temp_archive = f"{flush_dir}.zip"
         cwd = os.getcwd()
         os.chdir(flush_dir)
-        subprocess.run(["zip", "-r", temp_archive, "."], check=True, capture_output=True)
+        cmd = [
+            "zip",
+            "-r",
+            temp_archive,
+            ".",
+        ]
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+        )
+        returncode = await proc.wait()
+        if proc.returncode:
+            raise CalledProcessError(returncode=returncode, cmd=cmd)
         os.chdir(cwd)
         with open(temp_archive, "rb") as fh:
             resource.queue_patch(Range(0, await zip_view.resource.get_data_length()), fh.read())
 
 
-MagicMimeIdentifier.register(ZipArchive, "application/zip")
-MagicDescriptionIdentifier.register(
+MagicMimePattern.register(ZipArchive, "application/zip")
+MagicDescriptionPattern.register(
     ZipArchive, lambda desc: any([("Zip archive data" in s) for s in desc.split(", ")])
 )

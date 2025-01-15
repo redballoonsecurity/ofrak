@@ -66,7 +66,6 @@ class ComponentTargetFilter(ComponentFilter):
         return f"ComponentTargetFilter({', '.join(t.__name__ for t in self.tags)})"
 
     def filter(self, components: Set[ComponentInterface]) -> Set[ComponentInterface]:
-
         return {c for c in components if any(t in c.targets for t in self.tags)}
 
 
@@ -85,7 +84,7 @@ class AnalyzerOutputFilter(ComponentFilter):
         def component_is_analyzer_with_outputs(c: ComponentInterface):
             if _isinstance(c, Analyzer):
                 analyzer_outputs = set(c.get_outputs_as_attribute_types())  # type: ignore
-                return not analyzer_outputs.isdisjoint(self.outputs)
+                return self.outputs.issubset(analyzer_outputs)
             return False
 
         return {c for c in components if component_is_analyzer_with_outputs(c)}

@@ -31,9 +31,10 @@ await ofrak_fw_resource.run(SegmentInjectorModifier, SegmentInjectorModifierConf
 ```
 """
 import logging
+import itertools
 import os
 import tempfile
-from typing import Dict, Iterable, List, Mapping, Optional, Tuple
+from typing import Dict, Iterable, List, Mapping, Optional, Set, Tuple
 from warnings import warn
 
 from immutabledict import immutabledict
@@ -45,12 +46,14 @@ from ofrak_patch_maker.model import (
     PatchRegionConfig,
     LinkedExecutable,
     PatchMakerException,
+    SourceFileType,
 )
 from ofrak_patch_maker.toolchain.abstract import Toolchain
 from ofrak_patch_maker.toolchain.model import (
     Segment,
 )
 from ofrak_type.memory_permissions import MemoryPermissions
+from ofrak_type.symbol_type import LinkableSymbolType
 
 
 class PatchMaker:
@@ -109,7 +112,7 @@ class PatchMaker:
 
         self.logger = logger
 
-    def _extract_symbols(self, path: str) -> Dict[str, int]:
+    def _extract_symbols(self, path: str) -> Dict[str, Tuple[int, LinkableSymbolType]]:
         """
         :param path: path to a program or library binary with symbols
 
@@ -145,24 +148,20 @@ class PatchMaker:
 
         segments = self._toolchain.get_bin_file_segments(object_path)
         symbols = self._toolchain.get_bin_file_symbols(object_path)
-        bss_size_required = 0
+        # Symbols defined in another file which may or may not be another patch source file or the target binary.
+        relocation_symbols = self._toolchain.get_bin_file_rel_symbols(object_path)
+
         segment_map = {}
         for s in segments:
-            if self._toolchain.keep_section(s.segment_name):
+            if self._toolchain.keep_segment(s):
                 segment_map[s.segment_name] = s
-            if s.segment_name.startswith(".bss"):
-                if s.length > 0 and self._toolchain._config.no_bss_section:
-                    raise PatchMakerException(
-                        f"{s.segment_name} found but `no_bss_section` is set in the provided ToolchainConfig!"
-                    )
-                bss_size_required += s.length
 
         return AssembledObject(
             object_path,
             self._toolchain.file_format,
             immutabledict(segment_map),
             immutabledict(symbols),
-            bss_size_required,
+            immutabledict(relocation_symbols),
         )
 
     @staticmethod
@@ -240,36 +239,79 @@ class PatchMaker:
         out_dir = os.path.join(self.build_dir, name + "_bom_files")
         os.mkdir(out_dir)
 
-        for c_file in list(filter(lambda x: x.endswith(".c"), source_list)):
-            assembled_object_path = self._toolchain.compile(c_file, header_dirs, out_dir=out_dir)
-            assembled_object = self.prepare_object(assembled_object_path)
-            object_map.update({c_file: assembled_object})
+        c_files = list(filter(lambda x: x.endswith(".c"), source_list))
+        c_args = zip(
+            c_files,
+            itertools.repeat(header_dirs),
+            itertools.repeat(out_dir),
+            itertools.repeat(SourceFileType.C),
+        )
+        result = itertools.starmap(self._create_object_file, c_args)
+        for r in result:
+            object_map.update(r)
 
-        for asm_file in list(filter(lambda x: x.endswith(".as") or x.endswith(".S"), source_list)):
-            original_asm_file = asm_file
-            if asm_file.endswith(".S"):
-                asm_file = self._toolchain.preprocess(asm_file, header_dirs, out_dir=out_dir)
-            assembled_object_path = self._toolchain.assemble(asm_file, header_dirs, out_dir=out_dir)
-            assembled_object = self.prepare_object(assembled_object_path)
-            object_map.update({original_asm_file: assembled_object})
+        asm_files = list(filter(lambda x: x.endswith(".as") or x.endswith(".S"), source_list))
+        asm_args = zip(
+            asm_files,
+            itertools.repeat(header_dirs),
+            itertools.repeat(out_dir),
+            itertools.repeat(SourceFileType.ASM),
+        )
+        result = itertools.starmap(self._create_object_file, asm_args)
+        for r in result:
+            object_map.update(r)
 
         # Compute the required size for the .bss segment
-        bss_size_required = 0
-        symbols: Dict[str, int] = {}
-        for o in object_map.values():
-            bss_size_required += o.bss_size_required
-            symbols.update(o.symbols)
-
-        if entry_point_name and entry_point_name not in symbols:
-            raise PatchMakerException(f"Entry point {entry_point_name} not found in object files")
+        unresolved_sym_set = self._resolve_symbols_within_BOM(object_map, entry_point_name)
 
         return BOM(
             name,
             immutabledict(object_map),
-            bss_size_required,
+            unresolved_sym_set,
+            None,
             entry_point_name,
             self._toolchain.segment_alignment,
         )
+
+    def _create_object_file(
+        self,
+        file: str,
+        header_dirs: List[str],
+        out_dir: str,
+        file_type: SourceFileType,
+    ) -> Mapping[str, AssembledObject]:
+        original_file = file
+        if file.endswith(".S"):
+            file = self._toolchain.preprocess(file, header_dirs, out_dir=out_dir)
+        if file_type is SourceFileType.C:
+            object_path = self._toolchain.compile(file, header_dirs, out_dir=out_dir)
+        elif file_type is SourceFileType.ASM:
+            object_path = self._toolchain.assemble(file, header_dirs, out_dir=out_dir)
+        else:
+            self.logger.error(f"Source file type '{file_type}' invalid, unable to prepare object.")
+        obj = self.prepare_object(object_path)
+        return {original_file: obj}
+
+    def _resolve_symbols_within_BOM(
+        self, object_map: Dict[str, AssembledObject], entry_point_name: Optional[str] = None
+    ) -> Set[str]:
+        symbols: Dict[str, Tuple[int, LinkableSymbolType]] = {}
+        unresolved_symbols: Dict[str, Tuple[int, LinkableSymbolType]] = {}
+        for o in object_map.values():
+            symbols.update(o.strong_symbols)
+            # Resolve symbols defined within different patch files within the same patch BOM
+            for sym, values in o.unresolved_symbols.items():
+                # Have not already seen this symbol in a previous patch object
+                if sym not in symbols.keys():
+                    unresolved_symbols.update({sym: values})
+
+        unresolved_sym_set: Set[str]
+        unresolved_sym_set = set(unresolved_symbols.keys()) - set(symbols.keys())
+
+        if entry_point_name and entry_point_name not in symbols:
+            raise PatchMakerException(f"Entry point {entry_point_name} not found in object files")
+
+        return unresolved_sym_set
 
     def create_unsafe_bss_segment(self, vm_address: int, size: int) -> Segment:
         """
@@ -283,6 +325,13 @@ class PatchMaker:
 
         :return: a [Segment][ofrak_patch_maker.toolchain.model.Segment] object.
         """
+
+        warn(
+            "Reserving .bss space at the FEM linking step is deprecated! Run "
+            "FreeSpaceModifier with data_range=None before allocating the BOM instead.",
+            category=DeprecationWarning,
+        )
+
         segment = Segment(
             segment_name=".bss",
             vm_address=vm_address,
@@ -290,6 +339,7 @@ class PatchMaker:
             is_entry=False,
             length=size,
             access_perms=MemoryPermissions.RW,
+            is_bss=True,
         )
         align = self._toolchain.segment_alignment
         if vm_address % align != 0:
@@ -322,7 +372,7 @@ class PatchMaker:
         architecture-specific choices here.
 
         :param boms: BOMs and their corresponding target memory descriptions
-        :param bss_segment: A `.bss` segment, if any
+        :param bss_segment: A `.bss` segment, if any. DEPRECATED.
         :param additional_symbols: Additional symbols to provide to this patch, if needed
 
         :return: path to `.ld` script file
@@ -336,8 +386,28 @@ class PatchMaker:
                 for segment in region_config.segments[obj.path]:
                     # Skip the segments we're not interested in.
                     # We have to create regions for 0-length segments to keep the linker happy!
-                    if not self._toolchain.keep_section(segment.segment_name):
+                    if not self._toolchain.keep_segment(segment):
                         continue
+
+                    if segment.vm_address == Segment.BSS_LEGACY_VADDR:
+                        if not segment.is_bss:
+                            raise ValueError(
+                                "BSS_LEGACY_VADDR only supported for legacy allocation of .bss segments"
+                            )
+
+                        warn(
+                            "Reserving .bss space at the FEM linking step is deprecated! Run "
+                            "FreeSpaceModifier with data_range=None before allocating the BOM instead.",
+                            category=DeprecationWarning,
+                        )
+
+                        if not bss_segment:
+                            raise PatchMakerException(
+                                f"BOM {bom.name} requires bss but no bss Segment allocation provided"
+                            )
+                        bss_size_required += segment.length
+                        continue
+
                     memory_region, memory_region_name = self._toolchain.ld_generate_region(
                         obj.path,
                         segment.segment_name,
@@ -347,16 +417,9 @@ class PatchMaker:
                     )
                     memory_regions.append(memory_region)
                     section = self._toolchain.ld_generate_section(
-                        obj.path, segment.segment_name, memory_region_name
+                        obj.path, segment.segment_name, memory_region_name, segment.is_bss
                     )
                     sections.append(section)
-
-            if bom.bss_size_required > 0:
-                if not bss_segment:
-                    raise PatchMakerException(
-                        f"BOM {bom.name} requires bss but no bss Segment allocation provided"
-                    )
-                bss_size_required += bom.bss_size_required
 
             if self._toolchain.is_relocatable():
                 (
@@ -417,7 +480,7 @@ class PatchMaker:
 
         :param boms:
         :param exec_path:
-        :param unsafe_bss_segment:
+        :param unsafe_bss_segment: DEPRECATED
         :param additional_symbols:
 
         :raises PatchMakerException: for invalid user inputs

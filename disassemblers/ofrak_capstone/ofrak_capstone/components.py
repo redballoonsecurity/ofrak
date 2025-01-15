@@ -60,7 +60,6 @@ class CapstoneBasicBlockUnpacker(BasicBlockUnpacker):
             instruction_view = Instruction(
                 disassem_result.address,
                 disassem_result.size,
-                f"{disassem_result.mnemonic} {disassem_result.operands}",
                 disassem_result.mnemonic,
                 disassem_result.operands,
                 bb_view.mode,
@@ -125,7 +124,6 @@ class CapstoneInstructionAnalyzer(InstructionAnalyzer):
         return Instruction(
             disassem_result.address,
             disassem_result.size,
-            f"{disassem_result.mnemonic} {disassem_result.operands}",
             disassem_result.mnemonic,
             disassem_result.operands,
             mode,
@@ -143,7 +141,7 @@ class CapstoneInstructionRegisterUsageAnalyzer(InstructionRegisterUsageAnalyzer)
         super().__init__(resource_factory, data_service, resource_service)
         self._disassembler_service = disassembler_service
 
-    async def analyze(self, resource: Resource, config: None) -> RegisterUsage:
+    async def analyze(self, resource: Resource, config=None) -> RegisterUsage:
         program_attrs = await resource.analyze(ProgramAttributes)
 
         instruction = await resource.view_as(Instruction)

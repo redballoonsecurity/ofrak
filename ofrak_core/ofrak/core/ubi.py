@@ -1,18 +1,19 @@
-import subprocess
-import tempfile
+import asyncio
+import tempfile312 as tempfile
 from dataclasses import dataclass
 import logging
 from typing import List, Tuple
 import os
+from subprocess import CalledProcessError
 
+from ofrak.core import RawMagicPattern
 from ofrak.model.tag_model import ResourceTag
 
-from ofrak import Identifier, Analyzer
+from ofrak import Analyzer
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.resource import Resource
-from ofrak.core.filesystem import File
 from ofrak.core.binary import GenericBinary
 from ofrak.resource_view import ResourceView
 
@@ -47,7 +48,7 @@ class _PyLzoTool(ComponentExternalTool):
             install_check_arg="",
         )
 
-    def is_tool_installed(self) -> bool:
+    async def is_tool_installed(self) -> bool:
         try:
             import lzo  # type: ignore
 
@@ -56,7 +57,7 @@ class _PyLzoTool(ComponentExternalTool):
             return False
 
 
-PY_LZO_TOOL = _PyLzoTool()
+PY_LZO_TOOL: _PyLzoTool = _PyLzoTool()  # For some reason mypy needs this type annotation
 
 
 @dataclass
@@ -130,15 +131,11 @@ class UbiAnalyzer(Analyzer[None, Ubi]):
 
     async def analyze(self, resource: Resource, config=None) -> Ubi:
         # Flush to disk
-        with tempfile.NamedTemporaryFile() as temp_file:
-            resource_data = await resource.get_data()
-            temp_file.write(resource_data)
-            temp_file.flush()
-
+        async with resource.temp_to_disk() as temp_path:
             ubi_obj = ubireader_ubi(
                 ubi_io.ubi_file(
-                    temp_file.name,
-                    block_size=guess_peb_size(temp_file.name),
+                    temp_path,
+                    block_size=guess_peb_size(temp_path),
                     start_offset=0,
                     end_offset=None,
                 )
@@ -196,13 +193,18 @@ class UbiUnpacker(Unpacker[None]):
                 temp_file.flush()
 
             # extract temp_file to temp_flush_dir
-            command = [
+            cmd = [
                 "ubireader_extract_images",
                 "-o",
                 f"{temp_flush_dir}/output",
                 temp_file.name,
             ]
-            subprocess.run(command, check=True, capture_output=True)
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+            )
+            returncode = await proc.wait()
+            if proc.returncode:
+                raise CalledProcessError(returncode=returncode, cmd=cmd)
 
             ubi_view = await resource.view_as(Ubi)
 
@@ -235,19 +237,8 @@ class UbiPacker(Packer[None]):
     async def pack(self, resource: Resource, config=None) -> None:
         ubi_view = await resource.view_as(Ubi)
 
-        # with tempfile.NamedTemporaryFile(mode="rb") as temp:
         with tempfile.TemporaryDirectory() as temp_flush_dir:
             ubi_volumes = await resource.get_children()
-            command = [
-                "ubinize",
-                "-p",
-                str(ubi_view.peb_size),
-                "-m",
-                str(ubi_view.min_io_size),
-                "-o",
-                f"{temp_flush_dir}/output.ubi",
-                f"{temp_flush_dir}/config.ini",
-            ]
             ubinize_ini_entries = []
 
             for volume in ubi_volumes:
@@ -261,7 +252,7 @@ class UbiPacker(Packer[None]):
                     volume_path = (
                         f"{temp_flush_dir}/input-{ubi_view.image_seq}_vol-{volume_view.name}.ubivol"
                     )
-                    await volume.flush_to_disk(volume_path)
+                    await volume.flush_data_to_disk(volume_path)
                 else:
                     volume_path = None
                     volume_size = (volume_view.peb_count - 1) * ubi_view.peb_size
@@ -282,7 +273,22 @@ vol_name={volume_view.name}
             with open(f"{temp_flush_dir}/config.ini", "w") as config_ini_file:
                 config_ini_file.write("\n".join(ubinize_ini_entries))
 
-            subprocess.run(command, check=True, capture_output=True)
+            cmd = [
+                "ubinize",
+                "-p",
+                str(ubi_view.peb_size),
+                "-m",
+                str(ubi_view.min_io_size),
+                "-o",
+                f"{temp_flush_dir}/output.ubi",
+                f"{temp_flush_dir}/config.ini",
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+            )
+            returncode = await proc.wait()
+            if proc.returncode:
+                raise CalledProcessError(returncode=returncode, cmd=cmd)
 
             with open(f"{temp_flush_dir}/output.ubi", "rb") as output_f:
                 packed_blob_data = output_f.read()
@@ -290,18 +296,10 @@ vol_name={volume_view.name}
             resource.queue_patch(Range(0, await resource.get_data_length()), packed_blob_data)
 
 
-class UbiIdentifier(Identifier):
-    """
-    Check the first four bytes of a resource and tag the resource as Ubi if it matches the file magic.
-    """
+def match_ubi_magic(data: bytes) -> bool:
+    if len(data) < 4:
+        return False
+    return data[:4] in [UBI_EC_HDR_MAGIC, UBI_VID_HDR_MAGIC]
 
-    targets = (File, GenericBinary)
 
-    external_dependencies = (PY_LZO_TOOL,)
-
-    async def identify(self, resource: Resource, config=None) -> None:
-        datalength = await resource.get_data_length()
-        if datalength >= 4:
-            data = await resource.get_data(Range(0, 4))
-            if data in [UBI_EC_HDR_MAGIC, UBI_VID_HDR_MAGIC]:
-                resource.add_tag(Ubi)
+RawMagicPattern.register(Ubi, match_ubi_magic)

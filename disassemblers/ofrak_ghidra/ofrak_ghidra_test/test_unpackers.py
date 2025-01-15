@@ -1,5 +1,5 @@
 import os
-from typing import Tuple
+from typing import Tuple, Dict
 
 import pytest
 
@@ -16,6 +16,7 @@ from pytest_ofrak.patterns.code_region_unpacker import (
 )
 from pytest_ofrak.patterns.complex_block_unpacker import (
     ComplexBlockUnpackerUnpackAndVerifyPattern,
+    ComplexBlockUnpackerTestCase,
 )
 
 ASSETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
@@ -26,7 +27,27 @@ class TestGhidraCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
 
 
 class TestGhidraComplexBlockUnpackAndVerify(ComplexBlockUnpackerUnpackAndVerifyPattern):
-    pass
+    @pytest.fixture
+    async def expected_results(self, unpack_verify_test_case: ComplexBlockUnpackerTestCase) -> Dict:
+        if unpack_verify_test_case.binary_md5_digest == "fc7a6b95d993f955bd92f2bef2699dd0":
+            return self._fixup_test_case_for_pie(
+                unpack_verify_test_case.expected_results,
+                pie_base_vaddr=0x10000,
+            )
+
+        return unpack_verify_test_case.expected_results
+
+    @pytest.fixture
+    async def optional_results(self, unpack_verify_test_case: ComplexBlockUnpackerTestCase):
+        if unpack_verify_test_case.binary_md5_digest == "fc7a6b95d993f955bd92f2bef2699dd0":
+            return set(
+                self._fixup_test_case_for_pie(
+                    {vaddr: [] for vaddr in unpack_verify_test_case.optional_results},
+                    pie_base_vaddr=0x10000,
+                ).keys()
+            )
+
+        return unpack_verify_test_case.optional_results
 
 
 class TestGhidraBasicBlockUnpackAndVerify(BasicBlockUnpackerUnpackAndVerifyPattern):

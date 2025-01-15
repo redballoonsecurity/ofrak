@@ -3,8 +3,10 @@ ARG TARGETARCH
 RUN apt-get -y update && \
     apt-get -y install --no-install-recommends \
       build-essential \
+      cmake \
       cpio \
       git \
+      genisoimage \
       liblz4-dev \
       liblzo2-dev \
       libzstd-dev \
@@ -12,7 +14,6 @@ RUN apt-get -y update && \
       mtd-utils \
       pigz \
       zip \
-      qemu \
       qemu-user-static \
       u-boot-tools \
       unar \
@@ -22,7 +23,7 @@ RUN apt-get -y update && \
 RUN python3 -m pip install python-lzo
 
 # Install apktool and uber-apk-signer
-RUN apt-get -y update && apt-get -y install openjdk-11-jdk
+RUN apt-get -y update && apt-get -y install openjdk-17-jdk
 RUN wget https://raw.githubusercontent.com/iBotPeaches/Apktool/v2.3.3/scripts/linux/apktool -O /usr/local/bin/apktool && \
   wget https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.3.3.jar -O /usr/local/bin/apktool.jar && \
   wget https://github.com/patrickfav/uber-apk-signer/releases/download/v1.0.0/uber-apk-signer-1.0.0.jar -O /usr/local/bin/uber-apk-signer.jar && \
@@ -30,7 +31,7 @@ RUN wget https://raw.githubusercontent.com/iBotPeaches/Apktool/v2.3.3/scripts/li
 
 # Install official 7-zip
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
-  cd tmp && \
+  cd /tmp && \
   wget https://www.7-zip.org/a/7z2201-linux-arm64.tar.xz && \
   tar -xf 7z2201-linux-arm64.tar.xz && \
   mv 7zz /usr/local/bin && \
@@ -38,7 +39,7 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
 fi;
 
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
-  cd tmp && \
+  cd /tmp && \
   wget https://www.7-zip.org/a/7z2201-linux-x64.tar.xz && \
   tar -xf 7z2201-linux-x64.tar.xz && \
   mv 7zz /usr/local/bin && \
@@ -57,8 +58,13 @@ RUN cd /tmp && \
     cd /tmp && \
     rm -r squashfs-tools
 
-# Install binwalk
+# Install UEFIExtract (build from source, pinned to releae A68)
 RUN cd /tmp && \
-    git clone https://github.com/ReFirmLabs/binwalk && \
-    cd binwalk && \
-    python3 setup.py install
+    wget https://github.com/LongSoft/UEFITool/archive/refs/tags/A68.zip && \
+    unzip A68.zip && \
+    rm A68.zip && \
+    cd UEFITool-A68 && \
+    cmake UEFIExtract && \
+    make install && \
+    cd /tmp && \
+    rm -r UEFITool-A68

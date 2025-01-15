@@ -1,13 +1,13 @@
-import subprocess
-import tempfile
+import asyncio
 from dataclasses import dataclass
 from typing import Optional
+from subprocess import CalledProcessError
 
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.core.binary import GenericBinary
-from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
-from ofrak.model.component_model import CC, ComponentConfig, ComponentExternalTool
+from ofrak.core.magic import MagicMimePattern, MagicDescriptionPattern
+from ofrak.model.component_model import ComponentConfig, ComponentExternalTool
 from ofrak.resource import Resource
 from ofrak_type.range import Range
 
@@ -40,18 +40,16 @@ class ZstdUnpacker(Unpacker[None]):
     children = (GenericBinary,)
     external_dependencies = (ZSTD,)
 
-    async def unpack(self, resource: Resource, config: CC) -> None:
-        with tempfile.NamedTemporaryFile(suffix=".zstd") as compressed_file:
-            compressed_file.write(await resource.get_data())
-            compressed_file.flush()
-            output_filename = tempfile.mktemp()
+    async def unpack(self, resource: Resource, config: ComponentConfig = None) -> None:
+        cmd = ["zstd", "-d", "-k"]
+        proc = await asyncio.create_subprocess_exec(
+            *cmd, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE
+        )
+        result, _ = await proc.communicate(await resource.get_data())
+        if proc.returncode:
+            raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
 
-            command = ["zstd", "-d", "-k", compressed_file.name, "-o", output_filename]
-            subprocess.run(command, check=True)
-            with open(output_filename, "rb") as f:
-                result = f.read()
-
-            await resource.create_child(tags=(GenericBinary,), data=result)
+        await resource.create_child(tags=(GenericBinary,), data=result)
 
 
 class ZstdPacker(Packer[ZstdPackerConfig]):
@@ -69,25 +67,22 @@ class ZstdPacker(Packer[ZstdPackerConfig]):
         child_file = await zstd_view.get_child()
         uncompressed_data = await child_file.resource.get_data()
 
-        with tempfile.NamedTemporaryFile() as uncompressed_file:
-            uncompressed_file.write(uncompressed_data)
-            uncompressed_file.flush()
-            output_filename = tempfile.mktemp()
+        command = ["zstd", "-T0", f"-{config.compression_level}"]
+        if config.compression_level > 19:
+            command.append("--ultra")
+        proc = await asyncio.create_subprocess_exec(
+            *command, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE
+        )
+        result, _ = await proc.communicate(uncompressed_data)
+        if proc.returncode:
+            raise CalledProcessError(returncode=proc.returncode, cmd=command)
 
-            command = ["zstd", "-T0", f"-{config.compression_level}"]
-            if config.compression_level > 19:
-                command.append("--ultra")
-            command.extend([uncompressed_file.name, "-o", output_filename])
-            subprocess.run(command, check=True)
-            with open(output_filename, "rb") as f:
-                result = f.read()
-
-            compressed_data = result
-            original_size = await zstd_view.resource.get_data_length()
-            resource.queue_patch(Range(0, original_size), compressed_data)
+        compressed_data = result
+        original_size = await zstd_view.resource.get_data_length()
+        resource.queue_patch(Range(0, original_size), compressed_data)
 
 
-MagicMimeIdentifier.register(ZstdData, "application/x-zstd")
-MagicDescriptionIdentifier.register(
+MagicMimePattern.register(ZstdData, "application/x-zstd")
+MagicDescriptionPattern.register(
     ZstdData, lambda s: s.lower().startswith("zstandard compressed data")
 )

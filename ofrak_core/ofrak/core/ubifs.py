@@ -1,12 +1,14 @@
-import subprocess
-import tempfile
+import asyncio
+import tempfile312 as tempfile
 from dataclasses import dataclass
 import logging
+from subprocess import CalledProcessError
 
-from ofrak import Identifier, Analyzer
+from ofrak import Analyzer
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
-from ofrak.core import PY_LZO_TOOL
+from ofrak.core import RawMagicPattern
+from ofrak.core.ubi import PY_LZO_TOOL
 from ofrak.resource import Resource
 from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
 from ofrak.core.binary import GenericBinary
@@ -96,15 +98,11 @@ class UbifsAnalyzer(Analyzer[None, Ubifs]):
     external_dependencies = (PY_LZO_TOOL,)
 
     async def analyze(self, resource: Resource, config=None) -> Ubifs:
-        with tempfile.NamedTemporaryFile() as temp_file:
-            resource_data = await resource.get_data()
-            temp_file.write(resource_data)
-            temp_file.flush()
-
+        async with resource.temp_to_disk() as temp_path:
             ubifs_obj = ubireader_ubifs(
                 ubi_io.ubi_file(
-                    temp_file.name,
-                    block_size=guess_leb_size(temp_file.name),
+                    temp_path,
+                    block_size=guess_leb_size(temp_path),
                     start_offset=0,
                     end_offset=None,
                 )
@@ -141,14 +139,19 @@ class UbifsUnpacker(Unpacker[None]):
                 temp_file.write(resource_data)
                 temp_file.flush()
 
-            command = [
+            cmd = [
                 "ubireader_extract_files",
                 "-k",
                 "-o",
                 f"{temp_flush_dir}/output",
                 temp_file.name,
             ]
-            subprocess.run(command, check=True, capture_output=True)
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+            )
+            returncode = await proc.wait()
+            if proc.returncode:
+                raise CalledProcessError(returncode=returncode, cmd=cmd)
 
             ubifs_view = await resource.view_as(Ubifs)
             await ubifs_view.initialize_from_disk(f"{temp_flush_dir}/output")
@@ -166,8 +169,9 @@ class UbifsPacker(Packer[None]):
         ubifs_view = await resource.view_as(Ubifs)
         flush_dir = await ubifs_view.flush_to_disk()
 
-        with tempfile.NamedTemporaryFile(mode="rb") as temp:
-            command = [
+        with tempfile.NamedTemporaryFile(mode="rb", delete_on_close=False) as temp:
+            temp.close()
+            cmd = [
                 "mkfs.ubifs",
                 "-m",
                 f"{ubifs_view.min_io_size}",
@@ -190,24 +194,22 @@ class UbifsPacker(Packer[None]):
                 flush_dir,
                 temp.name,
             ]
-            subprocess.run(command, check=True, capture_output=True)
-            new_data = temp.read()
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+            )
+            returncode = await proc.wait()
+            if proc.returncode:
+                raise CalledProcessError(returncode=returncode, cmd=cmd)
+            with open(temp.name, "rb") as new_fh:
+                new_data = new_fh.read()
 
             resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
 
 
-class UbifsIdentifier(Identifier):
-    """
-    Check the first four bytes of a resource and tag the resource as Ubifs if it matches the file magic.
-    """
+def match_ubifs_magic(data: bytes) -> bool:
+    if len(data) < 4:
+        return False
+    return data[:4] == UBIFS_NODE_MAGIC
 
-    targets = (File, GenericBinary)
 
-    external_dependencies = (PY_LZO_TOOL,)
-
-    async def identify(self, resource: Resource, config=None) -> None:
-        datalength = await resource.get_data_length()
-        if datalength >= 4:
-            data = await resource.get_data(Range(0, 4))
-            if data == UBIFS_NODE_MAGIC:
-                resource.add_tag(Ubifs)
+RawMagicPattern.register(Ubifs, match_ubifs_magic)

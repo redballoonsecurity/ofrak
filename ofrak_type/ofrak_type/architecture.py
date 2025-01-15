@@ -19,6 +19,7 @@ class InstructionSet(Enum):
     :ivar PPS: PowerPC
     :ivar M68K: Motorola 68K
     :ivar AVR: Atmel AVR
+    :ivar SPARC: SPARC
     """
 
     ARM = "arm"
@@ -29,6 +30,7 @@ class InstructionSet(Enum):
     PPC = "ppc"
     M68K = "68000"
     AVR = "avr"
+    SPARC = "sparc"
 
 
 class SubInstructionSet(Enum):
@@ -129,6 +131,7 @@ class ProcessorType(Enum):
     :ivar COLDFIRE4E:
     :ivar CORTEX_A53:
     :ivar AVR:
+    :ivar SPARC:
     """
 
     ARM926EJ_S = "arm926ej-s"
@@ -136,6 +139,7 @@ class ProcessorType(Enum):
     GENERIC_A9_V6 = "generic_a9_v6"
     GENERIC_A9_V7 = "generic_a9_v7"
     GENERIC_A9_V7_THUMB = "generic_a9_v7_thumb"
+    GENERIC_ARM_BE8 = "generic_be8"  # ARM with little endian code but big endian data
     MSP430 = "msp340"
     MIPS_LITTLE = "mips"
     MIPS_RM5721_BIG = "mips_rm5721_big"
@@ -153,7 +157,9 @@ class ProcessorType(Enum):
     COLDFIRE4E = "cfv4e"
     CORTEX_A53 = "cortex-a53"
     CORTEX_A55 = "cortex-a55"
+    CORTEX_A72 = "cortex-a72"
     AVR = "avr"
+    SPARC = "leon3"
 
 
 @dataclass(frozen=True, eq=True)

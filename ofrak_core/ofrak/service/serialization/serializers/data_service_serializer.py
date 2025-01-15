@@ -7,7 +7,6 @@ from ofrak.service.serialization.serializers.serializer_i import SerializerInter
 
 
 class DataRootSerializer(SerializerInterface):
-
     targets = (_DataRoot,)
 
     data_root_annotations = {

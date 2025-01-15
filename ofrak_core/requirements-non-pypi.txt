@@ -1,0 +1,1 @@
+binwalk @ git+https://github.com/ReFirmLabs/binwalk.git@v2.3.4

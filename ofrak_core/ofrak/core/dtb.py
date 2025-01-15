@@ -3,7 +3,7 @@ Device Tree Blob (or Flattened Device Tree) OFRAK Utilities
 For more information see: https://devicetree-specification.readthedocs.io/en/stable/flattened-format.html
 """
 
-import os
+import posixpath
 import struct
 from dataclasses import dataclass
 from enum import Enum
@@ -12,18 +12,23 @@ from typing import Union, List, Tuple
 import fdt
 
 from ofrak.component.analyzer import Analyzer
-from ofrak.component.identifier import Identifier
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort
-from ofrak.core import GenericBinary, MagicMimeIdentifier, MagicDescriptionIdentifier
-from ofrak.model.component_model import CC
+from ofrak.core import GenericBinary
+from ofrak.core.magic import (
+    MagicMimePattern,
+    MagicDescriptionPattern,
+    RawMagicPattern,
+)
+from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import index
 from ofrak_type.range import Range
 
 DTB_MAGIC_SIGNATURE: int = 0xD00DFEED
+DTB_MAGIC_BYTES = struct.pack(">I", DTB_MAGIC_SIGNATURE)
 
 
 @dataclass
@@ -55,7 +60,7 @@ class DtbNode(GenericBinary):
             return self.name
 
         parent_node = await self.resource.get_parent_as_view(v_type=DtbNode)
-        return os.path.join(await parent_node.get_path(), self.name)
+        return posixpath.join(await parent_node.get_path(), self.name)
 
 
 class DeviceTreeBlob(GenericBinary):
@@ -101,7 +106,7 @@ class DtbHeaderAnalyzer(Analyzer[None, DtbHeader]):
     targets = (DtbHeader,)
     outputs = (DtbHeader,)
 
-    async def analyze(self, resource: Resource, config: CC) -> DtbHeader:
+    async def analyze(self, resource: Resource, config: None) -> DtbHeader:
         header_data = await resource.get_data()
         (
             dtb_magic,
@@ -183,7 +188,7 @@ class DtbProperty(GenericBinary):
 
     async def get_path(self):
         parent_node = await self.resource.get_parent_as_view(v_type=DtbNode)
-        return os.path.join(await parent_node.get_path(), self.name)
+        return posixpath.join(await parent_node.get_path(), self.name)
 
     async def get_value(self) -> Union[str, List[str], int, List[int], bytes, bytearray, None]:
         if self.p_type is DtbPropertyType.DtbPropNoValue:
@@ -227,7 +232,7 @@ class DeviceTreeBlobUnpacker(Unpacker[None]):
         DtbProperty,
     )
 
-    async def unpack(self, resource: Resource, config: CC = None):
+    async def unpack(self, resource: Resource, config: ComponentConfig = None):
         dtb_data = await resource.get_data()
         dtb_view = await resource.view_as(DeviceTreeBlob)
         dtb = fdt.parse_dtb(dtb_data)
@@ -283,7 +288,7 @@ class DeviceTreeBlobPacker(Packer[None]):
     id = b"DeviceTreeBlobPacker"
     targets = (DeviceTreeBlob,)
 
-    async def pack(self, resource: Resource, config: CC = None):
+    async def pack(self, resource: Resource, config: ComponentConfig = None):
         header = fdt.Header()
         header_view = await resource.get_only_descendant_as_view(
             v_type=DtbHeader, r_filter=ResourceFilter(tags=[DtbHeader])
@@ -321,7 +326,7 @@ class DeviceTreeBlobPacker(Packer[None]):
         ):
             # By default, add_item adds the missing nodes to complete the path of a previous node
             if not dtb.exist_node(await node.get_path()):
-                dtb.add_item(fdt.Node(node.name), os.path.dirname(await node.get_path()))
+                dtb.add_item(fdt.Node(node.name), posixpath.dirname(await node.get_path()))
             for prop in await node.resource.get_children_as_view(
                 v_type=DtbProperty,
                 r_filter=ResourceFilter(tags=[DtbProperty]),
@@ -330,22 +335,6 @@ class DeviceTreeBlobPacker(Packer[None]):
                 dtb.add_item(await _prop_to_fdt(prop), await node.get_path())
         original_size = await resource.get_data_length()
         resource.queue_patch(Range(0, original_size), dtb.to_dtb())
-
-
-class DeviceTreeBlobIdentifier(Identifier[None]):
-    """
-    Identify Device Tree Blob files.
-    """
-
-    targets = (GenericBinary,)
-
-    async def identify(self, resource: Resource, config: None) -> None:
-        """
-        Identify DTB files based on the first four bytes being "d00dfeed".
-        """
-        data = await resource.get_data(Range(0, 4))
-        if data == struct.pack("<I", DTB_MAGIC_SIGNATURE):
-            resource.add_tag(DeviceTreeBlob)
 
 
 async def _prop_to_fdt(p: DtbProperty) -> fdt.items.Property:
@@ -402,5 +391,14 @@ def _prop_from_fdt(p: fdt.items.Property) -> Tuple[DtbPropertyType, bytes]:
     return _p_type, _p_data
 
 
-MagicMimeIdentifier.register(DeviceTreeBlob, "Device Tree Blob")
-MagicDescriptionIdentifier.register(DeviceTreeBlob, lambda s: "device tree blob" in s.lower())
+MagicMimePattern.register(DeviceTreeBlob, "Device Tree Blob")
+MagicDescriptionPattern.register(DeviceTreeBlob, lambda s: "device tree blob" in s.lower())
+
+
+def match_dtb_magic(data: bytes):
+    if len(data) < 4:
+        return False
+    return data[:4] == DTB_MAGIC_BYTES
+
+
+RawMagicPattern.register(DeviceTreeBlob, match_dtb_magic)

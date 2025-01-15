@@ -5,8 +5,10 @@ from typing import List, Type
 import pytest
 import re
 import subprocess
+import filelock
 
 from ofrak.core import MemoryRegion
+from ofrak.model.resource_model import EphemeralResourceContextFactory, ClientResourceContextFactory
 from ofrak_patch_maker.toolchain.gnu_x64 import GNU_X86_64_LINUX_EABI_10_3_0_Toolchain
 
 from ofrak_patch_maker.toolchain.gnu_arm import GNU_ARM_NONE_EABI_10_2_1_Toolchain
@@ -25,12 +27,12 @@ from ofrak.core.basic_block import BasicBlock
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.core.program import Program
 from ofrak.core.patch_maker.linkable_symbol import LinkableSymbolType
-from ofrak.core.patch_maker.model import SourceBundle
 from ofrak.core.patch_maker.modifiers import (
     FunctionReplacementModifierConfig,
     FunctionReplacementModifier,
     SegmentInjectorModifierConfig,
     SegmentInjectorModifier,
+    SourceBundle,
 )
 from ofrak_patch_maker.toolchain.model import (
     CompilerOptimizationLevel,
@@ -45,6 +47,12 @@ from ofrak_type.endianness import Endianness
 PATCH_DIRECTORY = str(Path(__file__).parent / "assets" / "src")
 X86_64_PROGRAM_PATH = str(Path(__file__).parent / "assets" / "hello.out")
 ARM32_PROGRAM_PATH = str(Path(__file__).parent / "assets" / "simple_arm_gcc.o.elf")
+
+
+@pytest.fixture(params=[EphemeralResourceContextFactory, ClientResourceContextFactory])
+async def ofrak_context(request, ofrak_context):
+    ofrak_context._resource_context_factory = request.param()
+    return ofrak_context
 
 
 def normalize_assembly(assembly_str: str) -> str:
@@ -133,8 +141,11 @@ TEST_CASE_CONFIGS = [
         LLVM_12_0_1_Toolchain,
         [
             "00000000004004c4 <main>:",
-            "  4004c4: 6a 03                         pushq $3",
-            "  4004c6: 58                            popq %rax",
+            "  4004c4: 55 pushq %rbp",
+            "  4004c5: 48 89 e5 movq %rsp, %rbp",
+            "  4004c8: b8 03 00 00 00 movl $3, %eax",
+            "  4004cd: 5d popq %rbp",
+            "  4004ce: c3 retq",
         ],
     ),
     FunctionReplacementTestCaseConfig(
@@ -173,14 +184,10 @@ TEST_CASE_CONFIGS = [
 
 
 @pytest.mark.parametrize("config", TEST_CASE_CONFIGS)
-async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config):
+async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config, tmp_path):
     root_resource = await ofrak_context.create_root_resource_from_file(config.program.path)
     await root_resource.unpack_recursively()
     target_program = await root_resource.view_as(Program)
-
-    source_bundle_r = await target_program.resource.create_child(data=b"", tags=(SourceBundle,))
-    source_bundle = await source_bundle_r.view_as(SourceBundle)
-    await source_bundle.initialize_from_disk(PATCH_DIRECTORY)
 
     function_cb = ComplexBlock(
         virtual_address=config.program.function_vaddr,
@@ -207,7 +214,7 @@ async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config
     await target_program.resource.save()
 
     function_replacement_config = FunctionReplacementModifierConfig(
-        source_bundle.resource.get_id(),
+        SourceBundle.slurp(PATCH_DIRECTORY),
         {config.program.function_name: config.replacement_patch},
         ToolchainConfig(
             file_format=BinFileType.ELF,
@@ -223,20 +230,24 @@ async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config
     )
 
     await target_program.resource.run(FunctionReplacementModifier, function_replacement_config)
-    new_program_path = f"replaced_{Path(config.program.path).name}"
-    await target_program.resource.flush_to_disk(new_program_path)
+    new_program_path = str(tmp_path / f"replaced_{Path(config.program.path).name}")
 
-    # Check that the modified program looks as expected.
-    readobj_path = get_repository_config(config.toolchain_name, "BIN_PARSER")
+    # When running tests in parallel, do this one at a time
+    lock = filelock.FileLock(new_program_path + ".lock")
+    with lock:
+        await target_program.resource.flush_data_to_disk(new_program_path)
 
-    # LLVM-specific fix: use llvm-objdump, not llvm-readobj
-    if "readobj" in readobj_path:
-        readobj_path = readobj_path.replace("readobj", "objdump")
+        # Check that the modified program looks as expected.
+        readobj_path = get_repository_config(config.toolchain_name, "BIN_PARSER")
 
-    subprocess_result = subprocess.run(
-        [readobj_path, "-d", new_program_path], capture_output=True, text=True
-    )
-    readobj_output = subprocess_result.stdout
+        # LLVM-specific fix: use llvm-objdump, not llvm-readobj
+        if "readobj" in readobj_path:
+            readobj_path = readobj_path.replace("readobj", "objdump")
+
+        subprocess_result = subprocess.run(
+            [readobj_path, "-d", new_program_path], capture_output=True, text=True
+        )
+        readobj_output = subprocess_result.stdout
 
     expected_objdump_output_str = "\n".join(config.expected_objdump_output)
 

@@ -3,11 +3,12 @@ import logging
 from typing import Set, List, Iterable, Dict, cast
 
 from ofrak.model.component_model import ComponentContext
-from ofrak.model.data_model import DataPatchesResult
+from ofrak.model.data_model import DataPatchesResult, DataModel
 from ofrak.model.resource_model import (
     ResourceContext,
     ResourceAttributeDependency,
     MutableResourceModel,
+    Data,
 )
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceServiceInterface
@@ -59,11 +60,29 @@ class DependencyHandler:
 
         return resources_by_data_id
 
-    async def handle_post_patch_dependencies(self, patch_results: List[DataPatchesResult]):
+    async def handle_post_patch_dependencies(
+        self, patch_results: List[DataPatchesResult]
+    ) -> Set[MutableResourceModel]:
+        modified_resources = set()
+
         # Create look up maps for resources and dependencies
         resources_by_data_id = await self.map_data_ids_to_resources(
             patch_result.data_id for patch_result in patch_results
         )
+
+        all_data_ids = [patch_result.data_id for patch_result in patch_results]
+        models_by_data_id: Dict[bytes, DataModel] = {
+            data_id: model
+            for data_id, model in zip(
+                all_data_ids, await self._data_service.get_by_ids(all_data_ids)
+            )
+        }
+        # Go through and update all models' Data
+        for data_patch_result in patch_results:
+            resource_m = resources_by_data_id[data_patch_result.data_id]
+            data_m = models_by_data_id[data_patch_result.data_id]
+            resource_m.add_attributes(Data(data_m.range.start, data_m.range.length()))
+            modified_resources.add(resource_m)
 
         unhandled_dependencies: Set[ResourceAttributeDependency] = set()
         # Figure out which components results must be invalidated based on data changes
@@ -95,14 +114,16 @@ class DependencyHandler:
                         break
             for removed_data_dependency in removed_data_dependencies:
                 resource_m.remove_dependency(removed_data_dependency)
+                modified_resources.add(resource_m)
 
         # Recursively invalidate component results based on other components that were invalidated
         handled_dependencies: Set[ResourceAttributeDependency] = set()
 
         await self._invalidate_dependencies(
-            handled_dependencies,
-            unhandled_dependencies,
+            handled_dependencies, unhandled_dependencies, modified_resources
         )
+
+        return modified_resources
 
     def create_component_dependencies(
         self,
@@ -210,6 +231,7 @@ class DependencyHandler:
         self,
         handled_dependencies: Set[ResourceAttributeDependency],
         unhandled_dependencies: Set[ResourceAttributeDependency],
+        resources_modified: Set[MutableResourceModel],
     ):
         """
         Invalidate the unhandled resource attribute dependencies.
@@ -268,6 +290,7 @@ class DependencyHandler:
             if resource_m.get_component_id_by_attributes(dependency.attributes):
                 resource_m.remove_component(dependency.component_id, dependency.attributes)
                 self._component_context.mark_resource_modified(resource_m.id)
+                resources_modified.add(resource_m)
 
             # Find other dependencies to invalidate due to the invalidation of the attributes
             invalidated_dependencies = set()
@@ -287,11 +310,13 @@ class DependencyHandler:
             for invalidated_dependency in invalidated_dependencies:
                 resource_m.remove_dependency(invalidated_dependency)
                 self._component_context.mark_resource_modified(resource_m.id)
+                resources_modified.add(resource_m)
             next_unhandled_dependencies.update(invalidated_dependencies)
 
         await self._invalidate_dependencies(
             handled_dependencies,
             next_unhandled_dependencies,
+            resources_modified,
         )
 
 

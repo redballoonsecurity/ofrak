@@ -387,7 +387,7 @@ class ResourceModel:
         self.id: ModelIdType = id
         self.data_id: ModelDataIdType = data_id
         self.parent_id: ModelParentIdType = parent_id
-        self.tags: ModelTagsType = set(tags) if tags else set()
+        self.tags: ModelTagsType = {*tags} if tags else {*()}
         self.attributes: ModelAttributesType = attributes
         self.data_dependencies: ModelDataDependenciesType = data_dependencies
         self.attribute_dependencies: ModelAttributeDependenciesType = attribute_dependencies
@@ -410,7 +410,7 @@ class ResourceModel:
     ) -> Dict[ResourceAttributeDependency, Set[Range]]:
         new_dependencies = defaultdict(set)
         for dependency, ranges in dependencies.items():
-            new_dependencies[dependency] = set(ranges)
+            new_dependencies[dependency] = {*ranges}
         return new_dependencies
 
     def get_tags(self, inherit: bool = True) -> Set[ResourceTag]:
@@ -662,7 +662,7 @@ class ResourceModelDiff:
 
 
 class MutableResourceModel(ResourceModel):
-    __slots__ = "is_modified", "diff", "is_deleted"
+    __slots__ = "is_modified", "_diff", "is_deleted"
 
     def __init__(
         self,
@@ -691,7 +691,20 @@ class MutableResourceModel(ResourceModel):
         )
         self.is_modified = False
         self.is_deleted = False
-        self.diff = ResourceModelDiff(self.id)
+        self._diff: Optional[ResourceModelDiff] = None
+
+    def __hash__(self):
+        return self.id.__hash__()
+
+    @property
+    def diff(self):
+        if not self._diff:
+            self._diff = ResourceModelDiff(self.id)
+        return self._diff
+
+    @diff.setter
+    def diff(self, value):
+        self._diff = value
 
     @staticmethod
     def from_model(model: ResourceModel):
@@ -894,3 +907,24 @@ def _validate_indexed_type(getter_func: Callable[[Any], X]):
             f"Type of index {getter_func.__name__} is {index_type}, which is not "
             f"one of {_INDEXABLE_TYPES.values()}; cannot index by this value!"
         )
+
+
+@dataclasses.dataclass(**ResourceAttributes.DATACLASS_PARAMS)
+class Data(ResourceAttributes):
+    """
+    Special attributes class for accessing info about a resource's binary data.
+    Users should never access or modify this directly! Changing the fields of this data structure
+    will not change any about the resource's data! At best, it will do nothing, and at worst it
+    will screw up sorting/filtering.
+    """
+
+    _offset: int  # Offset of the resource in the binary blob it is mapped into.
+    _length: int
+
+    @index
+    def Offset(self) -> int:
+        return self._offset
+
+    @index
+    def Length(self) -> int:
+        return self._length

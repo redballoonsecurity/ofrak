@@ -205,17 +205,31 @@ class JobService(JobServiceInterface):
         request: JobAnalyzerRequest,
         job_context: Optional[JobRunContext] = None,
     ) -> ComponentRunResult:
-
         if job_context is None:
             job_context = self._job_context_factory.create()
 
         target_resource_model = await self._resource_service.get_by_id(request.resource_id)
+        # There may be an analyzer that outputs ALL the requested attributes at once
+        # If there is (as is usually the case for views), only run that one
+        one_analyzer_for_all_attributes: ComponentFilter = ComponentAndMetaFilter(
+            AnalyzerOutputFilter(*request.attributes),
+            _build_tag_filter(tuple(target_resource_model.get_tags())),
+        )
+        # Otherwise, look for individual analyzers for each attributes type
+        analyzer_for_each_attribute: List[ComponentFilter] = [
+            ComponentAndMetaFilter(
+                AnalyzerOutputFilter(attr_t),
+                _build_tag_filter(tuple(target_resource_model.get_tags())),
+            )
+            for attr_t in request.attributes
+        ]
+
         component_filter: ComponentFilter = ComponentAndMetaFilter(
             ANALYZERS_FILTER,
-            AnalyzerOutputFilter(
-                request.attributes,
+            ComponentPrioritySelectingMetaFilter(
+                one_analyzer_for_all_attributes,
+                ComponentOrMetaFilter(*analyzer_for_each_attribute),
             ),
-            _build_tag_filter(tuple(target_resource_model.get_tags())),
         )
 
         components_result = await self._auto_run_components(
@@ -232,7 +246,8 @@ class JobService(JobServiceInterface):
             return components_result
         else:
             raise NotFoundError(
-                f"Unable to find any analyzer for attributes {request.attributes.__name__}"
+                f"Unable to find any analyzer for attributes "
+                f"{', '.join(attr_t.__name__ for attr_t in request.attributes)}"
                 f"\nFilter: {component_filter}"
             )
 
@@ -453,11 +468,11 @@ class JobService(JobServiceInterface):
                 else:
                     component_run_error = cast(BaseException, component_run_result)
                     request_causing_run, component_name = component_run_metadata
-                    raise ComponentAutoRunFailure(
+                    raise component_run_error from ComponentAutoRunFailure(
                         request_causing_run.target_resource_id,
                         request_causing_run.component_filter,
                         component_name.encode(),
-                    ) from component_run_error
+                    )
 
             concurrent_run_tasks = list(pending)
             n_tasks_to_add = min(len(completed), len(queue))
@@ -522,9 +537,9 @@ def _build_tag_filter(tags: Tuple[ResourceTag]) -> ComponentFilter:
     When auto-running components, most of the time only the *most specific* components should be
     run for a resource. For example, an APK resource is also a ZIP resource; we want to always run
     the APK Unpacker on resources that are tagged as both ZIP and APK, because APK is a more
-    specific tag. However, Identifiers are a special case because they have benign side-effects, so
-    it is desirable to greedily run all Identifiers that could target a resource, not only the most
-    specific Identifiers.
+    specific tag. However, Identifiers and Analyzers are a special case because they have benign side-effects, so
+    it is desirable to greedily run all Identifiers and Analzyers that could target a resource, not only the most
+    specific Identifiers and Analyzers.
 
     This function constructs a filter which allows only components that target at least one of the
     given tags, but for non-identifiers the filter is even stricter so that only the most specific
@@ -548,8 +563,15 @@ def _build_tag_filter(tags: Tuple[ResourceTag]) -> ComponentFilter:
             ComponentTargetFilter(*tags),
         ),
         ComponentAndMetaFilter(
+            ANALYZERS_FILTER,
+            ComponentTargetFilter(*tags),
+        ),
+        ComponentAndMetaFilter(
             ComponentNotMetaFilter(
                 IDENTIFIERS_FILTER,
+            ),
+            ComponentNotMetaFilter(
+                ANALYZERS_FILTER,
             ),
             ComponentPrioritySelectingMetaFilter(*filters_prioritized_by_specificity),
         ),

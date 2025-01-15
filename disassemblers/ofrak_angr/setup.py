@@ -31,7 +31,7 @@ def read_requirements(requirements_path):
 
 setuptools.setup(
     name="ofrak_angr",
-    version="1.0.0",
+    version="1.0.1",
     description="OFRAK angr Components",
     packages=setuptools.find_packages(exclude=["ofrak_angr_test", "ofrak_angr_test.*"]),
     package_data={"ofrak_angr": ["py.typed"]},
@@ -69,7 +69,7 @@ setuptools.setup(
         "Topic :: Security",
         "Typing :: Typed",
     ],
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     license="Proprietary",
     license_files=["LICENSE"],
     cmdclass={"egg_info": egg_info_ex},

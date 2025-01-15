@@ -1,13 +1,14 @@
-import subprocess
-import tempfile
+import asyncio
+from subprocess import CalledProcessError
 
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.resource import Resource
 from ofrak.core.binary import GenericBinary
-from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
+from ofrak.core.magic import MagicMimePattern, MagicDescriptionPattern
 
-from ofrak.model.component_model import CC, ComponentExternalTool
+from ofrak.model.component_model import ComponentExternalTool
+from ofrak.model.component_model import ComponentConfig
 from ofrak_type.range import Range
 
 LZOP = ComponentExternalTool(
@@ -34,15 +35,19 @@ class LzoUnpacker(Unpacker[None]):
     children = (GenericBinary,)
     external_dependencies = (LZOP,)
 
-    async def unpack(self, resource: Resource, config: CC) -> None:
-        with tempfile.NamedTemporaryFile(suffix=".lzo") as compressed_file:
-            compressed_file.write(await resource.get_data())
-            compressed_file.flush()
+    async def unpack(self, resource: Resource, config: ComponentConfig = None) -> None:
+        cmd = ["lzop", "-d", "-f"]
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await proc.communicate(await resource.get_data())
+        if proc.returncode:
+            raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
 
-            command = ["lzop", "-d", "-f", "-c", compressed_file.name]
-            result = subprocess.run(command, check=True, capture_output=True)
-
-            await resource.create_child(tags=(GenericBinary,), data=result.stdout)
+        await resource.create_child(tags=(GenericBinary,), data=stdout)
 
 
 class LzoPacker(Packer[None]):
@@ -53,22 +58,26 @@ class LzoPacker(Packer[None]):
     targets = (LzoData,)
     external_dependencies = (LZOP,)
 
-    async def pack(self, resource: Resource, config=None):
+    async def pack(self, resource: Resource, config: ComponentConfig = None):
         lzo_view = await resource.view_as(LzoData)
         child_file = await lzo_view.get_child()
         uncompressed_data = await child_file.resource.get_data()
 
-        with tempfile.NamedTemporaryFile(suffix=".lzo") as uncompressed_file:
-            uncompressed_file.write(uncompressed_data)
-            uncompressed_file.flush()
+        cmd = ["lzop", "-f"]
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await proc.communicate(uncompressed_data)
+        if proc.returncode:
+            raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
 
-            command = ["lzop", "-f", "-c", uncompressed_file.name]
-            result = subprocess.run(command, check=True, capture_output=True)
-
-            compressed_data = result.stdout
-            original_size = await lzo_view.resource.get_data_length()
-            resource.queue_patch(Range(0, original_size), compressed_data)
+        compressed_data = stdout
+        original_size = await lzo_view.resource.get_data_length()
+        resource.queue_patch(Range(0, original_size), compressed_data)
 
 
-MagicMimeIdentifier.register(LzoData, "application/x-lzop")
-MagicDescriptionIdentifier.register(LzoData, lambda s: s.lower().startswith("lzop compressed data"))
+MagicMimePattern.register(LzoData, "application/x-lzop")
+MagicDescriptionPattern.register(LzoData, lambda s: s.lower().startswith("lzop compressed data"))

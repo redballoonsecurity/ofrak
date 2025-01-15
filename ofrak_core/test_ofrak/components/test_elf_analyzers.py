@@ -11,11 +11,6 @@ import pytest
 
 from ofrak import OFRAKContext
 from ofrak.core.architecture import ProgramAttributes
-from ofrak.model.viewable_tag_model import ViewableResourceTag, AttributesType
-from ofrak.resource import Resource
-from ofrak.resource_view import ResourceView
-from ofrak.service.job_service_i import ComponentAutoRunFailure
-from ofrak.service.resource_service_i import ResourceFilter
 from ofrak.core.elf.analyzer import (
     ElfRelaAnalyzer,
     ElfDynamicSectionAnalyzer,
@@ -28,7 +23,6 @@ from ofrak.core.elf.model import (
     ElfProgramHeader,
     ElfSectionHeader,
     ElfSymbol,
-    UnanalyzedElfSection,
     ElfSectionNameStringSection,
     ElfSection,
     ElfSectionType,
@@ -43,6 +37,10 @@ from ofrak.core.elf.model import (
     ElfDynamicSection,
     ElfPointerArraySection,
 )
+from ofrak.model.viewable_tag_model import ViewableResourceTag, AttributesType
+from ofrak.resource import Resource
+from ofrak.resource_view import ResourceView
+from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_type.architecture import InstructionSet
 from ofrak_type.bit_width import BitWidth
 from ofrak_type.endianness import Endianness
@@ -460,7 +458,7 @@ ELF_BASIC_HEADER_ANALYZER_TEST_CASES = [
     ElfBasicHeaderTestCase(
         "invalid magic",
         struct.pack("4sBBBBB7s", b"\x7fLOL", 0, 0, 0, 0, 0, b"\x00" * 7),
-        ComponentAutoRunFailure,
+        AssertionError,
     ),
     ElfBasicHeaderTestCase(
         "little endian, 32-bit",
@@ -541,7 +539,7 @@ async def test_elf_section_name_analyzer(ofrak_context: OFRAKContext):
         0,
         0,
     )
-    section_body = UnanalyzedElfSection(test_section_elf_index)
+    section_body = ElfSectionStructure(test_section_elf_index)
     elf_r = await _create_populated_elf(
         ofrak_context,
         ei_class=1,  # 32-bit
@@ -583,7 +581,7 @@ async def test_elf_program_attributes_analyzer_unknown_isa(ofrak_context: OFRAKC
         e_machine=0xFF,
     )
 
-    with pytest.raises(ComponentAutoRunFailure):
+    with pytest.raises(KeyError):
         _ = await elf_r.analyze(ProgramAttributes)
 
 
@@ -626,7 +624,6 @@ async def _create_populated_elf(
     e_shnum=0,
     e_shstrndx=0,
 ) -> Resource:
-
     elf_basic_header = ElfBasicHeader(
         ei_magic,
         ei_class,

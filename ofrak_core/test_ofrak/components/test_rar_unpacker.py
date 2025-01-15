@@ -8,7 +8,7 @@ from ofrak.core.filesystem import File
 from ofrak.resource import Resource
 
 from ofrak import OFRAKContext
-from ofrak.core.rar import RarArchive
+from ofrak.core.rar import RarArchive, RarUnpacker
 from pytest_ofrak.patterns.unpack_verify import (
     UnpackAndVerifyPattern,
     UnpackAndVerifyTestCase,
@@ -22,10 +22,11 @@ class RarUnpackerTestCase(UnpackAndVerifyTestCase[str, bytes]):
 
 
 RAR_UNPACKER_TEST_CASES = [
-    RarUnpackerTestCase("Single text file", {"hello.txt": b"hello world"}, {}, "hello.rar"),
+    RarUnpackerTestCase("Single text file", {"hello.txt": b"hello world"}, set(), "hello.rar"),
 ]
 
 
+@pytest.mark.skipif_missing_deps([RarUnpacker])
 class TestRarUnpackAndVerify(UnpackAndVerifyPattern):
     @pytest.fixture(params=RAR_UNPACKER_TEST_CASES, ids=lambda tc: tc.label)
     async def unpack_verify_test_case(self, request) -> RarUnpackerTestCase:

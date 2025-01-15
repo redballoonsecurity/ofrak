@@ -3,10 +3,6 @@
     box-sizing: border-box;
   }
 
-  .carousel {
-    margin-top: 1em;
-  }
-
   .bottomleft {
     position: absolute;
     bottom: 0.5em;
@@ -29,43 +25,46 @@
 </style>
 
 <script>
-  import AssemblyView from "./AssemblyView.svelte";
-  import AttributesView from "./AttributesView.svelte";
-  import AudioPlayer from "./AudioPlayer.svelte";
-  import ByteclassView from "./ByteclassView.svelte";
-  import CarouselSelector from "./CarouselSelector.svelte";
-  import EntropyView from "./EntropyView.svelte";
-  import HexView from "./HexView.svelte";
-  import LoadingAnimation from "./LoadingAnimation.svelte";
-  import MagnitudeView from "./MagnitudeView.svelte";
-  import Pane from "./Pane.svelte";
-  import ResourceTreeView from "./ResourceTreeView.svelte";
-  import Split from "./Split.svelte";
-  import StartView from "./StartView.svelte";
-  import TextView from "./TextView.svelte";
+  import AttributesView from "./views/AttributesView.svelte";
+  import AudioPlayer from "./utils/AudioPlayer.svelte";
+  import Gamepad from "./utils/Gamepad.svelte";
+  import LoadingAnimation from "./utils/LoadingAnimation.svelte";
+  import Pane from "./utils/Pane.svelte";
+  import ResourceTreeView from "./resource/ResourceTreeView.svelte";
+  import Split from "./utils/Split.svelte";
+  import StartView from "./views/StartView.svelte";
+  import ProjectManagerView from "./project/ProjectManagerView.svelte";
+  import ContentView from "./views/ContentView.svelte";
 
   import { printConsoleArt } from "./console-art.js";
-  import { selected, selectedResource } from "./stores.js";
-
-  import { writable } from "svelte/store";
-  import JumpToOffset from "./JumpToOffset.svelte";
+  import {
+    selected,
+    selectedResource,
+    settings,
+    dataLength,
+  } from "./stores.js";
+  import { keyEventToString, shortcuts } from "./keyboard.js";
 
   printConsoleArt();
 
   let showRootResource = false,
-    displayDataPromise = Promise.resolve([]),
-    hexScrollY = writable({}),
+    showProjectManager = false,
+    dataLenPromise = Promise.resolve([]),
     useAssemblyView = false,
     useTextView = false,
     rootResourceLoadPromise = new Promise((resolve) => {}),
-    resourceNodeDataMap = {},
     resources = {};
-  let carouselSelection, currentResource, rootResource, modifierView;
+  let currentResource, rootResource, modifierView, bottomLeftPane;
 
+  // TODO: Move to settings
   let riddleAnswered = JSON.parse(window.localStorage.getItem("riddleSolved"));
   if (riddleAnswered === null || riddleAnswered === undefined) {
     riddleAnswered = false;
   }
+
+  $: dataLenPromise.then((r) => {
+    $dataLength = r;
+  });
 
   $: if ($selected !== undefined) {
     currentResource = resources[$selected];
@@ -73,7 +72,7 @@
       console.error("Couldn't get the resource for ID " + $selected);
     } else {
       $selectedResource = currentResource;
-      displayDataPromise = currentResource.get_data();
+      dataLenPromise = currentResource.get_data_length();
       useAssemblyView = [
         "ofrak.core.complex_block.ComplexBlock",
         "ofrak.core.basic_block.BasicBlock",
@@ -83,7 +82,7 @@
       useTextView = ["ofrak.core.binary.GenericText"].some((tag) =>
         currentResource.has_tag(tag)
       );
-      $hexScrollY.top = 0;
+      document.title = "OFRAK App – " + currentResource.get_caption();
     }
     if ($selected !== window.location.hash.slice(1)) {
       window.history.pushState(null, "", `#${$selected}`);
@@ -97,6 +96,27 @@
       resources[window.location.hash.slice(1)]
     ) {
       $selected = window.location.hash.slice(1);
+    }
+  }
+
+  function handleShortcut(e) {
+    // Don't handle keypresses from within text inputs.
+    // Disable shortcuts in views with text inputs, otherwise misclicking outside of a text area may
+    // cause users to accidentally run shortcuts.
+    if (
+      ["input", "textarea"].includes(e.target?.tagName.toLocaleLowerCase()) ||
+      e.target.isContentEditable ||
+      modifierView
+    ) {
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    const keyString = keyEventToString(e);
+    const callback = shortcuts[keyString];
+    if (callback) {
+      callback();
     }
   }
 
@@ -123,9 +143,21 @@ Answer by running riddle.answer('your answer here') from the console.`);
     },
   };
   window.riddle.ask();
+
+  // Use colors from settings
+  const docstyle = document.documentElement.style;
+  $: docstyle.setProperty("--main-bg-color", $settings.background);
+  $: docstyle.setProperty("--main-fg-color", $settings.foreground);
+  $: docstyle.setProperty("--selected-bg-color", $settings.selected);
+  $: docstyle.setProperty("--highlight-color", $settings.highlight);
+  $: docstyle.setProperty("--comment-color", $settings.comment);
+  $: docstyle.setProperty("--accent-text-color", $settings.accentText);
+  $: docstyle.setProperty("--last-modified-color", $settings.lastModified);
+  $: docstyle.setProperty("--all-modified-color", $settings.allModified);
 </script>
 
-<svelte:window on:popstate="{backButton}" />
+<svelte:window on:popstate="{backButton}" on:keyup="{handleShortcut}" />
+<Gamepad />
 
 {#if showRootResource}
   {#await rootResourceLoadPromise}
@@ -137,61 +169,35 @@ Answer by running riddle.answer('your answer here') from the console.`);
           {#if modifierView}
             <svelte:component
               this="{modifierView}"
-              dataPromise="{displayDataPromise}"
               bind:modifierView="{modifierView}"
-              bind:resourceNodeDataMap="{resourceNodeDataMap}"
             />
           {:else}
             <ResourceTreeView
               rootResource="{rootResource}"
-              bind:resourceNodeDataMap="{resourceNodeDataMap}"
+              bind:bottomLeftPane="{bottomLeftPane}"
               bind:modifierView="{modifierView}"
+              bind:showProjectManager="{showProjectManager}"
+              bind:showRootResource="{showRootResource}"
             />
           {/if}
         </Pane>
         <Pane slot="second" paddingVertical="{'1em'}">
-          <AttributesView resource="{currentResource}" />
+          {#if bottomLeftPane}
+            <svelte:component
+              this="{bottomLeftPane}"
+              bind:bottomLeftPane="{bottomLeftPane}"
+            />
+          {:else}
+            <AttributesView resource="{currentResource}" />
+          {/if}
         </Pane>
       </Split>
-      <Pane
-        slot="second"
-        scrollY="{hexScrollY}"
-        displayMinimap="{currentResource && !useAssemblyView && !useTextView}"
-      >
-        {#if useAssemblyView}
-          <AssemblyView />
-        {:else if useTextView}
-          <TextView dataPromise="{displayDataPromise}" />
-        {:else}
-          <HexView
-            dataPromise="{displayDataPromise}"
-            scrollY="{hexScrollY}"
-            bind:resourceNodeDataMap="{resourceNodeDataMap}"
-          />
-        {/if}
+      <Pane slot="second">
+        <ContentView resources="{resources}" />
         <!-- 
           Named slot must be outside {#if} because of: 
           https://github.com/sveltejs/svelte/issues/5604 
         -->
-        <svelte:fragment slot="minimap">
-          <JumpToOffset
-            dataPromise="{displayDataPromise}"
-            scrollY="{hexScrollY}"
-          />
-          {#if carouselSelection === "Entropy"}
-            <EntropyView scrollY="{hexScrollY}" />
-          {:else if carouselSelection === "Byteclass"}
-            <ByteclassView scrollY="{hexScrollY}" />
-          {:else if carouselSelection === "Magnitude"}
-            <MagnitudeView scrollY="{hexScrollY}" />
-          {/if}
-          <div class="carousel">
-            <CarouselSelector
-              options="{['Magnitude', 'Entropy', 'Byteclass']}"
-              bind:selectedString="{carouselSelection}"
-            />
-          </div>
-        </svelte:fragment>
       </Pane>
     </Split>
   {/await}
@@ -201,16 +207,26 @@ Answer by running riddle.answer('your answer here') from the console.`);
       <AudioPlayer />
     </div>
   {/if}
+{:else if showProjectManager}
+  <ProjectManagerView
+    bind:rootResourceLoadPromise="{rootResourceLoadPromise}"
+    bind:rootResource="{rootResource}"
+    bind:resources="{resources}"
+    bind:showRootResource="{showRootResource}"
+    bind:showProjectManager="{showProjectManager}"
+  />
 {:else}
   <StartView
     bind:rootResourceLoadPromise="{rootResourceLoadPromise}"
     bind:showRootResource="{showRootResource}"
+    bind:showProjectManager="{showProjectManager}"
     bind:resources="{resources}"
     bind:rootResource="{rootResource}"
-    bind:resourceNodeDataMap="{resourceNodeDataMap}"
   />
 {/if}
 
 <div class="bottomright">
-  <p><a href="https://ofrak.com" target="_blank" rel="noreferrer">v2.2.0</a></p>
+  <p>
+    <a href="https://ofrak.com" target="_blank" rel="noreferrer">v3.2.0</a>
+  </p>
 </div>

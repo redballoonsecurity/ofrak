@@ -6,6 +6,7 @@ from typing import List, Mapping, Optional, Tuple, Dict
 from ofrak_type import ArchInfo
 from ofrak_type.architecture import InstructionSet
 from ofrak_type.memory_permissions import MemoryPermissions
+from ofrak_type.symbol_type import LinkableSymbolType
 
 from ofrak_patch_maker.binary_parser.llvm import LLVM_ELF_Parser
 from ofrak_patch_maker.toolchain.abstract import Toolchain, RBS_AUTOGEN_WARNING
@@ -42,21 +43,28 @@ class LLVM_12_0_1_Toolchain(Toolchain):
             self._assembler_flags.append(f"-mcpu={self._config.assembler_cpu}")
         self._compiler_flags.extend(
             [
-                "-cc1",
-                "-triple",
+                "-c",
+                "-target",
                 self._compiler_target,  # type: ignore
+                "-Xclang",
                 "-emit-obj",
-                "-msoft-float",
-                "-mfloat-abi",
-                "soft",
                 "-Wall",
+                "-fno-asynchronous-unwind-tables",  # avoids the .eh_frame section
             ]
         )
+        if processor.isa is InstructionSet.ARM:
+            # Without this option, Clang will ignore target("arm"/"thumb") attributes
+            self._compiler_flags.append("-marm")
+
+        if self._config.hard_float:
+            self._compiler_flags.append("-mno-soft-float")
+        else:
+            self._compiler_flags.append("-msoft-float")
 
         if self._config.separate_data_sections:
-            raise NotImplementedError("separate sections not supported by LLVM Toolchain yet")
+            self._compiler_flags.append("-fdata-sections")
         if self._config.compiler_cpu:
-            self._compiler_flags.append(f"-mcpu={self._config.compiler_cpu}")
+            self._logger.warning("compiler_cpu option set, but has no meaning for LLVM toolchain")
 
         llvm12_compiler_optimization_map = {
             CompilerOptimizationLevel.NONE: "-O0",
@@ -75,9 +83,10 @@ class LLVM_12_0_1_Toolchain(Toolchain):
             self._compiler_flags.append("-finline-hint-functions")
 
         if self._config.relocatable:
-            self._compiler_flags.extend(["-fno-direct-access-external-data", "-pic-is-pie"])
+            self._compiler_flags.extend(["-fno-direct-access-external-data", "-fPIE"])
             self._linker_flags.append("--pie")
         else:
+            self._compiler_flags.append("-fno-pic")
             self._linker_flags.append("--no-pie")
 
         if self._config.no_bss_section:
@@ -90,8 +99,11 @@ class LLVM_12_0_1_Toolchain(Toolchain):
             self._compiler_flags.extend(
                 [
                     "-fno-split-dwarf-inlining",
+                    "-Xclang",
                     "-debug-info-kind=limited",
+                    "-Xclang",
                     "-dwarf-version=4",
+                    "-Xclang",
                     "-debugger-tuning=gdb",
                 ]
             )
@@ -227,13 +239,15 @@ class LLVM_12_0_1_Toolchain(Toolchain):
         object_path: str,
         segment_name: str,
         memory_region_name: str,
+        segment_is_bss: bool,
     ) -> str:
         stripped_seg_name = segment_name.strip(".")
         stripped_obj_name = os.path.basename(object_path).split(".")[0]
         abs_path = os.path.abspath(object_path)
+        noload_attr = " (NOLOAD)" if segment_is_bss else ""
         return (
-            f"    .rbs_{stripped_obj_name}_{stripped_seg_name} : {{\n"
-            f"        {abs_path}({segment_name})\n"
+            f"    .rbs_{stripped_obj_name}_{stripped_seg_name}{noload_attr} : {{\n"
+            f"        {abs_path}({segment_name}*)\n"
             f"    }} > {memory_region_name}"
         )
 
@@ -244,7 +258,7 @@ class LLVM_12_0_1_Toolchain(Toolchain):
         bss_section_name = ".bss"
         return (
             f"    {bss_section_name} : {{\n"
-            f"        *.o({bss_section_name})\n"
+            f"        *.o({bss_section_name},{bss_section_name}.*),\n"
             f"    }} > {memory_region_name}"
         )
 
@@ -296,7 +310,9 @@ class LLVM_12_0_1_Toolchain(Toolchain):
             return 16
         return 1
 
-    def get_bin_file_symbols(self, executable_path: str) -> Dict[str, int]:
+    def get_bin_file_symbols(
+        self, executable_path: str
+    ) -> Dict[str, Tuple[int, LinkableSymbolType]]:
         readobj_output = self._execute_tool(
             self._readobj_path, ["--symbols"], [executable_path], out_file=None
         )
@@ -317,3 +333,12 @@ class LLVM_12_0_1_Toolchain(Toolchain):
         )
 
         return self._parser.parse_sections(readobj_output)
+
+    def get_bin_file_rel_symbols(
+        self, executable_path: str
+    ) -> Dict[str, Tuple[int, LinkableSymbolType]]:
+        readobj_output = self._execute_tool(
+            self._readobj_path, ["--symbols"], [executable_path], out_file=None
+        )
+
+        return self._parser.parse_relocations(readobj_output)

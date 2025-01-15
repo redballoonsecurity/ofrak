@@ -1,10 +1,12 @@
 import os
 import subprocess
-import tempfile
+import tempfile312 as tempfile
+
+import pytest
 
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
-from ofrak.core.seven_zip import SevenZFilesystem
+from ofrak.core.seven_zip import SevenZFilesystem, SevenZUnpacker, SevenzPacker
 from ofrak.core.strings import StringPatchingConfig, StringPatchingModifier
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 
@@ -15,6 +17,7 @@ TARGET_SEVEN_ZIP_FILE = "test.7z"
 SEVEN_ZIP_ENTRY_NAME = "hello_7z_file"
 
 
+@pytest.mark.skipif_missing_deps([SevenZUnpacker, SevenzPacker])
 class TestPzUnpackModifyPack(UnpackModifyPackPattern):
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         with tempfile.TemporaryDirectory() as d:
@@ -43,13 +46,9 @@ class TestPzUnpackModifyPack(UnpackModifyPackPattern):
         await seven_zip_resource.pack_recursively()
 
     async def verify(self, repacked_seven_zip_resource: Resource) -> None:
-        resource_data = await repacked_seven_zip_resource.get_data()
-        with tempfile.NamedTemporaryFile() as temp_file:
-            temp_file.write(resource_data)
-            temp_file.flush()
-
+        async with repacked_seven_zip_resource.temp_to_disk(suffix=".7z") as temp_path:
             with tempfile.TemporaryDirectory() as temp_flush_dir:
-                command = ["7zz", "x", f"-o{temp_flush_dir}", temp_file.name]
+                command = ["7zz", "x", f"-o{temp_flush_dir}", temp_path]
                 subprocess.run(command, check=True, capture_output=True)
                 with open(os.path.join(temp_flush_dir, SEVEN_ZIP_ENTRY_NAME), "rb") as f:
                     patched_data = f.read()

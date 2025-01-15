@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import os
 from dataclasses import dataclass
 from enum import Enum
+from functools import partial
 from typing import Any, Dict, List, Tuple, Type, Set, Optional, Sequence, Union, Iterable
 
 import pytest
@@ -19,10 +20,14 @@ from hypothesis.strategies import (
     one_of,
     just,
     floats,
+    text,
 )
 from intervaltree import IntervalTree, Interval
-
+from ofrak.core.patch_maker.modifiers import SourceBundle
 from ofrak.model.viewable_tag_model import AttributesType
+from ofrak.resource_view import ResourceView
+from ofrak.service.component_locator_i import ComponentFilter
+
 from synthol.injector import DependencyInjector
 from typing_inspect import get_args
 
@@ -34,8 +39,6 @@ from ofrak.core.magic import Magic
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributes, ResourceAttributeDependency
-from ofrak.resource_view import ResourceView
-from ofrak.service.component_locator_i import ComponentFilter
 from ofrak.service.serialization.pjson import PJSONSerializationService
 from ofrak_type.architecture import InstructionSet, InstructionSetMode
 from ofrak_type.range import Range
@@ -74,10 +77,9 @@ def iterable_strategy(draw, type_hint):
 @composite
 def os_stat_result_strategy(draw, _type_hint):
     """
-    os.stat_result instances can be generated as tuples of size 10. They most likely won't be valid
-    but it doesn't matter here.
+    os.stat_result instances can be generated as tuples of size 10.
     """
-    return draw(tuples(*[integer_strategy()] * 10))
+    return os.stat_result(draw(tuples(*[integer_strategy()] * 10)))
 
 
 @composite
@@ -94,12 +96,22 @@ def float_strategy(draw, _type_hint):
     return draw(floats(allow_nan=False, allow_infinity=False))
 
 
+@composite
+def source_bundle_strategy(draw, _type_hint):
+    return draw(
+        lists(
+            tuples(text(), lists(tuples(text(), text().map(partial(str.encode)))).map(SourceBundle))
+        ).map(SourceBundle)
+    )
+
+
 register_type_strategy(Range, range_strategy)
 register_type_strategy(Iterable, iterable_strategy)  # type: ignore
 register_type_strategy(os.stat_result, os_stat_result_strategy)
 register_type_strategy(ResourceTag, resource_tag_strategy)
 register_type_strategy(int, integer_strategy)
 register_type_strategy(float, float_strategy)
+register_type_strategy(SourceBundle, source_bundle_strategy)
 
 
 class A:
@@ -257,13 +269,13 @@ def test_interval_tree_serialization(obj: IntervalTree, _test_serialize_deserial
     "json_obj,type_hint",
     [
         ([1, 2], List),
-        ({1: 2}, Dict),
+        ([(1, 2)], Dict),
     ],
 )
 def test_from_pjson_ambiguous_type_hints(
     json_obj: Any, type_hint: Any, serializer: PJSONSerializationService
 ):
-    with pytest.raises((TypeError, BeartypeCallHintParamViolation)):
+    with pytest.raises((IndexError, ValueError)):
         serializer.from_pjson(json_obj, type_hint)
 
 

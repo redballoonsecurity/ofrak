@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
+from typing import ClassVar, Optional
 from ofrak_type.memory_permissions import MemoryPermissions
 
 
@@ -24,13 +24,26 @@ class Segment:
     """
     Describes a program segment.
 
+
     :var segment_name: e.g. `.text`
     :var vm_address: where the segment is located
     :var offset: offset from `vm_address`
     :var is_entry: If the `Segment` contains the patch "entry point symbol"
     :var length: size of the segment in bytes
     :var access_perms: `rw`, `ro`, `rwx`, etc.
+    :var length: size of the segment in bytes
+    :var access_perms: `rw`, `ro`, `rwx`, etc.
+    :var is_allocated: True if the segment is allocated in virtual memory. Corresponds to the ELF SHF_ALLOC flag.
+    :var is_bss:  True if the segment is a .bss sectiont that marks uninitialized data not actually present in the file.
+    :var alignment: Special address alignment requirement for the section
+
+    :cvar BSS_LEGACY_VADDR: Special marker for an uninitialized section (i.e. .bss) that
+        is not allocated in designated free space and should be placed in a new memory region
+        when linking following the deprecated `unsafe_bss_segment` behavior
+
     """
+
+    BSS_LEGACY_VADDR: ClassVar[int] = -0xFFFFFFFF
 
     segment_name: str
     vm_address: int
@@ -38,6 +51,10 @@ class Segment:
     is_entry: bool
     length: int
     access_perms: MemoryPermissions
+
+    is_allocated: bool = True
+    is_bss: bool = False
+    alignment: int = 1
 
 
 class CompilerOptimizationLevel(Enum):
@@ -97,6 +114,8 @@ class ToolchainConfig:
     :var isysroot: Specifies the root directory for header files
     :var c_standard: Specifies the version of C to use, e.g. C89, C99, etc
     :var separate_data_sections: Whether to put each data object in a separate section in .o file
+    :var include_subsections: In addition to normal keep sections, keep "sub"-sections sharing name
+    prefix e.g. .text.foo (this flag is treated as True if separate_data_sections is True)
     :var hard_float: Compile with support for hardware floating point operations (Default: `False`)
     """
 
@@ -117,5 +136,6 @@ class ToolchainConfig:
     userspace_dynamic_linker: Optional[str] = None
     isysroot: Optional[str] = None
     c_standard: Optional[CStandardVersion] = CStandardVersion.C99
-    separate_data_sections: Optional[bool] = False
-    hard_float: Optional[bool] = False
+    separate_data_sections: bool = False
+    include_subsections: bool = False
+    hard_float: bool = False

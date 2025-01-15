@@ -19,6 +19,21 @@ class GhidraProject(ResourceView):
     ghidra_url: str
 
 
+@dataclass
+class GhidraAutoLoadProject(GhidraProject):
+    """
+    A resource which Ghidra can automatically load with one of its existing Loaders (e.g. ELF).
+    """
+
+
+@dataclass
+class GhidraCustomLoadProject(GhidraProject):
+    """
+    A resource which Ghidra does not have an existing loader for and cannot load automatically.
+    Before analysis, we need to inform Ghidra of correct processor and segments.
+    """
+
+
 class GhidraComponentException(Exception):
     pass
 

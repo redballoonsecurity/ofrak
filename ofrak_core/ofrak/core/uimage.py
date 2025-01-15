@@ -9,7 +9,7 @@ from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
-from ofrak.core import ProgramAttributes, GenericBinary, MagicDescriptionIdentifier
+from ofrak.core import ProgramAttributes, GenericBinary, MagicDescriptionPattern
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.model.viewable_tag_model import AttributesType
@@ -527,7 +527,6 @@ class UImageMultiHeaderModifier(Modifier[UImageMultiHeaderModifierConfig]):
     targets = (UImageMultiHeader,)
 
     async def modify(self, resource: Resource, config: UImageMultiHeaderModifierConfig) -> None:
-
         # # First serialize the header with the ih_hcrc field set to 0, to compute this CRC later
         original_attributes = await resource.analyze(AttributesType[UImageMultiHeader])
         new_attributes = ResourceAttributes.replace_updated(original_attributes, config)
@@ -601,4 +600,4 @@ class UImagePacker(Packer[None]):
         resource.queue_patch(Range(0, original_size), header_data + repacked_body_data)
 
 
-MagicDescriptionIdentifier.register(UImage, lambda s: s.startswith("u-boot legacy uImage"))
+MagicDescriptionPattern.register(UImage, lambda s: s.startswith("u-boot legacy uImage"))

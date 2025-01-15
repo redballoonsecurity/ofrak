@@ -3,13 +3,14 @@ import struct
 from enum import IntEnum
 from dataclasses import dataclass
 from typing import List, Tuple
+
+from ofrak.core import RawMagicPattern
 from ofrak.core.code_region import CodeRegion
 
 from ofrak.resource import Resource
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.component.unpacker import Unpacker
 from ofrak.component.packer import Packer
-from ofrak.component.identifier import Identifier
 from ofrak.core.binary import GenericBinary
 from ofrak_type.range import Range
 from ofrak.service.resource_service_i import ResourceFilter
@@ -19,6 +20,7 @@ LOGGER = logging.getLogger(__name__)
 UF2_MAGIC_START_ONE = 0x0A324655
 UF2_MAGIC_START_TWO = 0x9E5D5157
 UF2_MAGIC_END = 0x0AB16F30
+UF2_MAGIC_START_BYTES = struct.pack("<II", UF2_MAGIC_START_ONE, UF2_MAGIC_START_TWO)
 
 HEADER_LENGTH = 32
 DATA_LENGTH = 476
@@ -243,11 +245,10 @@ class Uf2FilePacker(Packer[None]):
         resource.queue_patch(Range(0, await resource.get_data_length()), repacked_data)
 
 
-class Uf2FileIdentifier(Identifier):
-    id = b"Uf2FileIdentifier"
-    targets = (GenericBinary,)
+def match_uf2_magic(data: bytes):
+    if len(data) < 8:
+        return False
+    return data[:8] == UF2_MAGIC_START_BYTES
 
-    async def identify(self, resource: Resource, config=None):
-        resource_data = await resource.get_data(Range(0, 8))
-        if resource_data[:4] == UF2_MAGIC_START_ONE and resource_data[4:8] == UF2_MAGIC_START_TWO:
-            resource.add_tag(Uf2File)
+
+RawMagicPattern.register(Uf2File, match_uf2_magic)

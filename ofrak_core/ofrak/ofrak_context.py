@@ -1,9 +1,14 @@
 import asyncio
 import logging
 import os
+import tempfile312 as tempfile
 import time
 from types import ModuleType
 from typing import Type, Any, Awaitable, Callable, List, Iterable, Optional
+
+
+import ofrak_patch_maker
+from ofrak.license import verify_registered_license
 
 from ofrak_type import InvalidStateError
 from synthol.injector import DependencyInjector
@@ -12,7 +17,10 @@ from ofrak.component.interface import ComponentInterface
 from ofrak.core.binary import GenericBinary
 from ofrak.core.filesystem import File, FilesystemRoot
 from ofrak.model.component_model import ClientComponentContext
-from ofrak.model.resource_model import ResourceModel, ClientResourceContextFactory
+from ofrak.model.resource_model import (
+    ResourceModel,
+    EphemeralResourceContextFactory,
+)
 from ofrak.model.tag_model import ResourceTag
 from ofrak.model.viewable_tag_model import ResourceViewContext
 from ofrak.resource import Resource, ResourceFactory
@@ -24,6 +32,7 @@ from ofrak.service.job_service_i import JobServiceInterface
 from ofrak.service.resource_service_i import ResourceServiceInterface
 
 LOGGER = logging.getLogger("ofrak")
+DEFAULT_LOG_FILE = os.path.join(tempfile.gettempdir(), f"ofrak_{time.strftime('%Y%m%d%H%M%S')}.log")
 
 
 class OFRAKContext:
@@ -46,7 +55,7 @@ class OFRAKContext:
         self.resource_service = resource_service
         self.job_service = job_service
         self._all_ofrak_services = all_ofrak_services
-        self._resource_context_factory = ClientResourceContextFactory()
+        self._resource_context_factory = EphemeralResourceContextFactory()
 
     async def create_root_resource(
         self, name: str, data: bytes, tags: Iterable[ResourceTag] = (GenericBinary,)
@@ -85,6 +94,15 @@ class OFRAKContext:
         await root_resource.save()
         return root_resource
 
+    async def create_root_resource_from_directory(self, dir_path: str) -> Resource:
+        full_dir_path = os.path.abspath(dir_path)
+        root_resource = await self.create_root_resource(
+            os.path.basename(full_dir_path), b"", (FilesystemRoot,)
+        )
+        root_resource_v = await root_resource.view_as(FilesystemRoot)
+        await root_resource_v.initialize_from_disk(full_dir_path)
+        return root_resource
+
     async def start_context(self):
         if "_ofrak_context" in globals():
             raise InvalidStateError(
@@ -106,7 +124,9 @@ class OFRAK:
     def __init__(
         self,
         logging_level: int = DEFAULT_LOG_LEVEL,
+        log_file: Optional[str] = None,
         exclude_components_missing_dependencies: bool = False,
+        verify_license: bool = True,
     ):
         """
         Set up the OFRAK environment that a script will use.
@@ -114,9 +134,14 @@ class OFRAK:
         :param logging_level: Logging level of OFRAK instance (logging.DEBUG, logging.WARNING, etc.)
         :param exclude_components_missing_dependencies: When initializing OFRAK, check each component's dependency and do
         not use any components missing some dependencies
+        :param verify_license: Verify OFRAK license
         """
+        if verify_license:
+            verify_registered_license()
         logging.basicConfig(level=logging_level, format="[%(filename)15s:%(lineno)5s] %(message)s")
-        logging.getLogger().addHandler(logging.FileHandler("/tmp/ofrak.log"))
+        if log_file is None:
+            log_file = DEFAULT_LOG_FILE
+        logging.getLogger().addHandler(logging.FileHandler(log_file))
         logging.getLogger().setLevel(logging_level)
         logging.captureWarnings(True)
         self.injector = DependencyInjector()
@@ -185,6 +210,7 @@ class OFRAK:
         import ofrak
 
         self.discover(ofrak)
+        self.discover(ofrak_patch_maker)
 
         if self._id_service:
             self.injector.bind_instance(self._id_service)
@@ -200,7 +226,11 @@ class OFRAK:
         components_missing_deps = []
         audited_components = []
         for component in all_discovered_components:
-            if all(dep.is_tool_installed() for dep in component.external_dependencies):
+            if all(
+                await asyncio.gather(
+                    *[dep.is_tool_installed() for dep in component.external_dependencies]
+                )
+            ):
                 audited_components.append(component)
             else:
                 components_missing_deps.append(component)

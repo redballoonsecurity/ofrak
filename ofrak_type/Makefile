@@ -1,13 +1,13 @@
 PYTHON=python3
 PIP=pip3
 
-.PHONY: develop
+.PHONY: install
 install:
 	$(PIP) install .
 
-.PHONY: install
+.PHONY: develop
 develop:
-	$(PIP) install -e .[test]
+	$(PIP) install -e .[test] --config-settings editable_mode=compat
 
 .PHONY: inspect
 inspect:
@@ -17,9 +17,3 @@ inspect:
 test: inspect
 	$(PYTHON) -m pytest -n auto --cov=ofrak_type --cov-report=term-missing --cov-fail-under=100 ofrak_type_test
 	fun-coverage --cov-fail-under=100
-
-.PHONY: dependencies
-dependencies: ;
-
-.PHONY: clean
-clean: ;

@@ -51,7 +51,7 @@ HIGH_VALUE = HighValue()
 class ResourceNode:
     model: ResourceModel
     parent: Optional["ResourceNode"]
-    _children: List["ResourceNode"]
+    _children: Dict["ResourceNode", None]
     _ancestor_ids: Dict[bytes, int]
     _descendant_count: int
     _depth: int
@@ -59,8 +59,9 @@ class ResourceNode:
     def __init__(self, model: ResourceModel, parent: Optional["ResourceNode"]):
         self.model = model
         self.parent = parent
-        self._children = []
-        self._ancestor_ids = dict()
+        # Dict serves as an ordered set to preserve children insertion order
+        self._children: Dict[ResourceNode, None] = dict()
+        self._ancestor_ids: Dict[bytes, int] = dict()
         self._descendant_count = 0
         self._depth = 0
         if self.parent is not None:
@@ -82,10 +83,10 @@ class ResourceNode:
             parent._descendant_count += child._descendant_count + 1
             parent = parent.parent
 
-        self._children.append(child)
+        self._children[child] = None
 
     def remove_child(self, child: "ResourceNode"):
-        self._children.remove(child)
+        del self._children[child]
         parent: Optional[ResourceNode] = self
         while parent is not None:
             parent._descendant_count -= child._descendant_count + 1
@@ -97,7 +98,7 @@ class ResourceNode:
             for ancestor_id in ids_to_clear:
                 del descendent._ancestor_ids[ancestor_id]
 
-            for _descendent in descendent._children:
+            for _descendent in descendent._children.keys():
                 remove_ancestor_ids(_descendent)
 
         remove_ancestor_ids(child)
@@ -133,7 +134,7 @@ class ResourceNode:
             yield self
         if 0 <= max_depth <= _depth:
             return
-        for child in self._children:
+        for child in self._children.keys():
             yield from child.walk_descendants(True, max_depth, _depth + 1)
 
     def __lt__(self, other):
@@ -687,7 +688,7 @@ class ResourceService(ResourceServiceInterface):
         for _tag in tag.tag_classes():
             if blacklist is not None and _tag in blacklist:
                 continue
-            self._tag_indexes[_tag].remove(resource)
+            self._tag_indexes[_tag].discard(resource)
 
     def _add_resource_attribute_to_index(
         self,
@@ -988,7 +989,7 @@ class ResourceService(ResourceServiceInterface):
 
     def _delete_resource_helper(self, _resource_node: ResourceNode):
         deleted_models = []
-        for child in _resource_node._children:
+        for child in _resource_node._children.keys():
             deleted_models.extend(self._delete_resource_helper(child))
 
         for indexable_attribute, val in _resource_node.model.get_index_values().items():

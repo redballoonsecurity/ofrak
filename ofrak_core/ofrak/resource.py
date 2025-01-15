@@ -4,6 +4,7 @@ import hashlib
 import logging
 from inspect import isawaitable
 from typing import (
+    AsyncIterator,
     BinaryIO,
     Iterable,
     List,
@@ -17,7 +18,13 @@ from typing import (
     Sequence,
     Callable,
     Set,
+    Pattern,
+    overload,
 )
+from contextlib import asynccontextmanager
+from warnings import warn
+
+import tempfile312 as tempfile
 
 from ofrak.component.interface import ComponentInterface
 from ofrak.model.component_model import ComponentContext, CC, ComponentRunResult
@@ -35,6 +42,7 @@ from ofrak.model.resource_model import (
     ResourceModel,
     MutableResourceModel,
     ResourceContext,
+    Data,
 )
 from ofrak.model.tag_model import ResourceTag
 from ofrak.model.viewable_tag_model import (
@@ -241,6 +249,42 @@ class Resource:
             )
         return await self._data_service.get_data_range_within_root(self._resource.data_id)
 
+    @overload
+    async def search_data(
+        self,
+        query: Pattern[bytes],
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+        max_matches: Optional[int] = None,
+    ) -> Tuple[Tuple[int, bytes], ...]:
+        ...
+
+    @overload
+    async def search_data(
+        self,
+        query: bytes,
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+        max_matches: Optional[int] = None,
+    ) -> Tuple[int, ...]:
+        ...
+
+    async def search_data(self, query, start=None, end=None, max_matches=None):
+        """
+        Search for some data in this resource. The query may be a regex pattern (a return value
+        of `re.compile`). If the query is a regex pattern, returns a tuple of pairs with both the
+        offset of the match and the contents of the match itself. If the query is plain bytes, a
+        list of only the match offsets are returned.
+
+        :param query: Plain bytes to exactly match or a regex pattern to search for
+        :param start: Start offset in the data model to begin searching
+        :param end: End offset in the data model to stop searching
+
+        :return: A tuple of offsets matching a plain bytes query, or a list of (offset, match) pairs
+        for a regex pattern query
+        """
+        return await self._data_service.search(self.get_data_id(), query, start, end, max_matches)
+
     async def save(self):
         """
         If this resource has been modified, update the model stored in the resource service with
@@ -257,12 +301,11 @@ class Resource:
             self._resource_view_context,
         )
 
-    def _save(
-        self,
-        resources_to_delete: List[bytes],
-        patches_to_apply: List[DataPatch],
-        resources_to_update: List[MutableResourceModel],
-    ):
+    def _save(self) -> Tuple[List[bytes], List[DataPatch], List[MutableResourceModel]]:
+        resources_to_delete: List[bytes] = []
+        patches_to_apply: List[DataPatch] = []
+        resources_to_update: List[MutableResourceModel] = []
+
         if self._resource.is_deleted:
             resources_to_delete.append(self._resource.id)
         elif self._resource.is_modified:
@@ -276,6 +319,8 @@ class Resource:
             patches_to_apply.extend(modification_tracker.data_patches)
             resources_to_update.append(self._resource)
             modification_tracker.data_patches.clear()
+
+        return resources_to_delete, patches_to_apply, resources_to_update
 
     async def _fetch(self, resource: MutableResourceModel):
         """
@@ -293,7 +338,10 @@ class Resource:
         try:
             fetched_resource = await self._resource_service.get_by_id(resource.id)
         except NotFoundError:
-            if resource.id in self._component_context.modification_trackers:
+            if (
+                resource.id in self._component_context.modification_trackers
+                and resource.id in self._resource_context.resource_models
+            ):
                 del self._resource_context.resource_models[resource.id]
             return
 
@@ -313,6 +361,9 @@ class Resource:
             for view in views_in_context.values():
                 if resource_id not in self._resource_context.resource_models:
                     await self._fetch(view.resource.get_model())  # type: ignore
+                if resource_id not in self._resource_context.resource_models:
+                    view.set_deleted()
+                    continue
                 updated_model = self._resource_context.resource_models[resource_id]
                 fresh_view = view.create(updated_model)
                 for field in dataclasses.fields(fresh_view):
@@ -420,7 +471,7 @@ class Resource:
         """
         attributes = self._check_attributes(resource_attributes)
         if attributes is None:
-            await self._analyze_attributes(resource_attributes)
+            await self._analyze_attributes((resource_attributes,))
             return self.get_attributes(resource_attributes)
         else:
             return attributes
@@ -532,13 +583,13 @@ class Resource:
 
         destination.write(await self.get_data())
 
-    async def _analyze_attributes(self, attribute_type: Type[ResourceAttributes]):
+    async def _analyze_attributes(self, attribute_types: Tuple[Type[ResourceAttributes], ...]):
         job_context = self._job_context
         components_result = await self._job_service.run_analyzer_by_attribute(
             JobAnalyzerRequest(
                 self._job_id,
                 self._resource.id,
-                attribute_type,
+                attribute_types,
                 tuple(self._resource.tags),
             ),
             job_context,
@@ -629,11 +680,13 @@ class Resource:
                     "Cannot create a child with mapped data from a parent that doesn't have data"
                 )
             data_model_id = resource_id
-            await self._data_service.create_mapped(
+            data_model = await self._data_service.create_mapped(
                 data_model_id,
                 self._resource.data_id,
                 data_range,
             )
+            data_attrs = Data(data_model.range.start, data_model.range.length())
+            attributes = [data_attrs, *attributes] if attributes else [data_attrs]
         elif data is not None:
             if self._resource.data_id is None:
                 raise ValueError(
@@ -641,6 +694,8 @@ class Resource:
                 )
             data_model_id = resource_id
             await self._data_service.create_root(data_model_id, data)
+            data_attrs = Data(0, len(data))
+            attributes = [data_attrs, *attributes] if attributes else [data_attrs]
         else:
             data_model_id = None
         resource_model = ResourceModel.create(
@@ -742,21 +797,23 @@ class Resource:
             self._resource_view_context.add_view(self.get_id(), view)
             return cast(RV, view)
 
-        analysis_tasks = [
-            self._analyze_attributes(attrs_t)
-            for attrs_t, existing in zip(composed_attrs_types, existing_attributes)
-            if not existing
-        ]
-
         # Only if analysis is absolutely necessary is an awaitable created and returned
-        async def finish_view_creation() -> RV:
-            await asyncio.gather(*analysis_tasks)
+        async def finish_view_creation(
+            attrs_to_analyze: Tuple[Type[ResourceAttributes], ...]
+        ) -> RV:
+            await self._analyze_attributes(attrs_to_analyze)
             view = viewable_tag.create(self.get_model())
             view.resource = self  # type: ignore
             self._resource_view_context.add_view(self.get_id(), view)
             return cast(RV, view)
 
-        return finish_view_creation()
+        return finish_view_creation(
+            tuple(
+                attrs_t
+                for attrs_t, existing in zip(composed_attrs_types, existing_attributes)
+                if not existing
+            )
+        )
 
     async def view_as(self, viewable_tag: Type[RV]) -> RV:
         """
@@ -1377,7 +1434,7 @@ class Resource:
         self._resource.is_modified = True
         self._resource.is_deleted = True
 
-    async def flush_to_disk(self, path: str, pack: bool = True):
+    async def flush_data_to_disk(self, path: str, pack: bool = True):
         """
         Recursively repack the resource and write its data out to a file on disk. If this is a
         dataless resource, creates an empty file.
@@ -1395,6 +1452,13 @@ class Resource:
             # Create empty file
             with open(path, "wb") as f:
                 pass
+
+    async def flush_to_disk(self, path: str, pack: bool = True):  # pragma: no cover
+        warn(
+            "Resource.flush_to_disk is deprecated! Use Resource.flush_data_to_disk instead.",
+            category=DeprecationWarning,
+        )
+        return await self.flush_data_to_disk(path, pack)
 
     def __repr__(self):
         properties = [
@@ -1475,6 +1539,21 @@ class Resource:
             tree_string += f"{indent}{branch_symbol}{SPACER_LINE}{child_tree_string}"
         return tree_string
 
+    @asynccontextmanager
+    async def temp_to_disk(
+        self,
+        prefix: Optional[str] = None,
+        suffix: Optional[str] = None,
+        dir: Optional[str] = None,
+        delete: bool = True,
+    ) -> AsyncIterator[str]:
+        with tempfile.NamedTemporaryFile(
+            mode="wb", prefix=prefix, suffix=suffix, dir=dir, delete_on_close=False, delete=delete
+        ) as temp:
+            temp.write(await self.get_data())
+            temp.close()
+            yield temp.name
+
 
 async def save_resources(
     resources: Iterable["Resource"],
@@ -1492,11 +1571,11 @@ async def save_resources(
     resources_to_update: List[MutableResourceModel] = []
 
     for resource in resources:
-        resource._save(
-            resources_to_delete,
-            patches_to_apply,
-            resources_to_update,
-        )
+        _resources_to_delete, _patches_to_apply, _resources_to_update = resource._save()
+
+        resources_to_delete.extend(_resources_to_delete)
+        patches_to_apply.extend(_patches_to_apply)
+        resources_to_update.extend(_resources_to_update)
 
     deleted_descendants = await resource_service.delete_resources(resources_to_delete)
     data_ids_to_delete = [
@@ -1504,7 +1583,9 @@ async def save_resources(
     ]
     await data_service.delete_models(data_ids_to_delete)
     patch_results = await data_service.apply_patches(patches_to_apply)
-    await dependency_handler.handle_post_patch_dependencies(patch_results)
+    resources_to_update.extend(
+        await dependency_handler.handle_post_patch_dependencies(patch_results)
+    )
     diffs = []
     updated_ids = []
     for resource_m in resources_to_update:

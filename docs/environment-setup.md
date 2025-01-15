@@ -1,7 +1,7 @@
 # Environment Setup & Installing OFRAK
 
 !!! warning
-    OFRAK is a Python library supporting Python3.7 and up. First and foremost, make sure your Python and pip installations are for Python3.7+!
+    OFRAK is a Python library supporting Python3.7 and up. First and foremost, make sure your Python and pip installations are for Python3.7+! Python 3.8 is recommended, as this is the version we primarily test OFRAK with, and some packages (for example, ofrak-angr) require Python >=3.8.
 
 There are three main ways one can set up an environment to use OFRAK:
 
@@ -30,7 +30,7 @@ ofrak list
 
 However, not all of OFRAK's dependencies can be installed via `pip install`. 
 These dependencies are, however, optional, and the OFRAK code that requires them can be disabled in order avoid runtime errors.
-OFRAK has a system for inspecting and installing such dependencies. See [the section on external dependencies](handling-non-python-dependencies) for more info on that.
+OFRAK has a system for inspecting and installing such dependencies. See [the section on external dependencies](#handling-non-python-dependencies) for more info on that.
 
 
 ## From Source Code
@@ -65,7 +65,7 @@ However, this will result in a somewhat confusing environment where some of the 
 
 Installing OFRAK from source code will not install all of OFRAK's non-Python dependencies (for same reason as when installing OFRAK from PyPI - not all of its dependencies are pip-installable).
 These dependencies are, however, optional, and the OFRAK code that requires them can be disabled in order avoid runtime errors.
-OFRAK has a system for inspecting and installing dependencies. See [the section on external dependencies](handling-non-python-dependencies) for more info on that.
+OFRAK has a system for inspecting and installing dependencies. See [the section on external dependencies](#handling-non-python-dependencies) for more info on that.
 
 
 ### Modifying OFRAK Source Code

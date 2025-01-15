@@ -16,6 +16,7 @@ from ofrak_patch_maker.toolchain.model import (
 )
 from ofrak_patch_maker.toolchain.utils import get_file_format
 from ofrak_type.memory_permissions import MemoryPermissions
+from ofrak_type.symbol_type import LinkableSymbolType
 
 
 class Abstract_GNU_Toolchain(Toolchain, ABC):
@@ -45,7 +46,7 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
                 #      if sections contain more than one function =/
                 "-fno-merge-constants",  # avoids sections like .rodata.cst16, .rodata.str1.1 etc
                 "-fno-reorder-functions",
-                "-Wall",
+                "-fno-asynchronous-unwind-tables",  # avoids the .eh_frame section
             ]
         )
         if self._config.separate_data_sections:
@@ -112,17 +113,6 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
     def _get_linker_map_flag(exec_path: str) -> Iterable[str]:
         return "-Map", f"{exec_path}.map"
 
-    def keep_section(self, section_name: str):
-        if section_name in self._linker_keep_list:
-            return True
-        if self._config.separate_data_sections:
-            for keep_section in self._linker_keep_list:
-                if section_name.startswith(keep_section):
-                    return True
-            return False
-        else:
-            return False
-
     def add_linker_include_values(self, symbols: Mapping[str, int], path: str):
         with open(path, "a") as f:
             for name, addr in symbols.items():
@@ -179,12 +169,14 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
         object_path: str,
         segment_name: str,
         memory_region_name: str,
+        segment_is_bss: bool,
     ) -> str:
         stripped_seg_name = segment_name.strip(".")
         stripped_obj_name = os.path.basename(object_path).split(".")[0]
         abs_path = os.path.abspath(object_path)
+        noload_attr = " (NOLOAD)" if segment_is_bss else ""
         return (
-            f"    .rbs_{stripped_obj_name}_{stripped_seg_name} ORIGIN({memory_region_name}) : SUBALIGN(0) {{\n"
+            f"    .rbs_{stripped_obj_name}_{stripped_seg_name} ORIGIN({memory_region_name}){noload_attr}: SUBALIGN(0) {{\n"
             f"        {abs_path}({segment_name})\n"
             f"    }} > {memory_region_name}"
         )
@@ -328,7 +320,9 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
     def segment_alignment(self) -> int:
         raise NotImplementedError()
 
-    def get_bin_file_symbols(self, executable_path: str) -> Dict[str, int]:
+    def get_bin_file_symbols(
+        self, executable_path: str
+    ) -> Dict[str, Tuple[int, LinkableSymbolType]]:
         # This happens to be the same as LLVM but it really doesn't belong in Parent code.
         # Note: readobj for gcc is objdump
         readobj_output = self._execute_tool(self._readobj_path, ["--syms"], [executable_path])
@@ -345,6 +339,13 @@ class Abstract_GNU_Toolchain(Toolchain, ABC):
 
         return self._parser.parse_sections(readobj_output)
 
+    def get_bin_file_rel_symbols(
+        self, executable_path: str
+    ) -> Dict[str, Tuple[int, LinkableSymbolType]]:
+        readobj_output = self._execute_tool(self._readobj_path, ["--syms"], [executable_path])
+
+        return self._parser.parse_relocations(readobj_output)
+
 
 class GNU_10_Toolchain(Abstract_GNU_Toolchain):
     def __init__(
@@ -360,7 +361,8 @@ class GNU_10_Toolchain(Abstract_GNU_Toolchain):
         if self._config.compiler_cpu:
             self._compiler_flags.append(f"-mcpu={self._config.compiler_cpu}")
 
-        self._assembler_flags.append(f"-march={self._get_assembler_target(processor)}")
+        if self._assembler_target is not None:
+            self._assembler_flags.append(f"-march={self._assembler_target}")
         if self._config.assembler_cpu:
             self._assembler_flags.append(f"-mcpu={self._config.assembler_cpu}")
 
@@ -373,3 +375,4 @@ class GNU_10_Toolchain(Abstract_GNU_Toolchain):
             self._linker_flags.append("--pic-executable")
         else:
             self._compiler_flags.append("-fno-plt")
+            self._compiler_flags.append("-fno-pic")

@@ -7,7 +7,7 @@ import os
 import subprocess
 from abc import ABC, abstractmethod
 from os.path import join, split
-from typing import Dict, Iterable, List, Optional, Tuple, Mapping
+from typing import Dict, Iterable, List, Optional, Tuple, Mapping, Type
 
 from ofrak_type import ArchInfo
 from ofrak_patch_maker.binary_parser.abstract import AbstractBinaryFileParser
@@ -16,6 +16,7 @@ from ofrak_patch_maker.toolchain.utils import get_repository_config
 from ofrak_type.architecture import InstructionSet
 from ofrak_type.bit_width import BitWidth
 from ofrak_type.memory_permissions import MemoryPermissions
+from ofrak_type.symbol_type import LinkableSymbolType
 
 RBS_AUTOGEN_WARNING = (
     "/*\n"
@@ -29,6 +30,7 @@ RBS_AUTOGEN_WARNING = (
 
 class Toolchain(ABC):
     binary_file_parsers: List[AbstractBinaryFileParser] = []
+    toolchain_implementations: List[Type["Toolchain"]] = []
 
     def __init__(
         self,
@@ -78,10 +80,6 @@ class Toolchain(ABC):
         self._config = toolchain_config
         self._logger = logger
 
-        # The keep_list should only contain FUNCTIONALLY important sections
-        # (not empty .got.plt, for instance).
-        # TODO: Come up with a better system to handle this...
-        self._linker_keep_list = [".data", ".rodata", ".text"]
         self._linker_discard_list = [
             ".gnu.hash",
             ".comment",
@@ -92,10 +90,15 @@ class Toolchain(ABC):
             ".dynsym",
             ".dynstr",
             ".eh_frame",
+            ".altinstructions",
+            ".altinstr_replacement",
         ]
 
         self._assembler_target = self._get_assembler_target(processor)
         self._compiler_target = self._get_compiler_target(processor)
+
+    def __init_subclass__(cls, **kwargs):
+        Toolchain.toolchain_implementations.append(cls)
 
     @property
     @abstractmethod
@@ -106,7 +109,7 @@ class Toolchain(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def _get_assembler_target(self, processor: ArchInfo) -> str:
+    def _get_assembler_target(self, processor: ArchInfo) -> Optional[str]:
         """
         Red Balloon Security strongly recommends all users provide their specific hardware target
         for best results.
@@ -150,6 +153,8 @@ class Toolchain(ABC):
             and self._processor.bit_width == BitWidth.BIT_64
         ):
             assembler_path = "X86_64_ASM_PATH"
+        elif self._processor.isa == InstructionSet.SPARC:
+            assembler_path = "SPARC_ASM_PATH"
         else:
             assembler_path = f"{self._processor.isa.value.upper()}_ASM_PATH"
         return get_repository_config("ASM", assembler_path)
@@ -356,11 +361,8 @@ class Toolchain(ABC):
     def linker_include_filter(symbol_name: str) -> bool:
         return "." in symbol_name or "_DYNAMIC" in symbol_name
 
-    def keep_section(self, section_name: str) -> bool:
-        if self._config.separate_data_sections:
-            raise NotImplementedError("you must override keep_section() in your Toolchain sublass")
-        else:
-            return section_name in self._linker_keep_list
+    def keep_segment(self, segment: Segment):
+        return segment.is_allocated and segment.segment_name not in self._linker_discard_list
 
     @abstractmethod
     def generate_linker_include_file(self, symbols: Mapping[str, int], out_path: str) -> str:
@@ -419,7 +421,9 @@ class Toolchain(ABC):
 
     @staticmethod
     @abstractmethod
-    def ld_generate_section(object_path: str, segment_name: str, memory_region_name: str) -> str:
+    def ld_generate_section(
+        object_path: str, segment_name: str, memory_region_name: str, segment_is_bss: bool
+    ) -> str:
         """
         Generates sections for linker scripts.
 
@@ -479,7 +483,9 @@ class Toolchain(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_bin_file_symbols(self, executable_path: str) -> Dict[str, int]:
+    def get_bin_file_symbols(
+        self, executable_path: str
+    ) -> Dict[str, Tuple[int, LinkableSymbolType]]:
         """
         For now, this utility only searches for global function and data symbols which are
         actually contained in a section in the file, as opposed to symbols which are referenced
@@ -487,7 +493,8 @@ class Toolchain(ABC):
 
         :param executable_path: path to the program to be analyzed for symbols
 
-        :return Dict[str, int]: mapping of symbol string to effective address.
+        :return Dict[str, Tuple[int, LinkableSymbolType]]: mapping of symbol string to tuple of
+        effective address, symbol type.
         """
         raise NotImplementedError()
 
@@ -500,5 +507,20 @@ class Toolchain(ABC):
 
         :return Tuple[Segment, ...]: Tuple of [Segment][ofrak_patch_maker.toolchain.model.Segment]
         objects
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_bin_file_rel_symbols(
+        self, executable_path: str
+    ) -> Dict[str, Tuple[int, LinkableSymbolType]]:
+        """
+        This utility searches for global function and data symbols which are
+        referenced in a section in the file but are undefined.
+
+        :param executable_path: path to the program to be analyzed for symbols
+
+        :return Dict[str, Tuple[int, LinkableSymbolType]]: mapping of symbol string to tuple of
+        effective address, symbol type.
         """
         raise NotImplementedError()

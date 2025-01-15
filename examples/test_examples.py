@@ -2,10 +2,15 @@ import os
 import subprocess
 
 import pytest
-import xattr
+
+try:
+    import xattr
+except ImportError:
+    import ofrak_core.ofrak.core.xattr_stub as xattr  # type: ignore[no-redef]
 
 from examples.ex5_binary_extension import SEVEN_KITTEH
 from examples.ex8_recursive_unpacking import KITTEH as KITTEH_ASCII
+from hashlib import md5
 
 EXAMPLE_DIRECTORY = os.path.dirname(__file__)
 
@@ -156,3 +161,23 @@ def test_example_8(tmp_path):
     with open("meow.txt") as f:
         data = f.read().strip()
         assert data == KITTEH_ASCII.strip(), f"Inner file meow.txt had incorrect contents {data}"
+    os.chdir(EXAMPLE_DIRECTORY)
+
+
+def test_example_9(tmp_path):
+    """
+    Test that the modified flash dump contains the inserted string and matches the right md5sum
+    """
+    file = tmp_path / "repacked_flash_dump.bin"
+    command = ["python3", "ex9_flash_modification.py", "--output-file", str(file)]
+    subprocess.run(command, check=True)
+
+    with open(str(file), "rb") as f:
+        data = f.read()
+        expected_string = b"INSERT ME!"
+        assert expected_string in data, f"{str(file)} doesn't contain the {expected_string} string"
+        md5sum = md5(data).hexdigest()
+        expected_md5 = "6277eb7c64b12f247913eb4e875f5758"
+        assert (
+            md5sum == expected_md5
+        ), f"md5sum for '{str(file)}' {md5sum} (expected {expected_md5})"

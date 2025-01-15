@@ -1,49 +1,100 @@
 import asyncio
 import logging
 import os
-import tempfile
+import tempfile312 as tempfile
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple, Type
+from typing import Dict, List, Optional, Tuple, Type, Union, cast
 
-from ofrak.core import ProgramAttributes
+from ofrak_patch_maker.model import PatchRegionConfig, FEM
+from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.abstract import Toolchain
+from ofrak_patch_maker.toolchain.model import Segment, ToolchainConfig
+
 from ofrak.component.modifier import Modifier
+from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.complex_block import ComplexBlock
+from ofrak.core.injector import BinaryInjectorModifier, BinaryInjectorModifierConfig
 from ofrak.core.memory_region import MemoryRegion
+from ofrak.core.patch_maker.linkable_binary import LinkableBinary
 from ofrak.core.program import Program
 from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort, ResourceSortDirection
-from ofrak.core.injector import BinaryInjectorModifier, BinaryInjectorModifierConfig
-from ofrak.core.patch_maker.model import SourceBundle
-from ofrak_patch_maker.model import PatchRegionConfig, FEM
-from ofrak_patch_maker.patch_maker import PatchMaker
-from ofrak_patch_maker.toolchain.model import Segment, ToolchainConfig
 from ofrak_type.memory_permissions import MemoryPermissions
+from ofrak_type.error import NotFoundError
 
 LOGGER = logging.getLogger(__file__)
+
+
+class SourceBundle(Dict[str, Union[bytes, "SourceBundle"]]):
+    """
+    Class used to store filesystem trees of source code as serializable in-memory trees, for
+    transfer between components.
+    """
+
+    @classmethod
+    def slurp(cls, path: str) -> "SourceBundle":
+        """
+        Slurp up a path into a SourceBundle, recursively getting all files and directories and
+        storing them as a tree in memory.
+
+        :param path:
+        :return:
+        """
+        root, dirs, files = next(os.walk(path, topdown=True))
+
+        pairs: List[Tuple[str, Union[bytes, SourceBundle]]] = []
+        for file_name in files:
+            file_path = os.path.join(root, file_name)
+            with open(file_path, "rb") as f:
+                file_contents = f.read()
+
+            pairs.append((file_name, file_contents))
+
+        for dir_name in dirs:
+            dir_path = os.path.join(root, dir_name)
+            pairs.append((dir_name, SourceBundle.slurp(dir_path)))
+
+        return cls(pairs)
+
+    def dump(self, target_path: str):
+        """
+        Dump a SourceBundle tree back into the local filesystem, at the given target path.
+        :param target_path:
+        :return:
+        """
+        os.makedirs(target_path, exist_ok=True)
+        for item_name, item_contents in self.items():
+            item_path = os.path.join(target_path, item_name)
+            if type(item_contents) is bytes:
+                # item is a file
+                with open(item_path, "wb") as f:
+                    f.write(item_contents)
+            else:
+                # item is a directory
+                cast(SourceBundle, item_contents).dump(item_path)
 
 
 @dataclass
 class PatchFromSourceModifierConfig(ComponentConfig):
     """
-    :var source_code_resource_id: ID of FilesystemRoot resource with all source code for patch
+    :var source_code: Path to directory containing source code (ideally ONLY source code)
     :var source_patches: path of each source file to build and inject, with one or more segments
     defining where to inject one or more of the .text, .data, and .rodata from the build file
     :var toolchain_config: configuration for the
     [Toolchain][ofrak_patch_maker.toolchain.abstract.Toolchain] to use
-    :var toolchain: the type of which [Toolchain][ofrak_patch_maker.toolchain.abstract.Toolchain] to use
+    :var toolchain: the type of which [Toolchain][ofrak_patch_maker.toolchain.abstract.Toolchain]
+      to use to build patch
+    :var header_directories: (Optional) paths to directories to search for header files in
     :var patch_name: Optional name of patch
-    :var header_directory_resource_ids: Optional additional FilesystemRoot resources with header
-    directories
     """
 
-    source_code_resource_id: bytes
+    source_code: SourceBundle
     source_patches: Dict[str, Tuple[Segment, ...]]
     toolchain_config: ToolchainConfig
     toolchain: Type[Toolchain]
+    header_directories: Tuple[SourceBundle, ...] = ()
     patch_name: Optional[str] = None
-    header_directory_resource_ids: Optional[Tuple[bytes, ...]] = None
 
 
 class PatchFromSourceModifier(Modifier):
@@ -53,41 +104,23 @@ class PatchFromSourceModifier(Modifier):
 
     targets = (Program,)
 
-    async def _flush_source_bundle_to_disk(
-        self, resource_id: bytes, prototype_resource: Resource
-    ) -> str:
-        path = tempfile.mkdtemp()
-        source_dir_resource = await self._resource_factory.create(
-            prototype_resource.get_job_id(),
-            resource_id,
-            prototype_resource.get_resource_context(),
-            prototype_resource.get_resource_view_context(),
-            prototype_resource.get_component_context(),
-            prototype_resource.get_job_context(),
-        )
-        source_bundle = await source_dir_resource.view_as(SourceBundle)
-        await source_bundle.flush_to_disk(path)
-        return path
-
     async def modify(self, resource: Resource, config: PatchFromSourceModifierConfig) -> None:
-
         if config.patch_name is None:
-            patch_name = f"{config.source_code_resource_id.hex()}_{resource.get_id().hex()}"
+            patch_name = f"{resource.get_id().hex()}_patch"
         else:
             patch_name = config.patch_name
 
         build_tmp_dir = tempfile.mkdtemp()
-
-        source_tmp_dir = await self._flush_source_bundle_to_disk(
-            config.source_code_resource_id, resource
-        )
+        source_tmp_dir = os.path.join(build_tmp_dir, "src")
+        os.makedirs(source_tmp_dir)
+        config.source_code.dump(source_tmp_dir)
 
         header_dirs = []
-        if config.header_directory_resource_ids:
-            for header_directory_id in config.header_directory_resource_ids:
-                header_dirs.append(
-                    await self._flush_source_bundle_to_disk(header_directory_id, resource)
-                )
+        for header_directory in config.header_directories:
+            header_tmp_dir = os.path.join(build_tmp_dir, "include")
+            os.makedirs(build_tmp_dir)
+            header_directory.dump(header_tmp_dir)
+            header_dirs.append(header_tmp_dir)
 
         absolute_source_list = [
             os.path.join(source_tmp_dir, src_file) for src_file in config.source_patches.keys()
@@ -97,7 +130,6 @@ class PatchFromSourceModifier(Modifier):
             toolchain=config.toolchain(program_attributes, config.toolchain_config),
             build_dir=build_tmp_dir,
         )
-
         patch_bom = patch_maker.make_bom(
             name=patch_name,
             source_list=absolute_source_list,
@@ -115,21 +147,31 @@ class PatchFromSourceModifier(Modifier):
         target_linkable_bom_info = await target_program.make_linkable_bom(
             patch_maker,
             build_tmp_dir,
+            patch_bom.unresolved_symbols,
         )
+
         # To support additional dynamic references in user space executables
         # Create and use a modifier that will:
         # 1. Extend .got, add new entry
         # 2. Extend .got.plt, add new stub code
         # 3. If the DSO is not already listed in the load list for executable it must be extended and added.
         # 4. Provide the additional .got and .got.plt symbols to make_fem now that we have the locations
-        # NOTE: These external functions will probably be UND*
+        # NOTE: These external functions will probably be *UND*
         p = PatchRegionConfig(patch_bom.name + "_patch", patch_bom_segment_mapping)
         exec_path = os.path.join(build_tmp_dir, "output_exec")
-        fem = patch_maker.make_fem([(patch_bom, p), target_linkable_bom_info], exec_path)
-
+        fem = patch_maker.make_fem(
+            [(patch_bom, p), target_linkable_bom_info],
+            exec_path,
+        )
         await resource.run(
             SegmentInjectorModifier,
             SegmentInjectorModifierConfig.from_fem(fem),
+        )
+
+        # Refresh LinkableBinary with the LinkableSymbols used in this patch
+        target_binary = await resource.view_as(LinkableBinary)
+        await target_binary.define_linkable_symbols_from_patch(
+            fem.executable.symbols, program_attributes
         )
 
 
@@ -148,7 +190,15 @@ class SegmentInjectorModifierConfig(ComponentConfig):
         for segment in fem.executable.segments:
             if segment.length == 0:
                 continue
-            segment_data = exe_data[segment.offset : segment.offset + segment.length]
+
+            if segment.is_bss:
+                # It's possible for NOBITS sections like .bss to be allocated into RW MemoryRegions
+                # that are mapped to data. In that case, we should zero out the region instead
+                # of patching the arbitrary data in the FEM
+                segment_data = b"\0" * segment.length
+            else:
+                segment_data = exe_data[segment.offset : segment.offset + segment.length]
+
             extracted_segments.append((segment, segment_data))
         return SegmentInjectorModifierConfig(tuple(extracted_segments))
 
@@ -179,15 +229,14 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
         injection_tasks: List[Tuple[Resource, BinaryInjectorModifierConfig]] = []
 
         for segment, segment_data in config.segments_and_data:
-            if segment.length == 0 or segment.vm_address == 0:
+            if segment.length == 0 or not segment.is_allocated:
                 continue
             if segment.length > 0:
                 LOGGER.debug(
                     f"    Segment {segment.segment_name} - {segment.length} "
                     f"bytes @ {hex(segment.vm_address)}",
                 )
-            if segment.segment_name.startswith(".bss"):
-                continue
+
             if segment.segment_name.startswith(".rela"):
                 continue
             if segment.segment_name.startswith(".got"):
@@ -197,17 +246,30 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
                 # See PatchFromSourceModifier
                 continue
 
-            patches = [(segment.vm_address, segment_data)]
-            region = MemoryRegion.get_mem_region_with_vaddr_from_sorted(
-                segment.vm_address, sorted_regions
-            )
-            if region is None:
+            try:
+                region = MemoryRegion.get_mem_region_with_vaddr_from_sorted(
+                    segment.vm_address, sorted_regions
+                )
+            except NotFoundError:
+                # uninitialized section like .bss mapped to arbitrary memory range without corresponding
+                # MemoryRegion resource, no patch needed.
+                if segment.is_bss:
+                    continue
+                raise
+
+            region_mapped_to_data = region.resource.get_data_id() is not None
+            if region_mapped_to_data:
+                patches = [(segment.vm_address, segment_data)]
+                injection_tasks.append((region.resource, BinaryInjectorModifierConfig(patches)))
+            else:
+                if segment.is_bss:
+                    # uninitialized section like .bss mapped to arbitrary memory range without corresponding
+                    # data on a resource, no patch needed.
+                    continue
                 raise ValueError(
                     f"Cannot inject patch because the memory region at vaddr "
-                    f"{hex(segment.vm_address)} is None"
+                    f"{hex(segment.vm_address)} is not mapped to data"
                 )
-
-            injection_tasks.append((region.resource, BinaryInjectorModifierConfig(patches)))
 
         for injected_resource, injection_config in injection_tasks:
             result = await injected_resource.run(BinaryInjectorModifier, injection_config)
@@ -231,23 +293,22 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
 @dataclass
 class FunctionReplacementModifierConfig(ComponentConfig):
     """
-    :var source_code_resource_id: ID of FilesystemRoot resource with all source code for patch
+    :var source_code: Path to directory containing source code (ideally ONLY source code)
     :var new_function_sources: a mapping from function names (to replace) to source code file paths (to use as
     replacements). The paths are relative paths within the source code FilesystemRoot.
     :var toolchain_config: configuration for the
     [Toolchain][ofrak_patch_maker.toolchain.abstract.Toolchain] to use
     :var toolchain: the type of which type of [Toolchain][ofrak_patch_maker.toolchain.abstract.Toolchain] to use
     :var patch_name: Optional name of patch
-    :var header_directory_resource_ids: Optional additional FilesystemRoot resources with header
-    directories
+    :var header_directories: (Optional) paths to directories to search for header files in
     """
 
-    source_code_resource_id: bytes
+    source_code: SourceBundle
     new_function_sources: Dict[str, str]
     toolchain_config: ToolchainConfig
     toolchain: Type[Toolchain]
     patch_name: Optional[str] = None
-    header_directory_resource_ids: Optional[Tuple[bytes, ...]] = None
+    header_directories: Tuple[SourceBundle, ...] = ()
 
 
 class FunctionReplacementModifier(Modifier[FunctionReplacementModifierConfig]):
@@ -273,12 +334,12 @@ class FunctionReplacementModifier(Modifier[FunctionReplacementModifierConfig]):
             for func_name, complex_block in function_to_replace_cbs.items()
         }
         patch_from_source_config = PatchFromSourceModifierConfig(
-            config.source_code_resource_id,
+            config.source_code,
             source_patches,
             config.toolchain_config,
             config.toolchain,
+            config.header_directories,
             config.patch_name,
-            config.header_directory_resource_ids,
         )
         await resource.run(PatchFromSourceModifier, patch_from_source_config)
 

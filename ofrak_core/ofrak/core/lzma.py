@@ -7,7 +7,7 @@ from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.resource import Resource
 from ofrak.core.binary import GenericBinary
-from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
+from ofrak.core.magic import MagicMimePattern, MagicDescriptionPattern
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
@@ -50,11 +50,22 @@ class LzmaUnpacker(Unpacker[None]):
         elif resource.has_tag(LzmaData):
             format = lzma.FORMAT_ALONE
 
-        lzma_entry_data = lzma.decompress(file_data.read(), format)
-        await resource.create_child(
-            tags=(GenericBinary,),
-            data=lzma_entry_data,
-        )
+        lzma_entry_data = None
+        compressed_data = file_data.read()
+
+        try:
+            lzma_entry_data = lzma.decompress(compressed_data, format)
+        except lzma.LZMAError:
+            LOGGER.info("Initial LZMA decompression failed. Trying with null bytes stripped")
+            lzma_entry_data = lzma.decompress(compressed_data.rstrip(b"\x00"), format)
+
+        if lzma_entry_data is not None:
+            await resource.create_child(
+                tags=(GenericBinary,),
+                data=lzma_entry_data,
+            )
+        else:
+            raise lzma.LZMAError("Decompressed LZMA data is null")
 
 
 class LzmaPacker(Packer[None]):
@@ -88,7 +99,7 @@ class LzmaPacker(Packer[None]):
         return lzma_format, tag
 
 
-MagicMimeIdentifier.register(LzmaData, "application/x-lzma")
-MagicMimeIdentifier.register(XzData, "application/x-xz")
-MagicDescriptionIdentifier.register(LzmaData, lambda s: s.startswith("LZMA compressed data"))
-MagicDescriptionIdentifier.register(XzData, lambda s: s.startswith("XZ compressed data"))
+MagicMimePattern.register(LzmaData, "application/x-lzma")
+MagicMimePattern.register(XzData, "application/x-xz")
+MagicDescriptionPattern.register(LzmaData, lambda s: s.startswith("LZMA compressed data"))
+MagicDescriptionPattern.register(XzData, lambda s: s.startswith("XZ compressed data"))

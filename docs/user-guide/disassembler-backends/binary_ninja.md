@@ -2,44 +2,60 @@
 
 ## Install
 
-Binary Ninja is not distributed with OFRAK. **You need to have a valid headless BinaryNinja license to build and run the image.** For more details:
-- [Read about the environment setup](../../environment-setup.md#binary-ninja).
-- See the [Docker commands that are run](https://github.com/redballoonsecurity/ofrak/blob/master/disassemblers/ofrak_binary_ninja/Dockerstub).
+Binary Ninja is not distributed with OFRAK. **You need to have a valid Binary Ninja license to use OFRAK Binary Ninja.** You can run OFRAK Binary Ninja natively with a valid **commercial** licence, and in a Docker container with a valid **headless** license.
 
-The recommended BinaryNinja version to use with OFRAK is 3.2.3814. If you are running OFRAK outside of the Docker image, you can switch to this version of BinaryNinja using the [BinaryNinja version switcher](https://github.com/Vector35/binaryninja-api/blob/dev/python/examples/version_switcher.py).
+The recommended Binary Ninja version to use with OFRAK is 3.2.3814. If you are running OFRAK outside of the Docker image, you can switch to this version of Binary Ninja using the [Binary Ninja version switcher](https://github.com/Vector35/binaryninja-api/blob/dev/python/examples/version_switcher.py).
 
+=== "Native"
 
-### Docker
-To build the image, the license should be placed in the project's root directory and named `license.dat`. The serial number needs to be extracted from that file into a file named `serial.txt`. This can be done with the following command:
+    You need to have Binary Ninja installed along with a valid **commercial** Binary Ninja license to run OFRAK Binary Ninja natively. 
 
-```bash
-python3 \
-  -c 'import json, sys; print(json.load(sys.stdin)[0]["serial"])' \
-  < license.dat \
-  > serial.txt
-```
+    1. Create a virtual environment to which you will install code:
+        ```
+        % python3 -m venv venv
+        % source venv/bin/activate
+        ```
+    1. Install `ofrak` and its dependencies.
+    1. Run `make {install, develop}` inside of the ['ofrak_binary_ninja/'](https://github.com/redballoonsecurity/ofrak/tree/master/disassemblers/ofrak_binary_ninja) directory to install OFRAK Binary Ninja.
+    1. Next, install the Binary Ninja Python APIs in your virtual environment
+        ```python
+        % python3 "/Applications/Binary Ninja.app/Contents/Resources/scripts/install_api.py" -v
+        ```
 
-The command `python3 build_image.py --config ofrak-binary-ninja.yml --base --finish` will build an image using Docker BuildKit secrets so that neither the license nor serial number are exposed in the built Docker image. (If [Docker BuildKit](https://docs.docker.com/develop/develop-images/build_enhancements/) is not enabled in your environment, precede the `python3 build_image.py` command with `DOCKER_BUILDKIT=1`.)
+=== "Docker"
 
-The Docker container should be run with the same license file from the installation step. The license can then be mounted into the Docker container at location `/root/.binaryninja/license.dat` by adding the following arguments to the `docker run` command:
+    You need to have a valid **headless** Binary Ninja license to build and run the Docker image. [Read about the environment setup](../../environment-setup.md#binary-ninja) for more details.
 
-```
---mount type=bind,source="$(pwd)"/license.dat,target=/root/.binaryninja/license.dat 
-```
+    To build the image, the license should be placed in the project's root directory and named `license.dat`. The serial number needs to be extracted from that file into a file named `serial.txt`. This can be done with the following command:
 
-For example:
+    ```bash
+    python3 \
+      -c 'import json, sys; print(json.load(sys.stdin)[0]["serial"])' \
+      < license.dat \
+      > serial.txt
+    ```
 
-```bash
-# This simple command...
-docker run -it redballoonsecurity/ofrak/binary-ninja bash
+    The command `python3 build_image.py --config ofrak-binary-ninja.yml --base --finish` will build an image using Docker BuildKit secrets so that neither the license nor serial number are exposed in the built Docker image. BuildKit is required for the build to succeed!
 
-# ...becomes the following. Notice the --mount
-docker run \
-  -it \
-  --mount type=bind,source="$(pwd)"/license.dat,target=/root/.binaryninja/license.dat \
-  redballoonsecurity/ofrak/binary-ninja \
-  bash
-```
+    The Docker container should be run with the same license file from the installation step. The license can then be mounted into the Docker container at location `/root/.binaryninja/license.dat` by adding the following arguments to the `docker run` command:
+
+    ```
+    --mount type=bind,source="$(pwd)"/license.dat,target=/root/.binaryninja/license.dat 
+    ```
+
+    For example:
+
+    ```bash
+    # This simple command...
+    docker run -it redballoonsecurity/ofrak/binary-ninja bash
+
+    # ...becomes the following. Notice the --mount
+    docker run \
+      -it \
+      --mount type=bind,source="$(pwd)"/license.dat,target=/root/.binaryninja/license.dat \
+      redballoonsecurity/ofrak/binary-ninja \
+      bash
+    ```
 
 ## Usage
 

@@ -2,7 +2,19 @@ import heapq
 import itertools
 from bisect import bisect_left, bisect_right
 from collections import defaultdict
-from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, TypeVar, Generic
+from typing import (
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    TypeVar,
+    Generic,
+    Pattern,
+    cast,
+)
 
 from sortedcontainers import SortedList
 
@@ -90,9 +102,9 @@ class DataService(DataServiceInterface):
         root = self._get_root_by_id(model.root_id)
         if data_range is not None:
             translated_range = data_range.translate(model.range.start).intersect(root.model.range)
-            return root.data[translated_range.start : translated_range.end]
+            return bytes(root.data[translated_range.start : translated_range.end])
         else:
-            return root.data[model.range.start : model.range.end]
+            return bytes(root.data[model.range.start : model.range.end])
 
     async def apply_patches(self, patches: List[DataPatch]) -> List[DataPatchesResult]:
         patches_by_root: Dict[DataId, List[DataPatch]] = defaultdict(list)
@@ -133,6 +145,33 @@ class DataService(DataServiceInterface):
             root = self._get_root_by_id(model.root_id)
             root.delete_mapped_model(model)
             del self._model_store[model.id]
+
+    async def search(self, data_id, query, start=None, end=None, max_matches=None):
+        model = self._get_by_id(data_id)
+        root = self._get_root_by_id(model.root_id)
+        start = model.range.start if start is None else model.range.start + start
+        end = model.range.end if end is None else min(model.range.end, model.range.start + end)
+        if isinstance(query, bytes):
+            matches = []
+            while max_matches is None or len(matches) < max_matches:
+                match_offset = root.data.find(query, start, end)
+                if match_offset < 0:
+                    break
+
+                matches.append(match_offset - model.range.start)
+                start = match_offset + 1
+
+            return tuple(matches)
+        else:
+            query = cast(Pattern, query)
+            match_iterator = query.finditer(root.data, start, end)
+
+            if max_matches is not None:
+                match_iterator = itertools.islice(match_iterator, max_matches)
+            matches = (
+                (match.start() - model.range.start, match.group(0)) for match in match_iterator
+            )
+            return tuple(matches)
 
     def _get_by_id(self, data_id: DataId) -> DataModel:
         model = self._model_store.get(data_id)
@@ -222,13 +261,11 @@ class DataService(DataServiceInterface):
         for affected_range in affected_ranges:
             results[root_data_id].append(affected_range)
 
-        new_root_data = bytearray(root.data)
         # Apply finalized patches to data and data models
         for patch_range, data, size_diff in finalized_ordered_patches:
-            new_root_data[patch_range.start : patch_range.end] = data
+            root.data[patch_range.start : patch_range.end] = data
             if size_diff != 0:
                 root.resize_range(patch_range, size_diff)
-        root.data = bytes(new_root_data)
 
         return [
             DataPatchesResult(data_id, results_for_id)
@@ -287,7 +324,7 @@ class _DataRoot:
 
     def __init__(self, model: DataModel, data: bytes):
         self.model: DataModel = model
-        self.data = data
+        self.data = bytearray(data)
         self._children: Dict[DataId, DataModel] = dict()
 
         # A pair of sorted 2D arrays, where each "point" in the grid is a set of children's data IDs

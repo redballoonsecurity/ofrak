@@ -1,7 +1,7 @@
+import tempfile312 as tempfile
 from dataclasses import dataclass
-from typing import List, Tuple
-import tempfile
 from io import BytesIO
+from typing import List, Tuple
 
 import pytest
 
@@ -11,14 +11,13 @@ from ofrak.core.elf.model import Elf
 from ofrak.core.filesystem import FilesystemRoot
 from ofrak.core.patch_maker.linkable_binary import LinkableBinary
 from ofrak.core.program import Program
-from ofrak.model.resource_model import ResourceAttributes
-from ofrak.model.viewable_tag_model import AttributesType
+from ofrak.model.component_model import ComponentContext
+from ofrak.model.resource_model import ResourceAttributes, ResourceContext
+from ofrak.model.viewable_tag_model import AttributesType, ResourceViewContext
 from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import ResourceFilter
-from ofrak.service.job_service_i import ComponentAutoRunFailure
 from ofrak_type.range import Range
-
 from test_ofrak.unit.component import mock_component
 from test_ofrak.unit.component.mock_component import (
     MockFailException,
@@ -204,20 +203,20 @@ async def test_flush_to_disk_pack(ofrak_context: OFRAKContext):
 
     with BytesIO() as buffer:
         # should fail because write_to runs pack_recursively and MockFailFile will fail on packing
-        with pytest.raises(ComponentAutoRunFailure) as exc_info:
+        with pytest.raises(MockFailException):
             await root_resource.write_to(buffer)
-
-        assert isinstance(exc_info.value.__cause__, MockFailException)
 
         # this should not fail because pack_recursively was suppressed
         await root_resource.write_to(buffer, pack=False)
 
-    with tempfile.NamedTemporaryFile() as t:
-        # again, should fail because the packer is run automatically
-        with pytest.raises(ComponentAutoRunFailure):
-            await root_resource.flush_to_disk(t.name)
+    with tempfile.NamedTemporaryFile(delete_on_close=False) as t:
+        t.close()
 
-        await root_resource.flush_to_disk(t.name, pack=False)
+        # again, should fail because the packer is run automatically
+        with pytest.raises(MockFailException):
+            await root_resource.flush_data_to_disk(t.name)
+
+        await root_resource.flush_data_to_disk(t.name, pack=False)
 
 
 async def test_is_modified(resource: Resource):
@@ -314,3 +313,12 @@ async def test_create_child_data_and_data_range(ofrak_context: OFRAKContext):
     resource = await ofrak_context.create_root_resource(name="test_file", data=b"\xff" * 10)
     with pytest.raises(ValueError):
         await resource.create_child(data=b"\x00", data_range=Range(0, 1))
+
+
+async def test_get_contexts(resource: Resource):
+    assert isinstance(resource.get_resource_context(), ResourceContext)
+    assert isinstance(resource.get_resource_view_context(), ResourceViewContext)
+    assert isinstance(resource.get_component_context(), ComponentContext)
+
+    # Outside the context of a component, resources don't have job run contexts
+    assert resource.get_job_context() is None
