@@ -32,7 +32,6 @@ class OfrakImageConfig:
     build_finish: bool
     # Whether to supply --no-cache to docker build commands
     no_cache: bool
-    check_python_reqs: bool
     extra_build_args: Optional[List[str]]
     install_target: InstallTarget
     cache_from: List[str]
@@ -173,7 +172,6 @@ def parse_args() -> OfrakImageConfig:
         args.base,
         args.finish,
         args.no_cache,
-        args.check_python_reqs,
         config_dict.get("extra_build_args"),
         InstallTarget(args.target),
         args.cache_from,
@@ -277,22 +275,18 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
             "\\n",
         ]
     )
-    dockerfile_finish_parts.append(f'RUN printf "{develop_makefile}" >> Makefile\n')
-    if config.check_python_reqs:
-        dockerfile_finish_parts += [
-            '# We use --network="none" to ensure all dependencies were installed in base.Dockerfile\n',
-            'RUN --network="none" make $INSTALL_TARGET\n',
-            "RUN python3 -m pip check\n\n",
-        ]
-    else:
-        dockerfile_finish_parts += [
-            "RUN make $INSTALL_TARGET\n\n",
-        ]
+    dockerfile_finish_parts += [
+        f'RUN printf "{develop_makefile}" >> Makefile\n'
+        '# We use --network="none" to ensure all dependencies were installed in base.Dockerfile\n',
+        'RUN --network="none" make $INSTALL_TARGET\n\n',
+    ]
     test_names = " ".join([f"test_{package_name}" for package_name in package_names])
     finish_makefile = "\\n\\\n".join(
         [
-            ".PHONY: test " + test_names,
-            "test: " + test_names,
+            ".PHONY: test inspect" + test_names,
+            "inspect:",
+            "\tpython3 -m pip check",
+            "test: inspect" + test_names,
         ]
         + [
             f"test_{package_name}:\\n\\\n\t\\$(MAKE) -C {package_name} test"
