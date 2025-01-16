@@ -1,5 +1,5 @@
 import logging
-import lzma
+import lzma as lzma_package
 from io import BytesIO
 from typing import Union
 
@@ -43,21 +43,21 @@ class LzmaUnpacker(Unpacker[None]):
     async def unpack(self, resource: Resource, config=None):
         file_data = BytesIO(await resource.get_data())
 
-        format = lzma.FORMAT_AUTO
+        format = lzma_package.FORMAT_AUTO
 
         if resource.has_tag(XzData):
-            format = lzma.FORMAT_XZ
+            format = lzma_package.FORMAT_XZ
         elif resource.has_tag(LzmaData):
-            format = lzma.FORMAT_ALONE
+            format = lzma_package.FORMAT_ALONE
 
         lzma_entry_data = None
         compressed_data = file_data.read()
 
         try:
-            lzma_entry_data = lzma.decompress(compressed_data, format)
-        except lzma.LZMAError:
+            lzma_entry_data = lzma_package.decompress(compressed_data, format)
+        except lzma_package.LZMAError:
             LOGGER.info("Initial LZMA decompression failed. Trying with null bytes stripped")
-            lzma_entry_data = lzma.decompress(compressed_data.rstrip(b"\x00"), format)
+            lzma_entry_data = lzma_package.decompress(compressed_data.rstrip(b"\x00"), format)
 
         if lzma_entry_data is not None:
             await resource.create_child(
@@ -65,7 +65,7 @@ class LzmaUnpacker(Unpacker[None]):
                 data=lzma_entry_data,
             )
         else:
-            raise lzma.LZMAError("Decompressed LZMA data is null")
+            raise lzma_package.LZMAError("Decompressed LZMA data is null")
 
 
 class LzmaPacker(Packer[None]):
@@ -80,7 +80,7 @@ class LzmaPacker(Packer[None]):
         lzma_file: Union[XzData, LzmaData] = await resource.view_as(tag)
 
         lzma_child = await lzma_file.get_child()
-        lzma_compressed = lzma.compress(await lzma_child.resource.get_data(), lzma_format)
+        lzma_compressed = lzma_package.compress(await lzma_child.resource.get_data(), lzma_format)
 
         original_size = await lzma_file.resource.get_data_length()
         resource.queue_patch(Range(0, original_size), lzma_compressed)
@@ -88,10 +88,10 @@ class LzmaPacker(Packer[None]):
     async def _get_lzma_format_and_tag(self, resource):
         if resource.has_tag(XzData):
             tag = XzData
-            lzma_format = lzma.FORMAT_XZ
+            lzma_format = lzma_package.FORMAT_XZ
         elif resource.has_tag(LzmaData):
             tag = LzmaData
-            lzma_format = lzma.FORMAT_ALONE
+            lzma_format = lzma_package.FORMAT_ALONE
         else:
             raise TypeError(
                 f"Expected target of {self.get_id().decode()} to be either XzFile or LzmaFile"
