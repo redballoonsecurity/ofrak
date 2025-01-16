@@ -145,7 +145,6 @@ def parse_args() -> OfrakImageConfig:
     parser.add_argument("--base", action="store_true")
     parser.add_argument("--finish", action="store_true")
     parser.add_argument("--no-cache", action="store_true")
-    parser.add_argument("--check-python-reqs", action="store_true")
     parser.add_argument(
         "--target",
         choices=[InstallTarget.DEVELOP.value, InstallTarget.INSTALL.value],
