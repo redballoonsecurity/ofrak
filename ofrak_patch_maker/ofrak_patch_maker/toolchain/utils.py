@@ -1,10 +1,9 @@
 import configparser
 import os
-import glob
 from multiprocessing import Pool, cpu_count
 from typing import Optional, Dict, Mapping, Tuple
-
 import math
+import shutil
 
 from ofrak_patch_maker.toolchain.model import BinFileType, Segment
 from ofrak_type.error import NotFoundError
@@ -27,9 +26,8 @@ def get_file_format(path):
 
 def get_repository_config(section: str, key: Optional[str] = None):
     """
-    Get config values from toolchain.conf.
-
-    If the resulting value contains '*', we do a glob expansion.
+    Get config values from toolchain.conf. The toolchain.conf file can be located /etc/ofrak/toolchain.conf
+    or inside the `ofrak_patch_maker` Python package install.
 
     :param section: section name in config file
     :param key: key in `config[section]`
@@ -41,34 +39,33 @@ def get_repository_config(section: str, key: Optional[str] = None):
 
     config = configparser.RawConfigParser()
     config_name = "toolchain.conf"
-    local_config = os.path.join(os.path.dirname(__file__), os.path.pardir)
-    config_paths = [local_config]
+
+    # Should be shared across main OFRAK and use standardized configuration dirs in the future
+    config_paths = [
+        os.path.join(p, config_name)
+        for p in ("/etc/ofrak/", os.path.join(os.path.dirname(__file__), os.path.pardir))
+    ]
+
     error_by_config_file: Dict[str, Exception] = dict()
-    for p in config_paths:
-        conf = os.path.join(p, config_name)
+    for conf in config_paths:
         if not os.path.exists(conf):
             continue
         try:
             config.read(conf)
             if key:
-                raw_value = config.get(section, key)
-
-                if "*" in raw_value:
-                    matches = glob.glob(raw_value)
-                    if matches:
-                        return matches[0]
-                    else:
-                        raise NotFoundError(f"No file matches wildcard {raw_value}")
-                else:
-                    return raw_value
+                ret = config.get(section, key)
             else:
-                return config.items(section)  # type: ignore
+                ret = config.items(section)  # type: ignore
+            return ret
         except (configparser.NoSectionError, configparser.NoOptionError) as e:
             error_by_config_file[conf] = e
             continue
 
     if 0 == len(error_by_config_file):
-        raise NotFoundError(f"Configuration file {config_name} not found")
+        config_paths_str = "\n".join(config_paths)
+        raise NotFoundError(
+            f"Configuration file {config_name} not found. Tried the following locations:\n{config_paths_str}"
+        )
 
     elif 1 == len(error_by_config_file):
         _config, _e = next(iter(error_by_config_file.items()))
@@ -78,6 +75,34 @@ def get_repository_config(section: str, key: Optional[str] = None):
         raise NotFoundError(
             f"Section {section:s} or option {key:s} not found in any of the configs searched: "
             f"{error_by_config_file}"
+        )
+
+
+def get_exec_from_config(section: str, key: str):
+    """
+    Get an executable name or path from a toolchain.conf. Output instructions for configuring
+    toolchain paths if the exectuable is not available.
+
+    :param section: section name in config file
+    :param key: key in `config[section]`
+
+    :raises SystemExit: If `config[section]` or `config[section][key]` not found.
+    :return Union[str, List[Tuple[str, str]]]: the result of ``config.get(section, key)`` or
+        ``config.items(section)``
+    """
+
+    exec_path = get_repository_config(section, key)
+    if shutil.which(exec_path) is not None:
+        return exec_path
+    else:
+        try:
+            download_link = get_repository_config(section, "DOWNLOAD")
+            download_text = f"download the toolchain from {download_link} and "
+        except NotFoundError:
+            download_text = ""
+        raise NotFoundError(
+            f"Configured executable {exec_path} ({key} of {section}) not found on the filesystem or PATH. "
+            f"Please {download_text}edit the toolchain.conf file to point to the toolchain executable."
         )
 
 
