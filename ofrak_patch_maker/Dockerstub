@@ -1,5 +1,7 @@
 ARG TARGETARCH
 
+COPY ${PACKAGE_PATH}/conf/toolchain_docker_${TARGETARCH}.conf /etc/ofrak/toolchain.conf
+
 # LLVM
 RUN mkdir -p /opt/rbs/toolchain && \
     cd /tmp && \
