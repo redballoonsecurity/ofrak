@@ -3,9 +3,9 @@ base_image_name: "core-dev-base"
 image_name: "core-dev"
 packages_paths:
   [
-    "ofrak_patch_maker", # Patch maker dockerstub includes lots of downloads. Keeping it first helps with docker caching.
     "ofrak_type",
     "ofrak_io",
+    "ofrak_patch_maker",
     "ofrak_core",
     "frontend",
   ]
