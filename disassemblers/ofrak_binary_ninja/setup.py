@@ -36,6 +36,9 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
+    install_requires=[
+        "ofrak[test]>=3.3.0rc0",
+    ],
     extras_require={
         "test": [
             "fun-coverage==0.2.0",

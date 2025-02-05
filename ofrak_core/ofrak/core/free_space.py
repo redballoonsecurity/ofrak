@@ -606,7 +606,7 @@ class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
             FreeSpaceTag = RuntimeFreeSpace
         else:
             patch_data = _get_patch(freed_range, config.stub, config.fill)
-            patch_offset = (await parent.get_data_range_within_parent()).start
+            patch_offset = (await resource.get_data_range_within_parent()).start
             patch_range = freed_range.translate(patch_offset - freed_range.start)
 
             # Patch in the patch_data
