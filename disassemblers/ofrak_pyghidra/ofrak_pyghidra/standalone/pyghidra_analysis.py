@@ -15,8 +15,8 @@ def _parse_offset(java_object):
     return int(str(java_object.getOffsetAsBigInteger()))
 
 
-def unpack(program_file, decompiled):
-    with pyghidra.open_program(program_file) as flat_api:
+def unpack(program_file, decompiled, language=None):
+    with pyghidra.open_program(program_file, language=language) as flat_api:
         main_dictionary = {}
         code_regions = _unpack_program(flat_api)
         main_dictionary["metadata"] = {}
