@@ -183,7 +183,7 @@
     }
   }
 
-  $: if (node["type"].startsWith("ofrak")) {
+  $: if (node["type"].startsWith("ofrak") && node["enum"] == null) {
     setName();
   }
 
