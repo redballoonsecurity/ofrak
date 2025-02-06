@@ -107,7 +107,10 @@
     loadedScript = [],
     errorMessage,
     ofrakConfigsPromise = new Promise(() => {}),
-    scriptParams = {};
+    runScriptConfig = [
+      "ofrak.core.run_script_modifier.RunScriptModifierConfig",
+      {},
+    ];
 
   $: if (files) {
     files[0].text().then((value) => {
@@ -131,10 +134,10 @@
   async function runLoadedScript() {
     let results = {};
     try {
+      runScriptConfig[1].code = loadedScript.join("\n");
       results = await $selectedResource.run_component(
         "RunScriptModifier",
-        "ofrak.core.run_script_modifier.RunScriptModifierConfig",
-        Object.assign({ code: loadedScript.join("\n") }, scriptParams)
+        runScriptConfig
       );
     } catch (err) {
       $selectedResource.flush_cache();
@@ -201,7 +204,7 @@
           {#if field.name != "code"}
             <SerializerInputForm
               node="{field}"
-              bind:element="{scriptParams[field.name]}"
+              bind:element="{runScriptConfig[1][field.name]}"
             />
           {/if}
         {/each}
