@@ -1,4 +1,3 @@
-import asyncio
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Optional, Iterable
@@ -57,8 +56,7 @@ class BasicBlock(MemoryRegion):
         :return: the basic block's assembly
         """
         instructions = await self.get_instructions()
-        instruction_assemblies = [i.get_assembly() for i in instructions]
-        return "\n".join(await asyncio.gather(*instruction_assemblies))
+        return "\n".join([i.get_assembly() for i in instructions])
 
 
 class BasicBlockUnpacker(Unpacker[None], ABC):

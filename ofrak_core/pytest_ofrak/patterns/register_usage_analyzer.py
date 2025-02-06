@@ -20,7 +20,7 @@ class RegisterAnalyzerTestCase:
 
     @property
     def label(self):
-        return f"{self.program_attributes.isa.name}: {self.instruction.disassembly}"
+        return f"{self.program_attributes.isa.name}: {self.instruction.get_assembly()}"
 
 
 ARM_REGISTER_USAGE_TEST_CASES = [
@@ -29,7 +29,6 @@ ARM_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             0x100,
             0x4,
-            "push {r4, r5, r6, r7, r8, lr}",
             "push",
             "{r4, r5, r6, r7, r8, lr}",
             InstructionSetMode.NONE,
@@ -42,7 +41,6 @@ ARM_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             0x104,
             0x4,
-            "mov r4, #0x0",
             "mov",
             "r4, #0x0",
             InstructionSetMode.NONE,
@@ -55,7 +53,6 @@ ARM_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             0x108,
             0x4,
-            "mov r5, r4",
             "mov",
             "r5, r4",
             InstructionSetMode.NONE,
@@ -68,7 +65,6 @@ ARM_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             0x10C,
             0x4,
-            "ldr r6, [pc, #0x50]",
             "ldr",
             "r6, [pc, #0x50]",
             InstructionSetMode.NONE,
@@ -81,7 +77,6 @@ ARM_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             0x110,
             0x4,
-            "ldr r7, [pc, #0x50]",
             "ldr",
             "r7, [pc, #0x50]",
             InstructionSetMode.NONE,
@@ -98,7 +93,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x4003E0,
             size=2,
-            disassembly="xor ebp, ebp",
             mnemonic="xor",
             operands="ebp, ebp",
             mode=InstructionSetMode.NONE,
@@ -111,7 +105,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x4003E2,
             size=3,
-            disassembly="mov r9, rdx",
             mnemonic="mov",
             operands="r9, rdx",
             mode=InstructionSetMode.NONE,
@@ -124,7 +117,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x4003E5,
             size=1,
-            disassembly="pop rsi",
             mnemonic="pop",
             operands="rsi",
             mode=InstructionSetMode.NONE,
@@ -137,7 +129,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x4003E6,
             size=3,
-            disassembly="mov rdx, rsp",
             mnemonic="mov",
             operands="rdx, rsp",
             mode=InstructionSetMode.NONE,
@@ -150,7 +141,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x4003ED,
             size=1,
-            disassembly="push rax",
             mnemonic="push",
             operands="rax",
             mode=InstructionSetMode.NONE,
@@ -163,7 +153,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x4003EE,
             size=1,
-            disassembly="push rsp",
             mnemonic="push",
             operands="rsp",
             mode=InstructionSetMode.NONE,
@@ -176,7 +165,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x4003EF,
             size=7,
-            disassembly="mov r8, 0x4004e0",
             mnemonic="mov",
             operands="r8, 0x4004e0",
             mode=InstructionSetMode.NONE,
@@ -189,7 +177,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x4003F6,
             size=7,
-            disassembly="mov rcx, 0x4004f0",
             mnemonic="mov",
             operands="rcx, 0x4004f0",
             mode=InstructionSetMode.NONE,
@@ -202,7 +189,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x4003FD,
             size=7,
-            disassembly="mov rdi, 0x4004c4",
             mnemonic="mov",
             operands="rdi, 0x4004c4",
             mode=InstructionSetMode.NONE,
@@ -215,7 +201,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x400404,
             size=5,
-            disassembly="call 0x4003c8",
             mnemonic="call",
             operands="0x4003c8",
             mode=InstructionSetMode.NONE,
@@ -228,7 +213,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x400409,
             size=1,
-            disassembly="hlt ",
             mnemonic="hlt",
             operands="",
             mode=InstructionSetMode.NONE,
@@ -241,7 +225,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x40040C,
             size=4,
-            disassembly="sub rsp, 0x8",
             mnemonic="sub",
             operands="rsp, 0x8",
             mode=InstructionSetMode.NONE,
@@ -254,7 +237,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x400410,
             size=7,
-            disassembly="mov rax, qword ptr [0x600840]",
             mnemonic="mov",
             operands="rax, qword ptr [0x600840]",
             mode=InstructionSetMode.NONE,
@@ -267,7 +249,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x400417,
             size=3,
-            disassembly="test rax, rax",
             mnemonic="test",
             operands="rax, rax",
             mode=InstructionSetMode.NONE,
@@ -280,7 +261,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x40041A,
             size=2,
-            disassembly="jz 0x40041e",
             mnemonic="jz",
             operands="0x40041e",
             mode=InstructionSetMode.NONE,
@@ -293,7 +273,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x40041E,
             size=4,
-            disassembly="add rsp, 0x8",
             mnemonic="add",
             operands="rsp, 0x8",
             mode=InstructionSetMode.NONE,
@@ -306,7 +285,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x400422,
             size=1,
-            disassembly="ret ",
             mnemonic="ret",
             operands="",
             mode=InstructionSetMode.NONE,
@@ -319,7 +297,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x40041C,
             size=2,
-            disassembly="call rax",
             mnemonic="call",
             operands="rax",
             mode=InstructionSetMode.NONE,
@@ -332,7 +309,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x400430,
             size=1,
-            disassembly="push rbp",
             mnemonic="push",
             operands="rbp",
             mode=InstructionSetMode.NONE,
@@ -345,7 +321,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x400431,
             size=3,
-            disassembly="mov rbp, rsp",
             mnemonic="mov",
             operands="rbp, rsp",
             mode=InstructionSetMode.NONE,
@@ -358,7 +333,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x400434,
             size=1,
-            disassembly="push rbx",
             mnemonic="push",
             operands="rbx",
             mode=InstructionSetMode.NONE,
@@ -371,7 +345,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x400435,
             size=4,
-            disassembly="sub rsp, 0x8",
             mnemonic="sub",
             operands="rsp, 0x8",
             mode=InstructionSetMode.NONE,
@@ -384,7 +357,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x400439,
             size=7,
-            disassembly="cmp byte ptr [0x600880], 0x0",
             mnemonic="cmp",
             operands="byte ptr [0x600880], 0x0",
             mode=InstructionSetMode.NONE,
@@ -397,7 +369,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x400491,
             size=1,
-            disassembly="pop rbx",
             mnemonic="pop",
             operands="rbx",
             mode=InstructionSetMode.NONE,
@@ -410,7 +381,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x400492,
             size=1,
-            disassembly="leave ",
             mnemonic="leave",
             operands="",
             mode=InstructionSetMode.NONE,
@@ -423,7 +393,6 @@ X64_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             virtual_address=0x400493,
             size=1,
-            disassembly="ret ",
             mnemonic="ret",
             operands="",
             mode=InstructionSetMode.NONE,
@@ -439,7 +408,6 @@ PPC_REGISTER_USAGE_TEST_CASES = [
         Instruction(
             0x100,
             0x4,
-            "add r4, r5, r6",
             "add",
             "r4, r5, r6",
             InstructionSetMode.NONE,
@@ -504,7 +472,7 @@ class RegisterUsageTestPattern:
         self, test_case: RegisterAnalyzerTestCase, ofrak_context, assembler_service
     ):
         instr_data = await assembler_service.assemble(
-            test_case.instruction.disassembly,
+            test_case.instruction.get_assembly(),
             test_case.instruction.virtual_address,
             test_case.program_attributes,
             test_case.instruction.mode,
