@@ -248,7 +248,6 @@ class CachedBasicBlockUnpacker(BasicBlockUnpacker):
             instr = Instruction(
                 virtual_address=instruction["virtual_address"],
                 size=instruction["size"],
-                disassembly=f"{instruction['mnemonic']} {instruction['operands']}",
                 mnemonic=instruction["mnemonic"],
                 operands=instruction["operands"],
                 mode=mode,
