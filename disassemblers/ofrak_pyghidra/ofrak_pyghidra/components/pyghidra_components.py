@@ -1,8 +1,23 @@
-from ofrak.core import *
+from dataclasses import dataclass
 from tempfile import TemporaryDirectory
 import os
+from typing import Dict
+
+from ofrak.component.analyzer import Analyzer
+from ofrak.core.architecture import ProgramAttributes
+from ofrak.service.data_service_i import DataServiceInterface
+from ofrak.service.resource_service_i import ResourceFilter, ResourceServiceInterface
+from ofrak_type import ArchInfo, Endianness, InstructionSet
 
 
+from ofrak.component.identifier import Identifier
+from ofrak.core.elf.model import Elf
+from ofrak.core.ihex import Ihex
+from ofrak.core.pe.model import Pe
+from ofrak.core.program import Program
+from ofrak.model.component_model import ComponentConfig
+from ofrak.resource import Resource, ResourceFactory
+from ofrak.resource_view import ResourceView
 from ofrak_cached_disassembly.components.cached_disassembly import CachedAnalysisStore
 from ofrak_cached_disassembly.components.cached_disassembly_unpacker import (
     CachedCodeRegionUnpacker,

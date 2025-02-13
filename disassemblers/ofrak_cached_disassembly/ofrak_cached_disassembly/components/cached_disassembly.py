@@ -1,5 +1,7 @@
-from ofrak.core import *
 import json
+from typing import Any, Dict, Optional, Union
+
+from ofrak.core.architecture import ProgramAttributes
 
 
 class CachedAnalysisStore:

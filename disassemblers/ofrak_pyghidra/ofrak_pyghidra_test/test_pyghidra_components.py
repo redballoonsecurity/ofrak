@@ -1,9 +1,12 @@
+from dis import Instruction
 import os
-from typing import Dict
+from typing import Dict, Tuple
+from ofrak.core.complex_block import ComplexBlock
 from ofrak.ofrak_context import OFRAKContext
-from ofrak_type import InstructionSetMode
+from ofrak.resource import Resource
+from ofrak.service.resource_service_i import ResourceFilter
+from ofrak_type import InstructionSetMode, List
 import pytest
-from ofrak.core import *
 from pytest_ofrak.patterns.code_region_unpacker import CodeRegionUnpackAndVerifyPattern
 from pytest_ofrak.patterns.complex_block_unpacker import (
     ComplexBlockUnpackerUnpackAndVerifyPattern,
@@ -86,7 +89,7 @@ async def test_instruction_mode(test_case: Tuple[Resource, InstructionSetMode]):
     )
 
 
-async def test_cached_decompilation(ofrak_context: OFRAKContext):
+async def test_decompilation(ofrak_context: OFRAKContext):
     root_resource = await ofrak_context.create_root_resource_from_file(
         os.path.join(os.path.dirname(__file__), "assets/hello.x64.elf")
     )

@@ -1,13 +1,17 @@
 import os
-from typing import Dict
+from typing import Dict, Tuple
 import pytest
-from ofrak.core import *
+from ofrak.core.complex_block import ComplexBlock
+from ofrak.core.filesystem import File
+from ofrak.core.instruction import Instruction
 from ofrak.ofrak_context import OFRAKContext
+from ofrak.resource import Resource
+from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_cached_disassembly.components.cached_disassembly_unpacker import (
     CachedAnalysisAnalyzer,
     CachedAnalysisAnalyzerConfig,
 )
-from ofrak_type import InstructionSetMode
+from ofrak_type import InstructionSetMode, List
 from pytest_ofrak.patterns.code_region_unpacker import (
     CodeRegionUnpackAndVerifyPattern,
     CodeRegionUnpackerTestCase,

@@ -1,7 +1,15 @@
-from ofrak.core import *
+from dis import Instruction
 import hashlib
-from ofrak.core.code_region import CodeRegion
-from ofrak.core.complex_block import ComplexBlock
+from typing import List, Optional
+from dataclasses import dataclass
+
+from ofrak.component.modifier import Modifier
+from ofrak.core import Analyzer, ComponentConfig, ResourceFactory
+from ofrak.core.architecture import ProgramAttributes
+from ofrak.core.basic_block import BasicBlock, BasicBlockUnpacker
+from ofrak.core.code_region import CodeRegion, CodeRegionUnpacker
+from ofrak.core.complex_block import ComplexBlock, ComplexBlockUnpacker
+from ofrak.core.data import DataWord
 from ofrak.service.component_locator_i import (
     ComponentLocatorInterface,
 )
@@ -9,8 +17,20 @@ from ofrak.core.decompilation import (
     DecompilationAnalysis,
     DecompilationAnalyzer,
     DecompilationAnalysis,
+    ResourceView,
 )
+# from ofrak.core import Elf, Ihex, Pe, ResourceView, ComponentConfig, Analyzer, ResourceFactory, DataServiceInterface, ResourceServiceInterface, Resource, Program, ProgramAttributes, CodeRegionUnpacker, ComplexBlockUnpacker, ResourceFilter, Unpacker, InstructionSetMode, BasicBlockUnpacker, BasicBlock, Instruction, DataWord, Modifier
+from ofrak.core.elf.model import Elf
+from ofrak.core.ihex import Ihex
+from ofrak.core.pe.model import Pe
+from ofrak.service.data_service_i import DataServiceInterface
+from ofrak.service.resource_service_i import ResourceFilter, ResourceServiceInterface
 from ofrak_cached_disassembly.components.cached_disassembly import CachedAnalysisStore
+from ofrak.resource import Resource
+
+from ofrak.component.unpacker import Unpacker
+from ofrak.core.program import Program
+from ofrak_type.architecture import InstructionSetMode
 
 _GHIDRA_AUTO_LOADABLE_FORMATS = [Elf, Ihex, Pe]
 
