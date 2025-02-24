@@ -12,6 +12,7 @@ from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.core.binary import GenericBinary, GenericText
 from ofrak.core.program_section import ProgramSection
+from ofrak.core import CodeRegion
 from ofrak.core.program import Program
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter
@@ -84,10 +85,14 @@ class IhexProgramUnpacker(Unpacker[None]):
             # Segment is mapped into the program at an offset starting at the difference between
             # the segment's vaddr range and the program's base address
             segment_data_range = seg_vaddr_range.translate(-ihex_program.address_limits.start)
-            await resource.create_child_from_view(
+            child = await resource.create_child_from_view(
                 ProgramSection(seg_vaddr_range.start, seg_vaddr_range.length()),
                 data_range=segment_data_range,
             )
+            child.add_view(
+                CodeRegion(virtual_address=seg_vaddr_range.start, size=seg_vaddr_range.length())
+            )
+            await child.save()
 
 
 class IhexProgramPacker(Packer[None]):
