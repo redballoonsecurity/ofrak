@@ -5,15 +5,18 @@ from dataclasses import dataclass
 from typing import Any, List, Tuple, Union
 
 from bincopy import BinFile
+from ofrak_type import Optional
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.identifier import Identifier
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
+from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.binary import GenericBinary, GenericText
 from ofrak.core.program_section import ProgramSection
 from ofrak.core import CodeRegion
 from ofrak.core.program import Program
+from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_type.range import Range
@@ -53,6 +56,18 @@ class IhexAnalyzer(Analyzer[None, IhexProgram]):
         raw_ihex = await resource.get_parent()
         ihex_program, _ = _binfile_analysis(await raw_ihex.get_data(), self)
         return ihex_program
+
+
+# class IhexProgramProgramAttributesAnalyzer(Analyzer[None, Tuple[ProgramAttributes]]):
+
+
+#     targets = (IhexProgram,)
+#     outputs = (ProgramAttributes,)
+
+#     async def analyze(
+#         self, resource: Resource, config: Optional[ComponentConfig] = None
+#     ) -> Tuple[ProgramAttributes]:
+#         return resource.get_attributes(ProgramAttributes)
 
 
 class IhexUnpacker(Unpacker[None]):
