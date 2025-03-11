@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import json
 from tempfile import TemporaryDirectory
 import os
 from typing import Dict
@@ -20,6 +21,7 @@ from ofrak.resource import Resource, ResourceFactory
 from ofrak.resource_view import ResourceView
 from ofrak_cached_disassembly.components.cached_disassembly import CachedAnalysisStore
 from ofrak_cached_disassembly.components.cached_disassembly_unpacker import (
+    CachedAnalysis,
     CachedCodeRegionUnpacker,
     CachedComplexBlockUnpacker,
     CachedBasicBlockUnpacker,
@@ -70,8 +72,10 @@ class CachedCodeRegionModifier(CachedCodeRegionModifier):
     pass
 
 
+@dataclass
 class PyGhidraAutoAnalyzerConfig(ComponentConfig):
-    arch: ArchInfo
+    decomp: bool
+    language: str
 
 
 class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraProject]):
@@ -95,35 +99,40 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraProject]):
             program_file = os.path.join(tempdir, "program")
             await resource.flush_data_to_disk(program_file)
             if config is not None:
+                analysis = unpack(program_file, config.decomp, config.language)
+                with open("/root/analysis.json", "w") as fh:
+                    json.dump(analysis, fh)
                 self.analysis_store.store_analysis(
                     resource.get_id(),
-                    unpack(program_file, False, _arch_info_to_processor_id(config.arch)),
+                    analysis,
                 )
             else:
                 self.analysis_store.store_analysis(
                     resource.get_id(), unpack(program_file, False, None)
                 )
-            program_attributes = await resource.analyze(ProgramAttributes)
-            self.analysis_store.store_program_attributes(resource.get_id(), program_attributes)
+            # program_attributes = await resource.analyze(ProgramAttributes)
+            # self.analysis_store.store_program_attributes(resource.get_id(), program_attributes)
             return PyGhidraProject()
 
 
 @dataclass
 class PyGhidraCodeRegionUnpackerConfig(ComponentConfig):
-    arch: ArchInfo
+    decomp: bool
+    language: str
 
 
 class PyGhidraCodeRegionUnpacker(CachedCodeRegionUnpacker):
     id = b"PyGhidraCodeRegionUnpacker"
 
     async def unpack(self, resource: Resource, config: PyGhidraCodeRegionUnpackerConfig = None):
-        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(Program))
+        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(PyGhidraAutoLoadProject))
         if not self.analysis_store.id_exists(program_r.get_id()):
             if config is not None:
                 await program_r.run(
                     PyGhidraAutoAnalyzer,
                     config=PyGhidraAutoAnalyzerConfig(
-                        language=_arch_info_to_processor_id(config.arch)
+                        decomp=config.decomp,
+                        language=config.language
                     ),
                 )
             else:
@@ -143,11 +152,12 @@ class PyGhidraDecompilationAnalyzer(CachedDecompilationAnalyzer):
     id = b"PyGhidraDecompilationAnalyzer"
 
     async def analyze(self, resource: Resource, config=None):
-        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(Program))
+        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(PyGhidraAutoLoadProject))
         if not self.analysis_store.get_analysis(program_r.get_id())["metadata"]["decompiled"]:
             with TemporaryDirectory() as tempdir:
                 program_file = os.path.join(tempdir, "program")
                 await program_r.flush_data_to_disk(program_file)
+                
                 self.analysis_store.store_analysis(program_r.get_id(), unpack(program_file, True))
         return await super().analyze(resource, config)
 
@@ -168,5 +178,8 @@ def _arch_info_to_processor_id(processor: ArchInfo):
     # The goal of the follow code is to identify the best proc ID for the ArchInfo, and we expect to be able to fall back on this default
     partial_proc_id = f"{family}:{endian}:{processor.bit_width.value}"
     # TODO: There are also some proc_ids that end with '_any' which are default-like
-    default_proc_id = f"{partial_proc_id}:default"
+    if family == "ARM":
+        default_proc_id = f"{partial_proc_id}:Cortex"
+    else:
+        default_proc_id = f"{partial_proc_id}:default"
     return default_proc_id

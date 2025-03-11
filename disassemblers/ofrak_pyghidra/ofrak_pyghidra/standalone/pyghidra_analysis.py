@@ -85,10 +85,22 @@ def _unpack_program(flat_api):
         if memory_block.isExecute():
             is_execute = True
         vaddr = _parse_offset(memory_block.getStart())
+        size = memory_block.getSize()
         ghidra_code_regions.append(
-            {"virtual_address": vaddr, "size": memory_block.getSize(), "executable": is_execute}
+            {"virtual_address": vaddr, "size": size, "executable": is_execute}
         )
-    return ghidra_code_regions
+    return _concat_contiguous_code_blocks(ghidra_code_regions)
+
+
+def _concat_contiguous_code_blocks(code_regions):
+    for i in range(len(code_regions)-1):
+        if code_regions[i]["virtual_address"] + code_regions[i]["size"] == code_regions[i + 1]["virtual_address"] and code_regions[i]["executable"] and code_regions[i+1]["executable"]:
+                vaddr = code_regions[i]["virtual_address"]
+                size = code_regions[i]["size"] + code_regions[i+1]["size"]
+                code_regions[i] = {"virtual_address": vaddr, "size": size, "executable": True}
+                del code_regions[i+1]
+                return _concat_contiguous_code_blocks(code_regions)
+    return code_regions
 
 
 def _unpack_code_region(code_region, flat_api):
@@ -364,9 +376,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--decompile", "-d", type=bool, default=False, help="decompile functions in cache"
     )
+    parser.add_argument("--language", "-l", default=None, help="Ghidra language id")
     args = parser.parse_args()
     start = time.time()
-    res = unpack(args.infile, args.decompile)
+    res = unpack(args.infile, args.decompile, args.language)
     with open(args.outfile, "w") as fh:
         json.dump(res, fh, indent=4)
     print(f"PyGhidra analysis took {time.time() - start} seconds")

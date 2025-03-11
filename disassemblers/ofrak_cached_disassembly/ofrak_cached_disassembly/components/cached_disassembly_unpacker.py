@@ -1,4 +1,3 @@
-from dis import Instruction
 import hashlib
 from typing import List, Optional
 from dataclasses import dataclass
@@ -10,6 +9,7 @@ from ofrak.core.basic_block import BasicBlock, BasicBlockUnpacker
 from ofrak.core.code_region import CodeRegion, CodeRegionUnpacker
 from ofrak.core.complex_block import ComplexBlock, ComplexBlockUnpacker
 from ofrak.core.data import DataWord
+from ofrak.core.instruction import Instruction
 from ofrak.service.component_locator_i import (
     ComponentLocatorInterface,
 )
@@ -64,7 +64,7 @@ class CachedAnalysisAnalyzer(Analyzer[CachedAnalysisAnalyzerConfig, CachedAnalys
 
     async def analyze(self, resource: Resource, config: CachedAnalysisAnalyzerConfig):
         await resource.identify()
-        if not resource.has_tag(Program) and not resource.has_attributes(ProgramAttributes):
+        if not (resource.has_tag(Program) or resource.has_tag(Ihex)) and not resource.has_attributes(ProgramAttributes):
             raise AttributeError(
                 f"The reource with ID {resource.get_id()} is not an analyzable program format and does not have ProgramAttributes set."
             )
@@ -131,7 +131,7 @@ class CachedCodeRegionModifier(Modifier[None]):
         self.analysis_store = analysis_store
 
     async def modify(self, resource: Resource, config: None):
-        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(Program))
+        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(CachedAnalysis))
         analysis = self.analysis_store.get_analysis(program_r.get_id())
         ofrak_code_regions = await program_r.get_descendants_as_view(
             v_type=CodeRegion, r_filter=ResourceFilter(tags=[CodeRegion])
@@ -176,7 +176,7 @@ class CachedCodeRegionUnpacker(CodeRegionUnpacker):
         self.analysis_store = analysis_store
 
     async def unpack(self, resource: Resource, config: None):
-        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(Program))
+        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(CachedAnalysis))
         analysis = self.analysis_store.get_analysis(program_r.get_id())
         if analysis["metadata"]["backend"] == "ghidra":
             await resource.run(CachedCodeRegionModifier)
@@ -205,7 +205,7 @@ class CachedComplexBlockUnpacker(ComplexBlockUnpacker):
         self.analysis_store = analysis_store
 
     async def unpack(self, resource: Resource, config: None):
-        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(Program))
+        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(CachedAnalysis))
         analysis = self.analysis_store.get_analysis(program_r.get_id())
         program_attributes = self.analysis_store.get_program_attributes(program_r.get_id())
 
@@ -254,7 +254,7 @@ class CachedBasicBlockUnpacker(BasicBlockUnpacker):
         self.analysis_store = analysis_store
 
     async def unpack(self, resource: Resource, config: None):
-        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(Program))
+        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(CachedAnalysis))
         analysis = self.analysis_store.get_analysis(program_r.get_id())
 
         bb_view = await resource.view_as(BasicBlock)
@@ -289,7 +289,7 @@ class CachedDecompilationAnalyzer(DecompilationAnalyzer):
 
     async def analyze(self, resource: Resource, config: None) -> DecompilationAnalysis:
         # Run / fetch ghidra analyzer
-        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(Program))
+        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(CachedAnalysis))
         analysis = self.analysis_store.get_analysis(program_r.get_id())
         complex_block = await resource.view_as(ComplexBlock)
         decomp = analysis[f"func_{complex_block.virtual_address}"]["decompilation"]
