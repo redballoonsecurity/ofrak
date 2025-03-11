@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import ClassVar, Optional
+from typing import ClassVar, List, Optional
 from ofrak_type.memory_permissions import MemoryPermissions
 
 
@@ -117,6 +117,7 @@ class ToolchainConfig:
     :var include_subsections: In addition to normal keep sections, keep "sub"-sections sharing name
     prefix e.g. .text.foo (this flag is treated as True if separate_data_sections is True)
     :var hard_float: Compile with support for hardware floating point operations (Default: `False`)
+    :var additional_options: Custom options to be used with the toolchain.
     """
 
     file_format: BinFileType
@@ -139,3 +140,7 @@ class ToolchainConfig:
     separate_data_sections: bool = False
     include_subsections: bool = False
     hard_float: bool = False
+    additional_preprocessor_flags: Optional[List[str]] = None
+    additional_compiler_options: Optional[List[str]] = None
+    additional_assembler_options: Optional[List[str]] = None
+    additional_linker_flags: Optional[List[str]] = None

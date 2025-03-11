@@ -73,10 +73,10 @@ class Toolchain(ABC):
                 f"No binary file parser found for format " f"{toolchain_config.file_format.name}!"
             )
 
-        self._preprocessor_flags: List[str] = []
-        self._compiler_flags: List[str] = []
-        self._assembler_flags: List[str] = []
-        self._linker_flags: List[str] = []
+        self._preprocessor_flags: List[str] = toolchain_config.additional_preprocessor_flags if toolchain_config.additional_preprocessor_flags is not None else []
+        self._compiler_flags: List[str] = toolchain_config.additional_compiler_options if toolchain_config.additional_compiler_options is not None else []
+        self._assembler_flags: List[str] = toolchain_config.additional_assembler_options if toolchain_config.additional_assembler_options is not None else []
+        self._linker_flags: List[str] = toolchain_config.additional_linker_flags if toolchain_config.additional_linker_flags is not None else []
         self._config = toolchain_config
         self._logger = logger
 
@@ -299,7 +299,6 @@ class Toolchain(ABC):
         :return str: path to the object file
         """
         out_file = join(out_dir, split(c_file)[-1] + ".o")
-
         self._execute_tool(
             self._compiler_path,
             self._compiler_flags,
