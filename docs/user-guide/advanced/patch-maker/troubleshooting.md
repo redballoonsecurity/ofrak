@@ -66,7 +66,7 @@ There are three approaches for addressing this:
 
 - if it's not already the case, use `CompilerOptimizationLevel.SPACE,` for the `compiler_optimization_level` field of the `ToolchainConfig`.
 - create a bigger segment for the patch, if additional space is available
-- consider extending the binary to make as much space as needed for the patch. An example is OFRAK [example 7](../../examples/ex7_code_insertion_with_extension.html).
+- consider extending the binary to make as much space as needed for the patch. An example is OFRAK [example 7](../../../examples/ex7_code_insertion_with_extension.html).
 
 ## Use of read-only data
 Error:
