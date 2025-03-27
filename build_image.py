@@ -254,6 +254,7 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
 def create_dockerfile_finish(config: OfrakImageConfig) -> str:
     full_base_image_name = "/".join((config.registry, config.base_image_name))
     dockerfile_finish_parts = [
+        "# syntax = docker/dockerfile:1.3\n\n",
         f"FROM {full_base_image_name}:{config.image_revision}\n\n",
         f"ARG OFRAK_SRC_DIR=/\n",
     ]
@@ -273,13 +274,18 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
             "\\n",
         ]
     )
-    dockerfile_finish_parts.append(f'RUN printf "{develop_makefile}" >> Makefile\n')
-    dockerfile_finish_parts.append("RUN make $INSTALL_TARGET\n\n")
+    dockerfile_finish_parts += [
+        f'RUN printf "{develop_makefile}" >> Makefile\n'
+        '# We use --network="none" to ensure all dependencies were installed in base.Dockerfile\n',
+        'RUN --network="none" make $INSTALL_TARGET\n\n',
+    ]
     test_names = " ".join([f"test_{package_name}" for package_name in package_names])
     finish_makefile = "\\n\\\n".join(
         [
-            ".PHONY: test " + test_names,
-            "test: " + test_names,
+            ".PHONY: test inspect" + test_names,
+            "inspect:",
+            "\tpython3 -m pip check",
+            "test: inspect" + test_names,
         ]
         + [
             f"test_{package_name}:\\n\\\n\t\\$(MAKE) -C {package_name} test"
