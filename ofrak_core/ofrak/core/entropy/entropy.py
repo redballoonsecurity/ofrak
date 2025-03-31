@@ -14,6 +14,22 @@ from ofrak.service.resource_service_i import ResourceServiceInterface
 LOGGER = logging.getLogger(__name__)
 
 try:
+    from ofrak_gpu.entropy_gpu import entropy_gpu  # type: ignore
+    import numpy as np  # type: ignore
+
+    GPU_MODULE_INSTALLED = True
+except:
+    from ofrak.core.entropy.gpu_entropy_stub import entropy_gpu
+
+    # Do we have to mock numpy, too?
+    try:
+        import numpy as np  # type: ignore
+    except:
+        from ofrak.core.entropy.gpu_entropy_stub import np  # type: ignore[no-redef]
+
+    GPU_MODULE_INSTALLED = False
+
+try:
     from ofrak.core.entropy.entropy_c import entropy_c as entropy_func
 except:
     from ofrak.core.entropy.entropy_py import entropy_py as entropy_func
@@ -89,13 +105,32 @@ def sample_entropy(
     entropy. More here: <https://en.wikipedia.org/wiki/Entropy_(information_theory)>.
     """
 
-    if len(data) < 256:
+    if len(data) < window_size:
         return b""
 
     def log_percent(percent):  # pragma: no cover
         LOGGER.info(f"Entropy calculation {percent}% complete for {resource_id.hex()}")
 
-    result = entropy_func(data, window_size, log_percent)
+    # Run entropy calculation on GPU, if it is installed and we have a valid platform
+    try:
+        if not GPU_MODULE_INSTALLED:
+            raise ImportError("ofrak_gpu not installed!")
+
+        result = entropy_gpu(np.frombuffer(data, dtype=np.uint8), window_size, log_percent)
+    except (ImportError, NameError, RuntimeError, AttributeError) as e:
+        if not isinstance(e, ImportError) and not isinstance(e, NameError):
+            # ofrak_gpu has been installed, but something else went wrong (likely no opencl devices found)
+            LOGGER.warning(
+                f"Error encountered when attempting to run entropy calculation on GPU! {type(e).__name__}: {e}"
+            )
+        elif isinstance(e, NameError):
+            LOGGER.error(
+                "ofrak_gpu module found, but numpy is not installed! Falling back onto C/Python"
+            )
+        else:
+            LOGGER.warning("ofrak_gpu module not found! Falling back onto C/Python")  # ImportError
+        # Fall back onto C/Python implementations
+        result = entropy_func(data, window_size, log_percent)
 
     if len(result) <= max_samples:
         return result
