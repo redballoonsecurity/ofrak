@@ -93,13 +93,18 @@ def _unpack_program(flat_api):
 
 
 def _concat_contiguous_code_blocks(code_regions):
-    for i in range(len(code_regions)-1):
-        if code_regions[i]["virtual_address"] + code_regions[i]["size"] == code_regions[i + 1]["virtual_address"] and code_regions[i]["executable"] and code_regions[i+1]["executable"]:
-                vaddr = code_regions[i]["virtual_address"]
-                size = code_regions[i]["size"] + code_regions[i+1]["size"]
-                code_regions[i] = {"virtual_address": vaddr, "size": size, "executable": True}
-                del code_regions[i+1]
-                return _concat_contiguous_code_blocks(code_regions)
+    for i in range(len(code_regions) - 1):
+        if (
+            code_regions[i]["virtual_address"] + code_regions[i]["size"]
+            == code_regions[i + 1]["virtual_address"]
+            and code_regions[i]["executable"]
+            and code_regions[i + 1]["executable"]
+        ):
+            vaddr = code_regions[i]["virtual_address"]
+            size = code_regions[i]["size"] + code_regions[i + 1]["size"]
+            code_regions[i] = {"virtual_address": vaddr, "size": size, "executable": True}
+            del code_regions[i + 1]
+            return _concat_contiguous_code_blocks(code_regions)
     return code_regions
 
 

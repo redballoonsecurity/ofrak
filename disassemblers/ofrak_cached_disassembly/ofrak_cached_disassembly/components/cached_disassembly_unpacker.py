@@ -64,7 +64,9 @@ class CachedAnalysisAnalyzer(Analyzer[CachedAnalysisAnalyzerConfig, CachedAnalys
 
     async def analyze(self, resource: Resource, config: CachedAnalysisAnalyzerConfig):
         await resource.identify()
-        if not (resource.has_tag(Program) or resource.has_tag(Ihex)) and not resource.has_attributes(ProgramAttributes):
+        if not (
+            resource.has_tag(Program) or resource.has_tag(Ihex)
+        ) and not resource.has_attributes(ProgramAttributes):
             raise AttributeError(
                 f"The reource with ID {resource.get_id()} is not an analyzable program format and does not have ProgramAttributes set."
             )

@@ -5,7 +5,6 @@ import os
 from typing import Dict
 
 from ofrak.component.analyzer import Analyzer
-from ofrak.core.architecture import ProgramAttributes
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceFilter, ResourceServiceInterface
 from ofrak_type import ArchInfo, Endianness, InstructionSet
@@ -21,7 +20,6 @@ from ofrak.resource import Resource, ResourceFactory
 from ofrak.resource_view import ResourceView
 from ofrak_cached_disassembly.components.cached_disassembly import CachedAnalysisStore
 from ofrak_cached_disassembly.components.cached_disassembly_unpacker import (
-    CachedAnalysis,
     CachedCodeRegionUnpacker,
     CachedComplexBlockUnpacker,
     CachedBasicBlockUnpacker,
@@ -125,14 +123,15 @@ class PyGhidraCodeRegionUnpacker(CachedCodeRegionUnpacker):
     id = b"PyGhidraCodeRegionUnpacker"
 
     async def unpack(self, resource: Resource, config: PyGhidraCodeRegionUnpackerConfig = None):
-        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(PyGhidraAutoLoadProject))
+        program_r = await resource.get_only_ancestor(
+            ResourceFilter.with_tags(PyGhidraAutoLoadProject)
+        )
         if not self.analysis_store.id_exists(program_r.get_id()):
             if config is not None:
                 await program_r.run(
                     PyGhidraAutoAnalyzer,
                     config=PyGhidraAutoAnalyzerConfig(
-                        decomp=config.decomp,
-                        language=config.language
+                        decomp=config.decomp, language=config.language
                     ),
                 )
             else:
@@ -152,12 +151,14 @@ class PyGhidraDecompilationAnalyzer(CachedDecompilationAnalyzer):
     id = b"PyGhidraDecompilationAnalyzer"
 
     async def analyze(self, resource: Resource, config=None):
-        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(PyGhidraAutoLoadProject))
+        program_r = await resource.get_only_ancestor(
+            ResourceFilter.with_tags(PyGhidraAutoLoadProject)
+        )
         if not self.analysis_store.get_analysis(program_r.get_id())["metadata"]["decompiled"]:
             with TemporaryDirectory() as tempdir:
                 program_file = os.path.join(tempdir, "program")
                 await program_r.flush_data_to_disk(program_file)
-                
+
                 self.analysis_store.store_analysis(program_r.get_id(), unpack(program_file, True))
         return await super().analyze(resource, config)
 

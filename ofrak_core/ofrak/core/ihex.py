@@ -5,18 +5,14 @@ from dataclasses import dataclass
 from typing import Any, List, Tuple, Union
 
 from bincopy import BinFile
-from ofrak_type import Optional
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.identifier import Identifier
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
-from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.binary import GenericBinary, GenericText
 from ofrak.core.program_section import ProgramSection
-from ofrak.core import CodeRegion
 from ofrak.core.program import Program
-from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_type.range import Range
@@ -58,18 +54,6 @@ class IhexAnalyzer(Analyzer[None, IhexProgram]):
         return ihex_program
 
 
-# class IhexProgramProgramAttributesAnalyzer(Analyzer[None, Tuple[ProgramAttributes]]):
-
-
-#     targets = (IhexProgram,)
-#     outputs = (ProgramAttributes,)
-
-#     async def analyze(
-#         self, resource: Resource, config: Optional[ComponentConfig] = None
-#     ) -> Tuple[ProgramAttributes]:
-#         return resource.get_attributes(ProgramAttributes)
-
-
 class IhexUnpacker(Unpacker[None]):
     """
     Unpack an Intel HEX file, converting into raw bytes with padding bytes added to fill the gaps
@@ -100,14 +84,10 @@ class IhexProgramUnpacker(Unpacker[None]):
             # Segment is mapped into the program at an offset starting at the difference between
             # the segment's vaddr range and the program's base address
             segment_data_range = seg_vaddr_range.translate(-ihex_program.address_limits.start)
-            child = await resource.create_child_from_view(
+            await resource.create_child_from_view(
                 ProgramSection(seg_vaddr_range.start, seg_vaddr_range.length()),
                 data_range=segment_data_range,
             )
-            child.add_view(
-                CodeRegion(virtual_address=seg_vaddr_range.start, size=seg_vaddr_range.length())
-            )
-            await child.save()
 
 
 class IhexProgramPacker(Packer[None]):
