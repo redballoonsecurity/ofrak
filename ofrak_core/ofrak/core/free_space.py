@@ -41,11 +41,13 @@ class AnyFreeSpace(MemoryRegion):
 
 
 @dataclass
-class FreeSpace(AnyFreeSpace): ...
+class FreeSpace(AnyFreeSpace):
+    ...
 
 
 @dataclass
-class RuntimeFreeSpace(AnyFreeSpace): ...
+class RuntimeFreeSpace(AnyFreeSpace):
+    ...
 
 
 @dataclass
