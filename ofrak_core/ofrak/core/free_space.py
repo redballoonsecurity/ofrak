@@ -41,13 +41,11 @@ class AnyFreeSpace(MemoryRegion):
 
 
 @dataclass
-class FreeSpace(AnyFreeSpace):
-    ...
+class FreeSpace(AnyFreeSpace): ...
 
 
 @dataclass
-class RuntimeFreeSpace(AnyFreeSpace):
-    ...
+class RuntimeFreeSpace(AnyFreeSpace): ...
 
 
 @dataclass
@@ -289,7 +287,7 @@ class Allocatable(ResourceView):
         :param unaligned_range: the range to align
         :param alignment: the value that you want the new start address to be a product of
 
-        :raises ValueError: if the new range start is larger than the end
+        :raises ValueError: if alignment is greater than length of the unaligned range
 
         :return: a new Range that is byte aligned
         """
@@ -298,9 +296,12 @@ class Allocatable(ResourceView):
         # If we end up wanting to align both start and end, `offset_to_align_end` should be updated
         offset_to_align_end = 0
 
-        if unaligned_range.start + offset_to_align_start > unaligned_range.end + offset_to_align_end:
-            raise ValueError()
-        
+        if (
+            unaligned_range.start + offset_to_align_start
+            > unaligned_range.end + offset_to_align_end
+        ):
+            raise ValueError("Alignment value must be smaller than the length of the range")
+
         aligned_range = Range(
             unaligned_range.start + offset_to_align_start,
             unaligned_range.end + offset_to_align_end,
