@@ -284,14 +284,15 @@ class Allocatable(ResourceView):
     @staticmethod
     def _align_range(unaligned_range: Range, alignment: int) -> Range:
         """
-        Increase the range start address so it is a multiple of the `alignment` size
+        Increase the range start address so it is a multiple of the `alignment` size.
+        This method does not update the end address of the Range.
 
         :param unaligned_range: the range to align
         :param alignment: the value that you want the new start address to be a product of
 
         :raises ValueError: if alignment is greater than length of the unaligned range
 
-        :return: a new Range that is byte aligned
+        :return: a new Range with a byte aligned start address
         """
         offset_to_align_start = (alignment - (unaligned_range.start % alignment)) % alignment
         # Currently we don't expect the end of each allocated range to be aligned
