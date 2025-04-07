@@ -693,7 +693,7 @@ class PartialFreeSpaceModifier(Modifier[PartialFreeSpaceModifierConfig]):
 def align_range_start(unaligned_range: Range, alignment: int) -> Range:
     """
     Increase the range start address so it is a multiple of the `alignment` size.
-    This method does not update the end address of the Range.
+    This function does not update the end address of the Range.
 
     :param unaligned_range: the range to align
     :param alignment: the new start address will be a multiple of this value
