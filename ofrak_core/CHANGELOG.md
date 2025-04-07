@@ -3,7 +3,7 @@ All notable changes to `ofrak` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased: 3.3.0rc1](https://github.com/redballoonsecurity/ofrak/tree/master)
+## [Unreleased: 3.3.0rc2](https://github.com/redballoonsecurity/ofrak/tree/master)
 ### Added
 - Add license check command to prompt users about community or pro licenses. ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
 - Support `application/vnd.android.package-archive` mime type for APKs, which is returned by newer versions of libmagic ([#470](https://github.com/redballoonsecurity/ofrak/pull/470))
@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add `JavaArchive` resource tag ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
 - Add new method for allocating `.bss` sections using free space ranges that aren't mapped to data ranges. ([#505](https://github.com/redballoonsecurity/ofrak/pull/505), [#569](https://github.com/redballoonsecurity/ofrak/pull/569))
 - Add `JavaArchive` resource tag ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
+- Pulled `Allocatable._align_range` out to standalone function `allocate_range_start` ([#575](https://github.com/redballoonsecurity/ofrak/pull/575))
 
 ### Fixed
 - Improved flushing of filesystem entries (including symbolic links and other types) to disk. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373))
