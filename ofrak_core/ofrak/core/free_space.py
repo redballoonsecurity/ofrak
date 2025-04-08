@@ -254,7 +254,7 @@ class Allocatable(ResourceView):
                 continue
             # 2. Transform free range to satisfy alignment
             try:
-                free_range = self._align_range(free_range, alignment)
+                free_range = align_range_start(free_range, alignment)
             except ValueError:
                 # Free range is too small to satisfy alignment
                 continue
@@ -280,21 +280,6 @@ class Allocatable(ResourceView):
             )
 
         return allocation
-
-    @staticmethod
-    def _align_range(unaligned_range: Range, alignment: int) -> Range:
-        offset_to_align_start = (alignment - (unaligned_range.start % alignment)) % alignment
-        # Currently we don't expect the end of each allocated range to be aligned
-        # If we end up wanting to align both start and end, `offset_to_align_end` should be updated
-        offset_to_align_end = 0
-        aligned_range = Range(
-            unaligned_range.start + offset_to_align_start,
-            unaligned_range.end + offset_to_align_end,
-        )
-        assert aligned_range.start >= unaligned_range.start
-        assert aligned_range.end <= unaligned_range.end
-
-        return aligned_range
 
     @staticmethod
     def sort_free_ranges(ranges: Iterable[Range]) -> List[Range]:
@@ -703,3 +688,30 @@ class PartialFreeSpaceModifier(Modifier[PartialFreeSpaceModifierConfig]):
             ),
             data_range=Range(patch_range.start + free_offset, patch_range.end),
         )
+
+
+def align_range_start(unaligned_range: Range, alignment: int) -> Range:
+    """
+    Increase the range start address so it is a multiple of the `alignment` size.
+    This function does not update the end address of the Range.
+
+    :param unaligned_range: the range to align
+    :param alignment: the new start address will be a multiple of this value
+
+    :raises ValueError: if alignment is greater than length of the unaligned range
+
+    :return: a new Range whose start address has the specified alignment
+    """
+    offset_to_align_start = (alignment - (unaligned_range.start % alignment)) % alignment
+
+    try:
+        aligned_range = Range(
+            unaligned_range.start + offset_to_align_start,
+            unaligned_range.end,
+        )
+    except ValueError as e:
+        raise e
+
+    assert aligned_range.within(unaligned_range)
+
+    return aligned_range
