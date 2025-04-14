@@ -16,4 +16,4 @@ inspect:
 .PHONY: test
 test: inspect
 	$(PYTHON) -m pytest ofrak_capstone_test --cov=ofrak_capstone --cov-report=term-missing
-	fun-coverage --cov-fail-under=100 || ! (shell uname -m | grep x86_64)
+	fun-coverage --cov-fail-under=100
