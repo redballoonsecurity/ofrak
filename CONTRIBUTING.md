@@ -117,10 +117,9 @@ The packages in this repository maintain 100% test coverage, either at the state
 ### Pull Request Guidelines (for everyone)
 
 For now, every Pull Request will require at least one review by one of the current maintainers:
+
 - @whyitfor
-- @EdwardLarson
-- @andresito00
-- @rbs-jacob (frontend)
+- @rbs-jacob
 
 1. Please be respectful. Remember to discuss the merits of the idea, not the individual. Disrespectful behavior will not be tolerated.
 2. Please back your code review suggestions with technical reasoning.
@@ -129,7 +128,7 @@ For now, every Pull Request will require at least one review by one of the curre
 5. If you have to write a long-winded explanation in the review, we expect to see some code comments.
 6. Please keep your contributions within the scope of the proposed fix, feature, or maintenance task, though a little clean-up in the space you're working in is appreciated.
 7. Please keep your contributions to a reasonable review size. When reviewing, it can take developers a little over an hour to get through a few hundred lines of code and find most defects.
-8. The following packages maintain changelogs: [ofrak](./ofrak/CHANGELOG.md), [ofrak_io](./ofrak_io/CHANGELOG.md), [ofrak_patch_maker](./ofrak_patch_maker/CHANGELOG.md), [ofrak_type](./ofrak_type/CHANGELOG.md).). If applicable, please update the `Unreleased` section of each changelog as part of your Pull Request.
+8. The following packages maintain changelogs: [ofrak](./ofrak/CHANGELOG.md), [ofrak_io](./ofrak_io/CHANGELOG.md), [ofrak_patch_maker](./ofrak_patch_maker/CHANGELOG.md), [ofrak_type](./ofrak_type/CHANGELOG.md).). If applicable, please update the `Unreleased` section of each changelog as part of your Pull Request. If your pull request relates to an existing, unreleased changelog entry, add your pull request link to the existing entry.
 
 ### Python Coding Standard
 Please see our [coding standard document](https://ofrak.com/docs/contributor-guide/getting-started.html) for functional and stylistic expectations. It is still evolving, but has a lower probability of changing.

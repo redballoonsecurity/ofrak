@@ -3,11 +3,11 @@ PIP=pip3
 
 .PHONY: install
 install:
-	$(PIP) install .
+	$(PIP) install --pre .
 
 .PHONY: develop
 develop:
-	$(PIP) install -e .[test]
+	$(PIP) install --pre -e .[test] --config-settings editable_mode=compat
 
 .PHONY: inspect
 inspect:

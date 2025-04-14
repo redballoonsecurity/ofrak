@@ -22,6 +22,8 @@ from typing import (
     overload,
 )
 from contextlib import asynccontextmanager
+from warnings import warn
+
 import tempfile312 as tempfile
 
 from ofrak.component.interface import ComponentInterface
@@ -678,12 +680,12 @@ class Resource:
                     "Cannot create a child with mapped data from a parent that doesn't have data"
                 )
             data_model_id = resource_id
-            await self._data_service.create_mapped(
+            data_model = await self._data_service.create_mapped(
                 data_model_id,
                 self._resource.data_id,
                 data_range,
             )
-            data_attrs = Data(data_range.start, data_range.length())
+            data_attrs = Data(data_model.range.start, data_model.range.length())
             attributes = [data_attrs, *attributes] if attributes else [data_attrs]
         elif data is not None:
             if self._resource.data_id is None:
@@ -1450,6 +1452,13 @@ class Resource:
             # Create empty file
             with open(path, "wb") as f:
                 pass
+
+    async def flush_to_disk(self, path: str, pack: bool = True):  # pragma: no cover
+        warn(
+            "Resource.flush_to_disk is deprecated! Use Resource.flush_data_to_disk instead.",
+            category=DeprecationWarning,
+        )
+        return await self.flush_data_to_disk(path, pack)
 
     def __repr__(self):
         properties = [

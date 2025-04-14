@@ -3,7 +3,7 @@ All notable changes to `ofrak` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+## [Unreleased: 3.3.0rc2](https://github.com/redballoonsecurity/ofrak/tree/master)
 ### Added
 - Add license check command to prompt users about community or pro licenses. ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
 - Support `application/vnd.android.package-archive` mime type for APKs, which is returned by newer versions of libmagic ([#470](https://github.com/redballoonsecurity/ofrak/pull/470))
@@ -17,7 +17,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add generic DecompilationAnalysis classes. ([#453](https://github.com/redballoonsecurity/ofrak/pull/453))
 - `PatchFromSourceModifier` bundles src and header files into same temporary directory with BOM and FEM ([#517](https://github.com/redballoonsecurity/ofrak/pull/517))
 - Add support for running on Windows to the `Filesystem` component. ([#521](https://github.com/redballoonsecurity/ofrak/pull/521))
-- Add new method for allocating `.bss` sections using free space ranges that aren't mapped to data ranges. ([#505](https://github.com/redballoonsecurity/ofrak/pull/505))
+- Add `JavaArchive` resource tag ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
+- Add new method for allocating `.bss` sections using free space ranges that aren't mapped to data ranges. ([#505](https://github.com/redballoonsecurity/ofrak/pull/505), [#569](https://github.com/redballoonsecurity/ofrak/pull/569))
+- Add `JavaArchive` resource tag ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
+- Pulled `Allocatable._align_range` out to standalone function `allocate_range_start` ([#575](https://github.com/redballoonsecurity/ofrak/pull/575))
 
 ### Fixed
 - Improved flushing of filesystem entries (including symbolic links and other types) to disk. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373))
@@ -37,7 +40,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Fix bugs on Windows arising from using `os.path` methods when only forward-slashes are acceptable ([#521](https://github.com/redballoonsecurity/ofrak/pull/521))
 - Made some changes to OFRAK test suite to improve test coverage on Windows ([#487](https://github.com/redballoonsecurity/ofrak/pull/487))
 - Fix usage of `NamedTemporaryFile` with external tools on Windows ([#486](https://github.com/redballoonsecurity/ofrak/pull/486))
+- Fixed endianness issue in DTB raw byte identifier ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
 - Fix unintentional ignoring of cpio errors introduced in [#486](https://github.com/redballoonsecurity/ofrak/pull/486) ([#555](https://github.com/redballoonsecurity/ofrak/pull/555]))
+- `Data` resource attribute always corresponds to value of `Resource.get_data_range_within_root` ([#559](https://github.com/redballoonsecurity/ofrak/pull/559))
+- Fixed endianness issue in DTB raw byte identifier ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
+- Fixed bugs with PJSON serialization for some component configs in the front end ([#437](https://github.com/redballoonsecurity/ofrak/pull/437))
+- Make `ofrak[test]` dependencies on `ofrak-capstone` and `ofrak-angr` optional to avoid circular-dependency issues ([#571](https://github.com/redballoonsecurity/ofrak/pull/571))
+- Fix broken link in docs ([#574](https://github.com/redballoonsecurity/ofrak/pull/574))
 
 ### Changed
 - By default, the ofrak log is now `ofrak-YYYYMMDDhhmmss.log` rather than just `ofrak.log` and the name can be specified on the command line ([#480](https://github.com/redballoonsecurity/ofrak/pull/480))
@@ -49,6 +58,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Minor update to OFRAK Community License, add OFRAK Pro License ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
 - Update python to 3.9 as main version used and tested (including in default docker image build) ([#502](https://github.com/redballoonsecurity/ofrak/pull/502))
 - Update OpenJDK to version 17, remove unused qemu package ([#502](https://github.com/redballoonsecurity/ofrak/pull/502))
+- Update resource tag File to inherit from GenericBinary ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
+- Update auto-run component logic to run all Analyzers, not just the most specific ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
+- Revamp magic identification for significant speed improvements ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
+  - Refactor magic identification to use one identifier, named `MagicIdentifier`
+  - Rename `MagicMimeIdentifier` to `MagicMimePattern`, as it is run by `MagicIdentifier`
+  - Rename `MagicDescriptionIdentifier` to `MagicDescriptionPattern`, as it is run by `MagicIdentifier`
+  - Add `RawMagicPattern` to efficiently run custom magic byte search logic within `MagicIdenfifier`
+  - Update registered identifiers to make use of new `MagicIdentifier` for following resource tags: `Apk`, `Bzip2Data`, `CpioFilesystem`, `DeviceTreeBlob`, `Elf`, `Ext2Filesystem`, `Ext3Filesystem`, `Ext4Filesystem`, `GzipData`, `ISO9660Image`, `Jffs2Filesystem`, `LzmaData`, `XzData`, `LzoData`, `OpenWrtTrx`, `Pe`, `RarArchive`, `SevenZFilesystem`, `SquashfsFilesystem`, `TarArchive`, `Ubi`, `Ubifs`, `Uf2File`, `UImage`, `ZipArchive`, `ZlibData`, `ZstdData`
+- Update `Instruction.get_assembly` to by synchronous ([#539](https://github.com/redballoonsecurity/ofrak/issues/539))
+
+### Deprecated
+- `Resource.flush_to_disk` deprecated in favor of `Resource.flush_data_to_disk`. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373), [#567](https://github.com/redballoonsecurity/ofrak/pull/568))
+
+### Removed
+- Removed `Instruction.disassembly` from `Instruction` class: use `Instruction.get_assembly()` instead ([#539](https://github.com/redballoonsecurity/ofrak/issues/539))
 
 ### Security
 - Update aiohttp to 3.10.11 ([#522](https://github.com/redballoonsecurity/ofrak/pull/522))
