@@ -1,7 +1,5 @@
 ARG TARGETARCH
 
-COPY ${PACKAGE_PATH}/conf/toolchain_docker_${TARGETARCH}.conf /etc/ofrak/toolchain.conf
-
 RUN mkdir -p /opt/rbs/toolchain
 
 # LLVM
@@ -10,7 +8,7 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     wget https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz --show-progress --progress=bar:force:noscroll && \
     tar xf clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -C /opt/rbs/toolchain && \
     rm -rf clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz && \
-    mv /opt/rbs/toolchain/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu- /opt/rbs/toolchain/llvm_12.0.1; \
+    mv /opt/rbs/toolchain/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu /opt/rbs/toolchain/llvm_12.0.1; \
 elif [ "$TARGETARCH" = "arm64" ]; then \
     apt-get update && apt-get install -y libtinfo5 && \
     cd /tmp/ && \
@@ -127,11 +125,13 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     cd /tmp && \
     wget https://armkeil.blob.core.windows.net/developer/Files/downloads/gnu-a/10.3-2021.07/binrel/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu.tar.xz --show-progress --progress=bar:force:noscroll && \
     tar xf gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu.tar.xz -C /opt/rbs/toolchain && \
+    mv /opt/rbs/toolchain/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu /opt/rbs/toolchain/gcc-arm-10.3-2021.07-aarch64 &&\
     rm -rf gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu.tar.xz; \
 elif [ "$TARGETARCH" = "arm64" ]; then \
     cd /tmp && \
     wget https://developer.arm.com/-/media/Files/downloads/gnu-a/10.3-2021.07/binrel/gcc-arm-10.3-2021.07-aarch64-aarch64-none-elf.tar.xz --show-progress --progress=bar:force:noscroll && \
     tar xf gcc-arm-10.3-2021.07-aarch64-aarch64-none-elf.tar.xz -C /opt/rbs/toolchain && \
+    mv /opt/rbs/toolchain/gcc-arm-10.3-2021.07-aarch64-aarch64-none-elf /opt/rbs/toolchain/gcc-arm-10.3-2021.07-aarch64 &&\
     rm -rf gcc-arm-10.3-2021.07-aarch64-aarch64-none-elf.tar.xz; \
 fi;
 
@@ -140,6 +140,7 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     cd /tmp && \
     wget https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/SoftwareLibraries/Firmware/avr8-gnu-toolchain-3.6.2.1778-linux.any.x86_64.tar.gz --show-progress --progress=bar:force:noscroll && \
     tar xzf avr8-gnu-toolchain-3.6.2.1778-linux.any.x86_64.tar.gz -C /opt/rbs/toolchain && \
+    mv /opt/rbs/toolchain/avr8-gnu-toolchain-3.6.2.1778-linux.any.x86_64 /opt/rbs/toolchain/avr && \
     rm -rf avr8-gnu-toolchain-3.6.2.1778-linux.any.x86_64.tar.gz; \
 elif [ "$TARGETARCH" = "arm64" ]; then \
     cd /tmp && \
