@@ -8,7 +8,7 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     wget https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz --show-progress --progress=bar:force:noscroll && \
     tar xf clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -C /opt/rbs/toolchain && \
     rm -rf clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz && \
-    mv /opt/rbs/toolchain/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu /opt/rbs/toolchain/llvm_12.0.1; \
+    mv /opt/rbs/toolchain/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu- /opt/rbs/toolchain/llvm_12.0.1; \
 elif [ "$TARGETARCH" = "arm64" ]; then \
     apt-get update && apt-get install -y libtinfo5 && \
     cd /tmp/ && \
