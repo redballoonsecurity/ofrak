@@ -1,5 +1,4 @@
-# Specifying the full name is necessary for some tests to work on ARM
-CC=x86_64-linux-gnu-gcc
+CC=gcc
 
 default: program
 
