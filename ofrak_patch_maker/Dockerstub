@@ -2,35 +2,53 @@ ARG TARGETARCH
 
 COPY ${PACKAGE_PATH}/conf/toolchain_docker_${TARGETARCH}.conf /etc/ofrak/toolchain.conf
 
+RUN mkdir -p /opt/rbs/toolchain
+
 # LLVM
-RUN mkdir -p /opt/rbs/toolchain && \
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
     cd /tmp && \
     wget https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz --show-progress --progress=bar:force:noscroll && \
     tar xf clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -C /opt/rbs/toolchain && \
     rm -rf clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz && \
-    mv /opt/rbs/toolchain/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu- /opt/rbs/toolchain/llvm_12.0.1
+    mv /opt/rbs/toolchain/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu- /opt/rbs/toolchain/llvm_12.0.1; \
+elif [ "$TARGETARCH" = "arm64" ]; then \
+    apt-get update && apt-get install -y libtinfo5 && \
+    cd /tmp/ && \
+    wget https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-aarch64-linux-gnu.tar.xz --show-progress --progress=bar:force:noscroll && \
+    tar xf clang+llvm-12.0.1-aarch64-linux-gnu.tar.xz -C /opt/rbs/toolchain && \
+    rm -rf clang+llvm-12.0.1-aarch64-linux-gnu.tar.xz && \
+    mv /opt/rbs/toolchain/clang+llvm-12.0.1-aarch64-linux-gnu /opt/rbs/toolchain/llvm_12.0.1; \
+fi;
 
 # ARM GNU NONE EABI
-RUN cd /tmp && \
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+    cd /tmp && \
     wget https://developer.arm.com/-/media/Files/downloads/gnu-rm/10-2020q4/gcc-arm-none-eabi-10-2020-q4-major-x86_64-linux.tar.bz2 --show-progress --progress=bar:force:noscroll && \
     tar xf gcc-arm-none-eabi-10-2020-q4-major-x86_64-linux.tar.bz2 -C /opt/rbs/toolchain && \
-    rm -rf gcc-arm-none-eabi-10-2020-q4-major-x86_64-linux.tar.bz2
+    rm -rf gcc-arm-none-eabi-10-2020-q4-major-x86_64-linux.tar.bz2; \
+elif [ "$TARGETARCH" = "arm64" ]; then \
+    cd /tmp && \
+    wget https://developer.arm.com/-/media/Files/downloads/gnu-rm/10-2020q4/gcc-arm-none-eabi-10-2020-q4-major-aarch64-linux.tar.bz2 --show-progress --progress=bar:force:noscroll && \
+    tar xf gcc-arm-none-eabi-10-2020-q4-major-aarch64-linux.tar.bz2 -C /opt/rbs/toolchain && \
+    rm -rf gcc-arm-none-eabi-10-2020-q4-major-aarch64-linux.tar.bz2; \
+fi;
 
 # LINUX GNU + BINUTILS
-RUN cd /tmp && \
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+    cd /tmp && \
     wget https://download.01.org/0day-ci/cross-package/gcc-10.3.0-nolibc/x86_64-gcc-10.3.0-nolibc_x86_64-linux.tar.xz --show-progress --progress=bar:force:noscroll && \
     tar xf x86_64-gcc-10.3.0-nolibc_x86_64-linux.tar.xz -C /opt/rbs/toolchain && \
-    rm -rf x86_64-gcc-10.3.0-nolibc_x86_64-linux.tar.xz
-
-#X64-64 toolchain for arm64 Docker images
-RUN if [ "$TARGETARCH" = "arm64" ]; then \
-    apt-get update && apt-get install -y gcc-12-x86-64-linux-gnu; \
+    rm -rf x86_64-gcc-10.3.0-nolibc_x86_64-linux.tar.xz; \
+elif [ "$TARGETARCH" = "arm64" ]; then \
+    cd /tmp && \
+    wget https://www.kernel.org/pub/tools/crosstool/files/bin/arm64/10.3.0/arm64-gcc-10.3.0-nolibc-x86_64-linux.tar.xz --show-progress --progress=bar:force:noscroll && \
+    tar xvf arm64-gcc-10.3.0-nolibc-x86_64-linux.tar.xz -C /opt/rbs/toolchain && \
+    rm -rf arm64-gcc-10.3.0-nolibc-x86_64-linux.tar.xz; \
 fi;
 
 #M68k GNU 10 Linux
 #Only exists for x86
-RUN if [ "$TARGETARCH" = "amd64" ]; then \
-    cd /tmp && \
+RUN cd /tmp && \
     apt-get update && apt-get install -y gcc g++ gperf bison flex texinfo help2man make libncurses5-dev python3-dev autoconf automake libtool libtool-bin gawk wget bzip2 xz-utils unzip patch libstdc++6 rsync && \
     git clone https://github.com/crosstool-ng/crosstool-ng.git && \
     cd crosstool-ng/ && \
@@ -84,8 +102,7 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
       >> .config && \
     ./ct-ng build CT_JOBS=`nproc` \
       | sed 's/.*\r//g' && \
-    cd /tmp && rm -rf crosstool-ng; \
-fi;
+    cd /tmp && rm -rf crosstool-ng
 
 #M68k VBCC
 RUN cd /tmp && \
