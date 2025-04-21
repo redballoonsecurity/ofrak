@@ -5,7 +5,7 @@ from ofrak_type.memory_permissions import MemoryPermissions
 
 @pytest.mark.parametrize(
     "memory_permissions, expected_str",
-    [(MemoryPermissions.R, "r"), (MemoryPermissions.W, "w"), (MemoryPermissions.RWX, "rwx")],
+    [(MemoryPermissions.R, "r"), (MemoryPermissions.W, "w"), (MemoryPermissions.RWX, "rwx"), (MemoryPermissions.NONE, "none")],
 )
 def test_memory_permissions_as_str(memory_permissions: MemoryPermissions, expected_str: str):
     assert memory_permissions.as_str() == expected_str
@@ -14,6 +14,7 @@ def test_memory_permissions_as_str(memory_permissions: MemoryPermissions, expect
 class TestMemoryPermissionsAdd:
     def test_add(self):
         assert MemoryPermissions.R + MemoryPermissions.X == MemoryPermissions.RX
+        assert MemoryPermissions.R + MemoryPermissions.NONE == MemoryPermissions.R
 
     def test_add_type_error(self):
         with pytest.raises(TypeError):
@@ -27,6 +28,7 @@ class TestMemoryPermissionsAdd:
 class TestMemoryPermissionsAnd:
     def test_and(self):
         assert MemoryPermissions.RWX & MemoryPermissions.W == MemoryPermissions.W
+        assert MemoryPermissions.RWX & MemoryPermissions.NONE == MemoryPermissions.NONE
 
     def test_and_type_error(self):
         with pytest.raises(TypeError):
@@ -36,6 +38,7 @@ class TestMemoryPermissionsAnd:
 class TestMemoryPermissionsSub:
     def test_sub(self):
         assert MemoryPermissions.RWX - MemoryPermissions.W == MemoryPermissions.RX
+        assert MemoryPermissions.RWX - MemoryPermissions.NONE == MemoryPermissions.RWX
 
     def test_sub_type_error(self):
         with pytest.raises(TypeError):

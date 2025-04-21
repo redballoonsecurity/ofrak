@@ -289,7 +289,10 @@ class ElfProgramHeader(ElfSegmentStructure):
         """
         Get the MemoryPermission for the ElfProgramHeader.
         """
-        return MemoryPermissions(self.p_flags)
+        if self.p_flags > MemoryPermissions.RWX.value:
+            return MemoryPermissions.NONE
+        else:
+            return MemoryPermissions(self.p_flags)
 
     @classmethod
     def caption(cls, all_attributes) -> str:

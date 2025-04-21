@@ -7,6 +7,7 @@ class MemoryPermissions(Enum):
     are represented, with the exception of Write + eXecute (not a sane combination).
     """
 
+    NONE = 0
     X = 1
     W = 2
     R = 4
@@ -15,6 +16,9 @@ class MemoryPermissions(Enum):
     RWX = R + W + X
 
     def as_str(self) -> str:
+        if self.value == 0:
+            return "none"
+        
         string = ""
         if self.value & MemoryPermissions.R.value:
             string += "r"
