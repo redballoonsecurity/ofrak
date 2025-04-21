@@ -2,7 +2,7 @@ ARG TARGETARCH
 
 RUN mkdir -p /opt/rbs/toolchain
 
-COPY ${PACKAGE_PATH}/ofrak_patch_maker/config/${TARGETARCH}_platform_toolchain.conf /etc/ofrak/toolchain.conf
+COPY ${PACKAGE_PATH}/ofrak_patch_maker/config/docker/${TARGETARCH}_platform_toolchain.conf /etc/ofrak/toolchain.conf
 
 # LLVM
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
