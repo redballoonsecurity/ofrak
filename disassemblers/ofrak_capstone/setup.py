@@ -31,7 +31,7 @@ def read_requirements(requirements_path):
 
 setuptools.setup(
     name="ofrak_capstone",
-    version="1.0.0",
+    version="1.1.0rc1",
     packages=setuptools.find_packages(exclude=["ofrak_capstone_test", "ofrak_capstone_test.*"]),
     package_data={"ofrak_capstone": ["py.typed"]},
     install_requires=["ofrak>=3.3.0rc0"] + read_requirements("requirements.txt"),

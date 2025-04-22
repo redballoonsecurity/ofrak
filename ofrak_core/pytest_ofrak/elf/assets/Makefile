@@ -1,4 +1,3 @@
-
 CC=gcc
 
 default: program
