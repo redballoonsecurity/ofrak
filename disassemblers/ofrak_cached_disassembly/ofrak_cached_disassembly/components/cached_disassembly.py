@@ -13,12 +13,12 @@ class CachedAnalysisStore:
         if isinstance(analysis, str):
             with open(analysis) as fh:
                 analysis = json.load(fh)
-        if resource_id not in self.analysis.keys():
+        if resource_id not in self.analysis:
             self.analysis[resource_id] = dict()
         self.analysis[resource_id]["analysis"] = analysis
 
     def store_program_attributes(self, resource_id: bytes, program_attributes: ProgramAttributes):
-        if resource_id not in self.analysis.keys():
+        if resource_id not in self.analysis:
             self.analysis[resource_id] = dict()
         self.analysis[resource_id]["program_attributes"] = program_attributes
 
@@ -33,4 +33,4 @@ class CachedAnalysisStore:
         return self.analysis[resource_id]["program_attributes"]
 
     def id_exists(self, resource_id: bytes) -> bool:
-        return resource_id in self.analysis.keys()
+        return resource_id in self.analysis
