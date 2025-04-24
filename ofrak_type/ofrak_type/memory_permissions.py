@@ -4,7 +4,7 @@ from enum import Enum
 class MemoryPermissions(Enum):
     """
     Representation of memory access permissions - all combinations of Read, Write, and eXecute
-    are represented, with the exception of Write + eXecute (not a sane combination).
+    are represented.
     """
 
     NONE = 0
