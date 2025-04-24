@@ -46,8 +46,8 @@ class MemoryPermissions(Enum):
     def __sub__(self, other: "MemoryPermissions") -> "MemoryPermissions":
         if not isinstance(other, MemoryPermissions):
             raise TypeError(f"Operation between MemoryPermissions and {type(other)} not supported")
-        elif other.value == 0 or self.value == 0:
-            return MemoryPermissions(self.value | other.value)
+        elif other.value == 0:
+            return self
         elif other.value & self.value == 0:
             raise ValueError(f"Cannot subtract {other} from {self} because they have no overlap!")
         else:
