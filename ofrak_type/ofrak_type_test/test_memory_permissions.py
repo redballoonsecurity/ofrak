@@ -27,7 +27,7 @@ class TestMemoryPermissionsAdd:
 
     def test_add_value_error(self):
         with pytest.raises(ValueError):
-            MemoryPermissions.R + MemoryPermissions.RWX
+            MemoryPermissions.R + MemoryPermissions.RWX  # type: ignore
 
 
 class TestMemoryPermissionsAnd:
@@ -44,6 +44,7 @@ class TestMemoryPermissionsSub:
     def test_sub(self):
         assert MemoryPermissions.RWX - MemoryPermissions.W == MemoryPermissions.RX
         assert MemoryPermissions.RWX - MemoryPermissions.NONE == MemoryPermissions.RWX
+        assert MemoryPermissions.NONE - MemoryPermissions.NONE == MemoryPermissions.NONE
 
     def test_sub_type_error(self):
         with pytest.raises(TypeError):
@@ -51,4 +52,5 @@ class TestMemoryPermissionsSub:
 
     def test_sub_value_error(self):
         with pytest.raises(ValueError):
-            MemoryPermissions.RW - MemoryPermissions.X
+            MemoryPermissions.RW - MemoryPermissions.X  # type: ignore
+            MemoryPermissions.NONE - MemoryPermissions.R  # type: ignore
