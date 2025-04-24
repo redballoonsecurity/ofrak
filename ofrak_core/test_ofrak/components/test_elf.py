@@ -133,7 +133,9 @@ async def test_elf_segments(elf_no_sections: Resource):
 
 
 @pytest.fixture
-async def elf_permstest(elf_permstest_executable_file: str, ofrak_context: OFRAKContext) -> Resource:
+async def elf_permstest(
+    elf_permstest_executable_file: str, ofrak_context: OFRAKContext
+) -> Resource:
     """
     An ELF with all combinations of permission flags
     """

@@ -19,7 +19,7 @@ class MemoryPermissions(Enum):
     def as_str(self) -> str:
         if self.value == 0:
             return "none"
-        
+
         string = ""
         if self.value & MemoryPermissions.R.value:
             string += "r"

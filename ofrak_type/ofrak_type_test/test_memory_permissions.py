@@ -5,7 +5,12 @@ from ofrak_type.memory_permissions import MemoryPermissions
 
 @pytest.mark.parametrize(
     "memory_permissions, expected_str",
-    [(MemoryPermissions.R, "r"), (MemoryPermissions.W, "w"), (MemoryPermissions.RWX, "rwx"), (MemoryPermissions.NONE, "none")],
+    [
+        (MemoryPermissions.R, "r"),
+        (MemoryPermissions.W, "w"),
+        (MemoryPermissions.RWX, "rwx"),
+        (MemoryPermissions.NONE, "none"),
+    ],
 )
 def test_memory_permissions_as_str(memory_permissions: MemoryPermissions, expected_str: str):
     assert memory_permissions.as_str() == expected_str
