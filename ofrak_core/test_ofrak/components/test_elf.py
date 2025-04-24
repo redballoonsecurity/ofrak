@@ -133,19 +133,18 @@ async def test_elf_segments(elf_no_sections: Resource):
 
 
 @pytest.fixture
-async def elf_loos_header(ofrak_context: OFRAKContext) -> Resource:
+async def elf_permstest(elf_permstest_executable_file: str, ofrak_context: OFRAKContext) -> Resource:
     """
-    An ELF with a LOOS header and invalid memory permission flags
+    An ELF with all combinations of permission flags
     """
-    file_path = os.path.join(test_ofrak.components.ASSETS_DIR, "elf", "loos_elf")
-    return await ofrak_context.create_root_resource_from_file(file_path)
+    return await ofrak_context.create_root_resource_from_file(elf_permstest_executable_file)
 
 
-async def test_elf_loos_header_analysis(elf_loos_header: Resource):
+async def test_elf_perms_header_analysis(elf_permstest: Resource):
     """
-    Test getting memory permissions from LOOS header with invalid permissions
+    Test getting memory permissions for all flag combinations
     """
-    await elf_loos_header.unpack()
-    elf = await elf_loos_header.view_as(Elf)
+    await elf_permstest.unpack()
+    elf = await elf_permstest.view_as(Elf)
     for prog_header in await elf.get_program_headers():
         prog_header.get_memory_permissions()

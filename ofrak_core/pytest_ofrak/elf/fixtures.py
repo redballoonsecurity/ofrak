@@ -138,9 +138,11 @@ def elf_object_file(elf_test_directory):
 def elf_executable_file(elf_test_directory):
     return os.path.join(elf_test_directory, "program")
 
+
 @pytest.fixture(scope="session")
-def elf_loos_executable_file(elf_test_directory):
-    return os.path.join(elf_test_directory, "loos_elf")
+def elf_permstest_executable_file(elf_test_directory):
+    return os.path.join(elf_test_directory, "permstest_elf")
+
 
 @pytest.fixture(scope="session")
 def elf_no_pie_executable_file(elf_test_directory):

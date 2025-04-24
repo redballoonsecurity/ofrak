@@ -13,6 +13,7 @@ class MemoryPermissions(Enum):
     R = 4
     RW = R + W
     RX = R + X
+    WX = W + X
     RWX = R + W + X
 
     def as_str(self) -> str:
