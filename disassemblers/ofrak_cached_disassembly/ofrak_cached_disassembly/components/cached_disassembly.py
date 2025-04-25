@@ -33,4 +33,4 @@ class CachedAnalysisStore:
         return self.analysis[resource_id]["program_attributes"]
 
     def id_exists(self, resource_id: bytes) -> bool:
-        return resource_id in self.analysis.keys()
+        return resource_id in self.analysis
