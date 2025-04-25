@@ -13,7 +13,7 @@ class CachedAnalysisStore:
         if isinstance(analysis, str):
             with open(analysis) as fh:
                 analysis = json.load(fh)
-        if resource_id not in self.analysis.keys():
+        if resource_id not in self.analysis:
             self.analysis[resource_id] = dict()
         self.analysis[resource_id]["analysis"] = analysis
 
