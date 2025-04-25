@@ -19,6 +19,11 @@ def elf_executable_file(elf_test_directory):
 
 
 @pytest.fixture(scope="session")
+def elf_permstest_executable_file(elf_test_directory):
+    return os.path.join(elf_test_directory, "permstest_elf")
+
+
+@pytest.fixture(scope="session")
 def elf_no_pie_executable_file(elf_test_directory):
     return os.path.join(elf_test_directory, "program_no_reloc")
 

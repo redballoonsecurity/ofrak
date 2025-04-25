@@ -130,3 +130,23 @@ async def test_elf_segments(elf_no_sections: Resource):
     elf = await elf_no_sections.view_as(Elf)
     for segment in await elf.get_segments():
         assert isinstance(segment, ElfSegment)
+
+
+@pytest.fixture
+async def elf_permstest(
+    elf_permstest_executable_file: str, ofrak_context: OFRAKContext
+) -> Resource:
+    """
+    An ELF with all combinations of permission flags
+    """
+    return await ofrak_context.create_root_resource_from_file(elf_permstest_executable_file)
+
+
+async def test_elf_perms_header_analysis(elf_permstest: Resource):
+    """
+    Test getting memory permissions for all flag combinations
+    """
+    await elf_permstest.unpack()
+    elf = await elf_permstest.view_as(Elf)
+    for prog_header in await elf.get_program_headers():
+        prog_header.get_memory_permissions()
