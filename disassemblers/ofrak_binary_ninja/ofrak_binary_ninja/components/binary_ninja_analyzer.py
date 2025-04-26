@@ -24,11 +24,11 @@ class BinaryNinjaAnalyzer(Analyzer[Optional[BinaryNinjaAnalyzerConfig], BinaryNi
     targets = (BinaryNinjaAnalysisResource,)
     outputs = (BinaryNinjaAnalysis,)
 
-    async def analyze(
+    def analyze(
         self, resource: Resource, config: Optional[BinaryNinjaAnalyzerConfig] = None
     ) -> BinaryNinjaAnalysis:
         if not config:
-            async with resource.temp_to_disk(delete=False) as temp_path:
+            with resource.temp_to_disk(delete=False) as temp_path:
                 bv = open_view(temp_path)
 
             return BinaryNinjaAnalysis(bv)

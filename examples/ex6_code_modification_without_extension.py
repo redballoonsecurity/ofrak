@@ -65,21 +65,21 @@ BINARY_FILE = "./src/example_6/program_kitteh"
 PRINT_KITTEH_SOURCE = "./src/example_6/print_kitteh.c"
 
 
-async def main(
+def main(
     ofrak_context: OFRAKContext, file_path: str, print_kitteh_source: str, output_file_name: str
 ):
     try:
-        root_resource = await ofrak_context.create_root_resource_from_file(file_path)
+        root_resource = ofrak_context.create_root_resource_from_file(file_path)
     except FileNotFoundError:
         raise RuntimeError(
             f"Cannot find the file {file_path}. Did you run the Makefile to build it?"
         )
 
-    await root_resource.unpack_recursively(do_not_unpack=(ComplexBlock,))
+    root_resource.unpack_recursively(do_not_unpack=(ComplexBlock,))
 
     # The PatchMaker will need to know a bit about the target architecture
     # since it will compile our C patch.
-    program_attributes = await root_resource.analyze(ProgramAttributes)
+    program_attributes = root_resource.analyze(ProgramAttributes)
 
     # ... And also more details about how to configure the build toolchain.
     tc_config = ToolchainConfig(
@@ -95,7 +95,7 @@ async def main(
     )
 
     # Get the complex block for `main`
-    main_cb = await root_resource.get_only_descendant_as_view(
+    main_cb = root_resource.get_only_descendant_as_view(
         v_type=ComplexBlock,
         r_filter=ResourceFilter(
             attribute_filters=(ResourceAttributeValueFilter(ComplexBlock.Symbol, "main"),)
@@ -104,7 +104,7 @@ async def main(
     print(main_cb)
 
     # Get the complex block for `print_kitteh`
-    print_kitteh_function = await root_resource.get_only_descendant_as_view(
+    print_kitteh_function = root_resource.get_only_descendant_as_view(
         v_type=ComplexBlock,
         r_filter=ResourceFilter(
             attribute_filters=(ResourceAttributeValueFilter(ComplexBlock.Symbol, "print_kitteh"),)
@@ -166,10 +166,10 @@ async def main(
     fem = patch_maker.make_fem([(bom, p)], exec_path)
 
     # Inject the patch
-    await root_resource.run(SegmentInjectorModifier, SegmentInjectorModifierConfig.from_fem(fem))
+    root_resource.run(SegmentInjectorModifier, SegmentInjectorModifierConfig.from_fem(fem))
 
-    await root_resource.pack()
-    await root_resource.flush_data_to_disk(output_file_name)
+    root_resource.pack()
+    root_resource.flush_data_to_disk(output_file_name)
     print(f"Done! Output file written to {output_file_name}")
 
 

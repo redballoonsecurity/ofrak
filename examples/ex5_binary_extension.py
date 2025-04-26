@@ -74,16 +74,16 @@ SEVEN_KITTEH = 7 * KITTEH + b"\x00"
 PAGE_ALIGN = 0x1000
 
 
-async def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: str):
-    root_resource = await ofrak_context.create_root_resource_from_file(file_path)
+def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: str):
+    root_resource = ofrak_context.create_root_resource_from_file(file_path)
 
     # Add a segment
     empty_vaddr = 0x108000
     config = LiefAddSegmentConfig(empty_vaddr, PAGE_ALIGN, [0 for _ in range(0x2000)], "rw")
-    await root_resource.run(LiefAddSegmentModifier, config)
-    await root_resource.unpack_recursively(do_not_unpack=(CodeRegion,))
+    root_resource.run(LiefAddSegmentModifier, config)
+    root_resource.unpack_recursively(do_not_unpack=(CodeRegion,))
 
-    file_segments = await root_resource.get_descendants_as_view(
+    file_segments = root_resource.get_descendants_as_view(
         ElfProgramHeader, r_filter=ResourceFilter(tags=(ElfProgramHeader,))
     )
     new_segment = [seg for seg in file_segments if seg.p_vaddr == empty_vaddr].pop()
@@ -91,19 +91,19 @@ async def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: st
 
     # Add KITTEH to the new segment
     patch_config = BinaryPatchConfig(kitty_bytes_offset, SEVEN_KITTEH)
-    await root_resource.run(BinaryPatchModifier, patch_config)
+    root_resource.run(BinaryPatchModifier, patch_config)
 
     # Hello world is being loaded by a lea instruction.
     # Let's point it to load from the new entry point instead!
-    await root_resource.unpack_recursively()
-    main_cb = await root_resource.get_only_descendant_as_view(
+    root_resource.unpack_recursively()
+    main_cb = root_resource.get_only_descendant_as_view(
         v_type=ComplexBlock,
         r_filter=ResourceFilter(
             attribute_filters=(ResourceAttributeValueFilter(ComplexBlock.Symbol, "main"),)
         ),
     )
-    main_cb_assembly = await main_cb.get_assembly()
-    lea_instruction = await main_cb.resource.get_only_descendant_as_view(
+    main_cb_assembly = main_cb.get_assembly()
+    lea_instruction = main_cb.resource.get_only_descendant_as_view(
         v_type=Instruction,
         r_filter=ResourceFilter(
             attribute_filters=(ResourceAttributeValueFilter(Instruction.Mnemonic, "lea"),)
@@ -111,10 +111,10 @@ async def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: st
     )
     ghidra_empty_vaddr = empty_vaddr + 0x100000  # Ghidra bases PIE executables at 0x100000
     kitty_offset = ghidra_empty_vaddr - lea_instruction.virtual_address - 7
-    await lea_instruction.modify_assembly("lea", f"rdi, [rip + {kitty_offset}]")
+    lea_instruction.modify_assembly("lea", f"rdi, [rip + {kitty_offset}]")
 
-    await root_resource.pack()
-    await root_resource.flush_data_to_disk(output_file_name)
+    root_resource.pack()
+    root_resource.flush_data_to_disk(output_file_name)
     print(f"Done! Output file written to {output_file_name}")
 
 

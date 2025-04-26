@@ -180,15 +180,15 @@ class RawMagicPattern:
         cls.matchers[matcher] = resource_tag
 
     @classmethod
-    async def run(cls, resource: Resource):
+    def run(cls, resource: Resource):
         """
         Run the pattern against a given resource, tagging it based on registered tags.
         Note that the first MAX_SEARCH_SIZE bytes of a resource are made available to the callable.
 
         This method is designed to be called by the [MagicIdentifier][ofrak.core.magic.MagicIdentifier].
         """
-        data_length = min(await resource.get_data_length(), cls.MAX_SEARCH_SIZE)
-        data = await resource.get_data(range=Range(0, data_length))
+        data_length = min(resource.get_data_length(), cls.MAX_SEARCH_SIZE)
+        data = resource.get_data(range=Range(0, data_length))
         for matcher, resource_type in cls.matchers.items():
             if matcher(data):
                 resource.add_tag(resource_type)

@@ -40,7 +40,6 @@ setuptools.setup(
             "fun-coverage==0.2.0",
             "pytest",
             "pytest-cov",
-            "pytest-asyncio==0.19.0",
             "requests",
             "ofrak[test]>=3.3.0rc0",
         ]

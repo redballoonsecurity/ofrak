@@ -66,7 +66,7 @@ class CapstoneDisassemblerService(DisassemblerServiceInterface):
 
         return cs.disasm(request.data, request.virtual_address)
 
-    async def disassemble(self, request: DisassemblerServiceRequest) -> Iterable[DisassemblyResult]:
+    def disassemble(self, request: DisassemblerServiceRequest) -> Iterable[DisassemblyResult]:
         res = []
 
         for cs_instruction in self._cs_disassemble(request):
@@ -84,7 +84,7 @@ class CapstoneDisassemblerService(DisassemblerServiceInterface):
             )
         return res
 
-    async def get_register_usage(self, request: DisassemblerServiceRequest) -> RegisterUsageResult:
+    def get_register_usage(self, request: DisassemblerServiceRequest) -> RegisterUsageResult:
         for cs_instruction in self._cs_disassemble(request):
             if request.isa is InstructionSet.X86 and cs_instruction.mnemonic == "cmp":
                 raise DisassemblerRegisterUsageSupportError(

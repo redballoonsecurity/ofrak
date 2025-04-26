@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 from ofrak.component.unpacker import UnpackerError
@@ -37,11 +36,11 @@ class CapstoneBasicBlockUnpacker(BasicBlockUnpacker):
         super().__init__(resource_factory, data_service, resource_service, component_locator)
         self._disassembler_service = disassembler_service
 
-    async def unpack(self, resource: Resource, config=None):
-        bb_view = await resource.view_as(BasicBlock)
-        bb_data = await resource.get_data()
+    def unpack(self, resource: Resource, config=None):
+        bb_view = resource.view_as(BasicBlock)
+        bb_data = resource.get_data()
 
-        program_attrs = await resource.analyze(ProgramAttributes)
+        program_attrs = resource.analyze(ProgramAttributes)
 
         disassemble_request = DisassemblerServiceRequest(
             program_attrs.isa,
@@ -54,9 +53,7 @@ class CapstoneBasicBlockUnpacker(BasicBlockUnpacker):
             bb_view.virtual_address,
         )
 
-        instruction_children_created = []
-
-        for disassem_result in await self._disassembler_service.disassemble(disassemble_request):
+        for disassem_result in self._disassembler_service.disassemble(disassemble_request):
             instruction_view = Instruction(
                 disassem_result.address,
                 disassem_result.size,
@@ -65,13 +62,9 @@ class CapstoneBasicBlockUnpacker(BasicBlockUnpacker):
                 bb_view.mode,
             )
 
-            instruction_children_created.append(
-                bb_view.create_child_region(
-                    instruction_view, additional_attributes=(program_attrs,)
-                )
+            _ = bb_view.create_child_region(
+                instruction_view, additional_attributes=(program_attrs,)
             )
-
-        await asyncio.gather(*instruction_children_created)
 
 
 class CapstoneInstructionAnalyzer(InstructionAnalyzer):
@@ -85,19 +78,19 @@ class CapstoneInstructionAnalyzer(InstructionAnalyzer):
         super().__init__(resource_factory, data_service, resource_service)
         self._disassembler_service = disassembler_service
 
-    async def analyze(self, resource: Resource, config=None) -> Instruction:
-        parent_block = await resource.get_parent_as_view(Addressable)
+    def analyze(self, resource: Resource, config=None) -> Instruction:
+        parent_block = resource.get_parent_as_view(Addressable)
         mode: InstructionSetMode
         if parent_block.resource.has_tag(BasicBlock):
-            bb_attrs = await parent_block.resource.analyze(AttributesType[BasicBlock])
+            bb_attrs = parent_block.resource.analyze(AttributesType[BasicBlock])
             mode = bb_attrs.mode  # type: ignore
         else:
             mode = InstructionSetMode.NONE
-        instruction_data = await resource.get_data()
-        program_attrs = await resource.analyze(ProgramAttributes)
+        instruction_data = resource.get_data()
+        program_attrs = resource.analyze(ProgramAttributes)
 
         parent_start_vaddr = parent_block.virtual_address
-        instr_offset_in_parent = (await resource.get_data_range_within_parent()).start
+        instr_offset_in_parent = (resource.get_data_range_within_parent()).start
 
         disassemble_request = DisassemblerServiceRequest(
             program_attrs.isa,
@@ -112,7 +105,7 @@ class CapstoneInstructionAnalyzer(InstructionAnalyzer):
 
         try:
             disassem_result = next(
-                iter(await self._disassembler_service.disassemble(disassemble_request))
+                iter(self._disassembler_service.disassemble(disassemble_request))
             )
         except StopIteration:
             raise UnpackerError(
@@ -141,10 +134,10 @@ class CapstoneInstructionRegisterUsageAnalyzer(InstructionRegisterUsageAnalyzer)
         super().__init__(resource_factory, data_service, resource_service)
         self._disassembler_service = disassembler_service
 
-    async def analyze(self, resource: Resource, config=None) -> RegisterUsage:
-        program_attrs = await resource.analyze(ProgramAttributes)
+    def analyze(self, resource: Resource, config=None) -> RegisterUsage:
+        program_attrs = resource.analyze(ProgramAttributes)
 
-        instruction = await resource.view_as(Instruction)
+        instruction = resource.view_as(Instruction)
 
         disassemble_request = DisassemblerServiceRequest(
             program_attrs.isa,
@@ -153,11 +146,11 @@ class CapstoneInstructionRegisterUsageAnalyzer(InstructionRegisterUsageAnalyzer)
             program_attrs.endianness,
             program_attrs.processor,
             instruction.mode,
-            await instruction.resource.get_data(),
+            instruction.resource.get_data(),
             instruction.virtual_address,
         )
 
-        disassem_result = await self._disassembler_service.get_register_usage(disassemble_request)
+        disassem_result = self._disassembler_service.get_register_usage(disassemble_request)
 
         return RegisterUsage(
             disassem_result.regs_read,

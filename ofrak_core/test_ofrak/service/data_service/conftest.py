@@ -27,7 +27,7 @@ async def _serialize_deserialize_data_service(data_service: DataService):
     o.injector.discover(ofrak.service.serialization)
     o.injector.bind_factory(PJSONSerializationService)
 
-    serializer = await o.injector.get_instance(PJSONSerializationService)
+    serializer = o.injector.get_instance(PJSONSerializationService)
 
     serialized_data_service = serializer.to_pjson(data_service, DataService)
     deserialized_data_service = serializer.from_pjson(serialized_data_service, DataService)
@@ -82,7 +82,7 @@ async def populated_data_service(request):
     data_service = data_service_factory()
     populate_data_service(data_service)
     if postprocessing:
-        data_service = await postprocessing(data_service)
+        data_service = postprocessing(data_service)
     return data_service
 
 

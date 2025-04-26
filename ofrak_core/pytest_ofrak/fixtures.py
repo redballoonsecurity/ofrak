@@ -31,4 +31,4 @@ def ofrak(ofrak_injector, ofrak_id_service):
 def ofrak_context(ofrak):
     context = ofrak.create_ofrak_context()
     yield context
-    await context.shutdown_context()
+    context.shutdown_context()

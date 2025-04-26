@@ -43,15 +43,15 @@ def capstone_components(ofrak_injector):
 
 
 class TestCapstoneBasicBlockUnpackAndVerify(BasicBlockUnpackerUnpackAndVerifyPattern):
-    async def unpack(self, root_resource: Resource):
-        basic_block_resources = await root_resource.get_descendants(
+    def unpack(self, root_resource: Resource):
+        basic_block_resources = root_resource.get_descendants(
             r_filter=ResourceFilter.with_tags(BasicBlock),
         )
         for bb_r in basic_block_resources:
-            await bb_r.unpack()
+            bb_r.unpack()
 
     @pytest.fixture
-    async def root_resource(
+    def root_resource(
         self,
         unpack_verify_test_case: BasicBlockUnpackerTestCase,
         ofrak_context: OFRAKContext,
@@ -69,21 +69,21 @@ class TestCapstoneBasicBlockUnpackAndVerify(BasicBlockUnpackerUnpackAndVerifyPat
         asset_path = os.path.join(TEST_PATTERN_ASSETS_DIR, unpack_verify_test_case.binary_filename)
         with open(asset_path, "rb") as f:
             binary_data = f.read()
-        top_resource = await ofrak_context.create_root_resource(test_id, binary_data, tags=(File,))
-        await top_resource.unpack()
-        resource = await top_resource.create_child(
+        top_resource = ofrak_context.create_root_resource(test_id, binary_data, tags=(File,))
+        top_resource.unpack()
+        resource = top_resource.create_child(
             data=binary_data,
         )
 
         for bb_vaddr, bb_range in unpack_verify_test_case.basic_block_data_ranges_in_root.items():
-            await resource.create_child_from_view(
+            resource.create_child_from_view(
                 BasicBlock(bb_vaddr, bb_range.length(), InstructionSetMode.NONE, False, None),
                 data_range=bb_range,
             )
         return resource
 
-    async def get_descendants_to_verify(self, unpacked_resource: Resource) -> Dict[int, Resource]:
-        basic_blocks = await unpacked_resource.get_descendants_as_view(
+    def get_descendants_to_verify(self, unpacked_resource: Resource) -> Dict[int, Resource]:
+        basic_blocks = unpacked_resource.get_descendants_as_view(
             BasicBlock,
             r_filter=ResourceFilter.with_tags(BasicBlock),
             r_sort=ResourceSort(BasicBlock.VirtualAddress),
@@ -99,15 +99,13 @@ class UnpackerTestCase:
     basic_block_data: bytes
     expected_children: List[Instruction]
 
-    async def run_instruction_unpacker_test_case(self, ofrak: OFRAKContext):
-        bb_r = await self._initialize_basic_bloc_resource(ofrak)
+    def run_instruction_unpacker_test_case(self, ofrak: OFRAKContext):
+        bb_r = self._initialize_basic_bloc_resource(ofrak)
 
-        await bb_r.unpack()
+        bb_r.unpack()
 
         children = list(
-            await bb_r.get_children_as_view(
-                Instruction, r_sort=ResourceSort(BasicBlock.VirtualAddress)
-            )
+            bb_r.get_children_as_view(Instruction, r_sort=ResourceSort(BasicBlock.VirtualAddress))
         )
 
         assert len(self.expected_children) == len(children), (
@@ -118,27 +116,25 @@ class UnpackerTestCase:
         for expected_child, child in zip(self.expected_children, children):
             assert expected_child == child
 
-    async def run_instruction_analzyer_test_case(self, ofrak: OFRAKContext):
-        bb_r = await self._initialize_basic_bloc_resource(ofrak)
-        await bb_r.unpack()
-        basic_block = await bb_r.view_as(BasicBlock)
-        for instruction in await basic_block.get_instructions():
-            raw_bytes = await instruction.resource.get_data()
+    def run_instruction_analzyer_test_case(self, ofrak: OFRAKContext):
+        bb_r = self._initialize_basic_bloc_resource(ofrak)
+        bb_r.unpack()
+        basic_block = bb_r.view_as(BasicBlock)
+        for instruction in basic_block.get_instructions():
+            raw_bytes = instruction.resource.get_data()
             # Patch ourselves
-            await instruction.resource.run(BinaryPatchModifier, BinaryPatchConfig(0, raw_bytes))
+            instruction.resource.run(BinaryPatchModifier, BinaryPatchConfig(0, raw_bytes))
             # Clear context to get resource view again, triggering InstructionAnalyzer. Without
             # this step the InstructionAnalyzer does not run.
             instruction.resource._resource_view_context = ResourceViewContext()
-            reanalyzed_instruction = await instruction.resource.view_as(Instruction)
+            reanalyzed_instruction = instruction.resource.view_as(Instruction)
             assert instruction == reanalyzed_instruction
 
-    async def _initialize_basic_bloc_resource(self, ofrak) -> Resource:
-        bb_r = await ofrak.create_root_resource(
-            "test_resource", self.basic_block_data, tags=(Program,)
-        )
+    def _initialize_basic_bloc_resource(self, ofrak) -> Resource:
+        bb_r = ofrak.create_root_resource("test_resource", self.basic_block_data, tags=(Program,))
         bb_r.add_view(self.parent_basic_block)
         bb_r.add_attributes(self.program_attributes)
-        await bb_r.save()
+        bb_r.save()
         return bb_r
 
 
@@ -196,13 +192,13 @@ BASIC_BLOCK_TEST_CASES = [
 
 
 @pytest.mark.parametrize("test_case", BASIC_BLOCK_TEST_CASES, ids=lambda tc: tc.label)
-async def test_capstone_unpacker(test_case, ofrak_context):
-    await test_case.run_instruction_unpacker_test_case(ofrak_context)
+def test_capstone_unpacker(test_case, ofrak_context):
+    test_case.run_instruction_unpacker_test_case(ofrak_context)
 
 
 @pytest.mark.parametrize("test_case", BASIC_BLOCK_TEST_CASES, ids=lambda tc: tc.label)
-async def test_capstone_analyzer(test_case, ofrak_context):
-    await test_case.run_instruction_analzyer_test_case(ofrak_context)
+def test_capstone_analyzer(test_case, ofrak_context):
+    test_case.run_instruction_analzyer_test_case(ofrak_context)
 
 
 class TestCapstoneRegisterUsage(RegisterUsageTestPattern):

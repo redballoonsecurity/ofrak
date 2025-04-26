@@ -1439,12 +1439,12 @@ class Resource:
             with open(path, "wb") as f:
                 pass
 
-    async def flush_to_disk(self, path: str, pack: bool = True):  # pragma: no cover
+    def flush_to_disk(self, path: str, pack: bool = True):  # pragma: no cover
         warn(
             "Resource.flush_to_disk is deprecated! Use Resource.flush_data_to_disk instead.",
             category=DeprecationWarning,
         )
-        return await self.flush_data_to_disk(path, pack)
+        return self.flush_data_to_disk(path, pack)
 
     def __repr__(self):
         properties = [

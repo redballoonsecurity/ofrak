@@ -203,7 +203,7 @@ class OFRAK:
             print(f"It took {time.time() - start:.3f} seconds to run the OFRAK script")
 
     # TODO: Typehints here do not properly accept functions with variable args
-    def run(self, func: Callable[["OFRAKContext", Any], Awaitable[None]], *args):
+    def run(self, func: Callable, *args):
         self.run_async(func, *args)
 
     def _setup(self):

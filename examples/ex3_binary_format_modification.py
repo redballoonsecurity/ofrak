@@ -34,15 +34,15 @@ ASSETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
 BINARY_FILE = os.path.join(ASSETS_DIR, "example_program")
 
 
-async def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: str):
-    root_resource = await ofrak_context.create_root_resource_from_file(file_path)
-    await root_resource.unpack()
+def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: str):
+    root_resource = ofrak_context.create_root_resource_from_file(file_path)
+    root_resource.unpack()
 
-    elf_v = await root_resource.view_as(Elf)
-    exec_load_program_header = await get_exec_load_program_header(elf_v)
+    elf_v = root_resource.view_as(Elf)
+    exec_load_program_header = get_exec_load_program_header(elf_v)
 
     # Make this program header non-executable
-    await exec_load_program_header.resource.run(
+    exec_load_program_header.resource.run(
         ElfProgramHeaderModifier,
         ElfProgramHeaderModifierConfig(
             p_flags=exec_load_program_header.p_flags & ~MemoryPermissions.X.value
@@ -50,14 +50,14 @@ async def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: st
     )
 
     # Dump the modified program to disk
-    await root_resource.pack()
-    await root_resource.flush_data_to_disk(output_file_name)
+    root_resource.pack()
+    root_resource.flush_data_to_disk(output_file_name)
     print(f"Done! Output file written to {output_file_name}")
 
 
-async def get_exec_load_program_header(elf_v: Elf) -> ElfProgramHeader:
+def get_exec_load_program_header(elf_v: Elf) -> ElfProgramHeader:
     """Return the first executable LOAD program header in `elf_view`."""
-    for program_header in await elf_v.get_program_headers():
+    for program_header in elf_v.get_program_headers():
         if (
             program_header.p_type == ElfProgramHeaderType.LOAD.value
             and program_header.p_flags & MemoryPermissions.X.value

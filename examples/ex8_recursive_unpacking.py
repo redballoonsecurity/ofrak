@@ -44,27 +44,27 @@ KITTEH = r"""
                           \__(  o     o  )__/       kitteh! demands obedience..."""
 
 
-async def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: str):
+def main(ofrak_context: OFRAKContext, file_path: str, output_file_name: str):
     # Load a root resource from the input file
-    root_resource = await ofrak_context.create_root_resource_from_file(file_path)
+    root_resource = ofrak_context.create_root_resource_from_file(file_path)
 
     # Let OFRAK automatically unpack the file
-    await root_resource.unpack_recursively()
+    root_resource.unpack_recursively()
 
     # Step through the filesystem hierarchy to the innermost TAR
-    outer_tar = await root_resource.get_only_child()
-    inner_gzip = await outer_tar.get_only_child()
-    inner_tar = await inner_gzip.get_only_child()
+    outer_tar = root_resource.get_only_child()
+    inner_gzip = outer_tar.get_only_child()
+    inner_tar = inner_gzip.get_only_child()
 
     # View the innermost TAR as a TarArchive so that we can access TAR-specific methods
-    tar_view = await inner_tar.view_as(TarArchive)
+    tar_view = inner_tar.view_as(TarArchive)
 
     # Add a file
-    await tar_view.add_file("meow.txt", KITTEH.encode("ascii"))
+    tar_view.add_file("meow.txt", KITTEH.encode("ascii"))
 
     # Repack the file automagically and save the repacked file to disk
-    await root_resource.pack_recursively()
-    await root_resource.flush_data_to_disk(output_file_name)
+    root_resource.pack_recursively()
+    root_resource.flush_data_to_disk(output_file_name)
 
 
 if __name__ == "__main__":

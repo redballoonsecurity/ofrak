@@ -34,12 +34,12 @@ def ofrak() -> OFRAK:
 
 @pytest.fixture(scope="session")
 async def serializer(ofrak) -> PJSONSerializationService:
-    return await ofrak.injector.get_instance(PJSONSerializationService)
+    return ofrak.injector.get_instance(PJSONSerializationService)
 
 
 @pytest.fixture(scope="session")
 async def stashed_serializer(ofrak) -> StashedPJSONSerializationService:
-    return await ofrak.injector.get_instance(StashedPJSONSerializationService)
+    return ofrak.injector.get_instance(StashedPJSONSerializationService)
 
 
 @pytest.fixture(scope="session", params=[0, 1])

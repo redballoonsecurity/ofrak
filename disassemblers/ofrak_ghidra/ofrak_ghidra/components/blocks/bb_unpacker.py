@@ -1,4 +1,3 @@
-import asyncio
 import os
 import re
 from collections import defaultdict
@@ -57,7 +56,6 @@ class GhidraBasicBlockUnpacker(
         )
         program_attrs = await resource.analyze(ProgramAttributes)
 
-        children_created = []
         for instruction in instructions:
             vaddr = instruction["instr_offset"]
             size = instruction["instr_size"]
@@ -95,10 +93,7 @@ class GhidraBasicBlockUnpacker(
                 operands=operands,
                 mode=mode,
             )
-            children_created.append(
-                bb_view.create_child_region(instruction, additional_attributes=(program_attrs,))
-            )
-        await asyncio.gather(*children_created)
+            _ = bb_view.create_child_region(instruction, additional_attributes=(program_attrs,))
 
     async def _handle_get_instructions_batch(
         self, requests: Tuple[_GetInstructionsRequest, ...]

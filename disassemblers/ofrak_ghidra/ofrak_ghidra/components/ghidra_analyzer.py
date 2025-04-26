@@ -4,7 +4,7 @@ import logging
 import os
 import tempfile
 import time
-from contextlib import asynccontextmanager
+from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import Optional, List, Dict
@@ -110,8 +110,8 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
                 self._script_directories.add(script.script_dir)
                 self._scripts.add(script.script_name)
 
-    @asynccontextmanager
-    async def _prepare_ghidra_project(
+    @contextmanager
+    def _prepare_ghidra_project(
         self, resource: Resource, ghidra_zip_file: Optional[str] = None, name: Optional[str] = None
     ):
         # TODO: allow multiple headless server instances
@@ -121,14 +121,14 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
             tmp_dir = None
         else:
             tmp_dir = tempfile.TemporaryDirectory()
-            data = await resource.get_data()
+            data = resource.get_data()
             hash_sha256 = hashlib.sha256()
             hash_sha256.update(data)
 
             fname = name if name is not None else hash_sha256.hexdigest()
             full_fname = os.path.join(tmp_dir.name, fname)
 
-            data = await resource.get_data()
+            data = resource.get_data()
             with open(full_fname, "wb") as f:
                 f.write(data)
 
@@ -150,14 +150,14 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
         # of the same name in the ghidra project.
         use_existing = config.use_existing if config is not None else binary_fname is not None
 
-        async with self._prepare_ghidra_project(resource, gzf, binary_fname) as (
+        with self._prepare_ghidra_project(resource, gzf, binary_fname) as (
             ghidra_project,
             full_fname,
         ):
-            program_name = await self._do_ghidra_import(
+            program_name = self._do_ghidra_import(
                 ghidra_project, full_fname, use_existing=use_existing, use_binary_loader=False
             )
-            await self._do_ghidra_analyze_and_serve(
+            self._do_ghidra_analyze_and_serve(
                 ghidra_project,
                 program_name,
                 skip_analysis=config is not None,
@@ -167,7 +167,22 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
                 ghidra_project, f"http://{GHIDRA_SERVER_HOST}:{GHIDRA_SERVER_PORT}"
             )
 
-    async def _do_ghidra_import(
+    def _do_ghidra_import(
+        self,
+        ghidra_project: str,
+        full_fname: str,
+        use_existing: bool,
+        use_binary_loader: bool,
+        processor: Optional[ArchInfo] = None,
+        blocks: Optional[List[MemoryRegion]] = None,
+    ):
+        return asyncio.get_event_loop().run_until_complete(
+            self._do_ghidra_import_async(
+                ghidra_project, full_fname, use_existing, use_binary_loader, processor, blocks
+            )
+        )
+
+    async def _do_ghidra_import_async(
         self,
         ghidra_project: str,
         full_fname: str,
@@ -256,7 +271,17 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
 
                 return program_name
 
-    async def _do_ghidra_analyze_and_serve(
+    def _do_ghidra_analyze_and_serve(
+        self,
+        ghidra_project: str,
+        program_name: str,
+        skip_analysis: bool,
+    ):
+        asyncio.get_event_loop().run_until_complete(
+            self._do_ghidra_analyze_and_serve_async(ghidra_project, program_name, skip_analysis)
+        )
+
+    async def _do_ghidra_analyze_and_serve_async(
         self,
         ghidra_project: str,
         program_name: str,
@@ -475,15 +500,15 @@ class GhidraCustomLoadAnalyzer(GhidraProjectAnalyzer):
     targets = (GhidraCustomLoadProject,)
     outputs = (GhidraCustomLoadProject,)
 
-    async def analyze(
+    def analyze(
         self, resource: Resource, config: Optional[GhidraProjectConfig] = None
     ) -> GhidraProject:
-        arch_info: ArchInfo = await resource.analyze(ProgramAttributes)
-        mem_blocks = await self._get_memory_blocks(await resource.view_as(Program))
+        arch_info: ArchInfo = resource.analyze(ProgramAttributes)
+        mem_blocks = self._get_memory_blocks(resource.view_as(Program))
         use_existing = config.use_existing if config is not None else False
 
-        async with self._prepare_ghidra_project(resource) as (ghidra_project, full_fname):
-            program_name = await self._do_ghidra_import(
+        with self._prepare_ghidra_project(resource) as (ghidra_project, full_fname):
+            program_name = self._do_ghidra_import(
                 ghidra_project,
                 full_fname,
                 use_existing=use_existing,
@@ -491,7 +516,7 @@ class GhidraCustomLoadAnalyzer(GhidraProjectAnalyzer):
                 processor=arch_info,
                 blocks=mem_blocks,
             )
-            await self._do_ghidra_analyze_and_serve(
+            self._do_ghidra_analyze_and_serve(
                 ghidra_project,
                 program_name,
                 skip_analysis=config is not None,
@@ -501,8 +526,8 @@ class GhidraCustomLoadAnalyzer(GhidraProjectAnalyzer):
                 ghidra_project, f"http://{GHIDRA_SERVER_HOST}:{GHIDRA_SERVER_PORT}"
             )
 
-    async def _get_memory_blocks(self, program: Program):
-        mem_regions = await program.resource.get_children_as_view(
+    def _get_memory_blocks(self, program: Program) -> List[MemoryRegion]:
+        mem_regions = program.resource.get_children_as_view(
             MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
         )
         return list(mem_regions)

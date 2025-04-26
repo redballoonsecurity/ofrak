@@ -327,11 +327,11 @@ class FreeSpaceAnalyzer(Analyzer[None, Allocatable]):
 
         return merged_ranges_by_permissions
 
-    async def analyze(self, resource: Resource, config: ComponentConfig = None) -> Allocatable:
+    def analyze(self, resource: Resource, config: ComponentConfig = None) -> Allocatable:
         free_spaces_with_data = []
         free_spaces_without_data = []
 
-        for free_space_r in await resource.get_descendants_as_view(
+        for free_space_r in resource.get_descendants_as_view(
             AnyFreeSpace,
             r_filter=ResourceFilter.with_tags(AnyFreeSpace),
             r_sort=ResourceSort(AnyFreeSpace.VirtualAddress),
@@ -591,18 +591,18 @@ class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
             FreeSpaceTag = RuntimeFreeSpace
         else:
             patch_data = _get_patch(freed_range, config.stub, config.fill)
-            patch_offset = (await resource.get_data_range_within_parent()).start
+            patch_offset = (resource.get_data_range_within_parent()).start
             patch_range = freed_range.translate(patch_offset - freed_range.start)
 
             # Patch in the patch_data
-            await parent.run(BinaryPatchModifier, BinaryPatchConfig(patch_offset, patch_data))
+            parent.run(BinaryPatchModifier, BinaryPatchConfig(patch_offset, patch_data))
 
             if len(config.stub) > 0:
                 # Grab tags, so they can be saved to the stub.
                 # At some point, it might be nice to save the attributes as well.
                 current_tags = resource.get_tags()
 
-                await parent.create_child_from_view(
+                parent.create_child_from_view(
                     MemoryRegion(mem_region_view.virtual_address, len(config.stub)),
                     data_range=Range.from_size(patch_range.start, len(config.stub)),
                     additional_tags=current_tags,
