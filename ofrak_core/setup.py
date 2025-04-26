@@ -69,7 +69,7 @@ def read_requirements(requirements_path):
 
 setuptools.setup(
     name="ofrak",
-    version="3.2.0post0",
+    version="3.3.0rc3",
     description="A binary analysis and modification platform",
     packages=setuptools.find_packages(exclude=["test_ofrak", "test_ofrak.*"]),
     package_data={
@@ -78,15 +78,21 @@ setuptools.setup(
     install_requires=[
         "ofrak_io>=1.0,==1.*",
         "ofrak_type>=2.2.0rc0,==2.*",
-        "ofrak_patch_maker>=4.0.2rc0,==4.*",
+        "ofrak_patch_maker>=4.1.0rc0,==4.*",
     ]
     + read_requirements("requirements.txt"),
     extras_require={
         "docs": read_requirements("requirements-docs.txt"),
         "test": [
-            "importlib-resources",  # Needed because of https://github.com/redballoonsecurity/ofrak/issues/398
-            "ofrak_angr~=1.0",
-            "ofrak_capstone~=1.0",
+            # Running the full set of tests requires these version of angr and capstone.
+            #  If building a Docker image, it should already be installed on the system.
+            #  If you are running the tests in another environment, you will need to make sure
+            #  that this version is installed from GitHub, since it depends on ofrak==3.3.0rc0
+            #  and neither of these are yet released on PyPI.
+            #  If these are not installed, some of the tests will be skipped
+            # "ofrak_capstone>=1.1.0rc0",
+            # "ofrak_angr~=1.1.0rc0",
+            # "importlib-resources",  # Needed because of https://github.com/redballoonsecurity/ofrak/issues/398
         ]
         + read_requirements("requirements-test.txt"),
         "non-pypi": read_requirements("requirements-non-pypi.txt"),

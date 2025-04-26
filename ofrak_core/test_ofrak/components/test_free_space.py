@@ -1,3 +1,4 @@
+from ofrak.core.free_space import RuntimeFreeSpace
 import pytest
 from ofrak.core import FreeSpace, FreeSpaceModifier, FreeSpaceModifierConfig
 
@@ -17,13 +18,26 @@ from ofrak_type.range import Range
 @pytest.fixture
 def resource_under_test(ofrak_context: OFRAKContext) -> Resource:
     resource = ofrak_context.create_root_resource(
-        "mock_memory_region",
+        "mock_program",
         b"\xff" * 0x100,
         (Program,),
     )
     memory_region = resource.create_child_from_view(
-        MemoryRegion(0, 0x100), data_range=Range(0, 0x100)
+        MemoryRegion(0x100, 0xF0), data_range=Range(0x10, 0x100)
     )
+    resource.save()
+    memory_region.save()
+    return memory_region
+
+
+@pytest.fixture
+async def dataless_resource_under_test(ofrak_context: OFRAKContext) -> Resource:
+    resource = ofrak_context.create_root_resource(
+        "mock_empty",
+        b"",
+        (Program,),
+    )
+    memory_region = resource.create_child_from_view(MemoryRegion(0x100, 0xF0), data_range=None)
     resource.save()
     memory_region.save()
     return memory_region
@@ -49,11 +63,9 @@ def test_partial_free_modifier(resource_under_test: Resource):
     """
     Test that the PartialFreeSpaceModifier returns expected results.
     """
-    partial_start_offset = 4
-    partial_end_offset = 10
-    parent = resource_under_test.get_parent()
-    data_length = resource_under_test.get_data_length()
-    range_to_remove = Range.from_size(4, data_length - 4 - 10)
+    partial_start_address = 0x104
+    partial_end_address = 0x10A
+    range_to_remove = Range(partial_start_address, partial_end_address)
     config = PartialFreeSpaceModifierConfig(
         MemoryPermissions.RX,
         range_to_remove=range_to_remove,
@@ -68,11 +80,12 @@ def test_partial_free_modifier(resource_under_test: Resource):
     assert free_space_data == (b"\x00" * (range_to_remove.length() - len(config.stub)))
 
     # Assert stub is injected
-    memory_region_data = resource_under_test.get_data()
-    assert (
-        memory_region_data[partial_start_offset : partial_start_offset + len(config.stub)]
-        == config.stub
+    memory_region_view = resource_under_test.view_as(MemoryRegion)
+    start_offset_in_region = memory_region_view.get_offset_in_self(partial_start_address)
+    memory_region_stub_data = resource_under_test.get_data(
+        Range.from_size(start_offset_in_region, len(config.stub))
     )
+    assert memory_region_stub_data == config.stub
 
 
 def test_free_space_modifier(resource_under_test: Resource):
@@ -105,6 +118,32 @@ def test_free_space_modifier(resource_under_test: Resource):
     )
     child_data = child.get_data()
     assert child_data == config.stub
+
+
+async def test_dataless_free_space_modifier(dataless_resource_under_test: Resource):
+    original_region = await dataless_resource_under_test.view_as(MemoryRegion)
+    parent = await dataless_resource_under_test.get_parent()
+
+    rw_config = FreeSpaceModifierConfig(MemoryPermissions.RW)
+    await dataless_resource_under_test.run(FreeSpaceModifier, rw_config)
+
+    # Assert runtime free space created as required
+    runtime_free_region = await parent.get_only_child_as_view(
+        MemoryRegion, r_filter=ResourceFilter.with_tags(RuntimeFreeSpace)
+    )
+    assert original_region == runtime_free_region
+
+
+async def test_dataless_free_space_modifier_readonly_fails(dataless_resource_under_test: Resource):
+    ro_config = FreeSpaceModifierConfig(MemoryPermissions.R)
+    with pytest.raises(ValueError, match=r".*RW.*"):
+        await dataless_resource_under_test.run(FreeSpaceModifier, ro_config)
+
+
+async def test_dataless_free_space_modifier_stub_fails(dataless_resource_under_test: Resource):
+    stub_config = FreeSpaceModifierConfig(MemoryPermissions.RW, stub=b"\x00")
+    with pytest.raises(ValueError, match=r".*stub.*"):
+        await dataless_resource_under_test.run(FreeSpaceModifier, stub_config)
 
 
 def test_free_space_modifier_config_fill_parameters():

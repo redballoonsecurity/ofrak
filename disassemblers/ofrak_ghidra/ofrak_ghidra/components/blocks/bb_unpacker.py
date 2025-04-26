@@ -80,7 +80,6 @@ class GhidraBasicBlockUnpacker(
             for reg in instruction["regs_written"].lower().split(","):
                 if reg not in regs_written and reg != "":
                     regs_written.append(reg)
-            disasm = f"{mnem} {operands}"
 
             mode_string = instruction.get("instr_mode", "NONE")
             mode = InstructionSetMode[mode_string]
@@ -92,7 +91,6 @@ class GhidraBasicBlockUnpacker(
             instruction = Instruction(
                 virtual_address=vaddr,
                 size=size,
-                disassembly=disasm,
                 mnemonic=mnem,
                 operands=operands,
                 mode=mode,

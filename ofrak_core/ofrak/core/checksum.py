@@ -2,7 +2,6 @@ import hashlib
 from dataclasses import dataclass
 
 from ofrak.core.binary import GenericBinary
-from ofrak.core.filesystem import File
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.model.resource_model import ResourceAttributes
@@ -19,7 +18,7 @@ class Sha256Analyzer(Analyzer[None, Sha256Attributes]):
     Analyze binary data and add attributes with the SHA256 checksum of the data.
     """
 
-    targets = (File, GenericBinary)
+    targets = (GenericBinary,)
     outputs = (Sha256Attributes,)
 
     def analyze(self, resource: Resource, config=None) -> Sha256Attributes:
@@ -39,7 +38,7 @@ class Md5Analyzer(Analyzer[None, Md5Attributes]):
     Analyze binary data and add attributes with the MD5 checksum of the data.
     """
 
-    targets = (File, GenericBinary)
+    targets = (GenericBinary,)
     outputs = (Md5Attributes,)
 
     def analyze(self, resource: Resource, config=None) -> Md5Attributes:

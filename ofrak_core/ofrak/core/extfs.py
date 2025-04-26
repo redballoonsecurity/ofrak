@@ -11,7 +11,7 @@ from ofrak.core import (
     File,
     Folder,
     SpecialFileType,
-    MagicDescriptionIdentifier,
+    MagicDescriptionPattern,
 )
 from ofrak.model.component_model import ComponentExternalTool, ComponentConfig
 
@@ -74,6 +74,6 @@ class ExtUnpacker(Unpacker[None]):
                 fs_view.initialize_from_disk(temp_dir)
 
 
-MagicDescriptionIdentifier.register(Ext2Filesystem, lambda s: "ext2 filesystem" in s.lower())
-MagicDescriptionIdentifier.register(Ext3Filesystem, lambda s: "ext3 filesystem" in s.lower())
-MagicDescriptionIdentifier.register(Ext4Filesystem, lambda s: "ext4 filesystem" in s.lower())
+MagicDescriptionPattern.register(Ext2Filesystem, lambda s: "ext2 filesystem" in s.lower())
+MagicDescriptionPattern.register(Ext3Filesystem, lambda s: "ext3 filesystem" in s.lower())
+MagicDescriptionPattern.register(Ext4Filesystem, lambda s: "ext4 filesystem" in s.lower())

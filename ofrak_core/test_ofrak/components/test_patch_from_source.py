@@ -4,8 +4,8 @@ import subprocess
 
 from ofrak_patch_maker.toolchain.llvm_12 import LLVM_12_0_1_Toolchain
 
-import ofrak_angr
-import ofrak_capstone
+ofrak_angr = pytest.importorskip("ofrak_angr")
+ofrak_capstone = pytest.importorskip("ofrak_capstone")
 from ofrak import OFRAKContext, Resource, ResourceAttributeValueFilter, ResourceFilter
 from ofrak.core import (
     Allocatable,

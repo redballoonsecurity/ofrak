@@ -7,7 +7,6 @@ from ofrak.component.modifier import Modifier, ModifierError
 from ofrak.component.unpacker import Unpacker
 from ofrak.core.binary import BinaryPatchConfig, BinaryPatchModifier, GenericText, GenericBinary
 from ofrak.core.code_region import CodeRegion
-from ofrak.core.filesystem import File
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import index
 from ofrak.model.viewable_tag_model import AttributesType
@@ -67,7 +66,7 @@ class StringFindReplaceModifier(Modifier[StringFindReplaceConfig]):
     Find and replace all instances of a given string with a replacement string.
     """
 
-    targets = (GenericBinary, File)
+    targets = (GenericBinary,)
 
     def modify(self, resource: Resource, config: StringFindReplaceConfig) -> None:
         to_find = config.to_find.encode("utf-8")

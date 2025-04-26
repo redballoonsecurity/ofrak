@@ -646,7 +646,7 @@ export class RemoteResource extends Resource {
     });
   }
 
-  async run_component(component, configtype, response) {
+  async run_component(component, config) {
     const result = await fetch(
       `${this.uri}/run_component?component=${component}`,
       {
@@ -654,7 +654,7 @@ export class RemoteResource extends Resource {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify([configtype, response]),
+        body: JSON.stringify(config),
       }
     ).then(async (r) => {
       if (!r.ok) {

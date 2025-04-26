@@ -6,14 +6,14 @@ from typing import List, Tuple
 import os
 from subprocess import CalledProcessError
 
+from ofrak.core import RawMagicPattern
 from ofrak.model.tag_model import ResourceTag
 
-from ofrak import Identifier, Analyzer
+from ofrak import Analyzer
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.resource import Resource
-from ofrak.core.filesystem import File
 from ofrak.core.binary import GenericBinary
 from ofrak.resource_view import ResourceView
 
@@ -57,7 +57,7 @@ class _PyLzoTool(ComponentExternalTool):
             return False
 
 
-PY_LZO_TOOL = _PyLzoTool()
+PY_LZO_TOOL: _PyLzoTool = _PyLzoTool()  # For some reason mypy needs this type annotation
 
 
 @dataclass
@@ -294,18 +294,10 @@ vol_name={volume_view.name}
             resource.queue_patch(Range(0, resource.get_data_length()), packed_blob_data)
 
 
-class UbiIdentifier(Identifier):
-    """
-    Check the first four bytes of a resource and tag the resource as Ubi if it matches the file magic.
-    """
+def match_ubi_magic(data: bytes) -> bool:
+    if len(data) < 4:
+        return False
+    return data[:4] in [UBI_EC_HDR_MAGIC, UBI_VID_HDR_MAGIC]
 
-    targets = (File, GenericBinary)
 
-    external_dependencies = (PY_LZO_TOOL,)
-
-    def identify(self, resource: Resource, config=None) -> None:
-        datalength = resource.get_data_length()
-        if datalength >= 4:
-            data = resource.get_data(Range(0, 4))
-            if data in [UBI_EC_HDR_MAGIC, UBI_VID_HDR_MAGIC]:
-                resource.add_tag(Ubi)
+RawMagicPattern.register(Ubi, match_ubi_magic)

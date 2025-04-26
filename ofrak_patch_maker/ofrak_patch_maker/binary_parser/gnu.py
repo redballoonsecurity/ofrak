@@ -26,7 +26,7 @@ class GNU_ELF_Parser(AbstractBinaryFileParser):
         r"(?P<vma>[0-9A-Fa-f]+)[ \t]+"
         r"(?P<lma>[0-9A-Fa-f]+)[ \t]+"
         r"(?P<offset>[0-9A-Fa-f]+)[ \t]+"
-        r"(?P<alignment>[0-9]\*\*[0-9])\n[ \n]+"
+        r"2\*\*(?P<alignment>[0-9])\n[ \n]+"
         r"(?P<flags>[\S, ]+)",
         flags=re.MULTILINE,
     )
@@ -62,6 +62,9 @@ class GNU_ELF_Parser(AbstractBinaryFileParser):
                 permissions = permissions + MemoryPermissions.X
             # TODO: Figure out how to infer this.
             is_entry = False
+
+            is_allocated = "ALLOC" in section_data.group("flags")
+            is_bss = is_allocated and "LOAD" not in section_data.group("flags")
             seg = Segment(
                 segment_name=section_data.group("name"),
                 vm_address=int(section_data.group("vma"), 16),
@@ -69,6 +72,9 @@ class GNU_ELF_Parser(AbstractBinaryFileParser):
                 is_entry=is_entry,
                 length=int(section_data.group("size"), 16),
                 access_perms=permissions,
+                is_allocated=is_allocated,
+                is_bss=is_bss,
+                alignment=1 << int(section_data.group("alignment")),
             )
             segments.append(seg)
         return tuple(segments)

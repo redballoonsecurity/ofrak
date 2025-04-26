@@ -208,7 +208,10 @@ class TestResourceService:
             [R_ID_3_ROOT],
             r_filter=ResourceFilter(
                 include_self=True,
-                tags=(File, GenericBinary),
+                tags=(
+                    File,
+                    GenericBinary,
+                ),
                 tags_condition=ResourceFilterCondition.AND,
                 attribute_filters=None,
             ),
@@ -362,7 +365,10 @@ class TestResourceService:
             [R_ID_3_ROOT],
             r_filter=ResourceFilter(
                 include_self=True,
-                tags=(File, GenericBinary),
+                tags=(
+                    File,
+                    GenericBinary,
+                ),
                 tags_condition=ResourceFilterCondition.AND,
                 attribute_filters=None,
             ),
@@ -373,11 +379,23 @@ class TestResourceService:
             [R_ID_3_ROOT],
             r_filter=ResourceFilter(
                 include_self=True,
-                tags=(File, GenericBinary),
+                tags=(
+                    File,
+                    GenericBinary,
+                ),
                 tags_condition=ResourceFilterCondition.AND,
                 attribute_filters=None,
             ),
-            extra_resources=[((File, GenericBinary), ())] * 10,
+            extra_resources=[
+                (
+                    (
+                        File,
+                        GenericBinary,
+                    ),
+                    (),
+                )
+            ]
+            * 10,
         ),
         GetDescendantsTestCase(
             "attributes filter: exact value (attributes filter cheapest)",
@@ -898,7 +916,12 @@ class TestResourceService:
             R_ID_1_ROOT: ResourceModel(R_ID_1_ROOT),
             R_ID_2_ROOT: ResourceModel(R_ID_2_ROOT),
             R_ID_3_ROOT: ResourceModel.create(
-                R_ID_3_ROOT, tags=(File, GenericBinary), attributes=(TestIndexAttributes(5),)
+                R_ID_3_ROOT,
+                tags=(
+                    File,
+                    GenericBinary,
+                ),
+                attributes=(TestIndexAttributes(5),),
             ),
         }
 

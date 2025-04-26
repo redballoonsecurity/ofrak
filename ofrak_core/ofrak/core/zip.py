@@ -9,7 +9,7 @@ from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.resource import Resource
 from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
-from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
+from ofrak.core.magic import MagicMimePattern, MagicDescriptionPattern
 from ofrak.core.binary import GenericBinary
 
 from ofrak.model.component_model import ComponentExternalTool
@@ -93,7 +93,7 @@ class ZipPacker(Packer[None]):
             resource.queue_patch(Range(0, zip_view.resource.get_data_length()), fh.read())
 
 
-MagicMimeIdentifier.register(ZipArchive, "application/zip")
-MagicDescriptionIdentifier.register(
+MagicMimePattern.register(ZipArchive, "application/zip")
+MagicDescriptionPattern.register(
     ZipArchive, lambda desc: any([("Zip archive data" in s) for s in desc.split(", ")])
 )

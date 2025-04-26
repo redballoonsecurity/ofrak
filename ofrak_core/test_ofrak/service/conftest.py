@@ -105,7 +105,12 @@ def tree3_resource_models() -> List[ResourceModel]:
     # Elf indexes are arbitrary, just to create some indexable value
     return [
         ResourceModel.create(
-            R_ID_3_ROOT, tags=(File, GenericBinary), attributes=(TestIndexAttributes(5),)
+            R_ID_3_ROOT,
+            tags=(
+                File,
+                GenericBinary,
+            ),
+            attributes=(TestIndexAttributes(5),),
         ),
         ResourceModel.create(
             R_ID_3_1,

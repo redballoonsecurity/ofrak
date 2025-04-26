@@ -10,7 +10,7 @@ from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.core.binary import GenericBinary
 from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
-from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
+from ofrak.core.magic import MagicMimePattern, MagicDescriptionPattern
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.resource import Resource
 from ofrak_type.range import Range
@@ -82,5 +82,5 @@ class SevenzPacker(Packer[None]):
             resource.queue_patch(Range(0, resource.get_data_length()), new_data)
 
 
-MagicMimeIdentifier.register(SevenZFilesystem, "application/x-7z-compressed")
-MagicDescriptionIdentifier.register(SevenZFilesystem, lambda s: s.startswith("7-zip archive"))
+MagicMimePattern.register(SevenZFilesystem, "application/x-7z-compressed")
+MagicDescriptionPattern.register(SevenZFilesystem, lambda s: s.startswith("7-zip archive"))

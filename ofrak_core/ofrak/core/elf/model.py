@@ -17,7 +17,7 @@ from ofrak.service.resource_service_i import (
     ResourceSortDirection,
     ResourceSort,
 )
-from ofrak.core.magic import MagicDescriptionIdentifier
+from ofrak.core.magic import MagicDescriptionPattern
 from ofrak_type.bit_width import BitWidth
 from ofrak_type.endianness import Endianness
 from ofrak_type.memory_permissions import MemoryPermissions
@@ -289,7 +289,7 @@ class ElfProgramHeader(ElfSegmentStructure):
         """
         Get the MemoryPermission for the ElfProgramHeader.
         """
-        return MemoryPermissions(self.p_flags)
+        return MemoryPermissions(self.p_flags & 0b111)
 
     @classmethod
     def caption(cls, all_attributes) -> str:
@@ -867,4 +867,4 @@ class Elf(Program):
         )
 
 
-MagicDescriptionIdentifier.register(Elf, lambda s: s.startswith("ELF "))
+MagicDescriptionPattern.register(Elf, lambda s: s.startswith("ELF "))

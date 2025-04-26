@@ -6,7 +6,7 @@ from subprocess import CalledProcessError
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.core.binary import GenericBinary
-from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
+from ofrak.core.magic import MagicMimePattern, MagicDescriptionPattern
 from ofrak.model.component_model import ComponentConfig, ComponentExternalTool
 from ofrak.resource import Resource
 from ofrak_type.range import Range
@@ -80,7 +80,7 @@ class ZstdPacker(Packer[ZstdPackerConfig]):
         resource.queue_patch(Range(0, original_size), compressed_data)
 
 
-MagicMimeIdentifier.register(ZstdData, "application/x-zstd")
-MagicDescriptionIdentifier.register(
+MagicMimePattern.register(ZstdData, "application/x-zstd")
+MagicDescriptionPattern.register(
     ZstdData, lambda s: s.lower().startswith("zstandard compressed data")
 )

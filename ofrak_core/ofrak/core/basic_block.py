@@ -56,8 +56,7 @@ class BasicBlock(MemoryRegion):
         :return: the basic block's assembly
         """
         instructions = self.get_instructions()
-        instruction_assemblies = [i.get_assembly() for i in instructions]
-        return "\n".join(instruction_assemblies)
+        return "\n".join([i.get_assembly() for i in instructions])
 
 
 class BasicBlockUnpacker(Unpacker[None], ABC):

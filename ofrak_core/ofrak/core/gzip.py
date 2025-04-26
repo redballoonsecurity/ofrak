@@ -9,7 +9,7 @@ import tempfile312 as tempfile
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.core.binary import GenericBinary
-from ofrak.core.magic import MagicMimeIdentifier, MagicDescriptionIdentifier
+from ofrak.core.magic import MagicMimePattern, MagicDescriptionPattern
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.resource import Resource
 from ofrak_type.range import Range
@@ -126,5 +126,5 @@ class GzipPacker(Packer[None]):
             return proc.stdout
 
 
-MagicMimeIdentifier.register(GzipData, "application/gzip")
-MagicDescriptionIdentifier.register(GzipData, lambda s: s.startswith("gzip compressed data"))
+MagicMimePattern.register(GzipData, "application/gzip")
+MagicDescriptionPattern.register(GzipData, lambda s: s.startswith("gzip compressed data"))

@@ -9,7 +9,7 @@ from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
-from ofrak.core import ProgramAttributes, GenericBinary, MagicDescriptionIdentifier
+from ofrak.core import ProgramAttributes, GenericBinary, MagicDescriptionPattern
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.model.viewable_tag_model import AttributesType
@@ -598,4 +598,4 @@ class UImagePacker(Packer[None]):
         resource.queue_patch(Range(0, original_size), header_data + repacked_body_data)
 
 
-MagicDescriptionIdentifier.register(UImage, lambda s: s.startswith("u-boot legacy uImage"))
+MagicDescriptionPattern.register(UImage, lambda s: s.startswith("u-boot legacy uImage"))

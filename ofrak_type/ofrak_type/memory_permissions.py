@@ -4,17 +4,22 @@ from enum import Enum
 class MemoryPermissions(Enum):
     """
     Representation of memory access permissions - all combinations of Read, Write, and eXecute
-    are represented, with the exception of Write + eXecute (not a sane combination).
+    are represented.
     """
 
+    NONE = 0
     X = 1
     W = 2
     R = 4
     RW = R + W
     RX = R + X
+    WX = W + X
     RWX = R + W + X
 
     def as_str(self) -> str:
+        if self.value == 0:
+            return "none"
+
         string = ""
         if self.value & MemoryPermissions.R.value:
             string += "r"
@@ -41,6 +46,8 @@ class MemoryPermissions(Enum):
     def __sub__(self, other: "MemoryPermissions") -> "MemoryPermissions":
         if not isinstance(other, MemoryPermissions):
             raise TypeError(f"Operation between MemoryPermissions and {type(other)} not supported")
+        elif other.value == 0:
+            return self
         elif other.value & self.value == 0:
             raise ValueError(f"Cannot subtract {other} from {self} because they have no overlap!")
         else:

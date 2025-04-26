@@ -9,7 +9,7 @@ from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.core.binary import GenericBinary
 from ofrak.core.filesystem import File, Folder, FilesystemRoot, SpecialFileType
-from ofrak.core.magic import MagicDescriptionIdentifier
+from ofrak.core.magic import MagicDescriptionPattern
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.resource import Resource
 from ofrak_type.range import Range
@@ -83,4 +83,4 @@ class Jffs2Packer(Packer[None]):
             resource.queue_patch(Range(0, resource.get_data_length()), new_data)
 
 
-MagicDescriptionIdentifier.register(Jffs2Filesystem, lambda s: "jffs2 filesystem" in s.lower())
+MagicDescriptionPattern.register(Jffs2Filesystem, lambda s: "jffs2 filesystem" in s.lower())

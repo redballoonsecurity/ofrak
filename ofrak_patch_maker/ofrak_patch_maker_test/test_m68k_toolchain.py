@@ -3,7 +3,6 @@ import tempfile
 
 import pytest
 
-from ofrak_type import ArchInfo
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.gnu_m68k import GNU_M68K_LINUX_10_Toolchain
@@ -21,6 +20,7 @@ from ofrak_patch_maker_test.toolchain_asm import (
     run_monkey_patch_test,
 )
 from ofrak_patch_maker_test.toolchain_c import run_hello_world_test, run_bounds_check_test
+from ofrak_type import ArchInfo
 from ofrak_type.architecture import (
     InstructionSet,
     ProcessorType,

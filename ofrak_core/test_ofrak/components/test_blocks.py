@@ -87,21 +87,14 @@ DEFLATED_FRAME_DUMMY = DeflatedRegion(
                 Instruction(
                     0x8034,
                     0x4,
-                    "ldr r0, [pc, #0x24]",
                     "ldr",
                     "r0, [pc, #0x24]",
                     InstructionSetMode.NONE,
                 ),
-                Instruction(
-                    0x8038, 0x4, "push {r3, lr}", "push", "{r3, lr}", InstructionSetMode.NONE
-                ),
-                Instruction(
-                    0x803C, 0x4, "ldr r3, [r0]", "ldr", "r3, [r0]", InstructionSetMode.NONE
-                ),
-                Instruction(
-                    0x8040, 0x4, "cmp r3, #0x0", "cmp", "r3, #0x0", InstructionSetMode.NONE
-                ),
-                Instruction(0x8044, 0x4, "beq #0x8058", "beq", "#0x8058", InstructionSetMode.NONE),
+                Instruction(0x8038, 0x4, "push", "{r3, lr}", InstructionSetMode.NONE),
+                Instruction(0x803C, 0x4, "ldr", "r3, [r0]", InstructionSetMode.NONE),
+                Instruction(0x8040, 0x4, "cmp", "r3, #0x0", InstructionSetMode.NONE),
+                Instruction(0x8044, 0x4, "beq", "#0x8058", InstructionSetMode.NONE),
             ],
         ),
         DeflatedRegion(
@@ -110,25 +103,20 @@ DEFLATED_FRAME_DUMMY = DeflatedRegion(
                 Instruction(
                     0x8048,
                     0x4,
-                    "ldr r3, [pc, #0x14]",
                     "ldr",
                     "r3, [pc, #0x14]",
                     InstructionSetMode.NONE,
                 ),
-                Instruction(
-                    0x804C, 0x4, "cmp r3, #0x0", "cmp", "r3, #0x0", InstructionSetMode.NONE
-                ),
-                Instruction(
-                    0x8050, 0x4, "movne lr, pc", "movne", "lr, pc", InstructionSetMode.NONE
-                ),
-                Instruction(0x8054, 0x4, "bxne r3", "bxne", "re", InstructionSetMode.NONE),
+                Instruction(0x804C, 0x4, "cmp", "r3, #0x0", InstructionSetMode.NONE),
+                Instruction(0x8050, 0x4, "movne", "lr, pc", InstructionSetMode.NONE),
+                Instruction(0x8054, 0x4, "bxne", "re", InstructionSetMode.NONE),
             ],
         ),
         DeflatedRegion(
             BasicBlock(0x8058, 0x8, InstructionSetMode.NONE, True, None),
             [
-                Instruction(0x8058, 0x4, "pop {r3, lr}", "pop", "{r3,lr}", InstructionSetMode.NONE),
-                Instruction(0x805C, 0x4, "bx lr", "bx", "lr", InstructionSetMode.NONE),
+                Instruction(0x8058, 0x4, "pop", "{r3,lr}", InstructionSetMode.NONE),
+                Instruction(0x805C, 0x4, "bx", "lr", InstructionSetMode.NONE),
             ],
         ),
         DeflatedRegion(DataWord(0x8060, 0x4, "<L", (0x8034,)), []),

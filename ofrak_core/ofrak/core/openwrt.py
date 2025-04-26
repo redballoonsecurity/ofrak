@@ -5,13 +5,12 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, List
 
-from ofrak.component.identifier import Identifier
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker, UnpackerError
+from ofrak.core import RawMagicPattern
 from ofrak.core.binary import GenericBinary
-from ofrak.core.filesystem import File
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.model.viewable_tag_model import AttributesType
@@ -126,18 +125,13 @@ class OpenWrtTrx(GenericBinary):
 ####################
 #    IDENTIFIER    #
 ####################
+def match_openwrt_magic(data: bytes) -> bool:
+    if len(data) < 4:
+        return False
+    return data[:4] == OPENWRT_TRX_MAGIC_BYTES
 
 
-class OpenWrtIdentifier(Identifier[None]):
-    targets = (
-        File,
-        GenericBinary,
-    )
-
-    def identify(self, resource: Resource, config=None) -> None:
-        trx_magic = resource.get_data(range=Range(0, 4))
-        if trx_magic == OPENWRT_TRX_MAGIC_BYTES:
-            resource.add_tag(OpenWrtTrx)
+RawMagicPattern.register(OpenWrtTrx, match_openwrt_magic)
 
 
 ####################

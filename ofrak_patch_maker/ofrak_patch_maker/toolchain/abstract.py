@@ -12,7 +12,7 @@ from typing import Dict, Iterable, List, Optional, Tuple, Mapping, Type
 from ofrak_type import ArchInfo
 from ofrak_patch_maker.binary_parser.abstract import AbstractBinaryFileParser
 from ofrak_patch_maker.toolchain.model import Segment, ToolchainConfig
-from ofrak_patch_maker.toolchain.utils import get_repository_config
+from ofrak_patch_maker.toolchain.utils import get_exec_from_config, get_repository_config
 from ofrak_type.architecture import InstructionSet
 from ofrak_type.bit_width import BitWidth
 from ofrak_type.memory_permissions import MemoryPermissions
@@ -80,10 +80,6 @@ class Toolchain(ABC):
         self._config = toolchain_config
         self._logger = logger
 
-        # The keep_list should only contain FUNCTIONALLY important sections
-        # (not empty .got.plt, for instance).
-        # TODO: Come up with a better system to handle this...
-        self._linker_keep_list = [".data", ".rodata", ".text", ".rel"]
         self._linker_discard_list = [
             ".gnu.hash",
             ".comment",
@@ -161,35 +157,35 @@ class Toolchain(ABC):
             assembler_path = "SPARC_ASM_PATH"
         else:
             assembler_path = f"{self._processor.isa.value.upper()}_ASM_PATH"
-        return get_repository_config("ASM", assembler_path)
+        return get_exec_from_config("ASM", assembler_path)
 
     @property
     def _preprocessor_path(self) -> str:
         """
         :return str: path to the toolchain preprocessor - this is usually the compiler.
         """
-        return get_repository_config(self.name, "PREPROCESSOR")
+        return get_exec_from_config(self.name, "PREPROCESSOR")
 
     @property
     def _compiler_path(self) -> str:
         """
         :return str: path to the toolchain compiler
         """
-        return get_repository_config(self.name, "COMPILER")
+        return get_exec_from_config(self.name, "COMPILER")
 
     @property
     def _linker_path(self) -> str:
         """
         :return str: path to the toolchain linker
         """
-        return get_repository_config(self.name, "LINKER")
+        return get_exec_from_config(self.name, "LINKER")
 
     @property
     def _readobj_path(self) -> str:
         """
         :return str: path to the toolchain binary analysis utility
         """
-        return get_repository_config(self.name, "BIN_PARSER")
+        return get_exec_from_config(self.name, "BIN_PARSER")
 
     @property
     def _lib_path(self) -> str:
@@ -365,16 +361,8 @@ class Toolchain(ABC):
     def linker_include_filter(symbol_name: str) -> bool:
         return "." in symbol_name or "_DYNAMIC" in symbol_name
 
-    def keep_section(self, section_name: str):
-        if section_name in self._linker_keep_list:
-            return True
-        if self._config.separate_data_sections or self._config.include_subsections:
-            for keep_section in self._linker_keep_list:
-                if section_name.startswith(keep_section):
-                    return True
-            return False
-        else:
-            return False
+    def keep_segment(self, segment: Segment):
+        return segment.is_allocated and segment.segment_name not in self._linker_discard_list
 
     @abstractmethod
     def generate_linker_include_file(self, symbols: Mapping[str, int], out_path: str) -> str:
@@ -433,7 +421,9 @@ class Toolchain(ABC):
 
     @staticmethod
     @abstractmethod
-    def ld_generate_section(object_path: str, segment_name: str, memory_region_name: str) -> str:
+    def ld_generate_section(
+        object_path: str, segment_name: str, memory_region_name: str, segment_is_bss: bool
+    ) -> str:
         """
         Generates sections for linker scripts.
 
