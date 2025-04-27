@@ -1,4 +1,3 @@
-import asyncio
 import re
 from dataclasses import dataclass
 
@@ -141,12 +140,8 @@ class StringsUnpacker(Unpacker[None]):
         else:
             pattern = self.SHORT_STRING_PATTERN
 
-        children = [
+        for offset, string in resource.search_data(pattern):
             resource.create_child_from_view(
                 AsciiString(string.rstrip(b"\x00").decode("ascii")),
                 data_range=Range.from_size(offset, len(string)),
             )
-            for offset, string in resource.search_data(pattern)
-        ]
-
-        asyncio.gather(*children)

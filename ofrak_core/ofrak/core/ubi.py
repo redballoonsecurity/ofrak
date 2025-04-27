@@ -1,4 +1,5 @@
-import asyncio
+import subprocess
+
 import tempfile312 as tempfile
 from dataclasses import dataclass
 import logging
@@ -199,12 +200,9 @@ class UbiUnpacker(Unpacker[None]):
                 f"{temp_flush_dir}/output",
                 temp_file.name,
             ]
-            proc = asyncio.create_subprocess_exec(
-                *cmd,
-            )
-            returncode = proc.wait()
+            proc = subprocess.run(cmd, capture_output=True)
             if proc.returncode:
-                raise CalledProcessError(returncode=returncode, cmd=cmd)
+                raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
 
             ubi_view = resource.view_as(Ubi)
 
@@ -281,12 +279,9 @@ vol_name={volume_view.name}
                 f"{temp_flush_dir}/output.ubi",
                 f"{temp_flush_dir}/config.ini",
             ]
-            proc = asyncio.create_subprocess_exec(
-                *cmd,
-            )
-            returncode = proc.wait()
+            proc = subprocess.run(cmd, capture_output=True)
             if proc.returncode:
-                raise CalledProcessError(returncode=returncode, cmd=cmd)
+                raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
 
             with open(f"{temp_flush_dir}/output.ubi", "rb") as output_f:
                 packed_blob_data = output_f.read()

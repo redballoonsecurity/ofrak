@@ -75,7 +75,7 @@ class SquashfsUnpacker(Unpacker[None]):
                     cmd,
                 )
                 if proc.returncode:
-                    raise CalledProcessError(returncode=returncode, cmd=cmd)
+                    raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
 
                 squashfs_view = resource.view_as(SquashfsFilesystem)
                 squashfs_view.initialize_from_disk(temp_flush_dir)

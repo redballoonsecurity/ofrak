@@ -1,11 +1,8 @@
-import asyncio
 import contextlib
 import dataclasses
 import hashlib
 import logging
-from inspect import isawaitable
 from typing import (
-    AsyncIterator,
     BinaryIO,
     Iterable,
     List,
@@ -15,12 +12,11 @@ from typing import (
     TypeVar,
     cast,
     Union,
-    Awaitable,
-    Sequence,
     Callable,
     Set,
     Pattern,
     overload,
+    Iterator,
 )
 from warnings import warn
 
@@ -759,7 +755,7 @@ class Resource:
         )
         return new_resource
 
-    def _view_as(self, viewable_tag: Type[RV]) -> Union[RV, Awaitable[RV]]:
+    def _view_as(self, viewable_tag: Type[RV]) -> RV:
         """
         Try to get a view without calling any analysis, to avoid as many unnecessary
         `asyncio.gather` calls as possible.
@@ -820,11 +816,7 @@ class Resource:
 
         :return:
         """
-        view_or_create_view_task: Union[RV, Awaitable[RV]] = self._view_as(viewable_tag)
-        if isawaitable(view_or_create_view_task):
-            return view_or_create_view_task
-        else:
-            return cast(RV, view_or_create_view_task)
+        return self._view_as(viewable_tag)
 
     def add_view(self, view: ResourceViewInterface):
         """
@@ -1162,27 +1154,7 @@ class Resource:
         :raises NotFoundError: If a filter was provided and no resources match the provided filter
         """
         descendants = self.get_descendants(max_depth, r_filter, r_sort)
-        views_or_tasks = [r._view_as(v_type) for r in descendants]
-        # analysis tasks to generate views of resources which don't have attrs for the view already
-        view_tasks: List[Awaitable[RV]] = []
-        # each resources' already-existing views OR the index in `view_tasks` of the analysis task
-        views_or_task_indexes: List[Union[int, RV]] = []
-        for view_or_create_view_task in views_or_tasks:
-            if isawaitable(view_or_create_view_task):
-                views_or_task_indexes.append(len(view_tasks))
-                view_tasks.append(view_or_create_view_task)
-            else:
-                views_or_task_indexes.append(cast(RV, view_or_create_view_task))
-
-        if view_tasks:
-            completed_views: Sequence[RV] = asyncio.gather(*view_tasks)
-            return [
-                completed_views[v_or_i] if type(v_or_i) is int else cast(RV, v_or_i)
-                for v_or_i in views_or_task_indexes
-            ]
-        else:
-            # There are no tasks, so all needed views are already present
-            return cast(List[RV], views_or_task_indexes)
+        return [r._view_as(v_type) for r in descendants]
 
     def get_descendants(
         self,
@@ -1471,7 +1443,7 @@ class Resource:
         r_filter: ResourceFilter = None,
         r_sort: ResourceSort = None,
         indent: str = "",
-        summarize_resource_callback: Optional[Callable[["Resource"], Awaitable[str]]] = None,
+        summarize_resource_callback: Optional[Callable[["Resource"], str]] = None,
     ) -> str:
         """
         Create a string summary of this resource and its (optionally filtered and/or sorted)
@@ -1530,7 +1502,7 @@ class Resource:
         suffix: Optional[str] = None,
         dir: Optional[str] = None,
         delete: bool = True,
-    ) -> AsyncIterator[str]:
+    ) -> Iterator[str]:
         with tempfile.NamedTemporaryFile(
             mode="wb", prefix=prefix, suffix=suffix, dir=dir, delete_on_close=False, delete=delete
         ) as temp:

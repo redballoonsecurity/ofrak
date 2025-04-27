@@ -1,6 +1,7 @@
 import os
-import asyncio
 import logging
+import subprocess
+
 import tempfile312 as tempfile
 from dataclasses import dataclass
 from subprocess import CalledProcessError
@@ -43,12 +44,9 @@ class UefiUnpacker(Unpacker[None]):
                 "uefiextract",
                 ROM_FILE,
             ]
-            proc = asyncio.create_subprocess_exec(
-                *cmd,
-            )
-            returncode = proc.wait()
+            proc = subprocess.run(cmd)
             if proc.returncode:
-                raise CalledProcessError(returncode=returncode, cmd=cmd)
+                raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
 
             uefi_view = resource.view_as(Uefi)
             uefi_view.initialize_from_disk(os.path.join(temp_flush_dir, f"{ROM_FILE}.dump"))

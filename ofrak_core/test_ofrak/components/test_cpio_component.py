@@ -37,7 +37,7 @@ class TestCpioUnpackModifyPack(UnpackModifyPackPattern):
                 raise subprocess.CalledProcessError(
                     returncode=proc.returncode, cmd=cmd, output=proc.stdout, stderr=proc.stderr
                 )
-            result = ofrak_context.create_root_resource(name=TARGET_CPIO_FILE, data=stdout)
+            result = ofrak_context.create_root_resource(name=TARGET_CPIO_FILE, data=proc.stdout)
 
             os.chdir(wd)
             return result
