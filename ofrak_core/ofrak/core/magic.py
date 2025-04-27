@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Callable, Dict, Iterable, Union
 
 from ofrak.component.abstract import ComponentMissingDependencyError
-from ofrak_type import Range
+from ofrak_type.range import Range
 
 try:
     import magic

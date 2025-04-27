@@ -12,7 +12,7 @@ from ofrak.model.resource_model import index
 from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
-from ofrak_type import Range
+from ofrak_type.range import Range
 
 
 @dataclass

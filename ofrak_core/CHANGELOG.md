@@ -23,6 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Pulled `Allocatable._align_range` out to standalone function `allocate_range_start` ([#575](https://github.com/redballoonsecurity/ofrak/pull/575))
 
 ### Fixed
+- Correct docstring for `Resource.get_attributes` to state it raises `NotFoundError` instead of returning `None` ([#<relevant_pr_number_if_available>](<relevant_pr_link_if_available>))
 - Improved flushing of filesystem entries (including symbolic links and other types) to disk. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373))
 - Fix `java` and `apktool` CLI arguments for checking components. ([#390](https://github.com/redballoonsecurity/ofrak/pull/390))
 - Bump GitPython version from 3.1.35 to 3.1.41 to mitigate CVEs. ([#400](https://github.com/redballoonsecurity/ofrak/pull/400))

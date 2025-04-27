@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 from typing import List, Tuple
 
-from ofrak_type import LinkableSymbolType, MemoryPermissions, InstructionSetMode
+from ofrak_type.symbol_type import LinkableSymbolType
+from ofrak_type.memory_permissions import MemoryPermissions
+from ofrak_type.architecture import InstructionSetMode
 from ofrak.core.label import LabeledAddress
 from ofrak_patch_maker.toolchain.model import Segment
 from ofrak_type.memory_permissions import MemoryPermissions

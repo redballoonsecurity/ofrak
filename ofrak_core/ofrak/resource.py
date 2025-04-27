@@ -24,7 +24,7 @@ from typing import (
 from contextlib import asynccontextmanager
 from warnings import warn
 
-import tempfile312 as tempfile
+import tempfile
 
 from ofrak.component.interface import ComponentInterface
 from ofrak.model.component_model import ComponentContext, CC, ComponentRunResult
@@ -953,9 +953,11 @@ class Resource:
     def get_attributes(self, attributes_type: Type[RA]) -> RA:
         """
         If this resource has attributes matching the given type, return the value of those
-        attributes. Otherwise returns `None`.
-        :param attributes_type:
-        :return:
+        attributes.
+
+        :param attributes_type: The type of attributes to retrieve.
+        :return: The attributes instance if found.
+        :raises NotFoundError: If attributes of the given type are not found on the resource.
         """
         attributes = self._resource.get_attributes(attributes_type)
         if attributes is None:

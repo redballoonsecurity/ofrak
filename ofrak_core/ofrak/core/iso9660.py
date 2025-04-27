@@ -21,7 +21,7 @@ from ofrak.model.resource_model import index
 from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import ResourceFilter, ResourceAttributeValueFilter
-from ofrak_type import NotFoundError
+from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)

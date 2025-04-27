@@ -20,7 +20,9 @@ from ofrak.service.resource_service_i import (
 )
 from ofrak_patch_maker.model import BOM, PatchRegionConfig
 from ofrak_patch_maker.toolchain.model import Segment
-from ofrak_type import InstructionSet, InstructionSetMode, LinkableSymbolType, NotFoundError
+from ofrak_type.architecture import InstructionSet, InstructionSetMode
+from ofrak_type.symbol_type import LinkableSymbolType
+from ofrak_type.error import NotFoundError
 
 LOGGER = logging.getLogger()
 

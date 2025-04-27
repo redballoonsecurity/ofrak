@@ -10,7 +10,7 @@ from typing import Type, Any, Awaitable, Callable, List, Iterable, Optional
 import ofrak_patch_maker
 from ofrak.license import verify_registered_license
 
-from ofrak_type import InvalidStateError
+from ofrak_type.error import InvalidStateError
 from synthol.injector import DependencyInjector
 
 from ofrak.component.interface import ComponentInterface

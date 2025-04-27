@@ -17,6 +17,7 @@ from ofrak.model.viewable_tag_model import AttributesType, ResourceViewContext
 from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import ResourceFilter
+from ofrak_type.error import NotFoundError  # Added import
 from ofrak_type.range import Range
 from test_ofrak.unit.component import mock_component
 from test_ofrak.unit.component.mock_component import (
@@ -287,15 +288,15 @@ async def test_repr(resource: Resource):
     assert "GenericBinary" in result
 
 
+@dataclass(**ResourceAttributes.DATACLASS_PARAMS)
+class DummyAttributes(ResourceAttributes):
+    name: str
+
+
 async def test_attributes(resource: Resource):
     """
     Test Resource.{has_attributes, add_attributes, remove_attributes}
     """
-
-    @dataclass(**ResourceAttributes.DATACLASS_PARAMS)
-    class DummyAttributes(ResourceAttributes):
-        name: str
-
     dummy_attributes = DummyAttributes("dummy")
     assert resource.has_attributes(DummyAttributes) is False
 
@@ -304,6 +305,20 @@ async def test_attributes(resource: Resource):
 
     resource.remove_attributes(DummyAttributes)
     assert resource.has_attributes(DummyAttributes) is False
+
+
+@dataclass(**ResourceAttributes.DATACLASS_PARAMS)
+class NonExistentAttributes(ResourceAttributes):
+    value: int
+
+
+async def test_get_attributes_not_found(resource: Resource):
+    """
+    Test that Resource.get_attributes raises NotFoundError when attributes are not present.
+    """
+    assert not resource.has_attributes(NonExistentAttributes)
+    with pytest.raises(NotFoundError):
+        await resource.get_attributes(NonExistentAttributes)
 
 
 async def test_create_child_data_and_data_range(ofrak_context: OFRAKContext):

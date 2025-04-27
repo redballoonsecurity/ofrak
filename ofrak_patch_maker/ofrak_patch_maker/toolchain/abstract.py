@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from os.path import join, split
 from typing import Dict, Iterable, List, Optional, Tuple, Mapping, Type
 
-from ofrak_type import ArchInfo
+from ofrak_type.architecture import ArchInfo
 from ofrak_patch_maker.binary_parser.abstract import AbstractBinaryFileParser
 from ofrak_patch_maker.toolchain.model import Segment, ToolchainConfig
 from ofrak_patch_maker.toolchain.utils import get_exec_from_config, get_repository_config
