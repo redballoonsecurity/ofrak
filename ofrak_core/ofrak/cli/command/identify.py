@@ -3,7 +3,7 @@ import argparse
 from ofrak import OFRAKContext
 from ofrak.cli.ofrak_cli import OfrakCommandRunsScript
 from ofrak.core.magic import Magic
-from ofrak.gui.server import open_gui
+from ofrak.gui.server import run_gui_server
 from ofrak.resource import Resource
 
 
@@ -56,13 +56,12 @@ class IdentifyCommand(OfrakCommandRunsScript):
         print(IdentifyCommand.print_info(root_resource))
 
         if args.gui:
-            server = open_gui(
+            run_gui_server(
                 args.gui_hostname,
                 args.gui_port,
-                focus_resource=root_resource,
+                root_resource,
                 open_in_browser=(not args.gui_no_browser),
             )
-            server.run_until_cancelled()
 
     @staticmethod
     def print_info(resource: Resource) -> str:

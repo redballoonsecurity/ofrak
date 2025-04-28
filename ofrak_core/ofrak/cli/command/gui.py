@@ -2,7 +2,7 @@ import logging
 from argparse import ArgumentDefaultsHelpFormatter, Namespace
 
 from ofrak.cli.ofrak_cli import OfrakCommandRunsScript
-from ofrak.gui.server import open_gui
+from ofrak.gui.server import run_gui_server
 from ofrak.ofrak_context import OFRAKContext
 
 LOGGER = logging.getLogger(__name__)
@@ -53,12 +53,12 @@ class GUICommand(OfrakCommandRunsScript):
         self.add_ofrak_arguments(gui_parser)
         return gui_parser
 
-    async def ofrak_func(self, ofrak_context: OFRAKContext, args: Namespace):  # pragma: no cover
+    def ofrak_func(self, ofrak_context: OFRAKContext, args: Namespace):  # pragma: no cover
         most_recent_root = None
         if len(args.file) > 0:
             for path in args.file:
                 most_recent_root = ofrak_context.create_root_resource_from_file(path)
-        server = open_gui(
+        run_gui_server(
             args.hostname,
             args.port,
             focus_resource=most_recent_root if len(args.file) == 1 else None,
@@ -66,4 +66,3 @@ class GUICommand(OfrakCommandRunsScript):
             open_in_browser=(not args.no_browser),
             enable_cors=(args.enable_cors),
         )
-        server.run_until_cancelled()

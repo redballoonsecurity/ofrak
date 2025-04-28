@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import os
 import tempfile312 as tempfile
@@ -280,8 +279,9 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
                     for r in injected_resource.get_ancestors(ResourceFilter(include_self=True))
                 }
             )
-            to_delete = [r for r in resource.get_descendants() if r.get_id() in patched_descendants]
-            asyncio.gather(*(r.delete() for r in to_delete))
+            for r in resource.get_descendants():
+                if r.get_id() in patched_descendants:
+                    r.delete()
 
 
 @dataclass

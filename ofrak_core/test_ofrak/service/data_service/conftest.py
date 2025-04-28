@@ -22,12 +22,12 @@ DATA_TEST_0 = b"\x01\x00"
 DATA_TEST_1 = b"\x01\x01"
 
 
-async def _serialize_deserialize_data_service(data_service: DataService):
+def _serialize_deserialize_data_service(data_service: DataService):
     o = OFRAK()
     o.injector.discover(ofrak.service.serialization)
     o.injector.bind_factory(PJSONSerializationService)
 
-    serializer = o.injector.get_instance(PJSONSerializationService)
+    serializer = o.injector.get_instance_sync(PJSONSerializationService)
 
     serialized_data_service = serializer.to_pjson(data_service, DataService)
     deserialized_data_service = serializer.from_pjson(serialized_data_service, DataService)
@@ -77,7 +77,7 @@ DATA_SERVICE_IMPLEMENTATIONS = [
 
 
 @pytest.fixture(params=DATA_SERVICE_IMPLEMENTATIONS, ids=lambda r: r[0], scope="function")
-async def populated_data_service(request):
+def populated_data_service(request):
     _, data_service_factory, postprocessing = request.param
     data_service = data_service_factory()
     populate_data_service(data_service)

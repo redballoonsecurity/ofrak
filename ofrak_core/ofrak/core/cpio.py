@@ -93,7 +93,9 @@ class CpioUnpacker(Unpacker[None]):
                 "cpio",
                 "-id",
             ]
-            result = subprocess.run(cmd, capture_output=True, cwd=temp_flush_dir)
+            result = subprocess.run(
+                cmd, input=resource.get_data(), capture_output=True, cwd=temp_flush_dir
+            )
             if result.returncode:
                 raise CalledProcessError(returncode=result.returncode, cmd=cmd)
             cpio_v.initialize_from_disk(temp_flush_dir)
@@ -131,6 +133,7 @@ class CpioPacker(Packer[None]):
         ]
         cpio_pack_proc = subprocess.run(
             cpio_pack_cmd,
+            input=list_files_proc.stdout,
             capture_output=True,
             cwd=temp_flush_dir,
         )

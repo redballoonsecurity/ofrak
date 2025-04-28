@@ -109,15 +109,15 @@ def exceptions_to_http(error_class: Type[SerializedError]):
     Usage:
 
     @exceptions_to_http(MyErrorClass)
-    def handle_some_request(self, request...):
+    async def handle_some_request(self, request...):
         ...
     """
 
     def exceptions_to_http_decorator(func: Callable):
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        async def wrapper(*args, **kwargs):
             try:
-                return func(*args, **kwargs)
+                return await func(*args, **kwargs)
             except Exception as error:
                 LOGGER.exception("Exception raised in aiohttp endpoint")
                 return respond_with_error(error, error_class)
@@ -261,37 +261,37 @@ class AiohttpOFRAKServer:
                     "Unable to enable CORS. Please confirm that aiohttp_cors is installed."
                 )
 
-    def start(self):  # pragma: no cover
+    async def start(self):  # pragma: no cover
         """
         Start the server then return.
         """
         self.runner = web.AppRunner(self._app)
-        self.runner.setup()
+        await self.runner.setup()
         server = web.TCPSite(self.runner, host=self._host, port=self._port)
-        server.start()
+        await server.start()
 
-    def stop(self):  # pragma: no cover
+    async def stop(self):  # pragma: no cover
         """
         Stop the server.
         """
-        self.runner.server.shutdown()
-        self.runner.cleanup()
+        await self.runner.server.shutdown()
+        await self.runner.cleanup()
 
-    def run_until_cancelled(self):  # pragma: no cover
+    async def run_until_cancelled(self):  # pragma: no cover
         """
         To be run after `start_server`, within an asyncio Task.
         cancel() that task to shutdown the server.
         """
         try:
             while True:
-                asyncio.sleep(1)
+                await asyncio.sleep(1)
         except asyncio.CancelledError:
             pass
         finally:
-            self.runner.cleanup()
+            await self.runner.cleanup()
 
     @exceptions_to_http(SerializedError)
-    def init_chunked_root_resource(self, request: Request) -> Response:
+    async def init_chunked_root_resource(self, request: Request) -> Response:
         name = request.query.get("name")
         size_param = request.query.get("size")
         if name is None:
@@ -307,7 +307,7 @@ class AiohttpOFRAKServer:
         return json_response(root_resource.get_id().hex())
 
     @exceptions_to_http(SerializedError)
-    def root_resource_chunk(self, request: Request) -> Response:
+    async def root_resource_chunk(self, request: Request) -> Response:
         id = request.query.get("id")
         start_param = request.query.get("start")
         end_param = request.query.get("end")
@@ -319,13 +319,13 @@ class AiohttpOFRAKServer:
             raise HTTPBadRequest(reason="Missing chunk end from request")
         start = int(start_param)
         end = int(end_param)
-        chunk_data = request.read()
+        chunk_data = await request.read()
         _, data = self.resource_builder[id]
         data[start:end] = chunk_data
         return json_response([])
 
     @exceptions_to_http(SerializedError)
-    def create_chunked_root_resource(self, request: Request) -> Response:
+    async def create_chunked_root_resource(self, request: Request) -> Response:
         id = request.query.get("id")
         name = request.query.get("name")
         if id is None:
@@ -351,11 +351,11 @@ class AiohttpOFRAKServer:
         return json_response(self._serialize_resource(root_resource))
 
     @exceptions_to_http(SerializedError)
-    def create_root_resource(self, request: Request) -> Response:
+    async def create_root_resource(self, request: Request) -> Response:
         name = request.query.get("name")
         if name is None:
             return HTTPBadRequest(reason="Missing root resource `name` from request")
-        resource_data = request.read()
+        resource_data = await request.read()
         script_str = rf"""
         if root_resource is None:
             root_resource = ofrak_context.create_root_resource_from_file("{name}")"""
@@ -371,19 +371,19 @@ class AiohttpOFRAKServer:
         return json_response(self._serialize_resource(root_resource))
 
     @exceptions_to_http(SerializedError)
-    def get_root_resources(self, request: Request) -> Response:
+    async def get_root_resources(self, request: Request) -> Response:
         roots = self._ofrak_context.resource_service.get_root_resources()
 
         return json_response(list(map(self._serialize_resource_model, roots)))
 
     @exceptions_to_http(SerializedError)
-    def get_resource(self, request: Request) -> Response:
-        resource = self._get_resource_for_request(request)
+    async def get_resource(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
         return json_response(self._serialize_resource(resource))
 
     @exceptions_to_http(SerializedError)
-    def get_data(self, request: Request) -> Response:
-        resource = self._get_resource_for_request(request)
+    async def get_data(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
         _range = self._serializer.from_pjson(
             get_query_string_as_pjson(request).get("range"), Optional[Range]
         )
@@ -391,14 +391,14 @@ class AiohttpOFRAKServer:
         return Response(body=data)
 
     @exceptions_to_http(SerializedError)
-    def get_data_length(self, request: Request) -> Response:
-        resource = self._get_resource_for_request(request)
+    async def get_data_length(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
         data_len = resource.get_data_length()
         return json_response(data_len)
 
     @exceptions_to_http(SerializedError)
-    def get_child_data_ranges(self, request: Request) -> Response:
-        resource = self._get_resource_for_request(request)
+    async def get_child_data_ranges(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
         resource_service = self._ofrak_context.resource_factory._resource_service
         data_service = self._ofrak_context.resource_factory._data_service
         children = resource_service.get_descendants_by_id(
@@ -406,11 +406,11 @@ class AiohttpOFRAKServer:
             max_depth=1,
         )
 
-        def get_range(child):
+        async def get_range(child):
             try:
                 if child.data_id is None:
                     return
-                data_range = data_service.get_range_within_other(
+                data_range = await data_service.get_range_within_other(
                     child.data_id, resource.get_data_id()
                 )
                 return child.id.hex(), (data_range.start, data_range.end)
@@ -418,18 +418,20 @@ class AiohttpOFRAKServer:
                 pass
 
         return json_response(
-            dict(filter(lambda x: x is not None, asyncio.gather(*map(get_range, children))))
+            dict(filter(lambda x: x is not None, await asyncio.gather(*map(get_range, children))))
         )
 
     @exceptions_to_http(SerializedError)
-    def batch_get_range(self, request: Request) -> Response:
+    async def batch_get_range(self, request: Request) -> Response:
         if request.remote is not None:
             job_id = self._job_ids[request.remote]
         else:
             raise ValueError("No IP address found for the remote request!")
 
-        def get_resource_range(resource_id):
-            resource_model = self._get_resource_model_by_id(bytes.fromhex(resource_id), job_id)
+        async def get_resource_range(resource_id):
+            resource_model = await self._get_resource_model_by_id(
+                bytes.fromhex(resource_id), job_id
+            )
             if resource_model.data_id is None:
                 raise ValueError(
                     "Resource does not have a data_id. Cannot get data range from a "
@@ -454,20 +456,22 @@ class AiohttpOFRAKServer:
                     data_range = Range(0, 0)
                 else:
                     try:
-                        data_range = data_service.get_range_within_other(
+                        data_range = await data_service.get_range_within_other(
                             resource_model.data_id, parent_data_id
                         )
                     except ValueError:
                         data_range = Range(0, 0)
             return resource_id, [data_range.start, data_range.end]
 
-        return json_response(dict(asyncio.gather(*map(get_resource_range, request.json()))))
+        return json_response(
+            dict(await asyncio.gather(*map(get_resource_range, await request.json())))
+        )
 
     @exceptions_to_http(SerializedError)
-    def unpack(self, request: Request) -> Response:
-        resource = self._get_resource_for_request(request)
+    async def unpack(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
         script_str = """
-        {resource}.unpack()"""
+        await {resource}.unpack()"""
         self.script_builder.add_action(resource, script_str, ActionType.UNPACK)
         try:
             result = resource.unpack()
@@ -475,13 +479,13 @@ class AiohttpOFRAKServer:
         except Exception as e:
             self.script_builder.clear_script_queue(resource)
             raise e
-        return json_response(self._serialize_component_result(result))
+        return json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
-    def unpack_recursively(self, request: Request) -> Response:
-        resource = self._get_resource_for_request(request)
+    async def unpack_recursively(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
         script_str = """
-        {resource}.unpack_recursively()"""
+        await {resource}.unpack_recursively()"""
         self.script_builder.add_action(resource, script_str, ActionType.UNPACK)
         try:
             result = resource.unpack_recursively()
@@ -489,13 +493,13 @@ class AiohttpOFRAKServer:
         except Exception as e:
             self.script_builder.clear_script_queue(resource)
             raise e
-        return json_response(self._serialize_component_result(result))
+        return json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
-    def pack(self, request: Request) -> Response:
-        resource = self._get_resource_for_request(request)
+    async def pack(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
         script_str = """
-        {resource}.pack()"""
+        await {resource}.pack()"""
         self.script_builder.add_action(resource, script_str, ActionType.PACK)
         try:
             result = resource.pack()
@@ -503,13 +507,13 @@ class AiohttpOFRAKServer:
         except Exception as e:
             self.script_builder.clear_script_queue(resource)
             raise e
-        return json_response(self._serialize_component_result(result))
+        return json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
-    def pack_recursively(self, request: Request) -> Response:
-        resource = self._get_resource_for_request(request)
+    async def pack_recursively(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
         script_str = """
-        {resource}.pack_recursively()"""
+        await {resource}.pack_recursively()"""
         self.script_builder.add_action(resource, script_str, ActionType.PACK)
         try:
             result = resource.pack_recursively()
@@ -517,13 +521,13 @@ class AiohttpOFRAKServer:
         except Exception as e:
             self.script_builder.clear_script_queue(resource)
             raise e
-        return json_response(self._serialize_component_result(result))
+        return json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
-    def identify(self, request: Request) -> Response:
-        resource = self._get_resource_for_request(request)
+    async def identify(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
         script_str = """
-        {resource}.identify()"""
+        await {resource}.identify()"""
         self.script_builder.add_action(resource, script_str, ActionType.MOD)
         try:
             result = resource.identify()
@@ -531,13 +535,13 @@ class AiohttpOFRAKServer:
         except Exception as e:
             self.script_builder.clear_script_queue(resource)
             raise e
-        return json_response(self._serialize_component_result(result))
+        return json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
-    def identify_recursively(self, request: Request) -> Response:
-        resource = self._get_resource_for_request(request)
+    async def identify_recursively(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
         script_str = """
-        {resource}.identify_recursively()"""
+        await {resource}.identify_recursively()"""
         self.script_builder.add_action(resource, script_str, ActionType.MOD)
         try:
             result = resource.auto_run_recursively(all_identifiers=True)
@@ -545,20 +549,20 @@ class AiohttpOFRAKServer:
         except Exception as e:
             self.script_builder.clear_script_queue(resource)
             raise e
-        return json_response(self._serialize_component_result(result))
+        return json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
-    def data_summary(self, request: Request) -> Response:
-        resource = cast(Resource, self._get_resource_for_request(request))
+    async def data_summary(self, request: Request) -> Response:
+        resource = cast(Resource, await self._get_resource_for_request(request))
         result = resource.run(DataSummaryAnalyzer)
 
-        return json_response(self._serialize_component_result(result))
+        return json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
-    def analyze(self, request: Request) -> Response:
-        resource = self._get_resource_for_request(request)
+    async def analyze(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
         script_str = """
-        {resource}.auto_run(all_analyzers=True)"""
+        await {resource}.auto_run(all_analyzers=True)"""
         self.script_builder.add_action(resource, script_str, ActionType.MOD)
         try:
             result = resource.auto_run(all_analyzers=True)
@@ -566,38 +570,38 @@ class AiohttpOFRAKServer:
         except Exception as e:
             self.script_builder.clear_script_queue(resource)
             raise e
-        return json_response(self._serialize_component_result(result))
+        return json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
-    def get_parent(self, request: Request) -> Response:
-        resource = self._get_resource_for_request(request)
+    async def get_parent(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
         parent = resource.get_parent()
 
         return json_response(self._serialize_resource(parent))
 
     @exceptions_to_http(SerializedError)
-    def get_ancestors(self, request: Request) -> Response:
-        resource = self._get_resource_for_request(request)
+    async def get_ancestors(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
         ancestors = resource.get_ancestors()
 
         return json_response(self._serialize_multi_resource(ancestors))
 
     @exceptions_to_http(SerializedError)
-    def get_descendants(self, request: Request) -> Response:
-        resource = self._get_resource_for_request(request)
+    async def get_descendants(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
         descendants = resource.get_descendants()
 
         return json_response(self._serialize_multi_resource(descendants))
 
     @exceptions_to_http(SerializedError)
-    def batch_get_children(self, request: Request) -> Response:
+    async def batch_get_children(self, request: Request) -> Response:
         if request.remote is not None:
             job_id = self._job_ids[request.remote]
         else:
             raise ValueError("No IP address found for the remote request!")
 
-        def get_resource_children(resource_id):
-            resource = self._get_resource_by_id(bytes.fromhex(resource_id), job_id)
+        async def get_resource_children(resource_id):
+            resource = await self._get_resource_by_id(bytes.fromhex(resource_id), job_id)
             child_models = resource._resource_service.get_descendants_by_id(
                 resource._resource.id,
                 max_depth=1,
@@ -615,11 +619,13 @@ class AiohttpOFRAKServer:
             else:
                 return sys.maxsize
 
-        return json_response(dict(asyncio.gather(*map(get_resource_children, request.json()))))
+        return json_response(
+            dict(await asyncio.gather(*map(get_resource_children, await request.json())))
+        )
 
     @exceptions_to_http(SerializedError)
-    def get_root_resource_from_child(self, request: Request) -> Response:
-        resource = self._get_resource_for_request(request)
+    async def get_root_resource_from_child(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
         parent = resource
         try:
             # Assume get_ancestors returns an ordered list with the parent first and the root last
@@ -631,9 +637,9 @@ class AiohttpOFRAKServer:
         return json_response(self._serialize_resource(parent))
 
     @exceptions_to_http(SerializedError)
-    def queue_patch(self, request: Request) -> Response:
-        resource = self._get_resource_for_request(request)
-        new_data = request.read()
+    async def queue_patch(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
+        new_data = await request.read()
 
         start_param = request.query.get("start")
         start = int(start_param) if start_param is not None else 0
@@ -650,7 +656,7 @@ class AiohttpOFRAKServer:
         )
         self.script_builder.add_action(resource, script_str, ActionType.MOD)
         script_str = """
-        {resource}.save()"""
+        await {resource}.save()"""
         self.script_builder.add_action(resource, script_str, ActionType.MOD)
         try:
             resource.queue_patch(Range(start, end), new_data)
@@ -662,12 +668,12 @@ class AiohttpOFRAKServer:
         return json_response(self._serialize_resource(resource))
 
     @exceptions_to_http(SerializedError)
-    def create_mapped_child(self, request: Request) -> Response:
-        resource = self._get_resource_for_request(request)
-        _range = self._serializer.from_pjson(request.json(), Optional[Range])
+    async def create_mapped_child(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
+        _range = self._serializer.from_pjson(await request.json(), Optional[Range])
         script_str = (
             """
-        {resource}"""
+        await {resource}"""
             f""".create_child(tags=(GenericBinary,), data_range={_range})
         """
         )
@@ -681,9 +687,9 @@ class AiohttpOFRAKServer:
         return json_response(self._serialize_resource(child))
 
     @exceptions_to_http(SerializedError)
-    def find_and_replace(self, request: Request) -> Response:
-        resource = self._get_resource_for_request(request)
-        config = self._serializer.from_pjson(request.json(), StringFindReplaceConfig)
+    async def find_and_replace(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
+        config = self._serializer.from_pjson(await request.json(), StringFindReplaceConfig)
         script_str = f"""
         config = StringFindReplaceConfig(
             to_find="{config.to_find}", 
@@ -693,25 +699,25 @@ class AiohttpOFRAKServer:
         )"""
         self.script_builder.add_action(resource, script_str, ActionType.MOD)
         script_str = """
-        {resource}.run(StringFindReplaceModifier, config)"""
+        await {resource}.run(StringFindReplaceModifier, config)"""
         self.script_builder.add_action(resource, script_str, ActionType.MOD)
         try:
             result = resource.run(StringFindReplaceModifier, config=config)
             self.script_builder.commit_to_script(resource)
-            return json_response(self._serialize_component_result(result))
+            return json_response(await self._serialize_component_result(result))
         except Exception as e:
             self.script_builder.clear_script_queue(resource)
             raise e
 
-    def add_comment(self, request: Request) -> Response:
+    async def add_comment(self, request: Request) -> Response:
         """
         Expected POST body is a comment in the form Tuple[Optional[Range], str] (serialized to JSON).
         """
-        resource = self._get_resource_for_request(request)
-        comment = self._serializer.from_pjson(request.json(), Tuple[Optional[Range], str])
+        resource = await self._get_resource_for_request(request)
+        comment = self._serializer.from_pjson(await request.json(), Tuple[Optional[Range], str])
         script_str = (
             """
-        {resource}.run"""
+        await {resource}.run"""
             f"""(AddCommentModifier, AddCommentModifierConfig({comment}))
         """
         )
@@ -722,13 +728,13 @@ class AiohttpOFRAKServer:
         except Exception as e:
             self.script_builder.clear_script_queue(resource)
             raise e
-        return json_response(self._serialize_component_result(result))
+        return json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
-    def delete_comment(self, request: Request) -> Response:
-        resource = self._get_resource_for_request(request)
+    async def delete_comment(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
         comment_data = self._serializer.from_pjson(
-            request.json(), Union[Tuple[Optional[Range], Optional[str]], Optional[Range]]
+            await request.json(), Union[Tuple[Optional[Range], Optional[str]], Optional[Range]]
         )
         comment_range: Optional[Range] = None
         comment_text: Optional[str] = None
@@ -741,7 +747,7 @@ class AiohttpOFRAKServer:
 
         script_str = (
             """
-        {resource}.run"""
+        await {resource}.run"""
             f"""(
             DeleteCommentModifier, DeleteCommentModifierConfig(comment_range={comment_range}, comment_text="{comment_text}")
         )"""
@@ -756,13 +762,13 @@ class AiohttpOFRAKServer:
         except Exception as e:
             self.script_builder.clear_script_queue(resource)
             raise e
-        return json_response(self._serialize_component_result(result))
+        return json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
-    def search_for_vaddr(self, request: Request) -> Response:
-        resource = self._get_resource_for_request(request)
+    async def search_for_vaddr(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
         vaddr_start, vaddr_end = self._serializer.from_pjson(
-            request.json(), Tuple[int, Optional[int]]
+            await request.json(), Tuple[int, Optional[int]]
         )
 
         try:
@@ -784,9 +790,9 @@ class AiohttpOFRAKServer:
             return json_response([])
 
     @exceptions_to_http(SerializedError)
-    def search_for_string(self, request: Request):
-        resource = self._get_resource_for_request(request)
-        body = request.json()
+    async def search_for_string(self, request: Request):
+        resource = await self._get_resource_for_request(request)
+        body = await request.json()
         string_query_param = body["search_query"]
         if string_query_param == "":
             return json_response(None)
@@ -821,9 +827,9 @@ class AiohttpOFRAKServer:
         return json_response(found_resources)
 
     @exceptions_to_http(SerializedError)
-    def search_for_bytes(self, request: Request):
-        resource = self._get_resource_for_request(request)
-        body = request.json()
+    async def search_for_bytes(self, request: Request):
+        resource = await self._get_resource_for_request(request)
+        body = await request.json()
         bytes_query_request = body["search_query"]
         if bytes_query_request == "":
             return json_response(None)
@@ -842,9 +848,9 @@ class AiohttpOFRAKServer:
         return json_response(found_resources)
 
     @exceptions_to_http(SerializedError)
-    def add_tag(self, request: Request) -> Response:
-        resource = self._get_resource_for_request(request)
-        tag = self._serializer.from_pjson(request.json(), ResourceTag)
+    async def add_tag(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
+        tag = self._serializer.from_pjson(await request.json(), ResourceTag)
         script_str = (
             """
         {resource}.add_tag"""
@@ -852,7 +858,7 @@ class AiohttpOFRAKServer:
         )
         self.script_builder.add_action(resource, script_str, ActionType.MOD)
         script_str = """
-        {resource}.save()"""
+        await {resource}.save()"""
         self.script_builder.add_action(resource, script_str, ActionType.MOD)
         try:
             resource.add_tag(tag)
@@ -864,21 +870,21 @@ class AiohttpOFRAKServer:
         return json_response(self._serialize_resource(resource))
 
     @exceptions_to_http(SerializedError)
-    def get_all_tags(self, request: Request) -> Response:
+    async def get_all_tags(self, request: Request) -> Response:
         return json_response(
             self._serializer.to_pjson(set(self._all_tags.values()), Set[ResourceTag])
         )
 
     @exceptions_to_http(SerializedError)
-    def add_flush_to_disk_to_script(self, request: Request) -> Response:
-        resource = self._get_resource_for_request(request)
-        output_file_name = self._serializer.from_pjson(request.json(), str)
+    async def add_flush_to_disk_to_script(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
+        output_file_name = self._serializer.from_pjson(await request.json(), str)
         # Use FilesystemEntry name as filename if available, otherwise generate random filename
         if not output_file_name:
             output_file_name = self._ofrak_context.id_service.generate_id().hex()
         script_str = (
             """
-        {resource}"""
+        await {resource}"""
             f""".flush_data_to_disk("{output_file_name}")"""
         )
         self.script_builder.add_action(resource, script_str, ActionType.UNDEF)
@@ -886,14 +892,14 @@ class AiohttpOFRAKServer:
         return json_response(self._serialize_resource(resource))
 
     @exceptions_to_http(SerializedError)
-    def get_script(self, request: Request) -> Response:
-        resource = self._get_resource_for_request(request)
+    async def get_script(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
         return json_response(self.script_builder.get_script(resource))
 
     @exceptions_to_http(SerializedError)
-    def get_components(self, request: Request) -> Response:
-        resource: Resource = self._get_resource_for_request(request)
-        options = request.json()
+    async def get_components(self, request: Request) -> Response:
+        resource: Resource = await self._get_resource_for_request(request)
+        options = await request.json()
         show_all_components = options["show_all_components"]
         target_filter = options["target_filter"]
         incl_analyzers = options["analyzers"]
@@ -912,7 +918,7 @@ class AiohttpOFRAKServer:
         return json_response(self._serializer.to_pjson(components, Set[str]))
 
     @exceptions_to_http(SerializedError)
-    def get_config_for_component(self, request: Request) -> Response:
+    async def get_config_for_component(self, request: Request) -> Response:
         component_string = request.query.get("component")
         if component_string is not None:
             component = self._ofrak_context.component_locator.get_by_id(
@@ -956,8 +962,8 @@ class AiohttpOFRAKServer:
             return json_response([])
 
     @exceptions_to_http(SerializedError)
-    def run_component(self, request: Request) -> Response:
-        resource: Resource = self._get_resource_for_request(request)
+    async def run_component(self, request: Request) -> Response:
+        resource: Resource = await self._get_resource_for_request(request)
         component_string = request.query.get("component")
         if component_string is not None:
             component = type(
@@ -969,12 +975,12 @@ class AiohttpOFRAKServer:
         if config_type == inspect._empty or config_type is None:
             config = None
         else:
-            config = self._serializer.from_pjson(request.json(), config_type)
+            config = self._serializer.from_pjson(await request.json(), config_type)
 
         config_str = str(config).replace("{", "{{").replace("}", "}}")
         script_str = (
             """
-        {resource}"""
+        await {resource}"""
             f""".run({request.query.get("component")}, {config_str})"""
         )
         self.script_builder.add_action(resource, script_str, ActionType.MOD)
@@ -984,16 +990,16 @@ class AiohttpOFRAKServer:
         except Exception as e:
             self.script_builder.clear_script_queue(resource)
             raise e
-        return json_response(self._serialize_component_result(result))
+        return json_response(await self._serialize_component_result(result))
 
     @exceptions_to_http(SerializedError)
-    def get_static_files(self, request: Request) -> FileResponse:
+    async def get_static_files(self, request: Request) -> FileResponse:
         return FileResponse(os.path.join(os.path.dirname(__file__), "./public/index.html"))
 
     @exceptions_to_http(SerializedError)
-    def get_tags_and_num_components(self, request: Request):
-        resource = self._get_resource_for_request(request)
-        options = request.json()
+    async def get_tags_and_num_components(self, request: Request):
+        resource = await self._get_resource_for_request(request)
+        options = await request.json()
         only_target = options["target"]
         incl_analyzers = options["analyzers"]
         incl_modifiers = options["modifiers"]
@@ -1019,9 +1025,9 @@ class AiohttpOFRAKServer:
         return json_response(all_resource_tags_l)
 
     @exceptions_to_http(SerializedError)
-    def search_data(self, request: Request) -> Response:
-        resource: Resource = self._get_resource_for_request(request)
-        body = request.json()
+    async def search_data(self, request: Request) -> Response:
+        resource: Resource = await self._get_resource_for_request(request)
+        body = await request.json()
         mode = body.get("searchType")
         regex = body.get("regex")
         case_ignore = body.get("caseIgnore")
@@ -1048,18 +1054,18 @@ class AiohttpOFRAKServer:
             raise ValueError(f"Invalid query mode {mode}")
         results = resource.search_data(query)
         if isinstance(query, bytes):
-            results = [(offset, len(query)) for offset in results]
+            results_list = [(offset, len(query)) for offset in results]
         else:
             # final search query was regex pattern, matches were also returned
-            results = [(offset, len(match)) for offset, match in results]
+            results_list = [(offset, len(match)) for offset, match in results]
 
-        return json_response(results)
+        return json_response(results_list)
 
     @exceptions_to_http(SerializedError)
-    def create_new_project(self, request: Request) -> Response:
+    async def create_new_project(self, request: Request) -> Response:
         if self.projects is None:
             self.projects = self._slurp_projects_from_dir()
-        body = request.json()
+        body = await request.json()
         name = body.get("name")
         project = OfrakProject.create(name, os.path.join(self.projects_dir, name))
         self.projects.add(project)
@@ -1067,7 +1073,7 @@ class AiohttpOFRAKServer:
         return json_response({"id": project.session_id.hex()})
 
     @exceptions_to_http(SerializedError)
-    def clone_project_from_git(self, request: Request) -> Response:
+    async def clone_project_from_git(self, request: Request) -> Response:
         if self.projects is None:
             self.projects = self._slurp_projects_from_dir()
 
@@ -1082,7 +1088,7 @@ class AiohttpOFRAKServer:
             else:
                 return incr_path
 
-        body = request.json()
+        body = await request.json()
         url = body.get("url")
         path = recurse_path_collisions(
             os.path.join(self.projects_dir, url.split(":")[-1].split("/")[-1]), 0
@@ -1092,50 +1098,50 @@ class AiohttpOFRAKServer:
         return json_response({"id": project.session_id.hex()})
 
     @exceptions_to_http(SerializedError)
-    def get_project_by_id(self, request: Request) -> Response:
+    async def get_project_by_id(self, request: Request) -> Response:
         id = request.query.get("id")
         project = self._get_project_by_id(id)
         return json_response(project.get_current_metadata())
 
     @exceptions_to_http(SerializedError)
-    def get_all_projects(self, request: Request) -> Response:
+    async def get_all_projects(self, request: Request) -> Response:
         if self.projects is None or len(self.projects) == 0:
             self.projects = self._slurp_projects_from_dir()
         return json_response([project.get_current_metadata() for project in self.projects])
 
     @exceptions_to_http(SerializedError)
-    def reset_project(self, request: Request) -> Response:
-        body = request.json()
+    async def reset_project(self, request: Request) -> Response:
+        body = await request.json()
         id = body["id"]
         project = self._get_project_by_id(id)
         project.reset_project()
         return json_response([])
 
     @exceptions_to_http(SerializedError)
-    def add_binary_to_project(self, request: Request) -> Response:
+    async def add_binary_to_project(self, request: Request) -> Response:
         id = request.query.get("id")
         name_query = request.query.get("name")
         if name_query is not None:
             name = name_query
-        data = request.read()
+        data = await request.read()
         project = self._get_project_by_id(id)
         project.add_binary(name, data)
         return json_response([])
 
     @exceptions_to_http(SerializedError)
-    def add_script_to_project(self, request: Request) -> Response:
+    async def add_script_to_project(self, request: Request) -> Response:
         id = request.query.get("id")
         name_query = request.query.get("name")
         if name_query is not None:
             name = name_query
-        data = request.read()
+        data = await request.read()
         project = self._get_project_by_id(id)
         project.add_script(name, data.decode())
         return json_response([])
 
     @exceptions_to_http(SerializedError)
-    def open_project(self, request: Request) -> Response:
-        body = request.json()
+    async def open_project(self, request: Request) -> Response:
+        body = await request.json()
         id = body["id"]
         binary = body["binary"]
         script = body["script"]
@@ -1149,12 +1155,12 @@ class AiohttpOFRAKServer:
         return json_response(self._serialize_resource(resource))
 
     @exceptions_to_http(SerializedError)
-    def get_projects_path(self, request: Request) -> Response:
+    async def get_projects_path(self, request: Request) -> Response:
         return json_response(self.projects_dir)
 
     @exceptions_to_http(SerializedError)
-    def set_projects_path(self, request: Request) -> Response:
-        body = request.json()
+    async def set_projects_path(self, request: Request) -> Response:
+        body = await request.json()
         new_path = body["path"]
         if not os.path.exists(new_path):
             os.mkdir(new_path)
@@ -1163,8 +1169,8 @@ class AiohttpOFRAKServer:
         return json_response(self.projects_dir)
 
     @exceptions_to_http(SerializedError)
-    def save_project_data(self, request: Request) -> Response:
-        body = request.json()
+    async def save_project_data(self, request: Request) -> Response:
+        body = await request.json()
         session_id = body["session_id"]
         project = self._get_project_by_id(session_id)
         project.reload_metadata_from_json(body)
@@ -1172,8 +1178,8 @@ class AiohttpOFRAKServer:
         return json_response([])
 
     @exceptions_to_http(SerializedError)
-    def delete_binary_from_project(self, request: Request) -> Response:
-        body = request.json()
+    async def delete_binary_from_project(self, request: Request) -> Response:
+        body = await request.json()
         id = body["id"]
         binary_name = body["binary"]
         project = self._get_project_by_id(id)
@@ -1181,8 +1187,8 @@ class AiohttpOFRAKServer:
         return json_response([])
 
     @exceptions_to_http(SerializedError)
-    def delete_script_from_project(self, request: Request) -> Response:
-        body = request.json()
+    async def delete_script_from_project(self, request: Request) -> Response:
+        body = await request.json()
         id = body["id"]
         script_name = body["script"]
         project = self._get_project_by_id(id)
@@ -1190,7 +1196,7 @@ class AiohttpOFRAKServer:
         return json_response([])
 
     @exceptions_to_http(SerializedError)
-    def get_project_script(self, request: Request) -> Response:
+    async def get_project_script(self, request: Request) -> Response:
         project_id = request.query.get("project")
         script_name_query = request.query.get("script")
         if script_name_query is not None:
@@ -1204,8 +1210,8 @@ class AiohttpOFRAKServer:
         return Response(text=script_body)
 
     @exceptions_to_http(SerializedError)
-    def get_project_by_resource_id(self, request: Request) -> Response:
-        resource = self._get_resource_for_request(request)
+    async def get_project_by_resource_id(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
         if self.projects is not None:
             matching_projects = [
                 project
@@ -1338,7 +1344,7 @@ class AiohttpOFRAKServer:
             else:
                 return repr(obj).split("[")[0]
 
-    def _get_resource_by_id(self, resource_id: bytes, job_id: bytes) -> Resource:
+    async def _get_resource_by_id(self, resource_id: bytes, job_id: bytes) -> Resource:
         resource = self._ofrak_context.resource_factory.create(
             job_id,
             resource_id,
@@ -1407,7 +1413,7 @@ class AiohttpOFRAKServer:
                 config = [conf for conf in get_args(config) if conf is not None][0]
         return config
 
-    def _get_resource_model_by_id(
+    async def _get_resource_model_by_id(
         self, resource_id: bytes, job_id: bytes
     ) -> Optional[Union[ResourceModel, MutableResourceModel]]:
         resource_m: Optional[Union[ResourceModel, MutableResourceModel]] = None
@@ -1418,14 +1424,14 @@ class AiohttpOFRAKServer:
             )
         return resource_m
 
-    def _serialize_component_result(self, result: ComponentRunResult) -> PJSONType:
-        def get_and_serialize(resource_id) -> PJSONType:
+    async def _serialize_component_result(self, result: ComponentRunResult) -> PJSONType:
+        async def get_and_serialize(resource_id) -> PJSONType:
             resource_model = self._ofrak_context.resource_service.get_by_id(resource_id)
             return self._serialize_resource_model(resource_model)
 
         serialized_result = {
-            "created": asyncio.gather(*map(get_and_serialize, result.resources_created)),
-            "modified": asyncio.gather(
+            "created": await asyncio.gather(*map(get_and_serialize, result.resources_created)),
+            "modified": await asyncio.gather(
                 *map(
                     get_and_serialize,
                     result.resources_modified.difference(result.resources_created).difference(
@@ -1437,13 +1443,13 @@ class AiohttpOFRAKServer:
         }
         return serialized_result
 
-    def _get_resource_for_request(self, request: Request) -> Resource:
+    async def _get_resource_for_request(self, request: Request) -> Resource:
         resource_id = pluck_id(request, "resource_id")
         if request.remote is not None:
             job_id = self._job_ids[request.remote]
         else:
             raise ValueError("No IP address found for the remote request!")
-        return self._get_resource_by_id(resource_id, job_id)
+        return await self._get_resource_by_id(resource_id, job_id)
 
     def _serialize_resource_model(self, resource_model: ResourceModel) -> PJSONType:
         """
@@ -1476,7 +1482,7 @@ class AiohttpOFRAKServer:
         return list(map(self._serialize_resource, resources))
 
 
-def start_server(
+async def start_server(
     ofrak_context: OFRAKContext,
     host: str,
     port: int,
@@ -1494,8 +1500,8 @@ def start_server(
         port=port,
         enable_cors=enable_cors,
     )
-    server = ofrak_context.injector.get_instance(AiohttpOFRAKServer)
-    server.start()
+    server = await ofrak_context.injector.get_instance(AiohttpOFRAKServer)
+    await server.start()
 
     return server
 
@@ -1521,7 +1527,7 @@ def get_query_string_as_pjson(request: Request) -> Dict[str, PJSONType]:
     return {key: json.loads(value) for key, value in request.query.items()}
 
 
-def open_gui(
+async def open_gui(
     host: str,
     port: int,
     focus_resource: Optional[Resource] = None,
@@ -1532,7 +1538,7 @@ def open_gui(
     if ofrak_context is None:
         ofrak_context = get_current_ofrak_context()
 
-    server = start_server(ofrak_context, host, port, enable_cors)
+    server = await start_server(ofrak_context, host, port, enable_cors)
 
     if focus_resource is None:
         url = f"http://{server._host}:{server._port}/"
@@ -1544,6 +1550,32 @@ def open_gui(
         webbrowser.open(url)
 
     return server
+
+
+def run_gui_server(
+    hostname: str,
+    port: int,
+    focus_resource: Optional[Resource] = None,
+    ofrak_context: Optional[OFRAKContext] = None,
+    open_in_browser: bool = True,
+    enable_cors: bool = False,
+):
+    async def _run_gui_server(
+        hostname: str,
+        port: int,
+        focus_resource: Optional[Resource] = None,
+        ofrak_context: Optional[OFRAKContext] = None,
+        open_in_browser: bool = True,
+        enable_cors: bool = False,
+    ):
+        server = await open_gui(
+            hostname, port, focus_resource, ofrak_context, open_in_browser, enable_cors
+        )
+        await server.run_until_cancelled()
+
+    asyncio.new_event_loop().run_until_complete(
+        _run_gui_server(hostname, port, focus_resource, ofrak_context, open_in_browser, enable_cors)
+    )
 
 
 def json_response(

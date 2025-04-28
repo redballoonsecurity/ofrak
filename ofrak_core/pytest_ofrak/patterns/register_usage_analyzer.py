@@ -426,7 +426,7 @@ REGISTER_USAGE_TEST_CASES = (
 class RegisterUsageTestPattern:
     @pytest.fixture
     def assembler_service(self, ofrak_context: OFRAKContext):
-        return ofrak_context.injector.get_instance(AssemblerServiceInterface)
+        return ofrak_context.injector.get_instance_sync(AssemblerServiceInterface)
 
     def case_is_known_broken(self, test_case: RegisterAnalyzerTestCase) -> Tuple[bool, str]:
         """

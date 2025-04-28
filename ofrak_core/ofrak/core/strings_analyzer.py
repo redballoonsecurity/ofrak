@@ -64,11 +64,12 @@ class StringsAnalyzer(Analyzer[Optional[StringsAnalyzerConfig], StringsAttribute
                 ],
                 capture_output=True,
             )
-            for line in proc.stdout.decode("utf-8").split("\n"):
+            decoded_lines = proc.stdout.decode("ascii").split("\n")
+            for line in decoded_lines:
+                line = line.strip()
                 try:
                     offset, string = line.split(" ", maxsplit=1)
                 except ValueError:
-                    # String consisted entirely of whitespace
                     continue
                 strings[int(offset)] = string
         return StringsAttributes(strings)

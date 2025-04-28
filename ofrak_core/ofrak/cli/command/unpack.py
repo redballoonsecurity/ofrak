@@ -1,16 +1,14 @@
+import argparse
 import os.path
+import sys
+import time
+from pathlib import Path
 from typing import Optional
 
 from ofrak import OFRAKContext, Resource
-
-import argparse
-from pathlib import Path
-import time
-import sys
-
 from ofrak.cli.ofrak_cli import OfrakCommandRunsScript
 from ofrak.core import FilesystemEntry
-from ofrak.gui.server import open_gui
+from ofrak.gui.server import run_gui_server
 
 
 class UnpackCommand(OfrakCommandRunsScript):
@@ -123,15 +121,13 @@ class UnpackCommand(OfrakCommandRunsScript):
             f.write(info_dump)
 
         print(info_dump)
-
         if args.gui:
-            server = open_gui(
+            run_gui_server(
                 args.gui_hostname,
                 args.gui_port,
-                focus_resource=root_resource,
+                root_resource,
                 open_in_browser=(not args.gui_no_browser),
             )
-            server.run_until_cancelled()
 
     def resource_tree_to_files(self, resource: Resource, path):
         children_dir = path + ".ofrak_children"

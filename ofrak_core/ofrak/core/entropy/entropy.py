@@ -1,15 +1,10 @@
-import asyncio
 import logging
 import math
-from concurrent.futures import ProcessPoolExecutor
-from concurrent.futures.process import BrokenProcessPool
 from dataclasses import dataclass
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.model.resource_model import ResourceAttributes
-from ofrak.resource import Resource, ResourceFactory
-from ofrak.service.data_service_i import DataServiceInterface
-from ofrak.service.resource_service_i import ResourceServiceInterface
+from ofrak.resource import Resource
 
 LOGGER = logging.getLogger(__name__)
 
@@ -43,36 +38,12 @@ class DataSummaryAnalyzer(Analyzer[None, DataSummary]):
     targets = ()  # Target any resource with data
     outputs = (DataSummary,)
 
-    def __init__(
-        self,
-        resource_factory: ResourceFactory,
-        data_service: DataServiceInterface,
-        resource_service: ResourceServiceInterface,
-    ):
-        super().__init__(resource_factory, data_service, resource_service)
-        self.pool = ProcessPoolExecutor()
-        self.max_analysis_retries = 10
-
     def analyze(self, resource: Resource, config=None, depth=0) -> DataSummary:
-        if depth > self.max_analysis_retries:
-            raise RuntimeError(
-                f"Analysis process killed more than {self.max_analysis_retries} times. Aborting."
-            )
-
         data = resource.get_data()
         # Run blocking computations in separate processes
-        try:
-            entropy = asyncio.get_running_loop().run_in_executor(
-                self.pool, sample_entropy, data, resource.get_id()
-            )
-            magnitude = asyncio.get_running_loop().run_in_executor(
-                self.pool, sample_magnitude, data
-            )
-            return DataSummary(entropy, magnitude)
-        except BrokenProcessPool:
-            # If the previous one was aborted, try again with a new pool
-            self.pool = ProcessPoolExecutor()
-            return self.analyze(resource, config=config, depth=depth + 1)
+        entropy = sample_entropy(data, resource.get_id())
+        magnitude = sample_magnitude(data)
+        return DataSummary(entropy, magnitude)
 
 
 def sample_entropy(
