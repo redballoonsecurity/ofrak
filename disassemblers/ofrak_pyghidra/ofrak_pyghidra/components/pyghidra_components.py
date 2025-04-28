@@ -108,8 +108,6 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraProject]):
                 self.analysis_store.store_analysis(
                     resource.get_id(), unpack(program_file, False, None)
                 )
-            # program_attributes = await resource.analyze(ProgramAttributes)
-            # self.analysis_store.store_program_attributes(resource.get_id(), program_attributes)
             return PyGhidraProject()
 
 

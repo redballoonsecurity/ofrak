@@ -1,11 +1,13 @@
 import logging
 
 import hashlib
+import traceback
 import pyghidra
 import argparse
 import time
 import re
 import json
+from java.math import BigInteger
 
 
 def _parse_offset(java_object):
@@ -35,7 +37,11 @@ def unpack(program_file, decompiled, language=None):
                 cb_key = f"func_{cb['virtual_address']}"
                 code_region["children"].append(cb_key)
                 if decompiled:
-                    decompilation = _decompile(func, flat_api)
+                    try:
+                        decompilation = _decompile(func, flat_api)
+                    except Exception:
+                        print(traceback.format_exc())
+                        decompilation = ""
                     cb["decompilation"] = decompilation
                 basic_blocks, data_words = _unpack_complex_block(func, flat_api)
                 cb["children"] = []
@@ -173,7 +179,6 @@ def _unpack_complex_block(func, flat_api):
                     == _parse_offset(address_range.getMaxAddress()) + 1
                 ):
                     exit_vaddr = _parse_offset(successor_bb_address_range.getMinAddress())
-        from java.math import BigInteger
 
         instruction_mode = "none"
         tmode_register = flat_api.getCurrentProgram().getRegister("TMode")
@@ -337,7 +342,7 @@ def _decompile(func, flat_api):
     ifc.openProgram(flat_api.getCurrentProgram())
     res = ifc.decompileFunction(func, 0, TaskMonitor.DUMMY)
     if not res.decompileCompleted():
-        decomp = "Unable to decompile :("
+        raise Exception(f"Unable to decompile {func.getName()}")
         return
     decomp = res.getDecompiledFunction().getC()
     return decomp
