@@ -471,7 +471,7 @@ class AiohttpOFRAKServer:
     async def unpack(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         script_str = """
-        await {resource}.unpack()"""
+        {resource}.unpack()"""
         self.script_builder.add_action(resource, script_str, ActionType.UNPACK)
         try:
             result = resource.unpack()
@@ -485,7 +485,7 @@ class AiohttpOFRAKServer:
     async def unpack_recursively(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         script_str = """
-        await {resource}.unpack_recursively()"""
+        {resource}.unpack_recursively()"""
         self.script_builder.add_action(resource, script_str, ActionType.UNPACK)
         try:
             result = resource.unpack_recursively()
@@ -499,7 +499,7 @@ class AiohttpOFRAKServer:
     async def pack(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         script_str = """
-        await {resource}.pack()"""
+        {resource}.pack()"""
         self.script_builder.add_action(resource, script_str, ActionType.PACK)
         try:
             result = resource.pack()
@@ -513,7 +513,7 @@ class AiohttpOFRAKServer:
     async def pack_recursively(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         script_str = """
-        await {resource}.pack_recursively()"""
+        {resource}.pack_recursively()"""
         self.script_builder.add_action(resource, script_str, ActionType.PACK)
         try:
             result = resource.pack_recursively()
@@ -527,7 +527,7 @@ class AiohttpOFRAKServer:
     async def identify(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         script_str = """
-        await {resource}.identify()"""
+        {resource}.identify()"""
         self.script_builder.add_action(resource, script_str, ActionType.MOD)
         try:
             result = resource.identify()
@@ -541,7 +541,7 @@ class AiohttpOFRAKServer:
     async def identify_recursively(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         script_str = """
-        await {resource}.identify_recursively()"""
+        {resource}.identify_recursively()"""
         self.script_builder.add_action(resource, script_str, ActionType.MOD)
         try:
             result = resource.auto_run_recursively(all_identifiers=True)
@@ -562,7 +562,7 @@ class AiohttpOFRAKServer:
     async def analyze(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         script_str = """
-        await {resource}.auto_run(all_analyzers=True)"""
+        {resource}.auto_run(all_analyzers=True)"""
         self.script_builder.add_action(resource, script_str, ActionType.MOD)
         try:
             result = resource.auto_run(all_analyzers=True)
@@ -601,7 +601,7 @@ class AiohttpOFRAKServer:
             raise ValueError("No IP address found for the remote request!")
 
         async def get_resource_children(resource_id):
-            resource = await self._get_resource_by_id(bytes.fromhex(resource_id), job_id)
+            resource = self._get_resource_by_id(bytes.fromhex(resource_id), job_id)
             child_models = resource._resource_service.get_descendants_by_id(
                 resource._resource.id,
                 max_depth=1,
@@ -656,7 +656,7 @@ class AiohttpOFRAKServer:
         )
         self.script_builder.add_action(resource, script_str, ActionType.MOD)
         script_str = """
-        await {resource}.save()"""
+        {resource}.save()"""
         self.script_builder.add_action(resource, script_str, ActionType.MOD)
         try:
             resource.queue_patch(Range(start, end), new_data)
@@ -673,7 +673,7 @@ class AiohttpOFRAKServer:
         _range = self._serializer.from_pjson(await request.json(), Optional[Range])
         script_str = (
             """
-        await {resource}"""
+        {resource}"""
             f""".create_child(tags=(GenericBinary,), data_range={_range})
         """
         )
@@ -699,7 +699,7 @@ class AiohttpOFRAKServer:
         )"""
         self.script_builder.add_action(resource, script_str, ActionType.MOD)
         script_str = """
-        await {resource}.run(StringFindReplaceModifier, config)"""
+        {resource}.run(StringFindReplaceModifier, config)"""
         self.script_builder.add_action(resource, script_str, ActionType.MOD)
         try:
             result = resource.run(StringFindReplaceModifier, config=config)
@@ -717,7 +717,7 @@ class AiohttpOFRAKServer:
         comment = self._serializer.from_pjson(await request.json(), Tuple[Optional[Range], str])
         script_str = (
             """
-        await {resource}.run"""
+        {resource}.run"""
             f"""(AddCommentModifier, AddCommentModifierConfig({comment}))
         """
         )
@@ -747,7 +747,7 @@ class AiohttpOFRAKServer:
 
         script_str = (
             """
-        await {resource}.run"""
+        {resource}.run"""
             f"""(
             DeleteCommentModifier, DeleteCommentModifierConfig(comment_range={comment_range}, comment_text="{comment_text}")
         )"""
@@ -858,7 +858,7 @@ class AiohttpOFRAKServer:
         )
         self.script_builder.add_action(resource, script_str, ActionType.MOD)
         script_str = """
-        await {resource}.save()"""
+        {resource}.save()"""
         self.script_builder.add_action(resource, script_str, ActionType.MOD)
         try:
             resource.add_tag(tag)
@@ -884,7 +884,7 @@ class AiohttpOFRAKServer:
             output_file_name = self._ofrak_context.id_service.generate_id().hex()
         script_str = (
             """
-        await {resource}"""
+        {resource}"""
             f""".flush_data_to_disk("{output_file_name}")"""
         )
         self.script_builder.add_action(resource, script_str, ActionType.UNDEF)
@@ -980,7 +980,7 @@ class AiohttpOFRAKServer:
         config_str = str(config).replace("{", "{{").replace("}", "}}")
         script_str = (
             """
-        await {resource}"""
+        {resource}"""
             f""".run({request.query.get("component")}, {config_str})"""
         )
         self.script_builder.add_action(resource, script_str, ActionType.MOD)
@@ -1344,7 +1344,7 @@ class AiohttpOFRAKServer:
             else:
                 return repr(obj).split("[")[0]
 
-    async def _get_resource_by_id(self, resource_id: bytes, job_id: bytes) -> Resource:
+    def _get_resource_by_id(self, resource_id: bytes, job_id: bytes) -> Resource:
         resource = self._ofrak_context.resource_factory.create(
             job_id,
             resource_id,
@@ -1449,7 +1449,7 @@ class AiohttpOFRAKServer:
             job_id = self._job_ids[request.remote]
         else:
             raise ValueError("No IP address found for the remote request!")
-        return await self._get_resource_by_id(resource_id, job_id)
+        return self._get_resource_by_id(resource_id, job_id)
 
     def _serialize_resource_model(self, resource_model: ResourceModel) -> PJSONType:
         """
