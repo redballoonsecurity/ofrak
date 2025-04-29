@@ -18,7 +18,7 @@ python-magic;platform_system!="Windows"
 python-magic-bin;platform_system=="Windows"
 reedsolo==1.7.0
 sortedcontainers==2.2.2
-synthol~=0.1.1
+synthol @ git+https://gitlab.com/redballoonsecurity/synthol@feature/sync_support
 tempfile312~=1.0.1
 typeguard~=2.13.3
 ubi-reader==0.8.5
