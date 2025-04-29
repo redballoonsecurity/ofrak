@@ -1144,7 +1144,7 @@ async def test_add_flush_to_disk_to_script(ofrak_client: TestClient, firmware_zi
         "from ofrak.core import *",
         "",
         "",
-        "async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):",
+        "def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):",
         "    if root_resource is None:",
         '        root_resource = ofrak_context.create_root_resource_from_file("firmware_zip")',
         "",
@@ -1162,9 +1162,9 @@ async def test_add_flush_to_disk_to_script(ofrak_client: TestClient, firmware_zi
         "        )",
         "    )",
         "",
-        "    await folder_dir655_revB_FW_203NA.unpack()",
+        "    folder_dir655_revB_FW_203NA.unpack()",
         "",
-        "    file_DIR655B1_FW203NAB02_bin = await folder_dir655_revB_FW_203NA.get_only_child(",
+        "    file_DIR655B1_FW203NAB02_bin = folder_dir655_revB_FW_203NA.get_only_child(",
         "        r_filter=ResourceFilter(",
         "            tags={File},",
         "            attribute_filters=[",
@@ -1176,7 +1176,7 @@ async def test_add_flush_to_disk_to_script(ofrak_client: TestClient, firmware_zi
         "        )",
         "    )",
         "",
-        '    await file_DIR655B1_FW203NAB02_bin.flush_data_to_disk("DIR655B1_FW203NAB02.bin")',
+        '    file_DIR655B1_FW203NAB02_bin.flush_data_to_disk("DIR655B1_FW203NAB02.bin")',
         "",
         "",
         'if __name__ == "__main__":',
@@ -1375,7 +1375,7 @@ async def test_add_binary_to_project(ofrak_client: TestClient, test_project_dir,
 
 
 async def test_add_script_to_project(ofrak_client: TestClient, test_project_dir):
-    script = b"async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):\n\troot_resource.unpack()"
+    script = b"def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):\n\troot_resource.unpack()"
     resp = await ofrak_client.post(
         "/create_new_project",
         json={"name": "test"},
@@ -1397,7 +1397,7 @@ async def test_get_projects_path(ofrak_client: TestClient, test_project_dir):
 
 
 async def test_save_project_data(ofrak_client: TestClient, test_project_dir, hello_world_elf):
-    script = b"async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):\n\troot_resource.unpack()"
+    script = b"def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):\n\troot_resource.unpack()"
     resp = await ofrak_client.post(
         "/create_new_project",
         json={"name": "test"},
@@ -1440,7 +1440,7 @@ async def test_save_project_data(ofrak_client: TestClient, test_project_dir, hel
 
 
 async def test_delete_from_project(ofrak_client: TestClient, test_project_dir, hello_world_elf):
-    script = b"async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):\n\troot_resource.unpack()"
+    script = b"def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):\n\troot_resource.unpack()"
     resp = await ofrak_client.post(
         "/create_new_project",
         json={"name": "test"},
@@ -1495,7 +1495,7 @@ async def test_delete_from_project(ofrak_client: TestClient, test_project_dir, h
 
 
 async def test_get_project_script(ofrak_client: TestClient, test_project_dir):
-    script = b"async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):\n\troot_resource.unpack()"
+    script = b"def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):\n\troot_resource.unpack()"
     resp = await ofrak_client.post(
         "/create_new_project",
         json={"name": "test"},

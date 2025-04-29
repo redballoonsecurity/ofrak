@@ -429,9 +429,7 @@ class AiohttpOFRAKServer:
             raise ValueError("No IP address found for the remote request!")
 
         async def get_resource_range(resource_id):
-            resource_model = await self._get_resource_model_by_id(
-                bytes.fromhex(resource_id), job_id
-            )
+            resource_model = self._get_resource_model_by_id(bytes.fromhex(resource_id), job_id)
             if resource_model.data_id is None:
                 raise ValueError(
                     "Resource does not have a data_id. Cannot get data range from a "
@@ -456,7 +454,7 @@ class AiohttpOFRAKServer:
                     data_range = Range(0, 0)
                 else:
                     try:
-                        data_range = await data_service.get_range_within_other(
+                        data_range = data_service.get_range_within_other(
                             resource_model.data_id, parent_data_id
                         )
                     except ValueError:
@@ -1413,7 +1411,7 @@ class AiohttpOFRAKServer:
                 config = [conf for conf in get_args(config) if conf is not None][0]
         return config
 
-    async def _get_resource_model_by_id(
+    def _get_resource_model_by_id(
         self, resource_id: bytes, job_id: bytes
     ) -> Optional[Union[ResourceModel, MutableResourceModel]]:
         resource_m: Optional[Union[ResourceModel, MutableResourceModel]] = None
