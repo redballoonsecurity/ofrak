@@ -410,7 +410,7 @@ class AiohttpOFRAKServer:
             try:
                 if child.data_id is None:
                     return
-                data_range = await data_service.get_range_within_other(
+                data_range = data_service.get_range_within_other(
                     child.data_id, resource.get_data_id()
                 )
                 return child.id.hex(), (data_range.start, data_range.end)
