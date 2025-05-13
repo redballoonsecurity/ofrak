@@ -1,6 +1,7 @@
 import dataclasses
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from functools import lru_cache
 from typing import (
     TypeVar,
     Set,
@@ -229,6 +230,7 @@ class ResourceAttributes:
         return f"{self.__class__.__name__}({fields_str})"
 
     @classmethod
+    @lru_cache(maxsize=None)
     def get_indexable_attributes(cls) -> List[ResourceIndexedAttribute]:
         indexable_attributes = []
         for name, attr in cls.__dict__.items():
