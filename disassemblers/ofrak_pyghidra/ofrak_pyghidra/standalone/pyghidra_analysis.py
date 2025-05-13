@@ -99,6 +99,7 @@ def _unpack_program(flat_api):
 
 
 def _concat_contiguous_code_blocks(code_regions):
+    code_regions = dict(sorted(code_regions.items(), key=lambda item: item[1]["virtual_address"]))
     for i in range(len(code_regions) - 1):
         if (
             code_regions[i]["virtual_address"] + code_regions[i]["size"]
