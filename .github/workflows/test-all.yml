@@ -61,8 +61,6 @@ jobs:
         id: lfs-files
         run: |
           git lfs ls-files --long | cut -d ' ' -f 1 | sort > .git/lfs-hashes.txt
-          # TODO: Remove
-          echo "lfs_files=$(git lfs ls-files --long | cut -d ' ' -f 3 | sort | uniq | sed 's/^/"/g' | sed 's/$/"/g' | jq -s -c '.')" >> "${GITHUB_OUTPUT}"
       - name: Cache LFS files
         uses: actions/cache@v4
         with:
@@ -119,8 +117,6 @@ jobs:
         id: lfs-files
         run: |
           git lfs ls-files --long | cut -d ' ' -f 1 | sort > .git/lfs-hashes.txt
-          # TODO: Remove
-          echo "lfs_files=$(git lfs ls-files --long | cut -d ' ' -f 3 | sort | uniq | sed 's/^/"/g' | sed 's/$/"/g' | jq -s -c '.')" >> "${GITHUB_OUTPUT}"
       - name: Cache LFS files
         uses: actions/cache@v4
         with:
@@ -168,8 +164,6 @@ jobs:
         id: lfs-files
         run: |
           git lfs ls-files --long | cut -d ' ' -f 1 | sort > .git/lfs-hashes.txt
-          # TODO: Remove
-          echo "lfs_files=$(git lfs ls-files --long | cut -d ' ' -f 3 | sort | uniq | sed 's/^/"/g' | sed 's/$/"/g' | jq -s -c '.')" >> "${GITHUB_OUTPUT}"
       - name: Cache LFS files
         uses: actions/cache@v4
         with:
