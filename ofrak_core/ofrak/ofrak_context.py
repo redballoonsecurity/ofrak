@@ -203,7 +203,10 @@ class OFRAK:
 
     # TODO: Typehints here do not properly accept functions with variable args
     def run(self, func: Callable[["OFRAKContext", Any], Awaitable[None]], *args):
-        asyncio.get_event_loop().run_until_complete(self.run_async(func, *args))
+        # If we run this function multiple time and try using the default loop,
+        # the first test will delete the loop at the end of the run,
+        # and the 2nd call, unless we create a new asyncio loop.
+        asyncio.new_event_loop().run_until_complete(self.run_async(func, *args))
 
     def _setup(self):
         """Discover common OFRAK services and components."""
