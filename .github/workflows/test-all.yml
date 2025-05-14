@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          lfs: true
+          lfs: false
       - uses: actions/setup-python@v4
         with:
           python-version: '3.7'
@@ -56,7 +56,22 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          lfs: true
+          lfs: false
+      - name: List LFS files for cache key
+        id: lfs-files
+        run: |
+          git lfs ls-files --long | cut -d ' ' -f 1 | sort > .git/lfs-hashes.txt
+      - name: Cache LFS files
+        uses: actions/cache@v4
+        with:
+          path: .git/lfs
+          key: lfs-${{ hashFiles('.git/lfs-hashes.txt') }}
+          restore-keys: |
+            lfs-
+      - name: Fetch LFS objects not in cache
+        run: |
+          git lfs fetch --prune
+          git lfs checkout
       - uses: actions/setup-python@v4
         with:
           python-version: '3.7'
@@ -97,7 +112,22 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          lfs: true
+          lfs: false
+      - name: List LFS files for cache key
+        id: lfs-files
+        run: |
+          git lfs ls-files --long | cut -d ' ' -f 1 | sort > .git/lfs-hashes.txt
+      - name: Cache LFS files
+        uses: actions/cache@v4
+        with:
+          path: .git/lfs
+          key: lfs-${{ hashFiles('.git/lfs-hashes.txt') }}
+          restore-keys: |
+            lfs-
+      - name: Fetch LFS objects not in cache
+        run: |
+          git lfs fetch --prune
+          git lfs checkout
       - uses: actions/setup-python@v4
         with:
           python-version: '3.7'
@@ -129,7 +159,22 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          lfs: true
+          lfs: false
+      - name: List LFS files for cache key
+        id: lfs-files
+        run: |
+          git lfs ls-files --long | cut -d ' ' -f 1 | sort > .git/lfs-hashes.txt
+      - name: Cache LFS files
+        uses: actions/cache@v4
+        with:
+          path: .git/lfs
+          key: lfs-${{ hashFiles('.git/lfs-hashes.txt') }}
+          restore-keys: |
+            lfs-
+      - name: Fetch LFS objects not in cache
+        run: |
+          git lfs fetch --prune
+          git lfs checkout
       - uses: actions/setup-python@v4
         with:
           python-version: '3.7'
