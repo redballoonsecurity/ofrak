@@ -3,7 +3,7 @@ from ofrak.component.identifier import Identifier
 from ofrak.component.modifier import Modifier
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
-from ofrak.model.resource_model import ResourceAttributes, ResourceModel, Data
+from ofrak.model.resource_model import ResourceAttributes, ResourceModel
 from ofrak.model.tag_model import ResourceTag
 from ofrak.ofrak_context import OFRAK, OFRAKContext
 from ofrak.resource import Resource, ResourceFactory

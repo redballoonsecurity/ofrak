@@ -42,7 +42,6 @@ from ofrak.model.resource_model import (
     ResourceModel,
     MutableResourceModel,
     ResourceContext,
-    Data,
 )
 from ofrak.model.tag_model import ResourceTag
 from ofrak.model.viewable_tag_model import (
@@ -685,8 +684,6 @@ class Resource:
                 self._resource.data_id,
                 data_range,
             )
-            data_attrs = Data(data_model.range.start, data_model.range.length())
-            attributes = [data_attrs, *attributes] if attributes else [data_attrs]
         elif data is not None:
             if self._resource.data_id is None:
                 raise ValueError(
@@ -694,8 +691,6 @@ class Resource:
                 )
             data_model_id = resource_id
             await self._data_service.create_root(data_model_id, data)
-            data_attrs = Data(0, len(data))
-            attributes = [data_attrs, *attributes] if attributes else [data_attrs]
         else:
             data_model_id = None
         resource_model = ResourceModel.create(

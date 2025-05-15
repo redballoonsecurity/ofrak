@@ -3,12 +3,11 @@ import logging
 from typing import Set, List, Iterable, Dict, cast
 
 from ofrak.model.component_model import ComponentContext
-from ofrak.model.data_model import DataPatchesResult, DataModel
+from ofrak.model.data_model import DataPatchesResult
 from ofrak.model.resource_model import (
     ResourceContext,
     ResourceAttributeDependency,
     MutableResourceModel,
-    Data,
 )
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceServiceInterface
@@ -69,20 +68,6 @@ class DependencyHandler:
         resources_by_data_id = await self.map_data_ids_to_resources(
             patch_result.data_id for patch_result in patch_results
         )
-
-        all_data_ids = [patch_result.data_id for patch_result in patch_results]
-        models_by_data_id: Dict[bytes, DataModel] = {
-            data_id: model
-            for data_id, model in zip(
-                all_data_ids, await self._data_service.get_by_ids(all_data_ids)
-            )
-        }
-        # Go through and update all models' Data
-        for data_patch_result in patch_results:
-            resource_m = resources_by_data_id[data_patch_result.data_id]
-            data_m = models_by_data_id[data_patch_result.data_id]
-            resource_m.add_attributes(Data(data_m.range.start, data_m.range.length()))
-            modified_resources.add(resource_m)
 
         unhandled_dependencies: Set[ResourceAttributeDependency] = set()
         # Figure out which components results must be invalidated based on data changes
