@@ -59,7 +59,7 @@ from ofrak.service.resource_service_i import (
     ResourceFilter,
     ResourceSort,
 )
-from ofrak_type.error import NotFoundError, InvalidStateError
+from ofrak_type.error import MultipleResourcesFoundError, NotFoundError, InvalidStateError
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
