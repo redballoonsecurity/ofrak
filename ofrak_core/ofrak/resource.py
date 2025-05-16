@@ -1154,8 +1154,7 @@ class Resource:
                 f"provided filter"
             )
         if len(ancestors) > 1:
-            # TODO: Not the right kind of error
-            raise NotFoundError(
+            raise MultipleResourcesFoundError(
                 f"There are multiple descendants for resource {self._resource.id.hex()} "
                 f"matching the provided filter"
             )
@@ -1293,8 +1292,7 @@ class Resource:
                 f"the provided filter {r_filter}"
             )
         if len(models) > 1:
-            # TODO: Not the right kind of error
-            raise NotFoundError(
+            raise MultipleResourcesFoundError(
                 f"There are multiple descendants for resource {self._resource.id.hex()} "
                 f"matching the provided filter"
             )
@@ -1348,8 +1346,7 @@ class Resource:
                 f"the provided filter"
             )
         if len(models) > 1:
-            # TODO: Not the right kind of error
-            raise NotFoundError(
+            raise MultipleResourcesFoundError(
                 f"There are multiple siblings for resource {self._resource.id.hex()} "
                 f"matching the provided filter"
             )
