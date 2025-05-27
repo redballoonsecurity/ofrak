@@ -3,25 +3,6 @@ RUN wget https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.deb && 
     dpkg -i jdk-21_linux-x64_bin.deb && \
     rm -f jdk-21_linux-x64_bin.debd
 
-
-
-# RUN git clone https://github.com/NationalSecurityAgency/ghidra.git && \
-#     cd ghidra && \
-#     git checkout 5b7b12e7d016700eb0834d7421d266dd527a7355 && \
-#     ./gradlew -I gradle/support/fetchDependencies.gradle && \
-#     ./gradlew buildGhidra --info && \
-#     cd build/dist/ && \
-#     unzip ghidra*.zip > /dev/null && \
-#     mv ghidra_11.3_DEV /opt/rbs/ghidra_11.3_DEV && \
-#     cd ../../../ && \
-#     rm -rf ghidra && \
-#     cd /opt/rbs/ghidra_11.3_DEV/Ghidra/Features/PyGhidra/pypkg/ && \
-#     python3 -m pip install -e . 
-
-# ENV GHIDRA_INSTALL_DIR=/opt/rbs/ghidra_11.3_DEV/
-# RUN export GHIDRA_INSTALL_DIR=/opt/rbs/ghidra_11.3_DEV/
-
-
 RUN mkdir -p /opt/rbs && \
     cd /tmp && \
     wget -c https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_11.3_build/ghidra_11.3_PUBLIC_20250205.zip --show-progress --progress=bar:force:noscroll && \
