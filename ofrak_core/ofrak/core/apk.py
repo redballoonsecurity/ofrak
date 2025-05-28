@@ -6,29 +6,24 @@ import tempfile312 as tempfile
 from subprocess import CalledProcessError
 from dataclasses import dataclass
 
-from ofrak.core.filesystem import File, Folder
-
-from ofrak.component.packer import Packer
-
-from ofrak.resource import Resource
-
-from ofrak.component.unpacker import Unpacker
 from ofrak.component.identifier import Identifier
-
-from ofrak.model.component_model import ComponentConfig, ComponentExternalTool
+from ofrak.component.packer import Packer
+from ofrak.component.unpacker import Unpacker
+from ofrak.core.filesystem import File, Folder
+from ofrak.core.java import JavaArchive
+from ofrak.core.magic import MagicMimePattern
 from ofrak.core.zip import ZipArchive, UNZIP_TOOL
-from ofrak.core.binary import GenericBinary
-from ofrak.core.magic import Magic, MagicMimeIdentifier
+from ofrak.model.component_model import ComponentConfig, ComponentExternalTool
+from ofrak.resource import Resource
 from ofrak_type.range import Range
-
 
 APKTOOL = ComponentExternalTool("apktool", "https://ibotpeaches.github.io/Apktool/", "-version")
 JAVA = ComponentExternalTool(
     "java",
-    "https://openjdk.org/projects/jdk/11/",
+    "https://openjdk.org/projects/jdk/17/",
     "-help",
-    apt_package="openjdk-11-jdk",
-    brew_package="openjdk@11",
+    apt_package="openjdk-17-jdk",
+    brew_package="openjdk@17",
 )
 
 
@@ -206,30 +201,36 @@ class ApkPacker(Packer[ApkPackerConfig]):
             resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
 
 
+MagicMimePattern.register(Apk, "application/vnd.android.package-archive")
+
+
 class ApkIdentifier(Identifier):
-    targets = (File, GenericBinary)
+    """
+    Identifier for ApkArchive.
+
+    Some Apks are recognized by the MagicMimePattern; others are tagged as JavaArchive or
+    ZipArchive. This identifier inspects those files, and tags any with an androidmanifest.xml
+    as an ApkArchive.
+    """
+
+    targets = (JavaArchive, ZipArchive)
     external_dependencies = (UNZIP_TOOL,)
 
     async def identify(self, resource: Resource, config=None) -> None:
-        await resource.run(MagicMimeIdentifier)
-        magic = resource.get_attributes(Magic)
-        if magic.mime == "application/vnd.android.package-archive":
-            resource.add_tag(Apk)
-        elif magic is not None and magic.mime in ["application/java-archive", "application/zip"]:
-            async with resource.temp_to_disk(suffix=".zip") as temp_path:
-                unzip_cmd = [
-                    "unzip",
-                    "-l",
-                    temp_path,
-                ]
-                unzip_proc = await asyncio.create_subprocess_exec(
-                    *unzip_cmd,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                )
-                stdout, stderr = await unzip_proc.communicate()
-                if unzip_proc.returncode:
-                    raise CalledProcessError(returncode=unzip_proc.returncode, cmd=unzip_cmd)
+        async with resource.temp_to_disk(suffix=".zip") as temp_path:
+            unzip_cmd = [
+                "unzip",
+                "-l",
+                temp_path,
+            ]
+            unzip_proc = await asyncio.create_subprocess_exec(
+                *unzip_cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await unzip_proc.communicate()
+            if unzip_proc.returncode:
+                raise CalledProcessError(returncode=unzip_proc.returncode, cmd=unzip_cmd)
 
-                if b"androidmanifest.xml" in stdout.lower():
-                    resource.add_tag(Apk)
+            if b"androidmanifest.xml" in stdout.lower():
+                resource.add_tag(Apk)

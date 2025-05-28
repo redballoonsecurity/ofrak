@@ -1,4 +1,3 @@
-
 CC=gcc
 
 default: program
@@ -20,3 +19,6 @@ large_elf.o: large_elf.c $(HEADERS)
 
 large_elf: large_elf.o
 	$(CC) large_elf.o -no-pie -o large_elf 
+
+permstest_elf:
+	ld -T perms.ld -o permstest_elf /dev/null

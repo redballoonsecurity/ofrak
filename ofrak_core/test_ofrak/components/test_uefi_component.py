@@ -62,12 +62,12 @@ class TestUefiComponent(UnpackAndVerifyPattern):
         await root_resource.unpack_recursively()
 
     async def get_descendants_to_verify(self, unpacked_root_resource: Resource) -> Dict:
-        result = {
-            await (
-                await descendent.view_as(FilesystemEntry)
-            ).get_path(): await descendent.get_data()
-            for descendent in await unpacked_root_resource.get_descendants()
-        }
+        result = {}
+        for descendant in await unpacked_root_resource.get_descendants():
+            if descendant.has_tag(FilesystemEntry):
+                result[
+                    await (await descendant.view_as(FilesystemEntry)).get_path()
+                ] = await descendant.get_data()
         return result
 
     async def verify_descendant(self, unpacked_descendant: bytes, specified_result: bytes):

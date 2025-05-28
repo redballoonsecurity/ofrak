@@ -77,10 +77,9 @@ def iterable_strategy(draw, type_hint):
 @composite
 def os_stat_result_strategy(draw, _type_hint):
     """
-    os.stat_result instances can be generated as tuples of size 10. They most likely won't be valid
-    but it doesn't matter here.
+    os.stat_result instances can be generated as tuples of size 10.
     """
-    return draw(tuples(*[integer_strategy()] * 10))
+    return os.stat_result(draw(tuples(*[integer_strategy()] * 10)))
 
 
 @composite
@@ -270,13 +269,13 @@ def test_interval_tree_serialization(obj: IntervalTree, _test_serialize_deserial
     "json_obj,type_hint",
     [
         ([1, 2], List),
-        ({1: 2}, Dict),
+        ([(1, 2)], Dict),
     ],
 )
 def test_from_pjson_ambiguous_type_hints(
     json_obj: Any, type_hint: Any, serializer: PJSONSerializationService
 ):
-    with pytest.raises((TypeError, BeartypeCallHintParamViolation)):
+    with pytest.raises((IndexError, ValueError)):
         serializer.from_pjson(json_obj, type_hint)
 
 

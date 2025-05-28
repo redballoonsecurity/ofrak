@@ -6,7 +6,7 @@ import test_ofrak.components
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceAttributeValueFilter
-from ofrak.core.dtb import DeviceTreeBlob, DtbProperty, DtbNode
+from ofrak.core.dtb import DeviceTreeBlob, DtbProperty, DtbNode, match_dtb_magic
 from ofrak.core.strings import StringPatchingModifier, StringPatchingConfig
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 
@@ -110,3 +110,13 @@ class TestDeviceTreeBlobUnpackModifyPack(UnpackModifyPackPattern):
 
         # Assert that the repacked DTB contains an empty node named "great-new-node"
         assert dtb_diff_only_repacked.get_node("/great-new-node").empty
+
+
+def test_dtb_raw_magic_pattern():
+    """
+    Test that DTB raw pattern callable is correct.
+    """
+    dtb_path = os.path.join(test_ofrak.components.ASSETS_DIR, "imx7d-sdb.dtb")
+    with open(dtb_path, "rb") as f:
+        data = f.read()
+    assert match_dtb_magic(data)

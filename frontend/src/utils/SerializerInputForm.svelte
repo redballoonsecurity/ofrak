@@ -172,13 +172,19 @@
   ) {
     unionTypeSelect = node["args"][0];
   }
-  if (node["type"] == "ofrak_type.range.Range") {
-    element = [];
-  } else if (node["fields"] != null) {
-    element = {};
+
+  function setName() {
+    if (node?.type != null) {
+      element = [node.type, {}];
+    } else if (node["fields"] != null) {
+      element = {};
+    } else {
+      element = [];
+    }
   }
-  if (node["default"] != null) {
-    element = node["default"];
+
+  $: if (node["type"].startsWith("ofrak") && node["enum"] == null) {
+    setName();
   }
 
   const addElementToArray = () => {
@@ -342,8 +348,8 @@
       <!---->
     {:else if node["fields"] != null}
       {#each node["fields"] as field, i}
-        {#if node["type"] == "ofrak_type.range.Range"}
-          <svelte:self node="{field}" bind:element="{element[i]}" />
+        {#if node["type"].startsWith("ofrak")}
+          <svelte:self node="{field}" bind:element="{element[1][field.name]}" />
         {:else}
           <svelte:self node="{field}" bind:element="{element[field['name']]}" />
         {/if}
