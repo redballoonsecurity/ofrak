@@ -20,7 +20,11 @@ from ofrak_patch_maker_test.toolchain_asm import (
     run_challenge_3_reloc_toy_example_test,
     run_monkey_patch_test,
 )
-from ofrak_patch_maker_test.toolchain_c import run_hello_world_test, run_bounds_check_test
+from ofrak_patch_maker_test.toolchain_c import (
+    run_hello_world_test,
+    run_bounds_check_test,
+    run_relocatable_test,
+)
 from ofrak_type.architecture import (
     InstructionSet,
     SubInstructionSet,
@@ -114,6 +118,12 @@ def test_bounds_check(toolchain_under_test: ToolchainUnderTest):
 
 def test_hello_world(toolchain_under_test: ToolchainUnderTest):
     run_hello_world_test(toolchain_under_test)
+
+
+def test_relocatable(toolchain_under_test: ToolchainUnderTest):
+    # LLVM userspace test can't supply external symbols and LLVM non-userspace test can't link .got for some reason
+    if toolchain_under_test.toolchain != LLVM_12_0_1_Toolchain:
+        run_relocatable_test(toolchain_under_test)
 
 
 def test_arm_alignment(toolchain_under_test: ToolchainUnderTest):
