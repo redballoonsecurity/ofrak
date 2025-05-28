@@ -371,7 +371,7 @@ class GNU_10_Toolchain(Abstract_GNU_Toolchain):
         )
 
         if self._config.relocatable:
-            self._compiler_flags.append("-pie")
+            self._compiler_flags.append("-fPIE")
             self._linker_flags.append("--pic-executable")
         else:
             self._compiler_flags.append("-fno-plt")
