@@ -683,7 +683,7 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
         f"/{root_id}/get_script",
     )
     resp_body = await resp.json()
-    expected_list = [
+    normalized_expected_list = [
         "from ofrak import *",
         "from ofrak.core import *",
         "from ofrak.gui.script_builder import get_child_by_range",
@@ -704,17 +704,13 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
         "    )",
         "",
         "    # Resource with parent root_resource is missing, could not find selectable attributes.",
-        "    raise RuntimeError(",
-        '        "Resource with ID 0x00000002 cannot be uniquely identified by attribute Data.Offset (resource has value 0)."',
-        "    )",
+        "    raise RuntimeError(err)",
         "    root_resource_MISSING_RESOURCE_0 = None",
         "",
         "    await root_resource_MISSING_RESOURCE_0.unpack()",
         "",
         "    # Resource with parent root_resource is missing, could not find selectable attributes.",
-        "    raise RuntimeError(",
-        '        "Resource with ID 0x00000003 cannot be uniquely identified by attribute Data.Offset (resource has value 0)."',
-        "    )",
+        "    raise RuntimeError(err)",
         "    root_resource_MISSING_RESOURCE_1 = None",
         "",
         "    await root_resource_MISSING_RESOURCE_1.unpack()",
@@ -745,9 +741,8 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
         "",
     ]
 
-    expected_str = join_and_normalize(expected_list)
     actual_str = join_and_normalize(resp_body)
-    assert actual_str == expected_str
+    assert actual_str == "\n".join(normalized_expected_list)
 
 
 async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):

@@ -460,7 +460,10 @@ class ScriptBuilder:
 
 async def get_child_by_range(resource: Resource, _range: Range) -> Resource:
     """
-    Helper function to get the largest child at the given offset
+    Helper function to get child at the given offset.
+
+    :raises SelectableAttributeError: If no child maps to the _range in the resource, or if
+    multiple children map to the same range.
     """
     children = await resource.get_children()
 
@@ -473,10 +476,12 @@ async def get_child_by_range(resource: Resource, _range: Range) -> Resource:
             continue
         if range_in_parent == _range:
             if found_child:
-                raise SelectableAttributesError(
-                    f"Resource with ID 0x{resource.get_id().hex()} "
-                    f"does not have a selectable attribute."
-                )
+                # If two children have the same offset range, we raise an error, since the script
+                #  builder cannot reasonably identify which child is being selected.
+                #  This is intended behavior, see:
+                #  test_ofrak/unit/test_ofrak_server.py::test_selectable_attr_err.
+                found_child = None
+                break
             found_child = child
     if not found_child:
         raise SelectableAttributesError(
