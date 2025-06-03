@@ -675,8 +675,8 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
 
     child_one = children_body[root_id][0]
     child_two = children_body[root_id][1]
-    _ = await ofrak_client.post(f"/{child_one['id']}/unpack")
-    _ = await ofrak_client.post(f"/{child_two['id']}/unpack")
+    await ofrak_client.post(f"/{child_one['id']}/unpack")
+    await ofrak_client.post(f"/{child_two['id']}/unpack")
 
     # Verify script is as expected
     resp = await ofrak_client.get(
