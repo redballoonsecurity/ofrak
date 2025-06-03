@@ -9,8 +9,8 @@ from ofrak.resource import Resource
 from ofrak.core.dtb import DtbNode, DtbProperty
 from ofrak.core import Addressable
 from ofrak.core.filesystem import FilesystemEntry
-from ofrak.model.resource_model import Data
 from ofrak.service.resource_service_i import ResourceAttributeValueFilter, ResourceFilter
+from ofrak_type import Range
 from black import format_str, FileMode
 
 
@@ -56,10 +56,13 @@ class ScriptSession:
     boilerplate_header: str = r"""
     from ofrak import *
     from ofrak.core import *
+    from ofrak.gui.script_builder import get_child_by_range
 
     async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):"""
     # TODO: Replace with backend in use by OFRAK instance used to create the script.
     boilerplate_footer: str = r"""
+
+
     if __name__ == "__main__":
         ofrak = OFRAK()
         if False:
@@ -105,7 +108,6 @@ class ScriptBuilder:
         self.selectable_indexes: List[ResourceIndexedAttribute] = [
             FilesystemEntry.Name,
             Addressable.VirtualAddress,
-            Data.Offset,
             DtbNode.DtbNodeName,
             DtbProperty.DtbPropertyName,
         ]
@@ -308,25 +310,46 @@ class ScriptBuilder:
                 f"{attribute.__name__} (resource has value {attribute_value})."
             )
 
+    async def _test_get_child_by_range(
+        self,
+        ancestor: Resource,
+        resource: Resource,
+        range_in_parent: Range,
+    ):
+        retrieved_child = await get_child_by_range(ancestor, range_in_parent)
+        if retrieved_child.get_id() != resource.get_id():
+            raise SelectableAttributesError(
+                f"Resource with ID 0x{resource.get_id().hex()} cannot be uniquely identified by "
+                f"data range: {range_in_parent}"
+            )
+
     async def _get_selector(self, resource: Resource) -> str:
         root_resource = await self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
         parent = await resource.get_parent()
-        attribute, attribute_value = await self._get_selectable_attribute(resource)
-        await self._test_selectable_attributes(parent, resource, attribute, attribute_value)
-
-        attribute_value = f"{attribute_value!r}"
-        return f"""await {session.get_var_name(parent.get_id())}.get_only_child(
-                    r_filter=ResourceFilter(
-                        tags={resource.get_most_specific_tags()},
-                        attribute_filters=[
-                            ResourceAttributeValueFilter(
-                                attribute={attribute.__name__}, 
-                                value={attribute_value}
-                            )
-                        ]   
+        try:
+            attribute, attribute_value = await self._get_selectable_attribute(resource)
+            await self._test_selectable_attributes(parent, resource, attribute, attribute_value)
+            attribute_value = f"{attribute_value!r}"
+            return f"""await {session.get_var_name(parent.get_id())}.get_only_child(
+                        r_filter=ResourceFilter(
+                            tags={resource.get_most_specific_tags()},
+                            attribute_filters=[
+                                ResourceAttributeValueFilter(
+                                    attribute={attribute.__name__}, 
+                                    value={attribute_value}
+                                )
+                            ]   
+                        )
+                    )"""
+        except SelectableAttributesError:
+            range_in_parent = await resource.get_data_range_within_parent()
+            await self._test_get_child_by_range(parent, resource, range_in_parent)
+            return f"""await get_child_by_range(
+                        {session.get_var_name(parent.get_id())}, 
+                        Range({range_in_parent.start}, {range_in_parent.end})
                     )
-                )"""
+            """
 
     async def _get_self_and_siblings_matching_attribute(
         self, resource: Resource, attribute: ResourceIndexedAttribute, attribute_value: Any
@@ -374,11 +397,16 @@ class ScriptBuilder:
         root_resource = await self._get_root_resource(resource)
         session = self._get_session(root_resource.get_id())
         most_specific_tag = list(resource.get_most_specific_tags())[0].__name__.lower()
-        _, selectable_attribute_value = await self._get_selectable_attribute(resource)
-        if isinstance(selectable_attribute_value, int):
-            selectable_attribute_value = hex(selectable_attribute_value)
-        name = f"{most_specific_tag}_{selectable_attribute_value}"
-        name = re.sub(r"[^a-zA-Z0-9]", "_", name)
+        try:
+            _, selectable_attribute_value = await self._get_selectable_attribute(resource)
+            if isinstance(selectable_attribute_value, int):
+                selectable_attribute_value = hex(selectable_attribute_value)
+            name = f"{most_specific_tag}_{selectable_attribute_value}"
+            name = re.sub(r"[^a-zA-Z0-9]", "_", name)
+        except SelectableAttributesError:
+            range_in_parent = await resource.get_data_range_within_parent()
+            name = f"{most_specific_tag}_{hex(range_in_parent.start)}"
+            name = re.sub(r"[^a-zA-Z0-9]", "_", name)
         if name in session.resource_variable_names.values():
             parent = await resource.get_parent()
             return f"{session.get_var_name(parent.get_id())}_{name}"
@@ -428,3 +456,36 @@ class ScriptBuilder:
             line[indent_end_index:] if line and line.startswith(prefix) else "" for line in split
         ]
         return "\n".join(dedented_strings)
+
+
+async def get_child_by_range(resource: Resource, _range: Range) -> Resource:
+    """
+    Helper function to get child at the given offset.
+
+    :raises SelectableAttributeError: If no child maps to the _range in the resource, or if
+    multiple children map to the same range.
+    """
+    children = await resource.get_children()
+
+    found_child = None
+    for child in children:
+        try:
+            range_in_parent = await child.get_data_range_within_parent()
+        except ValueError:
+            # For some reason in the script builder some children do not have data_ids.
+            continue
+        if range_in_parent == _range:
+            if found_child:
+                # If two children have the same offset range, we raise an error, since the script
+                #  builder cannot reasonably identify which child is being selected.
+                #  This is intended behavior, see:
+                #  test_ofrak/unit/test_ofrak_server.py::test_selectable_attr_err.
+                found_child = None
+                break
+            found_child = child
+    if not found_child:
+        raise SelectableAttributesError(
+            f"Resource with ID 0x{resource.get_id().hex()} "
+            f"does not have a selectable attribute."
+        )
+    return found_child
