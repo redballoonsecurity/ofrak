@@ -348,7 +348,7 @@ class ScriptBuilder:
             return f"""await get_child_by_range(
                         {session.get_var_name(parent.get_id())}, 
                         Range({range_in_parent.start}, {range_in_parent.end})
-                        )
+                    )
             """
 
     async def _get_self_and_siblings_matching_attribute(
