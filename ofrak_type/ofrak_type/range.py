@@ -68,7 +68,7 @@ class Range:
         """
         start = max(range.start, self.start)
         end = min(range.end, self.end)
-        if start >= end:
+        if start > end:
             raise ValueError("There is no overlap between this range and the provided range ")
         return Range(start, end)
 

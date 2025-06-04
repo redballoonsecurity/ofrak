@@ -70,9 +70,11 @@ def test_overlaps(range_1: Range, range_2: Range, expected_result: bool):
 @pytest.mark.parametrize(
     "range_1, range_2, expected_range",
     [
+        (Range(10, 20), Range(20, 30), Range(20, 20)),
         (Range(10, 20), Range(0, 30), Range(10, 20)),
         (Range(10, 20), Range(10, 30), Range(10, 20)),
         (Range(10, 20), Range(15, 30), Range(15, 20)),
+        (Range(10, 20), Range(10, 20), Range(10, 20)),
     ],
 )
 def test_intersect(range_1: Range, range_2: Range, expected_range: Range):
@@ -83,20 +85,6 @@ def test_intersect_value_error():
     range_1 = Range(10, 20)
     with pytest.raises(ValueError):
         range_1.intersect(Range(30, 40))
-
-
-def test_intersect_edge_cases():
-    """Test edge cases for intersect method."""
-    # Ranges that touch at a single point
-    r1 = Range(0, 10)
-    r2 = Range(10, 20)
-    with pytest.raises(ValueError):
-        r1.intersect(r2)
-
-    # Identical ranges
-    r3 = Range(5, 15)
-    r4 = Range(5, 15)
-    assert r3.intersect(r4) == Range(5, 15)
 
 
 @pytest.mark.parametrize(
