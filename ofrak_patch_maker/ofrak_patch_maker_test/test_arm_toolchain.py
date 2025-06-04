@@ -121,9 +121,12 @@ def test_hello_world(toolchain_under_test: ToolchainUnderTest):
 
 
 def test_relocatable(toolchain_under_test: ToolchainUnderTest):
-    # LLVM userspace test can't supply external symbols and LLVM non-userspace test can't link .got for some reason
-    if toolchain_under_test.toolchain != LLVM_12_0_1_Toolchain:
-        run_relocatable_test(toolchain_under_test)
+    if toolchain_under_test.toolchain == LLVM_12_0_1_Toolchain:
+        if toolchain_under_test.userspace_dynamic_linker is not None:
+            pytest.skip("LLVM userspace mode can't supply external symbols")
+        else:
+            pytest.skip("LLVM test can't link .got")
+    run_relocatable_test(toolchain_under_test)
 
 
 def test_arm_alignment(toolchain_under_test: ToolchainUnderTest):
