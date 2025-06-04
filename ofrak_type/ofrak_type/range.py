@@ -68,7 +68,7 @@ class Range:
         """
         start = max(range.start, self.start)
         end = min(range.end, self.end)
-        if start > end:
+        if start >= end:
             raise ValueError("There is no overlap between this range and the provided range ")
         return Range(start, end)
 
@@ -104,6 +104,12 @@ class Range:
             return self
         if offset + self.start < 0:
             raise ValueError("The start of the translated range cannot be negative")
+
+        # Check for overflow
+        new_end = self.end + offset
+        if new_end > Range.MAX:
+            raise OverflowError("Translated range exceeds maximum allowed value")
+
         return Range(self.start + offset, self.end + offset)
 
     def __repr__(self) -> str:
@@ -169,6 +175,9 @@ def chunk_ranges(ranges: List[Range], chunk_size: int) -> List[Range]:
     :param chunk_size:
     :return: equal sized regions of Ranges
     """
+    if chunk_size <= 0:
+        raise ValueError("chunk_size must be positive")
+
     regions = Range.merge_ranges(ranges)
     chunked = []
     for region in regions:
