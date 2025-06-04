@@ -105,9 +105,7 @@ class Range:
         if offset + self.start < 0:
             raise ValueError("The start of the translated range cannot be negative")
 
-        # Check for overflow
-        new_end = self.end + offset
-        if new_end > Range.MAX:
+        if self.end + offset > Range.MAX:
             raise OverflowError("Translated range exceeds maximum allowed value")
 
         return Range(self.start + offset, self.end + offset)
