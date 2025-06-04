@@ -171,13 +171,12 @@ def run_hello_world_test(toolchain_under_test: ToolchainUnderTest):
     assert get_file_format(exec_path) == tc_config.file_format
 
 
-def run_relocatable_test(toolchain_under_test: ToolchainUnderTest):
+def run_relocatable_test(toolchain_under_test: ToolchainUnderTest, build_dir):
     """
     Use patchmaker to link on a relocatable binary
     """
     source_dir = os.path.join(os.path.dirname(__file__), "example_5")
     source_path = os.path.join(source_dir, "patch.c")
-    build_dir = tempfile.mkdtemp()
 
     base_symbols = {
         "debug_printf": 0x2000,

@@ -50,5 +50,5 @@ def test_hello_world(toolchain_under_test: ToolchainUnderTest):
 
 
 @pytest.mark.skipif(platform.machine() != "x86_64", reason="Test only supported on x86_64")
-def test_relocatable(toolchain_under_test: ToolchainUnderTest):
-    run_relocatable_test(toolchain_under_test)
+def test_relocatable(toolchain_under_test: ToolchainUnderTest, tmp_path):
+    run_relocatable_test(toolchain_under_test, tmp_path)
