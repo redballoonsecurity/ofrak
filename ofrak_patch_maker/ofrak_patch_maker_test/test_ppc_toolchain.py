@@ -12,6 +12,7 @@ from ofrak_patch_maker_test.toolchain_asm import (
 from ofrak_patch_maker_test.toolchain_c import (
     run_bounds_check_test,
     run_hello_world_test,
+    run_relocatable_test,
 )
 
 PPC_EXTENSION = ".ppc"
@@ -53,3 +54,7 @@ def test_bounds_check(toolchain_under_test: ToolchainUnderTest):
 
 def test_hello_world(toolchain_under_test: ToolchainUnderTest):
     run_hello_world_test(toolchain_under_test)
+
+
+def test_relocatable(toolchain_under_test: ToolchainUnderTest, tmp_path):
+    run_relocatable_test(toolchain_under_test, tmp_path)
