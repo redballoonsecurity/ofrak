@@ -54,8 +54,11 @@ To stop it, run `python -m ofrak_ghidra.server stop`.
 ## Usage
 To use Ghidra, you need to discover the component at setup-time with:
 ```python
-ofrak = OFRAK(logging.INFO)
-ofrak.injector.discover(ofrak_ghidra)
+from ofrak import OFRAK
+import ofrak_ghidra
+
+ofrak = OFRAK()
+ofrak.discover(ofrak_ghidra)
 ```
 
 !!! warning
@@ -84,7 +87,7 @@ async def main(ofrak_context: OFRAKContext,):
 
 if __name__ == "__main__":
     ofrak = OFRAK(logging.INFO)
-    ofrak.injector.discover(ofrak_ghidra)
+    ofrak.discover(ofrak_ghidra)
     ofrak.run(main)
 ```
 
