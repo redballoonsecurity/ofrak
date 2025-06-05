@@ -34,9 +34,9 @@ from ofrak_io.deserializer import BinaryDeserializer
 from ofrak_io.serializer import BinarySerializer
 from ofrak_type.endianness import Endianness
 
-from esptool import CHIP_DEFS, ESPLoader
-from esptool.bin_image import LoadFirmwareImage, ESP8266V2FirmwareImage
-from esptool.targets import ROM_LIST
+from esptool import CHIP_DEFS, ESPLoader #type: ignore
+from esptool.bin_image import LoadFirmwareImage, ESP8266V2FirmwareImage #type: ignore
+from esptool.targets import ROM_LIST #type: ignore
 
 from tempfile import NamedTemporaryFile, _TemporaryFileWrapper
 from ofrak.core.esp.flash_model import ESPFlashSection
@@ -85,7 +85,7 @@ def check_magic(f: _TemporaryFileWrapper):
     return magic
 
 
-async def get_esp_app(resource: Resource, config: Optional[ESPAppConfig]):
+async def get_esp_app(resource: Resource, config: Optional[ESPAppConfig]) -> ESPAppConfig:
     if config:
         return config
     else:
@@ -101,7 +101,7 @@ async def get_esp_app(resource: Resource, config: Optional[ESPAppConfig]):
         magic = check_magic(f)
         chip = determine_chip(f)
         image = LoadFirmwareImage(chip, f.name)
-    return ESPAppConfig(f, offset, magic, chip, image)
+        return ESPAppConfig(f, offset, magic, chip, image)
 
 
 ####################
@@ -167,50 +167,50 @@ class ESPAppUnpacker(Unpacker[None]):
         :param config: Optional configuration for unpacking
         :raises UnpackerError: If unpacking fails due to invalid data or file operations
         """
-        config = await get_esp_app(resource, config)
+        esp_config = await get_esp_app(resource, config)
         try:
             #TODO can this be removed?
             resource.add_attributes(await resource.analyze(ESPAppAttributes))
-            flash_s_bits, flash_fr_bits = self.__parse_flash_bits(config.image)
+            flash_s_bits, flash_fr_bits = self.__parse_flash_bits(esp_config.image)
 
             header = ESPAppHeader(
-                magic=config.magic,
-                num_segments=len(config.image.segments),
-                flash_mode=ESPAppFlashMode(config.image.flash_mode),
-                flash_size=FlashSize.from_value(flash_s_bits, config.chip),
+                magic=int(esp_config.magic) if isinstance(esp_config.magic, bytes) else esp_config.magic,
+                num_segments=len(esp_config.image.segments),
+                flash_mode=ESPAppFlashMode(esp_config.image.flash_mode),
+                flash_size=FlashSize.from_value(flash_s_bits, esp_config.chip),
                 flash_frequency=FlashFrequency.from_value(flash_fr_bits),
-                entry_point=config.image.entrypoint,
+                entry_point=esp_config.image.entrypoint,
             )
             await resource.create_child_from_view(
-                header, data_range=Range(0, ESP_APP_HEADER_SIZE).translate(config.offset)
+                header, data_range=Range(0, ESP_APP_HEADER_SIZE).translate(esp_config.offset)
             )
-            if config.chip != "esp8266":
+            if esp_config.chip != "esp8266":
                 extended_header = ESPAppExtendedHeader(
-                    wp_pin=config.image.wp_pin,
-                    clk_drv=config.image.clk_drv,
-                    q_drv=config.image.q_drv,
-                    d_drv=config.image.d_drv,
-                    cs_drv=config.image.cs_drv,
-                    hd_drv=config.image.hd_drv,
-                    wp_drv=config.image.wp_drv,
-                    chip_id=config.image.chip_id,
-                    min_chip_rev_deprecated=config.image.min_rev,
-                    min_chip_rev=config.image.min_rev_full,
-                    max_chip_rev=config.image.max_rev_full,
-                    hash_appended=config.image.append_digest,
+                    wp_pin=esp_config.image.wp_pin,
+                    clk_drv=esp_config.image.clk_drv,
+                    q_drv=esp_config.image.q_drv,
+                    d_drv=esp_config.image.d_drv,
+                    cs_drv=esp_config.image.cs_drv,
+                    hd_drv=esp_config.image.hd_drv,
+                    wp_drv=esp_config.image.wp_drv,
+                    chip_id=esp_config.image.chip_id,
+                    min_chip_rev_deprecated=esp_config.image.min_rev,
+                    min_chip_rev=esp_config.image.min_rev_full,
+                    max_chip_rev=esp_config.image.max_rev_full,
+                    hash_appended=esp_config.image.append_digest,
                 )
                 await resource.create_child_from_view(
                     extended_header,
                     data_range=Range.from_size(
                         ESP_APP_HEADER_SIZE, ESP_APP_EXTENDED_HEADER_SIZE
-                    ).translate(config.offset),
+                    ).translate(esp_config.offset),
                 )
 
             # Segments overview
             app_desc = None
             bootloader_desc = None
-            for idx, seg in enumerate(config.image.segments, start=1):
-                segs = seg.get_memory_type(config.image)
+            for idx, seg in enumerate(esp_config.image.segments, start=1):
+                segs = seg.get_memory_type(esp_config.image)
                 seg_name = ", ".join(segs)
                 if "DROM" in segs:  # The DROM segment starts with the esp_app_desc_t struct
                     app_desc = seg.data[:256]
@@ -229,7 +229,7 @@ class ESPAppUnpacker(Unpacker[None]):
                     data_range=Range.from_size(
                         (seg.file_offs - ESP_APP_SEGMENT_HEADER_SIZE),
                         ESP_APP_SEGMENT_HEADER_SIZE,
-                    ).translate(config.offset),
+                    ).translate(esp_config.offset),
                 )
                 section = ESPAppSection(
                     section_index=idx,
@@ -240,7 +240,8 @@ class ESPAppUnpacker(Unpacker[None]):
                 section_range = (
                     Range.from_size(seg.file_offs, len(seg.data)) if len(seg.data) > 0 else None
                 )
-                section_range.translate(config.offset)
+                if section_range is not None:
+                    section_range = section_range.translate(esp_config.offset)
                 section_r = await resource.create_child_from_view(section, data_range=section_range)
 
                 if "IRAM" in seg_name or "IROM" in seg_name:
@@ -253,39 +254,39 @@ class ESPAppUnpacker(Unpacker[None]):
                 (checksum_offset + 16) // 16 * 16
             ) - 1  # Align to next 16-byte boundary
             await resource.create_child_from_view(
-                ESPAppChecksum(checksum=config.image.checksum),
-                data_range=Range.from_size(checksum_offset, 1).translate(config.offset),
+                ESPAppChecksum(checksum=esp_config.image.checksum),
+                data_range=Range.from_size(checksum_offset, 1).translate(esp_config.offset),
             )
-            if hasattr(config.image, 'append_digest') and config.image.append_digest:
-                hash = ESPAppHash(hash=config.image.stored_digest)
+            if hasattr(esp_config.image, 'append_digest') and esp_config.image.append_digest:
+                hash = ESPAppHash(hash=esp_config.image.stored_digest)
                 hash_offset = checksum_offset + 1
                 await resource.create_child_from_view(
-                    hash, data_range=Range.from_size(hash_offset, 32).translate(config.offset)
+                    hash, data_range=Range.from_size(hash_offset, 32).translate(esp_config.offset)
                 )
-                if config.image.secure_pad == "1":
+                if esp_config.image.secure_pad == "1":
                     # Version + signature + 12 trailing bytes due to alignment = 80 bytes
-                    config.f.seek(-80, os.SEEK_END)
+                    esp_config.f.seek(-80, os.SEEK_END)
                     signature = ESPAppSignature(
-                        version=struct.unpack("<I", config.f.read(4))[0],
-                        signature=config.f.read(64),
+                        version=struct.unpack("<I", esp_config.f.read(4))[0],
+                        signature=esp_config.f.read(64),
                     )
                     signature_offset = hash_offset + 32
                     await resource.create_child_from_view(
-                        signature, data_range=Range.from_size(signature_offset, 80).translate(config.offset)
+                        signature, data_range=Range.from_size(signature_offset, 80).translate(esp_config.offset)
                     )
 
-                elif config.image.secure_pad == "2":  # Secure Boot V2
+                elif esp_config.image.secure_pad == "2":  # Secure Boot V2
                     # TODO: ESPTool.py comment says: "after checksum: SHA-256 digest +
                     # signature sector, but we place signature sector after the 64KB
                     # boundary" so this might work but unsure
-                    config.f.seek(-64004, os.SEEK_END)
+                    esp_config.f.seek(-64004, os.SEEK_END)
                     signature = ESPAppSignature(
-                        version=struct.unpack("<I", config.f.read(4))[0],
-                        signature=config.f.read(64000),
+                        version=struct.unpack("<I", esp_config.f.read(4))[0],
+                        signature=esp_config.f.read(64000),
                     )
                     signature_offset = hash_offset + 32
                     await resource.create_child_from_view(
-                        signature, data_range=Range.from_size(signature_offset, 64004).translate(config.offset)
+                        signature, data_range=Range.from_size(signature_offset, 64004).translate(esp_config.offset)
                     )
             # Process application description if present
             if app_desc:
@@ -296,7 +297,7 @@ class ESPAppUnpacker(Unpacker[None]):
                         data_range=Range.from_size(
                             ESP_APP_HEADER_SIZE + ESP_APP_EXTENDED_HEADER_SIZE + ESP_APP_SEGMENT_HEADER_SIZE,
                             256,
-                        ).translate(config.offset),
+                        ).translate(esp_config.offset),
                     )
             elif bootloader_desc:
                 bootloader_description, magic_byte = self.__parse_bootloader_description(
@@ -307,11 +308,11 @@ class ESPAppUnpacker(Unpacker[None]):
                         bootloader_description,
                         data_range=Range.from_size(
                             ESP_APP_HEADER_SIZE + ESP_APP_EXTENDED_HEADER_SIZE + ESP_APP_SEGMENT_HEADER_SIZE, 80
-                        ).translate(config.offset),
+                        ).translate(esp_config.offset),
                     )
         finally:
-            if hasattr(config, "f"):
-                config.f.close()
+            if hasattr(esp_config, "f"):
+                esp_config.f.close()
 
     def __parse_flash_bits(self, image) -> Tuple[int, int]:
         """
@@ -464,7 +465,7 @@ class ESPAppSectionHeaderAnalyzer(Analyzer[None, ESPAppSectionHeader]):
     async def analyze(self, resource: Resource, config=None) -> ESPAppSectionHeader:
         # Check if we already have the attributes
         try:
-            return resource.get_attributes(ESPAppSectionHeader)
+            return resource.get_attributes(ESPAppSectionHeader)  # type: ignore
         except:
             pass
             
@@ -496,7 +497,7 @@ class ESPAppSectionAnalyzer(Analyzer[None, ESPAppSection]):
     async def analyze(self, resource: Resource, config=None) -> ESPAppSection:
         # First check if we already have the section attributes
         try:
-            section_attrs = resource.get_attributes(ESPAppSection)
+            section_attrs = resource.get_attributes(ESPAppSection)  # type: ignore
             return section_attrs
         except:
             pass
