@@ -388,13 +388,10 @@ class ESPAppHeaderAnalyzer(Analyzer[None, ESPAppHeader]):
             endianness=Endianness.LITTLE_ENDIAN
         )
         
-        magic = deserializer.unpack_ubyte()
-        num_segments = deserializer.unpack_ubyte()
-        flash_mode = ESPAppFlashMode(deserializer.unpack_ubyte())
-        flash_size_freq = deserializer.unpack_ubyte()
+        magic, num_segments, flash_mode_value, flash_size_freq, entry_point = deserializer.unpack_multiple("BBBBI")
+        flash_mode = ESPAppFlashMode(flash_mode_value)
         flash_size = FlashSize.from_value(flash_size_freq & 0xF0)
         flash_frequency = FlashFrequency.from_value(flash_size_freq & 0x0F)
-        entry_point = deserializer.unpack_uint()
         
         return ESPAppHeader(
             magic=magic,
@@ -419,10 +416,7 @@ class ESPAppExtendedHeaderAnalyzer(Analyzer[None, ESPAppExtendedHeader]):
             endianness=Endianness.LITTLE_ENDIAN
         )
         
-        wp_pin = deserializer.unpack_ubyte()
-        drive_byte1 = deserializer.unpack_ubyte()
-        drive_byte2 = deserializer.unpack_ubyte()
-        drive_byte3 = deserializer.unpack_ubyte()
+        wp_pin, drive_byte1, drive_byte2, drive_byte3 = deserializer.unpack_multiple("BBBB")
         
         drive_settings = drive_byte1 | (drive_byte2 << 8) | (drive_byte3 << 16)
         clk_drv = (drive_settings >> 0) & 0x3
@@ -432,10 +426,7 @@ class ESPAppExtendedHeaderAnalyzer(Analyzer[None, ESPAppExtendedHeader]):
         hd_drv = (drive_settings >> 8) & 0x3
         wp_drv = (drive_settings >> 10) & 0x3
         
-        chip_id = deserializer.unpack_ushort()
-        min_chip_rev_deprecated = deserializer.unpack_ubyte()
-        min_chip_rev = deserializer.unpack_ushort()
-        max_chip_rev = deserializer.unpack_ushort()
+        chip_id, min_chip_rev_deprecated, min_chip_rev, max_chip_rev = deserializer.unpack_multiple("HBHH")
         deserializer.read(4)  # Reserved bytes
         hash_appended = deserializer.unpack_ubyte() != 0
         
@@ -475,8 +466,7 @@ class ESPAppSectionHeaderAnalyzer(Analyzer[None, ESPAppSectionHeader]):
             endianness=Endianness.LITTLE_ENDIAN
         )
         
-        memory_offset = deserializer.unpack_uint()
-        segment_size = deserializer.unpack_uint()
+        memory_offset, segment_size = deserializer.unpack_multiple("II")
         
         # Use a default name for now - it should be set during unpacking
         return ESPAppSectionHeader(
@@ -686,13 +676,6 @@ class AbstractESPAppAttributeModifier(ABC):
         original_attributes: Any,
         modifier_config: ComponentConfig,
     ):
-        # updates = {
-        #     k: v for k, v in modifier_config.__dict__.items() 
-        #     if v is not None and k != '_deleted'
-        # }
-        
-        # import dataclasses
-        # new_attributes = dataclasses.replace(original_attributes, **updates)
         new_attributes = ResourceAttributes.replace_updated(original_attributes, modifier_config)
         new_data = await self.serialize(resource, new_attributes)
         patch_length = await resource.get_data_length()
@@ -711,18 +694,9 @@ class ESPAppHeaderModifier(Modifier[ESPAppHeaderModifierConfig], AbstractESPAppA
     def populate_serializer(
         cls, serializer: BinarySerializer, attributes: AttributesType[ESPAppHeader]
     ):
-        # Pack magic and num_segments
-        serializer.pack_ubyte(attributes.magic)
-        serializer.pack_ubyte(attributes.num_segments)
-        
-        # Pack flash mode
-        serializer.pack_ubyte(attributes.flash_mode.value)
-        
-        # Pack flash size and frequency combined
         flash_size_freq = (attributes.flash_size.value) | (attributes.flash_frequency.value)
-        serializer.pack_ubyte(flash_size_freq)
-        
-        # Pack entry point
+        serializer.pack_multiple("BBBB", attributes.magic, attributes.num_segments, 
+                                attributes.flash_mode.value, flash_size_freq)
         serializer.pack_uint(attributes.entry_point)
 
     async def modify(self, resource: Resource, config: ESPAppHeaderModifierConfig):
@@ -741,10 +715,7 @@ class ESPAppExtendedHeaderModifier(Modifier[ESPAppExtendedHeaderModifierConfig],
     def populate_serializer(
         cls, serializer: BinarySerializer, attributes: AttributesType[ESPAppExtendedHeader]
     ):
-        # Pack WP pin
         serializer.pack_ubyte(attributes.wp_pin)
-        
-        # Pack drive settings (3 bytes)
         drive_settings = 0
         drive_settings |= (attributes.clk_drv & 0x3) << 0
         drive_settings |= (attributes.q_drv & 0x3) << 2
@@ -752,25 +723,12 @@ class ESPAppExtendedHeaderModifier(Modifier[ESPAppExtendedHeaderModifierConfig],
         drive_settings |= (attributes.cs_drv & 0x3) << 6
         drive_settings |= (attributes.hd_drv & 0x3) << 8
         drive_settings |= (attributes.wp_drv & 0x3) << 10
-        
-        serializer.pack_ubyte(drive_settings & 0xFF)
-        serializer.pack_ubyte((drive_settings >> 8) & 0xFF)
-        serializer.pack_ubyte((drive_settings >> 16) & 0xFF)
-        
-        # Pack chip ID
-        serializer.pack_ushort(attributes.chip_id)
-        
-        # Pack minimum chip revision (deprecated)
-        serializer.pack_ubyte(attributes.min_chip_rev_deprecated)
-        
-        # Pack min/max chip revisions
-        serializer.pack_ushort(attributes.min_chip_rev)
-        serializer.pack_ushort(attributes.max_chip_rev)
-        
-        # Pack reserved bytes (4 bytes)
+        serializer.pack_multiple("BBB", drive_settings & 0xFF, 
+                                (drive_settings >> 8) & 0xFF, 
+                                (drive_settings >> 16) & 0xFF)
+        serializer.pack_multiple("HBHH", attributes.chip_id, attributes.min_chip_rev_deprecated,
+                                 attributes.min_chip_rev, attributes.max_chip_rev)
         serializer.write(b'\x00' * 4)
-        
-        # Pack hash appended flag
         serializer.pack_ubyte(1 if attributes.hash_appended else 0)
 
     async def modify(self, resource: Resource, config: ESPAppExtendedHeaderModifierConfig):
@@ -795,11 +753,8 @@ class ESPAppSectionHeaderModifier(Modifier[ESPAppSectionHeaderModifierConfig], A
     def populate_serializer(
         cls, serializer: BinarySerializer, attributes: AttributesType[ESPAppSectionHeader]
     ):
-        # Pack memory offset
-        serializer.pack_uint(attributes.memory_offset)
-        
-        # Pack segment size
-        serializer.pack_uint(attributes.segment_size)
+        # Pack memory offset and segment size
+        serializer.pack_multiple("II", attributes.memory_offset, attributes.segment_size)
 
     async def modify(self, resource: Resource, config: ESPAppSectionHeaderModifierConfig):
         original_attributes = await resource.analyze(AttributesType[ESPAppSectionHeader])
@@ -818,8 +773,7 @@ class ESPAppDescriptionModifier(Modifier[ESPAppDescriptionModifierConfig], Abstr
         cls, serializer: BinarySerializer, attributes: AttributesType[ESPAppDescription]
     ):
         # Pack all fields according to the format "<II8s32s32s16s16s32s32s80s"
-        serializer.pack_uint(attributes.magic)
-        serializer.pack_uint(attributes.secure_version)
+        serializer.pack_multiple("II", attributes.magic, attributes.secure_version)
         serializer.write(attributes.reserv1[:8].ljust(8, b'\x00'))
         serializer.write(attributes.version[:32].ljust(32, b'\x00'))
         serializer.write(attributes.project_name[:32].ljust(32, b'\x00'))
@@ -856,3 +810,150 @@ class ESPBootloaderDescriptionModifier(Modifier[ESPBootloaderDescriptionModifier
     async def modify(self, resource: Resource, config: ESPBootloaderDescriptionModifierConfig):
         original_attributes = await resource.analyze(AttributesType[ESPBootloaderDescription])
         await self.serialize_and_patch(resource, original_attributes, config)
+
+
+####################
+#      PACKER      #
+####################
+class ESPAppPacker(Packer[None]):
+    """
+    Packer for ESP apps that reassembles components and updates checksum/hash.
+    
+    This packer reconstructs an ESP app binary from its unpacked components,
+    ensuring that the checksum and hash are correctly calculated for the 
+    modified binary.
+    """
+    
+    id = b"ESPAppPacker"
+    targets = (ESPApp,)
+
+    async def pack(self, resource: Resource, config=None) -> None:
+        """
+        Pack an ESP app by updating checksum and hash without full reassembly.
+        
+        :param resource: The ESP app resource to pack
+        :param config: Optional configuration (unused)
+        """
+        # Get current binary data
+        current_data = bytearray(await resource.get_data())
+        
+        # Parse basic ESP structure to find segments and calculate new checksum
+        magic = current_data[0]
+        num_segments = current_data[1] 
+        
+        # Determine if this is ESP32 (check for extended header)
+        # ESP8266 uses magic 0xE9 or 0xEA, ESP32 also uses 0xE9 but has extended header
+        # Check if byte at position 23 is 0 or 1 (hash_appended flag)
+        has_extended_header = False
+        if len(current_data) > 24:
+            # Check if this looks like a valid extended header
+            # The hash_appended byte should be 0 or 1
+            possible_hash_flag = current_data[23]
+            if possible_hash_flag in [0, 1]:
+                has_extended_header = True
+        
+        # Calculate segment data for checksum
+        offset = 8  # Basic header
+        if has_extended_header:
+            offset = 24  # Basic + extended header
+        
+        segment_data_list = []
+        for i in range(num_segments):
+            if offset + 8 > len(current_data):
+                break
+            
+            # Read segment header
+            segment_size = int.from_bytes(current_data[offset+4:offset+8], 'little')
+            offset += 8  # Skip segment header
+            
+            if offset + segment_size > len(current_data):
+                break
+            
+            # Collect segment data
+            segment_data = current_data[offset:offset+segment_size]
+            segment_data_list.append(segment_data)
+            offset += segment_size
+        
+        # Find checksum location (16-byte aligned) - use same formula as unpacker
+        checksum_offset = ((offset + 16) // 16) * 16 - 1
+        
+        # Calculate new checksum
+        calculated_checksum = ESP_APP_CHECKSUM_MAGIC  # 0xEF
+        for segment_data in segment_data_list:
+            for byte in segment_data:
+                calculated_checksum ^= byte
+        calculated_checksum &= 0xFF
+        
+        # Update checksum in the binary
+        if checksum_offset < len(current_data):
+            current_data[checksum_offset] = calculated_checksum
+        
+        # Calculate and update hash if needed (ESP32 with hash_appended)
+        hash_offset = checksum_offset + 1
+        if (has_extended_header and 
+            hash_offset + 32 <= len(current_data) and
+            current_data[23] == 1):  # hash_appended flag
+            
+            # Calculate SHA256 of data up to hash
+            image_data = current_data[:hash_offset]
+            calculated_hash = hashlib.sha256(image_data).digest()
+            
+            # Update hash in the binary
+            current_data[hash_offset:hash_offset+32] = calculated_hash
+        
+        # Update the main resource with the new data
+        resource.queue_patch(Range.from_size(0, len(current_data)), bytes(current_data))
+
+    async def verify_with_esptool(self, resource: Resource) -> bool:
+        """
+        Verify the packed ESP app using esptool image_info command.
+        
+        :param resource: The packed ESP app resource
+        :return: True if verification passes, False otherwise
+        """
+        try:
+            # Write the packed data to a temporary file
+            packed_data = await resource.get_data()
+            
+            with NamedTemporaryFile(suffix=".bin", delete=False) as temp_file:
+                temp_file.write(packed_data)
+                temp_file.flush()
+                
+                # Use esptool to verify the image
+                from esptool import main as esptool_main
+                import sys
+                from io import StringIO
+                
+                # Capture esptool output
+                old_stdout = sys.stdout
+                sys.stdout = captured_output = StringIO()
+                
+                try:
+                    # Run esptool image_info command
+                    sys.argv = ['esptool.py', 'image_info', '--version', '2', temp_file.name]
+                    esptool_main()
+                    
+                    output = captured_output.getvalue()
+                    
+                    # Check if checksum and hash are valid in the output
+                    checksum_valid = "Checksum: " in output and "invalid" not in output.lower()
+                    hash_valid = True  # If no hash errors reported, assume valid
+                    
+                    return checksum_valid and hash_valid
+                    
+                except SystemExit:
+                    # esptool calls sys.exit(), which is normal
+                    output = captured_output.getvalue()
+                    return "Checksum: " in output and "invalid" not in output.lower()
+                finally:
+                    sys.stdout = old_stdout
+                    
+        except Exception as e:
+            LOGGER.warning(f"Failed to verify ESP app with esptool: {e}")
+            return False
+        finally:
+            # Clean up temp file
+            try:
+                os.unlink(temp_file.name)
+            except:
+                pass
