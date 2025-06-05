@@ -169,3 +169,82 @@ def run_hello_world_test(toolchain_under_test: ToolchainUnderTest):
 
     assert os.path.exists(exec_path)
     assert get_file_format(exec_path) == tc_config.file_format
+
+
+def run_relocatable_test(toolchain_under_test: ToolchainUnderTest, build_dir):
+    """
+    Use patchmaker to link on a relocatable binary
+    """
+    source_dir = os.path.join(os.path.dirname(__file__), "example_5")
+    source_path = os.path.join(source_dir, "patch.c")
+
+    base_symbols = {
+        "debug_printf": 0x2000,
+        "debug_string": 0x4000,
+    }
+    tc_config = ToolchainConfig(
+        file_format=BinFileType.ELF,
+        force_inlines=True,
+        relocatable=True,
+        no_std_lib=True,
+        no_jump_tables=True,
+        no_bss_section=True,
+        create_map_files=True,
+        compiler_optimization_level=CompilerOptimizationLevel.FULL,
+        debug_info=True,
+        userspace_dynamic_linker=toolchain_under_test.userspace_dynamic_linker,
+    )
+
+    logger = logging.getLogger("ToolchainTest")
+    logger.setLevel("INFO")
+
+    toolchain = toolchain_under_test.toolchain(toolchain_under_test.proc, tc_config)
+    patch_maker = PatchMaker(
+        toolchain=toolchain,
+        logger=logger,
+        build_dir=build_dir,
+        base_symbols=base_symbols,
+    )
+
+    bom = patch_maker.make_bom(
+        name="example_5",
+        source_list=[source_path],
+        object_list=[],
+        header_dirs=[source_dir],
+    )
+
+    all_segments = {}
+    current_vm_address = 0x10000
+    for o in bom.object_map.values():
+        seg_list = []
+        for s in o.segment_map.values():
+            seg_list.append(replace(s, vm_address=current_vm_address))
+            current_vm_address += s.length
+
+            if toolchain_under_test.toolchain in [GNU_X86_64_LINUX_EABI_10_3_0_Toolchain]:
+                if current_vm_address % 16 > 0:
+                    current_vm_address += 16 - current_vm_address % 16
+            else:
+                if current_vm_address % 4 > 0:
+                    current_vm_address += 4 - current_vm_address % 4
+        # Linking a PIE object requires a .got segment
+        seg_list.append(
+            Segment(
+                ".got",
+                0x9000,
+                0,
+                is_entry=False,
+                length=0x1000,
+                access_perms=MemoryPermissions.R,
+            )
+        )
+        all_segments.update({o.path: tuple(seg_list)})
+
+    allocator_config = PatchRegionConfig(bom.name + "_patch", all_segments)
+
+    # Skip the config step for now
+    exec_path = os.path.join(build_dir, "fem")
+    fem = patch_maker.make_fem([(bom, allocator_config)], exec_path)
+
+    assert os.path.exists(exec_path)
+    assert get_file_format(exec_path) == tc_config.file_format
