@@ -31,7 +31,7 @@ def read_requirements(requirements_path):
 
 setuptools.setup(
     name="ofrak_tutorial",
-    version="0.1.0",
+    version="0.1.1",
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",
     description="OFRAK tutorial",
