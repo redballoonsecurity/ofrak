@@ -3,19 +3,11 @@ import os
 import tempfile
 from dataclasses import dataclass
 from enum import Enum, IntEnum
-from typing import Iterable, Tuple, Optional
-from io import BytesIO
-import struct
+from typing import Iterable, Optional
 
-from ofrak.core.program import Program, CodeRegion
+from ofrak.core.program import Program
 from ofrak.core.program_section import NamedProgramSection
 from ofrak.model.resource_model import index, ResourceAttributes
-from ofrak.component.identifier import Identifier
-from ofrak.component.analyzer import Analyzer
-from ofrak.component.unpacker import Unpacker, UnpackerError
-from ofrak.core.binary import GenericBinary
-from ofrak.core.filesystem import File
-from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import (
     ResourceAttributeValueFilter,
@@ -25,12 +17,10 @@ from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_type.range import Range
 from ofrak.model.component_model import ComponentConfig
 
-from esptool import CHIP_DEFS, ESPLoader
-from esptool.bin_image import LoadFirmwareImage, ESP8266V2FirmwareImage
-from esptool.targets import ROM_LIST
+from esptool.bin_image import ESP8266V2FirmwareImage #type: ignore
+from esptool.targets import ROM_LIST #type: ignore
 
 from tempfile import _TemporaryFileWrapper
-from ofrak.core.esp.flash_model import ESPFlashSection
 
 """
 # ESP-IDF Firmware Image Format Documentation

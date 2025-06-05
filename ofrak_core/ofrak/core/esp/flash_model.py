@@ -1,26 +1,17 @@
 import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import Iterable, Tuple, Optional, List
-import struct
+from typing import Iterable
 
-from ofrak.core.program import Program, CodeRegion
+from ofrak.core.program import Program
 from ofrak.core.program_section import NamedProgramSection
-from ofrak.model.resource_model import index, ResourceAttributes
-from ofrak.component.identifier import Identifier
-from ofrak.component.analyzer import Analyzer
-from ofrak.component.unpacker import Unpacker, UnpackerError
-from ofrak.core.binary import GenericBinary
-from ofrak.core.filesystem import File
-from ofrak.resource import Resource
+from ofrak.model.resource_model import index
 from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import (
     ResourceAttributeValueFilter,
     ResourceFilter,
 )
 from ofrak.service.resource_service_i import ResourceFilter
-from ofrak_type.range import Range
-from ofrak.model.component_model import ComponentConfig
 
 """
 # ESP-IDF Flash Dump, Partition-table based, Documentation

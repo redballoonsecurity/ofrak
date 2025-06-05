@@ -1,13 +1,10 @@
-import logging
 from dataclasses import dataclass
-from enum import Enum
-from typing import Iterable, Tuple, Optional, List, Any
+from typing import Tuple, Optional, List, Any
 import struct
 from abc import abstractmethod, ABC
 
-from ofrak.core.program import Program, CodeRegion
-from ofrak.core.program_section import NamedProgramSection
-from ofrak.model.resource_model import index, ResourceAttributes
+from ofrak.core.program import Program
+from ofrak.model.resource_model import ResourceAttributes
 from ofrak.component.identifier import Identifier
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.unpacker import Unpacker, UnpackerError
@@ -15,21 +12,13 @@ from ofrak.component.modifier import Modifier
 from ofrak.core.binary import GenericBinary
 from ofrak.core.filesystem import File
 from ofrak.resource import Resource
-from ofrak.resource_view import ResourceView
-from ofrak.service.resource_service_i import (
-    ResourceAttributeValueFilter,
-    ResourceFilter,
-)
-from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_type.range import Range
 from ofrak.model.component_model import ComponentConfig
-from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.core.esp.flash_model import *
 from ofrak_io.deserializer import BinaryDeserializer
 from ofrak_io.serializer import BinarySerializer
 import io
 from ofrak_type.endianness import Endianness
-from ofrak_type.bit_width import BitWidth
 
 ####################
 #    IDENTIFIER    #
@@ -286,8 +275,6 @@ class ESPPartitionTableEntryModifierConfig(ComponentConfig):
     name: Optional[str] = None
     flag: Optional[ESPPartitionFlag] = None
 
-
-# class ESPPartitionTableEntryModifier(Modifier[ESPPartitionTableEntryModifierConfig], AbstractESPFlashAttributeModifier):
 class ESPPartitionTableEntryModifier(Modifier[ESPPartitionTableEntryModifierConfig]):
     """
     Modifier for ESP partition table entries.
@@ -323,20 +310,12 @@ class ESPPartitionTableEntryModifier(Modifier[ESPPartitionTableEntryModifierConf
 
     async def modify(self, resource: Resource, config: ESPPartitionTableEntryModifierConfig):
         original_entry = await resource.view_as(ESPPartitionTableEntry)
-        # new_original_entry = dataclasses.asdict(original_entry)
-        # new_config = dataclasses.asdict(config)
-        # for k in new_original_entry.keys():
-        #     if new_config[k] is not None:
-        #         new_original_entry[k] = new_config[k]
-        # new_entry = ESPPartitionTableEntry(**new_original_entry)
-        # config = ESPPartitionTableEntryModifierConfig(**new_config)
         original_entry.type = config.type if config.type is not None else original_entry.type
         original_entry.subtype = config.subtype if config.subtype is not None else original_entry.subtype
         original_entry.virtual_address = config.virtual_address if config.virtual_address is not None else original_entry.virtual_address
         original_entry.size = config.size if config.size is not None else original_entry.size
         original_entry.name = config.name if config.name is not None else original_entry.name
         original_entry.flag = config.flag if config.flag is not None else original_entry.flag
-        # await self.serialize_and_patch(resource, new_entry, config)
         new_data = await self.serialize(resource, original_entry)
         patch_length = await resource.get_data_length()
         resource.queue_patch(Range.from_size(0, patch_length), new_data)
@@ -351,15 +330,3 @@ class ESPPartitionTableEntryModifier(Modifier[ESPPartitionTableEntryModifierConf
         )
         self.populate_serializer(serializer, updated_attributes)
         return buf.getvalue()
-
-    # async def serialize_and_patch(
-    #     self,
-    #     resource: Resource,
-    #     original_attributes: Any,
-    #     modifier_config: ComponentConfig,
-    # ):
-    #     new_attributes = ResourceAttributes.replace_updated(original_attributes, modifier_config)
-    #     new_data = await self.serialize(resource, new_attributes)
-    #     patch_length = await resource.get_data_length()
-    #     resource.queue_patch(Range.from_size(0, patch_length), new_data)
-    #     resource.add_attributes(new_attributes)
