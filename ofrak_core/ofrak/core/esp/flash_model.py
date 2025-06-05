@@ -218,13 +218,16 @@ class ESPPartitionTableEntry(ESPPartitionStructure, ESPFlashSection):
 
         :return: The body of the partition/section.
         """
-        return await self.resource.get_only_sibling_as_view(
+        # Get the flash resource (parent of parent - grandparent)
+        flash_resource = await (await self.resource.get_parent()).get_parent()
+        
+        return await flash_resource.get_only_child_as_view(
             ESPPartition,
             ResourceFilter(
                 tags=(ESPPartition,),
                 attribute_filters=[
                     ResourceAttributeValueFilter(
-                        ESPPartitionStructure.partition_index, self.partition_index
+                        ESPPartitionStructure.SectionIndex, self.partition_index
                     )
                 ],
             ),
@@ -250,7 +253,7 @@ class ESPPartition(ESPPartitionStructure, ESPFlashSection):
                 tags=(ESPPartitionTableEntry,),
                 attribute_filters=[
                     ResourceAttributeValueFilter(
-                        ESPPartitionStructure.partition_index, self.partition_index
+                        ESPPartitionStructure.SectionIndex, self.partition_index
                     )
                 ],
             ),
@@ -284,7 +287,7 @@ class ESPPartitionTable(ESPFlashSection):
             ESPPartition,
             ResourceFilter(
                 tags=(ESPPartition,),
-                attribute_filters=(ResourceAttributeValueFilter(ESPPartition.name, name),),
+                attribute_filters=(ResourceAttributeValueFilter(ESPPartition.SectionName, name),),
             ),
         )
 
@@ -321,7 +324,7 @@ class ESPFlash(Program):
             ESPFlashSection,
             ResourceFilter(
                 tags=(ESPFlashSection,),
-                attribute_filters=(ResourceAttributeValueFilter(ESPFlashSection.name, name),),
+                attribute_filters=(ResourceAttributeValueFilter(ESPFlashSection.SectionName, name),),
             ),
         )
     
@@ -332,5 +335,3 @@ class ESPFlash(Program):
                 tags=(ESPPartitionTable,),
             ),
         )
-    
-

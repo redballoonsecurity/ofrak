@@ -29,7 +29,7 @@ from esptool import CHIP_DEFS, ESPLoader
 from esptool.bin_image import LoadFirmwareImage, ESP8266V2FirmwareImage
 from esptool.targets import ROM_LIST
 
-from tempfile import NamedTemporaryFile, _TemporaryFileWrapper
+from tempfile import _TemporaryFileWrapper
 from ofrak.core.esp.flash_model import ESPFlashSection
 
 """
@@ -544,7 +544,7 @@ class ESPAppAttributes(ResourceAttributes):
 
 @dataclass
 class ESPAppConfig(ComponentConfig):
-    f: NamedTemporaryFile
+    f: _TemporaryFileWrapper
     offset: int
     magic: bytes
     chip: str
@@ -555,14 +555,14 @@ class ESPAppConfig(ComponentConfig):
 # MODIFIER RESOURCES #
 ######################
 @dataclass
-class ESPAppHeaderModifierConfig(ResourceView):
+class ESPAppHeaderModifierConfig(ComponentConfig):
     flash_mode: Optional[ESPAppFlashMode] = None
     flash_size: Optional[int] = None
     flash_frequency: Optional[int] = None
     entry_point: Optional[int] = None
 
 @dataclass
-class ESPAppExtendedHeaderModifierConfig(ResourceView):
+class ESPAppExtendedHeaderModifierConfig(ComponentConfig):
     wp_pin: Optional[int] = None
     clk_drv: Optional[int] = None
     q_drv: Optional[int] = None
@@ -577,7 +577,7 @@ class ESPAppExtendedHeaderModifierConfig(ResourceView):
     hash_appended: Optional[bool] = None
 
 @dataclass
-class ESPAppDescriptionModifierConfig(ResourceView):
+class ESPAppDescriptionModifierConfig(ComponentConfig):
     secure_version: Optional[int] = None
     reserv1: Optional[bytes] = None
     version: Optional[bytes] = None
@@ -589,7 +589,7 @@ class ESPAppDescriptionModifierConfig(ResourceView):
     reserv2: Optional[bytes] = None
 
 @dataclass
-class ESPBootloaderDescriptionModifierConfig(ResourceView):
+class ESPBootloaderDescriptionModifierConfig(ComponentConfig):
     reserved: Optional[bytes] = None
     version: Optional[int] = None
     idf_ver: Optional[bytes] = None

@@ -1,8 +1,9 @@
 import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import Iterable, Tuple, Optional, List
+from typing import Iterable, Tuple, Optional, List, Any
 import struct
+from abc import abstractmethod, ABC
 
 from ofrak.core.program import Program, CodeRegion
 from ofrak.core.program_section import NamedProgramSection
@@ -22,14 +23,13 @@ from ofrak.service.resource_service_i import (
 from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_type.range import Range
 from ofrak.model.component_model import ComponentConfig
+from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.core.esp.flash_model import *
 from ofrak_io.deserializer import BinaryDeserializer
 from ofrak_io.serializer import BinarySerializer
 import io
 from ofrak_type.endianness import Endianness
 from ofrak_type.bit_width import BitWidth
-
-#TODO: use asserts in places other then identifier when checking thats its an ESP thing
 
 ####################
 #    IDENTIFIER    #
@@ -84,129 +84,282 @@ class ESPFlashUnpacker(Unpacker[None]):
         ESPFlashSectionStructure,
         ESPPartition,
         )
-
-    async def unpack(self, resource: Resource, config=None):
+    
+    async def unpack(self, resource: Resource, config=None) -> None:
         """
-        Asynchronously unpacks an ESP Partition Table, extracting its components and metadata.
-
-        :param resource: The resource to unpack
-        :param config: Optoional configuration for unpacking
-        :raises UnpackingError: If unpacking fails due to invalid data or file operations.
+        Parse an ESP32 flash image, extracting:
+        • bootloader section
+        • partition-table blob
+        • every partition-table entry
+        • each partition payload that actually lies inside the image
         """
-        end = await resource.get_data_length()
-        data = await resource.get_data()
-        if (
-            end >= 0x80FF
-            and ESP_PARTITION_ENTRY_MAGIC
-            == data[ESP_PARTITION_TABLE_OFFSET : ESP_PARTITION_TABLE_OFFSET + 2]
-            and data[ESP_BOOTLOADER_OFFSET] == ESP_BOOTLOADER_MAGIC
-        ):
-            end = ESP_PARTITION_TABLE_EST_MAX if end > ESP_PARTITION_TABLE_EST_MAX else end
-            # Get bootloader
-            size = ESP_PARTITION_TABLE_OFFSET-ESP_BOOTLOADER_OFFSET
-            bootloader = ESPFlashSection(
-                section_index=0,
-                name="bootloader",
-                virtual_address=ESP_BOOTLOADER_OFFSET,
-                size=size
-            )
-            await resource.create_child_from_view(
-                bootloader, data_range=Range.from_size(ESP_BOOTLOADER_OFFSET, size)
-            )
-            # Get partition table
-            partition_table = ESPPartitionTable(
-                section_index=1,
-                name="partition_table",
-                virtual_address=ESP_PARTITION_TABLE_OFFSET,
-                size=ESP_PARTITION_TABLE_EST_MAX
-            )
-            await resource.create_child_from_view(
-                partition_table, data_range=Range.from_size(ESP_PARTITION_TABLE_OFFSET, ESP_PARTITION_TABLE_EST_MAX)
-            )
-            # Get partition table entries
-            sec_index = 2
-            par_index = 0
-            last_partition_ends = 0x9000
-            data_reader = io.BytesIO(data[ESP_PARTITION_TABLE_OFFSET:ESP_PARTITION_TABLE_EST_MAX - 1])
-            deserializer = BinaryDeserializer(data_reader)
-            virtual_addr = ESP_PARTITION_TABLE_OFFSET
+        data_len = await resource.get_data_length()
+        data     = await resource.get_data()
 
-            while (data_reader):
-                _, type, subtype, offset, size, label, flags = deserializer.unpack_multiple("<HBBII12sB")
-                virtual_addr += 25
-                label = label.decode("ascii").rstrip("\x00")
-                partition_entry = ESPPartitionTableEntry(
-                    section_index=sec_index,
-                    partition_index=par_index,
-                    name=label,
-                    virtual_address=virtual_addr,
-                    size=virtual_addr + 25,
-                    type=ESPPartitionType.from_value(type),
-                    subtype=ESPPartitionSubtype.from_value(subtype),
-                    flag=ESPPartitionSubtype.from_value(flags),
-                )
-                await resource.create_child_from_view(
-                    partition_entry, data_range=Range(virtual_addr, virtual_addr + 25)
-                )
-                partition = ESPPartition(
-                    section_index=sec_index,
-                    partition_index=par_index,
-                    name=label,
-                    virtual_address=offset,
-                    size=size
-                )
-                await resource.create_child_from_view(
-                    partition, data_range=Range.from_size(offset, size)
-                )
-                sec_index += 1
-                par_index += 1
-                partition_ends = offset + size
-                if partition_ends > last_partition_ends:
-                    last_partition_ends = partition_ends
+        ENTRY_MAGIC_BYTES = ESP_PARTITION_ENTRY_MAGIC          # b"\xAA\x50"
+        ENTRY_MAGIC_INT   = int.from_bytes(ENTRY_MAGIC_BYTES, "little")
 
-        else:
-            raise UnpackerError(
-                "This is not a valid ESP Flash" "(could not find magic number)"
+        if data_len < ESP_PARTITION_TABLE_OFFSET + 2:
+            raise UnpackerError("Image too small to contain a partition table")
+
+        if data[ESP_BOOTLOADER_OFFSET] != ESP_BOOTLOADER_MAGIC:
+            raise UnpackerError("Boot-loader magic not found - not an ESP image")
+
+        if data[ESP_PARTITION_TABLE_OFFSET : ESP_PARTITION_TABLE_OFFSET + 2] != \
+        ENTRY_MAGIC_BYTES:
+            raise UnpackerError("Partition-table magic not found - not an ESP image")
+
+        boot_sz = ESP_PARTITION_TABLE_OFFSET - ESP_BOOTLOADER_OFFSET
+        await resource.create_child_from_view(
+            ESPFlashSection(
+                section_index   = 0,
+                name            = "bootloader",
+                virtual_address = ESP_BOOTLOADER_OFFSET,
+                size            = boot_sz,
+            ),
+            data_range = Range.from_size(ESP_BOOTLOADER_OFFSET, boot_sz),
+        )
+
+        pt_blob_size = min(ESP_PARTITION_TABLE_EST_MAX,
+                        data_len - ESP_PARTITION_TABLE_OFFSET)
+
+        partition_table_res = await resource.create_child_from_view(
+            ESPPartitionTable(
+                section_index   = 1,
+                name            = "partition_table",
+                virtual_address = ESP_PARTITION_TABLE_OFFSET,
+                size            = pt_blob_size,
+            ),
+            data_range = Range.from_size(ESP_PARTITION_TABLE_OFFSET, pt_blob_size),
+        )
+
+        ENTRY_FMT  = "HBBII16sI"
+        ENTRY_SIZE = struct.calcsize("<" + ENTRY_FMT)
+
+        deserializer = BinaryDeserializer(
+            io.BytesIO(data[
+                ESP_PARTITION_TABLE_OFFSET :
+                ESP_PARTITION_TABLE_OFFSET + pt_blob_size]),
+            endianness = Endianness.LITTLE_ENDIAN,
+            word_size  = 4,
+        )
+
+        par_idx  = 0
+        entry_va = ESP_PARTITION_TABLE_OFFSET
+
+        while True:
+            try:
+                magic, p_type, p_sub, offset, size, raw_label, flag = \
+                    deserializer.unpack_multiple(ENTRY_FMT)
+            except EOFError as e:
+                break
+
+            if magic != ENTRY_MAGIC_INT:                 # 0xFFFF terminator
+                break
+
+            label = raw_label.rstrip(b"\0").decode() or f"partition_{par_idx}"
+            await partition_table_res.create_child_from_view(
+                ESPPartitionTableEntry(
+                    section_index   = par_idx,          # index inside the table
+                    partition_index = par_idx,
+                    name            = label,
+                    virtual_address = entry_va,
+                    size            = ENTRY_SIZE,
+                    type            = ESPPartitionType.from_value(p_type),
+                    subtype         = ESPPartitionSubtype.from_value(p_sub),
+                    flag           = ESPPartitionFlag.from_value(flag),
+                ),
+                data_range = Range.from_size(entry_va, ENTRY_SIZE),
             )
+
+            if offset < data_len:
+                payload_sz = min(size, data_len - offset)
+                if payload_sz:
+                    await resource.create_child_from_view(
+                        ESPPartition(
+                            section_index   = 2 + par_idx,   # after bootloader & table
+                            partition_index = par_idx,
+                            name            = str(label),
+                            virtual_address = offset,
+                            size            = payload_sz,
+                        ),
+                        data_range = Range.from_size(offset, payload_sz),
+                    )
+
+            par_idx  += 1
+            entry_va += ENTRY_SIZE
 
 ####################
-#    ANALYZERS     #
+#    ANALYZER      #
 ####################
+@dataclass(**ResourceAttributes.DATACLASS_PARAMS)
+class ESPFlashAttributes(ResourceAttributes):
+    total_partitions: int
+    total_flash_size: int
+    has_overlapping_partitions: bool
+    unused_space: int
 
 
-####################
-#     MODIFERS     #
-####################
-# @dataclass
-# class ESPPartitionTableEntryModifierConfig(ComponentConfig):
-#     type: Optional[ESPPartitionType] = None
-#     subtype: Optional[ESPPartitionSubtype] = None
-#     flag: Optional[ESPPartitionFlag] = None
+class ESPFlashAnalyzer(Analyzer[None, ESPFlashAttributes]):
+    """
+    Analyze ESP flash image for validity and attributes.
+    """
+    targets = (ESPFlash,)
+    outputs = (ESPFlashAttributes,)
 
-
-# class ESPPartitionTableEntryModifier(Modifier[ESPPartitionTableEntryModifierConfig]):
-#     id = b"ESPPartitionTableEntryModifier"
-#     targets = (ESPPartitionTableEntry,)
-
-#     async def modify(self, resource: Resource, config: ESPPartitionTableEntryModifierConfig):
-#         original_attributes = await resource.get_only_child_as_view(
-#             ESPPartitionTableEntry,
-#             ResourceFilter(
-#                 tags=(ESPPartitionTableEntry,)
-#             ))
-#         esp_resource = await resource.get_only_ancestor_as_view(
-#             ESPFlash,
-#             ResourceFilter.with_tags(ESPFlash)
-#             )
-#         new_attributes = ResourceAttributes.replace_updated(original_attributes, config)
-#         buf = io.BytesIO()
-#         serializer = BinarySerializer(
-#             buf,
-#             endianness=Endianness.LITTLE_ENDIAN,
-#             word_size=BitWidth.BIT_32,
-#         )
-#         serializer.pack_multiple()
-#         patch_length = await resource.get_data_length()
-#         resource.queue_patch(Range.from_size(0, patch_length), new_data)
-
+    async def analyze(self, resource: Resource, config=None) -> ESPFlashAttributes:
+        flash = await resource.view_as(ESPFlash)
+        partition_table = await flash.get_partition_table()
+        entries = await partition_table.get_entries()
         
+        total_partitions = len(list(entries))
+        total_flash_size = await resource.get_data_length()
+        
+        # Check for overlapping partitions
+        has_overlapping = False
+        partition_ranges: List[Tuple[int, int]] = []
+        max_end = 0
+        
+        for entry in entries:
+            partition = await entry.get_body()
+            start = partition.virtual_address
+            end = start + partition.size
+            
+            # Check overlap with existing partitions
+            for p_start, p_end in partition_ranges:
+                if (start < p_end and end > p_start):
+                    has_overlapping = True
+                    break
+            
+            partition_ranges.append((start, end))
+            if end > max_end:
+                max_end = end
+        
+        # Calculate unused space (gap between last partition and end of flash)
+        unused_space = total_flash_size - max_end if max_end < total_flash_size else 0
+        
+        return ESPFlashAttributes(
+            total_partitions=total_partitions,
+            total_flash_size=total_flash_size,
+            has_overlapping_partitions=has_overlapping,
+            unused_space=unused_space
+        )
+
+
+####################
+#    MODIFIERS     #
+####################
+class AbstractESPFlashAttributeModifier(ABC):
+    @classmethod
+    @abstractmethod
+    def populate_serializer(cls, serializer: BinarySerializer, attributes: Any):
+        raise NotImplementedError()
+
+    async def serialize(self, resource: Resource, updated_attributes: ResourceAttributes) -> bytes:
+        buf = io.BytesIO()
+        serializer = BinarySerializer(
+            buf,
+            endianness=Endianness.LITTLE_ENDIAN,
+        )
+        self.populate_serializer(serializer, updated_attributes)
+        return buf.getvalue()
+
+    async def serialize_and_patch(
+        self,
+        resource: Resource,
+        original_attributes: Any,
+        modifier_config: ComponentConfig,
+    ):
+        new_attributes = ResourceAttributes.replace_updated(original_attributes, modifier_config)
+        new_data = await self.serialize(resource, new_attributes)
+        patch_length = await resource.get_data_length()
+        resource.queue_patch(Range.from_size(0, patch_length), new_data)
+        resource.add_attributes(new_attributes)
+
+
+@dataclass
+class ESPPartitionTableEntryModifierConfig(ComponentConfig):
+    type: Optional[ESPPartitionType] = None
+    subtype: Optional[ESPPartitionSubtype] = None
+    virtual_address: Optional[int] = None
+    size: Optional[int] = None
+    name: Optional[str] = None
+    flag: Optional[ESPPartitionFlag] = None
+
+
+# class ESPPartitionTableEntryModifier(Modifier[ESPPartitionTableEntryModifierConfig], AbstractESPFlashAttributeModifier):
+class ESPPartitionTableEntryModifier(Modifier[ESPPartitionTableEntryModifierConfig]):
+    """
+    Modifier for ESP partition table entries.
+    """
+    id = b"ESPPartitionTableEntryModifier"
+    targets = (ESPPartitionTableEntry,)
+
+    @classmethod
+    def populate_serializer(
+        cls, serializer: BinarySerializer, attributes: ESPPartitionTableEntry
+    ):
+        # Pack magic, type, subtype, offset, and size
+        magic_value = int.from_bytes(ESP_PARTITION_ENTRY_MAGIC, "little")
+        type_value = attributes.type.value if isinstance(attributes.type.value, int) else 0xFF
+        subtype_value = attributes.subtype.value if isinstance(attributes.subtype.value, int) else 0xFF
+        
+        serializer.pack_multiple(
+            "HBBII",
+            magic_value,
+            type_value,
+            subtype_value,
+            attributes.virtual_address,
+            attributes.size,
+        )
+        
+        # Pack label (16 bytes to match unpacker format)
+        label_bytes = attributes.name.encode('ascii')[:16]
+        serializer.write(label_bytes.ljust(16, b'\x00'))
+        
+        # Pack flags
+        flag_value = attributes.flag.value if isinstance(attributes.flag.value, int) else 0
+        serializer.pack_uint(flag_value)
+
+    async def modify(self, resource: Resource, config: ESPPartitionTableEntryModifierConfig):
+        original_entry = await resource.view_as(ESPPartitionTableEntry)
+        # new_original_entry = dataclasses.asdict(original_entry)
+        # new_config = dataclasses.asdict(config)
+        # for k in new_original_entry.keys():
+        #     if new_config[k] is not None:
+        #         new_original_entry[k] = new_config[k]
+        # new_entry = ESPPartitionTableEntry(**new_original_entry)
+        # config = ESPPartitionTableEntryModifierConfig(**new_config)
+        original_entry.type = config.type if config.type is not None else original_entry.type
+        original_entry.subtype = config.subtype if config.subtype is not None else original_entry.subtype
+        original_entry.virtual_address = config.virtual_address if config.virtual_address is not None else original_entry.virtual_address
+        original_entry.size = config.size if config.size is not None else original_entry.size
+        original_entry.name = config.name if config.name is not None else original_entry.name
+        original_entry.flag = config.flag if config.flag is not None else original_entry.flag
+        # await self.serialize_and_patch(resource, new_entry, config)
+        new_data = await self.serialize(resource, original_entry)
+        patch_length = await resource.get_data_length()
+        resource.queue_patch(Range.from_size(0, patch_length), new_data)
+        inst = original_entry.get_attributes_instances() # type: ignore
+        [resource.add_attributes(i) for i in inst.values()]
+
+    async def serialize(self, resource: Resource, updated_attributes: ESPPartitionTableEntry) -> bytes:
+        buf = io.BytesIO()
+        serializer = BinarySerializer(
+            buf,
+            endianness=Endianness.LITTLE_ENDIAN,
+        )
+        self.populate_serializer(serializer, updated_attributes)
+        return buf.getvalue()
+
+    # async def serialize_and_patch(
+    #     self,
+    #     resource: Resource,
+    #     original_attributes: Any,
+    #     modifier_config: ComponentConfig,
+    # ):
+    #     new_attributes = ResourceAttributes.replace_updated(original_attributes, modifier_config)
+    #     new_data = await self.serialize(resource, new_attributes)
+    #     patch_length = await resource.get_data_length()
+    #     resource.queue_patch(Range.from_size(0, patch_length), new_data)
+    #     resource.add_attributes(new_attributes)
