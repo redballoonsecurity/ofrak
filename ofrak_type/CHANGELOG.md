@@ -13,7 +13,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 
 ### Fixed
-- `intersect` method in `Range` now raises a `ValueError` when ranges touch at a single point but do not intersect ([#591](https://github.com/redballoonsecurity/ofrak/pull/591))
 - Fix ValueError after analyzing ELF with invalid MemoryPermissions ([#581](https://github.com/redballoonsecurity/ofrak/pull/581))
 
 ## [2.2.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-type-v2.1.0...ofrak-type-v2.2.0)
