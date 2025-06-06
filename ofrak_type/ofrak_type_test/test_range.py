@@ -74,6 +74,7 @@ def test_overlaps(range_1: Range, range_2: Range, expected_result: bool):
         (Range(10, 20), Range(0, 30), Range(10, 20)),
         (Range(10, 20), Range(10, 30), Range(10, 20)),
         (Range(10, 20), Range(15, 30), Range(15, 20)),
+        (Range(10, 20), Range(10, 20), Range(10, 20)),
     ],
 )
 def test_intersect(range_1: Range, range_2: Range, expected_range: Range):
@@ -101,6 +102,14 @@ def test_intersect_value_error():
                 Range(8, 10),
             ),
         ),
+        (
+            Range(0, 10),
+            Range(5, 5),
+            (
+                Range(0, 5),
+                Range(5, 10),
+            ),
+        ),  # split with empty range
     ],
 )
 def test_split(range_1: Range, range_2: Range, expected_result: Iterable[Range]):
@@ -146,6 +155,16 @@ REMOVE_SUBRANGES_TEST_CASES = [
     ([], [Range(0x20, 0x40)], []),
     ([Range(0x20, 0x40)], [], [Range(0x20, 0x40)]),
     ([Range(5, 10), Range(12, 14)], [Range(0, 20)], []),
+    (
+        [Range(0, 30)],
+        [Range(5, 10), Range(15, 20), Range(25, 30)],
+        [Range(0, 5), Range(10, 15), Range(20, 25)],
+    ),  # remove with gaps
+    (
+        [Range(0x20, 0x40), Range(0x60, 0x80)],
+        [Range(0x20, 0x40), Range(0x60, 0x80)],
+        [],
+    ),  # remove everything, exact match
 ]
 
 
@@ -171,6 +190,13 @@ def test_translate(test_range: Range, offset: int, expected_range: Range):
 def test_translate_value_error(test_range: Range, offset: int):
     with pytest.raises(ValueError):
         test_range.translate(offset)
+
+
+def test_translate_overflow():
+    """Test translate with values that would overflow."""
+    r = Range(Range.MAX - 10, Range.MAX)
+    with pytest.raises(OverflowError):
+        r.translate(100)
 
 
 def test_repr():
@@ -294,3 +320,75 @@ def test_range_iterable_for_loop():
     for iteration in range(2):
         range_iterated_items = [i for i in r]
         assert range_iterated_items == list(range(10, 12))
+
+
+def test_empty_range():
+    """Test behavior of empty ranges (start == end)."""
+    r = Range(10, 10)
+    assert r.length() == 0
+    assert 10 not in r
+    assert list(r) == []
+    assert r.overlaps(Range(0, 20))
+    assert r.within(Range(0, 20))
+
+
+def test_negative_ranges():
+    """Test ranges with negative values."""
+    r = Range(-10, -5)
+    assert r.length() == 5
+    assert -7 in r
+    assert -10 in r
+    assert -5 not in r
+    assert list(r) == [-10, -9, -8, -7, -6]
+
+
+def test_very_large_ranges():
+    """Test ranges near Range.MAX."""
+    # Test with large values
+    large_start = Range.MAX - 100
+    r = Range(large_start, Range.MAX)
+    assert r.length() == 100
+    assert large_start in r
+    assert Range.MAX - 1 in r
+    assert Range.MAX not in r
+
+
+def test_chunk_ranges_invalid_chunk_size():
+    """Test chunk_ranges with invalid chunk sizes."""
+    ranges = [Range(0, 10)]
+
+    with pytest.raises(ValueError):
+        chunk_ranges(ranges, 0)
+
+    with pytest.raises(ValueError):
+        chunk_ranges(ranges, -1)
+
+
+def test_contains_constant_time():
+    """Verify that __contains__ is more efficient than iteration."""
+    import time
+
+    # Create a very large range
+    large_range = Range(0, 1_000_000)
+
+    # Test __contains__ (should be constant time)
+    start_time = time.perf_counter()
+    for _ in range(10000):
+        assert 500_000 in large_range
+    contains_time = time.perf_counter() - start_time
+
+    # Test iteration (should be much slower for middle values)
+    start_time = time.perf_counter()
+    for _ in range(10):  # Much fewer iterations because this is slow
+        found = False
+        for val in large_range:
+            if val == 500_000:
+                found = True
+                break
+        assert found
+    iter_time = time.perf_counter() - start_time
+
+    # The iteration method should be significantly slower
+    # We don't assert exact ratios due to system variability
+    # but __contains__ should be orders of magnitude faster
+    assert contains_time < iter_time
