@@ -8,7 +8,6 @@
 ```bash
 pip install ofrak
 ofrak unpack -x -r --gui <path-to-file>
-
 ```
 
 This will install OFRAK, run OFRAK to unpack a target file, then open it in the GUI.
@@ -29,7 +28,7 @@ OFRAK does not do its own disassembly, and instead re-uses several existing, cap
 To quickly start disassembling using OFRAK, we recommend installing two more OFRAK Python packages:
 
 ```bash
-pip install ofrak_angr ofrak_capstone
+pip install ofrak-angr ofrak-capstone
 ```
 
 These packages leverage [angr](https://angr.io/) and [capstone](https://www.capstone-engine.org/) to disassemble machine code. 
@@ -38,7 +37,6 @@ After running the above `pip install` command, modify the `ofrak unpack` command
 
 ```shell
 ofrak unpack -x --gui -r --backend angr <path-to-file>
-
 ```
 
 This will get OFRAK to disassemble any code it recognizes in the files it unpacks.
@@ -49,10 +47,13 @@ If that is the case, consider removing the `-r` flag so that OFRAK only unpacks 
 
 ## GUI
 
-OFRAK comes with a web-based GUI frontend for visualizing and manipulating binary targets. The OFRAK GUI runs by default in most of the OFRAK images, including the tutorial image. (Note that for now, the frontend is only built in the `ofrak_ghidra` and `ofrak_binary_ninja` analyzer backend configurations.)
+OFRAK comes with a web-based GUI frontend for visualizing and manipulating binary targets. The GUI can be launched in several ways:
 
-To access the GUI, navigate to <http://localhost:8080> and start by dropping anything you'd like into it!
+1. Using the `--gui` flag with the `ofrak unpack` command (as shown above)
+2. Running `ofrak gui` to start the GUI server
+3. When using Docker images, the GUI typically runs by default
 
+To access the GUI, navigate to <http://localhost:8080> (or the port specified with `-gp/--gui-port`) and start by dropping anything you'd like into it!
 
 ## Building from Docker
 
@@ -83,18 +84,25 @@ If you would like to generate the docs yourself for offline viewing, follow the 
 
 ## Guides and examples
 
-Once you've completed the tutorial, you'll be interested in the following resources (which you can see on the left of this page):
+Once you've completed the tutorial, you'll be interested in the following resources:
 
-- More details about how OFRAK works and how to use it: `User Guide` and `Contributor Guide`;
-- References: `Examples`, covering common tasks you might want to perform with OFRAK, and the `Code Reference`.
+- **User Guide**: More details about how OFRAK works and how to use it
+- **Contributor Guide**: Information on extending OFRAK and contributing to the project
+- **Examples**: Code examples covering common tasks you might want to perform with OFRAK
+- **Code Reference**: Complete API documentation
+
+You can find all of these in the documentation navigation on the left side of this page.
 
 ## Frequently Asked Questions (FAQ)
 
 _Why do my CodeRegions not have any code?_
 
-- You probably forgot to discover the analysis/disassembler backend you intended to use.
-- When **not** using the Ghidra analysis backend you will also need to discover the capstone components.
-- Check out the [Ghidra Backend User Guide](user-guide/disassembler-backends/ghidra.md) and [Binary Ninja Backend User Guides](user-guide/disassembler-backends/binary_ninja.md).
+- You probably forgot to discover the analysis/disassembler backend you intended to use. For instance, use `ofrak.discover(ofrak_ghidra)` to discover the Ghidra components.
+- When **not** using the Ghidra analysis backend you will also need to discover the capstone components (`ofrak.discover(ofrak_capstone)`)
+- User guides are available:
+    - [Ghidra Backend User Guide](user-guide/disassembler-backends/ghidra.md)
+    - [Binary Ninja Backend User Guide](user-guide/disassembler-backends/binary_ninja.md)
+    - [Angr Backend User Guide](user-guide/disassembler-backends/angr.md)
 
 _I ran a modifier and flushed the resource. The bytes did change, but my view is reporting the same values. Why?_
 

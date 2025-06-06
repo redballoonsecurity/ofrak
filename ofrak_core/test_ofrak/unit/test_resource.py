@@ -185,7 +185,7 @@ async def test_get_most_specific_tags(resource: Resource):
 
 @pytest.fixture(autouse=True)
 def mock_ofrak_component(ofrak):
-    ofrak.injector.discover(mock_component)
+    ofrak.discover(mock_component)
 
 
 @pytest.mark.asyncio

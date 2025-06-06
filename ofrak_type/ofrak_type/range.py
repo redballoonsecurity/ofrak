@@ -104,6 +104,10 @@ class Range:
             return self
         if offset + self.start < 0:
             raise ValueError("The start of the translated range cannot be negative")
+
+        if self.end + offset > Range.MAX:
+            raise OverflowError("Translated range exceeds maximum allowed value")
+
         return Range(self.start + offset, self.end + offset)
 
     def __repr__(self) -> str:
@@ -169,6 +173,9 @@ def chunk_ranges(ranges: List[Range], chunk_size: int) -> List[Range]:
     :param chunk_size:
     :return: equal sized regions of Ranges
     """
+    if chunk_size <= 0:
+        raise ValueError("chunk_size must be positive")
+
     regions = Range.merge_ranges(ranges)
     chunked = []
     for region in regions:
