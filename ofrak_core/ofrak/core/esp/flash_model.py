@@ -153,6 +153,7 @@ class ESPFlashSectionStructure(ResourceView):
     Base class for section headers and sections, links them via index.
     :param section_index: Index of the section
     """
+
     section_index: int
 
     @index
@@ -164,6 +165,7 @@ class ESPFlashSectionStructure(ResourceView):
         """
         return self.section_index
 
+
 @dataclass
 class ESPFlashSection(ESPFlashSectionStructure, NamedProgramSection):
     """
@@ -173,12 +175,14 @@ class ESPFlashSection(ESPFlashSectionStructure, NamedProgramSection):
     :param size: size of the partition/section.
     """
 
+
 @dataclass
 class ESPPartitionStructure(ResourceView):
     """
     Base class for partition entries and sections, links them via index.
     :param partition_index: Index of the partition.
     """
+
     partition_index: int
 
     @index
@@ -190,6 +194,7 @@ class ESPPartitionStructure(ResourceView):
         """
         return self.partition_index
 
+
 @dataclass
 class ESPPartitionTableEntry(ESPPartitionStructure, ESPFlashSection):
     """
@@ -199,6 +204,7 @@ class ESPPartitionTableEntry(ESPPartitionStructure, ESPFlashSection):
     :param subtype: subtype of the partition/section.
     :param flag: flag of the partition/section.
     """
+
     type: ESPPartitionType
     subtype: ESPPartitionSubtype
     flag: ESPPartitionFlag
@@ -211,7 +217,7 @@ class ESPPartitionTableEntry(ESPPartitionStructure, ESPFlashSection):
         """
         # Get the flash resource (parent of parent - grandparent)
         flash_resource = await (await self.resource.get_parent()).get_parent()
-        
+
         return await flash_resource.get_only_child_as_view(
             ESPPartition,
             ResourceFilter(
@@ -223,6 +229,7 @@ class ESPPartitionTableEntry(ESPPartitionStructure, ESPFlashSection):
                 ],
             ),
         )
+
 
 @dataclass
 class ESPPartition(ESPPartitionStructure, ESPFlashSection):
@@ -250,20 +257,21 @@ class ESPPartition(ESPPartitionStructure, ESPFlashSection):
             ),
         )
 
+
 @dataclass
 class ESPPartitionTable(ESPFlashSection):
     """
     ESP Paritition Table.
     """
-    
+
     async def get_entries(self) -> Iterable[ESPPartitionTableEntry]:
         await self.resource.unpack()
-        
+
         return await self.resource.get_children_as_view(
             ESPPartitionTableEntry,
             ResourceFilter(tags=(ESPPartitionTableEntry,)),
         )
-    
+
     async def get_section_by_name(self, name: str) -> ESPPartition:
         """
         Get a specific `ESPPartition` by its name.
@@ -282,6 +290,7 @@ class ESPPartitionTable(ESPFlashSection):
             ),
         )
 
+
 @dataclass
 class ESPFlash(Program):
     """
@@ -298,9 +307,9 @@ class ESPFlash(Program):
             ESPFlashSection,
             ResourceFilter(
                 tags=(ESPFlashSection,),
-            )
+            ),
         )
-    
+
     async def get_section_by_name(self, name: str) -> ESPFlashSection:
         """
         Get a specific `ESPSection` by its name.
@@ -315,10 +324,12 @@ class ESPFlash(Program):
             ESPFlashSection,
             ResourceFilter(
                 tags=(ESPFlashSection,),
-                attribute_filters=(ResourceAttributeValueFilter(ESPFlashSection.SectionName, name),),
+                attribute_filters=(
+                    ResourceAttributeValueFilter(ESPFlashSection.SectionName, name),
+                ),
             ),
         )
-    
+
     async def get_partition_table(self) -> ESPPartitionTable:
         return await self.resource.get_only_child_as_view(
             ESPPartitionTable,

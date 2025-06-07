@@ -1,6 +1,4 @@
 import logging
-import os
-import tempfile
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from typing import Iterable, Optional
@@ -14,11 +12,10 @@ from ofrak.service.resource_service_i import (
     ResourceFilter,
 )
 from ofrak.service.resource_service_i import ResourceFilter
-from ofrak_type.range import Range
 from ofrak.model.component_model import ComponentConfig
 
-from esptool.bin_image import ESP8266V2FirmwareImage #type: ignore
-from esptool.targets import ROM_LIST #type: ignore
+from esptool.bin_image import ESP8266V2FirmwareImage  # type: ignore
+from esptool.targets import ROM_LIST  # type: ignore
 
 from tempfile import _TemporaryFileWrapper
 
@@ -189,6 +186,7 @@ class ESPAppFlashMode(Enum):
     DIO = 2
     DOUT = 3
 
+
 # Specific Flash Size Enums for each chip type
 class FlashSizeESP8266(IntEnum):
     S_512KB = 0x00
@@ -201,12 +199,14 @@ class FlashSizeESP8266(IntEnum):
     S_8MB = 0x80
     S_16MB = 0x90
 
+
 class FlashSizeESP32(IntEnum):
     S_1MB = 0x00
     S_2MB = 0x10
     S_4MB = 0x20
     S_8MB = 0x30
     S_16MB = 0x40
+
 
 class FlashSizeESP32S2S3(IntEnum):
     S_1MB = 0x00
@@ -218,22 +218,26 @@ class FlashSizeESP32S2S3(IntEnum):
     S_64MB = 0x60
     S_128MB = 0x70
 
+
 class FlashFrequencyESP8266(IntEnum):
     F_40MHz = 0
     F_26MHz = 1
     F_20MHz = 2
-    F_80MHz = 0xf
+    F_80MHz = 0xF
+
 
 class FlashFrequencyESP32(IntEnum):
     ITFF_0MHz = 0
     ITFF_1MHz = 1
     ITFF_2MHz = 2
-    ITFF_FMHz = 0xf
+    ITFF_FMHz = 0xF
+
 
 class FlashFrequencyESP32C6(IntEnum):
     F_80MHz = 0
     F_40MHz = 0  # Note: Frequency 0 can mean either 80MHz or 40MHz based on MSPI clock source mode.
     F_20MHz = 2
+
 
 class FlashSize:
     @staticmethod
@@ -245,6 +249,7 @@ class FlashSize:
                 return FlashSizeESP32S2S3(value)
         return FlashSizeESP32(value)
 
+
 class FlashFrequency:
     @staticmethod
     def from_value(value: int, chip_type: Optional[str] = None):
@@ -254,7 +259,8 @@ class FlashFrequency:
             elif chip_type.lower().endswith("c6"):
                 return FlashFrequencyESP32C6(value)
         return FlashFrequencyESP32(value)
-        
+
+
 ######################
 # UNPACKER RESOURCES #
 ######################
@@ -484,6 +490,7 @@ class ESPAppSectionHeader(ESPAppSectionStructure):
             ),
         )
 
+
 @dataclass
 class ESPApp(Program):
     """
@@ -521,6 +528,7 @@ class ESPApp(Program):
             ),
         )
 
+
 ######################
 # ANALYZER RESOURCES #
 ######################
@@ -531,6 +539,7 @@ class ESPAppAttributes(ResourceAttributes):
     calculated_checksum: int
     hash_valid: bool
     calculated_hash: int
+
 
 @dataclass
 class ESPAppConfig(ComponentConfig):
@@ -551,6 +560,7 @@ class ESPAppHeaderModifierConfig(ComponentConfig):
     flash_frequency: Optional[int] = None
     entry_point: Optional[int] = None
 
+
 @dataclass
 class ESPAppExtendedHeaderModifierConfig(ComponentConfig):
     wp_pin: Optional[int] = None
@@ -566,6 +576,7 @@ class ESPAppExtendedHeaderModifierConfig(ComponentConfig):
     max_chip_rev: Optional[int] = None
     hash_appended: Optional[bool] = None
 
+
 @dataclass
 class ESPAppDescriptionModifierConfig(ComponentConfig):
     secure_version: Optional[int] = None
@@ -577,6 +588,7 @@ class ESPAppDescriptionModifierConfig(ComponentConfig):
     idf_ver: Optional[bytes] = None
     app_eld_sha256: Optional[bytes] = None
     reserv2: Optional[bytes] = None
+
 
 @dataclass
 class ESPBootloaderDescriptionModifierConfig(ComponentConfig):

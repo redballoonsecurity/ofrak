@@ -97,7 +97,6 @@ __all__ = [
     "ESPAppSectionHeaderModifier",
     "ESPAppDescriptionModifier",
     "ESPBootloaderDescriptionModifier",
-    
     # App models
     "ESPAppHeader",
     "ESPAppExtendedHeader",
@@ -131,14 +130,12 @@ __all__ = [
     "FlashFrequencyESP32C6",
     "FlashSize",
     "FlashFrequency",
-    
     # Flash components
     "ESPFlash",
     "ESPFlashIdentifier",
     "ESPFlashUnpacker",
     "ESPFlashAnalyzer",
     "ESPPartitionTableEntryModifier",
-    
     # Flash models
     "ESPPartitionTable",
     "ESPPartition",
