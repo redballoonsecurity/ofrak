@@ -36,37 +36,41 @@ from ofrak.core.esp.flash_model import ESPFlashSection
 from ofrak.core.esp.app_model import *
 
 
-def determine_chip(f: _TemporaryFileWrapper) -> str:
+def determine_chip(data: bytes) -> str:
     """
     Determines the chip type based on the firmware image.
 
-    :param f: A temporary file object containing the firmware image
+    :param data: Bytes containing the firmware image data
     :return: The chip name as a string, defaults to 'esp8266' if not determined
     """
-    extended_header = f.read(16)
-    if extended_header[-1] not in [0, 1]:
+    # Check if we have enough data (need at least 24 bytes for extended header)
+    if len(data) < 24:
+        return "esp8266"
+    
+    # The extended header starts at offset 8, so byte 23 is the last byte of extended header
+    if data[23] not in [0, 1]:
         return "esp8266"
 
-    chip_id = int.from_bytes(extended_header[4:5], "little")
+    # The chip_id is at offset 12 (4th byte of extended header which starts at offset 8)
+    chip_id = data[12]
     for rom in [n for n in ROM_LIST if n.CHIP_NAME != "ESP8266"]:
         if chip_id == rom.IMAGE_CHIP_ID:
             return rom.CHIP_NAME.lower()
     return "esp8266"
 
 
-def check_magic(f: _TemporaryFileWrapper):
+def check_magic(data: bytes):
     """
     Checks the magic number of the firmware image to verify its validity.
 
-    :param f: A temporary file object containing the firmware image
+    :param data: Bytes containing the firmware image data
     :return: The magic number as an integer
-    :raises UnpackerError: If the file is empty or the magic number is invalid
+    :raises UnpackerError: If the data is empty or the magic number is invalid
     """
-    try:
-        common_header = f.read(8)
-        magic = common_header[0]
-    except IndexError:
+    if len(data) == 0:
         raise UnpackerError("File is empty")
+    
+    magic = data[0]
     if magic not in [
         ESPLoader.ESP_IMAGE_MAGIC,
         ESP8266V2FirmwareImage.IMAGE_V2_MAGIC,
@@ -85,13 +89,14 @@ async def get_esp_app(resource: Resource, config: Optional[ESPAppConfig]) -> ESP
         data = await resource.get_data()
         offset = data.find(b"\xE9")
         if offset > -1:
-            f.write(data[offset:])
+            esp_data = data[offset:]
+            f.write(esp_data)
             f.flush()
             f.seek(0)
         else:
             raise UnpackerError("This is not a valid ESP image " "(could not find magic number)")
-        magic = check_magic(f)
-        chip = determine_chip(f)
+        magic = check_magic(esp_data)
+        chip = determine_chip(esp_data)
         image = LoadFirmwareImage(chip, f.name)
         return ESPAppConfig(f, offset, magic, chip, image)
 
