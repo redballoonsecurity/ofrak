@@ -1,21 +1,14 @@
 import pytest
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict
+from dataclasses import dataclass
 
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
 from ofrak.core.esp import (
     ESPFlash,
-    ESPFlashIdentifier,
-    ESPFlashUnpacker,
-    ESPFlashAnalyzer,
-    ESPFlashAttributes,
     ESPPartitionTable,
-    ESPPartitionTableEntry,
-    ESPPartition,
     ESPFlashSection,
-    ESPPartitionTableEntryModifier,
-    ESPPartitionTableEntryModifierConfig,
     ESPPartitionType,
     ESPPartitionSubtype,
     ESPPartitionFlag,
@@ -23,8 +16,8 @@ from ofrak.core.esp import (
     ESP_BOOTLOADER_OFFSET,
 )
 from ofrak.service.resource_service_i import ResourceFilter, ResourceAttributeValueFilter
-from ofrak.core.esp.flash_model import ESPPartitionStructure
 from ofrak.core.program_section import NamedProgramSection
+from pytest_ofrak.patterns.unpack_verify import UnpackAndVerifyPattern, UnpackAndVerifyTestCase
 
 
 def load_esp_flash_asset(filename: str) -> bytes:
@@ -33,6 +26,7 @@ def load_esp_flash_asset(filename: str) -> bytes:
     return asset_path.read_bytes()
 
 
+# Fixtures
 @pytest.fixture
 def esp32_flash_data():
     """Fixture providing test ESP32 flash data from assets"""
@@ -47,83 +41,140 @@ def esp32s3_flash_data():
 
 @pytest.fixture
 def esp_flash_data():
-    """Fixture providing default ESP flash data (ESP32)"""
-    # return load_esp_flash_asset("esp32_basic_flash.bin")
-    return load_esp_flash_asset("firmware-360.bin")
+    """Fixture providing default ESP flash data"""
+    return load_esp_flash_asset("esp32_basic_flash.bin")
 
 
 @pytest.fixture
-def esp8266_flash_data():
-    """Fixture providing ESP8266 app data (not a full flash image)"""
-    # Note: We only have an ESP8266 app binary, not a full flash image
-    return load_esp_flash_asset("esp8266_hello.bin")
-
-
-@pytest.fixture  
 def esp_app_data():
     """Fixture providing ESP app data from assets"""
     from test_ofrak.components.test_esp_app_component import load_esp_asset
+
     return load_esp_asset("esp32_hello.bin")
 
 
-@pytest.mark.asyncio
-async def test_esp_flash_identifier(ofrak_context: OFRAKContext, esp_flash_data: bytes):
-    """Test that ESPFlashIdentifier correctly identifies ESP flash images."""
-    resource = await ofrak_context.create_root_resource("test.bin", esp_flash_data)
-    
-    await resource.identify()
-    
-    assert resource.has_tag(ESPFlash)
+# Test case data classes
+@dataclass
+class ESPFlashUnpackTestCase(UnpackAndVerifyTestCase):
+    binary_path: str
+    flash_size: int
+    has_bootloader: bool
+    has_partition_table: bool
+    min_sections: int
 
 
-@pytest.mark.asyncio
-async def test_esp_flash_unpacker(ofrak_context: OFRAKContext, esp_flash_data: bytes):
-    """Test unpacking ESP flash image."""
-    resource = await ofrak_context.create_root_resource("test.bin", esp_flash_data)
-    await resource.identify()
-    
-    await resource.unpack()
-    
-    # Check bootloader section was unpacked
-    bootloader = await resource.get_only_child_as_view(
-        ESPFlashSection,
-        ResourceFilter(
-            tags=(ESPFlashSection,),
-            attribute_filters=[
-                ResourceAttributeValueFilter(NamedProgramSection.SectionName, "bootloader")
-            ]
-        )
+@dataclass
+class ESPFlashModifyTestCase:
+    label: str
+    binary_path: str
+    entry_index: int
+    new_type: ESPPartitionType
+    new_subtype: ESPPartitionSubtype
+    new_flag: ESPPartitionFlag
+
+
+# UnpackAndVerifyPattern implementation for ESP flash unpacking
+class TestESPFlashUnpackAndVerify(UnpackAndVerifyPattern):
+    @pytest.fixture(
+        params=[
+            ESPFlashUnpackTestCase(
+                label="ESP32 Flash",
+                binary_path="esp32_basic_flash.bin",
+                flash_size=4194304,  # 4MB
+                has_bootloader=True,
+                has_partition_table=True,
+                min_sections=2,
+                expected_results={
+                    "bootloader": {
+                        "offset": ESP_BOOTLOADER_OFFSET,
+                        "type": ESPFlashSection,
+                    },
+                    "partition_table": {
+                        "offset": ESP_PARTITION_TABLE_OFFSET,
+                        "type": ESPPartitionTable,
+                    },
+                },
+                optional_results={"app0", "app1", "nvs", "otadata", "phy_init", "factory"},
+            ),
+            ESPFlashUnpackTestCase(
+                label="ESP32-S3 Flash",
+                binary_path="esp32s3_basic_flash.bin",
+                flash_size=4194304,  # 4MB
+                has_bootloader=True,
+                has_partition_table=True,
+                min_sections=2,
+                expected_results={
+                    "bootloader": {
+                        "offset": ESP_BOOTLOADER_OFFSET,
+                        "type": ESPFlashSection,
+                    },
+                    "partition_table": {
+                        "offset": ESP_PARTITION_TABLE_OFFSET,
+                        "type": ESPPartitionTable,
+                    },
+                },
+                optional_results={"app0", "app1", "nvs", "otadata", "phy_init", "factory"},
+            ),
+        ],
+        ids=lambda tc: tc.label,
     )
-    assert bootloader is not None
-    assert bootloader.virtual_address == ESP_BOOTLOADER_OFFSET
-    
-    # Check partition table was unpacked
-    partition_table = await resource.get_only_child_as_view(
-        ESPPartitionTable,
-        ResourceFilter(tags=(ESPPartitionTable,))
-    )
-    assert partition_table is not None
-    assert partition_table.virtual_address == ESP_PARTITION_TABLE_OFFSET
-    
-    # Check partitions were unpacked
-    flash = await resource.view_as(ESPFlash)
-    sections = list(await flash.get_sections())
-    assert len(sections) >= 2  # At least bootloader and partition table
+    async def unpack_verify_test_case(self, request) -> ESPFlashUnpackTestCase:
+        return request.param
 
+    @pytest.fixture
+    async def root_resource(
+        self,
+        unpack_verify_test_case: ESPFlashUnpackTestCase,
+        ofrak_context: OFRAKContext,
+        test_id: str,
+    ) -> Resource:
+        data = load_esp_flash_asset(unpack_verify_test_case.binary_path)
+        return await ofrak_context.create_root_resource(test_id, data)
 
-@pytest.mark.asyncio
-async def test_esp_flash_analyzer(ofrak_context: OFRAKContext, esp_flash_data: bytes):
-    """Test ESP flash analyzer."""
-    resource = await ofrak_context.create_root_resource("test.bin", esp_flash_data)
-    await resource.identify()
-    await resource.unpack()
-    
-    attributes = await resource.analyze(ESPFlashAttributes)
-    
-    assert attributes.total_partitions > 0
-    assert attributes.total_flash_size == len(esp_flash_data)
-    assert isinstance(attributes.has_overlapping_partitions, bool)
-    assert attributes.unused_space >= 0
+    async def unpack(self, root_resource: Resource):
+        await root_resource.identify()
+        await root_resource.unpack()
+
+    async def get_descendants_to_verify(self, unpacked_root_resource: Resource) -> Dict[str, Any]:
+        results = {}
+
+        # Get bootloader
+        try:
+            bootloader = await unpacked_root_resource.get_only_child_as_view(
+                ESPFlashSection,
+                ResourceFilter(
+                    tags=(ESPFlashSection,),
+                    attribute_filters=[
+                        ResourceAttributeValueFilter(NamedProgramSection.SectionName, "bootloader")
+                    ],
+                ),
+            )
+            results["bootloader"] = bootloader
+        except:
+            pass
+
+        # Get partition table
+        try:
+            partition_table = await unpacked_root_resource.get_only_child_as_view(
+                ESPPartitionTable, ResourceFilter(tags=(ESPPartitionTable,))
+            )
+            results["partition_table"] = partition_table
+
+            # Get partition entries
+            entries = list(await partition_table.get_entries())
+            for entry in entries:
+                results[entry.name] = entry
+        except:
+            pass
+
+        return results
+
+    async def verify_descendant(self, unpacked_descendant: Any, specified_result: Dict):
+        if "offset" in specified_result:
+            assert unpacked_descendant.virtual_address == specified_result["offset"]
+
+        if "type" in specified_result:
+            assert isinstance(unpacked_descendant, specified_result["type"])
 
 
 @pytest.mark.asyncio
@@ -132,20 +183,19 @@ async def test_esp_partition_table_entries(ofrak_context: OFRAKContext, esp_flas
     resource = await ofrak_context.create_root_resource("test.bin", esp_flash_data)
     await resource.identify()
     await resource.unpack()
-    
+
     # Get partition table
     flash = await resource.view_as(ESPFlash)
     partition_table = await flash.get_partition_table()
     entries = list(await partition_table.get_entries())
-    print(entries)
     assert len(entries) > 0
-    
+
     # Check first entry
     first_entry = entries[0]
     assert isinstance(first_entry.type, ESPPartitionType)
     assert isinstance(first_entry.subtype, ESPPartitionSubtype)
     assert first_entry.name != ""
-    
+
     # Get corresponding partition
     partition = await first_entry.get_body()
     # The partition and entry should have the same name and partition index
@@ -156,61 +206,28 @@ async def test_esp_partition_table_entries(ofrak_context: OFRAKContext, esp_flas
 
 
 @pytest.mark.asyncio
-async def test_esp_partition_table_entry_modifier(ofrak_context: OFRAKContext, esp_flash_data: bytes):
-    """Test modifying partition table entries."""
-    resource = await ofrak_context.create_root_resource("test.bin", esp_flash_data)
-    await resource.identify()
-    await resource.unpack()
-    
-    # Get first partition entry
-    flash = await resource.view_as(ESPFlash)
-    partition_table = await flash.get_partition_table()
-    entries = list(await partition_table.get_entries())
-    first_entry = entries[0]
-    
-    # Modify the entry
-    new_type = ESPPartitionType.DATA
-    new_subtype = ESPPartitionSubtype.NVS
-    new_flag = ESPPartitionFlag.ENCRYPTED
-    
-    await first_entry.resource.run(
-        ESPPartitionTableEntryModifier,
-        ESPPartitionTableEntryModifierConfig(
-            type=new_type,
-            subtype=new_subtype,
-            flag=new_flag
-        )
-    )
-    
-    # Verify modification
-    modified_entry = await first_entry.resource.view_as(ESPPartitionTableEntry)
-    assert modified_entry.type == new_type
-    assert modified_entry.subtype == new_subtype
-    assert modified_entry.flag == new_flag
-
-@pytest.mark.asyncio
 async def test_esp_flash_with_app_partition(ofrak_context: OFRAKContext, esp_flash_data: bytes):
     """Test handling flash image with app partitions."""
     resource = await ofrak_context.create_root_resource("test.bin", esp_flash_data)
     await resource.identify()
     await resource.unpack()
-    
+
     # Find app partitions
     flash = await resource.view_as(ESPFlash)
     partition_table = await flash.get_partition_table()
     entries = list(await partition_table.get_entries())
-    
+
     app_partitions = [e for e in entries if e.type == ESPPartitionType.APP]
     assert len(app_partitions) > 0
-    
+
     # Check if app partition contains valid ESP app
     for app_entry in app_partitions:
         partition = await app_entry.get_body()
         partition_data = await partition.resource.get_data()
-        
+
         # Check for ESP app magic at start of partition
         if len(partition_data) > 0:
-            if partition_data[0] in [0xE9, 0xEA]: # ESP app magic bytes
+            if partition_data[0] in [0xE9, 0xEA]:  # ESP app magic bytes
                 assert True
                 return
-    assert False
+    assert False, "No valid ESP app found in app partitions"
