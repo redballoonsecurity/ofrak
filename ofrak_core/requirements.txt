@@ -23,4 +23,4 @@ tempfile312~=1.0.1
 typeguard~=2.13.3
 ubi-reader==0.8.5
 xattr==0.10.1;platform_system!="Windows"
-esptool
+esptool==4.8.1
