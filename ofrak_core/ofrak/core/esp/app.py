@@ -30,7 +30,7 @@ from ofrak_io.deserializer import BinaryDeserializer
 from ofrak_io.serializer import BinarySerializer
 from ofrak_type.endianness import Endianness
 
-from tempfile import NamedTemporaryFile, _TemporaryFileWrapper
+from tempfile import NamedTemporaryFile
 from ofrak.core.esp.flash_model import ESPFlashSection
 
 from ofrak.core.esp.app_model import *
@@ -46,7 +46,7 @@ def determine_chip(data: bytes) -> str:
     # Check if we have enough data (need at least 24 bytes for extended header)
     if len(data) < 24:
         return "esp8266"
-    
+
     # The extended header starts at offset 8, so byte 23 is the last byte of extended header
     if data[23] not in [0, 1]:
         return "esp8266"
@@ -69,7 +69,7 @@ def check_magic(data: bytes):
     """
     if len(data) == 0:
         raise UnpackerError("File is empty")
-    
+
     magic = data[0]
     if magic not in [
         ESPLoader.ESP_IMAGE_MAGIC,
