@@ -102,7 +102,7 @@ If OFRAK runs in debug mode (`ofrak = OFRAK(logging.DEBUG)`), Java exceptions ap
 python output.
 
 The full Ghidra logs are in Ghidra's log file. By default in the prebuilt Ghidra OFRAK Docker image,
-this is `~/.ghidra/.ghidra_10.1.2_PUBLIC/application.log`.
+this is `~/.ghidra/.ghidra_11.3.2_PUBLIC/application.log`.
 
 You can check the log file path for your sysem by running 
 `python -m ofrak_ghidra.config dump` and searching for the `log_file` setting under `ghidra_install` .
