@@ -1,5 +1,9 @@
 # Download & install java and supervisor
-RUN apt-get update && apt-get install -y openjdk-21-jdk supervisor
+RUN cd /tmp && \
+    wget https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.deb && \
+    dpkg -i jdk-21_linux-x64_bin.deb && \
+    rm -f jdk-21_linux-x64_bin.deb && \
+    apt-get update && apt-get install -y supervisor
 
 # Download & install ghidra
 RUN mkdir -p /opt/rbs && \
