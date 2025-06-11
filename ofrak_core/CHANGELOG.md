@@ -83,6 +83,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Update aiohttp to 3.10.11 ([#522](https://github.com/redballoonsecurity/ofrak/pull/522))
 - Update pycryptogrpahy to version 43.0.3. ([#525](https://github.com/redballoonsecurity/ofrak/pull/525))
 - Bump `lief` dependency to 0.16.1 to address [vulnerability](https://github.com/redballoonsecurity/ofrak/security/dependabot/31) in lower versions ([#502](https://github.com/redballoonsecurity/ofrak/pull/502), [#562](https://github.com/redballoonsecurity/ofrak/pull/562/files))
+- Update `vite` and `esbuild` to newer versions to address dependabot warnings ([#595](https://github.com/redballoonsecurity/ofrak/pull/595))
 
 ## [3.2.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v3.1.0...ofrak-v3.2.0)
 ### Added
