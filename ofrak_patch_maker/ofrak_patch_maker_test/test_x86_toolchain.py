@@ -5,7 +5,11 @@ from ofrak_type import ArchInfo
 from ofrak_patch_maker.toolchain.gnu_x86 import GNU_X86_32_LINUX_EABI_10_3_0_Toolchain
 from ofrak_patch_maker.toolchain.gnu_x64 import GNU_X86_64_LINUX_EABI_10_3_0_Toolchain
 from ofrak_patch_maker_test import ToolchainUnderTest
-from ofrak_patch_maker_test.toolchain_c import run_hello_world_test, run_bounds_check_test
+from ofrak_patch_maker_test.toolchain_c import (
+    run_hello_world_test,
+    run_bounds_check_test,
+    run_relocatable_test,
+)
 from ofrak_type.architecture import (
     InstructionSet,
     ProcessorType,
@@ -53,3 +57,7 @@ def test_bounds_check(toolchain_under_test: ToolchainUnderTest):
 
 def test_hello_world(toolchain_under_test: ToolchainUnderTest):
     run_hello_world_test(toolchain_under_test)
+
+
+def test_relocatable(toolchain_under_test: ToolchainUnderTest, tmp_path):
+    run_relocatable_test(toolchain_under_test, tmp_path)
