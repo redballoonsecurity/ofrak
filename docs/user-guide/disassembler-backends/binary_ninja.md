@@ -67,6 +67,7 @@ import ofrak_binary_ninja
 
 ofrak = OFRAK()
 ofrak.discover(ofrak_binary_ninja)
+ofrak.discover(ofrak_capstone)
 ```
 
 !!! warning
