@@ -371,7 +371,7 @@ await root_resource.flush_data_to_disk(output_filename)
 ### Troubleshooting
 
 This package attempts to be rigid in the hopes that, by the time it allows the generation of a FEM object, the developer
-can be confident that the code and data will be placed correctly and any references to existing code and data in the target
+can be confident that the code and data will be placed correctly, and any references to existing code and data in the target
 binary are linked correctly. PatchMaker raises liberally when encountering an unexpected use case.
 
 Of course, just as when driving a compiler directly, there is no escaping compiler, linker, or assembler errors. While
