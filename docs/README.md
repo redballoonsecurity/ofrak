@@ -25,24 +25,15 @@ Before building the docs, OFRAK and all of its dependencies must be installed an
 ```
 python3.9 -m venv venv
 source venv/bin/activate
-cd ofrak_patch_maker
-pip install -e .
-cd ../ofrak_type
-pip install -e .
-cd ../ofrak_io
-pip install -e .
-cd ../ofrak_core
-pip install -e .
-pip install -r requirements-docs.txt
-cd ../disassemblers/ofrak_angr
-pip install -e .
-cd ../ofrak_binary_ninja
-pip install -e .
-cd ../ofrak_capstone
-pip install -e .
-cd ../ofrak_ghidra
-pip install -e .
-cd ../..
+pip install -e ofrak_patch_maker
+pip install -e ofrak_type
+pip install -e ofrak_io
+pip install -e ofrak_core
+pip install -r ofrak_core/requirements-docs.txt
+pip install -e disassemblers/ofrak_angr
+pip install -e disassemblers/ofrak_binary_ninja
+pip install -e disassemblers/ofrak_capstone
+pip install -e disassemblers/ofrak_ghidra
 ```
 
 ## Build the Docs
