@@ -2,11 +2,9 @@
 
 The latest build of the OFRAK docs can be found at [ofrak.com/docs](https://ofrak.com/docs).
 
-## Build the Docs Locally
-
 The source for OFRAK's documentation resides in this folder (`docs`), and is built using [MkDocs](https://www.mkdocs.org/). In the parent directory, [`mkdocs.yml`](../mkdocs.yml) contains the configuration for building the docs.
 
-Before building the docs, OFRAK and all of its dependencies must be installed and available on the Python path. 
+## Prepare environment for building the Docs inside the Docker container
 
 The documentation files (`docs/` and `mkdocs.yml`) likely need to be manually copied into the Docker container. If, for example, the container name is `rbs-ofrak-interactive`, the commands to copy in the necessary files would be:
 
@@ -19,6 +17,35 @@ docker cp examples/ rbs-ofrak-interactive:/
 # For Ghidra docs, copy them to the place MkDocs expects
 docker exec -it rbs-ofrak-interactive bash -c "mkdir -p /disassemblers; ln -s /ofrak_ghidra /disassemblers/ofrak_ghidra"
 ```
+
+## Prepare for building the Docs in a virtual environment
+
+Before building the docs, OFRAK and all of its dependencies must be installed and available on the Python path, for example:
+
+```
+python3.9 -m venv venv
+source venv/bin/activate
+cd ofrak_patch_maker
+pip install -e .
+cd ../ofrak_type
+pip install -e .
+cd ../ofrak_io
+pip install -e .
+cd ../ofrak_core
+pip install -e .
+pip install -r requirements-docs.txt
+cd ../disassemblers/ofrak_angr
+pip install -e .
+cd ../ofrak_binary_ninja
+pip install -e .
+cd ../ofrak_capstone
+pip install -e .
+cd ../ofrak_ghidra
+pip install -e .
+cd ../..
+```
+
+## Build the Docs
 
 To build the documentation locally, run one of the following commands from the root directory of the Docker (or from the root of the repo on macOS):
 

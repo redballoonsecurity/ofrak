@@ -28,7 +28,7 @@ OFRAK does not do its own disassembly, and instead re-uses several existing, cap
 To quickly start disassembling using OFRAK, we recommend installing two more OFRAK Python packages:
 
 ```bash
-pip install ofrak-angr ofrak-capstone
+pip install ofrak_angr ofrak_capstone
 ```
 
 These packages leverage [angr](https://angr.io/) and [capstone](https://www.capstone-engine.org/) to disassemble machine code. 
@@ -86,10 +86,10 @@ If you would like to generate the docs yourself for offline viewing, follow the 
 
 Once you've completed the tutorial, you'll be interested in the following resources:
 
-- **User Guide**: More details about how OFRAK works and how to use it
-- **Contributor Guide**: Information on extending OFRAK and contributing to the project
-- **Examples**: Code examples covering common tasks you might want to perform with OFRAK
-- **Code Reference**: Complete API documentation
+- [User Guide](user-guide/key-concepts/resource.html): More details about how OFRAK works and how to use it
+- [Contributor Guide](contributor-guide/getting-started.md): Information on extending OFRAK and contributing to the project
+- [Examples](examples/ex1_simple_string_modification.html): Code examples covering common tasks you might want to perform with OFRAK
+- [Code Reference](reference/ofrak/__main__.html): Complete API documentation
 
 You can find all of these in the documentation navigation on the left side of this page.
 

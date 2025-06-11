@@ -95,6 +95,7 @@ async def main(ofrak_context: OFRAKContext,):
 if __name__ == "__main__":
     ofrak = OFRAK(logging.INFO)
     ofrak.discover(ofrak_binary_ninja)
+    ofrak.discover(ofrak_capstone)
     ofrak.run(main)
 ```
 
