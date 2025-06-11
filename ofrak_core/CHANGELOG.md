@@ -53,6 +53,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Remove `Data` attribute to eliminate duplicative indexing in `ResourceService`, resulting in performance improvement for all workflows ([#589](https://github.com/redballoonsecurity/ofrak/pull/589))
 
 ### Changed
+- Replace `ofrak.injector.discover` with `ofrak.discover` in OFRAK tests ([#592](https://github.com/redballoonsecurity/ofrak/pull/592))
 - By default, the ofrak log is now `ofrak-YYYYMMDDhhmmss.log` rather than just `ofrak.log` and the name can be specified on the command line ([#480](https://github.com/redballoonsecurity/ofrak/pull/480))
 - In `GzipUnpacker`, use the standard python `zlib` library to compress small files and decompress all files. Use `pigz` if it is installed to compress files 1MB and larger. ([#472](https://github.com/redballoonsecurity/ofrak/pull/472) and [#485](https://github.com/redballoonsecurity/ofrak/pull/485))
 - Change `FreeSpaceModifier` & `PartialFreeSpaceModifier` behavior: an optional stub that isn't free space can be provided and fill-bytes for free space can be specified. ([#409](https://github.com/redballoonsecurity/ofrak/pull/409))
