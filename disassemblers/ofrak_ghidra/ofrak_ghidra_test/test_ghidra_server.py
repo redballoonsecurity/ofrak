@@ -13,7 +13,8 @@ def _get_ghidra_server_process() -> Optional[psutil.Process]:
         cmdline = proc.cmdline()
         if (
             len(cmdline) > 1
-            and re.match("/usr/lib/jvm/*/bin/java", cmdline[0])
+            # Match any non-slash character
+            and re.match("/usr/lib/jvm/[^/]*/bin/java", cmdline[0])
             and cmdline[1] == "-Dwrapper.pidfile=/run/wrapper.ghidraSvr.pid"
         ):
             return proc
