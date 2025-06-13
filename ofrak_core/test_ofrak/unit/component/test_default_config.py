@@ -13,7 +13,7 @@ from test_ofrak.unit.component.mock_component import (
 
 @pytest.fixture(autouse=True)
 def mock_unpacker_component(ofrak):
-    ofrak.injector.discover(mock_component)
+    ofrak.discover(mock_component)
 
 
 async def test_unpacker_with_default(ofrak_context: OFRAKContext):
