@@ -43,7 +43,7 @@ To change one or more of the options, the recommended process is:
 The options are:
 
 ghidra_install:
-  path: # Path to the root directory of the Ghidra install, e.g. /opt/rbs/ghidra_10.1.2_PUBLIC
+  path: # Path to the root directory of the Ghidra install, e.g. /opt/rbs/ghidra_11.3.2_PUBLIC
   log_file: # Path to the file that Ghidra will use for its logs
 
 server:
