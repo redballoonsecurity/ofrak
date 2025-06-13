@@ -79,7 +79,17 @@ the ofrak script.
 
 Define a `GhidraProjectConfig` and manually run the `GhidraProjectAnalyzer`:
 ```python
-async def main(ofrak_context: OFRAKContext,):
+import logging
+from ofrak import OFRAK
+from ofrak import OFRAKContext
+import ofrak_capstone
+import ofrak_ghidra
+from ofrak_ghidra.components.ghidra_analyzer import (
+    GhidraProjectConfig,
+    GhidraProjectAnalyzer
+)
+
+async def main(ofrak_context: OFRAKContext):
     resource = await ofrak_context.create_root_resource_from_file(<file_path>)
     ghidra_config = GhidraProjectConfig(<gzf_file_path>)
     await resource.run(GhidraProjectAnalyzer, ghidra_config)
