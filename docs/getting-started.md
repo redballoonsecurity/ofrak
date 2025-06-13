@@ -91,7 +91,6 @@ Once you've completed the tutorial, you'll be interested in the following resour
 - [Examples](examples/ex1_simple_string_modification.html): Code examples covering common tasks you might want to perform with OFRAK
 - [Code Reference](reference/ofrak/__main__.html): Complete API documentation
 
-You can find all of these in the documentation navigation on the left side of this page.
 
 ## Frequently Asked Questions (FAQ)
 
