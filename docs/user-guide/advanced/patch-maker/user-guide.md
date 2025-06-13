@@ -20,10 +20,10 @@ implementations can be found in `ofrak_patch_maker.toolchain`
 which mostly consist of linker script constructors and compiler flag mappings (to general options defined in
 [ToolchainConfig][ofrak_patch_maker.toolchain.model.ToolchainConfig]).
 
-The user writes source code to modifications to be made against a target binary. That source may reference symbols baked
+The user writes source code for modifications to be made against a target binary. That source may reference symbols baked
 into the target binary, so the user also declares external symbols in the source and their respective addresses in
 PatchMaker. Source targets, external symbols used by the patch, and toolchain configuration are passed to the selected
-toolchain backend. The backend translates these  definitions into toolchain-specific command-line arguments and linker
+toolchain backend. The backend translates these definitions into toolchain-specific command-line arguments and linker
 scripts, then runs the toolchain compiler on the generated results.
 
 ```
@@ -371,7 +371,7 @@ await root_resource.flush_data_to_disk(output_filename)
 ### Troubleshooting
 
 This package attempts to be rigid in the hopes that, by the time it allows the generation of a FEM object, the developer
-can be confident that the code, data will be placed correctly and any references to existing code, data in the target
+can be confident that the code and data will be placed correctly, and any references to existing code and data in the target
 binary are linked correctly. PatchMaker raises liberally when encountering an unexpected use case.
 
 Of course, just as when driving a compiler directly, there is no escaping compiler, linker, or assembler errors. While

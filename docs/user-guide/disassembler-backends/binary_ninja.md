@@ -62,8 +62,13 @@ The recommended Binary Ninja version to use with OFRAK is 3.2.3814. If you are r
 To use Binary Ninja, you need to discover the components at setup-time with:
 
 ```python
-ofrak = OFRAK(logging.INFO)
-ofrak.injector.discover(ofrak_binary_ninja)
+from ofrak import OFRAK
+import ofrak_binary_ninja
+import ofrak_capstone
+
+ofrak = OFRAK()
+ofrak.discover(ofrak_binary_ninja)
+ofrak.discover(ofrak_capstone)
 ```
 
 !!! warning
@@ -83,7 +88,17 @@ You will need both your original file (`<file_path>`) and the Binary Ninja DataB
 Define a `BinaryNinjaAnalyzerConfig` and manually run the `BinaryNinjaAnalyzer`:
 
 ```python
-async def main(ofrak_context: OFRAKContext,):
+import logging
+from ofrak import OFRAK
+from ofrak import OFRAKContext
+import ofrak_capstone
+import ofrak_binary_ninja
+from ofrak_binary_ninja.components.binary_ninja_analyzer import (
+    BinaryNinjaAnalyzerConfig,
+    BinaryNinjaAnalyzer,
+)
+
+async def main(ofrak_context: OFRAKContext):
     resource = await ofrak_context.create_root_resource_from_file(<file_path>)
     binary_ninja_config = BinaryNinjaAnalyzerConfig(<bndb_file_path>)
     await resource.run(BinaryNinjaAnalyzer, binary_ninja_config)
@@ -91,7 +106,8 @@ async def main(ofrak_context: OFRAKContext,):
 
 if __name__ == "__main__":
     ofrak = OFRAK(logging.INFO)
-    ofrak.injector.discover(ofrak_binary_ninja)
+    ofrak.discover(ofrak_binary_ninja)
+    ofrak.discover(ofrak_capstone)
     ofrak.run(main)
 ```
 
