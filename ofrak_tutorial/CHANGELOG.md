@@ -7,9 +7,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Fixed
 - Update Notebook 3 output to make testing on different configurations easier ([#593](https://github.com/redballoonsecurity/ofrak/pull/593))
 
-### Changed
-- Replace `ofrak.injector.discover` with `ofrak.discover` in notebooks ([#592](https://github.com/redballoonsecurity/ofrak/pull/592))
-
 ## 0.1.0
 ### Added
 Initial release. Hello world!
