@@ -23,17 +23,12 @@ docker exec -it rbs-ofrak-interactive bash -c "mkdir -p /disassemblers; ln -s /o
 Before building the docs, OFRAK and all of its dependencies must be installed and available on the Python path, for example:
 
 ```
-python3.9 -m venv venv
+python3 -m venv venv
 source venv/bin/activate
-pip install -e ofrak_patch_maker
-pip install -e ofrak_type
-pip install -e ofrak_io
-pip install -e ofrak_core
-pip install -r ofrak_core/requirements-docs.txt
-pip install -e disassemblers/ofrak_angr
-pip install -e disassemblers/ofrak_binary_ninja
-pip install -e disassemblers/ofrak_capstone
-pip install -e disassemblers/ofrak_ghidra
+for dir in ofrak_type ofrak_io ofrak_patch_maker ofrak_core disassemblers/ofrak_ghidra;
+do
+    make -C $dir develop;
+done
 ```
 
 ## Build the Docs
