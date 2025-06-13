@@ -82,7 +82,6 @@ Define a `GhidraProjectConfig` and manually run the `GhidraProjectAnalyzer`:
 import logging
 from ofrak import OFRAK
 from ofrak import OFRAKContext
-import ofrak_capstone
 import ofrak_ghidra
 from ofrak_ghidra.components.ghidra_analyzer import (
     GhidraProjectConfig,

@@ -53,7 +53,7 @@ OFRAK comes with a web-based GUI frontend for visualizing and manipulating binar
 2. Running `ofrak gui` to start the GUI server
 3. When using Docker images, the GUI typically runs by default
 
-To access the GUI, navigate to <http://localhost:8080> (or the port specified with `-gp/--gui-port`) and start by dropping anything you'd like into it!
+To access the GUI, navigate to <http://localhost:8080> (or the port specified with `-p/--port` or `-gp/--gui-port`) and start by dropping anything you'd like into it!
 
 ## Building from Docker
 

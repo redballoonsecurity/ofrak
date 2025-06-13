@@ -20,7 +20,7 @@ docker exec -it rbs-ofrak-interactive bash -c "mkdir -p /disassemblers; ln -s /o
 
 ## Prepare for building the Docs in a virtual environment
 
-Before building the docs, OFRAK and all of its dependencies must be installed and available on the Python path, for example:
+Before building the docs, OFRAK, its dependencies, and the `ofrak-ghidra` package must be installed and available on the Python path, for example:
 
 ```
 python3 -m venv venv
