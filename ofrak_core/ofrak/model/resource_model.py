@@ -1,6 +1,7 @@
 import dataclasses
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from functools import lru_cache
 from typing import (
     TypeVar,
     Set,
@@ -229,6 +230,7 @@ class ResourceAttributes:
         return f"{self.__class__.__name__}({fields_str})"
 
     @classmethod
+    @lru_cache(maxsize=None)
     def get_indexable_attributes(cls) -> List[ResourceIndexedAttribute]:
         indexable_attributes = []
         for name, attr in cls.__dict__.items():
@@ -907,24 +909,3 @@ def _validate_indexed_type(getter_func: Callable[[Any], X]):
             f"Type of index {getter_func.__name__} is {index_type}, which is not "
             f"one of {_INDEXABLE_TYPES.values()}; cannot index by this value!"
         )
-
-
-@dataclasses.dataclass(**ResourceAttributes.DATACLASS_PARAMS)
-class Data(ResourceAttributes):
-    """
-    Special attributes class for accessing info about a resource's binary data.
-    Users should never access or modify this directly! Changing the fields of this data structure
-    will not change any about the resource's data! At best, it will do nothing, and at worst it
-    will screw up sorting/filtering.
-    """
-
-    _offset: int  # Offset of the resource in the binary blob it is mapped into.
-    _length: int
-
-    @index
-    def Offset(self) -> int:
-        return self._offset
-
-    @index
-    def Length(self) -> int:
-        return self._length

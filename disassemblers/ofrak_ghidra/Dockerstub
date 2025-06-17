@@ -1,13 +1,28 @@
+ARG TARGETARCH
+
 # Download & install java and supervisor
-RUN apt-get update && apt-get install -y openjdk-17-jdk supervisor
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+    cd /tmp && \
+    wget https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.deb && \
+    dpkg -i jdk-21_linux-x64_bin.deb && \
+    rm -f jdk-21_linux-x64_bin.deb; \
+elif [ "$TARGETARCH" = "arm64" ]; then \
+    cd /tmp && \
+    wget https://download.oracle.com/java/21/latest/jdk-21_linux-aarch64_bin.tar.gz && \
+    tar -xzf jdk-21_linux-aarch64_bin.tar.gz && \
+    mkdir -p /usr/lib/jvm && \
+    mv jdk-21.* /usr/lib/jvm/jdk-21 && \
+    rm -f jdk-21_linux-aarch64_bin.tar.gz; \
+fi && \
+apt-get update && apt-get install -y supervisor
 
 # Download & install ghidra
 RUN mkdir -p /opt/rbs && \
     cd /tmp && \
-    wget -c https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_10.1.2_build/ghidra_10.1.2_PUBLIC_20220125.zip --show-progress --progress=bar:force:noscroll && \
-    unzip ghidra_10.1.2_PUBLIC_20220125.zip > /dev/null && \
-    rm -f ghidra_10.1.2_PUBLIC_20220125.zip && \
-    mv ghidra_10.1.2_PUBLIC/ /opt/rbs/ghidra_10.1.2_PUBLIC
+    wget -c https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_11.3.2_build/ghidra_11.3.2_PUBLIC_20250415.zip --show-progress --progress=bar:force:noscroll && \
+    unzip ghidra_11.3.2_PUBLIC_20250415.zip > /dev/null && \
+    rm -f ghidra_11.3.2_PUBLIC_20250415.zip && \
+    mv ghidra_11.3.2_PUBLIC/ /opt/rbs/ghidra_11.3.2_PUBLIC
 
 WORKDIR /
-COPY $PACKAGE_PATH/server.conf /opt/rbs/ghidra_10.1.2_PUBLIC/server/
+COPY $PACKAGE_PATH/server.conf /opt/rbs/ghidra_11.3.2_PUBLIC/server/

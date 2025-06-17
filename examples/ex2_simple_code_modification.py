@@ -87,5 +87,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     ofrak = OFRAK()
-    ofrak.injector.discover(ofrak_ghidra)
+    ofrak.discover(ofrak_ghidra)
     ofrak.run(main, args.hello_world_file, args.output_file_name)

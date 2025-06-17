@@ -3,7 +3,6 @@ import tempfile
 
 import pytest
 
-from ofrak_type import ArchInfo
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
 from ofrak_patch_maker.toolchain.gnu_m68k import GNU_M68K_LINUX_10_Toolchain
@@ -20,7 +19,12 @@ from ofrak_patch_maker_test.toolchain_asm import (
     run_challenge_3_reloc_toy_example_test,
     run_monkey_patch_test,
 )
-from ofrak_patch_maker_test.toolchain_c import run_hello_world_test, run_bounds_check_test
+from ofrak_patch_maker_test.toolchain_c import (
+    run_hello_world_test,
+    run_bounds_check_test,
+    run_relocatable_test,
+)
+from ofrak_type import ArchInfo
 from ofrak_type.architecture import (
     InstructionSet,
     ProcessorType,
@@ -78,6 +82,12 @@ def test_bounds_check(toolchain_under_test: ToolchainUnderTest):
 
 def test_hello_world(toolchain_under_test: ToolchainUnderTest):
     run_hello_world_test(toolchain_under_test)
+
+
+def test_relocatable(toolchain_under_test: ToolchainUnderTest, tmp_path):
+    if toolchain_under_test.toolchain == VBCC_0_9_GNU_Hybrid_Toolchain:
+        pytest.skip("VBCC toolchain has missing symbols")
+    run_relocatable_test(toolchain_under_test, tmp_path)
 
 
 def test_m68k_alignment(toolchain_under_test: ToolchainUnderTest):

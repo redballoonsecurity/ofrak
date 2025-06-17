@@ -14,7 +14,6 @@ import json
 import orjson
 import inspect
 import os
-import sys
 import webbrowser
 from collections import defaultdict
 from typing import (
@@ -609,17 +608,7 @@ class AiohttpOFRAKServer:
                 max_depth=1,
             )
             serialized_children = list(map(self._serialize_resource_model, child_models))
-            serialized_children.sort(key=get_child_sort_key)
-
             return resource_id, serialized_children
-
-        def get_child_sort_key(child):
-            attrs = dict(child.get("attributes"))
-            data_attr = attrs.get("ofrak.model.resource_model.Data")
-            if data_attr is not None:
-                return data_attr[1]["_offset"]
-            else:
-                return sys.maxsize
 
         return json_response(
             dict(await asyncio.gather(*map(get_resource_children, await request.json())))

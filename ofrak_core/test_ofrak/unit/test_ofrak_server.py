@@ -1,4 +1,3 @@
-import itertools
 import json
 import os
 from pathlib import Path, PosixPath
@@ -6,7 +5,6 @@ from ofrak.ofrak_context import OFRAKContext
 from ofrak.resource import Resource
 import pytest
 import re
-import sys
 
 from multiprocessing import Process
 from typing import List, Tuple
@@ -614,6 +612,7 @@ async def test_update_script(ofrak_client: TestClient, hello_world_elf):
     expected_list = [
         "from ofrak import *",
         "from ofrak.core import *",
+        "from ofrak.gui.script_builder import get_child_by_range",
         "",
         "",
         "async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):",
@@ -624,14 +623,7 @@ async def test_update_script(ofrak_client: TestClient, hello_world_elf):
         "",
         "    await root_resource.unpack()",
         "",
-        "    elfbasicheader_0x0 = await root_resource.get_only_child(",
-        "        r_filter=ResourceFilter(",
-        "            tags={ElfBasicHeader},",
-        "            attribute_filters=[",
-        "                ResourceAttributeValueFilter(attribute=Data.Offset, value=0)",
-        "            ],",
-        "        )",
-        "    )",
+        "    elfbasicheader_0x0 = await get_child_by_range(root_resource, Range(0, 16))",
         "",
         "    await elfbasicheader_0x0.auto_run(all_analyzers=True)",
         "",
@@ -667,14 +659,6 @@ async def test_update_script(ofrak_client: TestClient, hello_world_elf):
 
 
 async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
-    def get_child_sort_key(child):
-        attrs = dict(child.get("attributes"))
-        data_attr = attrs.get("ofrak.model.resource_model.Data")
-        if data_attr is not None:
-            return data_attr[1]["_offset"]
-        else:
-            return sys.maxsize
-
     create_resp = await ofrak_client.post(
         "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
     )
@@ -691,49 +675,18 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
 
     child_one = children_body[root_id][0]
     child_two = children_body[root_id][1]
-    child_one_res = await ofrak_client.post(f"/{child_one['id']}/unpack")
-    child_two_res = await ofrak_client.post(f"/{child_two['id']}/unpack")
-    child_one_body = await child_one_res.json()
-    child_two_body = await child_two_res.json()
-    child_one_resources = child_one_body["created"]
-    child_two_resources = child_two_body["created"]
-    # Must sort results of unpacking so that comparison works
-    child_one_resources.sort(key=get_child_sort_key)
-    child_two_resources.sort(key=get_child_sort_key)
-
-    # Verify results of unpacking are the same for both children and are what we expect
-    attrs_to_skip = {"id", "data_id", "parent_id", "attributes"}
-    assert len(child_one_resources) == len(child_two_resources)
-    assert all(
-        list(
-            map(
-                dicts_are_similar,
-                child_one_resources,
-                child_two_resources,
-                itertools.repeat(attrs_to_skip),
-            )
-        )
-    )
-    assert all(
-        list(
-            map(
-                dicts_are_similar,
-                child_two_resources,
-                child_one_resources,
-                itertools.repeat(attrs_to_skip),
-            )
-        )
-    )
-    assert "ofrak.core.elf.model.ElfBasicHeader" in child_one_resources[0]["tags"]
+    await ofrak_client.post(f"/{child_one['id']}/unpack")
+    await ofrak_client.post(f"/{child_two['id']}/unpack")
 
     # Verify script is as expected
     resp = await ofrak_client.get(
         f"/{root_id}/get_script",
     )
     resp_body = await resp.json()
-    expected_list = [
+    normalized_expected_list = [
         "from ofrak import *",
         "from ofrak.core import *",
+        "from ofrak.gui.script_builder import get_child_by_range",
         "",
         "",
         "async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):",
@@ -751,17 +704,13 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
         "    )",
         "",
         "    # Resource with parent root_resource is missing, could not find selectable attributes.",
-        "    raise RuntimeError(",
-        '        "Resource with ID 0x00000002 cannot be uniquely identified by attribute Data.Offset (resource has value 0)."',
-        "    )",
+        "    raise RuntimeError(err)",
         "    root_resource_MISSING_RESOURCE_0 = None",
         "",
         "    await root_resource_MISSING_RESOURCE_0.unpack()",
         "",
         "    # Resource with parent root_resource is missing, could not find selectable attributes.",
-        "    raise RuntimeError(",
-        '        "Resource with ID 0x00000003 cannot be uniquely identified by attribute Data.Offset (resource has value 0)."',
-        "    )",
+        "    raise RuntimeError(err)",
         "    root_resource_MISSING_RESOURCE_1 = None",
         "",
         "    await root_resource_MISSING_RESOURCE_1.unpack()",
@@ -792,9 +741,8 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
         "",
     ]
 
-    expected_str = join_and_normalize(expected_list)
     actual_str = join_and_normalize(resp_body)
-    assert actual_str == expected_str
+    assert actual_str == "\n".join(normalized_expected_list)
 
 
 async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
@@ -829,6 +777,7 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
     expected_list = [
         "from ofrak import *",
         "from ofrak.core import *",
+        "from ofrak.gui.script_builder import get_child_by_range",
         "",
         "",
         "async def main(ofrak_context: OFRAKContext):",
@@ -1111,10 +1060,7 @@ async def test_run_component(ofrak_client: TestClient, hello_world_elf):
                 "parent_id": None,
                 "tags": ["ofrak.core.filesystem.File", "ofrak.core.filesystem.FilesystemEntry"],
                 "attributes": [
-                    [
-                        "ofrak.model.resource_model.Data",
-                        ["ofrak.model.resource_model.Data", {"_offset": 0, "_length": 8181}],
-                    ]
+                    [],
                 ],
                 "caption": "File",
             }
@@ -1152,6 +1098,7 @@ async def test_add_flush_to_disk_to_script(ofrak_client: TestClient, firmware_zi
     expected_list = [
         "from ofrak import *",
         "from ofrak.core import *",
+        "from ofrak.gui.script_builder import get_child_by_range",
         "",
         "",
         "async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):",
@@ -1551,7 +1498,7 @@ async def test_git_clone_project(ofrak_client: TestClient, test_project_dir):
 
 
 async def test_open_project(ofrak_client: TestClient, test_project_dir):
-    git_url = "https://github.com/redballoonsecurity/ofrak-project-example.git"
+    git_url = "https://github.com/whyitfor/ofrak-project-example.git"
     resp = await ofrak_client.post("/clone_project_from_git", json={"url": git_url})
     assert resp.status == 200
     resp_body = await resp.json(content_type=None)
@@ -1566,7 +1513,7 @@ async def test_open_project(ofrak_client: TestClient, test_project_dir):
 
 
 async def test_get_project_by_resource_id(ofrak_client: TestClient, test_project_dir):
-    git_url = "https://github.com/redballoonsecurity/ofrak-project-example.git"
+    git_url = "https://github.com/whyitfor/ofrak-project-example.git"
     resp = await ofrak_client.post("/clone_project_from_git", json={"url": git_url})
     assert resp.status == 200
     resp_body = await resp.json()

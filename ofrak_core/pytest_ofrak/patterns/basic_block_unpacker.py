@@ -1300,7 +1300,7 @@ BASIC_BLOCK_UNPACKER_TEST_CASES = [
                         virtual_address=0x8038,
                         size=4,
                         mnemonic="stmdb",
-                        operands="sp!, {r3 lr}",
+                        operands="sp!, {r3, lr}",
                         mode=InstructionSetMode.NONE,
                     ),
                     Instruction(
@@ -1371,7 +1371,7 @@ BASIC_BLOCK_UNPACKER_TEST_CASES = [
                         virtual_address=0x8058,
                         size=4,
                         mnemonic="ldmia",
-                        operands="sp!, {r3 lr}",
+                        operands="sp!, {r3, lr}",
                         mode=InstructionSetMode.NONE,
                     ),
                     Instruction(

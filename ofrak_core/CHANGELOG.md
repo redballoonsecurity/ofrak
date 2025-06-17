@@ -3,7 +3,7 @@ All notable changes to `ofrak` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased: 3.3.0rc1](https://github.com/redballoonsecurity/ofrak/tree/master)
+## [Unreleased: 3.3.0rc7](https://github.com/redballoonsecurity/ofrak/tree/master)
 ### Added
 - Add license check command to prompt users about community or pro licenses. ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
 - Support `application/vnd.android.package-archive` mime type for APKs, which is returned by newer versions of libmagic ([#470](https://github.com/redballoonsecurity/ofrak/pull/470))
@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add new method for allocating `.bss` sections using free space ranges that aren't mapped to data ranges. ([#505](https://github.com/redballoonsecurity/ofrak/pull/505))
 - Add PyGhidra support along with a disassembly backend to pull disassembler analysis from a json. ([#556](https://github.com/redballoonsecurity/ofrak/pull/556))
 - Add `JavaArchive` resource tag ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
+- Pulled `Allocatable._align_range` out to standalone function `allocate_range_start` ([#575](https://github.com/redballoonsecurity/ofrak/pull/575))
 
 ### Fixed
 - Improved flushing of filesystem entries (including symbolic links and other types) to disk. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373))
@@ -47,8 +48,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Fixed bugs with PJSON serialization for some component configs in the front end ([#437](https://github.com/redballoonsecurity/ofrak/pull/437))
 - Make `ofrak[test]` dependencies on `ofrak-capstone` and `ofrak-angr` optional to avoid circular-dependency issues ([#571](https://github.com/redballoonsecurity/ofrak/pull/571))
 - Fix broken link in docs ([#574](https://github.com/redballoonsecurity/ofrak/pull/574))
+- Fix ValueError after analyzing ELF with invalid MemoryPermissions ([#581](https://github.com/redballoonsecurity/ofrak/pull/581))
+- Fix build pipeline failures by pinning `orjson`, a recent minor version of which breaks the PJSON tests. ([#584](https://github.com/redballoonsecurity/ofrak/pull/584))
+- Improve performance of ResourceAttributes.get_indexable_attributes() ([#586](https://github.com/redballoonsecurity/ofrak/pull/586))
+- Remove `Data` attribute to eliminate duplicative indexing in `ResourceService`, resulting in performance improvement for all workflows ([#589](https://github.com/redballoonsecurity/ofrak/pull/589))
 
 ### Changed
+- Miscellaneous updates to the documentation. ([#592](https://github.com/redballoonsecurity/ofrak/pull/592))
 - By default, the ofrak log is now `ofrak-YYYYMMDDhhmmss.log` rather than just `ofrak.log` and the name can be specified on the command line ([#480](https://github.com/redballoonsecurity/ofrak/pull/480))
 - In `GzipUnpacker`, use the standard python `zlib` library to compress small files and decompress all files. Use `pigz` if it is installed to compress files 1MB and larger. ([#472](https://github.com/redballoonsecurity/ofrak/pull/472) and [#485](https://github.com/redballoonsecurity/ofrak/pull/485))
 - Change `FreeSpaceModifier` & `PartialFreeSpaceModifier` behavior: an optional stub that isn't free space can be provided and fill-bytes for free space can be specified. ([#409](https://github.com/redballoonsecurity/ofrak/pull/409))
@@ -67,6 +73,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   - Add `RawMagicPattern` to efficiently run custom magic byte search logic within `MagicIdenfifier`
   - Update registered identifiers to make use of new `MagicIdentifier` for following resource tags: `Apk`, `Bzip2Data`, `CpioFilesystem`, `DeviceTreeBlob`, `Elf`, `Ext2Filesystem`, `Ext3Filesystem`, `Ext4Filesystem`, `GzipData`, `ISO9660Image`, `Jffs2Filesystem`, `LzmaData`, `XzData`, `LzoData`, `OpenWrtTrx`, `Pe`, `RarArchive`, `SevenZFilesystem`, `SquashfsFilesystem`, `TarArchive`, `Ubi`, `Ubifs`, `Uf2File`, `UImage`, `ZipArchive`, `ZlibData`, `ZstdData`
 - Update `Instruction.get_assembly` to by synchronous ([#539](https://github.com/redballoonsecurity/ofrak/issues/539))
+- Update orjson to ~=3.10.12 ([#562](https://github.com/redballoonsecurity/ofrak/pull/562/files))
 
 ### Deprecated
 - `Resource.flush_to_disk` deprecated in favor of `Resource.flush_data_to_disk`. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373), [#567](https://github.com/redballoonsecurity/ofrak/pull/568))
@@ -77,7 +84,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Security
 - Update aiohttp to 3.10.11 ([#522](https://github.com/redballoonsecurity/ofrak/pull/522))
 - Update pycryptogrpahy to version 43.0.3. ([#525](https://github.com/redballoonsecurity/ofrak/pull/525))
-- Bump `lief` dependency to 0.15.1 to address [vulnerability](https://github.com/redballoonsecurity/ofrak/security/dependabot/31) in lower versions ([#502](https://github.com/redballoonsecurity/ofrak/pull/502))
+- Bump `lief` dependency to 0.16.1 to address [vulnerability](https://github.com/redballoonsecurity/ofrak/security/dependabot/31) in lower versions ([#502](https://github.com/redballoonsecurity/ofrak/pull/502), [#562](https://github.com/redballoonsecurity/ofrak/pull/562/files))
+- Update `vite` and `esbuild` to newer versions to address dependabot warnings ([#595](https://github.com/redballoonsecurity/ofrak/pull/595))
 
 ## [3.2.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v3.1.0...ofrak-v3.2.0)
 ### Added

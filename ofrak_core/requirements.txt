@@ -10,8 +10,8 @@ importlib-metadata>=4.13
 intervaltree==3.1.0
 keystone-engine==0.9.2
 jefferson==0.4.5;python_version>="3.8"
-lief==0.15.1
-orjson~=3.9.15
+lief==0.16.1
+orjson==3.10.16
 pefile==2023.2.7
 pycdlib==1.12.0
 python-magic;platform_system!="Windows"
