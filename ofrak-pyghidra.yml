@@ -8,6 +8,7 @@ packages_paths:
     "ofrak_io",
     "ofrak_patch_maker",
     "ofrak_core",
+    "disassemblers/ofrak_ghidra",
     "disassemblers/ofrak_cached_disassembly",
     "disassemblers/ofrak_pyghidra",
     "frontend",
