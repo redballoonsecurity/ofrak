@@ -343,7 +343,7 @@ def _decompile(func, flat_api):
     ifc.openProgram(flat_api.getCurrentProgram())
     res = ifc.decompileFunction(func, 0, TaskMonitor.DUMMY)
     if not res.decompileCompleted():
-        raise Exception(f"Unable to decompile {func.getName()}")
+        raise RuntimeError(f"Unable to decompile {func.getName()}")
         return
     decomp = res.getDecompiledFunction().getC()
     return decomp
