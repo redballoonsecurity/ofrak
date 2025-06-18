@@ -313,10 +313,7 @@ export class RemoteResource extends Resource {
       return r.json();
     });
     // For now, just add these in here :)
-    this.attributes["ofrak.core.entropy.entropy.DataSummary"] = {
-      entropy_samples: summaryData.entropy_samples,
-      magnitude_samples: summaryData.magnitude_samples,
-    };
+    this.attributes["ofrak.core.entropy.entropy.DataSummary"] = summaryData;
     this.update();
   }
 
