@@ -22,7 +22,7 @@ except:
 
 
 @dataclass
-class DataSummary(ResourceAttributes):
+class DataSummary:
     """
     High-level summary of binary data.
 
