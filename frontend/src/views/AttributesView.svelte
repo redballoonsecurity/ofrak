@@ -30,6 +30,7 @@
         "ofrak.core.comments.CommentsAttributes",
         // verbose and unhelpful
         "ofrak.core.entropy.entropy.DataSummary",
+        "ofrak.core.entropy.entropy.DataSummaryCache",
       ];
       if (skipped_attributes.includes(attrType)) {
         continue;

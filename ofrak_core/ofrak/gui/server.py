@@ -7,7 +7,6 @@ import functools
 import itertools
 import logging
 
-from ofrak.core.entropy.entropy import DataSummaryCache
 from ofrak.project.project import OfrakProject
 
 import typing_inspect
@@ -557,12 +556,10 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def data_summary(self, request: Request) -> Response:
         resource = cast(Resource, await self._get_resource_for_request(request))
-        await resource.run(DataSummaryAnalyzer)
-        cache_info = resource.get_attributes(DataSummaryCache)
         analyzer: DataSummaryAnalyzer = self._ofrak_context.component_locator.get_by_id(
             DataSummaryAnalyzer.get_id()
         )
-        data_summary = analyzer.get_data_summary(cache_info)
+        data_summary = await analyzer.get_data_summary(resource)
         return json_response(
             {
                 "entropy_samples": list(data_summary.entropy_samples),
