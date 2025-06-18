@@ -316,7 +316,7 @@ export class RemoteResource extends Resource {
     this.attributes["ofrak.core.entropy.entropy.DataSummary"] = {
       entropy_samples: summaryData.entropy_samples,
       magnitude_samples: summaryData.magnitude_samples,
-    }
+    };
     this.update();
   }
 
