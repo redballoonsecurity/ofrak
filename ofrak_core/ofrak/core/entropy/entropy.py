@@ -41,7 +41,7 @@ class DataSummaryCache(ResourceAttributes):
     cache_key: str
 
 
-class DataSummaryAnalyzer(Analyzer[None, DataSummary]):
+class DataSummaryAnalyzer(Analyzer[None, DataSummaryCache]):
     """
     Analyze binary data and return summaries of its structure via the entropy and magnitude of
     its bytes.
