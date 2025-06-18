@@ -556,8 +556,9 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def data_summary(self, request: Request) -> Response:
         resource = cast(Resource, await self._get_resource_for_request(request))
-        analyzer: DataSummaryAnalyzer = self._ofrak_context.component_locator.get_by_id(
-            DataSummaryAnalyzer.get_id()
+        analyzer = cast(
+            DataSummaryAnalyzer,
+            self._ofrak_context.component_locator.get_by_id(DataSummaryAnalyzer.get_id()),
         )
         data_summary = await analyzer.get_data_summary(resource)
         return json_response(
