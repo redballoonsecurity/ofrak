@@ -1,5 +1,7 @@
 import asyncio
 import logging
+from typing import Dict
+
 import math
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures.process import BrokenProcessPool
@@ -19,7 +21,7 @@ except:
     from ofrak.core.entropy.entropy_py import entropy_py as entropy_func
 
 
-@dataclass(**ResourceAttributes.DATACLASS_PARAMS)
+@dataclass
 class DataSummary(ResourceAttributes):
     """
     High-level summary of binary data.
@@ -34,6 +36,11 @@ class DataSummary(ResourceAttributes):
     magnitude_samples: bytes
 
 
+@dataclass(**ResourceAttributes.DATACLASS_PARAMS)
+class DataSummaryCache(ResourceAttributes):
+    cache_key: str
+
+
 class DataSummaryAnalyzer(Analyzer[None, DataSummary]):
     """
     Analyze binary data and return summaries of its structure via the entropy and magnitude of
@@ -41,7 +48,7 @@ class DataSummaryAnalyzer(Analyzer[None, DataSummary]):
     """
 
     targets = ()  # Target any resource with data
-    outputs = (DataSummary,)
+    outputs = (DataSummaryCache,)
 
     def __init__(
         self,
@@ -50,29 +57,14 @@ class DataSummaryAnalyzer(Analyzer[None, DataSummary]):
         resource_service: ResourceServiceInterface,
     ):
         super().__init__(resource_factory, data_service, resource_service)
-        self.pool = ProcessPoolExecutor()
-        self.max_analysis_retries = 10
+        self._cache_service = DataSummaryService()
 
-    async def analyze(self, resource: Resource, config=None, depth=0) -> DataSummary:
-        if depth > self.max_analysis_retries:
-            raise RuntimeError(
-                f"Analysis process killed more than {self.max_analysis_retries} times. Aborting."
-            )
+    async def analyze(self, resource: Resource, config=None) -> DataSummaryCache:
+        cache_info = await self._cache_service.compute(resource)
+        return cache_info
 
-        data = await resource.get_data()
-        # Run blocking computations in separate processes
-        try:
-            entropy = await asyncio.get_running_loop().run_in_executor(
-                self.pool, sample_entropy, data, resource.get_id()
-            )
-            magnitude = await asyncio.get_running_loop().run_in_executor(
-                self.pool, sample_magnitude, data
-            )
-            return DataSummary(entropy, magnitude)
-        except BrokenProcessPool:
-            # If the previous one was aborted, try again with a new pool
-            self.pool = ProcessPoolExecutor()
-            return await self.analyze(resource, config=config, depth=depth + 1)
+    def get_data_summary(self, cache_info: DataSummaryCache) -> DataSummary:
+        return self._cache_service.get_cache(cache_info)
 
 
 def sample_entropy(
@@ -112,3 +104,36 @@ def sample_magnitude(data: bytes, max_samples=2**20) -> bytes:  # pragma: no cov
     else:
         skip = len(data) / max_samples
         return bytes(data[math.floor(i * skip)] for i in range(max_samples))
+
+
+class DataSummaryService:
+    def __init__(self):
+        self._cache: Dict[str, DataSummary] = {}
+        self.pool = ProcessPoolExecutor()
+        self.max_analysis_retries = 10
+
+    async def compute(self, resource: Resource, depth=0) -> DataSummaryCache:
+        if depth > self.max_analysis_retries:
+            raise RuntimeError(
+                f"Analysis process killed more than {self.max_analysis_retries} times. Aborting."
+            )
+
+        cache_key = resource.get_id().hex()
+        data = await resource.get_data()
+
+        try:
+            entropy = await asyncio.get_running_loop().run_in_executor(
+                self.pool, sample_entropy, data, resource.get_id()
+            )
+            magnitude = await asyncio.get_running_loop().run_in_executor(
+                self.pool, sample_magnitude, data
+            )
+            self._cache[cache_key] = DataSummary(entropy, magnitude)
+            return DataSummaryCache(cache_key)
+        except BrokenProcessPool:
+            # If the previous one was aborted, try again with a new pool
+            self.pool = ProcessPoolExecutor()
+            return await self.compute(resource, depth=depth + 1)
+
+    def get_cache(self, cache_info: DataSummaryCache) -> DataSummary:
+        return self._cache[cache_info.cache_key]

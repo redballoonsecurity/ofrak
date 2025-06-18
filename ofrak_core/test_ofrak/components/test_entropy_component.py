@@ -1,10 +1,11 @@
 import os.path
 
 import pytest
-from ofrak.core.entropy import DataSummaryAnalyzer, DataSummary
+from ofrak.core.entropy import DataSummaryAnalyzer
 
 from ofrak import OFRAKContext
 import test_ofrak.components
+from ofrak.core.entropy.entropy import DataSummaryCache
 from ofrak.core.entropy.entropy_py import entropy_py
 from ofrak.core.entropy.entropy_c import entropy_c
 
@@ -46,7 +47,11 @@ async def test_analyzer(ofrak_context: OFRAKContext, test_file_path):
 
     root = await ofrak_context.create_root_resource_from_file(test_file_path)
     await root.run(DataSummaryAnalyzer)
-    data_summary = root.get_attributes(DataSummary)
+    data_summary_cache = root.get_attributes(DataSummaryCache)
+    data_summary_analyzer: DataSummaryAnalyzer = ofrak_context.component_locator.get_by_id(
+        DataSummaryAnalyzer.get_id()
+    )
+    data_summary = data_summary_analyzer.get_data_summary(data_summary_cache)
     entropy = data_summary.entropy_samples
     assert _almost_equal(
         entropy, expected_entropy

@@ -304,7 +304,7 @@ export class RemoteResource extends Resource {
   }
 
   async data_summary() {
-    const data_summary_results = await fetch(`${this.uri}/data_summary`, {
+    const summaryData = await fetch(`${this.uri}/data_summary`, {
       method: "POST",
     }).then(async (r) => {
       if (!r.ok) {
@@ -312,7 +312,11 @@ export class RemoteResource extends Resource {
       }
       return r.json();
     });
-    ingest_component_results(data_summary_results, this.resource_list);
+    // For now, just add these in here :)
+    this.attributes["ofrak.core.entropy.entropy.DataSummary"] = {
+      entropy_samples: summaryData.entropy_samples,
+      magnitude_samples: summaryData.magnitude_samples,
+    }
     this.update();
   }
 
