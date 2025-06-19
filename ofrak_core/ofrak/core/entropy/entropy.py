@@ -1,5 +1,7 @@
 import asyncio
 import logging
+from typing import Dict
+
 import math
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures.process import BrokenProcessPool
@@ -19,8 +21,8 @@ except:
     from ofrak.core.entropy.entropy_py import entropy_py as entropy_func
 
 
-@dataclass(**ResourceAttributes.DATACLASS_PARAMS)
-class DataSummary(ResourceAttributes):
+@dataclass
+class DataSummary:
     """
     High-level summary of binary data.
 
@@ -34,14 +36,19 @@ class DataSummary(ResourceAttributes):
     magnitude_samples: bytes
 
 
-class DataSummaryAnalyzer(Analyzer[None, DataSummary]):
+@dataclass(**ResourceAttributes.DATACLASS_PARAMS)
+class DataSummaryCache(ResourceAttributes):
+    cache_key: str
+
+
+class DataSummaryAnalyzer(Analyzer[None, DataSummaryCache]):
     """
     Analyze binary data and return summaries of its structure via the entropy and magnitude of
     its bytes.
     """
 
     targets = ()  # Target any resource with data
-    outputs = (DataSummary,)
+    outputs = (DataSummaryCache,)
 
     def __init__(
         self,
@@ -52,27 +59,38 @@ class DataSummaryAnalyzer(Analyzer[None, DataSummary]):
         super().__init__(resource_factory, data_service, resource_service)
         self.pool = ProcessPoolExecutor()
         self.max_analysis_retries = 10
+        self._cache: Dict[str, DataSummary] = {}
 
-    async def analyze(self, resource: Resource, config=None, depth=0) -> DataSummary:
+    async def analyze(self, resource: Resource, config=None) -> DataSummaryCache:
+        data_summary = await self._compute_data_summary(resource)
+        cache_key = resource.get_id().hex()
+        self._cache[cache_key] = data_summary
+        return DataSummaryCache(cache_key)
+
+    async def get_data_summary(self, resource: Resource) -> DataSummary:
+        await resource.run(DataSummaryAnalyzer)
+        cache_info = resource.get_attributes(DataSummaryCache)
+        return self._cache[cache_info.cache_key]
+
+    async def _compute_data_summary(self, resource: Resource, depth=0) -> DataSummary:
         if depth > self.max_analysis_retries:
             raise RuntimeError(
                 f"Analysis process killed more than {self.max_analysis_retries} times. Aborting."
             )
-
-        data = await resource.get_data()
-        # Run blocking computations in separate processes
         try:
+            data = await resource.get_data()
             entropy = await asyncio.get_running_loop().run_in_executor(
                 self.pool, sample_entropy, data, resource.get_id()
             )
             magnitude = await asyncio.get_running_loop().run_in_executor(
                 self.pool, sample_magnitude, data
             )
-            return DataSummary(entropy, magnitude)
+            data_summary = DataSummary(entropy, magnitude)
+            return data_summary
         except BrokenProcessPool:
             # If the previous one was aborted, try again with a new pool
             self.pool = ProcessPoolExecutor()
-            return await self.analyze(resource, config=config, depth=depth + 1)
+            return await self._compute_data_summary(resource, depth=depth + 1)
 
 
 def sample_entropy(

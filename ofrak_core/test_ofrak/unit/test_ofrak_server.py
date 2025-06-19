@@ -358,7 +358,9 @@ async def test_identify_recursively(ofrak_client: TestClient, hello_world_elf):
     assert resp_body["modified"][0]["id"] == create_body["id"]
 
 
-async def test_data_summary(ofrak_client: TestClient, ofrak_server, hello_world_elf, test_resource):
+async def test_data_summary(
+    ofrak_client: TestClient, ofrak_server, hello_world_elf, test_resource: Resource
+):
     create_resp = await ofrak_client.post(
         "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
     )
@@ -366,14 +368,16 @@ async def test_data_summary(ofrak_client: TestClient, ofrak_server, hello_world_
     resp = await ofrak_client.post(f"/{create_body['id']}/data_summary")
     assert resp.status == 200
     resp_body = await resp.json()
-    assert resp_body["modified"][0]["id"] == create_body["id"]
 
-    # use ofrak_context to create root resource, then run DataSummaryAnalyzer on it
-    result = await test_resource.run(DataSummaryAnalyzer)
-    serialized_result = await ofrak_server._serialize_component_result(result)
-    # Need to replace tuples with lists as per proper json structure
-    json_result = json.loads(json.dumps(serialized_result))
-    assert resp_body["modified"][0]["attributes"] == json_result["modified"][0]["attributes"]
+    # Compare result from accessing directly
+    data_summary_analyzer = test_resource._job_service._component_locator.get_by_id(
+        DataSummaryAnalyzer.get_id()
+    )
+    data_summary = await data_summary_analyzer.get_data_summary(test_resource)
+    assert resp_body == {
+        "entropy_samples": list(data_summary.entropy_samples),
+        "magnitude_samples": list(data_summary.magnitude_samples),
+    }
 
 
 async def test_get_parent(ofrak_client: TestClient, hello_world_elf):
