@@ -5,7 +5,9 @@ install:
 	$(PIP) install .
 
 develop:
-	$(PIP) install -e .[test] --config-settings editable_mode=compat
+	# Legacy-edinable is needed to allow mypy to find packages.
+	# See https://github.com/python/mypy/issues/13392
+	SETUPTOOLS_ENABLE_FEATURES="legacy-editable" $(PIP) install -e .[test]
 
 test:
 	$(PYTHON) -m pytest --cov=ofrak_ghidra --cov-report=term-missing ofrak_ghidra_test
