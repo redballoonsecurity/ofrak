@@ -3,14 +3,14 @@ All notable changes to `ofrak` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased: 3.3.0rc9](https://github.com/redballoonsecurity/ofrak/tree/master)
+## [Unreleased: 3.3.0rc10](https://github.com/redballoonsecurity/ofrak/tree/master)
 
 ### Added
 - Add license check command to prompt users about community or pro licenses. ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
 - Support `application/vnd.android.package-archive` mime type for APKs, which is returned by newer versions of libmagic ([#470](https://github.com/redballoonsecurity/ofrak/pull/470))
 - Add links to other resources and locations in comments with an autocomplete feature in the comment view. ([#447](https://github.com/redballoonsecurity/ofrak/pull/447)) 
 - Add modifier to add and remove sections using lief. ([#443](https://github.com/redballoonsecurity/ofrak/pull/443))
-- Add tabbed content views and a decompilation view to the OFRAK GUI. ([#436](https://github.com/redballoonsecurity/ofrak/pull/436/))
+- Add tabbed content views and a decompilation view to the OFRAK GUI. ([#436](https://github.com/redballoonsecurity/ofrak/pull/436/), [#600](https://github.com/redballoonsecurity/ofrak/pull/600))
 - Refactor HexView and related components to use mousewheel instead of scroll and compartmentalize all comonents to src/hex. ([#427](https://github.com/redballoonsecurity/ofrak/pull/427))
 - Add an improved ISO9660 packer that leverages `mkisofs` instead of PyCdLib. ([#393](https://github.com/redballoonsecurity/ofrak/pull/393))
 - Add UEFI binary unpacker. ([#399](https://github.com/redballoonsecurity/ofrak/pull/399))
@@ -20,7 +20,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add support for running on Windows to the `Filesystem` component. ([#521](https://github.com/redballoonsecurity/ofrak/pull/521))
 - Add `JavaArchive` resource tag ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
 - Add new method for allocating `.bss` sections using free space ranges that aren't mapped to data ranges. ([#505](https://github.com/redballoonsecurity/ofrak/pull/505), [#569](https://github.com/redballoonsecurity/ofrak/pull/569))
-- Add `JavaArchive` resource tag ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
 - Pulled `Allocatable._align_range` out to standalone function `allocate_range_start` ([#575](https://github.com/redballoonsecurity/ofrak/pull/575))
 
 ### Fixed
