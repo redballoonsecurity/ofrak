@@ -66,20 +66,21 @@ class GhidraDecompilationAnalyzer(DecompilationAnalyzer, OfrakGhidraMixin):
                 resource, complex_block.virtual_address
             )
         except JSONDecodeError as e:
-            return DecompilationAnalysis(str(e))
+            result = str(e)
+        finally:
+            if "decomp" in result:
+                decomp = (
+                    result["decomp"]
+                    .replace("<quote>", "'")
+                    .replace("<dquote>", '"')
+                    .replace("<nl>", "\n")
+                    .replace("<cr>", "\r")
+                    .replace("<tab>", "\t")
+                    .replace("<zero>", "\\0")
+                )
+            else:
+                decomp = "No Decompilation available"
 
-        if "decomp" in result:
-            decomp = (
-                result["decomp"]
-                .replace("<quote>", "'")
-                .replace("<dquote>", '"')
-                .replace("<nl>", "\n")
-                .replace("<cr>", "\r")
-                .replace("<tab>", "\t")
-                .replace("<zero>", "\\0")
-            )
-        else:
-            decomp = "No Decompilation available"
-
-        decomp_escaped = escape_strings(decomp)
-        return DecompilationAnalysis(decomp_escaped)
+            decomp_escaped = escape_strings(decomp)
+            resource.add_tag(DecompilationAnalysis)
+            return DecompilationAnalysis(decomp_escaped)
