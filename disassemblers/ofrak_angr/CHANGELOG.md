@@ -3,11 +3,11 @@ All notable changes to `ofrak-angr` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+## [Unreleased 1.1.0rc0](https://github.com/redballoonsecurity/ofrak/tree/master)
 
 ### Changed
 - Update to latest angr==9.2.93, which also necessitates Python >= 3.8.
-- Refactored AngrDecompilationAnalysis/Analyzer to use generic components in ofrak core. ([#453](https://github.com/redballoonsecurity/ofrak/pull/453))
+- Add decompilation using angr backend ([#453](https://github.com/redballoonsecurity/ofrak/pull/453), [#600](https://github.com/redballoonsecurity/ofrak/pull/600))
 - Minor update to OFRAK Community License, add OFRAK Pro License ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
 
 ### Fixed

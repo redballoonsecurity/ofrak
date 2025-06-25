@@ -31,7 +31,7 @@ def read_requirements(requirements_path):
 
 setuptools.setup(
     name="ofrak_ghidra",
-    version="0.2.0rc0",
+    version="0.2.0rc1",
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",
     description="OFRAK Ghidra Components",
@@ -42,7 +42,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    install_requires=read_requirements("requirements.txt"),
+    install_requires=["ofrak>=3.3.0rc10"] + read_requirements("requirements.txt"),
     extras_require={
         "test": [
             "fun-coverage==0.2.0",
