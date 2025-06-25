@@ -1,6 +1,6 @@
 from typing import List
 import os
-from ofrak.core.decompilation import DecompilationAnalysis
+from ofrak.core.decompilation import DecompilationAnalysis, DecompilationAnalyzer
 from ofrak.ofrak_context import OFRAKContext
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.service.resource_service_i import ResourceFilter
@@ -25,7 +25,7 @@ async def test_ghidra_decompilation(ofrak_context: OFRAKContext):
     )
     decomps = []
     for complex_block in complex_blocks:
-        await complex_block.resource.identify()
+        await complex_block.resource.run(DecompilationAnalyzer)
         ghidra_resource: DecompilationAnalysis = await complex_block.resource.view_as(
             DecompilationAnalysis
         )
