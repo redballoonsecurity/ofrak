@@ -1,5 +1,5 @@
 import logging
-import zlib
+import zlib as zlib_package
 from dataclasses import dataclass
 
 from ofrak.component.analyzer import Analyzer
@@ -53,7 +53,7 @@ class ZlibUnpacker(Unpacker[None]):
 
     async def unpack(self, resource: Resource, config=None):
         zlib_data = await resource.get_data()
-        zlib_uncompressed_data = zlib.decompress(zlib_data)
+        zlib_uncompressed_data = zlib_package.decompress(zlib_data)
         await resource.create_child(
             tags=(GenericBinary,),
             data=zlib_uncompressed_data,
@@ -72,7 +72,7 @@ class ZlibPacker(Packer[None]):
         compression_level = zlib_view.compression_level
         zlib_child = await zlib_view.get_child()
         zlib_data = await zlib_child.resource.get_data()
-        zlib_compressed = zlib.compress(zlib_data, compression_level)
+        zlib_compressed = zlib_package.compress(zlib_data, compression_level)
 
         original_zlib_size = await zlib_view.resource.get_data_length()
         resource.queue_patch(Range(0, original_zlib_size), zlib_compressed)
