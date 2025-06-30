@@ -216,10 +216,8 @@ class CachedComplexBlockUnpacker(ComplexBlockUnpacker):
             if children.startswith("bb"):
                 basic_block = analysis[children]
                 mode = InstructionSetMode.NONE
-                if basic_block["mode"] == "thumb":
-                    mode = InstructionSetMode.THUMB
-                elif basic_block["mode"] == "vle":
-                    mode = InstructionSetMode.VLE
+                if "mode" in basic_block:
+                    mode = InstructionSetMode[basic_block["mode"].upper()]
                 bb = BasicBlock(
                     virtual_address=basic_block["virtual_address"],
                     size=basic_block["size"],
