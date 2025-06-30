@@ -23,7 +23,7 @@ from ofrak_cached_disassembly.components.cached_disassembly_unpacker import (
     CachedCodeRegionUnpacker,
     CachedComplexBlockUnpacker,
     CachedBasicBlockUnpacker,
-    CachedCodeRegionModifier,
+    CachedGhidraCodeRegionModifier,
     CachedDecompilationAnalyzer,
 )
 from ofrak_pyghidra.standalone.pyghidra_analysis import unpack
@@ -66,7 +66,7 @@ class PyGhidraAnalysisStore(CachedAnalysisStore):
     pass
 
 
-class CachedCodeRegionModifier(CachedCodeRegionModifier):
+class CachedGhidraCodeRegionModifier(CachedGhidraCodeRegionModifier):
     pass
 
 

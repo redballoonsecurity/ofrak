@@ -42,11 +42,20 @@ class CachedAnalysis(ResourceView):
 
 @dataclass
 class CachedAnalysisAnalyzerConfig(ComponentConfig):
+    """This config is used to pass the filename of the cache json file to the analyzer.
+
+    Args:
+        filename (str): The path to the cache json file.
+        force (Optional[bool], optional): Set to True to force the analyzer to use the cache file even if the hash does not match. Defaults to False.
+    """
+
     filename: str
     force: Optional[bool] = False
 
 
 class CachedAnalysisAnalyzer(Analyzer[CachedAnalysisAnalyzerConfig, CachedAnalysis]):
+    """This analyzer maps the cached analysis to the resource and verifies it's metadata."""
+
     id = b"CachedAnalysisAnalyzer"
     targets = (CachedAnalysis,)
     outputs = (CachedAnalysis,)
@@ -93,6 +102,8 @@ class CachedAnalysisAnalyzer(Analyzer[CachedAnalysisAnalyzerConfig, CachedAnalys
 
 
 class CachedProgramUnpacker(Unpacker[None]):
+    """Extracts segments from the cache and creates CodeRegions for each."""
+
     targets = (CachedAnalysis,)
     outputs = (CodeRegion,)
 
@@ -118,7 +129,9 @@ class CachedProgramUnpacker(Unpacker[None]):
                 )
 
 
-class CachedCodeRegionModifier(Modifier[None]):
+class CachedGhidraCodeRegionModifier(Modifier[None]):
+    """Ghidra uses a different base address than the ELF does, so we have to rebase the ghidra analysis to the ELF addresses."""
+
     targets = (CodeRegion,)
 
     def __init__(
@@ -165,6 +178,8 @@ class CachedCodeRegionModifier(Modifier[None]):
 
 
 class CachedCodeRegionUnpacker(CodeRegionUnpacker):
+    """Unpacks complex from a CodeRegion resource via its cached children."""
+
     def __init__(
         self,
         resource_factory: ResourceFactory,
@@ -180,7 +195,7 @@ class CachedCodeRegionUnpacker(CodeRegionUnpacker):
         program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(CachedAnalysis))
         analysis = self.analysis_store.get_analysis(program_r.get_id())
         if analysis["metadata"]["backend"] == "ghidra":
-            await resource.run(CachedCodeRegionModifier)
+            await resource.run(CachedGhidraCodeRegionModifier)
         code_region_view = await resource.view_as(CodeRegion)
         func_keys = analysis[f"seg_{code_region_view.virtual_address}"]["children"]
         for func_key in func_keys:
@@ -194,6 +209,8 @@ class CachedCodeRegionUnpacker(CodeRegionUnpacker):
 
 
 class CachedComplexBlockUnpacker(ComplexBlockUnpacker):
+    """Unpacks a complex block into its basic blocks and data words using the dw and bb keys in the cache json file."""
+
     def __init__(
         self,
         resource_factory: ResourceFactory,
@@ -241,6 +258,8 @@ class CachedComplexBlockUnpacker(ComplexBlockUnpacker):
 
 
 class CachedBasicBlockUnpacker(BasicBlockUnpacker):
+    """Unpacks a basic block into its instructions using the instr key in the cache json file."""
+
     def __init__(
         self,
         resource_factory: ResourceFactory,
@@ -276,6 +295,8 @@ class CachedBasicBlockUnpacker(BasicBlockUnpacker):
 
 
 class CachedDecompilationAnalyzer(DecompilationAnalyzer):
+    """This analyzer extracts the decompilation from the cache json file and adds it to the resource if it exists."""
+
     def __init__(
         self,
         resource_factory: ResourceFactory,
@@ -291,5 +312,8 @@ class CachedDecompilationAnalyzer(DecompilationAnalyzer):
         program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(CachedAnalysis))
         analysis = self.analysis_store.get_analysis(program_r.get_id())
         complex_block = await resource.view_as(ComplexBlock)
-        decomp = analysis[f"func_{complex_block.virtual_address}"]["decompilation"]
+        if "decompilation" in analysis[f"func_{complex_block.virtual_address}"]:
+            decomp = analysis[f"func_{complex_block.virtual_address}"]["decompilation"]
+        else:
+            decomp = "The cache file does not contain a decompilation for this function."
         return DecompilationAnalysis(decomp)
