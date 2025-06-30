@@ -1,20 +1,18 @@
 import angr
 from angr.analyses.decompiler import Decompiler
-from ofrak.component.analyzer import Analyzer
 
 from ofrak.resource import Resource
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_angr.model import AngrAnalysis, AngrAnalysisResource
-from ofrak.core.decompilation import DecompilationAnalysis
+from ofrak.core.decompilation import DecompilationAnalysis, DecompilationAnalyzer
 
 
-class AngrDecompilatonAnalyzer(Analyzer[None, DecompilationAnalysis]):
-    id = b"AngrDecompilationAnalyzer"
+class AngrDecompilatonAnalyzer(DecompilationAnalyzer):
     targets = (ComplexBlock,)
     outputs = (DecompilationAnalysis,)
 
-    async def analyze(self, resource: Resource, config: None) -> DecompilationAnalysis:
+    async def analyze(self, resource: Resource, config=None) -> DecompilationAnalysis:
         # Run / fetch angr analyzer
         try:
             root_resource = await resource.get_only_ancestor(
@@ -51,6 +49,7 @@ class AngrDecompilatonAnalyzer(Analyzer[None, DecompilationAnalysis]):
                 decomp = dec.codegen.text
             else:
                 decomp = "No Decompilation available"
+            resource.add_tag(DecompilationAnalysis)
             return DecompilationAnalysis(decomp)
         except Exception as e:
             return DecompilationAnalysis(

@@ -6,6 +6,7 @@ from enum import Enum
 import functools
 import itertools
 import logging
+
 from ofrak.project.project import OfrakProject
 
 import typing_inspect
@@ -362,6 +363,9 @@ class AiohttpOFRAKServer:
             root_resource = await self._ofrak_context.create_root_resource(
                 name, resource_data, (File,)
             )
+            root_resource.add_view(File(name, None, None))
+            await root_resource.save()
+
             await self.script_builder.add_action(root_resource, script_str, ActionType.UNPACK)
             if request.remote is not None:
                 self._job_ids[request.remote] = root_resource.get_job_id()
@@ -555,9 +559,17 @@ class AiohttpOFRAKServer:
     @exceptions_to_http(SerializedError)
     async def data_summary(self, request: Request) -> Response:
         resource = cast(Resource, await self._get_resource_for_request(request))
-        result = await resource.run(DataSummaryAnalyzer)
-
-        return json_response(await self._serialize_component_result(result))
+        analyzer = cast(
+            DataSummaryAnalyzer,
+            self._ofrak_context.component_locator.get_by_id(DataSummaryAnalyzer.get_id()),
+        )
+        data_summary = await analyzer.get_data_summary(resource)
+        return json_response(
+            {
+                "entropy_samples": list(data_summary.entropy_samples),
+                "magnitude_samples": list(data_summary.magnitude_samples),
+            }
+        )
 
     @exceptions_to_http(SerializedError)
     async def analyze(self, request: Request) -> Response:

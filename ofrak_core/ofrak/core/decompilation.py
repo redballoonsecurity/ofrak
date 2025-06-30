@@ -5,21 +5,12 @@ from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
 
 from ofrak.component.analyzer import Analyzer
-from ofrak.component.identifier import Identifier
 from ofrak.core.complex_block import ComplexBlock
 
 
 @dataclass
 class DecompilationAnalysis(ResourceView):
     decompilation: str
-
-
-class DecompilationAnalysisIdentifier(Identifier):
-    id = b"DecompilationAnalysisIdentifier"
-    targets = (ComplexBlock,)
-
-    async def identify(self, resource: Resource, config=None):
-        resource.add_tag(DecompilationAnalysis)
 
 
 class DecompilationAnalyzer(Analyzer[None, DecompilationAnalysis], ABC):
