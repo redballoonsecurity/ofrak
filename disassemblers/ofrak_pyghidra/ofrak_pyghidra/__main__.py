@@ -17,7 +17,10 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Run PyGhidra scripts and OFRAK Components.")
     command_parser = parser.add_subparsers()
 
-    start_parser = command_parser.add_parser("analyze", description="Start the OFRAK Ghidra server")
+    start_parser = command_parser.add_parser(
+        "analyze",
+        description="Creates a cache json file from a binary to be used with the CachedDisassemblyAnalyzer.",
+    )
     start_parser.set_defaults(func=_analyze_binary)
     start_parser.add_argument(
         "--infile", "-i", type=str, required=True, help="The binary to be analyzed."
@@ -25,14 +28,19 @@ def parse_args():
     start_parser.add_argument(
         "--outfile", "-o", type=str, required=True, help="The output json file."
     )
-    start_parser.add_argument("--language", "-l", default=None, help="Ghidra language id")
+    start_parser.add_argument(
+        "--language",
+        "-l",
+        default=None,
+        help="Ghidra language id, not needed for ELF but other formats might need it. Example: 'x86:LE:32:default'",
+    )
     start_parser.add_argument(
         "--decompile",
         "-d",
         action="store_true",
         required=False,
         default=False,
-        help="decompile functions in cache",
+        help="Decompile functions in cache",
     )
 
     return parser
