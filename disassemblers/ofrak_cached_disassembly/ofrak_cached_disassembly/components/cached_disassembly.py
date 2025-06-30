@@ -5,6 +5,8 @@ from ofrak.core.architecture import ProgramAttributes
 
 
 class CachedAnalysisStore:
+    """A class that contains all cached analysis that can be passed between OFRAK components without have to re-open the json file."""
+
     def __init__(self):
         self.analysis = dict()
         self.program_attributes: Optional[ProgramAttributes] = None
