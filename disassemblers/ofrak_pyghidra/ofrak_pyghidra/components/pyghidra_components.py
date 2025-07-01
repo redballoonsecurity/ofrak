@@ -20,6 +20,7 @@ from ofrak.resource import Resource, ResourceFactory
 from ofrak.resource_view import ResourceView
 from ofrak_cached_disassembly.components.cached_disassembly import CachedAnalysisStore
 from ofrak_cached_disassembly.components.cached_disassembly_unpacker import (
+    CachedAnalysis,
     CachedCodeRegionUnpacker,
     CachedComplexBlockUnpacker,
     CachedBasicBlockUnpacker,
@@ -33,12 +34,7 @@ _GHIDRA_AUTO_LOADABLE_FORMATS = [Elf, Ihex, Pe]
 
 
 @dataclass
-class PyGhidraAutoLoadProject(ResourceView):
-    pass
-
-
-@dataclass
-class PyGhidraProject(ResourceView):
+class PyGhidraProject(CachedAnalysis):
     pass
 
 
@@ -54,7 +50,7 @@ class PyGhidraAnalysisIdentifier(Identifier):
     async def identify(self, resource: Resource, config=None):
         for tag in _GHIDRA_AUTO_LOADABLE_FORMATS:
             if resource.has_tag(tag):
-                resource.add_tag(PyGhidraAutoLoadProject)
+                resource.add_tag(PyGhidraProject)
 
 
 @dataclass
@@ -79,7 +75,7 @@ class PyGhidraAutoAnalyzerConfig(ComponentConfig):
 class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraProject]):
     id = b"PyGhidraAutoAnalyzer"
 
-    targets = (PyGhidraAutoLoadProject,)
+    targets = (PyGhidraProject,)
     outputs = (PyGhidraProject,)
 
     def __init__(
@@ -122,7 +118,7 @@ class PyGhidraCodeRegionUnpacker(CachedCodeRegionUnpacker):
 
     async def unpack(self, resource: Resource, config: PyGhidraCodeRegionUnpackerConfig = None):
         program_r = await resource.get_only_ancestor(
-            ResourceFilter.with_tags(PyGhidraAutoLoadProject)
+            ResourceFilter.with_tags(PyGhidraProject)
         )
         if not self.analysis_store.id_exists(program_r.get_id()):
             if config is not None:
@@ -150,7 +146,7 @@ class PyGhidraDecompilationAnalyzer(CachedDecompilationAnalyzer):
 
     async def analyze(self, resource: Resource, config=None):
         program_r = await resource.get_only_ancestor(
-            ResourceFilter.with_tags(PyGhidraAutoLoadProject)
+            ResourceFilter.with_tags(PyGhidraProject)
         )
         if not self.analysis_store.get_analysis(program_r.get_id())["metadata"]["decompiled"]:
             with TemporaryDirectory() as tempdir:

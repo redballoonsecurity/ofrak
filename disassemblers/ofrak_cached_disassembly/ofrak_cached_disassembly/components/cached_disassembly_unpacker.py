@@ -226,6 +226,8 @@ class CachedComplexBlockUnpacker(ComplexBlockUnpacker):
         program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(CachedAnalysis))
         analysis = self.analysis_store.get_analysis(program_r.get_id())
         program_attributes = self.analysis_store.get_program_attributes(program_r.get_id())
+        if program_attributes is None:
+            program_attributes = await resource.analyze(ProgramAttributes)
 
         cb_view = await resource.view_as(ComplexBlock)
         child_keys = analysis[f"func_{cb_view.virtual_address}"]["children"]

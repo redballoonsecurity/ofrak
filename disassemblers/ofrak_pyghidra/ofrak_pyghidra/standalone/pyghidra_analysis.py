@@ -7,7 +7,6 @@ import argparse
 import time
 import re
 import json
-from java.math import BigInteger
 
 
 def _parse_offset(java_object):
@@ -19,6 +18,7 @@ def _parse_offset(java_object):
 
 def unpack(program_file, decompiled, language=None):
     with pyghidra.open_program(program_file, language=language) as flat_api:
+        from java.math import BigInteger #  Jav packages must be imported after pyghidra.start()
         main_dictionary = {}
         code_regions = _unpack_program(flat_api)
         main_dictionary["metadata"] = {}
@@ -99,7 +99,7 @@ def _unpack_program(flat_api):
 
 
 def _concat_contiguous_code_blocks(code_regions):
-    code_regions = dict(sorted(code_regions.items(), key=lambda item: item[1]["virtual_address"]))
+    code_regions = sorted(code_regions, key=lambda item: item["virtual_address"])
     for i in range(len(code_regions) - 1):
         if (
             code_regions[i]["virtual_address"] + code_regions[i]["size"]
@@ -180,7 +180,6 @@ def _unpack_complex_block(func, flat_api):
                     == _parse_offset(address_range.getMaxAddress()) + 1
                 ):
                     exit_vaddr = _parse_offset(successor_bb_address_range.getMinAddress())
-
         instruction_mode = "none"
         tmode_register = flat_api.getCurrentProgram().getRegister("TMode")
         if tmode_register is not None:

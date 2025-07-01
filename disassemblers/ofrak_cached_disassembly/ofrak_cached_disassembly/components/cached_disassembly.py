@@ -31,7 +31,9 @@ class CachedAnalysisStore:
     def get_analysis(self, resource_id: bytes) -> Dict[str, Any]:
         return self.analysis[resource_id]["analysis"]
 
-    def get_program_attributes(self, resource_id: bytes) -> ProgramAttributes:
+    def get_program_attributes(self, resource_id: bytes) -> Optional[ProgramAttributes]:
+        if "program_attributes" not in self.analysis[resource_id]:
+            return None
         return self.analysis[resource_id]["program_attributes"]
 
     def id_exists(self, resource_id: bytes) -> bool:
