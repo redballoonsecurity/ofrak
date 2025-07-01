@@ -29,7 +29,9 @@ def unpack(program_file, decompiled, language=None, base_address=None):
 
             # Rebase the program to the specified base address
             program = flat_api.getCurrentProgram()
-            program.setImageBase(flat_api.toAddr(base_address), True)
+            address_factory = program.getAddressFactory()
+            new_base_addr = address_factory.getDefaultAddressSpace().getAddress(hex(base_address))
+            program.setImageBase(new_base_addr, True)
 
         from java.math import BigInteger  #  Java packages must be imported after pyghidra.start()
 
