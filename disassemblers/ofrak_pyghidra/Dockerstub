@@ -1,4 +1,0 @@
-# Download & install java and supervisor
-ENV GHIDRA_INSTALL_DIR=/opt/rbs/ghidra_11.3_PUBLIC/
-RUN export GHIDRA_INSTALL_DIR=/opt/rbs/ghidra_11.3_PUBLIC/
-RUN cd /opt/rbs/ghidra_11.3_PUBLIC/Ghidra/Features/PyGhidra/pypkg/ && python3 -m pip install -e . 

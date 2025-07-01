@@ -16,14 +16,30 @@ def _parse_offset(java_object):
     return int(str(java_object.getOffsetAsBigInteger()))
 
 
-def unpack(program_file, decompiled, language=None):
+def unpack(program_file, decompiled, language=None, base_address=None):
     with pyghidra.open_program(program_file, language=language) as flat_api:
-        from java.math import BigInteger #  Jav packages must be imported after pyghidra.start()
+        # If base_address is provided, rebase the program
+        if base_address is not None:
+            # Convert base_address to int if it's a string
+            if isinstance(base_address, str):
+                if base_address.startswith("0x"):
+                    base_address = int(base_address, 16)
+                else:
+                    base_address = int(base_address)
+
+            # Rebase the program to the specified base address
+            program = flat_api.getCurrentProgram()
+            program.setImageBase(flat_api.toAddr(base_address), True)
+
+        from java.math import BigInteger  #  Java packages must be imported after pyghidra.start()
+
         main_dictionary = {}
         code_regions = _unpack_program(flat_api)
         main_dictionary["metadata"] = {}
         main_dictionary["metadata"]["backend"] = "ghidra"
         main_dictionary["metadata"]["decompiled"] = decompiled
+        if base_address is not None:
+            main_dictionary["metadata"]["base_address"] = base_address
         with open(program_file, "rb") as fh:
             data = fh.read()
             md5_hash = hashlib.md5(data)
@@ -286,22 +302,29 @@ def _unpack_basic_block(block, flat_api):
             if i != instr.getNumOperands() - 1:
                 ops.append(", ")
             if instr.getOperandRefType(i) == RefType.READ:
-                regs_read.append(instr.getOpObjects(i)[instr.getOpObjects(i).length - 1].toString())
+                if instr.getOpObjects(i).length > 0:
+                    regs_read.append(
+                        instr.getOpObjects(i)[instr.getOpObjects(i).length - 1].toString()
+                    )
                 if i != instr.getNumOperands() - 1:
                     regs_read.append(", ")
 
             if instr.getOperandRefType(i) == RefType.WRITE:
-                regs_written.append(
-                    instr.getOpObjects(i)[instr.getOpObjects(i).length - 1].toString()
-                )
+                if instr.getOpObjects(i).length > 0:
+                    regs_written.append(
+                        instr.getOpObjects(i)[instr.getOpObjects(i).length - 1].toString()
+                    )
                 if i != instr.getNumOperands() - 1:
                     regs_written.append(", ")
 
             if instr.getOperandRefType(i) == RefType.READ_WRITE:
-                regs_read.append(instr.getOpObjects(i)[instr.getOpObjects(i).length - 1].toString())
-                regs_written.append(
-                    instr.getOpObjects(i)[instr.getOpObjects(i).length - 1].toString()
-                )
+                if instr.getOpObjects(i).length > 0:
+                    regs_read.append(
+                        instr.getOpObjects(i)[instr.getOpObjects(i).length - 1].toString()
+                    )
+                    regs_written.append(
+                        instr.getOpObjects(i)[instr.getOpObjects(i).length - 1].toString()
+                    )
                 if i != instr.getNumOperands() - 1:
                     regs_read.append(", ")
                     regs_written.append(", ")
@@ -387,9 +410,12 @@ if __name__ == "__main__":
         "--decompile", "-d", type=bool, default=False, help="decompile functions in cache"
     )
     parser.add_argument("--language", "-l", default=None, help="Ghidra language id")
+    parser.add_argument(
+        "--base_address", "-b", default=None, help="Base address to rebase the program to"
+    )
     args = parser.parse_args()
     start = time.time()
-    res = unpack(args.infile, args.decompile, args.language)
+    res = unpack(args.infile, args.decompile, args.language, args.base_address)
     with open(args.outfile, "w") as fh:
         json.dump(res, fh, indent=4)
     print(f"PyGhidra analysis took {time.time() - start} seconds")
