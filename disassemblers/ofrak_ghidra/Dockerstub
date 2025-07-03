@@ -26,7 +26,6 @@ RUN mkdir -p /opt/rbs && \
 
 # Install PyGhidra
 RUN export GHIDRA_INSTALL_DIR=/opt/rbs/ghidra_11.3.2_PUBLIC/ && \
-cd /opt/rbs/ghidra_11.3.2_PUBLIC/Ghidra/Features/PyGhidra/pypkg/ && python3 -m pip install -e . RUN export GHIDRA_INSTALL_DIR=/opt/rbs/ghidra_11.3.2_PUBLIC/
-    
+cd ${GHIDRA_INSTALL_DIR}/Ghidra/Features/PyGhidra/pypkg/ && python3 -m pip install -e .    
 WORKDIR /
 COPY $PACKAGE_PATH/server.conf /opt/rbs/ghidra_11.3.2_PUBLIC/server/
