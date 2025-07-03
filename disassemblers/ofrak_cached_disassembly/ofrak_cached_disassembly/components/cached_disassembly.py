@@ -24,10 +24,6 @@ class CachedAnalysisStore:
             self.analysis[resource_id] = dict()
         self.analysis[resource_id]["program_attributes"] = program_attributes
 
-    def delete_id_from_store(self, resource_id: bytes):
-        if resource_id in self.analysis:
-            del self.analysis[resource_id]
-
     def get_analysis(self, resource_id: bytes) -> Dict[str, Any]:
         return self.analysis[resource_id]["analysis"]
 

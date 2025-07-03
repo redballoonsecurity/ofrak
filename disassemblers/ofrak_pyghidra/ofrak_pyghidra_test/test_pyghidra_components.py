@@ -73,10 +73,30 @@ async def test_case(
     resource = await ofrak_context.create_root_resource_from_file(binary_path)
     return resource, mode
 
+
 ARCH_INFO_TEST_CASES = [
-    (ArchInfo(isa=InstructionSet.ARM, endianness=Endianness.LITTLE_ENDIAN, bit_width=BitWidth.BIT_32, processor=ProcessorType.ARM926EJ_S, sub_isa=SubInstructionSet.ARMv9A), "ARM:LE:32:v8"),
-    (ArchInfo(isa=InstructionSet.X86, endianness=Endianness.LITTLE_ENDIAN, bit_width=BitWidth.BIT_64, processor=ProcessorType.X64, sub_isa=None), "x86:LE:64:default"),
+    (
+        ArchInfo(
+            isa=InstructionSet.ARM,
+            endianness=Endianness.LITTLE_ENDIAN,
+            bit_width=BitWidth.BIT_32,
+            processor=ProcessorType.ARM926EJ_S,
+            sub_isa=SubInstructionSet.ARMv9A,
+        ),
+        "ARM:LE:32:v8",
+    ),
+    (
+        ArchInfo(
+            isa=InstructionSet.X86,
+            endianness=Endianness.LITTLE_ENDIAN,
+            bit_width=BitWidth.BIT_64,
+            processor=ProcessorType.X64,
+            sub_isa=None,
+        ),
+        "x86:LE:64:default",
+    ),
 ]
+
 
 async def test_instruction_mode(test_case: Tuple[Resource, InstructionSetMode]):
     root_resource, mode = test_case
@@ -123,6 +143,7 @@ async def test_decompilation(ofrak_context: OFRAKContext):
     assert "" not in decomps
     assert "main" in " ".join(decomps)
     assert "print" in " ".join(decomps)
+
 
 @pytest.mark.parametrize("arch, expected_processor_id", ARCH_INFO_TEST_CASES)
 def test_arch_info_to_processor_id(arch, expected_processor_id):

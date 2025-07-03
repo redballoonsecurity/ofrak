@@ -5,15 +5,7 @@ import json
 from ofrak_pyghidra.standalone.pyghidra_analysis import unpack
 
 
-def _analyze_binary(args):
-    start = time.time()
-    res = unpack(args.infile, args.decompile, args.language)
-    with open(args.outfile, "w") as fh:
-        json.dump(res, fh, indent=4)
-    print(f"PyGhidra analysis took {time.time() - start} seconds")
-
-
-def parse_args():
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run PyGhidra scripts and OFRAK Components.")
     command_parser = parser.add_subparsers()
 
@@ -21,7 +13,6 @@ def parse_args():
         "analyze",
         description="Creates a cache json file from a binary to be used with the CachedDisassemblyAnalyzer.",
     )
-    start_parser.set_defaults(func=_analyze_binary)
     start_parser.add_argument(
         "--infile", "-i", type=str, required=True, help="The binary to be analyzed."
     )
@@ -43,13 +34,14 @@ def parse_args():
         help="Decompile functions in cache",
     )
 
-    return parser
-
-
-if __name__ == "__main__":
-    parser = parse_args()
     args = parser.parse_args()
+
     if hasattr(args, "func"):
         args.func(args)
     else:
-        parser.print_usage()
+        # Handle the analyze command
+        start = time.time()
+        res = unpack(args.infile, args.decompile, args.language)
+        with open(args.outfile, "w") as fh:
+            json.dump(res, fh, indent=4)
+        print(f"PyGhidra analysis took {time.time() - start} seconds")
