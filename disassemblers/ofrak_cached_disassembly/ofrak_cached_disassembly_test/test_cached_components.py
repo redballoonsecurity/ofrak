@@ -25,7 +25,7 @@ from pytest_ofrak.patterns.basic_block_unpacker import (
     BasicBlockUnpackerUnpackAndVerifyPattern,
     BasicBlockUnpackerTestCase,
 )
-from ofrak.core.decompilation import DecompilationAnalysis
+from ofrak.core.decompilation import DecompilationAnalysis, DecompilationAnalyzer
 
 import ofrak_cached_disassembly
 
@@ -182,11 +182,11 @@ async def test_cached_decompilation(ofrak_context: OFRAKContext):
     )
     decomps = []
     for complex_block in complex_blocks:
-        await complex_block.resource.identify()
-        ghidra_resource: DecompilationAnalysis = await complex_block.resource.view_as(
+        await complex_block.resource.run(DecompilationAnalyzer)
+        cached_resource: DecompilationAnalysis = await complex_block.resource.view_as(
             DecompilationAnalysis
         )
-        decomps.append(ghidra_resource.decompilation)
+        decomps.append(cached_resource.decompilation)
     assert len(decomps) == 14
     assert "" not in decomps
     assert "main" in " ".join(decomps)

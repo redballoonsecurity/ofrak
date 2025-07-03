@@ -1,4 +1,4 @@
-from dis import Instruction
+from ofrak.core.instruction import Instruction
 import os
 from typing import Dict, Tuple
 from ofrak.core.complex_block import ComplexBlock
@@ -12,7 +12,7 @@ from pytest_ofrak.patterns.complex_block_unpacker import (
     ComplexBlockUnpackerUnpackAndVerifyPattern,
     ComplexBlockUnpackerTestCase,
 )
-from ofrak.core.decompilation import DecompilationAnalysis
+from ofrak.core.decompilation import DecompilationAnalysis, DecompilationAnalyzer
 from pytest_ofrak.patterns.basic_block_unpacker import BasicBlockUnpackerUnpackAndVerifyPattern
 import ofrak_pyghidra
 
@@ -108,11 +108,11 @@ async def test_decompilation(ofrak_context: OFRAKContext):
     )
     decomps = []
     for complex_block in complex_blocks:
-        await complex_block.resource.identify()
-        ghidra_resource: DecompilationAnalysis = await complex_block.resource.view_as(
+        await complex_block.resource.run(DecompilationAnalyzer)
+        pyghidra_resource: DecompilationAnalysis = await complex_block.resource.view_as(
             DecompilationAnalysis
         )
-        decomps.append(ghidra_resource.decompilation)
+        decomps.append(pyghidra_resource.decompilation)
     assert len(decomps) == 14
     assert "" not in decomps
     assert "main" in " ".join(decomps)

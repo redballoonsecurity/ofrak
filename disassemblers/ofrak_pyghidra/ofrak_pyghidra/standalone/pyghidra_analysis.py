@@ -33,8 +33,6 @@ def unpack(program_file, decompiled, language=None, base_address=None):
             new_base_addr = address_factory.getDefaultAddressSpace().getAddress(hex(base_address))
             program.setImageBase(new_base_addr, True)
 
-        from java.math import BigInteger  #  Java packages must be imported after pyghidra.start()
-
         main_dictionary = {}
         code_regions = _unpack_program(flat_api)
         main_dictionary["metadata"] = {}
@@ -117,6 +115,7 @@ def _unpack_program(flat_api):
 
 
 def _concat_contiguous_code_blocks(code_regions):
+    #  Ghidra splits the code into 0x10000 when it is a single segment, so we need to concat contiguous chunks
     code_regions = sorted(code_regions, key=lambda item: item["virtual_address"])
     for i in range(len(code_regions) - 1):
         if (
@@ -124,6 +123,7 @@ def _concat_contiguous_code_blocks(code_regions):
             == code_regions[i + 1]["virtual_address"]
             and code_regions[i]["executable"]
             and code_regions[i + 1]["executable"]
+            and code_regions[i]["size"] == 0x10000
         ):
             vaddr = code_regions[i]["virtual_address"]
             size = code_regions[i]["size"] + code_regions[i + 1]["size"]
@@ -168,6 +168,7 @@ def _unpack_code_region(code_region, flat_api):
 
 def _unpack_complex_block(func, flat_api):
     from ghidra.program.model.block import BasicBlockModel
+    from java.math import BigInteger  #  Java packages must be imported after pyghidra.start()
 
     bb_model = BasicBlockModel(flat_api.getCurrentProgram())
     bbs = []

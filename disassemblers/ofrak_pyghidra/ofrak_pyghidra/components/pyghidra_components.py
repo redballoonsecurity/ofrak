@@ -7,6 +7,8 @@ from xml.etree import ElementTree
 from ofrak.component.analyzer import Analyzer
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.code_region import CodeRegion
+from ofrak.core.complex_block import ComplexBlock
+from ofrak.core.decompilation import DecompilationAnalysis
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceFilter, ResourceServiceInterface
 from ofrak_type import ArchInfo, Endianness, InstructionSet
@@ -152,7 +154,8 @@ class PyGhidraBasicBlockUnpacker(CachedBasicBlockUnpacker):
 
 
 class PyGhidraDecompilationAnalyzer(CachedDecompilationAnalyzer):
-    id = b"PyGhidraDecompilationAnalyzer"
+    targets = (ComplexBlock,)
+    outputs = (DecompilationAnalysis,)
 
     async def analyze(self, resource: Resource, config=None):
         program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(PyGhidraProject))

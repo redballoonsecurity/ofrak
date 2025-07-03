@@ -299,6 +299,9 @@ class CachedBasicBlockUnpacker(BasicBlockUnpacker):
 class CachedDecompilationAnalyzer(DecompilationAnalyzer):
     """This analyzer extracts the decompilation from the cache json file and adds it to the resource if it exists."""
 
+    targets = (ComplexBlock,)
+    outputs = (DecompilationAnalysis,)
+
     def __init__(
         self,
         resource_factory: ResourceFactory,
@@ -318,4 +321,6 @@ class CachedDecompilationAnalyzer(DecompilationAnalyzer):
             decomp = analysis[f"func_{complex_block.virtual_address}"]["decompilation"]
         else:
             decomp = "The cache file does not contain a decompilation for this function."
+        resource.add_tag(DecompilationAnalysis)
+        await resource.save()
         return DecompilationAnalysis(decomp)
