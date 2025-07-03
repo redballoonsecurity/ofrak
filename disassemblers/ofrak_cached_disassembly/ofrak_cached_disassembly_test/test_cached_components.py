@@ -165,7 +165,9 @@ async def test_cached_decompilation(ofrak_context: OFRAKContext):
     )
     await root_resource.run(
         CachedAnalysisAnalyzer,
-        config=CachedAnalysisAnalyzerConfig(filename="assets/hello.x64.elf.json"),
+        config=CachedAnalysisAnalyzerConfig(
+            filename=os.path.join(os.path.dirname(__file__), "assets/hello.x64.elf")
+        ),
     )
     await root_resource.unpack_recursively(
         do_not_unpack=[
