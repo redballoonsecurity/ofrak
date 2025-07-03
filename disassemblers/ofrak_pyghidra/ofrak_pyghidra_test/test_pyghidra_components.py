@@ -5,7 +5,7 @@ from ofrak.core.complex_block import ComplexBlock
 from ofrak.ofrak_context import OFRAKContext
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter
-from ofrak_type import InstructionSetMode, List
+from ofrak_type import BitWidth, InstructionSetMode, List, ProcessorType, SubInstructionSet
 import pytest
 from pytest_ofrak.patterns.code_region_unpacker import CodeRegionUnpackAndVerifyPattern
 from pytest_ofrak.patterns.complex_block_unpacker import (
@@ -14,6 +14,8 @@ from pytest_ofrak.patterns.complex_block_unpacker import (
 )
 from ofrak.core.decompilation import DecompilationAnalysis, DecompilationAnalyzer
 from pytest_ofrak.patterns.basic_block_unpacker import BasicBlockUnpackerUnpackAndVerifyPattern
+from ofrak_pyghidra.components.pyghidra_components import _arch_info_to_processor_id
+from ofrak_type import ArchInfo, Endianness, InstructionSet
 import ofrak_pyghidra
 
 ASSETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
@@ -71,6 +73,10 @@ async def test_case(
     resource = await ofrak_context.create_root_resource_from_file(binary_path)
     return resource, mode
 
+ARCH_INFO_TEST_CASES = [
+    (ArchInfo(isa=InstructionSet.ARM, endianness=Endianness.LITTLE_ENDIAN, bit_width=BitWidth.BIT_32, processor=ProcessorType.ARM926EJ_S, sub_isa=SubInstructionSet.ARMv9A), "ARM:LE:32:v8"),
+    (ArchInfo(isa=InstructionSet.X86, endianness=Endianness.LITTLE_ENDIAN, bit_width=BitWidth.BIT_64, processor=ProcessorType.X64, sub_isa=None), "x86:LE:64:default"),
+]
 
 async def test_instruction_mode(test_case: Tuple[Resource, InstructionSetMode]):
     root_resource, mode = test_case
@@ -117,3 +123,7 @@ async def test_decompilation(ofrak_context: OFRAKContext):
     assert "" not in decomps
     assert "main" in " ".join(decomps)
     assert "print" in " ".join(decomps)
+
+@pytest.mark.parametrize("arch, expected_processor_id", ARCH_INFO_TEST_CASES)
+def test_arch_info_to_processor_id(arch, expected_processor_id):
+    assert _arch_info_to_processor_id(arch) == expected_processor_id
