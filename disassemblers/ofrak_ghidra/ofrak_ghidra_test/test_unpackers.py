@@ -19,12 +19,7 @@ from pytest_ofrak.patterns.complex_block_unpacker import (
     ComplexBlockUnpackerTestCase,
 )
 
-ASSETS_DIR = os.path.abspath(
-    os.path.join(
-        os.path.dirname(__file__),
-        "../../ofrak_cached_disassembly/ofrak_cached_disassembly_test/assets",
-    )
-)
+ASSETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
 
 
 class TestGhidraCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
