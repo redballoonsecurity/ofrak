@@ -18,7 +18,12 @@ from ofrak_pyghidra.components.pyghidra_components import _arch_info_to_processo
 from ofrak_type import ArchInfo, Endianness, InstructionSet
 import ofrak_pyghidra
 
-ASSETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
+ASSETS_DIR = os.path.abspath(
+    os.path.join(
+        os.path.dirname(__file__),
+        "../../ofrak_cached_disassembly/ofrak_cached_disassembly_test/assets",
+    )
+)
 
 
 @pytest.fixture(autouse=True)
