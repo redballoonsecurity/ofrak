@@ -105,7 +105,7 @@ class CachedProgramUnpacker(Unpacker[None]):
     """Extracts segments from the cache and creates CodeRegions for each."""
 
     targets = (CachedAnalysis,)
-    outputs = (CodeRegion,)
+    children = (CodeRegion,)
 
     def __init__(
         self,
