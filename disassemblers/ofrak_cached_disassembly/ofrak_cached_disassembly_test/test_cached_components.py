@@ -7,10 +7,13 @@ from ofrak.core.instruction import Instruction
 from ofrak.ofrak_context import OFRAKContext
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter
+from ofrak_cached_disassembly.components.cached_disassembly import CachedAnalysisStore
 from ofrak_cached_disassembly.components.cached_disassembly_unpacker import (
     CachedAnalysisAnalyzer,
     CachedAnalysisAnalyzerConfig,
+    CachedProgramUnpacker,
 )
+
 from ofrak_type import InstructionSetMode, List
 from pytest_ofrak.patterns.code_region_unpacker import (
     CodeRegionUnpackAndVerifyPattern,
@@ -26,6 +29,7 @@ from pytest_ofrak.patterns.basic_block_unpacker import (
     BasicBlockUnpackerTestCase,
 )
 from ofrak.core.decompilation import DecompilationAnalysis, DecompilationAnalyzer
+from ofrak.core.code_region import CodeRegion
 
 import ofrak_cached_disassembly
 
@@ -143,6 +147,9 @@ async def test_case(
 
 
 async def test_instruction_mode(test_case: Tuple[Resource, InstructionSetMode]):
+    """
+    Test unpacking instructions with different instructions sets
+    """
     root_resource, mode = test_case
     await root_resource.unpack_recursively()
     instructions = list(
@@ -193,3 +200,36 @@ async def test_cached_decompilation(ofrak_context: OFRAKContext):
     assert "" not in decomps
     assert "main" in " ".join(decomps)
     assert "print" in " ".join(decomps)
+
+
+def test_id_exists(ofrak_context: OFRAKContext):
+    """
+    Add a cached analysis to the store and check that the id exists within the store
+    """
+    cached_store = CachedAnalysisStore()
+    cached_store.store_analysis(b"1234", {"test": "store"})
+    assert cached_store.id_exists(b"1234"), "Resource id not found in CachedAnalysisStore"
+
+
+async def test_cached_program_unpacker(pyghidra_components, ofrak_context: OFRAKContext):
+    """
+    Test that the CachedProgramUnpacker unpacks a resource into CodeRegions
+    """
+    root_resource = await ofrak_context.create_root_resource_from_file(
+        os.path.join(os.path.dirname(__file__), "assets/hello.x64.elf")
+    )
+    cached_analysis_view = await root_resource.run(
+        CachedAnalysisAnalyzer,
+        config=CachedAnalysisAnalyzerConfig(
+            filename=os.path.join(os.path.dirname(__file__), "assets/hello.x64.elf.json")
+        ),
+    )
+
+    await root_resource.unpack_recursively()
+
+    await root_resource.run(CachedProgramUnpacker)
+
+    code_regions = await root_resource.get_descendants_as_view(
+        CodeRegion, r_filter=ResourceFilter.with_tags(CodeRegion)
+    )
+    assert len(list(code_regions)) > 0, "No CodeRegions were created by CachedProgramUnpacker"
