@@ -4,6 +4,28 @@
 
 [Contributions to OFRAK should be made as a Pull Request on Github.](https://github.com/redballoonsecurity/ofrak/blob/master/CONTRIBUTING.md)
 
+### Changelogs
+Each OFRAK package has a CHANGELOG.
+When changes are made to a package, the CHANGELOG should be updated as part of that PR.
+Usually this will involve updating an "Unreleased" change log entry.
+The changelogs follow the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and use semantic versioning.
+
+Most changes will require a **new** changelog entry. Please add a link to the PR at the end of the entry (see existing CHANGELOG files for examples).
+
+If your change is updating or fixing an unreleased feature, update the existing changelog entry, and add a link to the new PR, keeping the original PR reference (e.g., [#525](link), [#589](link))
+
+### Versions
+Make sure to bump version numbers in the CHANGELOG as well as each OFRAK package as part of your PR.
+
+For most packages, this will mean updating the following files:
+- `DIRECTORY/CHANGELOG.md`
+- `DIRECTORY/setup.py`
+
+For the `ofrak` package, version numbers should also be updated in the following additional locations:
+- `/frontend/package.json`
+- `/frontend/package-lock.json`
+- `/frontend/src/App.svelte`
+
 ## Pre-commit
 
 OFRAK uses [pre-commit](https://pre-commit.com/) to run automated tools on the code base before every commit.
