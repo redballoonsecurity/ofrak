@@ -69,7 +69,8 @@ public class GetDecompilation extends HeadlessScript {
                                           .replace("\n", "<nl>")
                                           .replace("\0", "<zero>")
                                           .replace("\t", "<tab>")
-                                          .replace("\r", "<cr>");
+                                          .replace("\r", "<cr>")
+                                          .replace("\\", "<escape>");
             return String.format("{\"decomp\": \"%s\"}", escaped_decomp);
         }
     }
