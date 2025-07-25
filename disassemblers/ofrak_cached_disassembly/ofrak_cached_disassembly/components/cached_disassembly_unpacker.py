@@ -76,16 +76,17 @@ class CachedAnalysisAnalyzer(Analyzer[CachedAnalysisAnalyzerConfig, CachedAnalys
             resource.has_tag(Program) or resource.has_tag(Ihex)
         ) and not resource.has_attributes(ProgramAttributes):
             raise AttributeError(
-                f"The reource with ID {resource.get_id()} is not an analyzable program format and does not have ProgramAttributes set."
+                f"The resource with ID {resource.get_id()} is not an analyzable program format and does not have ProgramAttributes set."
             )
-        await resource.unpack()  # Must unpack ELF to get program attributes
-        program_attributes = await resource.analyze(ProgramAttributes)
         self.analysis_store.store_analysis(resource.get_id(), config.filename)
         if not config.force:
             if not await self.verify_cache_file(resource):
                 raise ValueError(
                     "MD5 recorded in cache file does not match the hash of the requested resource, use the force config option to use this cache file anyway."
                 )
+        # unpack must come after store_analysis so the resource id lookup does not fail
+        await resource.unpack()  # Must unpack ELF to get program attributes
+        program_attributes = await resource.analyze(ProgramAttributes)
         self.analysis_store.store_program_attributes(resource.get_id(), program_attributes)
         cached_analysis_view = CachedAnalysis()
         resource.add_view(cached_analysis_view)

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import hashlib
 from tempfile import TemporaryDirectory
 import os
 from typing import Dict
@@ -24,6 +25,7 @@ from ofrak.resource import Resource, ResourceFactory
 from ofrak_cached_disassembly.components.cached_disassembly import CachedAnalysisStore
 from ofrak_cached_disassembly.components.cached_disassembly_unpacker import (
     CachedAnalysis,
+    CachedAnalysisAnalyzerConfig,
     CachedCodeRegionUnpacker,
     CachedComplexBlockUnpacker,
     CachedBasicBlockUnpacker,
@@ -31,6 +33,7 @@ from ofrak_cached_disassembly.components.cached_disassembly_unpacker import (
     CachedDecompilationAnalyzer,
 )
 from ofrak_pyghidra.standalone.pyghidra_analysis import unpack
+from ofrak_type.error import NotFoundError
 
 
 _GHIDRA_AUTO_LOADABLE_FORMATS = [Elf, Ihex, Pe]
@@ -164,7 +167,18 @@ class PyGhidraDecompilationAnalyzer(CachedDecompilationAnalyzer):
                 program_file = os.path.join(tempdir, "program")
                 await program_r.flush_data_to_disk(program_file)
 
-                self.analysis_store.store_analysis(program_r.get_id(), unpack(program_file, True))
+                try:
+                    program_attrs = program_r.get_attributes(ProgramAttributes)
+                except NotFoundError:
+                    program_attrs = await program_r.analyze(ProgramAttributes)
+                self.analysis_store.store_analysis(
+                    program_r.get_id(),
+                    unpack(
+                        program_file,
+                        True,
+                        language=_arch_info_to_processor_id(program_attrs),
+                    ),
+                )
         return await super().analyze(resource, config)
 
 
@@ -246,3 +260,52 @@ def _arch_info_to_processor_id(processor: ArchInfo):
         f"Could not determine a Ghidra language spec for the given architecture info "
         f"{processor}. Considered the following specs:\n{', '.join(processors_rejected)}"
     )
+
+
+class PyGhidraCachedAnalysisAnalyzer(Analyzer[CachedAnalysisAnalyzerConfig, CachedAnalysis]):
+    """This analyzer maps the cached analysis to the resource and verifies it's metadata."""
+
+    targets = (CachedAnalysis,)
+    outputs = (CachedAnalysis,)
+
+    def __init__(
+        self,
+        resource_factory: ResourceFactory,
+        data_service: DataServiceInterface,
+        resource_service: ResourceServiceInterface,
+        analysis_store: PyGhidraAnalysisStore,
+    ):
+        super().__init__(resource_factory, data_service, resource_service)
+        self.analysis_store = analysis_store
+
+    async def analyze(self, resource: Resource, config: CachedAnalysisAnalyzerConfig):
+        await resource.identify()
+        if not (
+            resource.has_tag(Program) or resource.has_tag(Ihex)
+        ) and not resource.has_attributes(ProgramAttributes):
+            raise AttributeError(
+                f"The resource with ID {resource.get_id()} is not an analyzable program format and does not have ProgramAttributes set."
+            )
+        self.analysis_store.store_analysis(resource.get_id(), config.filename)
+        if not config.force:
+            if not await self.verify_cache_file(resource):
+                raise ValueError(
+                    "MD5 recorded in cache file does not match the hash of the requested resource, use the force config option to use this cache file anyway."
+                )
+        # If unpack is called before store_analysis it might call get_analysis(resource.get_id())
+        # before the analysis for the resource id is stored.
+        await resource.unpack()  # Must unpack ELF to get program attributes
+        program_attributes = await resource.analyze(ProgramAttributes)
+        self.analysis_store.store_program_attributes(resource.get_id(), program_attributes)
+        cached_analysis_view = CachedAnalysis()
+        resource.add_view(cached_analysis_view)
+        await resource.save()
+        return cached_analysis_view
+
+    async def verify_cache_file(self, resource: Resource):
+        data = await resource.get_data()
+        md5_hash = hashlib.md5(data)
+        return (
+            md5_hash.digest().hex()
+            == self.analysis_store.get_analysis(resource.get_id())["metadata"]["hash"]
+        )

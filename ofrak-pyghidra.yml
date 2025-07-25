@@ -13,3 +13,6 @@ packages_paths:
     "disassemblers/ofrak_pyghidra",
     "frontend",
   ]
+entrypoint: |
+    nginx \
+      & python3 -m /ofrak-uboot/u_boot_pyghidra.py

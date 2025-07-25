@@ -55,8 +55,8 @@ def unpack(program_file, decompiled, language=None, base_address=None):
                 if decompiled:
                     try:
                         decompilation = _decompile(func, flat_api)
-                    except Exception:
-                        print(traceback.format_exc())
+                    except Exception as e:
+                        print(e, traceback.format_exc())
                         decompilation = ""
                     cb["decompilation"] = decompilation
                 basic_blocks, data_words = _unpack_complex_block(func, flat_api)
@@ -365,11 +365,15 @@ def _decompile(func, flat_api):
     from ghidra.util.task import TaskMonitor
 
     ifc = DecompInterface()
-    ifc.openProgram(flat_api.getCurrentProgram())
+    ifc.initializeProcess()
+    init = ifc.openProgram(flat_api.getCurrentProgram())
+    if not init:
+        raise RuntimeError("Could not open program for decompilation")
     res = ifc.decompileFunction(func, 0, TaskMonitor.DUMMY)
     if not res.decompileCompleted():
+        if res.failedToStart():
+            raise RuntimeError(f"Decompiler failed to start")
         raise RuntimeError(f"Unable to decompile {func.getName()}")
-        return
     decomp = res.getDecompiledFunction().getC()
     return decomp
 

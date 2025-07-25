@@ -233,3 +233,23 @@ async def test_cached_program_unpacker(pyghidra_components, ofrak_context: OFRAK
         CodeRegion, r_filter=ResourceFilter.with_tags(CodeRegion)
     )
     assert len(list(code_regions)) > 0, "No CodeRegions were created by CachedProgramUnpacker"
+
+
+async def test_load_cached_analysis(ofrak_context: OFRAKContext):
+    root_resource = await ofrak_context.create_root_resource_from_file(
+        os.path.join(os.path.dirname(__file__), "assets/hello.x64.elf")
+    )
+    await root_resource.run(
+        CachedAnalysisAnalyzer,
+        config=CachedAnalysisAnalyzerConfig(
+            filename=os.path.join(os.path.dirname(__file__), "assets/hello.x64.elf.json")
+        ),
+    )
+
+    injector = ofrak_context.injector
+    cached_store = await injector.get_instance(CachedAnalysisStore)
+    analysis = cached_store.get_analysis(root_resource.get_id())
+
+    assert analysis["metadata"]["decompiled"] == True
+    assert analysis["func_4496"]["name"] == "_init"
+    assert analysis["func_4496"]["decompilation"] != ""
