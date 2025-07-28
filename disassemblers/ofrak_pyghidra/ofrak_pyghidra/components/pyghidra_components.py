@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-import hashlib
 from tempfile import TemporaryDirectory
 import os
 from typing import Dict
@@ -25,7 +24,6 @@ from ofrak.resource import Resource, ResourceFactory
 from ofrak_cached_disassembly.components.cached_disassembly import CachedAnalysisStore
 from ofrak_cached_disassembly.components.cached_disassembly_unpacker import (
     CachedAnalysis,
-    CachedAnalysisAnalyzerConfig,
     CachedCodeRegionUnpacker,
     CachedComplexBlockUnpacker,
     CachedBasicBlockUnpacker,
