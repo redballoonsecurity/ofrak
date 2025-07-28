@@ -1,5 +1,5 @@
 # PyGhidra Backend
-Unlike the `ofrak_ghidra` module, `ofrak_pyghidra` does not require a server running to make calls to. It uses path to your Ghidra installation to ... 
+Use the ofrak_pyghidra module to disassemble and decompile a binary using Ghidra with the PyGhidra Python bindings. Unlike the `ofrak_ghidra` module, `ofrak_pyghidra` does not require a server running to make calls to. It uses the path to your Ghidra installation to run ghidra in headless mode and analyze the file.
 
 ## Install
 
@@ -13,7 +13,7 @@ Unlike the `ofrak_ghidra` module, `ofrak_pyghidra` does not require a server run
     1. Install `ofrak` and its dependencies.
     1. Run `make {install, develop}` inside of the [`ofrak_cached_disassembly/`](https://github.com/redballoonsecurity/ofrak/tree/master/disassemblers/ofrak_cached_disassembly) directory.
     1. Run `make {install, develop}` inside of the [`ofrak_pyghidra/`](https://github.com/redballoonsecurity/ofrak/tree/master/disassemblers/ofrak_pyghidra) directory.
-    1. Set the `GHIDRA_INSTALL_DIR` environement variable with `export GHIDRA_INSTALL_DIR=/install/ghidra_11.3.2_PUBLIC/`
+    1. Set the `GHIDRA_INSTALL_DIR` environement variable with `export GHIDRA_INSTALL_DIR=/install/ghidra_11.3.2_PUBLIC/`. Substituting with your ghidra install path.
     1. Install pyghidra `cd ${GHIDRA_INSTALL_DIR}/Ghidra/Features/PyGhidra/pypkg/ && python3 -m pip install -e .`
 
     Note: If you are using and Arm processor, you might need to compile the [native binaries](https://htmlpreview.github.io/?https://github.com/NationalSecurityAgency/ghidra/blob/Ghidra_10.1_build/GhidraDocs/InstallationGuide.html#Build) for decompilation to work 
@@ -33,7 +33,7 @@ ofrak.discover(ofrak_pyghidra)
 ```
 or open the gui with `ofrak gui --backend pyghidra` to unpack and anlyze a binary.
 
-If the resource is correctly tagged as a Program or IHex, it should automatically be tagged as `PyGhidraProject` when identified if the `ofrak_pyghidra` module is discovered.
+If the resource is correctly tagged as a Program or IHex, it should automatically be tagged as `PyGhidraProject` when identified, if the `ofrak_pyghidra` module is discovered.
 
 
 ## PyGhidra Analysis
@@ -65,10 +65,27 @@ program_attributes = ProgramAttributes(
 
 resource.add_attributes(program_attributes)
 await resource.save()
+
+resource.identify()
 ```
 
+A `CodeRegion` will need to be added manually
+
+```python
+new_length = await resource.get_data_length()
+await resource.create_child_from_view(
+    CodeRegion(
+        virtual_address=0,
+        size=new_length,
+    ),
+    Range.from_size(0, new_length)
+)
+await resource.save()
+```
+
+
 ### Cached analysis
-PyGhidra uses the cached disassembly module to store the results of any disassembly and decompilation for later use so there is no need to run the analysis again. 
+PyGhidra can store the results of any disassembly and decompilation for later use so there is no need to run the analysis again. 
 
 #### Saving cached analysis
 To save a cache to a json file
@@ -111,12 +128,4 @@ with open("cache_file.json", "w") as fh:
 ```
 
 #### Loading cached analysis
-Load an analysis json file with `PyGhidraCachedAnalysisAnalyzer`
-
-```python
-await resource.run(
-    PyGhidraCachedAnalysisAnalyzer,
-    config=CachedAnalysisAnalyzerConfig(
-        filename="cache_file.json")
-)
-```
+To load an analysis json file, see the [`Cached Disassembly Backend`](./cached_disassembly.md)

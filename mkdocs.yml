@@ -71,6 +71,8 @@ nav:
         - Projects: "user-guide/gui/projects.md"
       - Disassembler Backends:
         - Ghidra Backend: "user-guide/disassembler-backends/ghidra.md"
+        - PyGhidra Backend: "user-guide/disassembler-backends/pyghidra.md"
+        - Cached Disassembly Backend: "user-guide/disassembler-backends/cached_disassembly.md"
         - Binary Ninja Backend: "user-guide/disassembler-backends/binary_ninja.md"
         - Angr Backend: "user-guide/disassembler-backends/angr.md"
         - Gotchas: "user-guide/disassembler-backends/gotchas.md"
