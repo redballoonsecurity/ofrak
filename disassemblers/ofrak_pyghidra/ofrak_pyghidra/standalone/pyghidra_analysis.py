@@ -365,7 +365,6 @@ def _decompile(func, flat_api):
     from ghidra.util.task import TaskMonitor
 
     ifc = DecompInterface()
-    ifc.initializeProcess()
     init = ifc.openProgram(flat_api.getCurrentProgram())
     if not init:
         raise RuntimeError("Could not open program for decompilation")
