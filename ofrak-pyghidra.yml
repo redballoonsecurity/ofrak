@@ -15,4 +15,4 @@ packages_paths:
   ]
 entrypoint: |
     nginx \
-      & python3 -m /ofrak-uboot/u_boot_pyghidra.py
+      & python3 -m ofrak gui -H 0.0.0.0 -p 8877 --backend pyghidra
