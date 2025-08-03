@@ -18,3 +18,4 @@ disassemblers/ofrak_cached_disassembly/ofrak_cached_disassembly_test/assets/Make
 ofrak_core/pytest_ofrak/elf/assets/* filter=lfs diff=lfs merge=lfs -text
 ofrak_core/pytest_ofrak/elf/assets/*.c !filter !diff !merge text
 ofrak_core/pytest_ofrak/elf/assets/Makefile !filter !diff !merge text
+disassemblers/ofrak_ghidra/ofrak_ghidra_test/assets/Makefile filter=lfs diff=lfs merge=lfs -text
