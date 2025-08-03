@@ -12,7 +12,7 @@ OFRAK supports using the Ghidra backend in two ways: natively on your host machi
         % source venv/bin/activate
         ```
     1. Install `ofrak` and its dependencies.
-    1. Run `make {install, develop}` inside of the [`ofrak_ghidra/`](https://github.com/redballoonsecurity/ofrak/tree/master/disassemblers/ofrak_ghidra) directory to install OFRAK Ghidra.
+    1. Run `make install` or `make develop` inside of the [`ofrak_ghidra/`](https://github.com/redballoonsecurity/ofrak/tree/master/disassemblers/ofrak_ghidra) directory to install OFRAK Ghidra.
     1. Copy [`server.conf`](https://github.com/redballoonsecurity/ofrak/blob/master/disassemblers/ofrak_ghidra/server.conf) to the `server/` directory of your local Ghidra installation
     1. Run `python -m ofrak_ghidra.config dump > ofrak_ghidra.yml` to create the default YAML file
     1. Modify `ofrak_ghidra.yml` according to your local Ghidra environment. This provides OFRAK Ghidra with the paths to your Ghidra install directory and Ghidra log file as well as your Ghidra Server address and credentials.
@@ -21,7 +21,7 @@ OFRAK supports using the Ghidra backend in two ways: natively on your host machi
 
 === "Docker"
 
-    Follow the instructions in the [OFRAK environment setup guide](../../environment-setup.html) to build a Docker container with Ghidra. Ghidra will be automatically installed if the `disassemblers/ofrak_ghidra` package is included in the Docker build's config file.
+    Follow the instructions in the [OFRAK environment setup guide](../../environment-setup.md) to build a Docker container with Ghidra. Ghidra will be automatically installed if the `disassemblers/ofrak_ghidra` package is included in the Docker build's config file.
     For example, `ofrak-ghidra.yml`:
 
     ```yaml
