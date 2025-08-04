@@ -42,7 +42,7 @@ def main():
         with open(args.outfile, "w") as fh:
             json.dump(res, fh, indent=4)
         print(f"PyGhidra analysis took {time.time() - start} seconds")
-        
-        
+
+
 if __name__ == "__main__":
     main()
