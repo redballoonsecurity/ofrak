@@ -85,7 +85,7 @@ await resource.save()
 
 
 ### Cached analysis
-PyGhidra can store the results of any disassembly and decompilation for later use so there is no need to run the analysis again. 
+PyGhidra can store the results of any disassembly and decompilation for later use. 
 
 #### Saving cached analysis
 To save a cache to a JSON file:
