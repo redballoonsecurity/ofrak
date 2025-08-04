@@ -42,11 +42,11 @@ class CachedAnalysis(ResourceView):
 
 @dataclass
 class CachedAnalysisAnalyzerConfig(ComponentConfig):
-    """This config is used to pass the filename of the cache json file to the analyzer.
+    """
+    This config is used to pass the filename of the cache json file to the analyzer.
 
-    Args:
-        filename (str): The path to the cache json file.
-        force (Optional[bool], optional): Set to True to force the analyzer to use the cache file even if the hash does not match. Defaults to False.
+    :param filename:The path to the cache json file.
+    :param force: Set to True to force the analyzer to use the cache file even if the hash does not match. Defaults to False.
     """
 
     filename: str
@@ -54,7 +54,9 @@ class CachedAnalysisAnalyzerConfig(ComponentConfig):
 
 
 class CachedAnalysisAnalyzer(Analyzer[CachedAnalysisAnalyzerConfig, CachedAnalysis]):
-    """This analyzer maps the cached analysis to the resource and verifies it's metadata."""
+    """
+    This analyzer maps the cached analysis to the resource and verifies it's metadata.
+    """
 
     id = b"CachedAnalysisAnalyzer"
     targets = (CachedAnalysis,)
@@ -103,7 +105,9 @@ class CachedAnalysisAnalyzer(Analyzer[CachedAnalysisAnalyzerConfig, CachedAnalys
 
 
 class CachedProgramUnpacker(Unpacker[None]):
-    """Extracts segments from the cache and creates CodeRegions for each."""
+    """
+    Extracts segments from the cache and creates CodeRegions for each.
+    """
 
     targets = (CachedAnalysis,)
     children = (CodeRegion,)
@@ -131,7 +135,9 @@ class CachedProgramUnpacker(Unpacker[None]):
 
 
 class CachedGhidraCodeRegionModifier(Modifier[None]):
-    """Ghidra uses a different base address than the ELF does, so we have to rebase the ghidra analysis to the ELF addresses."""
+    """
+    Ghidra uses a different base address than the ELF does, so we have to rebase the ghidra analysis to the ELF addresses.
+    """
 
     targets = (CodeRegion,)
 
@@ -179,7 +185,9 @@ class CachedGhidraCodeRegionModifier(Modifier[None]):
 
 
 class CachedCodeRegionUnpacker(CodeRegionUnpacker):
-    """Unpacks complex from a CodeRegion resource via its cached children."""
+    """
+    Unpacks complex from a CodeRegion resource via its cached children.
+    """
 
     def __init__(
         self,
@@ -210,7 +218,9 @@ class CachedCodeRegionUnpacker(CodeRegionUnpacker):
 
 
 class CachedComplexBlockUnpacker(ComplexBlockUnpacker):
-    """Unpacks a complex block into its basic blocks and data words using the dw and bb keys in the cache json file."""
+    """
+    Unpacks a complex block into its basic blocks and data words using the dw and bb keys in the cache json file.
+    """
 
     def __init__(
         self,
@@ -261,7 +271,9 @@ class CachedComplexBlockUnpacker(ComplexBlockUnpacker):
 
 
 class CachedBasicBlockUnpacker(BasicBlockUnpacker):
-    """Unpacks a basic block into its instructions using the instr key in the cache json file."""
+    """
+    Unpacks a basic block into its instructions using the instr key in the cache json file.
+    """
 
     def __init__(
         self,
@@ -298,7 +310,9 @@ class CachedBasicBlockUnpacker(BasicBlockUnpacker):
 
 
 class CachedDecompilationAnalyzer(DecompilationAnalyzer):
-    """This analyzer extracts the decompilation from the cache json file and adds it to the resource if it exists."""
+    """
+    This analyzer extracts the decompilation from the cache json file and adds it to the resource if it exists.
+    """
 
     targets = (ComplexBlock,)
     outputs = (DecompilationAnalysis,)
