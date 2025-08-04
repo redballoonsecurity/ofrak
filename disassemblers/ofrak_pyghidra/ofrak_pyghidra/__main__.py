@@ -5,7 +5,7 @@ import json
 from ofrak_pyghidra.standalone.pyghidra_analysis import unpack
 
 
-def main(): # pragma: no cover
+def main():  # pragma: no cover
     parser = argparse.ArgumentParser(description="Run PyGhidra scripts and OFRAK Components.")
     command_parser = parser.add_subparsers()
     start_parser = command_parser.add_parser(
