@@ -5,10 +5,9 @@ import json
 from ofrak_pyghidra.standalone.pyghidra_analysis import unpack
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="Run PyGhidra scripts and OFRAK Components.")
     command_parser = parser.add_subparsers()
-
     start_parser = command_parser.add_parser(
         "analyze",
         description="Creates a cache json file from a binary to be used with the CachedDisassemblyAnalyzer.",
@@ -33,9 +32,7 @@ if __name__ == "__main__":
         default=False,
         help="Decompile functions in cache",
     )
-
     args = parser.parse_args()
-
     if hasattr(args, "func"):
         args.func(args)
     else:
@@ -45,3 +42,7 @@ if __name__ == "__main__":
         with open(args.outfile, "w") as fh:
             json.dump(res, fh, indent=4)
         print(f"PyGhidra analysis took {time.time() - start} seconds")
+        
+        
+if __name__ == "__main__":
+    main()
