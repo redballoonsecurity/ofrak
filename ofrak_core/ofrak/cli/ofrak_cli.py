@@ -21,6 +21,7 @@ BACKEND_PACKAGES: Dict[Optional[str], Set[str]] = {
     "angr": {"ofrak_angr", "ofrak_capstone"},
     "binary-ninja": {"ofrak_binary_ninja", "ofrak_capstone"},
     "ghidra": {"ofrak_ghidra"},
+    "pyghidra": {"ofrak_pyghidra"},
     None: set(),
 }
 

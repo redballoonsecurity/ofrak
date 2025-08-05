@@ -1,0 +1,1 @@
+importlib-resources  # A workaround for https://github.com/redballoonsecurity/ofrak/issues/398

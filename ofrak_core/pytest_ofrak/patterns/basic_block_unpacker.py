@@ -1306,6 +1306,20 @@ BASIC_BLOCK_UNPACKER_TEST_CASES = [
                     Instruction(
                         virtual_address=0x8038,
                         size=4,
+                        mnemonic="stmdb",
+                        operands="sp!, {r3, lr}",
+                        mode=InstructionSetMode.NONE,
+                    ),
+                    Instruction(
+                        virtual_address=0x8038,
+                        size=4,
+                        mnemonic="stmdb",
+                        operands="sp!, {r3, lr}",
+                        mode=InstructionSetMode.NONE,
+                    ),
+                    Instruction(
+                        virtual_address=0x8038,
+                        size=4,
                         mnemonic="push",
                         operands="{r3, lr}",
                         mode=InstructionSetMode.NONE,
@@ -1353,6 +1367,20 @@ BASIC_BLOCK_UNPACKER_TEST_CASES = [
             ],
             0x8058: [
                 (
+                    Instruction(
+                        virtual_address=0x8058,
+                        size=4,
+                        mnemonic="ldmia",
+                        operands="sp!, {r3, lr}",
+                        mode=InstructionSetMode.NONE,
+                    ),
+                    Instruction(
+                        virtual_address=0x8058,
+                        size=4,
+                        mnemonic="ldmia",
+                        operands="sp!, {r3, lr}",
+                        mode=InstructionSetMode.NONE,
+                    ),
                     Instruction(
                         virtual_address=0x8058,
                         size=4,
