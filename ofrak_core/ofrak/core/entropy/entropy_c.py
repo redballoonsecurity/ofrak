@@ -5,7 +5,6 @@ import sysconfig
 
 
 def get_entropy_c() -> Callable[[bytes, int, Optional[Callable[[int], None]]], bytes]:
-
     C_LOG_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_uint8)
 
     ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
@@ -34,10 +33,10 @@ def get_entropy_c() -> Callable[[bytes, int, Optional[Callable[[int], None]]], b
 
         if len(data) <= window_size:
             return b""
-        C_ENTROPY_FUNC = ctypes.create_string_buffer(len(data) - window_size)
-        errval = func(data, len(data), entropy, window_size, C_LOG_TYPE(log_percent))
+        entropy = ctypes.create_string_buffer(len(data) - window_size)
+        errval = C_ENTROPY_FUNC(data, len(data), entropy, window_size, C_LOG_TYPE(log_percent))
         if errval != 0:
             raise ValueError("Bad input to entropy function.")
         return bytes(entropy.raw)
-    
+
     return entropy_c
