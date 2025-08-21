@@ -69,7 +69,7 @@ def read_requirements(requirements_path):
 
 setuptools.setup(
     name="ofrak",
-    version="3.3.0rc12",
+    version="3.3.0rc13",
     description="A binary analysis and modification platform",
     packages=setuptools.find_packages(exclude=["test_ofrak", "test_ofrak.*"]),
     package_data={

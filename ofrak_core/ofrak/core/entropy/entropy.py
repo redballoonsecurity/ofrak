@@ -16,7 +16,9 @@ from ofrak.service.resource_service_i import ResourceServiceInterface
 LOGGER = logging.getLogger(__name__)
 
 try:
-    from ofrak.core.entropy.entropy_c import entropy_c as entropy_func
+    from ofrak.core.entropy.entropy_c import get_entropy_c
+
+    entropy_func = get_entropy_c()
 except:
     from ofrak.core.entropy.entropy_py import entropy_py as entropy_func
 

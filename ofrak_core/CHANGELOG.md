@@ -3,7 +3,7 @@ All notable changes to `ofrak` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased: 3.3.0rc12](https://github.com/redballoonsecurity/ofrak/tree/master)
+## [Unreleased: 3.3.0rc13](https://github.com/redballoonsecurity/ofrak/tree/master)
 
 ### Added
 - Add license check command to prompt users about community or pro licenses. ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
@@ -54,6 +54,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Remove `Data` attribute to eliminate duplicative indexing in `ResourceService`, resulting in performance improvement for all workflows ([#589](https://github.com/redballoonsecurity/ofrak/pull/589))
 - Minimap view now updates upon refresh when data changes ([#598](https://github.com/redballoonsecurity/ofrak/pull/598))
 - Ensure files loaded in OFRAK GUI display filename ([#599](https://github.com/redballoonsecurity/ofrak/pull/599)
+- Fixed import error when entropy c library is not found ([#605](https://github.com/redballoonsecurity/ofrak/pull/605))
 
 ### Changed
 - Miscellaneous updates to the documentation. ([#592](https://github.com/redballoonsecurity/ofrak/pull/592))
