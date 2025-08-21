@@ -5,6 +5,10 @@ import sysconfig
 
 
 def get_entropy_c() -> Callable[[bytes, int, Optional[Callable[[int], None]]], bytes]:
+    """
+    This function ensures the dependency injector does not "discover" this module and error while 
+    trying to load the entropy_c library.
+    """
     C_LOG_TYPE = ctypes.CFUNCTYPE(None, ctypes.c_uint8)
 
     ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
