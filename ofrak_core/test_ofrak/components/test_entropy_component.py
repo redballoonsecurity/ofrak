@@ -7,6 +7,7 @@ from ofrak import OFRAKContext
 import test_ofrak.components
 from ofrak.core.entropy.entropy_py import entropy_py
 from ofrak.core.entropy.entropy_c import get_entropy_c
+
 entropy_c = get_entropy_c()
 
 TEST_FILES = [
