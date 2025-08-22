@@ -1,3 +1,3 @@
 immutabledict==2.2.0
-python-magic;platform_system!="Windows"
-python-magic-bin;platform_system=="Windows"
+python-magic==0.4.27;platform_system!="Windows"
+python-magic-bin==0.4.14;platform_system=="Windows"
