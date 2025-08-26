@@ -108,7 +108,9 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraProject]):
                     return PyGhidraProject()
 
             program_attrs = resource.get_attributes(ProgramAttributes)
-            code_regions = await resource.get_children_as_view(CodeRegion)
+            code_regions = await resource.get_children_as_view(
+                CodeRegion, r_filter=ResourceFilter.with_tags(CodeRegion)
+            )
             base_address = min(code_region.virtual_address for code_region in code_regions)
             self.analysis_store.store_analysis(
                 resource.get_id(),
@@ -169,12 +171,17 @@ class PyGhidraDecompilationAnalyzer(CachedDecompilationAnalyzer):
                     program_attrs = program_r.get_attributes(ProgramAttributes)
                 except NotFoundError:
                     program_attrs = await program_r.analyze(ProgramAttributes)
+
+                code_region = await resource.get_parent_as_view(CodeRegion)
+                base_address = code_region.virtual_address
+
                 self.analysis_store.store_analysis(
                     program_r.get_id(),
                     unpack(
                         program_file,
                         True,
                         language=_arch_info_to_processor_id(program_attrs),
+                        base_address=base_address,
                     ),
                 )
         return await super().analyze(resource, config)
