@@ -49,12 +49,20 @@ def unpack(program_file, decompiled, language=None, base_address=None):
             main_dictionary[seg_key] = code_region
             func_cbs = _unpack_code_region(code_region, flat_api)
             code_region["children"] = []
+
+            from ghidra.app.decompiler import DecompInterface
+
+            decomp_interface = DecompInterface()
+            init = decomp_interface.openProgram(flat_api.getCurrentProgram())
+            if not init:
+                raise RuntimeError("Could not open program for decompilation")
+
             for func, cb in func_cbs:
                 cb_key = f"func_{cb['virtual_address']}"
                 code_region["children"].append(cb_key)
                 if decompiled:
                     try:
-                        decompilation = _decompile(func, flat_api)
+                        decompilation = _decompile(func, decomp_interface)
                     except Exception as e:
                         print(e, traceback.format_exc())
                         decompilation = ""
@@ -360,15 +368,10 @@ def _unpack_basic_block(block, flat_api):
     return instructions
 
 
-def _decompile(func, flat_api):
-    from ghidra.app.decompiler import DecompInterface
+def _decompile(func, decomp_interface):
     from ghidra.util.task import TaskMonitor
 
-    ifc = DecompInterface()
-    init = ifc.openProgram(flat_api.getCurrentProgram())
-    if not init:
-        raise RuntimeError("Could not open program for decompilation")
-    res = ifc.decompileFunction(func, 0, TaskMonitor.DUMMY)
+    res = decomp_interface.decompileFunction(func, 0, TaskMonitor.DUMMY)
     if not res.decompileCompleted():
         if res.failedToStart():
             raise RuntimeError(f"Decompiler failed to start")

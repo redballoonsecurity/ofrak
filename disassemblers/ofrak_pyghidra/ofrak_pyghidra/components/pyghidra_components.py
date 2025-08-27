@@ -112,6 +112,7 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraProject]):
                 CodeRegion, r_filter=ResourceFilter.with_tags(CodeRegion)
             )
             base_address = min(code_region.virtual_address for code_region in code_regions)
+
             self.analysis_store.store_analysis(
                 resource.get_id(),
                 unpack(
@@ -172,8 +173,13 @@ class PyGhidraDecompilationAnalyzer(CachedDecompilationAnalyzer):
                 except NotFoundError:
                     program_attrs = await program_r.analyze(ProgramAttributes)
 
-                code_region = await resource.get_parent_as_view(CodeRegion)
-                base_address = code_region.virtual_address
+                base_address = None
+
+                if not any(program_r.has_tag(tag) for tag in _GHIDRA_AUTO_LOADABLE_FORMATS):
+                    code_regions = await program_r.get_children_as_view(
+                        CodeRegion, r_filter=ResourceFilter.with_tags(CodeRegion)
+                    )
+                    base_address = min(r.virtual_address for r in code_regions)
 
                 self.analysis_store.store_analysis(
                     program_r.get_id(),
