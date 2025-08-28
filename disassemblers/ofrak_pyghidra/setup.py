@@ -42,8 +42,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    install_requires=read_requirements("requirements.txt")
-    + ["ofrak", "ofrak_cached_disassembly", "pyghidra~=2.1.0"],
+    install_requires=read_requirements("requirements.txt"),
     extras_require={
         "test": [
             "fun-coverage==0.2.0",
