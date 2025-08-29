@@ -6,7 +6,6 @@ from xml.etree import ElementTree
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.core.architecture import ProgramAttributes
-from ofrak.core.code_region import CodeRegion
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.core.decompilation import DecompilationAnalysis
 from ofrak.core.memory_region import MemoryRegion

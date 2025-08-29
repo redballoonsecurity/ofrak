@@ -370,7 +370,6 @@ def _unpack_basic_block(block, flat_api, ref_type, one):
 
 
 def _decompile(func, decomp_interface, task_monitor):
-
     res = decomp_interface.decompileFunction(func, 0, task_monitor)
     if not res.decompileCompleted():
         if res.failedToStart():
