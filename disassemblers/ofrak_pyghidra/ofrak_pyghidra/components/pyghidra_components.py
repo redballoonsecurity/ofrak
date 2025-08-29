@@ -108,6 +108,7 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraProject]):
                     return PyGhidraProject()
 
             program_attrs = resource.get_attributes(ProgramAttributes)
+            # Guess that the base address is the min start address of any memory region
             regions = await resource.get_children_as_view(
                 MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
             )
