@@ -18,12 +18,12 @@ def _parse_offset(java_object):
 
 def unpack(program_file, decompiled, language=None, base_address=None):
     with pyghidra.open_program(program_file, language=language) as flat_api:
+        # Java packages must be imported after pyghidra.start or pyghidra.open_program
         from ghidra.app.decompiler import DecompInterface
         from ghidra.util.task import TaskMonitor
         from ghidra.program.model.block import BasicBlockModel
         from ghidra.program.model.symbol import RefType
-        from java.math import BigInteger  #  Java packages must be imported after pyghidra.start()
-
+        from java.math import BigInteger
         # If base_address is provided, rebase the program
         if base_address is not None:
             # Convert base_address to int if it's a string
