@@ -24,6 +24,7 @@ def unpack(program_file, decompiled, language=None, base_address=None):
         from ghidra.program.model.block import BasicBlockModel
         from ghidra.program.model.symbol import RefType
         from java.math import BigInteger
+
         # If base_address is provided, rebase the program
         if base_address is not None:
             # Convert base_address to int if it's a string
