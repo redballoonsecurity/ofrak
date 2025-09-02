@@ -175,7 +175,6 @@ class PyGhidraDecompilationAnalyzer(CachedDecompilationAnalyzer):
                     program_attrs = await program_r.analyze(ProgramAttributes)
 
                 base_address = None
-
                 if not any(program_r.has_tag(tag) for tag in _GHIDRA_AUTO_LOADABLE_FORMATS):
                     regions = await program_r.get_children_as_view(
                         MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
