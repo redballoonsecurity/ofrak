@@ -42,7 +42,8 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    install_requires=read_requirements("requirements.txt") + ["ofrak", "ofrak_cached_disassembly"],
+    install_requires=["ofrak>=3.3.0rc0", "ofrak_cached_disassembly>=0.1.0"]
+    + read_requirements("requirements.txt"),
     extras_require={
         "test": [
             "fun-coverage==0.2.0",

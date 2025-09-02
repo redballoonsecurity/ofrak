@@ -18,6 +18,13 @@ def _parse_offset(java_object):
 
 def unpack(program_file, decompiled, language=None, base_address=None):
     with pyghidra.open_program(program_file, language=language) as flat_api:
+        # Java packages must be imported after pyghidra.start or pyghidra.open_program
+        from ghidra.app.decompiler import DecompInterface
+        from ghidra.util.task import TaskMonitor
+        from ghidra.program.model.block import BasicBlockModel
+        from ghidra.program.model.symbol import RefType
+        from java.math import BigInteger
+
         # If base_address is provided, rebase the program
         if base_address is not None:
             # Convert base_address to int if it's a string
@@ -44,22 +51,32 @@ def unpack(program_file, decompiled, language=None, base_address=None):
             data = fh.read()
             md5_hash = hashlib.md5(data)
             main_dictionary["metadata"]["hash"] = md5_hash.digest().hex()
+
         for code_region in code_regions:
             seg_key = f"seg_{code_region['virtual_address']}"
             main_dictionary[seg_key] = code_region
             func_cbs = _unpack_code_region(code_region, flat_api)
             code_region["children"] = []
+
+            decomp_interface = DecompInterface()
+            init = decomp_interface.openProgram(flat_api.getCurrentProgram())
+            if not init:
+                raise RuntimeError("Could not open program for decompilation")
+
             for func, cb in func_cbs:
                 cb_key = f"func_{cb['virtual_address']}"
                 code_region["children"].append(cb_key)
                 if decompiled:
                     try:
-                        decompilation = _decompile(func, flat_api)
+                        decompilation = _decompile(func, decomp_interface, TaskMonitor.DUMMY)
                     except Exception as e:
                         print(e, traceback.format_exc())
                         decompilation = ""
                     cb["decompilation"] = decompilation
-                basic_blocks, data_words = _unpack_complex_block(func, flat_api)
+                bb_model = BasicBlockModel(flat_api.getCurrentProgram())
+                basic_blocks, data_words = _unpack_complex_block(
+                    func, flat_api, bb_model, BigInteger.ONE
+                )
                 cb["children"] = []
                 for block, bb in basic_blocks:
                     if bb["size"] == 0:
@@ -75,7 +92,7 @@ def unpack(program_file, decompiled, language=None, base_address=None):
                         )
                         continue
                     bb_key = f"bb_{bb['virtual_address']}"
-                    instructions = _unpack_basic_block(block, flat_api)
+                    instructions = _unpack_basic_block(block, flat_api, RefType, BigInteger.ONE)
                     bb["children"] = []
                     for instruction in instructions:
                         instr_key = f"instr_{instruction['virtual_address']}"
@@ -166,11 +183,7 @@ def _unpack_code_region(code_region, flat_api):
     return functions
 
 
-def _unpack_complex_block(func, flat_api):
-    from ghidra.program.model.block import BasicBlockModel
-    from java.math import BigInteger  #  Java packages must be imported after pyghidra.start()
-
-    bb_model = BasicBlockModel(flat_api.getCurrentProgram())
+def _unpack_complex_block(func, flat_api, bb_model, one):
     bbs = []
     bb_iter = bb_model.getCodeBlocksContaining(func.getBody(), flat_api.monitor)
     for block in bb_iter:
@@ -207,7 +220,7 @@ def _unpack_complex_block(func, flat_api):
                 .getProgramContext()
                 .getRegisterValue(tmode_register, address_range.getMinAddress())
             )
-            if function_mode.getUnsignedValueIgnoreMask().equals(BigInteger.ONE):
+            if function_mode.getUnsignedValueIgnoreMask().equals(one):
                 instruction_mode = "thumb"
         vle_register = flat_api.getCurrentProgram().getRegister("vle")
         if vle_register is not None:
@@ -216,7 +229,7 @@ def _unpack_complex_block(func, flat_api):
                 .getProgramContext()
                 .getRegisterValue(vle_register, address_range.getMinAddress())
             )
-            if function_mode.getUnsignedValueIgnoreMask().equals(BigInteger.ONE):
+            if function_mode.getUnsignedValueIgnoreMask().equals(one):
                 instruction_mode = "vle"
         if is_exit_point:
             exit_vaddr = None
@@ -268,10 +281,7 @@ def _unpack_complex_block(func, flat_api):
     return bbs, dws
 
 
-def _unpack_basic_block(block, flat_api):
-    from java.math import BigInteger
-    from ghidra.program.model.symbol import RefType
-
+def _unpack_basic_block(block, flat_api, ref_type, one):
     instructions = []
     address_range = block.getAddressRanges().next()
     start = _parse_offset(address_range.getMinAddress())
@@ -292,19 +302,19 @@ def _unpack_basic_block(block, flat_api):
         instruction_mode = "none"
         if thumb_register is not None:
             thumb_val = instr.getValue(thumb_register, False)
-            if thumb_val.equals(BigInteger.ONE):
+            if thumb_val.equals(one):
                 instruction_mode = "thumb"
         else:
             vle_register = instr.getRegister("vle")
             if vle_register is not None:
                 vle_val = instr.getValue(vle_register, False)
-                if vle_val.equals(BigInteger.ONE):
+                if vle_val.equals(one):
                     instruction_mode = "vle"
         for i in range(int(instr.getNumOperands())):
             ops.append(instr.getDefaultOperandRepresentation(i))
             if i != instr.getNumOperands() - 1:
                 ops.append(", ")
-            if instr.getOperandRefType(i) == RefType.READ:
+            if instr.getOperandRefType(i) == ref_type.READ:
                 if instr.getOpObjects(i).length > 0:
                     regs_read.append(
                         instr.getOpObjects(i)[instr.getOpObjects(i).length - 1].toString()
@@ -312,7 +322,7 @@ def _unpack_basic_block(block, flat_api):
                 if i != instr.getNumOperands() - 1:
                     regs_read.append(", ")
 
-            if instr.getOperandRefType(i) == RefType.WRITE:
+            if instr.getOperandRefType(i) == ref_type.WRITE:
                 if instr.getOpObjects(i).length > 0:
                     regs_written.append(
                         instr.getOpObjects(i)[instr.getOpObjects(i).length - 1].toString()
@@ -320,7 +330,7 @@ def _unpack_basic_block(block, flat_api):
                 if i != instr.getNumOperands() - 1:
                     regs_written.append(", ")
 
-            if instr.getOperandRefType(i) == RefType.READ_WRITE:
+            if instr.getOperandRefType(i) == ref_type.READ_WRITE:
                 if instr.getOpObjects(i).length > 0:
                     regs_read.append(
                         instr.getOpObjects(i)[instr.getOpObjects(i).length - 1].toString()
@@ -360,15 +370,8 @@ def _unpack_basic_block(block, flat_api):
     return instructions
 
 
-def _decompile(func, flat_api):
-    from ghidra.app.decompiler import DecompInterface
-    from ghidra.util.task import TaskMonitor
-
-    ifc = DecompInterface()
-    init = ifc.openProgram(flat_api.getCurrentProgram())
-    if not init:
-        raise RuntimeError("Could not open program for decompilation")
-    res = ifc.decompileFunction(func, 0, TaskMonitor.DUMMY)
+def _decompile(func, decomp_interface, task_monitor):
+    res = decomp_interface.decompileFunction(func, 0, task_monitor)
     if not res.decompileCompleted():
         if res.failedToStart():
             raise RuntimeError(f"Decompiler failed to start")

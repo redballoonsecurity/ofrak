@@ -6,9 +6,9 @@ from xml.etree import ElementTree
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.core.architecture import ProgramAttributes
-from ofrak.core.code_region import CodeRegion
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.core.decompilation import DecompilationAnalysis
+from ofrak.core.memory_region import MemoryRegion
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceFilter, ResourceServiceInterface
 from ofrak_type import ArchInfo, Endianness, InstructionSet
@@ -108,8 +108,12 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraProject]):
                     return PyGhidraProject()
 
             program_attrs = resource.get_attributes(ProgramAttributes)
-            code_regions = await resource.get_children_as_view(CodeRegion)
-            base_address = min(code_region.virtual_address for code_region in code_regions)
+            # Guess that the base address is the min start address of any memory region
+            regions = await resource.get_children_as_view(
+                MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
+            )
+            base_address = min(code_region.virtual_address for code_region in regions)
+
             self.analysis_store.store_analysis(
                 resource.get_id(),
                 unpack(
@@ -169,12 +173,21 @@ class PyGhidraDecompilationAnalyzer(CachedDecompilationAnalyzer):
                     program_attrs = program_r.get_attributes(ProgramAttributes)
                 except NotFoundError:
                     program_attrs = await program_r.analyze(ProgramAttributes)
+
+                base_address = None
+                if not any(program_r.has_tag(tag) for tag in _GHIDRA_AUTO_LOADABLE_FORMATS):
+                    regions = await program_r.get_children_as_view(
+                        MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
+                    )
+                    base_address = min(r.virtual_address for r in regions)
+
                 self.analysis_store.store_analysis(
                     program_r.get_id(),
                     unpack(
                         program_file,
                         True,
                         language=_arch_info_to_processor_id(program_attrs),
+                        base_address=base_address,
                     ),
                 )
         return await super().analyze(resource, config)

@@ -11,10 +11,10 @@ Use the `ofrak_pyghidra` module to disassemble and decompile binaries using Ghid
         % source venv/bin/activate
         ```
     1. Install `ofrak` and its dependencies.
-    1. Run `make install` or `make develop` inside of the [`ofrak_cached_disassembly/`](https://github.com/redballoonsecurity/ofrak/tree/master/disassemblers/ofrak_cached_disassembly) directory.
-    1. Run `make install` or `make develop` inside of the [`ofrak_pyghidra/`](https://github.com/redballoonsecurity/ofrak/tree/master/disassemblers/ofrak_pyghidra) directory.
     1. Set the `GHIDRA_INSTALL_DIR` environment variable with `export GHIDRA_INSTALL_DIR=/install/ghidra_11.3.2_PUBLIC/`, substituting in your actual Ghidra install path.
     1. Install PyGhidra with: `cd ${GHIDRA_INSTALL_DIR}/Ghidra/Features/PyGhidra/pypkg/ && python3 -m pip install -e .`
+    1. Run `make install` or `make develop` inside of the [`ofrak_cached_disassembly/`](https://github.com/redballoonsecurity/ofrak/tree/master/disassemblers/ofrak_cached_disassembly) directory.
+    1. Run `make install` or `make develop` inside of the [`ofrak_pyghidra/`](https://github.com/redballoonsecurity/ofrak/tree/master/disassemblers/ofrak_pyghidra) directory.
 
     Note: If you are using an ARM processor, you might need to compile the [native binaries](https://htmlpreview.github.io/?https://github.com/NationalSecurityAgency/ghidra/blob/Ghidra_10.1_build/GhidraDocs/InstallationGuide.html#Build) for decompilation to work.
 === "Docker"

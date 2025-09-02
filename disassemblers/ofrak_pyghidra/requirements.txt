@@ -1,1 +1,2 @@
+pyghidra~=2.1.0
 importlib-resources  # A workaround for https://github.com/redballoonsecurity/ofrak/issues/398
