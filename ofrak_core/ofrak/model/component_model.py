@@ -36,7 +36,7 @@ class ComponentExternalTool:
     the host, typically something like "--help"
     :ivar apt_package: An `apt` package that installs this tool, if such a package exists
     :ivar brew_package: An `brew` package that installs this tool, if such a package exists
-
+    :ivar choco_package: A `choco` package that installs this tool, if such a package exists
     """
 
     tool: str
@@ -44,6 +44,7 @@ class ComponentExternalTool:
     install_check_arg: str
     apt_package: Optional[str] = None
     brew_package: Optional[str] = None
+    choco_package: Optional[str] = None
 
     async def is_tool_installed(self) -> bool:
         """

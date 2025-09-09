@@ -23,6 +23,7 @@ CPIO_TOOL = ComponentExternalTool(
     install_check_arg="--help",
     apt_package="cpio",
     brew_package="cpio",
+    choco_package="cpio",
 )
 
 

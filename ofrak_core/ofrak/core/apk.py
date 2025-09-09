@@ -17,7 +17,12 @@ from ofrak.model.component_model import ComponentConfig, ComponentExternalTool
 from ofrak.resource import Resource
 from ofrak_type.range import Range
 
-APKTOOL = ComponentExternalTool("apktool", "https://ibotpeaches.github.io/Apktool/", "-version")
+APKTOOL = ComponentExternalTool(
+    "apktool",
+    "https://ibotpeaches.github.io/Apktool/",
+    "-version",
+    choco_package="apktool",
+)
 JAVA = ComponentExternalTool(
     "java",
     "https://openjdk.org/projects/jdk/17/",

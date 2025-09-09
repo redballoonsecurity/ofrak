@@ -278,6 +278,13 @@ ofrak deps --packages-for brew | xargs brew install -y
 
 ```
 
+Or on Windows with Chocolatey, you can run:
+
+```powershell
+ofrak deps --packages-for choco | ForEach-Object { choco install -y $_ }
+
+```
+
 Each of these commands will collect all OFRAK dependencies with packages installable through the respective package manager, then pipe all those packages names to the package manager's install command.
 In this, way a good chunk of OFRAK's dependencies can be installed quickly.
 
