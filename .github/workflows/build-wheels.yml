@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.9', '3.10', '3.11']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
         
     steps:
       - uses: actions/checkout@v4
@@ -28,15 +28,53 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install build tools
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Build frontend
+        run: |
+          if [ -d "frontend" ]; then
+            cd frontend
+            npm install
+            npm run build
+            cd ../ofrak_core
+            cp -r ../frontend/dist ofrak/gui/public
+          else
+            echo "No frontend directory found, creating empty public directory"
+            mkdir -p ofrak_core/ofrak/gui/public
+          fi
+        shell: bash
+
+      - name: Install build tools  
         run: |
           python -m pip install --upgrade pip
-          pip install build wheel
+          pip install cibuildwheel
 
-      - name: Build OFRAK (ofrak_core) wheel
+      - name: Set Python version for cibuildwheel
+        id: py-version  
+        run: |
+          PY_VERSION="${{ matrix.python-version }}"
+          PY_VERSION_NO_DOT=${PY_VERSION//./}
+          echo "version=${PY_VERSION_NO_DOT}" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Build OFRAK wheels with cibuildwheel
+        env:
+          CIBW_BUILD: "cp${{ steps.py-version.outputs.version }}-*"
+          CIBW_SKIP: "*-win32 *-manylinux_i686 *-musllinux*"  # Skip 32-bit and musl
+          CIBW_ARCHS_WINDOWS: "AMD64 ARM64"  # Windows x64 and ARM64
+          CIBW_ARCHS_MACOS: "x86_64 arm64"   # Intel and Apple Silicon
+          CIBW_ARCHS_LINUX: "x86_64 aarch64" # Intel and ARM64
+          CIBW_BUILD_VERBOSITY: 1
+          # Ensure C compiler is available
+          CIBW_BEFORE_BUILD_WINDOWS: "pip install setuptools wheel"
+          CIBW_BEFORE_BUILD_MACOS: "pip install setuptools wheel" 
+          CIBW_BEFORE_BUILD_LINUX: "pip install setuptools wheel"
         run: |
           cd ofrak_core
-          python -m build --wheel --outdir ../wheelhouse
+          cibuildwheel --output-dir ../wheelhouse
         shell: bash
 
       - name: List built wheels
