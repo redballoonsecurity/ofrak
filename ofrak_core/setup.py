@@ -95,7 +95,7 @@ setuptools.setup(
             # "importlib-resources",  # Needed because of https://github.com/redballoonsecurity/ofrak/issues/398
         ]
         + read_requirements("requirements-test.txt"),
-        "non-pypi": read_requirements("requirements-non-pypi.txt"),
+        # "non-pypi": read_requirements("requirements-non-pypi.txt"),
     },
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",

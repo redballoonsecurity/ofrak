@@ -1,0 +1,62 @@
+name: Build Windows Wheels
+
+# Manual trigger only
+on:
+  workflow_dispatch:
+
+jobs:
+  build_windows_wheels:
+    name: Build Windows wheels (Python 3.9)
+    runs-on: windows-latest
+        
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build wheel
+
+      - name: Build ofrak_type wheel
+        run: |
+          cd ofrak_type
+          python -m build --wheel
+          
+      - name: Build ofrak_io wheel  
+        run: |
+          cd ofrak_io
+          python -m build --wheel
+
+      - name: Build ofrak_patch_maker wheel
+        run: |
+          cd ofrak_patch_maker  
+          python -m build --wheel
+
+      - name: Build ofrak_core wheel
+        run: |
+          cd ofrak_core
+          python -m build --wheel
+
+      - name: Collect all wheels
+        run: |
+          mkdir wheels
+          copy ofrak_type\dist\*.whl wheels\
+          copy ofrak_io\dist\*.whl wheels\
+          copy ofrak_patch_maker\dist\*.whl wheels\
+          copy ofrak_core\dist\*.whl wheels\
+          dir wheels
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-wheels-py39
+          path: wheels/
+          retention-days: 30

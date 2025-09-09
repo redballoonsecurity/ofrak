@@ -31,7 +31,7 @@ def read_requirements(requirements_path):
 
 setuptools.setup(
     name="ofrak_angr",
-    version="1.1.0rc0",
+    version="1.1.0rc1",
     description="OFRAK angr Components",
     packages=setuptools.find_packages(exclude=["ofrak_angr_test", "ofrak_angr_test.*"]),
     package_data={"ofrak_angr": ["py.typed"]},
