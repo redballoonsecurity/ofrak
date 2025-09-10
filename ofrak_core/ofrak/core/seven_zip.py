@@ -18,11 +18,7 @@ from ofrak_type.range import Range
 LOGGER = logging.getLogger(__name__)
 
 SEVEN_ZIP = ComponentExternalTool(
-    "7zz",
-    "https://www.7-zip.org",
-    "--help",
-    brew_package="sevenzip",
-    choco_package="7zip"
+    "7zz", "https://www.7-zip.org", "--help", brew_package="sevenzip", choco_package="7zip"
 )
 
 
