@@ -9,7 +9,7 @@ from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceAttributeRangeFilter, ResourceFilter
 from ofrak.core.uf2 import Uf2File, Uf2FilePacker, Uf2Unpacker
 from ofrak.core.strings import StringPatchingModifier, StringPatchingConfig
-import test_ofrak.components
+from .. import components
 
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 
@@ -20,7 +20,7 @@ EXPECTED_DATA = b"Raspberry Pi Pico with RP1337"
 
 
 async def test_uf2_identify(ofrak_context: OFRAKContext) -> None:
-    asset_path = Path(test_ofrak.components.ASSETS_DIR, FILENAME)
+    asset_path = Path(components.ASSETS_DIR, FILENAME)
     root_resource = await ofrak_context.create_root_resource_from_file(str(asset_path))
     await root_resource.identify()
     assert root_resource.has_tag(Uf2File), "Expected resource to have tag Uf2File"
@@ -29,7 +29,7 @@ async def test_uf2_identify(ofrak_context: OFRAKContext) -> None:
 @pytest.mark.skipif_missing_deps([Uf2FilePacker, Uf2Unpacker])
 class TestUf2UnpackModifyPack(UnpackModifyPackPattern):
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
-        asset_path = Path(test_ofrak.components.ASSETS_DIR, FILENAME)
+        asset_path = Path(components.ASSETS_DIR, FILENAME)
         root_resource = await ofrak_context.create_root_resource_from_file(str(asset_path))
         await root_resource.save()
         return root_resource

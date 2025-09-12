@@ -1,39 +1,19 @@
-from dataclasses import dataclass
-from typing import Tuple
-
-import pytest
+from ofrak.core.filesystem import File
+from ofrak_binary_ninja.model import BinaryNinjaAnalysis
 
 from ofrak import OFRAKContext
-from ofrak.core.filesystem import File
-from ofrak_binary_ninja.components.binary_ninja_analyzer import BinaryNinjaAnalyzer
-from ofrak_binary_ninja.model import BinaryNinjaAnalysis
-from test_ofrak.unit.component.analyzer.analyzer_test_case import PopulatedAnalyzerTestCase
 
 
-@dataclass
-class PopulatedBinaryNinjaAnalyzerTestCase(PopulatedAnalyzerTestCase):
-    resource_contents: bytes
-
-
-@pytest.fixture()
-async def test_case(
-    hello_elf, ofrak_context: OFRAKContext, test_id: str
-) -> PopulatedBinaryNinjaAnalyzerTestCase:
-    resource = await ofrak_context.create_root_resource(test_id, hello_elf, tags=(File,))
-    return PopulatedBinaryNinjaAnalyzerTestCase(
-        BinaryNinjaAnalyzer,
-        Tuple[BinaryNinjaAnalysis],
-        ofrak_context,
-        resource,
-        hello_elf,
-    )
-
-
-async def test_binary_ninja_analyzer(test_case: PopulatedBinaryNinjaAnalyzerTestCase):
+async def test_binary_ninja_analyzer(
+    hello_elf: bytes,
+    ofrak_context: OFRAKContext,
+    test_id: str
+):
     """
     Test that the [BinaryNinjaAnalysis][ofrak_binary_ninja.model.BinaryNinjaAnalysis]
     object can be successfully generated
     """
-    await test_case.resource.identify()
-    analysis = await test_case.resource.analyze(BinaryNinjaAnalysis)
+    resource = await ofrak_context.create_root_resource(test_id, hello_elf, tags=(File,))
+    await resource.identify()
+    analysis = resource.analyze(BinaryNinjaAnalysis)
     assert isinstance(analysis, BinaryNinjaAnalysis)

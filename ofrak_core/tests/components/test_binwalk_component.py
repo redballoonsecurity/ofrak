@@ -5,9 +5,9 @@ import os
 import pytest
 
 from ofrak.core.binwalk import BinwalkAnalyzer, BinwalkAttributes
-import test_ofrak.components
+from ..components import ASSETS_DIR
 
-BINWALK_ASSETS_PATH = os.path.join(test_ofrak.components.ASSETS_DIR, "binwalk_assets")
+BINWALK_ASSETS_PATH = os.path.join(ASSETS_DIR, "binwalk_assets")
 
 
 @dataclass

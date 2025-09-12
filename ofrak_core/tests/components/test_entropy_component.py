@@ -4,7 +4,7 @@ import pytest
 from ofrak.core.entropy import DataSummaryAnalyzer
 
 from ofrak import OFRAKContext
-import test_ofrak.components
+from .. import components
 from ofrak.core.entropy.entropy_py import entropy_py
 from ofrak.core.entropy.entropy_c import get_entropy_c
 
@@ -22,7 +22,7 @@ TEST_FILES = [
 
 @pytest.mark.parametrize(
     "test_file_path",
-    [os.path.join(test_ofrak.components.ASSETS_DIR, filename) for filename in TEST_FILES],
+    [os.path.join(components.ASSETS_DIR, filename) for filename in TEST_FILES],
 )
 async def test_analyzer(ofrak_context: OFRAKContext, test_file_path):
     """

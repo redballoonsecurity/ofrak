@@ -10,7 +10,7 @@ from pytest_ofrak.patterns.unpack_verify import (
     UnpackAndVerifyPattern,
     UnpackAndVerifyTestCase,
 )
-import test_ofrak.components
+from .. import components
 from typing import Set
 
 
@@ -50,7 +50,7 @@ class TestUefiComponent(UnpackAndVerifyPattern):
         test_id: str,
     ) -> Resource:
         asset_path = os.path.join(
-            test_ofrak.components.ASSETS_DIR, unpack_verify_test_case.filename
+            components.ASSETS_DIR, unpack_verify_test_case.filename
         )
         with open(asset_path, "rb") as f:
             data = f.read()

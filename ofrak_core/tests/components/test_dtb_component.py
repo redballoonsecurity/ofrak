@@ -2,7 +2,7 @@ import os
 
 import fdt
 
-import test_ofrak.components
+from .. import components
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceAttributeValueFilter
@@ -13,7 +13,7 @@ from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 
 class TestDeviceTreeBlobUnpackPackIdentity(UnpackModifyPackPattern):
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
-        dtb_path = os.path.join(test_ofrak.components.ASSETS_DIR, "imx7d-sdb.dtb")
+        dtb_path = os.path.join(components.ASSETS_DIR, "imx7d-sdb.dtb")
         return await ofrak_context.create_root_resource_from_file(dtb_path)
 
     async def unpack(self, resource: Resource) -> None:
@@ -26,7 +26,7 @@ class TestDeviceTreeBlobUnpackPackIdentity(UnpackModifyPackPattern):
         await resource.pack()
 
     async def verify(self, repacked_resource: Resource):
-        original_dtb_path = os.path.join(test_ofrak.components.ASSETS_DIR, "imx7d-sdb.dtb")
+        original_dtb_path = os.path.join(components.ASSETS_DIR, "imx7d-sdb.dtb")
         with open(original_dtb_path, "rb") as f:
             original_dtb_data = f.read()
         repacked_dtb_data = await repacked_resource.get_data()
@@ -46,7 +46,7 @@ class TestDeviceTreeBlobUnpackPackIdentity(UnpackModifyPackPattern):
 
 class TestDeviceTreeBlobUnpackModifyPack(UnpackModifyPackPattern):
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
-        dtb_path = os.path.join(test_ofrak.components.ASSETS_DIR, "imx7d-sdb.dtb")
+        dtb_path = os.path.join(components.ASSETS_DIR, "imx7d-sdb.dtb")
         return await ofrak_context.create_root_resource_from_file(dtb_path)
 
     async def unpack(self, resource: Resource) -> None:
@@ -89,7 +89,7 @@ class TestDeviceTreeBlobUnpackModifyPack(UnpackModifyPackPattern):
         await resource.pack()
 
     async def verify(self, repacked_resource: Resource):
-        original_dtb_path = os.path.join(test_ofrak.components.ASSETS_DIR, "imx7d-sdb.dtb")
+        original_dtb_path = os.path.join(components.ASSETS_DIR, "imx7d-sdb.dtb")
         with open(original_dtb_path, "rb") as f:
             original_dtb_data = f.read()
         repacked_dtb_data = await repacked_resource.get_data()
@@ -116,7 +116,7 @@ def test_dtb_raw_magic_pattern():
     """
     Test that DTB raw pattern callable is correct.
     """
-    dtb_path = os.path.join(test_ofrak.components.ASSETS_DIR, "imx7d-sdb.dtb")
+    dtb_path = os.path.join(components.ASSETS_DIR, "imx7d-sdb.dtb")
     with open(dtb_path, "rb") as f:
         data = f.read()
     assert match_dtb_magic(data)
