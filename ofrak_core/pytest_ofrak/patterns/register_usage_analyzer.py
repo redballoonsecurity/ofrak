@@ -8,7 +8,32 @@ from ofrak_type.architecture import InstructionSetMode
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.instruction import Instruction, RegisterUsage
 from ofrak.service.assembler.assembler_service_i import AssemblerServiceInterface
-from test_ofrak.constants import ARM32_ARCH, X64_ARCH, PPC_ARCH
+from ofrak_type import InstructionSet
+
+
+ARM32_ARCH = ProgramAttributes(
+    InstructionSet.ARM,
+    None,
+    BitWidth.BIT_32,
+    Endianness.LITTLE_ENDIAN,
+    None,
+)
+
+X64_ARCH = ProgramAttributes(
+    InstructionSet.X86,
+    None,
+    BitWidth.BIT_64,
+    Endianness.LITTLE_ENDIAN,
+    None,
+)
+
+PPC_ARCH = ProgramAttributes(
+    InstructionSet.PPC,
+    None,
+    BitWidth.BIT_32,
+    Endianness.BIG_ENDIAN,
+    None,
+)
 
 
 @dataclass

@@ -29,7 +29,7 @@ from ofrak.service.resource_service_i import (
 )
 from ofrak_type.error import AlreadyExistError, NotFoundError
 from ofrak_type.range import Range
-from test_ofrak.service.conftest import (
+from ...service.conftest import (
     R_ID_3_1_1_1_1,
     R_ID_3_1_1_1,
     R_ID_3_1_1,
@@ -48,7 +48,7 @@ from test_ofrak.service.conftest import (
     R_ID_1_1,
     R_ID_2_1_1_1_1,
 )
-from test_ofrak.service.resource_service.conftest import (
+from ...service.resource_service.conftest import (
     GetAncestorsTestCase,
     GetDescendantsTestCase,
     GetDescendantsTestCaseMultipleResults,

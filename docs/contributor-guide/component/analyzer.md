@@ -41,7 +41,7 @@ analyzer's class declaration. See the [Components Using External Tools](./extern
 information on how to do that.
 
 ### Testing Analyzers
-`test_ofrak.unit.analyzer.analyzer_test_case.AnalyzerTests` provides a suite of test cases that can be used to test implemented OFRAK Analyzers.
+`tests.unit.analyzer.analyzer_test_case.AnalyzerTests` provides a suite of test cases that can be used to test implemented OFRAK Analyzers.
 
 To use this test suite, a contributor should create a file, e.g. `test_foo_analyzer.py`, which should include the following:
 
@@ -59,7 +59,7 @@ import pytest
 
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
-from test_ofrak.unit.analyzer.analyzer_test_case import (
+from tests.unit.analyzer.analyzer_test_case import (
     AnalyzerTestCase,
     PopulatedAnalyzerTestCase,
     AnalyzerTests,

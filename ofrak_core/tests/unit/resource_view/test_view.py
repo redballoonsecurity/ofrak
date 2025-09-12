@@ -28,7 +28,7 @@ from ofrak_type.bit_width import BitWidth
 from ofrak_type.endianness import Endianness
 from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.range import Range
-from test_ofrak.unit.model import FlattenedResource
+from ..model import FlattenedResource
 
 MOCK_INSTRUCTION_MACHINE_CODE = b"\x03\x10\x82\xe0"
 

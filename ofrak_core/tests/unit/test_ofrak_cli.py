@@ -8,7 +8,7 @@ from dataclasses import fields
 from ofrak.cli.command.gui import GUICommand
 from ofrak.ofrak_context import OFRAKContext
 
-import test_ofrak.components
+from .. import components
 from ofrak.cli.command.identify import IdentifyCommand
 from ofrak.cli.command.unpack import UnpackCommand
 
@@ -186,7 +186,7 @@ async def all_expected_analysis(ofrak_context: OFRAKContext):
     all_expected_analysis = dict()
     for filename in TEST_FILES:
         file_path = os.path.join(
-            os.path.dirname(test_ofrak.components.__file__), "assets", filename
+            os.path.dirname(components.__file__), "assets", filename
         )
         test_resource = await ofrak_context.create_root_resource_from_file(file_path)
         await test_resource.identify()
@@ -202,7 +202,7 @@ def test_identify(ofrak_cli_parser, capsys, filename, all_expected_analysis: Tup
     expected_tags, expected_attributes = all_expected_analysis[filename]
     assert len(expected_tags) > 0
     assert len(expected_attributes) > 0
-    file_path = os.path.join(os.path.dirname(test_ofrak.components.__file__), "assets", filename)
+    file_path = os.path.join(os.path.dirname(components.__file__), "assets", filename)
     ofrak_cli_parser.parse_and_run(["identify", file_path])
 
     captured = capsys.readouterr()
@@ -223,7 +223,7 @@ async def all_expected_hashes(ofrak_context: OFRAKContext):
     for filename in TEST_FILES:
         expected_hashes = set()
         file_path = os.path.join(
-            os.path.dirname(test_ofrak.components.__file__), "assets", filename
+            os.path.dirname(components.__file__), "assets", filename
         )
         res = await ofrak_context.create_root_resource_from_file(file_path)
         await res.unpack()
@@ -239,7 +239,7 @@ async def all_expected_hashes(ofrak_context: OFRAKContext):
 
 @pytest.mark.parametrize("filename", TEST_FILES)
 def test_unpack(ofrak_cli_parser, capsys, filename, tmpdir, ofrak_context, all_expected_hashes):
-    file_path = os.path.join(os.path.dirname(test_ofrak.components.__file__), "assets", filename)
+    file_path = os.path.join(os.path.dirname(components.__file__), "assets", filename)
     ofrak_cli_parser.parse_and_run(["unpack", "-o", str(tmpdir), file_path])
 
     unpacked_hashes = set()

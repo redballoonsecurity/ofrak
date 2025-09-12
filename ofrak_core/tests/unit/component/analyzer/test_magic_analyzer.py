@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 import pytest
-from test_ofrak.unit.component.analyzer.analyzer_test_case import (
+from .analyzer_test_case import (
     AnalyzerTestCase,
     PopulatedAnalyzerTestCase,
     AnalyzerTests,

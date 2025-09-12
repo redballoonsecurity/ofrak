@@ -19,7 +19,7 @@ from ofrak.model.component_filters import ComponentOrMetaFilter, ComponentTypeFi
 from ofrak.service.serialization.pjson import (
     PJSONSerializationService,
 )
-from test_ofrak.components.hello_world_elf import hello_elf
+from .components.hello_world_elf import hello_elf
 
 
 @pytest.fixture(scope="session")

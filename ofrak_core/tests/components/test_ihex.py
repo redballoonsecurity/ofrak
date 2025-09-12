@@ -9,7 +9,7 @@ from ofrak.core import MemoryRegion, IhexProgram
 from ofrak_type import Range
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 from pytest_ofrak.patterns.unpack_verify import UnpackAndVerifyTestCase
-from test_ofrak.components import ASSETS_DIR
+from .components import ASSETS_DIR
 
 
 @dataclass

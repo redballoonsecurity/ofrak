@@ -479,7 +479,7 @@ async def get_child_by_range(resource: Resource, _range: Range) -> Resource:
                 # If two children have the same offset range, we raise an error, since the script
                 #  builder cannot reasonably identify which child is being selected.
                 #  This is intended behavior, see:
-                #  test_ofrak/unit/test_ofrak_server.py::test_selectable_attr_err.
+                #  tests/unit/test_ofrak_server.py::test_selectable_attr_err.
                 found_child = None
                 break
             found_child = child

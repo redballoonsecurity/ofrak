@@ -11,7 +11,7 @@ from ofrak.core.filesystem import File
 from ofrak.core.program import Program
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort
-from pytest_ofrak.patterns import TEST_PATTERN_ASSETS_DIR
+from pytest_ofrak.patterns import ASSETS_DIR
 from pytest_ofrak.patterns.unpack_verify import (
     UnpackAndVerifyPattern,
     UnpackAndVerifyTestCase,
@@ -144,7 +144,7 @@ class CodeRegionUnpackAndVerifyPattern(UnpackAndVerifyPattern):
         ofrak_context: OFRAKContext,
         test_id: str,
     ) -> Resource:
-        asset_path = os.path.join(TEST_PATTERN_ASSETS_DIR, unpack_verify_test_case.binary_filename)
+        asset_path = os.path.join(ASSETS_DIR, unpack_verify_test_case.binary_filename)
         with open(asset_path, "rb") as f:
             binary_data = f.read()
         resource = await ofrak_context.create_root_resource(test_id, binary_data, tags=(File,))

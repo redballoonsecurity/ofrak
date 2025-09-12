@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from ofrak_type.architecture import InstructionSetMode
 from ofrak.core.instruction import Instruction
 from ofrak import OFRAKContext
-from test_ofrak.unit.model import FlattenedResource
+from ..model import FlattenedResource
 
 
 @dataclass

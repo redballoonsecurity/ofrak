@@ -12,7 +12,7 @@ from ofrak.core.free_space import (
     FreeSpace,
     RuntimeFreeSpace,
 )
-from test_ofrak.components.free_space_components_test.mock_tree_struct import (
+from .mock_tree_struct import (
     FreeSpaceTreeType,
     inflate_tree,
 )

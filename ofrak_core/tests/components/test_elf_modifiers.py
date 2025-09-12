@@ -4,7 +4,6 @@ from typing import Optional
 
 import pytest
 from elftools.elf.elffile import ELFFile
-from test_ofrak.components.hello_world_elf import hello_elf
 
 from ofrak.core import (
     LiefAddSegmentConfig,
@@ -224,12 +223,7 @@ class TestElfPointerArraySectionModifier:
         return pointer_array_section
 
 
-@pytest.fixture
-async def hello_out(ofrak_context: OFRAKContext) -> Resource:
-    return await ofrak_context.create_root_resource("hello.out", hello_elf())
-
-
-async def test_lief_add_segment_modifier(hello_out: Resource, tmp_path):
+async def test_lief_add_segment_modifier(hello_elf: Resource, tmp_path):
     """
     Test that adding a segment results in a new segment in the Elf with the given vaddr and length.
     """
@@ -238,7 +232,7 @@ async def test_lief_add_segment_modifier(hello_out: Resource, tmp_path):
 
     # Assert new segment not in original binary
     original_path = tmp_path / "original"
-    await hello_out.flush_data_to_disk(original_path)
+    await hello_elf.flush_data_to_disk(original_path)
     with pytest.raises(ValueError):
         assert_segment_exists(original_path, segment_vaddr, segment_length)
 
@@ -248,7 +242,7 @@ async def test_lief_add_segment_modifier(hello_out: Resource, tmp_path):
 
     # Assert new segment is in extended binary
     extended_path = tmp_path / "extended"
-    await hello_out.flush_data_to_disk(extended_path)
+    await hello_elf.flush_data_to_disk(extended_path)
     assert_segment_exists(extended_path, segment_vaddr, 0x2000)
 
 
