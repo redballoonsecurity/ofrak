@@ -264,6 +264,9 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
         dockerfile_finish_parts.append(f"ADD {package_path} $OFRAK_SRC_DIR/{package_name}\n")
     dockerfile_finish_parts.append("\nWORKDIR /\n")
     dockerfile_finish_parts.append("ARG INSTALL_TARGET\n")
+    if config.install_target.value == "develop":
+        dockerfile_finish_parts.append("ADD dev-requirements.txt /\n")
+        dockerfile_finish_parts.append("RUN python3 -m pip install -r dev-requirements.txt\n")
     develop_makefile = "\\n\\\n".join(
         [
             "$INSTALL_TARGET:",
