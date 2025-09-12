@@ -18,8 +18,8 @@ from ofrak.resource import Resource
 from ofrak.resource_view import ResourceView
 from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_type.range import Range
-from .unit.component import mock_component
-from .unit.component.mock_component import (
+from .component import mock_component
+from .component.mock_component import (
     MockFailException,
     MockFile,
     MockFailFile,

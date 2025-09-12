@@ -2,8 +2,8 @@ import pytest
 
 from ofrak import OFRAKContext
 from ofrak.core.binary import GenericBinary
-from .unit.component import mock_component
-from .unit.component.mock_component import (
+from . import mock_component
+from .mock_component import (
     MockUnpackerConfig,
     MockUnpackerRequiresDefault,
     MockUnpackerWithDefaultRequiresPopulated,

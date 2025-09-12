@@ -1,0 +1,1 @@
+pytest_ofrak/assets/* filter=lfs diff=lfs merge=lfs -text

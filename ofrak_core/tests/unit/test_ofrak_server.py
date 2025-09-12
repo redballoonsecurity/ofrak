@@ -19,12 +19,6 @@ from ofrak.model.component_filters import ComponentOrMetaFilter, ComponentTypeFi
 from ofrak.service.serialization.pjson import (
     PJSONSerializationService,
 )
-from .components.hello_world_elf import hello_elf
-
-
-@pytest.fixture(scope="session")
-def hello_world_elf() -> bytes:
-    return hello_elf()
 
 
 @pytest.fixture()
@@ -75,8 +69,8 @@ async def ofrak_client(ofrak_server, aiohttp_client):
 
 
 @pytest.fixture
-async def test_resource(ofrak_context, hello_world_elf):
-    return await ofrak_context.create_root_resource(hello_world_elf, hello_world_elf, (File,))
+async def test_resource(ofrak_context, hello_elf):
+    return await ofrak_context.create_root_resource(hello_elf, hello_elf, (File,))
 
 
 def dicts_are_similar(d1, d2, attributes_to_skip=None):
@@ -121,10 +115,10 @@ async def test_get_index(ofrak_client: TestClient):
 
 
 async def test_create_root_resource(
-    ofrak_client: TestClient, ofrak_server, hello_world_elf, test_resource
+    ofrak_client: TestClient, ofrak_server, hello_elf, test_resource
 ):
     resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     assert resp.status == 200
     body = await resp.json()
@@ -162,10 +156,10 @@ async def test_create_chunked_root_resource(
 
 
 async def test_get_root_resources(
-    ofrak_client: TestClient, ofrak_context, ofrak_server, hello_world_elf
+    ofrak_client: TestClient, ofrak_context, ofrak_server, hello_elf
 ):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     get_resp = await ofrak_client.get("/get_root_resources")
     assert get_resp.status == 200
@@ -179,9 +173,9 @@ async def test_get_root_resources(
     assert body[0]["attributes"] == json_result[0]["attributes"]
 
 
-async def test_get_resource(ofrak_client: TestClient, hello_world_elf):
+async def test_get_resource(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     body = await create_resp.json()
     resp = await ofrak_client.get(f"/{body['id']}/")
@@ -190,35 +184,35 @@ async def test_get_resource(ofrak_client: TestClient, hello_world_elf):
     # TODO: How test directly? Package up in request and send to ofrak_server?
 
 
-async def test_get_data(ofrak_client: TestClient, hello_world_elf):
+async def test_get_data(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     create_body = await create_resp.json()
     resp = await ofrak_client.get(f"/{create_body['id']}/get_data")
     assert resp.status == 200
     resp_body = await resp.read()
-    assert resp_body == hello_world_elf
+    assert resp_body == hello_elf
     resp = await ofrak_client.get(f"/{create_body['id']}/get_data", params={"range": "[16,80]"})
     assert resp.status == 200
     resp_body = await resp.read()
-    assert resp_body == hello_world_elf[0x10:0x50]
+    assert resp_body == hello_elf[0x10:0x50]
 
 
-async def test_get_data_length(ofrak_client: TestClient, hello_world_elf):
+async def test_get_data_length(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     create_body = await create_resp.json()
     resp = await ofrak_client.get(f"/{create_body['id']}/get_data_length")
     assert resp.status == 200
     resp_body = await resp.json()
-    assert resp_body == len(hello_world_elf)
+    assert resp_body == len(hello_elf)
 
 
-async def test_unpack(ofrak_client: TestClient, hello_world_elf):
+async def test_unpack(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     create_body = await create_resp.json()
     resp = await ofrak_client.post(f"/{create_body['id']}/unpack")
@@ -227,9 +221,9 @@ async def test_unpack(ofrak_client: TestClient, hello_world_elf):
     assert resp_body["created"] is not None
 
 
-async def test_get_children(ofrak_client: TestClient, hello_world_elf):
+async def test_get_children(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     root = await create_resp.json()
     root_id = root["id"]
@@ -241,9 +235,9 @@ async def test_get_children(ofrak_client: TestClient, hello_world_elf):
     assert len(children_body[root_id]) > 1
 
 
-async def test_get_descendants(ofrak_client: TestClient, hello_world_elf):
+async def test_get_descendants(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     root = await create_resp.json()
     root_id = root["id"]
@@ -264,9 +258,9 @@ async def test_get_descendants(ofrak_client: TestClient, hello_world_elf):
     assert len(descendants) > 1
 
 
-async def test_get_data_range(ofrak_client: TestClient, hello_world_elf):
+async def test_get_data_range(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     root = await create_resp.json()
     root_id = root["id"]
@@ -285,18 +279,18 @@ async def test_get_data_range(ofrak_client: TestClient, hello_world_elf):
 
 
 # Cannot find manual example to compare against
-async def test_get_root(ofrak_client: TestClient, hello_world_elf):
+async def test_get_root(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     body = await create_resp.json()
     resp = await ofrak_client.get(f"/{body['id']}/get_root")
     assert resp.status == 200
 
 
-async def test_unpack_recursively(ofrak_client: TestClient, hello_world_elf):
+async def test_unpack_recursively(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     create_body = await create_resp.json()
     resp = await ofrak_client.post(f"/{create_body['id']}/unpack_recursively")
@@ -306,9 +300,9 @@ async def test_unpack_recursively(ofrak_client: TestClient, hello_world_elf):
 
 
 # Cannot find manual example to compare against
-async def test_pack(ofrak_client: TestClient, hello_world_elf):
+async def test_pack(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     body = await create_resp.json()
     resp = await ofrak_client.post(f"/{body['id']}/pack")
@@ -316,18 +310,18 @@ async def test_pack(ofrak_client: TestClient, hello_world_elf):
 
 
 # Cannot find manual example to compare against
-async def test_pack_recursively(ofrak_client: TestClient, hello_world_elf):
+async def test_pack_recursively(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     body = await create_resp.json()
     resp = await ofrak_client.post(f"/{body['id']}/pack_recursively")
     assert resp.status == 200
 
 
-async def test_analyze(ofrak_client: TestClient, hello_world_elf):
+async def test_analyze(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     create_body = await create_resp.json()
     resp = await ofrak_client.post(f"/{create_body['id']}/analyze")
@@ -336,9 +330,9 @@ async def test_analyze(ofrak_client: TestClient, hello_world_elf):
     assert resp_body is not None
 
 
-async def test_identify(ofrak_client: TestClient, hello_world_elf):
+async def test_identify(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     create_body = await create_resp.json()
     resp = await ofrak_client.post(f"/{create_body['id']}/identify")
@@ -347,9 +341,9 @@ async def test_identify(ofrak_client: TestClient, hello_world_elf):
     assert resp_body["modified"][0]["id"] == create_body["id"]
 
 
-async def test_identify_recursively(ofrak_client: TestClient, hello_world_elf):
+async def test_identify_recursively(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     create_body = await create_resp.json()
     resp = await ofrak_client.post(f"/{create_body['id']}/identify_recursively")
@@ -359,10 +353,10 @@ async def test_identify_recursively(ofrak_client: TestClient, hello_world_elf):
 
 
 async def test_data_summary(
-    ofrak_client: TestClient, ofrak_server, hello_world_elf, test_resource: Resource
+    ofrak_client: TestClient, ofrak_server, hello_elf, test_resource: Resource
 ):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     create_body = await create_resp.json()
     resp = await ofrak_client.post(f"/{create_body['id']}/data_summary")
@@ -380,9 +374,9 @@ async def test_data_summary(
     }
 
 
-async def test_get_parent(ofrak_client: TestClient, hello_world_elf):
+async def test_get_parent(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     create_body = await create_resp.json()
     unpack_resp = await ofrak_client.post(f"/{create_body['id']}/unpack")
@@ -393,9 +387,9 @@ async def test_get_parent(ofrak_client: TestClient, hello_world_elf):
     assert resp_body["id"] == create_body["id"]
 
 
-async def test_get_ancestors(ofrak_client: TestClient, hello_world_elf):
+async def test_get_ancestors(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     create_body = await create_resp.json()
     unpack_resp = await ofrak_client.post(f"/{create_body['id']}/unpack")
@@ -406,21 +400,21 @@ async def test_get_ancestors(ofrak_client: TestClient, hello_world_elf):
     assert resp_body[0]["id"] == create_body["id"]
 
 
-async def test_queue_patch(ofrak_client: TestClient, hello_world_elf):
+async def test_queue_patch(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     create_body = await create_resp.json()
     unpack_resp = await ofrak_client.post(f"/{create_body['id']}/unpack")
-    resp = await ofrak_client.post(f"/{create_body['id']}/queue_patch", data=hello_world_elf)
+    resp = await ofrak_client.post(f"/{create_body['id']}/queue_patch", data=hello_elf)
     assert resp.status == 200
     resp_body = await resp.json()
     assert resp_body["id"] == create_body["id"]
 
 
-async def test_create_mapped_child(ofrak_client: TestClient, hello_world_elf):
+async def test_create_mapped_child(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     root = await create_resp.json()
     root_id = root["id"]
@@ -436,9 +430,9 @@ async def test_create_mapped_child(ofrak_client: TestClient, hello_world_elf):
 
 
 # find_and_replace doesn't appear to send back any information in the response
-async def test_find_and_replace(ofrak_client: TestClient, hello_world_elf):
+async def test_find_and_replace(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     body = await create_resp.json()
     resp = await ofrak_client.post(
@@ -474,21 +468,21 @@ def get_comment_count(resp_body_json) -> Tuple[int, int]:
     return (comment_range_count, comment_count)
 
 
-async def test_add_comment(ofrak_server, aiohttp_client, hello_world_elf):
+async def test_add_comment(ofrak_server, aiohttp_client, hello_elf):
     client = await aiohttp_client(ofrak_server._app)
     create_resp = await client.post(
-        "/create_root_resource", params={"name": "test"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "test"}, data=hello_elf
     )
     create_body = await create_resp.json()
     # Try creating comments on invalid ranges
     resp = await client.post(
         f"/{create_body['id']}/add_comment",
-        json=[[0, len(hello_world_elf) + 1], "test comment out of bounds"],
+        json=[[0, len(hello_elf) + 1], "test comment out of bounds"],
     )
     assert resp.status != 200
     resp = await client.post(
         f"/{create_body['id']}/add_comment",
-        json=[[-1, len(hello_world_elf)], "test comment out of bounds"],
+        json=[[-1, len(hello_elf)], "test comment out of bounds"],
     )
     assert resp.status != 200
     # Create comment without range
@@ -503,13 +497,13 @@ async def test_add_comment(ofrak_server, aiohttp_client, hello_world_elf):
     assert resp_body["modified"][0]["id"] == create_body["id"]
     # Create multiple comments on the same range
     resp = await client.post(
-        f"/{create_body['id']}/add_comment", json=[[0, len(hello_world_elf)], "test comment 2"]
+        f"/{create_body['id']}/add_comment", json=[[0, len(hello_elf)], "test comment 2"]
     )
     assert resp.status == 200
     resp_body = await resp.json()
     assert resp_body["modified"][0]["id"] == create_body["id"]
     resp = await client.post(
-        f"/{create_body['id']}/add_comment", json=[[0, len(hello_world_elf)], "test comment 3"]
+        f"/{create_body['id']}/add_comment", json=[[0, len(hello_elf)], "test comment 3"]
     )
     assert resp.status == 200
     resp_body = await resp.json()
@@ -521,20 +515,20 @@ async def test_add_comment(ofrak_server, aiohttp_client, hello_world_elf):
 
 
 # Test deleting comments using both the old and new format
-async def test_delete_comment(ofrak_server, aiohttp_client, hello_world_elf):
+async def test_delete_comment(ofrak_server, aiohttp_client, hello_elf):
     client = await aiohttp_client(ofrak_server._app)
     create_resp = await client.post(
-        "/create_root_resource", params={"name": "test"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "test"}, data=hello_elf
     )
     create_body = await create_resp.json()
     # Comments to delete
     await client.post(f"/{create_body['id']}/add_comment", json=[None, "test comment 0"])
     await client.post(f"/{create_body['id']}/add_comment", json=[None, "test comment 1"])
     await client.post(
-        f"/{create_body['id']}/add_comment", json=[[0, len(hello_world_elf)], "test comment 0"]
+        f"/{create_body['id']}/add_comment", json=[[0, len(hello_elf)], "test comment 0"]
     )
     resp = await client.post(
-        f"/{create_body['id']}/add_comment", json=[[0, len(hello_world_elf)], "test comment 1"]
+        f"/{create_body['id']}/add_comment", json=[[0, len(hello_elf)], "test comment 1"]
     )
     resp_body = await resp.json()
     assert resp_body["modified"][0]["id"] == create_body["id"]
@@ -556,15 +550,15 @@ async def test_delete_comment(ofrak_server, aiohttp_client, hello_world_elf):
     assert comment_range_count == 1
     assert comment_count == 2
     # Test deleting entire range
-    resp = await client.post(f"/{create_body['id']}/delete_comment", json=[0, len(hello_world_elf)])
+    resp = await client.post(f"/{create_body['id']}/delete_comment", json=[0, len(hello_elf)])
     resp_body = await resp.json()
     assert resp_body["modified"][0]["id"] == create_body["id"]
     assert (0, 0) == get_comment_count(resp_body)  # All comments should be gone
 
 
-async def test_search_for_vaddr(ofrak_client: TestClient, hello_world_elf):
+async def test_search_for_vaddr(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     create_body = await create_resp.json()
     await ofrak_client.post(f"/{create_body['id']}/unpack_recursively")
@@ -581,9 +575,9 @@ async def test_get_all_tags(ofrak_client: TestClient):
     assert "ofrak.core.basic_block.BasicBlock" in resp_body
 
 
-async def test_add_tag(ofrak_client: TestClient, hello_world_elf):
+async def test_add_tag(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     create_body = await create_resp.json()
     resource_id = create_body["id"]
@@ -594,9 +588,9 @@ async def test_add_tag(ofrak_client: TestClient, hello_world_elf):
     assert resp.status == 200
 
 
-async def test_update_script(ofrak_client: TestClient, hello_world_elf):
+async def test_update_script(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     root = await create_resp.json()
     root_id = root["id"]
@@ -622,7 +616,7 @@ async def test_update_script(ofrak_client: TestClient, hello_world_elf):
         "async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):",
         "    if root_resource is None:",
         "        root_resource = await ofrak_context.create_root_resource_from_file(",
-        '            "hello_world_elf"',
+        '            "hello_elf"',
         "        )",
         "",
         "    await root_resource.unpack()",
@@ -662,9 +656,9 @@ async def test_update_script(ofrak_client: TestClient, hello_world_elf):
     assert actual_str == expected_str
 
 
-async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
+async def test_selectable_attr_err(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     root = await create_resp.json()
     root_id = root["id"]
@@ -696,7 +690,7 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
         "async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):",
         "    if root_resource is None:",
         "        root_resource = await ofrak_context.create_root_resource_from_file(",
-        '            "hello_world_elf"',
+        '            "hello_elf"',
         "        )",
         "",
         "    await root_resource.create_child(",
@@ -749,9 +743,9 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_world_elf):
     assert actual_str == "\n".join(normalized_expected_list)
 
 
-async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
+async def test_clear_action_queue(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     root = await create_resp.json()
     root_id = root["id"]
@@ -786,7 +780,7 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
         "",
         "async def main(ofrak_context: OFRAKContext):",
         "    root_resource = await ofrak_context.create_root_resource_from_file(",
-        '        "hello_world_elf"',
+        '        "hello_elf"',
         "    )",
         "",
         "    await root_resource.unpack()",
@@ -818,9 +812,9 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_world_elf):
     ]
 
 
-async def test_get_components(ofrak_client: TestClient, hello_world_elf, ofrak_context):
+async def test_get_components(ofrak_client: TestClient, hello_elf, ofrak_context):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     create_body = await create_resp.json()
     resource_id = create_body["id"]
@@ -849,9 +843,9 @@ async def test_get_components(ofrak_client: TestClient, hello_world_elf, ofrak_c
     }
 
 
-async def test_get_config(ofrak_client: TestClient, hello_world_elf):
+async def test_get_config(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     create_body = await create_resp.json()
     resource_id = create_body["id"]
@@ -940,9 +934,9 @@ async def test_get_config(ofrak_client: TestClient, hello_world_elf):
     }
 
 
-async def test_search_string(ofrak_client, hello_world_elf):
+async def test_search_string(ofrak_client, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     create_body = await create_resp.json()
     resource_id = create_body["id"]
@@ -990,9 +984,9 @@ async def test_search_string(ofrak_client, hello_world_elf):
     assert resp_body == []
 
 
-async def test_search_bytes(ofrak_client, hello_world_elf):
+async def test_search_bytes(ofrak_client, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     create_body = await create_resp.json()
     resource_id = create_body["id"]
@@ -1012,9 +1006,9 @@ async def test_search_bytes(ofrak_client, hello_world_elf):
     assert resp_body == []
 
 
-async def test_get_tags_and_num_components(ofrak_client: TestClient, hello_world_elf):
+async def test_get_tags_and_num_components(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     create_body = await create_resp.json()
     resource_id = create_body["id"]
@@ -1034,9 +1028,9 @@ async def test_get_tags_and_num_components(ofrak_client: TestClient, hello_world
     )  # The result of the components differs based on the number of components in OFRAK, so checking the exact output will break everytime a component is added.
 
 
-async def test_run_component(ofrak_client: TestClient, hello_world_elf):
+async def test_run_component(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     create_body = await create_resp.json()
     resource_id = create_body["id"]
@@ -1172,9 +1166,9 @@ async def test_add_flush_to_disk_to_script(ofrak_client: TestClient, firmware_zi
     assert actual_str == expected_str
 
 
-async def test_search_data(ofrak_client: TestClient, hello_world_elf):
+async def test_search_data(ofrak_client: TestClient, hello_elf):
     create_resp = await ofrak_client.post(
-        "/create_root_resource", params={"name": "hello_world_elf"}, data=hello_world_elf
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
     create_body = await create_resp.json()
     resource_id = create_body["id"]
@@ -1321,7 +1315,7 @@ async def test_reset_project(ofrak_client: TestClient, test_project_dir):
     assert resp.status == 200
 
 
-async def test_add_binary_to_project(ofrak_client: TestClient, test_project_dir, hello_world_elf):
+async def test_add_binary_to_project(ofrak_client: TestClient, test_project_dir, hello_elf):
     resp = await ofrak_client.post(
         "/create_new_project",
         json={"name": "test"},
@@ -1331,8 +1325,8 @@ async def test_add_binary_to_project(ofrak_client: TestClient, test_project_dir,
     id = resp_body["id"]
     resp = await ofrak_client.post(
         "/add_binary_to_project",
-        params={"id": id, "name": "hello_world_elf"},
-        data=hello_world_elf,
+        params={"id": id, "name": "hello_elf"},
+        data=hello_elf,
     )
     assert resp.status == 200
 
@@ -1359,7 +1353,7 @@ async def test_get_projects_path(ofrak_client: TestClient, test_project_dir):
     assert resp_body == test_project_dir
 
 
-async def test_save_project_data(ofrak_client: TestClient, test_project_dir, hello_world_elf):
+async def test_save_project_data(ofrak_client: TestClient, test_project_dir, hello_elf):
     script = b"async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):\n\tawait root_resource.unpack()"
     resp = await ofrak_client.post(
         "/create_new_project",
@@ -1374,8 +1368,8 @@ async def test_save_project_data(ofrak_client: TestClient, test_project_dir, hel
     assert resp.status == 200
     resp = await ofrak_client.post(
         "/add_binary_to_project",
-        params={"id": id, "name": "hello_world_elf"},
-        data=hello_world_elf,
+        params={"id": id, "name": "hello_elf"},
+        data=hello_elf,
     )
     assert resp.status == 200
     resp = await ofrak_client.get("/get_project_by_id", params={"id": id})
@@ -1390,19 +1384,19 @@ async def test_save_project_data(ofrak_client: TestClient, test_project_dir, hel
     resp_body = await resp.json()
     resp = await ofrak_client.post(
         "/add_binary_to_project",
-        params={"id": id, "name": "hello_world_elf"},
-        data=hello_world_elf,
+        params={"id": id, "name": "hello_elf"},
+        data=hello_elf,
     )
     assert resp.status == 200
     assert len(resp_body) == 1
     assert resp_body[0]["scripts"] == [{"name": "unpack.py"}]
     assert resp_body[0]["binaries"] == {
-        "hello_world_elf": {"init_script": None, "associated_scripts": []}
+        "hello_elf": {"init_script": None, "associated_scripts": []}
     }
     assert resp.status == 200
 
 
-async def test_delete_from_project(ofrak_client: TestClient, test_project_dir, hello_world_elf):
+async def test_delete_from_project(ofrak_client: TestClient, test_project_dir, hello_elf):
     script = b"async def main(ofrak_context: OFRAKContext, root_resource: Optional[Resource] = None):\n\tawait root_resource.unpack()"
     resp = await ofrak_client.post(
         "/create_new_project",
@@ -1417,8 +1411,8 @@ async def test_delete_from_project(ofrak_client: TestClient, test_project_dir, h
     assert resp.status == 200
     resp = await ofrak_client.post(
         "/add_binary_to_project",
-        params={"id": id, "name": "hello_world_elf"},
-        data=hello_world_elf,
+        params={"id": id, "name": "hello_elf"},
+        data=hello_elf,
     )
     assert resp.status == 200
     resp = await ofrak_client.get("/get_project_by_id", params={"id": id})
@@ -1434,7 +1428,7 @@ async def test_delete_from_project(ofrak_client: TestClient, test_project_dir, h
     assert len(resp_body) == 1
     assert resp_body[0]["scripts"] == [{"name": "unpack.py"}]
     assert resp_body[0]["binaries"] == {
-        "hello_world_elf": {"init_script": None, "associated_scripts": []}
+        "hello_elf": {"init_script": None, "associated_scripts": []}
     }
     resp = await ofrak_client.post(
         "/delete_script_from_project",
@@ -1443,7 +1437,7 @@ async def test_delete_from_project(ofrak_client: TestClient, test_project_dir, h
     assert resp.status == 200
     resp = await ofrak_client.post(
         "/delete_binary_from_project",
-        json={"id": id, "binary": "hello_world_elf"},
+        json={"id": id, "binary": "hello_elf"},
     )
     assert resp.status == 200
     resp = await ofrak_client.get("/get_project_by_id", params={"id": id})
