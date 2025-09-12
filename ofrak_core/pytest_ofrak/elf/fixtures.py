@@ -47,6 +47,7 @@ def large_elf_file(elf_test_directory):
 def patch_file(elf_test_directory):
     return os.path.join(elf_test_directory, "source_dir", "patch.c")
 
+
 @pytest.fixture(scope="session")
 def hello_elf(elf_test_directory) -> bytes:
     """

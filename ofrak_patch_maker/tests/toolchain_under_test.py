@@ -7,6 +7,7 @@ from ofrak_type import ArchInfo
 
 CURRENT_DIRECTORY = os.path.abspath(os.path.dirname(__file__))
 
+
 @dataclass
 class ToolchainUnderTest:
     toolchain: Type[Toolchain]

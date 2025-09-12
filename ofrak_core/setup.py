@@ -107,9 +107,7 @@ setuptools.setup(
         "xattr>=0.10.1;platform_system!='Windows'",
     ],
     extras_require={
-        "docs":
-            [ ] +
-            read_requirements("requirements-docs.txt"),
+        "docs": [] + read_requirements("requirements-docs.txt"),
         "test": [
             # Running the full set of tests requires these version of angr and capstone.
             #  If building a Docker image, it should already be installed on the system.

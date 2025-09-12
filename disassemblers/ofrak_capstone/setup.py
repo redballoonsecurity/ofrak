@@ -35,10 +35,7 @@ setuptools.setup(
     packages=setuptools.find_packages("src"),
     package_dir={"": "src"},
     package_data={"ofrak_capstone": ["py.typed"]},
-    install_requires=[
-        "capstone",
-        "ofrak>=3.3.0rc0"
-    ],
+    install_requires=["capstone", "ofrak>=3.3.0rc0"],
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",
     long_description=long_description,
