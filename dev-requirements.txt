@@ -1,6 +1,9 @@
 autoflake==1.4
 black==23.3.0
 fun-coverage==0.2.0
+hypothesis==6.39.6
+hypothesis-trio==0.6.0
+trio_asyncio==0.15.0
 mypy==0.942
 pre-commit==3.0.4
 pytest==7.4.4
