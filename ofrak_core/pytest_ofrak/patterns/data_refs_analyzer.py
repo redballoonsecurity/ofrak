@@ -9,6 +9,7 @@ from ofrak import OFRAKContext
 
 ASSETS_DIR = os.path.join(__file__, "assets")
 
+
 @dataclass
 class DataRefsAnalyzerTestCase:
     """

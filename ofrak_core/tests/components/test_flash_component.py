@@ -18,9 +18,7 @@ from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 from ofrak.core.binary import BinaryPatchConfig, BinaryPatchModifier
 
 DEFAULT_TEST_FILE = os.path.join(components.ASSETS_DIR, "flash_test_default.bin")
-DEFAULT_VERIFY_FILE = os.path.join(
-    components.ASSETS_DIR, "flash_test_default_verify.bin"
-)
+DEFAULT_VERIFY_FILE = os.path.join(components.ASSETS_DIR, "flash_test_default_verify.bin")
 DEFAULT_UNPACKED_VERIFY_FILE = os.path.join(
     components.ASSETS_DIR, "flash_test_default_unpacked_verify.bin"
 )

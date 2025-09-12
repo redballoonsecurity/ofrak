@@ -39,6 +39,7 @@ ARM32_ARCH = ProgramAttributes(
     None,
 )
 
+
 @pytest.fixture
 def test_id():
     return "TEST_JOB"

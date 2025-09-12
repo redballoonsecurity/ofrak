@@ -39,9 +39,7 @@ class TestRarUnpackAndVerify(UnpackAndVerifyPattern):
         ofrak_context: OFRAKContext,
         test_id: str,
     ) -> Resource:
-        asset_path = os.path.join(
-            components.ASSETS_DIR, unpack_verify_test_case.filename
-        )
+        asset_path = os.path.join(components.ASSETS_DIR, unpack_verify_test_case.filename)
         with open(asset_path, "rb") as f:
             data = f.read()
         return await ofrak_context.create_root_resource(test_id, data, tags=(File,))

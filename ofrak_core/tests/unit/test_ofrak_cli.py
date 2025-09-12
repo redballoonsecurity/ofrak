@@ -185,9 +185,7 @@ TEST_FILES = [
 async def all_expected_analysis(ofrak_context: OFRAKContext):
     all_expected_analysis = dict()
     for filename in TEST_FILES:
-        file_path = os.path.join(
-            os.path.dirname(components.__file__), "assets", filename
-        )
+        file_path = os.path.join(os.path.dirname(components.__file__), "assets", filename)
         test_resource = await ofrak_context.create_root_resource_from_file(file_path)
         await test_resource.identify()
         expected_tags = test_resource.get_most_specific_tags()
@@ -222,9 +220,7 @@ async def all_expected_hashes(ofrak_context: OFRAKContext):
     all_expected_hashes = dict()
     for filename in TEST_FILES:
         expected_hashes = set()
-        file_path = os.path.join(
-            os.path.dirname(components.__file__), "assets", filename
-        )
+        file_path = os.path.join(os.path.dirname(components.__file__), "assets", filename)
         res = await ofrak_context.create_root_resource_from_file(file_path)
         await res.unpack()
         for child in await res.get_descendants():

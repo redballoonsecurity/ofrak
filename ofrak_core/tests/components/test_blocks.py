@@ -20,6 +20,7 @@ from ofrak.core import (
 )
 from pytest_ofrak import ASSETS_DIR
 
+
 class TestOfrakBlocks:
     """
     Test that exercises ComplexBlock, BasicBlock, Instruction, DataWord resource view methods.

@@ -11,6 +11,7 @@ from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 from pytest_ofrak.patterns.unpack_verify import UnpackAndVerifyTestCase
 from . import ASSETS_DIR
 
+
 @dataclass
 class IhexTestCase(UnpackAndVerifyTestCase):
     fname: str

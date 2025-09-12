@@ -155,9 +155,7 @@ async def test_create_chunked_root_resource(
     assert length_resp_body == len(test_file_data)
 
 
-async def test_get_root_resources(
-    ofrak_client: TestClient, ofrak_context, ofrak_server, hello_elf
-):
+async def test_get_root_resources(ofrak_client: TestClient, ofrak_context, ofrak_server, hello_elf):
     create_resp = await ofrak_client.post(
         "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )
