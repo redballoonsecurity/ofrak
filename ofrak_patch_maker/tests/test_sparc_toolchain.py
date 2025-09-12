@@ -2,9 +2,9 @@ import pytest
 import platform
 
 from ofrak_patch_maker.toolchain.gnu_bcc_sparc import GNU_BCC_SPARC_Toolchain
-from ofrak_patch_maker_test import ToolchainUnderTest
-from ofrak_patch_maker_test.toolchain_asm import run_monkey_patch_test
-from ofrak_patch_maker_test.toolchain_c import (
+from .toolchain_under_test import ToolchainUnderTest
+from .toolchain_asm import run_monkey_patch_test
+from .toolchain_c import (
     run_bounds_check_test,
     run_hello_world_test,
     run_relocatable_test,

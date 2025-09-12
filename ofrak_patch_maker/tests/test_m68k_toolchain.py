@@ -14,12 +14,12 @@ from ofrak_patch_maker.toolchain.model import (
     Segment,
 )
 from ofrak_patch_maker.toolchain.utils import get_file_format
-from ofrak_patch_maker_test import ToolchainUnderTest, CURRENT_DIRECTORY
-from ofrak_patch_maker_test.toolchain_asm import (
+from .toolchain_under_test import ToolchainUnderTest, CURRENT_DIRECTORY
+from .toolchain_asm import (
     run_challenge_3_reloc_toy_example_test,
     run_monkey_patch_test,
 )
-from ofrak_patch_maker_test.toolchain_c import (
+from .toolchain_c import (
     run_hello_world_test,
     run_bounds_check_test,
     run_relocatable_test,

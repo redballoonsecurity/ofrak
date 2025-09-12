@@ -1,7 +1,8 @@
-from dataclasses import replace
+from dataclasses import replace, dataclass
 import logging
 import os
 import tempfile
+from typing import Type, Optional
 
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
@@ -16,7 +17,7 @@ from ofrak_patch_maker.toolchain.model import (
     CompilerOptimizationLevel,
 )
 from ofrak_patch_maker.toolchain.utils import get_file_format
-from ofrak_patch_maker_test import ToolchainUnderTest
+from .toolchain_under_test import ToolchainUnderTest
 from ofrak_type.memory_permissions import MemoryPermissions
 
 

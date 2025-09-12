@@ -1,11 +1,11 @@
 import pytest
 from ofrak_type import ArchInfo
 from ofrak_patch_maker.toolchain.gnu_avr import GNU_AVR_5_Toolchain
-from ofrak_patch_maker_test import ToolchainUnderTest
-from ofrak_patch_maker_test.toolchain_asm import (
+from .toolchain_under_test import ToolchainUnderTest
+from .toolchain_asm import (
     run_monkey_patch_test,
 )
-from ofrak_patch_maker_test.toolchain_c import run_hello_world_test, run_bounds_check_test
+from .toolchain_c import run_hello_world_test, run_bounds_check_test
 from ofrak_type.architecture import (
     InstructionSet,
     ProcessorType,

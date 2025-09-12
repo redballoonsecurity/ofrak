@@ -1,15 +1,15 @@
 import pytest
 
-from ofrak_patch_maker_test import ToolchainUnderTest
+from .toolchain_under_test import ToolchainUnderTest
 
 from ofrak_patch_maker.toolchain.gnu_ppc import GNU_PPC_LINUX_10_Toolchain
 from ofrak_type import ArchInfo, InstructionSet, BitWidth, Endianness
 
-from ofrak_patch_maker_test.toolchain_asm import (
+from .toolchain_asm import (
     run_monkey_patch_test,
 )
 
-from ofrak_patch_maker_test.toolchain_c import (
+from .toolchain_c import (
     run_bounds_check_test,
     run_hello_world_test,
     run_relocatable_test,

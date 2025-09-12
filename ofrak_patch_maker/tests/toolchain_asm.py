@@ -10,7 +10,7 @@ from ofrak_patch_maker.toolchain.model import (
     CompilerOptimizationLevel,
 )
 from ofrak_patch_maker.toolchain.utils import get_file_format
-from ofrak_patch_maker_test import ToolchainUnderTest
+from .toolchain_under_test import ToolchainUnderTest
 from ofrak_type.memory_permissions import MemoryPermissions
 
 
