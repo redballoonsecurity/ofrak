@@ -8,5 +8,5 @@ develop:
 	$(PIP) install -e .
 
 test:
-	$(PYTHON) -m pytest --cov=ofrak_cached_disassembly --cov-report=term-missing ofrak_cached_disassembly_test
+	$(PYTHON) -m pytest --cov=ofrak_cached_disassembly --cov-report=term-missing tests
 	fun-coverage --cov-fail-under=100

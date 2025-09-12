@@ -1,0 +1,1650 @@
+{
+    "metadata": {
+        "backend": "ghidra",
+        "decompiled": true,
+        "hash": "3121d565adbed9be7df99d102eb65884"
+    },
+    "seg_0": {
+        "virtual_address": 0,
+        "size": 2176,
+        "executable": false,
+        "children": []
+    },
+    "seg_4096": {
+        "virtual_address": 4096,
+        "size": 28,
+        "executable": false,
+        "children": []
+    },
+    "seg_4124": {
+        "virtual_address": 4124,
+        "size": 36,
+        "executable": false,
+        "children": []
+    },
+    "seg_4160": {
+        "virtual_address": 4160,
+        "size": 32,
+        "executable": false,
+        "children": []
+    },
+    "seg_4192": {
+        "virtual_address": 4192,
+        "size": 28,
+        "executable": false,
+        "children": []
+    },
+    "seg_4224": {
+        "virtual_address": 4224,
+        "size": 96,
+        "executable": false,
+        "children": []
+    },
+    "seg_4320": {
+        "virtual_address": 4320,
+        "size": 63,
+        "executable": false,
+        "children": []
+    },
+    "seg_4384": {
+        "virtual_address": 4384,
+        "size": 8,
+        "executable": false,
+        "children": []
+    },
+    "seg_4392": {
+        "virtual_address": 4392,
+        "size": 32,
+        "executable": false,
+        "children": []
+    },
+    "seg_4424": {
+        "virtual_address": 4424,
+        "size": 48,
+        "executable": false,
+        "children": []
+    },
+    "seg_4472": {
+        "virtual_address": 4472,
+        "size": 24,
+        "executable": false,
+        "children": []
+    },
+    "seg_4496": {
+        "virtual_address": 4496,
+        "size": 23,
+        "executable": true,
+        "children": [
+            "func_4496"
+        ]
+    },
+    "instr_4496": {
+        "virtual_address": 4496,
+        "size": 4,
+        "disassembly": "sub rsp, 0x8",
+        "mnemonic": "sub",
+        "operands": "rsp, 0x8",
+        "mode": "none"
+    },
+    "instr_4500": {
+        "virtual_address": 4500,
+        "size": 7,
+        "disassembly": "mov rax, qword ptr [0x111e8]",
+        "mnemonic": "mov",
+        "operands": "rax, qword ptr [0x111e8]",
+        "mode": "none"
+    },
+    "instr_4507": {
+        "virtual_address": 4507,
+        "size": 3,
+        "disassembly": "test rax, rax",
+        "mnemonic": "test",
+        "operands": "rax, rax",
+        "mode": "none"
+    },
+    "instr_4510": {
+        "virtual_address": 4510,
+        "size": 2,
+        "disassembly": "jz 0x11a2",
+        "mnemonic": "jz",
+        "operands": "0x11a2",
+        "mode": "none"
+    },
+    "bb_4496": {
+        "virtual_address": 4496,
+        "size": 16,
+        "mode": "none",
+        "is_exit_point": false,
+        "exit_vaddr": 4512,
+        "children": [
+            "instr_4496",
+            "instr_4500",
+            "instr_4507",
+            "instr_4510"
+        ]
+    },
+    "instr_4512": {
+        "virtual_address": 4512,
+        "size": 2,
+        "disassembly": "call rax",
+        "mnemonic": "call",
+        "operands": "rax",
+        "mode": "none"
+    },
+    "bb_4512": {
+        "virtual_address": 4512,
+        "size": 2,
+        "mode": "none",
+        "is_exit_point": false,
+        "exit_vaddr": 4514,
+        "children": [
+            "instr_4512"
+        ]
+    },
+    "instr_4514": {
+        "virtual_address": 4514,
+        "size": 4,
+        "disassembly": "add rsp, 0x8",
+        "mnemonic": "add",
+        "operands": "rsp, 0x8",
+        "mode": "none"
+    },
+    "instr_4518": {
+        "virtual_address": 4518,
+        "size": 1,
+        "disassembly": "ret ",
+        "mnemonic": "ret",
+        "operands": "",
+        "mode": "none"
+    },
+    "bb_4514": {
+        "virtual_address": 4514,
+        "size": 5,
+        "mode": "none",
+        "is_exit_point": true,
+        "exit_vaddr": null,
+        "children": [
+            "instr_4514",
+            "instr_4518"
+        ]
+    },
+    "func_4496": {
+        "virtual_address": 4496,
+        "size": 23,
+        "name": "_init",
+        "decompilation": "\nint _init(EVP_PKEY_CTX *ctx)\n\n{\n  undefined *puVar1;\n  \n  puVar1 = PTR___gmon_start___000111e8;\n  if (PTR___gmon_start___000111e8 != (undefined *)0x0) {\n    puVar1 = (undefined *)(*(code *)PTR___gmon_start___000111e8)();\n  }\n  return (int)puVar1;\n}\n\n",
+        "children": [
+            "bb_4496",
+            "bb_4512",
+            "bb_4514"
+        ]
+    },
+    "seg_4528": {
+        "virtual_address": 4528,
+        "size": 32,
+        "executable": true,
+        "children": [
+            "func_4528",
+            "func_4544"
+        ]
+    },
+    "instr_4528": {
+        "virtual_address": 4528,
+        "size": 6,
+        "disassembly": "push qword ptr [0x111f8]",
+        "mnemonic": "push",
+        "operands": "qword ptr [0x111f8]",
+        "mode": "none"
+    },
+    "instr_4534": {
+        "virtual_address": 4534,
+        "size": 6,
+        "disassembly": "jmp qword ptr [0x11200]",
+        "mnemonic": "jmp",
+        "operands": "qword ptr [0x11200]",
+        "mode": "none"
+    },
+    "bb_4528": {
+        "virtual_address": 4528,
+        "size": 12,
+        "mode": "none",
+        "is_exit_point": true,
+        "exit_vaddr": null,
+        "children": [
+            "instr_4528",
+            "instr_4534"
+        ]
+    },
+    "func_4528": {
+        "virtual_address": 4528,
+        "size": 12,
+        "name": "FUN_000011b0",
+        "decompilation": "\nvoid FUN_000011b0(void)\n\n{\n  (*(code *)PTR_00011200)();\n  return;\n}\n\n",
+        "children": [
+            "bb_4528"
+        ]
+    },
+    "instr_4544": {
+        "virtual_address": 4544,
+        "size": 6,
+        "disassembly": "jmp qword ptr [0x11208]",
+        "mnemonic": "jmp",
+        "operands": "qword ptr [0x11208]",
+        "mode": "none"
+    },
+    "bb_4544": {
+        "virtual_address": 4544,
+        "size": 6,
+        "mode": "none",
+        "is_exit_point": true,
+        "exit_vaddr": null,
+        "children": [
+            "instr_4544"
+        ]
+    },
+    "func_4544": {
+        "virtual_address": 4544,
+        "size": 6,
+        "name": "printf",
+        "decompilation": "\n/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */\n/* WARNING: Unknown calling convention -- yet parameter storage is locked */\n\nint printf(char *__format,...)\n\n{\n  int iVar1;\n  \n  iVar1 = (*_DAT_00011208)();\n  return iVar1;\n}\n\n",
+        "children": [
+            "bb_4544"
+        ]
+    },
+    "seg_4560": {
+        "virtual_address": 4560,
+        "size": 57344,
+        "executable": true,
+        "children": [
+            "func_4560",
+            "func_4608",
+            "func_4624",
+            "func_4672",
+            "func_4736",
+            "func_4784",
+            "func_4786",
+            "func_4807",
+            "func_4880",
+            "func_4976"
+        ]
+    },
+    "instr_4560": {
+        "virtual_address": 4560,
+        "size": 2,
+        "disassembly": "xor ebp, ebp",
+        "mnemonic": "xor",
+        "operands": "ebp, ebp",
+        "mode": "none"
+    },
+    "instr_4562": {
+        "virtual_address": 4562,
+        "size": 3,
+        "disassembly": "mov r9, rdx",
+        "mnemonic": "mov",
+        "operands": "r9, rdx",
+        "mode": "none"
+    },
+    "instr_4565": {
+        "virtual_address": 4565,
+        "size": 1,
+        "disassembly": "pop rsi",
+        "mnemonic": "pop",
+        "operands": "rsi",
+        "mode": "none"
+    },
+    "instr_4566": {
+        "virtual_address": 4566,
+        "size": 3,
+        "disassembly": "mov rdx, rsp",
+        "mnemonic": "mov",
+        "operands": "rdx, rsp",
+        "mode": "none"
+    },
+    "instr_4569": {
+        "virtual_address": 4569,
+        "size": 4,
+        "disassembly": "and rsp, -0x10",
+        "mnemonic": "and",
+        "operands": "rsp, -0x10",
+        "mode": "none"
+    },
+    "instr_4573": {
+        "virtual_address": 4573,
+        "size": 1,
+        "disassembly": "push rax",
+        "mnemonic": "push",
+        "operands": "rax",
+        "mode": "none"
+    },
+    "instr_4574": {
+        "virtual_address": 4574,
+        "size": 1,
+        "disassembly": "push rsp",
+        "mnemonic": "push",
+        "operands": "rsp",
+        "mode": "none"
+    },
+    "instr_4575": {
+        "virtual_address": 4575,
+        "size": 7,
+        "disassembly": "mov r8, 0x1370",
+        "mnemonic": "mov",
+        "operands": "r8, 0x1370",
+        "mode": "none"
+    },
+    "instr_4582": {
+        "virtual_address": 4582,
+        "size": 7,
+        "disassembly": "mov rcx, 0x1310",
+        "mnemonic": "mov",
+        "operands": "rcx, 0x1310",
+        "mode": "none"
+    },
+    "instr_4589": {
+        "virtual_address": 4589,
+        "size": 7,
+        "disassembly": "mov rdi, 0x12c7",
+        "mnemonic": "mov",
+        "operands": "rdi, 0x12c7",
+        "mode": "none"
+    },
+    "instr_4596": {
+        "virtual_address": 4596,
+        "size": 6,
+        "disassembly": "call qword ptr [0x111e0]",
+        "mnemonic": "call",
+        "operands": "qword ptr [0x111e0]",
+        "mode": "none"
+    },
+    "instr_4602": {
+        "virtual_address": 4602,
+        "size": 1,
+        "disassembly": "hlt ",
+        "mnemonic": "hlt",
+        "operands": "",
+        "mode": "none"
+    },
+    "bb_4560": {
+        "virtual_address": 4560,
+        "size": 43,
+        "mode": "none",
+        "is_exit_point": true,
+        "exit_vaddr": null,
+        "children": [
+            "instr_4560",
+            "instr_4562",
+            "instr_4565",
+            "instr_4566",
+            "instr_4569",
+            "instr_4573",
+            "instr_4574",
+            "instr_4575",
+            "instr_4582",
+            "instr_4589",
+            "instr_4596",
+            "instr_4602"
+        ]
+    },
+    "func_4560": {
+        "virtual_address": 4560,
+        "size": 43,
+        "name": "_start",
+        "decompilation": "\nvoid processEntry _start(undefined8 param_1,undefined8 param_2)\n\n{\n  undefined auStack_8 [8];\n  \n  (*(code *)PTR___libc_start_main_000111e0)\n            (main,param_2,&stack0x00000008,__libc_csu_init,__libc_csu_fini,param_1,auStack_8);\n  do {\n                    /* WARNING: Do nothing block with infinite loop */\n  } while( true );\n}\n\n",
+        "children": [
+            "bb_4560"
+        ]
+    },
+    "instr_4608": {
+        "virtual_address": 4608,
+        "size": 1,
+        "disassembly": "ret ",
+        "mnemonic": "ret",
+        "operands": "",
+        "mode": "none"
+    },
+    "bb_4608": {
+        "virtual_address": 4608,
+        "size": 1,
+        "mode": "none",
+        "is_exit_point": true,
+        "exit_vaddr": null,
+        "children": [
+            "instr_4608"
+        ]
+    },
+    "func_4608": {
+        "virtual_address": 4608,
+        "size": 1,
+        "name": "_dl_relocate_static_pie",
+        "decompilation": "\nvoid _dl_relocate_static_pie(void)\n\n{\n  return;\n}\n\n",
+        "children": [
+            "bb_4608"
+        ]
+    },
+    "instr_4624": {
+        "virtual_address": 4624,
+        "size": 5,
+        "disassembly": "mov eax, 0x11220",
+        "mnemonic": "mov",
+        "operands": "eax, 0x11220",
+        "mode": "none"
+    },
+    "instr_4629": {
+        "virtual_address": 4629,
+        "size": 6,
+        "disassembly": "cmp rax, 0x11220",
+        "mnemonic": "cmp",
+        "operands": "rax, 0x11220",
+        "mode": "none"
+    },
+    "instr_4635": {
+        "virtual_address": 4635,
+        "size": 2,
+        "disassembly": "jz 0x1230",
+        "mnemonic": "jz",
+        "operands": "0x1230",
+        "mode": "none"
+    },
+    "bb_4624": {
+        "virtual_address": 4624,
+        "size": 13,
+        "mode": "none",
+        "is_exit_point": false,
+        "exit_vaddr": 4637,
+        "children": [
+            "instr_4624",
+            "instr_4629",
+            "instr_4635"
+        ]
+    },
+    "instr_4637": {
+        "virtual_address": 4637,
+        "size": 5,
+        "disassembly": "mov eax, 0x0",
+        "mnemonic": "mov",
+        "operands": "eax, 0x0",
+        "mode": "none"
+    },
+    "instr_4642": {
+        "virtual_address": 4642,
+        "size": 3,
+        "disassembly": "test rax, rax",
+        "mnemonic": "test",
+        "operands": "rax, rax",
+        "mode": "none"
+    },
+    "instr_4645": {
+        "virtual_address": 4645,
+        "size": 2,
+        "disassembly": "jz 0x1230",
+        "mnemonic": "jz",
+        "operands": "0x1230",
+        "mode": "none"
+    },
+    "bb_4637": {
+        "virtual_address": 4637,
+        "size": 10,
+        "mode": "none",
+        "is_exit_point": false,
+        "exit_vaddr": 4647,
+        "children": [
+            "instr_4637",
+            "instr_4642",
+            "instr_4645"
+        ]
+    },
+    "instr_4647": {
+        "virtual_address": 4647,
+        "size": 5,
+        "disassembly": "mov edi, 0x11220",
+        "mnemonic": "mov",
+        "operands": "edi, 0x11220",
+        "mode": "none"
+    },
+    "instr_4652": {
+        "virtual_address": 4652,
+        "size": 2,
+        "disassembly": "jmp rax",
+        "mnemonic": "jmp",
+        "operands": "rax",
+        "mode": "none"
+    },
+    "bb_4647": {
+        "virtual_address": 4647,
+        "size": 7,
+        "mode": "none",
+        "is_exit_point": true,
+        "exit_vaddr": null,
+        "children": [
+            "instr_4647",
+            "instr_4652"
+        ]
+    },
+    "instr_4656": {
+        "virtual_address": 4656,
+        "size": 1,
+        "disassembly": "ret ",
+        "mnemonic": "ret",
+        "operands": "",
+        "mode": "none"
+    },
+    "bb_4656": {
+        "virtual_address": 4656,
+        "size": 1,
+        "mode": "none",
+        "is_exit_point": true,
+        "exit_vaddr": null,
+        "children": [
+            "instr_4656"
+        ]
+    },
+    "func_4624": {
+        "virtual_address": 4624,
+        "size": 33,
+        "name": "deregister_tm_clones",
+        "decompilation": "\n/* WARNING: Removing unreachable block (ram,0x0000121d) */\n/* WARNING: Removing unreachable block (ram,0x00001227) */\n\nvoid deregister_tm_clones(void)\n\n{\n  return;\n}\n\n",
+        "children": [
+            "bb_4624",
+            "bb_4637",
+            "bb_4647",
+            "bb_4656"
+        ]
+    },
+    "instr_4672": {
+        "virtual_address": 4672,
+        "size": 5,
+        "disassembly": "mov esi, 0x11220",
+        "mnemonic": "mov",
+        "operands": "esi, 0x11220",
+        "mode": "none"
+    },
+    "instr_4677": {
+        "virtual_address": 4677,
+        "size": 7,
+        "disassembly": "sub rsi, 0x11220",
+        "mnemonic": "sub",
+        "operands": "rsi, 0x11220",
+        "mode": "none"
+    },
+    "instr_4684": {
+        "virtual_address": 4684,
+        "size": 3,
+        "disassembly": "mov rax, rsi",
+        "mnemonic": "mov",
+        "operands": "rax, rsi",
+        "mode": "none"
+    },
+    "instr_4687": {
+        "virtual_address": 4687,
+        "size": 4,
+        "disassembly": "shr rsi, 0x3f",
+        "mnemonic": "shr",
+        "operands": "rsi, 0x3f",
+        "mode": "none"
+    },
+    "instr_4691": {
+        "virtual_address": 4691,
+        "size": 4,
+        "disassembly": "sar rax, 0x3",
+        "mnemonic": "sar",
+        "operands": "rax, 0x3",
+        "mode": "none"
+    },
+    "instr_4695": {
+        "virtual_address": 4695,
+        "size": 3,
+        "disassembly": "add rsi, rax",
+        "mnemonic": "add",
+        "operands": "rsi, rax",
+        "mode": "none"
+    },
+    "instr_4698": {
+        "virtual_address": 4698,
+        "size": 3,
+        "disassembly": "sar rsi, 0x1",
+        "mnemonic": "sar",
+        "operands": "rsi, 0x1",
+        "mode": "none"
+    },
+    "instr_4701": {
+        "virtual_address": 4701,
+        "size": 2,
+        "disassembly": "jz 0x1270",
+        "mnemonic": "jz",
+        "operands": "0x1270",
+        "mode": "none"
+    },
+    "bb_4672": {
+        "virtual_address": 4672,
+        "size": 31,
+        "mode": "none",
+        "is_exit_point": false,
+        "exit_vaddr": 4703,
+        "children": [
+            "instr_4672",
+            "instr_4677",
+            "instr_4684",
+            "instr_4687",
+            "instr_4691",
+            "instr_4695",
+            "instr_4698",
+            "instr_4701"
+        ]
+    },
+    "instr_4703": {
+        "virtual_address": 4703,
+        "size": 5,
+        "disassembly": "mov eax, 0x0",
+        "mnemonic": "mov",
+        "operands": "eax, 0x0",
+        "mode": "none"
+    },
+    "instr_4708": {
+        "virtual_address": 4708,
+        "size": 3,
+        "disassembly": "test rax, rax",
+        "mnemonic": "test",
+        "operands": "rax, rax",
+        "mode": "none"
+    },
+    "instr_4711": {
+        "virtual_address": 4711,
+        "size": 2,
+        "disassembly": "jz 0x1270",
+        "mnemonic": "jz",
+        "operands": "0x1270",
+        "mode": "none"
+    },
+    "bb_4703": {
+        "virtual_address": 4703,
+        "size": 10,
+        "mode": "none",
+        "is_exit_point": false,
+        "exit_vaddr": 4713,
+        "children": [
+            "instr_4703",
+            "instr_4708",
+            "instr_4711"
+        ]
+    },
+    "instr_4713": {
+        "virtual_address": 4713,
+        "size": 5,
+        "disassembly": "mov edi, 0x11220",
+        "mnemonic": "mov",
+        "operands": "edi, 0x11220",
+        "mode": "none"
+    },
+    "instr_4718": {
+        "virtual_address": 4718,
+        "size": 2,
+        "disassembly": "jmp rax",
+        "mnemonic": "jmp",
+        "operands": "rax",
+        "mode": "none"
+    },
+    "bb_4713": {
+        "virtual_address": 4713,
+        "size": 7,
+        "mode": "none",
+        "is_exit_point": true,
+        "exit_vaddr": null,
+        "children": [
+            "instr_4713",
+            "instr_4718"
+        ]
+    },
+    "instr_4720": {
+        "virtual_address": 4720,
+        "size": 1,
+        "disassembly": "ret ",
+        "mnemonic": "ret",
+        "operands": "",
+        "mode": "none"
+    },
+    "bb_4720": {
+        "virtual_address": 4720,
+        "size": 1,
+        "mode": "none",
+        "is_exit_point": true,
+        "exit_vaddr": null,
+        "children": [
+            "instr_4720"
+        ]
+    },
+    "func_4672": {
+        "virtual_address": 4672,
+        "size": 49,
+        "name": "register_tm_clones",
+        "decompilation": "\n/* WARNING: Removing unreachable block (ram,0x0000125f) */\n/* WARNING: Removing unreachable block (ram,0x00001269) */\n\nvoid register_tm_clones(void)\n\n{\n  return;\n}\n\n",
+        "children": [
+            "bb_4672",
+            "bb_4703",
+            "bb_4713",
+            "bb_4720"
+        ]
+    },
+    "instr_4736": {
+        "virtual_address": 4736,
+        "size": 7,
+        "disassembly": "cmp byte ptr [0x11220], 0x0",
+        "mnemonic": "cmp",
+        "operands": "byte ptr [0x11220], 0x0",
+        "mode": "none"
+    },
+    "instr_4743": {
+        "virtual_address": 4743,
+        "size": 2,
+        "disassembly": "jnz 0x12a0",
+        "mnemonic": "jnz",
+        "operands": "0x12a0",
+        "mode": "none"
+    },
+    "bb_4736": {
+        "virtual_address": 4736,
+        "size": 9,
+        "mode": "none",
+        "is_exit_point": false,
+        "exit_vaddr": 4745,
+        "children": [
+            "instr_4736",
+            "instr_4743"
+        ]
+    },
+    "instr_4745": {
+        "virtual_address": 4745,
+        "size": 1,
+        "disassembly": "push rbp",
+        "mnemonic": "push",
+        "operands": "rbp",
+        "mode": "none"
+    },
+    "instr_4746": {
+        "virtual_address": 4746,
+        "size": 3,
+        "disassembly": "mov rbp, rsp",
+        "mnemonic": "mov",
+        "operands": "rbp, rsp",
+        "mode": "none"
+    },
+    "instr_4749": {
+        "virtual_address": 4749,
+        "size": 5,
+        "disassembly": "call 0x1210",
+        "mnemonic": "call",
+        "operands": "0x1210",
+        "mode": "none"
+    },
+    "instr_4754": {
+        "virtual_address": 4754,
+        "size": 7,
+        "disassembly": "mov byte ptr [0x11220], 0x1",
+        "mnemonic": "mov",
+        "operands": "byte ptr [0x11220], 0x1",
+        "mode": "none"
+    },
+    "instr_4761": {
+        "virtual_address": 4761,
+        "size": 1,
+        "disassembly": "pop rbp",
+        "mnemonic": "pop",
+        "operands": "rbp",
+        "mode": "none"
+    },
+    "instr_4762": {
+        "virtual_address": 4762,
+        "size": 1,
+        "disassembly": "ret ",
+        "mnemonic": "ret",
+        "operands": "",
+        "mode": "none"
+    },
+    "bb_4745": {
+        "virtual_address": 4745,
+        "size": 18,
+        "mode": "none",
+        "is_exit_point": true,
+        "exit_vaddr": null,
+        "children": [
+            "instr_4745",
+            "instr_4746",
+            "instr_4749",
+            "instr_4754",
+            "instr_4761",
+            "instr_4762"
+        ]
+    },
+    "instr_4768": {
+        "virtual_address": 4768,
+        "size": 1,
+        "disassembly": "ret ",
+        "mnemonic": "ret",
+        "operands": "",
+        "mode": "none"
+    },
+    "bb_4768": {
+        "virtual_address": 4768,
+        "size": 1,
+        "mode": "none",
+        "is_exit_point": true,
+        "exit_vaddr": null,
+        "children": [
+            "instr_4768"
+        ]
+    },
+    "func_4736": {
+        "virtual_address": 4736,
+        "size": 33,
+        "name": "__do_global_dtors_aux",
+        "decompilation": "\nvoid __do_global_dtors_aux(void)\n\n{\n  if (completed_0 == '\\0') {\n    deregister_tm_clones();\n    completed_0 = 1;\n    return;\n  }\n  return;\n}\n\n",
+        "children": [
+            "bb_4736",
+            "bb_4745",
+            "bb_4768"
+        ]
+    },
+    "instr_4784": {
+        "virtual_address": 4784,
+        "size": 2,
+        "disassembly": "jmp 0x1240",
+        "mnemonic": "jmp",
+        "operands": "0x1240",
+        "mode": "none"
+    },
+    "bb_4784": {
+        "virtual_address": 4784,
+        "size": 2,
+        "mode": "none",
+        "is_exit_point": true,
+        "exit_vaddr": null,
+        "children": [
+            "instr_4784"
+        ]
+    },
+    "func_4784": {
+        "virtual_address": 4784,
+        "size": 2,
+        "name": "frame_dummy",
+        "decompilation": "\n/* WARNING: Removing unreachable block (ram,0x0000125f) */\n/* WARNING: Removing unreachable block (ram,0x00001269) */\n\nvoid frame_dummy(void)\n\n{\n  return;\n}\n\n",
+        "children": [
+            "bb_4784"
+        ]
+    },
+    "instr_4786": {
+        "virtual_address": 4786,
+        "size": 1,
+        "disassembly": "push rbp",
+        "mnemonic": "push",
+        "operands": "rbp",
+        "mode": "none"
+    },
+    "instr_4787": {
+        "virtual_address": 4787,
+        "size": 3,
+        "disassembly": "mov rbp, rsp",
+        "mnemonic": "mov",
+        "operands": "rbp, rsp",
+        "mode": "none"
+    },
+    "instr_4790": {
+        "virtual_address": 4790,
+        "size": 4,
+        "disassembly": "mov qword ptr [rbp - 0x8], rdi",
+        "mnemonic": "mov",
+        "operands": "qword ptr [rbp - 0x8], rdi",
+        "mode": "none"
+    },
+    "instr_4794": {
+        "virtual_address": 4794,
+        "size": 4,
+        "disassembly": "mov rax, qword ptr [rbp - 0x8]",
+        "mnemonic": "mov",
+        "operands": "rax, qword ptr [rbp - 0x8]",
+        "mode": "none"
+    },
+    "instr_4798": {
+        "virtual_address": 4798,
+        "size": 6,
+        "disassembly": "mov dword ptr [rax], 0x5",
+        "mnemonic": "mov",
+        "operands": "dword ptr [rax], 0x5",
+        "mode": "none"
+    },
+    "instr_4804": {
+        "virtual_address": 4804,
+        "size": 1,
+        "disassembly": "nop ",
+        "mnemonic": "nop",
+        "operands": "",
+        "mode": "none"
+    },
+    "instr_4805": {
+        "virtual_address": 4805,
+        "size": 1,
+        "disassembly": "pop rbp",
+        "mnemonic": "pop",
+        "operands": "rbp",
+        "mode": "none"
+    },
+    "instr_4806": {
+        "virtual_address": 4806,
+        "size": 1,
+        "disassembly": "ret ",
+        "mnemonic": "ret",
+        "operands": "",
+        "mode": "none"
+    },
+    "bb_4786": {
+        "virtual_address": 4786,
+        "size": 21,
+        "mode": "none",
+        "is_exit_point": true,
+        "exit_vaddr": null,
+        "children": [
+            "instr_4786",
+            "instr_4787",
+            "instr_4790",
+            "instr_4794",
+            "instr_4798",
+            "instr_4804",
+            "instr_4805",
+            "instr_4806"
+        ]
+    },
+    "func_4786": {
+        "virtual_address": 4786,
+        "size": 21,
+        "name": "set_int",
+        "decompilation": "\nvoid set_int(int *the_int)\n\n{\n  int *the_int_local;\n  \n  *the_int = 5;\n  return;\n}\n\n",
+        "children": [
+            "bb_4786"
+        ]
+    },
+    "instr_4807": {
+        "virtual_address": 4807,
+        "size": 1,
+        "disassembly": "push rbp",
+        "mnemonic": "push",
+        "operands": "rbp",
+        "mode": "none"
+    },
+    "instr_4808": {
+        "virtual_address": 4808,
+        "size": 3,
+        "disassembly": "mov rbp, rsp",
+        "mnemonic": "mov",
+        "operands": "rbp, rsp",
+        "mode": "none"
+    },
+    "instr_4811": {
+        "virtual_address": 4811,
+        "size": 4,
+        "disassembly": "sub rsp, 0x20",
+        "mnemonic": "sub",
+        "operands": "rsp, 0x20",
+        "mode": "none"
+    },
+    "instr_4815": {
+        "virtual_address": 4815,
+        "size": 3,
+        "disassembly": "mov dword ptr [rbp - 0x14], edi",
+        "mnemonic": "mov",
+        "operands": "dword ptr [rbp - 0x14], edi",
+        "mode": "none"
+    },
+    "instr_4818": {
+        "virtual_address": 4818,
+        "size": 4,
+        "disassembly": "mov qword ptr [rbp - 0x20], rsi",
+        "mnemonic": "mov",
+        "operands": "qword ptr [rbp - 0x20], rsi",
+        "mode": "none"
+    },
+    "instr_4822": {
+        "virtual_address": 4822,
+        "size": 7,
+        "disassembly": "mov dword ptr [rbp - 0x4], 0x0",
+        "mnemonic": "mov",
+        "operands": "dword ptr [rbp - 0x4], 0x0",
+        "mode": "none"
+    },
+    "instr_4829": {
+        "virtual_address": 4829,
+        "size": 4,
+        "disassembly": "lea rax, [rbp - 0x4]",
+        "mnemonic": "lea",
+        "operands": "rax, [rbp - 0x4]",
+        "mode": "none"
+    },
+    "instr_4833": {
+        "virtual_address": 4833,
+        "size": 3,
+        "disassembly": "mov rdi, rax",
+        "mnemonic": "mov",
+        "operands": "rdi, rax",
+        "mode": "none"
+    },
+    "instr_4836": {
+        "virtual_address": 4836,
+        "size": 5,
+        "disassembly": "call 0x12b2",
+        "mnemonic": "call",
+        "operands": "0x12b2",
+        "mode": "none"
+    },
+    "instr_4841": {
+        "virtual_address": 4841,
+        "size": 3,
+        "disassembly": "mov eax, dword ptr [rbp - 0x4]",
+        "mnemonic": "mov",
+        "operands": "eax, dword ptr [rbp - 0x4]",
+        "mode": "none"
+    },
+    "instr_4844": {
+        "virtual_address": 4844,
+        "size": 2,
+        "disassembly": "mov esi, eax",
+        "mnemonic": "mov",
+        "operands": "esi, eax",
+        "mode": "none"
+    },
+    "instr_4846": {
+        "virtual_address": 4846,
+        "size": 7,
+        "disassembly": "lea rdi, [0x10004]",
+        "mnemonic": "lea",
+        "operands": "rdi, [0x10004]",
+        "mode": "none"
+    },
+    "instr_4853": {
+        "virtual_address": 4853,
+        "size": 5,
+        "disassembly": "mov eax, 0x0",
+        "mnemonic": "mov",
+        "operands": "eax, 0x0",
+        "mode": "none"
+    },
+    "instr_4858": {
+        "virtual_address": 4858,
+        "size": 5,
+        "disassembly": "call 0x11c0",
+        "mnemonic": "call",
+        "operands": "0x11c0",
+        "mode": "none"
+    },
+    "instr_4863": {
+        "virtual_address": 4863,
+        "size": 5,
+        "disassembly": "mov eax, 0x0",
+        "mnemonic": "mov",
+        "operands": "eax, 0x0",
+        "mode": "none"
+    },
+    "instr_4868": {
+        "virtual_address": 4868,
+        "size": 1,
+        "disassembly": "leave ",
+        "mnemonic": "leave",
+        "operands": "",
+        "mode": "none"
+    },
+    "instr_4869": {
+        "virtual_address": 4869,
+        "size": 1,
+        "disassembly": "ret ",
+        "mnemonic": "ret",
+        "operands": "",
+        "mode": "none"
+    },
+    "bb_4807": {
+        "virtual_address": 4807,
+        "size": 63,
+        "mode": "none",
+        "is_exit_point": true,
+        "exit_vaddr": null,
+        "children": [
+            "instr_4807",
+            "instr_4808",
+            "instr_4811",
+            "instr_4815",
+            "instr_4818",
+            "instr_4822",
+            "instr_4829",
+            "instr_4833",
+            "instr_4836",
+            "instr_4841",
+            "instr_4844",
+            "instr_4846",
+            "instr_4853",
+            "instr_4858",
+            "instr_4863",
+            "instr_4868",
+            "instr_4869"
+        ]
+    },
+    "func_4807": {
+        "virtual_address": 4807,
+        "size": 63,
+        "name": "main",
+        "decompilation": "\nint main(int argc,char **argv)\n\n{\n  char **argv_local;\n  int argc_local;\n  int value;\n  \n  value = 0;\n  set_int(&value);\n  printf(\"we have the value %d\\n\",(ulong)(uint)value);\n  return 0;\n}\n\n",
+        "children": [
+            "bb_4807"
+        ]
+    },
+    "instr_4880": {
+        "virtual_address": 4880,
+        "size": 2,
+        "disassembly": "push r15",
+        "mnemonic": "push",
+        "operands": "r15",
+        "mode": "none"
+    },
+    "instr_4882": {
+        "virtual_address": 4882,
+        "size": 7,
+        "disassembly": "lea r15, [0x11000]",
+        "mnemonic": "lea",
+        "operands": "r15, [0x11000]",
+        "mode": "none"
+    },
+    "instr_4889": {
+        "virtual_address": 4889,
+        "size": 2,
+        "disassembly": "push r14",
+        "mnemonic": "push",
+        "operands": "r14",
+        "mode": "none"
+    },
+    "instr_4891": {
+        "virtual_address": 4891,
+        "size": 3,
+        "disassembly": "mov r14, rdx",
+        "mnemonic": "mov",
+        "operands": "r14, rdx",
+        "mode": "none"
+    },
+    "instr_4894": {
+        "virtual_address": 4894,
+        "size": 2,
+        "disassembly": "push r13",
+        "mnemonic": "push",
+        "operands": "r13",
+        "mode": "none"
+    },
+    "instr_4896": {
+        "virtual_address": 4896,
+        "size": 3,
+        "disassembly": "mov r13, rsi",
+        "mnemonic": "mov",
+        "operands": "r13, rsi",
+        "mode": "none"
+    },
+    "instr_4899": {
+        "virtual_address": 4899,
+        "size": 2,
+        "disassembly": "push r12",
+        "mnemonic": "push",
+        "operands": "r12",
+        "mode": "none"
+    },
+    "instr_4901": {
+        "virtual_address": 4901,
+        "size": 3,
+        "disassembly": "mov r12d, edi",
+        "mnemonic": "mov",
+        "operands": "r12d, edi",
+        "mode": "none"
+    },
+    "instr_4904": {
+        "virtual_address": 4904,
+        "size": 1,
+        "disassembly": "push rbp",
+        "mnemonic": "push",
+        "operands": "rbp",
+        "mode": "none"
+    },
+    "instr_4905": {
+        "virtual_address": 4905,
+        "size": 7,
+        "disassembly": "lea rbp, [0x11008]",
+        "mnemonic": "lea",
+        "operands": "rbp, [0x11008]",
+        "mode": "none"
+    },
+    "instr_4912": {
+        "virtual_address": 4912,
+        "size": 1,
+        "disassembly": "push rbx",
+        "mnemonic": "push",
+        "operands": "rbx",
+        "mode": "none"
+    },
+    "instr_4913": {
+        "virtual_address": 4913,
+        "size": 3,
+        "disassembly": "sub rbp, r15",
+        "mnemonic": "sub",
+        "operands": "rbp, r15",
+        "mode": "none"
+    },
+    "instr_4916": {
+        "virtual_address": 4916,
+        "size": 4,
+        "disassembly": "sub rsp, 0x8",
+        "mnemonic": "sub",
+        "operands": "rsp, 0x8",
+        "mode": "none"
+    },
+    "instr_4920": {
+        "virtual_address": 4920,
+        "size": 5,
+        "disassembly": "call 0x1190",
+        "mnemonic": "call",
+        "operands": "0x1190",
+        "mode": "none"
+    },
+    "instr_4925": {
+        "virtual_address": 4925,
+        "size": 4,
+        "disassembly": "sar rbp, 0x3",
+        "mnemonic": "sar",
+        "operands": "rbp, 0x3",
+        "mode": "none"
+    },
+    "instr_4929": {
+        "virtual_address": 4929,
+        "size": 2,
+        "disassembly": "jz 0x135e",
+        "mnemonic": "jz",
+        "operands": "0x135e",
+        "mode": "none"
+    },
+    "bb_4880": {
+        "virtual_address": 4880,
+        "size": 51,
+        "mode": "none",
+        "is_exit_point": false,
+        "exit_vaddr": 4931,
+        "children": [
+            "instr_4880",
+            "instr_4882",
+            "instr_4889",
+            "instr_4891",
+            "instr_4894",
+            "instr_4896",
+            "instr_4899",
+            "instr_4901",
+            "instr_4904",
+            "instr_4905",
+            "instr_4912",
+            "instr_4913",
+            "instr_4916",
+            "instr_4920",
+            "instr_4925",
+            "instr_4929"
+        ]
+    },
+    "instr_4931": {
+        "virtual_address": 4931,
+        "size": 2,
+        "disassembly": "xor ebx, ebx",
+        "mnemonic": "xor",
+        "operands": "ebx, ebx",
+        "mode": "none"
+    },
+    "instr_4933": {
+        "virtual_address": 4933,
+        "size": 3,
+        "disassembly": "nop dword ptr [rax]",
+        "mnemonic": "nop",
+        "operands": "dword ptr [rax]",
+        "mode": "none"
+    },
+    "bb_4931": {
+        "virtual_address": 4931,
+        "size": 5,
+        "mode": "none",
+        "is_exit_point": false,
+        "exit_vaddr": 4936,
+        "children": [
+            "instr_4931",
+            "instr_4933"
+        ]
+    },
+    "instr_4936": {
+        "virtual_address": 4936,
+        "size": 3,
+        "disassembly": "mov rdx, r14",
+        "mnemonic": "mov",
+        "operands": "rdx, r14",
+        "mode": "none"
+    },
+    "instr_4939": {
+        "virtual_address": 4939,
+        "size": 3,
+        "disassembly": "mov rsi, r13",
+        "mnemonic": "mov",
+        "operands": "rsi, r13",
+        "mode": "none"
+    },
+    "instr_4942": {
+        "virtual_address": 4942,
+        "size": 3,
+        "disassembly": "mov edi, r12d",
+        "mnemonic": "mov",
+        "operands": "edi, r12d",
+        "mode": "none"
+    },
+    "instr_4945": {
+        "virtual_address": 4945,
+        "size": 4,
+        "disassembly": "call qword ptr [r15 + rbx*0x8]",
+        "mnemonic": "call",
+        "operands": "qword ptr [r15 + rbx*0x8]",
+        "mode": "none"
+    },
+    "instr_4949": {
+        "virtual_address": 4949,
+        "size": 4,
+        "disassembly": "add rbx, 0x1",
+        "mnemonic": "add",
+        "operands": "rbx, 0x1",
+        "mode": "none"
+    },
+    "instr_4953": {
+        "virtual_address": 4953,
+        "size": 3,
+        "disassembly": "cmp rbp, rbx",
+        "mnemonic": "cmp",
+        "operands": "rbp, rbx",
+        "mode": "none"
+    },
+    "instr_4956": {
+        "virtual_address": 4956,
+        "size": 2,
+        "disassembly": "jnz 0x1348",
+        "mnemonic": "jnz",
+        "operands": "0x1348",
+        "mode": "none"
+    },
+    "bb_4936": {
+        "virtual_address": 4936,
+        "size": 22,
+        "mode": "none",
+        "is_exit_point": false,
+        "exit_vaddr": 4958,
+        "children": [
+            "instr_4936",
+            "instr_4939",
+            "instr_4942",
+            "instr_4945",
+            "instr_4949",
+            "instr_4953",
+            "instr_4956"
+        ]
+    },
+    "instr_4958": {
+        "virtual_address": 4958,
+        "size": 4,
+        "disassembly": "add rsp, 0x8",
+        "mnemonic": "add",
+        "operands": "rsp, 0x8",
+        "mode": "none"
+    },
+    "instr_4962": {
+        "virtual_address": 4962,
+        "size": 1,
+        "disassembly": "pop rbx",
+        "mnemonic": "pop",
+        "operands": "rbx",
+        "mode": "none"
+    },
+    "instr_4963": {
+        "virtual_address": 4963,
+        "size": 1,
+        "disassembly": "pop rbp",
+        "mnemonic": "pop",
+        "operands": "rbp",
+        "mode": "none"
+    },
+    "instr_4964": {
+        "virtual_address": 4964,
+        "size": 2,
+        "disassembly": "pop r12",
+        "mnemonic": "pop",
+        "operands": "r12",
+        "mode": "none"
+    },
+    "instr_4966": {
+        "virtual_address": 4966,
+        "size": 2,
+        "disassembly": "pop r13",
+        "mnemonic": "pop",
+        "operands": "r13",
+        "mode": "none"
+    },
+    "instr_4968": {
+        "virtual_address": 4968,
+        "size": 2,
+        "disassembly": "pop r14",
+        "mnemonic": "pop",
+        "operands": "r14",
+        "mode": "none"
+    },
+    "instr_4970": {
+        "virtual_address": 4970,
+        "size": 2,
+        "disassembly": "pop r15",
+        "mnemonic": "pop",
+        "operands": "r15",
+        "mode": "none"
+    },
+    "instr_4972": {
+        "virtual_address": 4972,
+        "size": 1,
+        "disassembly": "ret ",
+        "mnemonic": "ret",
+        "operands": "",
+        "mode": "none"
+    },
+    "bb_4958": {
+        "virtual_address": 4958,
+        "size": 15,
+        "mode": "none",
+        "is_exit_point": true,
+        "exit_vaddr": null,
+        "children": [
+            "instr_4958",
+            "instr_4962",
+            "instr_4963",
+            "instr_4964",
+            "instr_4966",
+            "instr_4968",
+            "instr_4970",
+            "instr_4972"
+        ]
+    },
+    "func_4880": {
+        "virtual_address": 4880,
+        "size": 93,
+        "name": "__libc_csu_init",
+        "decompilation": "\nvoid __libc_csu_init(EVP_PKEY_CTX *param_1,undefined8 param_2,undefined8 param_3)\n\n{\n  long lVar1;\n  \n  _init(param_1);\n  lVar1 = 0;\n  do {\n    (*(code *)(&__frame_dummy_init_array_entry)[lVar1])((ulong)param_1 & 0xffffffff,param_2,param_3)\n    ;\n    lVar1 = lVar1 + 1;\n  } while (lVar1 != 1);\n  return;\n}\n\n",
+        "children": [
+            "bb_4880",
+            "bb_4931",
+            "bb_4936",
+            "bb_4958"
+        ]
+    },
+    "instr_4976": {
+        "virtual_address": 4976,
+        "size": 1,
+        "disassembly": "ret ",
+        "mnemonic": "ret",
+        "operands": "",
+        "mode": "none"
+    },
+    "bb_4976": {
+        "virtual_address": 4976,
+        "size": 1,
+        "mode": "none",
+        "is_exit_point": true,
+        "exit_vaddr": null,
+        "children": [
+            "instr_4976"
+        ]
+    },
+    "func_4976": {
+        "virtual_address": 4976,
+        "size": 1,
+        "name": "__libc_csu_fini",
+        "decompilation": "\nvoid __libc_csu_fini(void)\n\n{\n  return;\n}\n\n",
+        "children": [
+            "bb_4976"
+        ]
+    },
+    "seg_61904": {
+        "virtual_address": 61904,
+        "size": 9,
+        "executable": true,
+        "children": [
+            "func_61904"
+        ]
+    },
+    "instr_61904": {
+        "virtual_address": 61904,
+        "size": 4,
+        "disassembly": "sub rsp, 0x8",
+        "mnemonic": "sub",
+        "operands": "rsp, 0x8",
+        "mode": "none"
+    },
+    "instr_61908": {
+        "virtual_address": 61908,
+        "size": 4,
+        "disassembly": "add rsp, 0x8",
+        "mnemonic": "add",
+        "operands": "rsp, 0x8",
+        "mode": "none"
+    },
+    "instr_61912": {
+        "virtual_address": 61912,
+        "size": 1,
+        "disassembly": "ret ",
+        "mnemonic": "ret",
+        "operands": "",
+        "mode": "none"
+    },
+    "bb_61904": {
+        "virtual_address": 61904,
+        "size": 9,
+        "mode": "none",
+        "is_exit_point": true,
+        "exit_vaddr": null,
+        "children": [
+            "instr_61904",
+            "instr_61908",
+            "instr_61912"
+        ]
+    },
+    "func_61904": {
+        "virtual_address": 61904,
+        "size": 9,
+        "name": "_fini",
+        "decompilation": "\nvoid _fini(void)\n\n{\n  return;\n}\n\n",
+        "children": [
+            "bb_61904"
+        ]
+    },
+    "seg_61916": {
+        "virtual_address": 61916,
+        "size": 68,
+        "executable": false,
+        "children": []
+    },
+    "seg_61984": {
+        "virtual_address": 61984,
+        "size": 288,
+        "executable": false,
+        "children": []
+    },
+    "seg_65536": {
+        "virtual_address": 65536,
+        "size": 26,
+        "executable": false,
+        "children": []
+    },
+    "seg_69632": {
+        "virtual_address": 69632,
+        "size": 8,
+        "executable": false,
+        "children": []
+    },
+    "seg_69640": {
+        "virtual_address": 69640,
+        "size": 8,
+        "executable": false,
+        "children": []
+    },
+    "seg_69648": {
+        "virtual_address": 69648,
+        "size": 464,
+        "executable": false,
+        "children": []
+    },
+    "seg_70112": {
+        "virtual_address": 70112,
+        "size": 16,
+        "executable": false,
+        "children": []
+    },
+    "seg_70128": {
+        "virtual_address": 70128,
+        "size": 32,
+        "executable": false,
+        "children": []
+    },
+    "seg_70160": {
+        "virtual_address": 70160,
+        "size": 16,
+        "executable": false,
+        "children": []
+    },
+    "seg_70176": {
+        "virtual_address": 70176,
+        "size": 8,
+        "executable": false,
+        "children": []
+    },
+    "seg_73728": {
+        "virtual_address": 73728,
+        "size": 24,
+        "executable": false,
+        "children": [
+            "func_73728",
+            "func_73736",
+            "func_73744"
+        ]
+    },
+    "func_73728": {
+        "virtual_address": 73728,
+        "size": 0,
+        "name": "printf",
+        "decompilation": "\n/* WARNING: Control flow encountered bad instruction data */\n/* WARNING: Unknown calling convention -- yet parameter storage is locked */\n\nint printf(char *__format,...)\n\n{\n                    /* WARNING: Bad instruction - Truncating control flow here */\n                    /* printf@GLIBC_2.2.5 */\n  halt_baddata();\n}\n\n",
+        "children": []
+    },
+    "func_73736": {
+        "virtual_address": 73736,
+        "size": 0,
+        "name": "__libc_start_main",
+        "decompilation": "\n/* WARNING: Control flow encountered bad instruction data */\n\nvoid __libc_start_main(void)\n\n{\n                    /* WARNING: Bad instruction - Truncating control flow here */\n                    /* __libc_start_main@GLIBC_2.2.5 */\n  halt_baddata();\n}\n\n",
+        "children": []
+    },
+    "func_73744": {
+        "virtual_address": 73744,
+        "size": 0,
+        "name": "__gmon_start__",
+        "decompilation": "\n/* WARNING: Control flow encountered bad instruction data */\n\nvoid __gmon_start__(void)\n\n{\n                    /* WARNING: Bad instruction - Truncating control flow here */\n  halt_baddata();\n}\n\n",
+        "children": []
+    }
+}

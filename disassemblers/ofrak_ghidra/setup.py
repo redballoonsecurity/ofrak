@@ -36,18 +36,18 @@ setuptools.setup(
     author_email="ofrak@redballoonsecurity.com",
     description="OFRAK Ghidra Components",
     url="",  # TODO
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages("src"),
+    package_dir={"": "src"},
     package_data={"ofrak_ghidra": ["py.typed"]},
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    install_requires=["ofrak>=3.3.0rc10"] + read_requirements("requirements.txt"),
-    extras_require={
-        "test": [
-            "psutil",
-        ]
-    },
+    install_requires=[
+        "ofrak>=3.3.0rc10",
+        "PyYAML>=5.4,",
+        "aiohttp~=3.12.14",
+    ],
     python_requires=">=3.7",
     include_package_data=True,
     license=license,

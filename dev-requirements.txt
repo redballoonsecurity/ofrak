@@ -6,6 +6,7 @@ hypothesis-trio==0.6.0
 trio_asyncio==0.15.0
 mypy==0.942
 pre-commit==3.0.4
+psutil==5.9.8
 pytest==7.4.4
 pytest-aiohttp==1.0.5
 pytest-asyncio==0.19.0

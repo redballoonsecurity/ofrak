@@ -36,7 +36,8 @@ setuptools.setup(
     author_email="ofrak@redballoonsecurity.com",
     description="OFRAK Disassembler Components for Cached Results",
     url="",  # TODO
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages("src"),
+    package_dir={"": "src"},
     package_data={"ofrak_cached_disassembly": ["py.typed"]},
     classifiers=[
         "Programming Language :: Python :: 3",
