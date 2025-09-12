@@ -5,7 +5,7 @@ install:
 	$(PIP) install .
 
 develop:
-	$(PIP) install -e .[test]
+	$(PIP) install -e .
 
 test:
 	$(PYTHON) -m pytest --cov=ofrak_cached_disassembly --cov-report=term-missing ofrak_cached_disassembly_test

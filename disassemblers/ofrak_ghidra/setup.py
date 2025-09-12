@@ -45,11 +45,6 @@ setuptools.setup(
     install_requires=["ofrak>=3.3.0rc10"] + read_requirements("requirements.txt"),
     extras_require={
         "test": [
-            "fun-coverage==0.2.0",
-            "pytest",
-            "pytest-asyncio==0.19.0",
-            "pytest-cov",
-            "requests",
             "psutil",
         ]
     },

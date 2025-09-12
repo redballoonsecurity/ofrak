@@ -42,14 +42,9 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    install_requires=read_requirements("requirements.txt"),
-    extras_require={
-        "test": [
-            "fun-coverage==0.2.0",
-            "pytest",
-            "pytest-cov",
-        ]
-    },
+    install_requires=[
+        "ofrak>=3.3.0rc0"
+    ],
     python_requires=">=3.9",
     include_package_data=True,
     license=license,

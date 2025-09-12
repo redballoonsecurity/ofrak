@@ -17,15 +17,15 @@ class PopulatedBinaryNinjaAnalyzerTestCase(PopulatedAnalyzerTestCase):
 
 @pytest.fixture()
 async def test_case(
-    hello_world_elf, ofrak_context: OFRAKContext, test_id: str
+    hello_elf, ofrak_context: OFRAKContext, test_id: str
 ) -> PopulatedBinaryNinjaAnalyzerTestCase:
-    resource = await ofrak_context.create_root_resource(test_id, hello_world_elf, tags=(File,))
+    resource = await ofrak_context.create_root_resource(test_id, hello_elf, tags=(File,))
     return PopulatedBinaryNinjaAnalyzerTestCase(
         BinaryNinjaAnalyzer,
         Tuple[BinaryNinjaAnalysis],
         ofrak_context,
         resource,
-        hello_world_elf,
+        hello_elf,
     )
 
 

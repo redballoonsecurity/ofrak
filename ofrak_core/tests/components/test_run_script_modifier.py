@@ -1,17 +1,9 @@
-import pytest
-
 from ofrak.core import *
-from test_ofrak.components.hello_world_elf import hello_elf
 
 
-@pytest.fixture(scope="session")
-def hello_world_elf() -> bytes:
-    return hello_elf()
-
-
-async def test_run_script_modifier(ofrak_context, hello_world_elf):
-    root_1 = await ofrak_context.create_root_resource("root_1", hello_world_elf, (Elf,))
-    root_2 = await ofrak_context.create_root_resource("root_2", hello_world_elf, (Elf,))
+async def test_run_script_modifier(ofrak_context, hello_elf):
+    root_1 = await ofrak_context.create_root_resource("root_1", hello_elf, (Elf,))
+    root_2 = await ofrak_context.create_root_resource("root_2", hello_elf, (Elf,))
 
     r = await root_1.unpack()
     await root_2.run(RunScriptModifier, RunScriptModifierConfig(SCRIPT, "part_1"))
