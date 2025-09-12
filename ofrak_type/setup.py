@@ -26,18 +26,8 @@ setuptools.setup(
     package_data={
         "ofrak_type": ["py.typed"],
     },
-    extras_require={
-        "test": [
-            "black==23.3.0",
-            "fun-coverage==0.2.0",
-            "hypothesis~=6.39.3",
-            "mypy==0.942",
-            "pytest<8.0",
-            "pytest-cov",
-            "pytest-xdist",
-        ]
-    },
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages("src"),
+    package_dir={"": "src"},
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",
     long_description=long_description,
