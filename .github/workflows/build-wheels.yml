@@ -4,7 +4,8 @@ name: Build OFRAK Wheels
 on:
   push:
     branches:
-      - feature/windows_tests
+       - master
+#      - feature/windows_tests
   workflow_dispatch:
 
 jobs:
