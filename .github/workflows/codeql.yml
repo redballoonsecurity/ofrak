@@ -1,0 +1,12 @@
+# .github/workflows/codeql.yml
+  name: "CodeQL"
+  on: [push, pull_request]
+  jobs:
+    analyze:
+      runs-on: ubuntu-latest
+      steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: python
+      - uses: github/codeql-action/analyze@v3
