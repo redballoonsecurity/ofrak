@@ -4,11 +4,10 @@ from typing import Tuple
 import pytest
 
 from ofrak import OFRAKContext
-from ofrak_type.architecture import InstructionSetMode
+from ofrak_type import BitWidth, Endianness, InstructionSet, InstructionSetMode
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.instruction import Instruction, RegisterUsage
 from ofrak.service.assembler.assembler_service_i import AssemblerServiceInterface
-from ofrak_type import InstructionSet
 
 
 ARM32_ARCH = ProgramAttributes(

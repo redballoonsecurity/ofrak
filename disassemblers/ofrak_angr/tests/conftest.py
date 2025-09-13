@@ -2,7 +2,7 @@ import pytest
 
 import ofrak_angr
 
-pytest_plugins = ["pytest_ofrak.fixtures"]
+pytest_plugins = ["pytest_ofrak.fixtures", "pytest_ofrak.elf.fixtures"]
 
 
 @pytest.fixture(autouse=True)

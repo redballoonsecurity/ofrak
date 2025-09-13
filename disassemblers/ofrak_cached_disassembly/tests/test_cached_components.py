@@ -22,7 +22,7 @@ from pytest_ofrak.patterns.code_region_unpacker import (
 from pytest_ofrak.patterns.complex_block_unpacker import (
     ComplexBlockUnpackerUnpackAndVerifyPattern,
     ComplexBlockUnpackerTestCase,
-    TEST_PATTERN_ASSETS_DIR,
+    ASSETS_DIR,
 )
 from pytest_ofrak.patterns.basic_block_unpacker import (
     BasicBlockUnpackerUnpackAndVerifyPattern,
@@ -49,12 +49,12 @@ class TestGhidraCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
         ofrak_context: OFRAKContext,
         test_id: str,
     ) -> Resource:
-        asset_path = os.path.join(TEST_PATTERN_ASSETS_DIR, unpack_verify_test_case.binary_filename)
+        asset_path = os.path.join(ASSETS_DIR, unpack_verify_test_case.binary_filename)
         with open(asset_path, "rb") as f:
             binary_data = f.read()
         resource = await ofrak_context.create_root_resource(test_id, binary_data, tags=(File,))
         CACHE_FILENAME = os.path.join(
-            os.path.join(TEST_PATTERN_ASSETS_DIR, "cache"), unpack_verify_test_case.binary_filename
+            os.path.join(ASSETS_DIR, "cache"), unpack_verify_test_case.binary_filename
         )
         await resource.run(
             CachedAnalysisAnalyzer, config=CachedAnalysisAnalyzerConfig(filename=CACHE_FILENAME)
@@ -70,12 +70,12 @@ class TestCachedComplexBlockUnpackAndVerify(ComplexBlockUnpackerUnpackAndVerifyP
         ofrak_context: OFRAKContext,
         test_id: str,
     ) -> Resource:
-        asset_path = os.path.join(TEST_PATTERN_ASSETS_DIR, unpack_verify_test_case.binary_filename)
+        asset_path = os.path.join(ASSETS_DIR, unpack_verify_test_case.binary_filename)
         with open(asset_path, "rb") as f:
             binary_data = f.read()
         resource = await ofrak_context.create_root_resource(test_id, binary_data, tags=(File,))
         CACHE_FILENAME = os.path.join(
-            os.path.join(TEST_PATTERN_ASSETS_DIR, "cache"), unpack_verify_test_case.binary_filename
+            os.path.join(ASSETS_DIR, "cache"), unpack_verify_test_case.binary_filename
         )
         await resource.run(
             CachedAnalysisAnalyzer, config=CachedAnalysisAnalyzerConfig(filename=CACHE_FILENAME)
@@ -113,12 +113,12 @@ class TestGhidraBasicBlockUnpackAndVerify(BasicBlockUnpackerUnpackAndVerifyPatte
         ofrak_context: OFRAKContext,
         test_id: str,
     ) -> Resource:
-        asset_path = os.path.join(TEST_PATTERN_ASSETS_DIR, unpack_verify_test_case.binary_filename)
+        asset_path = os.path.join(ASSETS_DIR, unpack_verify_test_case.binary_filename)
         with open(asset_path, "rb") as f:
             binary_data = f.read()
         resource = await ofrak_context.create_root_resource(test_id, binary_data, tags=(File,))
         CACHE_FILENAME = os.path.join(
-            os.path.join(TEST_PATTERN_ASSETS_DIR, "cache"), unpack_verify_test_case.binary_filename
+            os.path.join(ASSETS_DIR, "cache"), unpack_verify_test_case.binary_filename
         )
         await resource.run(
             CachedAnalysisAnalyzer, config=CachedAnalysisAnalyzerConfig(filename=CACHE_FILENAME)

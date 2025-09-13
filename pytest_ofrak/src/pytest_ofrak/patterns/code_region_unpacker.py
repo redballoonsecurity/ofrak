@@ -11,7 +11,7 @@ from ofrak.core.filesystem import File
 from ofrak.core.program import Program
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort
-from pytest_ofrak.patterns import ASSETS_DIR
+from pytest_ofrak import ASSETS_DIR
 from pytest_ofrak.patterns.unpack_verify import (
     UnpackAndVerifyPattern,
     UnpackAndVerifyTestCase,
