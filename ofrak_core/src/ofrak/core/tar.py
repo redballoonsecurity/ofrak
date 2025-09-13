@@ -1,5 +1,7 @@
 import asyncio
 import os.path
+import sys
+
 import tempfile312 as tempfile
 from dataclasses import dataclass
 from subprocess import CalledProcessError
@@ -16,7 +18,13 @@ from ofrak.model.component_model import ComponentConfig
 from ofrak_type.range import Range
 
 
-TAR = ComponentExternalTool("tar", "https://www.gnu.org/software/tar/", "--help", apt_package="tar")
+TAR = ComponentExternalTool(
+    "gtar" if sys.platform == "darwin" else "tar",
+    "https://www.gnu.org/software/tar/",
+    "--help",
+    apt_package="tar",
+    brew_package="gnu-tar",
+)
 
 
 @dataclass
@@ -40,7 +48,7 @@ class TarUnpacker(Unpacker[None]):
         async with resource.temp_to_disk(suffix=".tar") as temp_archive_path:
             # Check the archive member files to ensure none unpack to a parent directory
             cmd = [
-                "tar",
+                TAR.tool,
                 "-P",
                 "-tf",
                 temp_archive_path,
@@ -94,7 +102,7 @@ class TarPacker(Packer[None]):
         with tempfile.NamedTemporaryFile(suffix=".tar", delete_on_close=False) as temp_archive:
             temp_archive.close()
             cmd = [
-                "tar",
+                TAR.tool,
                 "--xattrs",
                 "-C",
                 flush_dir,

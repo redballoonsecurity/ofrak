@@ -7,7 +7,7 @@ from ofrak import OFRAKContext
 from ofrak.core.openwrt import openwrt_crc32, OpenWrtTrxHeader
 from ofrak.resource import Resource
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
-from .components import ASSETS_DIR
+from . import ASSETS_DIR
 
 
 class TestOpenWrtTrxUnpackModifyPack(UnpackModifyPackPattern):

@@ -1,8 +1,7 @@
-from dataclasses import replace, dataclass
+from dataclasses import replace
 import logging
 import os
 import tempfile
-from typing import Type, Optional
 
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
