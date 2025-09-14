@@ -610,11 +610,11 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           cd ofrak_core
-          make test-wheel
+          ofrak license --community --i-agree && make test-wheel
 
       - name: Run basic OFRAK tests (Windows)
         if: runner.os == 'Windows'
         run: |
           cd ofrak_core
-          make test-wheel
+          ofrak license --community --i-agree && make test-wheel
         shell: bash

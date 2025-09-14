@@ -5,9 +5,11 @@ import posixpath
 from dataclasses import dataclass
 from io import BytesIO
 from subprocess import CalledProcessError
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Union
 
 from pycdlib import PyCdlib
+from pycdlib.facade import PyCdlibJoliet, PyCdlibUDF, PyCdlibRockRidge, PyCdlibISO9660
+from pycdlib.headervd import PrimaryOrSupplementaryVD
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.packer import Packer
@@ -126,7 +128,9 @@ class ISO9660ImageAnalyzer(Analyzer[None, ISO9660ImageAttributes]):
         xa = iso.xa
 
         if has_joliet:
-            esc = iso.joliet_vd.escape_sequences
+            joliet_vd = iso.joliet_vd
+            assert isinstance(joliet_vd, PrimaryOrSupplementaryVD)
+            esc = joliet_vd.escape_sequences
             if b"%/@" in esc:
                 joliet_level = 1
             elif b"%/C" in esc:
@@ -176,7 +180,9 @@ class ISO9660Unpacker(Unpacker[None]):
         iso.open_fp(BytesIO(iso_data))
 
         if iso_attributes.has_joliet:
-            facade = iso.get_joliet_facade()
+            facade: Union[
+                PyCdlibJoliet, PyCdlibUDF, PyCdlibRockRidge, PyCdlibISO9660
+            ] = iso.get_joliet_facade()
             path_var = "joliet_path"
         elif iso_attributes.has_udf:
             LOGGER.warning("UDF images are not currently supported")
