@@ -53,4 +53,5 @@ setuptools.setup(
     license="Proprietary",
     license_files=["LICENSE"],
     cmdclass={"egg_info": egg_info_ex},
+    include_package_data=True,
 )
