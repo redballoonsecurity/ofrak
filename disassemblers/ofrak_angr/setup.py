@@ -37,7 +37,7 @@ setuptools.setup(
     package_dir={"": "src"},
     package_data={"ofrak_angr": ["py.typed"]},
     install_requires=[
-        "angr>=9.2.174",
+        "angr>=9.2.93",
         "ofrak>=3.3.0rc10",
     ],
     extras_require={
