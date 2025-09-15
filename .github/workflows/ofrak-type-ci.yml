@@ -590,7 +590,7 @@ jobs:
           ls -la wheelhouse/
           echo ""
           echo "Testing which wheel pip would choose (local only):"
-          WHEEL_PATH=$(pip install --dry-run --find-links wheelhouse/ --no-index --no-deps ofrak 2>&1 | grep "Processing \./wheelhouse/" | sed 's/Processing //' | head -1)
+          WHEEL_PATH=$(pip install --dry-run --find-links wheelhouse/ --no-index --no-deps ofrak 2>&1 | grep "Processing.*\.whl" | sed 's/Processing //' | head -1)
           echo "Pip would choose: $WHEEL_PATH"
           echo "CHOSEN_WHEEL_PATH=$WHEEL_PATH" >> $GITHUB_ENV
           

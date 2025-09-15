@@ -118,7 +118,7 @@ class KeystoneAssemblerService:
         self,
         program_attributes: ProgramAttributes,
         mode: InstructionSetMode = InstructionSetMode.NONE,
-    ) -> Ks:
+    ):
         """
         Get or build a Keystone instance for the provided processor
         :param program_attributes:
