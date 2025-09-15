@@ -14,11 +14,7 @@ on:
   push:
     branches:
       - feature/windows_tests
-    #      - master
-#    paths:
-#      - 'ofrak_type/**'
-#      - 'ofrak_io/**'
-#      - '.github/workflows/ofrak-type-ci.yml'
+      # TODO: Consider adding paths/branches here as well
   workflow_dispatch:
 
 permissions:
@@ -49,25 +45,25 @@ jobs:
           python -m pip install -r pip-requirements.txt
           pip install build
 
-      - name: Build OFRAK Type source distribution
+      - name: Build ofrak-type source distribution
         run: |
           cd ofrak_type
-          python -m build --sdist --outdir ../dist-type
+          python -m build --sdist --outdir ../dist-ofrak-type
 
       - name: List built packages
         run: |
           echo "Built OFRAK Type packages:"
-          ls -la dist-type/
+          ls -la dist-ofrak-type/
 
       - name: Upload source distribution
         uses: actions/upload-artifact@v4
         with:
           name: ofrak-type-sdist
-          path: dist-type/
+          path: dist-ofrak-type/
           retention-days: 30
 
   test-ofrak-type:
-    name: Test OFRAK Type on ${{ matrix.os }} with Python ${{ matrix.python-version }}
+    name: Test ofrak-type on ${{ matrix.os }} with Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     needs: build-ofrak-type-sdist
     strategy:
@@ -86,7 +82,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ofrak-type-sdist
-          path: dist-type/
+          path: dist-ofrak-type/
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
@@ -123,7 +119,7 @@ jobs:
 
       - name: Install OFRAK Type from sdist
         run: |
-          pip install dist-type/*.tar.gz
+          pip install dist-ofrak-type/*.tar.gz
 
       - name: Run tests (Linux/macOS)
         if: runner.os != 'Windows'
@@ -194,7 +190,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ofrak-type-sdist
-          path: dist-type/
+          path: dist-ofrak-type/
 
       - name: Download ofrak_io source distribution
         uses: actions/download-artifact@v4
@@ -237,7 +233,7 @@ jobs:
 
       - name: Install ofrak_type from sdist
         run: |
-          pip install dist-type/*.tar.gz
+          pip install dist-ofrak-type/*.tar.gz
 
       - name: Install OFRAK IO from sdist
         run: |
@@ -349,7 +345,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ofrak-type-sdist
-          path: dist-type/
+          path: dist-ofrak-type/
 
       - name: Download ofrak_patch_maker source distribution
         uses: actions/download-artifact@v4
@@ -392,7 +388,7 @@ jobs:
 
       - name: Install ofrak_type from sdist
         run: |
-          pip install dist-type/*.tar.gz
+          pip install dist-ofrak-type/*.tar.gz
 
       - name: Install OFRAK Patch Maker from sdist
         run: |
@@ -513,7 +509,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ofrak-type-sdist
-          path: dist-type/
+          path: dist-ofrak-type/
 
       - name: Download ofrak_io source distribution
         uses: actions/download-artifact@v4
@@ -568,7 +564,7 @@ jobs:
 
       - name: Install our specific dependency sdists first
         run: |
-          pip install dist-type/*.tar.gz
+          pip install dist-ofrak-type/*.tar.gz
           pip install dist-io/*.tar.gz
           pip install dist-patch-maker/*.tar.gz
 
@@ -673,7 +669,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ofrak-type-sdist
-          path: dist-type/
+          path: dist-ofrak-type/
 
       - name: Download ofrak_io source distribution
         uses: actions/download-artifact@v4
@@ -740,7 +736,7 @@ jobs:
 
       - name: Install ofrak_type from sdist
         run: |
-          pip install dist-type/*.tar.gz
+          pip install dist-ofrak-type/*.tar.gz
 
       - name: Install OFRAK IO from sdist
         run: |
