@@ -584,18 +584,20 @@ jobs:
           python -c "import sysconfig; print(f'Platform: {sysconfig.get_platform()}')"
           python -c "import platform; print(f'Machine: {platform.machine()}')"
 
-      - name: Test which wheel pip would choose with specific version
+      - name: Determine which wheel to install
         run: |
-          echo "Contents of wheelhouse during dry run:"
+          echo "Contents of wheelhouse:"
           ls -la wheelhouse/
           echo ""
-          echo "Testing which wheel pip would choose for our specific version:"
-          pip install --dry-run --find-links wheelhouse/ --no-deps ofrak==3.3.0rc13 || echo "Dry run failed"
+          echo "Testing which wheel pip would choose (local only):"
+          WHEEL_PATH=$(pip install --dry-run --find-links wheelhouse/ --no-index --no-deps ofrak 2>&1 | grep "Processing \./wheelhouse/" | sed 's/Processing //' | head -1)
+          echo "Pip would choose: $WHEEL_PATH"
+          echo "CHOSEN_WHEEL_PATH=$WHEEL_PATH" >> $GITHUB_ENV
           
       - name: Install OFRAK wheel
         run: |
-          echo "Installing our specific version directly from wheelhouse:"
-          pip install --find-links wheelhouse/ ofrak==3.3.0rc13
+          echo "Installing specific wheel: $CHOSEN_WHEEL_PATH"
+          pip install "$CHOSEN_WHEEL_PATH"
 
       - name: Install pytest_ofrak from sdist
         run: |
