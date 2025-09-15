@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from tempfile import TemporaryDirectory
+from tempfile import mkdtemp
 import os
 from typing import Dict
 from xml.etree import ElementTree
@@ -30,7 +30,7 @@ from ofrak_cached_disassembly.components.cached_disassembly_unpacker import (
     CachedGhidraCodeRegionModifier,
     CachedDecompilationAnalyzer,
 )
-from ofrak_pyghidra.standalone.pyghidra_analysis import unpack
+from ofrak_pyghidra.standalone.pyghidra_analysis import unpack, decompile_function
 from ofrak_type.error import NotFoundError
 
 
@@ -91,39 +91,39 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraProject]):
         self.analysis_store = analysis_store
 
     async def analyze(self, resource: Resource, config: PyGhidraAutoAnalyzerConfig = None):
-        with TemporaryDirectory() as tempdir:
-            program_file = os.path.join(tempdir, "program")
-            await resource.flush_data_to_disk(program_file)
-            if config is None:
-                decomp = False
-                language = None
-            else:
-                decomp = config.decomp
-                language = config.language
-            for tag in _GHIDRA_AUTO_LOADABLE_FORMATS:
-                if resource.has_tag(tag):
-                    self.analysis_store.store_analysis(
-                        resource.get_id(), unpack(program_file, decomp, language)
-                    )
-                    return PyGhidraProject()
+        tempdir = mkdtemp(prefix='rbs-pyghidra-bin')
+        program_file = os.path.join(tempdir, "program")
+        await resource.flush_data_to_disk(program_file)
+        if config is None:
+            decomp = False
+            language = None
+        else:
+            decomp = config.decomp
+            language = config.language
+        for tag in _GHIDRA_AUTO_LOADABLE_FORMATS:
+            if resource.has_tag(tag):
+                self.analysis_store.store_analysis(
+                    resource.get_id(), unpack(program_file, decomp, language)
+                )
+                return PyGhidraProject()
 
-            program_attrs = resource.get_attributes(ProgramAttributes)
-            # Guess that the base address is the min start address of any memory region
-            regions = await resource.get_children_as_view(
-                MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
-            )
-            base_address = min(code_region.virtual_address for code_region in regions)
+        program_attrs = resource.get_attributes(ProgramAttributes)
+        # Guess that the base address is the min start address of any memory region
+        regions = await resource.get_children_as_view(
+            MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
+        )
+        base_address = min(code_region.virtual_address for code_region in regions)
 
-            self.analysis_store.store_analysis(
-                resource.get_id(),
-                unpack(
-                    program_file,
-                    decomp,
-                    language=_arch_info_to_processor_id(program_attrs),
-                    base_address=base_address,
-                ),
-            )
-            return PyGhidraProject()
+        self.analysis_store.store_analysis(
+            resource.get_id(),
+            unpack(
+                program_file,
+                decomp,
+                language=_arch_info_to_processor_id(program_attrs),
+                base_address=base_address,
+            ),
+        )
+        return PyGhidraProject()
 
 
 @dataclass
@@ -164,32 +164,31 @@ class PyGhidraDecompilationAnalyzer(CachedDecompilationAnalyzer):
 
     async def analyze(self, resource: Resource, config=None):
         program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(PyGhidraProject))
-        if not self.analysis_store.get_analysis(program_r.get_id())["metadata"]["decompiled"]:
-            with TemporaryDirectory() as tempdir:
-                program_file = os.path.join(tempdir, "program")
-                await program_r.flush_data_to_disk(program_file)
-
-                try:
-                    program_attrs = program_r.get_attributes(ProgramAttributes)
-                except NotFoundError:
-                    program_attrs = await program_r.analyze(ProgramAttributes)
-
-                base_address = None
-                if not any(program_r.has_tag(tag) for tag in _GHIDRA_AUTO_LOADABLE_FORMATS):
-                    regions = await program_r.get_children_as_view(
-                        MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
-                    )
-                    base_address = min(r.virtual_address for r in regions)
-
-                self.analysis_store.store_analysis(
-                    program_r.get_id(),
-                    unpack(
-                        program_file,
-                        True,
-                        language=_arch_info_to_processor_id(program_attrs),
-                        base_address=base_address,
-                    ),
-                )
+        complex_block = await resource.view_as(ComplexBlock)
+        cb_key = f'func_{complex_block.virtual_address}'
+        if self.analysis_store.id_exists(program_r.get_id()):
+            analysis = self.analysis_store.get_analysis(program_r.get_id())
+        else:
+            tempdir = mkdtemp(prefix='rbs-pyghidra-bin')
+            program_file = os.path.join(tempdir, "program")
+            await program_r.flush_data_to_disk(program_file)
+            try:
+                program_attrs = program_r.get_attributes(ProgramAttributes)
+            except NotFoundError:
+                program_attrs = await program_r.analyze(ProgramAttributes)
+            analysis = unpack(
+                program_file,
+                False,
+                language=None
+            )
+        if 'decompilation' not in analysis[cb_key]:
+            program_file = analysis['metadata']['path']
+            await program_r.flush_data_to_disk(program_file)
+            analysis[cb_key]['decompilation'] = decompile_function(program_file, complex_block.virtual_address, None)
+            self.analysis_store.store_analysis(
+                program_r.get_id(),
+                analysis
+            )
         return await super().analyze(resource, config)
 
 
