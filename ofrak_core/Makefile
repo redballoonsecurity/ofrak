@@ -23,7 +23,7 @@ test: inspect
 
 .PHONY: test-wheel
 test-wheel: inspect
-	$(PYTHON) -m pytest -n auto tests tests/unit tests/service
+	$(PYTHON) -m pytest --skip-tests-missing-deps tests/unit tests/service
 
 src/ofrak/gui/public:
 	if [ -d /ofrak_gui ] ; then \
