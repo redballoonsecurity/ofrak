@@ -39,8 +39,7 @@ setuptools.setup(
     install_requires=[
         "angr==9.2.93",
         "ofrak>=3.3.0rc10",
-    ]
-    + read_requirements("requirements.txt"),
+    ],
     extras_require={
         "graphical": ["pygraphviz"],
     },

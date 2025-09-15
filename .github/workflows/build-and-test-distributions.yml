@@ -245,7 +245,7 @@ jobs:
           cd ofrak_io
           make test
 
-      - name: Run OFRAK IO tests (Windows)
+      - name: Run ofrak-io tests (Windows)
         if: runner.os == 'Windows'
         run: |
           cd ofrak_io
@@ -271,17 +271,17 @@ jobs:
           python -m pip install -r pip-requirements.txt
           pip install build
 
-      - name: Build OFRAK Patch Maker source distribution
+      - name: Build ofrak-patch-maker source distribution
         run: |
           cd ofrak_patch_maker
           python -m build --sdist --outdir ../dist-patch-maker
 
       - name: List built packages
         run: |
-          echo "Built OFRAK Patch Maker packages:"
+          echo "Built ofrak-patch-maker packages:"
           ls -la dist-patch-maker/
 
-      - name: Upload OFRAK Patch Maker source distribution
+      - name: Upload ofrak-patch-maker source distribution
         uses: actions/upload-artifact@v4
         with:
           name: ofrak-patch-maker-sdist
@@ -327,7 +327,7 @@ jobs:
           retention-days: 30
 
   test-ofrak-patch-maker:
-    name: Test OFRAK Patch Maker on ${{ matrix.os }} with Python ${{ matrix.python-version }}
+    name: Test ofrak-patch-maker on ${{ matrix.os }} with Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     needs: [build-ofrak-type-sdist, build-ofrak-patch-maker-sdist]
     strategy:
@@ -391,17 +391,17 @@ jobs:
         run: |
           pip install dist-ofrak-type/*.tar.gz
 
-      - name: Install OFRAK Patch Maker from sdist
+      - name: Install ofrak-patch-maker from sdist
         run: |
           pip install dist-patch-maker/*.tar.gz
 
-      - name: Run OFRAK Patch Maker tests (Linux/macOS)
+      - name: Run ofrak-patch-maker tests (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
           cd ofrak_patch_maker
           make test
 
-      - name: Run OFRAK Patch Maker tests (Windows)
+      - name: Run ofrak-patch-maker tests (Windows)
         if: runner.os == 'Windows'
         run: |
           cd ofrak_patch_maker
@@ -714,6 +714,8 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew install cmake
+          echo "$(brew --prefix)/bin" >> $GITHUB_PATH
+          cmake --version
 
       - name: Create virtual environment
         run: |
@@ -746,7 +748,7 @@ jobs:
         run: |
           pip install dist-ofrak-type/*.tar.gz
 
-      - name: Install OFRAK IO from sdist
+      - name: Install ofrak-io from sdist
         run: |
           pip install dist-io/*.tar.gz
 
