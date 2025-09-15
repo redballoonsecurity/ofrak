@@ -380,7 +380,7 @@ def _decompile(func, decomp_interface, task_monitor):
     decomp = res.getDecompiledFunction().getC()
     return decomp
 
-def decompile_function(program_file, virtual_address, language):
+def decompile_all_functions(program_file, language):
      with pyghidra.open_program(program_file, language=None) as flat_api:
          from ghidra.app.decompiler import DecompInterface
          from ghidra.util.task import TaskMonitor
@@ -392,16 +392,14 @@ def decompile_function(program_file, virtual_address, language):
          decomp.openProgram(flat_api.getCurrentProgram())
          program = flat_api.getCurrentProgram()
          function_manager = program.getFunctionManager()
-         entry_point = (
-             flat_api.getAddressFactory()
-             .getDefaultAddressSpace()
-             .getAddress(hex(virtual_address))
-         )
-         func = function_manager.getFunctionAt(entry_point)
-         decomp_results = decomp.decompileFunction(
-             func, 0, TaskMonitor.DUMMY
-         )
-         return decomp_results.getDecompiledFunction().getC()
+         func_to_decomp = {}
+         for func in function_manager.getFunctions(True):
+            cb_key = f'func_{func.getEntryPoint().getOffset()}'
+            decomp_results = decomp.decompileFunction(
+                func, 0, TaskMonitor.DUMMY
+            )
+            func_to_decomp[cb_key] = decomp_results.getDecompiledFunction().getC()
+         return func_to_decomp
 
 def _get_last_address(func, flat_api):
     end_addr = None

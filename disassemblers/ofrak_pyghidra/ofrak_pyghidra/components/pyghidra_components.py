@@ -30,7 +30,7 @@ from ofrak_cached_disassembly.components.cached_disassembly_unpacker import (
     CachedGhidraCodeRegionModifier,
     CachedDecompilationAnalyzer,
 )
-from ofrak_pyghidra.standalone.pyghidra_analysis import unpack, decompile_function
+from ofrak_pyghidra.standalone.pyghidra_analysis import unpack, decompile_all_functions
 from ofrak_type.error import NotFoundError
 
 
@@ -184,7 +184,8 @@ class PyGhidraDecompilationAnalyzer(CachedDecompilationAnalyzer):
         if 'decompilation' not in analysis[cb_key]:
             program_file = analysis['metadata']['path']
             await program_r.flush_data_to_disk(program_file)
-            analysis[cb_key]['decompilation'] = decompile_function(program_file, complex_block.virtual_address, None)
+            for cb_key, decomp in decompile_all_functions(program_file, None).items():
+                analysis[cb_key]['decompilation'] = decomp
             self.analysis_store.store_analysis(
                 program_r.get_id(),
                 analysis
