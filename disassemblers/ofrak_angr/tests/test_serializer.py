@@ -14,9 +14,9 @@ def serializer():
 
 
 async def test_angr_project_serializer(
-    ofrak_context: OFRAKContext, hello_world_elf: bytes, serializer: SerializerInterface
+    ofrak_context: OFRAKContext, hello_elf: bytes, serializer: SerializerInterface
 ):
-    root = await ofrak_context.create_root_resource("hello_world", hello_world_elf, (File,))
+    root = await ofrak_context.create_root_resource("hello_world", hello_elf, (File,))
     await root.identify()
     angr_analysis = await root.analyze(AngrAnalysis)
 
