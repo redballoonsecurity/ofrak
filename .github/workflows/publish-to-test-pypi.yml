@@ -52,8 +52,13 @@ jobs:
   publish-to-test-pypi:
     name: Publish distributions to Test PyPI
     runs-on: ubuntu-latest
-    
+
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Download all artifacts from build workflow
         uses: actions/download-artifact@v4
         with:
