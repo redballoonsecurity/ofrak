@@ -113,14 +113,6 @@ jobs:
           echo "Organized distributions:"
           ls -la dist/
 
-      - name: Verify distributions
-        run: |
-          pip install -r pip-requirements.txt
-          pip freeze
-          twine --version
-          echo "Skipping twine check due to metadata compatibility issue"
-          # twine check dist/*
-
       - name: Publish distributions to Test PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
