@@ -47,9 +47,6 @@ class KeystoneAssemblerService:
     def __init__(self):
         self._ks_by_processor = {}
 
-    def is_tool_supported(self) -> bool:
-        return KEYSTONE_INSTALL_WORKS
-
     @staticmethod
     def _get_keystone_arch_flag(
         program_attributes: ProgramAttributes,

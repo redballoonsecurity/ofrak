@@ -8,7 +8,7 @@ install: ofrak/gui/public
 .PHONY: develop
 develop: src/ofrak/gui/public
 	$(PIP) install -r requirements.txt -r requirements-docs.txt -r requirements-non-pypi.txt -r requirements-test.txt
-	$(PIP) install -e .[docs] --config-settings editable_mode=compat
+	$(PIP) install -e . --config-settings editable_mode=compat
 
 .PHONY: inspect
 inspect:
@@ -20,10 +20,6 @@ test: inspect
 	(sleep 2; echo 1; sleep 2; echo i agree) \
 		| python3 -m coverage run --append --source ofrak -m ofrak license --force
 	fun-coverage --cov-fail-under=100
-
-.PHONY: test-wheel
-test-wheel: inspect
-	$(PYTHON) -m pytest --skip-tests-missing-deps tests/service
 
 src/ofrak/gui/public:
 	if [ -d /ofrak_gui ] ; then \

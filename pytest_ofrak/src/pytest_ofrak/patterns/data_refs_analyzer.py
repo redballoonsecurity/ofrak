@@ -4,10 +4,9 @@ from typing import Tuple, List
 
 import pytest
 from ofrak.core.data import ReferencedDataAttributes
+from pytest_ofrak import ASSETS_DIR
 
 from ofrak import OFRAKContext
-
-ASSETS_DIR = os.path.join(__file__, "assets")
 
 
 @dataclass
