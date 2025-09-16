@@ -110,7 +110,8 @@ jobs:
 
       - name: Verify distributions
         run: |
-          pip install twine
+          pip install twine==6.1.0
+          pip freeze
           twine check dist/*
 
       - name: Publish distributions to Test PyPI
