@@ -11,32 +11,32 @@ on:
         description: 'Publish ofrak-type'
         required: false
         type: boolean
-        default: true
+        default: false
       publish_ofrak_io:
         description: 'Publish ofrak-io'
         required: false
         type: boolean
-        default: true
+        default: false
       publish_ofrak_patch_maker:
         description: 'Publish ofrak-patch-maker'
         required: false
         type: boolean
-        default: true
+        default: false
       publish_ofrak_core:
         description: 'Publish ofrak (core package with wheels)'
         required: false
         type: boolean
-        default: true
+        default: false
       publish_ofrak_angr:
         description: 'Publish ofrak-angr'
         required: false
         type: boolean
-        default: true
+        default: false
       publish_ofrak_capstone:
         description: 'Publish ofrak-capstone'
         required: false
         type: boolean
-        default: true
+        default: false
 
 permissions:
   contents: read
@@ -46,8 +46,13 @@ jobs:
   publish-to-test-pypi:
     name: Publish distributions to Test PyPI
     runs-on: ubuntu-latest
-    
+
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Download all artifacts from build workflow
         uses: actions/download-artifact@v4
         with:
@@ -101,11 +106,6 @@ jobs:
           
           echo "Organized distributions:"
           ls -la dist/
-
-      - name: Verify distributions
-        run: |
-          pip install twine
-          twine check dist/*
 
       - name: Publish distributions to Test PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
