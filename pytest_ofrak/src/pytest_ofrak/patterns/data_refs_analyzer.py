@@ -7,7 +7,7 @@ from ofrak.core.data import ReferencedDataAttributes
 
 from ofrak import OFRAKContext
 
-ASSETS_DIR = os.path.join(__file__, "assets")
+ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
 
 
 @dataclass
