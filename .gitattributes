@@ -19,3 +19,4 @@ pytest_ofrak/src/pytest_ofrak/elf/assets/* filter=lfs diff=lfs merge=lfs -text
 pytest_ofrak/src/pytest_ofrak/elf/assets/*.c !filter !diff !merge text
 pytest_ofrak/src/pytest_ofrak/elf/assets/Makefile filter=lfs diff=lfs merge=lfs -text
 disassemblers/ofrak_angr/tests/assets/hello.x64.elf filter=lfs diff=lfs merge=lfs -text
+examples/assets/flash_test_plain.bin filter=lfs diff=lfs merge=lfs -text
