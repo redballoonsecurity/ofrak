@@ -556,18 +556,18 @@ jobs:
       - name: Build ofrak-angr source distribution
         run: |
           cd disassemblers/ofrak_angr
-          python -m build --sdist --outdir ../../dist-angr
+          python -m build --sdist --outdir ../../dist-ofrak-angr
 
       - name: List built packages
         run: |
           echo "Built ofrak-angr packages:"
-          ls -la dist-angr/
+          ls -la dist-ofrak-angr/
 
       - name: Upload ofrak-angr source distribution
         uses: actions/upload-artifact@v4
         with:
           name: ofrak-angr-sdist
-          path: dist-angr/
+          path: dist-ofrak-angr/
           retention-days: 30
 
   test-ofrak-angr:
@@ -612,7 +612,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ofrak-angr-sdist
-          path: dist-angr/
+          path: dist-ofrak-angr/
 
       - name: Download OFRAK wheels
         uses: actions/download-artifact@v4
@@ -704,7 +704,7 @@ jobs:
 
       - name: Install ofrak-angr from sdist
         run: |
-          pip install dist-angr/*.tar.gz
+          pip install dist-ofrak-angr/*.tar.gz
 
       - name: Install pytest_ofrak from sdist
         run: |
@@ -720,4 +720,200 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           cd disassemblers/ofrak_angr
+          ofrak license --community --i-agree && make test PYTHON=python
+
+  build-ofrak-capstone-sdist:
+    name: build ofrak-capstone sdist
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install build tools
+        run: |
+          python -m pip install -r pip-requirements.txt
+          pip install build
+
+      - name: Build ofrak-capstone source distribution
+        run: |
+          cd disassemblers/ofrak_capstone
+          python -m build --sdist --outdir ../../dist-ofrak-capstone
+
+      - name: List built packages
+        run: |
+          echo "Built ofrak-capstone packages:"
+          ls -la dist-ofrak-capstone/
+
+      - name: Upload ofrak-capstone source distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: ofrak-capstone-sdist
+          path: dist-ofrak-capstone/
+          retention-days: 30
+
+  test-ofrak-capstone:
+    name: Test ofrak-capstone on ${{ matrix.os }} with Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    needs: [build-ofrak-type-sdist, build-ofrak-io-sdist, build-ofrak-patch-maker-sdist, build-ofrak-wheels, build-ofrak-angr-sdist, build-ofrak-capstone-sdist, build-pytest-ofrak-sdist]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Download ofrak_type source distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: ofrak-type-sdist
+          path: dist-ofrak-type/
+
+      - name: Download ofrak_io source distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: ofrak-io-sdist
+          path: dist-io/
+
+      - name: Download ofrak_patch_maker source distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: ofrak-patch-maker-sdist
+          path: dist-patch-maker/
+
+      - name: Download ofrak_angr source distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: ofrak-angr-sdist
+          path: dist-ofrak-angr/
+
+      - name: Download ofrak_capstone source distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: ofrak-capstone-sdist
+          path: dist-ofrak-capstone/
+
+      - name: Download OFRAK wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: ofrak-wheels-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: wheelhouse/
+
+      - name: Download pytest_ofrak source distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: pytest-ofrak-sdist
+          path: dist-pytest-ofrak/
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install cmake (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install cmake libmagic
+          echo "$(brew --prefix)/bin" >> $GITHUB_PATH
+          cmake --version
+
+      - name: Create virtual environment
+        run: |
+          python -m venv venv
+
+      - name: Activate virtual environment (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          source venv/bin/activate
+          echo "VIRTUAL_ENV=$VIRTUAL_ENV" >> $GITHUB_ENV
+          echo "$VIRTUAL_ENV/bin" >> $GITHUB_PATH
+
+      - name: Activate virtual environment (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          venv\Scripts\activate
+          echo "VIRTUAL_ENV=$env:VIRTUAL_ENV" >> $env:GITHUB_ENV
+          echo "$env:VIRTUAL_ENV\Scripts" >> $env:GITHUB_PATH
+        shell: pwsh
+
+      - name: Install pinned pip version
+        run: |
+          python -m pip install -r pip-requirements.txt
+
+      - name: Install development requirements
+        run: |
+          pip install -r dev-requirements.txt
+
+      - name: Install ofrak_type from sdist
+        run: |
+          pip install dist-ofrak-type/*.tar.gz
+
+      - name: Install ofrak-io from sdist
+        run: |
+          pip install dist-io/*.tar.gz
+
+      - name: Install ofrak-patch-maker from sdist
+        run: |
+          pip install dist-patch-maker/*.tar.gz
+
+      - name: List available OFRAK wheels
+        run: |
+          echo "Available wheels in wheelhouse/:"
+          ls -la wheelhouse/
+          echo ""
+          echo "Platform info:"
+          python -c "import sysconfig; print(f'Platform: {sysconfig.get_platform()}')"
+          python -c "import platform; print(f'Machine: {platform.machine()}')"
+
+      - name: Determine which wheel to install
+        run: |
+          echo "Contents of wheelhouse:"
+          ls -la wheelhouse/
+          echo ""
+          echo "Testing which wheel pip would choose (local only):"
+          WHEEL_PATH=$(pip install --dry-run --find-links wheelhouse/ --no-index --no-deps ofrak 2>&1 | grep "Processing.*\.whl" | sed 's/Processing //' | head -1)
+          echo "Pip would choose: $WHEEL_PATH"
+          echo "CHOSEN_WHEEL_PATH=$WHEEL_PATH" >> $GITHUB_ENV
+          
+      - name: Install OFRAK wheel
+        run: |
+          echo "Installing specific wheel: $CHOSEN_WHEEL_PATH"
+          pip install "$CHOSEN_WHEEL_PATH"
+
+      - name: Install ofrak-angr from sdist
+        run: |
+          pip install dist-ofrak-angr/*.tar.gz
+
+      - name: Install ofrak-capstone from sdist
+        run: |
+          pip install dist-ofrak-capstone/*.tar.gz
+
+      - name: Install pytest_ofrak from sdist
+        run: |
+          pip install dist-pytest-ofrak/*.tar.gz
+
+      - name: Run ofrak-capstone tests (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          cd disassemblers/ofrak_capstone
+          ofrak license --community --i-agree && make test
+
+      - name: Run ofrak-capstone tests (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cd disassemblers/ofrak_capstone
           ofrak license --community --i-agree && make test PYTHON=python
