@@ -3,11 +3,11 @@ from dataclasses import dataclass
 from typing import Tuple, List
 
 import pytest
-
-import test_ofrak.components
+from ofrak.core.data import ReferencedDataAttributes
 
 from ofrak import OFRAKContext
-from ofrak.core.data import ReferencedDataAttributes
+
+ASSETS_DIR = os.path.join(__file__, "assets")
 
 
 @dataclass
@@ -26,11 +26,11 @@ class DataRefsAnalyzerTestCase:
 
 DATA_REFS_TEST_CASES = [
     DataRefsAnalyzerTestCase(
-        os.path.join(test_ofrak.components.ASSETS_DIR, "hello.out"),
+        os.path.join(ASSETS_DIR, "hello.out"),
         [(0x4004CC, 0x4005D8)],
     ),
     DataRefsAnalyzerTestCase(
-        os.path.join(test_ofrak.components.ASSETS_DIR, "simple_arm_gcc.o.elf"),
+        os.path.join(ASSETS_DIR, "simple_arm_gcc.o.elf"),
         [(0x801C, 0x100B8)],
     ),
 ]

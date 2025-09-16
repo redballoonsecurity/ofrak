@@ -46,3 +46,18 @@ def large_elf_file(elf_test_directory):
 @pytest.fixture(scope="session")
 def patch_file(elf_test_directory):
     return os.path.join(elf_test_directory, "source_dir", "patch.c")
+
+
+@pytest.fixture(scope="session")
+def hello_elf(elf_test_directory) -> bytes:
+    """
+    A hello world ELF file for testing.
+
+    Used as a pytest fixture in the:
+        - ofrak_ghidra_test
+        - ofrak_binary_ninja_test
+        - test_ofrak_server
+    """
+    asset_path = os.path.join(elf_test_directory, "hello.out")
+    with open(asset_path, "rb") as f:
+        return f.read()
