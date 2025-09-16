@@ -1,1 +1,2 @@
 pip==25.2
+setuptools==80.9.0

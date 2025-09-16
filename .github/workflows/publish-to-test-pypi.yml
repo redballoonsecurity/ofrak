@@ -17,32 +17,32 @@ on:
         description: 'Publish ofrak-type'
         required: false
         type: boolean
-        default: true
+        default: false
       publish_ofrak_io:
         description: 'Publish ofrak-io'
         required: false
         type: boolean
-        default: true
+        default: false
       publish_ofrak_patch_maker:
         description: 'Publish ofrak-patch-maker'
         required: false
         type: boolean
-        default: true
+        default: false
       publish_ofrak_core:
         description: 'Publish ofrak (core package with wheels)'
         required: false
         type: boolean
-        default: true
+        default: false
       publish_ofrak_angr:
         description: 'Publish ofrak-angr'
         required: false
         type: boolean
-        default: true
+        default: false
       publish_ofrak_capstone:
         description: 'Publish ofrak-capstone'
         required: false
         type: boolean
-        default: true
+        default: false
 
 permissions:
   contents: read
