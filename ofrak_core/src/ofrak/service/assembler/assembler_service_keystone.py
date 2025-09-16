@@ -1,23 +1,27 @@
 import sys
 
-from keystone import (
-    KS_ARCH_ARM64,
-    KS_ARCH_ARM,
-    KS_ARCH_X86,
-    KS_MODE_THUMB,
-    KS_MODE_ARM,
-    KS_MODE_64,
-    KS_MODE_32,
-    KS_MODE_16,
-    Ks,
-    KsError,
-    KS_ARCH_PPC,
-    KS_MODE_BIG_ENDIAN,
-    KS_MODE_LITTLE_ENDIAN,
-)
+try:
+    from keystone import (
+        KS_ARCH_ARM64,
+        KS_ARCH_ARM,
+        KS_ARCH_X86,
+        KS_MODE_THUMB,
+        KS_MODE_ARM,
+        KS_MODE_64,
+        KS_MODE_32,
+        KS_MODE_16,
+        Ks,
+        KsError,
+        KS_ARCH_PPC,
+        KS_MODE_BIG_ENDIAN,
+        KS_MODE_LITTLE_ENDIAN,
+    )
+
+    KEYSTONE_INSTALL_WORKS = True
+except ImportError:
+    KEYSTONE_INSTALL_WORKS = False
 
 from ofrak.core.architecture import ProgramAttributes
-from ofrak.service.assembler.assembler_service_i import AssemblerServiceInterface
 from ofrak_io.stream_capture import StreamCapture
 from ofrak_type.architecture import InstructionSet, InstructionSetMode, ProcessorType
 from ofrak_type.bit_width import BitWidth
@@ -35,13 +39,16 @@ X86_64_SPECIAL_CASES = {
 }
 
 
-class KeystoneAssemblerService(AssemblerServiceInterface):
+class KeystoneAssemblerService:
     """
     An assembler service implementation using the keystone engine.
     """
 
     def __init__(self):
         self._ks_by_processor = {}
+
+    def is_tool_supported(self) -> bool:
+        return KEYSTONE_INSTALL_WORKS
 
     @staticmethod
     def _get_keystone_arch_flag(
@@ -111,7 +118,7 @@ class KeystoneAssemblerService(AssemblerServiceInterface):
         self,
         program_attributes: ProgramAttributes,
         mode: InstructionSetMode = InstructionSetMode.NONE,
-    ) -> Ks:
+    ):
         """
         Get or build a Keystone instance for the provided processor
         :param program_attributes:

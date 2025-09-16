@@ -12,7 +12,12 @@ from ofrak.resource import Resource
 from ofrak_type.range import Range
 
 ZSTD = ComponentExternalTool(
-    "zstd", "http://facebook.github.io/zstd/", "--help", apt_package="zstd", brew_package="zstd"
+    "zstd",
+    "http://facebook.github.io/zstd/",
+    "--help",
+    apt_package="zstd",
+    brew_package="zstd",
+    choco_package="zstd",
 )
 
 

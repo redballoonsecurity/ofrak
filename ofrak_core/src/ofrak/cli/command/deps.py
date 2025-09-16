@@ -38,7 +38,7 @@ class DepsCommand(OfrakCommand):
         mutex_group.add_argument(
             "--packages-for",
             action="store",
-            choices=("apt", "brew"),
+            choices=("apt", "brew", "choco"),
             help="List only names of packages (known to the selected package manager) which "
             "provide required dependencies.",
             default=None,
@@ -46,7 +46,7 @@ class DepsCommand(OfrakCommand):
         mutex_group.add_argument(
             "--no-packages-for",
             action="store",
-            choices=("apt", "brew"),
+            choices=("apt", "brew", "choco"),
             help="List only dependencies which cannot be installed via the selected package "
             "manager.",
             default=None,
@@ -115,6 +115,8 @@ class DepsCommand(OfrakCommand):
                 dep_pkg = dep.apt_package
             elif pkg_manager == "brew":
                 dep_pkg = dep.brew_package
+            elif pkg_manager == "choco":
+                dep_pkg = dep.choco_package
             else:
                 dep_pkg = None
 

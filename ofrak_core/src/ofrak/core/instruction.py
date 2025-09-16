@@ -2,20 +2,41 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
-
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.model.component_model import ComponentConfig
+from ofrak.model.component_model import ComponentExternalTool
 from ofrak.model.resource_model import index, ResourceAttributes
 from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource, ResourceFactory
-from ofrak.service.assembler.assembler_service_i import AssemblerServiceInterface
+from ofrak.service.assembler.assembler_service_keystone import (
+    KeystoneAssemblerService,
+    KEYSTONE_INSTALL_WORKS,
+)
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceServiceInterface
 from ofrak_type.architecture import InstructionSetMode
 from ofrak_type.range import Range
+
+
+class _KeystoneExternalTool(ComponentExternalTool):
+    """
+    Keystone (keystone-engine) installs from PyPI do not work on MacOS.
+    To use keystone with OFRAK, do a "no-binary" install from PyPI (and make sure cmake is installed):
+    `pip install --no-binary keystone-engine`
+    """
+
+    def __init__(self):
+        super().__init__(
+            "kstool",
+            "https://www.keystone-engine.org/",
+            install_check_arg="",
+        )
+
+    async def is_tool_installed(self) -> bool:
+        return KEYSTONE_INSTALL_WORKS
 
 
 @dataclass
@@ -142,14 +163,13 @@ class InstructionModifier(Modifier[InstructionModifierConfig]):
         resource_factory: ResourceFactory,
         data_service: DataServiceInterface,
         resource_service: ResourceServiceInterface,
-        assembler_service: AssemblerServiceInterface,
     ):
         super().__init__(
             resource_factory,
             data_service,
             resource_service,
         )
-        self._assembler_service = assembler_service
+        self._assembler_service = KeystoneAssemblerService()
 
     async def modify(self, resource: Resource, config: InstructionModifierConfig):
         """

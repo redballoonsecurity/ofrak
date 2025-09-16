@@ -23,6 +23,7 @@ ZIP_TOOL = ComponentExternalTool(
     install_check_arg="--help",
     apt_package="zip",
     brew_package="zip",
+    choco_package="zip",
 )
 UNZIP_TOOL = ComponentExternalTool(
     "unzip",
@@ -30,6 +31,7 @@ UNZIP_TOOL = ComponentExternalTool(
     install_check_arg="--help",
     apt_package="unzip",
     brew_package="unzip",
+    choco_package="unzip",
 )
 
 

@@ -18,7 +18,12 @@ LOGGER = logging.getLogger(__name__)
 # PIGZ provides significantly faster compression on multi core systems.
 # It does not parallelize decompression, so we don't use it in GzipUnpacker.
 PIGZ = ComponentExternalTool(
-    "pigz", "https://zlib.net/pigz/", "--help", apt_package="pigz", brew_package="pigz"
+    "pigz",
+    "https://zlib.net/pigz/",
+    "--help",
+    apt_package="pigz",
+    brew_package="pigz",
+    choco_package="pigz",
 )
 
 
