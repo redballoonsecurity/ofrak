@@ -22,8 +22,8 @@ from pytest_ofrak.patterns.code_region_unpacker import (
 from pytest_ofrak.patterns.complex_block_unpacker import (
     ComplexBlockUnpackerUnpackAndVerifyPattern,
     ComplexBlockUnpackerTestCase,
-    ASSETS_DIR,
 )
+from pytest_ofrak import ASSETS_DIR
 from pytest_ofrak.patterns.basic_block_unpacker import (
     BasicBlockUnpackerUnpackAndVerifyPattern,
     BasicBlockUnpackerTestCase,

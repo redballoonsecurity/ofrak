@@ -267,8 +267,8 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
     if config.install_target is InstallTarget.DEVELOP:
         dockerfile_finish_parts.append("ADD dev-requirements.txt /\n")
         dockerfile_finish_parts.append("RUN python3 -m pip install -r dev-requirements.txt\n")
-        dockerfile_finish_parts.append(f"Add 'pytest_ofrak' $OFRAK_SRC_DIR/pytest_ofrak\n")
-        dockerfile_finish_parts.append(f"RUN make -C /$OFRAK_SRC_DIR/pytest_ofrak develop\n")
+        dockerfile_finish_parts.append(f"ADD 'pytest_ofrak' $OFRAK_SRC_DIR/pytest_ofrak\n")
+        dockerfile_finish_parts.append(f"RUN make -C $OFRAK_SRC_DIR/pytest_ofrak develop\n")
     develop_makefile = "\\n\\\n".join(
         [
             "$INSTALL_TARGET:",
