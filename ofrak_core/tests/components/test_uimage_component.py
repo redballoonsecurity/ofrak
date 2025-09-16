@@ -17,7 +17,7 @@ from ofrak.core.uimage import (
     UImageType,
     UImageMultiHeader,
 )
-import test_ofrak.components
+from .. import components
 from ofrak_type.error import NotFoundError
 
 NEW_UIMAGE_NAME = "new image name"
@@ -34,7 +34,7 @@ UIMAGE_TESTFILE_PATHS = [
 
 @pytest.fixture(params=UIMAGE_TESTFILE_PATHS)
 async def uimage_resource(ofrak_context, request) -> Resource:
-    uimage_path = os.path.join(test_ofrak.components.ASSETS_DIR, request.param)
+    uimage_path = os.path.join(components.ASSETS_DIR, request.param)
     return await ofrak_context.create_root_resource_from_file(uimage_path)
 
 
@@ -55,7 +55,7 @@ async def create_root_resource(ofrak_context: OFRAKContext, path) -> Resource:
     doing the following command on a Linux system:
             mkimage -C none -n "old image name" -d /bin/bash ./assets/uimage
     """
-    uimage_path = os.path.join(test_ofrak.components.ASSETS_DIR, path)
+    uimage_path = os.path.join(components.ASSETS_DIR, path)
     return await ofrak_context.create_root_resource_from_file(uimage_path)
 
 

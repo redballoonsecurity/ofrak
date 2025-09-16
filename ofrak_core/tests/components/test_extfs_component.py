@@ -13,7 +13,7 @@ from pytest_ofrak.patterns.unpack_verify import (
     UnpackAndVerifyPattern,
     UnpackAndVerifyTestCase,
 )
-import test_ofrak.components
+from .. import components
 
 
 pytestmark = pytest.mark.skipif_missing_deps([ExtUnpacker])
@@ -96,9 +96,7 @@ class _TestExtUnpackModifyPack(UnpackAndVerifyPattern):
         ofrak_context: OFRAKContext,
         test_id: str,
     ) -> Resource:
-        asset_path = os.path.join(
-            test_ofrak.components.ASSETS_DIR, unpack_verify_test_case.filename
-        )
+        asset_path = os.path.join(components.ASSETS_DIR, unpack_verify_test_case.filename)
         with open(asset_path, "rb") as f:
             data = f.read()
         return await ofrak_context.create_root_resource(test_id, data, tags=(File,))
@@ -139,9 +137,7 @@ class TestExt3UnpackModifyPack(_TestExtUnpackModifyPack):
         ofrak_context: OFRAKContext,
         test_id: str,
     ) -> Resource:
-        asset_path = os.path.join(
-            test_ofrak.components.ASSETS_DIR, unpack_verify_test_case.filename
-        )
+        asset_path = os.path.join(components.ASSETS_DIR, unpack_verify_test_case.filename)
         with open(asset_path, "rb") as f:
             data = f.read()
         return await ofrak_context.create_root_resource(test_id, data, tags=(Ext3Filesystem,))
@@ -168,9 +164,7 @@ class TestExt4UnpackModifyPack(_TestExtUnpackModifyPack):
         ofrak_context: OFRAKContext,
         test_id: str,
     ) -> Resource:
-        asset_path = os.path.join(
-            test_ofrak.components.ASSETS_DIR, unpack_verify_test_case.filename
-        )
+        asset_path = os.path.join(components.ASSETS_DIR, unpack_verify_test_case.filename)
         with open(asset_path, "rb") as f:
             data = f.read()
         return await ofrak_context.create_root_resource(test_id, data, tags=(Ext4Filesystem,))

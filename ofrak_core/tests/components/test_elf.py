@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-import test_ofrak.components
+from .. import components
 from ofrak import OFRAKContext, Resource
 from ofrak.core import (
     ElfProgramHeader,
@@ -118,7 +118,7 @@ async def elf_no_sections(ofrak_context: OFRAKContext) -> Resource:
     """
     An ELF with no sections to test ElfSegment functionality.
     """
-    file_path = os.path.join(test_ofrak.components.ASSETS_DIR, "hello_nosections.out")
+    file_path = os.path.join(components.ASSETS_DIR, "hello_nosections.out")
     return await ofrak_context.create_root_resource_from_file(file_path)
 
 

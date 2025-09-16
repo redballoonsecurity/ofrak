@@ -7,7 +7,7 @@ from ofrak import OFRAKContext
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.resource import Resource
 from ofrak.core.free_space import Allocatable, FreeSpace, RuntimeFreeSpace
-from test_ofrak.components.free_space_components_test.mock_tree_struct import (
+from .mock_tree_struct import (
     FreeSpaceTreeType,
     inflate_tree,
 )

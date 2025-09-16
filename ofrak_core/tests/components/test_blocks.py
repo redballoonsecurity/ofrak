@@ -18,7 +18,7 @@ from ofrak.core import (
     DataWord,
     MemoryRegion,
 )
-from pytest_ofrak.patterns import TEST_PATTERN_ASSETS_DIR
+from pytest_ofrak import ASSETS_DIR
 
 
 class TestOfrakBlocks:
@@ -46,7 +46,7 @@ class TestOfrakBlocks:
         Unpack "arm_reloc_relocated.elf" and simulate unpacking the function "frame_dummy"
         recursively. This creates a tree of ComplexBlock, BasicBlock, Instruction, DataWords.
         """
-        file_path = os.path.join(TEST_PATTERN_ASSETS_DIR, "arm_reloc_relocated.elf")
+        file_path = os.path.join(ASSETS_DIR, "arm_reloc_relocated.elf")
 
         resource = await ofrak_context.create_root_resource_from_file(file_path)
         await resource.unpack()

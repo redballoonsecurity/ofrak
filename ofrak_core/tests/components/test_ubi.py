@@ -10,7 +10,7 @@ from ofrak.core.ubi import Ubi, UbiPacker, UbiUnpacker, UbiVolume
 from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import (
     CompressedFileUnpackModifyPackPattern,
 )
-from test_ofrak.components import ASSETS_DIR
+from . import ASSETS_DIR
 
 TEST_PAYLOAD = b"$ base64 -d <<< f0VMRuH//xAICIDSEAAAFAIAtwABAAAABAAAAAEAAAAcAAAAAAAAAAAA\
 AAAAAAAAAQAAAEAAOAABAADU8v//FwAAAADy//8XAAAAAIIAgNL6//8X > aarch64.elf;EOF"

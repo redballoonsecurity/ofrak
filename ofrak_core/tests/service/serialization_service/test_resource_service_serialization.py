@@ -2,7 +2,7 @@ import pytest
 
 from ofrak.service.resource_service import ResourceService
 from ofrak.service.serialization.service_i import SerializationServiceInterface
-from test_ofrak.service.resource_service.test_resource_service import TestResourceService
+from ..resource_service.test_resource_service import TestResourceService
 
 
 @pytest.fixture

@@ -4,7 +4,6 @@ from typing import Optional
 
 import pytest
 from elftools.elf.elffile import ELFFile
-from test_ofrak.components.hello_world_elf import hello_elf
 
 from ofrak.core import (
     LiefAddSegmentConfig,
@@ -225,8 +224,8 @@ class TestElfPointerArraySectionModifier:
 
 
 @pytest.fixture
-async def hello_out(ofrak_context: OFRAKContext) -> Resource:
-    return await ofrak_context.create_root_resource("hello.out", hello_elf())
+async def hello_out(ofrak_context: OFRAKContext, hello_elf: bytes) -> Resource:
+    return await ofrak_context.create_root_resource("hello.out", hello_elf)
 
 
 async def test_lief_add_segment_modifier(hello_out: Resource, tmp_path):

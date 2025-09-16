@@ -10,7 +10,7 @@ from ofrak.service.error import (
 )
 from ofrak_type.error import AlreadyExistError, NotFoundError
 from ofrak_type.range import Range
-from test_ofrak.service.data_service.conftest import (
+from .conftest import (
     DATA_0,
     DATA_1,
     DATA_2,

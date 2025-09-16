@@ -10,11 +10,11 @@ from ofrak_type.architecture import (
 )
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.instruction import Instruction
-from test_ofrak.unit.instruction_modifier.instruction_modifier_test import (
+from ..instruction_modifier_test import (
     InstructionModifierTestCase,
     run_instruction_modifier_test,
 )
-from test_ofrak.unit.model import FlattenedResource
+from ...model import FlattenedResource
 
 ARM32_INSTRUCTION_MODIFICATION_TEST_CASES = [
     InstructionModifierTestCase(

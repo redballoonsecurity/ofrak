@@ -13,7 +13,7 @@ from pytest_ofrak.patterns.pack_unpack_filesystem import (
     FilesystemPackUnpackVerifyPattern,
 )
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
-import test_ofrak.components
+from .. import components
 
 pytestmark = pytest.mark.skipif_missing_deps([TarUnpacker, TarPacker])
 
@@ -204,7 +204,7 @@ class TestComplexTarWithSpecialFiles(FilesystemPackUnpackVerifyPattern):
     def setup(self):
         super().setup()
         self.check_stat = False
-        self.testtar_path = os.path.join(test_ofrak.components.ASSETS_DIR, "testtar.tar")
+        self.testtar_path = os.path.join(components.ASSETS_DIR, "testtar.tar")
 
     async def create_root_resource(self, ofrak_context: OFRAKContext, directory: str) -> Resource:
         return await ofrak_context.create_root_resource_from_file(self.testtar_path)

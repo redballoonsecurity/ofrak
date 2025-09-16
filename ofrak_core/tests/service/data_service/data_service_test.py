@@ -8,7 +8,7 @@ import pytest
 from ofrak.model.data_model import DataModel
 from ofrak.service.error import OutOfBoundError
 from ofrak_type.range import Range
-from test_ofrak.service.data_service.conftest import DATA_1
+from .conftest import DATA_1
 
 from ofrak.service.data_service import DataService, _DataRoot, _PatchResizeTracker
 from ofrak_type.error import NotFoundError

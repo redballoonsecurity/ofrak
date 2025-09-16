@@ -2,7 +2,7 @@ import pytest
 import os
 from hashlib import md5
 
-import test_ofrak.components
+from .. import components
 from ofrak import OFRAKContext, ResourceFilter
 from ofrak.resource import Resource
 from ofrak.core.flash import (
@@ -17,15 +17,13 @@ from ofrak.core.ecc.reedsolomon import ReedSolomon
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 from ofrak.core.binary import BinaryPatchConfig, BinaryPatchModifier
 
-DEFAULT_TEST_FILE = os.path.join(test_ofrak.components.ASSETS_DIR, "flash_test_default.bin")
-DEFAULT_VERIFY_FILE = os.path.join(
-    test_ofrak.components.ASSETS_DIR, "flash_test_default_verify.bin"
-)
+DEFAULT_TEST_FILE = os.path.join(components.ASSETS_DIR, "flash_test_default.bin")
+DEFAULT_VERIFY_FILE = os.path.join(components.ASSETS_DIR, "flash_test_default_verify.bin")
 DEFAULT_UNPACKED_VERIFY_FILE = os.path.join(
-    test_ofrak.components.ASSETS_DIR, "flash_test_default_unpacked_verify.bin"
+    components.ASSETS_DIR, "flash_test_default_unpacked_verify.bin"
 )
 DEFAULT_UNPACKED_MODIFIED_VERIFY_FILE = os.path.join(
-    test_ofrak.components.ASSETS_DIR, "flash_test_default_unpacked_modified_verify.bin"
+    components.ASSETS_DIR, "flash_test_default_unpacked_modified_verify.bin"
 )
 DEFAULT_TEST_ATTR = FlashAttributes(
     header_block_format=[
@@ -65,8 +63,8 @@ DEFAULT_TEST_ATTR = FlashAttributes(
 FLASH_TEST_CASES = [
     (DEFAULT_TEST_FILE, DEFAULT_VERIFY_FILE, DEFAULT_TEST_ATTR),
     (
-        os.path.join(test_ofrak.components.ASSETS_DIR, "flash_test_plain.bin"),
-        os.path.join(test_ofrak.components.ASSETS_DIR, "flash_test_plain_verify.bin"),
+        os.path.join(components.ASSETS_DIR, "flash_test_plain.bin"),
+        os.path.join(components.ASSETS_DIR, "flash_test_plain_verify.bin"),
         FlashAttributes(
             data_block_format=[
                 FlashField(FlashFieldType.DATA, 223),
@@ -78,8 +76,8 @@ FLASH_TEST_CASES = [
         ),
     ),
     (
-        os.path.join(test_ofrak.components.ASSETS_DIR, "flash_test_totalsize_in_header.bin"),
-        os.path.join(test_ofrak.components.ASSETS_DIR, "flash_test_totalsize_in_header_verify.bin"),
+        os.path.join(components.ASSETS_DIR, "flash_test_totalsize_in_header.bin"),
+        os.path.join(components.ASSETS_DIR, "flash_test_totalsize_in_header_verify.bin"),
         FlashAttributes(
             header_block_format=[
                 FlashField(FlashFieldType.TOTAL_SIZE, 4),
@@ -94,8 +92,8 @@ FLASH_TEST_CASES = [
         ),
     ),
     (
-        os.path.join(test_ofrak.components.ASSETS_DIR, "flash_test_datasize_checksum.bin"),
-        os.path.join(test_ofrak.components.ASSETS_DIR, "flash_test_datasize_checksum_verify.bin"),
+        os.path.join(components.ASSETS_DIR, "flash_test_datasize_checksum.bin"),
+        os.path.join(components.ASSETS_DIR, "flash_test_datasize_checksum_verify.bin"),
         FlashAttributes(
             header_block_format=[
                 FlashField(FlashFieldType.DATA_SIZE, 4),
@@ -114,8 +112,8 @@ FLASH_TEST_CASES = [
         ),
     ),
     (
-        os.path.join(test_ofrak.components.ASSETS_DIR, "flash_test_magic.bin"),
-        os.path.join(test_ofrak.components.ASSETS_DIR, "flash_test_magic_verify.bin"),
+        os.path.join(components.ASSETS_DIR, "flash_test_magic.bin"),
+        os.path.join(components.ASSETS_DIR, "flash_test_magic_verify.bin"),
         FlashAttributes(
             header_block_format=[
                 FlashField(FlashFieldType.MAGIC, 7),

@@ -3,7 +3,7 @@ from ofrak_type.error import NotFoundError
 
 import pytest
 
-from test_ofrak.unit.component.analyzer.analyzer_test_case import (
+from ..unit.component.analyzer.analyzer_test_case import (
     AnalyzerTestCase,
     PopulatedAnalyzerTestCase,
     AnalyzerTests,
