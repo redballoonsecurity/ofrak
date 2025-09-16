@@ -291,4 +291,3 @@ def _get_bb_exit_addr_info(
             return False, successor_vaddrs[0]
         else:
             return False, None
-

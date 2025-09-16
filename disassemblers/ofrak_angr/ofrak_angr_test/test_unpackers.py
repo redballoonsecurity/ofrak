@@ -19,7 +19,7 @@ from ofrak import OFRAKContext
 from ofrak import ResourceFilter, ResourceAttributeValueFilter
 from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.core.addressable import Addressable
-from ofrak.core.elf.model import ElfSection
+
 
 class TestAngrCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
     pass
@@ -133,15 +133,18 @@ class TestAngrComplexBlockUnpackAndVerify(ComplexBlockUnpackerUnpackAndVerifyPat
         expected_results[cb_addr][idx] = bb_1
         expected_results[cb_addr].append(bb_2)
 
+
 async def test_basic_block_no_exit(ofrak_context: OFRAKContext):
     # Regression test for https://github.com/redballoonsecurity/ofrak/issues/614
     # Test unpacking a ComplexBlock that contains a BasicBlock which doesn't have an exit address
     with tempfile.TemporaryDirectory() as temp_dir:
-        response = requests.get("https://busybox.net/downloads/binaries/1.35.0-x86_64-linux-musl/busybox")
+        response = requests.get(
+            "https://busybox.net/downloads/binaries/1.35.0-x86_64-linux-musl/busybox"
+        )
         response.raise_for_status()
 
         file_path = os.path.join(temp_dir, "busybox")
-        with open(file_path, 'wb') as f:
+        with open(file_path, "wb") as f:
             f.write(response.content)
 
         root_resource = await ofrak_context.create_root_resource_from_file(file_path)
@@ -164,7 +167,7 @@ async def test_basic_block_no_exit(ofrak_context: OFRAKContext):
                 tags={ComplexBlock},
                 attribute_filters=[
                     ResourceAttributeValueFilter(
-                        attribute=AttributesType[Addressable].VirtualAddress, value=0x4d8768
+                        attribute=AttributesType[Addressable].VirtualAddress, value=0x4D8768
                     )
                 ],
             )
