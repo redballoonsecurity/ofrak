@@ -110,7 +110,7 @@ jobs:
 
       - name: Verify distributions
         run: |
-          pip install twine==6.1.0
+          pip install -r pip-requirements.txt
           pip freeze
           twine check dist/*
 
