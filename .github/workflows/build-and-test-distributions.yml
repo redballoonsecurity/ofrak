@@ -63,7 +63,7 @@ jobs:
           retention-days: 30
 
   test-ofrak-type:
-    name: Test ofrak-type on ${{ matrix.os }} with Python ${{ matrix.python-version }}
+    name: test ofrak-type on ${{ matrix.os }} with Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     needs: build-ofrak-type-sdist
     strategy:
@@ -171,7 +171,7 @@ jobs:
           retention-days: 30
 
   test-ofrak-io:
-    name: Test OFRAK IO on ${{ matrix.os }} with Python ${{ matrix.python-version }}
+    name: test ofrak-io on ${{ matrix.os }} with Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     needs: [build-ofrak-type-sdist, build-ofrak-io-sdist]
     strategy:
@@ -327,7 +327,7 @@ jobs:
           retention-days: 30
 
   build-ofrak-wheels:
-    name: Build OFRAK wheels on ${{ matrix.os }} for Python ${{ matrix.python-version }}
+    name: build ofrak wheels on ${{ matrix.os }} for Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -378,7 +378,7 @@ jobs:
           PY_VERSION_NO_DOT=${PY_VERSION//./}
           echo "version=${PY_VERSION_NO_DOT}" >> $GITHUB_OUTPUT
 
-      - name: Build OFRAK wheels with cibuildwheel
+      - name: build ofrak wheels with cibuildwheel
         env:
           CIBW_BUILD: "cp${{ steps.py-version.outputs.version }}-*"
           CIBW_SKIP: "*-win32 *-manylinux_i686"
@@ -571,7 +571,7 @@ jobs:
           retention-days: 30
 
   test-ofrak-angr:
-    name: Test ofrak-angr on ${{ matrix.os }} with Python ${{ matrix.python-version }}
+    name: test ofrak-angr on ${{ matrix.os }} with Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     needs: [build-ofrak-type-sdist, build-ofrak-io-sdist, build-ofrak-patch-maker-sdist, build-ofrak-wheels, build-ofrak-angr-sdist, build-pytest-ofrak-sdist]
     strategy:
@@ -762,7 +762,7 @@ jobs:
   test-ofrak-capstone:
     name: Test ofrak-capstone on ${{ matrix.os }} with Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
-    needs: [build-ofrak-type-sdist, build-ofrak-io-sdist, build-ofrak-patch-maker-sdist, build-ofrak-wheels, build-ofrak-angr-sdist, build-ofrak-capstone-sdist, build-pytest-ofrak-sdist]
+    needs: [build-ofrak-type-sdist, build-ofrak-io-sdist, build-ofrak-patch-maker-sdist, build-ofrak-wheels, build-ofrak-capstone-sdist, build-pytest-ofrak-sdist]
     strategy:
       fail-fast: false
       matrix:
@@ -793,12 +793,6 @@ jobs:
         with:
           name: ofrak-patch-maker-sdist
           path: dist-patch-maker/
-
-      - name: Download ofrak_angr source distribution
-        uses: actions/download-artifact@v4
-        with:
-          name: ofrak-angr-sdist
-          path: dist-ofrak-angr/
 
       - name: Download ofrak_capstone source distribution
         uses: actions/download-artifact@v4
@@ -893,10 +887,6 @@ jobs:
         run: |
           echo "Installing specific wheel: $CHOSEN_WHEEL_PATH"
           pip install "$CHOSEN_WHEEL_PATH"
-
-      - name: Install ofrak-angr from sdist
-        run: |
-          pip install dist-ofrak-angr/*.tar.gz
 
       - name: Install ofrak-capstone from sdist
         run: |
