@@ -11,14 +11,14 @@ from ofrak.core.filesystem import File
 import ofrak_capstone
 from ofrak import OFRAKContext
 from ofrak.model.viewable_tag_model import ResourceViewContext
-from ofrak_type.architecture import InstructionSet, InstructionSetMode
+from ofrak_type.architecture import BitWidth, Endianness, InstructionSet, InstructionSetMode
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.basic_block import BasicBlock
 from ofrak.core.instruction import Instruction
 from ofrak.core.program import Program
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort
-from pytest_ofrak.patterns import TEST_PATTERN_ASSETS_DIR
+from pytest_ofrak import ASSETS_DIR
 from pytest_ofrak.patterns.basic_block_unpacker import (
     BasicBlockUnpackerUnpackAndVerifyPattern,
     BasicBlockUnpackerTestCase,
@@ -27,9 +27,17 @@ from pytest_ofrak.patterns.register_usage_analyzer import (
     RegisterAnalyzerTestCase,
     RegisterUsageTestPattern,
 )
-from test_ofrak.constants import ARM32_ARCH
 
 pytest_plugins = ["pytest_ofrak.fixtures"]
+
+
+ARM32_ARCH = ProgramAttributes(
+    InstructionSet.ARM,
+    None,
+    BitWidth.BIT_32,
+    Endianness.LITTLE_ENDIAN,
+    None,
+)
 
 
 @pytest.fixture
@@ -66,7 +74,7 @@ class TestCapstoneBasicBlockUnpackAndVerify(BasicBlockUnpackerUnpackAndVerifyPat
         resource, which does not get unpacked but instead has basic block children manually
         mapped into it.
         """
-        asset_path = os.path.join(TEST_PATTERN_ASSETS_DIR, unpack_verify_test_case.binary_filename)
+        asset_path = os.path.join(ASSETS_DIR, unpack_verify_test_case.binary_filename)
         with open(asset_path, "rb") as f:
             binary_data = f.read()
         top_resource = await ofrak_context.create_root_resource(test_id, binary_data, tags=(File,))
