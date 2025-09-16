@@ -21,6 +21,10 @@ test: inspect
 		| python3 -m coverage run --append --source ofrak -m ofrak license --force
 	fun-coverage --cov-fail-under=100
 
+.PHONY: test-wheel  
+test-wheel: inspect  
+   $(PYTHON) -m pytest --skip-tests-missing-deps tests/service
+
 src/ofrak/gui/public:
 	if [ -d /ofrak_gui ] ; then \
 		cp -r /ofrak_gui src/ofrak/gui/public ; \
