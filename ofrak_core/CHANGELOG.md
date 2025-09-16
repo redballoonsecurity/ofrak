@@ -90,7 +90,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Security
 - Update aiohttp to 3.10.11 ([#522](https://github.com/redballoonsecurity/ofrak/pull/522))
-- Update pycryptography to version 45.0.0. ([#525](https://github.com/redballoonsecurity/ofrak/pull/525), [#589](https://github.com/redballoonsecurity/ofrak/pull/589), [#5613](https://github.com/redballoonsecurity/ofrak/pull/613))
+- Update pycryptography to version 45.0.3. ([#525](https://github.com/redballoonsecurity/ofrak/pull/525), [#589](https://github.com/redballoonsecurity/ofrak/pull/589), [#613](https://github.com/redballoonsecurity/ofrak/pull/613))
 - Bump `lief` dependency to 0.16.1 to address [vulnerability](https://github.com/redballoonsecurity/ofrak/security/dependabot/31) in lower versions ([#502](https://github.com/redballoonsecurity/ofrak/pull/502), [#562](https://github.com/redballoonsecurity/ofrak/pull/562/files))
 - Update `vite` and `esbuild` to newer versions to address dependabot warnings ([#595](https://github.com/redballoonsecurity/ofrak/pull/595))
 
