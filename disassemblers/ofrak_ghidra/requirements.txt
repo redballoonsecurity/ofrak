@@ -1,2 +1,2 @@
-PyYAML=5.4
+PyYAML>=5.4
 aiohttp>=3.12.14
