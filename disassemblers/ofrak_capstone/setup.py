@@ -31,7 +31,7 @@ def read_requirements(requirements_path):
 
 setuptools.setup(
     name="ofrak_capstone",
-    version="1.1.0rc1",
+    version="1.1.0rc2",
     packages=setuptools.find_packages("src"),
     package_dir={"": "src"},
     package_data={"ofrak_capstone": ["py.typed"]},
