@@ -31,7 +31,7 @@ def read_requirements(requirements_path):
 
 setuptools.setup(
     name="ofrak_ghidra",
-    version="0.2.0rc2",
+    version="0.2.0rc3",
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",
     description="OFRAK Ghidra Components",

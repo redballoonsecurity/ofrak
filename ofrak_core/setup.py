@@ -106,22 +106,6 @@ setuptools.setup(
         "ubi-reader>=0.8.12",
         "xattr>=0.10.1;platform_system!='Windows'",
     ],
-    extras_require={
-        "docs": [] + read_requirements("requirements-docs.txt"),
-        "test": [
-            # Running the full set of tests requires these version of angr and capstone.
-            #  If building a Docker image, it should already be installed on the system.
-            #  If you are running the tests in another environment, you will need to make sure
-            #  that this version is installed from GitHub, since it depends on ofrak==3.3.0rc0
-            #  and neither of these are yet released on PyPI.
-            #  If these are not installed, some of the tests will be skipped
-            # "ofrak_capstone>=1.1.0rc0",
-            # "ofrak_angr~=1.1.0rc0",
-            # "importlib-resources",  # Needed because of https://github.com/redballoonsecurity/ofrak/issues/398
-        ]
-        + read_requirements("requirements-test.txt"),
-        # "non-pypi": read_requirements("requirements-non-pypi.txt"),
-    },
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",
     long_description=long_description,

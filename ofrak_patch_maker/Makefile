@@ -8,7 +8,6 @@ install:
 
 .PHONY: develop
 develop:
-	$(PIP) install -r requirements.txt
 	$(PIP) install -e . --config-settings editable_mode=compat
 
 .PHONY: inspect
