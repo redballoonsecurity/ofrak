@@ -716,7 +716,7 @@ jobs:
       - name: Install cmake (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install cmake
+          brew install cmake libmagic
           echo "$(brew --prefix)/bin" >> $GITHUB_PATH
           cmake --version
 
