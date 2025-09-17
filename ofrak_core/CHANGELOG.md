@@ -22,7 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add `JavaArchive` resource tag ([#492](https://github.com/redballoonsecurity/ofrak/pull/492))
 - Add new method for allocating `.bss` sections using free space ranges that aren't mapped to data ranges. ([#505](https://github.com/redballoonsecurity/ofrak/pull/505), [#569](https://github.com/redballoonsecurity/ofrak/pull/569))
 - Pulled `Allocatable._align_range` out to standalone function `allocate_range_start` ([#575](https://github.com/redballoonsecurity/ofrak/pull/575))
-- ComponentExternalTools now support chocolatey packages (apk, cpio, pigz, 7zip, gnu-tar) ([#613](https://github.com/redballoonsecurity/ofrak/pull/613))
+- `ComponentExternalTool` now supports chocolatey packages (apk, cpio, pigz, 7zip) ([#613](https://github.com/redballoonsecurity/ofrak/pull/613))
 
 ### Fixed
 - Improved flushing of filesystem entries (including symbolic links and other types) to disk. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373))
@@ -57,7 +57,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Ensure files loaded in OFRAK GUI display filename ([#599](https://github.com/redballoonsecurity/ofrak/pull/599)
 - Fixed import error when entropy c library is not found ([#605](https://github.com/redballoonsecurity/ofrak/pull/605))
 - Python dependencies are not pinned in setup.py ([#613](https://github.com/redballoonsecurity/ofrak/pull/613))
-- Treat `keystone-engine as CommandExternalTool for easier pypi installations ([#613](https://github.com/redballoonsecurity/ofrak/pull/613))
+- Treat `keystone-engine` as `CommandExternalTool` for easier PyPI installations ([#613](https://github.com/redballoonsecurity/ofrak/pull/613))
 
 ### Changed
 - Miscellaneous updates to the documentation. ([#592](https://github.com/redballoonsecurity/ofrak/pull/592))
@@ -90,7 +90,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Security
 - Update aiohttp to 3.10.11 ([#522](https://github.com/redballoonsecurity/ofrak/pull/522))
-- Update pycryptography to version 45.0.3. ([#525](https://github.com/redballoonsecurity/ofrak/pull/525), [#589](https://github.com/redballoonsecurity/ofrak/pull/589), [#613](https://github.com/redballoonsecurity/ofrak/pull/613))
+- Update Python `cryptography` to version 45.0.3. ([#525](https://github.com/redballoonsecurity/ofrak/pull/525), [#589](https://github.com/redballoonsecurity/ofrak/pull/589), [#613](https://github.com/redballoonsecurity/ofrak/pull/613))
 - Bump `lief` dependency to 0.16.1 to address [vulnerability](https://github.com/redballoonsecurity/ofrak/security/dependabot/31) in lower versions ([#502](https://github.com/redballoonsecurity/ofrak/pull/502), [#562](https://github.com/redballoonsecurity/ofrak/pull/562/files))
 - Update `vite` and `esbuild` to newer versions to address dependabot warnings ([#595](https://github.com/redballoonsecurity/ofrak/pull/595))
 

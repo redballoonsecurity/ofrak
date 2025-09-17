@@ -2,7 +2,7 @@ import pytest
 
 from ofrak import Resource
 from ofrak_ghidra.ghidra_model import GhidraProject
-from ofrak_ghidra_test.assets.example_ghidra_package import example_ghidra_package
+from .example_ghidra_package import example_ghidra_package
 
 
 @pytest.fixture(autouse=True)

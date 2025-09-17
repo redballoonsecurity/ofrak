@@ -70,7 +70,7 @@ async def ofrak_client(ofrak_server, aiohttp_client):
 
 @pytest.fixture
 async def test_resource(ofrak_context, hello_elf):
-    return await ofrak_context.create_root_resource(hello_elf, hello_elf, (File,))
+    return await ofrak_context.create_root_resource("hello_elf", hello_elf, (File,))
 
 
 def dicts_are_similar(d1, d2, attributes_to_skip=None):

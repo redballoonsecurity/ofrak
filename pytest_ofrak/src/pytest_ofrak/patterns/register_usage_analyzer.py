@@ -7,8 +7,7 @@ from ofrak import OFRAKContext
 from ofrak_type import BitWidth, Endianness, InstructionSet, InstructionSetMode
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.instruction import Instruction, RegisterUsage
-from ofrak.service.assembler.assembler_service_i import AssemblerServiceInterface
-
+from ofrak.service.assembler.assembler_service_keystone import KeystoneAssemblerService
 
 ARM32_ARCH = ProgramAttributes(
     InstructionSet.ARM,
@@ -449,8 +448,8 @@ REGISTER_USAGE_TEST_CASES = (
 
 class RegisterUsageTestPattern:
     @pytest.fixture
-    async def assembler_service(self, ofrak_context: OFRAKContext):
-        return await ofrak_context.injector.get_instance(AssemblerServiceInterface)
+    async def assembler_service(self, ofrak_context: OFRAKContext) -> KeystoneAssemblerService:
+        return KeystoneAssemblerService()
 
     def case_is_known_broken(self, test_case: RegisterAnalyzerTestCase) -> Tuple[bool, str]:
         """
