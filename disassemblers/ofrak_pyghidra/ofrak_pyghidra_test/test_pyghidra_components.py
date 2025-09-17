@@ -18,6 +18,10 @@ from pytest_ofrak.patterns.basic_block_unpacker import BasicBlockUnpackerUnpackA
 from ofrak_pyghidra.components.pyghidra_components import _arch_info_to_processor_id
 from ofrak_type import ArchInfo, Endianness, InstructionSet
 import ofrak_pyghidra
+from ofrak_pyghidra.components.pyghidra_components import (
+    PyGhidraAutoAnalyzer,
+    PyGhidraAutoAnalyzerConfig,
+)
 
 ASSETS_DIR = os.path.abspath(
     os.path.join(
@@ -154,6 +158,39 @@ async def test_decompilation(ofrak_context: OFRAKContext):
     assert "print" in " ".join(decomps)
 
 
+async def test_pyghidra_auto_analysis_with_decomp(ofrak_context: OFRAKContext):
+    root_resource = await ofrak_context.create_root_resource_from_file(
+        os.path.join(
+            os.path.dirname(__file__),
+            "../../ofrak_cached_disassembly/ofrak_cached_disassembly_test/assets/hello.x64.elf",
+        )
+    )
+    await root_resource.identify()
+    await root_resource.run(
+        PyGhidraAutoAnalyzer, config=PyGhidraAutoAnalyzerConfig(decomp=True, language=None)
+    )
+    await root_resource.unpack_recursively()
+    complex_blocks: List[ComplexBlock] = await root_resource.get_descendants_as_view(
+        ComplexBlock,
+        r_filter=ResourceFilter(
+            tags=[
+                ComplexBlock,
+            ]
+        ),
+    )
+    decomps = []
+    for complex_block in complex_blocks:
+        await complex_block.resource.run(DecompilationAnalyzer)
+        pyghidra_resource: DecompilationAnalysis = await complex_block.resource.view_as(
+            DecompilationAnalysis
+        )
+        decomps.append(pyghidra_resource.decompilation)
+    assert len(decomps) == 14
+    assert "" not in decomps
+    assert "main" in " ".join(decomps)
+    assert "print" in " ".join(decomps)
+
+
 def test_unpack_recursively_benchmark(benchmark, ofrak_context):
     async def test_unpack_recursively(ofrak_context):
         root_resource = await ofrak_context.create_root_resource_from_file(
@@ -173,6 +210,10 @@ def test_unpack_recursively_benchmark(benchmark, ofrak_context):
 
 def test_decompilation_benchmark(benchmark, ofrak_context):
     benchmark(lambda oc: asyncio.run(test_decompilation(oc)), ofrak_context)
+
+
+def test_pyghidra_auto_analysis_with_decomp_benchmark(benchmark, ofrak_context):
+    benchmark(lambda oc: asyncio.run(test_pyghidra_auto_analysis_with_decomp(oc)), ofrak_context)
 
 
 @pytest.mark.parametrize("arch, expected_processor_id", ARCH_INFO_TEST_CASES)
