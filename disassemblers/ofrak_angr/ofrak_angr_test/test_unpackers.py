@@ -1,7 +1,10 @@
 from typing import Dict
 import pytest
+import os
 
 from ofrak.core.basic_block import BasicBlock
+from ofrak.core.complex_block import ComplexBlock
+from ofrak.core.code_region import CodeRegion
 
 from pytest_ofrak.patterns.code_region_unpacker import (
     CodeRegionUnpackAndVerifyPattern,
@@ -10,6 +13,10 @@ from pytest_ofrak.patterns.complex_block_unpacker import (
     ComplexBlockUnpackerTestCase,
     ComplexBlockUnpackerUnpackAndVerifyPattern,
 )
+from ofrak import OFRAKContext
+from ofrak import ResourceFilter, ResourceAttributeValueFilter
+from ofrak.model.viewable_tag_model import AttributesType
+from ofrak.core.addressable import Addressable
 
 
 class TestAngrCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
@@ -123,3 +130,44 @@ class TestAngrComplexBlockUnpackAndVerify(ComplexBlockUnpackerUnpackAndVerifyPat
 
         expected_results[cb_addr][idx] = bb_1
         expected_results[cb_addr].append(bb_2)
+
+
+@pytest.fixture
+async def busybox_resource(ofrak_context: OFRAKContext):
+    # Downloaded from https://busybox.net/downloads/binaries/1.35.0-x86_64-linux-musl/busybox
+    return await ofrak_context.create_root_resource_from_file(
+        os.path.join(os.path.dirname(__file__), "assets/busybox")
+    )
+
+
+async def test_basic_block_no_exit(ofrak_context: OFRAKContext, busybox_resource):
+    """
+    Regression test for https://github.com/redballoonsecurity/ofrak/issues/614
+    Test unpacking a ComplexBlock that contains a BasicBlock which doesn't have an exit address
+    """
+    await busybox_resource.unpack()
+
+    # For some reason, I couldn't get the code_region through its virtual address, so I got it manually:
+    code_regions = await busybox_resource.get_descendants_as_view(
+        v_type=CodeRegion, r_filter=ResourceFilter(tags=[CodeRegion])
+    )
+    text_section = None
+    for code_region in code_regions:
+        if code_region.virtual_address == 0x400130:
+            text_section = code_region
+
+    await text_section.resource.unpack()
+
+    complexblock_0x4d8768 = await text_section.resource.get_only_child(
+        r_filter=ResourceFilter(
+            tags={ComplexBlock},
+            attribute_filters=[
+                ResourceAttributeValueFilter(
+                    attribute=AttributesType[Addressable].VirtualAddress, value=0x4D8768
+                )
+            ],
+        )
+    )
+
+    await complexblock_0x4d8768.unpack()
+    # In the past, unpacking that ComplexBlock would fail because it contains a BasicBlock that doens't have an exit address

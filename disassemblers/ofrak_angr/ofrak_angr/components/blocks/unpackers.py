@@ -287,4 +287,7 @@ def _get_bb_exit_addr_info(
         # For example: basic block ends in unconditional one-way branch (not a call)
         # If there are somehow multiple successors and the fallthrough block is not one of them,
         # choosing the first succ as the exit addr is arbitrary, but better choice is unclear.
-        return False, successor_vaddrs[0]
+        if len(successor_vaddrs) > 0:
+            return False, successor_vaddrs[0]
+        else:
+            return False, None
