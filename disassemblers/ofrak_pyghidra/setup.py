@@ -49,6 +49,8 @@ setuptools.setup(
             "fun-coverage==0.2.0",
             "pytest",
             "pytest-cov",
+            "pytest-benchmark==3.2.3",
+            "py",
         ]
     },
     python_requires=">=3.9",

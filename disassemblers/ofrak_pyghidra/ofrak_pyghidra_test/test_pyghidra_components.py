@@ -1,5 +1,6 @@
 from ofrak.core.instruction import Instruction
 import os
+import asyncio
 from typing import Dict, Tuple
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.ofrak_context import OFRAKContext
@@ -151,6 +152,27 @@ async def test_decompilation(ofrak_context: OFRAKContext):
     assert "" not in decomps
     assert "main" in " ".join(decomps)
     assert "print" in " ".join(decomps)
+
+
+def test_unpack_recursively_benchmark(benchmark, ofrak_context):
+    async def test_unpack_recursively(ofrak_context):
+        root_resource = await ofrak_context.create_root_resource_from_file(
+            os.path.join(
+                os.path.dirname(__file__),
+                "../../ofrak_cached_disassembly/ofrak_cached_disassembly_test/assets/hello.x64.elf",
+            )
+        )
+        await root_resource.unpack_recursively(
+            do_not_unpack=[
+                ComplexBlock,
+            ]
+        )
+
+    benchmark(lambda oc: asyncio.run(test_unpack_recursively(oc)), ofrak_context)
+
+
+def test_decompilation_benchmark(benchmark, ofrak_context):
+    benchmark(lambda oc: asyncio.run(test_decompilation(oc)), ofrak_context)
 
 
 @pytest.mark.parametrize("arch, expected_processor_id", ARCH_INFO_TEST_CASES)
