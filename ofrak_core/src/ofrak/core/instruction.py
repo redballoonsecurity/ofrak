@@ -157,6 +157,7 @@ class InstructionModifier(Modifier[InstructionModifierConfig]):
     """
 
     targets = (Instruction,)
+    external_dependencies = (_KeystoneExternalTool,)
 
     def __init__(
         self,
