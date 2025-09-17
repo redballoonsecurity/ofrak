@@ -54,8 +54,8 @@ def hello_elf(elf_test_directory) -> bytes:
     A hello world ELF file for testing.
 
     Used as a pytest fixture in the:
-        - ofrak_ghidra_test
-        - ofrak_binary_ninja_test
+        - ofrak_ghidra tests
+        - ofrak_binary_ninja tests
         - test_ofrak_server
     """
     asset_path = os.path.join(elf_test_directory, "hello.out")
