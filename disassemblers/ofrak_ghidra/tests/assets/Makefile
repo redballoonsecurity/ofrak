@@ -1,3 +1,13 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:42d2ca7ae71dfdb8537e51be709796871efb3ff915dcfa42fd751d37ddbb2879
-size 388
+pyghidra: clean fib-pyghidra fib-thumb-pyghidra hello.x64.elf-pyghidra
+
+fib-pyghidra:
+	python3 -m ofrak_pyghidra analyze -i fib -o fib.json
+
+fib-thumb-pyghidra:
+	python3 -m ofrak_pyghidra analyze -i fib_thumb -o fib_thumb.json
+
+hello.x64.elf-pyghidra:
+	python3 -m ofrak_pyghidra analyze -i hello.x64.elf -o hello.x64.elf.json -d
+
+clean:
+	rm -f fib.json fib_thumb.json hello.x64.elf.json 
