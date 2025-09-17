@@ -1,6 +1,5 @@
 import asyncio
 import os.path
-import sys
 
 import tempfile312 as tempfile
 from dataclasses import dataclass
@@ -18,13 +17,7 @@ from ofrak.model.component_model import ComponentConfig
 from ofrak_type.range import Range
 
 
-TAR = ComponentExternalTool(
-    "gtar" if sys.platform == "darwin" else "tar",
-    "https://www.gnu.org/software/tar/",
-    "--help",
-    apt_package="tar",
-    brew_package="gnu-tar",
-)
+TAR = ComponentExternalTool("tar", "https://www.gnu.org/software/tar/", "--help", apt_package="tar")
 
 
 @dataclass

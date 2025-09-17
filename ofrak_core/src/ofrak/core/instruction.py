@@ -39,6 +39,9 @@ class _KeystoneExternalTool(ComponentExternalTool):
         return KEYSTONE_INSTALL_WORKS
 
 
+KEYSTONE_TOOL = _KeystoneExternalTool()
+
+
 @dataclass
 class Instruction(MemoryRegion):
     """
@@ -157,7 +160,7 @@ class InstructionModifier(Modifier[InstructionModifierConfig]):
     """
 
     targets = (Instruction,)
-    external_dependencies = (_KeystoneExternalTool,)
+    external_dependencies = (KEYSTONE_TOOL,)
 
     def __init__(
         self,
