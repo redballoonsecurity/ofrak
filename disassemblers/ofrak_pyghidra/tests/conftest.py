@@ -3,7 +3,7 @@ import ofrak_pyghidra
 
 from test_ofrak.components.hello_world_elf import hello_elf
 
-pytest_plugins = ["pytest_ofrak.fixtures"]
+pytest_plugins = ["pytest_ofrak.fixtures", "pytest_ofrak.elf.fixtures"]
 
 
 @pytest.fixture(scope="session")
