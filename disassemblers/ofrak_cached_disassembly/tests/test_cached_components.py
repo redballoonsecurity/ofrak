@@ -32,6 +32,7 @@ from ofrak.core.decompilation import DecompilationAnalysis, DecompilationAnalyze
 from ofrak.core.code_region import CodeRegion
 
 import ofrak_cached_disassembly
+from pytest_ofrak import ASSETS_DIR as PYTEST_OFRAK_ASSETS_DIR
 
 ASSETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
 
@@ -49,12 +50,12 @@ class TestGhidraCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
         ofrak_context: OFRAKContext,
         test_id: str,
     ) -> Resource:
-        asset_path = os.path.join(ASSETS_DIR, unpack_verify_test_case.binary_filename)
+        asset_path = os.path.join(PYTEST_OFRAK_ASSETS_DIR, unpack_verify_test_case.binary_filename)
         with open(asset_path, "rb") as f:
             binary_data = f.read()
         resource = await ofrak_context.create_root_resource(test_id, binary_data, tags=(File,))
         CACHE_FILENAME = os.path.join(
-            os.path.join(ASSETS_DIR, "cache"), unpack_verify_test_case.binary_filename
+            os.path.join(PYTEST_OFRAK_ASSETS_DIR, "cache"), unpack_verify_test_case.binary_filename
         )
         await resource.run(
             CachedAnalysisAnalyzer, config=CachedAnalysisAnalyzerConfig(filename=CACHE_FILENAME)
@@ -70,12 +71,12 @@ class TestCachedComplexBlockUnpackAndVerify(ComplexBlockUnpackerUnpackAndVerifyP
         ofrak_context: OFRAKContext,
         test_id: str,
     ) -> Resource:
-        asset_path = os.path.join(ASSETS_DIR, unpack_verify_test_case.binary_filename)
+        asset_path = os.path.join(PYTEST_OFRAK_ASSETS_DIR, unpack_verify_test_case.binary_filename)
         with open(asset_path, "rb") as f:
             binary_data = f.read()
         resource = await ofrak_context.create_root_resource(test_id, binary_data, tags=(File,))
         CACHE_FILENAME = os.path.join(
-            os.path.join(ASSETS_DIR, "cache"), unpack_verify_test_case.binary_filename
+            os.path.join(PYTEST_OFRAK_ASSETS_DIR, "cache"), unpack_verify_test_case.binary_filename
         )
         await resource.run(
             CachedAnalysisAnalyzer, config=CachedAnalysisAnalyzerConfig(filename=CACHE_FILENAME)
@@ -113,12 +114,12 @@ class TestGhidraBasicBlockUnpackAndVerify(BasicBlockUnpackerUnpackAndVerifyPatte
         ofrak_context: OFRAKContext,
         test_id: str,
     ) -> Resource:
-        asset_path = os.path.join(ASSETS_DIR, unpack_verify_test_case.binary_filename)
+        asset_path = os.path.join(PYTEST_OFRAK_ASSETS_DIR, unpack_verify_test_case.binary_filename)
         with open(asset_path, "rb") as f:
             binary_data = f.read()
         resource = await ofrak_context.create_root_resource(test_id, binary_data, tags=(File,))
         CACHE_FILENAME = os.path.join(
-            os.path.join(ASSETS_DIR, "cache"), unpack_verify_test_case.binary_filename
+            os.path.join(PYTEST_OFRAK_ASSETS_DIR, "cache"), unpack_verify_test_case.binary_filename
         )
         await resource.run(
             CachedAnalysisAnalyzer, config=CachedAnalysisAnalyzerConfig(filename=CACHE_FILENAME)
@@ -216,7 +217,7 @@ async def test_cached_program_unpacker(pyghidra_components, ofrak_context: OFRAK
     Test that the CachedProgramUnpacker unpacks a resource into CodeRegions
     """
     root_resource = await ofrak_context.create_root_resource_from_file(
-        os.path.join(os.path.dirname(__file__), "assets/hello.x64.elf")
+        os.path.join(PYTEST_OFRAK_ASSETS_DIR, "assets/hello.x64.elf")
     )
     cached_analysis_view = await root_resource.run(
         CachedAnalysisAnalyzer,
@@ -237,7 +238,7 @@ async def test_cached_program_unpacker(pyghidra_components, ofrak_context: OFRAK
 
 async def test_load_cached_analysis(ofrak_context: OFRAKContext):
     root_resource = await ofrak_context.create_root_resource_from_file(
-        os.path.join(os.path.dirname(__file__), "assets/hello.x64.elf")
+        os.path.join(PYTEST_OFRAK_ASSETS_DIR, "assets/hello.x64.elf")
     )
     await root_resource.run(
         CachedAnalysisAnalyzer,
@@ -253,3 +254,4 @@ async def test_load_cached_analysis(ofrak_context: OFRAKContext):
     assert analysis["metadata"]["decompiled"] == True
     assert analysis["func_4496"]["name"] == "_init"
     assert analysis["func_4496"]["decompilation"] != ""
+
