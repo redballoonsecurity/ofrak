@@ -464,14 +464,18 @@ class GhidraCodeRegionModifier(Modifier, OfrakGhidraMixin):
         else:
             LOGGER.warning(
                 f"Have not implemented PIE-detection for {root_resource}. The address of {code_region} will likely be incorrect."
-        )
+            )
         if fixup_address:
-            ghidra_project_r = await resource.get_only_ancestor(ResourceFilter.with_tags(GhidraProject))
+            ghidra_project_r = await resource.get_only_ancestor(
+                ResourceFilter.with_tags(GhidraProject)
+            )
             ghidra_project_v = await ghidra_project_r.view_as(GhidraProject)
 
             code_region = await resource.view_as(CodeRegion)
             if ghidra_project_v.base_address:
-                new_cr = CodeRegion(code_region.virtual_address + ghidra_project_v.base_address, code_region.size)
+                new_cr = CodeRegion(
+                    code_region.virtual_address + ghidra_project_v.base_address, code_region.size
+                )
                 code_region.resource.add_view(new_cr)
             elif len(ofrak_code_regions) > 0:
                 relative_va = code_region.virtual_address - ofrak_code_regions[0].virtual_address
@@ -484,7 +488,12 @@ class GhidraCodeRegionModifier(Modifier, OfrakGhidraMixin):
                     if backend_relative_va == relative_va and backend_cr.size == code_region.size:
                         resource.add_view(backend_cr)
                         ghidra_project_r.add_view(
-                            GhidraProject(project_url=ghidra_project_v.project_url, ghidra_url=ghidra_project_v.ghidra_url, base_address=backend_cr.virtual_address - code_region.virtual_address)
+                            GhidraProject(
+                                project_url=ghidra_project_v.project_url,
+                                ghidra_url=ghidra_project_v.ghidra_url,
+                                base_address=backend_cr.virtual_address
+                                - code_region.virtual_address,
+                            )
                         )
                         await ghidra_project_r.save()
 

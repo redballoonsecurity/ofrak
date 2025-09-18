@@ -180,16 +180,21 @@ class CachedGhidraCodeRegionModifier(Modifier[None]):
         else:
             LOGGER.warning(
                 f"Have not implemented PIE-detection for {root_resource}. The address of {code_region} will likely be incorrect."
-        )
+            )
         if fixup_address:
             # import here to avoid circular dependencies
             from ofrak_pyghidra.components.pyghidra_components import PyGhidraProject
-            pyghidra_project_r = await resource.get_only_ancestor(ResourceFilter.with_tags(PyGhidraProject))
+
+            pyghidra_project_r = await resource.get_only_ancestor(
+                ResourceFilter.with_tags(PyGhidraProject)
+            )
             pyghidra_project_v = await pyghidra_project_r.view_as(PyGhidraProject)
 
             code_region = await resource.view_as(CodeRegion)
             if pyghidra_project_v.base_address:
-                new_cr = CodeRegion(code_region.virtual_address + pyghidra_project_v.base_address, code_region.size)
+                new_cr = CodeRegion(
+                    code_region.virtual_address + pyghidra_project_v.base_address, code_region.size
+                )
                 code_region.resource.add_view(new_cr)
             elif len(ofrak_code_regions) > 0:
                 relative_va = code_region.virtual_address - ofrak_code_regions[0].virtual_address
@@ -199,11 +204,12 @@ class CachedGhidraCodeRegionModifier(Modifier[None]):
                         backend_cr.virtual_address - backend_code_regions[0].virtual_address
                     )
                     if backend_relative_va == relative_va and backend_cr.size == code_region.size:
-                        code_region.resource.add_view(
-                            backend_cr
-                        )
+                        code_region.resource.add_view(backend_cr)
                         pyghidra_project_r.add_view(
-                            PyGhidraProject(base_address=backend_cr.virtual_address - code_region.virtual_address)
+                            PyGhidraProject(
+                                base_address=backend_cr.virtual_address
+                                - code_region.virtual_address
+                            )
                         )
                         await pyghidra_project_r.save()
             await resource.save()

@@ -167,6 +167,7 @@ async def program_resource(ofrak_context: OFRAKContext):
         os.path.join(os.path.dirname(__file__), "assets/program")
     )
 
+
 async def test_PIE_code_regions(program_resource, ofrak_injector):
     """
     PIE binaries are loaded at address 0x100000 in Ghidra. Verify that unpacking CodeRegions creates them at the right virtual addresses.
@@ -179,7 +180,8 @@ async def test_PIE_code_regions(program_resource, ofrak_injector):
         await cr.resource.unpack()
 
     code_regions = await program_resource.get_descendants_as_view(
-        v_type=CodeRegion, r_filter=ResourceFilter(tags=[CodeRegion]),
+        v_type=CodeRegion,
+        r_filter=ResourceFilter(tags=[CodeRegion]),
         r_sort=ResourceSort(CodeRegion.VirtualAddress),
     )
     assert len(code_regions) == 5
@@ -188,4 +190,3 @@ async def test_PIE_code_regions(program_resource, ofrak_injector):
     assert code_regions[2].virtual_address == 0x101040 and code_regions[2].size == 0x8
     assert code_regions[3].virtual_address == 0x101050 and code_regions[3].size == 0x103
     assert code_regions[4].virtual_address == 0x101154 and code_regions[4].size == 0x9
-
