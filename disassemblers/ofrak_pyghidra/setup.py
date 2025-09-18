@@ -36,21 +36,18 @@ setuptools.setup(
     author_email="ofrak@redballoonsecurity.com",
     description="OFRAK PyGhidra Components",
     url="",  # TODO
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages("src"),
+    package_dir={"": "src"},
     package_data={"ofrak_pyghidra": ["py.typed"]},
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    install_requires=["ofrak>=3.3.0rc0", "ofrak_cached_disassembly>=0.1.0"]
-    + read_requirements("requirements.txt"),
-    extras_require={
-        "test": [
-            "fun-coverage==0.2.0",
-            "pytest",
-            "pytest-cov",
-        ]
-    },
+    install_requires=[
+        "ofrak>=3.3.0rc0",
+        "ofrak_cached_disassembly>=0.1.0",
+        "pyghidra~=2.1.0",
+    ],
     python_requires=">=3.9",
     include_package_data=True,
     license=license,

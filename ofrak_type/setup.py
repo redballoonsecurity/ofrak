@@ -21,22 +21,13 @@ with open("README.md") as f:
 
 setuptools.setup(
     name="ofrak_type",
-    version="2.3.0rc0",
+    version="2.3.0rc1",
     description="Custom classes and types used in OFRAK",
     package_data={
         "ofrak_type": ["py.typed"],
     },
-    extras_require={
-        "test": [
-            "black==23.3.0",
-            "fun-coverage==0.2.0",
-            "hypothesis~=6.39.3",
-            "mypy==0.942",
-            "pytest<8.0",
-            "pytest-cov",
-        ]
-    },
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages("src"),
+    package_dir={"": "src"},
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",
     long_description=long_description,

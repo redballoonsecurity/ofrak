@@ -3,7 +3,7 @@ All notable changes to `ofrak-io` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+## [Unreleased: 1.1.3rc1](https://github.com/redballoonsecurity/ofrak/tree/master)
 
 ### Changed
 - Minor update to OFRAK Community License, add OFRAK Pro License ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
