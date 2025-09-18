@@ -31,21 +31,17 @@ def read_requirements(requirements_path):
 
 setuptools.setup(
     name="ofrak_patch_maker",
-    version="4.1.0rc0",
+    version="4.1.0rc2",
     description="PatchMaker tool for applying source-code patches to binaries",
-    packages=setuptools.find_packages(exclude=("ofrak_patch_maker_test",)),
+    packages=setuptools.find_packages("src"),
+    package_dir={"": "src"},
     package_data={"ofrak_patch_maker": ["py.typed"]},
     install_requires=[
+        "immutabledict>=2.2.0",
         "ofrak_type>=2.2.0rc0,==2.*",
-    ]
-    + read_requirements("requirements.txt"),
-    extras_require={
-        "test": [
-            "fun-coverage==0.2.0",
-            "pytest",
-            "pytest-cov",
-        ]
-    },
+        "python-magic>=0.4.27;platform_system!='Windows'",
+        "python-magic-bin==0.4.14;platform_system=='Windows'",
+    ],
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",
     long_description=long_description,
