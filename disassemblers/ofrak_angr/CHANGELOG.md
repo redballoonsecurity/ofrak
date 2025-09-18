@@ -3,7 +3,7 @@ All notable changes to `ofrak-angr` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased 1.1.0rc0](https://github.com/redballoonsecurity/ofrak/tree/master)
+## [Unreleased 1.1.0rc3](https://github.com/redballoonsecurity/ofrak/tree/master)
 
 ### Changed
 - Update to latest angr==9.2.93, which also necessitates Python >= 3.8.
@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Fixed
 - Add `importlib-resources` dependency as workaround for z3-solver dependency issue. ([#401](https://github.com/redballoonsecurity/ofrak/pull/401))
+- Fixed bug in Angr backend unpacking BasicBlock that don't have an exit address ([#615](https://github.com/redballoonsecurity/ofrak/pull/615))
 
 ## 1.0.1 - 2023-06-26
 ### Fixed

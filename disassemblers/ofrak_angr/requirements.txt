@@ -1,2 +1,0 @@
-angr==9.2.93
-importlib-resources  # A workaround for https://github.com/redballoonsecurity/ofrak/issues/398

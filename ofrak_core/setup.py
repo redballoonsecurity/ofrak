@@ -51,7 +51,7 @@ with open("README.md") as f:
 
 entropy_so = CTypesExtension(
     "ofrak.core.entropy.entropy_c",
-    sources=["ofrak/core/entropy/entropy.c"],
+    sources=["src/ofrak/core/entropy/entropy.c"],
     libraries=["m"] if sys.platform != "win32" else None,  # math library
     optional=True,  # If this fails the build, OFRAK will fall back to Python implementation
     extra_compile_args=["-O3"] if sys.platform != "win32" else ["/O2"],
@@ -69,34 +69,43 @@ def read_requirements(requirements_path):
 
 setuptools.setup(
     name="ofrak",
-    version="3.3.0rc13",
+    version="3.3.0rc14",
     description="A binary analysis and modification platform",
-    packages=setuptools.find_packages(exclude=["test_ofrak", "test_ofrak.*"]),
+    packages=setuptools.find_packages("src"),
+    package_dir={"": "src"},
     package_data={
         "ofrak": ["py.typed"],
     },
     install_requires=[
+        "aiohttp>=3.12.14",
+        "aiohttp-cors~=0.7.0",
+        "beartype~=0.20.0",
+        "bincopy>=20.0.0",
+        "black>=23.3.0",
+        "cryptography>=44.0.3",
+        "fdt>=0.3.3",
+        "GitPython>=3.1.41",
+        "importlib-metadata>=4.13",
+        "intervaltree>=3.1.0",
+        "keystone-engine>=0.9.2",
+        "jefferson>=0.4.5;python_version>='3.8'",
+        "lief>=0.16.1",
         "ofrak_io>=1.0,==1.*",
         "ofrak_type>=2.2.0rc0,==2.*",
         "ofrak_patch_maker>=4.1.0rc0,==4.*",
-    ]
-    + read_requirements("requirements.txt"),
-    extras_require={
-        "docs": read_requirements("requirements-docs.txt"),
-        "test": [
-            # Running the full set of tests requires these version of angr and capstone.
-            #  If building a Docker image, it should already be installed on the system.
-            #  If you are running the tests in another environment, you will need to make sure
-            #  that this version is installed from GitHub, since it depends on ofrak==3.3.0rc0
-            #  and neither of these are yet released on PyPI.
-            #  If these are not installed, some of the tests will be skipped
-            # "ofrak_capstone>=1.1.0rc0",
-            # "ofrak_angr~=1.1.0rc0",
-            # "importlib-resources",  # Needed because of https://github.com/redballoonsecurity/ofrak/issues/398
-        ]
-        + read_requirements("requirements-test.txt"),
-        "non-pypi": read_requirements("requirements-non-pypi.txt"),
-    },
+        "orjson>=3.10.16",
+        "pefile>=2023.2.7",
+        "pycdlib>=1.12.0",
+        "python-magic>=0.4.27;platform_system!='Windows'",
+        "python-magic-bin>=0.4.14;platform_system=='Windows'",
+        "reedsolo>=1.7.0",
+        "sortedcontainers>=2.2.2",
+        "synthol~=0.1.1",
+        "tempfile312~=1.0.1",
+        "typeguard~=2.13.3",
+        "ubi-reader>=0.8.12",
+        "xattr>=0.10.1;platform_system!='Windows'",
+    ],
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",
     long_description=long_description,

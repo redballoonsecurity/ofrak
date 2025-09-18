@@ -36,20 +36,14 @@ setuptools.setup(
     author_email="ofrak@redballoonsecurity.com",
     description="OFRAK Disassembler Components for Cached Results",
     url="",  # TODO
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages("src"),
+    package_dir={"": "src"},
     package_data={"ofrak_cached_disassembly": ["py.typed"]},
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    install_requires=read_requirements("requirements.txt"),
-    extras_require={
-        "test": [
-            "fun-coverage==0.2.0",
-            "pytest",
-            "pytest-cov",
-        ]
-    },
+    install_requires=["ofrak>=3.3.0rc0"],
     python_requires=">=3.9",
     include_package_data=True,
     license=license,

@@ -31,22 +31,16 @@ def read_requirements(requirements_path):
 
 setuptools.setup(
     name="ofrak_angr",
-    version="1.1.0rc0",
+    version="1.1.0rc3",
     description="OFRAK angr Components",
-    packages=setuptools.find_packages(exclude=["ofrak_angr_test", "ofrak_angr_test.*"]),
+    packages=setuptools.find_packages("src"),
+    package_dir={"": "src"},
     package_data={"ofrak_angr": ["py.typed"]},
     install_requires=[
+        "angr>=9.2.93",
         "ofrak>=3.3.0rc10",
-    ]
-    + read_requirements("requirements.txt"),
+    ],
     extras_require={
-        "test": [
-            "fun-coverage==0.2.0",
-            "pytest",
-            "pytest-asyncio==0.19.0",
-            "pytest-cov",
-            "requests",
-        ],
         "graphical": ["pygraphviz"],
     },
     author="Red Balloon Security",

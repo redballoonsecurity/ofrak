@@ -2,7 +2,7 @@ ARG TARGETARCH
 
 RUN mkdir -p /opt/rbs/toolchain
 
-COPY ${PACKAGE_PATH}/ofrak_patch_maker/config/docker/${TARGETARCH}_platform_toolchain.conf /etc/ofrak/toolchain.conf
+COPY ${PACKAGE_PATH}/src/ofrak_patch_maker/config/docker/${TARGETARCH}_platform_toolchain.conf /etc/ofrak/toolchain.conf
 
 # LLVM
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
@@ -104,13 +104,12 @@ RUN cd /tmp && \
     cd /tmp && rm -rf crosstool-ng
 
 #M68k VBCC
-RUN cd /tmp && \
-    wget http://phoenix.owl.de/tags/vbcc0_9h.tar.gz --show-progress --progress=bar:force:noscroll && \
-    wget http://phoenix.owl.de/tags/vasm1_9.tar.gz --show-progress --progress=bar:force:noscroll && \
+COPY ${PACKAGE_PATH}/vendor/ /tmp/vendor
+RUN cd /tmp/vendor && \
     mkdir -p /opt/rbs/toolchain/vbcc_0_9/bin/ && \
     mkdir -p /opt/rbs/toolchain/vbcc_0_9/config/ && \
     tar -xvf vbcc0_9h.tar.gz && \
-    cd /tmp/vbcc && printf "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" | TARGET=m68k make all && \
+    cd ./vbcc && printf "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" | TARGET=m68k make all && \
     cp ./bin/* /opt/rbs/toolchain/vbcc_0_9/bin/ && \
     cd .. && \
     tar -xvf vasm1_9.tar.gz && \
@@ -119,7 +118,8 @@ RUN cd /tmp && \
     cp ./vasmm68k_mot /opt/rbs/toolchain/vbcc_0_9/bin/ && \
     cp ./vobjdump /opt/rbs/toolchain/vbcc_0_9/bin/ && \
     cd /tmp && \
-    rm -rf vasm* vbcc*
+    rm -rf vasm* vbcc* && \
+    rm -rf /tmp/vendor
 
 #AARCH64 GNU 10 Linux
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
