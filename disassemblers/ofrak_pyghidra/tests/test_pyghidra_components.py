@@ -152,9 +152,7 @@ async def test_decompilation(ofrak_context: OFRAKContext):
 
 
 async def test_pyghidra_standalone_unpack_decompiled():
-    program_file = (
-        "../../ofrak_cached_disassembly/ofrak_cached_disassembly_test/assets/hello.x64.elf"
-    )
+    program_file = os.path.join(ASSETS_DIR, "hello.x64.elf")
     decompiled = True
     unpack_results = unpack(program_file, decompiled, language=None)
     assert "metadata" in unpack_results
@@ -170,9 +168,7 @@ async def test_pyghidra_standalone_unpack_decompiled():
 
 
 async def test_pyghidra_standalone_decompile_all_functions():
-    program_file = (
-        "../../ofrak_cached_disassembly/ofrak_cached_disassembly_test/assets/hello.x64.elf"
-    )
+    program_file = os.path.join(ASSETS_DIR, "hello.x64.elf")
     decompilation_results = decompile_all_functions(program_file, language=None)
     main_cb_key = f"func_{0x12c7}"
     assert main_cb_key in decompilation_results
