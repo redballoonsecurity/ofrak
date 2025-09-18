@@ -169,12 +169,12 @@ async def test_instruction_mode(test_case: Tuple[Resource, InstructionSetMode]):
 
 async def test_cached_decompilation(ofrak_context: OFRAKContext):
     root_resource = await ofrak_context.create_root_resource_from_file(
-        os.path.join(os.path.dirname(__file__), "assets/hello.x64.elf")
+        os.path.join(ASSETS_DIR, "hello.x64.elf")
     )
     await root_resource.run(
         CachedAnalysisAnalyzer,
         config=CachedAnalysisAnalyzerConfig(
-            filename=os.path.join(os.path.dirname(__file__), "assets/hello.x64.elf.json")
+            filename=os.path.join(ASSETS_DIR, "hello.x64.elf.json")
         ),
     )
     await root_resource.unpack_recursively(
@@ -217,12 +217,12 @@ async def test_cached_program_unpacker(pyghidra_components, ofrak_context: OFRAK
     Test that the CachedProgramUnpacker unpacks a resource into CodeRegions
     """
     root_resource = await ofrak_context.create_root_resource_from_file(
-        os.path.join(PYTEST_OFRAK_ASSETS_DIR, "assets/hello.x64.elf")
+        os.path.join(PYTEST_OFRAK_ASSETS_DIR, "hello.x64.elf")
     )
     cached_analysis_view = await root_resource.run(
         CachedAnalysisAnalyzer,
         config=CachedAnalysisAnalyzerConfig(
-            filename=os.path.join(os.path.dirname(__file__), "assets/hello.x64.elf.json")
+            filename=os.path.join(ASSETS_DIR, "hello.x64.elf.json")
         ),
     )
 
@@ -238,12 +238,12 @@ async def test_cached_program_unpacker(pyghidra_components, ofrak_context: OFRAK
 
 async def test_load_cached_analysis(ofrak_context: OFRAKContext):
     root_resource = await ofrak_context.create_root_resource_from_file(
-        os.path.join(PYTEST_OFRAK_ASSETS_DIR, "assets/hello.x64.elf")
+        os.path.join(PYTEST_OFRAK_ASSETS_DIR, "hello.x64.elf")
     )
     await root_resource.run(
         CachedAnalysisAnalyzer,
         config=CachedAnalysisAnalyzerConfig(
-            filename=os.path.join(os.path.dirname(__file__), "assets/hello.x64.elf.json")
+            filename=os.path.join(ASSETS_DIR, "hello.x64.elf.json")
         ),
     )
 
