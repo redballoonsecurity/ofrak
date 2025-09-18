@@ -385,9 +385,7 @@ def decompile_all_functions(program_file, language):
     with pyghidra.open_program(program_file, language=language) as flat_api:
         from ghidra.app.decompiler import DecompInterface
         from ghidra.util.task import TaskMonitor
-        from ghidra.app.decompiler.component import DecompilerUtils
 
-        decomp_utils = DecompilerUtils()
         decomp = DecompInterface()
         decomp.openProgram(flat_api.getCurrentProgram())
         program = flat_api.getCurrentProgram()
