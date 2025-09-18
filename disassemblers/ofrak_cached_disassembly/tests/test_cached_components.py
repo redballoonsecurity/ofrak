@@ -254,4 +254,3 @@ async def test_load_cached_analysis(ofrak_context: OFRAKContext):
     assert analysis["metadata"]["decompiled"] == True
     assert analysis["func_4496"]["name"] == "_init"
     assert analysis["func_4496"]["decompilation"] != ""
-
