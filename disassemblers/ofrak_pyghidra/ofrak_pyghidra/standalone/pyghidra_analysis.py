@@ -380,26 +380,25 @@ def _decompile(func, decomp_interface, task_monitor):
     decomp = res.getDecompiledFunction().getC()
     return decomp
 
-def decompile_all_functions(program_file, language):
-     with pyghidra.open_program(program_file, language=None) as flat_api:
-         from ghidra.app.decompiler import DecompInterface
-         from ghidra.util.task import TaskMonitor
-         from ghidra.program.model.pcode.PcodeOp import CALL, STORE
-         from ghidra.app.decompiler.component import DecompilerUtils
 
-         decomp_utils = DecompilerUtils()
-         decomp = DecompInterface()
-         decomp.openProgram(flat_api.getCurrentProgram())
-         program = flat_api.getCurrentProgram()
-         function_manager = program.getFunctionManager()
-         func_to_decomp = {}
-         for func in function_manager.getFunctions(True):
-            cb_key = f'func_{func.getEntryPoint().getOffset()}'
-            decomp_results = decomp.decompileFunction(
-                func, 0, TaskMonitor.DUMMY
-            )
+def decompile_all_functions(program_file, language):
+    with pyghidra.open_program(program_file, language=language) as flat_api:
+        from ghidra.app.decompiler import DecompInterface
+        from ghidra.util.task import TaskMonitor
+        from ghidra.app.decompiler.component import DecompilerUtils
+
+        decomp_utils = DecompilerUtils()
+        decomp = DecompInterface()
+        decomp.openProgram(flat_api.getCurrentProgram())
+        program = flat_api.getCurrentProgram()
+        function_manager = program.getFunctionManager()
+        func_to_decomp = {}
+        for func in function_manager.getFunctions(True):
+            cb_key = f"func_{func.getEntryPoint().getOffset()}"
+            decomp_results = decomp.decompileFunction(func, 0, TaskMonitor.DUMMY)
             func_to_decomp[cb_key] = decomp_results.getDecompiledFunction().getC()
-         return func_to_decomp
+        return func_to_decomp
+
 
 def _get_last_address(func, flat_api):
     end_addr = None
