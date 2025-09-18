@@ -20,7 +20,7 @@ from ofrak.core.decompilation import (
     ResourceView,
 )
 
-from ofrak.core.elf.model import Elf
+from ofrak.core.elf.model import Elf, ElfHeader, ElfType
 from ofrak.core.ihex import Ihex
 from ofrak.core.pe.model import Pe
 from ofrak.service.data_service_i import DataServiceInterface
@@ -169,19 +169,44 @@ class CachedGhidraCodeRegionModifier(Modifier[None]):
         ofrak_code_regions = sorted(ofrak_code_regions, key=lambda cr: cr.virtual_address)
         backend_code_regions = sorted(backend_code_regions, key=lambda cr: cr.virtual_address)
 
-        if len(ofrak_code_regions) > 0:
-            code_region = await resource.view_as(CodeRegion)
-            relative_va = code_region.virtual_address - ofrak_code_regions[0].virtual_address
+        # We only want to adjust the address of a CodeRegion if the original binary is position-independent.
+        # Implement PIE-detection for other file types as necessary.
+        if program_r.has_tag(Elf):
+            elf_header = await program_r.get_only_descendant_as_view(
+                ElfHeader, r_filter=ResourceFilter(tags=[ElfHeader])
+            )
+            if elf_header is not None and elf_header.e_type == ElfType.ET_DYN.value:
+                fixup_address = True
+        else:
+            LOGGER.warning(
+                f"Have not implemented PIE-detection for {root_resource}. The address of {code_region} will likely be incorrect."
+        )
+        if fixup_address:
+            # import here to avoid circular dependencies
+            from ofrak_pyghidra.components.pyghidra_components import PyGhidraProject
+            pyghidra_project_r = await resource.get_only_ancestor(ResourceFilter.with_tags(PyGhidraProject))
+            pyghidra_project_v = await pyghidra_project_r.view_as(PyGhidraProject)
 
-            for backend_cr in backend_code_regions:
-                backend_relative_va = (
-                    backend_cr.virtual_address - backend_code_regions[0].virtual_address
-                )
-                if backend_relative_va == relative_va and backend_cr.size == code_region.size:
-                    code_region.resource.add_view(
-                        backend_cr
-                    )  # TODO: https://github.com/redballoonsecurity/ofrak/issues/537
-        await resource.save()
+            code_region = await resource.view_as(CodeRegion)
+            if pyghidra_project_v.base_address:
+                new_cr = CodeRegion(code_region.virtual_address + pyghidra_project_v.base_address, code_region.size)
+                code_region.resource.add_view(new_cr)
+            elif len(ofrak_code_regions) > 0:
+                relative_va = code_region.virtual_address - ofrak_code_regions[0].virtual_address
+
+                for backend_cr in backend_code_regions:
+                    backend_relative_va = (
+                        backend_cr.virtual_address - backend_code_regions[0].virtual_address
+                    )
+                    if backend_relative_va == relative_va and backend_cr.size == code_region.size:
+                        code_region.resource.add_view(
+                            backend_cr
+                        )
+                        pyghidra_project_r.add_view(
+                            PyGhidraProject(base_address=backend_cr.virtual_address - code_region.virtual_address)
+                        )
+                        await pyghidra_project_r.save()
+            await resource.save()
 
 
 class CachedCodeRegionUnpacker(CodeRegionUnpacker):

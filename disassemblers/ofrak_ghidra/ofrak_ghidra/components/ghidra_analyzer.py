@@ -41,6 +41,7 @@ from ofrak_ghidra.ghidra_model import (
     GhidraAutoLoadProject,
 )
 from ofrak_type import ArchInfo, InstructionSet, Endianness
+from ofrak.core.elf.model import Elf, ElfHeader, ElfType
 
 LOGGER = logging.getLogger(__name__)
 
@@ -451,23 +452,48 @@ class GhidraCodeRegionModifier(Modifier, OfrakGhidraMixin):
         ofrak_code_regions = sorted(ofrak_code_regions, key=lambda cr: cr.virtual_address)
         backend_code_regions = sorted(backend_code_regions, key=lambda cr: cr.virtual_address)
 
-        if len(ofrak_code_regions) > 0:
-            relative_va = code_region.virtual_address - ofrak_code_regions[0].virtual_address
-
-            for backend_cr in backend_code_regions:
-                backend_relative_va = (
-                    backend_cr.virtual_address - backend_code_regions[0].virtual_address
-                )
-
-                if backend_relative_va == relative_va and backend_cr.size == code_region.size:
-                    resource.add_view(backend_cr)
-                    return
-
-            LOGGER.debug(
-                f"No code region with relative offset {relative_va} and size {code_region.size} found in Ghidra"
+        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(Program))
+        # We only want to adjust the address of a CodeRegion if the original binary is position-independent.
+        # Implement PIE-detection for other file types as necessary.
+        if program_r.has_tag(Elf):
+            elf_header = await program_r.get_only_descendant_as_view(
+                ElfHeader, r_filter=ResourceFilter(tags=[ElfHeader])
             )
+            if elf_header is not None and elf_header.e_type == ElfType.ET_DYN.value:
+                fixup_address = True
+        else:
+            LOGGER.warning(
+                f"Have not implemented PIE-detection for {root_resource}. The address of {code_region} will likely be incorrect."
+        )
+        if fixup_address:
+            ghidra_project_r = await resource.get_only_ancestor(ResourceFilter.with_tags(GhidraProject))
+            ghidra_project_v = await ghidra_project_r.view_as(GhidraProject)
+
+            code_region = await resource.view_as(CodeRegion)
+            if ghidra_project_v.base_address:
+                new_cr = CodeRegion(code_region.virtual_address + ghidra_project_v.base_address, code_region.size)
+                code_region.resource.add_view(new_cr)
+            elif len(ofrak_code_regions) > 0:
+                relative_va = code_region.virtual_address - ofrak_code_regions[0].virtual_address
+
+                for backend_cr in backend_code_regions:
+                    backend_relative_va = (
+                        backend_cr.virtual_address - backend_code_regions[0].virtual_address
+                    )
+
+                    if backend_relative_va == relative_va and backend_cr.size == code_region.size:
+                        resource.add_view(backend_cr)
+                        ghidra_project_r.add_view(
+                            GhidraProject(project_url=ghidra_project_v.project_url, ghidra_url=ghidra_project_v.ghidra_url, base_address=backend_cr.virtual_address - code_region.virtual_address)
+                        )
+                        await ghidra_project_r.save()
+
+                LOGGER.debug(
+                    f"No code region with relative offset {relative_va} and size {code_region.size} found in Ghidra"
+                )
         else:
             LOGGER.debug("No OFRAK code regions to match in Ghidra")
+        await resource.save()
 
 
 class GhidraCustomLoadAnalyzer(GhidraProjectAnalyzer):
