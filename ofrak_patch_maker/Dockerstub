@@ -105,8 +105,8 @@ RUN cd /tmp && \
 
 #M68k VBCC
 RUN cd /tmp && \
-    wget http://phoenix.owl.de/tags/vbcc0_9h.tar.gz --show-progress --progress=bar:force:noscroll && \
-    wget http://phoenix.owl.de/tags/vasm1_9.tar.gz --show-progress --progress=bar:force:noscroll && \
+    wget https://web.archive.org/web/20241128145934if_/http://phoenix.owl.de/tags/vbcc0_9h.tar.gz --show-progress --progress=bar:force:noscroll && \
+    wget https://web.archive.org/web/20250216104538/http://phoenix.owl.de/tags/vasm1_9.tar.gz --show-progress --progress=bar:force:noscroll && \
     mkdir -p /opt/rbs/toolchain/vbcc_0_9/bin/ && \
     mkdir -p /opt/rbs/toolchain/vbcc_0_9/config/ && \
     tar -xvf vbcc0_9h.tar.gz && \
