@@ -21,7 +21,7 @@ import ofrak_pyghidra
 ASSETS_DIR = os.path.abspath(
     os.path.join(
         os.path.dirname(__file__),
-        "../../ofrak_cached_disassembly/ofrak_cached_disassembly_test/assets",
+        "../../ofrak_cached_disassembly/tests/assets",
     )
 )
 
@@ -122,10 +122,7 @@ async def test_instruction_mode(test_case: Tuple[Resource, InstructionSetMode]):
 
 async def test_decompilation(ofrak_context: OFRAKContext):
     root_resource = await ofrak_context.create_root_resource_from_file(
-        os.path.join(
-            os.path.dirname(__file__),
-            "../../ofrak_cached_disassembly/ofrak_cached_disassembly_test/assets/hello.x64.elf",
-        )
+        os.path.join(ASSETS_DIR, "hello.x64.elf")
     )
     await root_resource.unpack_recursively(
         do_not_unpack=[
