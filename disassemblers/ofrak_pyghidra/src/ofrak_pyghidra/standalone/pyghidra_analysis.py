@@ -45,6 +45,7 @@ def unpack(program_file, decompiled, language=None, base_address=None):
         main_dictionary["metadata"] = {}
         main_dictionary["metadata"]["backend"] = "ghidra"
         main_dictionary["metadata"]["decompiled"] = decompiled
+        main_dictionary["metadata"]["path"] = program_file
         if base_address is not None:
             main_dictionary["metadata"]["base_address"] = base_address
         with open(program_file, "rb") as fh:
@@ -378,6 +379,23 @@ def _decompile(func, decomp_interface, task_monitor):
         raise RuntimeError(f"Unable to decompile {func.getName()}")
     decomp = res.getDecompiledFunction().getC()
     return decomp
+
+
+def decompile_all_functions(program_file, language):
+    with pyghidra.open_program(program_file, language=language) as flat_api:
+        from ghidra.app.decompiler import DecompInterface
+        from ghidra.util.task import TaskMonitor
+
+        decomp = DecompInterface()
+        decomp.openProgram(flat_api.getCurrentProgram())
+        program = flat_api.getCurrentProgram()
+        function_manager = program.getFunctionManager()
+        func_to_decomp = {}
+        for func in function_manager.getFunctions(True):
+            cb_key = f"func_{func.getEntryPoint().getOffset()}"
+            decomp_results = decomp.decompileFunction(func, 0, TaskMonitor.DUMMY)
+            func_to_decomp[cb_key] = decomp_results.getDecompiledFunction().getC()
+        return func_to_decomp
 
 
 def _get_last_address(func, flat_api):

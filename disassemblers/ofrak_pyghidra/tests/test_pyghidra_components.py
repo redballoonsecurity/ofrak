@@ -17,6 +17,7 @@ from pytest_ofrak.patterns.basic_block_unpacker import BasicBlockUnpackerUnpackA
 from ofrak_pyghidra.components.pyghidra_components import _arch_info_to_processor_id
 from ofrak_type import ArchInfo, Endianness, InstructionSet
 import ofrak_pyghidra
+from ofrak_pyghidra.standalone.pyghidra_analysis import unpack, decompile_all_functions
 
 ASSETS_DIR = os.path.abspath(
     os.path.join(
@@ -148,6 +149,31 @@ async def test_decompilation(ofrak_context: OFRAKContext):
     assert "" not in decomps
     assert "main" in " ".join(decomps)
     assert "print" in " ".join(decomps)
+
+
+async def test_pyghidra_standalone_unpack_decompiled():
+    program_file = os.path.join(ASSETS_DIR, "hello.x64.elf")
+    decompiled = True
+    unpack_results = unpack(program_file, decompiled, language=None)
+    assert "metadata" in unpack_results
+    assert "path" in unpack_results["metadata"]
+    assert unpack_results["metadata"]["path"] == program_file
+    main_cb_key = f"func_{0x12c7}"
+    assert main_cb_key in unpack_results, list(
+        filter(lambda k: k.startswith("func_"), unpack_results.keys())
+    )
+    assert "decompilation" in unpack_results[main_cb_key]
+    assert "main" in unpack_results[main_cb_key]["decompilation"]
+    assert "printf" in unpack_results[main_cb_key]["decompilation"]
+
+
+async def test_pyghidra_standalone_decompile_all_functions():
+    program_file = os.path.join(ASSETS_DIR, "hello.x64.elf")
+    decompilation_results = decompile_all_functions(program_file, language=None)
+    main_cb_key = f"func_{0x12c7}"
+    assert main_cb_key in decompilation_results
+    assert "main" in decompilation_results[main_cb_key]
+    assert "printf" in decompilation_results[main_cb_key]
 
 
 @pytest.mark.parametrize("arch, expected_processor_id", ARCH_INFO_TEST_CASES)
