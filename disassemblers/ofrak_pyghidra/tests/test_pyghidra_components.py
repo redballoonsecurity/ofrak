@@ -157,10 +157,7 @@ async def test_decompilation(ofrak_context: OFRAKContext):
 
 async def test_pyghidra_auto_analysis_with_decomp(ofrak_context: OFRAKContext):
     root_resource = await ofrak_context.create_root_resource_from_file(
-        os.path.join(
-            os.path.dirname(__file__),
-            "../../ofrak_cached_disassembly/ofrak_cached_disassembly_test/assets/hello.x64.elf",
-        )
+        os.path.join(ASSETS_DIR, "hello.x64.elf")
     )
     await root_resource.identify()
     await root_resource.run(
@@ -191,10 +188,7 @@ async def test_pyghidra_auto_analysis_with_decomp(ofrak_context: OFRAKContext):
 def test_unpack_recursively_benchmark(benchmark, ofrak_context):
     async def test_unpack_recursively(ofrak_context):
         root_resource = await ofrak_context.create_root_resource_from_file(
-            os.path.join(
-                os.path.dirname(__file__),
-                "../../ofrak_cached_disassembly/ofrak_cached_disassembly_test/assets/hello.x64.elf",
-            )
+            os.path.join(ASSETS_DIR, "hello.x64.elf")
         )
         await root_resource.unpack_recursively(
             do_not_unpack=[
