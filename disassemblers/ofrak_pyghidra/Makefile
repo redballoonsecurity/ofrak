@@ -8,5 +8,7 @@ develop:
 	$(PIP) install -e .[test]
 
 test:
-	$(PYTHON) -m pytest --cov=ofrak_pyghidra --cov-report=term-missing ofrak_pyghidra_test
+	$(PYTHON) -m pytest --benchmark-skip --cov=ofrak_pyghidra --cov-report=term-missing ofrak_pyghidra_test
 	fun-coverage --cov-fail-under=100
+benchmark:
+	$(PYTHON) -m pytest --benchmark-only --benchmark-json benchmark.json ofrak_pyghidra_test
