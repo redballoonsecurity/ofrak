@@ -10,5 +10,7 @@ develop:
 test:
 	$(PYTHON) -m pytest --benchmark-skip --cov=ofrak_pyghidra --cov-report=term-missing tests
 	fun-coverage --cov-fail-under=100
-benchmark:
-	$(PYTHON) -m pytest --benchmark-only --benchmark-json benchmark.json tests
+benchmark: .benchmarks
+	$(PYTHON) -m pytest --benchmark-only --benchmark-json ./.benchmarks/benchmark.json tests
+.benchmarks:
+	mkdir -p .benchmarks
