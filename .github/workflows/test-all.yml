@@ -105,7 +105,7 @@ jobs:
             -c "python -m ofrak_ghidra.server start \
                 && ofrak license --community --i-agree \
                 && make test \
-                && make benchmark"
+                && make -C /ofrak_pyghidra benchmark"
 
   ofrak-angr:
     name: Test OFRAK angr and capstone components
