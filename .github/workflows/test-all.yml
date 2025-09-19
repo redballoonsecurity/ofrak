@@ -107,7 +107,7 @@ jobs:
                 && ofrak license --community --i-agree \
                 && make test \
                 && make -C /ofrak_pyghidra benchmark"
-          cat /ofrak_pyghidra_benchmarks > $GITHUB_STEP_SUMMARY
+          cat /ofrak_pyghidra_benchmarks/benchmark.json > $GITHUB_STEP_SUMMARY
 
   ofrak-angr:
     name: Test OFRAK angr and capstone components
