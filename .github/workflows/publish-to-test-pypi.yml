@@ -38,6 +38,10 @@ on:
         type: boolean
         default: false
 
+defaults:
+  run:
+    shell: bash -euxo pipefail {0}
+
 permissions:
   contents: read
   id-token: write  # Required for trusted publishing to PyPI
@@ -72,34 +76,32 @@ jobs:
           
           echo "Organizing selected packages for upload..."
           
-          # Copy selected source distributions
-          if [ "${{ inputs.publish_ofrak_type }}" == "true" ]; then
+          if "${{ inputs.publish_ofrak_type }}"; then
             echo "Including ofrak-type..."
             find artifacts/ -name "ofrak_type-*.tar.gz" -exec cp {} dist/ \;
           fi
           
-          if [ "${{ inputs.publish_ofrak_io }}" == "true" ]; then
+          if "${{ inputs.publish_ofrak_io }}"; then
             echo "Including ofrak-io..."
             find artifacts/ -name "ofrak_io-*.tar.gz" -exec cp {} dist/ \;
           fi
           
-          if [ "${{ inputs.publish_ofrak_patch_maker }}" == "true" ]; then
+          if "${{ inputs.publish_ofrak_patch_maker }}"; then
             echo "Including ofrak-patch-maker..."
             find artifacts/ -name "ofrak_patch_maker-*.tar.gz" -exec cp {} dist/ \;
           fi
           
-          if [ "${{ inputs.publish_ofrak_angr }}" == "true" ]; then
+          if "${{ inputs.publish_ofrak_angr }}"; then
             echo "Including ofrak-angr..."
             find artifacts/ -name "ofrak_angr-*.tar.gz" -exec cp {} dist/ \;
           fi
           
-          if [ "${{ inputs.publish_ofrak_capstone }}" == "true" ]; then
+          if "${{ inputs.publish_ofrak_capstone }}"; then
             echo "Including ofrak-capstone..."
             find artifacts/ -name "ofrak_capstone-*.tar.gz" -exec cp {} dist/ \;
           fi
           
-          # Copy ofrak core wheels if selected
-          if [ "${{ inputs.publish_ofrak_core }}" == "true" ]; then
+          if "${{ inputs.publish_ofrak_core }}"; then
             echo "Including ofrak core wheels..."
             find artifacts/ -name "ofrak-*.whl" -exec cp {} dist/ \;
           fi
