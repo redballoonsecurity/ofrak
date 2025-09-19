@@ -17,6 +17,7 @@ class GhidraProject(ResourceView):
 
     project_url: str
     ghidra_url: str
+    base_address: int = None
 
 
 @dataclass
