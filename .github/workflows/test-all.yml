@@ -104,7 +104,8 @@ jobs:
             redballoonsecurity/ofrak/ghidra:latest \
             -c "python -m ofrak_ghidra.server start \
                 && ofrak license --community --i-agree \
-                && make test"
+                && make test \
+                && make benchmark"
 
   ofrak-angr:
     name: Test OFRAK angr and capstone components
