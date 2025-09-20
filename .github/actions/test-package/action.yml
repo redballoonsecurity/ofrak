@@ -59,7 +59,7 @@ runs:
         path: dist-ofrak-patch-maker/
 
     - name: Download ofrak wheels
-      if: contains(inputs.packages, 'ofrak')
+      if: contains(format(' {0} ', inputs.packages), ' ofrak ')
       uses: actions/download-artifact@v4
       with:
         name: ofrak-wheels-${{ inputs.os }}-py${{ inputs.python-version }}
