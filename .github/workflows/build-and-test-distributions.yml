@@ -38,12 +38,15 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          lfs: ${{ matrix.lfs || false }}
+          lfs: false
+      - name: Setup LFS cache
+        if: ${{ matrix.lfs || false }}
+        uses: ./.github/actions/lfs-cache
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.9'
 
       - name: Install build tools
         run: |
@@ -81,7 +84,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          lfs: true
+          lfs: false
+      - name: Setup LFS cache
+        uses: ./.github/actions/lfs-cache
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
@@ -185,7 +190,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          lfs: ${{ matrix.test_config.lfs }}
+          lfs: false
+      - name: Setup LFS cache
+        if: ${{ matrix.test_config.lfs }}
+        uses: ./.github/actions/lfs-cache
 
       - name: Download ofrak-type-sdist
         if: contains(matrix.test_config.packages, 'ofrak-type')
