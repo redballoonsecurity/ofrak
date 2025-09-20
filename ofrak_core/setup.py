@@ -1,6 +1,5 @@
 import sys
 import setuptools
-import pkg_resources
 from setuptools.command.egg_info import egg_info
 from setuptools.command.build_ext import build_ext
 
@@ -56,15 +55,6 @@ entropy_so = CTypesExtension(
     optional=True,  # If this fails the build, OFRAK will fall back to Python implementation
     extra_compile_args=["-O3"] if sys.platform != "win32" else ["/O2"],
 )
-
-
-# Should be the same as in build_image.py
-def read_requirements(requirements_path):
-    with open(requirements_path) as requirements_handle:
-        return [
-            str(requirement)
-            for requirement in pkg_resources.parse_requirements(requirements_handle)
-        ]
 
 
 setuptools.setup(

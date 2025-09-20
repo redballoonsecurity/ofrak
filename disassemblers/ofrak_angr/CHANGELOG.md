@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [Unreleased 1.1.0rc3](https://github.com/redballoonsecurity/ofrak/tree/master)
 
 ### Changed
-- Update to latest angr==9.2.93, which also necessitates Python >= 3.8.
+- Update to latest "angr>=9.2.93,<=9.2.174" which also necessitates Python >= 3.8.
 - Add decompilation using angr backend ([#453](https://github.com/redballoonsecurity/ofrak/pull/453), [#600](https://github.com/redballoonsecurity/ofrak/pull/600))
 - Minor update to OFRAK Community License, add OFRAK Pro License ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
 
