@@ -1,0 +1,56 @@
+name: Test Package Matrix
+
+on:
+  workflow_call:
+    inputs:
+      package-under-test:
+        description: 'Name of the package being tested'
+        required: true
+        type: string
+      source-dir:
+        description: 'Source directory containing the package'
+        required: true
+        type: string
+      packages:
+        description: 'Space-separated list of packages to install (in dependency order)'
+        required: true
+        type: string
+      lfs:
+        description: 'Whether this package test requires LFS'
+        required: false
+        type: boolean
+        default: false
+      test-target:
+        description: 'Makefile target to run tests'
+        required: false
+        type: string
+        default: 'test'
+      excludes:
+        description: 'JSON array of matrix combinations to exclude'
+        required: false
+        type: string
+        default: '[]'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test ${{ inputs.package-under-test }} on ${{ matrix.os }} with Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        exclude: ${{ fromJSON(inputs.excludes) }}
+    steps:
+      - uses: ./.github/actions/test-package
+        with:
+          package-under-test: ${{ inputs.package-under-test }}
+          source-dir: ${{ inputs.source-dir }}
+          packages: ${{ inputs.packages }}
+          lfs: ${{ inputs.lfs }}
+          test-target: ${{ inputs.test-target }}
+          python-version: ${{ matrix.python-version }}
+          os: ${{ matrix.os }}

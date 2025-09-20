@@ -1,0 +1,135 @@
+name: 'Test Package'
+description: 'Test an OFRAK package with its dependencies'
+inputs:
+  package-under-test:
+    description: 'Name of the package being tested'
+    required: true
+  source-dir:
+    description: 'Source directory containing the package'
+    required: true
+  packages:
+    description: 'Space-separated list of packages to install (in dependency order)'
+    required: true
+  lfs:
+    description: 'Whether this package test requires LFS'
+    required: false
+    default: 'false'
+  test-target:
+    description: 'Makefile target to run tests'
+    required: false
+    default: 'test'
+  python-version:
+    description: 'Python version to use for testing'
+    required: true
+  os:
+    description: 'Operating system (for wheel selection)'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        lfs: false
+
+    - name: Setup LFS cache
+      if: ${{ inputs.lfs == 'true' }}
+      uses: ./.github/actions/lfs-cache
+
+    - name: Download ofrak-type-sdist
+      if: contains(inputs.packages, 'ofrak-type')
+      uses: actions/download-artifact@v4
+      with:
+        name: ofrak-type-sdist
+        path: dist-ofrak-type/
+
+    - name: Download ofrak-io-sdist
+      if: contains(inputs.packages, 'ofrak-io')
+      uses: actions/download-artifact@v4
+      with:
+        name: ofrak-io-sdist
+        path: dist-ofrak-io/
+
+    - name: Download ofrak-patch-maker-sdist
+      if: contains(inputs.packages, 'ofrak-patch-maker')
+      uses: actions/download-artifact@v4
+      with:
+        name: ofrak-patch-maker-sdist
+        path: dist-ofrak-patch-maker/
+
+    - name: Download ofrak wheels
+      if: contains(inputs.packages, 'ofrak')
+      uses: actions/download-artifact@v4
+      with:
+        name: ofrak-wheels-${{ inputs.os }}-py${{ inputs.python-version }}
+        path: wheelhouse/
+
+    - name: Download pytest-ofrak-sdist
+      if: contains(inputs.packages, 'pytest-ofrak')
+      uses: actions/download-artifact@v4
+      with:
+        name: pytest-ofrak-sdist
+        path: dist-pytest-ofrak/
+
+    - name: Download ofrak-angr-sdist
+      if: contains(inputs.packages, 'ofrak-angr')
+      uses: actions/download-artifact@v4
+      with:
+        name: ofrak-angr-sdist
+        path: dist-ofrak-angr/
+
+    - name: Download ofrak-capstone-sdist
+      if: contains(inputs.packages, 'ofrak-capstone')
+      uses: actions/download-artifact@v4
+      with:
+        name: ofrak-capstone-sdist
+        path: dist-ofrak-capstone/
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+        cache: pip
+
+    - name: Install cmake (macOS)
+      if: runner.os == 'macOS' && inputs.package-under-test == 'ofrak-angr'
+      shell: bash
+      run: |
+        brew install cmake libmagic
+        echo "$(brew --prefix)/bin" >> $GITHUB_PATH
+        cmake --version
+
+    - name: Install requirements
+      shell: bash
+      run: |
+        python -m pip install -r pip-requirements.txt
+        pip install -r dev-requirements.txt
+
+    - name: Install packages
+      shell: bash
+      run: |
+        # Install packages, in order of packages list
+        for package in ${{ inputs.packages }}; do
+          if [[ "$package" == "ofrak" ]]; then
+            echo "Installing ofrak wheel. Available wheels"
+            ls -la wheelhouse/
+            echo ""
+            echo "Platform info:"
+            python -c "import sysconfig; print(f'Platform: {sysconfig.get_platform()}')"
+            python -c "import platform; print(f'Machine: {platform.machine()}')"
+            echo ""
+            WHEEL_PATH=$(pip install --dry-run --find-links wheelhouse/ --no-index --no-deps ofrak 2>&1 | grep "Processing.*\.whl" | sed 's/Processing //' | head -1)
+            echo "Installing: $WHEEL_PATH"
+            pip install "$WHEEL_PATH"
+            ofrak license --community --i-agree
+          else
+            echo "Installing ${package}..."
+            pip install dist-${package}/*.tar.gz
+          fi
+        done
+
+    - name: Run tests
+      shell: bash
+      run: |
+        make -C ${{ inputs.source-dir }} ${{ inputs.test-target }} PYTHON=python

@@ -1,4 +1,4 @@
-name: Build and test ofrak packages
+name: Build and test ofrak packages (v2)
 
 on:
   pull_request:
@@ -9,281 +9,120 @@ permissions:
 
 defaults:
   run:
-    shell: bash -euxo pipefail {0}  # NOTE: On Windows, this uses Git Bash which provides Unix compatibility (for example for ofrak-io's StreamCapture)
+    shell: bash -euxo pipefail {0}
 
 jobs:
-  build-sdists:
-    name: build ${{ matrix.package }} sdist
+  build-ofrak-type:
+    name: Build ofrak-type sdist
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - package: ofrak-type
-            source_dir: ofrak_type
-          - package: ofrak-io
-            source_dir: ofrak_io
-          - package: ofrak-patch-maker
-            source_dir: ofrak_patch_maker
-          - package: pytest-ofrak
-            source_dir: pytest_ofrak
-            lfs: true
-          - package: ofrak-angr
-            source_dir: disassemblers/ofrak_angr
-          - package: ofrak-capstone
-            source_dir: disassemblers/ofrak_capstone
-    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: ./.github/actions/build-sdist
         with:
-          fetch-depth: 0
-          lfs: false
-      - name: Setup LFS cache
-        if: ${{ matrix.lfs || false }}
-        uses: ./.github/actions/lfs-cache
+          package-name: ofrak-type
+          source-dir: ofrak_type
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+  build-ofrak-io:
+    name: Build ofrak-io sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/build-sdist
         with:
-          python-version: '3.9'
+          package-name: ofrak-io
+          source-dir: ofrak_io
 
-      - name: Install build tools
-        run: |
-          python -m pip install -r pip-requirements.txt
-          pip install build
-
-      - name: Build ${{ matrix.package }} source distribution
-        run: |
-          cd ${{ matrix.source_dir }}
-          python -m build --sdist --outdir ${{ github.workspace }}/dist
-
-      - name: List built packages
-        run: |
-          echo "Built ${{ matrix.package }} packages:"
-          ls -la dist/
-
-      - name: Upload ${{ matrix.package }} source distribution
-        uses: actions/upload-artifact@v4
+  build-ofrak-patch-maker:
+    name: Build ofrak-patch-maker sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/build-sdist
         with:
-          name: ${{ matrix.package }}-sdist
-          path: dist/
-          retention-days: 30
+          package-name: ofrak-patch-maker
+          source-dir: ofrak_patch_maker
+
+  build-pytest-ofrak:
+    name: Build pytest-ofrak sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/build-sdist
+        with:
+          package-name: pytest-ofrak
+          source-dir: pytest_ofrak
+          lfs: true
+
+  build-ofrak-angr:
+    name: Build ofrak-angr sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/build-sdist
+        with:
+          package-name: ofrak-angr
+          source-dir: disassemblers/ofrak_angr
+
+  build-ofrak-capstone:
+    name: Build ofrak-capstone sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/build-sdist
+        with:
+          package-name: ofrak-capstone
+          source-dir: disassemblers/ofrak_capstone
 
   build-ofrak-wheels:
-    name: build ofrak wheels on ${{ matrix.os }} for Python ${{ matrix.python-version }}
+    name: Build ofrak wheels on ${{ matrix.os }} for Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          lfs: false
-      - name: Setup LFS cache
-        uses: ./.github/actions/lfs-cache
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+      - uses: ./.github/actions/build-wheels
         with:
           python-version: ${{ matrix.python-version }}
+          os: ${{ matrix.os }}
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
+  test-ofrak-type:
+    uses: ./.github/workflows/test-package-matrix.yml
+    needs: [build-ofrak-type]
+    with:
+      package-under-test: ofrak-type
+      source-dir: ofrak_type
+      packages: ofrak-type
 
-      - name: Build frontend
-        run: make -C ofrak_core src/ofrak/gui/public
+  test-ofrak-io:
+    uses: ./.github/workflows/test-package-matrix.yml
+    needs: [build-ofrak-type, build-ofrak-io]
+    with:
+      package-under-test: ofrak-io
+      source-dir: ofrak_io
+      packages: ofrak-type ofrak-io
 
-      - name: Install build tools
-        run: |
-          python -m pip install -r pip-requirements.txt
-          pip install cibuildwheel
+  test-ofrak:
+    uses: ./.github/workflows/test-package-matrix.yml
+    needs: [build-ofrak-type, build-ofrak-io, build-ofrak-patch-maker, build-pytest-ofrak, build-ofrak-wheels]
+    with:
+      package-under-test: ofrak
+      source-dir: ofrak_core
+      packages: ofrak-type ofrak-io ofrak-patch-maker ofrak pytest-ofrak
+      lfs: true
+      test-target: test-wheel
 
-      - name: Set Python version for cibuildwheel
-        id: py-version
-        run: |
-          PY_VERSION="${{ matrix.python-version }}"
-          PY_VERSION_NO_DOT=${PY_VERSION//./}
-          echo "version=${PY_VERSION_NO_DOT}" >> $GITHUB_OUTPUT
+  test-ofrak-angr:
+    uses: ./.github/workflows/test-package-matrix.yml
+    needs: [build-ofrak-type, build-ofrak-io, build-ofrak-patch-maker, build-pytest-ofrak, build-ofrak-wheels, build-ofrak-angr]
+    with:
+      package-under-test: ofrak-angr
+      source-dir: disassemblers/ofrak_angr
+      packages: ofrak-type ofrak-io ofrak-patch-maker ofrak pytest-ofrak ofrak-angr
+      lfs: true
+      excludes: '[{"os": "macos-latest", "python-version": "3.9"}]'
 
-      - name: build ofrak wheels with cibuildwheel
-        env:
-          CIBW_BUILD: "cp${{ steps.py-version.outputs.version }}-*"
-          CIBW_SKIP: "*-win32 *-manylinux_i686"
-          CIBW_ARCHS_WINDOWS: "AMD64"  # Simplified for now
-          CIBW_ARCHS_MACOS: "x86_64 arm64"
-          CIBW_ARCHS_LINUX: "x86_64"  # Simplified for now
-          CIBW_BUILD_VERBOSITY: 1
-          CIBW_BEFORE_BUILD: "pip install setuptools wheel"
-        run: |
-          cd ofrak_core
-          cibuildwheel --output-dir ../wheelhouse
-
-      - name: List built wheels
-        run: |
-          echo "Built OFRAK wheels:"
-          ls -la wheelhouse/ || echo "No wheelhouse found"
-
-      - name: Upload wheels
-        uses: actions/upload-artifact@v4
-        with:
-          name: ofrak-wheels-${{ matrix.os }}-py${{ matrix.python-version }}
-          path: wheelhouse/
-          retention-days: 30
-
-  test-packages:
-    name: test ${{ matrix.test_config.package_under_test }} on ${{ matrix.os }} with Python ${{ matrix.python-version }}
-    runs-on: ${{ matrix.os }}
-    needs: [build-sdists, build-ofrak-wheels]
-    strategy:
-      fail-fast: false
-      matrix:
-        test_config:
-          - package_under_test: ofrak-type  # Name of package to test
-            source_dir: ofrak_type  # Path to package in repository (needed to run test target)
-            packages: [ofrak-type]  # ofrak packages needed to test package_under_test. This list should be in dependency order
-            lfs: false
-            test_target: test  # Makefile target to run tests
-            
-          - package_under_test: ofrak-io
-            source_dir: ofrak_io
-            packages: [ofrak-type, ofrak-io]
-            lfs: false
-            test_target: test
-            
-          - package_under_test: ofrak
-            source_dir: ofrak_core
-            packages: [ofrak-type, ofrak-io, ofrak-patch-maker, ofrak, pytest-ofrak]
-            lfs: true
-            test_target: test-wheel
-            
-          - package_under_test: ofrak-angr
-            source_dir: disassemblers/ofrak_angr
-            packages: [ofrak-type, ofrak-io, ofrak-patch-maker, ofrak, pytest-ofrak, ofrak-angr]
-            lfs: true
-            test_target: test
-
-          - package_under_test: ofrak-capstone
-            source_dir: disassemblers/ofrak_capstone
-            packages: [ofrak-type, ofrak-io, ofrak-patch-maker, ofrak, pytest-ofrak, ofrak-angr, ofrak-capstone]
-            lfs: true
-            test_target: test
-
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
-        exclude:
-          - test_config: { package_under_test: ofrak-angr }
-            os: macos-latest
-            python-version: '3.9'
-          - test_config: { package_under_test: ofrak-capstone }
-            os: macos-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          lfs: false
-      - name: Setup LFS cache
-        if: ${{ matrix.test_config.lfs }}
-        uses: ./.github/actions/lfs-cache
-
-      - name: Download ofrak-type-sdist
-        if: contains(matrix.test_config.packages, 'ofrak-type')
-        uses: actions/download-artifact@v4
-        with:
-          name: ofrak-type-sdist
-          path: dist-ofrak-type/
-
-      - name: Download ofrak-io-sdist
-        if: contains(matrix.test_config.packages, 'ofrak-io')
-        uses: actions/download-artifact@v4
-        with:
-          name: ofrak-io-sdist
-          path: dist-ofrak-io/
-
-      - name: Download ofrak-patch-maker-sdist
-        if: contains(matrix.test_config.packages, 'ofrak-patch-maker')
-        uses: actions/download-artifact@v4
-        with:
-          name: ofrak-patch-maker-sdist
-          path: dist-ofrak-patch-maker/
-
-      - name: Download ofrak
-        if: contains(matrix.test_config.packages, 'ofrak')
-        uses: actions/download-artifact@v4
-        with:
-          name: ofrak-wheels-${{ matrix.os }}-py${{ matrix.python-version }}
-          path: wheelhouse/
-
-      - name: Download pytest-ofrak-sdist
-        if: contains(matrix.test_config.packages, 'pytest-ofrak')
-        uses: actions/download-artifact@v4
-        with:
-          name: pytest-ofrak-sdist
-          path: dist-pytest-ofrak/
-
-      - name: Download ofrak-angr-sdist
-        if: contains(matrix.test_config.packages, 'ofrak-angr')
-        uses: actions/download-artifact@v4
-        with:
-          name: ofrak-angr-sdist
-          path: dist-ofrak-angr/
-
-      - name: Download ofrak-capstone-sdist
-        if: contains(matrix.test_config.packages, 'ofrak-capstone')
-        uses: actions/download-artifact@v4
-        with:
-          name: ofrak-capstone-sdist
-          path: dist-ofrak-capstone/
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: pip
-
-      - name: Install cmake (macOS)
-        if: runner.os == 'macOS' && matrix.test_config.package_under_test == 'ofrak-angr'
-        run: |
-          brew install cmake libmagic
-          echo "$(brew --prefix)/bin" >> $GITHUB_PATH
-          cmake --version
-
-      - name: Install requirements
-        run: |
-          python -m pip install -r pip-requirements.txt
-          pip install -r dev-requirements.txt
-
-      - name: Install packages
-        run: |
-          # Install packages, in order of packages list
-          for package in ${{ join(matrix.test_config.packages, ' ') }}; do
-            if [[ "$package" == "ofrak" ]]; then
-              echo "Installing ofrak wheel. Available wheels"
-              ls -la wheelhouse/
-              echo ""
-              echo "Platform info:"
-              python -c "import sysconfig; print(f'Platform: {sysconfig.get_platform()}')"
-              python -c "import platform; print(f'Machine: {platform.machine()}')"
-              echo ""
-              WHEEL_PATH=$(pip install --dry-run --find-links wheelhouse/ --no-index --no-deps ofrak 2>&1 | grep "Processing.*\.whl" | sed 's/Processing //' | head -1)
-              echo "Installing: $WHEEL_PATH"
-              pip install "$WHEEL_PATH"
-              ofrak license --community --i-agree
-            else
-              echo "Installing ${package}..."
-              pip install dist-${package}/*.tar.gz
-            fi
-          done
-
-      - name: Run tests
-        run: |
-          make -C ${{ matrix.test_config.source_dir }} ${{ matrix.test_config.test_target }} PYTHON=python
+  test-ofrak-capstone:
+    uses: ./.github/workflows/test-package-matrix.yml
+    needs: [build-ofrak-type, build-ofrak-io, build-ofrak-patch-maker, build-pytest-ofrak, build-ofrak-wheels, build-ofrak-angr, build-ofrak-capstone]
+    with:
+      package-under-test: ofrak-capstone
+      source-dir: disassemblers/ofrak_capstone
+      packages: ofrak-type ofrak-io ofrak-patch-maker ofrak pytest-ofrak ofrak-angr ofrak-capstone
+      lfs: true
+      excludes: '[{"os": "macos-latest"}]'
