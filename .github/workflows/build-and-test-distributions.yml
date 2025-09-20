@@ -27,6 +27,7 @@ jobs:
             source_dir: ofrak_patch_maker
           - package: pytest-ofrak
             source_dir: pytest_ofrak
+            lfs: true
           - package: ofrak-angr
             source_dir: disassemblers/ofrak_angr
           - package: ofrak-capstone
@@ -37,7 +38,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          lfs: false
+          lfs: ${{ matrix.lfs || false }}
 
       - name: Set up Python
         uses: actions/setup-python@v4
