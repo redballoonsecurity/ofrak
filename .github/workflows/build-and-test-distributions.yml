@@ -1,4 +1,4 @@
-name: Build and test ofrak packages (v2)
+name: Build and test ofrak packages
 
 on:
   pull_request:

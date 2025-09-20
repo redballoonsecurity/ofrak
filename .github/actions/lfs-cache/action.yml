@@ -4,7 +4,7 @@ runs:
   using: 'composite'
   steps:
     - name: List LFS files for cache key
-      shell: bash
+      shell: bash -euxo pipefail {0}
       run: |
         git lfs ls-files --long | cut -d ' ' -f 1 | sort > .git/lfs-hashes.txt
     
@@ -17,7 +17,7 @@ runs:
           lfs-
     
     - name: Fetch LFS objects
-      shell: bash
+      shell: bash -euxo pipefail {0}
       run: |
         git lfs fetch --prune
         git lfs checkout

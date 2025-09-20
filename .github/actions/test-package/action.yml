@@ -94,21 +94,16 @@ runs:
 
     - name: Install cmake (macOS)
       if: runner.os == 'macOS' && inputs.package-under-test == 'ofrak-angr'
-      shell: bash
+      shell: bash -euxo pipefail {0}
       run: |
         brew install cmake libmagic
         echo "$(brew --prefix)/bin" >> $GITHUB_PATH
         cmake --version
 
-    - name: Install requirements
-      shell: bash
-      run: |
-        python -m pip install -r pip-requirements.txt
-        pip install -r dev-requirements.txt
-
     - name: Install packages
-      shell: bash
+      shell: bash -euxo pipefail {0}
       run: |
+        python -m pip install -r pip-requirements.txt -r dev-requirements.txt
         # Install packages, in order of packages list
         for package in ${{ inputs.packages }}; do
           if [[ "$package" == "ofrak" ]]; then
@@ -130,6 +125,6 @@ runs:
         done
 
     - name: Run tests
-      shell: bash
+      shell: bash -euxo pipefail {0}
       run: |
         make -C ${{ inputs.source-dir }} ${{ inputs.test-target }} PYTHON=python
