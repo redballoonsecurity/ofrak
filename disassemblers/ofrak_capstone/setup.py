@@ -19,8 +19,6 @@ with open("README.md") as f:
     long_description = f.read()
 
 
-
-
 setuptools.setup(
     name="ofrak_capstone",
     version="1.1.0rc2",

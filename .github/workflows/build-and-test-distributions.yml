@@ -16,6 +16,7 @@ jobs:
     name: Build ofrak-type sdist
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/build-sdist
         with:
           package-name: ofrak-type
@@ -25,6 +26,7 @@ jobs:
     name: Build ofrak-io sdist
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/build-sdist
         with:
           package-name: ofrak-io
@@ -34,6 +36,7 @@ jobs:
     name: Build ofrak-patch-maker sdist
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/build-sdist
         with:
           package-name: ofrak-patch-maker
@@ -43,6 +46,7 @@ jobs:
     name: Build pytest-ofrak sdist
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/build-sdist
         with:
           package-name: pytest-ofrak
@@ -53,6 +57,7 @@ jobs:
     name: Build ofrak-angr sdist
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/build-sdist
         with:
           package-name: ofrak-angr
@@ -62,6 +67,7 @@ jobs:
     name: Build ofrak-capstone sdist
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/build-sdist
         with:
           package-name: ofrak-capstone
@@ -76,6 +82,7 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/build-wheels
         with:
           python-version: ${{ matrix.python-version }}

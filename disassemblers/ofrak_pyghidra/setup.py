@@ -19,8 +19,6 @@ with open("LICENSE") as f:
     license = "".join(["\n", f.read()])
 
 
-
-
 setuptools.setup(
     name="ofrak_pyghidra",
     version="0.1.0",

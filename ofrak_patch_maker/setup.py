@@ -19,8 +19,6 @@ with open("README.md") as f:
     long_description = f.read()
 
 
-
-
 setuptools.setup(
     name="ofrak_patch_maker",
     version="4.1.0rc2",

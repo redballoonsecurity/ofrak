@@ -57,8 +57,6 @@ entropy_so = CTypesExtension(
 )
 
 
-
-
 setuptools.setup(
     name="ofrak",
     version="3.3.0rc14",

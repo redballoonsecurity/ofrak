@@ -45,6 +45,7 @@ jobs:
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
         exclude: ${{ fromJSON(inputs.excludes) }}
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/test-package
         with:
           package-under-test: ${{ inputs.package-under-test }}
