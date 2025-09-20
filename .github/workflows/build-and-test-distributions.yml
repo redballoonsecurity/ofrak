@@ -133,45 +133,52 @@ jobs:
           path: wheelhouse/
           retention-days: 30
 
-
   test-packages:
-    name: test ${{ matrix.test_config.package }} on ${{ matrix.os }} with Python ${{ matrix.python-version }}
+    name: test ${{ matrix.test_config.package_under_test }} on ${{ matrix.os }} with Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     needs: [build-sdists, build-ofrak-wheels]
     strategy:
       fail-fast: false
       matrix:
         test_config:
-          - package: ofrak-type
-            source_dir: ofrak_type
-            packages: [ofrak-type]
+          - package_under_test: ofrak-type  # Name of package to test
+            source_dir: ofrak_type  # Path to package in repository (needed to run test target)
+            packages: [ofrak-type]  # ofrak packages needed to test package_under_test. This list should be in dependency order
             lfs: false
-            test_target: test
+            test_target: test  # Makefile target to run tests
             
-          - package: ofrak-io
+          - package_under_test: ofrak-io
             source_dir: ofrak_io
             packages: [ofrak-type, ofrak-io]
             lfs: false
             test_target: test
             
-          - package: ofrak
+          - package_under_test: ofrak
             source_dir: ofrak_core
             packages: [ofrak-type, ofrak-io, ofrak-patch-maker, ofrak, pytest-ofrak]
             lfs: true
             test_target: test-wheel
             
-          - package: ofrak-angr
+          - package_under_test: ofrak-angr
             source_dir: disassemblers/ofrak_angr
             packages: [ofrak-type, ofrak-io, ofrak-patch-maker, ofrak, pytest-ofrak, ofrak-angr]
             lfs: true
             test_target: test
-            
+
+          - package_under_test: ofrak-capstone
+            source_dir: disassemblers/ofrak_capstone
+            packages: [ofrak-type, ofrak-io, ofrak-patch-maker, ofrak, pytest-ofrak, ofrak-angr, ofrak-capstone]
+            lfs: true
+            test_target: test
+
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
         exclude:
-          - test_config: { package: ofrak-angr }
+          - test_config: { package_under_test: ofrak-angr }
             os: macos-latest
             python-version: '3.9'
+          - test_config: { package_under_test: ofrak-capstone }
+            os: macos-latest
 
     steps:
       - name: Checkout code
@@ -222,6 +229,13 @@ jobs:
           name: ofrak-angr-sdist
           path: dist-ofrak-angr/
 
+      - name: Download ofrak-capstone-sdist
+        if: contains(matrix.test_config.packages, 'ofrak-capstone')
+        uses: actions/download-artifact@v4
+        with:
+          name: ofrak-capstone-sdist
+          path: dist-ofrak-capstone/
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
@@ -229,7 +243,7 @@ jobs:
           cache: pip
 
       - name: Install cmake (macOS)
-        if: runner.os == 'macOS' && matrix.test_config.package == 'ofrak-angr'
+        if: runner.os == 'macOS' && matrix.test_config.package_under_test == 'ofrak-angr'
         run: |
           brew install cmake libmagic
           echo "$(brew --prefix)/bin" >> $GITHUB_PATH
@@ -242,7 +256,7 @@ jobs:
 
       - name: Install packages
         run: |
-          # Install packages in dependency order
+          # Install packages, in order of packages list
           for package in ${{ join(matrix.test_config.packages, ' ') }}; do
             if [[ "$package" == "ofrak" ]]; then
               echo "Installing ofrak wheel. Available wheels"
