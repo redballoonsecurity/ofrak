@@ -1,5 +1,5 @@
 name: 'Build Wheels'
-description: 'Build wheels for OFRAK core package'
+description: 'Build wheels for ofrak'
 inputs:
   python-version:
     description: 'Python version to build for'

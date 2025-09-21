@@ -21,6 +21,7 @@ jobs:
         with:
           package-name: ofrak-type
           source-dir: ofrak_type
+          python-version: '3.9'
 
   build-ofrak-io:
     name: Build ofrak-io sdist
@@ -31,6 +32,7 @@ jobs:
         with:
           package-name: ofrak-io
           source-dir: ofrak_io
+          python-version: '3.9'
 
   build-ofrak-patch-maker:
     name: Build ofrak-patch-maker sdist
@@ -41,6 +43,7 @@ jobs:
         with:
           package-name: ofrak-patch-maker
           source-dir: ofrak_patch_maker
+          python-version: '3.9'
 
   build-pytest-ofrak:
     name: Build pytest-ofrak sdist
@@ -52,6 +55,7 @@ jobs:
           package-name: pytest-ofrak
           source-dir: pytest_ofrak
           lfs: true
+          python-version: '3.9'
 
   build-ofrak-angr:
     name: Build ofrak-angr sdist
@@ -62,6 +66,7 @@ jobs:
         with:
           package-name: ofrak-angr
           source-dir: disassemblers/ofrak_angr
+          python-version: '3.9'
 
   build-ofrak-capstone:
     name: Build ofrak-capstone sdist
@@ -72,12 +77,12 @@ jobs:
         with:
           package-name: ofrak-capstone
           source-dir: disassemblers/ofrak_capstone
+          python-version: '3.9'
 
   build-ofrak-wheels:
     name: Build ofrak wheels on ${{ matrix.os }} for Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']

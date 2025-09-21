@@ -1,5 +1,5 @@
 name: 'Build Source Distribution'
-description: 'Build a source distribution for an OFRAK package'
+description: 'Build a source distribution for an ofrak package'
 inputs:
   package-name:
     description: 'Name of the package to build'

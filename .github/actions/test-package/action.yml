@@ -1,5 +1,5 @@
 name: 'Test Package'
-description: 'Test an OFRAK package with its dependencies'
+description: 'Test an ofrak package with its dependencies'
 inputs:
   package-under-test:
     description: 'Name of the package being tested'
