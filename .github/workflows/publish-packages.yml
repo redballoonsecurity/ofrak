@@ -1,4 +1,4 @@
-name: Publish to Test PyPI
+name: Publish OFRAK Packages
 
 on:
   workflow_dispatch:
@@ -7,6 +7,14 @@ on:
         description: 'Run ID of the build workflow to download artifacts from'
         required: true
         type: string
+      publish_target:
+        description: 'Where to publish packages'
+        required: true
+        type: choice
+        options:
+          - test-pypi
+          - pypi
+        default: test-pypi
       publish_ofrak_type:
         description: 'Publish ofrak-type'
         required: false
@@ -47,9 +55,10 @@ permissions:
   id-token: write  # Required for trusted publishing to PyPI
 
 jobs:
-  publish-to-test-pypi:
-    name: Publish distributions to Test PyPI
+  publish-packages:
+    name: Publish distributions to ${{ inputs.publish_target == 'pypi' && 'PyPI' || 'Test PyPI' }}
     runs-on: ubuntu-latest
+    environment: ${{ inputs.publish_target == 'pypi' && 'pypi' || 'test-pypi' }}
 
     steps:
       - name: Download all artifacts from build workflow
@@ -64,12 +73,11 @@ jobs:
           echo "Downloaded artifacts:"
           find artifacts/ -type f -name "*.tar.gz" -o -name "*.whl" | sort
 
-
       - name: Organize distributions for upload
         run: |
           mkdir -p dist/
           
-          echo "Organizing selected packages for upload..."
+          echo "Organizing selected packages for upload to ${{ inputs.publish_target }}..."
           
           if "${{ inputs.publish_ofrak_type }}"; then
             echo "Including ofrak-type..."
@@ -103,11 +111,24 @@ jobs:
           
           echo "Organized distributions:"
           ls -la dist/
+          if [ -z "$(ls -A dist/)" ]; then
+            echo "No packages selected for publishing!"
+            exit 1
+          fi
 
-      - name: Publish distributions to Test PyPI
+      - name: Publish to Test PyPI
+        if: inputs.publish_target == 'test-pypi'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
           packages-dir: dist/
           verbose: true
           password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+
+      - name: Publish to PyPI
+        if: inputs.publish_target == 'pypi'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+          verbose: true
+          password: ${{ secrets.PYPI_API_TOKEN }}
