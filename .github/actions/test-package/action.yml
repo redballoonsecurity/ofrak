@@ -91,6 +91,9 @@ runs:
       with:
         python-version: ${{ inputs.python-version }}
         cache: pip
+        cache-dependency-path: |
+          requirements-*.txt
+          **/setup.py
 
     - name: Install cmake (macOS)
       if: runner.os == 'macOS' && inputs.package-under-test == 'ofrak-angr'
@@ -103,7 +106,8 @@ runs:
     - name: Install packages
       shell: bash -euxo pipefail {0}
       run: |
-        python -m pip install -r pip-requirements.txt -r dev-requirements.txt
+        python -m pip install -r requirements-pip.txt
+        python -m pip install -r requirements-dev.txt
         # Install packages, in order of packages list
         for package in ${{ inputs.packages }}; do
           if [[ "$package" == "ofrak" ]]; then
