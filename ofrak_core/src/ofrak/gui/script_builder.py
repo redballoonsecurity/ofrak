@@ -84,6 +84,11 @@ class ScriptSession:
 
             ofrak.discover(ofrak_ghidra)
 
+        if False:
+            import ofrak_pyghidra
+
+            ofrak.discover(ofrak_pyghidra)
+
         ofrak.run(main)
     """
 
