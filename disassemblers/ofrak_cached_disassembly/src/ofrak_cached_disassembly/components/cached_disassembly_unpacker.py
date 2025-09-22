@@ -37,7 +37,7 @@ _GHIDRA_AUTO_LOADABLE_FORMATS = [Elf, Ihex, Pe]
 
 @dataclass
 class CachedAnalysis(ResourceView):
-    pass
+    base_address: int = None
 
 
 @dataclass
@@ -176,18 +176,16 @@ class CachedGhidraCodeRegionModifier(Modifier[None]):
                 ElfHeader, r_filter=ResourceFilter(tags=[ElfHeader])
             )
             if elf_header is not None and elf_header.e_type == ElfType.ET_DYN.value:
-                # import here to avoid circular dependencies
-                from ofrak_pyghidra.components.pyghidra_components import PyGhidraProject
-
-                pyghidra_project_r = await resource.get_only_ancestor(
-                    ResourceFilter.with_tags(PyGhidraProject)
+                cached_analysis_r = await resource.get_only_ancestor(
+                    ResourceFilter.with_tags(CachedAnalysis)
                 )
-                pyghidra_project_v = await pyghidra_project_r.view_as(PyGhidraProject)
+
+                cached_analysis_v = await cached_analysis_r.view_as(CachedAnalysis)
 
                 code_region = await resource.view_as(CodeRegion)
-                if pyghidra_project_v.base_address:
+                if cached_analysis_v.base_address:
                     new_cr = CodeRegion(
-                        code_region.virtual_address + pyghidra_project_v.base_address,
+                        code_region.virtual_address + cached_analysis_v.base_address,
                         code_region.size,
                     )
                     code_region.resource.add_view(new_cr)
@@ -205,13 +203,13 @@ class CachedGhidraCodeRegionModifier(Modifier[None]):
                             and backend_cr.size == code_region.size
                         ):
                             code_region.resource.add_view(backend_cr)
-                            pyghidra_project_r.add_view(
-                                PyGhidraProject(
+                            cached_analysis_r.add_view(
+                                CachedAnalysis(
                                     base_address=backend_cr.virtual_address
                                     - code_region.virtual_address
                                 )
                             )
-                            await pyghidra_project_r.save()
+                            await cached_analysis_r.save()
                 await resource.save()
 
 

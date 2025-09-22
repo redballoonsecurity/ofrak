@@ -39,7 +39,7 @@ _GHIDRA_AUTO_LOADABLE_FORMATS = [Elf, Ihex, Pe]
 
 @dataclass
 class PyGhidraProject(CachedAnalysis):
-    base_address: int = None
+    pass
 
 
 class PyGhidraAnalysisIdentifier(Identifier):
