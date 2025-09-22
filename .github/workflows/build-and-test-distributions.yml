@@ -135,7 +135,9 @@ jobs:
       source-dir: disassemblers/ofrak_angr
       packages: ofrak-type ofrak-io ofrak-patch-maker ofrak pytest-ofrak ofrak-angr
       lfs: true
-#      excludes: '[{"os": "macos-latest", "python-version": "3.9"}]'
+      excludes: '[{"os": "macos-latest", "python-version": "3.9"}]'
+      # Compatible versions of angr have a dependency on pyvex 9.2.102, which depends on
+      #  unicorn 2.0.1.post1, which does not build on this platform
 
   test-ofrak-capstone:
     uses: ./.github/workflows/test-package-matrix.yml
@@ -145,4 +147,6 @@ jobs:
       source-dir: disassemblers/ofrak_capstone
       packages: ofrak-type ofrak-io ofrak-patch-maker ofrak pytest-ofrak ofrak-angr ofrak-capstone
       lfs: true
-#      excludes: '[{"os": "macos-latest"}]'
+      excludes: '[{"os": "macos-latest"}]'
+      # keystone-engine is used to test ofrak-capstone (register_usage_analyzer.py); PyPI version
+      #  does not build with version of cmake in macos-latest runner
