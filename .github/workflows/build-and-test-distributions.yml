@@ -2,7 +2,15 @@ name: Build and test ofrak packages
 
 on:
   pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: '0 0 * * *'
   workflow_dispatch:
+    inputs:
 
 permissions:
   contents: read
@@ -127,7 +135,7 @@ jobs:
       source-dir: disassemblers/ofrak_angr
       packages: ofrak-type ofrak-io ofrak-patch-maker ofrak pytest-ofrak ofrak-angr
       lfs: true
-      excludes: '[{"os": "macos-latest", "python-version": "3.9"}]'
+#      excludes: '[{"os": "macos-latest", "python-version": "3.9"}]'
 
   test-ofrak-capstone:
     uses: ./.github/workflows/test-package-matrix.yml
@@ -137,4 +145,4 @@ jobs:
       source-dir: disassemblers/ofrak_capstone
       packages: ofrak-type ofrak-io ofrak-patch-maker ofrak pytest-ofrak ofrak-angr ofrak-capstone
       lfs: true
-      excludes: '[{"os": "macos-latest"}]'
+#      excludes: '[{"os": "macos-latest"}]'
