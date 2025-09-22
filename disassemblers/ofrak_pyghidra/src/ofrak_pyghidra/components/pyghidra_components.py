@@ -164,10 +164,15 @@ class PyGhidraDecompilationAnalyzer(CachedDecompilationAnalyzer):
 
     async def analyze(self, resource: Resource, config=None):
         program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(PyGhidraProject))
-        complex_block = await resource.view_as(ComplexBlock)
-        cb_key = f"func_{complex_block.virtual_address}"
         if self.analysis_store.id_exists(program_r.get_id()):
+            complex_block = await resource.view_as(ComplexBlock)
+            cb_key = f"func_{complex_block.virtual_address}"
             analysis = self.analysis_store.get_analysis(program_r.get_id())
+            if "decompilation" not in analysis[cb_key]:
+                program_file = analysis["metadata"]["path"]
+                for cb_key, decomp in decompile_all_functions(program_file, None).items():
+                    analysis[cb_key]["decompilation"] = decomp
+                self.analysis_store.store_analysis(program_r.get_id(), analysis)
         else:
             tempdir = mkdtemp(prefix="rbs-pyghidra-bin")
             program_file = os.path.join(tempdir, "program")
@@ -177,14 +182,10 @@ class PyGhidraDecompilationAnalyzer(CachedDecompilationAnalyzer):
             except NotFoundError:
                 program_attrs = await program_r.analyze(ProgramAttributes)
             analysis = unpack(
-                program_file, False, language=_arch_info_to_processor_id(program_attrs)
+                program_file, True, language=_arch_info_to_processor_id(program_attrs)
             )
-        if "decompilation" not in analysis[cb_key]:
-            program_file = analysis["metadata"]["path"]
-            await program_r.flush_data_to_disk(program_file)
-            for cb_key, decomp in decompile_all_functions(program_file, None).items():
-                analysis[cb_key]["decompilation"] = decomp
             self.analysis_store.store_analysis(program_r.get_id(), analysis)
+
         return await super().analyze(resource, config)
 
 
