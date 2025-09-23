@@ -37,6 +37,8 @@ setuptools.setup(
         "ofrak>=3.3.0rc0",
         "ofrak_cached_disassembly>=0.1.0",
         "pyghidra~=2.1.0",
+        "pytest-benchmark==3.2.3",
+        "py",
     ],
     python_requires=">=3.9",
     include_package_data=True,

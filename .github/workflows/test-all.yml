@@ -85,11 +85,14 @@ jobs:
           docker run \
             --interactive \
             --rm \
+            --volume /ofrak_pyghidra_benchmarks:/ofrak_pyghidra/.benchmarks \
             --entrypoint bash \
             redballoonsecurity/ofrak/ghidra:latest \
             -c "python -m ofrak_ghidra.server start \
                 && ofrak license --community --i-agree \
-                && make test"
+                && make test \
+                && make -C /ofrak_pyghidra benchmark"
+          cat /ofrak_pyghidra_benchmarks/benchmark.json > $GITHUB_STEP_SUMMARY
 
   ofrak-angr:
     name: Test OFRAK angr and capstone components
