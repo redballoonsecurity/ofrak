@@ -107,7 +107,7 @@ runs:
         python -m pip install -r requirements-dev.txt
         # Install packages, in order of packages list
         for package in ${{ inputs.packages }}; do
-          if [[ "$package" == "ofrak" ]]; then
+          if [ "$package" = "ofrak" ]; then
             echo "Installing ofrak wheel. Available wheels"
             ls -la wheelhouse/
             WHEEL_PATH=$(pip install --dry-run --find-links wheelhouse/ --no-index --no-deps ofrak 2>&1 | grep "Processing.*\.whl" | sed 's/Processing //' | head -1)
@@ -124,4 +124,4 @@ runs:
       shell: bash -euxo pipefail {0}
       run: |
         # PYTHON=python needed for Windows compatibility where 'python3' is not available
-        make -C ${{ inputs.source-dir }} ${{ inputs.test-target }} PYTHON=python
+        make -C ${{ inputs.source-dir }} ${{ inputs.test-target }}
