@@ -96,7 +96,7 @@ runs:
 
     - name: Install dependencies (macOS)
       if: runner.os == 'macOS'
-      shell: bash
+      shell: bash -euxo pipefail {0}
       run: |
         brew install cmake libmagic
 
@@ -121,7 +121,7 @@ runs:
         done
 
     - name: Run tests
-      shell: bash
+      shell: bash -euxo pipefail {0}
       run: |
         # PYTHON=python needed for Windows compatibility where 'python3' is not available
         make -C ${{ inputs.source-dir }} ${{ inputs.test-target }}

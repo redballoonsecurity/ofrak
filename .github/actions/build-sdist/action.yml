@@ -33,19 +33,19 @@ runs:
           requirements-*.txt
 
     - name: Install build tools
-      shell: bash
+      shell: bash -euxo pipefail {0}
       run: |
         python -m pip install -r requirements-pip.txt
         python -m pip install -r requirements-build.txt
 
     - name: Build source distribution
-      shell: bash
+      shell: bash -euxo pipefail {0}
       run: |
         cd ${{ inputs.source-dir }}
         python -m build --sdist --outdir ${{ github.workspace }}/dist
 
     - name: List built packages
-      shell: bash
+      shell: bash -euxo pipefail {0}
       run: |
         echo "Built ${{ inputs.package-name }} packages:"
         ls -la dist/
