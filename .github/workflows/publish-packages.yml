@@ -7,14 +7,14 @@ on:
         description: 'Run ID of the build workflow to download artifacts from'
         required: true
         type: string
-      publish_target:
-        description: 'Where to publish packages'
+      repository_url:
+        description: 'PyPI repository URL'
         required: true
         type: choice
         options:
-          - test-pypi
-          - pypi
-        default: test-pypi
+          - https://test.pypi.org/legacy/
+          - https://upload.pypi.org/legacy/
+        default: https://test.pypi.org/legacy/
       publish_ofrak_type:
         description: 'Publish ofrak-type'
         required: false
@@ -56,9 +56,8 @@ permissions:
 
 jobs:
   publish-packages:
-    name: Publish distributions to ${{ inputs.publish_target == 'pypi' && 'PyPI' || 'Test PyPI' }}
+    name: Publish distributions to ${{ inputs.repository_url }}
     runs-on: ubuntu-latest
-    environment: ${{ inputs.publish_target == 'pypi' && 'pypi' || 'test-pypi' }}
 
     steps:
       - name: Download all artifacts from build workflow
@@ -77,7 +76,7 @@ jobs:
         run: |
           mkdir -p dist/
           
-          echo "Organizing selected packages for upload to ${{ inputs.publish_target }}..."
+          echo "Organizing selected packages for upload to ${{ inputs.repository_url }}..."
           
           if "${{ inputs.publish_ofrak_type }}"; then
             echo "Including ofrak-type..."
@@ -117,7 +116,7 @@ jobs:
           fi
 
       - name: Publish to Test PyPI
-        if: inputs.publish_target == 'test-pypi'
+        if: inputs.repository_url == 'https://test.pypi.org/legacy/'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
@@ -126,7 +125,7 @@ jobs:
           password: ${{ secrets.TEST_PYPI_API_TOKEN }}
 
       - name: Publish to PyPI
-        if: inputs.publish_target == 'pypi'
+        if: inputs.repository_url == 'https://upload.pypi.org/legacy/'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/

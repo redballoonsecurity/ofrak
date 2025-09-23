@@ -8,7 +8,7 @@ inputs:
     description: 'Source directory containing the package'
     required: true
   packages:
-    description: 'Space-separated list of packages to install (in dependency order)'
+    description: 'Space-separated list of packages to install (in ofrak dependency order)'
     required: true
   lfs:
     description: 'Whether this package test requires LFS'
@@ -93,15 +93,12 @@ runs:
         cache: pip
         cache-dependency-path: |
           requirements-*.txt
-          **/setup.py
 
-    - name: Install cmake (macOS)
-      if: runner.os == 'macOS' && inputs.package-under-test == 'ofrak-angr'
+    - name: Install dependencies (macOS)
+      if: runner.os == 'macOS'
       shell: bash -euxo pipefail {0}
       run: |
         brew install cmake libmagic
-        echo "$(brew --prefix)/bin" >> $GITHUB_PATH
-        cmake --version
 
     - name: Install packages
       shell: bash -euxo pipefail {0}
@@ -113,11 +110,6 @@ runs:
           if [[ "$package" == "ofrak" ]]; then
             echo "Installing ofrak wheel. Available wheels"
             ls -la wheelhouse/
-            echo ""
-            echo "Platform info:"
-            python -c "import sysconfig; print(f'Platform: {sysconfig.get_platform()}')"
-            python -c "import platform; print(f'Machine: {platform.machine()}')"
-            echo ""
             WHEEL_PATH=$(pip install --dry-run --find-links wheelhouse/ --no-index --no-deps ofrak 2>&1 | grep "Processing.*\.whl" | sed 's/Processing //' | head -1)
             echo "Installing: $WHEEL_PATH"
             pip install "$WHEEL_PATH"
@@ -131,4 +123,5 @@ runs:
     - name: Run tests
       shell: bash -euxo pipefail {0}
       run: |
+        # PYTHON=python needed for Windows compatibility where 'python3' is not available
         make -C ${{ inputs.source-dir }} ${{ inputs.test-target }} PYTHON=python

@@ -10,7 +10,6 @@ on:
   schedule:
     - cron: '0 0 * * *'
   workflow_dispatch:
-    inputs:
 
 permissions:
   contents: read
@@ -29,7 +28,6 @@ jobs:
         with:
           package-name: ofrak-type
           source-dir: ofrak_type
-          python-version: '3.9'
 
   build-ofrak-io:
     name: Build ofrak-io sdist
@@ -40,7 +38,6 @@ jobs:
         with:
           package-name: ofrak-io
           source-dir: ofrak_io
-          python-version: '3.9'
 
   build-ofrak-patch-maker:
     name: Build ofrak-patch-maker sdist
@@ -51,7 +48,6 @@ jobs:
         with:
           package-name: ofrak-patch-maker
           source-dir: ofrak_patch_maker
-          python-version: '3.9'
 
   build-pytest-ofrak:
     name: Build pytest-ofrak sdist
@@ -63,7 +59,6 @@ jobs:
           package-name: pytest-ofrak
           source-dir: pytest_ofrak
           lfs: true
-          python-version: '3.9'
 
   build-ofrak-angr:
     name: Build ofrak-angr sdist
@@ -74,7 +69,6 @@ jobs:
         with:
           package-name: ofrak-angr
           source-dir: disassemblers/ofrak_angr
-          python-version: '3.9'
 
   build-ofrak-capstone:
     name: Build ofrak-capstone sdist
@@ -85,7 +79,6 @@ jobs:
         with:
           package-name: ofrak-capstone
           source-dir: disassemblers/ofrak_capstone
-          python-version: '3.9'
 
   build-ofrak-wheels:
     name: Build ofrak wheels on ${{ matrix.os }} for Python ${{ matrix.python-version }}
@@ -103,7 +96,8 @@ jobs:
 
   test-ofrak-type:
     uses: ./.github/workflows/test-package-matrix.yml
-    needs: [build-ofrak-type]
+    needs:
+      - build-ofrak-type
     with:
       package-under-test: ofrak-type
       source-dir: ofrak_type
@@ -111,7 +105,9 @@ jobs:
 
   test-ofrak-io:
     uses: ./.github/workflows/test-package-matrix.yml
-    needs: [build-ofrak-type, build-ofrak-io]
+    needs:
+      - build-ofrak-type
+      - build-ofrak-io
     with:
       package-under-test: ofrak-io
       source-dir: ofrak_io
@@ -119,7 +115,12 @@ jobs:
 
   test-ofrak:
     uses: ./.github/workflows/test-package-matrix.yml
-    needs: [build-ofrak-type, build-ofrak-io, build-ofrak-patch-maker, build-pytest-ofrak, build-ofrak-wheels]
+    needs:
+      - build-ofrak-type
+      - build-ofrak-io
+      - build-ofrak-patch-maker
+      - build-pytest-ofrak
+      - build-ofrak-wheels
     with:
       package-under-test: ofrak
       source-dir: ofrak_core
@@ -129,7 +130,13 @@ jobs:
 
   test-ofrak-angr:
     uses: ./.github/workflows/test-package-matrix.yml
-    needs: [build-ofrak-type, build-ofrak-io, build-ofrak-patch-maker, build-pytest-ofrak, build-ofrak-wheels, build-ofrak-angr]
+    needs:
+      - build-ofrak-type
+      - build-ofrak-io
+      - build-ofrak-patch-maker
+      - build-pytest-ofrak
+      - build-ofrak-wheels
+      - build-ofrak-angr
     with:
       package-under-test: ofrak-angr
       source-dir: disassemblers/ofrak_angr
@@ -141,7 +148,14 @@ jobs:
 
   test-ofrak-capstone:
     uses: ./.github/workflows/test-package-matrix.yml
-    needs: [build-ofrak-type, build-ofrak-io, build-ofrak-patch-maker, build-pytest-ofrak, build-ofrak-wheels, build-ofrak-angr, build-ofrak-capstone]
+    needs:
+      - build-ofrak-type
+      - build-ofrak-io
+      - build-ofrak-patch-maker
+      - build-pytest-ofrak
+      - build-ofrak-wheels
+      - build-ofrak-angr
+      - build-ofrak-capstone
     with:
       package-under-test: ofrak-capstone
       source-dir: disassemblers/ofrak_capstone

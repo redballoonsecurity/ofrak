@@ -11,9 +11,6 @@ inputs:
     description: 'Whether this package requires LFS'
     required: false
     default: 'false'
-  python-version:
-    description: 'Python version to use for building'
-    required: true
 runs:
   using: 'composite'
   steps:
@@ -30,26 +27,25 @@ runs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ inputs.python-version }}
+        python-version: '3.9'
         cache: pip
         cache-dependency-path: |
           requirements-*.txt
-          **/setup.py
 
     - name: Install build tools
-      shell: bash -euxo pipefail {0}
+      shell: bash
       run: |
         python -m pip install -r requirements-pip.txt
         python -m pip install -r requirements-build.txt
 
     - name: Build source distribution
-      shell: bash -euxo pipefail {0}
+      shell: bash
       run: |
         cd ${{ inputs.source-dir }}
         python -m build --sdist --outdir ${{ github.workspace }}/dist
 
     - name: List built packages
-      shell: bash -euxo pipefail {0}
+      shell: bash
       run: |
         echo "Built ${{ inputs.package-name }} packages:"
         ls -la dist/

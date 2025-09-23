@@ -26,7 +26,6 @@ runs:
         cache: pip
         cache-dependency-path: |
           requirements-*.txt
-          **/setup.py
 
     - name: Set up Node.js
       uses: actions/setup-node@v4
@@ -43,27 +42,22 @@ runs:
         python -m pip install -r requirements-pip.txt
         python -m pip install -r requirements-build.txt
 
-    - name: Set Python version for cibuildwheel
-      id: py-version
-      shell: bash -euxo pipefail {0}
-      run: |
-        PY_VERSION="${{ inputs.python-version }}"
-        PY_VERSION_NO_DOT=${PY_VERSION//./}
-        echo "version=${PY_VERSION_NO_DOT}" >> $GITHUB_OUTPUT
-
     - name: Build ofrak wheels with cibuildwheel
       shell: bash -euxo pipefail {0}
       env:
-        CIBW_BUILD: "cp${{ steps.py-version.outputs.version }}-*"
         CIBW_SKIP: "*-win32 *-manylinux_i686"
         CIBW_ARCHS_WINDOWS: "AMD64"
         CIBW_ARCHS_MACOS: "x86_64 arm64"
         CIBW_ARCHS_LINUX: "x86_64"
         CIBW_BUILD_VERBOSITY: 1
       run: |
+        # Convert Python version to cibuildwheel format (3.9 -> 39)
+        PY_VERSION_NO_DOT="${{ inputs.python-version }}"
+        PY_VERSION_NO_DOT=${PY_VERSION_NO_DOT//./}
+        export CIBW_BUILD="cp${PY_VERSION_NO_DOT}-*"
         cd ofrak_core
         cibuildwheel --output-dir ../wheelhouse
-        ls -la wheelhouse/ || echo "No wheelhouse found"
+        ls -la wheelhouse/
 
     - name: Upload wheels
       uses: actions/upload-artifact@v4

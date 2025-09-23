@@ -1,3 +1,6 @@
+# Note that this action does not include checkout b/c the workflows need to first checkout
+#  in order to access this action. Eventually we can publish this action and consolidate checkout
+#  into it.
 name: 'LFS Cache'
 description: 'Cache and fetch LFS objects for faster workflow execution'
 runs:

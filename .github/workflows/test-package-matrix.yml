@@ -1,4 +1,5 @@
 name: Test Package Matrix
+description: Reusable workflow that tests a package across multiple operating systems and Python versions
 
 on:
   workflow_call:
