@@ -1,0 +1,4 @@
+build==1.3.0
+cibuildwheel  # Not pinned as different python versions use different versions
+twine==6.1.0
+wheel==0.45.1
