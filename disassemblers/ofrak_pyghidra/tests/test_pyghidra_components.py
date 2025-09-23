@@ -206,6 +206,8 @@ def test_decompilation_benchmark(benchmark, ofrak_context):
 
 def test_pyghidra_auto_analysis_with_decomp_benchmark(benchmark, ofrak_context):
     benchmark(lambda oc: asyncio.run(test_pyghidra_auto_analysis_with_decomp(oc)), ofrak_context)
+
+
 async def test_pyghidra_standalone_unpack_decompiled():
     program_file = os.path.join(ASSETS_DIR, "hello.x64.elf")
     decompiled = True
