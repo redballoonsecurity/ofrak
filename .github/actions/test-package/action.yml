@@ -124,4 +124,4 @@ runs:
       shell: bash
       run: |
         # PYTHON=python needed for Windows compatibility where 'python3' is not available
-        make -C ${{ inputs.source-dir }} ${{ inputs.test-target }}
+        make -C ${{ inputs.source-dir }} ${{ inputs.test-target }} PYTHON=python
