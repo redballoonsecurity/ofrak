@@ -110,7 +110,7 @@ runs:
           if [ "$package" = "ofrak" ]; then
             echo "Installing ofrak wheel. Available wheels"
             ls -la wheelhouse/
-            WHEEL_PATH=$(pip install --dry-run --find-links wheelhouse/ --no-index --no-deps ofrak 2>&1 | grep "Processing.*\.whl" | sed 's/Processing //' | head -1)
+            WHEEL_PATH="$(pip install --dry-run --find-links wheelhouse/ --no-index --no-deps ofrak 2>&1 | grep "Processing.*\.whl" | sed 's/Processing //' | head -1)"
             echo "Installing: $WHEEL_PATH"
             pip install "$WHEEL_PATH"
             ofrak license --community --i-agree
