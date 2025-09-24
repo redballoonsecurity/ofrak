@@ -5,7 +5,7 @@ packages_paths:
   [
     "ofrak_type",
     "ofrak_io",
-    "ofrak_patch_maker",
+    #    "ofrak_patch_maker",
     "ofrak_core",
     "disassemblers/ofrak_angr",
     "disassemblers/ofrak_capstone",

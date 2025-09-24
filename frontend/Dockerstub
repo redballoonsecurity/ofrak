@@ -1,4 +1,4 @@
-RUN apt-get update && apt-get install --yes nginx
+RUN apt-get update && apt-get install --yes nginx && rm -rf /var/lib/apt/lists/*
 
 COPY --from=svelte --chown=root:root /home/node/frontend/dist /ofrak_gui
 
