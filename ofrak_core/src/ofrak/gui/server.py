@@ -47,6 +47,7 @@ from ofrak.model.component_filters import (
     ComponentAndMetaFilter,
 )
 from ofrak.ofrak_context import get_current_ofrak_context
+from ofrak.resource_view import ResourceViewInterface
 from ofrak.service.component_locator_i import ComponentFilter
 from ofrak_patch_maker.toolchain.abstract import Toolchain
 from ofrak_type.error import NotFoundError
@@ -706,26 +707,25 @@ class AiohttpOFRAKServer:
             await request.json(), Type[ViewableResourceTag]
         )
 
-        import dataclasses
-
         # Build schema similar to get_config_for_component
         fields_info = []
-        for field in dataclasses.fields(view_type):
-            if field.name.startswith("_"):  # Skip private fields like _resource, _deleted
-                continue
+        if dataclasses.is_dataclass(view_type):
+            for field in dataclasses.fields(view_type):
+                if field.name.startswith("_"):  # Skip private fields like _resource, _deleted
+                    continue
 
-            field_info = {
-                "name": field.name,
-                "type": self._convert_to_class_name_str(field.type),
-                "args": self._construct_arg_response(field.type),
-                "fields": self._construct_field_response(field.type),
-                "enum": self._construct_enum_response(field.type),
-                "default": _format_default(field.default)
-                if not isinstance(field.default, dataclasses._MISSING_TYPE)
-                else None,
-                "required": field.default == dataclasses.MISSING,
-            }
-            fields_info.append(field_info)
+                field_info = {
+                    "name": field.name,
+                    "type": self._convert_to_class_name_str(field.type),
+                    "args": self._construct_arg_response(field.type),
+                    "fields": self._construct_field_response(field.type),
+                    "enum": self._construct_enum_response(field.type),
+                    "default": _format_default(field.default)
+                    if not isinstance(field.default, dataclasses._MISSING_TYPE)
+                    else None,
+                    "required": field.default == dataclasses.MISSING,
+                }
+                fields_info.append(field_info)
 
         # Return schema in same format as get_config_for_component
         schema = {
@@ -750,8 +750,8 @@ class AiohttpOFRAKServer:
         resource = await self._get_resource_for_request(request)
         body = await request.json()
 
-        view_type: Type[ViewableResourceTag] = self._serializer.from_pjson(
-            body["view_type"], Type[ViewableResourceTag]
+        view_type: Type[ResourceViewInterface] = self._serializer.from_pjson(
+            body["view_type"], Type[ResourceViewInterface]
         )
         field_values = body["fields"]
 
