@@ -17,6 +17,8 @@ from pytest_ofrak.patterns.basic_block_unpacker import BasicBlockUnpackerUnpackA
 from ofrak_pyghidra.components.pyghidra_components import _arch_info_to_processor_id
 from ofrak_type import ArchInfo, Endianness, InstructionSet
 import ofrak_pyghidra
+from ofrak.core.code_region import CodeRegion
+from ofrak.service.resource_service_i import ResourceFilter, ResourceSort
 from ofrak_pyghidra.standalone.pyghidra_analysis import unpack, decompile_all_functions
 
 ASSETS_DIR = os.path.abspath(
@@ -179,3 +181,35 @@ async def test_pyghidra_standalone_decompile_all_functions():
 @pytest.mark.parametrize("arch, expected_processor_id", ARCH_INFO_TEST_CASES)
 def test_arch_info_to_processor_id(arch, expected_processor_id):
     assert _arch_info_to_processor_id(arch) == expected_processor_id
+
+
+@pytest.fixture
+async def program_resource(ofrak_context: OFRAKContext):
+    # program compiled from examples/src
+    return await ofrak_context.create_root_resource_from_file(
+        os.path.join(os.path.dirname(__file__), "assets/program")
+    )
+
+
+async def test_PIE_code_regions(program_resource, ofrak_injector):
+    """
+    PIE binaries are loaded at address 0x100000 in Ghidra. Verify that unpacking CodeRegions creates them at the right virtual addresses.
+    """
+    await program_resource.unpack()
+    code_regions = await program_resource.get_descendants_as_view(
+        v_type=CodeRegion, r_filter=ResourceFilter(tags=[CodeRegion])
+    )
+    for cr in code_regions:
+        await cr.resource.unpack()
+
+    code_regions = await program_resource.get_descendants_as_view(
+        v_type=CodeRegion,
+        r_filter=ResourceFilter(tags=[CodeRegion]),
+        r_sort=ResourceSort(CodeRegion.VirtualAddress),
+    )
+    assert len(code_regions) == 5
+    assert code_regions[0].virtual_address == 0x101000 and code_regions[0].size == 0x17
+    assert code_regions[1].virtual_address == 0x101020 and code_regions[1].size == 0x20
+    assert code_regions[2].virtual_address == 0x101040 and code_regions[2].size == 0x8
+    assert code_regions[3].virtual_address == 0x101050 and code_regions[3].size == 0x103
+    assert code_regions[4].virtual_address == 0x101154 and code_regions[4].size == 0x9
