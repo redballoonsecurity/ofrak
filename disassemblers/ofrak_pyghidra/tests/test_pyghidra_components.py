@@ -218,7 +218,7 @@ async def test_PIE_code_regions(program_resource, ofrak_injector):
 
 @pytest.fixture
 async def freertos_resource(ofrak_context: OFRAKContext):
-    # program compiled from examples/src
+    # program compiled from https://github.com/FreeRTOS/FreeRTOS/tree/main/FreeRTOS-Plus/Demo/FreeRTOS_Plus_TCP_Echo_Qemu_mps2
     return await ofrak_context.create_root_resource_from_file(
         os.path.join(os.path.dirname(__file__), "assets/freertos_tcp_mps2_demo.axf")
     )
