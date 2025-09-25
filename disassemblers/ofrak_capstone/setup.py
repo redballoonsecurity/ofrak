@@ -1,5 +1,4 @@
 import setuptools
-import pkg_resources
 from setuptools.command.egg_info import egg_info
 
 
@@ -20,31 +19,13 @@ with open("README.md") as f:
     long_description = f.read()
 
 
-# Should be the same as in build_image.py
-def read_requirements(requirements_path):
-    with open(requirements_path) as requirements_handle:
-        return [
-            str(requirement)
-            for requirement in pkg_resources.parse_requirements(requirements_handle)
-        ]
-
-
 setuptools.setup(
     name="ofrak_capstone",
-    version="1.1.0rc1",
-    packages=setuptools.find_packages(exclude=["ofrak_capstone_test", "ofrak_capstone_test.*"]),
+    version="1.1.0rc2",
+    packages=setuptools.find_packages("src"),
+    package_dir={"": "src"},
     package_data={"ofrak_capstone": ["py.typed"]},
-    install_requires=["ofrak>=3.3.0rc0"] + read_requirements("requirements.txt"),
-    extras_require={
-        "test": [
-            "fun-coverage==0.2.0",
-            "pytest",
-            "pytest-cov",
-            "pytest-asyncio==0.19.0",
-            "requests",
-            "ofrak[test]>=3.3.0rc0",
-        ]
-    },
+    install_requires=["capstone", "ofrak>=3.3.0rc0"],
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",
     long_description=long_description,

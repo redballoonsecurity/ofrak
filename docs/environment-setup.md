@@ -186,7 +186,7 @@ Now, the scripts can be run inside the Docker container, and any files in `/my_e
 docker exec \
   --interactive \
   --tty \
-  rbs-ofrak \
+  rbs-ofrak-interactive \
   python3 /my_examples/ex1_simple_string_modification.py
 
 # On Linux, this will print "Meow!"

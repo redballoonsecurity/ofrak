@@ -1,0 +1,133 @@
+name: Publish OFRAK Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_workflow_run_id:
+        description: 'Run ID of the build workflow to download artifacts from'
+        required: true
+        type: string
+      repository_url:
+        description: 'PyPI repository URL'
+        required: true
+        type: choice
+        options:
+          - https://test.pypi.org/legacy/
+          - https://upload.pypi.org/legacy/
+        default: https://test.pypi.org/legacy/
+      publish_ofrak_type:
+        description: 'Publish ofrak-type'
+        required: false
+        type: boolean
+        default: false
+      publish_ofrak_io:
+        description: 'Publish ofrak-io'
+        required: false
+        type: boolean
+        default: false
+      publish_ofrak_patch_maker:
+        description: 'Publish ofrak-patch-maker'
+        required: false
+        type: boolean
+        default: false
+      publish_ofrak_core:
+        description: 'Publish ofrak (core package with wheels)'
+        required: false
+        type: boolean
+        default: false
+      publish_ofrak_angr:
+        description: 'Publish ofrak-angr'
+        required: false
+        type: boolean
+        default: false
+      publish_ofrak_capstone:
+        description: 'Publish ofrak-capstone'
+        required: false
+        type: boolean
+        default: false
+
+defaults:
+  run:
+    shell: bash -euxo pipefail {0}
+
+permissions:
+  contents: read
+  id-token: write  # Required for trusted publishing to PyPI
+
+jobs:
+  publish-packages:
+    name: Publish distributions to ${{ inputs.repository_url }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts from build workflow
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.build_workflow_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/
+
+      - name: List downloaded artifacts
+        run: |
+          echo "Downloaded artifacts:"
+          find artifacts/ -type f -name "*.tar.gz" -o -name "*.whl" | sort
+
+      - name: Organize distributions for upload
+        run: |
+          mkdir -p dist/
+          
+          echo "Organizing selected packages for upload to ${{ inputs.repository_url }}..."
+          
+          if "${{ inputs.publish_ofrak_type }}"; then
+            echo "Including ofrak-type..."
+            find artifacts/ -name "ofrak_type-*.tar.gz" -exec cp {} dist/ \;
+          fi
+          
+          if "${{ inputs.publish_ofrak_io }}"; then
+            echo "Including ofrak-io..."
+            find artifacts/ -name "ofrak_io-*.tar.gz" -exec cp {} dist/ \;
+          fi
+          
+          if "${{ inputs.publish_ofrak_patch_maker }}"; then
+            echo "Including ofrak-patch-maker..."
+            find artifacts/ -name "ofrak_patch_maker-*.tar.gz" -exec cp {} dist/ \;
+          fi
+          
+          if "${{ inputs.publish_ofrak_angr }}"; then
+            echo "Including ofrak-angr..."
+            find artifacts/ -name "ofrak_angr-*.tar.gz" -exec cp {} dist/ \;
+          fi
+          
+          if "${{ inputs.publish_ofrak_capstone }}"; then
+            echo "Including ofrak-capstone..."
+            find artifacts/ -name "ofrak_capstone-*.tar.gz" -exec cp {} dist/ \;
+          fi
+          
+          if "${{ inputs.publish_ofrak_core }}"; then
+            echo "Including ofrak core wheels..."
+            find artifacts/ -name "ofrak-*.whl" -exec cp {} dist/ \;
+          fi
+          
+          echo "Organized distributions:"
+          ls -la dist/
+          if [ -z "$(ls -A dist/)" ]; then
+            echo "No packages selected for publishing!"
+            exit 1
+          fi
+
+      - name: Publish to Test PyPI
+        if: inputs.repository_url == 'https://test.pypi.org/legacy/'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: dist/
+          verbose: true
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+
+      - name: Publish to PyPI
+        if: inputs.repository_url == 'https://upload.pypi.org/legacy/'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+          verbose: true
+          password: ${{ secrets.PYPI_API_TOKEN }}

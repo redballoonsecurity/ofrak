@@ -7,7 +7,7 @@ install:
 
 .PHONY: develop
 develop:
-	$(PIP) install -e .[test] --config-settings editable_mode=compat
+	$(PIP) install -e . --config-settings editable_mode=compat
 
 .PHONY: inspect
 inspect:
@@ -15,5 +15,5 @@ inspect:
 
 .PHONY: test
 test: inspect
-	$(PYTHON) -m pytest -n auto --cov=ofrak_type --cov-report=term-missing --cov-fail-under=100 ofrak_type_test
+	$(PYTHON) -m pytest -n auto --cov=ofrak_type --cov-report=term-missing --cov-fail-under=100 tests
 	fun-coverage --cov-fail-under=100

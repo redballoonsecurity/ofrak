@@ -1,5 +1,4 @@
 import setuptools
-import pkg_resources
 from setuptools.command.egg_info import egg_info
 
 
@@ -20,32 +19,19 @@ with open("README.md") as f:
     long_description = f.read()
 
 
-# Should be the same as in build_image.py
-def read_requirements(requirements_path):
-    with open(requirements_path) as requirements_handle:
-        return [
-            str(requirement)
-            for requirement in pkg_resources.parse_requirements(requirements_handle)
-        ]
-
-
 setuptools.setup(
     name="ofrak_patch_maker",
-    version="4.1.0rc0",
+    version="4.1.0rc2",
     description="PatchMaker tool for applying source-code patches to binaries",
-    packages=setuptools.find_packages(exclude=("ofrak_patch_maker_test",)),
+    packages=setuptools.find_packages("src"),
+    package_dir={"": "src"},
     package_data={"ofrak_patch_maker": ["py.typed"]},
     install_requires=[
+        "immutabledict>=2.2.0",
         "ofrak_type>=2.2.0rc0,==2.*",
-    ]
-    + read_requirements("requirements.txt"),
-    extras_require={
-        "test": [
-            "fun-coverage==0.2.0",
-            "pytest",
-            "pytest-cov",
-        ]
-    },
+        "python-magic>=0.4.27;platform_system!='Windows'",
+        "python-magic-bin==0.4.14;platform_system=='Windows'",
+    ],
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",
     long_description=long_description,

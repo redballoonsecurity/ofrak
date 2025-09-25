@@ -1,6 +1,6 @@
 {
   "name": "ofrak-app",
-  "version": "3.2.0",
+  "version": "3.3.0rc13",
   "description": "The graphical front-end for OFRAK.",
   "homepage": "https://ofrak.com",
   "private": true,
@@ -14,7 +14,7 @@
   "devDependencies": {
     "prettier": "^2.7.1",
     "prettier-plugin-svelte": "^2.6.0",
-    "vite": "^4.5.5",
+    "vite": "^4.5.14",
     "@sveltejs/vite-plugin-svelte": "^2.4.2",
     "svelte": "^4.0.5"
   },

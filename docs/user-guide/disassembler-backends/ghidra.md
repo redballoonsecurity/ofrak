@@ -12,7 +12,7 @@ OFRAK supports using the Ghidra backend in two ways: natively on your host machi
         % source venv/bin/activate
         ```
     1. Install `ofrak` and its dependencies.
-    1. Run `make {install, develop}` inside of the [`ofrak_ghidra/`](https://github.com/redballoonsecurity/ofrak/tree/master/disassemblers/ofrak_ghidra) directory to install OFRAK Ghidra.
+    1. Run `make install` or `make develop` inside of the [`ofrak_ghidra/`](https://github.com/redballoonsecurity/ofrak/tree/master/disassemblers/ofrak_ghidra) directory to install OFRAK Ghidra.
     1. Copy [`server.conf`](https://github.com/redballoonsecurity/ofrak/blob/master/disassemblers/ofrak_ghidra/server.conf) to the `server/` directory of your local Ghidra installation
     1. Run `python -m ofrak_ghidra.config dump > ofrak_ghidra.yml` to create the default YAML file
     1. Modify `ofrak_ghidra.yml` according to your local Ghidra environment. This provides OFRAK Ghidra with the paths to your Ghidra install directory and Ghidra log file as well as your Ghidra Server address and credentials.
@@ -21,7 +21,7 @@ OFRAK supports using the Ghidra backend in two ways: natively on your host machi
 
 === "Docker"
 
-    Follow the instructions in the [OFRAK environment setup guide](../../environment-setup.html) to build a Docker container with Ghidra. Ghidra will be automatically installed if the `disassemblers/ofrak_ghidra` package is included in the Docker build's config file.
+    Follow the instructions in the [OFRAK environment setup guide](../../environment-setup.md) to build a Docker container with Ghidra. Ghidra will be automatically installed if the `disassemblers/ofrak_ghidra` package is included in the Docker build's config file.
     For example, `ofrak-ghidra.yml`:
 
     ```yaml
@@ -54,8 +54,11 @@ To stop it, run `python -m ofrak_ghidra.server stop`.
 ## Usage
 To use Ghidra, you need to discover the component at setup-time with:
 ```python
-ofrak = OFRAK(logging.INFO)
-ofrak.injector.discover(ofrak_ghidra)
+from ofrak import OFRAK
+import ofrak_ghidra
+
+ofrak = OFRAK()
+ofrak.discover(ofrak_ghidra)
 ```
 
 !!! warning
@@ -76,7 +79,16 @@ the ofrak script.
 
 Define a `GhidraProjectConfig` and manually run the `GhidraProjectAnalyzer`:
 ```python
-async def main(ofrak_context: OFRAKContext,):
+import logging
+from ofrak import OFRAK
+from ofrak import OFRAKContext
+import ofrak_ghidra
+from ofrak_ghidra.components.ghidra_analyzer import (
+    GhidraProjectConfig,
+    GhidraProjectAnalyzer
+)
+
+async def main(ofrak_context: OFRAKContext):
     resource = await ofrak_context.create_root_resource_from_file(<file_path>)
     ghidra_config = GhidraProjectConfig(<gzf_file_path>)
     await resource.run(GhidraProjectAnalyzer, ghidra_config)
@@ -84,7 +96,7 @@ async def main(ofrak_context: OFRAKContext,):
 
 if __name__ == "__main__":
     ofrak = OFRAK(logging.INFO)
-    ofrak.injector.discover(ofrak_ghidra)
+    ofrak.discover(ofrak_ghidra)
     ofrak.run(main)
 ```
 
@@ -102,7 +114,7 @@ If OFRAK runs in debug mode (`ofrak = OFRAK(logging.DEBUG)`), Java exceptions ap
 python output.
 
 The full Ghidra logs are in Ghidra's log file. By default in the prebuilt Ghidra OFRAK Docker image,
-this is `~/.ghidra/.ghidra_10.1.2_PUBLIC/application.log`.
+this is `~/.ghidra/.ghidra_11.3.2_PUBLIC/application.log`.
 
 You can check the log file path for your sysem by running 
 `python -m ofrak_ghidra.config dump` and searching for the `log_file` setting under `ghidra_install` .

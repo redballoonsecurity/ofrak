@@ -183,7 +183,7 @@
     }
   }
 
-  $: if (node["type"].startsWith("ofrak") && node["enum"] == null) {
+  $: if (node["type"]?.startsWith("ofrak") && node["enum"] == null) {
     setName();
   }
 
@@ -348,7 +348,7 @@
       <!---->
     {:else if node["fields"] != null}
       {#each node["fields"] as field, i}
-        {#if node["type"].startsWith("ofrak")}
+        {#if node["type"]?.startsWith("ofrak")}
           <svelte:self node="{field}" bind:element="{element[1][field.name]}" />
         {:else}
           <svelte:self node="{field}" bind:element="{element[field['name']]}" />

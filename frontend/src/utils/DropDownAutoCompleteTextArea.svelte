@@ -61,7 +61,7 @@
     let match = comment?.match(pattern);
     if (match) {
       string = match[0];
-      autoOptions = options.filter((x) => x.startsWith(string));
+      autoOptions = options.filter((x) => x?.startsWith(string));
     }
   }
 

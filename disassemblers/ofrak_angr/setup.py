@@ -1,5 +1,4 @@
 import setuptools
-import pkg_resources
 from setuptools.command.egg_info import egg_info
 
 
@@ -20,33 +19,18 @@ with open("README.md") as f:
     long_description = f.read()
 
 
-# Should be the same as in build_image.py
-def read_requirements(requirements_path):
-    with open(requirements_path) as requirements_handle:
-        return [
-            str(requirement)
-            for requirement in pkg_resources.parse_requirements(requirements_handle)
-        ]
-
-
 setuptools.setup(
     name="ofrak_angr",
-    version="1.0.1",
+    version="1.1.0rc4",
     description="OFRAK angr Components",
-    packages=setuptools.find_packages(exclude=["ofrak_angr_test", "ofrak_angr_test.*"]),
+    packages=setuptools.find_packages("src"),
+    package_dir={"": "src"},
     package_data={"ofrak_angr": ["py.typed"]},
     install_requires=[
-        "ofrak",
-    ]
-    + read_requirements("requirements.txt"),
+        "angr>=9.2.93,<=9.2.174",
+        "ofrak>=3.3.0rc10",
+    ],
     extras_require={
-        "test": [
-            "fun-coverage==0.2.0",
-            "pytest",
-            "pytest-asyncio==0.19.0",
-            "pytest-cov",
-            "requests",
-        ],
         "graphical": ["pygraphviz"],
     },
     author="Red Balloon Security",

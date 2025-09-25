@@ -67,7 +67,7 @@ like commenting, unpacking, analysis, modification and packing of resources.
 See the [Getting Started guide](./getting-started.md) for examples on how to use OFRAK.
 
 ## Licensing
-The code in this repository comes with an [OFRAK Community License](https://github.com/redballoonsecurity/ofrak/LICENSE), which is intended for educational uses, personal development, or just having fun.
+The code in this repository comes with an [OFRAK Community License](https://github.com/redballoonsecurity/ofrak/blob/master/LICENSE), which is intended for educational uses, personal development, or just having fun.
 
 Users interested in using OFRAK for commercial purposes can request the Pro or Enterprise License. See [OFRAK Licensing](https://ofrak.com/license/) for more information.
 

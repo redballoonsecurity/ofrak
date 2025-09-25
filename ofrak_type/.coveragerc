@@ -1,4 +1,0 @@
-[run]
-omit =
-    ofrak_type/error.py
-    ofrak_type/architecture.py

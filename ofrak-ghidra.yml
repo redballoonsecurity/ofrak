@@ -10,6 +10,8 @@ packages_paths:
     "disassemblers/ofrak_capstone",
     "disassemblers/ofrak_angr",
     "disassemblers/ofrak_ghidra",
+    "disassemblers/ofrak_cached_disassembly",
+    "disassemblers/ofrak_pyghidra",
     "frontend",
   ]
 entrypoint: |
