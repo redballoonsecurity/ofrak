@@ -79,10 +79,15 @@ class ScriptSession:
             ofrak.discover(ofrak_capstone)
             ofrak.discover(ofrak_binary_ninja)
 
-        if False:
+        if False:  # older Ghidra backend with Java server
             import ofrak_ghidra
 
             ofrak.discover(ofrak_ghidra)
+
+        if False:  # newer PyGhidra backend
+            import ofrak_pyghidra
+
+            ofrak.discover(ofrak_pyghidra)
 
         ofrak.run(main)
     """
