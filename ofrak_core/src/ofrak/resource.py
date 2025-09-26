@@ -330,7 +330,6 @@ class Resource:
         if this resource has been modified.
 
         :raises InvalidStateError: If the local resource model has been modified
-
         :raises NotFoundError: If the resource service does not have a model for this resource's ID
         """
         if resource.is_modified and not resource.is_deleted:
