@@ -1,8 +1,5 @@
 <style>
   form {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
     justify-content: space-between;
     align-items: center;
   }
@@ -65,6 +62,14 @@
   option {
     font-family: monospace;
   }
+
+  .row {
+    justify-content: space-evenly;
+    align-items: baseline;
+    align-content: center;
+    white-space: nowrap;
+    margin-bottom: 1em;
+  }
 </style>
 
 <script>
@@ -81,8 +86,8 @@
 
   export let modifierView;
   let errorMessage,
-    ofrakTagsPromise = new Promise(() => {}),
-    selectedTag;
+    ofrakProgramAttributesPromise = new Promise(() => {});
+  let selected_attribute = {};
 
   async function refreshResource() {
     // Force tree view children refresh
@@ -99,29 +104,35 @@
     $selected = originalSelected;
   }
 
-  async function chooseTag() {
-    if (selectedTag) {
+  async function addProgramAttributes() {
+    if (selected_attribute['isa'] && selected_attribute['bit_width'] && selected_attribute['endianness']) {
       modifierView = undefined;
-      await $selectedResource.add_tag(selectedTag);
+      let program_attributes = JSON.stringify(
+        ["ofrak.core.architecture.ProgramAttributes",
+        {
+          "isa": selected_attribute['isa'],
+          "sub_isa": selected_attribute['sub_isa'],
+          "bit_width": selected_attribute['bit_width'],
+          "endianness": selected_attribute['endianness'],
+          "processor": selected_attribute['processor']
+        }
+        ]
+      );
+      await $selectedResource.add_program_attributes(program_attributes);
       await refreshResource();
     }
   }
 
   onMount(async () => {
     try {
-      await fetch(`${$settings.backendUrl}/get_all_tags`).then(async (r) => {
+      await fetch(`${$settings.backendUrl}/get_all_program_attributes`).then(async (r) => {
         if (!r.ok) {
           throw Error(JSON.stringify(await r.json(), undefined, 2));
         }
-        r.json().then((ofrakTags) => {
-          ofrakTags.sort(function (a, b) {
-            if (cleanOfrakType(a) > cleanOfrakType(b)) {
-              return 1;
-            } else {
-              return -1;
-            }
-          });
-          ofrakTagsPromise = ofrakTags;
+        
+        //console.log(r.json())
+        r.json().then((ofrakProgramAttributes) => {
+          ofrakProgramAttributesPromise = ofrakProgramAttributes;
         });
       });
     } catch (err) {
@@ -136,46 +147,51 @@
 
 <div class="container">
   <div class="inputs">
-    <p>Select tag to add to resource.</p>
-    {#await ofrakTagsPromise}
+    <p>Select ProgramAttributes to add to resource.</p>
+    {#await ofrakProgramAttributesPromise}
       <LoadingText />
-    {:then ofrakTags}
-      {#if ofrakTags && ofrakTags.length > 0}
+    {:then ofrakProgramAttributes}
+      {#if ofrakProgramAttributes && ofrakProgramAttributes.length > 0}
         <form
           on:submit="{(e) => {
             e.preventDefault();
-            chooseTag();
+            addProgramAttributes();
           }}"
         >
-          New Tag: <select
-            on:click="{(e) => {
-              e.stopPropagation();
-            }}"
-            bind:value="{selectedTag}"
-          >
-            <option value="{null}">Select a tag to add</option>
-            {#each ofrakTags as ofrakTag}
-              <option value="{ofrakTag}">
-                {cleanOfrakType(ofrakTag)}
-              </option>
-            {/each}
-          </select>
-
-          <Button
-            --button-margin="0 .5em 0 .5em"
-            --button-padding=".5em 1em .5em 1em"
-            on:click="{(e) => {
-              e.stopPropagation();
-            }}"
-            disabled="{!selectedTag}"
-            type="submit">Add</Button
-          >
+          {#each ofrakProgramAttributes as ofrakProgramAttributesType}
+            <div class="row">
+              {ofrakProgramAttributesType[0]} {#if ofrakProgramAttributesType[0] == "sub_isa" || ofrakProgramAttributesType[0] == "processor"}(optional){/if}: <select
+                on:click="{(e) => {
+                  e.stopPropagation();
+                }}"
+                bind:value="{selected_attribute[ofrakProgramAttributesType[0]]}"
+              >
+                <option value="{null}">Select {ofrakProgramAttributesType[0]}</option>
+                {#each ofrakProgramAttributesType[1] as avail_option}
+                  <option value="{avail_option}">
+                    {cleanOfrakType(avail_option)}
+                  </option>
+                {/each}
+              </select>
+            </div>
+          {/each}
+          <div class="row">
+            <Button
+              --button-margin="0 .5em 0 .5em"
+              --button-padding=".5em 1em .5em 1em"
+              on:click="{(e) => {
+                e.stopPropagation();
+              }}"
+              disabled="{!selected_attribute['isa'] || !selected_attribute['bit_width'] || !selected_attribute['endianness']}"
+              type="submit">Add</Button
+            >
+          </div>
         </form>
       {:else}
-        No tags found!
+        No ProgramAttributes found!
       {/if}
     {:catch}
-      <p>Failed to get the list of OFRAK tags!</p>
+      <p>Failed to get the list of OFRAK ProgramAttributes!</p>
       <p>The back end server may be down.</p>
     {/await}
     {#if errorMessage}
@@ -189,3 +205,4 @@
     <Button on:click="{() => (modifierView = undefined)}">Cancel</Button>
   </div>
 </div>
+

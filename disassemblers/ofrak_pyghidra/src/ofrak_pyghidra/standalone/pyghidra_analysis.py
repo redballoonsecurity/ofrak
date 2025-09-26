@@ -17,104 +17,110 @@ def _parse_offset(java_object):
 
 
 def unpack(program_file, decompiled, language=None, base_address=None):
-    with pyghidra.open_program(program_file, language=language) as flat_api:
-        # Java packages must be imported after pyghidra.start or pyghidra.open_program
-        from ghidra.app.decompiler import DecompInterface
-        from ghidra.util.task import TaskMonitor
-        from ghidra.program.model.block import BasicBlockModel
-        from ghidra.program.model.symbol import RefType
-        from java.math import BigInteger
+    try:
+        with pyghidra.open_program(program_file, language=language) as flat_api:
+            # Java packages must be imported after pyghidra.start or pyghidra.open_program
+            from ghidra.app.decompiler import DecompInterface
+            from ghidra.util.task import TaskMonitor
+            from ghidra.program.model.block import BasicBlockModel
+            from ghidra.program.model.symbol import RefType
+            from java.math import BigInteger
 
-        # If base_address is provided, rebase the program
-        if base_address is not None:
-            # Convert base_address to int if it's a string
-            if isinstance(base_address, str):
-                if base_address.startswith("0x"):
-                    base_address = int(base_address, 16)
-                else:
-                    base_address = int(base_address)
+            # If base_address is provided, rebase the program
+            if base_address is not None:
+                # Convert base_address to int if it's a string
+                if isinstance(base_address, str):
+                    if base_address.startswith("0x"):
+                        base_address = int(base_address, 16)
+                    else:
+                        base_address = int(base_address)
 
-            # Rebase the program to the specified base address
-            program = flat_api.getCurrentProgram()
-            address_factory = program.getAddressFactory()
-            new_base_addr = address_factory.getDefaultAddressSpace().getAddress(hex(base_address))
-            program.setImageBase(new_base_addr, True)
+                # Rebase the program to the specified base address
+                program = flat_api.getCurrentProgram()
+                address_factory = program.getAddressFactory()
+                new_base_addr = address_factory.getDefaultAddressSpace().getAddress(hex(base_address))
+                program.setImageBase(new_base_addr, True)
 
-        main_dictionary = {}
-        code_regions = _unpack_program(flat_api)
-        main_dictionary["metadata"] = {}
-        main_dictionary["metadata"]["backend"] = "ghidra"
-        main_dictionary["metadata"]["decompiled"] = decompiled
-        main_dictionary["metadata"]["path"] = program_file
-        if base_address is not None:
-            main_dictionary["metadata"]["base_address"] = base_address
-        with open(program_file, "rb") as fh:
-            data = fh.read()
-            md5_hash = hashlib.md5(data)
-            main_dictionary["metadata"]["hash"] = md5_hash.digest().hex()
+            main_dictionary = {}
+            code_regions = _unpack_program(flat_api)
+            main_dictionary["metadata"] = {}
+            main_dictionary["metadata"]["backend"] = "ghidra"
+            main_dictionary["metadata"]["decompiled"] = decompiled
+            main_dictionary["metadata"]["path"] = program_file
+            if base_address is not None:
+                main_dictionary["metadata"]["base_address"] = base_address
+            with open(program_file, "rb") as fh:
+                data = fh.read()
+                md5_hash = hashlib.md5(data)
+                main_dictionary["metadata"]["hash"] = md5_hash.digest().hex()
 
-        for code_region in code_regions:
-            seg_key = f"seg_{code_region['virtual_address']}"
-            main_dictionary[seg_key] = code_region
-            func_cbs = _unpack_code_region(code_region, flat_api)
-            code_region["children"] = []
+            for code_region in code_regions:
+                seg_key = f"seg_{code_region['virtual_address']}"
+                main_dictionary[seg_key] = code_region
+                func_cbs = _unpack_code_region(code_region, flat_api)
+                code_region["children"] = []
 
-            decomp_interface = DecompInterface()
-            init = decomp_interface.openProgram(flat_api.getCurrentProgram())
-            if not init:
-                raise RuntimeError("Could not open program for decompilation")
+                decomp_interface = DecompInterface()
+                init = decomp_interface.openProgram(flat_api.getCurrentProgram())
+                if not init:
+                    raise RuntimeError("Could not open program for decompilation")
 
-            for func, cb in func_cbs:
-                cb_key = f"func_{cb['virtual_address']}"
-                code_region["children"].append(cb_key)
-                if decompiled:
-                    try:
-                        decompilation = _decompile(func, decomp_interface, TaskMonitor.DUMMY)
-                    except Exception as e:
-                        print(e, traceback.format_exc())
-                        decompilation = ""
-                    cb["decompilation"] = decompilation
-                bb_model = BasicBlockModel(flat_api.getCurrentProgram())
-                basic_blocks, data_words = _unpack_complex_block(
-                    func, flat_api, bb_model, BigInteger.ONE
-                )
-                cb["children"] = []
-                for block, bb in basic_blocks:
-                    if bb["size"] == 0:
-                        raise Exception(f"Basic block 0x{bb['virtual_address']:x} has no size")
+                for func, cb in func_cbs:
+                    cb_key = f"func_{cb['virtual_address']}"
+                    code_region["children"].append(cb_key)
+                    if decompiled:
+                        try:
+                            decompilation = _decompile(func, decomp_interface, TaskMonitor.DUMMY)
+                        except Exception as e:
+                            print(e, traceback.format_exc())
+                            decompilation = ""
+                        cb["decompilation"] = decompilation
+                    bb_model = BasicBlockModel(flat_api.getCurrentProgram())
+                    basic_blocks, data_words = _unpack_complex_block(
+                        func, flat_api, bb_model, BigInteger.ONE
+                    )
+                    cb["children"] = []
+                    for block, bb in basic_blocks:
+                        if bb["size"] == 0:
+                            raise Exception(f"Basic block 0x{bb['virtual_address']:x} has no size")
 
-                    if (
-                        bb["virtual_address"] < cb["virtual_address"]
-                        or (bb["virtual_address"] + bb["size"]) > cb["virtual_address"] + cb["size"]
-                    ):
-                        logging.warning(
-                            f"Basic Block 0x{bb['virtual_address']:x} does not fall within "
-                            f"complex block {hex(cb['virtual_address'])}-{hex(cb['virtual_address'] + cb['size'])}"
-                        )
-                        continue
-                    bb_key = f"bb_{bb['virtual_address']}"
-                    instructions = _unpack_basic_block(block, flat_api, RefType, BigInteger.ONE)
-                    bb["children"] = []
-                    for instruction in instructions:
-                        instr_key = f"instr_{instruction['virtual_address']}"
-                        bb["children"].append(instr_key)
-                        main_dictionary[instr_key] = instruction
-                    cb["children"].append(bb_key)
-                    main_dictionary[bb_key] = bb
-                for dw in data_words:
-                    if (
-                        dw["virtual_address"] < cb["virtual_address"]
-                        or (dw["virtual_address"] + dw["size"]) > cb["virtual_address"] + cb["size"]
-                    ):
-                        logging.warning(
-                            f"Data Word 0x{dw['virtual_address']:x} does not fall within "
-                            f"complex block {hex(cb['virtual_address'])}-{hex(cb['virtual_address'] + cb['size'])}"
-                        )
-                        continue
-                    dw_key = f"dw_{dw['virtual_address']}"
-                    cb["children"].append(dw_key)
-                    main_dictionary[dw_key] = dw
-                main_dictionary[cb_key] = cb
+                        if (
+                            bb["virtual_address"] < cb["virtual_address"]
+                            or (bb["virtual_address"] + bb["size"]) > cb["virtual_address"] + cb["size"]
+                        ):
+                            logging.warning(
+                                f"Basic Block 0x{bb['virtual_address']:x} does not fall within "
+                                f"complex block {hex(cb['virtual_address'])}-{hex(cb['virtual_address'] + cb['size'])}"
+                            )
+                            continue
+                        bb_key = f"bb_{bb['virtual_address']}"
+                        instructions = _unpack_basic_block(block, flat_api, RefType, BigInteger.ONE)
+                        bb["children"] = []
+                        for instruction in instructions:
+                            instr_key = f"instr_{instruction['virtual_address']}"
+                            bb["children"].append(instr_key)
+                            main_dictionary[instr_key] = instruction
+                        cb["children"].append(bb_key)
+                        main_dictionary[bb_key] = bb
+                    for dw in data_words:
+                        if (
+                            dw["virtual_address"] < cb["virtual_address"]
+                            or (dw["virtual_address"] + dw["size"]) > cb["virtual_address"] + cb["size"]
+                        ):
+                            logging.warning(
+                                f"Data Word 0x{dw['virtual_address']:x} does not fall within "
+                                f"complex block {hex(cb['virtual_address'])}-{hex(cb['virtual_address'] + cb['size'])}"
+                            )
+                            continue
+                        dw_key = f"dw_{dw['virtual_address']}"
+                        cb["children"].append(dw_key)
+                        main_dictionary[dw_key] = dw
+                    main_dictionary[cb_key] = cb
+    except Exception as e:
+        if "toString" in dir(e) and "No load spec found" in e.toString():
+            raise Exception(e.toString() + "\nTry adding ProgramAttributes to you binary before running a Ghidra analyzer/unpacker!")
+        else:
+            raise e
     return main_dictionary
 
 

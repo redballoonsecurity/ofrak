@@ -1520,3 +1520,45 @@ async def test_get_project_by_resource_id(ofrak_client: TestClient, test_project
     project_resp = await ofrak_client.get(f"/{resource_id}/get_project_by_resource_id")
     project = await project_resp.json()
     assert project["session_id"] == id
+
+
+async def test_get_all_program_attributes(ofrak_client: TestClient):
+    resp = await ofrak_client.get(f"/get_all_program_attributes")
+    assert resp.status == 200
+    resp_body = await resp.json()
+    # convert from list to dict form:
+    resp_body_dict = {}
+    for key, values in resp_body:
+        resp_body_dict[key]=values
+    assert "isa" in resp_body_dict
+    assert "sub_isa" in resp_body_dict
+    assert "bit_width" in resp_body_dict
+    assert "endianness" in resp_body_dict
+    assert "processor" in resp_body_dict
+    assert "ofrak_type.architecture.InstructionSet.ARM" in resp_body_dict["isa"]
+    assert "ofrak_type.architecture.SubInstructionSet.ARMv4T" in resp_body_dict["sub_isa"]
+    assert "ofrak_type.bit_width.BitWidth.BIT_16" in resp_body_dict["bit_width"]
+    assert "ofrak_type.endianness.Endianness.LITTLE_ENDIAN" in resp_body_dict["endianness"]
+    assert "ofrak_type.architecture.ProcessorType.ARM926EJ_S" in resp_body_dict["processor"]
+
+
+async def test_add_program_attributes(ofrak_client: TestClient, hello_elf):
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
+    )
+    create_body = await create_resp.json()
+    resource_id = create_body["id"]
+    json_program_attributes = ["ofrak.core.architecture.ProgramAttributes",{"isa":"ofrak_type.architecture.InstructionSet.ARM","sub_isa":"ofrak_type.architecture.SubInstructionSet.ARMv6","bit_width":"ofrak_type.bit_width.BitWidth.BIT_32","endianness":"ofrak_type.endianness.Endianness.LITTLE_ENDIAN","processor":"ofrak_type.architecture.ProcessorType.GENERIC_A9_V7"}]
+    resp = await ofrak_client.post(
+        f"/{resource_id}/add_program_attributes",
+        json=json_program_attributes,
+    )
+    assert resp.status == 200
+
+    # also test having sub_isa and processor as null, as they are optional
+    json_program_attributes_optional = ["ofrak.core.architecture.ProgramAttributes",{"isa":"ofrak_type.architecture.InstructionSet.ARM","sub_isa":None,"bit_width":"ofrak_type.bit_width.BitWidth.BIT_32","endianness":"ofrak_type.endianness.Endianness.LITTLE_ENDIAN","processor":None}]
+    resp = await ofrak_client.post(
+        f"/{resource_id}/add_program_attributes",
+        json=json_program_attributes_optional,
+    )
+    assert resp.status == 200

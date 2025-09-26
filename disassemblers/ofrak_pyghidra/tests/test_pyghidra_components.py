@@ -20,6 +20,10 @@ import ofrak_pyghidra
 from ofrak.core.code_region import CodeRegion
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort
 from ofrak_pyghidra.standalone.pyghidra_analysis import unpack, decompile_all_functions
+from ofrak_type.architecture import InstructionSet
+from ofrak_type.bit_width import BitWidth
+from ofrak_type.endianness import Endianness
+from ofrak.core.architecture import ProgramAttributes
 
 ASSETS_DIR = os.path.abspath(
     os.path.join(
@@ -191,7 +195,7 @@ async def program_resource(ofrak_context: OFRAKContext):
     )
 
 
-async def test_PIE_code_regions(program_resource, ofrak_injector):
+async def test_PIE_code_regions(program_resource):
     """
     PIE binaries are loaded at address 0x100000 in Ghidra. Verify that unpacking CodeRegions creates them at the right virtual addresses.
     """
@@ -213,3 +217,40 @@ async def test_PIE_code_regions(program_resource, ofrak_injector):
     assert code_regions[2].virtual_address == 0x101040 and code_regions[2].size == 0x8
     assert code_regions[3].virtual_address == 0x101050 and code_regions[3].size == 0x103
     assert code_regions[4].virtual_address == 0x101154 and code_regions[4].size == 0x9
+
+
+@pytest.fixture
+async def ihex_resource(ofrak_context: OFRAKContext):
+    return await ofrak_context.create_root_resource_from_file(
+        os.path.join(
+            os.path.dirname(__file__),
+            "../../ofrak_core/tests/components/assets/hello_world.ihex",
+        )
+    )
+
+
+async def test_ihex_unpacking(ihex_resource):
+    """
+    Test that adding ProgramAttributes to an Ihex file allows for unpacking with ofrak_pyghidra.
+    """
+    program_attributes = ProgramAttributes(
+        InstructionSet.X86,
+        bit_width=BitWidth.BIT_64,
+        endianness=Endianness.LITTLE_ENDIAN,
+        sub_isa=None,
+        processor=None,
+    )
+    ihex_resource.add_attributes(program_attributes)
+    await ihex_resource.save()
+    await ihex_resource.unpack_recursively()
+
+    complex_blocks: List[ComplexBlock] = await ihex_resource.get_descendants_as_view(
+        ComplexBlock,
+        r_filter=ResourceFilter(
+            tags=[
+                ComplexBlock,
+            ]
+        ),
+    )
+    assert any(cb.name == "FUN_0040040c" for cb in complex_blocks)
+    assert any(cb.name == "FUN_004003be" for cb in complex_blocks)

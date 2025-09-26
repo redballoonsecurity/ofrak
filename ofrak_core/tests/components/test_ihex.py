@@ -5,7 +5,7 @@ from ofrak.core.ihex import IhexPacker, IhexUnpacker
 import pytest
 
 from ofrak import OFRAKContext, Resource, ResourceFilter, ResourceAttributeRangeFilter
-from ofrak.core import MemoryRegion, IhexProgram
+from ofrak.core import MemoryRegion, Ihex
 from ofrak_type import Range
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 from pytest_ofrak.patterns.unpack_verify import UnpackAndVerifyTestCase
@@ -72,19 +72,10 @@ async def test_ihex_analyzer(ofrak_context: OFRAKContext, ihex_file):
     from bincopy import BinFile
 
     root = await ofrak_context.create_root_resource_from_file(ihex_file)
+    await root.identify()
     raw_ihex_data = await root.get_data()
     binfile = BinFile()
     binfile.add_ihex(raw_ihex_data.decode("utf-8"))
 
-    ihex_prog_data = binfile.as_binary()
-
-    ihex_program_child = await root.create_child(
-        tags=(IhexProgram,),
-        data=ihex_prog_data,
-    )
-
-    ihex_prog = await ihex_program_child.view_as(IhexProgram)
-
-    assert ihex_prog.address_limits.start == binfile.minimum_address
-    assert ihex_prog.address_limits.end == binfile.maximum_address
-    assert ihex_prog.start_addr == binfile.execution_start_address
+    ihex = await root.view_as(Ihex)
+    assert ihex.start_addr == binfile.execution_start_address
