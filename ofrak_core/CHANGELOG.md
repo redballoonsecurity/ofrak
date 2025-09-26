@@ -83,7 +83,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Update orjson to ~=3.10.12 ([#562](https://github.com/redballoonsecurity/ofrak/pull/562/files))
 - Update `DataSummary` handling so that it is no longer stored in `ResourceModel`, but rather retrievable via `DataSummaryAnalyzer.get_data_summary` ([#598](https://github.com/redballoonsecurity/ofrak/pull/598))
 - Update dependencies: aiohttp>=3.12.14, beartype~=0.20.0, ubi-reader==0.8.12 ([#613](https://github.com/redballoonsecurity/ofrak/pull/613))
-- Rewrote Intel Hex components ([#637](https://github.com/redballoonsecurity/ofrak/pull/637))
+- Add `ofrak_pyghidra` to OFRAK GUI script builder ([#631](https://github.com/redballoonsecurity/ofrak/pull/631))
+- rewrote intel hex components ([#637](https://github.com/redballoonsecurity/ofrak/pull/637))
 
 ### Deprecated
 - `Resource.flush_to_disk` deprecated in favor of `Resource.flush_data_to_disk`. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373), [#567](https://github.com/redballoonsecurity/ofrak/pull/568))

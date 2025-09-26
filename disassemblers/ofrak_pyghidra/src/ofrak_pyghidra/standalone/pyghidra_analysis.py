@@ -20,7 +20,7 @@ def unpack(program_file, decompiled, language=None, base_address=None):
     try:
         with pyghidra.open_program(program_file, language=language) as flat_api:
             # Java packages must be imported after pyghidra.start or pyghidra.open_program
-            from ghidra.app.decompiler import DecompInterface
+            from ghidra.app.decompiler import DecompInterface, DecompileOptions
             from ghidra.util.task import TaskMonitor
             from ghidra.program.model.block import BasicBlockModel
             from ghidra.program.model.symbol import RefType
@@ -63,6 +63,9 @@ def unpack(program_file, decompiled, language=None, base_address=None):
                 code_region["children"] = []
 
                 decomp_interface = DecompInterface()
+                prog_options = DecompileOptions()
+                prog_options.grabFromProgram(flat_api.getCurrentProgram())
+                decomp_interface.setOptions(prog_options)
                 init = decomp_interface.openProgram(flat_api.getCurrentProgram())
                 if not init:
                     raise RuntimeError("Could not open program for decompilation")
@@ -396,12 +399,15 @@ def _decompile(func, decomp_interface, task_monitor):
 
 def decompile_all_functions(program_file, language):
     with pyghidra.open_program(program_file, language=language) as flat_api:
-        from ghidra.app.decompiler import DecompInterface
+        from ghidra.app.decompiler import DecompInterface, DecompileOptions
         from ghidra.util.task import TaskMonitor
 
         decomp = DecompInterface()
-        decomp.openProgram(flat_api.getCurrentProgram())
         program = flat_api.getCurrentProgram()
+        prog_options = DecompileOptions()
+        prog_options.grabFromProgram(program)
+        decomp.setOptions(prog_options)
+        decomp.openProgram(program)
         function_manager = program.getFunctionManager()
         func_to_decomp = {}
         for func in function_manager.getFunctions(True):
