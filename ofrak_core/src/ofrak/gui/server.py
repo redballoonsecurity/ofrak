@@ -734,10 +734,9 @@ class AiohttpOFRAKServer:
             "fields": fields_info,
             # Optionally include the composed attribute types for reference
             "composed_attributes": self._serializer.to_pjson(
-                list(view_type.composed_attributes_types), List[Type[ResourceAttributes]]
-            )
-            if hasattr(view_type, "composed_attributes_types")
-            else [],
+                list(getattr(view_type, "composed_attributes_types", [])),
+                List[Type[ResourceAttributes]],
+            ),
         }
 
         return json_response(schema)
@@ -1765,11 +1764,11 @@ def _format_component_docstring(component: ComponentInterface) -> str:
         )
     if hasattr(component, "children"):
         docstring += "\nChildren:" + "".join(
-            [f"\n\t- {child.__name__}" for child in component.children]
+            [f"\n\t- {child.__name__}" for child in getattr(component, "children", [])]
         )
     if hasattr(component, "outputs"):
         docstring += "\nOutputs:" + "".join(
-            [f"\n\t- {output.__name__}" for output in component.outputs]
+            [f"\n\t- {output.__name__}" for output in getattr(component, "outputs", [])]
         )
 
     return docstring
