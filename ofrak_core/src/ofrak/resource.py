@@ -58,7 +58,7 @@ from ofrak.service.resource_service_i import (
     ResourceFilter,
     ResourceSort,
 )
-from ofrak_type.error import MultipleResourcesFoundError, NotFoundError, InvalidStateError
+from ofrak_type.error import NotFoundError, InvalidStateError
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__name__)
@@ -1138,7 +1138,10 @@ class Resource:
 
         :param r_filter: Contains parameters which resources must match to be returned, including
         any tags it must have and/or values of indexable attributes
-        :return:
+        :return: the matching resources
+
+        :raises NotFoundError: If fewer than one ancestor matches the filter
+        :raises MultipleResourcesFoundError: If multiple ancestors match the filter
         """
         ancestors = list(
             await self._resource_service.get_ancestors_by_id(self._resource.id, 2, r_filter)
@@ -1150,7 +1153,7 @@ class Resource:
             )
         if len(ancestors) > 1:
             raise MultipleResourcesFoundError(
-                f"There are multiple descendants for resource {self._resource.id.hex()} "
+                f"There are multiple ancestors for resource {self._resource.id.hex()} "
                 f"matching the provided filter"
             )
         return await self._create_resource(ancestors[0])
@@ -1267,11 +1270,10 @@ class Resource:
         no maximum depth
         :param r_filter: Contains parameters which resources must match to be returned, including
         any tags it must have and/or values of indexable attributes
-        :return:
+        :return: the matching resource
 
-        :raises NotFoundError: If a filter is provided and more or fewer than one descendant matches
-        ``r_filter``
-        :raises NotFoundError: If a filter is not provided and this resource has multiple descendant
+        :raises NotFoundError: If fewer than one descendant matches the filter
+        :raises MultipleResourcesFoundError: If multiple descendants match the filter
         """
         models = list(
             await self._resource_service.get_descendants_by_id(
@@ -1765,3 +1767,7 @@ async def _default_summarize_resource(resource: Resource) -> str:
         f"{resource.get_id().hex()}: [caption=({resource.get_caption()}), "
         f"attributes=({attributes_info}){data_info}]"
     )
+
+
+class MultipleResourcesFoundError(RuntimeError):
+    pass
