@@ -1,8 +1,9 @@
 import pytest
-from ofrak_type.error import MultipleResourcesFoundError, NotFoundError
+from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 
 from ofrak import OFRAKContext
+from ofrak.resource import MultipleResourcesFoundError
 from ofrak.core import LinkableBinary, LinkableSymbol
 from ofrak_type import LinkableSymbolType
 
