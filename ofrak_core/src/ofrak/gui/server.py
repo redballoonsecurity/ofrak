@@ -1118,16 +1118,6 @@ class AiohttpOFRAKServer:
         else:
             return json_response([])
 
-    async def get_docstring_for_component(self, request: Request) -> Response:
-        component_string = request.query.get("component")
-        if component_string is not None:
-            component = type(
-                self._ofrak_context.component_locator.get_by_id(component_string.encode("ascii"))
-            )
-        else:
-            raise ValueError("component is required")
-        return json_response()
-
     @exceptions_to_http(SerializedError)
     async def run_component(self, request: Request) -> Response:
         resource: Resource = await self._get_resource_for_request(request)
