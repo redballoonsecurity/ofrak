@@ -59,7 +59,7 @@ entropy_so = CTypesExtension(
 
 setuptools.setup(
     name="ofrak",
-    version="3.3.0rc14",
+    version="3.3.0rc15",
     description="A binary analysis and modification platform",
     packages=setuptools.find_packages("src"),
     package_dir={"": "src"},
