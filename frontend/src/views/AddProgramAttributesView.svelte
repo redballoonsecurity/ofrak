@@ -105,19 +105,22 @@
   }
 
   async function addProgramAttributes() {
-    if (selected_attribute['isa'] && selected_attribute['bit_width'] && selected_attribute['endianness']) {
+    if (
+      selected_attribute["isa"] &&
+      selected_attribute["bit_width"] &&
+      selected_attribute["endianness"]
+    ) {
       modifierView = undefined;
-      let program_attributes = JSON.stringify(
-        ["ofrak.core.architecture.ProgramAttributes",
+      let program_attributes = JSON.stringify([
+        "ofrak.core.architecture.ProgramAttributes",
         {
-          "isa": selected_attribute['isa'],
-          "sub_isa": selected_attribute['sub_isa'],
-          "bit_width": selected_attribute['bit_width'],
-          "endianness": selected_attribute['endianness'],
-          "processor": selected_attribute['processor']
-        }
-        ]
-      );
+          isa: selected_attribute["isa"],
+          sub_isa: selected_attribute["sub_isa"],
+          bit_width: selected_attribute["bit_width"],
+          endianness: selected_attribute["endianness"],
+          processor: selected_attribute["processor"],
+        },
+      ]);
       await $selectedResource.add_program_attributes(program_attributes);
       await refreshResource();
     }
@@ -125,16 +128,18 @@
 
   onMount(async () => {
     try {
-      await fetch(`${$settings.backendUrl}/get_all_program_attributes`).then(async (r) => {
-        if (!r.ok) {
-          throw Error(JSON.stringify(await r.json(), undefined, 2));
+      await fetch(`${$settings.backendUrl}/get_all_program_attributes`).then(
+        async (r) => {
+          if (!r.ok) {
+            throw Error(JSON.stringify(await r.json(), undefined, 2));
+          }
+
+          //console.log(r.json())
+          r.json().then((ofrakProgramAttributes) => {
+            ofrakProgramAttributesPromise = ofrakProgramAttributes;
+          });
         }
-        
-        //console.log(r.json())
-        r.json().then((ofrakProgramAttributes) => {
-          ofrakProgramAttributesPromise = ofrakProgramAttributes;
-        });
-      });
+      );
     } catch (err) {
       try {
         errorMessage = JSON.parse(err.message).message;
@@ -160,13 +165,17 @@
         >
           {#each ofrakProgramAttributes as ofrakProgramAttributesType}
             <div class="row">
-              {ofrakProgramAttributesType[0]} {#if ofrakProgramAttributesType[0] == "sub_isa" || ofrakProgramAttributesType[0] == "processor"}(optional){/if}: <select
+              {ofrakProgramAttributesType[0]}
+              {#if ofrakProgramAttributesType[0] == "sub_isa" || ofrakProgramAttributesType[0] == "processor"}(optional){/if}:
+              <select
                 on:click="{(e) => {
                   e.stopPropagation();
                 }}"
                 bind:value="{selected_attribute[ofrakProgramAttributesType[0]]}"
               >
-                <option value="{null}">Select {ofrakProgramAttributesType[0]}</option>
+                <option value="{null}"
+                  >Select {ofrakProgramAttributesType[0]}</option
+                >
                 {#each ofrakProgramAttributesType[1] as avail_option}
                   <option value="{avail_option}">
                     {cleanOfrakType(avail_option)}
@@ -182,7 +191,9 @@
               on:click="{(e) => {
                 e.stopPropagation();
               }}"
-              disabled="{!selected_attribute['isa'] || !selected_attribute['bit_width'] || !selected_attribute['endianness']}"
+              disabled="{!selected_attribute['isa'] ||
+                !selected_attribute['bit_width'] ||
+                !selected_attribute['endianness']}"
               type="submit">Add</Button
             >
           </div>
