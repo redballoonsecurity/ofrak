@@ -1529,7 +1529,7 @@ async def test_get_all_program_attributes(ofrak_client: TestClient):
     # convert from list to dict form:
     resp_body_dict = {}
     for key, values in resp_body:
-        resp_body_dict[key]=values
+        resp_body_dict[key] = values
     assert "isa" in resp_body_dict
     assert "sub_isa" in resp_body_dict
     assert "bit_width" in resp_body_dict
@@ -1548,7 +1548,16 @@ async def test_add_program_attributes(ofrak_client: TestClient, hello_elf):
     )
     create_body = await create_resp.json()
     resource_id = create_body["id"]
-    json_program_attributes = ["ofrak.core.architecture.ProgramAttributes",{"isa":"ofrak_type.architecture.InstructionSet.ARM","sub_isa":"ofrak_type.architecture.SubInstructionSet.ARMv6","bit_width":"ofrak_type.bit_width.BitWidth.BIT_32","endianness":"ofrak_type.endianness.Endianness.LITTLE_ENDIAN","processor":"ofrak_type.architecture.ProcessorType.GENERIC_A9_V7"}]
+    json_program_attributes = [
+        "ofrak.core.architecture.ProgramAttributes",
+        {
+            "isa": "ofrak_type.architecture.InstructionSet.ARM",
+            "sub_isa": "ofrak_type.architecture.SubInstructionSet.ARMv6",
+            "bit_width": "ofrak_type.bit_width.BitWidth.BIT_32",
+            "endianness": "ofrak_type.endianness.Endianness.LITTLE_ENDIAN",
+            "processor": "ofrak_type.architecture.ProcessorType.GENERIC_A9_V7",
+        },
+    ]
     resp = await ofrak_client.post(
         f"/{resource_id}/add_program_attributes",
         json=json_program_attributes,
@@ -1556,7 +1565,16 @@ async def test_add_program_attributes(ofrak_client: TestClient, hello_elf):
     assert resp.status == 200
 
     # also test having sub_isa and processor as null, as they are optional
-    json_program_attributes_optional = ["ofrak.core.architecture.ProgramAttributes",{"isa":"ofrak_type.architecture.InstructionSet.ARM","sub_isa":None,"bit_width":"ofrak_type.bit_width.BitWidth.BIT_32","endianness":"ofrak_type.endianness.Endianness.LITTLE_ENDIAN","processor":None}]
+    json_program_attributes_optional = [
+        "ofrak.core.architecture.ProgramAttributes",
+        {
+            "isa": "ofrak_type.architecture.InstructionSet.ARM",
+            "sub_isa": None,
+            "bit_width": "ofrak_type.bit_width.BitWidth.BIT_32",
+            "endianness": "ofrak_type.endianness.Endianness.LITTLE_ENDIAN",
+            "processor": None,
+        },
+    ]
     resp = await ofrak_client.post(
         f"/{resource_id}/add_program_attributes",
         json=json_program_attributes_optional,

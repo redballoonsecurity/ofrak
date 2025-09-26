@@ -38,7 +38,9 @@ def unpack(program_file, decompiled, language=None, base_address=None):
                 # Rebase the program to the specified base address
                 program = flat_api.getCurrentProgram()
                 address_factory = program.getAddressFactory()
-                new_base_addr = address_factory.getDefaultAddressSpace().getAddress(hex(base_address))
+                new_base_addr = address_factory.getDefaultAddressSpace().getAddress(
+                    hex(base_address)
+                )
                 program.setImageBase(new_base_addr, True)
 
             main_dictionary = {}
@@ -86,7 +88,8 @@ def unpack(program_file, decompiled, language=None, base_address=None):
 
                         if (
                             bb["virtual_address"] < cb["virtual_address"]
-                            or (bb["virtual_address"] + bb["size"]) > cb["virtual_address"] + cb["size"]
+                            or (bb["virtual_address"] + bb["size"])
+                            > cb["virtual_address"] + cb["size"]
                         ):
                             logging.warning(
                                 f"Basic Block 0x{bb['virtual_address']:x} does not fall within "
@@ -105,7 +108,8 @@ def unpack(program_file, decompiled, language=None, base_address=None):
                     for dw in data_words:
                         if (
                             dw["virtual_address"] < cb["virtual_address"]
-                            or (dw["virtual_address"] + dw["size"]) > cb["virtual_address"] + cb["size"]
+                            or (dw["virtual_address"] + dw["size"])
+                            > cb["virtual_address"] + cb["size"]
                         ):
                             logging.warning(
                                 f"Data Word 0x{dw['virtual_address']:x} does not fall within "
@@ -118,7 +122,10 @@ def unpack(program_file, decompiled, language=None, base_address=None):
                     main_dictionary[cb_key] = cb
     except Exception as e:
         if "toString" in dir(e) and "No load spec found" in e.toString():
-            raise Exception(e.toString() + "\nTry adding ProgramAttributes to you binary before running a Ghidra analyzer/unpacker!")
+            raise Exception(
+                e.toString()
+                + "\nTry adding ProgramAttributes to you binary before running a Ghidra analyzer/unpacker!"
+            )
         else:
             raise e
     return main_dictionary

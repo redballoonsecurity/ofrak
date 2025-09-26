@@ -1249,15 +1249,28 @@ class AiohttpOFRAKServer:
             "processor": list(ProcessorType),
         }
         return json_response(
-            self._serializer.to_pjson(program_attributes_list, Dict[str, Set[Union[InstructionSet,Optional[SubInstructionSet],BitWidth,Endianness,Optional[ProcessorType]]]])
+            self._serializer.to_pjson(
+                program_attributes_list,
+                Dict[
+                    str,
+                    Set[
+                        Union[
+                            InstructionSet,
+                            Optional[SubInstructionSet],
+                            BitWidth,
+                            Endianness,
+                            Optional[ProcessorType],
+                        ]
+                    ],
+                ],
+            )
         )
 
     @exceptions_to_http(SerializedError)
     async def add_program_attributes(self, request: Request) -> Response:
         resource = await self._get_resource_for_request(request)
         program_attributes = self._serializer.from_pjson(await request.json(), ProgramAttributes)
-        script_str = (
-            f"""
+        script_str = f"""
         program_attributes = ProgramAttributes(
             {program_attributes.isa},
             bit_width={program_attributes.bit_width},
@@ -1267,7 +1280,6 @@ class AiohttpOFRAKServer:
         )
         {{resource}}.add_tag(Program)
         {{resource}}.add_attributes(program_attributes)"""
-        )
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
         script_str = """
         await {resource}.save()"""

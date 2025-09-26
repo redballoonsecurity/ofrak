@@ -92,7 +92,7 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraProject]):
 
     async def analyze(self, resource: Resource, config: PyGhidraAutoAnalyzerConfig = None):
         tempdir = mkdtemp(prefix="rbs-pyghidra-bin")
-        await resource.identify() # useful for checking tags later
+        await resource.identify()  # useful for checking tags later
         try:
             program_attrs = resource.get_attributes(ProgramAttributes)
             language = _arch_info_to_processor_id(program_attrs)

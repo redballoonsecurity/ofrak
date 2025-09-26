@@ -1,8 +1,7 @@
 import logging
 import re
-import sys
 from dataclasses import dataclass
-from typing import Any, List, Tuple, Union
+from typing import Any, Tuple, Union
 
 from bincopy import BinFile
 
@@ -10,7 +9,7 @@ from ofrak.component.analyzer import Analyzer
 from ofrak.component.identifier import Identifier
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
-from ofrak.core.binary import GenericBinary, GenericText
+from ofrak.core.binary import GenericText
 from ofrak.core.program import Program
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter
@@ -31,6 +30,7 @@ class Ihex(Program):
     :0C00000048656C6C6F20776F726C642197
     :00000001FF
     """
+
     start_addr: Union[None, int]
 
 
@@ -59,9 +59,15 @@ class IhexUnpacker(Unpacker[None]):
         _, binfile = _binfile_analysis(await resource.get_data(), self)
 
         for segment in binfile.segments:
-            segment_data = bytes(binfile.as_binary())[segment.minimum_address-binfile.minimum_address:segment.maximum_address-binfile.minimum_address]
+            segment_data = bytes(binfile.as_binary())[
+                segment.minimum_address
+                - binfile.minimum_address : segment.maximum_address
+                - binfile.minimum_address
+            ]
             await resource.create_child_from_view(
-                CodeRegion(segment.minimum_address, segment.maximum_address-segment.minimum_address),
+                CodeRegion(
+                    segment.minimum_address, segment.maximum_address - segment.minimum_address
+                ),
                 data=segment_data,
             )
 
@@ -80,7 +86,7 @@ class IhexPacker(Packer[None]):
         segments = await resource.get_children_as_view(
             CodeRegion, r_filter=ResourceFilter.with_tags(CodeRegion)
         )
-        if len(segments) == 0: # probably means that the ihex was never unpacked
+        if len(segments) == 0:  # probably means that the ihex was never unpacked
             raw_ihex = await resource.get_data()
             binfile.add_ihex(raw_ihex.decode("utf-8"))
         else:
@@ -122,5 +128,3 @@ def _binfile_analysis(raw_ihex: bytes, component) -> Tuple[Ihex, Any]:
     binfile = BinFile()
     binfile.add_ihex(raw_ihex.decode("utf-8"))
     return Ihex(start_addr=binfile.execution_start_address), binfile
-
-
