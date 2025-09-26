@@ -86,7 +86,7 @@ class IhexPacker(Packer[None]):
         segments = await resource.get_children_as_view(
             CodeRegion, r_filter=ResourceFilter.with_tags(CodeRegion)
         )
-        if len(segments) == 0:  # probably means that the ihex was never unpacked
+        if len(list(segments)) == 0:  # probably means that the ihex was never unpacked
             raw_ihex = await resource.get_data()
             binfile.add_ihex(raw_ihex.decode("utf-8"))
         else:
