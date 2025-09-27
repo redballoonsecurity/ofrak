@@ -240,6 +240,9 @@ class Resource:
         root.
 
         :return: The range of the root node's data which this resource represents
+
+        :raises ValueError: If the resource does not have a data_id
+        :raises NotFoundError: If the resource service does not have a model for this resource's ID
         """
         if self._resource.data_id is None:
             raise ValueError(
@@ -1102,7 +1105,7 @@ class Resource:
         any tags it must have and/or values of indexable attributes
         :return:
 
-        :raises NotFoundError: If a filter was provided and no resources match the provided filter
+        :raises NotFoundError: If the instance has been deleted or is no longer valid
         """
         models = await self._resource_service.get_ancestors_by_id(
             self._resource.id, r_filter=r_filter
@@ -1134,15 +1137,23 @@ class Resource:
 
         :param r_filter: Contains parameters which resources must match to be returned, including
         any tags it must have and/or values of indexable attributes
-        :return:
+        :return: the matching resources
+
+        :raises NotFoundError: If fewer than one ancestor matches the filter
+        :raises MultipleResourcesFoundError: If multiple ancestors match the filter
         """
         ancestors = list(
-            await self._resource_service.get_ancestors_by_id(self._resource.id, 1, r_filter)
+            await self._resource_service.get_ancestors_by_id(self._resource.id, 2, r_filter)
         )
         if len(ancestors) == 0:
             raise NotFoundError(
                 f"There is no ancestor for resource {self._resource.id.hex()} matching the "
                 f"provided filter"
+            )
+        if len(ancestors) > 1:
+            raise MultipleResourcesFoundError(
+                f"There are multiple ancestors for resource {self._resource.id.hex()} "
+                f"matching the provided filter"
             )
         return await self._create_resource(ancestors[0])
 
@@ -1168,7 +1179,7 @@ class Resource:
         direction to sort
         :return:
 
-        :raises NotFoundError: If a filter was provided and no resources match the provided filter
+        :raises NotFoundError: If the instance has been deleted or is no longer valid
         """
         descendants = await self.get_descendants(max_depth, r_filter, r_sort)
         views_or_tasks = [r._view_as(v_type) for r in descendants]
@@ -1212,7 +1223,7 @@ class Resource:
         direction to sort
         :return:
 
-        :raises NotFoundError: If a filter was provided and no resources match the provided filter
+        :raises NotFoundError: If the instance has been deleted or is no longer valid
         """
         models = await self._resource_service.get_descendants_by_id(
             self._resource.id, max_depth=max_depth, r_filter=r_filter, r_sort=r_sort
@@ -1258,11 +1269,10 @@ class Resource:
         no maximum depth
         :param r_filter: Contains parameters which resources must match to be returned, including
         any tags it must have and/or values of indexable attributes
-        :return:
+        :return: the matching resource
 
-        :raises NotFoundError: If a filter is provided and more or fewer than one descendant matches
-        ``r_filter``
-        :raises NotFoundError: If a filter is not provided and this resource has multiple descendant
+        :raises NotFoundError: If fewer than one descendant matches the filter
+        :raises MultipleResourcesFoundError: If multiple descendants match the filter
         """
         models = list(
             await self._resource_service.get_descendants_by_id(
@@ -1278,8 +1288,7 @@ class Resource:
                 f"the provided filter {r_filter}"
             )
         if len(models) > 1:
-            # TODO: Not the right kind of error
-            raise NotFoundError(
+            raise MultipleResourcesFoundError(
                 f"There are multiple descendants for resource {self._resource.id.hex()} "
                 f"matching the provided filter"
             )
@@ -1333,7 +1342,7 @@ class Resource:
                 f"the provided filter"
             )
         if len(models) > 1:
-            raise NotFoundError(
+            raise MultipleResourcesFoundError(
                 f"There are multiple siblings for resource {self._resource.id.hex()} "
                 f"matching the provided filter"
             )
@@ -1355,7 +1364,7 @@ class Resource:
         direction to sort
         :return:
 
-        :raises NotFoundError: If a filter was provided and no resources match the provided filter
+        :raises NotFoundError: If the instance has been deleted or is no longer valid
         """
         return await self.get_descendants(1, r_filter, r_sort)
 
@@ -1378,7 +1387,7 @@ class Resource:
         direction to sort
         :return:
 
-        :raises NotFoundError: If a filter was provided and no resources match the provided filter
+        :raises NotFoundError: If the instance has been deleted or is no longer valid
         """
         return await self.get_descendants_as_view(v_type, 1, r_filter, r_sort)
 
@@ -1757,3 +1766,7 @@ async def _default_summarize_resource(resource: Resource) -> str:
         f"{resource.get_id().hex()}: [caption=({resource.get_caption()}), "
         f"attributes=({attributes_info}){data_info}]"
     )
+
+
+class MultipleResourcesFoundError(RuntimeError):
+    pass
