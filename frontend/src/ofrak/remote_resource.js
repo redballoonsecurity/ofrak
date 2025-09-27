@@ -729,6 +729,26 @@ export class RemoteResource extends Resource {
       return await r.json();
     });
   }
+
+  async add_program_attributes(program_attributes) {
+    await fetch(`${this.uri}/add_program_attributes`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: program_attributes,
+    }).then(async (r) => {
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
+      const updated_model = await r.json();
+      remote_model_to_resource(updated_model, this.resource_list);
+    });
+    this.flush_cache();
+    this.update();
+
+    await this.update_script();
+  }
 }
 
 export function remote_models_to_resources(remote_models, resources) {
