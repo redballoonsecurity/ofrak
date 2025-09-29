@@ -2,7 +2,7 @@ PYTHON=python3
 PIP=pip3
 
 .PHONY: install
-install: ofrak/gui/public
+install: src/ofrak/gui/public
 	$(PIP) install .
 
 .PHONY: develop
@@ -31,6 +31,7 @@ src/ofrak/gui/public:
 	elif [ -d ../frontend ]; then \
 		cd ../frontend && \
 		npm install && \
+		VITE_OFRAK_VERSION="$(shell python3 src/version.py)" \
 		npm run build && \
 		cd ../ofrak_core && \
 		cp -r ../frontend/dist src/ofrak/gui/public ; \
