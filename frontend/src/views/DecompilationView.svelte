@@ -50,9 +50,9 @@
     }
   }
 
-  $: (async () => {
-    decompilation = await get_decompilation($selectedResource);
-  })();
+  $: get_decompilation($selectedResource).then((result) => {
+    decompilation = result;
+  });
 </script>
 
 <link rel="stylesheet" href="./code.css" />
