@@ -33,7 +33,7 @@
         $selectedResource.attributes[
           "ofrak.model._auto_attributes.AttributesType[DecompilationAnalysis]"
         ]["decompilation"],
-        { language: "c" },
+        { language: "c" }
       ).value;
       return html;
     } else {
@@ -43,7 +43,7 @@
           $selectedResource.attributes[
             "ofrak.model._auto_attributes.AttributesType[DecompilationAnalysis]"
           ]["decompilation"],
-          { language: "c" },
+          { language: "c" }
         ).value;
         return html;
       });
