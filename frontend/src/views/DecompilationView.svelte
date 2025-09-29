@@ -38,15 +38,13 @@
       return html;
     } else {
       decompilation = "Decompiling...";
-      return await $selectedResource.analyze().then(() => {
-        var html = hljs.highlight(
-          $selectedResource.attributes[
-            "ofrak.model._auto_attributes.AttributesType[DecompilationAnalysis]"
-          ]["decompilation"],
-          { language: "c" }
-        ).value;
-        return html;
-      });
+     await $selectedResource.analyze();
+     return hljs.highlight(
+       $selectedResource.attributes[
+         "ofrak.model._auto_attributes.AttributesType[DecompilationAnalysis]"
+       ]["decompilation"],
+       { language: "c" },
+     ).value;
     }
   }
 
