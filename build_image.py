@@ -11,9 +11,7 @@ import yaml
 
 from ofrak_core.src.version import VERSION
 
-DEFAULT_PYTHON_IMAGE = (
-    "python:3.9-bookworm@sha256:a23efa04a7f7a881151fe5d473770588ef639c08fd5f0dcc6987dbe13705c829"
-)
+DEFAULT_PYTHON_IMAGE = "python:3.9-slim-bookworm@sha256:ac457d45a4cafd54f0d72966592bdbbfa83e2ec3f5f95b28f6e68bbd490f8bc3"
 BASE_DOCKERFILE = "base.Dockerfile"
 FINISH_DOCKERFILE = "finish.Dockerfile"
 
