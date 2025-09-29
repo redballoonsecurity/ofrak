@@ -584,6 +584,9 @@ async def test_add_tag(ofrak_client: TestClient, hello_elf):
         json="ofrak.core.apk.Apk",
     )
     assert resp.status == 200
+    # Check tag is added
+    add_tag_resp = await ofrak_client.get(f"/{resource_id}/")
+    assert "ofrak.core.apk.Apk" in (await add_tag_resp.json())["tags"]
 
 
 async def test_remove_tag(ofrak_client: TestClient, hello_elf):
@@ -597,12 +600,19 @@ async def test_remove_tag(ofrak_client: TestClient, hello_elf):
         f"/{resource_id}/add_tag",
         json="ofrak.core.apk.Apk",
     )
+    # Check tag is added
+    add_tag_resp = await ofrak_client.get(f"/{resource_id}/")
+    assert "ofrak.core.apk.Apk" in (await add_tag_resp.json())["tags"]
+
     # Then remove it
     resp = await ofrak_client.post(
         f"/{resource_id}/remove_tag",
         json="ofrak.core.apk.Apk",
     )
     assert resp.status == 200
+    # Check tag is removed
+    rem_tag_resp = await ofrak_client.get(f"/{resource_id}/")
+    assert "ofrak.core.apk.Apk" not in (await rem_tag_resp.json())["tags"]
 
 
 async def test_get_view_schema(ofrak_client: TestClient):
@@ -632,6 +642,17 @@ async def test_add_view_to_resource(ofrak_client: TestClient, hello_elf):
         },
     )
     assert resp.status == 200
+    add_attribute_resp = await ofrak_client.get(f"/{resource_id}/")
+    add_attribute_dict = {
+        attr[0]: attr[1][1] for attr in (await add_attribute_resp.json())["attributes"]
+    }
+    assert (
+        "ofrak.model._auto_attributes.AttributesType[FilesystemEntry]" in add_attribute_dict.keys()
+    )
+    fields = add_attribute_dict["ofrak.model._auto_attributes.AttributesType[FilesystemEntry]"]
+    assert fields["name"] == "test_file"
+    assert fields["stat"] == None
+    assert fields["xattrs"] == None
 
 
 async def test_remove_component(ofrak_client: TestClient, hello_elf):
@@ -641,15 +662,24 @@ async def test_remove_component(ofrak_client: TestClient, hello_elf):
     create_body = await create_resp.json()
     resource_id = create_body["id"]
     # First run a component to add it
-    await ofrak_client.post(f"/{resource_id}/analyze")
+    await ofrak_client.post(f"/{resource_id}/run_component?component=Md5Analyzer")
+    # Check component is added
+    add_component_resp = await ofrak_client.get(f"/{resource_id}/")
+    add_attribute_names = [attr[0] for attr in (await add_component_resp.json())["attributes"]]
+    assert "ofrak.core.checksum.Md5Attributes" in add_attribute_names
+
     # Then try to remove a component
     resp = await ofrak_client.post(
         f"/{resource_id}/remove_component",
-        params={"component": "DataSummaryAnalyzer"},
+        params={"component": "Md5Analyzer"},
     )
     assert resp.status == 200
     resp_body = await resp.json()
     assert "success" in resp_body
+    # Check component is removed
+    rem_component_resp = await ofrak_client.get(f"/{resource_id}/")
+    rem_attribute_names = [attr[0] for attr in (await rem_component_resp.json())["attributes"]]
+    assert "ofrak.core.checksum.Md5Attributes" not in rem_attribute_names
 
 
 async def test_update_script(ofrak_client: TestClient, hello_elf):

@@ -753,10 +753,7 @@ class AiohttpOFRAKServer:
             body["view_type"], Type[ResourceViewInterface]
         )
         field_values = body["fields"]
-
-        # Create the view instance with the provided field values
         view_instance = view_type(**field_values)
-
         script_str = (
             """
         {resource}"""
@@ -767,7 +764,6 @@ class AiohttpOFRAKServer:
         )
         await self.script_builder.add_action(resource, script_str, ActionType.MOD)
 
-        # Add the view to the resource
         resource.add_view(view_instance)
         await resource.save()
         return json_response(self._serialize_resource(resource))
