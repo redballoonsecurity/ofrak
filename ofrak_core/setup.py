@@ -3,6 +3,8 @@ import setuptools
 from setuptools.command.egg_info import egg_info
 from setuptools.command.build_ext import build_ext
 
+from src.version import VERSION
+
 
 class egg_info_ex(egg_info):
     """Includes license file into `.egg-info` folder."""
@@ -59,7 +61,7 @@ entropy_so = CTypesExtension(
 
 setuptools.setup(
     name="ofrak",
-    version="3.3.0rc15",
+    version=VERSION,
     description="A binary analysis and modification platform",
     packages=setuptools.find_packages("src"),
     package_dir={"": "src"},
