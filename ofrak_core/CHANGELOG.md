@@ -85,6 +85,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Update `DataSummary` handling so that it is no longer stored in `ResourceModel`, but rather retrievable via `DataSummaryAnalyzer.get_data_summary` ([#598](https://github.com/redballoonsecurity/ofrak/pull/598))
 - Update dependencies: aiohttp>=3.12.14, beartype~=0.20.0, ubi-reader==0.8.12 ([#613](https://github.com/redballoonsecurity/ofrak/pull/613))
 - Add `ofrak_pyghidra` to OFRAK GUI script builder ([#631](https://github.com/redballoonsecurity/ofrak/pull/631))
+- Use a single source of truth for the package version ([#640](https://github.com/redballoonsecurity/ofrak/pull/640))
 
 ### Deprecated
 - `Resource.flush_to_disk` deprecated in favor of `Resource.flush_data_to_disk`. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373), [#567](https://github.com/redballoonsecurity/ofrak/pull/568))
