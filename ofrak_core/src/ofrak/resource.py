@@ -15,7 +15,6 @@ from typing import (
     cast,
     Union,
     Awaitable,
-    Sequence,
     Callable,
     Set,
     Pattern,
@@ -763,6 +762,22 @@ class Resource:
         )
         return new_resource
 
+    async def _apply_view_as(self, v_type: Type[RV], resources: Iterable["Resource"]):
+        views_or_tasks = [r._view_as(v_type) for r in resources]
+        # analysis tasks to generate views of resources which don't have attrs for the view already
+        view_tasks: List[Awaitable[RV]] = []
+        # each resources' already-existing views OR the index in `view_tasks` of the analysis task
+        views_or_task_indexes: List[Union[int, RV]] = []
+        for view_or_create_view_task in views_or_tasks:
+            if isawaitable(view_or_create_view_task):
+                views_or_task_indexes.append(len(view_tasks))
+                view_tasks.append(view_or_create_view_task)
+            else:
+                views_or_task_indexes.append(cast(RV, view_or_create_view_task))
+
+        if view_tasks:
+            await asyncio.gather(*view_tasks)
+
     def _view_as(self, viewable_tag: Type[RV]) -> Union[RV, Awaitable[RV]]:
         """
         Try to get a view without calling any analysis, to avoid as many unnecessary
@@ -1093,6 +1108,32 @@ class Resource:
             raise NotFoundError(f"There is no parent for resource {self._resource.id.hex()}")
         return await self._create_resource(models[0])
 
+    async def get_ancestors_as_view(
+        self,
+        v_type: Type[RV],
+        r_filter: ResourceFilter = None,
+        r_sort: ResourceSort = None,
+    ) -> Iterable[RV]:
+        """
+        Get all the ancestors of this resource. May optionally filter the ancestors so only
+        those matching certain parameters are returned. May optionally sort the ancestors by
+        an indexable attribute value key. The ancestors will be returned as an
+        instance of the given [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag].
+
+        :param v_type: The type of [view][ofrak.resource] to get the descendants as
+        :param r_filter: Contains parameters which resources must match to be returned, including
+        any tags it must have and/or values of indexable attributes
+        :param r_sort: Specifies which indexable attribute to use as the key to sort and the
+        direction to sort
+        :return:
+
+        :raises NotFoundError: If the instance has been deleted or is no longer valid
+        """
+        tag_ancestors = await self.get_ancestors(r_filter=ResourceFilter(tags=[v_type]))
+        await self._apply_view_as(v_type, tag_ancestors)
+        ancestors = await self.get_ancestors(r_filter)
+        return [await r.view_as(v_type) for r in ancestors]
+
     async def get_ancestors(
         self,
         r_filter: ResourceFilter = None,
@@ -1128,6 +1169,7 @@ class Resource:
 
         :raises NotFoundError: If more or fewer than one ancestor matches ``r_filter``
         """
+        await self.get_ancestors_as_view(v_type, r_filter=ResourceFilter(tags=[v_type]))
         ancestor_r = await self.get_only_ancestor(r_filter)
         return await ancestor_r.view_as(v_type)
 
@@ -1181,28 +1223,12 @@ class Resource:
 
         :raises NotFoundError: If the instance has been deleted or is no longer valid
         """
+        tag_descendants = await self.get_descendants(
+            max_depth, r_filter=ResourceFilter(tags=[v_type]), r_sort=r_sort
+        )
+        await self._apply_view_as(v_type, tag_descendants)
         descendants = await self.get_descendants(max_depth, r_filter, r_sort)
-        views_or_tasks = [r._view_as(v_type) for r in descendants]
-        # analysis tasks to generate views of resources which don't have attrs for the view already
-        view_tasks: List[Awaitable[RV]] = []
-        # each resources' already-existing views OR the index in `view_tasks` of the analysis task
-        views_or_task_indexes: List[Union[int, RV]] = []
-        for view_or_create_view_task in views_or_tasks:
-            if isawaitable(view_or_create_view_task):
-                views_or_task_indexes.append(len(view_tasks))
-                view_tasks.append(view_or_create_view_task)
-            else:
-                views_or_task_indexes.append(cast(RV, view_or_create_view_task))
-
-        if view_tasks:
-            completed_views: Sequence[RV] = await asyncio.gather(*view_tasks)
-            return [
-                completed_views[v_or_i] if type(v_or_i) is int else cast(RV, v_or_i)
-                for v_or_i in views_or_task_indexes
-            ]
-        else:
-            # There are no tasks, so all needed views are already present
-            return cast(List[RV], views_or_task_indexes)
+        return [await r.view_as(v_type) for r in descendants]
 
     async def get_descendants(
         self,
@@ -1253,13 +1279,10 @@ class Resource:
         ``r_filter``
         :raises NotFoundError: If a filter is not provided and this resource has multiple descendant
         """
-        try:
-            descendant_r = await self.get_only_descendant(max_depth, r_filter)
-        except NotFoundError:
-            await self.get_descendants_as_view(
-                v_type, max_depth, r_filter=ResourceFilter(tags=[v_type])
-            )
-            descendant_r = await self.get_only_descendant(max_depth, r_filter)
+        await self.get_descendants_as_view(
+            v_type, max_depth, r_filter=ResourceFilter(tags=[v_type])
+        )
+        descendant_r = await self.get_only_descendant(max_depth, r_filter)
         return await descendant_r.view_as(v_type)
 
     async def get_only_descendant(
@@ -1300,6 +1323,57 @@ class Resource:
             )
         return await self._create_resource(models[0])
 
+    async def get_siblings_as_view(
+        self,
+        v_type: Type[RV],
+        r_filter: ResourceFilter = None,
+        r_sort: ResourceSort = None,
+    ) -> Iterable[RV]:
+        """
+        Get all the siblings of this resource. May optionally filter the siblings so only
+        those matching certain parameters are returned. May optionally sort the siblings by
+        an indexable attribute value key. The siblings will be returned as an
+        instance of the given [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag].
+
+        :param v_type: The type of [view][ofrak.resource] to get the descendants as
+        :param r_filter: Contains parameters which resources must match to be returned, including
+        any tags it must have and/or values of indexable attributes
+        :param r_sort: Specifies which indexable attribute to use as the key to sort and the
+        direction to sort
+        :return:
+
+        :raises NotFoundError: If the instance has been deleted or is no longer valid
+        """
+        tag_siblings = await self.get_siblings(
+            r_filter=ResourceFilter(tags=[v_type]), r_sort=r_sort
+        )
+        await self._apply_view_as(v_type, tag_siblings)
+        siblings = await self.get_siblings(r_filter, r_sort)
+        return [await r.view_as(v_type) for r in siblings]
+
+    async def get_siblings(
+        self,
+        r_filter: ResourceFilter = None,
+        r_sort: ResourceSort = None,
+    ) -> Iterable["Resource"]:
+        """
+        Get all the siblings of this resource. May optionally filter the siblings so only
+        those matching certain parameters are returned. May optionally sort the descendants by
+        an indexable attribute value key.
+
+        :param r_filter: Contains parameters which resources must match to be returned, including
+        any tags it must have and/or values of indexable attributes
+        :param r_sort: Specifies which indexable attribute to use as the key to sort and the
+        direction to sort
+        :return:
+
+        :raises NotFoundError: If the instance has been deleted or is no longer valid
+        """
+        models = await self._resource_service.get_siblings_by_id(
+            self._resource.id, r_filter=r_filter, r_sort=r_sort
+        )
+        return await self._create_resources(models)
+
     async def get_only_sibling_as_view(
         self,
         v_type: Type[RV],
@@ -1319,6 +1393,7 @@ class Resource:
         ``r_filter``
         :raises NotFoundError: If a filter is not provided and this resource has multiple siblings
         """
+        await self.get_siblings_as_view(v_type, r_filter=ResourceFilter(tags=[v_type]))
         sibling_r = await self.get_only_sibling(r_filter)
         return await sibling_r.view_as(v_type)
 
