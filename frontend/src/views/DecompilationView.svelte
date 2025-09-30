@@ -14,11 +14,17 @@
 <script>
   import hljs from "highlight.js";
   import c from "highlight.js/lib/languages/c";
-  import { selectedResource } from "../stores.js";
+  import {
+    selectedResource,
+    resourceNodeDataMap,
+    selected,
+    settings,
+  } from "../stores.js";
+
   let decompilation;
   hljs.registerLanguage("c", c);
 
-  function get_decompilation() {
+  async function get_decompilation() {
     if (
       "ofrak.model._auto_attributes.AttributesType[DecompilationAnalysis]" in
       $selectedResource.attributes
@@ -31,11 +37,20 @@
       ).value;
       return html;
     } else {
-      return 'To see decompilation, click "Analyze" on the left toolbar';
+      decompilation = "Decompiling...";
+      await $selectedResource.analyze();
+      return hljs.highlight(
+        $selectedResource.attributes[
+          "ofrak.model._auto_attributes.AttributesType[DecompilationAnalysis]"
+        ]["decompilation"],
+        { language: "c" }
+      ).value;
     }
   }
 
-  $: decompilation = get_decompilation($selectedResource);
+  $: get_decompilation($selectedResource).then((result) => {
+    decompilation = result;
+  });
 </script>
 
 <link rel="stylesheet" href="./code.css" />
