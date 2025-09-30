@@ -1294,60 +1294,6 @@ class Resource:
             )
         return await self._create_resource(models[0])
 
-    async def get_only_sibling_as_view(
-        self,
-        v_type: Type[RV],
-        r_filter: ResourceFilter = None,
-    ) -> RV:
-        """
-        If a filter is provided, get the only sibling of this resource which matches the given
-        filter. If a filter is not provided, gets the only sibling of this resource. The sibling
-        will be returned as an instance of the given
-        [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag].
-        :param v_type: The type of [view][ofrak.resource] to get the sibling as
-        :param r_filter: Contains parameters which resources must match to be returned, including
-        any tags it must have and/or values of indexable attributes
-        :return:
-
-        :raises NotFoundError: If a filter is provided and more or fewer than one sibling matches
-        ``r_filter``
-        :raises NotFoundError: If a filter is not provided and this resource has multiple siblings
-        """
-        sibling_r = await self.get_only_sibling(r_filter)
-        return await sibling_r.view_as(v_type)
-
-    async def get_only_sibling(self, r_filter: ResourceFilter = None) -> "Resource":
-        """
-        If a filter is provided, get the only sibling of this resource which matches the given
-        filter. If a filter is not provided, gets the only sibling of this resource.
-
-        :param r_filter: Contains parameters which resources must match to be returned, including
-        any tags it must have and/or values of indexable attributes
-        :return:
-
-        :raises NotFoundError: If a filter is provided and more or fewer than one sibling matches
-        ``r_filter``
-        :raises NotFoundError: If a filter is not provided and this resource has multiple siblings
-        """
-        models = list(
-            await self._resource_service.get_siblings_by_id(
-                self._resource.id,
-                max_count=2,
-                r_filter=r_filter,
-            )
-        )
-        if len(models) == 0:
-            raise NotFoundError(
-                f"There is no sibling for resource {self._resource.id.hex()} matching "
-                f"the provided filter"
-            )
-        if len(models) > 1:
-            raise MultipleResourcesFoundError(
-                f"There are multiple siblings for resource {self._resource.id.hex()} "
-                f"matching the provided filter"
-            )
-        return await self._create_resource(models[0])
-
     async def get_children(
         self,
         r_filter: ResourceFilter = None,

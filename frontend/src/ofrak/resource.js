@@ -317,22 +317,6 @@ export class Resource {
     throw new NotImplementedError("get_only_descendant");
   }
 
-  async get_siblings_as_view(v_type, r_filter, r_sort) {
-    throw new NotImplementedError("get_siblings_as_view");
-  }
-
-  async get_siblings(r_filter, r_sort) {
-    throw new NotImplementedError("get_siblings");
-  }
-
-  async get_only_sibling_as_view(v_type, r_filter) {
-    throw new NotImplementedError("get_only_sibling_as_view");
-  }
-
-  async get_only_sibling(r_filter) {
-    throw new NotImplementedError("get_only_sibling");
-  }
-
   async get_children_as_view(v_type, r_filter, r_sort) {
     throw new NotImplementedError("get_children_as_view");
   }
