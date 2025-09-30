@@ -1253,7 +1253,13 @@ class Resource:
         ``r_filter``
         :raises NotFoundError: If a filter is not provided and this resource has multiple descendant
         """
-        descendant_r = await self.get_only_descendant(max_depth, r_filter)
+        try:
+            descendant_r = await self.get_only_descendant(max_depth, r_filter)
+        except NotFoundError:
+            await self.get_descendants_as_view(
+                v_type, max_depth, r_filter=ResourceFilter(tags=[v_type])
+            )
+            descendant_r = await self.get_only_descendant(max_depth, r_filter)
         return await descendant_r.view_as(v_type)
 
     async def get_only_descendant(
