@@ -3,7 +3,7 @@ All notable changes to `ofrak` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased: 3.3.0rc15](https://github.com/redballoonsecurity/ofrak/tree/master)
+## [Unreleased: 3.3.0](https://github.com/redballoonsecurity/ofrak/tree/master)
 
 ### Added
 - Add license check command to prompt users about community or pro licenses. ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
@@ -23,6 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add new method for allocating `.bss` sections using free space ranges that aren't mapped to data ranges. ([#505](https://github.com/redballoonsecurity/ofrak/pull/505), [#569](https://github.com/redballoonsecurity/ofrak/pull/569))
 - Pulled `Allocatable._align_range` out to standalone function `allocate_range_start` ([#575](https://github.com/redballoonsecurity/ofrak/pull/575))
 - `ComponentExternalTool` now supports chocolatey packages (apk, cpio, pigz, 7zip) ([#613](https://github.com/redballoonsecurity/ofrak/pull/613))
+- Add endpoints to the OFRAK GUI backend to support OFRAK MCP. ([#634](https://github.com/redballoonsecurity/ofrak/pull/634))
 
 ### Fixed
 - Improved flushing of filesystem entries (including symbolic links and other types) to disk. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373))
@@ -85,6 +86,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Update `DataSummary` handling so that it is no longer stored in `ResourceModel`, but rather retrievable via `DataSummaryAnalyzer.get_data_summary` ([#598](https://github.com/redballoonsecurity/ofrak/pull/598))
 - Update dependencies: aiohttp>=3.12.14, beartype~=0.20.0, ubi-reader==0.8.12 ([#613](https://github.com/redballoonsecurity/ofrak/pull/613))
 - Add `ofrak_pyghidra` to OFRAK GUI script builder ([#631](https://github.com/redballoonsecurity/ofrak/pull/631))
+- When the user selects the "Decompilation" tab in the GUI, the pane is updated with the decompiled code automatically, without having to click "Analyze" first. ([#639](https://github.com/redballoonsecurity/ofrak/pull/639))
+- Use a single source of truth for the package version ([#640](https://github.com/redballoonsecurity/ofrak/pull/640))
 
 ### Deprecated
 - `Resource.flush_to_disk` deprecated in favor of `Resource.flush_data_to_disk`. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373), [#567](https://github.com/redballoonsecurity/ofrak/pull/568))
