@@ -154,7 +154,8 @@ class PeSection(PeSectionStructure, NamedProgramSection):
     """PE section"""
 
     async def get_header(self) -> "PeSectionHeader":
-        return await self.resource.get_only_sibling_as_view(
+        parent = await self.resource.get_parent()
+        return await parent.get_only_child_as_view(
             PeSectionHeader,
             ResourceFilter(
                 tags=(PeSectionHeader,),
@@ -242,7 +243,8 @@ class PeSectionHeader(PeSectionStructure):
 
     async def get_body(self) -> PeSection:
         """Get the PeSection associated with this section header."""
-        return await self.resource.get_only_sibling_as_view(
+        parent = await self.resource.get_parent()
+        return await parent.get_only_child_as_view(
             PeSection,
             ResourceFilter(
                 tags=(PeSection,),

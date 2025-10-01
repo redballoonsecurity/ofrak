@@ -237,40 +237,6 @@ class ResourceServiceInterface(AbstractOfrakService, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    async def get_siblings_by_id(
-        self,
-        resource_id: bytes,
-        max_count: int = -1,
-        r_filter: Optional[ResourceFilter] = None,
-        r_sort: Optional[ResourceSort] = None,
-    ) -> Iterable[ResourceModel]:
-        """
-        Get the resource models of the siblings of a resource with a given ID. These siblings
-        may be filtered by an optional filter argument. A maximum count of siblings may also be
-        given, to cap the number of (filtered or unfiltered) siblings returned.
-
-        :param resource_id: ID of resource to get siblings of
-        :param max_count: Optional argument to cap the number of models returned; if set to -1
-        (default) then any number of siblings may be returned
-        :param r_filter: Optional resource filter for the resource models returned; if set to
-        None all siblings may be returned (the model for `resource_id` is excluded),
-        otherwise all siblings matching the filter may be returned (possibly including the model
-        for `resource_id`), up to the maximum allowed by `max_count`
-        :param r_sort: Optional logic to order the returned siblings by the value of a
-        specific attribute of each sibling
-
-        :raises NotFoundError: If there is not a resource with resource ID `resource_id`
-        :raises NotFoundError: If the resource with ID `resource_id` does not have siblings
-        because it is a root
-
-
-        :return: As many siblings of `resource_id` matching `r_filter` as `max_count`
-        allows, in order specified by `r_sort`. If `r_sort` is None, no specific ordering is
-        guaranteed.
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
     async def update(self, resource_diff: ResourceModelDiff) -> ResourceModel:
         """
         Modify a stored resource model according to the differences in the given diff object.

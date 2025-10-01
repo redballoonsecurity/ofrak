@@ -875,25 +875,6 @@ class ResourceService(ResourceServiceInterface):
             resources = itertools.islice(resources, 0, max_count)
         return resources
 
-    async def get_siblings_by_id(
-        self,
-        resource_id: bytes,
-        max_count: int = -1,
-        r_filter: Optional[ResourceFilter] = None,
-        r_sort: Optional[ResourceSort] = None,
-    ) -> Iterable[ResourceModel]:
-        resource_node = self._resource_store.get(resource_id)
-        if resource_node is None:
-            raise NotFoundError(f"The resource {resource_id.hex()} does not exist")
-        if resource_node.parent is None:
-            raise NotFoundError(
-                f"The resource {resource_id.hex()} does not have siblings as it is a root "
-                f"resource."
-            )
-        return await self.get_descendants_by_id(
-            resource_node.parent.model.id, max_count, 1, r_filter, r_sort
-        )
-
     async def update(self, resource_diff: ResourceModelDiff) -> ResourceModel:
         return self._update(resource_diff)
 
