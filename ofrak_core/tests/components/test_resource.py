@@ -106,7 +106,7 @@ async def test_get_descendants_as_view_1(resource_hello_elf_dyn: Resource):
     assert len(list(code_regions)) == 1
 
 
-async def test_get_descendants_as_view_1(resource_hello_elf_dyn: Resource):
+async def test_get_descendants_as_view_2(resource_hello_elf_dyn: Resource):
     """
     Test that get_descendants_as_view does not retrieve non-existing executable segments.
     """
