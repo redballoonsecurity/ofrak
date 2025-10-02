@@ -1203,7 +1203,7 @@ class Resource:
         )
         await self._view_multiple_as(v_type, tag_descendants)
         descendants = await self.get_descendants(max_depth, r_filter, r_sort)
-        return [await r.view_as(v_type) for r in descendants]
+        return await asyncio.gather(*[r.view_as(v_type) for r in descendants])
 
     async def get_descendants(
         self,
