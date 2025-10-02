@@ -1,95 +1,98 @@
 # Getting Started
 
-## Quick Start - Unpack a firmware file and display it in the GUI
+Welcome to OFRAK! This guid will help you get up and running quickly.
 
-!!! warning
-    OFRAK is a Python library supporting Python3.7 and up. First and foremost, make sure your Python and pip installations are for Python3.7+! Python 3.8 is recommended, as this is the version we primarily test OFRAK with, and some packages (for example, ofrak-angr) require Python >=3.8.
+## Quick Start
+
+If you just cannot want to try OFRAK out, you can install it from PyPI and get working immediately:
 
 ```bash
+# 1. Install OFRAK
 pip install ofrak
+
+# 2. Accept the community license
+ofrak license --community --i-agree
+
+# 3. Unpack a file and view it in the GUI
 ofrak unpack -x -r --gui <path-to-file>
 ```
 
-This will install OFRAK, run OFRAK to unpack a target file, then open it in the GUI.
+The GUI will open at <http://localhost:8080> showing your unpacked file.
 
-- The `-x` (`--exclude-components-missing-dependencies`) flag tells OFRAK to exclude components which are missing dependencies, which makes installation much easier at the price of missing out on support for some file types.
-See [Environment Setup](environment-setup.md#handling-non-python-dependencies) for more information.
-
-- The `--gui` flag starts up an OFRAK GUI server after file is unpacked, and tries to open it in your browser.
-The GUI will display the unpacked structure of the file, as OFRAK understands it.
-
-- The `-r` (`--recursive`) flag tells OFRAK to "recursively" unpack the target, until OFRAK can't subdivide its components any further.
-
-See `ofrak unpack --help` for other options and more information on each flag.
-
-### Disassembling with OFRAK
-
-OFRAK does not do its own disassembly, and instead re-uses several existing, capable tools.
-To quickly start disassembling using OFRAK, we recommend installing two more OFRAK Python packages:
-
+To try out one of the disassembler backends, run
 ```bash
-pip install ofrak_angr ofrak_capstone
+# Install OFRAK's angr and capstone modules
+pip install ofrak-angr ofrak-capstone
+
+# Make sure community license is accepted
+ofrak license --community --i-agree
+
+# Unpack a file and view it in the GUI
+ofrak unpack -x -r --gui <path-to-executable>
 ```
 
-These packages leverage [angr](https://angr.io/) and [capstone](https://www.capstone-engine.org/) to disassemble machine code. 
-Both are needed, as they work together - angr tells OFRAK information about the higher-level structures (such as where functions are) and capstone disassembles individual chunks of machine code.
-After running the above `pip install` command, modify the `ofrak unpack` command from earlier to include the option `--backend angr`:
+Happy reverse engineering! Run `ofrak --help` (or read the docs) if you need help.
 
-```shell
-ofrak unpack -x --gui -r --backend angr <path-to-file>
-```
+## Installation
 
-This will get OFRAK to disassemble any code it recognizes in the files it unpacks.
-A word of warning though - binaries don't have to get very large before disassembling starts to take a long time!
-This problem gets exponentially worse if you are unpacking a packed filesystem with potentially many executables.
-If that is the case, consider removing the `-r` flag so that OFRAK only unpacks the top level; once the resource is opened in the GUI, you can select specific children to unpack.
+OFRAK can be installed in multiple ways depending on your needs:
 
+- **[From PyPI](install/pypi.md)** - Quick installation via pip
+- **[Using Docker](install/docker.md)** - Pre-configured environment with all dependencies
+- **[From Source](install/source.md)** - For development and contribution
+
+See our [Installation Guide](install/index.md) to help you choose the right method.
 
 ## GUI
 
-OFRAK comes with a web-based GUI frontend for visualizing and manipulating binary targets. The GUI can be launched in several ways:
+OFRAK comes with a web-based GUI for visualizing and manipulating binaries.
+After installation, run `ofrak gui`:
 
-1. Using the `--gui` flag with the `ofrak unpack` command (as shown above)
-2. Running `ofrak gui` to start the GUI server
-3. When using Docker images, the GUI typically runs by default
+```bash
+$ ofrak gui
+Using OFRAK Community License.
+[   ofrak_cli.py:  180] No disassembler backend specified, so no disassembly will be possible
+GUI is being served on http://127.0.0.1:8080/
+```
 
 To access the GUI, navigate to <http://localhost:8080> (or the port specified with `-p/--port` or `-gp/--gui-port`) and start by dropping anything you'd like into it!
+See [OFRAK GUI Docs](user-guide/gui/minimap.md) for more info on using the GUI.
 
-## Building from Docker
-
-OFRAK also has a Docker build system. 
-This has the advantage of producing a consistent environment with all dependencies installed, but requires a Docker installation and running the build procedure.
-Check out the [Docker build documentation](environment-setup.md#docker) if you are interested.
-
+The GUI can also be used with the OFRAK CLI (with the `--gui` flag) and is typically running by default in the OFRAK Docker images.
 
 ## Tutorial
 
-A great way to get started with OFRAK is to go through the interactive tutorial.
+The best way to learn OFRAK is through our interactive tutorial:
 
-Run it with the following commands:
+### Running the Tutorial
 
-```shell
-make tutorial-image  # create the Docker image for the tutorial
+```bash
+# Build the tutorial Docker image
+make tutorial-image
+
+# Run the tutorial
 make tutorial-run
 ```
 
-It takes a minute for the notebook to start up. Once running, you can access the tutorial from [localhost:8888](http://localhost:8888) with your web browser. Have fun!
+Access the Jupyter notebook at [localhost:8888](http://localhost:8888) and work through the examples.
 
+### What You'll Learn
 
-## Docs
+- OFRAK core concepts (Resources, Components, etc.)
+- Unpacking and analyzing files
+- Modifying and repacking binaries
+- Writing custom components
+- Using different analysis backends
+
+## Documentation Overview
 
 The official documentation for the most up-to-date OFRAK lives at <https://ofrak.com/docs/>.
 
-If you would like to generate the docs yourself for offline viewing, follow the instructions in the [`docs/README.md`](https://github.com/redballoonsecurity/ofrak/blob/master/docs/README.md) file.
-
-## Guides and examples
-
-Once you've completed the tutorial, you'll be interested in the following resources:
-
-- [User Guide](user-guide/key-concepts/resource.html): More details about how OFRAK works and how to use it
-- [Contributor Guide](contributor-guide/getting-started.md): Information on extending OFRAK and contributing to the project
-- [Examples](examples/ex1_simple_string_modification.html): Code examples covering common tasks you might want to perform with OFRAK
-- [Code Reference](reference/ofrak/__main__.html): Complete API documentation
+Some sections of interest include:
+- **[User Guide](user-guide/)** - Detailed explanations of OFRAK concepts
+- **[Examples](user-guide/examples)** - Common tasks and use cases
+- **[Code Reference](reference/)** - API documentation
+- **[Contributor Guide](contributor-guide/)** - For those wanting to contribute
 
 
 ## Frequently Asked Questions (FAQ)
@@ -105,7 +108,10 @@ _Why do my CodeRegions not have any code?_
 
 _I ran a modifier and flushed the resource. The bytes did change, but my view is reporting the same values. Why?_
 
-- The bytes may have changed, but the analysis that depends on those bytes may not have been forced to re-run. You can force this analysis to update by re-running `await resource.view_as` if you want to get an updated view after modifying data the view depends on.
+After modifying, you need to re-run analysis:
+```python
+await resource.view_as(YourViewType)  # Forces re-analysis
+```
 
 <div align="right">
 <img src="./assets/square_01.png" width="125" height="125">

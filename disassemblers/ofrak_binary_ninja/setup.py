@@ -35,7 +35,7 @@ setuptools.setup(
     install_requires=[
         "ofrak[test]>=3.3.0rc0",
     ],
-    python_requires=">=3.7",
+    python_requires=">=3.9",
     license=license,
     cmdclass={"egg_info": egg_info_ex},
     entry_points={"ofrak.packages": ["ofrak_binary_ninja_pkg = ofrak_binary_ninja"]},

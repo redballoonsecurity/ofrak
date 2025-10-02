@@ -64,7 +64,10 @@ like commenting, unpacking, analysis, modification and packing of resources.
 </div>
 
 ## Getting Started
-See the [Getting Started guide](./getting-started.md) for examples on how to use OFRAK.
+
+- **New to OFRAK?** Start with our [Quick Start guide](./getting-started.md#quick-start) to unpack your first file in under 5 minutes!
+- **Ready to install?** Check our [Installation Guide](./installation/index.md) to choose the best installation method for your needs.
+- **Want to learn more?** Explore the [Getting Started guide](./getting-started.md) for tutorials and examples.
 
 ## Licensing
 The code in this repository comes with an [OFRAK Community License](https://github.com/redballoonsecurity/ofrak/blob/master/LICENSE), which is intended for educational uses, personal development, or just having fun.

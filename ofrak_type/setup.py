@@ -48,7 +48,7 @@ setuptools.setup(
         "Topic :: Security",
         "Typing :: Typed",
     ],
-    python_requires=">=3.7",
+    python_requires=">=3.9",
     license="Proprietary",
     license_files=["LICENSE"],
     cmdclass={"egg_info": egg_info_ex},
