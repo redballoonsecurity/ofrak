@@ -4,7 +4,7 @@ Welcome to OFRAK! This guid will help you get up and running quickly.
 
 ## Quick Start
 
-If you just cannot want to try OFRAK out, you can install it from PyPI and get working immediately:
+If you just cannot wait to try out OFRAK, you can install it from PyPI and get working immediately:
 
 ```bash
 # 1. Install OFRAK
@@ -14,7 +14,7 @@ pip install ofrak
 ofrak license --community --i-agree
 
 # 3. Unpack a file and view it in the GUI
-ofrak unpack -x -r --gui <path-to-file>
+ofrak unpack --exclude-components-missing-dependencies --recursive --gui <path-to-file>
 ```
 
 The GUI will open at <http://localhost:8080> showing your unpacked file.
@@ -51,14 +51,13 @@ After installation, run `ofrak gui`:
 ```bash
 $ ofrak gui
 Using OFRAK Community License.
-[   ofrak_cli.py:  180] No disassembler backend specified, so no disassembly will be possible
 GUI is being served on http://127.0.0.1:8080/
 ```
 
 To access the GUI, navigate to <http://localhost:8080> (or the port specified with `-p/--port` or `-gp/--gui-port`) and start by dropping anything you'd like into it!
 See [OFRAK GUI Docs](user-guide/gui/minimap.md) for more info on using the GUI.
 
-The GUI can also be used with the OFRAK CLI (with the `--gui` flag) and is typically running by default in the OFRAK Docker images.
+The GUI can also be used with the OFRAK CLI (via the `--gui` flag) and is typically running by default in the OFRAK Docker images.
 
 ## Tutorial
 

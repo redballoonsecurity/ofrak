@@ -109,18 +109,18 @@ ofrak deps --packages-for brew | xargs brew install
 
 ### Python Version Errors
 
-**Symptoms**: Import errors, package installation failures
+**Symptoms**: Import errors, package installation failures.
 
-**Solution**: Use Python 3.8+ for full compatibility:
+**Solution**: Use Python 3.9+ for full compatibility:
 ```bash
 python3.9 -m pip install ofrak
 ```
 
 ### Missing System Dependencies
 
-**Symptoms**: Runtime errors about missing tools (e.g., "pigz not found")
+**Symptoms**: Runtime errors about missing tools (e.g., "pigz not found").
 
-**Solution**: Use `ofrak deps` to identify and install (see above)
+**Solution**: Use `ofrak deps` to identify and install (see above).
 
 ### Permission Errors
 

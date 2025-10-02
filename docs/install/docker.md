@@ -10,7 +10,7 @@
 **Limitations**:
 - Requires Docker installation
 - Larger download size compared to PyPI
-- Slight learning curve for Docker commands
+- Slight learning curve for those new to Docker
 
 ## Prerequisites
 
@@ -19,7 +19,7 @@
     - For Docker 18.09-22.x, enable BuildKit by setting `DOCKER_BUILDKIT=1`
 - Python 3.9+
 - Git with [Git LFS](https://git-lfs.github.com/) installed ([installation instructions](https://github.com/git-lfs/git-lfs#installing))
-- make
+- GNU make
 
 ## Build Your Own Image
 
@@ -191,17 +191,14 @@ docker run --rm -v "$(pwd):/files" \
 ```
 
 ## Troubleshooting
-See [Install from Source Troubleshooting](source.md#troubleshooting-common-installation-issues).
+[Troubleshoot installation from source](source.md#troubleshooting-common-installation-issues).
 
 Additionally:
 
-**Port in use**: Change to `-p 8081:80`
-
-**Permission issues**: Add `--user $(id -u):$(id -g)`
-
-**Can't access GUI**: Check container is running with `docker ps`
-
-**Out of memory**: Increase Docker memory limit
+- **Port in use**: Change to `-p 8081:80`
+- **Permission issues**: Add `--user $(id -u):$(id -g)`
+- **Can't access GUI**: Check container is running with `docker ps`
+- **Out of memory**: Increase Docker memory limit
 
 ## Next Steps
 
