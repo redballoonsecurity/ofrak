@@ -1108,32 +1108,6 @@ class Resource:
             raise NotFoundError(f"There is no parent for resource {self._resource.id.hex()}")
         return await self._create_resource(models[0])
 
-    async def get_ancestors_as_view(
-        self,
-        v_type: Type[RV],
-        r_filter: ResourceFilter = None,
-        r_sort: ResourceSort = None,
-    ) -> Iterable[RV]:
-        """
-        Get all the ancestors of this resource. May optionally filter the ancestors so only
-        those matching certain parameters are returned. May optionally sort the ancestors by
-        an indexable attribute value key. The ancestors will be returned as an
-        instance of the given [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag].
-
-        :param v_type: The type of [view][ofrak.resource] to get the descendants as
-        :param r_filter: Contains parameters which resources must match to be returned, including
-        any tags it must have and/or values of indexable attributes
-        :param r_sort: Specifies which indexable attribute to use as the key to sort and the
-        direction to sort
-        :return:
-
-        :raises NotFoundError: If the instance has been deleted or is no longer valid
-        """
-        tag_ancestors = await self.get_ancestors(r_filter=ResourceFilter(tags=[v_type]))
-        await self._view_multiple_as(v_type, tag_ancestors)
-        ancestors = await self.get_ancestors(r_filter)
-        return [await r.view_as(v_type) for r in ancestors]
-
     async def get_ancestors(
         self,
         r_filter: ResourceFilter = None,
@@ -1169,7 +1143,8 @@ class Resource:
 
         :raises NotFoundError: If more or fewer than one ancestor matches ``r_filter``
         """
-        await self.get_ancestors_as_view(v_type, r_filter=ResourceFilter(tags=[v_type]))
+        tag_ancestors = await self.get_ancestors(r_filter=ResourceFilter(tags=[v_type]))
+        await self._view_multiple_as(v_type, tag_ancestors)
         ancestor_r = await self.get_only_ancestor(r_filter)
         return await ancestor_r.view_as(v_type)
 
