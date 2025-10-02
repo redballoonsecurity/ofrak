@@ -4,7 +4,7 @@ from .. import components
 from ofrak import OFRAKContext, Resource
 from ofrak_type.error import NotFoundError
 from ofrak.resource import MultipleResourcesFoundError
-from ofrak.core import CodeRegion, Addressable
+from ofrak.core import Elf, CodeRegion, Addressable
 from ofrak.service.resource_service_i import ResourceFilter, ResourceAttributeValueFilter
 
 
@@ -188,3 +188,25 @@ async def test_get_descendants_combined_1(resource_hello_elf_dyn: Resource):
     )
 
     assert len(list(code_regions)) == 1
+
+
+async def test_get_only_anscestor_as_view(resource_hello_elf_dyn: Resource):
+    """
+    Test get_only_ancestor_as_view implicitly performs analysis on its retrieved components, making them retrievable by get_descendants.
+    """
+    await resource_hello_elf_dyn.unpack()
+    text_segment = await resource_hello_elf_dyn.get_only_descendant_as_view(
+        v_type=CodeRegion,
+        r_filter=ResourceFilter(
+            tags=(CodeRegion,),
+            attribute_filters=(ResourceAttributeValueFilter(Addressable.VirtualAddress, 0x1050),),
+        ),
+    )
+    elf = await text_segment.resource.get_only_ancestor_as_view(
+        v_type=Elf,
+        r_filter=ResourceFilter(
+            tags=(Elf,),
+        ),
+    )
+
+    assert isinstance(elf, Elf)
