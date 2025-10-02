@@ -7,6 +7,7 @@ Install OFRAK from source code for development or contribution.
 - Python 3.9+ and pip
 - Git with [Git LFS](https://git-lfs.github.com/) installed ([installation instructions](https://github.com/git-lfs/git-lfs#installing))
 - make
+- cmake (macOS only - install via `brew install cmake`)
 
 ## Clone and Install
 
@@ -114,6 +115,25 @@ ofrak unpack -x --gui <some-file>
 make requirements-pip
 make requirements-build-docker
 ```
+
+### keystone-engine Import Error on macOS (M1/M2)
+
+**Symptoms**: `ImportError: ERROR: fail to load the dynamic library` when importing or using OFRAK components that depend on `keystone-engine`.
+
+**Cause**: On M1/M2 Macbooks, the `keystone-engine` dependency requires `cmake` to build properly. If `cmake` is not installed, the build step for the shared library can silently fail, leading to runtime import errors.
+
+**Solution**:
+1. Install cmake via Homebrew:
+   ```shell
+   brew install cmake
+   ```
+2. Reinstall keystone-engine:
+   ```shell
+   pip uninstall keystone-engine
+   pip install keystone-engine
+   ```
+
+**Reference**: See [Issue #318](https://github.com/redballoonsecurity/ofrak/issues/318) for more details.
 
 ## Next Steps
 

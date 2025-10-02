@@ -14,7 +14,9 @@
 
 ## Prerequisites
 
-- Docker installed and running ([Get Docker](https://www.docker.com/get-started))
+- Docker 23.0+ installed and running ([Get Docker](https://www.docker.com/get-started))
+    - BuildKit is required and comes enabled by default in Docker 23.0+
+    - For Docker 18.09-22.x, enable BuildKit by setting `DOCKER_BUILDKIT=1`
 - Python 3.9+
 - Git with [Git LFS](https://git-lfs.github.com/) installed ([installation instructions](https://github.com/git-lfs/git-lfs#installing))
 - make
