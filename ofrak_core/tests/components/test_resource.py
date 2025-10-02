@@ -82,13 +82,15 @@ async def test_get_descendants_as_view_0(resource_hello_elf_dyn: Resource):
     Test that get_descendants_as_view retrieves all five executable segments in the ELF file.
     """
     await resource_hello_elf_dyn.unpack()
-    code_regions = await resource_hello_elf_dyn.get_descendants_as_view(
-        v_type=CodeRegion,
-        r_filter=ResourceFilter(
-            tags=(CodeRegion,),
-        ),
+    code_regions = list(
+        await resource_hello_elf_dyn.get_descendants_as_view(
+            v_type=CodeRegion,
+            r_filter=ResourceFilter(
+                tags=(CodeRegion,),
+            ),
+        )
     )
-    assert len(list(code_regions)) == 5
+    assert len(code_regions) == 5 and all(isinstance(cr, CodeRegion) for cr in code_regions)
 
 
 async def test_get_descendants_as_view_1(resource_hello_elf_dyn: Resource):
@@ -96,14 +98,18 @@ async def test_get_descendants_as_view_1(resource_hello_elf_dyn: Resource):
     Test that get_descendants_as_view retrieves the one executable segment with the specified virtual address in the ELF file.
     """
     await resource_hello_elf_dyn.unpack()
-    code_regions = await resource_hello_elf_dyn.get_descendants_as_view(
-        v_type=CodeRegion,
-        r_filter=ResourceFilter(
-            tags=(CodeRegion,),
-            attribute_filters=(ResourceAttributeValueFilter(Addressable.VirtualAddress, 0x1050),),
-        ),
+    code_regions = list(
+        await resource_hello_elf_dyn.get_descendants_as_view(
+            v_type=CodeRegion,
+            r_filter=ResourceFilter(
+                tags=(CodeRegion,),
+                attribute_filters=(
+                    ResourceAttributeValueFilter(Addressable.VirtualAddress, 0x1050),
+                ),
+            ),
+        )
     )
-    assert len(list(code_regions)) == 1
+    assert len(code_regions) == 1 and all(isinstance(cr, CodeRegion) for cr in code_regions)
 
 
 async def test_get_descendants_as_view_2(resource_hello_elf_dyn: Resource):
@@ -135,7 +141,7 @@ async def test_get_only_descendant_as_view_0(resource_hello_elf_dyn: Resource):
             attribute_filters=(ResourceAttributeValueFilter(Addressable.VirtualAddress, 0x1050),),
         ),
     )
-    assert text_segment is not None
+    assert isinstance(text_segment, CodeRegion)
 
 
 async def test_get_only_descendant_as_view_1(resource_hello_elf_dyn: Resource):
@@ -192,7 +198,7 @@ async def test_get_descendants_combined_1(resource_hello_elf_dyn: Resource):
 
 async def test_get_only_anscestor_as_view(resource_hello_elf_dyn: Resource):
     """
-    Test get_only_ancestor_as_view implicitly performs analysis on its retrieved components, making them retrievable by get_descendants.
+    Test that get_only_ancestor_as_view returns a resource of correct type
     """
     await resource_hello_elf_dyn.unpack()
     text_segment = await resource_hello_elf_dyn.get_only_descendant_as_view(
