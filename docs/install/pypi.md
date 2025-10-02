@@ -133,4 +133,3 @@ pip install --user ofrak
 - [Accept OFRAK License](../getting-started.md#quick-start) - Required before first use
 - [Quick Start Guide](../getting-started.md#quick-start) - Unpack your first file
 - [Getting Started](../getting-started.md) - Tutorials and examples
-- [Troubleshooting](../environment-setup.md#troubleshooting-common-installation-issues) - Common issues and solutions

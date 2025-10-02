@@ -40,6 +40,7 @@ develop-core: requirements-pip requirements-dev
 	@echo "Core packages installed!"
 
 .PHONY: docker-requirements:
+docker-requirements:
 	python3 -m pip install requirements-pip.txt
 	python3 -m pip install requirements-build-docker.txt
 
