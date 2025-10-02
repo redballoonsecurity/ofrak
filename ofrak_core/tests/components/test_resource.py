@@ -41,14 +41,15 @@ async def test_get_descendants_1(resource_hello_elf_dyn: Resource):
             attribute_filters=(ResourceAttributeValueFilter(Addressable.VirtualAddress, 0x1050),),
         ),
     )
-    # The CodeRegions have not been analyzed and therefore do not have a virtual_address attribute.
-    # Consequently, they are filtered out by the ResourceAttributeValueFilter.
+    # The CodeRegions have not been analyzed and therefore do not have a virtual_address
+    # attribute. Consequently, they are filtered out by the ResourceAttributeValueFilter.
     assert len(list(code_regions)) == 0
 
 
 async def test_get_only_descendant_0(resource_hello_elf_dyn: Resource):
     """
-    Test that get_only_descendant throws an error when it finds multiple descendants that match the filter.
+    Test that get_only_descendant throws an error when it finds multiple descendants that match
+    the filter.
     """
     await resource_hello_elf_dyn.unpack()
     with pytest.raises(MultipleResourcesFoundError):
@@ -61,11 +62,14 @@ async def test_get_only_descendant_0(resource_hello_elf_dyn: Resource):
 
 async def test_get_only_descendant_1(resource_hello_elf_dyn: Resource):
     """
-    Test that get_only_descendant throws an error when it does not find any descendants that match the filter. Note that the CodeRegion exists, but it has not been analyzed yet and therefore does not have the `virtual_address` attribute that is filtered for.
+    Test that get_only_descendant throws an error when it does not find any descendants that
+    match the filter. Note that the CodeRegion exists, but it has not been analyzed yet and
+    therefore does not have the `virtual_address` attribute that is filtered for.
     """
     await resource_hello_elf_dyn.unpack()
     with pytest.raises(NotFoundError):
-        # The CodeRegions have not been analyzed and therefore do not have a virtual_address attribute.
+        # The CodeRegions have not been analyzed and therefore do not have a
+        # virtual_address attribute.
         # Consequently, they are filtered out by the ResourceAttributeValueFilter.
         await resource_hello_elf_dyn.get_only_descendant(
             r_filter=ResourceFilter(
@@ -95,7 +99,8 @@ async def test_get_descendants_as_view_0(resource_hello_elf_dyn: Resource):
 
 async def test_get_descendants_as_view_1(resource_hello_elf_dyn: Resource):
     """
-    Test that get_descendants_as_view retrieves the one executable segment with the specified virtual address in the ELF file.
+    Test that get_descendants_as_view retrieves the one executable segment with the specified
+    virtual address in the ELF file.
     """
     await resource_hello_elf_dyn.unpack()
     code_regions = list(
@@ -131,7 +136,8 @@ async def test_get_descendants_as_view_2(resource_hello_elf_dyn: Resource):
 
 async def test_get_only_descendant_as_view_0(resource_hello_elf_dyn: Resource):
     """
-    Test that get_only_descendant_as_view retrieves the one executable segment with the specified virtual address in the ELF file.
+    Test that get_only_descendant_as_view retrieves the one executable segment with the
+    specified virtual address in the ELF file.
     """
     await resource_hello_elf_dyn.unpack()
     text_segment = await resource_hello_elf_dyn.get_only_descendant_as_view(
@@ -146,7 +152,8 @@ async def test_get_only_descendant_as_view_0(resource_hello_elf_dyn: Resource):
 
 async def test_get_only_descendant_as_view_1(resource_hello_elf_dyn: Resource):
     """
-    Test that get_only_descendant_as_view throws an error if it does not find a non-existing executable segments.
+    Test that get_only_descendant_as_view throws an error if it does not finda non-existing
+    executable segments.
     """
     await resource_hello_elf_dyn.unpack()
     with pytest.raises(NotFoundError):
@@ -163,7 +170,8 @@ async def test_get_only_descendant_as_view_1(resource_hello_elf_dyn: Resource):
 
 async def test_get_only_descendant_as_view_2(resource_hello_elf_dyn: Resource):
     """
-    Test that get_only_descendant_as_view throws an error when it finds multiple descendants that match the filter.
+    Test that get_only_descendant_as_view throws an error when it finds multiple descendants that
+    match the filter.
     """
     await resource_hello_elf_dyn.unpack()
     with pytest.raises(MultipleResourcesFoundError):
@@ -177,7 +185,8 @@ async def test_get_only_descendant_as_view_2(resource_hello_elf_dyn: Resource):
 
 async def test_get_descendants_combined_1(resource_hello_elf_dyn: Resource):
     """
-    Test that get_descendants_as_view implicitly performs analysis on its retrieved components, making them retrievable by get_descendants.
+    Test that get_descendants_as_view implicitly performs analysis on its retrieved components,
+    making them retrievable by get_descendants.
     """
     await resource_hello_elf_dyn.unpack()
     await resource_hello_elf_dyn.get_descendants_as_view(
