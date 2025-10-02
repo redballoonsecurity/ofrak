@@ -13,9 +13,10 @@ packages_paths:
     "ofrak_tutorial"
   ]
 entrypoint: |
-    python -m ofrak_ghidra.server start \
-        && jupyter notebook \
-            --no-browser \
-            --allow-root \
-            --ip 0.0.0.0 \
-            --notebook-dir "/ofrak_tutorial/notebooks"
+    ofrak license -l ofrak.license --i-agree \
+    && python -m ofrak_ghidra.server start \
+    && jupyter notebook \
+        --no-browser \
+        --allow-root \
+        --ip 0.0.0.0 \
+        --notebook-dir "/ofrak_tutorial/notebooks"
