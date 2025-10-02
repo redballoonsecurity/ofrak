@@ -1137,7 +1137,7 @@ class Resource:
         """
         Create a view for every ancestor resource that matches the given
         [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag] to populate the
-        resources with the associated indexable attirbutes. If a filter is provided, identify and
+        resources with the associated indexable attributes. If a filter is provided, identify and
         return the only one of these ancestor resources that matches this filter. If a filter is
         not provided, get the only ancestor of this resource. In every case, the ancestor will be
         returned as an instance of the given
@@ -1192,7 +1192,7 @@ class Resource:
         """
         Create a view for every descendant resource that matches the given
         [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag] to populate the
-        resources with the associated indexable attirbutes. If a filter is provided, identify and
+        resources with the associated indexable attributes. If a filter is provided, identify and
         return all of the descendant resources that match this filter. The descendant will be
         returned as an instance of the given
         [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag].
@@ -1252,7 +1252,7 @@ class Resource:
         """
         Create a view for every descendant resource that matches the given
         [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag] to populate the
-        resource with the associated indexable attirbutes. If a filter is provided, identify and
+        resource with the associated indexable attributes. If a filter is provided, identify and
         return the only one of these descendant resources that matches this filter. If a filter is
         not provided, get the only descendant of this resource. In every case, the descendant will
         be returned as an instance of the given
@@ -1346,7 +1346,7 @@ class Resource:
         """
         Create a view for every child of this resource that matches the given
         [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag] to populate the
-        resource with the associated indexable attirbutes. If a filter is provided, identify and
+        resource with the associated indexable attributes. If a filter is provided, identify and
         return all of the children resources that match this filter. The child will be returned as
         an instance of the given
         [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag].
@@ -1383,7 +1383,7 @@ class Resource:
         """
         Create a view for every child resource that matches the given
         [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag] to populate the
-        resources with the associated indexable attirbutes. If a filter is provided, identify and
+        resources with the associated indexable attributes. If a filter is provided, identify and
         return the only one of these child resources that matches this filter. If a filter is not
         provided, get the only child of this resource. In every case, the child will be returned
         as an instance of the given
