@@ -762,7 +762,7 @@ class Resource:
         )
         return new_resource
 
-    async def _apply_view_as(self, v_type: Type[RV], resources: Iterable["Resource"]):
+    async def _view_multiple_as(self, v_type: Type[RV], resources: Iterable["Resource"]):
         views_or_tasks = [r._view_as(v_type) for r in resources]
         # analysis tasks to generate views of resources which don't have attrs for the view already
         view_tasks: List[Awaitable[RV]] = []
@@ -1130,7 +1130,7 @@ class Resource:
         :raises NotFoundError: If the instance has been deleted or is no longer valid
         """
         tag_ancestors = await self.get_ancestors(r_filter=ResourceFilter(tags=[v_type]))
-        await self._apply_view_as(v_type, tag_ancestors)
+        await self._view_multiple_as(v_type, tag_ancestors)
         ancestors = await self.get_ancestors(r_filter)
         return [await r.view_as(v_type) for r in ancestors]
 
@@ -1226,7 +1226,7 @@ class Resource:
         tag_descendants = await self.get_descendants(
             max_depth, r_filter=ResourceFilter(tags=[v_type]), r_sort=r_sort
         )
-        await self._apply_view_as(v_type, tag_descendants)
+        await self._view_multiple_as(v_type, tag_descendants)
         descendants = await self.get_descendants(max_depth, r_filter, r_sort)
         return [await r.view_as(v_type) for r in descendants]
 
