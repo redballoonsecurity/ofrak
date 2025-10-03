@@ -21,11 +21,6 @@ For most packages, this will mean updating the following files:
 - `DIRECTORY/CHANGELOG.md`
 - `DIRECTORY/setup.py`
 
-For the `ofrak` package, version numbers should also be updated in the following additional locations:
-- `/frontend/package.json`
-- `/frontend/package-lock.json`
-- `/frontend/src/App.svelte`
-
 ## Pre-commit
 
 OFRAK uses [pre-commit](https://pre-commit.com/) to run automated tools on the code base before every commit.
@@ -146,21 +141,24 @@ class MyClass:
         ...
 ```
 
+## OFRAK Package Structure
+
+### Source Layout
+
+OFRAK packages use a "src layout" structure where source code is organized in a `src/` subdirectory within each package directory.
+
 ## Adding new packages to OFRAK build
 
-The build script `build_image.py` expects a config file similar to `ofrak-core-dev.yml`. Each of the packages listed under `packages_paths` in the YAML files should correspond to a directory containing two files: `Makefile` and `Dockerstub`. They may also contain a `Dockerstage` file for multi-stage builds. 
+The build script `build_image.py` expects a config file similar to `ofrak-dev.yml`. Each of the packages listed under `packages_paths` in the YAML files should correspond to a directory containing two files: `Makefile` and `Dockerstub`. They may also contain a `Dockerstage` file for multi-stage builds.
 
-Imagine we are adding a new package with the following structure:
+When creating a new package, follow the src layout structure shown above. Your `setup.py` should reference the `src/` directory:
 
-```
-ofrak_package_x
- |--Dockerstub
- |--Makefile
- |--setup.py
- |--ofrak_package_x_python_module
-     |...
- |--ofrak_package_x_python_module_test
-     |...
+```python
+setup(
+    package_dir={"": "src"},
+    packages=find_packages(where="src"),
+    # ... other setup parameters
+)
 ```
 
 ### Makefile
