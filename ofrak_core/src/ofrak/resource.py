@@ -1134,7 +1134,7 @@ class Resource:
     ) -> RV:
         """
         Get ancestors that match the given [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag],
-        creating a view if the view doesn't exist.
+        creating a view if the view does not exist.
         If a filter is provided, only those ancestors that match the filter are returned.
         In every case, the ancestor will be
         returned as an instance of the given
@@ -1186,9 +1186,9 @@ class Resource:
     ) -> Iterable[RV]:
         """
         Get descendants that match the given [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag],
-        creating a view if the view doesn't exist.
+        creating a view if the view does not exist.
         If a filter is provided, only those descendants matching this filter are returned.
-        The descendant will be returned as an instance of the given
+        The descendants will be returned as instances of the given
         [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag].
 
         :param v_type: The type of [view][ofrak.resource] to get the descendants as
@@ -1242,13 +1242,11 @@ class Resource:
         r_filter: ResourceFilter = None,
     ) -> RV:
         """
-        Create a view for every descendant resource that matches the given
-        [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag] to populate the
-        resource with the associated indexable attributes. If a filter is provided, identify and
-        return the only one of these descendant resources that matches this filter. If a filter is
-        not provided, get the only descendant of this resource. In every case, the descendant will
-        be returned as an instance of the given
-        [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag].
+        Get a view for every descendant of this resource that matches the given
+        [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag], creating
+        the view if one does not exist. If a filter is provided, return the only descendant of
+        this resource that matches the provided filter. The descendant will be returned as an
+        instance of the given [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag].
 
         :param v_type: The type of [view][ofrak.resource] to get the descendant as
         :param max_depth: Maximum depth from this resource to search for descendants; if -1,
@@ -1332,11 +1330,10 @@ class Resource:
         r_sort: ResourceSort = None,
     ) -> Iterable[RV]:
         """
-        Create a view for every child of this resource that matches the given
-        [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag] to populate the
-        resource with the associated indexable attributes. If a filter is provided, identify and
-        return all of the children resources that match this filter. The child will be returned as
-        an instance of the given
+        Get a view for every child of this resource that matches the given
+        [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag], creating
+        the view if one does not exist. If a filter is provided, return all of the children
+        resources that match this filter. The children will be returned as instances of the given
         [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag].
 
         :param v_type: The type of [view][ofrak.resource] to get the children as
@@ -1367,13 +1364,11 @@ class Resource:
 
     async def get_only_child_as_view(self, v_type: Type[RV], r_filter: ResourceFilter = None) -> RV:
         """
-        Create a view for every child resource that matches the given
-        [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag] to populate the
-        resources with the associated indexable attributes. If a filter is provided, identify and
-        return the only one of these child resources that matches this filter. If a filter is not
-        provided, get the only child of this resource. In every case, the child will be returned
-        as an instance of the given
-        [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag].
+        Get a view for every child of this resource that matches the given
+        [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag], creating
+        the view if one does not exist. If a filter is provided, return the only child of this
+        resource that matches the provided filter. The child will be returned as an instance of the
+        given [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag].
 
         :param v_type: The type of [view][ofrak.resource] to get the child as
         :param r_filter: Contains parameters which resources must match to be returned, including
