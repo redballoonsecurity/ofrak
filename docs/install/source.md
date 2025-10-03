@@ -21,6 +21,10 @@ git lfs install
 git lfs pull
 ```
 
+!!! Note "OFRAK Uses Git LFS"
+    If you accidentally cloned the repository before installing Git LFS,
+    you can pull the LFS assets by re-running the "Install Git LFS files" step from above.
+
 ## Install Packages
 
 ### Easy Way: One Command

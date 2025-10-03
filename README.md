@@ -45,6 +45,8 @@ OFRAK can be installed in three ways:
 
 See ([Install](docs/install/index.md)) for detailed installation instructions.
 
+Note that OFRAK uses Git LFS -- see [Installing from Source](docs/install/source.md) for more details.
+
 ## Documentation
 
 OFRAK has general documentation and API documentation. Both can be viewed at [ofrak.com/docs](https://ofrak.com/docs).
