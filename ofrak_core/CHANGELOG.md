@@ -88,6 +88,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add `ofrak_pyghidra` to OFRAK GUI script builder ([#631](https://github.com/redballoonsecurity/ofrak/pull/631))
 - When the user selects the "Decompilation" tab in the GUI, the pane is updated with the decompiled code automatically, without having to click "Analyze" first. ([#639](https://github.com/redballoonsecurity/ofrak/pull/639))
 - Use a single source of truth for the package version ([#640](https://github.com/redballoonsecurity/ofrak/pull/640))
+- Reimplement the CPIO components using `libarchive` ([#647](https://github.com/redballoonsecurity/ofrak/pull/647))
 
 ### Deprecated
 - `Resource.flush_to_disk` deprecated in favor of `Resource.flush_data_to_disk`. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373), [#567](https://github.com/redballoonsecurity/ofrak/pull/568))
