@@ -1313,9 +1313,7 @@ class Resource:
         """
         Get all the children of this resource. May optionally sort the children by an
         indexable attribute value key. May optionally filter the children so only those
-        matching certain indexable attributes are returned. Children that have not previously been
-        analyzed and populated with the indexable attributes are treated as not matching the
-        filter.
+        matching certain attributes are returned.
 
         :param r_filter: Contains parameters which resources must match to be returned, including
         any tags it must have and/or values of indexable attributes
