@@ -9,7 +9,7 @@ Install OFRAK from source code for development or contribution.
 - make
 - cmake (macOS only - install via `brew install cmake`)
 
-## Clone and Install
+## Clone
 
 ```bash
 # Clone repository
@@ -28,6 +28,14 @@ git lfs pull
 ## Install Packages
 
 ### Easy Way: One Command
+
+!!! tip "Use virtual environment"
+    We strongly recommend installing OFRAK using a Python virutal environment.
+    For example, to use [venv](https://docs.python.org/3/library/venv.html):
+    ```bash
+    $ python3 -m venv venv
+    $ source venv/bin/activate
+    ```
 
 From the repository root:
 
@@ -50,16 +58,6 @@ Before using OFRAK, you need to select a license. For example, to select the com
 ofrak license --community --i-agree
 ```
 
-## Handle Dependencies
-
-OFRAK uses several third party dependencies. You can see which ones are installed, and install ones from package managers with the following commands:
-```bash
-ofrak deps --missing-only
-ofrak deps --packages-for apt | xargs sudo apt install  # Ubuntu/Debian
-ofrak deps --packages-for brew | xargs brew install     # macOS
-ofrak deps --packages-for choco | xargs choco install   # Windows 
-```
-
 ## Test Installation
 
 ```bash
@@ -77,7 +75,7 @@ ofrak unpack -x --gui <some-file>
 **Solution**:
 1. Install Git LFS: [https://git-lfs.github.com/](https://git-lfs.github.com/)
 2. Initialize and pull LFS files:
-   ```shell
+   ```bash
    cd ofrak
    git lfs install
    git lfs pull
@@ -91,22 +89,7 @@ ofrak unpack -x --gui <some-file>
 **Cause**: External tools required by OFRAK components are not installed on the system.
 
 **Solution**:
-1. Identify missing dependencies:
-   ```shell
-   ofrak deps --missing-only
-   ```
-2. Install via package manager (if available):
-   ```shell
-   # On Ubuntu/Debian:
-   ofrak deps --packages-for apt | xargs sudo apt install -y
-
-   # On macOS:
-   ofrak deps --packages-for brew | xargs brew install
-   ```
-3. Alternatively, use the `-x` flag to exclude components with missing dependencies:
-   ```shell
-   ofrak unpack -x <file>
-   ```
+See [OFRAK CLI Configuring Dependencies](../ofrak-cli.md#configuring-dependencies--quickstart)
 
 ### build_image.py Dependency Errors
 
@@ -115,7 +98,7 @@ ofrak unpack -x --gui <some-file>
 **Cause**: The `setuptools` or `pyyaml` packages are not installed (see [Docker prerequisites](#docker)).
 
 **Solution**:
-```shell
+```bash
 make requirements-pip
 make requirements-build-docker
 ```
@@ -128,11 +111,11 @@ make requirements-build-docker
 
 **Solution**:
 1. Install cmake via Homebrew:
-   ```shell
+   ```bash
    brew install cmake
    ```
 2. Reinstall keystone-engine:
-   ```shell
+   ```bash
    pip uninstall keystone-engine
    pip install keystone-engine
    ```
@@ -142,4 +125,3 @@ make requirements-build-docker
 ## Next Steps
 
 - [Contributor Guide](../contributor-guide/getting-started.md) for development workflow
-- [Getting Started](../getting-started.md) for tutorials 

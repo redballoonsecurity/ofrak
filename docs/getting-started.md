@@ -43,21 +43,11 @@ OFRAK can be installed in multiple ways depending on your needs:
 
 See our [Installation Guide](install/index.md) to help you choose the right method.
 
+## CLI
+See [OFRAK CLI](./ofrak-cli.md).
+
 ## GUI
-
-OFRAK comes with a web-based GUI for visualizing and manipulating binaries.
-After installation, run `ofrak gui`:
-
-```bash
-$ ofrak gui
-Using OFRAK Community License.
-GUI is being served on http://127.0.0.1:8080/
-```
-
-To access the GUI, navigate to <http://localhost:8080> (or the port specified with `-p/--port` or `-gp/--gui-port`) and start by dropping anything you'd like into it!
-See [OFRAK GUI Docs](user-guide/gui/minimap.md) for more info on using the GUI.
-
-The GUI can also be used with the OFRAK CLI (via the `--gui` flag) and is typically running by default in the OFRAK Docker images.
+See [OFRAK GUI](./ofrak-cli.md#gui).
 
 ## Tutorial
 

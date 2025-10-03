@@ -16,23 +16,26 @@ Best for users who want a comprehensive, consistent environment with all depende
 
 ## Prerequisites
 
+You will need the [Install from Source Prerequisites](./source.md#prerequisites). Additionally,
+you will need:
+
 - Docker 23.0+ installed and running ([Get Docker](https://www.docker.com/get-started))
     - BuildKit is required and comes enabled by default in Docker 23.0+
     - For Docker 18.09-22.x, enable BuildKit by setting `DOCKER_BUILDKIT=1`
-- Python 3.9+
-- Git with [Git LFS](https://git-lfs.github.com/) installed ([installation instructions](https://github.com/git-lfs/git-lfs#installing))
-- GNU make
 
 ## Build Your Own Image
 
-```bash
-# Clone repository
-git clone https://github.com/redballoonsecurity/ofrak.git
-cd ofrak
+First, [clone the repository](./source.md#clone).
 
+Next, install the Docker build requirements:
+
+```bash
 # Install build dependencies
 make requirements-build-docker
+```
 
+Now, you are ready to build images:
+```
 # Build image (choose config)
 python3 build_image.py --config ofrak-ghidra.yml --base --finish
 ```
@@ -200,8 +203,3 @@ Additionally:
 - **Permission issues**: Add `--user $(id -u):$(id -g)`
 - **Can't access GUI**: Check container is running with `docker ps`
 - **Out of memory**: Increase Docker memory limit
-
-## Next Steps
-
-- [Quick Start Guide](../getting-started.md#quick-start) for first commands
-- [Getting Started](../getting-started.md) for tutorials 

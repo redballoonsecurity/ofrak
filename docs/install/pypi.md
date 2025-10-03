@@ -84,9 +84,3 @@ python3.9 -m pip install ofrak
 ```bash
 pip install --user ofrak
 ```
-
-## Next Steps
-
-- [Accept OFRAK License](../getting-started.md#quick-start) - Required before first use
-- [Quick Start Guide](../getting-started.md#quick-start) - Unpack your first file
-- [Getting Started](../getting-started.md) - Tutorials and examples
