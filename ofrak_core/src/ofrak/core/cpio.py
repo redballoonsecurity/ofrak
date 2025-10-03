@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import os
 import stat
@@ -28,9 +27,11 @@ from ofrak.core.filesystem import FilesystemEntry
 
 try:
     import libarchive
+
     LIBARCHIVE_INSTALLED = True
 except OSError:
     LIBARCHIVE_INSTALLED = False
+
 
 class LibarchiveTool(ComponentExternalTool):
     def __init__(self):
@@ -45,6 +46,7 @@ class LibarchiveTool(ComponentExternalTool):
 
     async def is_tool_installed(self) -> bool:
         return LIBARCHIVE_INSTALLED
+
 
 LIBARCHIVE_TOOL: LibarchiveTool = LibarchiveTool()
 
@@ -101,18 +103,20 @@ class CpioFilesystemAnalyzer(Analyzer[None, CpioFilesystem]):
 
 
 def _libarchive_entry_to_stat_result(entry) -> os.stat_result:
-    return os.stat_result((
-        entry.mode,           # st_mode (complete mode: file type + permission bits)
-        0,                    # st_ino (not preserved in CPIO)
-        0,                    # st_dev (not preserved)
-        1,                    # st_nlink (default, it looks like we can't get this from libarchive)
-        entry.uid,            # st_uid
-        entry.gid,            # st_gid
-        entry.size,           # st_size
-        int(entry.atime) if entry.atime else 0,     # st_atime
-        int(entry.mtime) if entry.mtime else 0,     # st_mtime
-        int(entry.ctime) if entry.ctime else 0,     # st_ctime
-    ))
+    return os.stat_result(
+        (
+            entry.mode,  # st_mode (complete mode: file type + permission bits)
+            0,  # st_ino (not preserved in CPIO)
+            0,  # st_dev (not preserved)
+            1,  # st_nlink (default, it looks like we can't get this from libarchive)
+            entry.uid,  # st_uid
+            entry.gid,  # st_gid
+            entry.size,  # st_size
+            int(entry.atime) if entry.atime else 0,  # st_atime
+            int(entry.mtime) if entry.mtime else 0,  # st_mtime
+            int(entry.ctime) if entry.ctime else 0,  # st_ctime
+        )
+    )
 
 
 class CpioUnpacker(Unpacker[None]):
@@ -141,46 +145,31 @@ class CpioUnpacker(Unpacker[None]):
                 entry_stat = _libarchive_entry_to_stat_result(entry)
 
                 xattrs = {}
-                if hasattr(entry, 'xattr'):
+                if hasattr(entry, "xattr"):
                     for xattr_name in entry.xattr.keys():
                         xattrs[xattr_name] = entry.xattr.get(xattr_name)
 
                 filetype = entry.filetype
 
                 if stat.S_ISREG(filetype):
-                    data = b''.join(entry.get_blocks())
+                    data = b"".join(entry.get_blocks())
                     await cpio_v.add_file(path, data, entry_stat, xattrs or None)
                 elif stat.S_ISDIR(filetype):
                     await cpio_v.add_folder(path, entry_stat, xattrs or None)
                 elif stat.S_ISLNK(filetype):
                     linkpath = entry.linkpath or ""
                     symlink = SymbolicLink(
-                        name=path,
-                        stat=entry_stat,
-                        xattrs=xattrs or None,
-                        source_path=linkpath
+                        name=path, stat=entry_stat, xattrs=xattrs or None, source_path=linkpath
                     )
                     await cpio_v.add_special_file_entry(path, symlink)
                 elif stat.S_ISCHR(filetype):
-                    chardev = CharacterDevice(
-                        name=path,
-                        stat=entry_stat,
-                        xattrs=xattrs or None
-                    )
+                    chardev = CharacterDevice(name=path, stat=entry_stat, xattrs=xattrs or None)
                     await cpio_v.add_special_file_entry(path, chardev)
                 elif stat.S_ISBLK(filetype):
-                    blockdev = BlockDevice(
-                        name=path,
-                        stat=entry_stat,
-                        xattrs=xattrs or None
-                    )
+                    blockdev = BlockDevice(name=path, stat=entry_stat, xattrs=xattrs or None)
                     await cpio_v.add_special_file_entry(path, blockdev)
                 elif stat.S_ISFIFO(filetype):
-                    fifo = FIFOPipe(
-                        name=path,
-                        stat=entry_stat,
-                        xattrs=xattrs or None
-                    )
+                    fifo = FIFOPipe(name=path, stat=entry_stat, xattrs=xattrs or None)
                     await cpio_v.add_special_file_entry(path, fifo)
                 else:
                     raise NotImplementedError(f"Unsupported file type: {oct(filetype)}")
@@ -235,9 +224,7 @@ class CpioPacker(Packer[None]):
 
         format_str = _get_libarchive_format(cpio_v.archive_type)
 
-        entries = await resource.get_descendants(
-            r_filter=ResourceFilter(tags=(FilesystemEntry,))
-        )
+        entries = await resource.get_descendants(r_filter=ResourceFilter(tags=(FilesystemEntry,)))
 
         # Sort entries by path (parents before children)
         entry_list = []
@@ -273,7 +260,7 @@ class CpioPacker(Packer[None]):
                     linkpath = symlink_view.source_path
 
                 # Get data only for regular files (not symlinks, directories, or special files)
-                data = b''
+                data = b""
                 entry_size = 0
                 if entry_resource.has_tag(File) and not is_symlink:
                     data = await entry_resource.get_data()
@@ -287,24 +274,24 @@ class CpioPacker(Packer[None]):
 
                 # Build parameters dict - include linkpath for symlinks
                 add_params = {
-                    'entry_path': path,
-                    'entry_size': entry_size,
-                    'entry_data': data,
-                    'filetype': filetype,
-                    'permission': permission_bits,
-                    'uid': entry_stat.st_uid,
-                    'gid': entry_stat.st_gid,
-                    'atime': entry_stat.st_atime,
-                    'mtime': entry_stat.st_mtime,
-                    'ctime': entry_stat.st_ctime,
+                    "entry_path": path,
+                    "entry_size": entry_size,
+                    "entry_data": data,
+                    "filetype": filetype,
+                    "permission": permission_bits,
+                    "uid": entry_stat.st_uid,
+                    "gid": entry_stat.st_gid,
+                    "atime": entry_stat.st_atime,
+                    "mtime": entry_stat.st_mtime,
+                    "ctime": entry_stat.st_ctime,
                 }
                 if linkpath is not None:
-                    add_params['linkpath'] = linkpath
+                    add_params["linkpath"] = linkpath
 
                 archive.add_file_from_memory(**add_params)
 
         # Combine all chunks into final bytes
-        packed_bytes = b''.join(packed_chunks)
+        packed_bytes = b"".join(packed_chunks)
         resource.queue_patch(Range(0, await resource.get_data_length()), packed_bytes)
 
 

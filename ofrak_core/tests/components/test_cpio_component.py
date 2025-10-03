@@ -1,7 +1,4 @@
-import asyncio
 import os
-import subprocess
-import tempfile312 as tempfile
 import stat
 
 import pytest
@@ -11,7 +8,14 @@ from ofrak.resource import Resource, ResourceFilter
 from ofrak.core.cpio import CpioFilesystem, CpioPacker, CpioUnpacker, CpioArchiveType
 from ofrak.core.strings import StringPatchingConfig, StringPatchingModifier
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
-from ofrak.core.filesystem import FilesystemEntry, File, Folder, SymbolicLink, CharacterDevice, BlockDevice
+from ofrak.core.filesystem import (
+    FilesystemEntry,
+    File,
+    Folder,
+    SymbolicLink,
+    CharacterDevice,
+    BlockDevice,
+)
 from . import ASSETS_DIR
 
 INITIAL_DATA = b"hello world"
@@ -55,6 +59,7 @@ class TestCpioUnpackModifyPack(UnpackModifyPackPattern):
         patched_data = await child_textfile.resource.get_data()
         assert patched_data == EXPECTED_DATA
 
+
 async def test_unpacking_root(ofrak_context: OFRAKContext):
     cpio_r = await ofrak_context.create_root_resource("root.cpio", b"", (CpioFilesystem,))
     cpio_r.add_view(CpioFilesystem(archive_type=CpioArchiveType.NEW_ASCII))
@@ -69,12 +74,15 @@ async def test_unpacking_root(ofrak_context: OFRAKContext):
     await cpio_r.pack_recursively()
     cpio_data = await cpio_r.get_data()
 
-    root_resource = await ofrak_context.create_root_resource("root2.cpio", cpio_data, (CpioFilesystem,))
+    root_resource = await ofrak_context.create_root_resource(
+        "root2.cpio", cpio_data, (CpioFilesystem,)
+    )
 
     await root_resource.unpack()
 
     children = list(await root_resource.get_children())
     assert len(children) > 0, "Should have unpacked children"
+
 
 async def test_character_device(ofrak_context: OFRAKContext):
     cpio_r = await ofrak_context.create_root_resource("character.cpio", b"", (CpioFilesystem,))
@@ -90,7 +98,9 @@ async def test_character_device(ofrak_context: OFRAKContext):
     await cpio_r.pack_recursively()
     cpio_data = await cpio_r.get_data()
 
-    root_resource = await ofrak_context.create_root_resource("character2.cpio", cpio_data, (CpioFilesystem,))
+    root_resource = await ofrak_context.create_root_resource(
+        "character2.cpio", cpio_data, (CpioFilesystem,)
+    )
 
     await root_resource.unpack()
 
@@ -103,28 +113,28 @@ async def test_round_trip_metadata_preservation(ofrak_context: OFRAKContext):
     from ofrak.service.resource_service_i import ResourceFilter
 
     # First unpack
-    root1 = await ofrak_context.create_root_resource_from_file(os.path.join(ASSETS_DIR, "tinycore.cpio"))
+    root1 = await ofrak_context.create_root_resource_from_file(
+        os.path.join(ASSETS_DIR, "tinycore.cpio")
+    )
     await root1.unpack()
 
     # Capture all metadata from first unpack
     metadata1 = {}
-    descendants1 = await root1.get_descendants(
-        r_filter=ResourceFilter(tags=(FilesystemEntry,))
-    )
+    descendants1 = await root1.get_descendants(r_filter=ResourceFilter(tags=(FilesystemEntry,)))
     for entry_resource in descendants1:
         entry = await entry_resource.view_as(FilesystemEntry)
         path = await entry.get_path()
         if entry.stat:
             metadata1[path] = {
-                'mode': entry.stat.st_mode,
-                'nlink': entry.stat.st_nlink,
-                'uid': entry.stat.st_uid,
-                'gid': entry.stat.st_gid,
-                'size': entry.stat.st_size,
-                'atime': entry.stat.st_atime,
-                'mtime': entry.stat.st_mtime,
-                'ctime': entry.stat.st_ctime,
-                'xattrs': dict(entry.xattrs) if entry.xattrs else {},
+                "mode": entry.stat.st_mode,
+                "nlink": entry.stat.st_nlink,
+                "uid": entry.stat.st_uid,
+                "gid": entry.stat.st_gid,
+                "size": entry.stat.st_size,
+                "atime": entry.stat.st_atime,
+                "mtime": entry.stat.st_mtime,
+                "ctime": entry.stat.st_ctime,
+                "xattrs": dict(entry.xattrs) if entry.xattrs else {},
             }
 
     # Repack
@@ -133,30 +143,27 @@ async def test_round_trip_metadata_preservation(ofrak_context: OFRAKContext):
 
     # Second unpack
     root2 = await ofrak_context.create_root_resource(
-        name="repacked_core_tinycore",
-        data=repacked_data
+        name="repacked_core_tinycore", data=repacked_data
     )
     await root2.unpack()
 
     # Capture metadata from second unpack
     metadata2 = {}
-    descendants2 = await root2.get_descendants(
-        r_filter=ResourceFilter(tags=(FilesystemEntry,))
-    )
+    descendants2 = await root2.get_descendants(r_filter=ResourceFilter(tags=(FilesystemEntry,)))
     for entry_resource in descendants2:
         entry = await entry_resource.view_as(FilesystemEntry)
         path = await entry.get_path()
         if entry.stat:
             metadata2[path] = {
-                'mode': entry.stat.st_mode,
-                'nlink': entry.stat.st_nlink,
-                'uid': entry.stat.st_uid,
-                'gid': entry.stat.st_gid,
-                'size': entry.stat.st_size,
-                'atime': entry.stat.st_atime,
-                'mtime': entry.stat.st_mtime,
-                'ctime': entry.stat.st_ctime,
-                'xattrs': dict(entry.xattrs) if entry.xattrs else {},
+                "mode": entry.stat.st_mode,
+                "nlink": entry.stat.st_nlink,
+                "uid": entry.stat.st_uid,
+                "gid": entry.stat.st_gid,
+                "size": entry.stat.st_size,
+                "atime": entry.stat.st_atime,
+                "mtime": entry.stat.st_mtime,
+                "ctime": entry.stat.st_ctime,
+                "xattrs": dict(entry.xattrs) if entry.xattrs else {},
             }
 
     # Compare metadata - key attributes must match
@@ -170,13 +177,13 @@ async def test_round_trip_metadata_preservation(ofrak_context: OFRAKContext):
         m2 = metadata2[path]
 
         # Check if this is a symlink using stat module
-        is_symlink = stat.S_ISLNK(m1['mode'])
+        is_symlink = stat.S_ISLNK(m1["mode"])
 
         # For symlinks, skip size check - libarchive CPIO writer doesn't preserve symlink size
         # This is a known limitation of libarchive's add_file_from_memory for CPIO symlinks
-        keys_to_check = ['mode', 'nlink', 'uid', 'gid', 'atime', 'mtime', 'ctime', 'xattrs']
+        keys_to_check = ["mode", "nlink", "uid", "gid", "atime", "mtime", "ctime", "xattrs"]
         if not is_symlink:
-            keys_to_check.append('size')
+            keys_to_check.append("size")
 
         for key in keys_to_check:
             if m1[key] != m2[key]:
@@ -188,12 +195,12 @@ async def test_round_trip_metadata_preservation(ofrak_context: OFRAKContext):
 async def test_special_file_types(ofrak_context: OFRAKContext):
     """Test that various file types are correctly handled."""
 
-    root = await ofrak_context.create_root_resource_from_file(os.path.join(ASSETS_DIR, "tinycore.cpio"))
+    root = await ofrak_context.create_root_resource_from_file(
+        os.path.join(ASSETS_DIR, "tinycore.cpio")
+    )
     await root.unpack()
 
-    descendants = await root.get_descendants(
-        r_filter=ResourceFilter(tags=(FilesystemEntry,))
-    )
+    descendants = await root.get_descendants(r_filter=ResourceFilter(tags=(FilesystemEntry,)))
 
     found_regular_file = False
     found_directory = False
@@ -229,7 +236,13 @@ async def test_special_file_types(ofrak_context: OFRAKContext):
             if not found_block_device and entry_resource.has_tag(BlockDevice):
                 found_block_device = True
 
-        if found_regular_file and found_directory and found_symlink and found_character_device and found_block_device:
+        if (
+            found_regular_file
+            and found_directory
+            and found_symlink
+            and found_character_device
+            and found_block_device
+        ):
             break
 
     # Verify we found all expected file types
@@ -240,11 +253,13 @@ async def test_special_file_types(ofrak_context: OFRAKContext):
     assert found_block_device, "Should find at least one block device"
 
 
-
-@pytest.mark.parametrize("archive_type", [
-    CpioArchiveType.OLD_ASCII,
-    CpioArchiveType.NEW_ASCII,
-])
+@pytest.mark.parametrize(
+    "archive_type",
+    [
+        CpioArchiveType.OLD_ASCII,
+        CpioArchiveType.NEW_ASCII,
+    ],
+)
 async def test_cpio_type_preservation(ofrak_context: OFRAKContext, archive_type: CpioArchiveType):
     """
     Test that CPIO files of different CpioArchiveType can be created, packed, unpacked, and preserves its type.
@@ -262,7 +277,9 @@ async def test_cpio_type_preservation(ofrak_context: OFRAKContext, archive_type:
     """
 
     # Create a CPIO archive with the specified type
-    cpio_r = await ofrak_context.create_root_resource(f"test_{archive_type.value}.cpio", b"", (CpioFilesystem,))
+    cpio_r = await ofrak_context.create_root_resource(
+        f"test_{archive_type.value}.cpio", b"", (CpioFilesystem,)
+    )
     cpio_r.add_view(CpioFilesystem(archive_type=archive_type))
     await cpio_r.save()
 
@@ -283,8 +300,7 @@ async def test_cpio_type_preservation(ofrak_context: OFRAKContext, archive_type:
 
     # Create a new resource from the packed data
     new_cpio_r = await ofrak_context.create_root_resource(
-        name=f"repacked_{archive_type.value}.cpio",
-        data=packed_data
+        name=f"repacked_{archive_type.value}.cpio", data=packed_data
     )
 
     # Unpack and verify the archive type is preserved
@@ -292,8 +308,9 @@ async def test_cpio_type_preservation(ofrak_context: OFRAKContext, archive_type:
     new_cpio_v = await new_cpio_r.view_as(CpioFilesystem)
 
     # Verify the archive type is preserved
-    assert new_cpio_v.archive_type == archive_type, \
-        f"Archive type not preserved: expected {archive_type}, got {new_cpio_v.archive_type}"
+    assert (
+        new_cpio_v.archive_type == archive_type
+    ), f"Archive type not preserved: expected {archive_type}, got {new_cpio_v.archive_type}"
 
     # Verify the file content is preserved
     child_file = await new_cpio_v.get_entry(filename)
