@@ -21,14 +21,14 @@ with open("README.md") as f:
 
 setuptools.setup(
     name="ofrak_angr",
-    version="1.1.0rc4",
+    version="1.1.0",
     description="OFRAK angr Components",
     packages=setuptools.find_packages("src"),
     package_dir={"": "src"},
     package_data={"ofrak_angr": ["py.typed"]},
     install_requires=[
         "angr>=9.2.93,<=9.2.174",
-        "ofrak>=3.3.0rc10",
+        "ofrak>=3.3.0",
     ],
     extras_require={
         "graphical": ["pygraphviz"],

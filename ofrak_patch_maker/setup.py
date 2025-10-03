@@ -21,7 +21,7 @@ with open("README.md") as f:
 
 setuptools.setup(
     name="ofrak_patch_maker",
-    version="4.1.0rc2",
+    version="4.1.0",
     description="PatchMaker tool for applying source-code patches to binaries",
     packages=setuptools.find_packages("src"),
     package_dir={"": "src"},
