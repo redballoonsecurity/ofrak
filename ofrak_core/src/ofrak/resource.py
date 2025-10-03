@@ -1274,9 +1274,7 @@ class Resource:
     ) -> "Resource":
         """
         If a filter is provided, get the only descendant of this resource which matches the given
-        filter. Descendants that have not previously been analyzed and populated with the indexable
-        attributes are treated as not matching the filter. If a filter is not provided, gets the
-        only descendant of this resource.
+        filter. If a filter is not provided, gets the only descendant of this resource.
 
         :param max_depth: Maximum depth from this resource to search for descendants; if -1,
         no maximum depth
