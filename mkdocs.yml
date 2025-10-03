@@ -56,6 +56,7 @@ nav:
       - Install from PyPI: "install/pypi.md"
       - Install from Source: "install/source.md"
       - Use Docker: "install/docker.md"
+  - OFRAK CLI: "ofrak-cli.md"
   - Examples: examples/
   - User Guide:
       - Key Concepts:

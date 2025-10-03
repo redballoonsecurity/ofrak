@@ -70,7 +70,6 @@ generate_docs(["ofrak"], "ofrak_core/src")
 generate_docs(["ofrak_type"], "ofrak_type/src")
 generate_docs(["ofrak_io"], "ofrak_io/src")
 generate_docs(["ofrak_patch_maker"], "ofrak_patch_maker/src")
-generate_docs(["ofrak_type"], "ofrak_type")
 generate_docs(["ofrak_ghidra"], "disassemblers/ofrak_ghidra/src")
 
 

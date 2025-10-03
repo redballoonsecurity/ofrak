@@ -1,13 +1,15 @@
 # Use Docker
 
-**Best for**: Users who want a comprehensive, consistent environment with all dependencies included.
+Best for users who want a comprehensive, consistent environment with all dependencies included.
 
 **Advantages**:
+
 - All OFRAK dependencies (including disassemblers and external tools) are pre-installed
 - Provides consistent environment across different platforms
 - Minimal configuration needed
 
 **Limitations**:
+
 - Requires Docker installation
 - Larger download size compared to PyPI
 - Slight learning curve for those new to Docker
@@ -29,7 +31,7 @@ git clone https://github.com/redballoonsecurity/ofrak.git
 cd ofrak
 
 # Install build dependencies
-make docker-requirements
+make requirements-build-docker
 
 # Build image (choose config)
 python3 build_image.py --config ofrak-ghidra.yml --base --finish
@@ -48,7 +50,6 @@ This separation allows you to quickly rebuild just the finish image with the lat
 
 | Configuration | Description |
 |---------------|-------------|
-| `ofrak-core-dev.yml` | Core OFRAK with main components and dependencies only (no disassemblers) |
 | `ofrak-angr.yml` | Core OFRAK + angr disassembler backend and components |
 | `ofrak-ghidra.yml` | Core OFRAK + Ghidra disassembler backend and components (recommended for most users) |
 | `ofrak-binary-ninja.yml` | Core OFRAK + Binary Ninja disassembler backend. **Requires Binary Ninja license** - see [Binary Ninja setup guide](../user-guide/disassembler-backends/binary_ninja.md) |

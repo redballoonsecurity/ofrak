@@ -21,7 +21,7 @@ OFRAK supports using the Ghidra backend in two ways: natively on your host machi
 
 === "Docker"
 
-    Follow the instructions in the [OFRAK environment setup guide](../../environment-setup.md) to build a Docker container with Ghidra. Ghidra will be automatically installed if the `disassemblers/ofrak_ghidra` package is included in the Docker build's config file.
+    Follow the instructions in the [OFRAK environment setup guide](../../install/docker.md) to build a Docker container with Ghidra. Ghidra will be automatically installed if the `disassemblers/ofrak_ghidra` package is included in the Docker build's config file.
     For example, `ofrak-ghidra.yml`:
 
     ```yaml

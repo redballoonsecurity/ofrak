@@ -39,14 +39,10 @@ develop-core: requirements-pip requirements-dev
 	$(MAKE) -C ofrak_core develop
 	@echo "Core packages installed!"
 
-.PHONY: docker-requirements:
-docker-requirements:
+.PHONY: requirements-build-docker:
+requirements-build-docker: requirements-pip
 	python3 -m pip install requirements-pip.txt
 	python3 -m pip install requirements-build-docker.txt
-
-.PHONY: image
-image:
-	python3 build_image.py --config ofrak-core-dev.yml --base --finish
 
 tutorial-image:
 	python3 build_image.py --config ofrak-tutorial.yml --base --finish

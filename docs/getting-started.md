@@ -1,6 +1,6 @@
 # Getting Started
 
-Welcome to OFRAK! This guid will help you get up and running quickly.
+Welcome to OFRAK! This guide will help you get up and running quickly.
 
 ## Quick Start
 
@@ -10,7 +10,7 @@ If you just cannot wait to try out OFRAK, you can install it from PyPI and get w
 # 1. Install OFRAK
 pip install ofrak
 
-# 2. Accept the community license
+# 2. Add an OFRAK license (e.g., accept the OFRAK Community License)
 ofrak license --community --i-agree
 
 # 3. Unpack a file and view it in the GUI
@@ -24,11 +24,11 @@ To try out one of the disassembler backends, run
 # Install OFRAK's angr and capstone modules
 pip install ofrak-angr ofrak-capstone
 
-# Make sure community license is accepted
+# 2. Add an OFRAK license (e.g., accept the OFRAK Community License)
 ofrak license --community --i-agree
 
 # Unpack a file and view it in the GUI
-ofrak unpack -x -r --gui <path-to-executable>
+ofrak unpack --exclude-components-missing-dependencies --recursive --gui <path-to-file>
 ```
 
 Happy reverse engineering! Run `ofrak --help` (or read the docs) if you need help.
@@ -88,6 +88,7 @@ Access the Jupyter notebook at [localhost:8888](http://localhost:8888) and work 
 The official documentation for the most up-to-date OFRAK lives at <https://ofrak.com/docs/>.
 
 Some sections of interest include:
+
 - **[User Guide](user-guide/)** - Detailed explanations of OFRAK concepts
 - **[Examples](user-guide/examples)** - Common tasks and use cases
 - **[Code Reference](reference/)** - API documentation

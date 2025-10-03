@@ -13,31 +13,29 @@ Install OFRAK quickly using pip for the simplest setup.
 pip install ofrak
 ```
 
-This installs the core `ofrak` package and `ofrak_patch_maker` along with all Python dependencies.
+!!! tip "Use virtual environment"
+    We strongly recommend installing OFRAK using a Python virutal environment.
+    For example, to use [venv](https://docs.python.org/3/library/venv.html):
+    ```bash
+    $ python3 -m venv venv
+    $ source venv/bin/activate
+    ```
 
 ## Verify Installation
-
-
-
-```mermaid
-
+First, activate an [OFRAK License](../license.md). For example, to use the OFRAK Community License:
+```bash
+$ ofrak license --community --i-agree
 ```
+
+See `ofrak license --help` for more license options.
+
+Once the license in installed, this command will listall installed OFRAK modules and components:
 
 ```bash
 ofrak list
 ```
 
-This lists all installed OFRAK modules and components.
-
-## What's Included
-
-The PyPI installation provides:
--  OFRAK core functionality
--  Patch maker
-- L Disassembler backends (require separate installation)
-- L Some analysis components (optional)
-
-## Installing Disassemblers
+## Installing Disassembler Backend
 
 ### angr + Capstone (Recommended for beginners)
 
@@ -62,48 +60,6 @@ pip install ofrak_binary_ninja
 ```
 
 Requires Binary Ninja license. See [Binary Ninja Backend Guide](../user-guide/disassembler-backends/binary_ninja.md).
-
-## Handling Missing Dependencies
-
-OFRAK integrates many external tools. Not all can be installed via pip.
-
-### Option 1: Exclude Missing Dependencies
-
-Use the `-x` flag to skip components with missing dependencies:
-
-```bash
-ofrak unpack -x <file>
-```
-
-Or in Python:
-
-```python
-from ofrak import OFRAK
-
-ofrak = OFRAK(
-    exclude_components_missing_dependencies=True
-)
-```
-
-**Note**: This prevents errors but means OFRAK can't use those components. For example, without `pigz`, gzip files can't be processed.
-
-### Option 2: Install Missing Dependencies
-
-Check what's missing:
-
-```bash
-ofrak deps --missing-only
-```
-
-Install via package manager:
-
-```bash
-# Ubuntu/Debian
-ofrak deps --packages-for apt | xargs sudo apt install -y
-
-# macOS
-ofrak deps --packages-for brew | xargs brew install
-```
 
 ## Common Issues
 
