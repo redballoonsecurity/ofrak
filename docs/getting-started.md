@@ -6,32 +6,31 @@ Welcome to OFRAK! This guide will help you get up and running quickly.
 
 If you just cannot wait to try out OFRAK, you can install it from PyPI and get working immediately:
 
+1. Install OFRAK
+  ```bash
+  $ pip install ofrak
+  ```
+2. Accept the OFRAK Community License
+  ```bash
+  $ ofrak license --community --i-agree
+  ```
+3. Unpack a file and view it in the GUI
 ```bash
-# 1. Install OFRAK
-pip install ofrak
-
-# 2. Add an OFRAK license (e.g., accept the OFRAK Community License)
-ofrak license --community --i-agree
-
-# 3. Unpack a file and view it in the GUI
-ofrak unpack --exclude-components-missing-dependencies --recursive --gui <path-to-file>
+# Unpack recursively, skipping components with missing system dependencies
+$ ofrak unpack --exclude-components-missing-dependencies --recursive --gui <path-to-file>
 ```
 
-The GUI will open at <http://localhost:8080> showing your unpacked file.
+The GUI will open at http://localhost:8080 showing your unpacked file.
 
-To try out one of the disassembler backends, run
+To enable disassembly, you need to install a disassembler backend. For example, run:
 ```bash
-# Install OFRAK's angr and capstone modules
-pip install ofrak-angr ofrak-capstone
-
-# 2. Add an OFRAK license (e.g., accept the OFRAK Community License)
-ofrak license --community --i-agree
-
-# Unpack a file and view it in the GUI
-ofrak unpack --exclude-components-missing-dependencies --recursive --gui <path-to-file>
+$ pip install ofrak-angr ofrak-capstone
 ```
 
-Happy reverse engineering! Run `ofrak --help` (or read the docs) if you need help.
+Then use the same unpack command as above.
+
+Happy reverse engineering! Run `ofrak --help` for additional commands and options, or continue 
+reading the documentation below.
 
 ## Installation
 

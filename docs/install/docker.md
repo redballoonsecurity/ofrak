@@ -16,12 +16,10 @@ Best for users who want a comprehensive, consistent environment with all depende
 
 ## Prerequisites
 
-You will need the [Install from Source Prerequisites](./source.md#prerequisites). Additionally,
-you will need:
-
 - Docker 23.0+ installed and running ([Get Docker](https://www.docker.com/get-started))
     - BuildKit is required and comes enabled by default in Docker 23.0+
     - For Docker 18.09-22.x, enable BuildKit by setting `DOCKER_BUILDKIT=1`
+- If building from source, see [Install from Source Prerequisites](./source.md#prerequisites)
 
 ## Build Your Own Image
 

@@ -41,8 +41,8 @@ develop-core: requirements-pip requirements-dev
 
 .PHONY: requirements-build-docker:
 requirements-build-docker: requirements-pip
-	python3 -m pip install requirements-pip.txt
-	python3 -m pip install requirements-build-docker.txt
+	python3 -m pip install -r requirements-pip.txt
+	python3 -m pip install -r requirements-build-docker.txt
 
 tutorial-image:
 	python3 build_image.py --config ofrak-tutorial.yml --base --finish

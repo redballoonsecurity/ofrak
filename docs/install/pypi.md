@@ -14,7 +14,7 @@ pip install ofrak
 ```
 
 !!! tip "Use virtual environment"
-    We strongly recommend installing OFRAK using a Python virutal environment.
+    We strongly recommend installing OFRAK using a Python virtual environment.
     For example, to use [venv](https://docs.python.org/3/library/venv.html):
     ```bash
     $ python3 -m venv venv
@@ -29,7 +29,7 @@ $ ofrak license --community --i-agree
 
 See `ofrak license --help` for more license options.
 
-Once the license in installed, this command will listall installed OFRAK modules and components:
+Once the license is installed, this command will list all installed OFRAK modules and components:
 
 ```bash
 ofrak list
