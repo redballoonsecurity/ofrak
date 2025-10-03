@@ -1353,8 +1353,6 @@ class Resource:
     async def get_only_child(self, r_filter: ResourceFilter = None) -> "Resource":
         """
         If a filter is provided, get the only child of this resource which matches the given
-        filter. Children that have not previously been
-        analyzed and populated with the indexable attributes are treated as not matching the
         filter. If a filter is not provided, gets the only child of this resource.
 
         :param r_filter: Contains parameters which resources must match to be returned, including
