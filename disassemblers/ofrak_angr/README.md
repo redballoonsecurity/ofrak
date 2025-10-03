@@ -46,17 +46,6 @@ ofrak.discover(ofrak_angr)
 It can be used from the CLI by adding the `--backend angr` flag to the OFRAK CLI command.
 
 ## Testing
-The tests for `ofrak_angr`  require the tests to be installed for the core OFRAK module. These must
-first be installed after downloading the [OFRAK source code](https://github.com/redballoonsecurity/ofrak).
-
-Then, the `ofrak_angr` tests can be run with:
-
-```python
-pytest --pyargs ofrak_angr_test
-
-```
-
-## Testing
 This package maintains 100% test coverage of functions.
 
 ## License
