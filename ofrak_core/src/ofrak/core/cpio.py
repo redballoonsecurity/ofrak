@@ -101,7 +101,6 @@ class CpioFilesystemAnalyzer(Analyzer[None, CpioFilesystem]):
 
 
 def _libarchive_entry_to_stat_result(entry) -> os.stat_result:
-    import ipdb; ipdb.set_trace()
     return os.stat_result((
         entry.mode,           # st_mode (complete mode: file type + permission bits)
         0,                    # st_ino (not preserved in CPIO)

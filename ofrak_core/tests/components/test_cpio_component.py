@@ -238,3 +238,64 @@ async def test_special_file_types(ofrak_context: OFRAKContext):
     assert found_symlink, "Should find at least one symlink"
     assert found_character_device, "Should find at least one character device"
     assert found_block_device, "Should find at least one block device"
+
+
+
+@pytest.mark.parametrize("archive_type", [
+    CpioArchiveType.OLD_ASCII,
+    CpioArchiveType.NEW_ASCII,
+])
+async def test_cpio_type_preservation(ofrak_context: OFRAKContext, archive_type: CpioArchiveType):
+    """
+    Test that CPIO files of different CpioArchiveType can be created, packed, unpacked, and preserves its type.
+
+    Some CPIO types are known to not preserve the archive type. It is a known limitation of libarchive, which manpage says:
+    > The libarchive(3) library can read most tar archives. However, it only writes POSIX-standard ''ustar'' and ''pax interchange'' formats.
+
+    The following types were removed from this test because the archive type is not preserved:
+    - CpioArchiveType.BINARY
+    - CpioArchiveType.CRC_ASCII
+    - CpioArchiveType.TAR
+    - CpioArchiveType.HPBIN
+    - CpioArchiveType.HPODC
+    - CpioArchiveType.USTAR (this type of file created with libarchive is then recognized as a POSIX tar archive by magic)
+    """
+
+    # Create a CPIO archive with the specified type
+    cpio_r = await ofrak_context.create_root_resource(f"test_{archive_type.value}.cpio", b"", (CpioFilesystem,))
+    cpio_r.add_view(CpioFilesystem(archive_type=archive_type))
+    await cpio_r.save()
+
+    filename = "test_file.txt"
+    file_content = b"test content for archive type preservation"
+    # Add a simple file to the archive
+    cpio_v = await cpio_r.view_as(CpioFilesystem)
+    await cpio_v.add_file(
+        path=filename,
+        data=file_content,
+        file_stat_result=os.stat_result((0o644, 0, 0, 1, 0, 0, 0, 0, 0, 0)),
+        file_xattrs=None,
+    )
+
+    # Pack the archive
+    await cpio_r.pack_recursively()
+    packed_data = await cpio_r.get_data()
+
+    # Create a new resource from the packed data
+    new_cpio_r = await ofrak_context.create_root_resource(
+        name=f"repacked_{archive_type.value}.cpio",
+        data=packed_data
+    )
+
+    # Unpack and verify the archive type is preserved
+    await new_cpio_r.unpack()
+    new_cpio_v = await new_cpio_r.view_as(CpioFilesystem)
+
+    # Verify the archive type is preserved
+    assert new_cpio_v.archive_type == archive_type, \
+        f"Archive type not preserved: expected {archive_type}, got {new_cpio_v.archive_type}"
+
+    # Verify the file content is preserved
+    child_file = await new_cpio_v.get_entry(filename)
+    file_data = await child_file.resource.get_data()
+    assert file_data == file_content
