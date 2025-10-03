@@ -23,6 +23,7 @@ RUN apt-get -y update && \
       unar \
       unzip \
       zstd \
+      libarchive-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # python-lzo needed by ubireader
