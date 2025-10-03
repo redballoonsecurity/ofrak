@@ -28,7 +28,7 @@ setuptools.setup(
     package_data={"ofrak_angr": ["py.typed"]},
     install_requires=[
         "angr>=9.2.93,<=9.2.174",
-        "ofrak>=3.3.0",
+        "ofrak>=3.3.0,==3.*",
     ],
     extras_require={
         "graphical": ["pygraphviz"],

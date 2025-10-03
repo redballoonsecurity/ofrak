@@ -29,7 +29,7 @@ setuptools.setup(
         "ofrak_io": ["py.typed"],
     },
     install_requires=[
-        "ofrak_type>=1.0",
+        "ofrak_type>=2.3.0,==2.*",
     ],
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",
