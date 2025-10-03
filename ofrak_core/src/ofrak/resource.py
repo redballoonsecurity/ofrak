@@ -1186,11 +1186,10 @@ class Resource:
         r_sort: ResourceSort = None,
     ) -> Iterable[RV]:
         """
-        Create a view for every descendant resource that matches the given
-        [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag] to populate the
-        resources with the associated indexable attributes. If a filter is provided, identify and
-        return all of the descendant resources that match this filter. The descendant will be
-        returned as an instance of the given
+        Get descendants that match the given [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag],
+        creating a view if the view doesn't exist.
+        If a filter is provided, only those descendants matching this filter are returned.
+        The descendant will be returned as an instance of the given
         [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag].
 
         :param v_type: The type of [view][ofrak.resource] to get the descendants as
