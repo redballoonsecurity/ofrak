@@ -22,7 +22,7 @@ pip install ofrak
 ```
 
 ## Verify Installation
-First, activate an [OFRAK License](../license.md). For example, to use the OFRAK Community License:
+Activate an [OFRAK License](../license.md). For example, to use the OFRAK Community License:
 ```bash
 $ ofrak license --community --i-agree
 ```
