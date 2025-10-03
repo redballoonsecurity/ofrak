@@ -93,7 +93,7 @@ OFRAK dependencies come in three "tiers":
 ### PyPI Dependencies
 These are the easiest.
 These are simply included in the requirements for the OFRAK Python packages which require them. 
-Simply by installing an OFRAK Python package, these dependencies will also be installed with no 
+By installing an OFRAK Python package, these dependencies will also be installed with no 
 further effort required.
 
 ### Packages Available Through Standard Package Managers
