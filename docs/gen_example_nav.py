@@ -13,9 +13,9 @@ animals = list(Path("docs/assets").glob("square_*.png"))
 example_nav = mkdocs_gen_files.Nav()
 r = re.compile(r"^ex(\d+)", re.IGNORECASE)
 
-for i, path in enumerate(sorted(Path("examples").glob("**/ex*.py"))):
+for i, path in enumerate(sorted(Path("examples").glob("ex*.py"))):
     module_path = path.relative_to("examples").with_suffix("")
-    doc_path = path.relative_to("examples").with_suffix(".md")
+    doc_path = path.with_suffix(".md")
 
     parts = list(module_path.parts)
     parts[-1] = parts[-1].replace("_", " ")

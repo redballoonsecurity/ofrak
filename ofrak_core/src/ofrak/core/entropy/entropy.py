@@ -29,7 +29,7 @@ class DataSummary:
     High-level summary of binary data.
 
     :ivar entropy_samples: Shannon entropy of the data. A description of Shannon entropy and how it
-    can be used is [here](../../../../user-guide/key-concepts/gui/minimap.md#entropy-view).
+    can be used is [here](../../../../user-guide/gui/minimap.md#entropy-view).
     :ivar magnitude_samples: Sample of the binary data to put an upper limit on the displayed byte
     magnitudes; if the input data is smaller than this upper limit, all bytes are sampled.
     """

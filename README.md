@@ -33,9 +33,19 @@ The web-based GUI view provides a navigable resource tree. For the selected reso
 
 ## Getting Started
 
-**OFRAK uses Git LFS. This means that you must have Git LFS installed before you clone the repository!** Install Git LFS by following [the instructions here](https://git-lfs.github.com/). If you accidentally cloned the repository before installing Git LFS, `cd` into the repository and run `git lfs pull`.
+### Installation Methods
 
-See [`docs/environment-setup`](https://ofrak.com/docs/environment-setup.html) for detailed instructions on how to install OFRAK.
+OFRAK can be installed in three ways:
+
+| Method | Best For | Installation Command |
+|--------|----------|---------------------|
+| **PyPI** | Quick testing, users who prefer managing their own environment | `pip install ofrak` |
+| **Docker** | Comprehensive environment with all dependencies, consistent setup | `python3 build_image.py --config ofrak-ghidra.yml --base --finish` |
+| **Source** | Contributors, developers, modifying OFRAK code | Clone repo + `make develop` |
+
+See ([Install](docs/install/index.md)) for detailed installation instructions.
+
+Note that OFRAK uses Git LFS -- see [Installing from Source](docs/install/source.md) for more details.
 
 ## Documentation
 
@@ -46,6 +56,7 @@ If you wish to make changes to the documentation or serve it yourself, follow th
 ## License
 
 The code in this repository comes with an [OFRAK Community License](LICENSE), which is intended for educational uses, personal development, or just having fun.
+If the community license is right for you, run `ofrak license --community --i-agree` to accept it!
 
 Users interested in OFRAK for commercial purposes can request the Pro or Enterprise License. See [OFRAK Licensing](https://ofrak.com/license/) for more information.
 

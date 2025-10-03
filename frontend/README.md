@@ -15,9 +15,13 @@ development.
 make app-stack-dev
 ```
 
-In order for the app stack to start up successfully, there must be a build of
-the `registry.gitlab.com/redballoonsecurity/ofrak/dev` OFRAK image with the
-`latest` tag. 
+In order for the app stack to start up successfully, there must be a local build of
+  an OFRAK Docker image tagged as `latest`. You can build this using:
+
+```bash
+python3 build_image.py --config ofrak-ghidra.yml --base --finish
+```
+See the [Docker instructions](../docs/install/docker.md) for more information.
 
 The app server maps the repo directory into a NodeJS Docker container that
 exposes port `8888`, compiles the code, and runs a web server. Any changes to

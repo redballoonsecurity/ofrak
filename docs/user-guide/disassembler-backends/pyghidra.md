@@ -19,8 +19,8 @@ Use the `ofrak_pyghidra` module to disassemble and decompile binaries using Ghid
     Note: If you are using an ARM processor, you might need to compile the [native binaries](https://htmlpreview.github.io/?https://github.com/NationalSecurityAgency/ghidra/blob/Ghidra_10.1_build/GhidraDocs/InstallationGuide.html#Build) for decompilation to work.
 === "Docker"
 
-    Follow the instructions in the [OFRAK environment setup guide](../../environment-setup.md) to build a Docker container with PyGhidra. Ghidra and PyGhidra will be automatically installed if the `disassemblers/ofrak_ghidra` package is included in the YAML configuration file.
-    An example configuration is provided in `ofrak-pyghidra.yml`.
+    Follow the instructions in the [OFRAK environment setup guide](../../install/docker.md) to build a Docker container with PyGhidra. Ghidra and PyGhidra will be automatically installed if the `disassemblers/ofrak_pyghidra` package is included in the YAML configuration file.
+    An example configuration is provided in `ofrak-ghidra.yml`.
 
 ## Usage
 Once installed, you can import `ofrak_pyghidra` into any script, as you would with the other analysis back ends.  
