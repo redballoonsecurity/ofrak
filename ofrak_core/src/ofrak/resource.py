@@ -1154,9 +1154,7 @@ class Resource:
 
     async def get_only_ancestor(self, r_filter: ResourceFilter) -> "Resource":
         """
-        Get the only ancestor of this resource that matches the provided filter. Ancestors that
-        have not previously been analyzed and populated with the indexable attributes are treated
-        as not matching the filter.
+        Get the only ancestor of this resource that matches the provided filter.
 
         :param r_filter: Contains parameters which resources must match to be returned, including
         any tags it must have and/or values of indexable attributes
