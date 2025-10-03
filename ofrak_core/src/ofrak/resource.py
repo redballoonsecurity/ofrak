@@ -1216,11 +1216,9 @@ class Resource:
         r_sort: ResourceSort = None,
     ) -> Iterable["Resource"]:
         """
-        Get all the descendants of this resource. If a filter is provided, identify
-        and return all of the descendant resources that match this filter. Descendants that have
-        not previously been analyzed and populated with the indexable attributes are treated
-        as not matching the filter. May optionally sort the descendants by an indexable attribute
-        value key.
+        Get all the descendants of this resource. If a filter is provided,
+        return only those descendants that match this filter.
+        May optionally sort the descendants by an indexable attribute value key.
 
         :param max_depth: Maximum depth from this resource to search for descendants; if -1,
         no maximum depth
