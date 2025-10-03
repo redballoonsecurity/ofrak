@@ -1133,11 +1133,10 @@ class Resource:
         r_filter: ResourceFilter,
     ) -> RV:
         """
-        Create a view for every ancestor resource that matches the given
-        [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag] to populate the
-        resources with the associated indexable attributes. If a filter is provided, identify and
-        return the only one of these ancestor resources that matches this filter. If a filter is
-        not provided, get the only ancestor of this resource. In every case, the ancestor will be
+        Get ancestors that match the given [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag],
+        creating a view if the view doesn't exist.
+        If a filter is provided, only those ancestors that match the filter are returned.
+        In every case, the ancestor will be
         returned as an instance of the given
         [viewable tag][ofrak.model.viewable_tag_model.ViewableResourceTag].
 
