@@ -97,6 +97,7 @@ setuptools.setup(
         "typeguard~=2.13.3",
         "ubi-reader>=0.8.12",
         "xattr>=0.10.1;platform_system!='Windows'",
+        "libarchive-c>=4.0.0",
     ],
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",
