@@ -99,8 +99,6 @@ further effort required.
 ### Packages Available Through Standard Package Managers
 See [Option 2: Install Missing Dependencies](#option-2--install-missing-dependencies).
 
-The second two types of dependencies can be listed with the `deps` command:
-
 ### Dependencies with Non-Standard Installation
 Running:
 

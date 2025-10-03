@@ -9,10 +9,6 @@ Install OFRAK quickly using pip for the simplest setup.
 
 ## Quick Install
 
-```bash
-pip install ofrak
-```
-
 !!! tip "Use virtual environment"
     We strongly recommend installing OFRAK using a Python virtual environment.
     For example, to use [venv](https://docs.python.org/3/library/venv.html):
@@ -20,6 +16,10 @@ pip install ofrak
     $ python3 -m venv venv
     $ source venv/bin/activate
     ```
+
+```bash
+pip install ofrak
+```
 
 ## Verify Installation
 First, activate an [OFRAK License](../license.md). For example, to use the OFRAK Community License:
