@@ -1113,10 +1113,8 @@ class Resource:
         r_filter: ResourceFilter = None,
     ) -> Iterable["Resource"]:
         """
-        Get all the ancestors of this resource. If a filter is provided, identify
-        and return all of the ancestors resources that match this filter. Ancestors that have
-        not previously been analyzed and populated with the indexable attributes are treated
-        as not matching the filter.
+        Get all the ancestors of this resource. If a filter is provided, only
+        those ancestors that match the filter are returned.
 
         :param r_filter: Contains parameters which resources must match to be returned, including
         any tags it must have and/or values of indexable attributes
