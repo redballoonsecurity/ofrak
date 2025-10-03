@@ -33,7 +33,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    install_requires=["ofrak>=3.3.0rc0"],
+    install_requires=["ofrak>=3.3.0,==3.*"],
     python_requires=">=3.9",
     include_package_data=True,
     license=license,

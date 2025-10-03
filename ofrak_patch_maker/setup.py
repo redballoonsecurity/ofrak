@@ -21,14 +21,14 @@ with open("README.md") as f:
 
 setuptools.setup(
     name="ofrak_patch_maker",
-    version="4.1.0rc2",
+    version="4.1.0",
     description="PatchMaker tool for applying source-code patches to binaries",
     packages=setuptools.find_packages("src"),
     package_dir={"": "src"},
     package_data={"ofrak_patch_maker": ["py.typed"]},
     install_requires=[
         "immutabledict>=2.2.0",
-        "ofrak_type>=2.2.0rc0,==2.*",
+        "ofrak_type>=2.3.0,==2.*",
         "python-magic>=0.4.27;platform_system!='Windows'",
         "python-magic-bin==0.4.14;platform_system=='Windows'",
     ],

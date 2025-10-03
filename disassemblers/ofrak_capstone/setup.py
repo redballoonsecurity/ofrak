@@ -21,11 +21,11 @@ with open("README.md") as f:
 
 setuptools.setup(
     name="ofrak_capstone",
-    version="1.1.0rc2",
+    version="1.1.0",
     packages=setuptools.find_packages("src"),
     package_dir={"": "src"},
     package_data={"ofrak_capstone": ["py.typed"]},
-    install_requires=["capstone", "ofrak>=3.3.0rc0"],
+    install_requires=["capstone", "ofrak>=3.3.0,==3.*"],
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",
     long_description=long_description,

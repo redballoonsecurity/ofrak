@@ -21,7 +21,7 @@ with open("README.md") as f:
 
 setuptools.setup(
     name="ofrak_io",
-    version="1.1.3rc1",
+    version="1.1.3",
     description="Classes useful for general I/O in OFRAK",
     packages=setuptools.find_packages("src"),
     package_dir={"": "src"},
@@ -29,7 +29,7 @@ setuptools.setup(
         "ofrak_io": ["py.typed"],
     },
     install_requires=[
-        "ofrak_type>=1.0",
+        "ofrak_type>=2.3.0,==2.*",
     ],
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",
