@@ -5,7 +5,7 @@ Install OFRAK quickly using pip for the simplest setup.
 ## Prerequisites
 
 - Python 3.9+ and pip
-- cmake (macOS only - install via `brew install cmake`)
+- cmake and libmagic (macOS only - install via `brew install cmake libmagic`)
 
 ## Quick Install
 

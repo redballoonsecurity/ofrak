@@ -7,7 +7,7 @@ Install OFRAK from source code for development or contribution.
 - Python 3.9+ and pip
 - Git with [Git LFS](https://git-lfs.github.com/) installed ([installation instructions](https://github.com/git-lfs/git-lfs#installing))
 - make
-- cmake (macOS only - install via `brew install cmake`)
+- cmake and libmagic (macOS only - install via `brew install cmake libmagic`)
 
 ## Clone
 
