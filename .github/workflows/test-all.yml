@@ -64,7 +64,7 @@ jobs:
           cache-dependency-path: '**/setup.py'
       - name: Build Ghidra image
         run: |
-          python3 -m pip install PyYAML
+          make requirements-build-docker
           python3 build_image.py \
             --config ofrak-ghidra.yml \
             --base \
@@ -106,7 +106,7 @@ jobs:
           cache-dependency-path: '**/setup.py'
       - name: Build angr image
         run: |
-          python3 -m pip install PyYAML
+          make requirements-build-docker
           python3 build_image.py \
             --config ofrak-angr.yml \
             --base \
@@ -139,7 +139,7 @@ jobs:
           cache-dependency-path: '**/setup.py'
       - name: Build tutorial image
         run: |
-          python3 -m pip install PyYAML
+          make requirements-build-docker
           python3 build_image.py \
             --config ofrak-tutorial.yml \
             --base \

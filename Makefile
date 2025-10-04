@@ -1,3 +1,6 @@
+PYTHON=python3
+PIP=pip3
+
 .PHONY: check-black
 check-black:
 	black . --check --diff
@@ -11,11 +14,19 @@ inspect: autoflake check-black
 
 .PHONY: requirements-pip
 requirements-pip:
-	python3 -m pip install -r requirements-pip.txt
+	$(PYTHON) -m pip install -r requirements-pip.txt
 
 .PHONY: requirements-dev
-requirements-dev:
-	python3 -m pip install -r requirements-dev.txt
+requirements-dev: requirements-pip
+	$(PYTHON) -m pip install -r requirements-dev.txt
+
+.PHONY: requirements-build
+requirements-build: requirements-pip
+	$(PYTHON) -m pip install -r requirements-build.txt
+
+.PHONY: requirements-build-docker
+requirements-build-docker: requirements-pip
+	$(PYTHON) -m pip install -r requirements-build-docker.txt
 
 .PHONY: develop
 develop: develop-core
@@ -37,15 +48,11 @@ develop-core: requirements-pip requirements-dev
 	$(MAKE) -C ofrak_io develop
 	$(MAKE) -C ofrak_patch_maker develop
 	$(MAKE) -C ofrak_core develop
+	$(MAKE) -C pytest_ofrak develop
 	@echo "Core packages installed!"
 
-.PHONY: requirements-build-docker:
-requirements-build-docker: requirements-pip
-	python3 -m pip install -r requirements-pip.txt
-	python3 -m pip install -r requirements-build-docker.txt
-
 tutorial-image:
-	python3 build_image.py --config ofrak-tutorial.yml --base --finish
+	$(PYTHON) build_image.py --config ofrak-tutorial.yml --base --finish
 
 tutorial-run:
 	make -C ofrak_tutorial run
