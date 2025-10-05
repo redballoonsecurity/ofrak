@@ -1,5 +1,4 @@
 PYTHON=python3
-PIP=pip3
 
 .PHONY: check-black
 check-black:
