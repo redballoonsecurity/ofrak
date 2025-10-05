@@ -12,10 +12,12 @@ from typing import Dict, Iterable, List, Optional, Sequence, Type, Set
 
 from importlib_metadata import entry_points
 
+from ofrak import __version__
 from ofrak.component.interface import ComponentInterface
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.ofrak_context import DEFAULT_LOG_FILE, OFRAKContext, OFRAK
 from synthol.injector import DependencyInjector
+
 
 BACKEND_PACKAGES: Dict[Optional[str], Set[str]] = {
     "angr": {"ofrak_angr", "ofrak_capstone"},
@@ -212,6 +214,12 @@ class OFRAKCommandLineInterface:
         ofrak_env: OFRAKEnvironment = OFRAKEnvironment(),
     ):
         self.ofrak_parser = ArgumentParser(prog="ofrak")
+        self.ofrak_parser.add_argument(
+            "-V",
+            "--version",
+            action="version",
+            version=get_ofrak_version(),
+        )
         ofrak_subparsers = self.ofrak_parser.add_subparsers(
             help="Command line utilities to use or configure OFRAK"
         )
@@ -226,3 +234,7 @@ class OFRAKCommandLineInterface:
             self.ofrak_parser.print_help()
             sys.exit(1)
         parsed.run(parsed)
+
+
+def get_ofrak_version() -> str:
+    return f"ofrak version {__version__}"

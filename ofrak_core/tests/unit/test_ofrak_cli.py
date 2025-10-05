@@ -9,6 +9,7 @@ from ofrak.cli.command.gui import GUICommand
 from ofrak.ofrak_context import OFRAKContext
 
 from .. import components
+from ofrak.version import VERSION
 from ofrak.cli.command.identify import IdentifyCommand
 from ofrak.cli.command.unpack import UnpackCommand
 
@@ -303,3 +304,33 @@ def test_ofrak_help(cli_commands):
 def test_install_checks(cli_commands):
     ofrak_cli = OFRAKCommandLineInterface(cli_commands)
     ofrak_cli.parse_and_run(["deps", "--package", "ofrak"])
+
+
+def test_version_flag(cli_commands, capsys):
+    """Test that --version flag displays version and exits successfully."""
+    ofrak_env = OFRAKEnvironment()
+    ofrak_cli = OFRAKCommandLineInterface(cli_commands, ofrak_env)
+    try:
+        ofrak_cli.parse_and_run(["--version"])
+    except SystemExit as e:
+        assert e.code == 0
+
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
+    assert "ofrak" in output.lower()
+    assert VERSION in output
+
+
+def test_version_short_flag(cli_commands, capsys):
+    """Test that -V flag displays version and exits successfully."""
+    ofrak_env = OFRAKEnvironment()
+    ofrak_cli = OFRAKCommandLineInterface(cli_commands, ofrak_env)
+    try:
+        ofrak_cli.parse_and_run(["-V"])
+    except SystemExit as e:
+        assert e.code == 0
+
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
+    assert "ofrak" in output.lower()
+    assert VERSION in output
