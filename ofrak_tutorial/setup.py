@@ -43,6 +43,6 @@ setuptools.setup(
     extras_require={
         "test": read_requirements("requirements-test.txt"),
     },
-    python_requires=">=3.7",
+    python_requires=">=3.9",
     license=license,
 )

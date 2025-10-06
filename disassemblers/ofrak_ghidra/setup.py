@@ -34,11 +34,11 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires=[
-        "ofrak>=3.3.0rc10",
+        "ofrak>=3.3.0,==3.*",
         "PyYAML>=5.4,",
         "aiohttp~=3.12.14",
     ],
-    python_requires=">=3.7",
+    python_requires=">=3.9",
     include_package_data=True,
     license=license,
     cmdclass={"egg_info": egg_info_ex},

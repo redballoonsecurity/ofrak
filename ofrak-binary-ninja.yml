@@ -9,7 +9,7 @@ packages_paths:
     "ofrak_core",
     "disassemblers/ofrak_binary_ninja",
     "disassemblers/ofrak_capstone",
-    frontend,
+    "frontend",
   ]
 extra_build_args:
   [

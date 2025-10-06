@@ -645,12 +645,6 @@ class TestResourceService:
         )
         test_case.check_results(results)
 
-    @pytest.mark.skip
-    async def test_get_siblings_by_id(self, resource_service):
-        # TODO: Implement test
-        # Not done with the others because it is a special case of get_descendants_by_id
-        pass
-
     async def test_update(self, populated_resource_service: ResourceServiceInterface):
         # Update nonexistant resource
         with pytest.raises(NotFoundError):

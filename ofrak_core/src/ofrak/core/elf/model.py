@@ -232,7 +232,8 @@ class ElfSegmentStructure(ResourceView):
         return self.segment_index
 
     async def get_header(self) -> "ElfProgramHeader":
-        return await self.resource.get_only_sibling_as_view(
+        parent = await self.resource.get_parent()
+        return await parent.get_only_child_as_view(
             ElfProgramHeader,
             ResourceFilter(
                 tags=(ElfProgramHeader,),
@@ -333,7 +334,8 @@ class ElfSectionStructure(ResourceView):
         return await self.resource.get_parent_as_view(Elf)
 
     async def get_header(self) -> "ElfSectionHeader":
-        return await self.resource.get_only_sibling_as_view(
+        parent = await self.resource.get_parent()
+        return await parent.get_only_child_as_view(
             ElfSectionHeader,
             ResourceFilter(
                 tags=(ElfSectionHeader,),

@@ -21,7 +21,7 @@ with open("README.md") as f:
 
 setuptools.setup(
     name="ofrak_type",
-    version="2.3.0rc1",
+    version="2.3.0",
     description="Custom classes and types used in OFRAK",
     package_data={
         "ofrak_type": ["py.typed"],
@@ -48,7 +48,7 @@ setuptools.setup(
         "Topic :: Security",
         "Typing :: Typed",
     ],
-    python_requires=">=3.7",
+    python_requires=">=3.9",
     license="Proprietary",
     license_files=["LICENSE"],
     cmdclass={"egg_info": egg_info_ex},

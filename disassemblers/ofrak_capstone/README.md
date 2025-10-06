@@ -41,17 +41,6 @@ ofrak.discover(ofrak_capstone)
 ```
 
 ## Testing
-The tests for `ofrak_capstone`  require the tests to be installed for the core OFRAK module. These must
-first be installed after downloading the [OFRAK source code](https://github.com/redballoonsecurity/ofrak).
-
-Then, the `ofrak_capstone` tests can be run with:
-
-```python
-pytest --pyargs ofrak_capstone_test
-
-```
-
-## Testing
 This package maintains 100% test coverage of functions.
 
 ## License

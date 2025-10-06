@@ -3,7 +3,7 @@ All notable changes to `ofrak` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased: 3.3.0](https://github.com/redballoonsecurity/ofrak/tree/master)
+## [3.3.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v3.2.0...ofrak-v3.3.0) - 2025-10-03
 
 ### Added
 - Add license check command to prompt users about community or pro licenses. ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
@@ -88,13 +88,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add `ofrak_pyghidra` to OFRAK GUI script builder ([#631](https://github.com/redballoonsecurity/ofrak/pull/631))
 - When the user selects the "Decompilation" tab in the GUI, the pane is updated with the decompiled code automatically, without having to click "Analyze" first. ([#639](https://github.com/redballoonsecurity/ofrak/pull/639))
 - Use a single source of truth for the package version ([#640](https://github.com/redballoonsecurity/ofrak/pull/640))
+- Update the behavior of `get_only_descendant_as_view`, `get_descendants_as_view`, `get_ancestors_as_view`, and `get_only_ancestor_as_view` to retrieve all resources that match the filter. ([#642](https://github.com/redballoonsecurity/ofrak/pull/642))
 - Reimplement the CPIO components using `libarchive` ([#647](https://github.com/redballoonsecurity/ofrak/pull/647))
 
 ### Deprecated
 - `Resource.flush_to_disk` deprecated in favor of `Resource.flush_data_to_disk`. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373), [#567](https://github.com/redballoonsecurity/ofrak/pull/568))
 
 ### Removed
-- Removed `Instruction.disassembly` from `Instruction` class: use `Instruction.get_assembly()` instead ([#539](https://github.com/redballoonsecurity/ofrak/issues/539))
+- Remove `Instruction.disassembly` from `Instruction` class: use `Instruction.get_assembly()` instead ([#539](https://github.com/redballoonsecurity/ofrak/issues/539))
+- Remove `Resource.get_only_sibling`, `Resource.get_only_sibling_as_view` API from Resource ([#641](https://github.com/redballoonsecurity/ofrak/pull/641))
 
 ### Security
 - Update aiohttp to 3.10.11 ([#522](https://github.com/redballoonsecurity/ofrak/pull/522))
