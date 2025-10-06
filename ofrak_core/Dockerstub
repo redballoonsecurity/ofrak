@@ -6,7 +6,6 @@ RUN apt-get -y update && \
     apt-get -y install --no-install-recommends \
       build-essential \
       cmake \
-      cpio \
       git \
       genisoimage \
       liblz4-dev \
