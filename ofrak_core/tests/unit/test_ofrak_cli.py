@@ -1,4 +1,5 @@
 import hashlib
+import importlib.metadata
 import os
 from typing import Iterable, Dict, Tuple
 
@@ -9,7 +10,6 @@ from ofrak.cli.command.gui import GUICommand
 from ofrak.ofrak_context import OFRAKContext
 
 from .. import components
-from ofrak.version import VERSION
 from ofrak.cli.command.identify import IdentifyCommand
 from ofrak.cli.command.unpack import UnpackCommand
 
@@ -318,7 +318,7 @@ def test_version_flag(cli_commands, capsys):
     captured = capsys.readouterr()
     output = captured.out + captured.err
     assert "ofrak" in output.lower()
-    assert VERSION in output
+    assert importlib.metadata.version("ofrak") in output
 
 
 def test_version_short_flag(cli_commands, capsys):
@@ -333,4 +333,4 @@ def test_version_short_flag(cli_commands, capsys):
     captured = capsys.readouterr()
     output = captured.out + captured.err
     assert "ofrak" in output.lower()
-    assert VERSION in output
+    assert importlib.metadata.version("ofrak") in output
