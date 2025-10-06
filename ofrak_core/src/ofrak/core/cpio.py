@@ -30,7 +30,8 @@ try:
     import libarchive
 
     LIBARCHIVE_INSTALLED = True
-except OSError:
+except (AttributeError, OSError, TypeError):
+    # Linux throws an AttributeError, MacOS an OSError, Windows a TypeError
     LIBARCHIVE_INSTALLED = False
 
 
