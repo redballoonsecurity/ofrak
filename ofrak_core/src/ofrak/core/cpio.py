@@ -123,7 +123,7 @@ def _libarchive_entry_to_stat_result(entry) -> os.stat_result:
 
 class CpioUnpacker(Unpacker[None]):
     """
-    Unpack a CPIO archive using libarchive.
+    Unpack a CPIO archive.
     """
 
     targets = (CpioFilesystem,)
@@ -215,7 +215,7 @@ def _get_libarchive_format(archive_type: CpioArchiveType) -> str:
 
 class CpioPacker(Packer[None]):
     """
-    Pack files into a CPIO archive using libarchive.
+    Pack files into a CPIO.
     """
 
     targets = (CpioFilesystem,)
