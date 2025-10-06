@@ -197,7 +197,8 @@ def _ofrak_tags_to_filetype(resource) -> int:
 def _get_libarchive_format(archive_type: CpioArchiveType) -> str:
     """
     Note: libarchive supports reading many CPIO variants but only supports
-    writing a subset. We map to the closest supported write format.
+    writing a subset (https://linux.die.net/man/5/libarchive-formats).
+    We map to the closest supported write format.
     Available write formats: 'cpio' (generic), 'cpio_newc' (SVR4 newc)
     """
     format_map = {

@@ -31,6 +31,7 @@ class TestCpioUnpackModifyPack(UnpackModifyPackPattern):
         cpio_r.add_view(CpioFilesystem(archive_type=CpioArchiveType.NEW_ASCII))
         await cpio_r.save()
         cpio_v = await cpio_r.view_as(CpioFilesystem)
+        # This also tests packing and unpacking a root file
         await cpio_v.add_file(
             path=CPIO_ENTRY_NAME,
             data=INITIAL_DATA,
@@ -58,30 +59,6 @@ class TestCpioUnpackModifyPack(UnpackModifyPackPattern):
         child_textfile = await cpio_v.get_entry(CPIO_ENTRY_NAME)
         patched_data = await child_textfile.resource.get_data()
         assert patched_data == EXPECTED_DATA
-
-
-async def test_unpacking_root(ofrak_context: OFRAKContext):
-    cpio_r = await ofrak_context.create_root_resource("root.cpio", b"", (CpioFilesystem,))
-    cpio_r.add_view(CpioFilesystem(archive_type=CpioArchiveType.NEW_ASCII))
-    await cpio_r.save()
-    cpio_v = await cpio_r.view_as(CpioFilesystem)
-    await cpio_v.add_file(
-        path="root.txt",
-        data=b"Content of root file",
-        file_stat_result=os.stat_result((0o644, 0, 0, 1, 0, 0, 0, 0, 0, 0)),
-        file_xattrs=None,
-    )
-    await cpio_r.pack_recursively()
-    cpio_data = await cpio_r.get_data()
-
-    root_resource = await ofrak_context.create_root_resource(
-        "root2.cpio", cpio_data, (CpioFilesystem,)
-    )
-
-    await root_resource.unpack()
-
-    children = list(await root_resource.get_children())
-    assert len(children) > 0, "Should have unpacked children"
 
 
 async def test_character_device(ofrak_context: OFRAKContext):
