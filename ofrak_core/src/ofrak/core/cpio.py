@@ -25,6 +25,7 @@ from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_type.range import Range
 from ofrak.core.filesystem import FilesystemEntry
 
+# The libarchive binary is a requirement for the libarchive-c python bindings to work
 try:
     import libarchive
 
@@ -39,7 +40,7 @@ class LibarchiveTool(ComponentExternalTool):
             "libarchive",
             "https://www.libarchive.org/",
             install_check_arg="",
-            apt_package="libarchive-dev",
+            apt_package="libarchive",
             brew_package="libarchive",
             choco_package="libarchive",
         )
