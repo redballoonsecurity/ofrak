@@ -1,14 +1,13 @@
 PYTHON=python3
-PIP=pip3
 
 .PHONY: install
 install: src/ofrak/gui/public
-	$(PIP) install .
+	$(PYTHON) -m pip install .
 
 .PHONY: develop
 develop: src/ofrak/gui/public
-	$(PIP) install -r requirements.txt -r requirements-docs.txt -r requirements-non-pypi.txt -r requirements-test.txt
-	$(PIP) install -e . --config-settings editable_mode=compat
+	$(PYTHON) -m pip install -r requirements.txt -r requirements-docs.txt -r requirements-non-pypi.txt -r requirements-test.txt
+	$(PYTHON) -m pip install -e . --config-settings editable_mode=compat
 
 .PHONY: inspect
 inspect:
