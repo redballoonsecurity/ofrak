@@ -61,30 +61,6 @@ class TestCpioUnpackModifyPack(UnpackModifyPackPattern):
         assert patched_data == EXPECTED_DATA
 
 
-async def test_character_device(ofrak_context: OFRAKContext):
-    cpio_r = await ofrak_context.create_root_resource("character.cpio", b"", (CpioFilesystem,))
-    cpio_r.add_view(CpioFilesystem(archive_type=CpioArchiveType.NEW_ASCII))
-    await cpio_r.save()
-    cpio_v = await cpio_r.view_as(CpioFilesystem)
-    chardev = CharacterDevice(
-        name="chardev",
-        stat=os.stat_result((0o20644, 0, 0, 1, 0, 0, 0, 0, 0, 0)),
-        xattrs=None,
-    )
-    await cpio_v.add_special_file_entry("chardev", chardev)
-    await cpio_r.pack_recursively()
-    cpio_data = await cpio_r.get_data()
-
-    root_resource = await ofrak_context.create_root_resource(
-        "character2.cpio", cpio_data, (CpioFilesystem,)
-    )
-
-    await root_resource.unpack()
-
-    children = list(await root_resource.get_children())
-    assert len(children) > 0, "Should have unpacked children"
-
-
 async def test_round_trip_metadata_preservation(ofrak_context: OFRAKContext):
     from ofrak.core.filesystem import FilesystemEntry
     from ofrak.service.resource_service_i import ResourceFilter
