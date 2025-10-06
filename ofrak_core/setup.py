@@ -3,7 +3,7 @@ import setuptools
 from setuptools.command.egg_info import egg_info
 from setuptools.command.build_ext import build_ext
 
-from src.ofrak.version import VERSION
+from version import VERSION
 
 
 class egg_info_ex(egg_info):

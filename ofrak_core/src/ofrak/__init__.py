@@ -16,6 +16,3 @@ from ofrak.service.resource_service_i import (
     ResourceFilterCondition,
     ResourceSort,
 )
-from ofrak.version import VERSION
-
-__version__ = VERSION

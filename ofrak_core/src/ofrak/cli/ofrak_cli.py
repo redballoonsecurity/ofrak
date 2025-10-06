@@ -1,5 +1,6 @@
 import functools
 import importlib
+import importlib.metadata
 import importlib.util
 import logging
 import os.path
@@ -12,7 +13,6 @@ from typing import Dict, Iterable, List, Optional, Sequence, Type, Set
 
 from importlib_metadata import entry_points
 
-from ofrak import __version__
 from ofrak.component.interface import ComponentInterface
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.ofrak_context import DEFAULT_LOG_FILE, OFRAKContext, OFRAK
@@ -237,4 +237,4 @@ class OFRAKCommandLineInterface:
 
 
 def get_ofrak_version() -> str:
-    return f"ofrak version {__version__}"
+    return f"ofrak version {importlib.metadata.version('ofrak')}"

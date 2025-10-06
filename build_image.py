@@ -9,7 +9,7 @@ import sys
 import pkg_resources
 import yaml
 
-from ofrak_core.src.ofrak.version import VERSION
+from ofrak_core.version import VERSION
 
 DEFAULT_PYTHON_IMAGE = "python:3.9-slim-bookworm@sha256:ac457d45a4cafd54f0d72966592bdbbfa83e2ec3f5f95b28f6e68bbd490f8bc3"
 BASE_DOCKERFILE = "base.Dockerfile"
