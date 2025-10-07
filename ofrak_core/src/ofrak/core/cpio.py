@@ -33,6 +33,18 @@ try:
 except (AttributeError, OSError, TypeError):
     # Linux throws an AttributeError, MacOS an OSError, Windows a TypeError
     LIBARCHIVE_INSTALLED = False
+    try:
+        # On Windows, if libarchive is not installed, use the DLL from the `extractcode-libarchive` python package.
+        import sys
+
+        os.environ["LIBARCHIVE"] = os.path.join(
+            sys.prefix, "lib", "site-packages", "extractcode_libarchive", "lib", "libarchive-13.dll"
+        )
+        import libarchive
+
+        LIBARCHIVE_INSTALLED = True
+    except:
+        pass
 
 
 class LibarchiveTool(ComponentExternalTool):
@@ -43,7 +55,7 @@ class LibarchiveTool(ComponentExternalTool):
             install_check_arg="",
             apt_package="libarchive",
             brew_package="libarchive",
-            choco_package="libarchive",
+            choco_package="",  # libarchive is not available on choco. If it is not installed, it will use the DLL provided by the `extractcode-libarchive` python package.
         )
 
     async def is_tool_installed(self) -> bool:
