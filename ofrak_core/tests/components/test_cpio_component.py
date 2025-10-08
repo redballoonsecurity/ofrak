@@ -129,16 +129,7 @@ async def test_round_trip_metadata_preservation(ofrak_context: OFRAKContext):
         m1 = metadata1[path]
         m2 = metadata2[path]
 
-        # Check if this is a symlink using stat module
-        is_symlink = stat.S_ISLNK(m1["mode"])
-
-        # For symlinks, skip size check - libarchive CPIO writer doesn't preserve symlink size
-        # This is a known limitation of libarchive's add_file_from_memory for CPIO symlinks
-        keys_to_check = ["mode", "nlink", "uid", "gid", "atime", "mtime", "ctime", "xattrs"]
-        if not is_symlink:
-            keys_to_check.append("size")
-
-        for key in keys_to_check:
+        for key in metadata1[path].keys():
             if m1[key] != m2[key]:
                 mismatches.append(f"{path}: {key} changed from {m1[key]} to {m2[key]}")
 

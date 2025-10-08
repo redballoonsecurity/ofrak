@@ -24,6 +24,7 @@ from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_type.range import Range
 from ofrak.core.filesystem import FilesystemEntry
+from ctypes import c_void_p
 
 # The libarchive binary is a requirement for the libarchive-c python bindings to work
 try:
@@ -301,9 +302,34 @@ class CpioPacker(Packer[None]):
                     "ctime": entry_stat.st_ctime,
                 }
                 if linkpath is not None:
-                    add_params["linkpath"] = linkpath
-
-                archive.add_file_from_memory(**add_params)
+                    # There is an issue in libarchive python bindings where symlinks linkpaths discarded when added to the archive
+                    # https://github.com/Changaco/python-libarchive-c/issues/143
+                    # we implement a quickfix here:
+                    new_entry = libarchive.entry.ArchiveEntry(
+                        pathname=path,
+                        size=entry_size,
+                        filetype=filetype,
+                        perm=permission_bits,
+                        header_codec=archive.header_codec,
+                        linkpath=linkpath.encode("utf-8"),
+                        uid=entry_stat.st_uid,
+                        gid=entry_stat.st_gid,
+                        atime=entry_stat.st_atime,
+                        mtime=entry_stat.st_mtime,
+                        ctime=entry_stat.st_ctime,
+                        birthtime=None,
+                        rdev=entry_stat.st_dev,
+                    )
+                    libarchive.ffi.ffi(
+                        "entry_set_symlink", [c_void_p], None
+                    )  # need to import an additional function from the shared library
+                    libarchive.ffi.entry_set_symlink(
+                        new_entry._entry_p, linkpath.encode("utf-8")
+                    )  # this turns the hardlink into a symlink
+                    libarchive.ffi.write_header(archive._pointer, new_entry._entry_p)
+                    libarchive.ffi.write_finish_entry(archive._pointer)
+                else:
+                    archive.add_file_from_memory(**add_params)
 
         # Combine all chunks into final bytes
         packed_bytes = b"".join(packed_chunks)
