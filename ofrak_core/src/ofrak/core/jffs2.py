@@ -32,7 +32,8 @@ class Jffs2Filesystem(GenericBinary, FilesystemRoot):
 
 class Jffs2Unpacker(Unpacker[None]):
     """
-    Extracts files and directories from JFFS2 (Journalling Flash File System 2) filesystems. Use when analyzing firmware from embedded devices using NOR or NAND flash memory.
+    Extracts files and directories from JFFS2 (Journalling Flash File System 2) filesystems. Use
+    when analyzing firmware from embedded devices using NOR or NAND flash memory.
     """
 
     targets = (Jffs2Filesystem,)
@@ -62,7 +63,10 @@ class Jffs2Unpacker(Unpacker[None]):
 
 class Jffs2Packer(Packer[None]):
     """
-    Compresses and packages files into a JFFS2 (Journalling Flash File System 2) filesystem image with compression, inode structures, and directory entries. Use after modifying extracted JFFS2 contents to recreate firmware for embedded devices using NOR or NAND flash. The packer creates a valid JFFS2 image that can be directly flashed to devices.
+    Compresses and packages files into a JFFS2 (Journalling Flash File System 2) filesystem image
+    with compression, inode structures, and directory entries. Use after modifying extracted JFFS2
+    contents to recreate firmware for embedded devices using NOR or NAND flash. The packer creates a
+    valid JFFS2 image that can be directly flashed to devices.
     """
 
     targets = (Jffs2Filesystem,)

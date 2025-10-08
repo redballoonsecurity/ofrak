@@ -32,7 +32,12 @@ class StringPatchingConfig(ComponentConfig):
 
 class StringPatchingModifier(Modifier[StringPatchingConfig]):
     """
-    Patches a string at a specific offset in text resources, replacing the string at the exact offset with a new string. Unlike find-replace, this is offset-targeted for precise control. Use for targeted string replacement when you know the exact offset, patching specific string locations, modifying configuration strings at known positions, fixing specific text entries, or implementing precise string modifications. Useful when offset is known from analysis or when only one specific instance should be changed.
+    Patches a string at a specific offset in text resources, replacing the string at the exact
+    offset with a new string. Unlike find-replace, this is offset-targeted for precise control. Use
+    for targeted string replacement when you know the exact offset, patching specific string
+    locations, modifying configuration strings at known positions, fixing specific text entries, or
+    implementing precise string modifications. Useful when offset is known from analysis or when
+    only one specific instance should be changed.
     """
 
     id = b"StringPatchingModifier"
@@ -63,7 +68,12 @@ class StringFindReplaceConfig(ComponentConfig):
 
 class StringFindReplaceModifier(Modifier[StringFindReplaceConfig]):
     """
-    Finds all occurrences of a specified string pattern in binary data and replaces each occurrence with a replacement string. Handles multiple occurrences automatically and can work with NULL-terminated strings or raw byte patterns. Use for bulk string patching, renaming identifiers throughout a binary, changing URLs or domain names, updating configuration strings, replacing hardcoded paths, or modifying all instances of specific text. More efficient than manual individual replacements when the same change is needed in multiple locations.
+    Finds all occurrences of a specified string pattern in binary data and replaces each occurrence
+    with a replacement string. Handles multiple occurrences automatically and can work with
+    NULL-terminated strings or raw byte patterns. Use for bulk string patching, renaming identifiers
+    throughout a binary, changing URLs or domain names, updating configuration strings, replacing
+    hardcoded paths, or modifying all instances of specific text. More efficient than manual
+    individual replacements when the same change is needed in multiple locations.
     """
 
     targets = (GenericBinary,)
@@ -108,7 +118,8 @@ class AsciiString(ResourceView):
 
 class AsciiStringAnalyzer(Analyzer[None, AsciiString]):
     """
-    Extracts and decodes the actual string content from NULL-terminated ASCII string resources, converting bytes to readable text and removing the NULL terminator. Use when analyzing specific string resources that have been identified to get their decoded content, compare strings, search for specific text, or extract meaningful data from string sections. Provides the human-readable string value rather than just identifying that a string exists.
+    Decodes existing AsciiString resources (strips NULL terminators, converts to text). NOT for string
+    discovery - only processes already-identified AsciiString resources from StringsUnpacker.
     """
 
     targets = (AsciiString,)
@@ -121,7 +132,9 @@ class AsciiStringAnalyzer(Analyzer[None, AsciiString]):
 
 class StringsUnpacker(Unpacker[None]):
     """
-    Extracts NULL-terminated ASCII strings from binary data, identifying human-readable text embedded in executables or firmware. Strings can reveal debug messages, error messages, file paths, URLs, function names, and other useful information. Use as a reconnaissance tool when analyzing unknown binaries to discover clues about functionality, embedded resources, or developer artifacts. This is often one of the first analysis steps for understanding what a binary does. This is a slow operation and may result in many children being created.
+    Extracts NULL-terminated ASCII strings as separate child resources (AsciiString). Slow operation
+    using Python regex. Use when you need strings as individual resources for hierarchical analysis.
+    Alternative: StringsAnalyzer is much faster but returns flat dictionary. Not run by default.
     """
 
     targets = ()  # Strings unpacker is slow, don't run by default.

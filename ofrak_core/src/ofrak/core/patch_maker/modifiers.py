@@ -99,7 +99,10 @@ class PatchFromSourceModifierConfig(ComponentConfig):
 
 class PatchFromSourceModifier(Modifier):
     """
-    Compiles C or assembly source code and patches it directly into program memory regions at specified addresses, handling compilation, assembly, linking, and injection. Supports arbitrary source code with proper toolchain integration. Use for injecting custom C functions or assembly routines, adding new functionality to programs, and patching vulnerabilities.
+    Compiles C or assembly source code and patches it directly into program memory regions at
+    specified addresses, handling compilation, assembly, linking, and injection. Supports arbitrary
+    source code with proper toolchain integration. Use for injecting custom C functions or assembly
+    routines, adding new functionality to programs, and patching vulnerabilities.
     """
 
     targets = (Program,)
@@ -205,7 +208,12 @@ class SegmentInjectorModifierConfig(ComponentConfig):
 
 class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
     """
-    Injects new program segments into executables, creating complete loadable segments with code or data at specified virtual addresses with configurable permissions. Only non-zero length segments (excluding .bss) are injected. Use for adding executable code segments, injecting data segments, creating new memory regions, implementing code caves via segments, or expanding program memory space. More comprehensive than simple data injection as it creates properly structured loadable segments with memory mapping.
+    Injects new program segments into executables, creating complete loadable segments with code or
+    data at specified virtual addresses with configurable permissions. Only non-zero length segments
+    (excluding .bss) are injected. Use for adding executable code segments, injecting data segments,
+    creating new memory regions, implementing code caves via segments, or expanding program memory
+    space. More comprehensive than simple data injection as it creates properly structured loadable
+    segments with memory mapping.
     """
 
     targets = (Program,)

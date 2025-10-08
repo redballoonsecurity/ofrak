@@ -76,7 +76,12 @@ class ElfHeaderModifierConfig(ComponentConfig):
 
 class ElfHeaderModifier(Modifier[ElfHeaderModifierConfig], AbstractElfAttributeModifier):
     """
-    Modifies ELF header fields such as entry point address (where execution starts), program header table offset and count, section header table offset and count, processor flags, or header size. These fields control how the ELF file is interpreted and executed. Use for adjusting execution entry point, fixing header tables after modifications, changing architecture flags, updating counts after adding/removing headers, or repairing corrupted ELF files. Must be very careful as incorrect values can make the ELF unloadable.
+    Modifies ELF header fields such as entry point address (where execution starts), program header
+    table offset and count, section header table offset and count, processor flags, or header size.
+    These fields control how the ELF file is interpreted and executed. Use for adjusting execution
+    entry point, fixing header tables after modifications, changing architecture flags, updating
+    counts after adding/removing headers, or repairing corrupted ELF files. Must be very careful as
+    incorrect values can make the ELF unloadable.
     """
 
     id = b"ElfHeaderModifier"
@@ -125,7 +130,12 @@ class ElfProgramHeaderModifier(
     AbstractElfAttributeModifier, Modifier[ElfProgramHeaderModifierConfig]
 ):
     """
-    Modifies ELF program header (Phdr) fields including segment type, file and memory addresses, sizes, protection flags (read/write/execute), and alignment requirements. Program headers define how segments are loaded into memory and their permissions. Use when adjusting ELF loading behavior, changing memory protection (making segments executable or writable), resizing segments, relocating segments in memory, or fixing up program headers after other modifications. Critical for controlling how the binary is loaded and mapped by the operating system.
+    Modifies ELF program header (Phdr) fields including segment type, file and memory addresses,
+    sizes, protection flags (read/write/execute), and alignment requirements. Program headers define
+    how segments are loaded into memory and their permissions. Use when adjusting ELF loading
+    behavior, changing memory protection (making segments executable or writable), resizing
+    segments, relocating segments in memory, or fixing up program headers after other modifications.
+    Critical for controlling how the binary is loaded and mapped by the operating system.
     """
 
     targets = (ElfProgramHeader,)
@@ -173,7 +183,13 @@ class ElfSectionHeaderModifier(
     AbstractElfAttributeModifier, Modifier[ElfSectionHeaderModifierConfig]
 ):
     """
-    Modifies ELF section header (Shdr) fields including section name, type, flags (writable, allocatable, executable), virtual address, file offset, size, link fields, info field, alignment, and entry size. Section headers organize the file for linking and debugging. Use for adjusting section properties, changing section addresses or sizes, modifying section flags (making sections writable or executable), fixing section headers after modifications, or reconfiguring section relationships. Essential for maintaining ELF structure integrity after changes.
+    Modifies ELF section header (Shdr) fields including section name, type, flags (writable,
+    allocatable, executable), virtual address, file offset, size, link fields, info field,
+    alignment, and entry size. Section headers organize the file for linking and debugging. Use for
+    adjusting section properties, changing section addresses or sizes, modifying section flags
+    (making sections writable or executable), fixing section headers after modifications, or
+    reconfiguring section relationships. Essential for maintaining ELF structure integrity after
+    changes.
     """
 
     id = b"ElfSectionHeaderModifier"
@@ -221,7 +237,12 @@ class ElfSymbolModifierConfig(ComponentConfig):
 
 class ElfSymbolModifier(AbstractElfAttributeModifier, Modifier[ElfSymbolModifierConfig]):
     """
-    Modifies ELF symbol entry fields including name (string table index), value/address, size, binding (local/global/weak), type (function/object/section), visibility, and section index. These modifications change what the ELF header claims, not what's actually in the binary. Use when you need to update the symbol table that the OS loader will read (e.g., after manually modifying code locations), but note that modifying code doesn't automatically update these symbols - you must manually sync them.
+    Modifies ELF symbol entry fields including name (string table index), value/address, size,
+    binding (local/global/weak), type (function/object/section), visibility, and section index.
+    These modifications change what the ELF header claims, not what's actually in the binary. Use
+    when you need to update the symbol table that the OS loader will read (e.g., after manually
+    modifying code locations), but note that modifying code doesn't automatically update these
+    symbols - you must manually sync them.
     """
 
     id = b"ElfSymbolModifier"
@@ -276,7 +297,12 @@ class ElfRelaModifierConfig(ComponentConfig):
 
 class ElfRelaModifier(AbstractElfAttributeModifier, Modifier[ElfRelaModifierConfig]):
     """
-    Modifies individual fields in ELF relocation entries with addends (Elf32_Rela or Elf64_Rela), including the offset where relocation applies, symbol index, relocation type, and addend constant. Relocations control how addresses are adjusted during linking and loading. Use when adjusting relocations during binary patching, fixing up relocations after code injection, changing symbol references, modifying relocation types, or debugging position-independent code issues. Must maintain consistency between relocations and actual code/data.
+    Modifies individual fields in ELF relocation entries with addends (Elf32_Rela or Elf64_Rela),
+    including the offset where relocation applies, symbol index, relocation type, and addend
+    constant. Relocations control how addresses are adjusted during linking and loading. Use when
+    adjusting relocations during binary patching, fixing up relocations after code injection,
+    changing symbol references, modifying relocation types, or debugging position-independent code
+    issues. Must maintain consistency between relocations and actual code/data.
     """
 
     targets = (ElfRelaEntry,)
@@ -327,7 +353,13 @@ class ElfDynamicEntryModifier(
     AbstractElfAttributeModifier, Modifier[ElfDynamicEntryModifierConfig]
 ):
     """
-    Modifies ELF dynamic section entries (Elf32_Dyn or Elf64_Dyn) by changing tags or values, affecting runtime dynamic linking behavior. Can modify library dependencies, search paths, symbol table locations, initialization functions, and many other dynamic linking parameters. Use for changing required libraries (DT_NEEDED), modifying library search paths (DT_RPATH/DT_RUNPATH), adjusting symbol table pointers, changing initialization/finalization functions, or configuring dynamic linking behavior. Critical for controlling how the runtime linker loads and resolves the binary.
+    Modifies ELF dynamic section entries (Elf32_Dyn or Elf64_Dyn) by changing tags or values,
+    affecting runtime dynamic linking behavior. Can modify library dependencies, search paths,
+    symbol table locations, initialization functions, and many other dynamic linking parameters.
+    Use for changing required libraries (DT_NEEDED), modifying library search paths
+    (DT_RPATH/DT_RUNPATH), adjusting symbol table pointers, changing initialization/finalization
+    functions, or configuring dynamic linking behavior. Critical for controlling how the runtime
+    linker loads and resolves the binary.
     """
 
     targets = (ElfDynamicEntry,)
@@ -376,7 +408,12 @@ class ElfVirtualAddressModifier(
     AbstractElfAttributeModifier, Modifier[ElfVirtualAddressModifierConfig]
 ):
     """
-    Modifies individual pointer values within ELF pointer array sections, updating specific function pointer entries to reference new addresses. Each pointer can be independently modified. Use for redirecting specific constructor/destructor functions, changing function pointer table entries, updating callback addresses, modifying initialization function targets, or implementing function hooking via pointer tables. More surgical than ElfPointerArraySectionAddModifier which modifies all pointers uniformly.
+    Modifies individual pointer values within ELF pointer array sections, updating specific
+    function pointer entries to reference new addresses. Each pointer can be independently modified.
+    Use for redirecting specific constructor/destructor functions, changing function pointer table
+    entries, updating callback addresses, modifying initialization function targets, or implementing
+    function hooking via pointer tables. More surgical than ElfPointerArraySectionAddModifier which
+    modifies all pointers uniformly.
     """
 
     targets = (ElfVirtualAddress,)
@@ -414,7 +451,12 @@ class ElfPointerArraySectionAddModifierConfig(ComponentConfig):
 
 class ElfPointerArraySectionAddModifier(Modifier[ElfPointerArraySectionAddModifierConfig]):
     """
-    Adds a constant offset value to all pointer entries in ELF pointer array sections like .init_array, .fini_array, .ctors, and .dtors. This batch operation updates every pointer in the section by the same amount. Use when relocating code or data that is referenced by constructor/destructor arrays, adjusting for base address changes, or fixing up pointers after memory layout modifications. Essential when code injection or relocation changes the addresses of initialization/cleanup functions.
+    Adds a constant offset value to all pointer entries in ELF pointer array sections like
+    .init_array, .fini_array, .ctors, and .dtors. This batch operation updates every pointer in the
+    section by the same amount. Use when relocating code or data that is referenced by
+    constructor/destructor arrays, adjusting for base address changes, or fixing up pointers after
+    memory layout modifications. Essential when code injection or relocation changes the addresses
+    of initialization/cleanup functions.
     """
 
     targets = (ElfPointerArraySection,)

@@ -107,7 +107,12 @@ class ElToritoISO9660Image(ISO9660Image):
 
 class ISO9660ImageAnalyzer(Analyzer[None, ISO9660ImageAttributes]):
     """
-    Extracts metadata and structural attributes from ISO 9660 disc images including volume descriptors, volume labels, creation/modification timestamps, block sizes, volume size, path table information, and root directory location. ISO 9660 defines the standard CD/DVD filesystem format. Use to understand ISO structure before extraction, validate ISO integrity, check disc capacity and layout, extract metadata for cataloging, or locate specific filesystem structures. Helps understand disc organization.
+    Extracts metadata and structural attributes from ISO 9660 disc images including volume
+    descriptors, volume labels, creation/modification timestamps, block sizes, volume size, path
+    table information, and root directory location. ISO 9660 defines the standard CD/DVD filesystem
+    format. Use to understand ISO structure before extraction, validate ISO integrity, check disc
+    capacity and layout, extract metadata for cataloging, or locate specific filesystem structures.
+    Helps understand disc organization.
     """
 
     targets = (ISO9660Image,)
@@ -166,7 +171,9 @@ class ISO9660ImageAnalyzer(Analyzer[None, ISO9660ImageAttributes]):
 
 class ISO9660Unpacker(Unpacker[None]):
     """
-    Extracts files and directories from ISO 9660 optical disc images. Use when analyzing CD/DVD images, bootable ISOs, or software distributions packaged as disc images. The unpacker handles various ISO 9660 extensions like Rock Ridge (Unix permissions) and Joliet (long filenames).
+    Extracts files and directories from ISO 9660 optical disc images. Use when analyzing CD/DVD
+    images, bootable ISOs, or software distributions packaged as disc images. The unpacker handles
+    various ISO 9660 extensions like Rock Ridge (Unix permissions) and Joliet (long filenames).
     """
 
     id = b"ISO9660Unpacker"
@@ -273,7 +280,10 @@ MKISOFS = ComponentExternalTool(
 
 class ISO9660Packer(Packer[None]):
     """
-    Packages files into an ISO 9660 optical disc image suitable for CD/DVD burning or virtual machine use. The packer creates the Volume Descriptor Set, Path Tables, and directory structures required by the ISO 9660 standard. Use after modifying extracted ISO contents to recreate bootable installation media or software distribution images.
+    Packages files into an ISO 9660 optical disc image suitable for CD/DVD burning or virtual
+    machine use. The packer creates the Volume Descriptor Set, Path Tables, and directory structures
+    required by the ISO 9660 standard. Use after modifying extracted ISO contents to recreate
+    bootable installation media or software distribution images.
     """
 
     targets = (ISO9660Image,)

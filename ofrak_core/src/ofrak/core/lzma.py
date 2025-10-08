@@ -33,7 +33,9 @@ class XzData(GenericBinary):
 
 class LzmaUnpacker(Unpacker[None]):
     """
-    Decompresses LZMA (Lempel-Ziv-Markov chain Algorithm) or XZ compressed data. Use for .lzma, .xz, or .7z files (which often use LZMA internally), or when encountering LZMA-compressed sections in firmware images. Common in router firmware and embedded Linux distributions.
+    Decompresses LZMA (Lempel-Ziv-Markov chain Algorithm) or XZ compressed data. Use for .lzma, .xz,
+    or .7z files (which often use LZMA internally), or when encountering LZMA-compressed sections in
+    firmware images. Common in router firmware and embedded Linux distributions.
     """
 
     id = b"LzmaUnpacker"
@@ -70,7 +72,9 @@ class LzmaUnpacker(Unpacker[None]):
 
 class LzmaPacker(Packer[None]):
     """
-    Compresses data using LZMA (Lempel-Ziv-Markov chain Algorithm) or XZ compression. Use after modifying decompressed LZMA/XZ data to recreate compressed files or sections. Common in firmware, embedded systems, and software distributions.
+    Compresses data using LZMA (Lempel-Ziv-Markov chain Algorithm) or XZ compression. Use after
+    modifying decompressed LZMA/XZ data to recreate compressed files or sections. Common in
+    firmware, embedded systems, and software distributions.
     """
 
     targets = (LzmaData, XzData)

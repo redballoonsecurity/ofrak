@@ -7,7 +7,12 @@ from ofrak.model.component_model import ComponentConfig
 
 class ComplexBlockSymbolAnalyzer(Analyzer[None, LinkableSymbol]):
     """
-    Analyzes function blocks (complex blocks) to identify and extract linkable symbols by examining function entry points, call relationships, and debug information. Creates symbol entries with names and addresses that can be used for linking or reference. Use when analyzing disassembled functions to discover callable symbol names and addresses, build a symbol table for stripped binaries, or prepare for code injection that needs to reference existing functions. Helpful for understanding what functions are available to call.
+    Analyzes function blocks (complex blocks) to identify and extract linkable symbols by examining
+    function entry points, call relationships, and debug information. Creates symbol entries with
+    names and addresses that can be used for linking or reference. Use when analyzing disassembled
+    functions to discover callable symbol names and addresses, build a symbol table for stripped
+    binaries, or prepare for code injection that needs to reference existing functions. Helpful for
+    understanding what functions are available to call.
     """
 
     targets = (ComplexBlock,)

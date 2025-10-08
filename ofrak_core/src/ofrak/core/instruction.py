@@ -156,7 +156,12 @@ class InstructionModifierConfig(ComponentConfig):
 
 class InstructionModifier(Modifier[InstructionModifierConfig]):
     """
-    Modifies individual assembly instructions by changing their mnemonic (operation) and/or operands (arguments), enabling instruction-level binary patching. The replacement instruction must be the same size as the original to prevent corruption. Use for changing specific instructions, redirecting branches or calls, modifying instruction operands, implementing instruction-level patches, NOP-ing operations, or fine-tuning code behavior. Powerful but requires understanding of instruction encoding and size constraints.
+    Modifies individual assembly instructions by changing their mnemonic (operation) and/or operands
+    (arguments), enabling instruction-level binary patching. The replacement instruction must be the
+    same size as the original to prevent corruption. Use for changing specific instructions,
+    redirecting branches or calls, modifying instruction operands, implementing instruction-level
+    patches, NOP-ing operations, or fine-tuning code behavior. Powerful but requires understanding
+    of instruction encoding and size constraints.
     """
 
     targets = (Instruction,)

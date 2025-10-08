@@ -260,7 +260,12 @@ class UpdateLinkableSymbolsModifierConfig(ComponentConfig):
 
 class UpdateLinkableSymbolsModifier(Modifier[UpdateLinkableSymbolsModifierConfig]):
     """
-    Adds new linkable symbols or updates existing ones in LinkableBinary resources, managing the symbol table for linking purposes. All provided symbols must have unique virtual addresses. Use for creating symbols after code injection, adding function names for injected code, updating symbol addresses after relocation, building symbol tables for stripped binaries, or maintaining linkable symbol information. Essential for making injected code callable by name and supporting proper linking workflows.
+    Adds new linkable symbols or updates existing ones in LinkableBinary resources, managing the
+    symbol table for linking purposes. All provided symbols must have unique virtual addresses. Use
+    for creating symbols after code injection, adding function names for injected code, updating
+    symbol addresses after relocation, building symbol tables for stripped binaries, or maintaining
+    linkable symbol information. Essential for making injected code callable by name and supporting
+    proper linking workflows.
 
     :raises ValueError: if not all the provided symbols have unique vaddrs.
     """

@@ -29,7 +29,9 @@ class TarArchive(GenericBinary, FilesystemRoot):
 
 class TarUnpacker(Unpacker[None]):
     """
-    Extracts files and directories from TAR (Tape Archive) archives. TAR preserves file permissions, ownership, timestamps, and directory structure without compression. Use for .tar files, or as the first step in unpacking compressed tarballs (.tar.gz, .tar.bz2, etc.) after decompression.
+    Extracts files and directories from TAR (Tape Archive) archives. TAR preserves file permissions,
+    ownership, timestamps, and directory structure without compression. Use for .tar files, or as
+    the first step in unpacking compressed tarballs (.tar.gz, .tar.bz2, etc.) after decompression.
     """
 
     targets = (TarArchive,)

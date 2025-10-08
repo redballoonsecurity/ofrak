@@ -308,7 +308,13 @@ class UImageUnpacker(Unpacker[None]):
 #####################
 class UImageHeaderAttributesAnalyzer(Analyzer[None, UImageHeader]):
     """
-    Parses and extracts all fields from a UImage header including magic number, header and data CRC checksums, creation timestamp, data size, load address, entry point address, target architecture (ARM, MIPS, x86, etc.), operating system (Linux, U-Boot, VxWorks, etc.), image type (kernel, ramdisk, multi, etc.), compression type (none, gzip, bzip2, lzma), and image name. Use to understand UImage metadata without fully unpacking, verify header integrity via CRCs, determine what kind of firmware component you're analyzing, or extract load addresses for further analysis.
+    Parses and extracts all fields from a UImage header including magic number, header and data CRC
+    checksums, creation timestamp, data size, load address, entry point address, target architecture
+    (ARM, MIPS, x86, etc.), operating system (Linux, U-Boot, VxWorks, etc.), image type (kernel,
+    ramdisk, multi, etc.), compression type (none, gzip, bzip2, lzma), and image name. Use to
+    understand UImage metadata without fully unpacking, verify header integrity via CRCs, determine
+    what kind of firmware component you're analyzing, or extract load addresses for further
+    analysis.
     """
 
     targets = (UImageHeader,)
@@ -358,7 +364,12 @@ class UImageHeaderAttributesAnalyzer(Analyzer[None, UImageHeader]):
 
 class UImageMultiHeaderAttributesAnalyzer(Analyzer[None, UImageMultiHeader]):
     """
-    Parses the UImageMultiHeader present in multi-file UImage images (UImageType.MULTI), extracting the sizes of each contained image component. Multi-file UImages package multiple components (like kernel + ramdisk) together. Use when analyzing multi-component UImage files to understand how many images are packaged together, determine individual image sizes for extraction, or prepare to unpack specific components. Each size field indicates the length of one packaged image.
+    Parses the UImageMultiHeader present in multi-file UImage images (UImageType.MULTI), extracting
+    the sizes of each contained image component. Multi-file UImages package multiple components
+    (like kernel + ramdisk) together. Use when analyzing multi-component UImage files to understand
+    how many images are packaged together, determine individual image sizes for extraction, or
+    prepare to unpack specific components. Each size field indicates the length of one packaged
+    image.
     """
 
     targets = (UImageMultiHeader,)
@@ -378,7 +389,12 @@ class UImageMultiHeaderAttributesAnalyzer(Analyzer[None, UImageMultiHeader]):
 
 class UImageProgramAttributesAnalyzer(Analyzer[None, Tuple[ProgramAttributes]]):
     """
-    Derives program architecture attributes (instruction set, bit width, endianness) from UImage header's architecture field (ih_arch). Maps UImage architecture enumerations (ARM, MIPS, x86, PowerPC, etc.) to OFRAK's architecture model. Use to identify the target platform for UImage firmware without examining the actual code, set up proper disassembly tools, verify firmware compatibility with target devices, or understand what embedded system the firmware runs on. Used to determine architecture before unpacking.
+    Derives program architecture attributes (instruction set, bit width, endianness) from UImage
+    header's architecture field (ih_arch). Maps UImage architecture enumerations (ARM, MIPS, x86,
+    PowerPC, etc.) to OFRAK's architecture model. Use to identify the target platform for UImage
+    firmware without examining the actual code, set up proper disassembly tools, verify firmware
+    compatibility with target devices, or understand what embedded system the firmware runs on.
+    Used to determine architecture before unpacking.
     """
 
     targets = (UImage,)
@@ -467,7 +483,12 @@ class UImageHeaderModifierConfig(ComponentConfig):
 
 class UImageHeaderModifier(Modifier[UImageHeaderModifierConfig]):
     """
-    Modifies UImage header fields such as load address, entry point, data size, compression type, OS type, architecture, or image name, then automatically recalculates and updates the header CRC32 checksum to maintain validity. Bootloaders verify this CRC before loading. Use for changing boot addresses, updating entry points after code modification, switching compression methods, adjusting image metadata, or fixing corrupted headers. Critical for ensuring modified UImage files are accepted by U-Boot bootloaders.
+    Modifies UImage header fields such as load address, entry point, data size, compression type,
+    OS type, architecture, or image name, then automatically recalculates and updates the header
+    CRC32 checksum to maintain validity. Bootloaders verify this CRC before loading. Use for
+    changing boot addresses, updating entry points after code modification, switching compression
+    methods, adjusting image metadata, or fixing corrupted headers. Critical for ensuring modified
+    UImage files are accepted by U-Boot bootloaders.
     """
 
     targets = (UImageHeader,)
@@ -522,7 +543,12 @@ class UImageMultiHeaderModifierConfig(ComponentConfig):
 
 class UImageMultiHeaderModifier(Modifier[UImageMultiHeaderModifierConfig]):
     """
-    Modifies the multi-header structure in UImageType.MULTI images, which contains size fields for each packaged component (like kernel + ramdisk combinations). Changes allow adding, removing, or resizing packaged images. Use when modifying multi-component UImage files, changing image sizes after compression or decompression, adding or removing packaged components, or reorganizing multi-file firmware. Must ensure size fields accurately reflect component sizes for proper unpacking by bootloaders.
+    Modifies the multi-header structure in UImageType.MULTI images, which contains size fields for
+    each packaged component (like kernel + ramdisk combinations). Changes allow adding, removing, or
+    resizing packaged images. Use when modifying multi-component UImage files, changing image sizes
+    after compression or decompression, adding or removing packaged components, or reorganizing
+    multi-file firmware. Must ensure size fields accurately reflect component sizes for proper
+    unpacking by bootloaders.
     """
 
     targets = (UImageMultiHeader,)

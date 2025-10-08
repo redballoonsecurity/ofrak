@@ -31,7 +31,10 @@ class SevenZFilesystem(GenericBinary, FilesystemRoot):
 
 class SevenZUnpacker(Unpacker[None]):
     """
-    Extracts files and directories from 7-Zip (.7z) compressed archives. The 7z format supports multiple compression algorithms including LZMA, LZMA2, and others. Use when encountering 7z-packaged software distributions, firmware bundles, or data archives. After extraction, files can be analyzed individually and later repacked if needed.
+    Extracts files and directories from 7-Zip (.7z) compressed archives. The 7z format supports
+    multiple compression algorithms including LZMA, LZMA2, and others. Use when encountering
+    7z-packaged software distributions, firmware bundles, or data archives. After extraction,
+    files can be analyzed individually and later repacked if needed.
     """
 
     targets = (SevenZFilesystem,)

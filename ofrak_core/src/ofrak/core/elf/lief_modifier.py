@@ -35,7 +35,13 @@ class LiefAddSegmentConfig(ComponentConfig):
 
 class LiefAddSegmentModifier(Modifier[LiefAddSegmentConfig]):
     """
-    Adds new loadable program segments (PT_LOAD) to ELF binaries using LIEF, creating complete memory regions with configurable addresses, sizes, and permissions (RWX). The new segments are integrated into the program header table and can be used for code or data injection. Use when creating new memory regions for code injection, adding executable segments for custom functions, inserting data segments for configuration or resources, or expanding the binary's memory footprint. More comprehensive than just adding sections as it includes memory mapping information.
+    Adds new loadable program segments (PT_LOAD) to ELF binaries using LIEF, creating complete
+    memory regions with configurable addresses, sizes, and permissions (RWX). The new segments are
+    integrated into the program header table and can be used for code or data injection. Use when
+    creating new memory regions for code injection, adding executable segments for custom
+    functions, inserting data segments for configuration or resources, or expanding the binary's
+    memory footprint. More comprehensive than just adding sections as it includes memory mapping
+    information.
     """
 
     id = b"LiefAddSegmentModifier"
@@ -90,7 +96,12 @@ class LiefAddSectionModifierConfig(ComponentConfig):
 
 class LiefAddSectionModifer(Modifier[LiefAddSectionModifierConfig]):
     """
-    Adds new sections to ELF binaries using the LIEF (Library to Instrument Executable Formats) library, creating section headers and inserting section data at appropriate file offsets. The new sections can contain code, data, or other content and are automatically integrated into the ELF structure with proper size and offset adjustments. Use for injecting new data sections, adding custom metadata, creating space for code caves, or inserting resources. LIEF handles the complex details of ELF modification including offset recalculation and header updates.
+    Adds new sections to ELF binaries using the LIEF (Library to Instrument Executable Formats)
+    library, creating section headers and inserting section data at appropriate file offsets. The
+    new sections can contain code, data, or other content and are automatically integrated into
+    the ELF structure with proper size and offset adjustments. Use for injecting new data sections,
+    adding custom metadata, creating space for code caves, or inserting resources. LIEF handles the
+    complex details of ELF modification including offset recalculation and header updates.
     """
 
     targets = (Elf,)
@@ -121,7 +132,12 @@ class LiefRemoveSectionModifierConfig(ComponentConfig):
 
 class LiefRemoveSectionModifier(Modifier[LiefRemoveSectionModifierConfig]):
     """
-    Removes sections from ELF binaries using LIEF, deleting the section header and optionally removing the section data, then fixing up all dependent headers and offsets. Section removal can reduce binary size and complexity. Use for stripping debug sections (.debug_*), removing unused sections, cleaning up after analysis, deleting symbols (.symtab), removing comments, or preparing binaries for deployment. Must be careful not to remove sections required for execution.
+    Removes sections from ELF binaries using LIEF, deleting the section header and optionally
+    removing the section data, then fixing up all dependent headers and offsets. Section removal
+    can reduce binary size and complexity. Use for stripping debug sections (.debug_*), removing
+    unused sections, cleaning up after analysis, deleting symbols (.symtab), removing comments, or
+    preparing binaries for deployment. Must be careful not to remove sections required for
+    execution.
     """
 
     targets = (Elf,)

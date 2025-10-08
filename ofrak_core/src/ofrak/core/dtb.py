@@ -99,7 +99,12 @@ class DtbHeader(GenericBinary):
 
 class DtbHeaderAnalyzer(Analyzer[None, DtbHeader]):
     """
-    Parses Device Tree Blob header to extract version number, total DTB size, structure block offset and size, strings block offset and size, memory reservation block offset and size, and various format version fields. The header describes the layout of all DTB sections. Use to understand DTB file structure before full unpacking, validate DTB integrity by checking sizes and offsets, determine DTB version for compatibility, or navigate to specific DTB sections. Essential first step in device tree analysis.
+    Parses Device Tree Blob header to extract version number, total DTB size, structure block offset
+    and size, strings block offset and size, memory reservation block offset and size, and various
+    format version fields. The header describes the layout of all DTB sections. Use to understand
+    DTB file structure before full unpacking, validate DTB integrity by checking sizes and offsets,
+    determine DTB version for compatibility, or navigate to specific DTB sections. Essential first
+    step in device tree analysis.
     """
 
     id = b"DtbHeaderAnalyzer"
@@ -214,7 +219,13 @@ class DtbProperty(GenericBinary):
 
 class DeviceTreeBlobUnpacker(Unpacker[None]):
     """
-    Parses Device Tree Blob (DTB/FDT) files into their hierarchical structure of nodes and properties that describe hardware configurations for embedded Linux systems. The unpacker extracts the header with version and size information, the structure block containing the node hierarchy, the strings block with property names, and the data block with property values. Use when analyzing embedded Linux device trees, understanding hardware peripheral configurations, examining memory maps, or preparing to modify device configurations. Device trees are critical for ARM-based embedded systems and describe CPUs, memory, buses, and peripheral devices.
+    Parses Device Tree Blob (DTB/FDT) files into their hierarchical structure of nodes and
+    properties that describe hardware configurations for embedded Linux systems. The unpacker
+    extracts the header with version and size information, the structure block containing the node
+    hierarchy, the strings block with property names, and the data block with property values. Use
+    when analyzing embedded Linux device trees, understanding hardware peripheral configurations,
+    examining memory maps, or preparing to modify device configurations. Device trees are critical
+    for ARM-based embedded systems and describe CPUs, memory, buses, and peripheral devices.
 
     A DeviceTreeBlob consists of:
     - 1 DtbHeader
@@ -279,7 +290,11 @@ class DeviceTreeBlobUnpacker(Unpacker[None]):
 
 class DeviceTreeBlobPacker(Packer[None]):
     """
-    Repacks the modified Device Tree structure back into binary DTB (Device Tree Blob) format suitable for bootloaders and Linux kernels. The packer regenerates all internal offsets, updates the strings block and data block, and creates a valid DTB that can be used for booting. Use after modifying device tree nodes, properties, or hardware configurations to generate a working DTB file.
+    Repacks the modified Device Tree structure back into binary DTB (Device Tree Blob) format
+    suitable for bootloaders and Linux kernels. The packer regenerates all internal offsets, updates
+    the strings block and data block, and creates a valid DTB that can be used for booting. Use
+    after modifying device tree nodes, properties, or hardware configurations to generate a working
+    DTB file.
     """
 
     id = b"DeviceTreeBlobPacker"

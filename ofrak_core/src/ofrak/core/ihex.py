@@ -42,7 +42,12 @@ class IhexProgram(Program):
 
 class IhexAnalyzer(Analyzer[None, IhexProgram]):
     """
-    Extracts and analyzes Intel HEX program metadata including the starting and ending addresses of all segments, individual segment sizes, the overall address range covered by the program, and any gaps between segments. Intel HEX files can have non-contiguous address ranges. Use to understand the memory layout described by an Intel HEX file, identify which memory regions contain data, find gaps that will be filled with padding, or determine the total memory space required. Useful before unpacking or when planning memory modifications.
+    Extracts and analyzes Intel HEX program metadata including the starting and ending addresses of
+    all segments, individual segment sizes, the overall address range covered by the program, and
+    any gaps between segments. Intel HEX files can have non-contiguous address ranges. Use to
+    understand the memory layout described by an Intel HEX file, identify which memory regions
+    contain data, find gaps that will be filled with padding, or determine the total memory space
+    required. Useful before unpacking or when planning memory modifications.
     """
 
     targets = (IhexProgram,)
@@ -72,7 +77,12 @@ class IhexUnpacker(Unpacker[None]):
 
 class IhexProgramUnpacker(Unpacker[None]):
     """
-    Extracts individual memory segments from an Intel HEX program's binary representation, separating the continuous memory image into distinct addressable sections. Each segment corresponds to a contiguous region of memory defined in the original HEX file. Use when you need to analyze specific address regions independently, examine gaps between segments, or work with individual memory sections. This is useful after converting Intel HEX to binary when you need to understand the memory layout structure.
+    Extracts individual memory segments from an Intel HEX program's binary representation,
+    separating the continuous memory image into distinct addressable sections. Each segment
+    corresponds to a contiguous region of memory defined in the original HEX file. Use when you need
+    to analyze specific address regions independently, examine gaps between segments, or work with
+    individual memory sections. This is useful after converting Intel HEX to binary when you need to
+    understand the memory layout structure.
     """
 
     targets = (IhexProgram,)
@@ -118,7 +128,11 @@ class IhexProgramPacker(Packer[None]):
 
 class IhexPacker(Packer[None]):
     """
-    Converts binary program data back into Intel HEX text format with proper addressing and checksums. Each output record contains address information, data bytes, and checksums for verification. Use after modifying firmware to generate .hex files suitable for programming microcontrollers, EPROMs, or embedded devices. The packer handles different record types including data records, extended address records, and end-of-file records.
+    Converts binary program data back into Intel HEX text format with proper addressing and
+    checksums. Each output record contains address information, data bytes, and checksums for
+    verification. Use after modifying firmware to generate .hex files suitable for programming
+    microcontrollers, EPROMs, or embedded devices. The packer handles different record types
+    including data records, extended address records, and end-of-file records.
     """
 
     targets = (Ihex,)

@@ -89,7 +89,11 @@ class Ubifs(GenericBinary, FilesystemRoot):
 
 class UbifsAnalyzer(Analyzer[None, Ubifs]):
     """
-    Extracts UBIFS (UBI File System) parameters that are required for correctly repacking the filesystem, including minimum I/O unit size, logical erase block (LEB) size, and maximum LEB count. These parameters must match the target flash device's characteristics. Use before modifying UBIFS filesystems to preserve critical parameters, ensure repacked images are compatible with target flash hardware, or validate filesystem constraints.
+    Extracts UBIFS (UBI File System) parameters that are required for correctly repacking the
+    filesystem, including minimum I/O unit size, logical erase block (LEB) size, and maximum LEB
+    count. These parameters must match the target flash device's characteristics. Use before
+    modifying UBIFS filesystems to preserve critical parameters, ensure repacked images are
+    compatible with target flash hardware, or validate filesystem constraints.
     """
 
     targets = (Ubifs,)
@@ -123,7 +127,9 @@ class UbifsAnalyzer(Analyzer[None, Ubifs]):
 
 class UbifsUnpacker(Unpacker[None]):
     """
-    Extracts files and directories from UBIFS (UBI File System) images, the standard filesystem for UBI volumes on NAND flash. Use when analyzing root filesystems or data partitions from embedded devices using NAND flash. Common in routers, set-top boxes, and industrial embedded systems.
+    Extracts files and directories from UBIFS (UBI File System) images, the standard filesystem for
+    UBI volumes on NAND flash. Use when analyzing root filesystems or data partitions from embedded
+    devices using NAND flash. Common in routers, set-top boxes, and industrial embedded systems.
     """
 
     targets = (Ubifs,)
@@ -159,7 +165,10 @@ class UbifsUnpacker(Unpacker[None]):
 
 class UbifsPacker(Packer[None]):
     """
-    Generates a UBIFS (UBI File System) filesystem image from a file and directory structure, creating the superblock, master nodes, index nodes, and data nodes required by UBIFS. Use after modifying extracted UBIFS contents to recreate root filesystems or data partitions for embedded devices.
+    Generates a UBIFS (UBI File System) filesystem image from a file and directory structure,
+    creating the superblock, master nodes, index nodes, and data nodes required by UBIFS. Use after
+    modifying extracted UBIFS contents to recreate root filesystems or data partitions for embedded
+    devices.
     """
 
     targets = (Ubifs,)

@@ -60,7 +60,11 @@ class SquashfsFilesystem(GenericBinary, FilesystemRoot):
 
 class SquashfsUnpacker(Unpacker[None]):
     """
-    Extracts files and directories from SquashFS compressed read-only filesystems, which are heavily used in embedded Linux systems and Live CD distributions. SquashFS is the standard format for read-only root filesystems in router firmware, embedded devices, and Linux distribution installers. Use when analyzing firmware or examining compressed Linux filesystems. The unpacker preserves file permissions, ownership, symbolic links, and special files.
+    Extracts files and directories from SquashFS compressed read-only filesystems, which are
+    heavily used in embedded Linux systems and Live CD distributions. SquashFS is the standard
+    format for read-only root filesystems in router firmware, embedded devices, and Linux
+    distribution installers. Use when analyzing firmware or examining compressed Linux filesystems.
+    The unpacker preserves file permissions, ownership, symbolic links, and special files.
     """
 
     targets = (SquashfsFilesystem,)
@@ -91,7 +95,10 @@ class SquashfsUnpacker(Unpacker[None]):
 
 class SquashfsPacker(Packer[None]):
     """
-    Compresses and packages files into a SquashFS compressed read-only filesystem. Use after modifying extracted SquashFS contents to recreate firmware images or compressed root filesystems. The packer preserves Unix permissions, ownership, symbolic links, device nodes, and applies compression to blocks for optimal size.
+    Compresses and packages files into a SquashFS compressed read-only filesystem. Use after
+    modifying extracted SquashFS contents to recreate firmware images or compressed root
+    filesystems. The packer preserves Unix permissions, ownership, symbolic links, device nodes, and
+    applies compression to blocks for optimal size.
     """
 
     targets = (SquashfsFilesystem,)

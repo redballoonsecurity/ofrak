@@ -45,7 +45,14 @@ class BinwalkAttributes(ResourceAttributes):
 
 class BinwalkAnalyzer(Analyzer[None, BinwalkAttributes]):
     """
-    Uses the binwalk tool to scan binary data for embedded files, filesystems, compressed data, bootloaders, and known file signatures. Binwalk identifies file offsets and types based on magic bytes and header patterns. Use for initial triage of unknown firmware or binaries to discover what's embedded inside, identify compressed sections, find filesystem boundaries, or locate interesting artifacts without manually parsing. This is a good first step in the firmware analysis workflow if OFRAK cannot automatically identify and unpack a given firmware - once binwalk identifies firmware chunk boundaries, create children for each chunk and use the OFRAK firmware analysis workflows accordingly.
+    Uses the binwalk tool to scan binary data for embedded files, filesystems, compressed data,
+    bootloaders, and known file signatures. Binwalk identifies file offsets and types based on magic
+    bytes and header patterns. Use for initial triage of unknown firmware or binaries to discover
+    what's embedded inside, identify compressed sections, find filesystem boundaries, or locate
+    interesting artifacts without manually parsing. This is a good first step in the firmware
+    analysis workflow if OFRAK cannot automatically identify and unpack a given firmware - once
+    binwalk identifies firmware chunk boundaries, create children for each chunk and use the OFRAK
+    firmware analysis workflows accordingly.
     """
 
     targets = (GenericBinary,)
