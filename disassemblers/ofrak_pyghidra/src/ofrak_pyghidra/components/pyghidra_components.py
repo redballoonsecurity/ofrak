@@ -66,7 +66,12 @@ class PyGhidraAnalysisStore(CachedAnalysisStore):
 
 class CachedGhidraCodeRegionModifier(CachedGhidraCodeRegionModifier):
     """
-    Modifies code regions while maintaining Ghidra analysis caching and context, preserving Ghidra's understanding of the code structure across modifications. This specialized modifier integrates with Ghidra's analysis database. Use when making modifications that need to maintain Ghidra analysis state, performing iterative modifications within Ghidra workflows, preserving analysis context across changes, or ensuring modifications are reflected in Ghidra's database. Important for maintaining analysis consistency in Ghidra-based workflows.
+    Modifies code regions while maintaining Ghidra analysis caching and context, preserving Ghidra's
+    understanding of the code structure across modifications. This specialized modifier integrates
+    with Ghidra's analysis database. Use when making modifications that need to maintain Ghidra
+    analysis state, performing iterative modifications within Ghidra workflows, preserving analysis
+    context across changes, or ensuring modifications are reflected in Ghidra's database. Important
+    for maintaining analysis consistency in Ghidra-based workflows.
     """
 
 
@@ -78,7 +83,13 @@ class PyGhidraAutoAnalyzerConfig(ComponentConfig):
 
 class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraProject]):
     """
-    Runs Ghidra's comprehensive automated analysis on binaries including disassembly, function boundary detection, control flow analysis, data type propagation, symbol discovery, cross-reference generation, and pattern matching. This is Ghidra's powerful automatic analysis engine that does the heavy lifting. Use for comprehensive initial analysis of unknown executables, automated function discovery in stripped binaries, control flow graph generation, or creating a foundation for further manual analysis. Normally runs automatically in Ghidra-based workflows.
+    Runs Ghidra's comprehensive automated analysis on binaries including disassembly, function
+    boundary detection, control flow analysis, data type propagation, symbol discovery,
+    cross-reference generation, and pattern matching. This is Ghidra's powerful automatic analysis
+    engine that does the heavy lifting. Use for comprehensive initial analysis of unknown
+    executables, automated function discovery in stripped binaries, control flow graph generation,
+    or creating a foundation for further manual analysis. Normally runs automatically in
+    Ghidra-based workflows.
     """
 
     id = b"PyGhidraAutoAnalyzer"
@@ -140,7 +151,10 @@ class PyGhidraCodeRegionUnpackerConfig(ComponentConfig):
 
 class PyGhidraCodeRegionUnpacker(CachedCodeRegionUnpacker):
     """
-    Uses Ghidra's analysis engine to automatically disassemble code regions and identify function boundaries (complex blocks). Ghidra analyzes control flow, recognizes function prologues/epilogues, and determines where functions start and end. Use when you need automated function discovery in executable code, especially for binaries without symbols.
+    Uses Ghidra's analysis engine to automatically disassemble code regions and identify function
+    boundaries (complex blocks). Ghidra analyzes control flow, recognizes function
+    prologues/epilogues, and determines where functions start and end. Use when you need automated
+    function discovery in executable code, especially for binaries without symbols.
     """
 
     id = b"PyGhidraCodeRegionUnpacker"
@@ -162,7 +176,11 @@ class PyGhidraCodeRegionUnpacker(CachedCodeRegionUnpacker):
 
 class PyGhidraComplexBlockUnpacker(CachedComplexBlockUnpacker):
     """
-    Uses Ghidra to disassemble complete functions (complex blocks) into their constituent basic blocks and data words. Basic blocks are sequences of instructions with a single entry point and single exit point, representing straight-line code between branches. Use when performing control flow analysis to understand branching, loops, and function structure. This enables detailed analysis of how code flows through a function.
+    Uses Ghidra to disassemble complete functions (complex blocks) into their constituent basic
+    blocks and data words. Basic blocks are sequences of instructions with a single entry point and
+    single exit point, representing straight-line code between branches. Use when performing control
+    flow analysis to understand branching, loops, and function structure. This enables detailed
+    analysis of how code flows through a function.
     """
 
     id = b"PyGhidraComplexBlockUnpacker"
@@ -170,7 +188,11 @@ class PyGhidraComplexBlockUnpacker(CachedComplexBlockUnpacker):
 
 class PyGhidraBasicBlockUnpacker(CachedBasicBlockUnpacker):
     """
-    Uses Ghidra to disassemble basic blocks into individual assembly instructions, providing the finest-grained view of executable code. Each instruction is extracted with its mnemonic, operands, and address. Use when you need instruction-level analysis, want to examine specific assembly operations, or are preparing for instruction-level modifications. This is the deepest level of code structure extraction.
+    Uses Ghidra to disassemble basic blocks into individual assembly instructions, providing the
+    finest-grained view of executable code. Each instruction is extracted with its mnemonic,
+    operands, and address. Use when you need instruction-level analysis, want to examine specific
+    assembly operations, or are preparing for instruction-level modifications. This is the deepest
+    level of code structure extraction.
     """
 
     id = b"PyGhidraBasicBlockUnpacker"
@@ -178,7 +200,12 @@ class PyGhidraBasicBlockUnpacker(CachedBasicBlockUnpacker):
 
 class PyGhidraDecompilationAnalyzer(CachedDecompilationAnalyzer):
     """
-    Uses Ghidra's decompiler to convert assembly instructions back into pseudo-C source code, applying data type inference, control flow reconstruction, variable naming, and structural analysis to produce high-level code representations. Use when you need high-level understanding of function behavior, want to analyze complex logic or algorithms, prepare for function reimplementation, or need to understand code quickly. The decompiled code should be verified against disassembly.
+    Uses Ghidra's decompiler to convert assembly instructions back into pseudo-C source code,
+    applying data type inference, control flow reconstruction, variable naming, and structural
+    analysis to produce high-level code representations. Use when you need high-level understanding
+    of function behavior, want to analyze complex logic or algorithms, prepare for function
+    reimplementation, or need to understand code quickly. The decompiled code should be verified
+    against disassembly.
     """
 
     id = b"PyGhidraDecompilationAnalyzer"
