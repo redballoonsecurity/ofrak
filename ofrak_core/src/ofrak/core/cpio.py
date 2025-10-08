@@ -122,7 +122,7 @@ def _libarchive_entry_to_stat_result(entry) -> os.stat_result:
         (
             entry.mode,  # st_mode (complete mode: file type + permission bits)
             0,  # st_ino (not preserved in CPIO)
-            0,  # st_dev (not preserved)
+            entry.rdev,  # st_dev
             1,  # st_nlink (default, it looks like we can't get this from libarchive)
             entry.uid,  # st_uid
             entry.gid,  # st_gid
@@ -300,6 +300,7 @@ class CpioPacker(Packer[None]):
                     "atime": entry_stat.st_atime,
                     "mtime": entry_stat.st_mtime,
                     "ctime": entry_stat.st_ctime,
+                    "rdev": entry_stat.st_dev,
                 }
                 if linkpath is not None:
                     # There is an issue in libarchive python bindings where symlinks linkpaths discarded when added to the archive

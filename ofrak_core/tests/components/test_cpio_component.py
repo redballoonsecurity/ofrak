@@ -87,6 +87,7 @@ async def test_round_trip_metadata_preservation(ofrak_context: OFRAKContext):
                 "atime": entry.stat.st_atime,
                 "mtime": entry.stat.st_mtime,
                 "ctime": entry.stat.st_ctime,
+                "dev": entry.stat.st_dev,
                 "xattrs": dict(entry.xattrs) if entry.xattrs else {},
             }
 
@@ -116,6 +117,7 @@ async def test_round_trip_metadata_preservation(ofrak_context: OFRAKContext):
                 "atime": entry.stat.st_atime,
                 "mtime": entry.stat.st_mtime,
                 "ctime": entry.stat.st_ctime,
+                "dev": entry.stat.st_dev,
                 "xattrs": dict(entry.xattrs) if entry.xattrs else {},
             }
 
