@@ -20,6 +20,12 @@ class BinaryNinjaAnalyzerConfig(ComponentConfig):
 
 
 class BinaryNinjaAnalyzer(Analyzer[Optional[BinaryNinjaAnalyzerConfig], BinaryNinjaAnalysis]):
+    """
+    Opens and analyzes binaries with Binary Ninja, either from scratch or from a pre-analyzed BNDB file. Creates
+    BinaryNinjaAnalysis state containing the BinaryView for use by other Binary Ninja components. Use for initial
+    comprehensive analysis with Binary Ninja's powerful analysis engine.
+    """
+
     id = b"BinaryNinjaAnalyzer"
     targets = (BinaryNinjaAnalysisResource,)
     outputs = (BinaryNinjaAnalysis,)

@@ -26,6 +26,12 @@ LOGGER = logging.getLogger(__name__)
 
 
 class CapstoneBasicBlockUnpacker(BasicBlockUnpacker):
+    """
+    Uses Capstone disassembler to decode basic blocks into individual assembly instructions. Extracts instruction
+    mnemonics, operands, and addresses. Use for instruction-level disassembly when you need fast, lightweight
+    disassembly without heavy analysis frameworks.
+    """
+
     def __init__(
         self,
         resource_factory: ResourceFactory,
@@ -75,6 +81,12 @@ class CapstoneBasicBlockUnpacker(BasicBlockUnpacker):
 
 
 class CapstoneInstructionAnalyzer(InstructionAnalyzer):
+    """
+    Analyzes and decodes individual instruction resources using Capstone. Extracts instruction details like mnemonic,
+    operands, size, and address. Use for analyzing specific instruction resources or when you need to decode
+    instructions on-demand.
+    """
+
     def __init__(
         self,
         resource_factory: ResourceFactory,
@@ -131,6 +143,12 @@ class CapstoneInstructionAnalyzer(InstructionAnalyzer):
 
 
 class CapstoneInstructionRegisterUsageAnalyzer(InstructionRegisterUsageAnalyzer):
+    """
+    Uses Capstone to analyze which CPU registers an instruction reads from and writes to. Returns RegisterUsage with
+    sets of read and written registers. Use for data-flow analysis, register allocation, or understanding instruction
+    side effects.
+    """
+
     def __init__(
         self,
         resource_factory: ResourceFactory,

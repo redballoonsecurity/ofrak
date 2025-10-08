@@ -9,6 +9,11 @@ from ofrak.core.decompilation import DecompilationAnalysis, DecompilationAnalyze
 
 
 class AngrDecompilatonAnalyzer(DecompilationAnalyzer):
+    """
+    Uses angr's decompiler to convert assembly functions back into pseudo-C code. Provides high-level representation
+    of function behavior for understanding complex logic. Use when you need human-readable code from angr's analysis.
+    """
+
     targets = (ComplexBlock,)
     outputs = (DecompilationAnalysis,)
 

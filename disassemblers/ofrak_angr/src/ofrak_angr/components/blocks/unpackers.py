@@ -24,6 +24,12 @@ LOGGER = logging.getLogger(__name__)
 
 
 class AngrCodeRegionUnpacker(CodeRegionUnpacker):
+    """
+    Uses angr's CFG analysis to automatically identify and extract function boundaries (complex blocks) from executable
+    code regions. Runs AngrAnalyzer if needed, fixes addresses for PIE binaries. Use for automated function discovery
+    in stripped binaries or when you need angr's analysis capabilities.
+    """
+
     async def unpack(self, resource: Resource, config: Optional[AngrAnalyzerConfig] = None):
         # Prepare CR unpacker
         cr_view = await resource.view_as(CodeRegion)
@@ -92,6 +98,12 @@ class AngrCodeRegionUnpacker(CodeRegionUnpacker):
 
 
 class AngrComplexBlockUnpacker(ComplexBlockUnpacker):
+    """
+    Uses angr to disassemble complete functions into basic blocks and data words. Extracts control flow structure,
+    instruction sequences, and data cross-references. Use for detailed function analysis when you need basic block
+    level granularity with angr's analysis.
+    """
+
     async def unpack(self, resource: Resource, config: Optional[AngrAnalyzerConfig] = None):
         # Prepare CB unpacker
         cb_view = await resource.view_as(ComplexBlock)

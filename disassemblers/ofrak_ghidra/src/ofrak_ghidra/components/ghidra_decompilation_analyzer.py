@@ -52,6 +52,12 @@ def escape_strings(s: str) -> str:
 
 
 class GhidraDecompilationAnalyzer(DecompilationAnalyzer, OfrakGhidraMixin):
+    """
+    Uses Ghidra's decompiler to convert assembly functions into pseudo-C code. Provides high-level representation of
+    function behavior with Ghidra's sophisticated decompilation engine. Use when you need human-readable code from
+    Ghidra's analysis.
+    """
+
     get_decompilation_script = OfrakGhidraScript(
         os.path.join(CORE_OFRAK_GHIDRA_SCRIPTS, "GetDecompilation.java")
     )
