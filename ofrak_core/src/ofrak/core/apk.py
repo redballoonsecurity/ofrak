@@ -84,9 +84,7 @@ class Apk(ZipArchive):
 
 class ApkUnpacker(Unpacker[None]):
     """
-    Decode Android APK files.
-
-    This unpacker is a wrapper for `apktool`. See <https://ibotpeaches.github.io/Apktool/>.
+    Decodes Android APK application packages into their component files and resources using apktool (see <https://ibotpeaches.github.io/Apktool/>). This tool decodes the AndroidManifest.xml back to readable XML, extracts resources (images, layouts, strings) in their original format, converts DEX bytecode to Smali assembly, and preserves the complete directory structure. Use when reverse engineering Android applications, analyzing app behavior, examining resource files, or preparing to modify and repackage an APK. The decoded files are much easier to read and modify than the compiled APK format.
     """
 
     targets = (Apk,)
@@ -127,7 +125,7 @@ class ApkPackerConfig(ComponentConfig):
 
 class ApkPacker(Packer[ApkPackerConfig]):
     """
-    Pack decoded APK resources into an APK.
+    Repackages decoded Android APK resources into a complete, signed APK file using apktool for compilation and uber-apk-signer for signing. The process recompiles resources, repackages DEX files, updates the manifest, and creates cryptographic signatures required for Android installation. Use after modifying Android app resources, Smali code, or manifest to create an installable APK.
 
     This unpacker is a wrapper for two tools:
 

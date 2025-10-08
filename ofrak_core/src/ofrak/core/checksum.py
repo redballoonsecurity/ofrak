@@ -15,7 +15,7 @@ class Sha256Attributes(ResourceAttributes):
 
 class Sha256Analyzer(Analyzer[None, Sha256Attributes]):
     """
-    Analyze binary data and add attributes with the SHA256 checksum of the data.
+    Calculates the SHA-256 (Secure Hash Algorithm 256-bit) cryptographic hash of binary data, producing a 256-bit fingerprint. Use for file identification with high security, integrity verification for security-critical applications, malware analysis and sample tracking, creating file signatures for threat intelligence, or compliance scenarios requiring secure hashing.
     """
 
     targets = (GenericBinary,)
@@ -35,7 +35,7 @@ class Md5Attributes(ResourceAttributes):
 
 class Md5Analyzer(Analyzer[None, Md5Attributes]):
     """
-    Analyze binary data and add attributes with the MD5 checksum of the data.
+    Calculates the MD5 (Message Digest 5) cryptographic hash of binary data, producing a 128-bit fingerprint. Use for file identification by comparing against known MD5 databases, quick integrity verification to detect modifications, tracking changes during binary modification workflows, or creating file catalogs.
     """
 
     targets = (GenericBinary,)

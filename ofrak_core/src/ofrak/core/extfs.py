@@ -47,7 +47,7 @@ class Ext4Filesystem(ExtFilesystem):
 
 class ExtUnpacker(Unpacker[None]):
     """
-    Unpack a Linux EXT filesystem.
+    Extracts files and directories from Linux Extended (EXT2/EXT3/EXT4) filesystems, the standard Linux filesystem family. These filesystems support full Unix permissions, symbolic links, hard links, and extended attributes. Use when analyzing disk images, partition dumps, or embedded system storage that uses EXT filesystems. Common in Linux-based embedded devices, development boards, and virtualized environments.
     """
 
     targets = (ExtFilesystem,)

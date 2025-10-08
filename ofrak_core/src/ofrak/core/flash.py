@@ -292,8 +292,7 @@ class FlashAttributes(ResourceAttributes):
 #####################
 class FlashResourceUnpacker(Unpacker[None]):
     """
-    Finds the overarching parent for region that includes OOB data.
-    Identifies the bounds based on the `FlashAttributes`.
+    Separates a raw NAND flash memory dump into logical data regions and out-of-band (OOB) spare areas based on flash geometry. Use when analyzing raw NAND flash dumps from embedded devices, where you need to separate the actual data from the flash management information. Essential first step for extracting filesystems from raw flash dumps.
     """
 
     targets = (FlashResource,)
@@ -408,7 +407,7 @@ class FlashResourceUnpacker(Unpacker[None]):
 
 class FlashOobResourceUnpacker(Unpacker[None]):
     """
-    Unpack a single `FlashOobResource` dump into logical data using the `FlashAttributes`.
+    Separates the logical data from Error Correction Code (ECC) data within flash memory OOB regions. Use after FlashResourceUnpacker to access the pure logical data without ECC bytes, which is necessary before extracting filesystems or analyzing the actual stored data. Different flash layouts use different ECC schemes and data/ECC arrangements.
     """
 
     targets = (FlashOobResource,)
@@ -519,7 +518,7 @@ class FlashOobResourceUnpacker(Unpacker[None]):
 #####################
 class FlashResourcePacker(Packer[None]):
     """
-    Packs the FlashResource into binary and cleans up logical data representations
+    Packs the complete flash resource including both main data pages and OOB spare areas into a final binary image suitable for flashing to NAND devices. This is the top-level packer that consolidates all flash components (logical data, ECC, OOB metadata) into a complete flash dump. Use for creating final flash memory images after any modifications to flash contents.
     """
 
     id = b"FlashResourcePacker"
@@ -541,7 +540,7 @@ class FlashResourcePacker(Packer[None]):
 
 class FlashOobResourcePacker(Packer[None]):
     """
-    Packs the entire region including Oob data back into a binary blob
+    Packs the complete flash OOB regions (logical data plus ECC) back into a binary blob with the proper interleaving and layout specified by the flash attributes. Use for finalizing flash dumps after both logical data and ECC have been assembled.
     """
 
     id = b"FlashOobResourcePacker"
@@ -562,8 +561,7 @@ class FlashOobResourcePacker(Packer[None]):
 
 class FlashLogicalDataResourcePacker(Packer[None]):
     """
-    Packs the `FlashLogicalDataResource` into a `FlashOobResource` of the format
-    specified by the `FlashAttributes`
+    Packs logical flash data back into the OOB (out-of-band) format, FlashOobResource, by recalculating and inserting ECC (Error Correction Code) bytes according to the `FlashAttributes`. Use when recreating flash dumps after modifying the logical data, ensuring ECC is properly calculated for flash device compatibility.
     """
 
     id = b"FlashLogicalDataResourcePacker"

@@ -45,8 +45,7 @@ class DataSummaryCache(ResourceAttributes):
 
 class DataSummaryAnalyzer(Analyzer[None, DataSummaryCache]):
     """
-    Analyze binary data and return summaries of its structure via the entropy and magnitude of
-    its bytes.
+    Performs statistical analysis of binary data to characterize its structure through entropy calculation (randomness measure) and byte magnitude distribution. Use for detecting encrypted/compressed regions, distinguishing code from data sections, finding packing boundaries, identifying anomalies or hidden data, or understanding data characteristics. Powerful tool for binary triage and structure discovery.
     """
 
     targets = ()  # Target any resource with data

@@ -71,7 +71,7 @@ class ElfHeaderAttributesAnalyzer(Analyzer[None, ElfHeader]):
     """
     Deserialize the [ElfHeader][ofrak.core.elf.model.ElfHeader], which contains all of the
     ELF header fields except the first 7. The first 7 fields are deserialized as part of the
-    [ElfBasicHeader][ofrak.core.elf.model.ElfBasicHeader].
+    [ElfBasicHeader][ofrak.core.elf.model.ElfBasicHeader]. The remaining fields locate all other ELF structures. Use to understand ELF structure details, find program and section headers for unpacking, extract entry point for execution analysis, or validate ELF structure integrity.
     """
 
     id = b"ElfHeaderAttributesAnalyzer"
@@ -119,7 +119,7 @@ class ElfHeaderAttributesAnalyzer(Analyzer[None, ElfHeader]):
 
 class ElfProgramHeaderAttributesAnalyzer(Analyzer[None, ElfProgramHeader]):
     """
-    Deserialize an [ElfProgramHeader][ofrak.core.elf.model.ElfProgramHeader].
+    Deserializes ELF program header (Phdr) structures to extract segment type (LOAD, DYNAMIC, INTERP, etc.), file offset, virtual address where segment is loaded, physical address, file size, memory size (may be larger if includes .bss), segment flags (readable, writable, executable), and alignment requirements. Program headers define how the ELF is loaded into memory. Use when analyzing specific segments to understand ELF memory layout, determine loading behavior, find executable or data regions, or prepare for memory-based modifications. Critical for understanding runtime memory organization.
     """
 
     id = b"ElfProgramHeaderAttributesAnalyzer"
@@ -150,7 +150,7 @@ class ElfProgramHeaderAttributesAnalyzer(Analyzer[None, ElfProgramHeader]):
 
 class ElfSegmentAnalyzer(Analyzer[None, ElfSegment]):
     """
-    Analyze an ElfSegment.
+    Extracts and analyzes detailed attributes from ELF program segments (from program headers), including segment type classification, memory protection flags, size information, alignment requirements, and relationships to sections. Segments define how the binary is loaded and mapped in memory. Use when analyzing specific program segments to understand memory layout, determine what code/data regions are loaded where, find segment boundaries for modifications, or understand memory protection and access patterns. Critical for memory-based binary analysis.
     """
 
     id = b"ElfSegmentAnalyzer"
@@ -169,7 +169,7 @@ class ElfSegmentAnalyzer(Analyzer[None, ElfSegment]):
 
 class ElfSectionHeaderAttributesAnalyzer(Analyzer[None, ElfSectionHeader]):
     """
-    Deserialize an [ElfSectionHeader][ofrak.core.elf.model.ElfSectionHeader].
+    Deserializes ELF section header (Shdr) structures to extract section name index (into string table), section type (PROGBITS, SYMTAB, STRTAB, etc.), section flags (writable, allocatable, executable), virtual address, file offset, section size, link to related section, additional info field, address alignment, and entry size for fixed-size entry sections. Section headers describe the file's organization. Use when analyzing specific sections to understand their properties, find particular sections like .text or .data, determine section attributes, or navigate ELF file structure.
     """
 
     id = b"ElfSectionHeaderAttributesAnalyzer"
@@ -212,8 +212,7 @@ class ElfSectionHeaderAttributesAnalyzer(Analyzer[None, ElfSectionHeader]):
 
 class ElfSymbolAttributesAnalyzer(Analyzer[None, ElfSymbol]):
     """
-    Deserialize an [ElfSymbol][ofrak.core.elf.model.ElfSymbol], an entry in the ELF symbol
-    table.
+    Deserializes and extracts detailed attributes from ELF symbol table entries including symbol name (as an index into the string table), value/address, size in bytes, binding type (local, global, weak), symbol type (function, object, section), visibility, and section index. These attributes reflect what the ELF header claims, which might not match what's actually in the binary. Use when you need to examine or modify the symbol metadata that the OS loader will read, but don't rely on these for discovering actual symbols in the binary.
     """
 
     targets = (ElfSymbol,)
@@ -265,6 +264,10 @@ class ElfDynamicSectionAnalyzer(Analyzer[None, ElfDynamicEntry]):
 
 
 class ElfPointerAnalyzer(Analyzer[None, ElfVirtualAddress]):
+    """
+    Extracts and deserializes virtual address pointer values from ELF pointer array sections, converting raw bytes to addresses based on the binary's word size and endianness. Pointers reference functions or data locations in memory. Use when analyzing specific pointer entries in .init_array, .fini_array, .ctors, .dtors, or other pointer arrays to determine what addresses they reference, understand initialization order, or prepare to modify pointer targets. Each pointer entry is analyzed individually.
+    """
+
     id = b"ElfPointerAnalyzer"
     targets = (ElfVirtualAddress,)
     outputs = (ElfVirtualAddress,)
@@ -281,8 +284,7 @@ class ElfPointerAnalyzer(Analyzer[None, ElfVirtualAddress]):
 
 class ElfRelaAnalyzer(Analyzer[None, ElfRelaEntry]):
     """
-    Deserialize an [ElfRelaEntry][ofrak.core.elf.model.ElfRelaEntry], an entry in a rela.*
-    table.
+    Deserializes [ElfRelaEntry][ofrak.core.elf.model.ElfRelaEntry] entries with addends (Elf32_Rela or Elf64_Rela structures) to extract offset (where to apply relocation), symbol index (which symbol is involved), relocation type (how to compute the value), and addend (constant to add to the symbol value). Relocations specify how addresses should be adjusted during linking or loading. Use when analyzing specific relocation entries to understand how position-independent code works, debugging linking issues, preparing for code relocation, or understanding dynamic symbol resolution. Each entry describes one address adjustment.
 
     http://sourceware.org/git/?p=glibc.git;a=blob_plain;f=elf/elf.h
     """
@@ -306,9 +308,7 @@ class ElfRelaAnalyzer(Analyzer[None, ElfRelaEntry]):
 
 class ElfSectionNameAnalyzer(Analyzer[None, AttributesType[NamedProgramSection]]):
     """
-    Get the name of an ELF section. ELF section names are stored as null-terminated strings in
-    dedicated string section, and each ELF section header's `sh_name` field is an offset in this
-    section.
+    Resolves ELF section names from the section header string table (.shstrtab) using the sh_name field from section headers as an index. Section names like ".text", ".data", ".bss", ".rodata" are stored as NULL-terminated strings in a dedicated string section. Use to identify sections by their symbolic names rather than numeric indexes, find specific sections for analysis (like finding .text for code), understand section purposes, or display human-readable section information. Makes ELF navigation much more intuitive.
     """
 
     id = b"ElfSectionNameAnalyzer"
@@ -335,8 +335,7 @@ class ElfSectionNameAnalyzer(Analyzer[None, AttributesType[NamedProgramSection]]
 
 class ElfSectionMemoryRegionAnalyzer(Analyzer[None, MemoryRegion]):
     """
-    Get the in-memory address and size of an ELF section. These are stored in the corresponding
-    ELF section header.
+    Extracts memory region information for ELF sections by reading the virtual address and size fields from section headers, determining where each section will be located in memory when the ELF is loaded. Sections may or may not be allocated in memory (depending on SHF_ALLOC flag). Use to understand where ELF sections are loaded in memory, map file offsets to virtual addresses, plan memory-based modifications, or understand memory layout for debugging. Bridges file-based and memory-based views of sections.
     """
 
     id = b"ElfSectionMemoryRegionAnalyzer"
@@ -354,8 +353,7 @@ class ElfSectionMemoryRegionAnalyzer(Analyzer[None, MemoryRegion]):
 
 class ElfProgramAttributesAnalyzer(Analyzer[None, ProgramAttributes]):
     """
-    Analyze the `ProgramAttributes` of an ELF, which are part of the information stored in the ELF
-    header.
+    Extracts `ProgramAttributes` from the ELF header's machine type field and flags, determining the instruction set architecture (x86, ARM, MIPS, PowerPC, etc.), bit width (16/32/64-bit), endianness, and processor-specific flags. This information defines what kind of CPU can execute the binary. Use to understand the target platform for an ELF binary, verify compatibility with target systems, determine what disassembler or emulator to use, or check architectural assumptions before analysis. Critical for setting up proper analysis tools.
     """
 
     id = b"ElfProgramAttributesAnalyzer"

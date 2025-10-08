@@ -44,7 +44,7 @@ class ZipArchive(GenericBinary, FilesystemRoot):
 
 class ZipUnpacker(Unpacker[None]):
     """
-    Unpack (decompress) a zip archive.
+    Extracts files and directories from ZIP compressed archives using standard ZIP decompression. Use for any ZIP-packaged software distributions, firmware bundles, or data archives. After extraction, individual files can be analyzed, modified, and later repacked with ZipPacker.
     """
 
     targets = (ZipArchive,)
@@ -72,7 +72,7 @@ class ZipUnpacker(Unpacker[None]):
 
 class ZipPacker(Packer[None]):
     """
-    Pack files into a compressed zip archive.
+    Compresses and packages files into a ZIP archive format with standard compression algorithms. Use after modifying extracted ZIP contents to recreate the archive for distribution or deployment. The packer preserves directory structure and file attributes during compression.
     """
 
     targets = (ZipArchive,)

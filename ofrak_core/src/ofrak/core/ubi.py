@@ -121,7 +121,7 @@ class Ubi(GenericBinary):
 
 class UbiAnalyzer(Analyzer[None, Ubi]):
     """
-    Extract UBI parameters required for packing a resource.
+    Extracts UBI (Unsorted Block Images) container parameters required for correctly repacking UBI images, including physical erase block (PEB) size, minimum I/O unit size, VID (Volume ID) header offset, and other flash-specific parameters. Use before modifying UBI images to preserve critical flash management parameters, ensure repacked images work with target flash hardware, or validate UBI configuration.
     """
 
     targets = (Ubi,)
@@ -177,7 +177,7 @@ class UbiAnalyzer(Analyzer[None, Ubi]):
 
 class UbiUnpacker(Unpacker[None]):
     """
-    Extract the UBI image
+    Extracts volumes from UBI (Unsorted Block Images) containers, which are used for managing flash storage on NAND devices. Use when analyzing firmware for embedded devices with NAND flash storage, particularly Linux-based devices. Each extracted UBI volume can be further unpacked if it contains a filesystem like UBIFS.
     """
 
     targets = (Ubi,)
@@ -228,7 +228,7 @@ class UbiUnpacker(Unpacker[None]):
 
 class UbiPacker(Packer[None]):
     """
-    Generate an UBI image from an Ubi resource view.
+    Generates a UBI (Unsorted Block Images) image from modified UBI volumes, recreating the UBI structure with proper erase block headers, volume table, and wear-leveling information. Use after modifying UBI volume contents to recreate firmware images for embedded devices with NAND flash. The packer ensures proper UBI metadata and volume layout.
     """
 
     targets = (Ubi,)

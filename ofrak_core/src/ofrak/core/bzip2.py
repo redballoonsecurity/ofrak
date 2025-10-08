@@ -21,9 +21,7 @@ class Bzip2Data(GenericBinary):
 
 class Bzip2Unpacker(Unpacker[None]):
     """
-    Unpack bzip2 data.
-
-    bzip2 binary blobs decompress into one child.
+    Decompresses bzip2-compressed data, which uses Burrows-Wheeler transform and Huffman coding for compression. Use for .bz2 files or bzip2-compressed sections within larger binaries. Common in Linux systems for compressed tarballs (.tar.bz2) and firmware images. Results in a single child.
     """
 
     targets = (Bzip2Data,)
@@ -46,7 +44,7 @@ class Bzip2Unpacker(Unpacker[None]):
 
 class Bzip2Packer(Packer[None]):
     """
-    Pack a resource, compressing it into bzip2 data.
+    Compresses data using the bzip2 algorithm. Use after modifying decompressed bzip2 data to recreate .bz2 files or bzip2-compressed sections within larger binaries. Common for compressed tarballs and firmware images.
     """
 
     targets = (Bzip2Data,)

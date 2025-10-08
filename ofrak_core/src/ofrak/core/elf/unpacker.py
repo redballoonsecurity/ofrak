@@ -43,6 +43,10 @@ from ofrak_type.range import Range
 
 
 class ElfUnpacker(Unpacker[None]):
+    """
+    Extracts and parses ELF (Executable and Linkable Format) binary structures including the basic header, full header with entry point and architecture information, program headers describing loadable segments, the segments themselves (like PT_LOAD, PT_DYNAMIC), section headers, sections (.text, .data, .bss, etc.), string sections, symbol tables, and executable code regions. Use when analyzing any Linux/Unix executable, shared library, object file, or kernel module to examine code, data, symbols, and linking information.
+    """
+
     id = b"ElfUnpacker"
     targets = (Elf,)
     children = (
@@ -204,6 +208,10 @@ class ElfUnpacker(Unpacker[None]):
 
 
 class ElfDynamicSectionUnpacker(Unpacker[None]):
+    """
+    Extracts individual dynamic linking entries from an ELF binary's .dynamic section, which controls runtime linking behavior. Each entry is a tag-value pair that specifies things like required shared libraries, symbol/string table locations, relocation table addresses, initialization/finalization functions, and runtime linker options. Use when you need to understand an ELF's runtime dependencies, analyze how dynamic linking works, or prepare to modify dynamic linking behavior. Essential for analyzing shared libraries, dynamically linked executables, and understanding the runtime loader's configuration.
+    """
+
     id = b"ElfDynamicSectionUnpacker"
     targets = (ElfDynamicSection,)
     children = (ElfDynamicEntry,)
@@ -217,6 +225,10 @@ class ElfDynamicSectionUnpacker(Unpacker[None]):
 
 
 class ElfRelaUnpacker(Unpacker[None]):
+    """
+    Extracts individual relocation entries with addends from ELF relocation sections (.rela.text, .rela.dyn, etc.). Relocation entries specify how addresses should be adjusted when code is loaded at different addresses or linked with other objects. Use when analyzing position-independent code (PIC), understanding dynamic linking relocations, or preparing to modify code that requires relocation adjustments. Each entry contains an offset, relocation type, symbol reference, and addend value.
+    """
+
     id = b"ElfRelaUnpacker"
     targets = (ElfRelaSection,)
     children = (ElfRelaEntry,)
@@ -230,6 +242,10 @@ class ElfRelaUnpacker(Unpacker[None]):
 
 
 class ElfSymbolUnpacker(Unpacker[None]):
+    """
+    Extracts individual symbol entries from ELF symbol tables (.symtab or .dynsym), where each symbol represents a function, variable, or other named entity with an address, size, and type. These symbols reflect what the ELF header claims, which might not match what's actually in the binary (e.g., after code modifications, or in stripped/obfuscated binaries). Use when you need to modify the symbol table that the OS loader will read, but don't rely on these for discovering actual symbols - use analysis-based symbol discovery instead.
+    """
+
     id = b"ElfSymbolUnpacker"
     targets = (ElfSymbolSection,)
     children = (ElfSymbol,)
@@ -245,6 +261,10 @@ class ElfSymbolUnpacker(Unpacker[None]):
 
 
 class ElfPointerArraySectionUnpacker(Unpacker[None]):
+    """
+    Extracts individual pointer values from ELF sections that contain arrays of function pointers, such as .init_array (constructors run before main), .fini_array (destructors run after main), .ctors, and .dtors. Each pointer references a function that should be called during initialization or cleanup. Use when analyzing constructor/destructor functions, understanding initialization order, or modifying the functions called during program startup/shutdown.
+    """
+
     id = b"ElfPointerArraySectionUnpacker"
     targets = (ElfPointerArraySection,)
     children = (ElfVirtualAddress,)

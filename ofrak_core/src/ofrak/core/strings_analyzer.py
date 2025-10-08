@@ -49,6 +49,10 @@ class _StringsToolDependency(ComponentExternalTool):
 
 
 class StringsAnalyzer(Analyzer[Optional[StringsAnalyzerConfig], StringsAttributes]):
+    """
+    Extracts all printable ASCII and Unicode strings from binary data using configurable minimum length threshold, scanning the entire binary for sequences of human-readable text. Use for comprehensive string analysis to find debug messages, error strings, URLs, file paths, function names, encryption keys, configuration data, or any embedded text. One of the most valuable reconnaissance tools for understanding binary functionality and finding interesting artifacts.
+    """
+
     targets = ()
     outputs = (StringsAttributes,)
     external_dependencies = (_StringsToolDependency(),)

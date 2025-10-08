@@ -19,6 +19,10 @@ from ofrak_type.range import Range
 
 
 class PeUnpacker(Unpacker[None]):
+    """
+    Extracts and parses Windows Portable Executable (PE) file structures including the MS-DOS header, PE file header with machine type and characteristics, optional header containing entry point and memory layout information, data directories pointing to import/export/resource tables, section headers, and the actual section data (.text, .data, .rdata, etc.). Use when analyzing Windows executables, DLLs, drivers, or any PE-format binary to understand its structure, imports, exports, resources, or prepare for modification. This is the fundamental first step for any Windows binary analysis.
+    """
+
     id = b"PeUnpacker"
     targets = (Pe,)
     children = (

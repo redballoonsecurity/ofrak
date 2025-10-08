@@ -25,7 +25,7 @@ class AddCommentModifierConfig(ComponentConfig):
 
 class AddCommentModifier(Modifier[AddCommentModifierConfig]):
     """
-    Modifier to add a single comment to a resource.
+    Adds analysis comments to resources for documentation purposes, attaching text annotations to specific resources or byte ranges. Comments can document findings, mark important locations, explain modifications, or provide analysis notes. Use for annotating interesting findings, documenting reverse engineering insights, marking modified regions, explaining code behavior, noting security concerns, or creating analysis documentation. Comments persist with the resource and help track analysis progress and findings.
     """
 
     targets = ()
@@ -67,7 +67,7 @@ class DeleteCommentModifierConfig(ComponentConfig):
 
 class DeleteCommentModifier(Modifier[DeleteCommentModifierConfig]):
     """
-    Modifier to delete comment(s) from a resource.
+    Removes one or more comments from resources based on range, content, or removes all comments. Can target specific comments by text or location, or clear all comments from a resource. Use for cleaning up outdated annotations, removing incorrect analysis notes, clearing comment clutter, updating documentation by removing old comments, or resetting comment state. Helps maintain clean analysis state by removing no-longer-relevant documentation.
     """
 
     targets = ()

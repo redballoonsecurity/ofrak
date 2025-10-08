@@ -37,7 +37,7 @@ class ZstdPackerConfig(ComponentConfig):
 
 class ZstdUnpacker(Unpacker[None]):
     """
-    Unpack (decompress) a zstd file.
+    Decompresses Zstandard (zstd) compressed data. Use when encountering .zst files or zstd-compressed sections within larger binaries. After decompression, the resulting data can be further analyzed or unpacked if it contains additional structure.
     """
 
     id = b"ZstdUnpacker"
@@ -59,7 +59,7 @@ class ZstdUnpacker(Unpacker[None]):
 
 class ZstdPacker(Packer[ZstdPackerConfig]):
     """
-    Pack data into a compressed zstd file.
+    Compresses data using the Zstandard algorithm. Use after modifying decompressed zstd data to recreate .zst files or zstd-compressed sections.
     """
 
     targets = (ZstdData,)
