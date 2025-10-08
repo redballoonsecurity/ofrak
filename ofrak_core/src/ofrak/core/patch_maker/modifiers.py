@@ -180,6 +180,12 @@ class PatchFromSourceModifier(Modifier):
 
 @dataclass
 class SegmentInjectorModifierConfig(ComponentConfig):
+    """
+    Config for injecting new segments into a program.
+
+    :var segments_and_data: Tuple of (Segment, bytes) pairs - each segment's metadata and raw data to inject
+    """
+
     segments_and_data: Tuple[Tuple[Segment, bytes], ...]
 
     @staticmethod

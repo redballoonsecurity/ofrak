@@ -32,6 +32,12 @@ class ZstdData(GenericBinary):
 
 @dataclass
 class ZstdPackerConfig(ComponentConfig):
+    """
+    Config for zstd compression packer.
+
+    :var compression_level: Zstandard compression level (1-22, higher = better compression but slower)
+    """
+
     compression_level: int
 
 

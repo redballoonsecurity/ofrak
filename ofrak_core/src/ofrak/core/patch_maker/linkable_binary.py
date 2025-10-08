@@ -247,6 +247,12 @@ class LinkableBinary(GenericBinary):
 
 @dataclass
 class UpdateLinkableSymbolsModifierConfig(ComponentConfig):
+    """
+    Config for updating linkable symbols in a binary.
+
+    :var updated_symbols: Tuple of LinkableSymbol objects to add or update (must have unique vaddrs)
+    """
+
     updated_symbols: Tuple[LinkableSymbol, ...]
 
     def __post_init__(self):

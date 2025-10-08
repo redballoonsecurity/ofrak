@@ -59,6 +59,24 @@ class AbstractElfAttributeModifier(ABC):
 
 @dataclass
 class ElfHeaderModifierConfig(ComponentConfig):
+    """
+    Configuration for modifying ELF header fields that control binary interpretation and execution.
+
+    :var e_type: ELF file type (executable, shared object, relocatable, core dump)
+    :var e_machine: Target architecture/machine type (x86, ARM, MIPS, etc.)
+    :var e_version: ELF format version number
+    :var e_entry: Virtual address where execution begins
+    :var e_phoff: File offset to program header table
+    :var e_shoff: File offset to section header table
+    :var e_flags: Architecture-specific processor flags
+    :var e_ehsize: Size of the ELF header in bytes
+    :var e_phentsize: Size of one program header table entry
+    :var e_phnum: Number of program header entries
+    :var e_shentsize: Size of one section header table entry
+    :var e_shnum: Number of section header entries
+    :var e_shstrndx: Section header table index of section name string table
+    """
+
     e_type: Optional[int] = None
     e_machine: Optional[int] = None
     e_version: Optional[int] = None
@@ -116,6 +134,19 @@ class ElfHeaderModifier(Modifier[ElfHeaderModifierConfig], AbstractElfAttributeM
 
 @dataclass
 class ElfProgramHeaderModifierConfig(ComponentConfig):
+    """
+    Configuration for modifying ELF program header (Phdr) fields that control segment loading and memory mapping.
+
+    :var p_type: Segment type (PT_LOAD, PT_DYNAMIC, PT_INTERP, etc.)
+    :var p_offset: File offset where segment data begins
+    :var p_vaddr: Virtual address where segment is loaded in memory
+    :var p_paddr: Physical address (for systems where it matters)
+    :var p_filesz: Size of segment in the file (bytes)
+    :var p_memsz: Size of segment in memory (can be larger than filesz for BSS)
+    :var p_flags: Segment permissions (PF_R=read, PF_W=write, PF_X=execute)
+    :var p_align: Segment alignment in memory and file
+    """
+
     p_type: Optional[int] = None
     p_offset: Optional[int] = None
     p_vaddr: Optional[int] = None
@@ -167,6 +198,21 @@ class ElfProgramHeaderModifier(
 
 @dataclass
 class ElfSectionHeaderModifierConfig(ComponentConfig):
+    """
+    Configuration for modifying ELF section header (Shdr) fields that organize file structure for linking and debugging.
+
+    :var sh_name: Index into section name string table
+    :var sh_type: Section type (SHT_PROGBITS, SHT_SYMTAB, SHT_STRTAB, etc.)
+    :var sh_flags: Section attributes (SHF_WRITE, SHF_ALLOC, SHF_EXECINSTR, etc.)
+    :var sh_addr: Virtual address of section in memory (if loaded)
+    :var sh_offset: File offset where section data begins
+    :var sh_size: Size of section in bytes
+    :var sh_link: Section index of associated section (meaning depends on type)
+    :var sh_info: Extra section information (meaning depends on type)
+    :var sh_addralign: Section alignment requirement (power of 2)
+    :var sh_entsize: Size of each entry if section holds table of fixed-size entries
+    """
+
     sh_name: Optional[int] = None
     sh_type: Optional[int] = None
     sh_flags: Optional[int] = None
@@ -227,6 +273,17 @@ class ElfSectionHeaderModifier(
 
 @dataclass
 class ElfSymbolModifierConfig(ComponentConfig):
+    """
+    Configuration for modifying ELF symbol table entries that define functions, variables, and other symbols.
+
+    :var st_name: Index into symbol name string table
+    :var st_value: Symbol value/address (typically virtual address for functions/variables)
+    :var st_size: Size of symbol in bytes (size of function or data object)
+    :var st_info: Symbol binding (local/global/weak) and type (function/object/section) packed into one byte
+    :var st_other: Symbol visibility (default/internal/hidden/protected)
+    :var st_shndx: Section index where symbol is defined (or special values like SHN_UNDEF)
+    """
+
     st_name: Optional[int] = None
     st_value: Optional[int] = None
     st_size: Optional[int] = None
@@ -502,6 +559,12 @@ class ElfPointerArraySectionAddModifier(Modifier[ElfPointerArraySectionAddModifi
 
 @dataclass
 class ElfAddStringModifierConfig(ComponentConfig):
+    """
+    Configuration for adding strings to the ELF string table for use as symbol or section names.
+
+    :var strings: String or tuple of strings to add to .strtab section (will be null-terminated)
+    """
+
     strings: Union[Tuple[str, ...], str]
 
 
@@ -578,6 +641,12 @@ class ElfAddStringModifier(Modifier[ElfAddStringModifierConfig]):
 
 @dataclass
 class ElfRelocateSymbolsModifierConfig(ComponentConfig):
+    """
+    Configuration for changing symbol addresses in an ELF file, updating where symbols point in memory.
+
+    :var new_symbol_vaddrs: Dictionary mapping original symbol virtual addresses to new virtual addresses
+    """
+
     new_symbol_vaddrs: Dict[int, int]
 
 
