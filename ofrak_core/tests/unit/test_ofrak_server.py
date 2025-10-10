@@ -1067,6 +1067,11 @@ async def test_get_config(ofrak_client: TestClient, hello_elf):
                 "default": None,
             }
         ],
+        "doc": """
+    Config for updating linkable symbols in a binary.
+
+    :var updated_symbols: Tuple of LinkableSymbol objects to add or update (must have unique vaddrs)
+    """,
     }
 
 
