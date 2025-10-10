@@ -16,9 +16,26 @@ EXPECTED_DATA = b"hello ofrak"
 TARGET_SEVEN_ZIP_FILE = "test.7z"
 SEVEN_ZIP_ENTRY_NAME = "hello_7z_file"
 
+"""
+This module tests the functionality of the SevenZip component in OFRAK.
+
+Requirements Mapping:
+- REQ4.3: As an OFRAK user, I want to be able to recursively pack a nested tree of unpacked binaries.
+  - TestPzUnpackModifyPack: Tests the recursive unpacking, modification, and repacking of a 7zip archive
+"""
+
 
 @pytest.mark.skipif_missing_deps([SevenZUnpacker, SevenzPacker])
 class TestPzUnpackModifyPack(UnpackModifyPackPattern):
+    """
+    Tests the recursive unpacking, modification, and repacking of a 7zip archive (REQ4.3).
+
+    This test verifies that:
+    - A 7zip file can be recursively unpacked
+    - Content within the archive can be modified
+    - The modified content can be packed back into a 7zip file
+    """
+
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         with tempfile.TemporaryDirectory() as d:
             entry_name = os.path.join(d, SEVEN_ZIP_ENTRY_NAME)

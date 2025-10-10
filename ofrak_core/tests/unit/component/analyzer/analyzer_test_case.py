@@ -11,6 +11,18 @@ from ofrak.resource import Resource
 from ofrak_type.error import NotFoundError
 
 
+"""
+This module tests the analyzer interface and validation of analyzers.
+
+Requirements Mapping:
+- REQ2.1: As an OFRAK contributor, I want to implement an analyzer using a well-defined interface so that it is easy to add new analyzers.
+  - test_analyze_method: Tests that Analyzer.analyze returns the expected AnalyzerReturnType
+  - test_resource_analyzer: Tests that Resource.analyze returns the expected resource attributes
+  - test_run_analyzer: Tests that Resource.run works on the given analyzer
+  - test_no_valid_analyzer: Tests that running Resource.analyze raises AnalyzerNotFoundError when no analyzer matches the given ResourceAttributes type
+"""
+
+
 @dataclass
 class DummyAttributes(ResourceAttributes):
     dummy_value: str
@@ -40,7 +52,10 @@ class AnalyzerTests:
 
     async def test_analyze_method(self, test_case: PopulatedAnalyzerTestCase):
         """
-        Test that :func:`Analyzer.analyze` returns the expected AnalyzerReturnType
+        Test that :func:`Analyzer.analyze` returns the expected AnalyzerReturnType (REQ2.1).
+
+        This test verifies that:
+        - The analyzer's analyze method result matches the expected result specified in the test case
         """
         analyzer = test_case.get_analyzer()
         result = await analyzer.analyze(test_case.resource)
@@ -48,7 +63,10 @@ class AnalyzerTests:
 
     async def test_resource_analyzer(self, test_case: PopulatedAnalyzerTestCase):
         """
-        Test that :func:`Resource.analyze` returns the expected resource attributes.
+        Test that :func:`Resource.analyze` returns the expected resource attributes (REQ2.1).
+
+        This test verifies that:
+        - The resource's analyze method can retrieve the expected attributes
         """
         if isinstance(test_case.expected_result, tuple):
             attributes_to_analyze = test_case.expected_result
@@ -60,7 +78,11 @@ class AnalyzerTests:
 
     async def test_run_analyzer(self, test_case: PopulatedAnalyzerTestCase):
         """
-        Test that :func:`Resource.run` works on the given analyzer.
+        Test that :func:`Resource.run` works on the given analyzer (REQ2.1).
+
+        This test verifies that:
+        - The resource can successfully run the analyzer via the run method
+        - The expected attributes are properly set on the resource after running
         """
         await test_case.resource.run(test_case.analyzer_type)
         if isinstance(test_case.expected_result, tuple):
@@ -73,8 +95,10 @@ class AnalyzerTests:
 
     async def test_no_valid_analyzer(self, test_case: PopulatedAnalyzerTestCase):
         """
-        Test that running :func:`Resource.analyze` raises :class:`AnalyzerNotFoundError`
-        when no analyzer matches the given :class:`ResourceAttributes` type.
+        Test that running :func:`Resource.analyze` raises AnalyzerNotFoundError when no analyzer matches the given ResourceAttributes type (REQ2.1).
+
+        This test verifies that:
+        - The system properly raises an error when trying to analyze with a non-existent analyzer
         """
         with pytest.raises(NotFoundError):
             await test_case.resource.analyze(DummyAttributes)

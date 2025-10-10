@@ -1,3 +1,13 @@
+"""
+This module tests the unpack and pack functionality of OFRAK resources.
+
+Requirements Mapping:
+- REQ1.6: As an OFRAK user, I want to automatically unpack a binary, so I don't have to manually pick analyzers and unpackers.
+  - test_unpack_pack_unpack: Tests that a resource can be automatically unpacked and packed
+- REQ4.2: As an OFRAK user, I want to be able to repack an unpacked binary so that I can get a binary file that contains modifications.
+  - test_unpack_pack_unpack: Tests that a resource can be repacked after being unpacked
+"""
+
 from gzip import GzipFile as _GzipFile
 
 import pytest
@@ -17,6 +27,14 @@ def test_file(tmpdir):
 
 
 async def test_unpack_pack_unpack(ofrak_context, test_file):
+    """
+    Tests that a resource can be automatically unpacked and packed (REQ1.6).
+
+    This test verifies that:
+    - A resource can be automatically unpacked without manual analyzer/unpacker selection
+    - The resource can be packed after unpacking
+    - The resource can be unpacked again after repacking
+    """
     root_resource = await ofrak_context.create_root_resource_from_file(test_file)
 
     await root_resource.unpack()

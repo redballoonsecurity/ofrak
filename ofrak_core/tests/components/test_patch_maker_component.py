@@ -44,6 +44,15 @@ from ofrak_patch_maker.toolchain.utils import get_repository_config
 from ofrak_type.bit_width import BitWidth
 from ofrak_type.endianness import Endianness
 
+"""
+This module tests the patch maker component which allows users to compile and link source code against specific addresses within a binary.
+
+Requirements Mapping:
+- REQ6.1: As an OFRAK user, I want to be able to compile and link source code against specific addresses within a binary; I should be able to reference internal functions within the binary.
+  - test_function_replacement_modifier: Tests the replacement of functions in a program using compiled source code
+  - test_segment_injector_deletes_patched_descendants: Tests that segment injection properly deletes patched descendants
+"""
+
 PATCH_DIRECTORY = str(Path(__file__).parent / "assets" / "src")
 X86_64_PROGRAM_PATH = str(Path(__file__).parent / "assets" / "hello.out")
 ARM32_PROGRAM_PATH = str(Path(__file__).parent / "assets" / "simple_arm_gcc.o.elf")
@@ -185,6 +194,13 @@ TEST_CASE_CONFIGS = [
 
 @pytest.mark.parametrize("config", TEST_CASE_CONFIGS)
 async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config, tmp_path):
+    """
+    Tests the replacement of functions in a program using compiled source code (REQ6.1).
+
+    This test verifies that:
+    - A function in a program can be replaced with new compiled code
+    - The resulting binary has the expected assembly output
+    """
     root_resource = await ofrak_context.create_root_resource_from_file(config.program.path)
     await root_resource.unpack_recursively()
     target_program = await root_resource.view_as(Program)
@@ -255,6 +271,13 @@ async def test_function_replacement_modifier(ofrak_context: OFRAKContext, config
 
 
 async def test_segment_injector_deletes_patched_descendants(ofrak_context: OFRAKContext):
+    """
+    Tests that segment injection properly deletes patched descendants (REQ6.1).
+
+    This test verifies that:
+    - When a segment is injected, it properly removes the patched descendants
+    - The correct resources are marked for deletion
+    """
     # unpack_recursively an ELF
     root_resource = await ofrak_context.create_root_resource_from_file(ARM32_PROGRAM_PATH)
     await root_resource.unpack_recursively()

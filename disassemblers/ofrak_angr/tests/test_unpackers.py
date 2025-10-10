@@ -19,11 +19,35 @@ from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.core.addressable import Addressable
 
 
+"""
+This module tests the unpacking functionality of OFRAK with Angr disassembler backend.
+
+Requirements Mapping:
+- REQ1.2: As an OFRAK user, I want to receive an abstract binary analysis object, so the interface does not change depending on the analyzer used for complex blocks, basic blocks, symbols, instructions, and the control flow graph.
+  - TestAngrCodeRegionUnpackAndVerify: Tests code region unpacking with Angr backend
+  - TestAngrComplexBlockUnpackAndVerify: Tests complex block unpacking with Angr backend
+- REQ2.3: As an OFRAK user, I want to have parity across different combinations of disassembler backends: all common operations should be able to be performed with any backend combination.
+  - test_basic_block_no_exit: Tests that basic blocks without exit addresses can be unpacked properly
+"""
+
+
 class TestAngrCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
-    pass
+    """Tests code region unpacking with Angr backend (REQ1.2).
+
+    This test verifies that:
+    - Code regions can be successfully unpacked using the Angr disassembler backend
+    - The abstract binary analysis objects are properly created
+    """
 
 
 class TestAngrComplexBlockUnpackAndVerify(ComplexBlockUnpackerUnpackAndVerifyPattern):
+    """
+    Tests complex block unpacking with Angr backend (REQ1.2).
+
+    This test verifies that:
+    - Complex blocks can be successfully unpacked with the Angr backend
+    """
+
     @pytest.fixture
     async def expected_results(self, unpack_verify_test_case: ComplexBlockUnpackerTestCase) -> Dict:
         if unpack_verify_test_case.binary_md5_digest == "cc2de3c0cd2d0ded7543682c2470fcf0":
@@ -142,8 +166,11 @@ async def busybox_resource(ofrak_context: OFRAKContext):
 
 async def test_basic_block_no_exit(ofrak_context: OFRAKContext, busybox_resource):
     """
+    Tests that basic blocks without exit addresses can be unpacked properly (REQ2.3).
     Regression test for https://github.com/redballoonsecurity/ofrak/issues/614
-    Test unpacking a ComplexBlock that contains a BasicBlock which doesn't have an exit address
+
+    This test verifies that:
+    - Complex blocks containing basic blocks without exit addresses can be successfully unpacked
     """
     await busybox_resource.unpack()
 

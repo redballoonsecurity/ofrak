@@ -18,6 +18,28 @@ from ofrak.core.filesystem import (
 from ofrak.resource import Resource
 from pytest_ofrak.patterns.pack_unpack_filesystem import FilesystemPackUnpackVerifyPattern
 
+"""
+This module tests filesystem components including the ability to initialize from disk, flush to disk, and manage filesystem entries.
+
+Requirements Mapping:
+- REQ1.4: As an OFRAK user, I want to unpack a compressed filesystem of known format into a tree-like structure, and export its contents to disk so that it can be examined outside of OFRAK.
+  - test_initialize_from_disk: Tests that FilesystemRoot.initialize_from_disk modifies a resources tree summary.
+  - test_flush_to_disk: Tests that FilesystemRoot.flush_to_disk correctly flushes the filesystem resources.
+  - test_get_entry: Tests that FilesystemRoot.get_entry returns the correct entry.
+  - test_list_dir: Tests that FilesystemRoot.list_dir returns the expected directory contents.
+  - test_add_folder: Tests FilesystemRoot.add_folder functionality.
+  - test_add_file: Tests FilesystemRoot.add_file functionality.
+  - test_remove_file: Tests FilesystemRoot.remove_file functionality.
+  - test_modify_stat_attribute: Tests that FilesytemEntry.modify_stat_attribute modifies the entry's stat attributes.
+  - test_modify_xattr_attribute: Tests that FilesystemEntry.modify_xattr_attribute modifies the entry's xattr attributes.
+  - test_get_entry (Folder): Tests Folder.get_entry method.
+  - test_create_symlinked_file: Tests creation of a text file, a symbolic link to that file, and a symbolic link to the symbolic link.
+  - test_create_symlinked_directory: Tests creation of a directory, a symbolic link to the directory, a file in the directory, and symbolic links to the file both inside and outside the directory.
+  - test_create_symlink_file_cycle: Tests creation of a cycle of symbolic links like: `1 <- 2 <- 3 <- 1`.
+  - test_create_symlink_directory_cycle: Tests creation of a directory, and a symbolic link inside the directory pointing to the directory itself.
+  - test_create_broken_symlink: Tests creation of a link to a file or folder that does not actually exist on the filesystem.
+"""
+
 CHILD_TEXT = "Hello World\n"
 SUBCHILD_TEXT = "Goodbye World\n"
 
@@ -84,7 +106,11 @@ class TestFilesystemRoot:
         self, ofrak_context: OFRAKContext, filesystem_root_directory
     ):
         """
-        Test that FilesystemRoot.initialize_from_disk modifies a resources tree summary.
+        Test that FilesystemRoot.initialize_from_disk modifies a resources tree summary (REQ1.4).
+
+        This test verifies that:
+        - The filesystem root resource is initialized from a disk directory
+        - The tree summary of the resource changes after initialization
         """
         resource = await ofrak_context.create_root_resource(
             name=filesystem_root_directory, data=b"", tags=[FilesystemRoot]
@@ -97,7 +123,11 @@ class TestFilesystemRoot:
 
     async def test_flush_to_disk(self, ofrak_context: OFRAKContext, filesystem_root_directory):
         """
-        Test that FilesystemRoot.flush_to_disk correctly flushes the filesystem resources.
+        Test that FilesystemRoot.flush_to_disk correctly flushes the filesystem resources (REQ1.4).
+
+        This test verifies that:
+        - The filesystem can be flushed to a new directory
+        - The contents of the flush directory match the original filesystem
         """
         resource = await ofrak_context.create_root_resource(
             name=filesystem_root_directory, data=b"", tags=[FilesystemRoot]
@@ -117,14 +147,22 @@ class TestFilesystemRoot:
 
     async def test_get_entry(self, filesystem_root: FilesystemRoot):
         """
-        Test that FilesystemRoot.get_entry returns the correct entry.
+        Test that FilesystemRoot.get_entry returns the correct entry (REQ1.4).
+
+        This test verifies that:
+        - The root filesystem can retrieve a specific entry by name
+        - The retrieved entry has the expected name
         """
         entry = await filesystem_root.get_entry(CHILD_TEXTFILE_NAME)
         assert entry.name == CHILD_TEXTFILE_NAME
 
     async def test_list_dir(self, filesystem_root: FilesystemRoot):
         """
-        Test that FilesystemRoot.list_dir returns the expected directory contents.
+        Test that FilesystemRoot.list_dir returns the expected directory contents (REQ1.4).
+
+        This test verifies that:
+        - The root filesystem can list its top-level directory contents
+        - The returned entries match the expected set of names
         """
         list_dir_output = await filesystem_root.list_dir()
         expected = {CHILD_FOLDER, CHILD_TEXTFILE_NAME}
@@ -134,7 +172,11 @@ class TestFilesystemRoot:
 
     async def test_add_folder(self, filesystem_root: FilesystemRoot, tmp_path):
         """
-        Test FilesystemRoot.add_folder functionality.
+        Test FilesystemRoot.add_folder functionality (REQ1.4).
+
+        This test verifies that:
+        - A new folder can be added to the filesystem root
+        - The added folder appears in the directory listing
         """
         new_folder_name = "new_folder"
         tmp_dir = tmp_path / new_folder_name
@@ -149,7 +191,11 @@ class TestFilesystemRoot:
 
     async def test_add_file(self, filesystem_root: FilesystemRoot, tmp_path):
         """
-        Test FilesystemRoot.add_file functionality.
+        Test FilesystemRoot.add_file functionality (REQ1.4).
+
+        This test verifies that:
+        - A new file can be added to the filesystem root
+        - The added file appears in the directory listing
         """
         new_file_name = "new_file"
         new_file_bytes = b"New file"
@@ -165,7 +211,11 @@ class TestFilesystemRoot:
 
     async def test_remove_file(self, filesystem_root: FilesystemRoot):
         """
-        Test FilesystemRoot.remove_file functionality.
+        Test FilesystemRoot.remove_file functionality (REQ1.4).
+
+        This test verifies that:
+        - An existing file can be removed from the filesystem root
+        - The removed file no longer appears in the directory listing
         """
         list_dir_output = await filesystem_root.list_dir()
         assert CHILD_TEXTFILE_NAME in list_dir_output
@@ -183,7 +233,11 @@ class TestFilesystemEntry:
 
     async def test_modify_stat_attribute(self, filesystem_root: FilesystemRoot):
         """
-        Test that FilesytemEntry.modify_stat_attribute modifies the entry's stat attributes.
+        Test that FilesytemEntry.modify_stat_attribute modifies the entry's stat attributes (REQ1.4).
+
+        This test verifies that:
+        - A filesystem entry's stat attributes can be modified
+        - The modification is reflected in the entry's stat information
         """
         child_textfile = await filesystem_root.get_entry(CHILD_TEXTFILE_NAME)
         new_stat_mode = 0o100755
@@ -193,7 +247,11 @@ class TestFilesystemEntry:
 
     async def test_modify_xattr_attribute(self, filesystem_root: FilesystemRoot):
         """
-        Test that FilesystemEntry.modify_xattr_attribute modifies the entry's xattr attributes.
+        Test that FilesystemEntry.modify_xattr_attribute modifies the entry's xattr attributes (REQ1.4).
+
+        This test verifies that:
+        - A filesystem entry's extended attributes can be modified
+        - The modification is reflected in the entry's xattrs information
         """
         child_textfile = await filesystem_root.get_entry(CHILD_TEXTFILE_NAME)
         assert child_textfile.xattrs == {}
@@ -204,7 +262,11 @@ class TestFilesystemEntry:
 class TestFolder:
     async def test_get_entry(self, filesystem_root: FilesystemRoot):
         """
-        Test Folder.get_entry method.
+        Test Folder.get_entry method (REQ1.4).
+
+        This test verifies that:
+        - A folder can retrieve its child entries by name
+        - The retrieval works for both existing and non-existent entries
         """
         folder_entry = await filesystem_root.get_entry(CHILD_FOLDER)
         folder = await folder_entry.resource.view_as(Folder)
