@@ -208,8 +208,6 @@ class PyGhidraDecompilationAnalyzer(CachedDecompilationAnalyzer):
     against disassembly.
     """
 
-    id = b"PyGhidraDecompilationAnalyzer"
-
     targets = (ComplexBlock,)
     outputs = (DecompilationAnalysis,)
 
