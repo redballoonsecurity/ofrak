@@ -31,6 +31,25 @@ class RunScriptModifier(Modifier[RunScriptModifierConfig]):
     helper functions and the like. Since this can be run through the GUI, it can be used to
     automate tasks which might be repetitive or impossible purely through the graphical interface.
 
+    Function Requirements:
+        The provided code must define an async function (specified by `function_name` in the config)
+        that accepts `ofrak_context` and `root_resource` as keyword arguments. The function can be
+        defined in either global or local scope within the executed code.
+
+        Example:
+            ```python
+            async def main(ofrak_context, root_resource, **kwargs):
+                # Your code here
+                pass
+            ```
+
+    Execution Mechanism:
+        1. The provided code string is executed using `exec()` in a new namespace
+        2. The specified function (by `function_name`) is located in either the global or local scope
+        3. The function is called using `await` with the following kwargs:
+           - `ofrak_context`: The current OFRAK context
+           - `root_resource`: The resource being modified
+           - Any additional kwargs provided via `config.extra_args`
     """
 
     targets = ()
