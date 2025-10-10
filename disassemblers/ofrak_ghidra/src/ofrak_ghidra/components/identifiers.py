@@ -10,8 +10,8 @@ _GHIDRA_AUTO_LOADABLE_FORMATS = [Elf, Ihex, Pe]
 
 class GhidraAnalysisIdentifier(Identifier):
     """
-    Component to identify resources to analyze with Ghidra. If this component is discovered,
-    it will tag all [Program][ofrak.core.program.Program]s as GhidraProjects
+    Tags Program resources for Ghidra analysis. Auto-loadable formats (ELF, PE, Ihex) get GhidraAutoLoadProject tag,
+    others get GhidraCustomLoadProject. Enables Ghidra-based components to run on the resource.
     """
 
     id = b"GhidraAnalysisIdentifier"

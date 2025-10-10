@@ -139,9 +139,12 @@ RawMagicPattern.register(OpenWrtTrx, match_openwrt_magic)
 ####################
 class OpenWrtTrxUnpacker(Unpacker[None]):
     """
-    Unpack an OpenWrtTrx firmware file into its partitions.
-
-    The header has a mapped data range, whereas all partitions are unmapped data.
+    Extracts firmware partitions from OpenWrt TRX (TRX firmware) format files, which package
+    multiple firmware components (bootloader, kernel, root filesystem) with a header containing
+    offsets and checksums. The TRX format is widely used in router firmware. Use when analyzing
+    router firmware, examining individual partitions like the Linux kernel or SquashFS root
+    filesystem, or preparing to modify and repackage router firmware. The header is extracted as a
+    mapped resource while partitions are extracted as separate unmapped children.
     """
 
     id = b"OpenWrtTrxUnpacker"
@@ -195,7 +198,11 @@ class OpenWrtTrxUnpacker(Unpacker[None]):
 #####################
 class OpenWrtTrxHeaderAttributesAnalyzer(Analyzer[None, OpenWrtTrxHeader]):
     """
-    Analyze the OpenWrtTrxHeader of a OpenWrtTrx firmware file.
+    Parses OpenWrt TRX firmware header to extract magic number (0x30524448), total firmware length,
+    CRC32 checksum for integrity verification, firmware flags, and partition offsets pointing to the
+    bootloader, kernel, and root filesystem locations. Use to understand TRX firmware structure,
+    validate firmware integrity via CRC, locate specific partitions for extraction, or prepare for
+    firmware modification. Essential for analyzing router firmware before making changes.
     """
 
     targets = (OpenWrtTrxHeader,)
@@ -268,7 +275,12 @@ class OpenWrtTrxHeaderModifierConfig(ComponentConfig):
 
 class OpenWrtTrxHeaderModifier(Modifier[OpenWrtTrxHeaderModifierConfig]):
     """
-    Modify a OpenWrtTrxHeader according to a given modifier config.
+    Modifies OpenWrt TRX firmware header fields including firmware length, CRC32 checksum, flags,
+    and partition offsets, then recalculates the CRC to maintain header validity. The TRX header
+    must be valid for bootloaders to accept the firmware. Use when adjusting TRX structure after
+    partition modifications, updating partition offsets after resizing, changing firmware
+    configuration flags, fixing header corruption, or ensuring header integrity after modifications.
+    Critical for creating valid modified router firmware that will boot correctly.
     """
 
     targets = (OpenWrtTrxHeader,)
@@ -318,10 +330,11 @@ class OpenWrtTrxHeaderModifier(Modifier[OpenWrtTrxHeaderModifierConfig]):
 ####################
 class OpenWrtTrxPacker(Packer[None]):
     """
-    Pack an OpenWrtTrx firmware file.
-
-    It consolidates the OpenWrtTrxHeader and all partition instances into a single binary, updating
-    the CRC checksum, data size, and partition offsets in the header.
+    Repackages OpenWrt TRX firmware partitions with an updated header containing recalculated CRC32
+    checksums, partition offsets, and total length. The TRX format requires accurate checksums for
+    bootloaders to accept the firmware. Use after modifying TRX firmware partitions (kernel,
+    filesystem) to create a valid firmware image for flashing to routers. Critical for ensuring
+    modified router firmware will boot correctly.
     """
 
     id = b"OpenWrtTrxPacker"

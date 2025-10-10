@@ -33,6 +33,12 @@ class AngrAnalyzerConfig(ComponentConfig):
 
 
 class AngrAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
+    """
+    Runs angr's automated binary analysis engine to build control flow graphs (CFG), identify functions, and analyze
+    program structure. Use for initial comprehensive analysis of binaries with angr. Configurable CFG analyzer and
+    post-analysis hooks. Creates AngrAnalysis state for other angr components to use.
+    """
+
     id = b"AngrAnalyzer"
     targets = (AngrAnalysisResource,)
     outputs = (AngrAnalysis,)
@@ -76,6 +82,12 @@ class AngrAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
 
 
 class AngrCodeRegionModifier(Modifier):
+    """
+    Adjusts CodeRegion virtual addresses to account for position-independent executables (PIE) using angr's loader.
+    Automatically detects PIE binaries (currently supports ELF) and fixes addresses relative to angr's base address.
+    Used internally by angr unpacking workflow.
+    """
+
     id = b"AngrCodeRegionModifier"
     targets = (CodeRegion,)
 

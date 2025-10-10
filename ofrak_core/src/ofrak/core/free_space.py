@@ -52,6 +52,13 @@ class RuntimeFreeSpace(AnyFreeSpace):
 
 @dataclass
 class FreeSpaceAllocation(ComponentConfig):
+    """
+    Config for allocating free space with specific permissions.
+
+    :var permissions: Fully qualified MemoryPermissions enum (e.g., ofrak_type.memory_permissions.MemoryPermissions.RX)
+    :var allocations: List of memory ranges to allocate from free space
+    """
+
     permissions: MemoryPermissions
     allocations: List[Range]
 
@@ -536,7 +543,7 @@ class FreeSpaceModifierConfig(ComponentConfig):
     """
     Configuration for modifier which marks some free space.
 
-    :var permissions: Memory permissions to give the created free space.
+    :var permissions: Fully qualified MemoryPermissions enum (e.g., ofrak_type.memory_permissions.MemoryPermissions.RX)
     :var stub: Bytes for a stub to be injected before the free space. The stub will not be marked as
       [FreeSpace][ofrak.core.free_space.FreeSpace].
     :var fill: Pattern of bytes to fill the free space with.
@@ -632,7 +639,9 @@ class FreeSpaceModifier(Modifier[FreeSpaceModifierConfig]):
 @dataclass
 class PartialFreeSpaceModifierConfig(ComponentConfig):
     """
-    :var permissions: memory permissions to give the created free space.
+    Config for marking partial ranges as free space.
+
+    :var permissions: Fully qualified MemoryPermissions enum (e.g., ofrak_type.memory_permissions.MemoryPermissions.RX)
     :var range_to_remove: The ranges to consider as free space (remove).
     :var stub: Bytes for a stub to be injected before the free space. If a stub is specified, then the FreeSpace created
       will decrease in size. For example, with a stub of b"HA" and range_to_remove=Range(4,10), the final FreeSpace will
