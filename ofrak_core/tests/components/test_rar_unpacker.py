@@ -1,3 +1,6 @@
+"""
+This module tests the RAR unpacker component.
+"""
 import os.path
 from dataclasses import dataclass
 from typing import Dict
@@ -28,6 +31,14 @@ RAR_UNPACKER_TEST_CASES = [
 
 @pytest.mark.skipif_missing_deps([RarUnpacker])
 class TestRarUnpackAndVerify(UnpackAndVerifyPattern):
+    """
+    This test verifies that the RAR unpacker correctly extracts files from a RAR archive.
+
+    This test verifies that:
+    - The RAR unpacker can successfully unpack a RAR archive
+    - The extracted files match the expected content
+    """
+
     @pytest.fixture(params=RAR_UNPACKER_TEST_CASES, ids=lambda tc: tc.label)
     async def unpack_verify_test_case(self, request) -> RarUnpackerTestCase:
         return request.param

@@ -1,3 +1,6 @@
+"""
+This module tests the unpacking functionality of OFRAK Binary Ninja component.
+"""
 from typing import Dict
 
 import pytest

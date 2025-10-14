@@ -1,3 +1,7 @@
+"""
+This module tests the MagicAnalyzer component's functionality in analyzing and identifying
+binary data types using magic bytes signatures.
+"""
 from dataclasses import dataclass
 
 import pytest

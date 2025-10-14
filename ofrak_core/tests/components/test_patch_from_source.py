@@ -1,3 +1,10 @@
+"""
+This module tests the patch from source functionality in OFRAK.
+
+Requirements Mapping:
+- REQ6.2:
+  - test_patch_from_source_modifier: Tests patching a binary from source code by adding a new segment and injecting compiled code
+"""
 import os
 import pytest
 import subprocess
@@ -45,6 +52,15 @@ async def test_patch_from_source_modifier(
     large_elf_file,
     patch_file,
 ) -> None:
+    """
+    Tests the patch from source modifier functionality (REQ6.2).
+
+    This test verifies that:
+    - A new memory segment can be added to an ELF binary
+    - Source code can be compiled and injected into the binary
+    - The patched binary can be executed successfully
+    """
+
     async def add_and_return_segment(resource: Resource, vaddr: int, size: int) -> ElfProgramHeader:
         """Add a segment to `elf_resource`, of size `size` at virtual address `vaddr`,
         returning this new segment resource after unpacking."""

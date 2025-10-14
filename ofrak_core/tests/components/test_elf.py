@@ -1,3 +1,6 @@
+"""
+This module tests the functionality of the Elf component.
+"""
 import os
 
 import pytest
@@ -31,6 +34,9 @@ from ofrak_type.range import Range
 def test_get_memory_permissions(memory_permissions: MemoryPermissions):
     """
     Test that ElfProgramHeader.get_memory_permissions returns the correct value.
+
+    This test verifies that:
+    - The get_memory_permissions method correctly interprets the memory permissions value
     """
     elf_program_header = ElfProgramHeader(0, 0, 0, 0, 0, 0, 0, memory_permissions.value, 0)
     assert elf_program_header.get_memory_permissions() == memory_permissions
@@ -60,6 +66,11 @@ async def test_elf_section_headers(elf_o_resource: Resource):
 async def test_elf_symbols(elf_o_resource: Resource):
     """
     Test Elf.get_symbol_section, ElfSymbol APIs.
+
+    This test verifies that:
+    - The symbol section can be retrieved from the ELF
+    - Symbol properties such as binding, type, and visibility are correctly identified
+    - Section indices for symbols are properly handled
     """
     await elf_o_resource.unpack()
     elf = await elf_o_resource.view_as(Elf)
@@ -79,6 +90,9 @@ async def test_elf_sections(elf_o_resource: Resource):
     """
     Test that ElfSections returned from Elf.get_sections match corresponding sections returned by
     Elf.{get_sections, get_section_by_index, get_section_by_name}.
+
+    This test verifies that:
+    - Sections retrieved via different methods are consistent with each other
     """
     await elf_o_resource.unpack()
     elf = await elf_o_resource.view_as(Elf)
@@ -125,6 +139,9 @@ async def elf_no_sections(ofrak_context: OFRAKContext) -> Resource:
 async def test_elf_segments(elf_no_sections: Resource):
     """
     Test that Elf.get_segments returns ElfSegments.
+
+    This test verifies that:
+    - Segments retrieved from ELF are correctly identified as ElfSegment instances
     """
     await elf_no_sections.unpack()
     elf = await elf_no_sections.view_as(Elf)
@@ -145,6 +162,9 @@ async def elf_permstest(
 async def test_elf_perms_header_analysis(elf_permstest: Resource):
     """
     Test getting memory permissions for all flag combinations
+
+    This test verifies that:
+    - Memory permissions can be correctly extracted from program headers with various flag combinations
     """
     await elf_permstest.unpack()
     elf = await elf_permstest.view_as(Elf)

@@ -1,3 +1,6 @@
+"""
+This module tests the serialization functionality for Angr analysis data.
+"""
 import pytest
 from angr import Project
 
@@ -16,6 +19,13 @@ def serializer():
 async def test_angr_project_serializer(
     ofrak_context: OFRAKContext, hello_elf: bytes, serializer: SerializerInterface
 ):
+    """
+    Tests the serialization behavior of Angr Project objects within the OFRAK framework.
+
+    This test verifies that:
+    - Angr Project objects cannot be serialized to JSON format
+    - Attempting to deserialize a null serialized Project object raises NotImplementedError
+    """
     root = await ofrak_context.create_root_resource("hello_world", hello_elf, (File,))
     await root.identify()
     angr_analysis = await root.analyze(AngrAnalysis)

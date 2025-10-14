@@ -1,3 +1,7 @@
+"""
+This module tests the various example scripts in the examples directory to ensure they
+function correctly and produce expected outputs.
+"""
 import os
 import subprocess
 
@@ -38,6 +42,10 @@ def make_program_kitteh(move_to_test_directory):
 def test_example_1(tmp_path):
     """
     Test that the executable built by ex1_simple_string_modification.py prints "Meow!" to stdout.
+
+    This test verifies that:
+    - The example script creates an executable file
+    - The executable produces expected stdout output
     """
     file = tmp_path / "example_1.out"
     command = ["python3", "ex1_simple_string_modification.py", "--output-file-name", str(file)]
@@ -51,6 +59,10 @@ def test_example_2(tmp_path):
     """
     Test that the executable built by ex2_simple_code_modification.py prints "Hello, World!" in an
     infinite loop.
+
+    This test verifies that:
+    - The example script creates an executable file
+    - The executable runs for a short time and produces repeated output
     """
     file = tmp_path / "example_2.out"
     command = ["python3", "ex2_simple_code_modification.py", "--output-file-name", str(file)]
@@ -67,6 +79,10 @@ def test_example_3(tmp_path):
     """
     Test that the executable built by ex3_binary_format_modification.py results in a Segmentation
     fault.
+
+    This test verifies that:
+    - The example script creates an executable file
+    - The executable crashes with a segmentation fault
     """
     file = tmp_path / "example_3.out"
     command = ["python3", "ex3_binary_format_modification.py", "--output-file-name", str(file)]
@@ -82,6 +98,12 @@ def test_example_4(tmp_path):
      * string
      * permissions
      * xattrs
+
+    This test verifies that:
+    - The example script creates a squashfs filesystem that can be unpacked
+    - The unpacked files have correct permissions
+    - The unpacked files have correct extended attributes
+    - The unpacked executable produces expected output
     """
     file = tmp_path / "example_4.out"
     command = ["python3", "ex4_filesystem_modification.py", "--output-file-name", str(file)]
@@ -100,6 +122,10 @@ def test_example_4(tmp_path):
 def test_example_5(tmp_path):
     """
     Test the the executable built by ex5_binary_extension.py prints seven kitteh.
+
+    This test verifies that:
+    - The example script creates an executable file
+    - The executable produces expected stdout output
     """
     file = tmp_path / "example_5.out"
     command = ["python3", "ex5_binary_extension.py", "--output-file-name", str(file)]
@@ -113,6 +139,10 @@ def test_example_6(tmp_path):
     """
     Test that the executable built by ex6_code_modification_without_extension.py prints kitteh and
     not Hello, World!
+
+    This test verifies that:
+    - The example script creates an executable file
+    - The executable produces expected stdout output
     """
     file = tmp_path / "example_6.out"
     command = [
@@ -131,6 +161,10 @@ def test_example_7(tmp_path):
     """
     Test that the executable built by ex7_code_insertion_with_extension.py prints capital
     "HELLO, WORLD!".
+
+    This test verifies that:
+    - The example script creates an executable file
+    - The executable produces expected stdout output
     """
     file = tmp_path / "example_7.out"
     command = ["python3", "ex7_code_insertion_with_extension.py", "--output-file-name", str(file)]
@@ -144,6 +178,12 @@ def test_example_8(tmp_path):
     """
     Test that the archive built by ex8_recursive_unpacking.py contains the expected file, and that
     the file contains the expected contents
+
+    This test verifies that:
+    - The example script creates a tar.gz archive
+    - The archive can be successfully unpacked
+    - The inner archive is correctly extracted
+    - The inner file has correct content
     """
     file = tmp_path / "example_8.tar.gz"
     command = ["python3", "ex8_recursive_unpacking.py", "--output-file-name", str(file)]
@@ -167,6 +207,11 @@ def test_example_8(tmp_path):
 def test_example_9(tmp_path):
     """
     Test that the modified flash dump contains the inserted string and matches the right md5sum
+
+    This test verifies that:
+    - The example script creates a modified flash dump
+    - The flash dump contains the expected inserted string
+    - The flash dump has the expected md5 checksum
     """
     file = tmp_path / "repacked_flash_dump.bin"
     command = ["python3", "ex9_flash_modification.py", "--output-file", str(file)]

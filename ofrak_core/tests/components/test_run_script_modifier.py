@@ -1,7 +1,20 @@
+"""
+This module tests the RunScriptModifier component by verifying its ability to execute Python scripts
+within the OFRAK framework and modify resources accordingly.
+"""
 from ofrak.core import *
 
 
 async def test_run_script_modifier(ofrak_context, hello_elf):
+    """
+    This test verifies that the RunScriptModifier can successfully execute Python scripts
+    and apply modifications to resources, ensuring consistency between different execution paths.
+
+    This test verifies that:
+    - The RunScriptModifier can unpack a resource and apply changes via script execution
+    - The modifications applied by the script are consistent with manual operations
+    - The script can accept and utilize additional arguments for customization
+    """
     root_1 = await ofrak_context.create_root_resource("root_1", hello_elf, (Elf,))
     root_2 = await ofrak_context.create_root_resource("root_2", hello_elf, (Elf,))
 

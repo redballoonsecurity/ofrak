@@ -1,3 +1,6 @@
+"""
+This module tests the entropy analysis component functionality.
+"""
 import os.path
 
 import pytest
@@ -26,8 +29,13 @@ TEST_FILES = [
 )
 async def test_analyzer(ofrak_context: OFRAKContext, test_file_path):
     """
-    Only test on small files for two reasons:
+    Test that the entropy analyzer produces consistent results between Python and C implementations.
 
+    This test verifies that:
+    - The C and Python entropy implementations produce nearly identical results for test files
+    - The entropy analysis component correctly computes entropy samples for resources
+
+    Only test on small files for two reasons:
     1. The sampling of large files may lead to spurious test failures.
     2. The reference method is *extremely* slow for even moderately sized files.
     """

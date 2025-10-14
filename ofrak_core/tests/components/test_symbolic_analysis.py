@@ -1,3 +1,7 @@
+"""
+This module tests the symbolic analysis capabilities of OFRAK, specifically focusing
+on symbol resolution and type identification in ELF binaries.
+"""
 import subprocess
 from typing import Tuple, Dict
 
@@ -103,6 +107,15 @@ async def test_complex_block_symbolic_analysis(
     unstripped_elf_resource: Resource,
     expected_symbols: Dict[str, Tuple[int, ElfSymbolType]],
 ):
+    """
+    This test verifies that the symbolic analysis component correctly identifies and analyzes
+    function symbols in an ELF binary.
+
+    This test verifies that:
+    - The ELF binary is properly unpacked
+    - Function symbols are correctly identified and their virtual addresses are accurately determined
+    - Symbol types are correctly inferred based on the section they belong to
+    """
     await unstripped_elf_resource.unpack_recursively(do_not_unpack=(ElfSymbolSection,))
     analyzed_syms = await unstripped_elf_resource.get_descendants_as_view(
         LinkableSymbol,

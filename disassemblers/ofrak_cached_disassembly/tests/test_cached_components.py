@@ -1,3 +1,9 @@
+"""
+This module tests components related to cached disassembly functionality,
+including the CachedAnalysisAnalyzer, CachedProgramUnpacker, and their interactions
+with code regions, complex blocks, and decompilation.
+"""
+
 import os
 from typing import Dict, Tuple
 import pytest
@@ -43,6 +49,14 @@ def pyghidra_components(ofrak_injector):
 
 
 class TestGhidraCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
+    """
+    Test unpacking of code regions using cached analysis.
+
+    This test verifies that:
+    - Code regions are correctly unpacked from cached analysis
+    - The unpacked regions match expected test case specifications
+    """
+
     @pytest.fixture
     async def root_resource(
         self,
@@ -64,6 +78,15 @@ class TestGhidraCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
 
 
 class TestCachedComplexBlockUnpackAndVerify(ComplexBlockUnpackerUnpackAndVerifyPattern):
+    """
+    Test unpacking of complex blocks using cached analysis.
+
+    This test verifies that:
+    - Complex blocks are correctly unpacked from cached analysis
+    - PIE base address adjustments work correctly when needed
+    - Optional results are properly handled in complex block unpacking
+    """
+
     @pytest.fixture
     async def root_resource(
         self,
@@ -107,6 +130,14 @@ class TestCachedComplexBlockUnpackAndVerify(ComplexBlockUnpackerUnpackAndVerifyP
 
 
 class TestGhidraBasicBlockUnpackAndVerify(BasicBlockUnpackerUnpackAndVerifyPattern):
+    """
+    Test unpacking of basic blocks using cached analysis.
+
+    This test verifies that:
+    - Basic blocks are correctly unpacked from cached analysis
+    - The unpacked blocks match expected test case specifications
+    """
+
     @pytest.fixture
     async def root_resource(
         self,
@@ -149,7 +180,11 @@ async def test_case(
 
 async def test_instruction_mode(test_case: Tuple[Resource, InstructionSetMode]):
     """
-    Test unpacking instructions with different instructions sets
+    Test unpacking instructions with different instruction set modes.
+
+    This test verifies that:
+    - Instructions can be unpacked using different instruction set modes
+    - At least one instruction in the unpacked resource matches the expected mode
     """
     root_resource, mode = test_case
     await root_resource.unpack_recursively()
@@ -168,6 +203,14 @@ async def test_instruction_mode(test_case: Tuple[Resource, InstructionSetMode]):
 
 
 async def test_cached_decompilation(ofrak_context: OFRAKContext):
+    """
+    Test decompilation functionality with cached analysis.
+
+    This test verifies that:
+    - Decompilation analysis can be retrieved from cached analysis
+    - Complex blocks are properly decompiled with non-empty results
+    - The decompilation results contain expected keywords like 'main' and 'print'
+    """
     root_resource = await ofrak_context.create_root_resource_from_file(
         os.path.join(ASSETS_DIR, "hello.x64.elf")
     )
@@ -205,7 +248,11 @@ async def test_cached_decompilation(ofrak_context: OFRAKContext):
 
 def test_id_exists(ofrak_context: OFRAKContext):
     """
-    Add a cached analysis to the store and check that the id exists within the store
+    Test checking existence of analysis IDs in the CachedAnalysisStore.
+
+    This test verifies that:
+    - Storing analysis data in the cache works correctly
+    - The cache properly tracks stored resource IDs
     """
     cached_store = CachedAnalysisStore()
     cached_store.store_analysis(b"1234", {"test": "store"})
@@ -214,7 +261,11 @@ def test_id_exists(ofrak_context: OFRAKContext):
 
 async def test_cached_program_unpacker(pyghidra_components, ofrak_context: OFRAKContext):
     """
-    Test that the CachedProgramUnpacker unpacks a resource into CodeRegions
+    Test functionality of the CachedProgramUnpacker component.
+
+    This test verifies that:
+    - A resource can be unpacked into CodeRegions using cached analysis
+    - At least one CodeRegion is created during unpacking
     """
     root_resource = await ofrak_context.create_root_resource_from_file(
         os.path.join(ASSETS_DIR, "hello.x64.elf")
@@ -237,6 +288,13 @@ async def test_cached_program_unpacker(pyghidra_components, ofrak_context: OFRAK
 
 
 async def test_load_cached_analysis(ofrak_context: OFRAKContext):
+    """
+    Test loading and validating cached analysis data.
+
+    This test verifies that:
+    - Cached analysis data can be loaded from JSON files
+    - The analysis metadata and function decompilation status are correctly stored
+    """
     root_resource = await ofrak_context.create_root_resource_from_file(
         os.path.join(ASSETS_DIR, "hello.x64.elf")
     )

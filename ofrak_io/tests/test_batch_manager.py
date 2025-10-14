@@ -1,3 +1,6 @@
+"""
+This module tests the batch manager functionality.
+"""
 import asyncio
 import random
 from dataclasses import dataclass
@@ -66,6 +69,13 @@ def bad_batch_manager(counter):
 
 
 async def test_single_result(batch_manager, counter):
+    """
+    This test verifies that a single request is handled correctly by the batch manager.
+
+    This test verifies that:
+    - A single string request is processed and returns the correct result
+    - The batch manager properly tracks the number of batches handled
+    """
     test_string = "OFRAk is awesome"
     res = await batch_manager.get_result(test_string)
     assert res == len(test_string)
@@ -73,11 +83,24 @@ async def test_single_result(batch_manager, counter):
 
 
 async def test_many_results(batch_manager, many_strings, counter):
+    """
+    This test verifies that multiple requests are handled efficiently by the batch manager.
+
+    This test verifies that:
+    - Multiple string requests are processed in a single batch
+    - The batch manager correctly tracks batch handling for multiple requests
+    """
     await asyncio.gather(*[batch_manager.get_result(s) for s in many_strings])
     assert counter.count == 1
 
 
 async def test_incomplete_handling_raises_err(bad_batch_manager):
+    """
+    This test verifies that the batch manager properly raises an error when not all requests are handled.
+
+    This test verifies that:
+    - A NotAllRequestsHandledError is raised when some requests are not processed
+    """
     test_string = "OFRAk is awesome"
     with pytest.raises(NotAllRequestsHandledError):
         _ = await bad_batch_manager.get_result(test_string)

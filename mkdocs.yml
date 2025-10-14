@@ -97,6 +97,7 @@ nav:
         - Components Using External Tools: "contributor-guide/component/external_tools.md"
         - Ghidra Components: "contributor-guide/component/ghidra_components.md"
       - ResourceView: "contributor-guide/core/resource_view.md"
+      - OFRAK Requirements: "contributor-guide/ofrak_requirements.md"
   # Built by gen-files and literate-nav
   - Code Reference: reference/
   - License: "license.md"

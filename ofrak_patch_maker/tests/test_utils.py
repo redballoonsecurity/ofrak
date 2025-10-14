@@ -1,3 +1,7 @@
+"""
+This module tests the utility functions related to toolchain operations,
+specifically the generation of ARM stubs.
+"""
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Tuple, Mapping
@@ -33,6 +37,10 @@ class GenerateArmStubsTestCase:
 def test_generate_arm_stubs(test_case: GenerateArmStubsTestCase, tmp_path):
     """
     Test that generate_arm_stubs correctly generates stubs with the correct segments.
+
+    This test verifies that:
+    - The function generates the correct number of stub files
+    - Each generated stub file has the expected segment configuration
     """
     stubs = generate_arm_stubs(test_case.func_names, str(tmp_path), test_case.thumb)
     assert len(stubs) == len(test_case.func_names)

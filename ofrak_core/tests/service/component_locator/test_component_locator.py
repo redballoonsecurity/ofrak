@@ -1,3 +1,9 @@
+"""
+This module tests the ComponentLocator service's ability to register, filter, and retrieve components
+based on type, target, output, and priority selection rules. It validates error handling,
+component resolution logic, and module priority conflicts.
+"""
+
 from dataclasses import dataclass
 from typing import Type, Optional, Iterable, Tuple
 
@@ -108,6 +114,15 @@ def components_for_testing(
 
 
 def test_add_components(component_locator, components_for_testing):
+    """
+    Component registration with validation rules.
+
+    This test verifies that:
+    - Valid components are successfully registered
+    - Duplicate components raise InvalidComponentError
+    - Components not inheriting from proper base classes raise InvalidComponentError
+    - Components missing required targets/outputs raise TypeError
+    """
     component_locator.add_components(components_for_testing)
 
     with pytest.raises(InvalidComponentError):
@@ -176,6 +191,13 @@ GET_BY_TYPE_TEST_CASES = [
 
 @pytest.mark.parametrize("test_case", GET_BY_TYPE_TEST_CASES, ids=lambda t: t.label)
 def test_get_by_type(populated_component_locator, test_case: GetByTypeTestCase):
+    """
+    Component retrieval by interface type with error handling.
+
+    This test verifies that:
+    - Valid interface implementations are successfully retrieved
+    - Missing interface implementations raise NotFoundError
+    """
     test_case.run_test(populated_component_locator)
 
 
@@ -341,15 +363,35 @@ GET_COMPONENTS_TEST_CASES = [
 def test_get_components_matching_filter(
     populated_component_locator, test_case: GetComponentMatchingFiltersTestCase
 ):
+    """
+    Component selection using complex filter combinations.
+
+    This test verifies that:
+    - Components are correctly selected based on filter criteria
+    - Filter logic handles AND/OR/NOT operations properly
+    - Priority-based selection works as expected
+    """
     test_case.run_test(populated_component_locator)
 
 
 def test_no_module_priority(populated_component_locator):
+    """
+    Module priority validation when components have same ID.
+
+    This test verifies that:
+    - Components with same ID from different modules raise InvalidComponentError when no priority is specified
+    """
     with pytest.raises(InvalidComponentError):
         populated_component_locator.add_components([AlternativeTargetsRROutputsD()])
 
 
 def test_module_1_has_priority(populated_component_locator):
+    """
+    Module priority resolution when module 1 has priority.
+
+    This test verifies that:
+    - The right component (from module 1) is selected when its module has priority
+    """
     populated_component_locator.add_components(
         [AlternativeTargetsRROutputsD()], [mock_library2, mock_library]
     )
@@ -359,6 +401,12 @@ def test_module_1_has_priority(populated_component_locator):
 
 
 def test_module_2_has_priority(populated_component_locator):
+    """
+    Module priority resolution when module 2 has priority.
+
+    This test verifies that:
+    - The right component (from module 2) is selected when its module has priority
+    """
     populated_component_locator.add_components(
         [AlternativeTargetsRROutputsD()], [mock_library, mock_library2]
     )

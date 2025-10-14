@@ -1,3 +1,6 @@
+"""
+This module tests the M68K (Motorola 68000) toolchain implementation in the patch maker (GNU and VBCC).
+"""
 import os
 import tempfile
 
@@ -91,6 +94,15 @@ def test_relocatable(toolchain_under_test: ToolchainUnderTest, tmp_path):
 
 
 def test_m68k_alignment(toolchain_under_test: ToolchainUnderTest):
+    """
+    Tests that M68K assembly patches are correctly aligned at odd memory addresses.
+
+    This test verifies that:
+    - The toolchain respects M68K alignment requirements when placing code at specific addresses
+    - Assembly patches can be correctly compiled and placed at odd-aligned memory locations
+    - Generated executables have the correct instruction encoding at the specified address
+    - Code segments maintain the expected virtual address and length properties
+    """
     tc_config = ToolchainConfig(
         file_format=BinFileType.ELF,
         force_inlines=True,

@@ -1,3 +1,6 @@
+"""
+This module tests the functionality of the UBIFS filesystem component.
+"""
 import subprocess
 import tempfile312 as tempfile
 
@@ -8,11 +11,19 @@ from ofrak.core.ubifs import UbifsPacker, UbifsUnpacker
 from ofrak.resource import Resource
 from pytest_ofrak.patterns.pack_unpack_filesystem import FilesystemPackUnpackVerifyPattern
 
-# from pytest_ofrak.patterns.unpack_modify_pack import UnpackPackPattern
-
 
 @pytest.mark.skipif_missing_deps([UbifsUnpacker, UbifsPacker])
 class TestUbifsUnpackRepack(FilesystemPackUnpackVerifyPattern):
+    """
+    This test verifies that UBIFS filesystems can be properly unpacked and repacked.
+
+    This test verifies that:
+    - A UBIFS image can be created from a directory of files
+    - The UBIFS image can be unpacked into its constituent files
+    - The unpacked files can be repacked back into a valid UBIFS image
+    - The repacked image produces the same file structure as the original
+    """
+
     def setup(self):
         super().setup()
         # Don't compare stat values since several entries (like time modified and inode number) will be unequal

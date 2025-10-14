@@ -1,3 +1,7 @@
+"""
+This module tests the Device Tree Blob (DTB) component's ability to unpack, modify, and pack
+DTB files while maintaining integrity.
+"""
 import os
 
 import fdt
@@ -12,6 +16,16 @@ from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 
 
 class TestDeviceTreeBlobUnpackPackIdentity(UnpackModifyPackPattern):
+    """
+    This test verifies that a DTB file can be unpacked and repacked without any modifications,
+    ensuring the output is identical to the input.
+
+    This test verifies that:
+    - The DTB can be unpacked successfully
+    - The DTB can be packed successfully after unpacking
+    - The repacked DTB is byte-for-byte identical to the original
+    """
+
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         dtb_path = os.path.join(components.ASSETS_DIR, "imx7d-sdb.dtb")
         return await ofrak_context.create_root_resource_from_file(dtb_path)
@@ -45,6 +59,16 @@ class TestDeviceTreeBlobUnpackPackIdentity(UnpackModifyPackPattern):
 
 
 class TestDeviceTreeBlobUnpackModifyPack(UnpackModifyPackPattern):
+    """
+    This test verifies that a DTB file can be unpacked, modified, and repacked successfully.
+
+    This test verifies that:
+    - The DTB can be unpacked successfully
+    - Modifications can be made to the DTB structure (adding/deleting nodes, modifying properties)
+    - The DTB can be packed successfully after modifications
+    - The repacked DTB reflects the expected changes in its structure and properties
+    """
+
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         dtb_path = os.path.join(components.ASSETS_DIR, "imx7d-sdb.dtb")
         return await ofrak_context.create_root_resource_from_file(dtb_path)
@@ -114,7 +138,10 @@ class TestDeviceTreeBlobUnpackModifyPack(UnpackModifyPackPattern):
 
 def test_dtb_raw_magic_pattern():
     """
-    Test that DTB raw pattern callable is correct.
+    This test verifies that the DTB magic pattern matching function correctly identifies DTB file headers.
+
+    This test verifies that:
+    - The match_dtb_magic function properly detects DTB file signatures
     """
     dtb_path = os.path.join(components.ASSETS_DIR, "imx7d-sdb.dtb")
     with open(dtb_path, "rb") as f:

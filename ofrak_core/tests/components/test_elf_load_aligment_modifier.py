@@ -1,3 +1,6 @@
+"""
+This module tests the ELF load segment alignment modifier component in OFRAK.
+"""
 import os
 import subprocess
 import tempfile312 as tempfile
@@ -106,6 +109,13 @@ class TestElfModifiers:
     async def test_elf_load_alignment_free_space_modifier(
         self, ofrak_context: OFRAKContext, test_case: ElfModifierTestCase, request
     ):
+        """
+        Test the functionality of the `ElfLoadAlignmentModifier`.
+
+        This test verifies that:
+        - The ElfLoadAlignmentModifier runs correctly on a test binary and finds free space
+        - The binary remains executable after modification and stdout matches the test case expectation
+        """
         file_path = os.path.join(ASSETS_DIR, test_case.test_file)
         output_path = f"{OUTPUT_DIR}/{os.path.basename(file_path)}_aligned_free"
         await main(ofrak_context, file_path, output_path)

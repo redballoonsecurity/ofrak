@@ -1,3 +1,6 @@
+"""
+This modules defines test cases and test pattern classes for the DataRefsAnalyzer.
+"""
 import os
 from dataclasses import dataclass
 from typing import Tuple, List
