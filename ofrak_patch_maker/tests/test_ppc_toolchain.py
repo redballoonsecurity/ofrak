@@ -1,3 +1,6 @@
+"""
+This module tests the PowerPC toolchain functionality.
+"""
 import pytest
 
 from .toolchain_under_test import ToolchainUnderTest

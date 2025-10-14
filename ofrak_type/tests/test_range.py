@@ -1,3 +1,10 @@
+"""This module tests the Range class and related functions.
+
+This test verifies that:
+- The Range class correctly handles range creation, validation, and operations
+- Functions like remove_subranges and chunk_ranges work as expected
+- Edge cases such as empty ranges, negative ranges, and large ranges are handled properly
+"""
 from dataclasses import dataclass
 from typing import List, Iterable
 
@@ -16,12 +23,18 @@ def range_strategy(draw):
 
 
 def test_invalid_range():
+    """
+    Test that creating a range with start > end raises a ValueError.
+    """
     with pytest.raises(ValueError):
         _ = Range(5, 0)
 
 
 @given(r=range_strategy())
 def test_length(r: Range):
+    """
+    Test that the length method correctly calculates range length.
+    """
     assert r.length() == r.end - r.start
 
 
@@ -35,6 +48,13 @@ def test_length(r: Range):
     ],
 )
 def test_contains(r: Range, value: int, expected_result: bool):
+    """
+    Test the contains_value method and 'in' operator for ranges.
+
+    This test verifies that:
+    - The contains_value method correctly identifies if a value is in a range
+    - The 'in' operator works equivalently to contains_value
+    """
     assert r.contains_value(value) is expected_result
     # The `in` operator should also work:
     assert (value in r) is expected_result
@@ -51,6 +71,9 @@ def test_contains(r: Range, value: int, expected_result: bool):
     ],
 )
 def test_within(range_1: Range, range_2: Range, expected_result: bool):
+    """
+    Test the within method to check if one range is completely within another.
+    """
     assert range_1.within(range_2) is expected_result
 
 
@@ -64,6 +87,12 @@ def test_within(range_1: Range, range_2: Range, expected_result: bool):
     ],
 )
 def test_overlaps(range_1: Range, range_2: Range, expected_result: bool):
+    """
+    Test the overlaps method to check if two ranges overlap.
+
+    This test verifies that:
+    - The overlaps method correctly identifies when two ranges intersect
+    """
     assert range_1.overlaps(range_2) is expected_result
 
 
@@ -78,10 +107,19 @@ def test_overlaps(range_1: Range, range_2: Range, expected_result: bool):
     ],
 )
 def test_intersect(range_1: Range, range_2: Range, expected_range: Range):
+    """
+    Test the intersect method to find the intersection of two ranges.
+
+    This test verifies that:
+    - The intersect method correctly calculates the overlapping portion of two ranges
+    """
     assert range_1.intersect(range_2) == expected_range
 
 
 def test_intersect_value_error():
+    """
+    Test that intersect raises ValueError when ranges don't overlap.
+    """
     range_1 = Range(10, 20)
     with pytest.raises(ValueError):
         range_1.intersect(Range(30, 40))
@@ -113,12 +151,18 @@ def test_intersect_value_error():
     ],
 )
 def test_split(range_1: Range, range_2: Range, expected_result: Iterable[Range]):
+    """
+    Test the split method to divide a range by another range.
+    """
     assert range_1.split(range_2) == expected_result
 
 
 def test_split_value_error():
     """
     Test that the unreachable else statement at the end of Range.split raises a ValueError.
+
+    This test verifies that:
+    - The split method raises a ValueError when the internal condition is not met
     """
 
     class RangeNeverWithin(Range):
@@ -170,6 +214,9 @@ REMOVE_SUBRANGES_TEST_CASES = [
 
 @pytest.mark.parametrize("test_case", REMOVE_SUBRANGES_TEST_CASES)
 def test_remove_subranges(test_case):
+    """
+    Test the remove_subranges function to remove ranges from a list of ranges.
+    """
     ranges, to_remove, expected_result = test_case
     assert remove_subranges(ranges, to_remove) == expected_result
 
@@ -182,31 +229,52 @@ def test_remove_subranges(test_case):
     ],
 )
 def test_translate(test_range: Range, offset: int, expected_range: Range):
+    """
+    Test the translate method to shift a range by an offset.
+    """
     translated_range = test_range.translate(offset)
     assert translated_range == expected_range
 
 
 @pytest.mark.parametrize("test_range, offset", [(Range(5, 10), -6)])
 def test_translate_value_error(test_range: Range, offset: int):
+    """
+    Test that translate raises ValueError for invalid offsets.
+    """
     with pytest.raises(ValueError):
         test_range.translate(offset)
 
 
 def test_translate_overflow():
-    """Test translate with values that would overflow."""
+    """
+    Test translate with values that would overflow.
+
+    This test verifies that:
+    - The translate method raises an OverflowError when overflow occurs
+    """
     r = Range(Range.MAX - 10, Range.MAX)
     with pytest.raises(OverflowError):
         r.translate(100)
 
 
 def test_repr():
+    """
+    Test the __repr__ method for proper string representation.
+
+    This test verifies that:
+    - The __repr__ method returns a correctly formatted string representation
+    """
     test_range = Range(5, 20)
     assert test_range.__repr__() == "Range(0x5, 0x14)"
 
 
 def test_hash():
     """
-    Test `Range.__hash__`, which is used in lookups like below.
+    Test the `Range.__hash__` for use in sets and dictionaries.
+
+
+    This test verifies that:
+    - The __hash__ method works correctly for Range objects
     """
     range_set = {Range(10, 20)}
     assert Range(10, 20) in range_set
@@ -214,6 +282,9 @@ def test_hash():
 
 @given(start=strategies.integers(), size=strategies.integers(min_value=0))
 def test_from_size(start: int, size: int):
+    """
+    Test the from_size method to create a range from start and size.
+    """
     range_from_size = Range.from_size(start, size)
     assert range_from_size.start == start
     assert range_from_size.length() == size
@@ -277,6 +348,9 @@ MERGE_RANGES_TEST_CASES = [
 
 @pytest.mark.parametrize("test_case", MERGE_RANGES_TEST_CASES, ids=lambda tc: tc[0])
 def test_merge_ranges(test_case):
+    """
+    Test the merge_ranges function to merge overlapping ranges.
+    """
     _, input_ranges, expected_merged_ranges = test_case
 
     merged_ranges = Range.merge_ranges(input_ranges)
@@ -301,11 +375,20 @@ RANGES_CHUNK_TEST_CASES = [
 
 @pytest.mark.parametrize("test_case", RANGES_CHUNK_TEST_CASES)
 def test_chunk_ranges(test_case: ChunkRangesTestCase):
+    """
+    Test the chunk_ranges function to divide ranges into chunks.
+
+    This test verifies that:
+    - The chunk_ranges function correctly splits ranges into equal-sized chunks
+    """
     ranges = chunk_ranges(test_case.ranges, test_case.chunck_size)
     assert ranges == test_case.expected_output
 
 
 def test_range_iterable():
+    """
+    Test that Range is iterable.
+    """
     r = Range(10, 12)
     # This should return without raising a TypeError if `r` is iterable.
     iter(r)
@@ -314,7 +397,9 @@ def test_range_iterable():
 
 
 def test_range_iterable_for_loop():
-    """Test that Range behaves like an iterable, notably in for loops."""
+    """
+    Test that Range behaves like an iterable, notably in for loops.
+    """
     r = Range(10, 12)
     # Test that the same object can be iterated over several times
     for iteration in range(2):
@@ -323,7 +408,12 @@ def test_range_iterable_for_loop():
 
 
 def test_empty_range():
-    """Test behavior of empty ranges (start == end)."""
+    """
+    Test behavior of empty ranges (start == end).
+
+    This test verifies that:
+    - Empty ranges behave correctly with length, containment, overlap and within operators
+    """
     r = Range(10, 10)
     assert r.length() == 0
     assert 10 not in r
@@ -333,7 +423,9 @@ def test_empty_range():
 
 
 def test_negative_ranges():
-    """Test ranges with negative values."""
+    """
+    Test ranges with negative values.
+    """
     r = Range(-10, -5)
     assert r.length() == 5
     assert -7 in r
@@ -343,7 +435,9 @@ def test_negative_ranges():
 
 
 def test_very_large_ranges():
-    """Test ranges near Range.MAX."""
+    """
+    Test ranges near Range.MAX.
+    """
     # Test with large values
     large_start = Range.MAX - 100
     r = Range(large_start, Range.MAX)
@@ -354,7 +448,9 @@ def test_very_large_ranges():
 
 
 def test_chunk_ranges_invalid_chunk_size():
-    """Test chunk_ranges with invalid chunk sizes."""
+    """
+    Test chunk_ranges with invalid chunk sizes.
+    """
     ranges = [Range(0, 10)]
 
     with pytest.raises(ValueError):
@@ -365,7 +461,9 @@ def test_chunk_ranges_invalid_chunk_size():
 
 
 def test_contains_constant_time():
-    """Verify that __contains__ is more efficient than iteration."""
+    """
+    Verify that __contains__ is more efficient than iteration.
+    """
     import time
 
     # Create a very large range

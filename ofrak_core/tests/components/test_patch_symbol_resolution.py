@@ -1,3 +1,6 @@
+"""
+This module tests the symbol resolution functionality within the PatchMaker.
+"""
 import pytest
 import tempfile312 as tempfile
 
@@ -191,6 +194,13 @@ def symbol_test_case(request) -> TestCase:
     "symbol_test_case", PARAMS, indirect=["symbol_test_case"], ids=lambda tc: tc.label
 )
 def test_symbol_resolution(patch_maker, symbol_test_case):
+    """
+    This test verifies that the symbol resolution logic correctly identifies unresolved symbols.
+
+    This test verifies that:
+    - Symbols defined in one AssembledObject are resolved when referenced in another
+    - Symbols not defined anywhere are identified as unresolved
+    """
     unresolved_sym_set = patch_maker._resolve_symbols_within_BOM(symbol_test_case.object_map)
 
     assert unresolved_sym_set == symbol_test_case.expected_unresolved_symbols

@@ -1,3 +1,7 @@
+"""
+This module tests core Resource class functionality, including child management, view handling,
+ patch application, tag and attribute operations, and resource context handling.
+"""
 import tempfile312 as tempfile
 from dataclasses import dataclass
 from io import BytesIO
@@ -50,11 +54,10 @@ async def nested_resource_children() -> NestedList:
 
 async def test_get_children_does_not_return_self_no_filter(resource: Resource):
     """
-    Test that ``Resource.get_children`` does not return itself as a child
-    when no resource filters are provided.
+    Test that Resource.get_children excludes the itself as a child when no filter is provided.
 
-    :param resource:
-    :return:
+    This test verifies that:
+    - A resource with one child returns exactly one child when get_children is called without a filter
     """
     children = list(await resource.get_children())
     assert 1 == len(children)
@@ -64,11 +67,10 @@ async def test_get_children_does_not_return_self_filter_include_self_false(
     resource: Resource,
 ):
     """
-    Test that ``Resource.get_children`` does not return itself as a child
-    with a ``ResourceFilter`` that has ``include_self`` set to False.
+    Test that Resource.get_children excludes itself when filter specifies include_self=False.
 
-    :param resource:
-    :return:
+    This test verifies that:
+    - A resource with one child returns exactly one child when get_children is called with include_self=False
     """
     children = list(await resource.get_children(ResourceFilter(False)))
     assert 1 == len(children)
@@ -76,11 +78,12 @@ async def test_get_children_does_not_return_self_filter_include_self_false(
 
 async def test_get_children_returns_self_filter_include_self_true(resource: Resource):
     """
-    Test that ``Resource.get_children`` returns itself as a child with a ``ResourceFilter``
-    that has `include_self`` set to True.
+    Test that Resource.get_children includes itself as a child when filter specifies include_self=True.
 
-    :param resource:
-    :return:
+    This test verifies that:
+    - A resource with one child returns two entries (self and child) when get_children is called
+    with include_self=True
+    - The returned list contains the resource's ID
     """
     children = list(await resource.get_children(ResourceFilter(True)))
     assert 2 == len(children)
@@ -112,10 +115,10 @@ async def test_get_children_order_preserved(
     ofrak_context: OFRAKContext, nested_resource_children: NestedList
 ):
     """
-    Test that resource children are returned in the same order that they were added.
+    Test that resource children are returned in the same order they were added.
 
-    :param ofrak_context:
-    :param nested_resource_children:
+    This test verifies that:
+    - A resource with nested children validates all data ranges and order matches original structure
     """
     resource = await ofrak_context.create_root_resource("root", b"root data")
     await recursively_add_children(resource, nested_resource_children)
@@ -124,11 +127,11 @@ async def test_get_children_order_preserved(
 
 async def test_add_view(resource: Resource):
     """
-    Test that ``Resource.add_view`` adds each the attributes in the view and the tag
-    correctly.
+    Test that Resource.add_view properly adds each view attributes and tags.
 
-    :param resource:
-    :return:
+    This test verifies that:
+    - Adding a view correctly sets both its attributes and tag hierarchy
+    - The view's data can be retrieved and matches expected values
     """
 
     @dataclass
@@ -160,6 +163,13 @@ async def test_add_view(resource: Resource):
 
 
 async def test_save_applies_patches(resource: Resource):
+    """
+    Test that Resource.save properly applies queued patches.
+
+    This test verifies that:
+    - Patch is applied after save is called
+    - Patch is not double-applied on subsequent saves
+    """
     original_data = await resource.get_data()
     resource.queue_patch(Range(2, 4), b"\xff")
     data_after_patch = await resource.get_data()
@@ -177,6 +187,12 @@ async def test_save_applies_patches(resource: Resource):
 
 
 async def test_get_most_specific_tags(resource: Resource):
+    """
+    Test Resource.get_most_specific_tags returns the expected specific tags.
+
+    This test verifies that:
+    - Adding multiple tags results in only the most specific tags being returned
+    """
     resource.add_tag(GenericBinary, GenericText, FilesystemRoot, LinkableBinary, Program, Elf)
 
     expected_most_specific_tags = {GenericText, FilesystemRoot, Elf}
@@ -190,6 +206,13 @@ def mock_ofrak_component(ofrak):
 
 @pytest.mark.asyncio
 async def test_flush_to_disk_pack(ofrak_context: OFRAKContext):
+    """
+    Test Resource.flush_data_to_disk properly handles packing behavior.
+
+    This test verifies that:
+    - Packing fails when MockFailFile is encountered
+    - Setting pack=False allows successful write
+    """
     # This test works as long as LZMA fails to pack() and the default is to
     # pack recursively. The root resource is a LZMA archive in a LZMA archive,
     # which as of 2022-09-13 will fail to pack and therefore pack_recursively
@@ -221,7 +244,12 @@ async def test_flush_to_disk_pack(ofrak_context: OFRAKContext):
 
 async def test_is_modified(resource: Resource):
     """
-    Test Resource.is_modified raises true if the local resource is "dirty".
+    Test Resource.is_modified accurately reflects resource modification state (returns True
+    if the local resource is "dirty").
+
+    This test verifies that:
+    - Resource starts in unmodified state
+    - Adding a tag marks the resource as modified
     """
     assert resource.is_modified() is False
 
@@ -232,20 +260,33 @@ async def test_is_modified(resource: Resource):
 
 async def test_summarize(resource: Resource):
     """
-    Test that the resource string summary returns a string
+    Test Resource.summarize returns a valid string representation.
+
+    This test verifies that:
+    - The summary generated by summarize() is a string type
     """
     summary = await resource.summarize()
     assert isinstance(summary, str)
 
 
 async def test_summarize_tree(resource: Resource):
+    """
+    Test Resource.summarize_tree returns a valid string representation.
+
+    This test verifies that:
+    - The summary generated by summarize_tree() is a string type
+    """
     summary = await resource.summarize_tree()
     assert isinstance(summary, str)
 
 
 async def test_get_range_within_parent(resource: Resource):
     """
-    Test that Resource.get_data_range_within_parent returns the correctly-mapped range.
+    Test Resource.get_data_range_within_parent correctly maps child ranges.
+
+    This test verifies that:
+    - Child resource's range within parent matches expected value
+    - Grandchild resource's range within parent matches expected value
     """
     child_range = Range(1, 3)
     child = await resource.create_child(data_range=child_range)
@@ -260,18 +301,35 @@ async def test_get_range_within_parent(resource: Resource):
 
 async def test_get_range_within_parent_for_root(resource: Resource):
     """
-    Resource.get_data_range_within_parent returns Range(0, 0) if the resource is not mapped.
+    Test Resource.get_data_range_within_parent returns correct value for root resources.
+
+    This test verifies that:
+    - Root resource with no mapping returns Range(0, 0) when get_data_range_within_parent is called
     """
     assert await resource.get_data_range_within_parent() == Range(0, 0)
 
 
 async def test_identify(resource: Resource):
+    """
+    Test Resource.identify properly adds resource tags.
+
+    This test verifies that:
+    - Identify operation adds GenericBinary tag
+    - Identify operation does not add Elf tag
+    """
     await resource.identify()
     assert resource.has_tag(GenericBinary) is True
     assert resource.has_tag(Elf) is False
 
 
 async def test_get_tags(resource: Resource):
+    """
+    Test Resource.get_tags correctly returns current tags.
+
+    This test verifies that:
+    - Initial tag list contains GenericBinary
+    - Adding Elf tag makes it appear in results
+    """
     tags = resource.get_tags()
     assert GenericBinary in tags
     assert Elf not in tags
@@ -282,6 +340,13 @@ async def test_get_tags(resource: Resource):
 
 
 async def test_repr(resource: Resource):
+    """
+    Test Resource.__repr__ returns valid string format.
+
+    This test verifies that:
+    - String representation starts with "Resource(resource_id=" format
+    - String representation contains "GenericBinary" tag
+    """
     result = resource.__repr__()
     assert result.startswith("Resource(resource_id=")
     assert "GenericBinary" in result
@@ -289,7 +354,13 @@ async def test_repr(resource: Resource):
 
 async def test_attributes(resource: Resource):
     """
-    Test Resource.{has_attributes, add_attributes, remove_attributes}
+    Test Resource attribute management functions
+    (Resource.{has_attributes, add_attributes, remove_attributes}) work as expected.
+
+    This test verifies that:
+    - Resource starts without DummyAttributes
+    - Adding attributes makes them detectable
+    - Removing attributes removes them
     """
 
     @dataclass(**ResourceAttributes.DATACLASS_PARAMS)
@@ -308,7 +379,10 @@ async def test_attributes(resource: Resource):
 
 async def test_create_child_data_and_data_range(ofrak_context: OFRAKContext):
     """
-    Assert that passing both data and data_range to `Resource.create_child` raises a ValueError.
+    Test Resource.create_child raises ValueError when both data and data_range are provided.
+
+    This test verifies that:
+    - Passing both data and data_range parameters to create_child raises ValueError
     """
     resource = await ofrak_context.create_root_resource(name="test_file", data=b"\xff" * 10)
     with pytest.raises(ValueError):
@@ -316,6 +390,15 @@ async def test_create_child_data_and_data_range(ofrak_context: OFRAKContext):
 
 
 async def test_get_contexts(resource: Resource):
+    """
+    Test Resource context accessors return correct context types.
+
+    This test verifies that:
+    - Resource has valid resource context
+    - Resource has valid view context
+    - Resource has valid component context
+    - Resource has no job context when not in component context
+    """
     assert isinstance(resource.get_resource_context(), ResourceContext)
     assert isinstance(resource.get_resource_view_context(), ResourceViewContext)
     assert isinstance(resource.get_component_context(), ComponentContext)

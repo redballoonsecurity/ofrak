@@ -1,3 +1,6 @@
+"""
+This module tests the MemoryPermissions enum and its associated operations.
+"""
 import pytest
 
 from ofrak_type.memory_permissions import MemoryPermissions
@@ -17,11 +20,25 @@ from ofrak_type.memory_permissions import MemoryPermissions
     ],
 )
 def test_memory_permissions_as_str(memory_permissions: MemoryPermissions, expected_str: str):
+    """
+    Test that the as_str() method correctly converts MemoryPermissions to their string representation.
+    """
     assert memory_permissions.as_str() == expected_str
 
 
 class TestMemoryPermissionsAdd:
+    """
+    Test the addition operation (+) of MemoryPermissions.
+    """
+
     def test_add(self):
+        """
+        Test the addition operation (+) of MemoryPermissions.
+
+        This test verifies that:
+        - Addition combines permissions correctly
+        - Adding NONE returns the original permission
+        """
         # Basic additions
         assert MemoryPermissions.R + MemoryPermissions.X == MemoryPermissions.RX
         assert MemoryPermissions.R + MemoryPermissions.W == MemoryPermissions.RW
@@ -39,16 +56,33 @@ class TestMemoryPermissionsAdd:
         assert MemoryPermissions.X + MemoryPermissions.RW == MemoryPermissions.RWX
 
     def test_add_type_error(self):
+        """
+        Test that adding with a non-MemoryPermissions type raises TypeError.
+        """
         with pytest.raises(TypeError):
             MemoryPermissions.R + 2  # type: ignore
 
     def test_add_value_error(self):
+        """
+        Test that adding incompatible permissions raises ValueError.
+        """
         with pytest.raises(ValueError):
             MemoryPermissions.R + MemoryPermissions.RWX  # type: ignore
 
 
 class TestMemoryPermissionsAnd:
+    """
+    Test the bitwise AND operation (&) of MemoryPermissions.
+    """
+
     def test_and(self):
+        """
+        Test the bitwise AND operation (&) of MemoryPermissions.
+
+        This test verifies that:
+        - AND operations correctly intersect permissions
+        - AND with NONE always returns NONE
+        """
         # Basic AND operations
         assert MemoryPermissions.RWX & MemoryPermissions.W == MemoryPermissions.W
         assert MemoryPermissions.RWX & MemoryPermissions.R == MemoryPermissions.R
@@ -75,12 +109,26 @@ class TestMemoryPermissionsAnd:
         assert MemoryPermissions.W & MemoryPermissions.X == MemoryPermissions.NONE
 
     def test_and_type_error(self):
+        """
+        Test that ANDing with a non-MemoryPermissions type raises TypeError.
+        """
         with pytest.raises(TypeError):
             MemoryPermissions.R & 2  # type: ignore
 
 
 class TestMemoryPermissionsSub:
+    """
+    Test the subtraction operation (-) of MemoryPermissions.
+    """
+
     def test_sub(self):
+        """
+        Test the subtraction operation (-) of MemoryPermissions.
+
+        This test verifies that:
+        - Subtraction correctly removes permissions
+        - Subtracting NONE returns the original permission
+        """
         # Basic subtractions
         assert MemoryPermissions.RWX - MemoryPermissions.W == MemoryPermissions.RX
         assert MemoryPermissions.RWX - MemoryPermissions.R == MemoryPermissions.WX
@@ -106,17 +154,28 @@ class TestMemoryPermissionsSub:
         assert MemoryPermissions.RW - MemoryPermissions.W == MemoryPermissions.R
 
     def test_sub_type_error(self):
+        """
+        Test that subtracting with a non-MemoryPermissions type raises TypeError.
+        """
         with pytest.raises(TypeError):
             MemoryPermissions.R - 0  # type: ignore
 
     def test_sub_value_error(self):
+        """
+        Test that subtracting incompatible permissions raises ValueError.
+        """
         with pytest.raises(ValueError):
             MemoryPermissions.RW - MemoryPermissions.X  # type: ignore
             MemoryPermissions.NONE - MemoryPermissions.R  # type: ignore
 
 
 class TestMemoryPermissionsEnumValues:
-    """Test that the enum values are correct"""
+    """
+    Test that the enum values are correct.
+
+    This test verifies that:
+    - Each MemoryPermissions enum value has the correct integer representation
+    """
 
     def test_enum_values(self):
         assert MemoryPermissions.NONE.value == 0
@@ -130,9 +189,14 @@ class TestMemoryPermissionsEnumValues:
 
 
 class TestMemoryPermissionsProperties:
-    """Test mathematical properties of operations"""
+    """
+    Test mathematical properties of operations.
+    """
 
     def test_inverse_operations(self):
+        """
+        Test that inverse operations (add then subtract) return the original value
+        """
         # Adding then subtracting should return original
         assert (
             MemoryPermissions.R + MemoryPermissions.W - MemoryPermissions.W == MemoryPermissions.R
@@ -145,6 +209,9 @@ class TestMemoryPermissionsProperties:
         )
 
     def test_chained_operations(self):
+        """
+        Test that complex chained operations work correctly
+        """
         # Complex chained operations
         result = MemoryPermissions.NONE + MemoryPermissions.R
         result = result + MemoryPermissions.W

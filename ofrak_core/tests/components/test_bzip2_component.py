@@ -1,3 +1,6 @@
+"""
+This module tests the Bzip2 compression and decompression functionality within OFRAK.
+"""
 import bz2
 import logging
 
@@ -17,6 +20,15 @@ BZIP2_ENTRY_NAME = "hello_bzip2_file"
 
 
 class TestBzip2UnpackModifyPack(UnpackModifyPackPattern):
+    """
+    This test verifies that Bzip2-compressed data can be successfully unpacked, modified, and repacked.
+
+    This test verifies that:
+    - Bzip2-compressed data can be unpacked
+    - The unpacked data can be modified
+    - The modified data can be repacked back into Bzip2 format
+    """
+
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         compressed_data = bz2.compress(INITIAL_DATA)
         root_resource = await ofrak_context.create_root_resource("bzip2", compressed_data)

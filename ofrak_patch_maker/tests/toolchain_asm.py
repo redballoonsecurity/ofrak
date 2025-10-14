@@ -1,3 +1,7 @@
+"""
+This module tests the functionality of the PatchMaker toolchain in generating
+relocatable binaries and applying patches at specified memory regions.
+"""
 import logging
 import os
 import tempfile
@@ -16,7 +20,13 @@ from ofrak_type.memory_permissions import MemoryPermissions
 
 def run_challenge_3_reloc_toy_example_test(toolchain_under_test: ToolchainUnderTest):
     """
-    Example solution patch for bounds_check challenge.
+    Tests the application of a patch with multiple segments mapped to specific memory addresses.
+
+    This test verifies that:
+    - A set of assembly source files can be compiled and linked into an ELF binary.
+    - Multiple text segments are correctly assigned to distinct virtual memory regions.
+    - The resulting executable is valid and matches the expected file format.
+    - Symbols used for relocation are properly handled during patch generation.
     """
     source_dir = os.path.join(os.path.dirname(__file__), "example_4")
     build_dir = tempfile.mkdtemp()
@@ -166,7 +176,13 @@ def run_challenge_3_reloc_toy_example_test(toolchain_under_test: ToolchainUnderT
 
 def run_monkey_patch_test(toolchain_under_test: ToolchainUnderTest):
     """
-    Example showing how to manually generate an executable with assembly at client-specified locs.
+    Demonstrates manual generation of an executable with assembly code placed at
+    client-specified memory locations.
+
+    This test verifies that:
+    - Assembly source files can be compiled and linked into an ELF binary.
+    - Specific segments are mapped to designated virtual addresses.
+    - The final executable is valid and matches the expected file format.
     """
     source_dir = os.path.join(os.path.dirname(__file__), "example_2")
     source_files = [

@@ -1,3 +1,6 @@
+"""
+This module tests the Intel HEX (IHEX) file format handling capabilities of OFRAK.
+"""
 import os
 from dataclasses import dataclass
 
@@ -28,6 +31,16 @@ IHEX_TEST_FILES = [
 
 @pytest.mark.skipif_missing_deps([IhexPacker, IhexUnpacker])
 class TestIhexUnpackPack(UnpackModifyPackPattern):
+    """
+    This test verifies the unpacking, modification, and repacking functionality of Intel HEX files.
+
+    This test verifies that:
+    - Intel HEX files can be successfully unpacked into memory regions
+    - Modifications can be made to the unpacked memory regions
+    - The modified data can be repacked back into Intel HEX format
+    - The repacked file maintains the expected modifications and is valid
+    """
+
     REPLACEMENT_STRING = b"deadbeef ofrak"
 
     @pytest.fixture(params=IHEX_TEST_FILES, autouse=True)
@@ -69,6 +82,14 @@ class TestIhexUnpackPack(UnpackModifyPackPattern):
 @pytest.mark.skipif_missing_deps([IhexPacker, IhexUnpacker])
 @pytest.mark.parametrize("ihex_file", IHEX_TEST_FILES)
 async def test_ihex_analyzer(ofrak_context: OFRAKContext, ihex_file):
+    """
+    This test verifies the Intel HEX analyzer functionality for parsing and extracting program information.
+
+    This test verifies that:
+    - Intel HEX files are correctly parsed to extract address limits
+    - The start address is properly identified from the HEX file
+    - The data can be converted between HEX and binary formats correctly
+    """
     from bincopy import BinFile
 
     root = await ofrak_context.create_root_resource_from_file(ihex_file)

@@ -1,3 +1,7 @@
+"""
+This module tests the symbol parsing functionality of the patch maker across different
+toolchains and architectures.
+"""
 import logging
 import os
 from typing import Type, Tuple
@@ -115,6 +119,14 @@ FULL_TEST_CASES = [
 
 @pytest.mark.parametrize("tc", FULL_TEST_CASES, ids=lambda case: case.full_label)
 def test_symbol_parsing(tc: SymbolParsingTestCase, tmpdir):
+    """
+    This test verifies that symbols are correctly parsed and resolved based on their definition and usage.
+
+    This test verifies that:
+    - Symbols defined as weak are not resolved
+    - Symbols defined as strong are resolved
+    - Symbols declared as extern are not resolved
+    """
     logging.getLogger().addHandler(logging.FileHandler("/tmp/ofrak.log"))
     logging.getLogger().setLevel(logging.INFO)
 

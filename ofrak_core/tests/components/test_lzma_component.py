@@ -1,3 +1,6 @@
+"""
+This module tests the LZMA and XZ compression components.
+"""
 import lzma
 
 import pytest
@@ -10,6 +13,15 @@ from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import (
 
 
 class TestXzUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
+    """
+    This test verifies that XZ compressed files can be correctly unpacked, modified, and repacked.
+
+    This test verifies that:
+    - XZ compressed files can be unpacked into a filesystem
+    - The filesystem can be modified
+    - The modified filesystem can be repacked back into an XZ compressed file
+    """
+
     expected_tag = XzData
 
     @pytest.fixture(autouse=True)
@@ -30,6 +42,15 @@ class TestXzUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
 
 
 class TestLzmaUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
+    """
+    This test verifies that LZMA compressed files can be correctly unpacked, modified, and repacked.
+
+    This test verifies that:
+    - LZMA compressed files can be unpacked into a filesystem
+    - The filesystem can be modified
+    - The modified filesystem can be repacked back into an LZMA compressed file
+    """
+
     expected_tag = LzmaData
 
     @pytest.fixture(autouse=True)

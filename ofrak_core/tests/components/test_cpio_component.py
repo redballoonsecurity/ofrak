@@ -1,3 +1,6 @@
+"""
+This module tests the CPIO filesystem component functionality.
+"""
 import asyncio
 import os
 import subprocess
@@ -19,6 +22,17 @@ CPIO_ENTRY_NAME = "hello_cpio_file"
 
 @pytest.mark.skipif_missing_deps([CpioUnpacker, CpioPacker])
 class TestCpioUnpackModifyPack(UnpackModifyPackPattern):
+    """
+    This test verifies that a CPIO archive can be unpacked, modified, and repacked correctly.
+
+    This test verifies that:
+    - A CPIO archive can be created from a temporary file
+    - The archive can be unpacked recursively
+    - A file inside the archive can be modified
+    - The archive can be packed back up
+    - The resulting archive contains the expected modified data
+    """
+
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         with tempfile.TemporaryDirectory() as tmpdir:
             wd = os.path.abspath(os.curdir)

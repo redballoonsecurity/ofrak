@@ -1,3 +1,7 @@
+"""
+This module tests the functionality of JFFS2 components in OFRAK, including creation,
+modification, and parsing of JFFS2 file systems.
+"""
 import os
 import subprocess
 import tempfile312 as tempfile
@@ -18,6 +22,17 @@ JFFS2_ENTRY_NAME = "hello_jffs2_file"
 
 @pytest.mark.skipif_missing_deps([Jffs2Packer, Jffs2Unpacker])
 class TestJffs2UnpackModifyPack(UnpackModifyPackPattern):
+    """
+    Test case for unpacking, modifying, and repacking a JFFS2 filesystem.
+
+    This test verifies that:
+    - A JFFS2 filesystem can be created and loaded as a resource
+    - The filesystem can be unpacked recursively
+    - Modifications to embedded files are applied correctly
+    - The filesystem can be repacked recursively
+    - The final output contains the modified data as expected
+    """
+
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         with tempfile.TemporaryDirectory() as tmpdir:
             entry_name = os.path.join(tmpdir, JFFS2_ENTRY_NAME)

@@ -1,3 +1,6 @@
+"""
+This module tests the PJSON serialization and deserialization service.
+"""
 from dataclasses import dataclass
 import os
 from dataclasses import dataclass
@@ -189,6 +192,14 @@ can_be_slow_settings = settings(
 @given(data=data())
 @settings(parent=can_be_slow_settings, max_examples=50)
 def test_to_pjson_hypothesis(type_hint, data, _test_serialize_deserialize):
+    """
+    Property-based testing of PJSON serialization for common Python types.
+
+    This test verifies that:
+    - Hypothesis-generated objects can be serialized to PJSON format for a variety of type hints
+    - Deserialized objects match the original objects
+    - Serialization works correctly for primitives, collections, unions, optionals, and custom classes
+    """
     obj = data.draw(from_type(type_hint))
     _test_serialize_deserialize(obj, type_hint)
 
@@ -205,7 +216,14 @@ def test_to_pjson_hypothesis(type_hint, data, _test_serialize_deserialize):
 @given(data=data())
 @settings(parent=can_be_slow_settings, max_examples=10)
 def test_to_pjson_hypothesis_slow_types(type_hint, data, _test_serialize_deserialize):
-    """Types for which hypothesis will generate big objects and be slow."""
+    """
+    Property-based testing of PJSON serialization for complex nested types.
+
+    This test verifies that:
+    - Nested collections and dataclasses can be serialized to PJSON format
+    - Large and deeply nested objects maintain correctness after serialization and deserialization
+    - Complex type structures including nested lists, sets, and dictionaries are handled properly
+    """
     obj = data.draw(from_type(type_hint))
     _test_serialize_deserialize(obj, type_hint)
 
@@ -246,6 +264,15 @@ class WeirdEnum(Enum):
     ],
 )
 def test_to_pjson(obj: Any, type_hint: Any, _test_serialize_deserialize):
+    """
+    Example-based testing of PJSON serialization for special cases and edge cases.
+
+    This test verifies that:
+    - Special types like Any, Enum, type objects, and ResourceTag can be serialized correctly
+    - OFRAK-specific types including ResourceAttributes and ResourceAttributeDependency work properly
+    - Metaclasses and complex type relationships are handled correctly
+    - Various enum implementations with different underlying types serialize correctly
+    """
     _test_serialize_deserialize(obj, type_hint)
 
 
@@ -262,6 +289,15 @@ def test_to_pjson(obj: Any, type_hint: Any, _test_serialize_deserialize):
     ],
 )
 def test_interval_tree_serialization(obj: IntervalTree, _test_serialize_deserialize):
+    """
+    Testing of PJSON serialization for IntervalTree data structures.
+
+    This test verifies that:
+    - Empty IntervalTrees can be serialized and deserialized
+    - IntervalTrees with single and multiple intervals maintain their structure
+    - Intervals with and without associated data are preserved correctly
+    - Complex interval hierarchies are handled properly
+    """
     _test_serialize_deserialize(obj, IntervalTree)
 
 
@@ -275,6 +311,14 @@ def test_interval_tree_serialization(obj: IntervalTree, _test_serialize_deserial
 def test_from_pjson_ambiguous_type_hints(
     json_obj: Any, type_hint: Any, serializer: PJSONSerializationService
 ):
+    """
+    Testing error handling for ambiguous type hints during PJSON deserialization.
+
+    This test verifies that:
+    - Deserialization with insufficiently specific type hints raises appropriate errors
+    - Generic types without full type parameters (e.g., List instead of List[int]) are rejected
+    - The serializer requires complete type information for proper deserialization
+    """
     with pytest.raises((IndexError, ValueError)):
         serializer.from_pjson(json_obj, type_hint)
 
@@ -292,6 +336,14 @@ def test_from_pjson_ambiguous_type_hints(
 def test_from_pjson_invalid_types(
     json_obj: Any, type_hint: Any, serializer: PJSONSerializationService
 ):
+    """
+    Testing error handling for type mismatches during PJSON deserialization.
+
+    This test verifies that:
+    - Deserialization with incompatible JSON objects and type hints raises appropriate errors
+    - Type validation catches mismatches between expected and actual types
+    - Invalid type coercions are properly rejected (e.g., string to list)
+    """
     with pytest.raises((TypeError, BeartypeCallHintParamViolation)):
         serializer.from_pjson(json_obj, type_hint)
 
@@ -325,8 +377,14 @@ def _type_and_descendants(superclass_type) -> List[Tuple[Type, Type]]:
 @settings(parent=can_be_slow_settings, max_examples=10)
 def test_ofrak_classes(superclass_type, descendant_type, data, _test_serialize_deserialize):
     """
-    Test the serialization of all the classes in the parametrization above, trying both with
-    the descendant type as type hint, and the superclass type.
+    Property-based testing of PJSON serialization for OFRAK class hierarchies.
+
+    This test verifies that:
+    - All OFRAK classes derived from ResourceView, ResourceAttributes, ComponentFilter,
+    and ComponentConfig can be serialized
+    - Serialization works correctly when using both the specific descendant type and the
+    superclass type as type hints
+    - Polymorphic serialization maintains type information across the class hierarchy
     """
     instance = data.draw(builds(descendant_type))
     _test_serialize_deserialize(instance, descendant_type)

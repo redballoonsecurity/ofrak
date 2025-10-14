@@ -1,3 +1,6 @@
+"""
+This module tests the StringsAnalyzer component in OFRAK, which extracts and analyzes string data from binary resources.
+"""
 from dataclasses import dataclass
 from ofrak_type.error import NotFoundError
 
@@ -52,6 +55,12 @@ async def test_case(
 @pytest.mark.skipif_missing_deps([StringsAnalyzer])
 class TestStringsAnalyzer(AnalyzerTests):
     async def test_resource_analyzer(self, test_case: PopulatedAnalyzerTestCase):
+        """
+        Verify error handling when StringsAnalyzer is unavailable.
+
+        This test verifies that:
+        - Attempting to use the analyzer without dependencies raises NotFoundError
+        """
         with pytest.raises(
             NotFoundError, match="Unable to find any analyzer for attributes StringsAttributes"
         ):

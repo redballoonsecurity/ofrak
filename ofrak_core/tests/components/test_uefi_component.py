@@ -1,3 +1,6 @@
+"""
+This module tests UEFI firmware image unpacking and extraction capabilities.
+"""
 import pytest
 import os.path
 from dataclasses import dataclass
@@ -38,6 +41,16 @@ UEFI_COMPONENT_TEST_CASE = [
 
 @pytest.mark.skipif_missing_deps([UefiUnpacker])
 class TestUefiComponent(UnpackAndVerifyPattern):
+    """
+    UEFI firmware unpacking and validation test suite.
+
+    This test verifies that:
+    - UEFI firmware images can be successfully unpacked
+    - Nested UEFI volumes, files, and sections are correctly extracted
+    - Extracted filesystem entries maintain their hierarchical structure
+    - Specific known files contain the expected binary content
+    """
+
     @pytest.fixture(params=UEFI_COMPONENT_TEST_CASE, ids=lambda tc: tc.label)
     async def unpack_verify_test_case(self, request) -> UnpackAndVerifyTestCase:
         return request.param

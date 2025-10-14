@@ -1,3 +1,6 @@
+"""
+This module tests SquashFS filesystem unpacking, modification, and repacking functionality.
+"""
 import os
 import subprocess
 import tempfile312 as tempfile
@@ -18,6 +21,17 @@ SQUASH_ENTRY_NAME = "hello_squash_file"
 
 @pytest.mark.skipif_missing_deps([SquashfsUnpacker, SquashfsPacker])
 class TestSquashfsUnpackModifyPack(UnpackModifyPackPattern):
+    """
+    Test case for unpacking, modifying, and repacking a SquashFS filesystem.
+
+    This test verifies that:
+    - A SquashFS filesystem can be created and loaded as a resource
+    - The filesystem can be unpacked recursively
+    - Modifications to embedded files are applied correctly
+    - The filesystem can be repacked recursively
+    - The final output contains the modified data as expected
+    """
+
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         with tempfile.TemporaryDirectory() as tmpdir:
             entry_name = os.path.join(tmpdir, SQUASH_ENTRY_NAME)

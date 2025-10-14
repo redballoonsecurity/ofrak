@@ -1,3 +1,6 @@
+"""
+This module tests the functionality of the Zlib component.
+"""
 import zlib
 
 import pytest
@@ -10,6 +13,15 @@ from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import (
 
 
 class TestZlibUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
+    """
+    This test verifies that zlib-compressed data can be successfully unpacked, modified, and repacked.
+
+    This test verifies that:
+    - Zlib-compressed data can be unpacked into a filesystem
+    - The unpacked data can be modified
+    - The modified data can be repacked back into zlib format
+    """
+
     expected_tag = ZlibData
 
     @pytest.fixture(autouse=True)

@@ -1,3 +1,6 @@
+"""
+This module tests the LZO compression and decompression functionality.
+"""
 import subprocess
 
 from ofrak.core.lzo import LzoPacker, LzoUnpacker
@@ -11,6 +14,14 @@ from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import (
 
 @pytest.mark.skipif_missing_deps([LzoUnpacker, LzoPacker])
 class TestLzoUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
+    """
+    This test verifies that LZO compressed files can be properly unpacked, modified, and repacked.
+
+    This test verifies that:
+    - LZO files can be decompressed and re-compressed without data loss
+    - The modification process works correctly on LZO compressed data
+    """
+
     @pytest.fixture(autouse=True)
     def create_test_file(self, tmpdir):
         d = tmpdir.mkdir("lzo")

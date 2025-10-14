@@ -1,3 +1,6 @@
+"""
+This module tests the Binwalk component functionality.
+"""
 from dataclasses import dataclass
 from typing import Dict, Optional
 
@@ -57,6 +60,14 @@ BINWALK_TEST_CASES = [
 @pytest.mark.skipif_missing_deps([BinwalkAnalyzer])
 @pytest.mark.parametrize("test_case", BINWALK_TEST_CASES, ids=lambda tc: tc.filename)
 async def test_binwalk_component(ofrak_context, test_case):
+    """
+    Test the Binwalk component analysis functionality.
+
+    This test verifies that:
+    - The Binwalk analyzer correctly identifies file types in various binary files
+    - The analysis produces expected results for different file formats
+    - The extracted attributes match the expected offsets and descriptions
+    """
     asset_path = os.path.join(BINWALK_ASSETS_PATH, test_case.filename)
     root_resource = await ofrak_context.create_root_resource_from_file(asset_path)
     await root_resource.analyze(BinwalkAttributes)

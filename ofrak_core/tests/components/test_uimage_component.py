@@ -1,3 +1,6 @@
+"""
+This module tests the functionality of the U-Boot Image (UImage) component.
+"""
 import os
 import subprocess
 import shutil
@@ -42,7 +45,15 @@ async def uimage_resource(ofrak_context, request) -> Resource:
     shutil.which("mkimage") is None, reason="Test requires mkimage from u-boot-tools"
 )
 async def test_uimage_unpack_modify_pack(uimage_resource: Resource, tmpdir):
-    """Test unpacking, modifying and then repacking a UImage file."""
+    """
+    Test unpacking, modifying and then repacking a UImage file.
+
+    This test verifies that:
+    - A UImage can be successfully unpacked
+    - The UImage header can be modified
+    - The UImage can be packed back together
+    - The resulting UImage is valid and can be verified with mkimage
+    """
     await uimage_resource.unpack_recursively()
     await modify(uimage_resource)
     await uimage_resource.pack_recursively()
@@ -93,6 +104,11 @@ async def verify(repacked_root_resource: Resource, tmpdir) -> None:
 async def test_uimage_header(uimage_resource: Resource) -> None:
     """
     Test that UImageHeader and UImageMultiHeader methods return expected types.
+
+    This test verifies that:
+    - The UImage header properties are identified and are of the correct type
+    - For MULTI type headers, the multi-header is correctly retrieved and its properties are valid
+    - For non-MULTI type headers, attempting to get the multi-header raises NotFoundError
     """
     await uimage_resource.unpack()
     uimage = await uimage_resource.view_as(UImage)
@@ -120,6 +136,9 @@ async def test_uimage_header(uimage_resource: Resource) -> None:
 async def test_uimage_program_attributes_analzyer(uimage_resource: Resource) -> None:
     """
     Test that UImageProgramAttributesAnalyzer returns ProgramAttributes.
+
+    This test verifies that:
+    - The UImage resource can be analyzed to produce ProgramAttributes
     """
     await uimage_resource.unpack()
     program_attributes = await uimage_resource.analyze(ProgramAttributes)

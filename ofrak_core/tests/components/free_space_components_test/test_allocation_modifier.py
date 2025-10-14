@@ -1,3 +1,8 @@
+"""
+This module tests the FreeSpaceAllocationModifier's behavior in various allocation scenarios,
+ensuring that allocating memory ranges correctly removes FreeSpace tags and properly adjusts
+the memory region structure.
+"""
 from dataclasses import dataclass
 
 import pytest
@@ -228,6 +233,14 @@ FREE_SPACE_ALLOCATION_MODIFIER_TEST_CASES = [
 async def test_free_space_analyzer(
     ofrak_context: OFRAKContext, test_case: FreeSpaceAllocationModifierTestCase
 ):
+    """
+    Test the FreeSpaceAllocationModifier's behavior in different allocation scenarios.
+
+    This test verifies that:
+    - The modifier correctly removes FreeSpace tags from allocated ranges
+    - Memory regions are split appropriately when allocations are partial
+    - The memory tree structure is properly updated after allocation
+    """
     allocatable_r = await inflate_tree(test_case.initial_tree_structure, ofrak_context)
     await allocatable_r.run(RemoveFreeSpaceModifier, test_case.allocated_range)
 

@@ -1,3 +1,7 @@
+"""
+This module tests the DependencyHandler's ability to manage and invalidate dependencies
+between resources in OFRAK.
+"""
 import itertools
 from dataclasses import dataclass
 from typing import Tuple, Iterable, Dict, List, Set, Type, Optional
@@ -253,6 +257,13 @@ async def test_dependency_invalidation(
     resource_context: ResourceContext,
     test_case: DependencyInvalidationTestCase,
 ):
+    """
+    This test verifies that dependencies are properly invalidated when data or attributes change.
+
+    - Sets up a test case with specified dependency relationships
+    - Applies data patches that may invalidate dependencies
+    - Verifies which resources are invalidated based on expected results
+    """
     await test_case.set_up_test_case(
         resource_context, dependency_handler._resource_service, dependency_handler._data_service
     )
@@ -382,6 +393,13 @@ async def test_dependency_creation(
     resource_context: ResourceContext,
     test_case: DependencyCreationTestCase,
 ):
+    """
+    This test verifies that dependencies are correctly created between resources based on their interactions.
+
+    - Sets up component and resource contexts with specified test conditions
+    - Creates dependencies using the DependencyHandler
+    - Checks that dependencies match expected relationships
+    """
     test_case.set_up_contexts(dependency_handler._component_context, resource_context)
 
     dependency_handler.create_resource_dependencies(COMPONENT_ID)

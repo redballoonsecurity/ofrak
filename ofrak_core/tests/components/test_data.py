@@ -1,3 +1,6 @@
+"""
+This module tests the data-related components and functionality of the OFRAK framework.
+"""
 from dataclasses import dataclass
 
 import pytest
@@ -38,6 +41,10 @@ class DataClassValueTestCase:
 class TestDataWordGetValue:
     """
     Test that DataWord.{get_signed_value, get_unsigned_value} return correct values.
+
+    This test verifies that:
+    - The signed value of a DataWord is correctly computed
+    - The unsigned value of a DataWord is correctly computed
     """
 
     async def test_data_word_get_signed_value(self, data_word_test_case: DataClassValueTestCase):
@@ -85,6 +92,10 @@ class TestDataWordGetValue:
 class TestDataRefsAnalyzerLogic(DataRefsAnalyzerTestPattern):
     """
     Test that ReferencedDataAttributes.{get_xrefs_to, get_xrefs_from} logic is sound.
+
+    This test verifies that:
+    - The get_xrefs_to and get_xrefs_from methods of ReferencedDataAttributes work correctly
+    - The data references are properly analyzed and validated
     """
 
     async def test_analyze_data_refs(

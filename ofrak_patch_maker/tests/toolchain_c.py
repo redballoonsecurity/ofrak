@@ -1,3 +1,7 @@
+"""
+This module provides helper function for testing toolchains working under the patch maker.
+"""
+
 from dataclasses import replace
 import logging
 import os
@@ -22,7 +26,13 @@ from ofrak_type.memory_permissions import MemoryPermissions
 
 def run_bounds_check_test(toolchain_under_test: ToolchainUnderTest):
     """
-    Example solution patch for bounds_check challenge.
+    Tests the ability to generate a patched ELF binary for a bounds checking example.
+
+    This test verifies that:
+    - The toolchain can compile C source code into an object file.
+    - A PatchRegionConfig is correctly constructed from segment mappings.
+    - An executable ELF file is generated successfully using PatchMaker.
+    - The resulting binary has the expected file format and exists at the output path.
     """
     source_dir = os.path.join(os.path.dirname(__file__), "example_3")
     source_path = os.path.join(source_dir, "bounds_check.c")
@@ -86,7 +96,12 @@ def run_bounds_check_test(toolchain_under_test: ToolchainUnderTest):
 
 def run_hello_world_test(toolchain_under_test: ToolchainUnderTest):
     """
-    Make sure we can run the toolchain components without falling over.
+    Verifies that the toolchain can build a basic hello-world program without errors.
+
+    This test verifies that:
+    - The toolchain compiles and links a simple C program successfully.
+    - All necessary segments are mapped to appropriate virtual memory addresses.
+    - A valid ELF executable is created with correct segment layout and file format.
     """
     source_dir = os.path.join(os.path.dirname(__file__), "example_1")
     source_path = os.path.join(source_dir, "hello_world.c")
@@ -173,7 +188,13 @@ def run_hello_world_test(toolchain_under_test: ToolchainUnderTest):
 
 def run_relocatable_test(toolchain_under_test: ToolchainUnderTest, build_dir):
     """
-    Use patchmaker to link on a relocatable binary
+    Ensures that the toolchain works correctly when building a relocatable binary.
+
+    This test verifies that:
+    - The toolchain compiles C code into a relocatable object.
+    - Segments are properly assigned virtual memory addresses.
+    - A valid ELF executable is generated for a relocatable input.
+    - The correct linker and symbol resolution mechanisms are used during linking.
     """
     source_dir = os.path.join(os.path.dirname(__file__), "example_5")
     source_path = os.path.join(source_dir, "patch.c")
