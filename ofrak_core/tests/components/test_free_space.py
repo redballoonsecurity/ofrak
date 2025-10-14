@@ -1,3 +1,17 @@
+"""
+This module tests free space modification capabilities in OFRAK.
+
+Requirements Mapping:
+- REQ3.3:
+  - test_partial_free_modifier_out_of_bounds: Tests that trying to run PartialFreeSpaceModifier past a memory regions bounds results in a ValueError
+  - test_partial_free_modifier: Tests that the PartialFreeSpaceModifier returns expected results
+  - test_free_space_modifier: Tests that the FreeSpaceModifier returns expected results
+  - test_dataless_free_space_modifier: Tests that the FreeSpaceModifier works correctly with dataless resources
+  - test_dataless_free_space_modifier_readonly_fails: Tests that attempting to use FreeSpaceModifier with read-only permissions on a dataless resource fails appropriately
+  - test_dataless_free_space_modifier_stub_fails: Tests that attempting to use FreeSpaceModifier with a stub on a dataless resource fails appropriately
+  - test_free_space_modifier_config_fill_parameters: Tests that the length of fill passed to FreeSpaceModifierConfig is greater than 0
+  - test_partial_space_modifier_config_fill_parameters: Tests that the length of fill passed to PartialFreeSpaceModifierConfig is greater than 0
+"""
 from ofrak.core.free_space import RuntimeFreeSpace
 import pytest
 from ofrak.core import FreeSpace, FreeSpaceModifier, FreeSpaceModifierConfig
@@ -13,22 +27,6 @@ from ofrak.core import (
 )
 from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.range import Range
-
-
-"""
-This module tests free space modification capabilities in OFRAK.
-
-Requirements Mapping:
-- REQ3.3: As an OFRAK user, I want to mark regions of a binary as free space so that automated modifications can inject bytes there.
-  - test_partial_free_modifier_out_of_bounds: Tests that trying to run PartialFreeSpaceModifier past a memory regions bounds results in a ValueError
-  - test_partial_free_modifier: Tests that the PartialFreeSpaceModifier returns expected results
-  - test_free_space_modifier: Tests that the FreeSpaceModifier returns expected results
-  - test_dataless_free_space_modifier: Tests that the FreeSpaceModifier works correctly with dataless resources
-  - test_dataless_free_space_modifier_readonly_fails: Tests that attempting to use FreeSpaceModifier with read-only permissions on a dataless resource fails appropriately
-  - test_dataless_free_space_modifier_stub_fails: Tests that attempting to use FreeSpaceModifier with a stub on a dataless resource fails appropriately
-  - test_free_space_modifier_config_fill_parameters: Tests that the length of fill passed to FreeSpaceModifierConfig is greater than 0
-  - test_partial_space_modifier_config_fill_parameters: Tests that the length of fill passed to PartialFreeSpaceModifierConfig is greater than 0
-"""
 
 
 @pytest.fixture

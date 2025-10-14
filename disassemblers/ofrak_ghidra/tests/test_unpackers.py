@@ -1,3 +1,15 @@
+"""
+This module tests the unpacking functionality of OFRAK with Ghidra backend.
+
+Requirements Mapping:
+- REQ1.2:
+  - TestGhidraCodeRegionUnpackAndVerify: Tests code region unpacking with Ghidra backend
+  - TestGhidraComplexBlockUnpackAndVerify: Tests complex block unpacking with Ghidra backend
+  - TestGhidraBasicBlockUnpackAndVerify: Tests basic block unpacking with Ghidra backend
+- REQ2.3:
+  - test_instruction_mode: Tests instruction mode handling with different architectures
+  - test_PIE_code_regions: Tests PIE code region handling with Ghidra backend
+"""
 import os
 from typing import Tuple, Dict
 
@@ -21,20 +33,6 @@ from pytest_ofrak.patterns.complex_block_unpacker import (
 )
 
 ASSETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
-
-
-"""
-This module tests the unpacking functionality of OFRAK with Ghidra backend.
-
-Requirements Mapping:
-- REQ1.2: As an OFRAK user, I want to receive an abstract binary analysis object, so the interface does not change depending on the analyzer used for complex blocks, basic blocks, symbols, instructions, and the control flow graph.
-  - TestGhidraCodeRegionUnpackAndVerify: Tests code region unpacking with Ghidra backend
-  - TestGhidraComplexBlockUnpackAndVerify: Tests complex block unpacking with Ghidra backend
-  - TestGhidraBasicBlockUnpackAndVerify: Tests basic block unpacking with Ghidra backend
-- REQ2.3: As an OFRAK user, I want to have parity across different combinations of disassembler backends: all common operations should be able to be performed with any backend combination.
-  - test_instruction_mode: Tests instruction mode handling with different architectures
-  - test_PIE_code_regions: Tests PIE code region handling with Ghidra backend
-"""
 
 
 class TestGhidraCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):

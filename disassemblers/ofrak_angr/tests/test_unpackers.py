@@ -1,3 +1,13 @@
+"""
+This module tests the unpacking functionality of OFRAK with Angr disassembler backend.
+
+Requirements Mapping:
+- REQ1.2:
+  - TestAngrCodeRegionUnpackAndVerify: Tests code region unpacking with Angr backend
+  - TestAngrComplexBlockUnpackAndVerify: Tests complex block unpacking with Angr backend
+- REQ2.3:
+  - test_basic_block_no_exit: Tests that basic blocks without exit addresses can be unpacked properly
+"""
 from typing import Dict
 import pytest
 import os
@@ -17,18 +27,6 @@ from ofrak import OFRAKContext
 from ofrak import ResourceFilter, ResourceAttributeValueFilter
 from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.core.addressable import Addressable
-
-
-"""
-This module tests the unpacking functionality of OFRAK with Angr disassembler backend.
-
-Requirements Mapping:
-- REQ1.2: As an OFRAK user, I want to receive an abstract binary analysis object, so the interface does not change depending on the analyzer used for complex blocks, basic blocks, symbols, instructions, and the control flow graph.
-  - TestAngrCodeRegionUnpackAndVerify: Tests code region unpacking with Angr backend
-  - TestAngrComplexBlockUnpackAndVerify: Tests complex block unpacking with Angr backend
-- REQ2.3: As an OFRAK user, I want to have parity across different combinations of disassembler backends: all common operations should be able to be performed with any backend combination.
-  - test_basic_block_no_exit: Tests that basic blocks without exit addresses can be unpacked properly
-"""
 
 
 class TestAngrCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):

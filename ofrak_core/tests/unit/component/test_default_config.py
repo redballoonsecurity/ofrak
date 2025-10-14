@@ -1,3 +1,10 @@
+"""
+This module tests the default configuration behavior for unpackers.
+
+Requirements Mapping:
+- REQ1.5:
+  - test_unpacker_with_default: Verifies that unpackers can be invoked with default configurations and that default arguments are properly handled
+"""
 import pytest
 
 from ofrak import OFRAKContext
@@ -9,14 +16,6 @@ from .mock_component import (
     MockUnpackerWithDefaultRequiresPopulated,
     MockUnpackerModifiesDefaultArgument,
 )
-
-"""
-This module tests the default configuration behavior for unpackers.
-
-Requirements Mapping:
-- REQ1.5: As an OFRAK user, I want to programmatically invoke a specific unpacker on a specific binary so that I can control which unpackers run.
-  - test_unpacker_with_default: Verifies that unpackers can be invoked with default configurations and that default arguments are properly handled
-"""
 
 
 @pytest.fixture(autouse=True)

@@ -1,3 +1,11 @@
+"""
+This module tests the patch maker component which allows users to compile and link source code against specific addresses within a binary.
+
+Requirements Mapping:
+- REQ6.1:
+  - test_function_replacement_modifier: Tests the replacement of functions in a program using compiled source code
+  - test_segment_injector_deletes_patched_descendants: Tests that segment injection properly deletes patched descendants
+"""
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Type
@@ -43,15 +51,6 @@ from ofrak_patch_maker.toolchain.model import (
 from ofrak_patch_maker.toolchain.utils import get_repository_config
 from ofrak_type.bit_width import BitWidth
 from ofrak_type.endianness import Endianness
-
-"""
-This module tests the patch maker component which allows users to compile and link source code against specific addresses within a binary.
-
-Requirements Mapping:
-- REQ6.1: As an OFRAK user, I want to be able to compile and link source code against specific addresses within a binary; I should be able to reference internal functions within the binary.
-  - test_function_replacement_modifier: Tests the replacement of functions in a program using compiled source code
-  - test_segment_injector_deletes_patched_descendants: Tests that segment injection properly deletes patched descendants
-"""
 
 PATCH_DIRECTORY = str(Path(__file__).parent / "assets" / "src")
 X86_64_PROGRAM_PATH = str(Path(__file__).parent / "assets" / "hello.out")

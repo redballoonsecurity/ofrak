@@ -1,3 +1,14 @@
+"""
+This module tests the integration of OFRAK with the Capstone disassembler backend.
+
+Requirements Mapping:
+- REQ1.2:
+  - test_capstone_unpacker: Tests that the Capstone disassembler can correctly unpack basic blocks into individual instructions
+  - test_capstone_analyzer: Tests that the Capstone disassembler can correctly analyze instructions and maintain consistency when reanalyzing
+- REQ2.3:
+  - TestCapstoneBasicBlockUnpackAndVerify: Tests that the Capstone disassembler can correctly unpack and verify basic blocks
+  - TestCapstoneRegisterUsage: Tests that the Capstone disassembler can correctly analyze register usage
+"""
 import os
 from binascii import unhexlify
 from dataclasses import dataclass
@@ -29,19 +40,6 @@ from pytest_ofrak.patterns.register_usage_analyzer import (
 )
 
 pytest_plugins = ["pytest_ofrak.fixtures"]
-
-
-"""
-This module tests the integration of OFRAK with the Capstone disassembler backend.
-
-Requirements Mapping:
-- REQ1.2: As an OFRAK user, I want to receive an abstract binary analysis object, so the interface does not change depending on the analyzer used for complex blocks, basic blocks, symbols, instructions, and the control flow graph.
-  - test_capstone_unpacker: Tests that the Capstone disassembler can correctly unpack basic blocks into individual instructions
-  - test_capstone_analyzer: Tests that the Capstone disassembler can correctly analyze instructions and maintain consistency when reanalyzing
-- REQ2.3: As an OFRAK user, I want to have parity across different combinations of disassembler backends: all common operations should be able to be performed with any backend combination.
-  - TestCapstoneBasicBlockUnpackAndVerify: Tests that the Capstone disassembler can correctly unpack and verify basic blocks
-  - TestCapstoneRegisterUsage: Tests that the Capstone disassembler can correctly analyze register usage
-"""
 
 
 ARM32_ARCH = ProgramAttributes(

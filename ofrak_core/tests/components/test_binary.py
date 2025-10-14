@@ -1,7 +1,8 @@
-"""This module tests binary extension functionality in OFRAK.
+"""
+This module tests binary extension functionality in OFRAK.
 
 Requirements Mapping:
-- REQ3.2: As an OFRAK user, I want to extend a firmware image so that I have more space to inject bytes.
+- REQ3.2:
   - TestBinaryExtendModify: Tests the ability to extend a binary resource with additional content
 """
 

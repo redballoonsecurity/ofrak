@@ -1,3 +1,11 @@
+"""
+This module tests allocation of free space in OFRAK.
+
+Requirements Mapping:
+- REQ3.3:
+  - test_allocate: Tests the basic allocation functionality with various test cases
+  - test_allocate_bom: Tests allocation specifically for BOM (Batched Objects and Metadata) components
+"""
 import inspect
 import logging
 import os
@@ -35,16 +43,6 @@ from ofrak_type import (
 )
 from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.range import Range
-
-
-"""
-This module tests allocation of free space in OFRAK.
-
-Requirements Mapping:
-- REQ3.3: As an OFRAK user, I want to mark regions of a binary as free space so that automated modifications can inject bytes there.
-  - test_allocate: Tests the basic allocation functionality with various test cases
-  - test_allocate_bom: Tests allocation specifically for BOM (Batched Objects and Metadata) components
-"""
 
 
 class NullRemoveFreeSpaceModifier(Modifier[FreeSpaceAllocation]):

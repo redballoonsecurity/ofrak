@@ -2,9 +2,9 @@
 This module tests the unpack and pack functionality of OFRAK resources.
 
 Requirements Mapping:
-- REQ1.6: As an OFRAK user, I want to automatically unpack a binary, so I don't have to manually pick analyzers and unpackers.
+- REQ1.6:
   - test_unpack_pack_unpack: Tests that a resource can be automatically unpacked and packed
-- REQ4.2: As an OFRAK user, I want to be able to repack an unpacked binary so that I can get a binary file that contains modifications.
+- REQ4.2:
   - test_unpack_pack_unpack: Tests that a resource can be repacked after being unpacked
 """
 

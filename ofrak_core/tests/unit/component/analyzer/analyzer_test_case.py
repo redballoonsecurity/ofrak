@@ -1,3 +1,13 @@
+"""
+This module tests the analyzer interface and validation of analyzers.
+
+Requirements Mapping:
+- REQ2.1:
+  - test_analyze_method: Tests that Analyzer.analyze returns the expected AnalyzerReturnType
+  - test_resource_analyzer: Tests that Resource.analyze returns the expected resource attributes
+  - test_run_analyzer: Tests that Resource.run works on the given analyzer
+  - test_no_valid_analyzer: Tests that running Resource.analyze raises AnalyzerNotFoundError when no analyzer matches the given ResourceAttributes type
+"""
 from dataclasses import dataclass
 from typing import Type
 
@@ -9,18 +19,6 @@ from ofrak.model.component_model import CC
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.resource import Resource
 from ofrak_type.error import NotFoundError
-
-
-"""
-This module tests the analyzer interface and validation of analyzers.
-
-Requirements Mapping:
-- REQ2.1: As an OFRAK contributor, I want to implement an analyzer using a well-defined interface so that it is easy to add new analyzers.
-  - test_analyze_method: Tests that Analyzer.analyze returns the expected AnalyzerReturnType
-  - test_resource_analyzer: Tests that Resource.analyze returns the expected resource attributes
-  - test_run_analyzer: Tests that Resource.run works on the given analyzer
-  - test_no_valid_analyzer: Tests that running Resource.analyze raises AnalyzerNotFoundError when no analyzer matches the given ResourceAttributes type
-"""
 
 
 @dataclass

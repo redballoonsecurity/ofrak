@@ -1,3 +1,10 @@
+"""
+This module tests the patch from source functionality in OFRAK.
+
+Requirements Mapping:
+- REQ6.2:
+  - test_patch_from_source_modifier: Tests patching a binary from source code by adding a new segment and injecting compiled code
+"""
 import os
 import pytest
 import subprocess
@@ -32,14 +39,6 @@ from ofrak_type import Range
 from ofrak_type.memory_permissions import MemoryPermissions
 
 PAGE_ALIGN = 0x1000
-
-"""
-This module tests the patch from source functionality in OFRAK.
-
-Requirements Mapping:
-- REQ6.2: As an OFRAK user, I want to be able to carve code, writable data, and read-only data memory regions as injectable for the addresses in the linked binary.
-  - test_patch_from_source_modifier: Tests patching a binary from source code by adding a new segment and injecting compiled code
-"""
 
 
 @pytest.fixture(autouse=True)
