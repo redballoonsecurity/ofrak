@@ -1,5 +1,5 @@
 """
-This module tests the utility functions related to toolchain operations,
+Tests the utility functions related to toolchain operations,
 specifically the generation of ARM stubs.
 """
 from dataclasses import dataclass

@@ -1,5 +1,5 @@
 """
-This module tests the functionality of the PatchMaker toolchain in generating
+Test the functionality of the PatchMaker toolchain in generating
 relocatable binaries and applying patches at specified memory regions.
 """
 import logging
@@ -20,7 +20,7 @@ from ofrak_type.memory_permissions import MemoryPermissions
 
 def run_challenge_3_reloc_toy_example_test(toolchain_under_test: ToolchainUnderTest):
     """
-    Tests the application of a patch with multiple segments mapped to specific memory addresses.
+    Test the application of a patch with multiple segments mapped to specific memory addresses.
 
     This test verifies that:
     - A set of assembly source files can be compiled and linked into an ELF binary.

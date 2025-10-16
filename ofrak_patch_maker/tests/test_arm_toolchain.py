@@ -1,5 +1,5 @@
 """
-This module tests ARM toolchain implementation in the patch maker (GNU ARM and LLVM).
+Test the ARM toolchain implementation in the patch maker (GNU ARM and LLVM).
 """
 import os
 import tempfile

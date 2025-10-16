@@ -3,11 +3,6 @@ All notable changes to `ofrak-patch-maker` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased 4.2.0](https://github.com/redballoonsecurity/ofrak/tree/master)
-
-### Added
-- Add OFRAK requirements, requirement to test mapping, test specifications ([#656](https://github.com/redballoonsecurity/ofrak/pull/656))
-
 ## [4.1.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-patch-maker-v.4.0.2...ofrak-patch-maker-v.4.1.0) - 2025-10-03
 
 ### Added

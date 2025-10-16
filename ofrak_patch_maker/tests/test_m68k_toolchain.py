@@ -1,5 +1,5 @@
 """
-This module tests the M68K (Motorola 68000) toolchain implementation in the patch maker (GNU and VBCC).
+Test the M68K (Motorola 68000) toolchain implementation in the patch maker (GNU and VBCC).
 """
 import os
 import tempfile

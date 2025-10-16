@@ -1,5 +1,5 @@
 """
-This module tests the GNU AVR toolchain implementation in the patch maker.
+Test the GNU AVR toolchain implementation in the patch maker.
 """
 import pytest
 from ofrak_type import ArchInfo

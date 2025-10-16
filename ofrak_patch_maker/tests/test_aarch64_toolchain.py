@@ -1,5 +1,5 @@
 """
-This module tests the GNU AArch64 Linux toolchain implementation in the patch maker.
+Test the GNU AArch64 Linux toolchain implementation of OFRAK Patch Maker.
 """
 import os
 import tempfile

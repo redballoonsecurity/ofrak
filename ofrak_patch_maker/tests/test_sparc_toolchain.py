@@ -1,5 +1,5 @@
 """
-This module tests the SPARC toolchain functionality.
+Test the SPARC toolchain functionality.
 """
 import pytest
 import platform

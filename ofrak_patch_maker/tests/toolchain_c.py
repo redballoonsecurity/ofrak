@@ -1,5 +1,5 @@
 """
-This module provides helper function for testing toolchains working under the patch maker.
+Helper function for testing toolchains working under the patch maker.
 """
 
 from dataclasses import replace
@@ -26,7 +26,7 @@ from ofrak_type.memory_permissions import MemoryPermissions
 
 def run_bounds_check_test(toolchain_under_test: ToolchainUnderTest):
     """
-    Tests the ability to generate a patched ELF binary for a bounds checking example.
+    Test the ability to generate a patched ELF binary for a bounds checking example.
 
     This test verifies that:
     - The toolchain can compile C source code into an object file.
@@ -96,7 +96,7 @@ def run_bounds_check_test(toolchain_under_test: ToolchainUnderTest):
 
 def run_hello_world_test(toolchain_under_test: ToolchainUnderTest):
     """
-    Verifies that the toolchain can build a basic hello-world program without errors.
+    Verify that the toolchain can build a basic hello-world program without errors.
 
     This test verifies that:
     - The toolchain compiles and links a simple C program successfully.
@@ -188,7 +188,7 @@ def run_hello_world_test(toolchain_under_test: ToolchainUnderTest):
 
 def run_relocatable_test(toolchain_under_test: ToolchainUnderTest, build_dir):
     """
-    Ensures that the toolchain works correctly when building a relocatable binary.
+    Ensure that the toolchain works correctly when building a relocatable binary.
 
     This test verifies that:
     - The toolchain compiles C code into a relocatable object.

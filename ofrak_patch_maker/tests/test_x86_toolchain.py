@@ -1,5 +1,5 @@
 """
-This module tests the x86 toolchain functionality.
+Test the x86 toolchain functionality.
 """
 import pytest
 

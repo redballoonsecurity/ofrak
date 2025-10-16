@@ -1,5 +1,5 @@
 """
-This module tests the PowerPC toolchain functionality.
+Test the PowerPC toolchain functionality.
 """
 import pytest
 
