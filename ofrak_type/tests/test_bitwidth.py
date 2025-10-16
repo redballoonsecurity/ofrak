@@ -1,5 +1,5 @@
 """
-This module tests the BitWidth enum and its methods.
+Test the BitWidth enum and its methods.
 """
 import pytest
 
@@ -12,7 +12,7 @@ from ofrak_type.bit_width import BitWidth
 )
 def test_bitwidth_get_word_size(bitwidth: BitWidth, expected_word_size: int):
     """
-    This test verifies that the get_word_size method of BitWidth returns the correct word size
-    for each bit width.
+    Test that the get_word_size method of BitWidth returns the correct word size for each possible
+    bit width.
     """
     assert bitwidth.get_word_size() == expected_word_size

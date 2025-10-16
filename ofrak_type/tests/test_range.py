@@ -1,6 +1,7 @@
-"""This module tests the Range class and related functions.
+"""
+Test the Range class and related functions.
 
-This test verifies that:
+These tests verify that:
 - The Range class correctly handles range creation, validation, and operations
 - Functions like remove_subranges and chunk_ranges work as expected
 - Edge cases such as empty ranges, negative ranges, and large ranges are handled properly
@@ -24,7 +25,7 @@ def range_strategy(draw):
 
 def test_invalid_range():
     """
-    Test that creating a range with start > end raises a ValueError.
+    Test that creating a Range with start > end raises a ValueError.
     """
     with pytest.raises(ValueError):
         _ = Range(5, 0)
@@ -239,7 +240,7 @@ def test_translate(test_range: Range, offset: int, expected_range: Range):
 @pytest.mark.parametrize("test_range, offset", [(Range(5, 10), -6)])
 def test_translate_value_error(test_range: Range, offset: int):
     """
-    Test that translate raises ValueError for invalid offsets.
+    Test that translate raises a ValueError for invalid offsets.
     """
     with pytest.raises(ValueError):
         test_range.translate(offset)

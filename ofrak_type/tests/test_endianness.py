@@ -1,5 +1,5 @@
 """
-This module tests the endianness functionality.
+Test endianness functionality.
 """
 import pytest
 import struct
@@ -16,7 +16,7 @@ from ofrak_type.endianness import Endianness
 )
 def test_endianness_get_struct_flag(endianness: Endianness, expected_struct_flag: str):
     """
-    This test verifies that the Endianness enum correctly returns the appropriate struct flag
+    Test that the Endianness enum correctly returns the appropriate struct flag
     for packing and unpacking binary data.
 
     This test verifies that:

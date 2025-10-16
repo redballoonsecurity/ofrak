@@ -1,5 +1,5 @@
 """
-This module tests the MemoryPermissions enum and its associated operations.
+Test MemoryPermissions enum and its associated operations.
 """
 import pytest
 
@@ -21,7 +21,8 @@ from ofrak_type.memory_permissions import MemoryPermissions
 )
 def test_memory_permissions_as_str(memory_permissions: MemoryPermissions, expected_str: str):
     """
-    Test that the as_str() method correctly converts MemoryPermissions to their string representation.
+    Test that the as_str() method correctly converts MemoryPermissions to their string
+    representation.
     """
     assert memory_permissions.as_str() == expected_str
 
