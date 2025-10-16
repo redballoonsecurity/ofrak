@@ -1,5 +1,5 @@
 """
-This module tests the functionality of the BinaryDeserializer class and its error handling.
+Test BinaryDeserializer class and its error handling.
 """
 import io
 
@@ -11,12 +11,12 @@ from ofrak_type.endianness import Endianness
 
 class TestBinaryDeserializer:
     """
-    This test class verifies the functionality of the BinaryDeserializer implementation.
+    Test the BinaryDeserializer implementation.
     """
 
     def test_set_stream(self):
         """
-        This test verifies that the deserializer can correctly set and read from a stream.
+        Test that deserializer can correctly set and read from a stream.
 
         This test verifies that:
         - Setting a stream allows reading data
@@ -31,10 +31,10 @@ class TestBinaryDeserializer:
 
     def test_set_endianness(self):
         """
-        This test verifies that the deserializer can configure its endianness setting.
+        Test that the deserializer can configure its endianness setting.
 
         This test verifies that:
-        - Endianness can be set to LITTLE_ENDIAN
+        - Endianness can be set
         - The configuration persists after setting
         """
         deserializer = BinaryDeserializer(io.BytesIO())
@@ -42,12 +42,12 @@ class TestBinaryDeserializer:
 
     def test_set_word_size(self):
         """
-        This test verifies that the deserializer can configure its word size setting.
+        Test that the deserializer can configure its word size setting.
 
         This test verifies that:
         - Word size defaults to 8
         - Word size can be changed to 4
-        - Configuration persists after setting
+        - Changes to word size persist
         """
         deserializer = BinaryDeserializer(io.BytesIO())
         assert deserializer.get_word_size() == 8
@@ -56,7 +56,7 @@ class TestBinaryDeserializer:
 
     def test_seek(self):
         """
-        This test verifies that the deserializer can seek to specific positions in the stream.
+        Test that the deserializer can seek to specific positions in the stream.
 
         This test verifies that:
         - Initial position starts at 0
@@ -77,7 +77,7 @@ class TestBinaryDeserializer:
 
     def test_seek_error(self):
         """
-        This test verifies that seeking without a configured stream raises an error.
+        Test that seeking without a configured stream raises an error.
 
         This test verifies that:
         - Attempting to seek with no stream raises DeserializationError
@@ -88,7 +88,7 @@ class TestBinaryDeserializer:
 
     def test_position_error(self):
         """
-        This test verifies that position queries without a stream raise proper errors.
+        Test that position queries without a stream raise proper errors.
 
         This test verifies that:
         - Attempting to get position with no stream raises DeserializationError
@@ -99,7 +99,7 @@ class TestBinaryDeserializer:
 
     def test_read_error(self):
         """
-        This test verifies that read operations without a stream raise proper errors.
+        Test that read operations without a stream raise proper errors.
 
         This test verifies that:
         - Attempting to read with no stream raises DeserializationError
@@ -110,7 +110,7 @@ class TestBinaryDeserializer:
 
     def test_read_length_error(self):
         """
-        This test verifies that attempting to read beyond stream length raises an error.
+        Test that attempting to read beyond stream length raises an error.
 
         This test verifies that:
         - Reading from empty stream with positive length request raises DeserializationError

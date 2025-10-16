@@ -1,5 +1,5 @@
 """
-This module tests StreamCapture.
+Test StreamCapture.
 """
 import os
 import sys
@@ -9,8 +9,6 @@ from ofrak_io.stream_capture import StreamCapture
 
 def test_stream_capture(capsys):
     """
-    Test StreamCapture.
-
     This test verifies that:
     - StreamCapture properly captures output written to a stream
     - The captured output matches the expected content including line endings

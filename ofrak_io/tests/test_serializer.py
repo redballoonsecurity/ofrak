@@ -1,5 +1,5 @@
 """
-This module tests the functionality of the BinarySerializer class.
+Test the functionality of the BinarySerializer class.
 """
 import io
 
@@ -47,7 +47,8 @@ class TestBinarySerializer:
 
     def test_seek(self):
         """
-        This test verifies that the serializer can correctly seek to different positions in the stream.
+        This test verifies that the serializer can correctly seek to different positions in the
+        stream.
         - It creates a serializer with a BytesIO buffer
         - It writes data and verifies the position advances correctly
         - It seeks back to the beginning and overwrites data

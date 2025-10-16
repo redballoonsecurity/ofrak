@@ -1,5 +1,5 @@
 """
-This module tests the batch manager functionality.
+Test the batch manager functionality.
 """
 import asyncio
 import random
@@ -70,7 +70,7 @@ def bad_batch_manager(counter):
 
 async def test_single_result(batch_manager, counter):
     """
-    This test verifies that a single request is handled correctly by the batch manager.
+    Test that a single request is handled correctly by the batch manager.
 
     This test verifies that:
     - A single string request is processed and returns the correct result
@@ -84,7 +84,7 @@ async def test_single_result(batch_manager, counter):
 
 async def test_many_results(batch_manager, many_strings, counter):
     """
-    This test verifies that multiple requests are handled efficiently by the batch manager.
+    Test that multiple requests are handled efficiently by the batch manager.
 
     This test verifies that:
     - Multiple string requests are processed in a single batch
@@ -96,7 +96,7 @@ async def test_many_results(batch_manager, many_strings, counter):
 
 async def test_incomplete_handling_raises_err(bad_batch_manager):
     """
-    This test verifies that the batch manager properly raises an error when not all requests are handled.
+    Test that the batch manager properly raises an error when not all requests are handled.
 
     This test verifies that:
     - A NotAllRequestsHandledError is raised when some requests are not processed

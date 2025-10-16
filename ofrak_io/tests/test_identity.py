@@ -1,5 +1,5 @@
 """
-This module tests the identity property of binary serialization and deserialization operations.
+Test the identity property of binary serialization and deserialization operations.
 """
 import io
 import os
@@ -69,7 +69,8 @@ class TestBinarySerializationIdentity:
     @given(values=pack_multiple_strategy)
     def test_multiple_auto_bitwidth(self, values: PackMultipleValues):
         """
-        Test the identity property for packing and unpacking multiple values with auto bitwidth detection.
+        Test the identity property for packing and unpacking multiple values with auto bitwidth
+        detection.
 
         This test verifies that:
         - A set of values (int, byte, and quad) are serialized with auto bitwidth detection
@@ -318,7 +319,8 @@ class TestBinarySerializationIdentity:
 
         This test verifies that:
         - A string is serialized with a fixed length
-        - The serialized data is then deserialized back to the same value using automatic length detection
+        - The serialized data is then deserialized back to the same value using automatic length
+        detection
         """
         string_text = "hello"
         string_length = len(string_text) + 10
