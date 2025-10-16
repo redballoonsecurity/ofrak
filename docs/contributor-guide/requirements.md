@@ -11,9 +11,7 @@ Broadly speaking, there are three types of people who use OFRAK:
 - **OFRAK Developers**: Engineers who maintain the core OFRAK code.
 
 ## OFRAK Requirements
-OFRAK requirements are expressed in a series of epics: unpack binary files, analyze binary files, modify binary files, pack binary files, and have helpful, comprehensive documentation. Each epic is further expressed as a series of user stories.
-
-Requirements are divided into the following categories, and all have unique identifiers:
+OFRAK requirements are expressed in a series of epics:
 
 1. Unpack binary files
 2. Analyze binary files
@@ -22,12 +20,14 @@ Requirements are divided into the following categories, and all have unique iden
 5. OFRAK Documentation
 6. Assemble and compile source code into injectable payloads
 
+Each epic is further expressed as a series of user stories, each of which is a specific requirement which has a unique requirement identifier.
+
 ### 1. Unpack binary files
 
 | Req ID | User Story (Requirement) | User Type | Validation |
 |--------|--------------------------|-----------|------------|
 | REQ1.1 | As an OFRAK contributor, I want to implement an unpacker using a well-defined interface so that it is easy to add new unpackers. | OFRAK Contributor | Unpacker interface is defined in [Unpacker][ofrak.component.unpacker]; see the multiple unpacker tests in [tests/components](https://github.com/redballoonsecurity/ofrak/blob/master/ofrak_core/tests/components) |
-| REQ1.2 | As an OFRAK user, I want to receive an abstract binary analysis object, so the interface does not change depending on the analyzer used for complex blocks, basic blocks, symbols, instructions, and the control flow graph. | OFRAK User | OFRAK contains test patterns for these abstract analysis objects in [pytest_ofrak/patterns](https://github.com/redballoonsecurity/ofrak/tree/master/pytest_ofrak/src/pytest_ofrak/patterns): implementations of these test for different analysis backends include: [test_unpackers (Angr)](https://github.com/redballoonsecurity/ofrak/blob/master/disassemblers/ofrak_angr/tests/test_unpackers.py), [test_unpackers (Ghidra)](https://github.com/redballoonsecurity/ofrak/blob/master/disassemblers/ofrak_ghidra/tests/test_unpackers.py), and [test_ofrak_capstone](https://github.com/redballoonsecurity/ofrak/blob/master/disassemblers/ofrak_capstone/tests/test_ofrak_capstone.py) |
+| REQ1.2 | As an OFRAK user, I want to receive an abstract binary analysis object, so the interface does not change depending on the analyzer used for complex blocks, basic blocks, symbols, instructions, and the control flow graph. | OFRAK User | OFRAK contains test patterns for these abstract analysis objects in [pytest_ofrak/patterns](https://github.com/redballoonsecurity/ofrak/tree/master/pytest_ofrak/src/pytest_ofrak/patterns): implementations of these tests for different analysis backends include: [test_unpackers (Angr)](https://github.com/redballoonsecurity/ofrak/blob/master/disassemblers/ofrak_angr/tests/test_unpackers.py), [test_unpackers (Ghidra)](https://github.com/redballoonsecurity/ofrak/blob/master/disassemblers/ofrak_ghidra/tests/test_unpackers.py), and [test_ofrak_capstone](https://github.com/redballoonsecurity/ofrak/blob/master/disassemblers/ofrak_capstone/tests/test_ofrak_capstone.py) |
 | REQ1.3 | As an OFRAK user, I want to use a library of built-in unpackers to unpack commonly occurring binary formats. | OFRAK User | See the multiple unpacker tests in [tests/components](https://github.com/redballoonsecurity/ofrak/blob/master/ofrak_core/tests/components) |
 | REQ1.4 | As an OFRAK user, I want to unpack a compressed filesystem of known format into a tree-like structure, and export its contents to disk so that it can be examined outside of OFRAK. | OFRAK User | [test_filesystem_component](https://github.com/redballoonsecurity/ofrak/blob/master/ofrak_core/tests/components/test_filesystem_component.py) |
 | REQ1.5 | As an OFRAK user, I want to programmatically invoke a specific unpacker on a specific binary so that I can control which unpackers run. | OFRAK User | [test_unpacker_with_default](https://github.com/redballoonsecurity/ofrak/blob/master/ofrak_core/tests/unit/component/test_default_config.py) |
@@ -38,7 +38,7 @@ Requirements are divided into the following categories, and all have unique iden
 |--------|--------------------------|-----------|------------|
 | REQ2.1 | As an OFRAK contributor, I want to implement an analyzer using a well-defined interface so that it is easy to add new analyzers. | OFRAK Contributor | Analyzer interface is defined in [Analyzer][ofrak.component.analyzer]; analyzer test cases are defined in [analyzer_test_case](https://github.com/redballoonsecurity/ofrak/blob/master/ofrak_core/tests/unit/component/analyzer/analyzer_test_case.py) with an example test in [test_magic_analyzer](https://github.com/redballoonsecurity/ofrak/blob/master/ofrak_core/tests/unit/component/analyzer/test_magic_analyzer.py) |
 | REQ2.2 | As an OFRAK user, I want access to a library of common analyzers so I can learn about an unknown binary. | OFRAK User | See the multiple analyzer tests in [tests/components](https://github.com/redballoonsecurity/ofrak/blob/master/ofrak_core/tests/components) |
-| REQ2.3 | As an OFRAK user, I want to have parity across different combinations of disassembler backends: all common operations should be able to be performed with any backend combination. | OFRAK User | OFRAK supports the following backend combinations: Ghidra, Ghidra + Capstone, angr + Capstone. See : [test_unpackers (Angr)](https://github.com/redballoonsecurity/ofrak/blob/master/disassemblers/ofrak_angr/tests/test_unpackers.py), [test_unpackers (Ghidra)](https://github.com/redballoonsecurity/ofrak/blob/master/disassemblers/ofrak_ghidra/tests/test_unpackers.py), [test_ofrak_capstone](https://github.com/redballoonsecurity/ofrak/blob/master/disassemblers/ofrak_capstone/tests/test_ofrak_capstone.py)|
+| REQ2.3 | As an OFRAK user, I want to have parity across different combinations of disassembler backends: all common operations should be able to be performed with any backend combination. | OFRAK User | OFRAK supports the following backend combinations: Ghidra, Ghidra + Capstone, angr + Capstone. See [test_unpackers (Angr)](https://github.com/redballoonsecurity/ofrak/blob/master/disassemblers/ofrak_angr/tests/test_unpackers.py), [test_unpackers (Ghidra)](https://github.com/redballoonsecurity/ofrak/blob/master/disassemblers/ofrak_ghidra/tests/test_unpackers.py), [test_ofrak_capstone](https://github.com/redballoonsecurity/ofrak/blob/master/disassemblers/ofrak_capstone/tests/test_ofrak_capstone.py)|
 | REQ2.4 | As an OFRAK user, I want the analyzer outputs to be resource views and not attributes types, so that my class definition and types are cleaner and easier to read. | OFRAK User | The [Analyzer][ofrak.component.analyzer] interface supports analysis output of type `ViewableResourceTag` to allow for outputs to be of type `ResourceView` |
 
 ### 3. Modify binary files
