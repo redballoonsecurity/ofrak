@@ -88,6 +88,7 @@ nav:
         - NAND Flash Component: "user-guide/advanced/flash_component.md"
   - Contributor Guide:
       - Getting Started: "contributor-guide/getting-started.md"
+      - Requirements: "contributor-guide/requirements.md"
       - Writing Components:
         - Identifier: "contributor-guide/component/identifier.md"
         - Unpacker: "contributor-guide/component/unpacker.md"
@@ -97,7 +98,6 @@ nav:
         - Components Using External Tools: "contributor-guide/component/external_tools.md"
         - Ghidra Components: "contributor-guide/component/ghidra_components.md"
       - ResourceView: "contributor-guide/core/resource_view.md"
-      - OFRAK Requirements: "contributor-guide/ofrak_requirements.md"
   # Built by gen-files and literate-nav
   - Code Reference: reference/
   - License: "license.md"
