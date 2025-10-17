@@ -9,6 +9,11 @@ class BinaryNinjaAnalysisResource(ResourceView):
 
 
 class BinaryNinjaAnalysisIdentifier(Identifier):
+    """
+    Tags Program resources for Binary Ninja analysis. Enables Binary Ninja-based components to run on the resource.
+    Automatically identifies programs that should be analyzed with Binary Ninja.
+    """
+
     id = b"BinaryNinjaAnalysisIdentifier"
     targets = (Program,)
 

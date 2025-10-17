@@ -1101,6 +1101,9 @@ class AiohttpOFRAKServer:
                         else None,
                     }
                 )
+            docstring = "No documentation is provided for this config."
+            if config.__doc__ is not None:
+                docstring = config.__doc__
             return json_response(
                 {
                     "name": config.__name__,
@@ -1109,6 +1112,7 @@ class AiohttpOFRAKServer:
                     "args": self._construct_arg_response(self._convert_to_class_name_str(config)),
                     "enum": self._construct_enum_response(config),
                     "fields": _fields,
+                    "doc": docstring,
                 }
             )
         else:

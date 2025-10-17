@@ -26,7 +26,12 @@ class Uefi(FilesystemRoot, Pe):
 
 
 class UefiUnpacker(Unpacker[None]):
-    """Unpack a UEFI binary. This current method cannot repack after modification because UEFITool cannot support it."""
+    """
+    Extracts components from UEFI (Unified Extensible Firmware Interface) firmware binaries, which
+    contain multiple nested firmware volumes, files, and sections. Note that current limitations
+    prevent repacking after modification. Use when analyzing UEFI firmware for security research,
+    examining firmware updates, or extracting embedded drivers and applications.
+    """
 
     targets = (Uefi,)
     children = (File, Folder, SpecialFileType)

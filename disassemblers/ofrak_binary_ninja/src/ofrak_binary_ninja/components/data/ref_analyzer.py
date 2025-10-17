@@ -16,7 +16,8 @@ LOGGER = logging.getLogger(__name__)
 
 class BinaryNinjaReferencedDataAnalyzer(ReferencedDataAnalyzer):
     """
-    Analyzer to get all data references in the program
+    Finds cross-references between functions and data using Binary Ninja's analysis. Returns which functions reference
+    which data addresses. Use for data-flow analysis and understanding how functions access static data.
     """
 
     async def analyze(self, resource: Resource, config=None) -> Tuple[ReferencedDataAttributes]:

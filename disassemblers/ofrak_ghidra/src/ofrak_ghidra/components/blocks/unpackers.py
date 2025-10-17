@@ -32,6 +32,11 @@ _GetDataWordsResult = List[Dict[str, Union[str, int]]]
 
 
 class GhidraCodeRegionUnpacker(CodeRegionUnpacker, OfrakGhidraMixin):
+    """
+    Uses Ghidra's function analysis to extract function boundaries (complex blocks) from code regions. Leverages
+    Ghidra's sophisticated function detection and analysis. Use for automated function discovery with Ghidra.
+    """
+
     get_complex_blocks_script = OfrakGhidraScript(
         os.path.join(CORE_OFRAK_GHIDRA_SCRIPTS, "GetComplexBlocks.java"),
     )
@@ -77,6 +82,11 @@ class GhidraComplexBlockUnpacker(
     ComplexBlockUnpacker,
     OfrakGhidraMixin,
 ):
+    """
+    Uses Ghidra to disassemble functions into basic blocks and data words. Extracts control flow, instruction set
+    modes, and data cross-references using Ghidra's analysis. Use for detailed function structure analysis with Ghidra.
+    """
+
     get_basic_blocks_script = OfrakGhidraScript(
         os.path.join(CORE_OFRAK_GHIDRA_SCRIPTS, "GetBasicBlocks.java")
     )

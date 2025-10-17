@@ -5,6 +5,11 @@ from ofrak_angr.model import AngrAnalysisResource
 
 
 class AngrAnalysisIdentifier(Identifier):
+    """
+    Tags Program resources for angr analysis. Enables angr-based components to run on the resource. Automatically
+    identifies programs that should be analyzed with angr.
+    """
+
     id = b"AngrAnalysisIdentifier"
     targets = (Program,)
 

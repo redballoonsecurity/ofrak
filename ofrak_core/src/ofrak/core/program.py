@@ -93,6 +93,12 @@ class Program(LinkableBinary):
 
 
 class ReferencedStringsAnalyzer(Analyzer[None, Tuple[ReferencedStringsAttributes]], ABC):
+    """
+    Finds cross-references between functions and strings (which functions reference which strings).
+    Use for program structure analysis and control-flow. NOT for string extraction - use
+    StringsAnalyzer or StringsUnpacker for that.
+    """
+
     targets = (Program,)
     outputs = (ReferencedStringsAttributes,)
 

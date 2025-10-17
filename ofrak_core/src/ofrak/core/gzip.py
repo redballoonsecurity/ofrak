@@ -48,7 +48,10 @@ class GzipData(GenericBinary):
 
 class GzipUnpacker(Unpacker[None]):
     """
-    Unpack (decompress) a gzip file.
+    Decompresses gzip-compressed data using the DEFLATE algorithm with gzip wrapper headers and CRC
+    checksums. Use for .gz files, compressed tarballs (.tar.gz), or gzip-compressed sections within
+    binaries. After decompression, the resulting data can be further unpacked if it contains
+    archives or structured formats.
     """
 
     id = b"GzipUnpacker"
@@ -88,7 +91,9 @@ class GzipUnpacker(Unpacker[None]):
 
 class GzipPacker(Packer[None]):
     """
-    Pack data into a compressed gzip file.
+    Compresses data using gzip format with DEFLATE compression and adds gzip headers and CRC32
+    checksums. Use after modifying decompressed gzip data to recreate .gz files or gzip-compressed
+    sections.
     """
 
     targets = (GzipData,)

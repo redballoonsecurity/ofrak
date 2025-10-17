@@ -247,6 +247,12 @@ class LinkableBinary(GenericBinary):
 
 @dataclass
 class UpdateLinkableSymbolsModifierConfig(ComponentConfig):
+    """
+    Config for updating linkable symbols in a binary.
+
+    :var updated_symbols: Tuple of LinkableSymbol objects to add or update (must have unique vaddrs)
+    """
+
     updated_symbols: Tuple[LinkableSymbol, ...]
 
     def __post_init__(self):
@@ -260,7 +266,12 @@ class UpdateLinkableSymbolsModifierConfig(ComponentConfig):
 
 class UpdateLinkableSymbolsModifier(Modifier[UpdateLinkableSymbolsModifierConfig]):
     """
-    Add or update the LinkableSymbols in a LinkableBinary.
+    Adds new linkable symbols or updates existing ones in LinkableBinary resources, managing the
+    symbol table for linking purposes. All provided symbols must have unique virtual addresses. Use
+    for creating symbols after code injection, adding function names for injected code, updating
+    symbol addresses after relocation, building symbol tables for stripped binaries, or maintaining
+    linkable symbol information. Essential for making injected code callable by name and supporting
+    proper linking workflows.
 
     :raises ValueError: if not all the provided symbols have unique vaddrs.
     """

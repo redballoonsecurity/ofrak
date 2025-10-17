@@ -27,7 +27,9 @@ class LzoData(GenericBinary):
 
 class LzoUnpacker(Unpacker[None]):
     """
-    Unpack (decompress) an LZO file.
+    Decompresses LZO (Lempel-Ziv-Oberhumer) compressed data. Use when analyzing firmware or software
+    that uses LZO compression, often identifiable by specific magic bytes. The fast decompression
+    makes it popular for real-time compression needs.
     """
 
     id = b"LzoUnpacker"
@@ -52,7 +54,8 @@ class LzoUnpacker(Unpacker[None]):
 
 class LzoPacker(Packer[None]):
     """
-    Pack data into a compressed LZO file.
+    Compresses data using LZO (Lempel-Ziv-Oberhumer) algorithm. Use after modifying decompressed LZO
+    data to recreate compressed sections in firmware.
     """
 
     targets = (LzoData,)
