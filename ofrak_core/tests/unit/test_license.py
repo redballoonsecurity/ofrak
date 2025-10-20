@@ -1,5 +1,8 @@
 """
 Test the license agreement and license file reading functionality.
+
+Requirements Mapping:
+- REQ5.3
 """
 import json
 import os
@@ -21,6 +24,14 @@ class TestAgreement:
         "license_data", ({"license_type": "Community License"}, {"license_type": "Pro License"})
     )
     def test_get_agreement(self, license_data: LicenseDataType):
+        """
+        Test that Agreement.get_agreement returns valid license text for different license types (REQ5.3).
+
+        This test verifies that:
+        - The method returns a non-empty string for Community License
+        - The method returns a non-empty string for Pro License
+        - The returned agreement text is properly formatted
+        """
         assert isinstance(Agreement.get_agreement(license_data), str)
 
 

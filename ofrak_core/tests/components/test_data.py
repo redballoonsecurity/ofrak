@@ -51,12 +51,26 @@ class TestDataWordGetValue:
     """
 
     async def test_data_word_get_signed_value(self, data_word_test_case: DataClassValueTestCase):
+        """
+        Test that DataWord.get_value_signed returns the correct signed integer value (REQ1.2).
+
+        This test verifies that:
+        - The signed value is correctly extracted from the DataWord's binary data
+        - The value matches the expected signed integer interpretation
+        """
         data_word = data_word_test_case.data_word
         expected_signed_value = data_word_test_case.expected_signed_value
         signed_value = await data_word.get_value_signed()
         assert signed_value == expected_signed_value
 
     async def test_data_word_get_unsigned_value(self, data_word_test_case: DataClassValueTestCase):
+        """
+        Test that DataWord.get_value_unsigned returns the correct unsigned integer value (REQ1.2).
+
+        This test verifies that:
+        - The unsigned value is correctly extracted from the DataWord's binary data
+        - The value matches the expected unsigned integer interpretation
+        """
         data_word = data_word_test_case.data_word
         expected_unsigned_value = data_word_test_case.expected_unsigned_value
         unsigned_value = await data_word.get_value_unsigned()
@@ -104,6 +118,14 @@ class TestDataRefsAnalyzerLogic(DataRefsAnalyzerTestPattern):
     async def test_analyze_data_refs(
         self, ofrak_context: OFRAKContext, data_refs_test_case: DataRefsAnalyzerTestCase
     ):
+        """
+        Test that ReferencedDataAttributes logic correctly handles cross-references (REQ1.2).
+
+        This test verifies that:
+        - The get_xrefs_to method returns correct references to data
+        - The get_xrefs_from method returns correct references from instructions
+        - Cross-reference data structures maintain proper bidirectional mappings
+        """
         referencing_addresses = list()
         referenced_data = list()
         references = list()

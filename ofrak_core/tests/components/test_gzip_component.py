@@ -72,6 +72,15 @@ class GzipUnpackModifyPackPattern(CompressedFileUnpackModifyPackPattern, ABC):
         self._test_file = gzip_path.resolve()
 
     async def test_unpack_modify_pack(self, ofrak_context: OFRAKContext):
+        """
+        Test gzip unpack, modify, and pack workflow with pigz optimization (REQ1.3, REQ4.4).
+
+        This test verifies that:
+        - Gzip files are unpacked using the appropriate decompressor
+        - Large files trigger pigz parallel compression when available
+        - Modified data can be successfully repacked into valid gzip format
+        - The repacked data decompresses to the expected modified content
+        """
         with patch("asyncio.create_subprocess_exec", wraps=create_subprocess_exec) as mock_exec:
             if self.EXPECT_PIGZ and await PIGZ.is_tool_installed():
                 await super().test_unpack_modify_pack(ofrak_context)
