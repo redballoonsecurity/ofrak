@@ -1,3 +1,11 @@
+"""
+This module defines test patterns for compressed filesystem unpack, modify, and pack operations.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.2
+- REQ4.4
+"""
 from abc import ABC
 from typing import Optional
 
@@ -59,6 +67,14 @@ class CompressedFileUnpackModifyPackPattern(UnpackModifyPackPattern, ABC):
         return await ofrak_context.create_root_resource_from_file(self._test_file)
 
     async def unpack(self, root_resource: Resource):
+        """
+        Test compressed file unpacking (REQ1.3, REQ4.2, REQ4.4).
+
+        This test verifies that:
+        - A compressed file can be unpacked using built-in unpackers
+        - The resource is tagged with the expected type if specified
+        - The unpacked content matches the original uncompressed data
+        """
         await root_resource.unpack()
         if self.expected_tag:
             assert root_resource.has_tag(self.expected_tag)

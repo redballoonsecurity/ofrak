@@ -1,3 +1,10 @@
+"""
+This module defines test patterns for complex block unpacking in OFRAK.
+
+Requirements Mapping:
+- REQ1.2
+- REQ2.3
+"""
 import os
 from dataclasses import dataclass
 from typing import Dict, List, Union
@@ -353,6 +360,15 @@ class ComplexBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
         return resource
 
     async def unpack(self, root_resource: Resource):
+        """
+        Test complex block unpacking with consistent interface across backends (REQ1.2, REQ2.3).
+
+        This test verifies that:
+        - Complex blocks are unpacked recursively from a binary
+        - Basic blocks and data words within complex blocks are extracted correctly
+        - The analyzer provides consistent abstract binary analysis objects
+        - Different disassembler backends produce compatible results
+        """
         await root_resource.unpack_recursively(do_not_unpack=(BasicBlock,))
 
     async def get_descendants_to_verify(self, unpacked_resource: Resource) -> Dict[int, Resource]:

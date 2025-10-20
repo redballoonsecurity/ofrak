@@ -1,3 +1,10 @@
+"""
+This module defines test patterns for basic block unpacking in OFRAK.
+
+Requirements Mapping:
+- REQ1.2
+- REQ2.3
+"""
 import os
 from dataclasses import dataclass
 from typing import Dict, List, Union, Tuple
@@ -1557,6 +1564,15 @@ class BasicBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
     """
 
     async def unpack(self, root_resource: Resource):
+        """
+        Test basic block unpacking with consistent interface across backends (REQ1.2, REQ2.3).
+
+        This test verifies that:
+        - Basic blocks are unpacked recursively from a binary
+        - Instructions within basic blocks are extracted correctly
+        - The analyzer provides consistent abstract binary analysis objects
+        - Different disassembler backends produce compatible results
+        """
         await root_resource.unpack_recursively()
 
     @pytest.fixture(params=BASIC_BLOCK_UNPACKER_TEST_CASES, ids=lambda tc: tc.label)
