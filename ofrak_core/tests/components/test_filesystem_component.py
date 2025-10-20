@@ -2,12 +2,7 @@
 This module tests filesystem components including the ability to initialize from disk, flush to disk, and manage filesystem entries.
 
 Requirements Mapping:
-- REQ1.4:
-  - TestFilesystemRoot
-  - TestFilesystemEntry
-  - TestFolder
-  - TestSymbolicLinkUnpackPack
-  - TestLoadInMemoryFilesystem
+- REQ1.4
 """
 
 import os
