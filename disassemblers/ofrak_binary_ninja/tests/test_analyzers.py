@@ -1,6 +1,3 @@
-"""
-This module tests the Binary Ninja data references analyzer.
-"""
 from pytest_ofrak.patterns.data_refs_analyzer import DataRefsAnalyzerTestPattern
 
 

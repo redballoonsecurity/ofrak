@@ -1,5 +1,5 @@
 """
-This module tests the serialization functionality for Angr analysis data.
+Test the serialization functionality for Angr analysis data.
 """
 import pytest
 from angr import Project

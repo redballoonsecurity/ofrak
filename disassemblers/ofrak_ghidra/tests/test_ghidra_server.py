@@ -1,5 +1,5 @@
 """
-This module tests the Ghidra server management functionality.
+Test the Ghidra server management functionality.
 """
 import re
 import time

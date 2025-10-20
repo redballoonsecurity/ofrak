@@ -1,13 +1,9 @@
 """
-This module tests the integration of OFRAK with the Capstone disassembler backend.
+Tests the integration of OFRAK with the Capstone disassembler backend.
 
 Requirements Mapping:
-- REQ1.2:
-  - test_capstone_unpacker: Tests that the Capstone disassembler can correctly unpack basic blocks into individual instructions
-  - test_capstone_analyzer: Tests that the Capstone disassembler can correctly analyze instructions and maintain consistency when reanalyzing
-- REQ2.3:
-  - TestCapstoneBasicBlockUnpackAndVerify: Tests that the Capstone disassembler can correctly unpack and verify basic blocks
-  - TestCapstoneRegisterUsage: Tests that the Capstone disassembler can correctly analyze register usage
+- REQ1.2
+- REQ2.3
 """
 import os
 from binascii import unhexlify
@@ -63,7 +59,7 @@ def capstone_components(ofrak_injector):
 
 class TestCapstoneBasicBlockUnpackAndVerify(BasicBlockUnpackerUnpackAndVerifyPattern):
     """
-    Tests that the Capstone disassembler can correctly unpack and verify basic blocks (REQ1.2).
+    Test that the Capstone disassembler can correctly unpack and verify basic blocks (REQ1.2).
 
     This test verifies that:
     - Basic blocks can be correctly unpacked into their constituent instructions
@@ -226,7 +222,7 @@ BASIC_BLOCK_TEST_CASES = [
 @pytest.mark.parametrize("test_case", BASIC_BLOCK_TEST_CASES, ids=lambda tc: tc.label)
 async def test_capstone_unpacker(test_case, ofrak_context):
     """
-    Tests that the Capstone disassembler can correctly unpack basic blocks into individual instructions (REQ1.2).
+    Test that the Capstone disassembler can correctly unpack basic blocks into individual instructions (REQ1.2).
 
     This test verifies that:
     - Basic blocks are correctly disassembled into their constituent instructions
@@ -239,7 +235,7 @@ async def test_capstone_unpacker(test_case, ofrak_context):
 @pytest.mark.parametrize("test_case", BASIC_BLOCK_TEST_CASES, ids=lambda tc: tc.label)
 async def test_capstone_analyzer(test_case, ofrak_context):
     """
-    Tests that the Capstone disassembler can correctly analyze instructions and maintain consistency when reanalyzing (REQ1.2).
+    Test that the Capstone disassembler can correctly analyze instructions and maintain consistency when reanalyzing (REQ1.2).
 
     This test verifies that:
     - Instructions can be analyzed by the Capstone backend
@@ -251,7 +247,7 @@ async def test_capstone_analyzer(test_case, ofrak_context):
 
 class TestCapstoneRegisterUsage(RegisterUsageTestPattern):
     """
-    Tests that the Capstone disassembler can correctly analyze register usage (REQ2.3).
+    Test that the Capstone disassembler can correctly analyze register usage (REQ2.3).
 
     This test verifies that:
     - Register usage information is correctly extracted from instructions

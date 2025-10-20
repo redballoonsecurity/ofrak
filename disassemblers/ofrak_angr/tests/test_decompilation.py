@@ -1,5 +1,5 @@
 """
-This module tests the decompilation functionality within the OFRAK Angr disassembler.
+Test the decompilation functionality within the OFRAK Angr disassembler.
 """
 from typing import List
 import os

@@ -1,5 +1,5 @@
 """
-This module tests the decompilation functionality of OFRAK with Ghidra.
+Test the decompilation functionality of OFRAK with Ghidra.
 """
 from typing import List
 import os

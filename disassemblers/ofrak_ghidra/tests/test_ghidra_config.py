@@ -1,5 +1,5 @@
 """
-This module tests the Ghidra configuration functionality.
+Test the Ghidra configuration functionality.
 """
 from dataclasses import dataclass
 

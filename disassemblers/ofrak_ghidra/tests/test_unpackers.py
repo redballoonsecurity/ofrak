@@ -1,14 +1,9 @@
 """
-This module tests the unpacking functionality of OFRAK with Ghidra backend.
+Test the unpacking functionality of OFRAK with Ghidra backend.
 
 Requirements Mapping:
-- REQ1.2:
-  - TestGhidraCodeRegionUnpackAndVerify: Tests code region unpacking with Ghidra backend
-  - TestGhidraComplexBlockUnpackAndVerify: Tests complex block unpacking with Ghidra backend
-  - TestGhidraBasicBlockUnpackAndVerify: Tests basic block unpacking with Ghidra backend
-- REQ2.3:
-  - test_instruction_mode: Tests instruction mode handling with different architectures
-  - test_PIE_code_regions: Tests PIE code region handling with Ghidra backend
+- REQ1.2
+- REQ2.3
 """
 import os
 from typing import Tuple, Dict
@@ -37,7 +32,7 @@ ASSETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
 
 class TestGhidraCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
     """
-    Tests code region unpacking with Ghidra backend (REQ1.2).
+    Test code region unpacking with Ghidra backend (REQ1.2).
 
     This test verifies that:
     - Code regions can be successfully unpacked
@@ -47,7 +42,7 @@ class TestGhidraCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
 
 class TestGhidraComplexBlockUnpackAndVerify(ComplexBlockUnpackerUnpackAndVerifyPattern):
     """
-    Tests complex block unpacking with Ghidra backend (REQ1.2).
+    Test complex block unpacking with Ghidra backend (REQ1.2).
 
     This test verifies that:
     - Complex blocks can be successfully unpacked
@@ -80,7 +75,7 @@ class TestGhidraComplexBlockUnpackAndVerify(ComplexBlockUnpackerUnpackAndVerifyP
 
 class TestGhidraBasicBlockUnpackAndVerify(BasicBlockUnpackerUnpackAndVerifyPattern):
     """
-    Tests basic block unpacking with Ghidra backend (REQ1.2).
+    Test basic block unpacking with Ghidra backend (REQ1.2).
 
     This test verifies that:
     - Basic blocks can be successfully unpacked
@@ -106,7 +101,7 @@ async def test_case(
 
 async def test_instruction_mode(test_case: Tuple[Resource, InstructionSetMode]):
     """
-    Tests instruction mode handling with different architectures (REQ2.3).
+    Test instruction mode handling with different architectures (REQ2.3).
 
     This test verifies that:
     - Instructions are correctly identified with their expected instruction set mode
@@ -138,7 +133,7 @@ async def program_resource(ofrak_context: OFRAKContext):
 
 async def test_PIE_code_regions(program_resource):
     """
-    Tests PIE code region handling with Ghidra backend (REQ2.3).
+    Test PIE code region handling with Ghidra backend (REQ2.3).
 
     This test verifies that:
     - PIE binaries are loaded at the correct address in Ghidra

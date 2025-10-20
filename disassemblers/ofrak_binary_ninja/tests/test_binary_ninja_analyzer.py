@@ -1,5 +1,5 @@
 """
-This module tests the functionality of the BinaryNinjaAnalyzer component.
+Test the functionality of the BinaryNinjaAnalyzer component.
 """
 from dataclasses import dataclass
 from typing import Tuple

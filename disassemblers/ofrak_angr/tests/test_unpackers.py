@@ -1,12 +1,9 @@
 """
-This module tests the unpacking functionality of OFRAK with Angr disassembler backend.
+Test the unpacking functionality of OFRAK with Angr disassembler backend.
 
 Requirements Mapping:
-- REQ1.2:
-  - TestAngrCodeRegionUnpackAndVerify: Tests code region unpacking with Angr backend
-  - TestAngrComplexBlockUnpackAndVerify: Tests complex block unpacking with Angr backend
-- REQ2.3:
-  - test_basic_block_no_exit: Tests that basic blocks without exit addresses can be unpacked properly
+- REQ1.2
+- REQ2.3
 """
 from typing import Dict
 import pytest
@@ -30,7 +27,7 @@ from ofrak.core.addressable import Addressable
 
 
 class TestAngrCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
-    """Tests code region unpacking with Angr backend (REQ1.2).
+    """Test code region unpacking with Angr backend (REQ1.2).
 
     This test verifies that:
     - Code regions can be successfully unpacked using the Angr disassembler backend
@@ -40,7 +37,7 @@ class TestAngrCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
 
 class TestAngrComplexBlockUnpackAndVerify(ComplexBlockUnpackerUnpackAndVerifyPattern):
     """
-    Tests complex block unpacking with Angr backend (REQ1.2).
+    Test complex block unpacking with Angr backend (REQ1.2).
 
     This test verifies that:
     - Complex blocks can be successfully unpacked with the Angr backend
@@ -164,7 +161,7 @@ async def busybox_resource(ofrak_context: OFRAKContext):
 
 async def test_basic_block_no_exit(ofrak_context: OFRAKContext, busybox_resource):
     """
-    Tests that basic blocks without exit addresses can be unpacked properly (REQ2.3).
+    Test that basic blocks without exit addresses can be unpacked properly (REQ2.3).
     Regression test for https://github.com/redballoonsecurity/ofrak/issues/614
 
     This test verifies that:

@@ -1,5 +1,5 @@
 """
-This module tests the Ghidra program analyzer components.
+Test the Ghidra program analyzer components.
 """
 import os.path
 import os.path

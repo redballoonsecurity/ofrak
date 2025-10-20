@@ -1,5 +1,5 @@
 """
-This module tests that additional script directories can be specified to Ghidra.
+Test that additional script directories can be specified to Ghidra.
 """
 import pytest
 
