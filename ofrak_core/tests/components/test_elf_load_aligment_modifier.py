@@ -1,5 +1,8 @@
 """
 This module tests the ELF load segment alignment modifier component in OFRAK.
+
+Requirements Mapping:
+- REQ3.4
 """
 import os
 import subprocess

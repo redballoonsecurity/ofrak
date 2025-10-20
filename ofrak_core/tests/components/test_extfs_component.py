@@ -1,5 +1,9 @@
 """
-This module tests the Ext filesystem unpacking functionality for EXT2, EXT3, and EXT4 filesystems.
+Test the Ext filesystem unpacking functionality for EXT2, EXT3, and EXT4 filesystems.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
 """
 import os.path
 from dataclasses import dataclass

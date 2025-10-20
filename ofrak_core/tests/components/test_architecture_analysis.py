@@ -1,5 +1,8 @@
 """
-This module tests the analysis of program attributes from memory regions within an OFRAK resource.
+Test the analysis of program attributes from memory regions within an OFRAK resource.
+
+Requirements Mapping:
+- REQ2.2
 """
 import os
 

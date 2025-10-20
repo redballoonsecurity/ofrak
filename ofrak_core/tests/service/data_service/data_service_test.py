@@ -1,5 +1,5 @@
 """
-This module tests the internal implementation details of the DataService.
+Test the internal implementation details of the DataService.
 """
 import pytest
 
@@ -15,8 +15,9 @@ from ofrak_type.error import NotFoundError
 class TestDataService:
     async def test_get_root_by_id(self, populated_data_service: DataService):
         """
-        This test verifies that the DataService properly handles requests for non-existent data roots.
-        - It checks that attempting to retrieve a root by an ID that doesn't exist raises a NotFoundError.
+        Test that the DataService properly handles requests for non-existent data roots.
+        - It checks that attempting to retrieve a root by an ID that doesn't exist raises a
+        NotFoundError.
         """
         with pytest.raises(NotFoundError):
             populated_data_service._get_root_by_id(DATA_1)
@@ -40,7 +41,7 @@ class TestDataRoot:
 
     async def test_add_mapped_model(self, data_root: _DataRoot):
         """
-        This test verifies that the _DataRoot class correctly rejects models mapped outside its bounds.
+        Test that the _DataRoot class correctly rejects models mapped outside its bounds.
 
         This test:
         - creates a model with a range that exceeds the root's boundaries.
@@ -56,7 +57,7 @@ class TestDataRoot:
 
     async def test_delete_mapped_model(self, data_root: _DataRoot):
         """
-        This test verifies that the _DataRoot class correctly handles deletion of non-existent models.
+        Test that the _DataRoot class correctly handles deletion of non-existent models.
 
         This test:
         - creates a model that is not present in the root's mapped models.
@@ -73,7 +74,7 @@ class TestDataRoot:
 
 class TestPatchResizeTracker:
     """
-    This test verifies the functionality of shifting points based on patch resize operations.
+    Test the functionality of shifting points based on patch resize operations.
 
     This test:
     - checks that points before a resized range are not shifted.
@@ -97,7 +98,7 @@ class TestPatchResizeTracker:
 
     async def test_add_new_resized_range(self, tracker: _PatchResizeTracker):
         """
-        This test verifies the correct calculation of the total size difference after adding resized ranges.
+        Test the correct calculation of the total size difference after adding resized ranges.
 
         This test:
         - adds a new resized range with a negative size change.

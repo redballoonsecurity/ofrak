@@ -1,5 +1,8 @@
 """
-This module tests the entropy analysis component functionality.
+Test entropy analysis component functionality.
+
+Requirements Mapping:
+- REQ2.2
 """
 import os.path
 

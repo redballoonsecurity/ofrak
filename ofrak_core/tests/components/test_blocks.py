@@ -1,5 +1,8 @@
 """
 This module tests ComplexBlock, BasicBlock, Instruction, and DataWord primitives.
+
+Requirements Mapping:
+- REQ1.2: The classes tested in this module directly support this requirement
 """
 import os
 from dataclasses import dataclass

@@ -1,5 +1,5 @@
 """
-This module tests the ResourceService interface for managing OFRAK resources,
+Test the ResourceService interface for managing OFRAK resources,
 including CRUD operations, hierarchical traversal, and filtering capabilities.
 """
 import random

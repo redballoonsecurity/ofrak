@@ -1,5 +1,9 @@
 """
-This module tests the functionality of the Zlib component.
+Test the functionality of the Zlib component.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
 """
 import zlib
 
@@ -14,7 +18,7 @@ from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import (
 
 class TestZlibUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
     """
-    This test verifies that zlib-compressed data can be successfully unpacked, modified, and repacked.
+    Test that zlib-compressed data can be successfully unpacked, modified, and repacked.
 
     This test verifies that:
     - Zlib-compressed data can be unpacked into a filesystem

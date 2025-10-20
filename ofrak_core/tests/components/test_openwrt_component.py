@@ -1,5 +1,9 @@
 """
-This module tests the OpenWrt TRX component functionality.
+Test the OpenWrt TRX component functionality.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
 """
 import os
 import struct
@@ -15,7 +19,7 @@ from . import ASSETS_DIR
 
 class TestOpenWrtTrxUnpackModifyPack(UnpackModifyPackPattern):
     """
-    This test verifies that an OpenWrt TRX image can be unpacked, modified, and repacked correctly.
+    Test that an OpenWrt TRX image can be unpacked, modified, and repacked correctly.
 
     This test verifies that:
     - The TRX image can be successfully unpacked into its constituent parts
@@ -94,7 +98,7 @@ class TestOpenWrtTrxUnpackRepackIdempotency(TestOpenWrtTrxUnpackModifyPack):
 
 class TestOpenWrtTrxUnpackRepackNullRootfs(TestOpenWrtTrxUnpackModifyPack):
     """
-    This test verifies that an OpenWrt TRX image without a valid rootfs segment can be handled.
+    Test that an OpenWrt TRX image without a valid rootfs segment can be handled.
 
     This test verifies that:
     - The TRX image can be unpacked even when it lacks a standard rootfs

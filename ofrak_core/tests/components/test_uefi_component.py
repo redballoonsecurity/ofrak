@@ -1,5 +1,9 @@
 """
-This module tests UEFI firmware image unpacking and extraction capabilities.
+Test UEFI firmware image unpacking and extraction capabilities.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
 """
 import pytest
 import os.path

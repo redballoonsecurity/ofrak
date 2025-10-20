@@ -1,5 +1,8 @@
 """
 This module tests the Binwalk component functionality.
+
+Requirements Mapping:
+- REQ2.2:
 """
 from dataclasses import dataclass
 from typing import Dict, Optional

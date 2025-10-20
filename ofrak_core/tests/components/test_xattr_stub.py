@@ -1,5 +1,8 @@
 """
 This module tests the functionality of the xattr stub implementation.
+
+Requirements Mapping:
+- REQ1.2
 """
 import os
 

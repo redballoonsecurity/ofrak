@@ -1,6 +1,10 @@
 """
-This module tests the Device Tree Blob (DTB) component's ability to unpack, modify, and pack
+Test the Device Tree Blob (DTB) component's ability to unpack, modify, and pack
 DTB files while maintaining integrity.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
 """
 import os
 
@@ -17,7 +21,7 @@ from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 
 class TestDeviceTreeBlobUnpackPackIdentity(UnpackModifyPackPattern):
     """
-    This test verifies that a DTB file can be unpacked and repacked without any modifications,
+    Test that a DTB file can be unpacked and repacked without any modifications,
     ensuring the output is identical to the input.
 
     This test verifies that:
@@ -60,7 +64,7 @@ class TestDeviceTreeBlobUnpackPackIdentity(UnpackModifyPackPattern):
 
 class TestDeviceTreeBlobUnpackModifyPack(UnpackModifyPackPattern):
     """
-    This test verifies that a DTB file can be unpacked, modified, and repacked successfully.
+    Test that a DTB file can be unpacked, modified, and repacked successfully.
 
     This test verifies that:
     - The DTB can be unpacked successfully
@@ -138,7 +142,7 @@ class TestDeviceTreeBlobUnpackModifyPack(UnpackModifyPackPattern):
 
 def test_dtb_raw_magic_pattern():
     """
-    This test verifies that the DTB magic pattern matching function correctly identifies DTB file headers.
+    Test that the DTB magic pattern matching function correctly identifies DTB file headers.
 
     This test verifies that:
     - The match_dtb_magic function properly detects DTB file signatures

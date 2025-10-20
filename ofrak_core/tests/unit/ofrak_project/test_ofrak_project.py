@@ -1,5 +1,5 @@
 """
-This module tests core OFRAK project functionality, including project initialization,
+Test core OFRAK project functionality, including project initialization,
 binary loading, and metadata persistence.
 """
 

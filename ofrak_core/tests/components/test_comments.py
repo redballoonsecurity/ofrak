@@ -1,5 +1,5 @@
 """
-This module tests the functionality of comments in OFRAK Core, including adding, modifying
+Test the functionality of comments in OFRAK Core, including adding, modifying
 and removing comments on resources.
 """
 from datetime import timedelta

@@ -1,5 +1,9 @@
 """
-This module tests the Zstandard (zstd) compression component.
+Test the Zstandard (zstd) compression component.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
 """
 import subprocess
 import tempfile312 as tempfile
@@ -16,7 +20,7 @@ from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import (
 @pytest.mark.skipif_missing_deps([ZstdUnpacker, ZstdPacker])
 class TestZstdUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
     """
-    This test verifies that a zstd compressed file can be unpacked, modified, and repacked correctly.
+    Test that a zstd compressed file can be unpacked, modified, and repacked correctly.
 
     This test verifies that:
     - A zstd compressed file can be unpacked into its constituent files

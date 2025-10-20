@@ -3,22 +3,13 @@ This module tests filesystem components including the ability to initialize from
 
 Requirements Mapping:
 - REQ1.4:
-  - test_initialize_from_disk: Tests that FilesystemRoot.initialize_from_disk modifies a resources tree summary.
-  - test_flush_to_disk: Tests that FilesystemRoot.flush_to_disk correctly flushes the filesystem resources.
-  - test_get_entry: Tests that FilesystemRoot.get_entry returns the correct entry.
-  - test_list_dir: Tests that FilesystemRoot.list_dir returns the expected directory contents.
-  - test_add_folder: Tests FilesystemRoot.add_folder functionality.
-  - test_add_file: Tests FilesystemRoot.add_file functionality.
-  - test_remove_file: Tests FilesystemRoot.remove_file functionality.
-  - test_modify_stat_attribute: Tests that FilesytemEntry.modify_stat_attribute modifies the entry's stat attributes.
-  - test_modify_xattr_attribute: Tests that FilesystemEntry.modify_xattr_attribute modifies the entry's xattr attributes.
-  - test_get_entry (Folder): Tests Folder.get_entry method.
-  - test_create_symlinked_file: Tests creation of a text file, a symbolic link to that file, and a symbolic link to the symbolic link.
-  - test_create_symlinked_directory: Tests creation of a directory, a symbolic link to the directory, a file in the directory, and symbolic links to the file both inside and outside the directory.
-  - test_create_symlink_file_cycle: Tests creation of a cycle of symbolic links like: `1 <- 2 <- 3 <- 1`.
-  - test_create_symlink_directory_cycle: Tests creation of a directory, and a symbolic link inside the directory pointing to the directory itself.
-  - test_create_broken_symlink: Tests creation of a link to a file or folder that does not actually exist on the filesystem.
+  - TestFilesystemRoot
+  - TestFilesystemEntry
+  - TestFolder
+  - TestSymbolicLinkUnpackPack
+  - TestLoadInMemoryFilesystem
 """
+
 import os
 import re
 import stat
@@ -232,7 +223,8 @@ class TestFilesystemEntry:
 
     async def test_modify_stat_attribute(self, filesystem_root: FilesystemRoot):
         """
-        Test that FilesytemEntry.modify_stat_attribute modifies the entry's stat attributes (REQ1.4).
+        Test that FilesytemEntry.modify_stat_attribute modifies the entry's stat attributes
+        (REQ1.4).
 
         This test verifies that:
         - A filesystem entry's stat attributes can be modified
@@ -246,7 +238,8 @@ class TestFilesystemEntry:
 
     async def test_modify_xattr_attribute(self, filesystem_root: FilesystemRoot):
         """
-        Test that FilesystemEntry.modify_xattr_attribute modifies the entry's xattr attributes (REQ1.4).
+        Test that FilesystemEntry.modify_xattr_attribute modifies the entry's xattr attributes
+        (REQ1.4).
 
         This test verifies that:
         - A filesystem entry's extended attributes can be modified

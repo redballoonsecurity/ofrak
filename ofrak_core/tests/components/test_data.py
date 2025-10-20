@@ -1,5 +1,8 @@
 """
 This module tests the data-related components and functionality of the OFRAK framework.
+
+Requirements Mapping:
+- REQ1.2: The classes tested in this module directly support this requirement
 """
 from dataclasses import dataclass
 

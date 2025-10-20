@@ -1,5 +1,9 @@
 """
-This module tests the CPIO filesystem component functionality.
+Test the CPIO filesystem component functionality.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
 """
 import asyncio
 import os
@@ -23,7 +27,7 @@ CPIO_ENTRY_NAME = "hello_cpio_file"
 @pytest.mark.skipif_missing_deps([CpioUnpacker, CpioPacker])
 class TestCpioUnpackModifyPack(UnpackModifyPackPattern):
     """
-    This test verifies that a CPIO archive can be unpacked, modified, and repacked correctly.
+    Test that a CPIO archive can be unpacked, modified, and repacked correctly.
 
     This test verifies that:
     - A CPIO archive can be created from a temporary file

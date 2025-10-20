@@ -1,5 +1,5 @@
 """
-This module tests the OFRAK command-line interface (CLI) functionality.
+Test the OFRAK command-line interface (CLI) functionality.
 """
 import hashlib
 import os
@@ -73,7 +73,7 @@ def _check_cli_output_matches_one_of(expected_outputs: Iterable[str], capsys):
 
 def test_list(ofrak_cli_parser, capsys):
     """
-    Tests the 'list' CLI command to ensure it properly displays available packages and components.
+    Test the 'list' CLI command to ensure it properly displays available packages and components.
 
     This test verifies that:
     - The list command can display all packages and components
@@ -129,7 +129,7 @@ def test_list(ofrak_cli_parser, capsys):
 
 def test_deps(ofrak_cli_parser, capsys):
     """
-    Tests the 'deps' CLI command to ensure it properly displays tool dependencies.
+    Test the 'deps' CLI command to ensure it properly displays tool dependencies.
 
     This test verifies that:
     - The deps command can display all tool dependencies for components
@@ -218,7 +218,7 @@ async def all_expected_analysis(ofrak_context: OFRAKContext):
 @pytest.mark.parametrize("filename", TEST_FILES)
 def test_identify(ofrak_cli_parser, capsys, filename, all_expected_analysis: Tuple[Dict, Dict]):
     """
-    Tests the 'identify' CLI command to ensure it correctly identifies file types and attributes.
+    Test the 'identify' CLI command to ensure it correctly identifies file types and attributes.
 
     This test verifies that:
     - The identify command can properly identify file tags
@@ -264,7 +264,7 @@ async def all_expected_hashes(ofrak_context: OFRAKContext):
 @pytest.mark.parametrize("filename", TEST_FILES)
 def test_unpack(ofrak_cli_parser, capsys, filename, tmpdir, ofrak_context, all_expected_hashes):
     """
-    Tests the 'unpack' CLI command to ensure it correctly extracts file contents.
+    Test the 'unpack' CLI command to ensure it correctly extracts file contents.
 
     This test verifies that:
     - The unpack command can properly extract file contents to a directory
@@ -298,7 +298,7 @@ def test_unpack(ofrak_cli_parser, capsys, filename, tmpdir, ofrak_context, all_e
 
 def test_import_file(ofrak_cli_parser, tmpdir, capsys):
     """
-    Tests the 'identify' CLI command with custom import files.
+    Test the 'identify' CLI command with custom import files.
 
     This test verifies that:
     - The identify command can load and use custom Python modules
@@ -336,7 +336,7 @@ class ScratchIdentifier(Identifier[None]):
 
 def test_ofrak_help(cli_commands):
     """
-    Tests that the OFRAK CLI help command works correctly.
+    Test that the OFRAK CLI help command works correctly.
 
     This test verifies that:
     - The --help flag can be parsed without errors
@@ -352,7 +352,7 @@ def test_ofrak_help(cli_commands):
 
 def test_install_checks(cli_commands):
     """
-    Tests the 'deps' CLI command with package installation checks.
+    Test the 'deps' CLI command with package installation checks.
 
     This test verifies that:
     - The deps command can check dependencies for a specific package

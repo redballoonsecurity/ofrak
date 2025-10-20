@@ -1,5 +1,8 @@
 """
-This module tests the symbol resolution functionality within the PatchMaker.
+Test symbol resolution functionality within the PatchMaker.
+
+Requirements Mapping:
+- REQ6.1: Tests support this requirement
 """
 import pytest
 import tempfile312 as tempfile

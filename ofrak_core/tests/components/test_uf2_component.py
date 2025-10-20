@@ -1,5 +1,9 @@
 """
-This module tests the UF2 file format component.
+Test the UF2 file format component.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
 """
 import logging
 import pytest
@@ -24,7 +28,7 @@ EXPECTED_DATA = b"Raspberry Pi Pico with RP1337"
 
 async def test_uf2_identify(ofrak_context: OFRAKContext) -> None:
     """
-    Tests that a UF2 file is correctly identified by the UF2 component.
+    Test that a UF2 file is correctly identified by the UF2 component.
 
     This test verifies that:
     - A UF2 file resource is correctly tagged with Uf2File after identification
@@ -38,7 +42,7 @@ async def test_uf2_identify(ofrak_context: OFRAKContext) -> None:
 @pytest.mark.skipif_missing_deps([Uf2FilePacker, Uf2Unpacker])
 class TestUf2UnpackModifyPack(UnpackModifyPackPattern):
     """
-    Tests the complete workflow of unpacking a UF2 file, modifying its contents, and repacking it.
+    Test the complete workflow of unpacking a UF2 file, modifying its contents, and repacking it.
 
     This test verifies that:
     - A UF2 file can be successfully unpacked into its constituent parts

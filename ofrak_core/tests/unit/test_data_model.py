@@ -1,5 +1,5 @@
 """
-This module tests the data model components of the OFRAK framework.
+Test the data model components of the OFRAK framework.
 """
 from ofrak_type.range import Range
 

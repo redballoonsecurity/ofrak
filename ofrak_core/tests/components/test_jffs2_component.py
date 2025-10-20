@@ -1,6 +1,10 @@
 """
 This module tests the functionality of JFFS2 components in OFRAK, including creation,
 modification, and parsing of JFFS2 file systems.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
 """
 import os
 import subprocess

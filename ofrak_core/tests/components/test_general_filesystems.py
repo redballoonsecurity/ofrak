@@ -1,6 +1,12 @@
 """
-This module tests the general filesystem components including their unpacking,
+Test general filesystem components including their unpacking,
 modification, and packing capabilities.
+
+Requirements Mapping:
+- REQ1.3
+- REQ1.4
+- REQ3.4
+- REQ4.4
 """
 import os
 import tempfile312 as tempfile
@@ -90,7 +96,7 @@ class FilesystemPattern(UnpackModifyPackPattern, ABC):
 
 class TestFilesystemAddFile(FilesystemPattern):
     """
-    This test verifies that a new file can be successfully added to a filesystem.
+    Test that a new file can be successfully added to a filesystem.
 
     This test verifies that:
     - A new file is added to an existing folder in the filesystem
@@ -115,7 +121,7 @@ class TestFilesystemAddFile(FilesystemPattern):
 
 class TestFilesystemRemoveFile(FilesystemPattern):
     """
-    This test verifies that a file can be successfully removed from a filesystem.
+    Test that a file can be successfully removed from a filesystem.
 
     This test verifies that:
     - A specified file is removed from the filesystem
@@ -135,7 +141,7 @@ class TestFilesystemRemoveFile(FilesystemPattern):
 
 class TestFilesystemComponent(FilesystemPattern):
     """
-    This test verifies the modification of file contents within a filesystem.
+    Test the modification of file contents within a filesystem.
 
     This test verifies that:
     - Text in existing files can be patched successfully

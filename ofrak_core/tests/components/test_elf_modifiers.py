@@ -1,5 +1,8 @@
 """
 This module tests ELF modifier components that alter various aspects of ELF binaries.
+
+Requirements Mapping:
+- REQ3.4
 """
 import os
 import subprocess
@@ -224,7 +227,8 @@ class TestElfPointerArraySectionModifier:
 
     async def test_elf_pointer_array_section_modifier(self, elf_resource: Resource):
         """
-        Tests arithmetic modification of pointer array section entries with `ElfPointerArraySectionModifier`.
+        Tests arithmetic modification of pointer array section entries with
+        `ElfPointerArraySectionModifier`.
 
         This test verifies that:
         - ElfPointerArraySectionAddModifier can add a value to all pointer entries

@@ -1,5 +1,8 @@
 """
-This module tests the PE (Portable Executable) component functionality.
+Test the PE (Portable Executable) component functionality.
+
+Requirements Mapping:
+- REQ1.3
 """
 import os
 from typing import List

@@ -1,5 +1,5 @@
 """
-This module tests the functionality related to external tool dependencies in components.
+Test functionality related to external tool dependencies in components.
 """
 import os.path
 import subprocess

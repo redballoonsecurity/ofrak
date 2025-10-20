@@ -1,5 +1,8 @@
 """
-This module tests the functionality of linkable symbols.
+Test the functionality of linkable symbols.
+
+Requirements Mapping:
+- REQ1.2
 """
 import pytest
 

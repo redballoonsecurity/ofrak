@@ -1,5 +1,5 @@
 """
-This module tests the FreeSpaceAllocationModifier's behavior in various allocation scenarios,
+Tests the FreeSpaceAllocationModifier's behavior in various allocation scenarios,
 ensuring that allocating memory ranges correctly removes FreeSpace tags and properly adjusts
 the memory region structure.
 """

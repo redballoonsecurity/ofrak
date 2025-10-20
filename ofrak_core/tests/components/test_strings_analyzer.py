@@ -1,5 +1,9 @@
 """
-This module tests the StringsAnalyzer component in OFRAK, which extracts and analyzes string data from binary resources.
+This module tests the StringsAnalyzer component in OFRAK, which extracts and analyzes string
+data from binary resources.
+
+Requirements Mapping:
+- REQ2.2
 """
 from dataclasses import dataclass
 from ofrak_type.error import NotFoundError

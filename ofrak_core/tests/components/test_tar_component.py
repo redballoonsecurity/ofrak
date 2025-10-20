@@ -1,5 +1,9 @@
 """
 This module tests the functionality of the TarArchive component.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
 """
 import os
 import subprocess

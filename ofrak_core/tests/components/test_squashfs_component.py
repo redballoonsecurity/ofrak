@@ -1,5 +1,9 @@
 """
 This module tests SquashFS filesystem unpacking, modification, and repacking functionality.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
 """
 import os
 import subprocess

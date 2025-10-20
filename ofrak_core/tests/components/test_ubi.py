@@ -1,5 +1,9 @@
 """
-This module tests the functionality of the UBI (Unsorted Block Images) component.
+Test the functionality of the UBI (Unsorted Block Images) component.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
 """
 import hashlib
 import os
@@ -28,7 +32,7 @@ EXPECTED_HASHES = (
 @pytest.mark.skipif_missing_deps([UbiUnpacker, UbiPacker])
 class TestUbiUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
     """
-    This test verifies the complete UBI unpack, modify, and pack workflow.
+    Test the complete UBI unpack, modify, and pack workflow.
 
     This test verifies that:
     - UBI images can be successfully unpacked

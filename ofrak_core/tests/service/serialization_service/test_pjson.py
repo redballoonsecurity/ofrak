@@ -1,5 +1,5 @@
 """
-This module tests the PJSON serialization and deserialization service.
+Test the PJSON serialization and deserialization service.
 """
 from dataclasses import dataclass
 import os

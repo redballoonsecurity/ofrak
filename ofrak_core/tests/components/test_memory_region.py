@@ -1,5 +1,8 @@
 """
 This module tests the MemoryRegion component.
+
+Requirements Mapping:
+- REQ1.2
 """
 from ofrak.core import MemoryRegion
 

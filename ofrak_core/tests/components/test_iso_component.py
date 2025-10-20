@@ -1,5 +1,9 @@
 """
-This module tests the ISO 9660 filesystem component functionality.
+Test the ISO 9660 filesystem component functionality.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
 """
 import os
 from io import BytesIO
@@ -79,7 +83,7 @@ class Iso9660UnpackModifyPackPattern(CompressedFileUnpackModifyPackPattern):
 
 class TestIso9660UnpackModifyPack(Iso9660UnpackModifyPackPattern):
     """
-    This test verifies the unpack, modify, and pack functionality for ISO 9660 filesystems.
+    Test unpack, modify, and pack functionality for ISO 9660 filesystems.
 
     This test verifies that:
     - An ISO 9660 filesystem can be unpacked successfully
@@ -103,7 +107,7 @@ class TestIso9660UnpackModifyPack(Iso9660UnpackModifyPackPattern):
 
 class TestJolietUnpackModifyPack(Iso9660UnpackModifyPackPattern):
     """
-    This test verifies the unpack, modify, and pack functionality for ISO 9660 filesystems with
+    Test unpack, modify, and pack functionality for ISO 9660 filesystems with
     Joliet extensions.
 
     This test verifies that:

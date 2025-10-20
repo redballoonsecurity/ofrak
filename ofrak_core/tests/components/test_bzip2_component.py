@@ -1,5 +1,9 @@
 """
-This module tests the Bzip2 compression and decompression functionality within OFRAK.
+Test Bzip2 compression and decompression functionality within OFRAK.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
 """
 import bz2
 import logging
@@ -21,7 +25,7 @@ BZIP2_ENTRY_NAME = "hello_bzip2_file"
 
 class TestBzip2UnpackModifyPack(UnpackModifyPackPattern):
     """
-    This test verifies that Bzip2-compressed data can be successfully unpacked, modified, and repacked.
+    Test that Bzip2-compressed data can be successfully unpacked, modified, and repacked.
 
     This test verifies that:
     - Bzip2-compressed data can be unpacked

@@ -1,5 +1,5 @@
 """
-This module tests the functionality and behavior of ResourceIndexedAttribute and ResourceAttributes.
+Test the functionality and behavior of ResourceIndexedAttribute and ResourceAttributes.
 """
 
 from dataclasses import dataclass

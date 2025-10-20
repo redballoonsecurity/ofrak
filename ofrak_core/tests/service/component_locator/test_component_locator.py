@@ -1,5 +1,5 @@
 """
-This module tests the ComponentLocator service's ability to register, filter, and retrieve components
+Test the ComponentLocator service's ability to register, filter, and retrieve components
 based on type, target, output, and priority selection rules. It validates error handling,
 component resolution logic, and module priority conflicts.
 """

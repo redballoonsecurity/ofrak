@@ -1,6 +1,9 @@
 """
 This module tests the symbolic analysis capabilities of OFRAK, specifically focusing
 on symbol resolution and type identification in ELF binaries.
+
+Requirements Mapping:
+- REQ2.2
 """
 import subprocess
 from typing import Tuple, Dict
@@ -108,7 +111,7 @@ async def test_complex_block_symbolic_analysis(
     expected_symbols: Dict[str, Tuple[int, ElfSymbolType]],
 ):
     """
-    This test verifies that the symbolic analysis component correctly identifies and analyzes
+    Test that the symbolic analysis component correctly identifies and analyzes
     function symbols in an ELF binary.
 
     This test verifies that:

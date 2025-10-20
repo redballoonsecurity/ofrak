@@ -1,12 +1,8 @@
 """
-This module tests the analyzer interface and validation of analyzers.
+Test cases for the analyzer interface and validation of analyzers.
 
 Requirements Mapping:
-- REQ2.1:
-  - test_analyze_method: Tests that Analyzer.analyze returns the expected AnalyzerReturnType
-  - test_resource_analyzer: Tests that Resource.analyze returns the expected resource attributes
-  - test_run_analyzer: Tests that Resource.run works on the given analyzer
-  - test_no_valid_analyzer: Tests that running Resource.analyze raises AnalyzerNotFoundError when no analyzer matches the given ResourceAttributes type
+- REQ2.1
 """
 from dataclasses import dataclass
 from typing import Type
@@ -53,7 +49,8 @@ class AnalyzerTests:
         Test that :func:`Analyzer.analyze` returns the expected AnalyzerReturnType (REQ2.1).
 
         This test verifies that:
-        - The analyzer's analyze method result matches the expected result specified in the test case
+        - The analyzer's analyze method result matches the expected result specified in the test
+        case
         """
         analyzer = test_case.get_analyzer()
         result = await analyzer.analyze(test_case.resource)

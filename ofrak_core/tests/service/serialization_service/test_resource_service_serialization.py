@@ -1,5 +1,5 @@
 """
-This module tests the serialization and deserialization functionality of the ResourceService
+Test the serialization and deserialization functionality of the ResourceService
 through the SerializationServiceInterface.
 """
 import pytest

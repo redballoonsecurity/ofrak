@@ -1,5 +1,5 @@
 """
-This module tests the OFRAK HTTP server API endpoints and GUI backend functionality.
+Test the OFRAK HTTP server API endpoints and GUI backend functionality.
 """
 import json
 import os
@@ -115,7 +115,7 @@ async def test_server_main(ofrak_client: TestClient, ofrak_context):
 
 async def test_error(ofrak_client: TestClient):
     """
-    Tests error handling for invalid routes.
+    Test error handling for invalid routes.
 
     This test verifies that:
     - Requests to invalid routes return appropriate error status codes
@@ -128,7 +128,7 @@ async def test_error(ofrak_client: TestClient):
 # Test calls to each of the routes set on the server, this should hit each of the callbacks
 async def test_get_index(ofrak_client: TestClient):
     """
-    Tests the index route returns the HTML interface.
+    Test the index route returns the HTML interface.
 
     This test verifies that:
     - The index route is accessible
@@ -144,7 +144,7 @@ async def test_create_root_resource(
     ofrak_client: TestClient, ofrak_server, hello_elf, test_resource
 ):
     """
-    Tests creating a root resource from binary data.
+    Test creating a root resource from binary data.
 
     This test verifies that:
     - A root resource can be created via HTTP POST with binary data
@@ -168,7 +168,7 @@ async def test_create_chunked_root_resource(
     ofrak_client: TestClient, ofrak_server, large_test_file
 ):
     """
-    Tests creating a large root resource using chunked upload.
+    Test creating a large root resource using chunked upload.
 
     This test verifies that:
     - A root resource can be initialized for chunked upload
@@ -201,7 +201,7 @@ async def test_create_chunked_root_resource(
 
 async def test_get_root_resources(ofrak_client: TestClient, ofrak_context, ofrak_server, hello_elf):
     """
-    Tests retrieving all root resources.
+    Test retrieving all root resources.
 
     This test verifies that:
     - Root resources can be retrieved via the API
@@ -225,7 +225,7 @@ async def test_get_root_resources(ofrak_client: TestClient, ofrak_context, ofrak
 
 async def test_get_resource(ofrak_client: TestClient, hello_elf):
     """
-    Tests retrieving a specific resource by ID.
+    Test retrieving a specific resource by ID.
 
     This test verifies that:
     - A resource can be retrieved by its ID via the API
@@ -243,7 +243,7 @@ async def test_get_resource(ofrak_client: TestClient, hello_elf):
 
 async def test_get_data(ofrak_client: TestClient, hello_elf):
     """
-    Tests retrieving resource data with and without range parameters.
+    Test retrieving resource data with and without range parameters.
 
     This test verifies that:
     - Full resource data can be retrieved
@@ -266,7 +266,7 @@ async def test_get_data(ofrak_client: TestClient, hello_elf):
 
 async def test_get_data_length(ofrak_client: TestClient, hello_elf):
     """
-    Tests retrieving the length of resource data.
+    Test retrieving the length of resource data.
 
     This test verifies that:
     - The data length endpoint returned length matches the actual binary data length
@@ -283,7 +283,7 @@ async def test_get_data_length(ofrak_client: TestClient, hello_elf):
 
 async def test_unpack(ofrak_client: TestClient, hello_elf):
     """
-    Tests unpacking a resource.
+    Test unpacking a resource.
 
     This test verifies that:
     - A resource can be unpacked via the API
@@ -302,7 +302,7 @@ async def test_unpack(ofrak_client: TestClient, hello_elf):
 
 async def test_get_children(ofrak_client: TestClient, hello_elf):
     """
-    Tests retrieving child resources in batch.
+    Test retrieving child resources in batch.
 
     This test verifies that:
     - Child resources can be retrieved for multiple parent resources
@@ -324,7 +324,7 @@ async def test_get_children(ofrak_client: TestClient, hello_elf):
 
 async def test_get_descendants(ofrak_client: TestClient, hello_elf):
     """
-    Tests retrieving all descendant resources recursively.
+    Test retrieving all descendant resources recursively.
 
     This test verifies that:
     - All descendants of a resource can be retrieved
@@ -355,7 +355,7 @@ async def test_get_descendants(ofrak_client: TestClient, hello_elf):
 
 async def test_get_data_range(ofrak_client: TestClient, hello_elf):
     """
-    Tests retrieving data ranges for child resources.
+    Test retrieving data ranges for child resources.
 
     This test verifies that:
     - Data ranges can be retrieved for all child resources
@@ -384,7 +384,7 @@ async def test_get_data_range(ofrak_client: TestClient, hello_elf):
 # Cannot find manual example to compare against
 async def test_get_root(ofrak_client: TestClient, hello_elf):
     """
-    Tests retrieving the root resource for a given resource.
+    Test retrieving the root resource for a given resource.
 
     This test verifies that:
     - The get_root endpoint is accessible
@@ -400,7 +400,7 @@ async def test_get_root(ofrak_client: TestClient, hello_elf):
 
 async def test_unpack_recursively(ofrak_client: TestClient, hello_elf):
     """
-    Tests recursively unpacking a resource and all its children.
+    Test recursively unpacking a resource and all its children.
 
     This test verifies that:
     - A resource can be unpacked recursively via the API
@@ -420,7 +420,7 @@ async def test_unpack_recursively(ofrak_client: TestClient, hello_elf):
 # Cannot find manual example to compare against
 async def test_pack(ofrak_client: TestClient, hello_elf):
     """
-    Tests packing a resource.
+    Test packing a resource.
 
     This test verifies that:
     - A resource can be packed via the API
@@ -436,7 +436,7 @@ async def test_pack(ofrak_client: TestClient, hello_elf):
 # Cannot find manual example to compare against
 async def test_pack_recursively(ofrak_client: TestClient, hello_elf):
     """
-    Tests recursively packing a resource and all its children.
+    Test recursively packing a resource and all its children.
 
     This test verifies that:
     - A resource can be packed recursively via the API
@@ -451,7 +451,7 @@ async def test_pack_recursively(ofrak_client: TestClient, hello_elf):
 
 async def test_analyze(ofrak_client: TestClient, hello_elf):
     """
-    Tests analyzing a resource to extract attributes.
+    Test analyzing a resource to extract attributes.
 
     This test verifies that:
     - A resource can be analyzed via the API
@@ -470,7 +470,7 @@ async def test_analyze(ofrak_client: TestClient, hello_elf):
 
 async def test_identify(ofrak_client: TestClient, hello_elf):
     """
-    Tests identifying a resource to determine its type.
+    Test identifying a resource to determine its type.
 
     This test verifies that:
     - A resource can be identified via the API
@@ -489,7 +489,7 @@ async def test_identify(ofrak_client: TestClient, hello_elf):
 
 async def test_identify_recursively(ofrak_client: TestClient, hello_elf):
     """
-    Tests recursively identifying a resource and all its children.
+    Test recursively identifying a resource and all its children.
 
     This test verifies that:
     - A resource can be identified recursively via the API
@@ -510,7 +510,7 @@ async def test_data_summary(
     ofrak_client: TestClient, ofrak_server, hello_elf, test_resource: Resource
 ):
     """
-    Tests retrieving a data summary including entropy and magnitude samples.
+    Test retrieving a data summary including entropy and magnitude samples.
 
     This test verifies that:
     - A data summary can be retrieved via the API
@@ -538,7 +538,7 @@ async def test_data_summary(
 
 async def test_get_parent(ofrak_client: TestClient, hello_elf):
     """
-    Tests retrieving the parent resource of a child.
+    Test retrieving the parent resource of a child.
 
     This test verifies that:
     - The parent resource can be retrieved for a child resource
@@ -558,7 +558,7 @@ async def test_get_parent(ofrak_client: TestClient, hello_elf):
 
 async def test_get_ancestors(ofrak_client: TestClient, hello_elf):
     """
-    Tests retrieving all ancestor resources.
+    Test retrieving all ancestor resources.
 
     This test verifies that:
     - All ancestors can be retrieved for a resource
@@ -579,7 +579,7 @@ async def test_get_ancestors(ofrak_client: TestClient, hello_elf):
 
 async def test_queue_patch(ofrak_client: TestClient, hello_elf):
     """
-    Tests queueing a patch operation on a resource.
+    Test queueing a patch operation on a resource.
 
     This test verifies that:
     - A patch can be queued for a resource via the API
@@ -599,7 +599,7 @@ async def test_queue_patch(ofrak_client: TestClient, hello_elf):
 
 async def test_create_mapped_child(ofrak_client: TestClient, hello_elf):
     """
-    Tests creating a mapped child resource with a specific data range.
+    Test creating a mapped child resource with a specific data range.
 
     This test verifies that:
     - A mapped child can be created from a parent resource
@@ -625,7 +625,7 @@ async def test_create_mapped_child(ofrak_client: TestClient, hello_elf):
 # find_and_replace doesn't appear to send back any information in the response
 async def test_find_and_replace(ofrak_client: TestClient, hello_elf):
     """
-    Tests the find and replace string modification functionality.
+    Test the find and replace string modification functionality.
 
     This test verifies that:
     - String find and replace can be performed on a resource
@@ -671,7 +671,7 @@ def get_comment_count(resp_body_json) -> Tuple[int, int]:
 
 async def test_add_comment(ofrak_server, aiohttp_client, hello_elf):
     """
-    Tests adding comments to resources with various range configurations.
+    Test adding comments to resources with various range configurations.
 
     This test verifies that:
     - Comments can be added without a range
@@ -728,7 +728,7 @@ async def test_add_comment(ofrak_server, aiohttp_client, hello_elf):
 # Test deleting comments using both the old and new format
 async def test_delete_comment(ofrak_server, aiohttp_client, hello_elf):
     """
-    Tests deleting comments from resources.
+    Test deleting comments from resources.
 
     This test verifies that:
     - Specific comments can be deleted from a range
@@ -778,7 +778,7 @@ async def test_delete_comment(ofrak_server, aiohttp_client, hello_elf):
 
 async def test_search_for_vaddr(ofrak_client: TestClient, hello_elf):
     """
-    Tests searching for resources by virtual address.
+    Test searching for resources by virtual address.
 
     This test verifies that:
     - Resources can be searched by virtual address
@@ -798,7 +798,7 @@ async def test_search_for_vaddr(ofrak_client: TestClient, hello_elf):
 
 async def test_get_all_tags(ofrak_client: TestClient):
     """
-    Tests retrieving all available OFRAK tags.
+    Test retrieving all available OFRAK tags.
 
     This test verifies that:
     - All system tags can be retrieved
@@ -812,7 +812,7 @@ async def test_get_all_tags(ofrak_client: TestClient):
 
 async def test_add_tag(ofrak_client: TestClient, hello_elf):
     """
-    Tests adding a tag to a resource.
+    Test adding a tag to a resource.
 
     This test verifies that:
     - Tags can be added to resources via the API
@@ -835,7 +835,7 @@ async def test_add_tag(ofrak_client: TestClient, hello_elf):
 
 async def test_remove_tag(ofrak_client: TestClient, hello_elf):
     """
-    Tests removing a tag from a resource.
+    Test removing a tag from a resource.
 
     This test verifies that:
     - Tags can be removed from resources via the API
@@ -868,7 +868,7 @@ async def test_remove_tag(ofrak_client: TestClient, hello_elf):
 
 async def test_get_view_schema(ofrak_client: TestClient):
     """
-    Tests retrieving the schema for a resource view type.
+    Test retrieving the schema for a resource view type.
 
     This test verifies that:
     - View schemas can be retrieved via the API
@@ -889,7 +889,7 @@ async def test_get_view_schema(ofrak_client: TestClient):
 
 async def test_add_view_to_resource(ofrak_client: TestClient, hello_elf):
     """
-    Tests adding a view with attributes to a resource.
+    Test adding a view with attributes to a resource.
 
     This test verifies that:
     - Views can be added to resources with specified fields
@@ -924,7 +924,7 @@ async def test_add_view_to_resource(ofrak_client: TestClient, hello_elf):
 
 async def test_remove_component(ofrak_client: TestClient, hello_elf):
     """
-    Tests removing a component from a resource.
+    Test removing a component from a resource.
 
     This test verifies that:
     - Components can be run on resources
@@ -960,7 +960,7 @@ async def test_remove_component(ofrak_client: TestClient, hello_elf):
 
 async def test_update_script(ofrak_client: TestClient, hello_elf):
     """
-    Tests automatic script generation from GUI actions.
+    Test automatic script generation from GUI actions.
 
     This test verifies that:
     - Actions performed in the GUI are tracked
@@ -1040,7 +1040,7 @@ async def test_update_script(ofrak_client: TestClient, hello_elf):
 
 async def test_selectable_attr_err(ofrak_client: TestClient, hello_elf):
     """
-    Tests script generation when selectable attribute errors occur.
+    Test script generation when selectable attribute errors occur.
 
     This test verifies that:
     - Duplicate children with identical attributes can be created
@@ -1139,7 +1139,7 @@ async def test_selectable_attr_err(ofrak_client: TestClient, hello_elf):
 
 async def test_clear_action_queue(ofrak_client: TestClient, hello_elf):
     """
-    Tests that failed actions are removed from the script generation queue.
+    Test that failed actions are removed from the script generation queue.
 
     This test verifies that:
     - Failed operations are tracked
@@ -1222,7 +1222,7 @@ async def test_clear_action_queue(ofrak_client: TestClient, hello_elf):
 
 async def test_get_components(ofrak_client: TestClient, hello_elf, ofrak_context):
     """
-    Tests retrieving available components for a resource.
+    Test retrieving available components for a resource.
 
     This test verifies that:
     - Components can be retrieved via the API
@@ -1261,7 +1261,7 @@ async def test_get_components(ofrak_client: TestClient, hello_elf, ofrak_context
 
 async def test_get_components_with_docstrings(ofrak_client: TestClient, hello_elf):
     """
-    Tests retrieving component information including docstrings.
+    Test retrieving component information including docstrings.
 
     This test verifies that:
     - Components can be retrieved with documentation
@@ -1297,7 +1297,7 @@ async def test_get_components_with_docstrings(ofrak_client: TestClient, hello_el
 
 async def test_get_config(ofrak_client: TestClient, hello_elf):
     """
-    Tests retrieving configuration schemas for components.
+    Test retrieving configuration schemas for components.
 
     This test verifies that:
     - Configuration schemas can be retrieved for components
@@ -1400,7 +1400,7 @@ async def test_get_config(ofrak_client: TestClient, hello_elf):
 
 async def test_run_component_no_config(ofrak_client: TestClient, hello_elf):
     """
-    Tests running a component without providing optional configuration.
+    Test running a component without providing optional configuration.
 
     This test verifies that:
     - Components with optional config can run without providing config
@@ -1429,7 +1429,7 @@ async def test_run_component_no_config(ofrak_client: TestClient, hello_elf):
 
 async def test_search_string(ofrak_client, hello_elf):
     """
-    Tests string searching with various options including regex and case sensitivity.
+    Test string searching with various options including regex and case sensitivity.
 
     This test verifies that:
     - Regex pattern matching works correctly
@@ -1488,7 +1488,7 @@ async def test_search_string(ofrak_client, hello_elf):
 
 async def test_search_bytes(ofrak_client, hello_elf):
     """
-    Tests byte pattern searching.
+    Test byte pattern searching.
 
     This test verifies that:
     - Hexadecimal byte patterns can be searched
@@ -1518,7 +1518,7 @@ async def test_search_bytes(ofrak_client, hello_elf):
 
 async def test_get_tags_and_num_components(ofrak_client: TestClient, hello_elf):
     """
-    Tests retrieving tag information and component counts for a target type.
+    Test retrieving tag information and component counts for a target type.
 
     This test verifies that:
     - Tag and component count information can be retrieved
@@ -1547,7 +1547,7 @@ async def test_get_tags_and_num_components(ofrak_client: TestClient, hello_elf):
 
 async def test_run_component(ofrak_client: TestClient, hello_elf):
     """
-    Tests running a component with configuration.
+    Test running a component with configuration.
 
     This test verifies that:
     - Components can be run with provided configuration
@@ -1599,7 +1599,7 @@ async def test_run_component(ofrak_client: TestClient, hello_elf):
 
 async def test_add_flush_to_disk_to_script(ofrak_client: TestClient, firmware_zip):
     """
-    Tests adding flush_to_disk actions to the generated script.
+    Test adding flush_to_disk actions to the generated script.
 
     This test verifies that:
     - Flush to disk operations can be added to the script
@@ -1708,7 +1708,7 @@ async def test_add_flush_to_disk_to_script(ofrak_client: TestClient, firmware_zi
 
 async def test_search_data(ofrak_client: TestClient, hello_elf):
     """
-    Tests comprehensive data searching with strings and bytes.
+    Test comprehensive data searching with strings and bytes.
 
     This test verifies that:
     - Data can be searched as strings with regex patterns
@@ -1794,7 +1794,7 @@ async def test_search_data(ofrak_client: TestClient, hello_elf):
 
 async def test_create_new_project(ofrak_client: TestClient, test_project_dir):
     """
-    Tests creating a new project.
+    Test creating a new project.
 
     This test verifies that:
     - New projects can be created via the API
@@ -1808,7 +1808,7 @@ async def test_create_new_project(ofrak_client: TestClient, test_project_dir):
 
 async def test_get_project_by_id(ofrak_client: TestClient, test_project_dir):
     """
-    Tests retrieving a project by its ID.
+    Test retrieving a project by its ID.
 
     This test verifies that:
     - Projects can be retrieved by ID
@@ -1838,7 +1838,7 @@ async def test_get_project_by_id(ofrak_client: TestClient, test_project_dir):
 
 async def test_get_all_projects(ofrak_client: TestClient, test_project_dir):
     """
-    Tests retrieving all projects.
+    Test retrieving all projects.
 
     This test verifies that:
     - All projects can be listed via the API
@@ -1873,7 +1873,7 @@ async def test_get_all_projects(ofrak_client: TestClient, test_project_dir):
 
 async def test_reset_project(ofrak_client: TestClient, test_project_dir):
     """
-    Tests resetting a project to its initial state.
+    Test resetting a project to its initial state.
 
     This test verifies that:
     - Projects can be reset via the API
@@ -1894,7 +1894,7 @@ async def test_reset_project(ofrak_client: TestClient, test_project_dir):
 
 async def test_add_binary_to_project(ofrak_client: TestClient, test_project_dir, hello_elf):
     """
-    Tests adding a binary file to a project.
+    Test adding a binary file to a project.
 
     This test verifies that:
     - Binary files can be added to projects
@@ -1916,7 +1916,7 @@ async def test_add_binary_to_project(ofrak_client: TestClient, test_project_dir,
 
 async def test_add_script_to_project(ofrak_client: TestClient, test_project_dir):
     """
-    Tests adding a script to a project.
+    Test adding a script to a project.
 
     This test verifies that:
     - Python scripts can be added to projects
@@ -1937,7 +1937,7 @@ async def test_add_script_to_project(ofrak_client: TestClient, test_project_dir)
 
 async def test_get_projects_path(ofrak_client: TestClient, test_project_dir):
     """
-    Tests retrieving the projects directory path.
+    Test retrieving the projects directory path.
 
     This test verifies that:
     - The projects directory path can be retrieved
@@ -1951,7 +1951,7 @@ async def test_get_projects_path(ofrak_client: TestClient, test_project_dir):
 
 async def test_save_project_data(ofrak_client: TestClient, test_project_dir, hello_elf):
     """
-    Tests saving project data including scripts and binaries.
+    Test saving project data including scripts and binaries.
 
     This test verifies that:
     - Project data can be saved persistently
@@ -2002,7 +2002,7 @@ async def test_save_project_data(ofrak_client: TestClient, test_project_dir, hel
 
 async def test_delete_from_project(ofrak_client: TestClient, test_project_dir, hello_elf):
     """
-    Tests deleting scripts and binaries from a project.
+    Test deleting scripts and binaries from a project.
 
     This test verifies that:
     - Scripts can be deleted from projects
@@ -2066,7 +2066,7 @@ async def test_delete_from_project(ofrak_client: TestClient, test_project_dir, h
 
 async def test_get_project_script(ofrak_client: TestClient, test_project_dir):
     """
-    Tests retrieving a script from a project.
+    Test retrieving a script from a project.
 
     This test verifies that:
     - Scripts can be retrieved by name from a project
@@ -2095,7 +2095,7 @@ async def test_get_project_script(ofrak_client: TestClient, test_project_dir):
 
 async def test_git_clone_project(ofrak_client: TestClient, test_project_dir):
     """
-    Tests cloning a project from a git repository.
+    Test cloning a project from a git repository.
 
     This test verifies that:
     - Projects can be cloned from git URLs
@@ -2125,7 +2125,7 @@ async def test_git_clone_project(ofrak_client: TestClient, test_project_dir):
 
 async def test_open_project(ofrak_client: TestClient, test_project_dir):
     """
-    Tests opening a project with a specific binary and script.
+    Test opening a project with a specific binary and script.
 
     This test verifies that:
     - Projects can be opened with a specified binary
@@ -2148,7 +2148,7 @@ async def test_open_project(ofrak_client: TestClient, test_project_dir):
 
 async def test_get_project_by_resource_id(ofrak_client: TestClient, test_project_dir):
     """
-    Tests retrieving a project using a resource ID.
+    Test retrieving a project using a resource ID.
 
     This test verifies that:
     - Projects can be looked up by resource ID

@@ -1,5 +1,5 @@
 """
-This module tests the x86_64 ELF components.
+Test X86_64ElfRelaInfo.type_mask.
 """
 
 from ofrak.core import X86_64ElfRelaInfo

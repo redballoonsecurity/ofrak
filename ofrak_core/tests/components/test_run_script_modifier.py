@@ -1,13 +1,16 @@
 """
-This module tests the RunScriptModifier component by verifying its ability to execute Python scripts
+Test the RunScriptModifier component by verifying its ability to execute Python scripts
 within the OFRAK framework and modify resources accordingly.
+
+Requirements Mapping:
+- REQ3.4
 """
 from ofrak.core import *
 
 
 async def test_run_script_modifier(ofrak_context, hello_elf):
     """
-    This test verifies that the RunScriptModifier can successfully execute Python scripts
+    Test that the RunScriptModifier can successfully execute Python scripts
     and apply modifications to resources, ensuring consistency between different execution paths.
 
     This test verifies that:

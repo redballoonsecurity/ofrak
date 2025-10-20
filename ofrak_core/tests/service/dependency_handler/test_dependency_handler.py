@@ -1,5 +1,5 @@
 """
-This module tests the DependencyHandler's ability to manage and invalidate dependencies
+Test the DependencyHandler's ability to manage and invalidate dependencies
 between resources in OFRAK.
 """
 import itertools
@@ -394,7 +394,7 @@ async def test_dependency_creation(
     test_case: DependencyCreationTestCase,
 ):
     """
-    This test verifies that dependencies are correctly created between resources based on their interactions.
+    Test that dependencies are correctly created between resources based on their interactions.
 
     - Sets up component and resource contexts with specified test conditions
     - Creates dependencies using the DependencyHandler

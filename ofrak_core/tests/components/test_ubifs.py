@@ -1,5 +1,9 @@
 """
-This module tests the functionality of the UBIFS filesystem component.
+Test the functionality of the UBIFS filesystem component.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
 """
 import subprocess
 import tempfile312 as tempfile
@@ -15,7 +19,7 @@ from pytest_ofrak.patterns.pack_unpack_filesystem import FilesystemPackUnpackVer
 @pytest.mark.skipif_missing_deps([UbifsUnpacker, UbifsPacker])
 class TestUbifsUnpackRepack(FilesystemPackUnpackVerifyPattern):
     """
-    This test verifies that UBIFS filesystems can be properly unpacked and repacked.
+    Test that UBIFS filesystems can be properly unpacked and repacked.
 
     This test verifies that:
     - A UBIFS image can be created from a directory of files

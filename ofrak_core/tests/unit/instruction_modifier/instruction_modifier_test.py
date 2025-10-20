@@ -1,9 +1,12 @@
 """
-This module tests the instruction modifier functionality.
+Test instruction modifier functionality.
 
 This module contains tests for modifying assembly instructions in binary resources,
 verifying that the modification process correctly updates machine code according to
 the specified mnemonic, operands, and instruction set mode.
+
+Requirements Mapping:
+- REQ3.4
 """
 
 from dataclasses import dataclass

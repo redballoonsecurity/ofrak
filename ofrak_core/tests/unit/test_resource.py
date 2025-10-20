@@ -1,5 +1,5 @@
 """
-This module tests core Resource class functionality, including child management, view handling,
+Test the core Resource class functionality, including child management, view handling,
  patch application, tag and attribute operations, and resource context handling.
 """
 import tempfile312 as tempfile

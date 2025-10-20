@@ -1,5 +1,5 @@
 """
-This module tests the license agreement and license file reading functionality.
+Test the license agreement and license file reading functionality.
 """
 import json
 import os
@@ -11,7 +11,7 @@ from ofrak.license import Agreement, LicenseDataType, read_license_file
 
 class TestAgreement:
     """
-    This test verifies that the Agreement class can correctly retrieve agreements based on license data.
+    Test that the Agreement class can correctly retrieve agreements based on license data.
 
     This test verifies that:
     - The get_agreement method returns a string for different license types
@@ -34,7 +34,7 @@ def license_file(tmpdir) -> str:
 
 def test_read_license_file(license_file: str):
     """
-    This test verifies that the read_license_file function correctly reads and parses license files.
+    Test that the read_license_file function correctly reads and parses license files.
 
     This test verifies that:
     - The function returns parsed license data as a dictionary

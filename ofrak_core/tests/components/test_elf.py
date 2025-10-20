@@ -1,5 +1,10 @@
 """
-This module tests the functionality of the Elf component.
+Test the functionality of the Elf components.
+
+Requirements Mapping:
+- REQ1.3
+- REQ2.2
+- REQ4.4
 """
 import os
 

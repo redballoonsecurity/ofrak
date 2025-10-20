@@ -1,5 +1,10 @@
 """
-This module tests the LZO compression and decompression functionality.
+Test the LZO compression and decompression functionality.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
+
 """
 import subprocess
 
@@ -15,7 +20,7 @@ from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import (
 @pytest.mark.skipif_missing_deps([LzoUnpacker, LzoPacker])
 class TestLzoUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
     """
-    This test verifies that LZO compressed files can be properly unpacked, modified, and repacked.
+    Test that LZO compressed files can be properly unpacked, modified, and repacked.
 
     This test verifies that:
     - LZO files can be decompressed and re-compressed without data loss

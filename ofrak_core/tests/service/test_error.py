@@ -1,5 +1,5 @@
 """
-This module tests error handling in OFRAK
+Test error handling in OFRAK.
 """
 from ofrak.service.error import SerializedError
 

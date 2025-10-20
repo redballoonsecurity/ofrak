@@ -1,5 +1,10 @@
 """
 This module tests the Flash component's unpacking, modification, and repacking functionality.
+
+Requirements Mapping:
+- REQ1.3
+- REQ3.4
+- REQ4.4
 """
 
 import pytest

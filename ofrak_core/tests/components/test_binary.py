@@ -16,7 +16,7 @@ CONTENT = b"RBS" * 40
 
 
 class TestBinaryExtendModify(ModifyPattern):
-    """Tests the ability to extend a binary resource with additional content (REQ3.2).
+    """Test the ability to extend a binary resource with additional content (REQ3.2).
 
     This test verifies that:
     - A binary resource can be extended with additional bytes

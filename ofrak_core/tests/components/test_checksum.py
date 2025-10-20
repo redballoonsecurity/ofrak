@@ -1,5 +1,8 @@
 """
-This module tests the MD5 and SHA256 checksum components.
+Test the MD5 and SHA256 checksum components.
+
+Requirements Mapping:
+- REQ2.2
 """
 import os
 
@@ -72,7 +75,7 @@ MD5_TEST_CASES = [
 @pytest.mark.parametrize("test_file", SHA256_TEST_CASES, ids=lambda tc: tc.filename)
 async def test_sha256(ofrak_context: OFRAKContext, test_file):
     """
-    This test verifies that the SHA256 checksum component correctly computes and assigns checksums
+    Test that the SHA256 checksum analyzer correctly computes and assigns checksums
     to resources.
 
     This test verifies that:
@@ -93,7 +96,7 @@ async def test_sha256(ofrak_context: OFRAKContext, test_file):
 @pytest.mark.parametrize("test_file", MD5_TEST_CASES, ids=lambda tc: tc.filename)
 async def test_md5(ofrak_context: OFRAKContext, test_file):
     """
-    This test verifies that the MD5 checksum component correctly computes and assigns checksums to
+    Test that the MD5 checksum analyzer correctly computes and assigns checksums to
     resources.
 
     This test verifies that:

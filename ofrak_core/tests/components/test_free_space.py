@@ -2,15 +2,7 @@
 This module tests free space modification capabilities in OFRAK.
 
 Requirements Mapping:
-- REQ3.3:
-  - test_partial_free_modifier_out_of_bounds: Tests that trying to run PartialFreeSpaceModifier past a memory regions bounds results in a ValueError
-  - test_partial_free_modifier: Tests that the PartialFreeSpaceModifier returns expected results
-  - test_free_space_modifier: Tests that the FreeSpaceModifier returns expected results
-  - test_dataless_free_space_modifier: Tests that the FreeSpaceModifier works correctly with dataless resources
-  - test_dataless_free_space_modifier_readonly_fails: Tests that attempting to use FreeSpaceModifier with read-only permissions on a dataless resource fails appropriately
-  - test_dataless_free_space_modifier_stub_fails: Tests that attempting to use FreeSpaceModifier with a stub on a dataless resource fails appropriately
-  - test_free_space_modifier_config_fill_parameters: Tests that the length of fill passed to FreeSpaceModifierConfig is greater than 0
-  - test_partial_space_modifier_config_fill_parameters: Tests that the length of fill passed to PartialFreeSpaceModifierConfig is greater than 0
+- REQ3.3
 """
 from ofrak.core.free_space import RuntimeFreeSpace
 import pytest
@@ -173,7 +165,8 @@ async def test_dataless_free_space_modifier(dataless_resource_under_test: Resour
 
 async def test_dataless_free_space_modifier_readonly_fails(dataless_resource_under_test: Resource):
     """
-    Test that attempting to use FreeSpaceModifier with read-only permissions on a dataless resource fails appropriately (REQ3.3).
+    Test that attempting to use FreeSpaceModifier with read-only permissions on a dataless resource
+    fails appropriately (REQ3.3).
 
     This test verifies that:
     - The FreeSpaceModifier properly validates memory permissions
@@ -186,7 +179,8 @@ async def test_dataless_free_space_modifier_readonly_fails(dataless_resource_und
 
 async def test_dataless_free_space_modifier_stub_fails(dataless_resource_under_test: Resource):
     """
-    Test that attempting to use FreeSpaceModifier with a stub on a dataless resource fails appropriately (REQ3.3).
+    Test that attempting to use FreeSpaceModifier with a stub on a dataless resource fails
+    appropriately (REQ3.3).
 
     This test verifies that:
     - The FreeSpaceModifier properly validates stub usage with dataless resources

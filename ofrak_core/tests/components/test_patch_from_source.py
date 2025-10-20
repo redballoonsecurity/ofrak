@@ -1,9 +1,8 @@
 """
-This module tests the patch from source functionality in OFRAK.
+Test the patch from source functionality in OFRAK.
 
 Requirements Mapping:
-- REQ6.2:
-  - test_patch_from_source_modifier: Tests patching a binary from source code by adding a new segment and injecting compiled code
+- REQ6.2
 """
 import os
 import pytest

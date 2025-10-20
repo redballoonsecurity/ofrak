@@ -1,11 +1,9 @@
 """
-This module tests the unpack and pack functionality of OFRAK resources.
+Test the unpack and pack functionality of OFRAK resources.
 
 Requirements Mapping:
-- REQ1.6:
-  - test_unpack_pack_unpack: Tests that a resource can be automatically unpacked and packed
-- REQ4.2:
-  - test_unpack_pack_unpack: Tests that a resource can be repacked after being unpacked
+- REQ1.6
+- REQ4.2
 """
 
 from gzip import GzipFile as _GzipFile
@@ -28,7 +26,7 @@ def test_file(tmpdir):
 
 async def test_unpack_pack_unpack(ofrak_context, test_file):
     """
-    Tests that a resource can be automatically unpacked and packed (REQ1.6).
+    Tests that a resource can be automatically unpacked and packed (REQ1.6, REQ4.2).
 
     This test verifies that:
     - A resource can be automatically unpacked without manual analyzer/unpacker selection

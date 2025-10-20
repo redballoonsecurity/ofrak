@@ -1,5 +1,8 @@
 """
 This module tests the functionality of string manipulation components in OFRAK.
+
+Requirements Mapping:
+- REQ3.4
 """
 from pathlib import Path
 import pytest

@@ -1,5 +1,5 @@
 """
-This module tests the resource traversal and querying functionality of OFRAK.
+Test the resource traversal and querying functionality of OFRAK.
 """
 import pytest
 import os

@@ -1,5 +1,8 @@
 """
-This module tests the ARM32 instruction modifier functionality.
+Test the ARM32 instruction modifier functionality.
+
+Requirements Mapping:
+- REQ3.4
 """
 import pytest
 
@@ -115,7 +118,7 @@ ARM32_INSTRUCTION_MODIFICATION_TEST_CASES = [
 )
 async def test_arm32_instruction_modifier(ofrak_context, test_case):
     """
-    This test verifies that the ARM32 instruction modifier correctly changes mnemonics in various
+    Test that the ARM32 instruction modifier correctly changes mnemonics in various
     instruction modes.
 
     This test verifies that:

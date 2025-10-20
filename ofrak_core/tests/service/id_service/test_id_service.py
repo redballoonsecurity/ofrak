@@ -1,5 +1,5 @@
 """
-This module tests the ID service implementation.
+Test the ID service implementation.
 """
 
 import pytest

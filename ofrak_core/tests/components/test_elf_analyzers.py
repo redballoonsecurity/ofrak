@@ -1,5 +1,10 @@
 """
-This module tests ELF file structure analyzers and their ability to correctly parse ELF format components.
+This module tests ELF file structure analyzers and their ability to correctly parse ELF format
+components.
+
+Requirements Mapping:
+- REQ1.3
+- REQ2.2
 """
 import dataclasses
 import os

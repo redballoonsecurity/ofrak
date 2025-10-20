@@ -1,5 +1,8 @@
 """
-This module tests the RAR unpacker component.
+Test the RAR unpacker component.
+
+Requirements Mapping:
+- REQ1.3
 """
 import os.path
 from dataclasses import dataclass

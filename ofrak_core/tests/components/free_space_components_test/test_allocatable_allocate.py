@@ -1,10 +1,8 @@
 """
-This module tests allocation of free space in OFRAK.
+Test allocation of free space in OFRAK.
 
 Requirements Mapping:
 - REQ3.3:
-  - test_allocate: Tests the basic allocation functionality with various test cases
-  - test_allocate_bom: Tests allocation specifically for BOM (Batched Objects and Metadata) components
 """
 import inspect
 import logging
@@ -195,9 +193,10 @@ ALLOCATE_TEST_CASES = [
 @pytest.mark.parametrize("test_case", ALLOCATE_TEST_CASES, ids=lambda tc: tc.label)
 async def test_allocate(ofrak_context: OFRAKContext, test_case: AllocateTestCase, mock_allocatable):
     """
-    Tests the basic allocation functionality with various test cases (REQ3.3).
+    Test basic allocation functionality with numerous test caeses and edge cases (REQ3.3).
+    See ALLOCATE_TEST_CASES for details on each test case.
 
-    This test verifies that:
+    This test verifies that, for each test case:
     - Allocation works correctly with different sizes and alignments
     - Allocation fails appropriately when there's not enough space
     - Fragmented allocations work properly

@@ -1,9 +1,8 @@
 """
-This module tests the default configuration behavior for unpackers.
+Test the default configuration behavior for unpackers.
 
 Requirements Mapping:
-- REQ1.5:
-  - test_unpacker_with_default: Verifies that unpackers can be invoked with default configurations and that default arguments are properly handled
+- REQ1.5
 """
 import pytest
 
@@ -25,7 +24,7 @@ def mock_unpacker_component(ofrak):
 
 async def test_unpacker_with_default(ofrak_context: OFRAKContext):
     """
-    Tests the behavior of unpackers with default configurations (REQ1.5).
+    Test the behavior of unpackers with default configurations (REQ1.5).
 
     This test verifies that:
     - Unpackers requiring default configs can be invoked without explicit configuration

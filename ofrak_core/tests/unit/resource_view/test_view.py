@@ -1,5 +1,5 @@
 """
-This module tests resource view creation and manipulation in OFRAK.
+Test the resource view creation and manipulation in OFRAK.
 """
 from dataclasses import dataclass
 from typing import Optional

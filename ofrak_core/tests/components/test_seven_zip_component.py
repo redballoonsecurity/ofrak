@@ -2,8 +2,9 @@
 This module tests the functionality of the SevenZip component in OFRAK.
 
 Requirements Mapping:
-- REQ4.3:
-  - TestPzUnpackModifyPack: Tests the recursive unpacking, modification, and repacking of a 7zip archive
+- REQ1.3
+- REQ4.3
+- REQ4.4
 """
 import os
 import subprocess
@@ -27,7 +28,8 @@ SEVEN_ZIP_ENTRY_NAME = "hello_7z_file"
 @pytest.mark.skipif_missing_deps([SevenZUnpacker, SevenzPacker])
 class TestPzUnpackModifyPack(UnpackModifyPackPattern):
     """
-    Tests the recursive unpacking, modification, and repacking of a 7zip archive (REQ4.3).
+    Tests the recursive (REQ4.3) unpacking (REQ4.1), modification, and repacking (REQ4.4) of a
+    7zip archive.
 
     This test verifies that:
     - A 7zip file can be recursively unpacked

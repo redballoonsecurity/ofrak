@@ -1,6 +1,10 @@
 """
-This module tests the functionality of the gzip component, including unpacking,
+Test the functionality of the gzip component, including unpacking,
 modifying, and repacking gzip-compressed data.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
 """
 import zlib
 import gzip
@@ -85,7 +89,7 @@ class GzipUnpackModifyPackPattern(CompressedFileUnpackModifyPackPattern, ABC):
 
 class TestGzipUnpackModifyPack(GzipUnpackModifyPackPattern):
     """
-    Tests the basic unpack, modify, and pack functionality for a simple gzip file.
+    Test the basic unpack, modify, and pack functionality for a simple gzip file.
     """
 
     def write_gzip(self, gzip_path: Path):
@@ -95,7 +99,7 @@ class TestGzipUnpackModifyPack(GzipUnpackModifyPackPattern):
 
 class TestGzipWithMultipleMembersUnpackModifyPack(GzipUnpackModifyPackPattern):
     """
-    Tests the unpack, modify, and pack functionality for a gzip file with multiple members.
+    Test the unpack, modify, and pack functionality for a gzip file with multiple members.
     """
 
     def write_gzip(self, gzip_path: Path):
@@ -109,7 +113,7 @@ class TestGzipWithMultipleMembersUnpackModifyPack(GzipUnpackModifyPackPattern):
 
 class TestGzipWithTrailingBytesUnpackModifyPack(GzipUnpackModifyPackPattern):
     """
-    Tests the unpack, modify, and pack functionality for a gzip file with trailing bytes.
+    Test the unpack, modify, and pack functionality for a gzip file with trailing bytes.
     """
 
     def write_gzip(self, gzip_path: Path):
@@ -124,7 +128,7 @@ async def test_corrupted_gzip_fail(
     gzip_test_input: Tuple[bytes, bytes, bool], ofrak_context: OFRAKContext
 ):
     """
-    Tests that unpacking a corrupted gzip file raises an appropriate error.
+    Test that unpacking a corrupted gzip file raises an appropriate error.
 
     This test verifies that:
     - A gzip file with invalid data (corrupted) raises an error when attempting to unpack

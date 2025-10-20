@@ -1,5 +1,8 @@
 """
-This module tests the allocatable analyzer component.
+Test the allocatable analyzer component.
+
+Requirements Mapping:
+- REQ3.3:
 """
 from dataclasses import dataclass
 from typing import List, Dict
@@ -191,8 +194,10 @@ async def test_free_space_analyzer(
     ofrak_context: OFRAKContext, test_case: FreeSpaceAnalyzerTestCase
 ):
     """
-    This test verifies that the allocatable analyzer correctly identifies and aggregates free space
-    ranges within memory regions.
+    Test that the allocatable analyzer correctly identifies and aggregates free space
+    ranges within memory regions. This functionality supports REQ3.3.
+    See FREE_SPACE_ANALYZER_TEST_CASES for details on the numerous tests cases validated by this
+    test.
 
     This test verifies that:
     - Free space ranges are correctly identified and grouped by memory permissions
@@ -224,11 +229,13 @@ async def test_free_space_analysis_of_non_memory_region(
     ofrak_context: OFRAKContext,
 ):
     """
-    This test verifies that the allocatable analyzer correctly handles resources that are not MemoryRegions.
+    Test that the allocatable analyzer correctly handles resources that are not
+    MemoryRegions.
 
     This test verifies that:
     - The analyzer can work with root resources that are not MemoryRegions
-    - Free space ranges from child resources are correctly identified even when parent is not a MemoryRegion
+    - Free space ranges from child resources are correctly identified even when parent is not a
+      MemoryRegion
     - Dataless free space ranges are properly tracked for RuntimeFreeSpace resources
     """
     # root resource is not a MemoryRegion, but it has MemoryRegion and FreeSpace descendants
@@ -268,7 +275,7 @@ async def test_free_space_without_data_fail(
     ofrak_context: OFRAKContext,
 ):
     """
-    This test verifies that the allocatable analyzer correctly raises an error when FreeSpace
+    Test that the allocatable analyzer correctly raises an error when FreeSpace
     resources have no data range.
 
     This test verifies that:
@@ -295,7 +302,7 @@ async def test_runtime_free_space_with_data_fail(
     ofrak_context: OFRAKContext,
 ):
     """
-    This test verifies that the allocatable analyzer correctly raises an error when RuntimeFreeSpace
+    Test that the allocatable analyzer correctly raises an error when RuntimeFreeSpace
     resources have a data range.
 
     This test verifies that:

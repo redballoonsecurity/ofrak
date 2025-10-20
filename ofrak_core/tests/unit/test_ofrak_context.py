@@ -1,5 +1,5 @@
 """
-This module tests the core functionality of the OFRAK context, including
+Test the core functionality of the OFRAK context, including
 OFRAK.run behavior, context management, and resource creation.
 """
 import asyncio
