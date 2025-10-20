@@ -32,6 +32,8 @@ class TestAngrCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
     This test verifies that:
     - Code regions can be successfully unpacked using the Angr disassembler backend
     - The abstract binary analysis objects are properly created
+
+    See `CodeRegionUnpackAndVerifyPattern` for more details on test cases.
     """
 
 

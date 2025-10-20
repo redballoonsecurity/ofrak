@@ -37,6 +37,8 @@ class TestGhidraCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
     This test verifies that:
     - Code regions can be successfully unpacked
     - The unpacking process works correctly with the Ghidra backend
+
+    See `CodeRegionUnpackAndVerifyPattern` for more details on test cases.
     """
 
 

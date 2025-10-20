@@ -2,6 +2,7 @@
 Test the OFRAK command-line interface (CLI) functionality.
 """
 import hashlib
+import importlib.metadata
 import os
 from typing import Iterable, Dict, Tuple
 
@@ -359,3 +360,33 @@ def test_install_checks(cli_commands):
     """
     ofrak_cli = OFRAKCommandLineInterface(cli_commands)
     ofrak_cli.parse_and_run(["deps", "--package", "ofrak"])
+
+
+def test_version_flag(cli_commands, capsys):
+    """Test that --version flag displays version and exits successfully."""
+    ofrak_env = OFRAKEnvironment()
+    ofrak_cli = OFRAKCommandLineInterface(cli_commands, ofrak_env)
+    try:
+        ofrak_cli.parse_and_run(["--version"])
+    except SystemExit as e:
+        assert e.code == 0
+
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
+    assert "ofrak" in output.lower()
+    assert importlib.metadata.version("ofrak") in output
+
+
+def test_version_short_flag(cli_commands, capsys):
+    """Test that -V flag displays version and exits successfully."""
+    ofrak_env = OFRAKEnvironment()
+    ofrak_cli = OFRAKCommandLineInterface(cli_commands, ofrak_env)
+    try:
+        ofrak_cli.parse_and_run(["-V"])
+    except SystemExit as e:
+        assert e.code == 0
+
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
+    assert "ofrak" in output.lower()
+    assert importlib.metadata.version("ofrak") in output

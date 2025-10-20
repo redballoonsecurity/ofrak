@@ -39,6 +39,15 @@ def pyghidra_components(ofrak_injector):
 
 
 class TestGhidraCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
+    """
+    Test code region unpacking with Ghidra backend (REQ1.2).
+
+    This test verifies that:
+    - Code regions can be successfully unpacked
+    - The unpacking process works correctly with the Ghidra backend
+
+    See `CodeRegionUnpackAndVerifyPattern` for more details on test cases.
+    """
     pass
 
 
