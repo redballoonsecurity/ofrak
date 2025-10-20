@@ -1,3 +1,10 @@
+"""
+Test the ISO 9660 filesystem component functionality.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
+"""
 import os
 from io import BytesIO
 import posixpath
@@ -75,6 +82,15 @@ class Iso9660UnpackModifyPackPattern(CompressedFileUnpackModifyPackPattern):
 
 
 class TestIso9660UnpackModifyPack(Iso9660UnpackModifyPackPattern):
+    """
+    Test unpack, modify, and pack functionality for ISO 9660 filesystems.
+
+    This test verifies that:
+    - An ISO 9660 filesystem can be unpacked successfully
+    - Modifications can be made to files within the unpacked filesystem
+    - The modified filesystem can be packed back into a valid ISO 9660 image
+    """
+
     @pytest.fixture(autouse=True)
     def create_test_file(self, tmpdir):
         iso = PyCdlib()
@@ -90,6 +106,16 @@ class TestIso9660UnpackModifyPack(Iso9660UnpackModifyPackPattern):
 
 
 class TestJolietUnpackModifyPack(Iso9660UnpackModifyPackPattern):
+    """
+    Test unpack, modify, and pack functionality for ISO 9660 filesystems with
+    Joliet extensions.
+
+    This test verifies that:
+    - An ISO 9660 filesystem with Joliet extensions can be unpacked successfully
+    - Modifications can be made to files within the unpacked filesystem
+    - The modified filesystem can be packed back into a valid ISO 9660 image with Joliet support
+    """
+
     TEST_DIR_NAME = "/test"
     TEST_FILE_NAME = os.path.join(TEST_DIR_NAME, "test.txt")
 

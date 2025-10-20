@@ -1,3 +1,10 @@
+"""
+Test the Ext filesystem unpacking functionality for EXT2, EXT3, and EXT4 filesystems.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
+"""
 import os.path
 from dataclasses import dataclass
 from typing import Dict
@@ -115,6 +122,14 @@ class _TestExtUnpackModifyPack(UnpackAndVerifyPattern):
 
 
 class TestExt2UnpackModifyPack(_TestExtUnpackModifyPack):
+    """
+    This test verifies that EXT2 filesystems can be correctly unpacked and their contents verified.
+
+    This test verifies that:
+    - The EXT2 filesystem is successfully unpacked
+    - The files within the EXT2 filesystem are correctly identified and extracted
+    """
+
     @pytest.fixture(params=EXT2_UNPACKER_TEST_CASES, ids=lambda tc: tc.label)
     async def unpack_verify_test_case(self, request) -> ExtUnpackerTestCase:
         return request.param
@@ -130,6 +145,14 @@ class TestExt2UnpackModifyPack(_TestExtUnpackModifyPack):
 
 
 class TestExt3UnpackModifyPack(_TestExtUnpackModifyPack):
+    """
+    This test verifies that EXT3 filesystems can be correctly unpacked and their contents verified.
+
+    This test verifies that:
+    - The EXT3 filesystem is successfully unpacked
+    - The files within the EXT3 filesystem are correctly identified and extracted
+    """
+
     @pytest.fixture
     async def root_resource(
         self,
@@ -157,6 +180,14 @@ class TestExt3UnpackModifyPack(_TestExtUnpackModifyPack):
 
 
 class TestExt4UnpackModifyPack(_TestExtUnpackModifyPack):
+    """
+    This test verifies that EXT4 filesystems can be correctly unpacked and their contents verified.
+
+    This test verifies that:
+    - The EXT4 filesystem is successfully unpacked
+    - The files within the EXT4 filesystem are correctly identified and extracted
+    """
+
     @pytest.fixture
     async def root_resource(
         self,

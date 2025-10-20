@@ -1,3 +1,7 @@
+"""
+Test the ResourceService interface for managing OFRAK resources,
+including CRUD operations, hierarchical traversal, and filtering capabilities.
+"""
 import random
 
 import pytest
@@ -57,7 +61,27 @@ from ...service.resource_service.conftest import (
 
 
 class TestResourceService:
+    """
+    Test suite for the ResourceService interface.
+
+    This test verifies that:
+    - Resources can be created, retrieved, updated, and deleted correctly
+    - Resource hierarchies can be traversed and queried with ancestors and descendants
+    - Filtering by tags, attributes, and value ranges works as expected
+    - Sorting resources by attributes functions properly
+    - Resource rebasing and parent changes are handled correctly
+    """
+
     async def test_create(self, resource_service, tree1_resource_models, tree2_resource_models):
+        """
+        Test resource creation with various configurations and validation of creation constraints.
+
+        This test verifies that:
+        - Resources can be created successfully with valid parent references
+        - Duplicate resource creation raises AlreadyExistError
+        - Creating a resource with a missing parent raises NotFoundError
+        - Resources can be created with data IDs, tags, and indexable attributes
+        """
         # Can creates resources normally
         for model in tree1_resource_models:
             created = await resource_service.create(model)
@@ -94,6 +118,14 @@ class TestResourceService:
         await resource_service.create(model)
 
     async def test_get_by_data_ids(self, resource_service, tree1_resource_models):
+        """
+        Test batch retrieval of resources by their data IDs.
+
+        This test verifies that:
+        - Multiple resources can be retrieved by data IDs in the specified order
+        - NotFoundError is raised when any requested data ID is missing
+        - Empty list input returns empty list output
+        """
         resources_by_data_id = {bytes(i): model for i, model in enumerate(tree1_resource_models)}
 
         for i, model in resources_by_data_id.items():
@@ -119,6 +151,14 @@ class TestResourceService:
     async def test_get_by_ids(
         self, basic_populated_resource_service: ResourceServiceInterface, tree1_resource_models
     ):
+        """
+        Test batch retrieval of resources by their resource IDs.
+
+        This test verifies that:
+        - Multiple resources can be retrieved by IDs in the specified order
+        - NotFoundError is raised when any requested resource ID is missing
+        - Empty list input returns empty list output
+        """
         # tree1_resource_models -> depth = 0
         resources_by_id = {model.id: model for model in tree1_resource_models}
 
@@ -143,6 +183,13 @@ class TestResourceService:
     async def test_get_by_id(
         self, basic_populated_resource_service: ResourceServiceInterface, tree1_resource_models
     ):
+        """
+        Test individual resource retrieval by resource ID.
+
+        This test verifies that:
+        - Each resource can be retrieved individually by its ID
+        - Retrieved resources match the originally created models
+        """
         for model in tree1_resource_models:
             got_model = await basic_populated_resource_service.get_by_id(model.id)
             assert got_model == model
@@ -150,6 +197,14 @@ class TestResourceService:
     async def test_get_depths(
         self, populated_resource_service: ResourceServiceInterface, tree3_resource_models
     ):
+        """
+        Test calculation of resource depths in the hierarchy.
+
+        This test verifies that:
+        - Depth values are correctly calculated based on parent-child relationships
+        - NotFoundError is raised when any requested resource ID is missing
+        - Empty list input returns empty list output
+        """
         expected_depths_dict = {}
         for model in tree3_resource_models:
             if model.parent_id in expected_depths_dict.keys():
@@ -262,6 +317,15 @@ class TestResourceService:
     async def test_get_ancestors_by_id(
         self, populated_resource_service: ResourceServiceInterface, test_case: GetAncestorsTestCase
     ):
+        """
+        Test retrieval of ancestor resources with various filtering options.
+
+        This test verifies that:
+        - Ancestors can be retrieved up the resource hierarchy
+        - Max count limits work correctly
+        - Filtering by tags with OR/AND conditions functions properly
+        - Filtering by exact attribute values, multiple values, and value ranges works as expected
+        """
         results = list(
             await populated_resource_service.get_ancestors_by_id(
                 test_case.resource_id,
@@ -633,6 +697,17 @@ class TestResourceService:
         populated_resource_service: ResourceServiceInterface,
         test_case: GetDescendantsTestCase,
     ):
+        """
+        Test retrieval of descendant resources with filtering, sorting, and query optimization.
+
+        This test verifies that:
+        - Descendants can be retrieved down the resource hierarchy
+        - Max count and max depth limits work correctly
+        - Filtering by tags with OR/AND conditions functions properly
+        - Filtering by exact attribute values, multiple values, and value ranges works as expected
+        - Sorting by attributes in ascending/descending order produces correct results
+        - Query optimizer selects appropriate strategies (tag filter vs ancestor filter)
+        """
         await test_case.initialize(populated_resource_service)
         results = list(
             await populated_resource_service.get_descendants_by_id(
@@ -646,6 +721,16 @@ class TestResourceService:
         test_case.check_results(results)
 
     async def test_update(self, populated_resource_service: ResourceServiceInterface):
+        """
+        Resource model updates including tags, attributes, dependencies, and components.
+
+        This test verifies that:
+        - NotFoundError is raised when updating a nonexistent resource
+        - Non-indexing fields like dependencies and component versions can be added and removed
+        - Update operations are idempotent
+        - Tag updates affect descendant query results appropriately
+        - Attribute updates affect filtered query results appropriately
+        """
         # Update nonexistant resource
         with pytest.raises(NotFoundError):
             await populated_resource_service.update(ResourceModelDiff(b"\xFF"))
@@ -775,6 +860,15 @@ class TestResourceService:
     async def test_rebase_resource(
         self, basic_populated_resource_service: ResourceServiceInterface, tree2_resource_models
     ):
+        """
+        Test changing a resource's parent (rebasing) within the hierarchy.
+
+        This test verifies that:
+        - A resource can be rebased from one tree to another
+        - Parent ID is updated correctly after rebasing
+        - Ancestor chains are updated for rebased resources and their descendants
+        - NotFoundError is raised when rebasing a nonexistent resource or to a nonexistent parent
+        """
         for model in tree2_resource_models:
             await basic_populated_resource_service.create(model)
 
@@ -827,6 +921,16 @@ class TestResourceService:
             )
 
     async def test_delete_resource(self, populated_resource_service: ResourceServiceInterface):
+        """
+        Resource deletion including leaf nodes, internal nodes, and cascading deletions.
+
+        This test verifies that:
+        - Leaf resources can be deleted successfully
+        - Deleting an internal node cascades to all descendants
+        - Deleted resources raise NotFoundError when retrieved
+        - Double deletion is idempotent and doesn't raise errors
+        - Resources with data IDs are properly removed from lookup indices
+        """
         # delete leaf
         await populated_resource_service.delete_resource(R_ID_3_1_1_1_2)
         with pytest.raises(NotFoundError):
@@ -858,6 +962,14 @@ class TestResourceService:
             await populated_resource_service.get_by_id(b"\xFF")
 
     async def test_verify_ids_exist(self, populated_resource_service: ResourceServiceInterface):
+        """
+        Test resource existence by checking multiple IDs at once.
+
+        This test verifies that:
+        - Multiple resource IDs can be checked for existence in a single call
+        - Boolean results correctly indicate existence for each ID
+        - Empty list input returns empty list output
+        """
         # delete a leaf and internal node
         await populated_resource_service.delete_resource(R_ID_3_1_1_1_2)
         await populated_resource_service.delete_resource(R_ID_3_1_1_1)
@@ -880,9 +992,11 @@ class TestResourceService:
 
     async def test_nested_indexes(self, populated_resource_service):
         """
-        Granular test of the get_value for nested indexes which is needed for the resource service
-        :param populated_resource_service:
-        :return:
+        Test nested index calculation for resource attributes.
+
+        This test verifies that:
+        - Nested index values can be calculated from multiple attribute types on a resource
+        - Missing dependencies return None rather than raising errors
         """
         m = ResourceModel(
             b"",
@@ -906,6 +1020,13 @@ class TestResourceService:
         assert TestNestedIndexAttributes.TestNestedIndex.get_value(m2) is None
 
     async def test_get_root_resources(self, triple_populated_resource_service):
+        """
+        Test retrieval of all root resources (resources without parents).
+
+        This test verifies that:
+        - All root resources can be retrieved in a single call
+        - Retrieved models match the expected root resource models
+        """
         roots = {
             model.id: model
             for model in await triple_populated_resource_service.get_root_resources()

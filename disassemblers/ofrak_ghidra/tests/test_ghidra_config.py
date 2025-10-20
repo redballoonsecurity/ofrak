@@ -1,3 +1,6 @@
+"""
+Test the Ghidra configuration functionality.
+"""
 from dataclasses import dataclass
 
 import pytest
@@ -53,6 +56,9 @@ def restore_config_after_test():
 def test_dump_config(capsys):
     """
     Test that ofrak_ghira.config dump returns expected output.
+
+    This test verifies that:
+    - The dump command outputs the default configuration
     """
     _validate_config(capsys, DEFAULT_CONFIG)
 
@@ -60,6 +66,9 @@ def test_dump_config(capsys):
 def test_import_config(capsys, tmp_path, restore_config_after_test):
     """
     Test that importing a config changes the default config.
+
+    This test verifies that:
+    - The default configuration can be overridden with a custom one
     """
     # Validate default config is set
     _validate_config(capsys, DEFAULT_CONFIG)
@@ -77,6 +86,9 @@ def test_import_config(capsys, tmp_path, restore_config_after_test):
 def test_restore_config(capsys, tmp_path, restore_config_after_test):
     """
     Test that "ofrak_ghidra.config restore" restores the default config file.
+
+    This test verifies that:
+    - A modified configuration can be restored to the original default
     """
     # Change the default config
     path = tmp_path / "config.yml"
@@ -101,6 +113,9 @@ def _validate_config(capsys, expected_config: str):
 def test_ofrak_ghidra_config_help():
     """
     Assert that OFRAKGhidraConfig.config_help returns a help string.
+
+    This test verifies that:
+    - The configuration class provides a help method
     """
     config = load_ghidra_config()
     assert isinstance(config.config_help(), str)

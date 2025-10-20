@@ -1,3 +1,10 @@
+"""
+Test the OpenWrt TRX component functionality.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
+"""
 import os
 import struct
 
@@ -11,6 +18,15 @@ from . import ASSETS_DIR
 
 
 class TestOpenWrtTrxUnpackModifyPack(UnpackModifyPackPattern):
+    """
+    Test that an OpenWrt TRX image can be unpacked, modified, and repacked correctly.
+
+    This test verifies that:
+    - The TRX image can be successfully unpacked into its constituent parts
+    - A modification (replacing first partition with null bytes) can be applied
+    - The modified image can be repacked while maintaining correct CRC32 checksums
+    """
+
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         """
         Create a root resource from the test image stored in Git LFS.
@@ -57,6 +73,10 @@ class TestOpenWrtTrxUnpackRepackIdempotency(TestOpenWrtTrxUnpackModifyPack):
     """
     Unpack and repack (non-recursively) and check if the resulting and original OpenWrt TRX image
     are the exact same
+
+    This test verifies that:
+    - The TRX image can be successfully unpacked and repacked without modification
+    - The resulting image is identical to the original image
     """
 
     async def unpack(self, resource: Resource) -> None:
@@ -78,7 +98,11 @@ class TestOpenWrtTrxUnpackRepackIdempotency(TestOpenWrtTrxUnpackModifyPack):
 
 class TestOpenWrtTrxUnpackRepackNullRootfs(TestOpenWrtTrxUnpackModifyPack):
     """
-    Unpack and repack an image without a valid rootfs segment - this seems to be seen on most non-MIPS boards
+    Test that an OpenWrt TRX image without a valid rootfs segment can be handled.
+
+    This test verifies that:
+    - The TRX image can be unpacked even when it lacks a standard rootfs
+    - The repacked image maintains correct CRC32 checksums
     """
 
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:

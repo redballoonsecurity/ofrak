@@ -1,3 +1,6 @@
+"""
+Test the Ghidra server management functionality.
+"""
 import re
 import time
 
@@ -45,8 +48,9 @@ def test_start_stop_ghidra_server(ghidra_is_running: bool):
     """
     Test that the Ghidra server can be started and stopped using ofrak_ghidra.server.
 
-    If the server is running, stop it, then restart it.
-    If the server is not running ,start
+    This test verifies that:
+    - The Ghidra server can be started if it is not running
+    - The Ghidra server can be stopped if it is running
     """
     if ghidra_is_running:
         server_main._stop_ghidra_server()
