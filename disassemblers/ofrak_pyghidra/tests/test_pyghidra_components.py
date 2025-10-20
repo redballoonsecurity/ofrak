@@ -48,7 +48,6 @@ class TestGhidraCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
 
     See `CodeRegionUnpackAndVerifyPattern` for more details on test cases.
     """
-    pass
 
 
 class TestGhidraComplexBlockUnpackAndVerify(ComplexBlockUnpackerUnpackAndVerifyPattern):
