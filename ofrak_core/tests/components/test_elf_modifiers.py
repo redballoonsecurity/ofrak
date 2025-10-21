@@ -1,3 +1,9 @@
+"""
+This module tests ELF modifier components that alter various aspects of ELF binaries.
+
+Requirements Mapping:
+- REQ3.4
+"""
 import os
 import subprocess
 from typing import Optional
@@ -46,6 +52,14 @@ from ofrak import OFRAKContext, Resource
 async def test_elf_add_symbols(
     ofrak_context: OFRAKContext, elf_executable_file, elf_test_directory
 ):
+    """
+    Tests insertion of new strings into an ELF executable.
+
+    This test verifies that:
+    - New strings can be added to an ELF binary using ElfAddStringModifier
+    - Added strings are present in the modified binary
+    - The modified binary remains executable and functions correctly
+    """
     strings_result = subprocess.run(["strings", elf_executable_file], capture_output=True)
     original_strings = set(strings_result.stdout.decode().split("\n"))
 
@@ -77,6 +91,14 @@ async def test_elf_add_symbols(
 async def test_elf_force_relocation(
     ofrak_context: OFRAKContext, elf_object_file, elf_test_directory
 ):
+    """
+    Tests symbol relocation modification to redirect function calls.
+
+    This test verifies that:
+    - Symbol virtual addresses can be identified from the symbol table
+    - ElfRelocateSymbolsModifier can swap symbol relocations in an object file
+    - Modified relocations affect program behavior during execution
+    """
     # Modify this object file so main calls `bar` instead of `foo`
     # This causes the process to exit with code 24 instead of 12
     original_elf = await ofrak_context.create_root_resource_from_file(elf_object_file)
@@ -140,6 +162,14 @@ async def test_modifier(
     test_view,
     test_view_entry,
 ):
+    """
+    Tests various ELF entry modifiers on relocation, dynamic, and pointer array sections.
+
+    This test verifies that:
+    - Modifiers can update entries in ELF sections (rela, dynamic, pointer arrays)
+    - Modified entries persist after flushing to disk and reloading
+    - Each modifier correctly transforms entries to expected values
+    """
     original_elf = await ofrak_context.create_root_resource_from_file(elf_executable_file)
     await original_elf.unpack()
     elf = await original_elf.view_as(Elf)
@@ -175,7 +205,11 @@ async def elf_resource(elf_executable_file: str, ofrak_context: OFRAKContext):
 
 async def test_elf_program_header_modifier(elf_resource: Resource):
     """
-    Test the ElfProgramHeaderModifier.
+    Tests modification of ELF program header type field.
+
+    This test verifies that:
+    - ElfProgramHeaderModifier can update the p_type field of program headers
+    - Modified values are correctly reflected in the program header view
     """
     await elf_resource.unpack()
     elf = await elf_resource.view_as(Elf)
@@ -193,7 +227,12 @@ class TestElfPointerArraySectionModifier:
 
     async def test_elf_pointer_array_section_modifier(self, elf_resource: Resource):
         """
-        Test that `ElfPointerArraySectionModifier` modifies the underlying pointer bytes.
+        Tests arithmetic modification of pointer array section entries with
+        `ElfPointerArraySectionModifier`.
+
+        This test verifies that:
+        - ElfPointerArraySectionAddModifier can add a value to all pointer entries
+        - Modified pointer bytes differ from their original values in the binary data
         """
         pointer_array_section = await self._unpack_and_get_first_pointer_array_section(elf_resource)
         original_data_values = list()
@@ -230,7 +269,12 @@ async def hello_out(ofrak_context: OFRAKContext, hello_elf: bytes) -> Resource:
 
 async def test_lief_add_segment_modifier(hello_out: Resource, tmp_path):
     """
-    Test that adding a segment results in a new segment in the Elf with the given vaddr and length.
+    Tests adding a new segment to an ELF binary using LIEF.
+
+    This test verifies that:
+    - A segment with specified virtual address and size can be added to an ELF binary
+    - The new segment is not present in the original binary
+    - The new segment exists in the modified binary with correct properties
     """
     segment_vaddr = 0x108000
     segment_length = 0x2000
@@ -265,6 +309,13 @@ def assert_segment_exists(filepath: str, vaddr: int, length: int):
 
 
 async def test_lief_add_section_modifier(hello_out: Resource, tmp_path):
+    """
+    Tests adding a new section to an ELF binary using LIEF.
+
+    This test verifies that:
+    - A section with specified name, content, and flags can be added to an ELF binary
+    - The new section exists in the modified binary with correct content
+    """
     config = LiefAddSectionModifierConfig(name=".test", content=b"test", flags=0)
     await hello_out.run(LiefAddSectionModifer, config=config)
     elf_path = tmp_path / "test.elf"
@@ -273,6 +324,14 @@ async def test_lief_add_section_modifier(hello_out: Resource, tmp_path):
 
 
 async def test_lief_remove_section_modifier(hello_out: Resource, tmp_path):
+    """
+    Tests removing a section from an ELF binary using LIEF.
+
+    This test verifies that:
+    - A section can be removed from an ELF binary by name
+    - The section exists in the original binary
+    - The section no longer exists in the modified binary
+    """
     original = tmp_path / "original.elf"
     await hello_out.flush_data_to_disk(original)
     assert segment_exists(original, ".text")

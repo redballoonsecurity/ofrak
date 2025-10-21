@@ -1,3 +1,6 @@
+"""
+Test the GNU AArch64 Linux toolchain implementation of OFRAK Patch Maker.
+"""
 import os
 import tempfile
 
@@ -77,6 +80,14 @@ def test_relocatable(toolchain_under_test: ToolchainUnderTest, tmp_path):
 
 
 def test_aarch64_alignment(toolchain_under_test: ToolchainUnderTest):
+    """
+    Test handling of unaligned memory addresses in AArch64.
+
+    This test verifies that:
+    - The AArch64 toolchain can compile code for unaligned memory addresses
+    - Code segments are correctly placed at specified unaligned addresses
+    - The generated machine code is correct despite alignment constraints
+    """
     tc_config = ToolchainConfig(
         file_format=BinFileType.ELF,
         force_inlines=True,

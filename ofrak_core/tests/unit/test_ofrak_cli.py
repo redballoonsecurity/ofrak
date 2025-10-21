@@ -1,3 +1,6 @@
+"""
+Test the OFRAK command-line interface (CLI) functionality.
+"""
 import hashlib
 import importlib.metadata
 import os
@@ -70,6 +73,14 @@ def _check_cli_output_matches_one_of(expected_outputs: Iterable[str], capsys):
 
 
 def test_list(ofrak_cli_parser, capsys):
+    """
+    Test the 'list' CLI command to ensure it properly displays available packages and components.
+
+    This test verifies that:
+    - The list command can display all packages and components
+    - The list command can filter by packages or components
+    - The list command can display packages and components separately
+    """
     ofrak_cli_parser.parse_and_run(["list"])
     _check_cli_output_matches(
         "pytest_ofrak.mock_library3\n\t_MockComponentA\n\t_MockComponentB\n\t_MockComponentC\n_MockOFRAKPackage2\n",
@@ -118,6 +129,15 @@ def test_list(ofrak_cli_parser, capsys):
 
 
 def test_deps(ofrak_cli_parser, capsys):
+    """
+    Test the 'deps' CLI command to ensure it properly displays tool dependencies.
+
+    This test verifies that:
+    - The deps command can display all tool dependencies for components
+    - The deps command can filter by specific packages or components
+    - The deps command can show dependencies for specific package types
+    - The deps command can show dependencies excluding certain package types
+    """
     ofrak_cli_parser.parse_and_run(["deps", "--no-check"])
     _check_cli_output_matches_one_of(
         (
@@ -198,6 +218,14 @@ async def all_expected_analysis(ofrak_context: OFRAKContext):
 
 @pytest.mark.parametrize("filename", TEST_FILES)
 def test_identify(ofrak_cli_parser, capsys, filename, all_expected_analysis: Tuple[Dict, Dict]):
+    """
+    Test the 'identify' CLI command to ensure it correctly identifies file types and attributes.
+
+    This test verifies that:
+    - The identify command can properly identify file tags
+    - The identify command can display expected file attributes
+    - The identify command works with various test files
+    """
     expected_tags, expected_attributes = all_expected_analysis[filename]
     assert len(expected_tags) > 0
     assert len(expected_attributes) > 0
@@ -236,6 +264,14 @@ async def all_expected_hashes(ofrak_context: OFRAKContext):
 
 @pytest.mark.parametrize("filename", TEST_FILES)
 def test_unpack(ofrak_cli_parser, capsys, filename, tmpdir, ofrak_context, all_expected_hashes):
+    """
+    Test the 'unpack' CLI command to ensure it correctly extracts file contents.
+
+    This test verifies that:
+    - The unpack command can properly extract file contents to a directory
+    - The unpack command generates correct hash values for extracted files
+    - The unpack command creates an info dump file with proper content
+    """
     file_path = os.path.join(os.path.dirname(components.__file__), "assets", filename)
     ofrak_cli_parser.parse_and_run(["unpack", "-o", str(tmpdir), file_path])
 
@@ -262,6 +298,13 @@ def test_unpack(ofrak_cli_parser, capsys, filename, tmpdir, ofrak_context, all_e
 
 
 def test_import_file(ofrak_cli_parser, tmpdir, capsys):
+    """
+    Test the 'identify' CLI command with custom import files.
+
+    This test verifies that:
+    - The identify command can load and use custom Python modules
+    - The identify command correctly identifies resources using custom tags
+    """
     scratch_file = os.path.join(tmpdir, "scratch.py")
     with open(scratch_file, "w") as f:
         f.write(
@@ -293,6 +336,13 @@ class ScratchIdentifier(Identifier[None]):
 
 
 def test_ofrak_help(cli_commands):
+    """
+    Test that the OFRAK CLI help command works correctly.
+
+    This test verifies that:
+    - The --help flag can be parsed without errors
+    - The help command exits with code 0
+    """
     ofrak_env = OFRAKEnvironment()
     ofrak_cli = OFRAKCommandLineInterface(cli_commands, ofrak_env)
     try:
@@ -302,6 +352,12 @@ def test_ofrak_help(cli_commands):
 
 
 def test_install_checks(cli_commands):
+    """
+    Test the 'deps' CLI command with package installation checks.
+
+    This test verifies that:
+    - The deps command can check dependencies for a specific package
+    """
     ofrak_cli = OFRAKCommandLineInterface(cli_commands)
     ofrak_cli.parse_and_run(["deps", "--package", "ofrak"])
 

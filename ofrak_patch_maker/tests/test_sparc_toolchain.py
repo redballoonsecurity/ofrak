@@ -1,3 +1,6 @@
+"""
+Test the SPARC toolchain functionality.
+"""
 import pytest
 import platform
 

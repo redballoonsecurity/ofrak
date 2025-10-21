@@ -1,3 +1,10 @@
+"""
+This module defines test patterns for code region unpacking in OFRAK.
+
+Requirements Mapping:
+- REQ1.2
+- REQ2.3
+"""
 import os.path
 from dataclasses import dataclass
 from typing import List, Dict
@@ -151,6 +158,15 @@ class CodeRegionUnpackAndVerifyPattern(UnpackAndVerifyPattern):
         return resource
 
     async def unpack(self, root_resource: Resource):
+        """
+        Test code region unpacking with consistent interface across backends (REQ1.2, REQ2.3).
+
+        This test verifies that:
+        - Code regions are unpacked recursively from a binary
+        - Complex blocks within code regions are extracted correctly
+        - Literal pools are correctly identified within complex blocks
+        - Different disassembler backends produce compatible results
+        """
         await root_resource.unpack_recursively(do_not_unpack=(BasicBlock,))
 
     async def get_descendants_to_verify(self, unpacked_resource: Resource) -> Dict[int, Resource]:

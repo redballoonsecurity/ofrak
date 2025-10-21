@@ -1,3 +1,6 @@
+"""
+Test the resource traversal and querying functionality of OFRAK.
+"""
 import pytest
 import os
 from .. import components
@@ -20,6 +23,10 @@ async def resource_hello_elf_dyn(ofrak_context: OFRAKContext) -> Resource:
 async def test_get_descendants_0(resource_hello_elf_dyn: Resource):
     """
     Test that get_descendants retrieves all five executable segments in the ELF file.
+
+    This test verifies that:
+    - The get_descendants method correctly identifies all CodeRegion descendants
+    - The number of retrieved CodeRegions matches the expected count
     """
     await resource_hello_elf_dyn.unpack()
     code_regions = await resource_hello_elf_dyn.get_descendants(
@@ -33,6 +40,10 @@ async def test_get_descendants_0(resource_hello_elf_dyn: Resource):
 async def test_get_descendants_1(resource_hello_elf_dyn: Resource):
     """
     Test that get_descendants does not retrieve CodeRegions that have not been analyzed yet.
+
+    This test verifies that:
+    - The get_descendants method filters descendants based on attribute values
+    - CodeRegions without the required attribute are correctly excluded
     """
     await resource_hello_elf_dyn.unpack()
     code_regions = await resource_hello_elf_dyn.get_descendants(
@@ -50,6 +61,10 @@ async def test_get_only_descendant_0(resource_hello_elf_dyn: Resource):
     """
     Test that get_only_descendant throws an error when it finds multiple descendants that match
     the filter.
+
+    This test verifies that:
+    - The get_only_descendant method correctly identifies multiple matching descendants
+    - An appropriate exception is raised for multiple matches
     """
     await resource_hello_elf_dyn.unpack()
     with pytest.raises(MultipleResourcesFoundError):
@@ -65,6 +80,10 @@ async def test_get_only_descendant_1(resource_hello_elf_dyn: Resource):
     Test that get_only_descendant throws an error when it does not find any descendants that
     match the filter. Note that the CodeRegion exists, but it has not been analyzed yet and
     therefore does not have the `virtual_address` attribute that is filtered for.
+
+    This test verifies that:
+    - The get_only_descendant method correctly identifies no matches for a filter
+    - An appropriate exception is raised when no descendants match
     """
     await resource_hello_elf_dyn.unpack()
     with pytest.raises(NotFoundError):
@@ -84,6 +103,10 @@ async def test_get_only_descendant_1(resource_hello_elf_dyn: Resource):
 async def test_get_descendants_as_view_0(resource_hello_elf_dyn: Resource):
     """
     Test that get_descendants_as_view retrieves all five executable segments in the ELF file.
+
+    This test verifies that:
+    - The get_descendants_as_view method correctly identifies all CodeRegion descendants
+    - The retrieved views are of the correct type
     """
     await resource_hello_elf_dyn.unpack()
     code_regions = list(
@@ -101,6 +124,10 @@ async def test_get_descendants_as_view_1(resource_hello_elf_dyn: Resource):
     """
     Test that get_descendants_as_view retrieves the one executable segment with the specified
     virtual address in the ELF file.
+
+    This test verifies that:
+    - The get_descendants_as_view method correctly filters descendants by attribute values
+    - The correct single CodeRegion view is retrieved
     """
     await resource_hello_elf_dyn.unpack()
     code_regions = list(
@@ -120,6 +147,10 @@ async def test_get_descendants_as_view_1(resource_hello_elf_dyn: Resource):
 async def test_get_descendants_as_view_2(resource_hello_elf_dyn: Resource):
     """
     Test that get_descendants_as_view does not retrieve non-existing executable segments.
+
+    This test verifies that:
+    - The get_descendants_as_view method correctly handles filters with no matches
+    - An empty result is returned for non-existent descendants
     """
     await resource_hello_elf_dyn.unpack()
     non_existing_segments = await resource_hello_elf_dyn.get_descendants_as_view(
@@ -138,6 +169,10 @@ async def test_get_only_descendant_as_view_0(resource_hello_elf_dyn: Resource):
     """
     Test that get_only_descendant_as_view retrieves the one executable segment with the
     specified virtual address in the ELF file.
+
+    This test verifies that:
+    - The get_only_descendant_as_view method correctly filters descendants by attribute values
+    - The correct single CodeRegion view is retrieved
     """
     await resource_hello_elf_dyn.unpack()
     text_segment = await resource_hello_elf_dyn.get_only_descendant_as_view(
@@ -152,8 +187,12 @@ async def test_get_only_descendant_as_view_0(resource_hello_elf_dyn: Resource):
 
 async def test_get_only_descendant_as_view_1(resource_hello_elf_dyn: Resource):
     """
-    Test that get_only_descendant_as_view throws an error if it does not finda non-existing
+    Test that get_only_descendant_as_view throws an error if it does not find a non-existing
     executable segments.
+
+    This test verifies that:
+    - The get_only_descendant_as_view method correctly identifies no matches for a filter
+    - An appropriate exception is raised when no descendants match
     """
     await resource_hello_elf_dyn.unpack()
     with pytest.raises(NotFoundError):
@@ -172,6 +211,10 @@ async def test_get_only_descendant_as_view_2(resource_hello_elf_dyn: Resource):
     """
     Test that get_only_descendant_as_view throws an error when it finds multiple descendants that
     match the filter.
+
+    This test verifies that:
+    - The get_only_descendant_as_view method correctly identifies multiple matching descendants
+    - An appropriate exception is raised for multiple matches
     """
     await resource_hello_elf_dyn.unpack()
     with pytest.raises(MultipleResourcesFoundError):
@@ -187,6 +230,10 @@ async def test_get_descendants_combined_1(resource_hello_elf_dyn: Resource):
     """
     Test that get_descendants_as_view implicitly performs analysis on its retrieved components,
     making them retrievable by get_descendants.
+
+    This test verifies that:
+    - The get_descendants_as_view method triggers analysis of descendants
+    - The subsequent get_descendants call correctly retrieves analyzed descendants
     """
     await resource_hello_elf_dyn.unpack()
     await resource_hello_elf_dyn.get_descendants_as_view(
@@ -208,6 +255,10 @@ async def test_get_descendants_combined_1(resource_hello_elf_dyn: Resource):
 async def test_get_only_anscestor_as_view(resource_hello_elf_dyn: Resource):
     """
     Test that get_only_ancestor_as_view returns a resource of correct type
+
+    This test verifies that:
+    - The get_only_descendant_as_view method correctly retrieves a descendant
+    - The get_only_ancestor_as_view method correctly retrieves the ancestor of the descendant
     """
     await resource_hello_elf_dyn.unpack()
     text_segment = await resource_hello_elf_dyn.get_only_descendant_as_view(

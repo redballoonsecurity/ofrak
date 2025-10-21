@@ -1,3 +1,10 @@
+"""
+This module defines test patterns for unpacking and verification in OFRAK.
+
+Requirements Mapping:
+- REQ1.1
+- REQ2.1
+"""
 import warnings
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
@@ -71,6 +78,15 @@ class UnpackAndVerifyPattern(ABC):
         expected_results: Dict,
         optional_results: Set,
     ):
+        """
+        Test unpacking and verify extracted descendants (REQ1.1, REQ2.1).
+
+        This test verifies that:
+        - The binary is unpacked using the well-defined unpacker interface
+        - All expected descendants are present after unpacking
+        - No extraneous descendants exist beyond expected and optional results
+        - Each descendant matches its expected attributes and structure
+        """
         await self.unpack(root_resource)
         print(await root_resource.summarize_tree())
 

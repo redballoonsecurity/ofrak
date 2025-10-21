@@ -1,3 +1,9 @@
+"""
+Test the default configuration behavior for unpackers.
+
+Requirements Mapping:
+- REQ1.5
+"""
 import pytest
 
 from ofrak import OFRAKContext
@@ -17,6 +23,13 @@ def mock_unpacker_component(ofrak):
 
 
 async def test_unpacker_with_default(ofrak_context: OFRAKContext):
+    """
+    Test the behavior of unpackers with default configurations (REQ1.5).
+
+    This test verifies that:
+    - Unpackers requiring default configs can be invoked without explicit configuration
+    - Unpackers with default arguments properly handle both default and explicit configurations
+    """
     resource_1 = await ofrak_context.create_root_resource("test resource 1", b"", (GenericBinary,))
     # Will fail if the default config is not provided to unpack
     await resource_1.run(MockUnpackerRequiresDefault)

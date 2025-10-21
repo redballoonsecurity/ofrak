@@ -1,3 +1,6 @@
+"""
+Test the ARM toolchain implementation in the patch maker (GNU ARM and LLVM).
+"""
 import os
 import tempfile
 
@@ -121,6 +124,13 @@ def test_hello_world(toolchain_under_test: ToolchainUnderTest):
 
 
 def test_relocatable(toolchain_under_test: ToolchainUnderTest, tmp_path):
+    """
+    Tests relocatable code generation and linking for ARM toolchains.
+
+    This test verifies that:
+    - The toolchain can generate position-independent or relocatable code for ARM architectures
+    - Special toolchain limitations (e.g., LLVM GOT linking issues) are properly handled
+    """
     if toolchain_under_test.toolchain == LLVM_12_0_1_Toolchain:
         if toolchain_under_test.userspace_dynamic_linker is not None:
             pytest.skip("LLVM userspace mode can't supply external symbols")
@@ -130,6 +140,14 @@ def test_relocatable(toolchain_under_test: ToolchainUnderTest, tmp_path):
 
 
 def test_arm_alignment(toolchain_under_test: ToolchainUnderTest):
+    """
+    Tests ARM-specific code alignment and memory segment configuration.
+
+    This test verifies that:
+    - Assembly code compiles with correct byte alignment at specific virtual addresses
+    - Generated code matches expected instruction encoding for different endianness configurations
+    - Endianness handling is correct for little-endian and BE8 (byte-invariant big-endian) modes
+    """
     tc_config = ToolchainConfig(
         file_format=BinFileType.ELF,
         force_inlines=True,

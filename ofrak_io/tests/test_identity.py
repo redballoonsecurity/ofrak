@@ -1,3 +1,6 @@
+"""
+Test the identity property of binary serialization and deserialization operations.
+"""
 import io
 import os
 import random
@@ -47,6 +50,13 @@ class TestBinarySerializationIdentity:
 
     @given(values=pack_multiple_strategy)
     def test_multiple(self, values: PackMultipleValues):
+        """
+        Test the identity property for packing and unpacking multiple values at once.
+
+        This test verifies that:
+        - A set of values (int, byte, and quad) are serialized together
+        - The serialized data is then deserialized back into the same values
+        """
         buffer = io.BytesIO()
         serializer = BinarySerializer(buffer)
         serializer.pack_multiple(values.char, values.i_value, values.b_value, values.q_value)
@@ -58,6 +68,14 @@ class TestBinarySerializationIdentity:
 
     @given(values=pack_multiple_strategy)
     def test_multiple_auto_bitwidth(self, values: PackMultipleValues):
+        """
+        Test the identity property for packing and unpacking multiple values with auto bitwidth
+        detection.
+
+        This test verifies that:
+        - A set of values (int, byte, and quad) are serialized with auto bitwidth detection
+        - The serialized data is then deserialized back into the same values using auto bitwidth
+        """
         buffer = io.BytesIO()
         serializer = BinarySerializer(buffer, word_size=4)
         serializer.pack_multiple(
@@ -71,6 +89,13 @@ class TestBinarySerializationIdentity:
 
     @given(value=ubyte_strategy)
     def test_ubyte(self, value: int):
+        """
+        Test the identity property for unsigned byte serialization and deserialization.
+
+        This test verifies that:
+        - An unsigned byte value is serialized
+        - The serialized data is then deserialized back to the same value
+        """
         buffer = io.BytesIO()
         serializer = BinarySerializer(buffer)
 
@@ -83,6 +108,13 @@ class TestBinarySerializationIdentity:
 
     @given(value=uint16_strategy)
     def test_ushort(self, value: int):
+        """
+        Test the identity property for unsigned short serialization and deserialization.
+
+        This test verifies that:
+        - An unsigned short value is serialized
+        - The serialized data is then deserialized back to the same value
+        """
         buffer = io.BytesIO()
         serializer = BinarySerializer(buffer)
 
@@ -95,6 +127,13 @@ class TestBinarySerializationIdentity:
 
     @given(value=uint32_strategy)
     def test_uint(self, value: int):
+        """
+        Test the identity property for unsigned integer serialization and deserialization.
+
+        This test verifies that:
+        - An unsigned integer value is serialized
+        - The serialized data is then deserialized back to the same value
+        """
         buffer = io.BytesIO()
         serializer = BinarySerializer(buffer)
 
@@ -107,6 +146,13 @@ class TestBinarySerializationIdentity:
 
     @given(value=uint64_strategy)
     def test_ulong(self, value: int):
+        """
+        Test the identity property for unsigned long serialization and deserialization.
+
+        This test verifies that:
+        - An unsigned long value is serialized
+        - The serialized data is then deserialized back to the same value
+        """
         buffer = io.BytesIO()
         serializer = BinarySerializer(buffer)
 
@@ -119,6 +165,13 @@ class TestBinarySerializationIdentity:
 
     @given(value=signed_byte_strategy)
     def test_byte(self, value: int):
+        """
+        Test the identity property for signed byte serialization and deserialization.
+
+        This test verifies that:
+        - A signed byte value is serialized
+        - The serialized data is then deserialized back to the same value
+        """
         buffer = io.BytesIO()
         serializer = BinarySerializer(buffer)
 
@@ -131,6 +184,13 @@ class TestBinarySerializationIdentity:
 
     @given(value=signed_int16_strategy)
     def test_short(self, value: int):
+        """
+        Test the identity property for signed short serialization and deserialization.
+
+        This test verifies that:
+        - A signed short value is serialized
+        - The serialized data is then deserialized back to the same value
+        """
         buffer = io.BytesIO()
         serializer = BinarySerializer(buffer)
 
@@ -143,6 +203,13 @@ class TestBinarySerializationIdentity:
 
     @given(value=signed_int32_strategy)
     def test_int(self, value: int):
+        """
+        Test the identity property for signed integer serialization and deserialization.
+
+        This test verifies that:
+        - A signed integer value is serialized
+        - The serialized data is then deserialized back to the same value
+        """
         buffer = io.BytesIO()
         serializer = BinarySerializer(buffer)
 
@@ -155,6 +222,13 @@ class TestBinarySerializationIdentity:
 
     @given(value=signed_int64_strategy)
     def test_long(self, value: int):
+        """
+        Test the identity property for signed long serialization and deserialization.
+
+        This test verifies that:
+        - A signed long value is serialized
+        - The serialized data is then deserialized back to the same value
+        """
         buffer = io.BytesIO()
         serializer = BinarySerializer(buffer)
 
@@ -167,6 +241,13 @@ class TestBinarySerializationIdentity:
 
     @given(value=long_long_strategy)
     def test_long_long(self, value: int):
+        """
+        Test the identity property for long long serialization and deserialization.
+
+        This test verifies that:
+        - A long long value is serialized
+        - The serialized data is then deserialized back to the same value
+        """
         buffer = io.BytesIO()
         serializer = BinarySerializer(buffer)
 
@@ -179,6 +260,13 @@ class TestBinarySerializationIdentity:
 
     @given(value=float_strategy)
     def test_float(self, value: float):
+        """
+        Test the identity property for float serialization and deserialization.
+
+        This test verifies that:
+        - A float value is serialized
+        - The serialized data is then deserialized back to the same value
+        """
         buffer = io.BytesIO()
         serializer = BinarySerializer(buffer)
         serializer.pack_float(value)
@@ -190,6 +278,13 @@ class TestBinarySerializationIdentity:
 
     @given(value=double_float_strategy)
     def test_double(self, value: float):
+        """
+        Test the identity property for double serialization and deserialization.
+
+        This test verifies that:
+        - A double value is serialized
+        - The serialized data is then deserialized back to the same value
+        """
         buffer = io.BytesIO()
         serializer = BinarySerializer(buffer)
         serializer.pack_double(value)
@@ -201,6 +296,13 @@ class TestBinarySerializationIdentity:
 
     @given(value=string_strategy)
     def test_string(self, value: str):
+        """
+        Test the identity property for string serialization and deserialization.
+
+        This test verifies that:
+        - A string value is serialized with a specified length
+        - The serialized data is then deserialized back to the same value
+        """
         buffer = io.BytesIO()
         serializer = BinarySerializer(buffer)
         string_length = len(value) + random.randint(0, 4)
@@ -212,6 +314,14 @@ class TestBinarySerializationIdentity:
         assert deserialized == value
 
     def test_variable_length_string(self):
+        """
+        Test the identity property for variable-length string serialization and deserialization.
+
+        This test verifies that:
+        - A string is serialized with a fixed length
+        - The serialized data is then deserialized back to the same value using automatic length
+        detection
+        """
         string_text = "hello"
         string_length = len(string_text) + 10
         buffer = io.BytesIO()
@@ -225,6 +335,13 @@ class TestBinarySerializationIdentity:
 
     @given(value=ubyte_strategy)
     def test_dynamic_bytes(self, value: int):
+        """
+        Test the identity property for dynamic bytes serialization and deserialization.
+
+        This test verifies that:
+        - A random byte sequence is serialized
+        - The serialized data is then deserialized back to the same byte sequence
+        """
         raw_bytes = os.urandom(value)
         buffer = io.BytesIO()
         serializer = BinarySerializer(buffer)
@@ -238,6 +355,13 @@ class TestBinarySerializationIdentity:
 
     @given(value=uint16_strategy)
     def test_dynamic_bytes_short(self, value: int):
+        """
+        Test the identity property for dynamic bytes serialization and deserialization with short length.
+
+        This test verifies that:
+        - A random byte sequence is serialized with a short length prefix
+        - The serialized data is then deserialized back to the same byte sequence
+        """
         raw_bytes = os.urandom(value)
         buffer = io.BytesIO()
         serializer = BinarySerializer(buffer)

@@ -1,3 +1,11 @@
+"""
+This module tests binary extension functionality in OFRAK.
+
+Requirements Mapping:
+- REQ3.2:
+  - TestBinaryExtendModify: Tests the ability to extend a binary resource with additional content
+"""
+
 from ofrak import OFRAKContext
 from ofrak.core.binary import GenericBinary, BinaryExtendConfig, BinaryExtendModifier
 from ofrak.resource import Resource
@@ -8,6 +16,14 @@ CONTENT = b"RBS" * 40
 
 
 class TestBinaryExtendModify(ModifyPattern):
+    """Test the ability to extend a binary resource with additional content (REQ3.2).
+
+    This test verifies that:
+    - A binary resource can be extended with additional bytes
+    - The extended data is correctly appended to the original binary
+    - The final resource size matches the expected extended size
+    """
+
     expected_tag = GenericBinary
 
     async def create_root_resource(self, ofrak_context: OFRAKContext):

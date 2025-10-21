@@ -88,6 +88,35 @@ We use [mkdocstrings](https://github.com/mkdocstrings/mkdocstrings) to generate 
 - Class, function, and method signatures are annotated using [Sphinx syntax](https://sphinx-rtd-tutorial.readthedocs.io/en/latest/docstrings.html)
 - Cross references to code can be added using [Markdown reference-style links](https://mkdocstrings.github.io/usage/#cross-references)
 
+### Requirements and Test Documentation
+
+All requirements are defined in [requirements.md](requirements.md). When writing or updating tests:
+
+**Test module docstrings:**
+```python
+"""
+This module tests binary extension functionality in OFRAK.
+
+Requirements Mapping:
+- REQ3.2
+"""
+```
+
+**Test method docstrings:**
+```python
+async def test_binary_extend_modify(self, ofrak_context):
+    """
+    Test the ability to extend a binary resource with additional content (REQ3.2).
+
+    This test verifies that:
+    - A binary resource can be extended with additional bytes
+    - The extended data is correctly appended to the original binary
+    - The final resource size matches the expected extended size
+    """
+```
+
+When adding new requirements to `requirements.md`, use format `REQ<epic>.<number>` and update the Validation column with links to relevant tests.
+
 ### Functions and Methods
 
 Public-facing functions and methods should have docstrings. Thus, each interface or abstract class should have a docstring on each of its methods. This docstring should not be duplicated in implementations, unless the implementation has unique behavior which could be of concern to the user (perhaps a significant side effect, or additional errors are raised).
