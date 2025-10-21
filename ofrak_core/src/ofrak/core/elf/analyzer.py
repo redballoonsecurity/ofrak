@@ -318,9 +318,9 @@ class ElfRelaAnalyzer(Analyzer[None, ElfRelaEntry]):
     (Elf32_Rela or Elf64_Rela structures) to extract offset (where to apply relocation), symbol
     index (which symbol is involved), relocation type (how to compute the value), and addend
     (constant to add to the symbol value). Relocations specify how addresses should be adjusted
-    during linking or loading. Use when analyzing specific relocation entries to understand how
-    position-independent code works, debugging linking issues, preparing for code relocation, or
-    understanding dynamic symbol resolution. Each entry describes one address adjustment.
+    during linking or loading. Use when debugging linking issues, preparing for code relocation,
+    understanding dynamic symbol resolution, or analyzing specific relocation entries to understand 
+    how position-independent code works. Each entry describes one address adjustment.
 
     http://sourceware.org/git/?p=glibc.git;a=blob_plain;f=elf/elf.h
     """

@@ -53,9 +53,8 @@ class ZlibCompressionLevelAnalyzer(Analyzer[None, ZlibData]):
 
 class ZlibUnpacker(Unpacker[None]):
     """
-    Decompresses zlib-compressed data. Use when encountering zlib-compressed data blocks, whichare
-    often identified by specific magic bytes (0x78 0x9C, 0x78 0xDA, etc.). The decompressed data may
-    contain further structure that can be analyzed or unpacked.
+    Decompresses zlib-compressed data. Use when encountering zlib-compressed data blocks. The 
+    decompressed data may contain further structure that can be analyzed or unpacked.
     """
 
     id = b"ZlibUnpacker"

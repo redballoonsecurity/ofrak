@@ -179,8 +179,8 @@ class UbiUnpacker(Unpacker[None]):
     """
     Extracts volumes from UBI (Unsorted Block Images) containers, which are used for managing flash
     storage on NAND devices. Use when analyzing firmware for embedded devices with NAND flash
-    storage, particularly Linux-based devices. Each extracted UBI volume can be further unpacked if
-    it contains a filesystem like UBIFS.
+    storage using the UBI format, particularly Linux-based devices. Each extracted UBI volume can be
+    further unpacked if it contains a filesystem like UBIFS.
     """
 
     targets = (Ubi,)

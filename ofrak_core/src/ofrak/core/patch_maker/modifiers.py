@@ -216,7 +216,8 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
     """
     Injects new program segments into executables, creating complete loadable segments with code or
     data at specified virtual addresses with configurable permissions. Only non-zero length segments
-    (excluding .bss) are injected. Use for adding executable code segments, injecting data segments,
+    are injected, with the exception of .bss segments, as these are expected to be zero length and 
+    will always be injected. Use for adding executable code segments, injecting data segments,
     creating new memory regions, implementing code caves via segments, or expanding program memory
     space. More comprehensive than simple data injection as it creates properly structured loadable
     segments with memory mapping.

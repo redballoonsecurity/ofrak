@@ -81,8 +81,7 @@ class Uf2Unpacker(Unpacker[None]):
     Extracts code regions from USB Flashing Format (UF2) files, a format designed for easy
     microcontroller programming via USB mass storage. UF2 files contain binary data with address
     information and are commonly used for Adafruit boards, Raspberry Pi Pico, and other development
-    boards. Use when analyzing firmware for devices that support UF2 flashing. The unpacker creates
-    code regions that can be further analyzed or disassembled.
+    boards. The unpacker creates code regions that can be further analyzed or disassembled.
     """
 
     targets = (Uf2File,)

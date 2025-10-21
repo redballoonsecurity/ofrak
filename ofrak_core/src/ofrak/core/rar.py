@@ -33,7 +33,8 @@ class RarUnpacker(Unpacker[None]):
     Extracts files and directories from RAR compressed archives using the free unar tool. RAR is a
     proprietary archive format that offers good compression and supports features like split
     archives and recovery records. Use when analyzing RAR-packaged software, data archives, or
-    firmware bundles. The unpacker handles various RAR versions and compression methods.
+    firmware bundles. The unpacker handles various RAR versions and compression methods. Note that 
+    there is currently no RAR packer, so after unpacking, the resource cannot be repacked.
     """
 
     targets = (RarArchive,)

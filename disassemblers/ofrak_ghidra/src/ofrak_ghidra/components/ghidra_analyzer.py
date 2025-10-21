@@ -80,7 +80,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
     """
     Creates or loads a Ghidra project and runs Ghidra's automated analysis. Connects to Ghidra server for analysis
     access. Use for comprehensive binary analysis with Ghidra's powerful analysis engine. Can import existing .gzf
-    files or analyze from scratch.
+    files specified in the ComponentConfig or analyze from scratch.
     """
 
     id = b"GhidraProjectAnalyzer"

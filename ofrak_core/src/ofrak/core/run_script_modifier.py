@@ -38,7 +38,7 @@ class RunScriptModifier(Modifier[RunScriptModifierConfig]):
 
         Example:
             ```python
-            async def main(ofrak_context, root_resource, **kwargs):
+            async def main(ofrak_context: OFRAKContext, root_resource: Resource, **kwargs):
                 # Your code here
                 pass
             ```

@@ -38,6 +38,10 @@ class StringPatchingModifier(Modifier[StringPatchingConfig]):
     locations, modifying configuration strings at known positions, fixing specific text entries, or
     implementing precise string modifications. Useful when offset is known from analysis or when
     only one specific instance should be changed.
+
+    By default, data at `offset` will be patched with the ASCII string specified in the config's 
+    `string` argument, encoded as bytes. To append a null byte to the string, specify 
+    `null_terminate = True` in the config.
     """
 
     id = b"StringPatchingModifier"
@@ -74,6 +78,13 @@ class StringFindReplaceModifier(Modifier[StringFindReplaceConfig]):
     throughout a binary, changing URLs or domain names, updating configuration strings, replacing
     hardcoded paths, or modifying all instances of specific text. More efficient than manual
     individual replacements when the same change is needed in multiple locations.
+
+    By default, `to_find` will be replaced with the ASCII string specified in the config's 
+    `replace_with` argument, encoded as bytes, with a null byte appended. To remove the null byte,
+    specify `null_terminate = False` in the config. If `replace_with` is larger than `to_find`, a 
+    ModifierError will be raised, unless `allow_overflow` is `True`. Note that this has the 
+    potential to overwrite important data, so only use `allow_overflow = True` if you know there is
+    extra space for the string. 
     """
 
     targets = (GenericBinary,)
