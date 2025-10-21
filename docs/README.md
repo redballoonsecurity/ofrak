@@ -70,14 +70,19 @@ To add a markdown file to the docs, first write the documentation as a markdown 
 **Examples:**
 ```html
 <!-- docs/index.md -->
+<div align="right">
 <img src="./assets/square_02.png" width="125" height="125">
+</div>
 
 <!-- docs/install/docker.md -->
+<div align="right">
 <img src="../assets/square_03.png" width="125" height="125">
+</div>
 
 <!-- docs/user-guide/gui/settings.md -->
+<div align="right">
 <img src="../../assets/square_01.png" width="125" height="125">
-```
+</div>
 
 <div align="right">
 <img src="./assets/square_01.png" width="125" height="125">
