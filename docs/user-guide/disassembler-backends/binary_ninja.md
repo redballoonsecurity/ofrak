@@ -120,3 +120,7 @@ if __name__ == "__main__":
 ## Troubleshooting
 
 You can test python code in the interactive python console available in the Binary Ninja desktop application. Enable it with `View -> Native Docks -> Show Python Console` (on Mac).
+
+<div align="right">
+<img src="../../assets/square_03.png" width="125" height="125">
+</div>

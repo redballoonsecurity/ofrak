@@ -258,6 +258,17 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
         f"FROM {full_base_image_name}:{config.image_revision}\n\n",
         f"ARG OFRAK_SRC_DIR=/\n",
     ]
+
+    # Extract OFRAK_DIR from extra_build_args if present
+    ofrak_dir_prefix = ""
+    if config.extra_build_args:
+        for i, arg in enumerate(config.extra_build_args):
+            if arg.startswith("OFRAK_DIR"):
+                ofrak_dir_prefix = arg.split("=", 1)[1]
+                if ofrak_dir_prefix and not ofrak_dir_prefix.endswith("/"):
+                    ofrak_dir_prefix += "/"
+                break
+
     package_names = list()
     for package_path in config.packages_paths:
         package_name = os.path.basename(package_path)
@@ -266,9 +277,11 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
     dockerfile_finish_parts.append("\nWORKDIR /\n")
     dockerfile_finish_parts.append("ARG INSTALL_TARGET\n")
     if config.install_target is InstallTarget.DEVELOP:
-        dockerfile_finish_parts.append("ADD requirements-dev.txt /\n")
+        dockerfile_finish_parts.append(f"ADD {ofrak_dir_prefix}requirements-dev.txt /\n")
         dockerfile_finish_parts.append("RUN python3 -m pip install -r requirements-dev.txt\n")
-        dockerfile_finish_parts.append(f"ADD 'pytest_ofrak' $OFRAK_SRC_DIR/pytest_ofrak\n")
+        dockerfile_finish_parts.append(
+            f"ADD '{ofrak_dir_prefix}pytest_ofrak' $OFRAK_SRC_DIR/pytest_ofrak\n"
+        )
         dockerfile_finish_parts.append(f"RUN make -C $OFRAK_SRC_DIR/pytest_ofrak develop\n")
     develop_makefile = "\\n\\\n".join(
         [

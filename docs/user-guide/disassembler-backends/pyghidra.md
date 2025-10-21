@@ -130,3 +130,7 @@ To save a cache to a JSON file:
 
 #### Loading cached analysis
 To load an analysis JSON file, see the [`Cached Disassembly Backend`](./cached_disassembly.md).
+
+<div align="right">
+<img src="../../assets/square_05.png" width="125" height="125">
+</div>

@@ -117,3 +117,7 @@ since if you don't expect to need the component(s) requiring a dependency, you c
 
 To see how dependencies are installed in our [Docker Images](./install/docker.md), you can inspect
 the Dockerstub files in each respective OFRAK package.
+
+<div align="right">
+<img src="./assets/square_02.png" width="125" height="125">
+</div>

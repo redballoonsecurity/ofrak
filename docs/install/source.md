@@ -125,3 +125,7 @@ make requirements-build-docker
 ## Next Steps
 
 - [Contributor Guide](../contributor-guide/getting-started.md) for development workflow
+
+<div align="right">
+<img src="../assets/square_01.png" width="125" height="125">
+</div>
