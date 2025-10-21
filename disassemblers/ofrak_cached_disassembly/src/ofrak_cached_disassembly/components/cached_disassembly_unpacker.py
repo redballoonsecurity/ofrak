@@ -140,6 +140,8 @@ class CachedGhidraCodeRegionModifier(Modifier[None]):
     """
     Adjusts CodeRegion addresses from Ghidra's address space to match ELF addresses for PIE binaries. Handles address
     rebasing when using cached Ghidra analysis. Used internally by cached Ghidra workflow.
+
+    For more details on the PIE fixups, see [gotchas.md](docs/user-guide/dissassembler-backends/gotchas.md).
     """
 
     targets = (CodeRegion,)

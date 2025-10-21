@@ -86,6 +86,8 @@ class AngrCodeRegionModifier(Modifier):
     Adjusts CodeRegion virtual addresses to account for position-independent executables (PIE) using angr's loader.
     Automatically detects PIE binaries (currently supports ELF) and fixes addresses relative to angr's base address.
     Used internally by angr unpacking workflow.
+
+    For more details on the PIE fixups, see [gotchas.md](docs/user-guide/dissassembler-backends/gotchas.md).
     """
 
     id = b"AngrCodeRegionModifier"

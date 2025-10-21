@@ -430,6 +430,8 @@ class GhidraCodeRegionModifier(Modifier, OfrakGhidraMixin):
     """
     Adjusts CodeRegion virtual addresses to match Ghidra's address space, accounting for PIE binaries. Syncs OFRAK's
     code region addresses with Ghidra's internal representation. Used internally by Ghidra unpacking workflow.
+
+    For more details on the PIE fixups, see [gotchas.md](docs/user-guide/dissassembler-backends/gotchas.md).
     """
 
     id = b"GhidraCodeRegionModifier"
