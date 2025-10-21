@@ -83,6 +83,7 @@ To add a markdown file to the docs, first write the documentation as a markdown 
 <div align="right">
 <img src="../../assets/square_01.png" width="125" height="125">
 </div>
+```
 
 <div align="right">
 <img src="./assets/square_01.png" width="125" height="125">
