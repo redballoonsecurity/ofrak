@@ -140,3 +140,7 @@ arguments, etc.), and then fix it in the PatchMaker setup/usage.
 ## General troubleshooting tips:
 - the standalone assembler/compiler/linker commands can be run on the command line manually while experimenting, avoiding running the full OFRAK script
 - different toolchains will handle compilation differently, and unless prohibited by the use case, it may be helpful to change the employed toolchain to further triage the error (or even get past it)
+
+<div align="right">
+<img src="../../../assets/square_04.png" width="125" height="125">
+</div>

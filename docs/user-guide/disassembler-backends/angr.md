@@ -42,3 +42,7 @@ have to do anything!
 ## Documentation
 
 [Angr User Documentation](https://docs.angr.io/)
+
+<div align="right">
+<img src="../../assets/square_05.png" width="125" height="125">
+</div>
