@@ -240,7 +240,7 @@ async def test_strings_in_decomp(freertos_resource, ofrak_injector):
             )
         ),
     )
-    await complex_block.resource.run(DecompilationAnalyzer)
+    await complex_block.resource.run(PyGhidraDecompilationAnalyzer)
     decomp_resource: DecompilationAnalysis = await complex_block.resource.view_as(
         DecompilationAnalysis
     )
