@@ -1,0 +1,65 @@
+"""
+[Brief description of what this script does]
+
+Usage:
+    python script_name.py <input_file> [options]
+
+Example:
+    python script_name.py firmware.bin --output extracted/
+"""
+import argparse
+from ofrak import OFRAK, OFRAKContext
+
+# Import OFRAK components and views as needed
+# from ofrak.core.binary import BinaryPatchConfig, BinaryPatchModifier
+# from ofrak.core.strings import StringsAnalyzer, StringsAttributes
+# from ofrak.core.elf.model import Elf
+# from ofrak.core.filesystem import File
+
+
+async def main(ofrak_context: OFRAKContext, input_file: str, output_file: str):
+    """
+    Main function that performs OFRAK operations.
+
+    Args:
+        ofrak_context: The OFRAK context for creating and managing resources
+        input_file: Path to input binary file
+        output_file: Path to output file
+    """
+    # Load the binary file
+    print(f"Loading {input_file}...")
+    root_resource = await ofrak_context.create_root_resource_from_file(input_file)
+
+    # Perform your analysis/modification here
+    # Example: Unpack the resource
+    # await root_resource.unpack()
+
+    # Example: Run an analyzer
+    # await root_resource.run(StringsAnalyzer)
+    # strings = await root_resource.analyze(StringsAttributes)
+
+    # Example: Modify the resource
+    # config = BinaryPatchConfig(offset=0x1000, patch=b"\x90\x90")
+    # await root_resource.run(BinaryPatchModifier, config)
+
+    # Save the results
+    print(f"Saving results to {output_file}...")
+    await root_resource.flush_data_to_disk(output_file)
+
+    print("Done!")
+
+
+if __name__ == "__main__":
+    # Set up command line argument parsing
+    parser = argparse.ArgumentParser(description="[Brief description of what this script does]")
+    parser.add_argument("input_file", help="Path to the input binary file")
+    parser.add_argument("output_file", help="Path to save the output file")
+    parser.add_argument(
+        "--option", type=int, default=42, help="An optional parameter (default: 42)"
+    )
+
+    args = parser.parse_args()
+
+    # Create OFRAK instance and run the main function
+    ofrak = OFRAK()
+    ofrak.run(main, args.input_file, args.output_file)
