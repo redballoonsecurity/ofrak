@@ -14,7 +14,7 @@ import pytest
 
 from ofrak.ofrak_context import OFRAKContext
 from ofrak.resource import Resource
-from ofrak.core.lz4 import Lz4Data
+from ofrak.core.lz4 import Lz4ModernData, Lz4SkippableData
 from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import (
     CompressedFileUnpackModifyPackPattern,
 )
@@ -51,7 +51,7 @@ class Lz4UnpackModifyPackPattern(CompressedFileUnpackModifyPackPattern):
     - The LZ4 file contains the expected data after decompression
     """
 
-    expected_tag = Lz4Data
+    expected_tag = Lz4ModernData
 
     @pytest.fixture(autouse=True)
     def create_test_file(self, lz4_test_input: Tuple[bytes, bytes], tmp_path: Path):
@@ -154,8 +154,8 @@ async def test_corrupted_lz4_fail(lz4_test_input: Tuple[bytes, bytes], ofrak_con
     # Corrupt the magic number
     corrupted_data[0] = 0xFF
     resource = await ofrak_context.create_root_resource("corrupted.lz4", data=bytes(corrupted_data))
-    # Manually tag as Lz4Data since corrupted magic bytes won't be auto-identified
-    resource.add_tag(Lz4Data)
+    # Manually tag as Lz4ModernData since corrupted magic bytes won't be auto-identified
+    resource.add_tag(Lz4ModernData)
     await resource.save()
 
     with pytest.raises(RuntimeError):
@@ -171,8 +171,8 @@ async def test_empty_lz4_file(ofrak_context: OFRAKContext):
     - Attempting to unpack an empty file raises the expected error
     """
     resource = await ofrak_context.create_root_resource("empty.lz4", data=b"")
-    # Manually tag as Lz4Data since empty data won't be auto-identified
-    resource.add_tag(Lz4Data)
+    # Manually tag as Lz4ModernData since empty data won't be auto-identified
+    resource.add_tag(Lz4ModernData)
     await resource.save()
 
     with pytest.raises(RuntimeError):
@@ -214,6 +214,32 @@ async def test_lz4_with_large_data(ofrak_context: OFRAKContext):
     assert child_data == large_data
 
 
+async def test_real_lz4_skippable_frame(ofrak_context: OFRAKContext):
+    """
+    Test unpacking a real LZ4 skippable frame file from the official LZ4 repository (REQ1.3).
+
+    This test verifies that:
+    - Real LZ4 files from the wild can be unpacked successfully
+    - Skippable frames are identified correctly as Lz4SkippableData
+    - Skippable frames are handled correctly by the unpacker
+    - The official LZ4 golden sample file works as expected
+    """
+    # This is the skip.bin file from lz4/lz4 repository tests/goldenSamples
+    # Source: https://github.com/lz4/lz4/tree/dev/tests/goldenSamples
+    test_file = ASSETS_DIR / "lz4_skip.bin"
+
+    resource = await ofrak_context.create_root_resource_from_file(test_file)
+    await resource.unpack()
+
+    # Verify it was identified as skippable frame
+    assert resource.has_tag(Lz4SkippableData)
+
+    # Skippable frame decompresses to empty content
+    child = await resource.get_only_child()
+    child_data = await child.get_data()
+    assert child_data == b""
+
+
 async def test_lz4_round_trip(ofrak_context: OFRAKContext):
     """
     Test complete round-trip: compress with LZ4, unpack, modify, pack, verify (REQ1.3, REQ4.4).
@@ -229,7 +255,7 @@ async def test_lz4_round_trip(ofrak_context: OFRAKContext):
 
     resource = await ofrak_context.create_root_resource("test.lz4", data=compressed_data)
     # Manually tag for this test to ensure the resource is treated as LZ4
-    resource.add_tag(Lz4Data)
+    resource.add_tag(Lz4ModernData)
     await resource.save()
 
     await resource.unpack()
