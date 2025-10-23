@@ -1,0 +1,143 @@
+"""
+[Component Name] - [Brief description of what this component does]
+
+This module provides [component type] functionality for [target resource type].
+"""
+from dataclasses import dataclass
+from typing import Optional
+
+from ofrak.component.[component_base] import [ComponentBaseClass]
+from ofrak.model.component_model import ComponentConfig
+from ofrak.model.resource_model import ResourceAttributes
+from ofrak.resource import Resource
+from ofrak.core.binary import GenericBinary
+
+
+# =============================================================================
+# Configuration (if component needs configuration)
+# =============================================================================
+
+@dataclass
+class MyComponentConfig(ComponentConfig):
+    """
+    Configuration for MyComponent.
+
+    Attributes:
+        option1: Description of option1
+        option2: Description of option2 (has default value)
+    """
+    option1: str
+    option2: int = 42
+
+
+# =============================================================================
+# Attributes (for Analyzers - what information this extracts)
+# =============================================================================
+
+@dataclass
+class MyComponentAttributes(ResourceAttributes):
+    """
+    Attributes extracted by MyComponent.
+
+    Attributes:
+        field1: Description of field1
+        field2: Description of field2
+    """
+    field1: int
+    field2: str
+
+
+# =============================================================================
+# Component Implementation
+# =============================================================================
+
+class MyComponent([ComponentBaseClass]):
+    """
+    [Detailed description of what this component does]
+
+    This component [explain what it does, when to use it, any prerequisites].
+
+    For Identifiers:
+    - Detects [format/type] by checking [signature/structure]
+    - Adds [Tag] tag to matching resources
+
+    For Analyzers:
+    - Extracts [information] from [resource type]
+    - Produces MyComponentAttributes with [fields]
+    - Requires [any prerequisites]
+
+    For Unpackers:
+    - Unpacks [format] resources
+    - Creates [child type] children
+    - Handles [compression/encoding]
+
+    For Modifiers:
+    - Modifies [what aspect] of resources
+    - Requires [configuration options]
+    - Preserves [what should be preserved]
+
+    For Packers:
+    - Packs [resource type] from children
+    - Uses [compression/encoding]
+    - Reconstructs [format structure]
+    """
+
+    # Component ID (should match class name) - must be bytes
+    id = b"MyComponent"
+
+    # For Identifiers: typically empty tuple
+    # For others: tuple of tags this component can operate on
+    targets = (GenericBinary,)
+
+    # For Unpackers: types of children created
+    children = ()
+
+    # For Analyzers: attributes produced
+    outputs = (MyComponentAttributes,)
+
+    # If component uses external tools, list them here
+    # external_dependencies = ("tool-name",)
+
+    async def run(self, resource: Resource, config: Optional[MyComponentConfig] = None) -> None:
+        """
+        Execute the component.
+
+        For Identifiers, use: async def identify(self, resource: Resource, config=None) -> None
+        For Analyzers, use: async def analyze(self, resource: Resource, config=None) -> MyComponentAttributes
+        For Unpackers, use: async def unpack(self, resource: Resource, config=None) -> None
+        For Modifiers, use: async def modify(self, resource: Resource, config: MyComponentConfig) -> None
+        For Packers, use: async def pack(self, resource: Resource, config=None) -> None
+
+        Args:
+            resource: The resource to operate on
+            config: Component configuration (may be None if no config needed)
+        """
+        # Get resource data
+        data = await resource.get_data()
+
+        # TODO: Implement component logic
+        # For Identifiers:
+        #   if matches_format(data):
+        #       resource.add_tag(MyFormat)
+
+        # For Analyzers:
+        #   field1 = extract_field1(data)
+        #   field2 = extract_field2(data)
+        #   return MyComponentAttributes(field1=field1, field2=field2)
+
+        # For Unpackers:
+        #   for entry in parse_entries(data):
+        #       await resource.create_child(
+        #           tags=(File,),
+        #           data=entry.data,
+        #           attributes=(File(entry.name, entry.size),)
+        #       )
+
+        # For Modifiers:
+        #   modified_data = modify_data(data, config)
+        #   resource.queue_patch(Range(0, len(data)), modified_data)
+
+        # For Packers:
+        #   children = await resource.get_children()
+        #   packed_data = pack_children(children)
+        #   resource.queue_patch(Range(0, await resource.get_data_length()), packed_data)

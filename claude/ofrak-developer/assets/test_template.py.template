@@ -1,0 +1,279 @@
+"""
+Tests for [ComponentName].
+
+This module contains comprehensive tests for [ComponentName] to ensure
+100% code coverage as required by OFRAK.
+"""
+import pytest
+from ofrak import OFRAKContext
+from ofrak.resource import Resource
+
+from my_module import MyComponent, MyComponentConfig
+
+
+class TestMyComponent:
+    """
+    Test suite for MyComponent.
+
+    Tests cover:
+    - Basic functionality
+    - Edge cases (empty input, large input, boundary conditions)
+    - Error handling
+    - Integration with other components
+    """
+
+    # =========================================================================
+    # Fixtures
+    # =========================================================================
+
+    @pytest.fixture
+    async def test_resource(self, ofrak_context: OFRAKContext) -> Resource:
+        """
+        Create a basic test resource for MyComponent tests.
+
+        Args:
+            ofrak_context: OFRAK context fixture (provided by framework)
+
+        Returns:
+            Resource ready for testing
+        """
+        # Create test data
+        test_data = b"test binary data"
+
+        # Create resource
+        resource = await ofrak_context.create_root_resource("test.bin", test_data)
+
+        # Add any required tags
+        # resource.add_tag(MyFormat)
+
+        # Run any prerequisite components
+        # await resource.run(PrerequisiteAnalyzer)
+
+        return resource
+
+    @pytest.fixture
+    def sample_data(self) -> bytes:
+        """
+        Provide sample data for testing.
+
+        Returns:
+            Sample binary data
+        """
+        return b"sample test data"
+
+    # =========================================================================
+    # Basic Functionality Tests
+    # =========================================================================
+
+    async def test_component_basic_functionality(
+        self, test_resource: Resource, ofrak_context: OFRAKContext
+    ):
+        """
+        Test MyComponent performs its basic function correctly.
+
+        For Identifiers: Test that matching resources get tagged
+        For Analyzers: Test that attributes are extracted correctly
+        For Unpackers: Test that children are created correctly
+        For Modifiers: Test that data is modified as expected
+        For Packers: Test that children are packed correctly
+        """
+        # Run component
+        await test_resource.run(MyComponent)
+
+        # Verify results
+        # For Identifiers:
+        #   assert test_resource.has_tag(MyFormat)
+
+        # For Analyzers:
+        #   attrs = await test_resource.analyze(MyComponentAttributes)
+        #   assert attrs.field1 == expected_value1
+        #   assert attrs.field2 == expected_value2
+
+        # For Unpackers:
+        #   children = await test_resource.get_children()
+        #   assert len(children) == expected_count
+        #   child_data = await children[0].get_data()
+        #   assert child_data == expected_data
+
+        # For Modifiers:
+        #   modified_data = await test_resource.get_data()
+        #   assert modified_data == expected_modified_data
+
+        # For Packers:
+        #   packed_data = await test_resource.get_data()
+        #   assert packed_data[:4] == b"MAGIC"  # Check format signature
+
+    async def test_component_with_config(
+        self, test_resource: Resource, ofrak_context: OFRAKContext
+    ):
+        """Test MyComponent with custom configuration."""
+        # Create configuration
+        config = MyComponentConfig(option1="custom_value", option2=123)
+
+        # Run component with config
+        await test_resource.run(MyComponent, config)
+
+        # Verify config was applied
+        result = await test_resource.get_data()
+        # assert result == expected_output_with_config
+
+    # =========================================================================
+    # Edge Case Tests
+    # =========================================================================
+
+    async def test_empty_input(self, ofrak_context: OFRAKContext):
+        """Test component handles empty input gracefully."""
+        empty_resource = await ofrak_context.create_root_resource("empty.bin", b"")
+
+        # Should either handle gracefully or raise appropriate error
+        # If should handle:
+        await empty_resource.run(MyComponent)
+        # assert appropriate behavior
+
+        # If should raise error:
+        # with pytest.raises(ValueError):
+        #     await empty_resource.run(MyComponent)
+
+    async def test_large_input(self, ofrak_context: OFRAKContext):
+        """Test component handles large inputs."""
+        large_data = b"x" * 1024 * 1024  # 1 MB
+        resource = await ofrak_context.create_root_resource("large.bin", large_data)
+
+        await resource.run(MyComponent)
+
+        # Verify component handled large input correctly
+        # result = await resource.get_data()
+        # assert len(result) == expected_size
+
+    async def test_boundary_conditions(self, ofrak_context: OFRAKContext):
+        """Test component at boundary conditions."""
+        # Test at boundaries (e.g., minimum size, maximum values, etc.)
+        boundary_data = create_boundary_test_data()
+        resource = await ofrak_context.create_root_resource("boundary.bin", boundary_data)
+
+        await resource.run(MyComponent)
+
+        # Verify behavior at boundaries
+        # assert appropriate behavior
+
+    # =========================================================================
+    # Error Handling Tests
+    # =========================================================================
+
+    async def test_invalid_input_raises_error(self, ofrak_context: OFRAKContext):
+        """Test component raises appropriate error for invalid input."""
+        invalid_data = b"INVALID_FORMAT"
+        resource = await ofrak_context.create_root_resource("invalid.bin", invalid_data)
+
+        with pytest.raises(ValueError, match="Invalid format"):
+            await resource.run(MyComponent)
+
+    async def test_missing_prerequisite_raises_error(self, ofrak_context: OFRAKContext):
+        """Test component raises error when prerequisite is missing."""
+        resource = await ofrak_context.create_root_resource("test.bin", b"data")
+
+        # Don't run prerequisite component
+
+        with pytest.raises(ComponentDependencyError):
+            await resource.run(MyComponent)
+
+    async def test_handles_corrupted_data(self, ofrak_context: OFRAKContext):
+        """Test component handles corrupted data gracefully."""
+        corrupted_data = create_corrupted_test_data()
+        resource = await ofrak_context.create_root_resource("corrupted.bin", corrupted_data)
+
+        # Should either handle or raise appropriate error
+        with pytest.raises(ValueError, match="Corrupted"):
+            await resource.run(MyComponent)
+
+    # =========================================================================
+    # Parameterized Tests
+    # =========================================================================
+
+    @pytest.mark.parametrize(
+        "input_data,expected_output",
+        [
+            (b"input1", b"output1"),
+            (b"input2", b"output2"),
+            (b"input3", b"output3"),
+        ],
+    )
+    async def test_multiple_cases(
+        self, ofrak_context: OFRAKContext, input_data: bytes, expected_output: bytes
+    ):
+        """Test component with multiple input/output pairs."""
+        resource = await ofrak_context.create_root_resource("test.bin", input_data)
+
+        await resource.run(MyComponent)
+
+        result = await resource.get_data()
+        assert result == expected_output
+
+    # =========================================================================
+    # Integration Tests
+    # =========================================================================
+
+    async def test_integration_with_other_components(self, ofrak_context: OFRAKContext):
+        """Test MyComponent works correctly with other components."""
+        resource = await ofrak_context.create_root_resource("test.bin", b"test data")
+
+        # Run prerequisite components
+        await resource.run(PrerequisiteComponent)
+
+        # Run this component
+        await resource.run(MyComponent)
+
+        # Run dependent components
+        await resource.run(DependentComponent)
+
+        # Verify full workflow
+        # result = await resource.get_data()
+        # assert result == expected_final_result
+
+    async def test_full_workflow(self, ofrak_context: OFRAKContext):
+        """Test complete workflow: identify -> analyze -> unpack -> modify -> pack."""
+        # Load or create test resource
+        resource = await ofrak_context.create_root_resource("test.bin", b"test data")
+
+        # Identify
+        await resource.run(MyIdentifier)
+        assert resource.has_tag(MyFormat)
+
+        # Analyze
+        await resource.run(MyAnalyzer)
+        attrs = await resource.analyze(MyFormatAttributes)
+
+        # Unpack
+        await resource.unpack()
+        children = await resource.get_children()
+        assert len(children) > 0
+
+        # Modify
+        await resource.run(MyModifier)
+
+        # Pack
+        await resource.pack()
+
+        # Verify final result
+        final_data = await resource.get_data()
+        # assert final_data meets expectations
+
+
+# =============================================================================
+# Helper Functions
+# =============================================================================
+
+
+def create_boundary_test_data() -> bytes:
+    """Create test data at boundary conditions."""
+    return b"boundary test data"
+
+
+def create_corrupted_test_data() -> bytes:
+    """Create corrupted test data."""
+    return b"corrupted data"
+
+
+def create_valid_test_data() -> bytes:
+    """Create valid test data."""
+    return b"valid test data"
