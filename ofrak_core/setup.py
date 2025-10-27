@@ -96,6 +96,7 @@ setuptools.setup(
         "tempfile312~=1.0.1",
         "typeguard~=2.13.3",
         "ubi-reader>=0.8.12",
+        "werkzeug>=3.0.0",
         "xattr>=0.10.1;platform_system!='Windows'",
     ],
     author="Red Balloon Security",

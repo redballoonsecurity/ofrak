@@ -17,7 +17,12 @@ from aiohttp.test_utils import TestClient
 from ofrak import Analyzer, Unpacker, Modifier, Packer
 from ofrak.core import File
 from ofrak.core.entropy import DataSummaryAnalyzer
-from ofrak.gui.server import AiohttpOFRAKServer, start_server
+from ofrak.gui.server import (
+    AiohttpOFRAKServer,
+    start_server,
+    validate_safe_directory_path,
+    sanitize_repo_name,
+)
 from ofrak.model.component_filters import ComponentOrMetaFilter, ComponentTypeFilter
 from ofrak.service.serialization.pjson import (
     PJSONSerializationService,
@@ -2169,3 +2174,192 @@ async def test_get_project_by_resource_id(ofrak_client: TestClient, test_project
     project_resp = await ofrak_client.get(f"/{resource_id}/get_project_by_resource_id")
     project = await project_resp.json()
     assert project["session_id"] == id
+
+
+def test_validate_safe_directory_path_valid_relative(tmpdir):
+    """
+    Test that valid relative paths are properly resolved within the base directory
+
+    This test verifies that:
+    - Relative paths are converted to absolute paths
+    - The resolved path stays within the base directory
+    - Path normalization works correctly
+    """
+    base_dir = str(tmpdir)
+    result = validate_safe_directory_path(base_dir, "myproject")
+    expected = os.path.join(os.path.realpath(base_dir), "myproject")
+    assert result == expected
+
+
+def test_validate_safe_directory_path_valid_nested(tmpdir):
+    """
+    Test that nested relative paths are allowed within the base directory
+
+    This test verifies that:
+    - Multi-level relative paths are properly resolved
+    - Nested directories remain within the base directory boundary
+    """
+    base_dir = str(tmpdir)
+    result = validate_safe_directory_path(base_dir, "foo/bar/baz")
+    expected = os.path.join(os.path.realpath(base_dir), "foo/bar/baz")
+    assert result == expected
+
+
+def test_validate_safe_directory_path_traversal_attack(tmpdir):
+    """
+    Test that directory traversal attacks are blocked
+
+    This test verifies that:
+    - Path traversal attempts using ../ are detected
+    - A ValueError is raised with appropriate error message
+    - Attackers cannot escape the base directory
+    """
+    base_dir = str(tmpdir)
+    with pytest.raises(ValueError, match="Path traversal attempt detected"):
+        validate_safe_directory_path(base_dir, "../../../etc/passwd")
+
+
+def test_validate_safe_directory_path_absolute_escape(tmpdir):
+    """
+    Test that absolute paths outside the base directory are rejected
+
+    This test verifies that:
+    - Absolute paths pointing outside base directory are blocked
+    - A ValueError is raised for such attempts
+    """
+    base_dir = str(tmpdir)
+    with pytest.raises(ValueError, match="Path traversal attempt detected"):
+        validate_safe_directory_path(base_dir, "/etc/passwd")
+
+
+def test_validate_safe_directory_path_symlink_escape(tmpdir):
+    """
+    Test that symlink-based directory escapes are caught
+
+    This test verifies that:
+    - Symlinks pointing outside the base directory are detected
+    - Path resolution follows symlinks to detect escapes
+    """
+    base_dir = str(tmpdir)
+    symlink_path = tmpdir.join("evil_link")
+    os.symlink("/etc", str(symlink_path))
+
+    with pytest.raises(ValueError, match="Path traversal attempt detected"):
+        validate_safe_directory_path(base_dir, "evil_link")
+
+
+def test_validate_safe_directory_path_same_as_base(tmpdir):
+    """
+    Test that current directory reference returns the base directory
+
+    This test verifies that:
+    - Using "." as the path returns the base directory itself
+    - This is treated as a valid case (staying within bounds)
+    """
+    base_dir = str(tmpdir)
+    result = validate_safe_directory_path(base_dir, ".")
+    expected = os.path.realpath(base_dir)
+    assert result == expected
+
+
+def test_validate_safe_directory_path_double_dots_in_middle(tmpdir):
+    """
+    Test that complex path traversal attempts are handled correctly
+
+    This test verifies that:
+    - Paths with .. in the middle are normalized
+    - The final normalized path must still be within base directory
+    """
+    base_dir = str(tmpdir)
+    # This should fail because it attempts to escape
+    with pytest.raises(ValueError, match="Path traversal attempt detected"):
+        validate_safe_directory_path(base_dir, "foo/../../bar")
+
+
+def test_sanitize_repo_name_https_url():
+    """
+    Test that HTTPS git URLs are properly parsed to extract repo name
+
+    This test verifies that:
+    - HTTPS URLs are parsed correctly
+    - The .git extension is removed
+    - Only the repository name is returned
+    """
+    result = sanitize_repo_name("https://github.com/redballoonsecurity/ofrak.git")
+    assert result == "ofrak"
+
+
+def test_sanitize_repo_name_ssh_url():
+    """
+    Test that SSH git URLs are properly parsed to extract repo name
+
+    This test verifies that:
+    - SSH-style URLs (git@host:path) are parsed correctly
+    - The repository name is extracted from the path
+    """
+    result = sanitize_repo_name("git@github.com:redballoonsecurity/ofrak.git")
+    assert result == "ofrak"
+
+
+def test_sanitize_repo_name_no_git_extension():
+    """
+    Test that URLs without .git extension work correctly
+
+    This test verifies that:
+    - URLs without the .git suffix are handled
+    - The repository name is still extracted correctly
+    """
+    result = sanitize_repo_name("https://github.com/redballoonsecurity/ofrak")
+    assert result == "ofrak"
+
+
+def test_sanitize_repo_name_special_characters():
+    """
+    Test that special characters are removed by secure_filename
+
+    This test verifies that:
+    - Path traversal characters in repo names are sanitized
+    - The result is safe for use as a directory name
+    """
+    result = sanitize_repo_name("https://github.com/user/../malicious/repo.git")
+    # secure_filename should remove or replace dangerous characters
+    assert ".." not in result
+    assert "/" not in result
+
+
+def test_sanitize_repo_name_empty_result():
+    """
+    Test that invalid URLs that produce empty names are rejected
+
+    This test verifies that:
+    - URLs that result in empty repo names raise ValueError
+    - The error message indicates an invalid repository URL
+    """
+    with pytest.raises(ValueError, match="Invalid repository URL"):
+        sanitize_repo_name("https://github.com/user/")
+
+
+def test_sanitize_repo_name_only_special_chars():
+    """
+    Test that URLs that sanitize to empty strings are rejected
+
+    This test verifies that:
+    - URLs containing only special characters are detected
+    - A ValueError is raised with appropriate message
+    """
+    with pytest.raises(ValueError, match="Invalid repository URL"):
+        sanitize_repo_name("https://github.com/user/../../../.git")
+
+
+def test_sanitize_repo_name_unicode():
+    """
+    Test that unicode characters are handled by secure_filename
+
+    This test verifies that:
+    - Unicode characters in repository names are converted to ASCII
+    - The result is safe for filesystem use
+    """
+    result = sanitize_repo_name("https://github.com/user/repö.git")
+    # secure_filename should convert to ASCII-safe characters
+    assert result.isascii()
+    assert len(result) > 0
