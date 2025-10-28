@@ -149,6 +149,7 @@ class AndroidSparseImagePacker(Packer[None]):
                 sparse_file.close()
 
                 # TODO: detect block size in the unpacker rather than default to 4096
+                # See https://github.com/redballoonsecurity/ofrak/issues/665
                 cmd = [
                     "img2simg",
                     raw_file.name,
