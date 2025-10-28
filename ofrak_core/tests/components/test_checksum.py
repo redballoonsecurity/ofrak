@@ -1,3 +1,9 @@
+"""
+Test the MD5 and SHA256 checksum components.
+
+Requirements Mapping:
+- REQ2.2
+"""
 import os
 
 import psutil
@@ -68,6 +74,14 @@ MD5_TEST_CASES = [
 
 @pytest.mark.parametrize("test_file", SHA256_TEST_CASES, ids=lambda tc: tc.filename)
 async def test_sha256(ofrak_context: OFRAKContext, test_file):
+    """
+    Test that the SHA256 checksum analyzer correctly computes and assigns checksums
+    to resources.
+
+    This test verifies that:
+    - The SHA256 checksum is computed for each test file
+    - The computed checksum matches the expected value
+    """
     filepath = os.path.join(ASSETS_DIR, test_file.filename)
     resource = await ofrak_context.create_root_resource_from_file(filepath)
     await resource.analyze_recursively()
@@ -81,6 +95,14 @@ async def test_sha256(ofrak_context: OFRAKContext, test_file):
 
 @pytest.mark.parametrize("test_file", MD5_TEST_CASES, ids=lambda tc: tc.filename)
 async def test_md5(ofrak_context: OFRAKContext, test_file):
+    """
+    Test that the MD5 checksum analyzer correctly computes and assigns checksums to
+    resources.
+
+    This test verifies that:
+    - The MD5 checksum is computed for each test file
+    - The computed checksum matches the expected value
+    """
     p = psutil.Process()
     [print(f.path) for f in p.open_files()]
     filepath = os.path.join(ASSETS_DIR, test_file.filename)

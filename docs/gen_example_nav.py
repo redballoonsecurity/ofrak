@@ -33,7 +33,8 @@ for i, path in enumerate(sorted(Path("examples").glob("ex*.py"))):
 
     with mkdocs_gen_files.open(Path("examples", doc_path), "w") as f:
         # Build relative path to assets directory
-        animal_path = ("../" * len(module_path.parts)) / (
+        # Add 1 to account for the "examples" directory itself
+        animal_path = Path("../" * (len(module_path.parts) + 1)) / (
             animals[i % len(animals)].relative_to("docs")
         )
         print(

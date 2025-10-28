@@ -201,3 +201,7 @@ Additionally:
 - **Permission issues**: Add `--user $(id -u):$(id -g)`
 - **Can't access GUI**: Check container is running with `docker ps`
 - **Out of memory**: Increase Docker memory limit
+
+<div align="right">
+<img src="../assets/square_03.png" width="125" height="125">
+</div>

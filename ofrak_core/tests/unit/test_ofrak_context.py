@@ -1,3 +1,7 @@
+"""
+Test the core functionality of the OFRAK context, including
+OFRAK.run behavior, context management, and resource creation.
+"""
 import asyncio
 import logging
 
@@ -17,6 +21,10 @@ from ofrak.core.filesystem import FilesystemRoot
 def test_ofrak_context():
     """
     Test that OFRAK.run successfully creates an event loop and runs the target async function.
+
+    This test verifies that:
+    - OFRAK.run can create and manage an event loop
+    - The provided async function executes correctly within the context
     """
     # Reset the event loop (this appears to be necessary when running in CI)
     loop = asyncio.new_event_loop()
@@ -32,6 +40,14 @@ def test_ofrak_context():
 
 
 def test_ofrak_context_exclude_components_missing_dependencies():
+    """
+    Test the exclusion of components with missing dependencies.
+
+    This test verifies that:
+    - Components with missing dependencies are excluded when configured to do so
+    - Components with installed dependencies can be executed
+    - Components with missing dependencies raise NotFoundError when excluded
+    """
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
@@ -63,6 +79,14 @@ def test_ofrak_context_exclude_components_missing_dependencies():
 
 
 def test_get_ofrak_context_over_time():
+    """
+    Test context management over the lifetime of OFRAK execution.
+
+    This test verifies that:
+    - No active context exists before running OFRAK
+    - An active context is available during OFRAK execution
+    - No active context exists after OFRAK execution completes
+    """
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
@@ -86,12 +110,27 @@ def test_get_ofrak_context_over_time():
 
 
 async def test_get_ofrak_context_fixture(ofrak_context: OFRAKContext):
+    """
+    Test that the ofrak_context fixture provides a valid OFRAK context.
+
+    This test verifies that:
+    - The fixture correctly provides an OFRAK context
+    - The context retrieved via get_current_ofrak_context matches the fixture-provided context
+    """
     current_ofrak_context = get_current_ofrak_context()
     assert current_ofrak_context is not None
     assert current_ofrak_context is ofrak_context
 
 
 async def test_create_root_resource_from_directory(ofrak_context: OFRAKContext):
+    """
+    Test creating a root resource from a directory structure.
+
+    This test verifies that:
+    - A directory can be converted into a root resource
+    - The directory structure and file contents are preserved
+    - The created resource can be flushed back to disk maintaining integrity
+    """
     with TemporaryDirectory() as tempdir:
         with open(os.path.join(tempdir, "1.txt"), "w") as fh:
             fh.write("test")

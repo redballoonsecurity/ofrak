@@ -1,3 +1,10 @@
+"""
+Test the UF2 file format component.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
+"""
 import logging
 import pytest
 from ofrak.core.addressable import Addressable
@@ -20,6 +27,12 @@ EXPECTED_DATA = b"Raspberry Pi Pico with RP1337"
 
 
 async def test_uf2_identify(ofrak_context: OFRAKContext) -> None:
+    """
+    Test that a UF2 file is correctly identified by the UF2 component.
+
+    This test verifies that:
+    - A UF2 file resource is correctly tagged with Uf2File after identification
+    """
     asset_path = Path(components.ASSETS_DIR, FILENAME)
     root_resource = await ofrak_context.create_root_resource_from_file(str(asset_path))
     await root_resource.identify()
@@ -28,6 +41,16 @@ async def test_uf2_identify(ofrak_context: OFRAKContext) -> None:
 
 @pytest.mark.skipif_missing_deps([Uf2FilePacker, Uf2Unpacker])
 class TestUf2UnpackModifyPack(UnpackModifyPackPattern):
+    """
+    Test the complete workflow of unpacking a UF2 file, modifying its contents, and repacking it.
+
+    This test verifies that:
+    - A UF2 file can be successfully unpacked into its constituent parts
+    - The memory region containing the string data can be located and modified
+    - The modified UF2 file can be packed back together correctly
+    - The modification is preserved in the final output
+    """
+
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         asset_path = Path(components.ASSETS_DIR, FILENAME)
         root_resource = await ofrak_context.create_root_resource_from_file(str(asset_path))

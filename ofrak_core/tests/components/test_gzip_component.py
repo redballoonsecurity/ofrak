@@ -1,3 +1,11 @@
+"""
+Test the functionality of the gzip component, including unpacking,
+modifying, and repacking gzip-compressed data.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
+"""
 import zlib
 import gzip
 from pathlib import Path
@@ -41,6 +49,12 @@ class GzipUnpackModifyPackPattern(CompressedFileUnpackModifyPackPattern, ABC):
     """
     Template for tests that test different inputs the gzip component should support
     unpacking.
+
+    This test verifies that:
+    - A gzip file can be successfully unpacked
+    - Modifications to the unpacked data can be applied
+    - The modified data can be repacked back into a valid gzip file
+    - The gzip file contains the expected data after decompression
     """
 
     EXPECT_PIGZ: bool
@@ -58,6 +72,15 @@ class GzipUnpackModifyPackPattern(CompressedFileUnpackModifyPackPattern, ABC):
         self._test_file = gzip_path.resolve()
 
     async def test_unpack_modify_pack(self, ofrak_context: OFRAKContext):
+        """
+        Test gzip unpack, modify, and pack workflow with pigz optimization (REQ1.3, REQ4.4).
+
+        This test verifies that:
+        - Gzip files are unpacked using the appropriate decompressor
+        - Large files trigger pigz parallel compression when available
+        - Modified data can be successfully repacked into valid gzip format
+        - The repacked data decompresses to the expected modified content
+        """
         with patch("asyncio.create_subprocess_exec", wraps=create_subprocess_exec) as mock_exec:
             if self.EXPECT_PIGZ and await PIGZ.is_tool_installed():
                 await super().test_unpack_modify_pack(ofrak_context)
@@ -74,12 +97,20 @@ class GzipUnpackModifyPackPattern(CompressedFileUnpackModifyPackPattern, ABC):
 
 
 class TestGzipUnpackModifyPack(GzipUnpackModifyPackPattern):
+    """
+    Test the basic unpack, modify, and pack functionality for a simple gzip file.
+    """
+
     def write_gzip(self, gzip_path: Path):
         with gzip.GzipFile(gzip_path, mode="w") as gzip_file:
             gzip_file.write(self.INITIAL_DATA)
 
 
 class TestGzipWithMultipleMembersUnpackModifyPack(GzipUnpackModifyPackPattern):
+    """
+    Test the unpack, modify, and pack functionality for a gzip file with multiple members.
+    """
+
     def write_gzip(self, gzip_path: Path):
         middle = len(self.INITIAL_DATA) // 2
         with gzip.GzipFile(gzip_path, mode="w") as gzip_file:
@@ -90,6 +121,10 @@ class TestGzipWithMultipleMembersUnpackModifyPack(GzipUnpackModifyPackPattern):
 
 
 class TestGzipWithTrailingBytesUnpackModifyPack(GzipUnpackModifyPackPattern):
+    """
+    Test the unpack, modify, and pack functionality for a gzip file with trailing bytes.
+    """
+
     def write_gzip(self, gzip_path: Path):
         with gzip.GzipFile(gzip_path, mode="w") as gzip_file:
             gzip_file.write(self.INITIAL_DATA)
@@ -101,6 +136,13 @@ class TestGzipWithTrailingBytesUnpackModifyPack(GzipUnpackModifyPackPattern):
 async def test_corrupted_gzip_fail(
     gzip_test_input: Tuple[bytes, bytes, bool], ofrak_context: OFRAKContext
 ):
+    """
+    Test that unpacking a corrupted gzip file raises an appropriate error.
+
+    This test verifies that:
+    - A gzip file with invalid data (corrupted) raises an error when attempting to unpack
+    - The error type is consistent with expected decompression errors
+    """
     initial_data = gzip_test_input[0]
     corrupted_data = bytearray(gzip.compress(initial_data))
     corrupted_data[10] = 255

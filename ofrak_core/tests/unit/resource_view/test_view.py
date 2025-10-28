@@ -1,3 +1,6 @@
+"""
+Test the resource view creation and manipulation in OFRAK.
+"""
 from dataclasses import dataclass
 from typing import Optional
 
@@ -99,11 +102,25 @@ def mock_basic_block():
 
 
 async def test_create_from_resource(mock_instruction, ofrak_context):
+    """
+    Create a resource from a mock instruction and verify view attributes are preserved.
+
+    This test verifies that:
+    - Data remains consistent after view creation
+    """
     instr_r, _ = await mock_instruction.inflate(ofrak_context)
     instr_view = await instr_r.view_as(Instruction)
 
 
 async def test_create_resource_from_view(mock_basic_block, mock_instruction_view, ofrak_context):
+    """
+    Create a child resource from a view and ensure attributes propagate correctly.
+
+    This test verifies that:
+    - View data updates are reflected in resource
+    - Child resource inherits view attributes
+    - Resource relationships maintain integrity
+    """
     bb_r, _ = await mock_basic_block.inflate(ofrak_context)
     instr_view = mock_instruction_view
     instr_view.data = MOCK_INSTRUCTION_MACHINE_CODE
@@ -120,6 +137,12 @@ async def test_create_resource_from_view(mock_basic_block, mock_instruction_view
 
 
 async def test_create_view_from_resource(mock_instruction, mock_instruction_view, ofrak_context):
+    """
+    Convert a resource to a view and confirm attributes match original.
+
+    This test verifies that:
+    - Virtual address, size and other instruction metadata remain consistent
+    """
     instr_r, _ = await mock_instruction.inflate(ofrak_context)
     new_instr_view = await instr_r.view_as(Instruction)
 
@@ -131,12 +154,26 @@ async def test_create_view_from_resource(mock_instruction, mock_instruction_view
 
 
 async def test_view_indexes_types():
+    """
+    Verify view indexes correctly map to their attribute owners.
+
+    This test verifies that:
+    - Index references point to correct attribute classes
+    """
     assert Instruction.VirtualAddress.attributes_owner is AttributesType[Addressable]
     assert Instruction.Size.attributes_owner is AttributesType[MemoryRegion]
     assert Instruction.Mnemonic.attributes_owner is AttributesType[Instruction]
 
 
 async def test_view_indexes(mock_basic_block, mock_instruction_view, ofrak_context):
+    """
+    Test resource filtering using view attribute indexes.
+
+    This test verifies that:
+    - Filters work with view-specific indexes
+    - Superclass indexes function correctly
+    - False positives are excluded
+    """
     bb_r, _ = await mock_basic_block.inflate(ofrak_context)
     instr_view = mock_instruction_view
 
@@ -204,6 +241,13 @@ async def test_view_indexes(mock_basic_block, mock_instruction_view, ofrak_conte
 
 
 async def test_AttributesType():
+    """
+    Validate AttributesType behavior and inheritance structure.
+
+    This test verifies that:
+    - Constructor requires type parameter
+    - Instantiated types inherit from ResourceAttributes
+    """
     # Constructor fails without a type parameter
     with pytest.raises(NotImplementedError):
         AttributesType()
@@ -245,6 +289,13 @@ async def instr_view(ofrak_context: OFRAKContext):
 
 
 async def test_resource_property_does_not_modify(instr_view: Instruction):
+    """
+    Run a modifier without saving and verify view remains unchanged.
+
+    This test verifies that:
+    - Modifier changes require save to persist
+    - Reloaded view maintains original state
+    """
     await instr_view.resource.run(
         InstructionModifier, InstructionModifierConfig("add", "r4, r5", InstructionSetMode.NONE)
     )
@@ -256,6 +307,12 @@ async def test_resource_property_does_not_modify(instr_view: Instruction):
 
 
 async def test_modifier_updates_view(instr_view: Instruction):
+    """
+    Execute modifier and confirm view updates immediately.
+
+    This test verifies that:
+    - Modifier changes are reflected in the view
+    """
     await instr_view.resource.run(
         InstructionModifier, InstructionModifierConfig("add", "r4, r5", InstructionSetMode.NONE)
     )
@@ -265,6 +322,12 @@ async def test_modifier_updates_view(instr_view: Instruction):
 
 
 async def test_save_updates_view(instr_view: Instruction):
+    """
+    Save modified view and verify updates propagate.
+
+    This test verifies that:
+    - Saved changes update the view's state
+    """
     instr_view.resource.add_view(Instruction(0x100, 0x4, "sub", "r4, r5", InstructionSetMode.NONE))
     await instr_view.resource.save()
 
@@ -272,6 +335,12 @@ async def test_save_updates_view(instr_view: Instruction):
 
 
 async def test_resource_view_delete_resource(ofrak_context: OFRAKContext):
+    """
+    Run modifier that deletes resource and check access restrictions.
+
+    This test verifies that:
+    - Deleted resource access raises appropriate error
+    """
     root_r = await ofrak_context.create_root_resource(
         "mock_memory_region",
         b"\xff" * 0x10,

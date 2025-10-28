@@ -1,3 +1,9 @@
+"""
+Test the PE (Portable Executable) component functionality.
+
+Requirements Mapping:
+- REQ1.3
+"""
 import os
 from typing import List
 
@@ -18,6 +24,15 @@ async def kernel32_dll(ofrak_context: OFRAKContext, request) -> Resource:
 
 
 async def test_pe_unpacker(pe_root_resource: Resource):
+    """
+    Test that the PE unpacker correctly parses PE headers and sections.
+
+    This test verifies that:
+    - The PE resource can be successfully unpacked recursively
+    - The optional header is correctly parsed and typed
+    - Sections are properly retrieved with their headers and flags
+    - Code regions are properly created
+    """
     await pe_root_resource.unpack_recursively()
 
     pe_view = await pe_root_resource.view_as(Pe)
@@ -44,7 +59,10 @@ async def test_pe_unpacker(pe_root_resource: Resource):
 
 async def test_pe_get_memory_region_for_vaddr(kernel32_dll: Resource):
     """
-    Test that Program.get_memory_region_for_vaddr works for Pe as intended.
+    Test that the PE component correctly maps virtual addresses to memory regions.
+
+    This test verifies that:
+    - Memory regions can be retrieved for virtual addresses within PE sections
     """
     await kernel32_dll.unpack()
     pe_view = await kernel32_dll.view_as(Pe)

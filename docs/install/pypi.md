@@ -84,3 +84,7 @@ python3.9 -m pip install ofrak
 ```bash
 pip install --user ofrak
 ```
+
+<div align="right">
+<img src="../assets/square_05.png" width="125" height="125">
+</div>

@@ -1,3 +1,10 @@
+"""
+This module defines test patterns for unpack-modify-pack workflows in OFRAK.
+
+Requirements Mapping:
+- REQ4.2
+- REQ4.3
+"""
 from abc import ABC, abstractmethod
 from difflib import ndiff
 from subprocess import CalledProcessError
@@ -22,6 +29,15 @@ class UnpackModifyPackPattern(ABC):
     """
 
     async def test_unpack_modify_pack(self, ofrak_context):
+        """
+        Test the unpack-modify-pack workflow (REQ4.2, REQ4.3).
+
+        This test verifies that:
+        - A binary can be unpacked into its constituent parts
+        - The unpacked binary can be modified
+        - The modified binary can be successfully repacked
+        - The repacked binary matches expected patterns after modifications
+        """
         try:
             root_resource = await self.create_root_resource(ofrak_context)
             await self.unpack(root_resource)

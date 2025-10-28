@@ -1,3 +1,12 @@
+"""
+This module tests the Flash component's unpacking, modification, and repacking functionality.
+
+Requirements Mapping:
+- REQ1.3
+- REQ3.4
+- REQ4.4
+"""
+
 import pytest
 import os
 from hashlib import md5
@@ -153,6 +162,16 @@ FLASH_TEST_CASES = [
 class TestFlashUnpackModifyPack(UnpackModifyPackPattern):
     @pytest.mark.parametrize(["TEST_FILE", "VERIFY_FILE", "TEST_ATTR"], FLASH_TEST_CASES)
     async def test_unpack_modify_pack(self, ofrak_context, TEST_FILE, VERIFY_FILE, TEST_ATTR):
+        """
+        Test full workflow of unpacking, modifying, repacking and verifying Flash resources.
+
+        This test verifies that:
+        - Flash attributes are properly added to the resource
+        - Resource can be unpacked recursively
+        - Logical data can be modified using a binary patch
+        - Resource can be repacked after modification
+        - Final packed data matches expected verification file
+        """
         root_resource = await self.create_root_resource(ofrak_context, TEST_FILE)
         root_resource.add_attributes(TEST_ATTR)
         await root_resource.save()
@@ -193,6 +212,13 @@ class TestFlashUnpackModifyPack(UnpackModifyPackPattern):
 
 class TestFlashUnpackModifyPackUnpackVerify(TestFlashUnpackModifyPack):
     async def test_unpack_modify_pack(self, ofrak_context):
+        """
+        Test unpacking, modifying, repacking, and unpacking Flash resources.
+
+        This test verifies that:
+        - Resource can be unpacked and verified at intermediate stages
+        - Repacked resource can be unpacked again and verified
+        """
         root_resource = await self.create_root_resource(ofrak_context, DEFAULT_TEST_FILE)
         root_resource.add_attributes(DEFAULT_TEST_ATTR)
         await root_resource.save()

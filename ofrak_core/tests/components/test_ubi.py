@@ -1,3 +1,10 @@
+"""
+Test the functionality of the UBI (Unsorted Block Images) component.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
+"""
 import hashlib
 import os
 
@@ -24,6 +31,16 @@ EXPECTED_HASHES = (
 
 @pytest.mark.skipif_missing_deps([UbiUnpacker, UbiPacker])
 class TestUbiUnpackModifyPack(CompressedFileUnpackModifyPackPattern):
+    """
+    Test the complete UBI unpack, modify, and pack workflow.
+
+    This test verifies that:
+    - UBI images can be successfully unpacked
+    - New UBI volumes can be created and added to the unpacked image
+    - The modified UBI image can be packed back to its original format
+    - The resulting UBI image maintains correct data integrity for all volumes
+    """
+
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         """
         Create a root resource from the test image stored in Git LFS.

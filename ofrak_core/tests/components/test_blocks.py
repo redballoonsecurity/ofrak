@@ -1,5 +1,8 @@
 """
-Test ComplexBlock, BasicBlock, Instruction, DataWord primitives.
+This module tests ComplexBlock, BasicBlock, Instruction, and DataWord primitives.
+
+Requirements Mapping:
+- REQ1.2: The classes tested in this module directly support this requirement
 """
 import os
 from dataclasses import dataclass
@@ -23,19 +26,33 @@ from pytest_ofrak import ASSETS_DIR
 
 class TestOfrakBlocks:
     """
-    Test that exercises ComplexBlock, BasicBlock, Instruction, DataWord resource view methods.
+    Test ComplexBlock, BasicBlock, Instruction, DataWord resource view methods.
+
+    This test verifies that:
+    - Complex blocks can be properly created and analyzed
+    - Basic blocks maintain correct instruction sequences
+    - Data words are correctly identified within complex blocks
+    - Assembly representations match expected output
     """
 
     async def test_get_assembly(self, frame_dummy_complex_block: ComplexBlock):
         """
-        Test that ComplexBlock.get_assembly returns an assembly string.
+        ComplexBlock.get_assembly returns the correct assembly instructions for the block.
+
+        This test verifies that:
+        - The assembly string generated matches the expected sequence
+        - All instructions in the block are correctly represented
         """
         assembly = await frame_dummy_complex_block.get_assembly()
         assert assembly == EXPECTED_ASSEMBLY
 
     async def test_get_data_words(self, frame_dummy_complex_block: ComplexBlock):
         """
-        Test that ComplexBlock.get_data_words returns the expected number of data words.
+        ComplexBlock.get_data_words correctly identifies all data words in the block.
+
+        This test verifies that:
+        - The returned data word count matches expected value
+        - Data words are properly structured
         """
         data_words = list(await frame_dummy_complex_block.get_data_words())
         assert len(data_words) == 2

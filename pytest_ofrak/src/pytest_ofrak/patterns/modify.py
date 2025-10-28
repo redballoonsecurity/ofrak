@@ -1,3 +1,10 @@
+"""
+This module defines test patterns for binary modification in OFRAK.
+
+Requirements Mapping:
+- REQ3.1
+- REQ3.4
+"""
 from abc import ABC, abstractmethod
 
 from ofrak import OFRAKContext
@@ -16,6 +23,15 @@ class ModifyPattern(ABC):
     """
 
     async def test_modify(self, ofrak_context):
+        """
+        Test binary modification using modifiers (REQ3.1, REQ3.4).
+
+        This test verifies that:
+        - A binary resource can be created
+        - The binary can be modified using OFRAK modifiers
+        - The modifications are correctly applied
+        - The modified binary matches expected patterns
+        """
         root_resource = await self.create_root_resource(ofrak_context)
         await self.modify(root_resource)
         await self.verify(root_resource)
