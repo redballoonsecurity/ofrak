@@ -43,20 +43,18 @@ class _AndroidSparseImageTool(ComponentExternalTool):
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
-            stdout, stderr = await proc.communicate()
+            _, stderr = await proc.communicate()
         except FileNotFoundError:
             return False
 
         # Check if usage information is present in output (tool returns 255, but that's OK)
-        output = stdout + stderr
-        if b"Usage:" in output or b"usage:" in output:
+        if b"usage:" in stderr.lower():
             return True
 
         return False
 
 
 SIMG2IMG = _AndroidSparseImageTool("simg2img", "android-sdk-libsparse-utils", "simg2img")
-
 IMG2SIMG = _AndroidSparseImageTool("img2simg", "android-sdk-libsparse-utils", "simg2img")
 
 
@@ -92,7 +90,6 @@ class AndroidSparseImageUnpacker(Unpacker[None]):
         Unpack the Android sparse image by converting it to raw format.
 
         :param resource: The sparse image resource to unpack
-        :param config: Optional unpacker configuration (unused)
         """
         async with resource.temp_to_disk() as sparse_path:
             with tempfile.NamedTemporaryFile(
@@ -135,7 +132,6 @@ class AndroidSparseImagePacker(Packer[None]):
         Pack the raw image back into sparse format.
 
         :param resource: The sparse image resource to pack
-        :param config: Optional packer configuration (unused)
         """
         sparse_view = await resource.view_as(AndroidSparseImage)
         raw_child_r = await sparse_view.get_file()
@@ -152,7 +148,7 @@ class AndroidSparseImagePacker(Packer[None]):
             ) as sparse_file:
                 sparse_file.close()
 
-                # Default block size is 4096 bytes (standard for Android)
+                # TODO: detect block size in the unpacker rather than default to 4096
                 cmd = [
                     "img2simg",
                     raw_file.name,

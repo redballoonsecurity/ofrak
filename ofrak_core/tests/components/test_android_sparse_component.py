@@ -21,7 +21,6 @@ To create test assets:
   img2simg tests/components/assets/ext4.4096.img tests/components/assets/ext4.4096.simg 4096
   img2simg tests/components/assets/random8M tests/components/assets/random8M.simg 2048
 """
-import asyncio
 from pathlib import Path
 from subprocess import CalledProcessError
 
@@ -35,7 +34,6 @@ from ofrak.core.android_sparse import (
     AndroidSparseImage,
     AndroidSparseImagePacker,
     AndroidSparseImageUnpacker,
-    SIMG2IMG,
     SPARSE_HEADER_MAGIC,
 )
 from pytest_ofrak.patterns.compressed_filesystem_unpack_modify_pack import (
@@ -105,37 +103,10 @@ class AndroidSparseUnpackModifyPackPattern(CompressedFileUnpackModifyPackPattern
 
         :param repacked_root_resource: The repacked sparse image resource
         """
-        sparse_data = await repacked_root_resource.get_data()
-
-        # Verify it's a valid sparse image
-        assert sparse_data[:4] == SPARSE_HEADER_MAGIC
-
-        # Use simg2img to verify if available
-        if await SIMG2IMG.is_tool_installed():
-            import tempfile312 as tempfile
-
-            with tempfile.NamedTemporaryFile(
-                suffix=".simg", delete=False
-            ) as sparse_file, tempfile.NamedTemporaryFile(suffix=".img", delete=False) as raw_file:
-                sparse_file.write(sparse_data)
-                sparse_file.close()
-                raw_file.close()
-
-                cmd = ["simg2img", sparse_file.name, raw_file.name]
-                proc = await asyncio.create_subprocess_exec(
-                    *cmd,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                )
-                stdout, stderr = await proc.communicate()
-
-                if proc.returncode == 0:
-                    with open(raw_file.name, "rb") as f:
-                        raw_data = f.read()
-                    assert raw_data == self.EXPECTED_REPACKED_DATA
-                else:
-                    rc = proc.returncode or -1
-                    raise CalledProcessError(rc, cmd, stderr)
+        await repacked_root_resource.unpack()
+        unpacked_child = await repacked_root_resource.get_only_child()
+        unpacked_child_data = await unpacked_child.get_data()
+        assert unpacked_child_data == self.EXPECTED_REPACKED_DATA
 
     async def modify(self, unpacked_root_resource: Resource):
         resource_to_modify = await unpacked_root_resource.get_only_child()
@@ -188,14 +159,14 @@ async def test_large_sparse_image_roundtrip(ofrak_context: OFRAKContext):
     """
     large_sparse = ASSETS_DIR / "random8M.simg"
 
-    # Test unpacking
+    # Unpack
     resource = await ofrak_context.create_root_resource_from_file(str(large_sparse))
 
     await resource.unpack()
     child = await resource.get_only_child()
     unpacked_data = await child.get_data()
 
-    # Test repacking
+    # Repack
     await resource.pack()
     repacked_data = await resource.get_data()
 
@@ -207,7 +178,6 @@ async def test_large_sparse_image_roundtrip(ofrak_context: OFRAKContext):
     await resource2.unpack()
     child2 = await resource2.get_only_child()
     unpacked_data2 = await child2.get_data()
-
     assert unpacked_data == unpacked_data2
 
 
