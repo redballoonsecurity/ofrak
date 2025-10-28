@@ -80,7 +80,6 @@ class AndroidSparseImageUnpacker(Unpacker[None]):
     Unpack (convert) an Android sparse image to raw image format using simg2img.
     """
 
-    id = b"AndroidSparseImageUnpacker"
     targets = (AndroidSparseImage,)
     children = (GenericBinary,)
     external_dependencies = (SIMG2IMG,)
@@ -123,7 +122,6 @@ class AndroidSparseImagePacker(Packer[None]):
     Pack (convert) a raw image back into Android sparse image format using img2simg.
     """
 
-    id = b"AndroidSparseImagePacker"
     targets = (AndroidSparseImage,)
     external_dependencies = (IMG2SIMG,)
 
