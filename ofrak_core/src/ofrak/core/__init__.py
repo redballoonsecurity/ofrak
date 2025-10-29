@@ -13,6 +13,7 @@ from ofrak.core.patch_maker.linkable_symbol import *
 from ofrak.core.patch_maker.modifiers import *
 
 from ofrak.core.addressable import *
+from ofrak.core.android_sparse import *
 from ofrak.core.apk import *
 from ofrak.core.architecture import *
 from ofrak.core.architecture_analysis import *
