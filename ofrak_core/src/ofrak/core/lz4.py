@@ -81,7 +81,6 @@ class Lz4Unpacker(Unpacker[None]):
     - Skippable frames (metadata containers: Lz4SkippableData)
     """
 
-    id = b"Lz4Unpacker"
     targets = (Lz4ModernData, Lz4SkippableData)
     children = (GenericBinary,)
 
@@ -128,7 +127,6 @@ class Lz4LegacyUnpacker(Unpacker[None]):
     Legacy format (v0.1-v0.9) uses lz4.block decompression instead of lz4.frame.
     """
 
-    id = b"Lz4LegacyUnpacker"
     targets = (Lz4LegacyData,)
     children = (GenericBinary,)
 

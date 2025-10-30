@@ -63,7 +63,7 @@ async def test_lz4_unpack_modify_pack(
     ofrak_context: OFRAKContext, test_case: Lz4UnpackModifyPackTestCase
 ):
     """
-    Test unpack, modify, and pack functionality for LZ4 files (modern and legacy formats).
+    Test unpack, modify, and pack functionality for LZ4 files (REQ1.3, REQ1.4).
 
     This test verifies that:
     - LZ4 files with various compression settings can be unpacked
