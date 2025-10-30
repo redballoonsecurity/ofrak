@@ -6,6 +6,7 @@ Requirements Mapping:
 - REQ1.3
 - REQ4.4
 """
+from dataclasses import dataclass
 from pathlib import Path
 
 import lz4.block
@@ -26,26 +27,40 @@ from ofrak_type.range import Range
 ASSETS_DIR = Path(__file__).parent / "assets" / "lz4"
 
 
+@dataclass
+class Lz4UnpackModifyPackTestCase:
+    test_file: Path
+    input_file: Path
+
+    @property
+    def id(self):
+        return self.test_file.name
+
+
 @pytest.mark.parametrize(
-    "test_file,input_file",
+    "test_case",
     [
-        (ASSETS_DIR / "default.lz4", ASSETS_DIR / "input.txt"),
-        (ASSETS_DIR / "no_frame_crc.lz4", ASSETS_DIR / "input.txt"),
-        (ASSETS_DIR / "with_size.lz4", ASSETS_DIR / "input.txt"),
-        (ASSETS_DIR / "block_checksum.lz4", ASSETS_DIR / "input.txt"),
-        (ASSETS_DIR / "block_dependency.lz4", ASSETS_DIR / "input.txt"),
-        (ASSETS_DIR / "large_block.lz4", ASSETS_DIR / "input.txt"),
-        (ASSETS_DIR / "small_block.lz4", ASSETS_DIR / "input.txt"),
-        (ASSETS_DIR / "combined_flags.lz4", ASSETS_DIR / "input.txt"),
-        (ASSETS_DIR / "ultra_fast.lz4", ASSETS_DIR / "large_input.txt"),
-        (ASSETS_DIR / "high_compression.lz4", ASSETS_DIR / "large_input.txt"),
-        (ASSETS_DIR / "best_compression.lz4", ASSETS_DIR / "large_input.txt"),
-        (ASSETS_DIR / "legacy.lz4", ASSETS_DIR / "large_input.txt"),
+        Lz4UnpackModifyPackTestCase(ASSETS_DIR / "default.lz4", ASSETS_DIR / "input.txt"),
+        Lz4UnpackModifyPackTestCase(ASSETS_DIR / "no_frame_crc.lz4", ASSETS_DIR / "input.txt"),
+        Lz4UnpackModifyPackTestCase(ASSETS_DIR / "with_size.lz4", ASSETS_DIR / "input.txt"),
+        Lz4UnpackModifyPackTestCase(ASSETS_DIR / "block_checksum.lz4", ASSETS_DIR / "input.txt"),
+        Lz4UnpackModifyPackTestCase(ASSETS_DIR / "block_dependency.lz4", ASSETS_DIR / "input.txt"),
+        Lz4UnpackModifyPackTestCase(ASSETS_DIR / "large_block.lz4", ASSETS_DIR / "input.txt"),
+        Lz4UnpackModifyPackTestCase(ASSETS_DIR / "small_block.lz4", ASSETS_DIR / "input.txt"),
+        Lz4UnpackModifyPackTestCase(ASSETS_DIR / "combined_flags.lz4", ASSETS_DIR / "input.txt"),
+        Lz4UnpackModifyPackTestCase(ASSETS_DIR / "ultra_fast.lz4", ASSETS_DIR / "large_input.txt"),
+        Lz4UnpackModifyPackTestCase(
+            ASSETS_DIR / "high_compression.lz4", ASSETS_DIR / "large_input.txt"
+        ),
+        Lz4UnpackModifyPackTestCase(
+            ASSETS_DIR / "best_compression.lz4", ASSETS_DIR / "large_input.txt"
+        ),
+        Lz4UnpackModifyPackTestCase(ASSETS_DIR / "legacy.lz4", ASSETS_DIR / "large_input.txt"),
     ],
-    ids=lambda test_file: test_file.name,
+    ids=lambda tc: tc.id,
 )
 async def test_lz4_unpack_modify_pack(
-    ofrak_context: OFRAKContext, test_file: Path, input_file: Path
+    ofrak_context: OFRAKContext, test_case: Lz4UnpackModifyPackTestCase
 ):
     """
     Test unpack, modify, and pack functionality for LZ4 files (modern and legacy formats).
@@ -57,12 +72,12 @@ async def test_lz4_unpack_modify_pack(
     - The repacked file can be unpacked again to verify the modification
     """
     # Read the original content
-    initial_data = input_file.read_bytes()
+    initial_data = test_case.input_file.read_bytes()
 
     modification = b"OFRAK"
 
     # Create resource and unpack
-    resource = await ofrak_context.create_root_resource_from_file(test_file)
+    resource = await ofrak_context.create_root_resource_from_file(test_case.test_file)
     await resource.unpack()
 
     # Verify it has the expected tag
@@ -195,26 +210,44 @@ async def test_real_lz4_skippable_frame(lz4_skip_bin: Resource):
     assert child_data == b""
 
 
+@dataclass
+class Lz4UnpackVerifyContentTestCase:
+    test_file: Path
+    input_file: Path
+
+    @property
+    def id(self):
+        return self.test_file.name
+
+
 @pytest.mark.parametrize(
-    "test_file,input_file",
+    "test_case",
     [
-        (ASSETS_DIR / "default.lz4", ASSETS_DIR / "input.txt"),
-        (ASSETS_DIR / "no_frame_crc.lz4", ASSETS_DIR / "input.txt"),
-        (ASSETS_DIR / "with_size.lz4", ASSETS_DIR / "input.txt"),
-        (ASSETS_DIR / "block_checksum.lz4", ASSETS_DIR / "input.txt"),
-        (ASSETS_DIR / "block_dependency.lz4", ASSETS_DIR / "input.txt"),
-        (ASSETS_DIR / "large_block.lz4", ASSETS_DIR / "input.txt"),
-        (ASSETS_DIR / "small_block.lz4", ASSETS_DIR / "input.txt"),
-        (ASSETS_DIR / "combined_flags.lz4", ASSETS_DIR / "input.txt"),
-        (ASSETS_DIR / "legacy.lz4", ASSETS_DIR / "large_input.txt"),
-        (ASSETS_DIR / "ultra_fast.lz4", ASSETS_DIR / "large_input.txt"),
-        (ASSETS_DIR / "high_compression.lz4", ASSETS_DIR / "large_input.txt"),
-        (ASSETS_DIR / "best_compression.lz4", ASSETS_DIR / "large_input.txt"),
+        Lz4UnpackVerifyContentTestCase(ASSETS_DIR / "default.lz4", ASSETS_DIR / "input.txt"),
+        Lz4UnpackVerifyContentTestCase(ASSETS_DIR / "no_frame_crc.lz4", ASSETS_DIR / "input.txt"),
+        Lz4UnpackVerifyContentTestCase(ASSETS_DIR / "with_size.lz4", ASSETS_DIR / "input.txt"),
+        Lz4UnpackVerifyContentTestCase(ASSETS_DIR / "block_checksum.lz4", ASSETS_DIR / "input.txt"),
+        Lz4UnpackVerifyContentTestCase(
+            ASSETS_DIR / "block_dependency.lz4", ASSETS_DIR / "input.txt"
+        ),
+        Lz4UnpackVerifyContentTestCase(ASSETS_DIR / "large_block.lz4", ASSETS_DIR / "input.txt"),
+        Lz4UnpackVerifyContentTestCase(ASSETS_DIR / "small_block.lz4", ASSETS_DIR / "input.txt"),
+        Lz4UnpackVerifyContentTestCase(ASSETS_DIR / "combined_flags.lz4", ASSETS_DIR / "input.txt"),
+        Lz4UnpackVerifyContentTestCase(ASSETS_DIR / "legacy.lz4", ASSETS_DIR / "large_input.txt"),
+        Lz4UnpackVerifyContentTestCase(
+            ASSETS_DIR / "ultra_fast.lz4", ASSETS_DIR / "large_input.txt"
+        ),
+        Lz4UnpackVerifyContentTestCase(
+            ASSETS_DIR / "high_compression.lz4", ASSETS_DIR / "large_input.txt"
+        ),
+        Lz4UnpackVerifyContentTestCase(
+            ASSETS_DIR / "best_compression.lz4", ASSETS_DIR / "large_input.txt"
+        ),
     ],
-    ids=lambda test_file: test_file.name,
+    ids=lambda tc: tc.id,
 )
 async def test_lz4_unpack_verify_content(
-    ofrak_context: OFRAKContext, test_file: Path, input_file: Path
+    ofrak_context: OFRAKContext, test_case: Lz4UnpackVerifyContentTestCase
 ):
     """
     Test that unpacking LZ4 files produces the correct decompressed content (REQ1.3).
@@ -232,10 +265,10 @@ async def test_lz4_unpack_verify_content(
     - Small and large input files
     """
     # Read expected content
-    expected_content = input_file.read_bytes()
+    expected_content = test_case.input_file.read_bytes()
 
     # Create resource and unpack
-    resource = await ofrak_context.create_root_resource_from_file(test_file)
+    resource = await ofrak_context.create_root_resource_from_file(test_case.test_file)
     await resource.unpack()
 
     # Get the decompressed child
@@ -246,25 +279,35 @@ async def test_lz4_unpack_verify_content(
     assert decompressed_data == expected_content
 
 
+@dataclass
+class Lz4UnpackRepackEquivalenceTestCase:
+    test_file: Path
+    compression_level: int
+
+    @property
+    def id(self):
+        return self.test_file.name
+
+
 @pytest.mark.parametrize(
-    "test_file,compression_level",
+    "test_case",
     [
-        (ASSETS_DIR / "default.lz4", 0),
-        (ASSETS_DIR / "no_frame_crc.lz4", 0),
-        (ASSETS_DIR / "with_size.lz4", 0),
-        (ASSETS_DIR / "block_checksum.lz4", 0),
-        (ASSETS_DIR / "block_dependency.lz4", 0),
-        (ASSETS_DIR / "ultra_fast.lz4", -1),
-        (ASSETS_DIR / "high_compression.lz4", 9),
-        (ASSETS_DIR / "best_compression.lz4", 12),
-        (ASSETS_DIR / "large_block.lz4", 0),
-        (ASSETS_DIR / "small_block.lz4", 0),
-        (ASSETS_DIR / "combined_flags.lz4", 0),
+        Lz4UnpackRepackEquivalenceTestCase(ASSETS_DIR / "default.lz4", 0),
+        Lz4UnpackRepackEquivalenceTestCase(ASSETS_DIR / "no_frame_crc.lz4", 0),
+        Lz4UnpackRepackEquivalenceTestCase(ASSETS_DIR / "with_size.lz4", 0),
+        Lz4UnpackRepackEquivalenceTestCase(ASSETS_DIR / "block_checksum.lz4", 0),
+        Lz4UnpackRepackEquivalenceTestCase(ASSETS_DIR / "block_dependency.lz4", 0),
+        Lz4UnpackRepackEquivalenceTestCase(ASSETS_DIR / "ultra_fast.lz4", -1),
+        Lz4UnpackRepackEquivalenceTestCase(ASSETS_DIR / "high_compression.lz4", 9),
+        Lz4UnpackRepackEquivalenceTestCase(ASSETS_DIR / "best_compression.lz4", 12),
+        Lz4UnpackRepackEquivalenceTestCase(ASSETS_DIR / "large_block.lz4", 0),
+        Lz4UnpackRepackEquivalenceTestCase(ASSETS_DIR / "small_block.lz4", 0),
+        Lz4UnpackRepackEquivalenceTestCase(ASSETS_DIR / "combined_flags.lz4", 0),
     ],
-    ids=lambda test_file, compression_level: test_file.name,
+    ids=lambda tc: tc.id,
 )
 async def test_lz4_unpack_repack_equivalence(
-    ofrak_context: OFRAKContext, test_file: Path, compression_level: int
+    ofrak_context: OFRAKContext, test_case: Lz4UnpackRepackEquivalenceTestCase
 ):
     """
     Test that unpacking and repacking LZ4 files preserves exact binary format (REQ1.3, REQ4.4).
@@ -287,14 +330,14 @@ async def test_lz4_unpack_repack_equivalence(
     - Combined flags (multiple options together)
     """
     # Load the original file
-    original_data = test_file.read_bytes()
+    original_data = test_case.test_file.read_bytes()
 
     # Create resource and unpack
-    resource = await ofrak_context.create_root_resource_from_file(test_file)
+    resource = await ofrak_context.create_root_resource_from_file(test_case.test_file)
     await resource.unpack()
 
     # Repack the data with specified compression level
-    config = Lz4PackerConfig(compression_level=compression_level)
+    config = Lz4PackerConfig(compression_level=test_case.compression_level)
     await resource.run(Lz4Packer, config)
 
     # Get the repacked data
