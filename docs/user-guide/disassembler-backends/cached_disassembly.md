@@ -37,3 +37,7 @@ The `ofrak_cached_disassembly` module is an OFRAK backend and cannot be used con
 ofrak.discover(ofrak_cached_disassembly)
 ofrak.discover(ofrak_pyghidra)
 ```
+
+<div align="right">
+<img src="../../assets/square_01.png" width="125" height="125">
+</div>

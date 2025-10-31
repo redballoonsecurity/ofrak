@@ -1,5 +1,7 @@
 ARG TARGETARCH
 # - u-boot-tools: for mkimage, to test the UImage packer/unpacker
+# - zlib1g-dev, liblzma-dev: development headers needed for squashfs-tools compilation
+# - android-sdk-libsparse-utils: for img2simg and simg2img used by AndroidSparseImagePacker/Unpacker
 RUN apt-get -y update && \
     apt-get -y install --no-install-recommends \
       build-essential \
@@ -10,20 +12,26 @@ RUN apt-get -y update && \
       liblz4-dev \
       liblzo2-dev \
       libzstd-dev \
+      zlib1g-dev \
+      liblzma-dev \
       lzop \
       mtd-utils \
       pigz \
       zip \
       qemu-user-static \
+      wget \
       u-boot-tools \
       unar \
-      zstd
+      unzip \
+      zstd \
+      android-sdk-libsparse-utils \
+    && rm -rf /var/lib/apt/lists/*
 
 # python-lzo needed by ubireader
 RUN python3 -m pip install python-lzo
 
 # Install apktool and uber-apk-signer
-RUN apt-get -y update && apt-get -y install openjdk-17-jdk
+RUN apt-get -y update && apt-get -y install openjdk-17-jdk && rm -rf /var/lib/apt/lists/*
 RUN wget https://raw.githubusercontent.com/iBotPeaches/Apktool/v2.3.3/scripts/linux/apktool -O /usr/local/bin/apktool && \
   wget https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.3.3.jar -O /usr/local/bin/apktool.jar && \
   wget https://github.com/patrickfav/uber-apk-signer/releases/download/v1.0.0/uber-apk-signer-1.0.0.jar -O /usr/local/bin/uber-apk-signer.jar && \

@@ -51,6 +51,8 @@ def verify_registered_license(full_details: bool = False) -> None:
         sys.exit(
             RuntimeError(
                 "OFRAK license not configured! Run 'ofrak license' to configure your OFRAK license."
+                " If you just want to try OFRAK, run 'ofrak license --community --i-agree' to "
+                "accept the Community License and start hacking."
             )
         )
 

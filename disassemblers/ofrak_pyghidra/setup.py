@@ -34,7 +34,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires=[
-        "ofrak>=3.3.0rc0",
+        "ofrak>=3.3.0,==3.*",
         "ofrak_cached_disassembly>=0.1.0",
         "pyghidra~=2.1.0",
     ],

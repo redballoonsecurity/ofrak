@@ -1,3 +1,6 @@
+"""
+Test the decompilation functionality within the OFRAK Angr disassembler.
+"""
 from typing import List
 import os
 from ofrak.core.decompilation import DecompilationAnalysis, DecompilationAnalyzer
@@ -7,6 +10,15 @@ from ofrak.service.resource_service_i import ResourceFilter
 
 
 async def test_angr_decompilation(ofrak_context: OFRAKContext):
+    """
+    Test that Angr decompilation produces expected output for a sample binary.
+
+    This test verifies that:
+    - The decompilation analyzer correctly processes the test binary
+    - A certain number of decompilation outputs are generated
+    - The decompilation results contain expected keywords like 'main' and 'print'
+    """
+
     root_resource = await ofrak_context.create_root_resource_from_file(
         os.path.join(os.path.dirname(__file__), "assets/hello.x64.elf")
     )

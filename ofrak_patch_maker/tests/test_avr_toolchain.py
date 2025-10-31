@@ -1,3 +1,6 @@
+"""
+Test the GNU AVR toolchain implementation in the patch maker.
+"""
 import pytest
 from ofrak_type import ArchInfo
 from ofrak_patch_maker.toolchain.gnu_avr import GNU_AVR_5_Toolchain
@@ -38,6 +41,12 @@ def toolchain_under_test(request) -> ToolchainUnderTest:
 
 # ASM Tests
 def test_monkey_patch(toolchain_under_test: ToolchainUnderTest):
+    """
+    Test that the monkey patching test pattern does not work in AVR toolchain.
+
+    This test verifies that:
+    - Monkey patching attempts fail with specific error
+    """
     with pytest.raises(ValueError) as e_info:
         run_monkey_patch_test(toolchain_under_test)
     assert str(e_info.value) == "-pie not supported for AVR"

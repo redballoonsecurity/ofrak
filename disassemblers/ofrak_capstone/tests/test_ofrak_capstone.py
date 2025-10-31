@@ -1,3 +1,10 @@
+"""
+Tests the integration of OFRAK with the Capstone disassembler backend.
+
+Requirements Mapping:
+- REQ1.2
+- REQ2.3
+"""
 import os
 from binascii import unhexlify
 from dataclasses import dataclass
@@ -51,6 +58,15 @@ def capstone_components(ofrak_injector):
 
 
 class TestCapstoneBasicBlockUnpackAndVerify(BasicBlockUnpackerUnpackAndVerifyPattern):
+    """
+    Test that the Capstone disassembler can correctly unpack and verify basic blocks (REQ1.2).
+
+    This test verifies that:
+    - Basic blocks can be correctly unpacked into their constituent instructions
+    - The unpacking process maintains the expected structure of basic blocks
+    - The analysis results are consistent with the expected instruction data
+    """
+
     async def unpack(self, root_resource: Resource):
         basic_block_resources = await root_resource.get_descendants(
             r_filter=ResourceFilter.with_tags(BasicBlock),
@@ -205,15 +221,40 @@ BASIC_BLOCK_TEST_CASES = [
 
 @pytest.mark.parametrize("test_case", BASIC_BLOCK_TEST_CASES, ids=lambda tc: tc.label)
 async def test_capstone_unpacker(test_case, ofrak_context):
+    """
+    Test that the Capstone disassembler can correctly unpack basic blocks into individual instructions (REQ1.2).
+
+    This test verifies that:
+    - Basic blocks are correctly disassembled into their constituent instructions
+    - The instruction count matches the expected number
+    - Each instruction's properties match the expected values
+    """
     await test_case.run_instruction_unpacker_test_case(ofrak_context)
 
 
 @pytest.mark.parametrize("test_case", BASIC_BLOCK_TEST_CASES, ids=lambda tc: tc.label)
 async def test_capstone_analyzer(test_case, ofrak_context):
+    """
+    Test that the Capstone disassembler can correctly analyze instructions and maintain consistency when reanalyzing (REQ1.2).
+
+    This test verifies that:
+    - Instructions can be analyzed by the Capstone backend
+    - Re-analyzing an instruction produces consistent results
+    - The analysis process maintains instruction integrity
+    """
     await test_case.run_instruction_analzyer_test_case(ofrak_context)
 
 
 class TestCapstoneRegisterUsage(RegisterUsageTestPattern):
+    """
+    Test that the Capstone disassembler can correctly analyze register usage (REQ2.3).
+
+    This test verifies that:
+    - Register usage information is correctly extracted from instructions
+    - The analysis works consistently across different instruction types
+    - Special cases and known limitations are handled appropriately
+    """
+
     def case_is_known_broken(self, test_case: RegisterAnalyzerTestCase):
         if test_case.program_attributes.isa is InstructionSet.PPC:
             return True, "capstone fails to give register usage info for PPC instructions"

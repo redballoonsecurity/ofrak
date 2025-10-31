@@ -11,7 +11,7 @@
 >
 > *-0xAC*
 
-OFRAK (Open Firmware Reverse Analysis Konsole) is a binary analysis and modification platform that combines the ability unpack, analyze, modify, and repack binaries.
+OFRAK (Open Firmware Reverse Analysis Konsole) is a binary analysis and modification platform that combines the ability to unpack, analyze, modify, and repack binaries.
 
 OFRAK combines the ability to:
 
@@ -64,7 +64,8 @@ like commenting, unpacking, analysis, modification and packing of resources.
 </div>
 
 ## Getting Started
-See the [Getting Started guide](./getting-started.md) for examples on how to use OFRAK.
+
+- **New to OFRAK?** Start with our [Quick Start guide](./getting-started.md) to unpack your first file in under 5 minutes!
 
 ## Licensing
 The code in this repository comes with an [OFRAK Community License](https://github.com/redballoonsecurity/ofrak/blob/master/LICENSE), which is intended for educational uses, personal development, or just having fun.
@@ -73,3 +74,7 @@ Users interested in using OFRAK for commercial purposes can request the Pro or E
 
 ## Support
 Please contact [ofrak@redballoonsecurity.com](mailto:ofrak@redballoonsecurity.com), or write to us on [the OFRAK Slack](https://join.slack.com/t/ofrak/shared_invite/zt-1jku9h6r5-mY7CeeZ4AT8JVmu5YWw2Qg) with any questions or issues regarding OFRAK. We look forward to getting your feedback! Sign up for the [OFRAK Mailing List](https://ofrak.com/sign-up) to receive monthly updates about OFRAK code improvements and new features.
+
+<div align="right">
+<img src="./assets/square_02.png" width="125" height="125">
+</div>

@@ -1,8 +1,16 @@
+"""
+Test the functionality of the LinkableBinary component,
+including symbol retrieval and error handling.
+
+Requirements Mapping:
+- REQ1.2
+"""
 import pytest
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range
 
 from ofrak import OFRAKContext
+from ofrak.resource import MultipleResourcesFoundError
 from ofrak.core import LinkableBinary, LinkableSymbol
 from ofrak_type import LinkableSymbolType
 
@@ -19,7 +27,7 @@ class TestLinkableBinary:
         """
         Assert that LinkableBinary.get_only_symbol raises an error when multiple symbols exist
         """
-        with pytest.raises(NotFoundError):
+        with pytest.raises(MultipleResourcesFoundError):
             _ = await linkable_binary.get_only_symbol(name="key")
 
     async def test_nonexistent_symbol(self, linkable_binary: LinkableBinary):

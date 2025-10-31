@@ -3,7 +3,17 @@ All notable changes to `ofrak` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased: 3.3.0rc15](https://github.com/redballoonsecurity/ofrak/tree/master)
+## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+
+### Added
+- Add Android sparse image unpacker and packer ([#662](https://github.com/redballoonsecurity/ofrak/pull/662))
+- Add OFRAK requirements, requirement to test mapping, test specifications ([#656](https://github.com/redballoonsecurity/ofrak/pull/656))
+- Add `-V, --version` flag to ofrak cli ([#652](https://github.com/redballoonsecurity/ofrak/pull/652))
+
+### Fixed
+- `build_image.py` uses `OFRAK_DIR` from `extra_build_args` to identify `pytest_ofrak` location for develop builds ([#657](https://github.com/redballoonsecurity/ofrak/pull/657/))
+
+## [3.3.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v3.2.0...ofrak-v3.3.0) - 2025-10-03
 
 ### Added
 - Add license check command to prompt users about community or pro licenses. ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
@@ -23,6 +33,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add new method for allocating `.bss` sections using free space ranges that aren't mapped to data ranges. ([#505](https://github.com/redballoonsecurity/ofrak/pull/505), [#569](https://github.com/redballoonsecurity/ofrak/pull/569))
 - Pulled `Allocatable._align_range` out to standalone function `allocate_range_start` ([#575](https://github.com/redballoonsecurity/ofrak/pull/575))
 - `ComponentExternalTool` now supports chocolatey packages (apk, cpio, pigz, 7zip) ([#613](https://github.com/redballoonsecurity/ofrak/pull/613))
+- Add endpoints to the OFRAK GUI backend to support OFRAK MCP. ([#634](https://github.com/redballoonsecurity/ofrak/pull/634))
 - Add endpoints to get and add ProgramAttributes in the server backend ([#637](https://github.com/redballoonsecurity/ofrak/pull/637))
 
 ### Fixed
@@ -53,6 +64,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Fix ValueError after analyzing ELF with invalid MemoryPermissions ([#581](https://github.com/redballoonsecurity/ofrak/pull/581))
 - Fix build pipeline failures by pinning `orjson`, a recent minor version of which breaks the PJSON tests. ([#584](https://github.com/redballoonsecurity/ofrak/pull/584))
 - Improve performance of ResourceAttributes.get_indexable_attributes() ([#586](https://github.com/redballoonsecurity/ofrak/pull/586))
+- Correct docstrings in the `resource.py` file to accurately reflect when an error is raised
 - Remove `Data` attribute to eliminate duplicative indexing in `ResourceService`, resulting in performance improvement for all workflows ([#589](https://github.com/redballoonsecurity/ofrak/pull/589))
 - Minimap view now updates upon refresh when data changes ([#598](https://github.com/redballoonsecurity/ofrak/pull/598))
 - Ensure files loaded in OFRAK GUI display filename ([#599](https://github.com/redballoonsecurity/ofrak/pull/599)
@@ -81,16 +93,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   - Update registered identifiers to make use of new `MagicIdentifier` for following resource tags: `Apk`, `Bzip2Data`, `CpioFilesystem`, `DeviceTreeBlob`, `Elf`, `Ext2Filesystem`, `Ext3Filesystem`, `Ext4Filesystem`, `GzipData`, `ISO9660Image`, `Jffs2Filesystem`, `LzmaData`, `XzData`, `LzoData`, `OpenWrtTrx`, `Pe`, `RarArchive`, `SevenZFilesystem`, `SquashfsFilesystem`, `TarArchive`, `Ubi`, `Ubifs`, `Uf2File`, `UImage`, `ZipArchive`, `ZlibData`, `ZstdData`
 - Update `Instruction.get_assembly` to by synchronous ([#539](https://github.com/redballoonsecurity/ofrak/issues/539))
 - Update orjson to ~=3.10.12 ([#562](https://github.com/redballoonsecurity/ofrak/pull/562/files))
+- Update `get_only_ancestor` to raise `MultipleResourcesFoundError` if more than one ancestor is found ([#538](https://github.com/redballoonsecurity/ofrak/pull/588))
 - Update `DataSummary` handling so that it is no longer stored in `ResourceModel`, but rather retrievable via `DataSummaryAnalyzer.get_data_summary` ([#598](https://github.com/redballoonsecurity/ofrak/pull/598))
 - Update dependencies: aiohttp>=3.12.14, beartype~=0.20.0, ubi-reader==0.8.12 ([#613](https://github.com/redballoonsecurity/ofrak/pull/613))
 - Add `ofrak_pyghidra` to OFRAK GUI script builder ([#631](https://github.com/redballoonsecurity/ofrak/pull/631))
+- When the user selects the "Decompilation" tab in the GUI, the pane is updated with the decompiled code automatically, without having to click "Analyze" first. ([#639](https://github.com/redballoonsecurity/ofrak/pull/639))
+- Use a single source of truth for the package version ([#640](https://github.com/redballoonsecurity/ofrak/pull/640))
+- Update the behavior of `get_only_descendant_as_view`, `get_descendants_as_view`, `get_ancestors_as_view`, and `get_only_ancestor_as_view` to retrieve all resources that match the filter. ([#642](https://github.com/redballoonsecurity/ofrak/pull/642))
 - rewrote intel hex components ([#637](https://github.com/redballoonsecurity/ofrak/pull/637))
 
 ### Deprecated
 - `Resource.flush_to_disk` deprecated in favor of `Resource.flush_data_to_disk`. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373), [#567](https://github.com/redballoonsecurity/ofrak/pull/568))
 
 ### Removed
-- Removed `Instruction.disassembly` from `Instruction` class: use `Instruction.get_assembly()` instead ([#539](https://github.com/redballoonsecurity/ofrak/issues/539))
+- Remove `Instruction.disassembly` from `Instruction` class: use `Instruction.get_assembly()` instead ([#539](https://github.com/redballoonsecurity/ofrak/issues/539))
+- Remove `Resource.get_only_sibling`, `Resource.get_only_sibling_as_view` API from Resource ([#641](https://github.com/redballoonsecurity/ofrak/pull/641))
 
 ### Security
 - Update aiohttp to 3.10.11 ([#522](https://github.com/redballoonsecurity/ofrak/pull/522))

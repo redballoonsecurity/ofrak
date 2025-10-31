@@ -151,7 +151,7 @@ class LinkableBinary(GenericBinary):
     ):
         """
         From some basic info about symbols returned from
-        [get_bin_file_symbols][ofrak_patch_maker.toolchain.abstract.get_bin_file_symbols],
+        [get_bin_file_symbols][ofrak_patch_maker.toolchain.abstract.Toolchain.get_bin_file_symbols],
         create a LinkableSymbol resource for each one. Usage is to pass a dictionary that defines
         each symbol like so:
         "symbol_name": (symbol_vaddr, symbol_type)

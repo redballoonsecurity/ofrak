@@ -1,3 +1,6 @@
+"""
+Test functionality related to external tool dependencies in components.
+"""
 import os.path
 import subprocess
 import os
@@ -32,6 +35,14 @@ def bad_dependency():
 async def test_missing_external_tool_caught(
     ofrak_context: OFRAKContext, dependency_path, mock_dependency
 ):
+    """
+    This test verifies that a component properly handles missing external tool dependencies.
+
+    This test verifies that:
+    - A ComponentMissingDependencyError is raised when an external tool dependency is not found
+    - An OSError is raised when the dependency exists but cannot be executed
+    """
+
     class _MockComponent(Unpacker):
         targets = ()
         children = ()
@@ -78,6 +89,13 @@ async def test_missing_external_tool_caught(
 
 
 async def test_external_tool_runtime_error_caught(ofrak_context: OFRAKContext, tmpdir):
+    """
+    This test verifies that a component properly handles runtime errors from external tools.
+
+    This test verifies that:
+    - A ComponentSubprocessError is raised when an external tool fails during execution
+    """
+
     class _MockComponent(Unpacker):
         targets = ()
         children = ()
@@ -106,6 +124,13 @@ async def test_external_tool_runtime_error_caught(ofrak_context: OFRAKContext, t
 
 
 async def test_tool_install_check(mock_dependency):
+    """
+    This test verifies the functionality of checking if an external tool is installed.
+
+    This test verifies that:
+    - A tool that does not exist is correctly identified as not installed
+    - A tool with a valid install check argument is correctly identified as installed
+    """
     assert not await mock_dependency.is_tool_installed()
 
     cd_tool = ComponentExternalTool(sys.executable, "", install_check_arg="-v")
@@ -113,4 +138,10 @@ async def test_tool_install_check(mock_dependency):
 
 
 async def test_bad_tool_install_check(bad_dependency):
+    """
+    This test verifies the behavior when checking a tool that is known to fail its install check.
+
+    This test verifies that:
+    - A tool with an invalid install check argument is correctly identified as not installed
+    """
     assert not await bad_dependency.is_tool_installed()

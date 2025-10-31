@@ -21,11 +21,6 @@ For most packages, this will mean updating the following files:
 - `DIRECTORY/CHANGELOG.md`
 - `DIRECTORY/setup.py`
 
-For the `ofrak` package, version numbers should also be updated in the following additional locations:
-- `/frontend/package.json`
-- `/frontend/package-lock.json`
-- `/frontend/src/App.svelte`
-
 ## Pre-commit
 
 OFRAK uses [pre-commit](https://pre-commit.com/) to run automated tools on the code base before every commit.
@@ -33,7 +28,7 @@ OFRAK uses [pre-commit](https://pre-commit.com/) to run automated tools on the c
 Install pre-commit with the following commands:
 
 ```shell
-pip3 install --user pre-commit
+python3 -m pip install --user pre-commit
 pre-commit install
 ```
 
@@ -93,6 +88,35 @@ We use [mkdocstrings](https://github.com/mkdocstrings/mkdocstrings) to generate 
 - Class, function, and method signatures are annotated using [Sphinx syntax](https://sphinx-rtd-tutorial.readthedocs.io/en/latest/docstrings.html)
 - Cross references to code can be added using [Markdown reference-style links](https://mkdocstrings.github.io/usage/#cross-references)
 
+### Requirements and Test Documentation
+
+All requirements are defined in [requirements.md](requirements.md). When writing or updating tests:
+
+**Test module docstrings:**
+```python
+"""
+This module tests binary extension functionality in OFRAK.
+
+Requirements Mapping:
+- REQ3.2
+"""
+```
+
+**Test method docstrings:**
+```python
+async def test_binary_extend_modify(self, ofrak_context):
+    """
+    Test the ability to extend a binary resource with additional content (REQ3.2).
+
+    This test verifies that:
+    - A binary resource can be extended with additional bytes
+    - The extended data is correctly appended to the original binary
+    - The final resource size matches the expected extended size
+    """
+```
+
+When adding new requirements to `requirements.md`, use format `REQ<epic>.<number>` and update the Validation column with links to relevant tests.
+
 ### Functions and Methods
 
 Public-facing functions and methods should have docstrings. Thus, each interface or abstract class should have a docstring on each of its methods. This docstring should not be duplicated in implementations, unless the implementation has unique behavior which could be of concern to the user (perhaps a significant side effect, or additional errors are raised).
@@ -146,21 +170,24 @@ class MyClass:
         ...
 ```
 
+## OFRAK Package Structure
+
+### Source Layout
+
+OFRAK packages use a "src layout" structure where source code is organized in a `src/` subdirectory within each package directory.
+
 ## Adding new packages to OFRAK build
 
-The build script `build_image.py` expects a config file similar to `ofrak-core-dev.yml`. Each of the packages listed under `packages_paths` in the YAML files should correspond to a directory containing two files: `Makefile` and `Dockerstub`. They may also contain a `Dockerstage` file for multi-stage builds. 
+The build script `build_image.py` expects a config file similar to `ofrak-dev.yml`. Each of the packages listed under `packages_paths` in the YAML files should correspond to a directory containing two files: `Makefile` and `Dockerstub`. They may also contain a `Dockerstage` file for multi-stage builds.
 
-Imagine we are adding a new package with the following structure:
+When creating a new package, follow the src layout structure shown above. Your `setup.py` should reference the `src/` directory:
 
-```
-ofrak_package_x
- |--Dockerstub
- |--Makefile
- |--setup.py
- |--ofrak_package_x_python_module
-     |...
- |--ofrak_package_x_python_module_test
-     |...
+```python
+setup(
+    package_dir={"": "src"},
+    packages=find_packages(where="src"),
+    # ... other setup parameters
+)
 ```
 
 ### Makefile
@@ -177,15 +204,14 @@ At a minimum, an OFRAK package Makefile should contain the following targets:
 An example of such a Makefile for `ofrak_package_x` is:
 ```make
 PYTHON=python3
-PIP=pip3
 
 .PHONY: install
 install:
-	$(PIP) install .
+	$(PYTHON) -m pip install .
 
 .PHONY: develop
 develop:
-	$(PIP) install -e .[test]
+	$(PYTHON) -m pip install -e . --config-settings editable_mode=compat
 
 .PHONY: inspect
 inspect:
@@ -193,7 +219,7 @@ inspect:
 
 .PHONY: test
 test: inspect
-	$(PYTHON) -m pytest -n auto --cov=ofrak_package_x_python_module --cov-report=term-missing --cov-fail-under=100 ofrak_package_x_python_module_test
+	$(PYTHON) -m pytest -n auto --cov=ofrak_package_x_python_module --cov-report=term-missing --cov-fail-under=100 test
 	fun-coverage --cov-fail-under=100
 ```
 

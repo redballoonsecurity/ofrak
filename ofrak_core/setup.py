@@ -3,6 +3,8 @@ import setuptools
 from setuptools.command.egg_info import egg_info
 from setuptools.command.build_ext import build_ext
 
+from version import VERSION
+
 
 class egg_info_ex(egg_info):
     """Includes license file into `.egg-info` folder."""
@@ -59,7 +61,7 @@ entropy_so = CTypesExtension(
 
 setuptools.setup(
     name="ofrak",
-    version="3.3.0rc14",
+    version=VERSION,
     description="A binary analysis and modification platform",
     packages=setuptools.find_packages("src"),
     package_dir={"": "src"},
@@ -80,9 +82,9 @@ setuptools.setup(
         "keystone-engine>=0.9.2",
         "jefferson>=0.4.5;python_version>='3.8'",
         "lief>=0.16.1",
-        "ofrak_io>=1.0,==1.*",
-        "ofrak_type>=2.2.0rc0,==2.*",
-        "ofrak_patch_maker>=4.1.0rc0,==4.*",
+        "ofrak_io>=1.1.3,==1.*",
+        "ofrak_type>=2.3.0,==2.*",
+        "ofrak_patch_maker>=4.1.0,==4.*",
         "orjson>=3.10.16",
         "pefile>=2023.2.7",
         "pycdlib>=1.12.0",
@@ -116,7 +118,7 @@ setuptools.setup(
         "Topic :: Security",
         "Typing :: Typed",
     ],
-    python_requires=">=3.7",
+    python_requires=">=3.9",
     license="Proprietary",
     license_files=["LICENSE"],
     cmdclass={"egg_info": egg_info_ex, "build_ext": build_ext_1},

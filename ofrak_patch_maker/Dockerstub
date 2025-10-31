@@ -1,5 +1,14 @@
 ARG TARGETARCH
 
+# Install all compression tools and dependencies needed for toolchain downloads
+RUN apt-get update && apt-get install -y \
+    xz-utils \
+    bzip2 \
+    lbzip2 \
+    unzip \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN mkdir -p /opt/rbs/toolchain
 
 COPY ${PACKAGE_PATH}/src/ofrak_patch_maker/config/docker/${TARGETARCH}_platform_toolchain.conf /etc/ofrak/toolchain.conf
@@ -12,7 +21,7 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     rm -rf clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz && \
     mv /opt/rbs/toolchain/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu- /opt/rbs/toolchain/llvm_12.0.1; \
 elif [ "$TARGETARCH" = "arm64" ]; then \
-    apt-get update && apt-get install -y libtinfo5 && \
+    apt-get update && apt-get install -y libtinfo5 && rm -rf /var/lib/apt/lists/* && \
     cd /tmp/ && \
     wget https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-aarch64-linux-gnu.tar.xz --show-progress --progress=bar:force:noscroll && \
     tar xf clang+llvm-12.0.1-aarch64-linux-gnu.tar.xz -C /opt/rbs/toolchain && \
@@ -48,7 +57,7 @@ fi;
 
 #M68k GNU 10 Linux
 RUN cd /tmp && \
-    apt-get update && apt-get install -y gcc g++ gperf bison flex texinfo help2man make libncurses5-dev python3-dev autoconf automake libtool libtool-bin gawk wget bzip2 xz-utils unzip patch libstdc++6 rsync && \
+    apt-get update && apt-get install -y gcc g++ git gperf bison flex texinfo help2man make libncurses5-dev python3-dev autoconf automake libtool libtool-bin gawk patch libstdc++6 rsync && rm -rf /var/lib/apt/lists/* && \
     git clone https://github.com/crosstool-ng/crosstool-ng.git && \
     cd crosstool-ng/ && \
     git reset --hard 6d1d61cbcacc7ce4622ef024490e0cb56881614b && \

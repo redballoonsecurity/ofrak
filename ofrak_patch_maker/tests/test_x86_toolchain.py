@@ -1,3 +1,6 @@
+"""
+Test the x86 toolchain functionality.
+"""
 import pytest
 
 from ofrak_type import ArchInfo

@@ -1,7 +1,7 @@
 site_name: OFRAK Docs
 site_url: ""  # Required to have file:// paths work
 site_description: "Documentation for OFRAK (Open Firmware Reverse Analysis Konsole), a binary analysis and modification platform that combines the ability to unpack, analyze, modify, and repack binaries. "
-copyright: Copyright &copy; 2021 - 2023 Red Balloon Security, Inc.
+copyright: Copyright &copy; 2021 - 2025 Red Balloon Security, Inc.
 repo_url: https://github.com/redballoonsecurity/ofrak
 use_directory_urls: false  # Required to have file:// paths work
 theme:
@@ -50,8 +50,13 @@ markdown_extensions:
 
 nav:
   - Home: "index.md"
-  - Environment Setup: "environment-setup.md"
   - Getting Started: "getting-started.md"
+  - Installing OFRAK:
+      - Choose Your Method: "install/index.md"
+      - Install from PyPI: "install/pypi.md"
+      - Install from Source: "install/source.md"
+      - Use Docker: "install/docker.md"
+  - OFRAK CLI: "ofrak-cli.md"
   - Examples: examples/
   - User Guide:
       - Key Concepts:
@@ -83,6 +88,7 @@ nav:
         - NAND Flash Component: "user-guide/advanced/flash_component.md"
   - Contributor Guide:
       - Getting Started: "contributor-guide/getting-started.md"
+      - Requirements: "contributor-guide/requirements.md"
       - Writing Components:
         - Identifier: "contributor-guide/component/identifier.md"
         - Unpacker: "contributor-guide/component/unpacker.md"

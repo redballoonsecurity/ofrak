@@ -24,7 +24,7 @@ The recommended Binary Ninja version to use with OFRAK is 3.2.3814. If you are r
 
 === "Docker"
 
-    You need to have a valid **headless** Binary Ninja license to build and run the Docker image. [Read about the environment setup](../../environment-setup.md#binary-ninja) for more details.
+    You need to have a valid **headless** Binary Ninja license to build and run the Docker image.
 
     To build the image, the license should be placed in the project's root directory and named `license.dat`. The serial number needs to be extracted from that file into a file named `serial.txt`. This can be done with the following command:
 
@@ -120,3 +120,7 @@ if __name__ == "__main__":
 ## Troubleshooting
 
 You can test python code in the interactive python console available in the Binary Ninja desktop application. Enable it with `View -> Native Docks -> Show Python Console` (on Mac).
+
+<div align="right">
+<img src="../../assets/square_03.png" width="125" height="125">
+</div>

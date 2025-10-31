@@ -9,9 +9,9 @@ import sys
 import pkg_resources
 import yaml
 
-DEFAULT_PYTHON_IMAGE = (
-    "python:3.9-bookworm@sha256:a23efa04a7f7a881151fe5d473770588ef639c08fd5f0dcc6987dbe13705c829"
-)
+from ofrak_core.version import VERSION
+
+DEFAULT_PYTHON_IMAGE = "python:3.9-slim-bookworm@sha256:ac457d45a4cafd54f0d72966592bdbbfa83e2ec3f5f95b28f6e68bbd490f8bc3"
 BASE_DOCKERFILE = "base.Dockerfile"
 FINISH_DOCKERFILE = "finish.Dockerfile"
 
@@ -209,6 +209,7 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
             dockerstub = file_handle.read()
         # Cannot use ENV here because of multi-stage build FROM, so replace direclty in Docerkstage contents
         dockerstub = dockerstub.replace("$PACKAGE_DIR", package_path)
+        dockerstub = dockerstub.replace("$OFRAK_VERSION", VERSION)
         dockerfile_base_parts += [f"### {dockerstage_path}", dockerstub]
 
     dockerfile_base_parts += [
@@ -257,6 +258,17 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
         f"FROM {full_base_image_name}:{config.image_revision}\n\n",
         f"ARG OFRAK_SRC_DIR=/\n",
     ]
+
+    # Extract OFRAK_DIR from extra_build_args if present
+    ofrak_dir_prefix = ""
+    if config.extra_build_args:
+        for i, arg in enumerate(config.extra_build_args):
+            if arg.startswith("OFRAK_DIR"):
+                ofrak_dir_prefix = arg.split("=", 1)[1]
+                if ofrak_dir_prefix and not ofrak_dir_prefix.endswith("/"):
+                    ofrak_dir_prefix += "/"
+                break
+
     package_names = list()
     for package_path in config.packages_paths:
         package_name = os.path.basename(package_path)
@@ -265,9 +277,11 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
     dockerfile_finish_parts.append("\nWORKDIR /\n")
     dockerfile_finish_parts.append("ARG INSTALL_TARGET\n")
     if config.install_target is InstallTarget.DEVELOP:
-        dockerfile_finish_parts.append("ADD requirements-dev.txt /\n")
+        dockerfile_finish_parts.append(f"ADD {ofrak_dir_prefix}requirements-dev.txt /\n")
         dockerfile_finish_parts.append("RUN python3 -m pip install -r requirements-dev.txt\n")
-        dockerfile_finish_parts.append(f"ADD 'pytest_ofrak' $OFRAK_SRC_DIR/pytest_ofrak\n")
+        dockerfile_finish_parts.append(
+            f"ADD '{ofrak_dir_prefix}pytest_ofrak' $OFRAK_SRC_DIR/pytest_ofrak\n"
+        )
         dockerfile_finish_parts.append(f"RUN make -C $OFRAK_SRC_DIR/pytest_ofrak develop\n")
     develop_makefile = "\\n\\\n".join(
         [

@@ -20,3 +20,7 @@ Binaries from projects can be launched from the Launch option of the toolbar. Wh
 
 ## Sharing Work
 Projects make it easy to share your work with others. Git integration allows users to easily clone public repos and follow the process used by others in OFRAK. Check out Red Balloon's [Example Project](https://github.com/redballoonsecurity/ofrak-project-example) to get started!
+
+<div align="right">
+<img src="../../assets/square_05.png" width="125" height="125">
+</div>

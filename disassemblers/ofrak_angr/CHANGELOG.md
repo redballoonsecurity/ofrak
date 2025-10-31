@@ -3,7 +3,7 @@ All notable changes to `ofrak-angr` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased 1.1.0rc4](https://github.com/redballoonsecurity/ofrak/tree/master)
+## [1.1.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-angr-v1.0.1...ofrak-angr-v1.1.0) - 2025-10-03
 
 ### Changed
 - Update to latest "angr>=9.2.93,<=9.2.174" which also necessitates Python >= 3.8.
