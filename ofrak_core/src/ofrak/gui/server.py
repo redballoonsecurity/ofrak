@@ -17,6 +17,7 @@ import inspect
 import os
 import webbrowser
 from collections import defaultdict
+from werkzeug.utils import secure_filename
 from typing import (
     Iterable,
     Optional,
@@ -1245,9 +1246,9 @@ class AiohttpOFRAKServer:
 
         body = await request.json()
         url = body.get("url")
-        path = recurse_path_collisions(
-            os.path.join(self.projects_dir, url.split(":")[-1].split("/")[-1]), 0
-        )
+        sanitized_name = sanitize_repo_name(url)
+        safe_path = validate_safe_directory_path(self.projects_dir, sanitized_name)
+        path = recurse_path_collisions(safe_path, 0)
         project = OfrakProject.clone_from_git(url, path)
         self.projects.add(project)
         return json_response({"id": project.session_id.hex()})
@@ -1319,9 +1320,10 @@ class AiohttpOFRAKServer:
     async def set_projects_path(self, request: Request) -> Response:
         body = await request.json()
         new_path = body["path"]
-        if not os.path.exists(new_path):
-            os.mkdir(new_path)
-        self.projects_dir = new_path
+        validated_path = os.path.normpath(os.path.abspath(new_path))
+        if not os.path.exists(validated_path):
+            os.mkdir(validated_path)
+        self.projects_dir = validated_path
         self.projects = self._slurp_projects_from_dir()
         return json_response(self.projects_dir)
 
@@ -1386,11 +1388,13 @@ class AiohttpOFRAKServer:
 
     def _slurp_projects_from_dir(self) -> Set:
         projects = set()
-        if not os.path.exists(self.projects_dir):
-            os.makedirs(self.projects_dir)
-        for dir in os.listdir(self.projects_dir):
+        validated_projects_dir = os.path.normpath(os.path.abspath(self.projects_dir))
+        if not os.path.exists(validated_projects_dir):
+            os.makedirs(validated_projects_dir)
+        for dir in os.listdir(validated_projects_dir):
             try:
-                project = OfrakProject.init_from_path(os.path.join(self.projects_dir, dir))
+                safe_dir = validate_safe_directory_path(validated_projects_dir, dir)
+                project = OfrakProject.init_from_path(safe_dir)
                 projects.add(project)
             except Exception as e:
                 logging.warning(f"{dir} is in the projects directory but is not a valid project")
@@ -1758,3 +1762,48 @@ def _format_component_docstring(component: ComponentInterface) -> str:
         )
 
     return docstring
+
+
+def validate_safe_directory_path(base_dir: str, user_path: str) -> str:
+    """
+    Validate that a user-provided directory path is within the allowed base directory
+
+    :param base_dir: the base directory that paths must be within
+    :param user_path: the user-provided path to validate
+
+    :return: the safely resolved absolute path within the base directory
+
+    :raises ValueError: if the resolved path escapes the base directory or is invalid
+
+    """
+    base_dir_resolved = os.path.realpath(os.path.abspath(base_dir))
+
+    if os.path.isabs(user_path):
+        target_path = os.path.realpath(user_path)
+    else:
+        target_path = os.path.realpath(os.path.join(base_dir_resolved, user_path))
+
+    if not target_path.startswith(base_dir_resolved + os.sep) and target_path != base_dir_resolved:
+        raise ValueError(f"Path traversal attempt detected: {user_path}")
+
+    return target_path
+
+
+def sanitize_repo_name(git_url: str) -> str:
+    """
+    Extract and sanitize repository name from a git URL
+
+    :param git_url: the git repository URL
+
+    :return: sanitized repository name safe for use as a directory name
+
+    :raises ValueError: if the URL is invalid or produces an empty name
+    """
+    repo_name = git_url.split(":")[-1].split("/")[-1]
+    repo_name = repo_name.replace(".git", "")
+    sanitized = secure_filename(repo_name)
+
+    if not sanitized:
+        raise ValueError(f"Invalid repository URL: {git_url}")
+
+    return sanitized
