@@ -11,6 +11,7 @@ Lz4LegacyPacker supports repacking legacy LZ4 format (Lz4LegacyData) with compre
 support (default/fast/high modes). Compression level can be specified via config.
 """
 import logging
+import io
 from dataclasses import dataclass
 
 import lz4.block  # type: ignore
@@ -22,6 +23,8 @@ from ofrak.core.magic import RawMagicPattern
 from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
 from ofrak_type.range import Range
+from ofrak_type.endianness import Endianness
+from ofrak_io.deserializer import BinaryDeserializer
 
 
 LOGGER = logging.getLogger(__name__)
@@ -139,31 +142,29 @@ class Lz4LegacyUnpacker(Unpacker[None]):
         :raises RuntimeError: if the data is not valid LZ4 legacy format
         """
         resource_data = await resource.get_data()
-
-        # Parse legacy header: 4 bytes magic + 4 bytes block size
         if len(resource_data) < 8:
             raise RuntimeError("Invalid LZ4 legacy format: file too short")
-
-        # Note: The header field is the compressed block size, not uncompressed size
-        block_size = int.from_bytes(resource_data[4:8], "little")
-        compressed_block = resource_data[8:]
-
-        # Validate block size matches actual data
-        if len(compressed_block) != block_size:
-            raise RuntimeError(
-                f"Invalid LZ4 legacy format: header says {block_size} bytes but found {len(compressed_block)}"
-            )
-
-        try:
-            # LZ4 legacy blocks don't store uncompressed size, so we need to provide
-            # a large enough buffer. Use a generous multiplier to handle any compression ratio.
-            max_uncompressed_size = block_size * 255  # LZ4 max compression ratio
-            decompressed_data = lz4.block.decompress(
-                compressed_block, uncompressed_size=max_uncompressed_size
-            )
-        except Exception as e:
-            LOGGER.error(f"Failed to decompress LZ4 legacy data: {e}")
-            raise RuntimeError(f"LZ4 legacy decompression failed: {e}")
+        deserializer = BinaryDeserializer(
+            io.BytesIO(resource_data),
+            endianness=Endianness.LITTLE_ENDIAN,
+            word_size=4,
+        )
+        magic = deserializer.read(4)
+        assert magic == LZ4_LEGACY_MAGIC
+        
+        decompressed_data = b""
+        while deserializer.position() < len(resource_data):
+            # Legacy LZ4 has a repeating pattern of 4 bytes block size followed by compressed data
+            block_size = deserializer.unpack_uint()
+            compressed_block = deserializer.read(block_size)
+            try:
+                # LZ4 legacy block size (uncompressed) is 8 MB (see https://github.com/lz4/lz4/blob/67a385a170d2dc331a25677e0d20d96eef0450c5/programs/lz4io.c#L86)
+                decompressed_data += lz4.block.decompress(
+                    compressed_block, uncompressed_size=8 * (1 << 20),
+                )
+            except Exception as e:
+                LOGGER.error(f"Failed to decompress LZ4 legacy data: {e}")
+                raise RuntimeError(f"LZ4 legacy decompression failed: {e}")
 
         await resource.create_child(
             tags=(GenericBinary,),
@@ -213,7 +214,7 @@ class Lz4Packer(Packer[Lz4PackerConfig]):
         lz4_view = await resource.view_as(Lz4ModernData)
         content_checksum = lz4_view.content_checksum
         block_checksum = lz4_view.block_checksum
-        block_size = lz4_view.block_size
+        block_size_id = lz4_view.block_size_id
         store_size = lz4_view.content_size != 0
 
         lz4_compressed = lz4.frame.compress(
@@ -221,7 +222,7 @@ class Lz4Packer(Packer[Lz4PackerConfig]):
             compression_level=config.compression_level,
             content_checksum=content_checksum,
             block_checksum=block_checksum,
-            block_size=block_size,
+            block_size=block_size_id,
             store_size=store_size,
         )
 
@@ -254,39 +255,51 @@ class Lz4LegacyPacker(Packer[Lz4PackerConfig]):
         lz4_child = await resource.get_only_child()
         child_data = await lz4_child.get_data()
 
-        # Map compression_level to lz4.block.compress() parameters
-        # This matches the lz4 CLI behavior for legacy format:
-        # - Level < 0: fast mode with acceleration = -level
-        if config.compression_level < 0:
-            # Fast mode with acceleration
-            compressed_block = lz4.block.compress(
-                child_data,
-                mode="fast",
-                acceleration=abs(config.compression_level),
-                store_size=False,
-            )
-        # - Level 0-2: fast mode with acceleration = 0
-        elif config.compression_level < 3:
-            # Fast mode with acceleration = 0 (levels 0, 1, 2)
-            compressed_block = lz4.block.compress(
-                child_data, mode="fast", acceleration=0, store_size=False
-            )
-        # - Level >= 3: high compression mode
-        else:
-            # High compression mode (3-12)
-            compressed_block = lz4.block.compress(
-                child_data,
-                mode="high_compression",
-                compression=config.compression_level,
-                store_size=False,
-            )
+        # LZ4 legacy format uses 8 MB blocks (see https://github.com/lz4/lz4/blob/67a385a170d2dc331a25677e0d20d96eef0450c5/programs/lz4io.c#L86)
+        LEGACY_BLOCK_SIZE = 8 * (1 << 20)  # 8 MB
 
-        # Build legacy header: magic (4 bytes) + compressed_block_size (4 bytes)
-        compressed_block_size = len(compressed_block)
-        header = LZ4_LEGACY_MAGIC + compressed_block_size.to_bytes(4, "little")
+        # Start with magic header
+        lz4_compressed = LZ4_LEGACY_MAGIC
 
-        # Combine header + compressed block
-        lz4_compressed = header + compressed_block
+        # Split data into 8MB chunks and compress each block
+        # The last block may be smaller than 8MB
+        offset = 0
+        while offset < len(child_data):
+            # Get up to 8MB (last block will be smaller if remaining data < 8MB)
+            block_data = child_data[offset:offset + LEGACY_BLOCK_SIZE]
+
+            # Map compression_level to lz4.block.compress() parameters
+            # This matches the lz4 CLI behavior for legacy format:
+            # - Level < 0: fast mode with acceleration = -level
+            if config.compression_level < 0:
+                # Fast mode with acceleration
+                compressed_block = lz4.block.compress(
+                    block_data,
+                    mode="fast",
+                    acceleration=abs(config.compression_level),
+                    store_size=False,
+                )
+            # - Level 0-2: fast mode with acceleration = 0
+            elif config.compression_level < 3:
+                # Fast mode with acceleration = 0 (levels 0, 1, 2)
+                compressed_block = lz4.block.compress(
+                    block_data, mode="fast", acceleration=0, store_size=False
+                )
+            # - Level >= 3: high compression mode
+            else:
+                # High compression mode (3-12)
+                compressed_block = lz4.block.compress(
+                    block_data,
+                    mode="high_compression",
+                    compression=config.compression_level,
+                    store_size=False,
+                )
+
+            # Append block size + compressed block data
+            compressed_block_size = len(compressed_block)
+            lz4_compressed += compressed_block_size.to_bytes(4, "little") + compressed_block
+
+            offset += LEGACY_BLOCK_SIZE
 
         original_size = await resource.get_data_length()
         resource.queue_patch(Range(0, original_size), lz4_compressed)
