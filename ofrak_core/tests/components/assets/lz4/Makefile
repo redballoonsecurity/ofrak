@@ -33,7 +33,7 @@ block_checksum.lz4:
 	$(LZ4) -BX input.txt block_checksum.lz4
 
 block_dependency.lz4:
-	$(LZ4) -BD input.txt block_dependency.lz4
+	$(LZ4) -BD large_input.txt block_dependency.lz4
 
 high_compression.lz4:
 	$(LZ4) -9 large_input.txt high_compression.lz4

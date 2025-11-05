@@ -151,7 +151,7 @@ class Lz4LegacyUnpacker(Unpacker[None]):
         )
         magic = deserializer.read(4)
         assert magic == LZ4_LEGACY_MAGIC
-        
+
         decompressed_data = b""
         while deserializer.position() < len(resource_data):
             # Legacy LZ4 has a repeating pattern of 4 bytes block size followed by compressed data
@@ -160,7 +160,8 @@ class Lz4LegacyUnpacker(Unpacker[None]):
             try:
                 # LZ4 legacy block size (uncompressed) is 8 MB (see https://github.com/lz4/lz4/blob/67a385a170d2dc331a25677e0d20d96eef0450c5/programs/lz4io.c#L86)
                 decompressed_data += lz4.block.decompress(
-                    compressed_block, uncompressed_size=8 * (1 << 20),
+                    compressed_block,
+                    uncompressed_size=8 * (1 << 20),
                 )
             except Exception as e:
                 LOGGER.error(f"Failed to decompress LZ4 legacy data: {e}")
@@ -215,6 +216,7 @@ class Lz4Packer(Packer[Lz4PackerConfig]):
         content_checksum = lz4_view.content_checksum
         block_checksum = lz4_view.block_checksum
         block_size_id = lz4_view.block_size_id
+        block_linked = lz4_view.block_linked
         store_size = lz4_view.content_size != 0
 
         lz4_compressed = lz4.frame.compress(
@@ -223,6 +225,7 @@ class Lz4Packer(Packer[Lz4PackerConfig]):
             content_checksum=content_checksum,
             block_checksum=block_checksum,
             block_size=block_size_id,
+            block_linked=block_linked,
             store_size=store_size,
         )
 
@@ -266,7 +269,7 @@ class Lz4LegacyPacker(Packer[Lz4PackerConfig]):
         offset = 0
         while offset < len(child_data):
             # Get up to 8MB (last block will be smaller if remaining data < 8MB)
-            block_data = child_data[offset:offset + LEGACY_BLOCK_SIZE]
+            block_data = child_data[offset : offset + LEGACY_BLOCK_SIZE]
 
             # Map compression_level to lz4.block.compress() parameters
             # This matches the lz4 CLI behavior for legacy format:

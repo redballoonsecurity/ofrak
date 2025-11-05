@@ -43,7 +43,9 @@ class Lz4UnpackModifyPackTestCase:
         Lz4UnpackModifyPackTestCase(ASSETS_DIR / "no_frame_crc.lz4", ASSETS_DIR / "input.txt"),
         Lz4UnpackModifyPackTestCase(ASSETS_DIR / "with_size.lz4", ASSETS_DIR / "input.txt"),
         Lz4UnpackModifyPackTestCase(ASSETS_DIR / "block_checksum.lz4", ASSETS_DIR / "input.txt"),
-        Lz4UnpackModifyPackTestCase(ASSETS_DIR / "block_dependency.lz4", ASSETS_DIR / "input.txt"),
+        Lz4UnpackModifyPackTestCase(
+            ASSETS_DIR / "block_dependency.lz4", ASSETS_DIR / "large_input.txt"
+        ),
         Lz4UnpackModifyPackTestCase(ASSETS_DIR / "large_block.lz4", ASSETS_DIR / "input.txt"),
         Lz4UnpackModifyPackTestCase(ASSETS_DIR / "small_block.lz4", ASSETS_DIR / "input.txt"),
         Lz4UnpackModifyPackTestCase(ASSETS_DIR / "combined_flags.lz4", ASSETS_DIR / "input.txt"),
@@ -51,11 +53,11 @@ class Lz4UnpackModifyPackTestCase:
         Lz4UnpackModifyPackTestCase(
             ASSETS_DIR / "high_compression.lz4", ASSETS_DIR / "large_input.txt"
         ),
-        Lz4UnpackModifyPackTestCase(
-            ASSETS_DIR / "best_compression.lz4", ASSETS_DIR / "input.txt"
-        ),
+        Lz4UnpackModifyPackTestCase(ASSETS_DIR / "best_compression.lz4", ASSETS_DIR / "input.txt"),
         Lz4UnpackModifyPackTestCase(ASSETS_DIR / "legacy.lz4", ASSETS_DIR / "input.txt"),
-        Lz4UnpackModifyPackTestCase(ASSETS_DIR / "legacy_large.lz4", ASSETS_DIR / "large_input.txt"),
+        Lz4UnpackModifyPackTestCase(
+            ASSETS_DIR / "legacy_large.lz4", ASSETS_DIR / "large_input.txt"
+        ),
     ],
     ids=lambda tc: tc.id,
 )
@@ -121,14 +123,16 @@ async def test_corrupted_lz4_fail(ofrak_context: OFRAKContext):
     temp_resource = await ofrak_context.create_root_resource("temp_lz4", data=b"")
     temp_resource.add_tag(Lz4ModernData)
     # Add Lz4ModernData view with default settings
-    temp_resource.add_view(Lz4ModernData(
-        block_size=65536,
-        block_size_id=4,
-        block_linked=False,
-        content_checksum=False,
-        block_checksum=False,
-        content_size=0,
-    ))
+    temp_resource.add_view(
+        Lz4ModernData(
+            block_size=65536,
+            block_size_id=4,
+            block_linked=False,
+            content_checksum=False,
+            block_checksum=False,
+            content_size=0,
+        )
+    )
     await temp_resource.save()
     # Create child with the uncompressed data
     await temp_resource.create_child(tags=(GenericBinary,), data=initial_data)
@@ -140,7 +144,7 @@ async def test_corrupted_lz4_fail(ofrak_context: OFRAKContext):
     # Corrupt the frame descriptor flags and data to ensure decompression fails
     corrupted_data = bytearray(compressed_data)
     # Corrupt bytes after magic (frame descriptor and data)
-    corrupted_data[5:min(len(corrupted_data), 20)] = b"\xFF" * (min(len(corrupted_data), 20) - 5)
+    corrupted_data[5 : min(len(corrupted_data), 20)] = b"\xFF" * (min(len(corrupted_data), 20) - 5)
 
     resource = await ofrak_context.create_root_resource("corrupted.lz4", data=bytes(corrupted_data))
 
@@ -179,14 +183,16 @@ async def test_lz4_with_small_data(ofrak_context: OFRAKContext):
     temp_resource = await ofrak_context.create_root_resource("temp_small_lz4", data=b"")
     temp_resource.add_tag(Lz4ModernData)
     # Add Lz4ModernData view with default settings
-    temp_resource.add_view(Lz4ModernData(
-        block_size=65536,
-        block_size_id=4,
-        block_linked=False,
-        content_checksum=False,
-        block_checksum=False,
-        content_size=0,
-    ))
+    temp_resource.add_view(
+        Lz4ModernData(
+            block_size=65536,
+            block_size_id=4,
+            block_linked=False,
+            content_checksum=False,
+            block_checksum=False,
+            content_size=0,
+        )
+    )
     await temp_resource.save()
     # Create child with the uncompressed data
     await temp_resource.create_child(tags=(GenericBinary,), data=small_data)
@@ -216,14 +222,16 @@ async def test_lz4_with_large_data(ofrak_context: OFRAKContext):
     temp_resource = await ofrak_context.create_root_resource("temp_large_lz4", data=b"")
     temp_resource.add_tag(Lz4ModernData)
     # Add Lz4ModernData view with default settings
-    temp_resource.add_view(Lz4ModernData(
-        block_size=65536,
-        block_size_id=4,
-        block_linked=False,
-        content_checksum=False,
-        block_checksum=False,
-        content_size=0,
-    ))
+    temp_resource.add_view(
+        Lz4ModernData(
+            block_size=65536,
+            block_size_id=4,
+            block_linked=False,
+            content_checksum=False,
+            block_checksum=False,
+            content_size=0,
+        )
+    )
     await temp_resource.save()
     # Create child with the uncompressed data
     await temp_resource.create_child(tags=(GenericBinary,), data=large_data)
@@ -286,13 +294,15 @@ class Lz4UnpackVerifyContentTestCase:
         Lz4UnpackVerifyContentTestCase(ASSETS_DIR / "with_size.lz4", ASSETS_DIR / "input.txt"),
         Lz4UnpackVerifyContentTestCase(ASSETS_DIR / "block_checksum.lz4", ASSETS_DIR / "input.txt"),
         Lz4UnpackVerifyContentTestCase(
-            ASSETS_DIR / "block_dependency.lz4", ASSETS_DIR / "input.txt"
+            ASSETS_DIR / "block_dependency.lz4", ASSETS_DIR / "large_input.txt"
         ),
         Lz4UnpackVerifyContentTestCase(ASSETS_DIR / "large_block.lz4", ASSETS_DIR / "input.txt"),
         Lz4UnpackVerifyContentTestCase(ASSETS_DIR / "small_block.lz4", ASSETS_DIR / "input.txt"),
         Lz4UnpackVerifyContentTestCase(ASSETS_DIR / "combined_flags.lz4", ASSETS_DIR / "input.txt"),
         Lz4UnpackVerifyContentTestCase(ASSETS_DIR / "legacy.lz4", ASSETS_DIR / "input.txt"),
-        Lz4UnpackVerifyContentTestCase(ASSETS_DIR / "legacy_large.lz4", ASSETS_DIR / "large_input.txt"),
+        Lz4UnpackVerifyContentTestCase(
+            ASSETS_DIR / "legacy_large.lz4", ASSETS_DIR / "large_input.txt"
+        ),
         Lz4UnpackVerifyContentTestCase(
             ASSETS_DIR / "ultra_fast.lz4", ASSETS_DIR / "large_input.txt"
         ),
@@ -355,21 +365,16 @@ class Lz4UnpackRepackEquivalenceTestCase:
         Lz4UnpackRepackEquivalenceTestCase(ASSETS_DIR / "no_frame_crc.lz4", 0),
         Lz4UnpackRepackEquivalenceTestCase(ASSETS_DIR / "with_size.lz4", 0),
         Lz4UnpackRepackEquivalenceTestCase(ASSETS_DIR / "block_checksum.lz4", 0),
-        Lz4UnpackRepackEquivalenceTestCase(ASSETS_DIR / "block_dependency.lz4", 0),
         pytest.param(
-            Lz4UnpackRepackEquivalenceTestCase(ASSETS_DIR / "ultra_fast.lz4", -1),
-            # TODO: verify that this is an expected issue
+            Lz4UnpackRepackEquivalenceTestCase(
+                ASSETS_DIR / "block_dependency.lz4", 0
+            ),  # Uses large_input.txt
             marks=pytest.mark.xfail(
-                reason="Python lz4 library bug: content_checksum flag not preserved during repack (issue with large files + content checksums)"
-            )
+                reason="Python lz4 library and lz4 CLI produce different (but equivalent) compressed output for block-linked mode"
+            ),
         ),
-        pytest.param(
-            Lz4UnpackRepackEquivalenceTestCase(ASSETS_DIR / "high_compression.lz4", 9),
-            # TODO: verify that this is an expected issue
-            marks=pytest.mark.xfail(
-                reason="Python lz4 library bug: content_checksum flag not preserved during repack (issue with large files + content checksums)"
-            )
-        ),
+        Lz4UnpackRepackEquivalenceTestCase(ASSETS_DIR / "ultra_fast.lz4", -1),
+        Lz4UnpackRepackEquivalenceTestCase(ASSETS_DIR / "high_compression.lz4", 9),
         Lz4UnpackRepackEquivalenceTestCase(ASSETS_DIR / "best_compression.lz4", 12),
         Lz4UnpackRepackEquivalenceTestCase(ASSETS_DIR / "large_block.lz4", 0),
         Lz4UnpackRepackEquivalenceTestCase(ASSETS_DIR / "small_block.lz4", 0),
@@ -410,6 +415,46 @@ async def test_lz4_unpack_repack_equivalence(
     # Repack the data with specified compression level
     config = Lz4PackerConfig(compression_level=test_case.compression_level)
     await resource.run(Lz4Packer, config)
+
+    # Get the repacked data
+    repacked_data = await resource.get_data()
+
+    # Verify that repacked data is identical to original
+    assert repacked_data == original_data
+
+
+@pytest.mark.parametrize(
+    "test_case",
+    [
+        Lz4UnpackRepackEquivalenceTestCase(ASSETS_DIR / "legacy.lz4", 0),
+        Lz4UnpackRepackEquivalenceTestCase(ASSETS_DIR / "legacy_large.lz4", 0),
+    ],
+    ids=lambda tc: tc.id,
+)
+async def test_lz4_legacy_unpack_repack_equivalence(
+    ofrak_context: OFRAKContext, test_case: Lz4UnpackRepackEquivalenceTestCase
+):
+    """
+    Test that unpacking and repacking legacy LZ4 files preserves exact binary format (REQ1.3, REQ4.4).
+
+    This test verifies that:
+    - Legacy LZ4 files can be unpacked successfully
+    - The unpacked data can be repacked while preserving the original compression settings
+    - The repacked compressed data is byte-for-byte identical to the original compressed data
+    - Compression level can be specified to match the original file
+
+    Legacy format uses Lz4LegacyPacker instead of the modern Lz4Packer.
+    """
+    # Load the original file
+    original_data = test_case.test_file.read_bytes()
+
+    # Create resource and unpack
+    resource = await ofrak_context.create_root_resource_from_file(test_case.test_file)
+    await resource.unpack()
+
+    # Repack the data with specified compression level using legacy packer
+    config = Lz4PackerConfig(compression_level=test_case.compression_level)
+    await resource.run(Lz4LegacyPacker, config)
 
     # Get the repacked data
     repacked_data = await resource.get_data()
@@ -482,17 +527,27 @@ async def test_lz4_legacy_unpack_repack_content_preservation(
         (ASSETS_DIR / "legacy_large.lz4", ASSETS_DIR / "large_input.txt", 0),
         (ASSETS_DIR / "legacy_large.lz4", ASSETS_DIR / "large_input.txt", -1),
         pytest.param(
-            ASSETS_DIR / "legacy_large.lz4", ASSETS_DIR / "large_input.txt", 9,
-            marks=pytest.mark.skip(reason="Level 9 compression too slow on 9MB file")
+            ASSETS_DIR / "legacy_large.lz4",
+            ASSETS_DIR / "large_input.txt",
+            9,
+            marks=pytest.mark.skip(reason="Level 9 compression too slow on 9MB file"),
         ),
         pytest.param(
-            ASSETS_DIR / "legacy_large.lz4", ASSETS_DIR / "large_input.txt", 12,
-            marks=pytest.mark.skip(reason="Level 12 compression too slow on 9MB file")
+            ASSETS_DIR / "legacy_large.lz4",
+            ASSETS_DIR / "large_input.txt",
+            12,
+            marks=pytest.mark.skip(reason="Level 12 compression too slow on 9MB file"),
         ),
     ],
     ids=[
-        "legacy_small_level_0", "legacy_small_level_-1", "legacy_small_level_9", "legacy_small_level_12",
-        "legacy_large_level_0", "legacy_large_level_-1", "legacy_large_level_9", "legacy_large_level_12",
+        "legacy_small_level_0",
+        "legacy_small_level_-1",
+        "legacy_small_level_9",
+        "legacy_small_level_12",
+        "legacy_large_level_0",
+        "legacy_large_level_-1",
+        "legacy_large_level_9",
+        "legacy_large_level_12",
     ],
 )
 async def test_lz4_legacy_unpack_repack_with_compression_levels(
@@ -525,9 +580,7 @@ async def test_lz4_legacy_unpack_repack_with_compression_levels(
     repacked_data = await resource.get_data()
 
     # Verify it's a valid legacy file
-    assert (
-        repacked_data[:4] == b"\x02\x21\x4c\x18"
-    ), f"Invalid magic for level {compression_level}"
+    assert repacked_data[:4] == b"\x02\x21\x4c\x18", f"Invalid magic for level {compression_level}"
 
     # Verify decompressed content is correct by unpacking the repacked data using OFRAK
     repacked_resource = await ofrak_context.create_root_resource("repacked", repacked_data)
