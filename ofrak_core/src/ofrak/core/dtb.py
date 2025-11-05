@@ -99,11 +99,11 @@ class DtbHeader(GenericBinary):
 
 class DtbHeaderAnalyzer(Analyzer[None, DtbHeader]):
     """
-    Parses Device Tree Blob (DTB) header to extract version number, total DTB size, structure block 
-    offset and size, strings block offset and size, memory reservation block offset and size, and 
-    various format version fields. The header describes the layout of all DTB sections. Use to 
-    understand DTB file structure before full unpacking, validate DTB integrity by checking sizes 
-    and offsets, determine DTB version for compatibility, or navigate to specific DTB sections. 
+    Parses Device Tree Blob (DTB) header to extract version number, total DTB size, structure block
+    offset and size, strings block offset and size, memory reservation block offset and size, and
+    various format version fields. The header describes the layout of all DTB sections. Use to
+    understand DTB file structure before full unpacking, validate DTB integrity by checking sizes
+    and offsets, determine DTB version for compatibility, or navigate to specific DTB sections.
     Essential first step in device tree analysis.
     """
 

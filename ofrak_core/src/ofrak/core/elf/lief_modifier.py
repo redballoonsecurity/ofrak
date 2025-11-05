@@ -44,7 +44,7 @@ class LiefAddSegmentModifier(Modifier[LiefAddSegmentConfig]):
     information.
 
     Not all ELF binaries may be compatible with this modifier. ELF binaries missing the NOTE segment
-    will fail unless the component config specifies `replace_note = False`. 
+    will fail unless the component config specifies `replace_note = False`.
     """
 
     id = b"LiefAddSegmentModifier"
@@ -103,7 +103,7 @@ class LiefAddSectionModifer(Modifier[LiefAddSectionModifierConfig]):
     library, creating section headers and inserting section data at appropriate file offsets. The
     new sections can contain code, data, or other content and are automatically integrated into
     the ELF structure with proper size and offset adjustments. Use for injecting new data sections,
-    adding custom metadata, creating space for code injection, or inserting resources. LIEF handles 
+    adding custom metadata, creating space for code injection, or inserting resources. LIEF handles
     the complex details of ELF modification including offset recalculation and header updates.
     """
 

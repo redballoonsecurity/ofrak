@@ -51,7 +51,7 @@ class ExtUnpacker(Unpacker[None]):
     Linux filesystem family. These filesystems support full Unix permissions, symbolic links, hard
     links, and extended attributes. Use when analyzing disk images, partition dumps, or embedded
     system storage that uses EXT filesystems. Common in Linux-based embedded devices, development
-    boards, and virtualized environments. Note that there are currently no EXT packers, so after 
+    boards, and virtualized environments. Note that there are currently no EXT packers, so after
     unpacking, the resource cannot be repacked.
     """
 

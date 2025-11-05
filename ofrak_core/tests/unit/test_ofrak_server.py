@@ -1336,7 +1336,7 @@ async def test_get_config(ofrak_client: TestClient, hello_elf):
     )
     config = await config_resp.json()
 
-    # Verify the response includes a docstring, but don't check the value. The 
+    # Verify the response includes a docstring, but don't check the value. The
     # exact wording of the docstring may change. This should not fail the test.
     assert "doc" in config
     assert len(config["doc"]) > 0

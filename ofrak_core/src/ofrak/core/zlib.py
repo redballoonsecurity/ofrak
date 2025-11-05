@@ -53,7 +53,7 @@ class ZlibCompressionLevelAnalyzer(Analyzer[None, ZlibData]):
 
 class ZlibUnpacker(Unpacker[None]):
     """
-    Decompresses zlib-compressed data. Use when encountering zlib-compressed data blocks. The 
+    Decompresses zlib-compressed data. Use when encountering zlib-compressed data blocks. The
     decompressed data may contain further structure that can be analyzed or unpacked.
     """
 

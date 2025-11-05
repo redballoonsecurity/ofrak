@@ -27,8 +27,8 @@ LOGGER = logging.getLogger(__name__)
 
 class CapstoneBasicBlockUnpacker(BasicBlockUnpacker):
     """
-    Uses Capstone disassembler to decode basic blocks into individual assembly instructions. 
-    Extracts instruction mnemonics, operands, and addresses. Use for instruction-level disassembly 
+    Uses Capstone disassembler to decode basic blocks into individual assembly instructions.
+    Extracts instruction mnemonics, operands, and addresses. Use for instruction-level disassembly
     when you need fast, lightweight disassembly without heavy analysis frameworks. Required for some
     disassembler backends which cannot natively disassemble (i.e. angr).
     """

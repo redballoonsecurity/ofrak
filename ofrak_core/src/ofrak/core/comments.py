@@ -30,7 +30,7 @@ class AddCommentModifier(Modifier[AddCommentModifierConfig]):
     explain modifications, or provide analysis notes. Use for annotating interesting findings,
     documenting reverse engineering insights, marking modified regions, explaining code behavior,
     noting security concerns, or creating analysis documentation. Comments persist with the resource
-    and help track analysis progress and findings. In the GUI, comments are specially rendered to 
+    and help track analysis progress and findings. In the GUI, comments are specially rendered to
     show the comment text directly within the tree view.
     """
 
