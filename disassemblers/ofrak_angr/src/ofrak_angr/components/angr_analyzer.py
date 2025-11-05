@@ -87,7 +87,7 @@ class AngrCodeRegionModifier(Modifier):
     Automatically detects PIE binaries (currently supports ELF) and fixes addresses relative to angr's base address.
     Used internally by angr unpacking workflow.
 
-    For more details on the PIE fixups, see [gotchas.md](docs/user-guide/dissassembler-backends/gotchas.md).
+    For more details on the PIE fixups, see [gotchas.md](docs/user-guide/disassembler-backends/gotchas.md).
     """
 
     id = b"AngrCodeRegionModifier"
