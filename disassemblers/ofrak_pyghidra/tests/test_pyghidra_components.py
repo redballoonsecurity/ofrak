@@ -1,5 +1,8 @@
 """
 This module tests the PyGhidra component, including unpackers, disassembly and decompilation components.
+
+Requirements Mapping:
+- REQ1.2
 """
 from ofrak.core.instruction import Instruction
 import os
@@ -260,6 +263,9 @@ async def test_PIE_code_regions(program_resource):
     - Code regions are correctly created at expected virtual addresses
     - PIE binary base address (0x100000) is properly handled
     - Code region addresses and sizes match expected values
+
+    Requirements Mapping:
+    - REQ1.2
     """
     await program_resource.unpack()
     code_regions = await program_resource.get_descendants_as_view(
@@ -341,6 +347,14 @@ async def ihex_resource(ofrak_context: OFRAKContext):
 async def test_ihex_unpacking(ihex_resource):
     """
     Test that adding ProgramAttributes to an Ihex file allows for unpacking with ofrak_pyghidra.
+
+    This test verifies that:
+    - Intel HEX files can be unpacked with PyGhidra when ProgramAttributes are provided
+    - Complex blocks are correctly identified after recursive unpacking
+    - Expected function names are discovered in the unpacked binary
+
+    Requirements Mapping:
+    - REQ1.2
     """
     program_attributes = ProgramAttributes(
         InstructionSet.X86,

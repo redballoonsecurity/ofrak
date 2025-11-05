@@ -2184,6 +2184,9 @@ async def test_get_all_program_attributes(ofrak_client: TestClient):
     - Endianness options are included
     - Processor type options are included
     - Specific known values exist for each category (ARM, ARMv4T, etc.)
+
+    Requirements Mapping:
+    - REQ2.2
     """
     resp = await ofrak_client.get(f"/get_all_program_attributes")
     assert resp.status == 200
@@ -2215,6 +2218,9 @@ async def test_add_program_attributes(ofrak_client: TestClient, hello_elf):
     - Optional fields can be set to None
     - Multiple program attribute updates can be applied to the same resource
     - The add_program_attributes endpoint handles both complete and minimal configurations
+
+    Requirements Mapping:
+    - REQ2.2
     """
     create_resp = await ofrak_client.post(
         "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
