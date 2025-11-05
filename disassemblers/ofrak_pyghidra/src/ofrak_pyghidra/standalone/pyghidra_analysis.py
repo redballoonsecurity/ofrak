@@ -130,8 +130,9 @@ def unpack(program_file, decompiled, language=None, base_address=None):
     except Exception as e:
         if "toString" in dir(e) and "No load spec found" in e.toString():
             raise PyGhidraComponentException(
-                str(type(e)) + " " +
-                e.toString()
+                str(type(e))
+                + " "
+                + e.toString()
                 + "\nTry adding ProgramAttributes to you binary before running a Ghidra analyzer/unpacker!"
             )
         else:
