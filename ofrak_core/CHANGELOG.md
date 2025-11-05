@@ -100,7 +100,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - When the user selects the "Decompilation" tab in the GUI, the pane is updated with the decompiled code automatically, without having to click "Analyze" first. ([#639](https://github.com/redballoonsecurity/ofrak/pull/639))
 - Use a single source of truth for the package version ([#640](https://github.com/redballoonsecurity/ofrak/pull/640))
 - Update the behavior of `get_only_descendant_as_view`, `get_descendants_as_view`, `get_ancestors_as_view`, and `get_only_ancestor_as_view` to retrieve all resources that match the filter. ([#642](https://github.com/redballoonsecurity/ofrak/pull/642))
-- rewrote intel hex components ([#637](https://github.com/redballoonsecurity/ofrak/pull/637))
+- Rewrote Intel hex components. The Ihex resource is now a descendant of Program and produces CodeRegion children. ([#637](https://github.com/redballoonsecurity/ofrak/pull/637))
 
 ### Deprecated
 - `Resource.flush_to_disk` deprecated in favor of `Resource.flush_data_to_disk`. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373), [#567](https://github.com/redballoonsecurity/ofrak/pull/568))

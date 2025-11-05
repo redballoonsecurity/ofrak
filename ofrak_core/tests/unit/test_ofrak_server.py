@@ -2172,6 +2172,19 @@ async def test_get_project_by_resource_id(ofrak_client: TestClient, test_project
 
 
 async def test_get_all_program_attributes(ofrak_client: TestClient):
+    """
+    Test retrieving all available program architecture attributes.
+
+    This test verifies that:
+    - The get_all_program_attributes endpoint is accessible
+    - All program attribute categories are returned
+    - ISA (Instruction Set Architecture) options are included
+    - Sub-ISA options are included
+    - Bit width options are included
+    - Endianness options are included
+    - Processor type options are included
+    - Specific known values exist for each category (ARM, ARMv4T, etc.)
+    """
     resp = await ofrak_client.get(f"/get_all_program_attributes")
     assert resp.status == 200
     resp_body = await resp.json()
@@ -2192,6 +2205,17 @@ async def test_get_all_program_attributes(ofrak_client: TestClient):
 
 
 async def test_add_program_attributes(ofrak_client: TestClient, hello_elf):
+    """
+    Test adding program architecture attributes to a resource.
+
+    This test verifies that:
+    - Program attributes can be added to a resource via the API
+    - All required attribute fields can be specified (ISA, bit width, endianness)
+    - Optional fields (sub_isa, processor) can be set to specific values
+    - Optional fields can be set to None
+    - Multiple program attribute updates can be applied to the same resource
+    - The add_program_attributes endpoint handles both complete and minimal configurations
+    """
     create_resp = await ofrak_client.post(
         "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
     )

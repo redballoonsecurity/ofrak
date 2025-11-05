@@ -9,6 +9,10 @@ import re
 import json
 
 
+class PyGhidraComponentException(Exception):
+    pass
+
+
 def _parse_offset(java_object):
     """
     This parses the offset as a big int
@@ -125,12 +129,13 @@ def unpack(program_file, decompiled, language=None, base_address=None):
                     main_dictionary[cb_key] = cb
     except Exception as e:
         if "toString" in dir(e) and "No load spec found" in e.toString():
-            raise Exception(
+            raise PyGhidraComponentException(
+                str(type(e)) + " " +
                 e.toString()
                 + "\nTry adding ProgramAttributes to you binary before running a Ghidra analyzer/unpacker!"
             )
         else:
-            raise e
+            raise PyGhidraComponentException(e)
     return main_dictionary
 
 

@@ -106,19 +106,19 @@
 
   async function addProgramAttributes() {
     if (
-      selected_attribute["isa"] &&
-      selected_attribute["bit_width"] &&
-      selected_attribute["endianness"]
+      selected_attribute.isa &&
+      selected_attribute.bit_width &&
+      selected_attribute.endianness
     ) {
       modifierView = undefined;
       let program_attributes = JSON.stringify([
         "ofrak.core.architecture.ProgramAttributes",
         {
-          isa: selected_attribute["isa"],
-          sub_isa: selected_attribute["sub_isa"],
-          bit_width: selected_attribute["bit_width"],
-          endianness: selected_attribute["endianness"],
-          processor: selected_attribute["processor"],
+          isa: selected_attribute.isa,
+          sub_isa: selected_attribute.sub_isa,
+          bit_width: selected_attribute.bit_width,
+          endianness: selected_attribute.endianness,
+          processor: selected_attribute.processor,
         },
       ]);
       await $selectedResource.add_program_attributes(program_attributes);
@@ -128,18 +128,13 @@
 
   onMount(async () => {
     try {
-      await fetch(`${$settings.backendUrl}/get_all_program_attributes`).then(
-        async (r) => {
-          if (!r.ok) {
-            throw Error(JSON.stringify(await r.json(), undefined, 2));
-          }
+      const r = await fetch(`${$settings.backendUrl}/get_all_program_attributes`);
+      if (!r.ok) {
+        throw Error(JSON.stringify(await r.json(), undefined, 2));
+      }
 
-          //console.log(r.json())
-          r.json().then((ofrakProgramAttributes) => {
-            ofrakProgramAttributesPromise = ofrakProgramAttributes;
-          });
-        }
-      );
+      const ofrakProgramAttributes = await r.json();
+      ofrakProgramAttributesPromise = ofrakProgramAttributes;
     } catch (err) {
       try {
         errorMessage = JSON.parse(err.message).message;

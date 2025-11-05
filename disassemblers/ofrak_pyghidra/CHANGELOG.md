@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Changed
 - Reduce the decompilation time of PyGhidra by reusing cached unpacking results. ([#623](https://github.com/redballoonsecurity/ofrak/pull/623))
 - Improve `ofrak_pyghidra` decompilation: more strings and symbol names for cross-references in decompilation. ([#633](https://github.com/redballoonsecurity/ofrak/pull/633))
-- Look for `ProgramAttributes` before unpacking. Do not pack when flushing to disk. Better error message when Ghidra raises "No load spec found". Added test for unpacking ihex with `ofrak_pyghidra` ([#637](https://github.com/redballoonsecurity/ofrak/pull/637))
+- Improve unpacking logic, error messages, and testing for `ofrak_pyghidra` auto analyzer ([#637](https://github.com/redballoonsecurity/ofrak/pull/637))
 
 ## 0.1.0 - 2025-07-25
 
