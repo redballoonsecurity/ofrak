@@ -128,7 +128,9 @@
 
   onMount(async () => {
     try {
-      const r = await fetch(`${$settings.backendUrl}/get_all_program_attributes`);
+      const r = await fetch(
+        `${$settings.backendUrl}/get_all_program_attributes`
+      );
       if (!r.ok) {
         throw Error(JSON.stringify(await r.json(), undefined, 2));
       }
