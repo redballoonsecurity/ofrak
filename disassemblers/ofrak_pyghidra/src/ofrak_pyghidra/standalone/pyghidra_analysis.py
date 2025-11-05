@@ -127,6 +127,9 @@ def unpack(program_file, decompiled, language=None, base_address=None):
                         cb["children"].append(dw_key)
                         main_dictionary[dw_key] = dw
                     main_dictionary[cb_key] = cb
+    # Loading the file into Ghidra can result in a LoadException. This may occur if Ghidra cannot
+    # detect the language. Ideally we would `except LoadException` directly, but it is from Java
+    # and can't be imported outside of the `with pyghidra.open_program()` block
     except Exception as e:
         if "toString" in dir(e) and "No load spec found" in e.toString():
             raise PyGhidraComponentException(
