@@ -109,11 +109,16 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraProject]):
 
     async def analyze(self, resource: Resource, config: PyGhidraAutoAnalyzerConfig = None):
         tempdir = mkdtemp(prefix="rbs-pyghidra-bin")
+        await resource.identify()  # useful for checking tags later
+        try:
+            program_attrs = resource.get_attributes(ProgramAttributes)
+            language = _arch_info_to_processor_id(program_attrs)
+        except NotFoundError:
+            language = None
         program_file = os.path.join(tempdir, "program")
-        await resource.flush_data_to_disk(program_file)
+        await resource.flush_data_to_disk(program_file, pack=False)
         if config is None:
             decomp = False
-            language = None
         else:
             decomp = config.decomp
             language = config.language
@@ -207,6 +212,8 @@ class PyGhidraDecompilationAnalyzer(CachedDecompilationAnalyzer):
     reimplementation, or need to understand code quickly. The decompiled code should be verified
     against disassembly.
     """
+
+    id = b"PyGhidraDecompilationAnalyzer"
 
     targets = (ComplexBlock,)
     outputs = (DecompilationAnalysis,)
