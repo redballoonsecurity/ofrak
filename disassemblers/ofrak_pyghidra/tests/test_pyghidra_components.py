@@ -15,9 +15,12 @@ from pytest_ofrak.patterns.complex_block_unpacker import (
     ComplexBlockUnpackerUnpackAndVerifyPattern,
     ComplexBlockUnpackerTestCase,
 )
-from ofrak.core.decompilation import DecompilationAnalysis, DecompilationAnalyzer
+from ofrak.core.decompilation import DecompilationAnalysis
 from pytest_ofrak.patterns.basic_block_unpacker import BasicBlockUnpackerUnpackAndVerifyPattern
-from ofrak_pyghidra.components.pyghidra_components import _arch_info_to_processor_id
+from ofrak_pyghidra.components.pyghidra_components import (
+    _arch_info_to_processor_id,
+    PyGhidraDecompilationAnalyzer,
+)
 from ofrak_type import ArchInfo, Endianness, InstructionSet
 import ofrak_pyghidra
 from ofrak.core.code_region import CodeRegion
@@ -177,7 +180,7 @@ async def test_decompilation(ofrak_context: OFRAKContext):
     )
     decomps = []
     for complex_block in complex_blocks:
-        await complex_block.resource.run(DecompilationAnalyzer)
+        await complex_block.resource.run(PyGhidraDecompilationAnalyzer)
         pyghidra_resource: DecompilationAnalysis = await complex_block.resource.view_as(
             DecompilationAnalysis
         )
@@ -303,7 +306,7 @@ async def test_strings_in_decomp(freertos_resource, ofrak_injector):
             )
         ),
     )
-    await complex_block.resource.run(DecompilationAnalyzer)
+    await complex_block.resource.run(PyGhidraDecompilationAnalyzer)
     decomp_resource: DecompilationAnalysis = await complex_block.resource.view_as(
         DecompilationAnalysis
     )
