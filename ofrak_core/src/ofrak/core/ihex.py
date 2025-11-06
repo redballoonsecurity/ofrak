@@ -36,7 +36,12 @@ class Ihex(Program):
 
 class IhexAnalyzer(Analyzer[None, Ihex]):
     """
-    Extract Intel HEX parameters
+    Extracts and analyzes Intel HEX program metadata including the starting and ending addresses of
+    all segments, individual segment sizes, the overall address range covered by the program, and
+    any gaps between segments. Intel HEX files can have non-contiguous address ranges. Use to
+    understand the memory layout described by an Intel HEX file, identify which memory regions
+    contain data, find gaps that will be filled with padding, or determine the total memory space
+    required. Useful before unpacking or when planning memory modifications.
     """
 
     targets = (Ihex,)
@@ -49,7 +54,9 @@ class IhexAnalyzer(Analyzer[None, Ihex]):
 
 class IhexUnpacker(Unpacker[None]):
     """
-    Unpack the individual segments from an Intel HEX Program's binary blob.
+    Extracts individual memory segments from an Intel HEX program's binary representation,
+    separating the continuous memory image into distinct addressable sections. Each segment
+    corresponds to a contiguous region of memory defined in the original HEX file.
     """
 
     targets = (Ihex,)

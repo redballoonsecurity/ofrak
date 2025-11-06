@@ -15,7 +15,12 @@ class BinaryInjectorModifierConfig(ComponentConfig):
 
 class BinaryInjectorModifier(Modifier[BinaryInjectorModifierConfig]):
     """
-    Inject bytes at the given vm address in a [MemoryRegion][ofrak.core.memory_region.MemoryRegion].
+    Injects arbitrary data at a specified virtual memory address within a memory region, placing the
+    data at the target address in the binary's memory space. The injection is address-targeted
+    rather than offset-targeted. Use for address-specific injection when you know exact memory
+    locations, patching memory-mapped resources, injecting at known virtual addresses from analysis,
+    modifying specific memory locations, or implementing address-based modifications. Requires
+    understanding of the binary's memory layout and virtual addressing.
     """
 
     targets = (MemoryRegion,)

@@ -1335,12 +1335,17 @@ async def test_get_config(ofrak_client: TestClient, hello_elf):
         params={"component": "UpdateLinkableSymbolsModifier"},
     )
     config = await config_resp.json()
-    # Verify the response includes the optional field
-    assert "optional" in config
+
+    # Verify the response includes a docstring, but don't check the value. The
+    # exact wording of the docstring may change. This should not fail the test.
+    assert "doc" in config
+    assert len(config["doc"]) > 0
+    config["doc"] = "placeholder"
+
     assert config == {
         "name": "UpdateLinkableSymbolsModifierConfig",
         "type": "ofrak.core.patch_maker.linkable_binary.UpdateLinkableSymbolsModifierConfig",
-        "optional": False,  # This component has a required config
+        "optional": False,
         "args": None,
         "enum": None,
         "fields": [
@@ -1395,6 +1400,7 @@ async def test_get_config(ofrak_client: TestClient, hello_elf):
                 "default": None,
             }
         ],
+        "doc": "placeholder",
     }
 
 

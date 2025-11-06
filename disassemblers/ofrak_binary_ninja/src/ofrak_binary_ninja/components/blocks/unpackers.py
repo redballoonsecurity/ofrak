@@ -27,6 +27,12 @@ MAX_GAP_BETWEEN_FUNC_ADDRESS_RANGE = 0x20
 
 
 class BinaryNinjaCodeRegionUnpacker(CodeRegionUnpacker):
+    """
+    Uses Binary Ninja's analysis to identify and extract function boundaries (complex blocks) from code regions.
+    Handles discontiguous functions, alignment bytes, and literal pools. Use for automated function discovery with
+    Binary Ninja's sophisticated function detection.
+    """
+
     async def unpack(self, resource: Resource, config=None):
         region_view = await resource.view_as(CodeRegion)
         program_r = await region_view.resource.get_only_ancestor_as_view(
@@ -148,6 +154,12 @@ class BinaryNinjaCodeRegionUnpacker(CodeRegionUnpacker):
 
 
 class BinaryNinjaComplexBlockUnpacker(ComplexBlockUnpacker):
+    """
+    Uses Binary Ninja to disassemble functions into basic blocks and data words (including literal pools/jump tables).
+    Extracts control flow edges, instruction set modes (ARM/Thumb), and data cross-references. Use for detailed function
+    structure analysis with Binary Ninja.
+    """
+
     async def unpack(self, resource: Resource, config: Optional[ComponentConfig] = None):
         cb_view = await resource.view_as(ComplexBlock)
         program_r = await cb_view.resource.get_only_ancestor_as_view(

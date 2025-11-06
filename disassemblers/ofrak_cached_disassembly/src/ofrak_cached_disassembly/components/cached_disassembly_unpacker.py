@@ -55,7 +55,8 @@ class CachedAnalysisAnalyzerConfig(ComponentConfig):
 
 class CachedAnalysisAnalyzer(Analyzer[CachedAnalysisAnalyzerConfig, CachedAnalysis]):
     """
-    This analyzer maps the cached analysis to the resource and verifies it's metadata.
+    Loads pre-computed disassembly analysis from JSON cache file. Verifies file hash matches cached analysis. Use to
+    speed up analysis by reusing previous disassembly results. Alternative to running fresh analysis with angr/Ghidra/etc.
     """
 
     id = b"CachedAnalysisAnalyzer"
@@ -106,7 +107,8 @@ class CachedAnalysisAnalyzer(Analyzer[CachedAnalysisAnalyzerConfig, CachedAnalys
 
 class CachedProgramUnpacker(Unpacker[None]):
     """
-    Extracts segments from the cache and creates CodeRegions for each.
+    Extracts segments from cached analysis and creates CodeRegion resources. Uses pre-computed segment information
+    instead of analyzing binary structure. Part of cached disassembly workflow.
     """
 
     targets = (CachedAnalysis,)
@@ -136,7 +138,10 @@ class CachedProgramUnpacker(Unpacker[None]):
 
 class CachedGhidraCodeRegionModifier(Modifier[None]):
     """
-    Ghidra uses a different base address than the ELF does, so we have to rebase the ghidra analysis to the ELF addresses.
+    Adjusts CodeRegion addresses from Ghidra's address space to match ELF addresses for PIE binaries. Handles address
+    rebasing when using cached Ghidra analysis. Used internally by cached Ghidra workflow.
+
+    For more details on the PIE fixups, see [gotchas.md](docs/user-guide/disassembler-backends/gotchas.md).
     """
 
     targets = (CodeRegion,)
@@ -215,7 +220,8 @@ class CachedGhidraCodeRegionModifier(Modifier[None]):
 
 class CachedCodeRegionUnpacker(CodeRegionUnpacker):
     """
-    Unpacks complex from a CodeRegion resource via its cached children.
+    Extracts function boundaries (complex blocks) from code regions using cached analysis. Reads pre-computed function
+    information instead of running function detection. Part of cached disassembly workflow.
     """
 
     def __init__(
@@ -248,7 +254,8 @@ class CachedCodeRegionUnpacker(CodeRegionUnpacker):
 
 class CachedComplexBlockUnpacker(ComplexBlockUnpacker):
     """
-    Unpacks a complex block into its basic blocks and data words using the dw and bb keys in the cache json file.
+    Extracts basic blocks and data words from functions using cached analysis. Reads pre-computed control flow and data
+    references instead of analyzing function structure. Part of cached disassembly workflow.
     """
 
     def __init__(
@@ -301,7 +308,8 @@ class CachedComplexBlockUnpacker(ComplexBlockUnpacker):
 
 class CachedBasicBlockUnpacker(BasicBlockUnpacker):
     """
-    Unpacks a basic block into its instructions using the instr key in the cache json file.
+    Extracts individual instructions from basic blocks using cached analysis. Reads pre-computed disassembly instead of
+    disassembling bytes. Part of cached disassembly workflow.
     """
 
     def __init__(
@@ -340,7 +348,8 @@ class CachedBasicBlockUnpacker(BasicBlockUnpacker):
 
 class CachedDecompilationAnalyzer(DecompilationAnalyzer):
     """
-    This analyzer extracts the decompilation from the cache json file and adds it to the resource if it exists.
+    Retrieves pre-computed decompilation from cached analysis file. Returns pseudo-C code without running decompiler.
+    Use with cached analysis to speed up workflows that need decompilation.
     """
 
     targets = (ComplexBlock,)

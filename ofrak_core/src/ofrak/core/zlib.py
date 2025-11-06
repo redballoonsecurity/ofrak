@@ -22,6 +22,15 @@ class ZlibData(GenericBinary):
 
 
 class ZlibCompressionLevelAnalyzer(Analyzer[None, ZlibData]):
+    """
+    Attempts to determine the compression level (0-9) used when creating zlib-compressed data by
+    analyzing compression parameters and testing decompression with different level hints.
+    Understanding compression level can help with recompression to match original size. Use when
+    analyzing compression characteristics for size optimization, understanding compression
+    trade-offs, or preparing to modify and recompress data while maintaining similar
+    characteristics. Useful for forensics or binary diffing.
+    """
+
     id = b"ZlibCompressionLevelAnalyzer"
     targets = (ZlibData,)
     outputs = (ZlibData,)
@@ -44,7 +53,8 @@ class ZlibCompressionLevelAnalyzer(Analyzer[None, ZlibData]):
 
 class ZlibUnpacker(Unpacker[None]):
     """
-    Decompress a blob of zlib data
+    Decompresses zlib-compressed data. Use when encountering zlib-compressed data blocks. The
+    decompressed data may contain further structure that can be analyzed or unpacked.
     """
 
     id = b"ZlibUnpacker"
@@ -62,7 +72,9 @@ class ZlibUnpacker(Unpacker[None]):
 
 class ZlibPacker(Packer[None]):
     """
-    Pack a binary with zlib
+    Compresses data using zlib's DEFLATE algorithm. Use after modifying decompressed zlib data to
+    recreate compressed sections in binaries, PNG files, or any format that uses zlib compression.
+    The packer can target different compression levels for size vs speed tradeoffs.
     """
 
     targets = (ZlibData,)
