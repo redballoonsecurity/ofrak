@@ -1,5 +1,8 @@
 """
 This module tests the PyGhidra component, including unpackers, disassembly and decompilation components.
+
+Requirements Mapping:
+- REQ1.2
 """
 from ofrak.core.instruction import Instruction
 import os
@@ -27,6 +30,10 @@ from ofrak.core.code_region import CodeRegion
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort
 from ofrak_pyghidra.standalone.pyghidra_analysis import unpack, decompile_all_functions
 from ofrak import ResourceFilter, ResourceAttributeValueFilter
+from ofrak_type.architecture import InstructionSet
+from ofrak_type.bit_width import BitWidth
+from ofrak_type.endianness import Endianness
+from ofrak.core.architecture import ProgramAttributes
 
 ASSETS_DIR = os.path.abspath(
     os.path.join(
@@ -251,7 +258,7 @@ async def program_resource(ofrak_context: OFRAKContext):
     )
 
 
-async def test_PIE_code_regions(program_resource, ofrak_injector):
+async def test_PIE_code_regions(program_resource):
     """
     Test code region handling in Position Independent Executables (PIE).
 
@@ -259,6 +266,9 @@ async def test_PIE_code_regions(program_resource, ofrak_injector):
     - Code regions are correctly created at expected virtual addresses
     - PIE binary base address (0x100000) is properly handled
     - Code region addresses and sizes match expected values
+
+    Requirements Mapping:
+    - REQ1.2
     """
     await program_resource.unpack()
     code_regions = await program_resource.get_descendants_as_view(
@@ -325,3 +335,48 @@ async def test_strings_in_decomp(freertos_resource, ofrak_injector):
     assert "&ucDNSServerAddress" in decompilation_output
     assert "&ucMACAddress" in decompilation_output
     assert "usleep(1000000);" in decompilation_output
+
+
+@pytest.fixture
+async def ihex_resource(ofrak_context: OFRAKContext):
+    return await ofrak_context.create_root_resource_from_file(
+        os.path.join(
+            os.path.dirname(__file__),
+            "../../ofrak_core/tests/components/assets/hello_world.ihex",
+        )
+    )
+
+
+async def test_ihex_unpacking(ihex_resource):
+    """
+    Test that adding ProgramAttributes to an Ihex file allows for unpacking with ofrak_pyghidra.
+
+    This test verifies that:
+    - Intel HEX files can be unpacked with PyGhidra when ProgramAttributes are provided
+    - Complex blocks are correctly identified after recursive unpacking
+    - Expected function names are discovered in the unpacked binary
+
+    Requirements Mapping:
+    - REQ1.2
+    """
+    program_attributes = ProgramAttributes(
+        InstructionSet.X86,
+        bit_width=BitWidth.BIT_64,
+        endianness=Endianness.LITTLE_ENDIAN,
+        sub_isa=None,
+        processor=None,
+    )
+    ihex_resource.add_attributes(program_attributes)
+    await ihex_resource.save()
+    await ihex_resource.unpack_recursively()
+
+    complex_blocks: List[ComplexBlock] = await ihex_resource.get_descendants_as_view(
+        ComplexBlock,
+        r_filter=ResourceFilter(
+            tags=[
+                ComplexBlock,
+            ]
+        ),
+    )
+    assert any(cb.name == "FUN_0040040c" for cb in complex_blocks)
+    assert any(cb.name == "FUN_004003be" for cb in complex_blocks)
