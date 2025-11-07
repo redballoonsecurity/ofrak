@@ -33,7 +33,11 @@ class BinaryExtendConfig(ComponentConfig):
 
 class BinaryExtendModifier(Modifier[BinaryExtendConfig]):
     """
-    Extend a binary with new data.
+    Appends arbitrary data to the end of a binary file, extending its size without modifying
+    existing content. The extension can contain code, data, or padding as needed. Use for adding
+    trailing data, creating space for signatures or metadata, appending code caves, adding debug
+    information, or reserving space for future modifications. Simple but effective way to add
+    content when modifying internal structures is too risky or complex.
     """
 
     targets = ()
@@ -64,7 +68,12 @@ class BinaryPatchConfig(ComponentConfig):
 
 class BinaryPatchModifier(Modifier[BinaryPatchConfig]):
     """
-    Patch a binary at the target offset with the given patch bytes.
+    Replaces bytes at a specific file offset with provided patch bytes, performing direct binary
+    patching without structural awareness. The patch must fit within existing boundaries or risk
+    overwriting adjacent data. Use for targeted binary patches, fixing specific bugs, NOP-ing
+    instructions, modifying constants or strings, applying binary diffs, or making surgical changes
+    to specific locations. Most direct patching method but requires careful offset calculation and
+    size management.
     """
 
     targets = ()

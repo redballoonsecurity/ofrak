@@ -14,8 +14,13 @@ from ofrak.model.component_model import ComponentConfig
 
 class MemoryRegionProgramAttributesAnalyzer(Analyzer[None, Tuple[ProgramAttributes]]):
     """
-    Analyze a [MemoryRegion][ofrak.core.memory_region.MemoryRegion] to extract its
-    [ProgramAttributes][ofrak.core.architecture.ProgramAttributes].
+    Analyzes a [MemoryRegion][ofrak.core.memory_region.MemoryRegion] to automatically determine the
+    [ProgramAttributes][ofrak.core.architecture.ProgramAttributes] by fetching ProgramAttributes
+    from the Program ancestor. Retrieves ProgramAttributes information: instruction set architecture
+    (ARM, x86, MIPS, etc.), bit width (32-bit vs 64-bit), endianness (little or big-endian), and
+    other architectural properties. Use when analyzing memory dumps or code regions where the
+    architecture is unknown or ambiguous, or when verifying that detected architecture matches
+    expectations.
     """
 
     targets = (MemoryRegion,)

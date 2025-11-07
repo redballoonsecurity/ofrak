@@ -1335,12 +1335,17 @@ async def test_get_config(ofrak_client: TestClient, hello_elf):
         params={"component": "UpdateLinkableSymbolsModifier"},
     )
     config = await config_resp.json()
-    # Verify the response includes the optional field
-    assert "optional" in config
+
+    # Verify the response includes a docstring, but don't check the value. The
+    # exact wording of the docstring may change. This should not fail the test.
+    assert "doc" in config
+    assert len(config["doc"]) > 0
+    config["doc"] = "placeholder"
+
     assert config == {
         "name": "UpdateLinkableSymbolsModifierConfig",
         "type": "ofrak.core.patch_maker.linkable_binary.UpdateLinkableSymbolsModifierConfig",
-        "optional": False,  # This component has a required config
+        "optional": False,
         "args": None,
         "enum": None,
         "fields": [
@@ -1395,6 +1400,7 @@ async def test_get_config(ofrak_client: TestClient, hello_elf):
                 "default": None,
             }
         ],
+        "doc": "placeholder",
     }
 
 
@@ -2169,3 +2175,93 @@ async def test_get_project_by_resource_id(ofrak_client: TestClient, test_project
     project_resp = await ofrak_client.get(f"/{resource_id}/get_project_by_resource_id")
     project = await project_resp.json()
     assert project["session_id"] == id
+
+
+async def test_get_all_program_attributes(ofrak_client: TestClient):
+    """
+    Test retrieving all available program architecture attributes.
+
+    This test verifies that:
+    - The get_all_program_attributes endpoint is accessible
+    - All program attribute categories are returned
+    - ISA (Instruction Set Architecture) options are included
+    - Sub-ISA options are included
+    - Bit width options are included
+    - Endianness options are included
+    - Processor type options are included
+    - Specific known values exist for each category (ARM, ARMv4T, etc.)
+
+    Requirements Mapping:
+    - REQ2.2
+    """
+    resp = await ofrak_client.get(f"/get_all_program_attributes")
+    assert resp.status == 200
+    resp_body = await resp.json()
+    # convert from list to dict form:
+    resp_body_dict = {}
+    for key, values in resp_body:
+        resp_body_dict[key] = values
+    assert "isa" in resp_body_dict
+    assert "sub_isa" in resp_body_dict
+    assert "bit_width" in resp_body_dict
+    assert "endianness" in resp_body_dict
+    assert "processor" in resp_body_dict
+    assert "ofrak_type.architecture.InstructionSet.ARM" in resp_body_dict["isa"]
+    assert "ofrak_type.architecture.SubInstructionSet.ARMv4T" in resp_body_dict["sub_isa"]
+    assert "ofrak_type.bit_width.BitWidth.BIT_16" in resp_body_dict["bit_width"]
+    assert "ofrak_type.endianness.Endianness.LITTLE_ENDIAN" in resp_body_dict["endianness"]
+    assert "ofrak_type.architecture.ProcessorType.ARM926EJ_S" in resp_body_dict["processor"]
+
+
+async def test_add_program_attributes(ofrak_client: TestClient, hello_elf):
+    """
+    Test adding program architecture attributes to a resource.
+
+    This test verifies that:
+    - Program attributes can be added to a resource via the API
+    - All required attribute fields can be specified (ISA, bit width, endianness)
+    - Optional fields (sub_isa, processor) can be set to specific values
+    - Optional fields can be set to None
+    - Multiple program attribute updates can be applied to the same resource
+    - The add_program_attributes endpoint handles both complete and minimal configurations
+
+    Requirements Mapping:
+    - REQ2.2
+    """
+    create_resp = await ofrak_client.post(
+        "/create_root_resource", params={"name": "hello_elf"}, data=hello_elf
+    )
+    create_body = await create_resp.json()
+    resource_id = create_body["id"]
+    json_program_attributes = [
+        "ofrak.core.architecture.ProgramAttributes",
+        {
+            "isa": "ofrak_type.architecture.InstructionSet.ARM",
+            "sub_isa": "ofrak_type.architecture.SubInstructionSet.ARMv6",
+            "bit_width": "ofrak_type.bit_width.BitWidth.BIT_32",
+            "endianness": "ofrak_type.endianness.Endianness.LITTLE_ENDIAN",
+            "processor": "ofrak_type.architecture.ProcessorType.GENERIC_A9_V7",
+        },
+    ]
+    resp = await ofrak_client.post(
+        f"/{resource_id}/add_program_attributes",
+        json=json_program_attributes,
+    )
+    assert resp.status == 200
+
+    # also test having sub_isa and processor as null, as they are optional
+    json_program_attributes_optional = [
+        "ofrak.core.architecture.ProgramAttributes",
+        {
+            "isa": "ofrak_type.architecture.InstructionSet.ARM",
+            "sub_isa": None,
+            "bit_width": "ofrak_type.bit_width.BitWidth.BIT_32",
+            "endianness": "ofrak_type.endianness.Endianness.LITTLE_ENDIAN",
+            "processor": None,
+        },
+    ]
+    resp = await ofrak_client.post(
+        f"/{resource_id}/add_program_attributes",
+        json=json_program_attributes_optional,
+    )
+    assert resp.status == 200
