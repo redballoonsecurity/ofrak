@@ -73,31 +73,20 @@ async def test_lz4_unpack_modify_pack(
     - The modified data can be repacked into a valid LZ4 file
     - The repacked file can be unpacked again to verify the modification
     """
-    # Read the original content
-    initial_data = test_case.input_file.read_bytes()
-
-    modification = b"OFRAK"
-
-    # Create resource and unpack
     resource = await ofrak_context.create_root_resource_from_file(test_case.test_file)
     await resource.unpack()
-
-    # Verify it has the expected tag
     assert resource.has_tag(Lz4Data)
-
-    # Get the child and verify initial content
+    
+    initial_data = test_case.input_file.read_bytes()
     child = await resource.get_only_child()
     child_data = await child.get_data()
     assert child_data == initial_data
 
-    # Modify the data
+    modification = b"OFRAK"
     child.queue_patch(Range.from_size(0, len(modification)), modification)
     await child.save()
-
-    # Pack it back
     await resource.pack()
 
-    # Verify the repacked data by unpacking it again
     repacked_data = await resource.get_data()
     verify_resource = await ofrak_context.create_root_resource(
         "repacked_test.lz4", data=repacked_data
