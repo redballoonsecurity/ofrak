@@ -27,19 +27,9 @@ CPIO_ENTRY_NAME = "hello_cpio_file"
 @pytest.mark.skipif_missing_deps([CpioUnpacker, CpioPacker])
 class TestCpioUnpackModifyPack(UnpackModifyPackPattern):
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
-        cpio_r = await ofrak_context.create_root_resource("root.cpio", b"", (CpioFilesystem,))
-        cpio_r.add_view(CpioFilesystem(archive_type=CpioArchiveType.NEW_ASCII))
-        await cpio_r.save()
-        cpio_v = await cpio_r.view_as(CpioFilesystem)
-        # This also tests packing and unpacking a root file
-        await cpio_v.add_file(
-            path=CPIO_ENTRY_NAME,
-            data=INITIAL_DATA,
-            file_stat_result=os.stat_result((0o644, 0, 0, 1, 0, 0, 0, 0, 0, 0)),
-            file_xattrs=None,
+        return await ofrak_context.create_root_resource_from_file(
+            os.path.join(ASSETS_DIR, "root_file.cpio")
         )
-        await cpio_r.pack_recursively()
-        return cpio_r
 
     async def unpack(self, cpio_resource: Resource) -> None:
         await cpio_resource.unpack_recursively()
