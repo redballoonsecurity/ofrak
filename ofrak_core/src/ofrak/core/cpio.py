@@ -56,7 +56,7 @@ class LibarchiveTool(ComponentExternalTool):
             install_check_arg="",
             apt_package="libarchive",
             brew_package="libarchive",
-            choco_package="",  # libarchive is not available on choco. If it is not installed, it will use the DLL provided by the `extractcode-libarchive` python package.
+            choco_package="",  # libarchive is not available on choco. If libarchive is not installed, OFRAK will use the DLL provided by the `extractcode-libarchive` python package.
         )
 
     async def is_tool_installed(self) -> bool:
