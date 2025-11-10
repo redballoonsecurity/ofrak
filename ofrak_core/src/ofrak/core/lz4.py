@@ -262,7 +262,7 @@ class Lz4LegacyPacker(Packer[Lz4PackerConfig]):
         LEGACY_BLOCK_SIZE = 8 * (1 << 20)  # 8 MB
 
         # Start with magic header
-        lz4_compressed = LZ4_LEGACY_MAGIC
+        lz4_compressed_parts = [LZ4_LEGACY_MAGIC]
 
         # Split data into 8MB chunks and compress each block
         # The last block may be smaller than 8MB
@@ -300,12 +300,14 @@ class Lz4LegacyPacker(Packer[Lz4PackerConfig]):
 
             # Append block size + compressed block data
             compressed_block_size = len(compressed_block)
-            lz4_compressed += compressed_block_size.to_bytes(4, "little") + compressed_block
+            lz4_compressed_parts.append(
+                compressed_block_size.to_bytes(4, "little") + compressed_block
+            )
 
             offset += LEGACY_BLOCK_SIZE
 
         original_size = await resource.get_data_length()
-        resource.queue_patch(Range(0, original_size), lz4_compressed)
+        resource.queue_patch(Range(0, original_size), b"".join(lz4_compressed_parts))
 
 
 def match_lz4_modern_magic(data: bytes) -> bool:

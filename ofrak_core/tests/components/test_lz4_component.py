@@ -76,7 +76,7 @@ async def test_lz4_unpack_modify_pack(
     resource = await ofrak_context.create_root_resource_from_file(test_case.test_file)
     await resource.unpack()
     assert resource.has_tag(Lz4Data)
-    
+
     initial_data = test_case.input_file.read_bytes()
     child = await resource.get_only_child()
     child_data = await child.get_data()
