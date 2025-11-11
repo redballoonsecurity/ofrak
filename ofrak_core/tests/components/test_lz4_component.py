@@ -107,11 +107,8 @@ async def test_corrupted_lz4_fail(ofrak_context: OFRAKContext):
     - The error type is consistent with expected decompression errors
     """
     initial_data = b"hello_world_this_is_test_data"
-
-    # Create a valid LZ4 file using OFRAK
     temp_resource = await ofrak_context.create_root_resource("temp_lz4", data=b"")
     temp_resource.add_tag(Lz4ModernData)
-    # Add Lz4ModernData view with default settings
     temp_resource.add_view(
         Lz4ModernData(
             block_size=65536,
@@ -123,16 +120,12 @@ async def test_corrupted_lz4_fail(ofrak_context: OFRAKContext):
         )
     )
     await temp_resource.save()
-    # Create child with the uncompressed data
     await temp_resource.create_child(tags=(GenericBinary,), data=initial_data)
-    # Pack it
     await temp_resource.run(Lz4Packer)
     compressed_data = await temp_resource.get_data()
 
-    # Corrupt a significant portion of the compressed data (not the magic header)
-    # Corrupt the frame descriptor flags and data to ensure decompression fails
-    corrupted_data = bytearray(compressed_data)
     # Corrupt bytes after magic (frame descriptor and data)
+    corrupted_data = bytearray(compressed_data)
     corrupted_data[5 : min(len(corrupted_data), 20)] = b"\xFF" * (min(len(corrupted_data), 20) - 5)
 
     resource = await ofrak_context.create_root_resource("corrupted.lz4", data=bytes(corrupted_data))
@@ -167,11 +160,8 @@ async def test_lz4_with_small_data(ofrak_context: OFRAKContext):
     - Small files can be unpacked and repacked successfully
     """
     small_data = b"x"
-
-    # Create LZ4 file using OFRAK packer
     temp_resource = await ofrak_context.create_root_resource("temp_small_lz4", data=b"")
     temp_resource.add_tag(Lz4ModernData)
-    # Add Lz4ModernData view with default settings
     temp_resource.add_view(
         Lz4ModernData(
             block_size=65536,
@@ -183,12 +173,10 @@ async def test_lz4_with_small_data(ofrak_context: OFRAKContext):
         )
     )
     await temp_resource.save()
-    # Create child with the uncompressed data
     await temp_resource.create_child(tags=(GenericBinary,), data=small_data)
-    # Pack it
     await temp_resource.run(Lz4Packer)
-    compressed_data = await temp_resource.get_data()
 
+    compressed_data = await temp_resource.get_data()
     resource = await ofrak_context.create_root_resource("small.lz4", data=compressed_data)
     await resource.unpack()
     child = await resource.get_only_child()
@@ -206,11 +194,8 @@ async def test_lz4_with_large_data(ofrak_context: OFRAKContext):
     """
     # Create 1MB of test data
     large_data = b"A" * (1024 * 1024)
-
-    # Create LZ4 file using OFRAK packer
     temp_resource = await ofrak_context.create_root_resource("temp_large_lz4", data=b"")
     temp_resource.add_tag(Lz4ModernData)
-    # Add Lz4ModernData view with default settings
     temp_resource.add_view(
         Lz4ModernData(
             block_size=65536,
@@ -222,9 +207,7 @@ async def test_lz4_with_large_data(ofrak_context: OFRAKContext):
         )
     )
     await temp_resource.save()
-    # Create child with the uncompressed data
     await temp_resource.create_child(tags=(GenericBinary,), data=large_data)
-    # Pack it
     await temp_resource.run(Lz4Packer)
     compressed_data = await temp_resource.get_data()
 
@@ -255,11 +238,8 @@ async def test_real_lz4_skippable_frame(lz4_skip_bin: Resource):
     - The official LZ4 golden sample file works as expected
     """
     await lz4_skip_bin.unpack()
-
-    # Verify it was identified as skippable frame
     assert lz4_skip_bin.has_tag(Lz4SkippableData)
 
-    # Skippable frame decompresses to empty content
     child = await lz4_skip_bin.get_only_child()
     child_data = await child.get_data()
     assert child_data == b""
@@ -322,18 +302,14 @@ async def test_lz4_unpack_verify_content(
     - Different compression levels
     - Small and large input files
     """
-    # Read expected content
     expected_content = test_case.input_file.read_bytes()
 
-    # Create resource and unpack
     resource = await ofrak_context.create_root_resource_from_file(test_case.test_file)
     await resource.unpack()
 
-    # Get the decompressed child
     child = await resource.get_only_child()
     decompressed_data = await child.get_data()
 
-    # Verify decompressed data matches expected
     assert decompressed_data == expected_content
 
 
@@ -394,21 +370,16 @@ async def test_lz4_unpack_repack_equivalence(
     - Different block sizes (64KB, 4MB)
     - Combined flags (multiple options together)
     """
-    # Load the original file
     original_data = test_case.test_file.read_bytes()
 
-    # Create resource and unpack
     resource = await ofrak_context.create_root_resource_from_file(test_case.test_file)
     await resource.unpack()
 
-    # Repack the data with specified compression level
     config = Lz4PackerConfig(compression_level=test_case.compression_level)
     await resource.run(Lz4Packer, config)
 
-    # Get the repacked data
     repacked_data = await resource.get_data()
 
-    # Verify that repacked data is identical to original
     assert repacked_data == original_data
 
 
@@ -434,21 +405,16 @@ async def test_lz4_legacy_unpack_repack_equivalence(
 
     Legacy format uses Lz4LegacyPacker instead of the modern Lz4Packer.
     """
-    # Load the original file
     original_data = test_case.test_file.read_bytes()
 
-    # Create resource and unpack
     resource = await ofrak_context.create_root_resource_from_file(test_case.test_file)
     await resource.unpack()
 
-    # Repack the data with specified compression level using legacy packer
     config = Lz4PackerConfig(compression_level=test_case.compression_level)
     await resource.run(Lz4LegacyPacker, config)
 
-    # Get the repacked data
     repacked_data = await resource.get_data()
 
-    # Verify that repacked data is identical to original
     assert repacked_data == original_data
 
 
@@ -476,29 +442,23 @@ async def test_lz4_legacy_unpack_repack_content_preservation(
     """
     expected_content = input_file.read_bytes()
 
-    # Create resource and unpack
     resource = await ofrak_context.create_root_resource_from_file(test_file)
     await resource.unpack()
 
-    # Verify decompressed content
     child = await resource.get_only_child()
     decompressed_data = await child.get_data()
     assert decompressed_data == expected_content
 
-    # Repack the data with default compression
     config = Lz4PackerConfig(compression_level=0)
     await resource.run(Lz4LegacyPacker, config)
 
-    # Get the repacked data
     repacked_data = await resource.get_data()
 
-    # Create new resource from repacked data and verify it can be unpacked
     repacked_resource = await ofrak_context.create_root_resource(
         "repacked_legacy.lz4", data=repacked_data
     )
     await repacked_resource.unpack()
 
-    # Verify the repacked file decompresses to the same content
     repacked_child = await repacked_resource.get_only_child()
     repacked_decompressed_data = await repacked_child.get_data()
     assert repacked_decompressed_data == expected_content
@@ -562,20 +522,16 @@ async def test_lz4_legacy_unpack_repack_with_compression_levels(
     resource = await ofrak_context.create_root_resource_from_file(test_file)
     await resource.unpack()
 
-    # Repack with specified compression level
     config = Lz4PackerConfig(compression_level=compression_level)
     await resource.run(Lz4LegacyPacker, config)
 
     repacked_data = await resource.get_data()
 
-    # Verify it's a valid legacy file
     assert repacked_data[:4] == b"\x02\x21\x4c\x18", f"Invalid magic for level {compression_level}"
 
-    # Verify decompressed content is correct by unpacking the repacked data using OFRAK
     repacked_resource = await ofrak_context.create_root_resource("repacked", repacked_data)
     await repacked_resource.unpack()
 
-    # Get the decompressed child
     decompressed_child = await repacked_resource.get_only_child()
     decompressed_data = await decompressed_child.get_data()
 
