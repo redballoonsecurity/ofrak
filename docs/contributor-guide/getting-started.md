@@ -28,7 +28,7 @@ OFRAK uses [pre-commit](https://pre-commit.com/) to run automated tools on the c
 Install pre-commit with the following commands:
 
 ```shell
-pip3 install --user pre-commit
+python3 -m pip install --user pre-commit
 pre-commit install
 ```
 
@@ -87,6 +87,35 @@ We use [mkdocstrings](https://github.com/mkdocstrings/mkdocstrings) to generate 
 
 - Class, function, and method signatures are annotated using [Sphinx syntax](https://sphinx-rtd-tutorial.readthedocs.io/en/latest/docstrings.html)
 - Cross references to code can be added using [Markdown reference-style links](https://mkdocstrings.github.io/usage/#cross-references)
+
+### Requirements and Test Documentation
+
+All requirements are defined in [requirements.md](requirements.md). When writing or updating tests:
+
+**Test module docstrings:**
+```python
+"""
+This module tests binary extension functionality in OFRAK.
+
+Requirements Mapping:
+- REQ3.2
+"""
+```
+
+**Test method docstrings:**
+```python
+async def test_binary_extend_modify(self, ofrak_context):
+    """
+    Test the ability to extend a binary resource with additional content (REQ3.2).
+
+    This test verifies that:
+    - A binary resource can be extended with additional bytes
+    - The extended data is correctly appended to the original binary
+    - The final resource size matches the expected extended size
+    """
+```
+
+When adding new requirements to `requirements.md`, use format `REQ<epic>.<number>` and update the Validation column with links to relevant tests.
 
 ### Functions and Methods
 
@@ -175,15 +204,14 @@ At a minimum, an OFRAK package Makefile should contain the following targets:
 An example of such a Makefile for `ofrak_package_x` is:
 ```make
 PYTHON=python3
-PIP=pip3
 
 .PHONY: install
 install:
-	$(PIP) install .
+	$(PYTHON) -m pip install .
 
 .PHONY: develop
 develop:
-	$(PIP) install -e .[test]
+	$(PYTHON) -m pip install -e . --config-settings editable_mode=compat
 
 .PHONY: inspect
 inspect:
@@ -191,7 +219,7 @@ inspect:
 
 .PHONY: test
 test: inspect
-	$(PYTHON) -m pytest -n auto --cov=ofrak_package_x_python_module --cov-report=term-missing --cov-fail-under=100 ofrak_package_x_python_module_test
+	$(PYTHON) -m pytest -n auto --cov=ofrak_package_x_python_module --cov-report=term-missing --cov-fail-under=100 test
 	fun-coverage --cov-fail-under=100
 ```
 

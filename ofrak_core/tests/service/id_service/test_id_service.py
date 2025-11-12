@@ -1,3 +1,7 @@
+"""
+Test the ID service implementation.
+"""
+
 import pytest
 
 from ofrak.service.id_service_i import IDServiceInterface
@@ -26,6 +30,13 @@ def id_service(request) -> IDServiceInterface:
 
 
 def test_get_id(id_service):
+    """
+    ID generation produces unique values.
+
+    This test verifies that:
+    - Generating two IDs in sequence results in different values
+    - Each generated ID is unique within the service instance
+    """
     id1 = id_service.generate_id()
     id2 = id_service.generate_id()
 
@@ -33,6 +44,14 @@ def test_get_id(id_service):
 
 
 def test_generate_id_from_base(id_service):
+    """
+    ID generation from base maintains uniqueness and consistency.
+
+    This test verifies that:
+    - Different keys with same base produce different IDs
+    - Same key with same base reproduces identical IDs
+    - Different base/key combinations produce unique IDs
+    """
     base_id = id_service.generate_id()
     key1 = "alpha"
     key2 = "beta"

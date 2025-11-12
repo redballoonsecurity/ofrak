@@ -49,6 +49,12 @@ class _StringsToolDependency(ComponentExternalTool):
 
 
 class StringsAnalyzer(Analyzer[Optional[StringsAnalyzerConfig], StringsAttributes]):
+    """
+    Fast string extraction using native `strings` tool. Returns {offset: string} dictionary without
+    creating child resources. Supports ASCII + Unicode. Use for quick initial reconnaissance of
+    binaries. Alternative: StringsUnpacker creates child resources but is much slower.
+    """
+
     targets = ()
     outputs = (StringsAttributes,)
     external_dependencies = (_StringsToolDependency(),)

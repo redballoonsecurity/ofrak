@@ -1,3 +1,6 @@
+"""
+This modules defines test cases and test pattern classes for the RegisterAnalyzer.
+"""
 from dataclasses import dataclass
 from typing import Tuple
 
@@ -447,6 +450,15 @@ REGISTER_USAGE_TEST_CASES = (
 
 
 class RegisterUsageTestPattern:
+    """
+    Base test class for register usage analysis tests.
+
+    This test verifies that:
+    - The register usage analyzer correctly identifies registers read and written by instructions
+    - Known broken test cases are properly skipped or verified to still fail
+    - The analyzer produces consistent results with expected register usage patterns
+    """
+
     @pytest.fixture
     async def assembler_service(self, ofrak_context: OFRAKContext) -> KeystoneAssemblerService:
         return KeystoneAssemblerService()
@@ -468,6 +480,13 @@ class RegisterUsageTestPattern:
     async def test_register_usage_analyzer(
         self, test_case: RegisterAnalyzerTestCase, ofrak_context, assembler_service
     ):
+        """
+        Test that the register usage analyzer correctly identifies registers read and written by instructions.
+
+        This test verifies that:
+        - The analyzer accurately detects expected register reads/writes for each instruction
+        - Known broken cases are properly skipped with appropriate messages
+        """
         test_case_is_broken, reason = self.case_is_known_broken(test_case)
         if test_case_is_broken:
             if not reason:

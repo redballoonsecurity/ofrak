@@ -29,7 +29,10 @@ class TarArchive(GenericBinary, FilesystemRoot):
 
 class TarUnpacker(Unpacker[None]):
     """
-    Unpack a tar archive.
+    Extracts files and directories from TAR (Tape Archive) archives. TAR preserves file permissions,
+    ownership, timestamps, extended attributes (xattrs), and directory structure without
+    compression. Use for .tar files, or as the second step in unpacking compressed tarballs
+    (.tar.gz, .tar.bz2, etc.) after first decompressing.
     """
 
     targets = (TarArchive,)
@@ -80,7 +83,7 @@ class TarUnpacker(Unpacker[None]):
 
 class TarPacker(Packer[None]):
     """
-    Pack files into a tar archive.
+    Packages files into a TAR (Tape Archive) format, preserving file permissions, ownership, timestamps, and directory structure without compression. Use after modifying extracted tar contents to recreate archives for distribution or backup.
     """
 
     targets = (TarArchive,)

@@ -21,4 +21,8 @@
 
 ## Need Help Choosing?
 
-**Start with PyPI** if you're new to OFRAK. You can always switch methods later. 
+**Start with PyPI** if you're new to OFRAK. You can always switch methods later.
+
+<div align="right">
+<img src="../assets/square_04.png" width="125" height="125">
+</div> 

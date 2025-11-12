@@ -1,3 +1,11 @@
+"""
+This module tests ELF file structure analyzers and their ability to correctly parse ELF format
+components.
+
+Requirements Mapping:
+- REQ1.3
+- REQ2.2
+"""
 import dataclasses
 import os
 import random
@@ -437,6 +445,15 @@ ELF_ANALYZER_TEST_CASES = [
 
 @pytest.mark.parametrize("test_case", ELF_ANALYZER_TEST_CASES, ids=lambda tc: tc.get_label())
 async def test_deserializing_analyzers(ofrak_context, test_case: ElfDeserializingAnalyzerTestCase):
+    """
+    Tests ELF structure analyzers deserialize binary data correctly across different architectures.
+
+    This test verifies that:
+    - ELF headers, program headers, section headers, and symbols are correctly deserialized
+    - Both 32-bit and 64-bit formats are properly parsed
+    - Both big-endian and little-endian byte orders are handled correctly
+    - Deserialized structures match expected values
+    """
     test_target = await test_case.create_test_elf(ofrak_context)
     analyzed_view = await test_target.view_as(test_case.get_target_tag())  # type: ignore
     assert test_case.expected_view == analyzed_view
@@ -497,6 +514,15 @@ ELF_BASIC_HEADER_ANALYZER_TEST_CASES = [
 async def test_basic_header_analyzer(
     ofrak_context: OFRAKContext, test_case: ElfBasicHeaderTestCase
 ):
+    """
+    Tests ELF basic header analyzer correctly extracts platform attributes and handles invalid headers.
+
+    This test verifies that:
+    - Valid ELF magic numbers are accepted and invalid ones are rejected
+    - Endianness (little-endian and big-endian) is correctly identified
+    - Bit width (32-bit and 64-bit) is properly extracted
+    - Invalid bit width and endianness values raise appropriate errors
+    """
     basic_header_r = await test_case.create_header(ofrak_context)
     if type(test_case.expected_results) is tuple:
         basic_header = await basic_header_r.view_as(ElfBasicHeader)
@@ -512,6 +538,14 @@ async def test_basic_header_analyzer(
 
 
 async def test_elf_section_name_analyzer(ofrak_context: OFRAKContext):
+    """
+    Tests ELF section name analyzer extracts section names from the string table.
+
+    This test verifies that:
+    - Section names are correctly resolved from the section name string table
+    - Name offsets are properly used to locate strings
+    - The analyzer correctly associates section headers with their names
+    """
     test_section_elf_index = 3
     test_section_name_offset = 0x40
     test_section_name = ".rbs_test_name"
@@ -555,6 +589,15 @@ async def test_elf_section_name_analyzer(ofrak_context: OFRAKContext):
 
 
 async def test_elf_program_attributes_analyzer(ofrak_context: OFRAKContext):
+    """
+    Tests ELF program attributes analyzer correctly extracts architecture information.
+
+    This test verifies that:
+    - Instruction set architecture is correctly identified from the machine type
+    - Bit width is properly extracted from the ELF header
+    - Endianness is correctly determined from the ELF header
+    - Program attributes match the expected architecture configuration
+    """
     expected_program_attrs = ProgramAttributes(
         InstructionSet.ARM,
         None,
@@ -574,6 +617,14 @@ async def test_elf_program_attributes_analyzer(ofrak_context: OFRAKContext):
 
 
 async def test_elf_program_attributes_analyzer_unknown_isa(ofrak_context: OFRAKContext):
+    """
+    Tests ELF program attributes analyzer properly handles unknown instruction set architectures.
+
+    This test verifies that:
+    - Unknown machine type values are detected
+    - A KeyError is raised when encountering an unsupported instruction set
+    - The analyzer fails gracefully rather than producing incorrect results
+    """
     elf_r = await _create_populated_elf(
         ofrak_context,
         ei_class=1,  # 32-bit
@@ -587,12 +638,18 @@ async def test_elf_program_attributes_analyzer_unknown_isa(ofrak_context: OFRAKC
 
 async def test_elf_unknown_os_specific_section_type():
     """
+    Tests ELF section type handling for OS-specific and unknown section types.
+
+    This test verifies that:
+    - OS-specific section types in the reserved range are classified as UNKNOWN_OS_SPECIFIC
+    - Section types outside known ranges raise a ValueError
+    - The enum properly distinguishes between OS-specific and truly invalid section types
+
     A range of possible section types is reserved for OS-specific types, so we don't necessarily
     have an enum type for them. This should not cause any failures in OFRAK though. However we do
     expect to raise an error if the section type is unknown and not in this reserved OS-specific
     range.
     Although this is not a test of an analyzer exactly, it seems important to explicitly test.
-    :return:
     """
     os_specific_section_type = ElfSectionType(0x6007010F)
     assert os_specific_section_type is ElfSectionType.UNKNOWN_OS_SPECIFIC
@@ -843,6 +900,15 @@ async def test_analyzer(
     filter_helper,
     entry_sort,
 ):
+    """
+    Tests ELF analyzers produce results matching readelf output for real binaries.
+
+    This test verifies that:
+    - Relocation entries are extracted correctly and match readelf output
+    - Dynamic section entries are properly parsed and match readelf output
+    - Pointer array sections are accurately analyzed and match readelf output
+    - All extracted entries match the expected values from readelf
+    """
     readelf_path = "/usr/bin/readelf"
     assert os.path.exists(readelf_path)
     expected_entries: Iterable[test_entry_view] = readelf_helper(readelf_path, elf_executable_file)

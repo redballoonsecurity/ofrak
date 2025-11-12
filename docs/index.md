@@ -74,3 +74,7 @@ Users interested in using OFRAK for commercial purposes can request the Pro or E
 
 ## Support
 Please contact [ofrak@redballoonsecurity.com](mailto:ofrak@redballoonsecurity.com), or write to us on [the OFRAK Slack](https://join.slack.com/t/ofrak/shared_invite/zt-1jku9h6r5-mY7CeeZ4AT8JVmu5YWw2Qg) with any questions or issues regarding OFRAK. We look forward to getting your feedback! Sign up for the [OFRAK Mailing List](https://ofrak.com/sign-up) to receive monthly updates about OFRAK code improvements and new features.
+
+<div align="right">
+<img src="./assets/square_02.png" width="125" height="125">
+</div>

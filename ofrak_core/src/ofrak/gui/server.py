@@ -97,6 +97,11 @@ from ofrak.service.serialization.pjson import (
 from ofrak.gui.script_builder import ActionType, ScriptBuilder
 from ofrak.service.serialization.pjson_types import PJSONType
 from ofrak.core.entropy import DataSummaryAnalyzer
+from ofrak_type.architecture import InstructionSet, SubInstructionSet, ProcessorType
+from ofrak_type.bit_width import BitWidth
+from ofrak_type.endianness import Endianness
+from ofrak.core.architecture import ProgramAttributes
+from ofrak.core.program import Program
 
 T = TypeVar("T")
 LOGGER = logging.getLogger(__name__)
@@ -236,6 +241,8 @@ class AiohttpOFRAKServer:
                     os.path.join(os.path.dirname(__file__), "./public"),
                     show_index=True,
                 ),
+                web.get("/get_all_program_attributes", self.get_all_program_attributes),
+                web.post("/{resource_id}/add_program_attributes", self.add_program_attributes),
             ]
         )
 
@@ -1101,6 +1108,9 @@ class AiohttpOFRAKServer:
                         else None,
                     }
                 )
+            docstring = "No documentation is provided for this config."
+            if config.__doc__ is not None:
+                docstring = config.__doc__
             return json_response(
                 {
                     "name": config.__name__,
@@ -1109,6 +1119,7 @@ class AiohttpOFRAKServer:
                     "args": self._construct_arg_response(self._convert_to_class_name_str(config)),
                     "enum": self._construct_enum_response(config),
                     "fields": _fields,
+                    "doc": docstring,
                 }
             )
         else:
@@ -1383,6 +1394,61 @@ class AiohttpOFRAKServer:
             return json_response([])
         else:
             raise AttributeError("A resource ID became linked to multiple projects.")
+
+    @exceptions_to_http(SerializedError)
+    async def get_all_program_attributes(self, request: Request) -> Response:
+        program_attributes_list = {
+            "isa": list(InstructionSet),
+            "sub_isa": list(SubInstructionSet),
+            "bit_width": list(BitWidth),
+            "endianness": list(Endianness),
+            "processor": list(ProcessorType),
+        }
+        return json_response(
+            self._serializer.to_pjson(
+                program_attributes_list,
+                Dict[
+                    str,
+                    Set[
+                        Union[
+                            InstructionSet,
+                            Optional[SubInstructionSet],
+                            BitWidth,
+                            Endianness,
+                            Optional[ProcessorType],
+                        ]
+                    ],
+                ],
+            )
+        )
+
+    @exceptions_to_http(SerializedError)
+    async def add_program_attributes(self, request: Request) -> Response:
+        resource = await self._get_resource_for_request(request)
+        program_attributes = self._serializer.from_pjson(await request.json(), ProgramAttributes)
+        script_str = f"""
+        program_attributes = ProgramAttributes(
+            {program_attributes.isa},
+            bit_width={program_attributes.bit_width},
+            endianness={program_attributes.endianness},
+            sub_isa={program_attributes.sub_isa},
+            processor={program_attributes.processor},
+        )
+        {{resource}}.add_tag(Program)
+        {{resource}}.add_attributes(program_attributes)"""
+        await self.script_builder.add_action(resource, script_str, ActionType.MOD)
+        script_str = """
+        await {resource}.save()"""
+        await self.script_builder.add_action(resource, script_str, ActionType.MOD)
+        try:
+            resource.add_tag(Program)
+            resource.add_attributes(program_attributes)
+            await resource.save()
+            await self.script_builder.commit_to_script(resource)
+        except Exception as e:
+            await self.script_builder.clear_script_queue(resource)
+            raise e
+        return json_response(self._serialize_resource(resource))
 
     def _slurp_projects_from_dir(self) -> Set:
         projects = set()

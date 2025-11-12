@@ -31,7 +31,10 @@ class SevenZFilesystem(GenericBinary, FilesystemRoot):
 
 class SevenZUnpacker(Unpacker[None]):
     """
-    Unpack (decompress) a 7z file.
+    Extracts files and directories from 7-Zip (.7z) compressed archives. The 7z format supports
+    multiple compression algorithms including LZMA, LZMA2, and others. Use when encountering
+    7z-packaged software distributions, firmware bundles, or data archives. After extraction,
+    files can be analyzed individually and later repacked if needed.
     """
 
     targets = (SevenZFilesystem,)
@@ -60,7 +63,7 @@ class SevenZUnpacker(Unpacker[None]):
 
 class SevenzPacker(Packer[None]):
     """
-    Pack files into a compressed 7z archive.
+    Compresses and packages files into 7-Zip archive format using LZMA or LZMA2 compression. Use after modifying extracted 7z contents to recreate compressed archives. Supports various compression methods, encryption, and solid compression.
     """
 
     targets = (SevenZFilesystem,)

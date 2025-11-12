@@ -78,9 +78,9 @@ class GhidraProgramLoadConfig(ComponentConfig):
 
 class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
     """
-    Use Ghidra backend to create project for and analyze a binary. This analyzer must run before
-    Ghidra analysis can be accessed from OFRAK. This Analyzer can either create a new project and
-    new analysis for a binary or, if a config is passed to it, load an existing Ghidra project.
+    Creates or loads a Ghidra project and runs Ghidra's automated analysis. Connects to Ghidra server for analysis
+    access. Use for comprehensive binary analysis with Ghidra's powerful analysis engine. Can import existing .gzf
+    files specified in the ComponentConfig or analyze from scratch.
     """
 
     id = b"GhidraProjectAnalyzer"
@@ -427,6 +427,13 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
 
 
 class GhidraCodeRegionModifier(Modifier, OfrakGhidraMixin):
+    """
+    Adjusts CodeRegion virtual addresses to match Ghidra's address space, accounting for PIE binaries. Syncs OFRAK's
+    code region addresses with Ghidra's internal representation. Used internally by Ghidra unpacking workflow.
+
+    For more details on the PIE fixups, see [gotchas.md](docs/user-guide/disassembler-backends/gotchas.md).
+    """
+
     id = b"GhidraCodeRegionModifier"
     targets = (CodeRegion,)
 
@@ -506,6 +513,11 @@ class GhidraCodeRegionModifier(Modifier, OfrakGhidraMixin):
 
 
 class GhidraCustomLoadAnalyzer(GhidraProjectAnalyzer):
+    """
+    Loads raw binaries into Ghidra using BinaryLoader with custom memory block configuration. Use for non-standard
+    formats or raw firmware that need explicit memory region mapping. Creates memory blocks from MemoryRegion resources.
+    """
+
     id = b"GhidraCustomLoadProjectAnalyzer"
     targets = (GhidraCustomLoadProject,)
     outputs = (GhidraCustomLoadProject,)

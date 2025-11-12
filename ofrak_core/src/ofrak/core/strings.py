@@ -32,7 +32,16 @@ class StringPatchingConfig(ComponentConfig):
 
 class StringPatchingModifier(Modifier[StringPatchingConfig]):
     """
-    Patch a string in a resource at a given offset, based on the provided configuration.
+    Patches a string at a specific offset in text resources, replacing the string at the exact
+    offset with a new string. Unlike find-replace, this is offset-targeted for precise control. Use
+    for targeted string replacement when you know the exact offset, patching specific string
+    locations, modifying configuration strings at known positions, fixing specific text entries, or
+    implementing precise string modifications. Useful when offset is known from analysis or when
+    only one specific instance should be changed.
+
+    By default, data at `offset` will be patched with the ASCII string specified in the config's
+    `string` argument, encoded as bytes. To append a null byte to the string, specify
+    `null_terminate = True` in the config.
     """
 
     id = b"StringPatchingModifier"
@@ -63,7 +72,19 @@ class StringFindReplaceConfig(ComponentConfig):
 
 class StringFindReplaceModifier(Modifier[StringFindReplaceConfig]):
     """
-    Find and replace all instances of a given string with a replacement string.
+    Finds all occurrences of a specified string pattern in binary data and replaces each occurrence
+    with a replacement string. Handles multiple occurrences automatically and can work with
+    NULL-terminated strings or raw byte patterns. Use for bulk string patching, renaming identifiers
+    throughout a binary, changing URLs or domain names, updating configuration strings, replacing
+    hardcoded paths, or modifying all instances of specific text. More efficient than manual
+    individual replacements when the same change is needed in multiple locations.
+
+    By default, `to_find` will be replaced with the ASCII string specified in the config's
+    `replace_with` argument, encoded as bytes, with a null byte appended. To remove the null byte,
+    specify `null_terminate = False` in the config. If `replace_with` is larger than `to_find`, a
+    ModifierError will be raised, unless `allow_overflow` is `True`. Note that this has the
+    potential to overwrite important data, so only use `allow_overflow = True` if you know there is
+    extra space for the string.
     """
 
     targets = (GenericBinary,)
@@ -108,7 +129,8 @@ class AsciiString(ResourceView):
 
 class AsciiStringAnalyzer(Analyzer[None, AsciiString]):
     """
-    Extract the decoded string from a C-style, NULL-terminated string of ASCII characters.
+    Decodes existing AsciiString resources (strips NULL terminators, converts to text). NOT for string
+    discovery - only processes already-identified AsciiString resources from StringsUnpacker.
     """
 
     targets = (AsciiString,)
@@ -121,7 +143,9 @@ class AsciiStringAnalyzer(Analyzer[None, AsciiString]):
 
 class StringsUnpacker(Unpacker[None]):
     """
-    Unpack NULL-terminated strings of printable ASCII characters.
+    Extracts NULL-terminated ASCII strings as separate child resources (AsciiString). Slow operation
+    using Python regex. Use when you need strings as individual resources for hierarchical analysis.
+    Alternative: StringsAnalyzer is much faster but returns flat dictionary. Not run by default.
     """
 
     targets = ()  # Strings unpacker is slow, don't run by default.

@@ -95,6 +95,14 @@ class CpioFilesystem(GenericBinary, FilesystemRoot):
 
 
 class CpioFilesystemAnalyzer(Analyzer[None, CpioFilesystem]):
+    """
+    Extracts CPIO archive metadata including archive format type (newc, crc, old binary, etc.),
+    number of files, total archive size, and format-specific parameters. Use before modifying CPIO
+    archives to preserve the correct format, ensure compatibility with target systems (some
+    bootloaders only support specific formats), or understand archive characteristics. Essential for
+    maintaining format compatibility during repacking.
+    """
+
     targets = (CpioFilesystem,)
     outputs = (CpioFilesystem,)
 
@@ -136,7 +144,12 @@ def _libarchive_entry_to_stat_result(entry) -> os.stat_result:
 
 class CpioUnpacker(Unpacker[None]):
     """
-    Unpack a CPIO archive.
+    Extracts files and directories from CPIO archive formats, which are commonly used in Linux
+    initial ramdisk (initramfs) images and some embedded system firmware packages. CPIO archives can
+    contain regular files, directories, symbolic links, and special device files with preserved
+    permissions and ownership. Use when analyzing Linux boot processes (initramfs/initrd), embedded
+    firmware that uses CPIO for packaging, or any CPIO archive. Essential for examining and
+    modifying initramfs filesystems.
     """
 
     targets = (CpioFilesystem,)
@@ -229,7 +242,10 @@ def _get_libarchive_format(archive_type: CpioArchiveType) -> str:
 
 class CpioPacker(Packer[None]):
     """
-    Pack files into a CPIO.
+    Packages files into a CPIO archive format suitable for use as Linux initial ramdisk (initramfs)
+    or embedded firmware packaging. Use after modifying extracted CPIO contents to recreate
+    initramfs images or firmware archives. Critical for modifying Linux boot process and embedded
+    system initialization.
     """
 
     targets = (CpioFilesystem,)

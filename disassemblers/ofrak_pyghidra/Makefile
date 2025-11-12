@@ -1,11 +1,10 @@
 PYTHON=python3
-PIP=pip3
 
 install:
-	$(PIP) install .
+	$(PYTHON) -m pip install .
 
 develop:
-	$(PIP) install -e .[test]
+	$(PYTHON) -m pip install -e .[test]
 
 test:
 	$(PYTHON) -m pytest --cov=ofrak_pyghidra --cov-report=term-missing tests

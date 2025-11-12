@@ -88,6 +88,7 @@ nav:
         - NAND Flash Component: "user-guide/advanced/flash_component.md"
   - Contributor Guide:
       - Getting Started: "contributor-guide/getting-started.md"
+      - Requirements: "contributor-guide/requirements.md"
       - Writing Components:
         - Identifier: "contributor-guide/component/identifier.md"
         - Unpacker: "contributor-guide/component/unpacker.md"

@@ -1,3 +1,9 @@
+"""
+Test the analysis of program attributes from memory regions within an OFRAK resource.
+
+Requirements Mapping:
+- REQ2.2
+"""
 import os
 
 import pytest
@@ -17,8 +23,14 @@ async def resource(ofrak_context: OFRAKContext):
 
 async def test_architecture_analysis(resource: Resource):
     """
-    Test that the `MemoryRegionProgramAttributesAnalyzer` correctly extracts the program's
-    program attributes.
+    Test that the MemoryRegionProgramAttributesAnalyzer correctly extracts program attributes
+    from a memory region.
+
+    This test verifies that:
+    - Program attributes are analyzed from the root resource
+    - The first memory region child resource is retrieved
+    - Program attributes are analyzed from the memory region
+    - Both program attributes instances are confirmed to be equal
     """
     await resource.unpack()
     program_attributes = await resource.analyze(ProgramAttributes)

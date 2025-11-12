@@ -1,3 +1,6 @@
+"""
+Test endianness functionality.
+"""
 import pytest
 import struct
 
@@ -12,6 +15,15 @@ from ofrak_type.endianness import Endianness
     ],
 )
 def test_endianness_get_struct_flag(endianness: Endianness, expected_struct_flag: str):
+    """
+    Test that the Endianness enum correctly returns the appropriate struct flag
+    for packing and unpacking binary data.
+
+    This test verifies that:
+    - The get_struct_flag() method returns the correct struct module flag
+    - The returned flag can be used with struct.pack/unpack to correctly encode/decode values
+    - The endianness behavior is correctly reflected in the packed byte order
+    """
     assert endianness.get_struct_flag() == expected_struct_flag
 
     # Test the struct flag actually works with struct module

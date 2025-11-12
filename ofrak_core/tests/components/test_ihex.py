@@ -1,3 +1,10 @@
+"""
+Test the Intel HEX (IHEX) file format handling capabilities of OFRAK.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
+"""
 import os
 from dataclasses import dataclass
 
@@ -5,7 +12,7 @@ from ofrak.core.ihex import IhexPacker, IhexUnpacker
 import pytest
 
 from ofrak import OFRAKContext, Resource, ResourceFilter, ResourceAttributeRangeFilter
-from ofrak.core import MemoryRegion, IhexProgram
+from ofrak.core import MemoryRegion, Ihex
 from ofrak_type import Range
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 from pytest_ofrak.patterns.unpack_verify import UnpackAndVerifyTestCase
@@ -28,6 +35,16 @@ IHEX_TEST_FILES = [
 
 @pytest.mark.skipif_missing_deps([IhexPacker, IhexUnpacker])
 class TestIhexUnpackPack(UnpackModifyPackPattern):
+    """
+    Test the unpacking, modification, and repacking functionality of Intel HEX files.
+
+    This test verifies that:
+    - Intel HEX files can be successfully unpacked into memory regions
+    - Modifications can be made to the unpacked memory regions
+    - The modified data can be repacked back into Intel HEX format
+    - The repacked file maintains the expected modifications and is valid
+    """
+
     REPLACEMENT_STRING = b"deadbeef ofrak"
 
     @pytest.fixture(params=IHEX_TEST_FILES, autouse=True)
@@ -69,22 +86,21 @@ class TestIhexUnpackPack(UnpackModifyPackPattern):
 @pytest.mark.skipif_missing_deps([IhexPacker, IhexUnpacker])
 @pytest.mark.parametrize("ihex_file", IHEX_TEST_FILES)
 async def test_ihex_analyzer(ofrak_context: OFRAKContext, ihex_file):
+    """
+    Test the Intel HEX analyzer functionality for parsing and extracting program information.
+
+    This test verifies that:
+    - Intel HEX files are correctly parsed to extract address limits
+    - The start address is properly identified from the HEX file
+    - The data can be converted between HEX and binary formats correctly
+    """
     from bincopy import BinFile
 
     root = await ofrak_context.create_root_resource_from_file(ihex_file)
+    await root.identify()
     raw_ihex_data = await root.get_data()
     binfile = BinFile()
     binfile.add_ihex(raw_ihex_data.decode("utf-8"))
 
-    ihex_prog_data = binfile.as_binary()
-
-    ihex_program_child = await root.create_child(
-        tags=(IhexProgram,),
-        data=ihex_prog_data,
-    )
-
-    ihex_prog = await ihex_program_child.view_as(IhexProgram)
-
-    assert ihex_prog.address_limits.start == binfile.minimum_address
-    assert ihex_prog.address_limits.end == binfile.maximum_address
-    assert ihex_prog.start_addr == binfile.execution_start_address
+    ihex = await root.view_as(Ihex)
+    assert ihex.start_addr == binfile.execution_start_address

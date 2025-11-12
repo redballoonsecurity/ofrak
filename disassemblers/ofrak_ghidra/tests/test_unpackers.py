@@ -1,3 +1,10 @@
+"""
+Test the unpacking functionality of OFRAK with Ghidra backend.
+
+Requirements Mapping:
+- REQ1.2
+- REQ2.3
+"""
 import os
 from typing import Tuple, Dict
 
@@ -24,10 +31,27 @@ ASSETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
 
 
 class TestGhidraCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
-    pass
+    """
+    Test code region unpacking with Ghidra backend (REQ1.2).
+
+    This test verifies that:
+    - Code regions can be successfully unpacked
+    - The unpacking process works correctly with the Ghidra backend
+
+    See `CodeRegionUnpackAndVerifyPattern` for more details on test cases.
+    """
 
 
 class TestGhidraComplexBlockUnpackAndVerify(ComplexBlockUnpackerUnpackAndVerifyPattern):
+    """
+    Test complex block unpacking with Ghidra backend (REQ1.2).
+
+    This test verifies that:
+    - Complex blocks can be successfully unpacked
+    - The unpacking process works correctly with the Ghidra backend
+    - Special handling for PIE binaries is correct
+    """
+
     @pytest.fixture
     async def expected_results(self, unpack_verify_test_case: ComplexBlockUnpackerTestCase) -> Dict:
         if unpack_verify_test_case.binary_md5_digest == "fc7a6b95d993f955bd92f2bef2699dd0":
@@ -52,7 +76,13 @@ class TestGhidraComplexBlockUnpackAndVerify(ComplexBlockUnpackerUnpackAndVerifyP
 
 
 class TestGhidraBasicBlockUnpackAndVerify(BasicBlockUnpackerUnpackAndVerifyPattern):
-    pass
+    """
+    Test basic block unpacking with Ghidra backend (REQ1.2).
+
+    This test verifies that:
+    - Basic blocks can be successfully unpacked
+    - The unpacking process works correctly with the Ghidra backend
+    """
 
 
 INSTRUCTION_MODE_TEST_CASES = [
@@ -72,6 +102,13 @@ async def test_case(
 
 
 async def test_instruction_mode(test_case: Tuple[Resource, InstructionSetMode]):
+    """
+    Test instruction mode handling with different architectures (REQ2.3).
+
+    This test verifies that:
+    - Instructions are correctly identified with their expected instruction set mode
+    - The unpacking process properly handles different architecture modes
+    """
     root_resource, mode = test_case
     await root_resource.unpack_recursively()
     instructions = list(
@@ -98,7 +135,11 @@ async def program_resource(ofrak_context: OFRAKContext):
 
 async def test_PIE_code_regions(program_resource):
     """
-    PIE binaries are loaded at address 0x100000 in Ghidra. Verify that unpacking CodeRegions creates them at the right virtual addresses.
+    Test PIE code region handling with Ghidra backend (REQ2.3).
+
+    This test verifies that:
+    - PIE binaries are loaded at the correct address in Ghidra
+    - Code regions are created at the right virtual addresses
     """
     await program_resource.unpack()
     code_regions = await program_resource.get_descendants_as_view(
