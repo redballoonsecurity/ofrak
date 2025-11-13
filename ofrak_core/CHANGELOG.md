@@ -14,6 +14,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Fixed
 - `build_image.py` uses `OFRAK_DIR` from `extra_build_args` to identify `pytest_ofrak` location for develop builds ([#657](https://github.com/redballoonsecurity/ofrak/pull/657/))
 
+### Changed
+- Reimplement the CPIO components using `libarchive` ([#647](https://github.com/redballoonsecurity/ofrak/pull/647))
+
 ## [3.3.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v3.2.0...ofrak-v3.3.0) - 2025-10-03
 
 ### Added
@@ -101,7 +104,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - When the user selects the "Decompilation" tab in the GUI, the pane is updated with the decompiled code automatically, without having to click "Analyze" first. ([#639](https://github.com/redballoonsecurity/ofrak/pull/639))
 - Use a single source of truth for the package version ([#640](https://github.com/redballoonsecurity/ofrak/pull/640))
 - Update the behavior of `get_only_descendant_as_view`, `get_descendants_as_view`, `get_ancestors_as_view`, and `get_only_ancestor_as_view` to retrieve all resources that match the filter. ([#642](https://github.com/redballoonsecurity/ofrak/pull/642))
-- Reimplement the CPIO components using `libarchive` ([#647](https://github.com/redballoonsecurity/ofrak/pull/647))
 - Rewrote Intel hex components. The Ihex resource is now a descendant of Program and produces CodeRegion children. ([#637](https://github.com/redballoonsecurity/ofrak/pull/637))
 
 ### Deprecated
