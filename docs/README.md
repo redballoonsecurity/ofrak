@@ -25,10 +25,7 @@ Before building the docs, OFRAK, its dependencies, and the `ofrak-ghidra` packag
 ```
 python3 -m venv venv
 source venv/bin/activate
-for dir in ofrak_type ofrak_io ofrak_patch_maker ofrak_core disassemblers/ofrak_ghidra;
-do
-    make -C $dir develop;
-done
+make develop
 ```
 
 ## Build the Docs
@@ -52,3 +49,42 @@ OFRAK documentation comes from two sources: manually-written markdown files in `
 For writing docstrings that will display well, see the [contributor guidelines](https://ofrak.com/docs/contributor-guide/getting-started.html#docstrings). The list of packages whose docstrings are extracted can be found [in the script that does the extraction](https://github.com/redballoonsecurity/ofrak/blob/master/docs/gen_ref_nav.py#L69-L74).
 
 To add a markdown file to the docs, first write the documentation as a markdown file in the `docs/` directory of the repo. Then, add it to the documentation nav bar by [editing the `nav` property of `mkdocs.yml`](https://github.com/redballoonsecurity/ofrak/blob/master/mkdocs.yml#L50).
+
+### Decorative Footer Images
+
+**Each documentation page must have a decorative footer image at the end:**
+
+```html
+<div align="right">
+<img src="[PATH]/assets/square_[01-05].png" width="125" height="125">
+</div>
+```
+
+**Path calculation:**
+- Count directory levels from the file to `docs/` root
+- Use `../` for each level (e.g., `./assets/`, `../assets/`, `../../assets/`)
+
+**Image selection:**
+- Choose any number from 01-05 for visual variety
+
+**Examples:**
+```html
+<!-- docs/index.md -->
+<div align="right">
+<img src="./assets/square_02.png" width="125" height="125">
+</div>
+
+<!-- docs/install/docker.md -->
+<div align="right">
+<img src="../assets/square_03.png" width="125" height="125">
+</div>
+
+<!-- docs/user-guide/gui/settings.md -->
+<div align="right">
+<img src="../../assets/square_01.png" width="125" height="125">
+</div>
+```
+
+<div align="right">
+<img src="./assets/square_01.png" width="125" height="125">
+</div>

@@ -1,3 +1,9 @@
+"""
+Test allocation of free space in OFRAK.
+
+Requirements Mapping:
+- REQ3.3:
+"""
 import inspect
 import logging
 import os
@@ -186,6 +192,15 @@ ALLOCATE_TEST_CASES = [
 
 @pytest.mark.parametrize("test_case", ALLOCATE_TEST_CASES, ids=lambda tc: tc.label)
 async def test_allocate(ofrak_context: OFRAKContext, test_case: AllocateTestCase, mock_allocatable):
+    """
+    Test basic allocation functionality with numerous test caeses and edge cases (REQ3.3).
+    See ALLOCATE_TEST_CASES for details on each test case.
+
+    This test verifies that, for each test case:
+    - Allocation works correctly with different sizes and alignments
+    - Allocation fails appropriately when there's not enough space
+    - Fragmented allocations work properly
+    """
     resource = await ofrak_context.create_root_resource(test_case.label, b"\x00")
     resource.add_view(mock_allocatable)
     await resource.save()
@@ -214,6 +229,14 @@ async def test_allocate(ofrak_context: OFRAKContext, test_case: AllocateTestCase
 
 
 async def test_allocate_bom(ofrak_context: OFRAKContext, tmpdir):
+    """
+    Tests allocation specifically for BOM (Batched Objects and Metadata) components (REQ3.3).
+
+    This test verifies that:
+    - Allocation works correctly with BOM components
+    - Segments are properly allocated in memory
+    - BOM allocations respect memory constraints
+    """
     source_path = os.path.join(tmpdir, "test_source.c")
     with open(source_path, "w") as f:
         f.write(

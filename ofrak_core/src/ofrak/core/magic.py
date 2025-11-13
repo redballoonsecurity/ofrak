@@ -56,7 +56,11 @@ LIBMAGIC_DEP = _LibmagicDependency()
 
 class MagicAnalyzer(Analyzer[None, Magic]):
     """
-    Analyze a binary blob to extract its mimetype and magic description.
+    Identifies file types and formats by analyzing magic byte signatures and file structure using
+    libmagic (the library behind the Unix file command). Produces a MIME type and human-readable
+    description. Use for initial file type identification of unknown binaries, automated triage of
+    large firmware collections, determining what unpacker or analyzer to use next, or validating
+    that files match expected types. Often the first analysis step when encountering unknown files.
     """
 
     targets = (GenericBinary,)

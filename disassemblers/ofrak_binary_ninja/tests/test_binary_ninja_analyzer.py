@@ -1,3 +1,6 @@
+"""
+Test the functionality of the BinaryNinjaAnalyzer component.
+"""
 from dataclasses import dataclass
 from typing import Tuple
 
@@ -33,6 +36,11 @@ async def test_binary_ninja_analyzer(test_case: PopulatedBinaryNinjaAnalyzerTest
     """
     Test that the [BinaryNinjaAnalysis][ofrak_binary_ninja.model.BinaryNinjaAnalysis]
     object can be successfully generated
+
+    This test verifies that:
+    - The resource can be identified
+    - The BinaryNinjaAnalyzer can analyze the resource and produce a BinaryNinjaAnalysis object
+    - The resulting analysis is of the correct type
     """
     await test_case.resource.identify()
     analysis = await test_case.resource.analyze(BinaryNinjaAnalysis)

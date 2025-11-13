@@ -3,6 +3,17 @@ All notable changes to `ofrak` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+
+### Added
+- Add Android sparse image unpacker and packer ([#662](https://github.com/redballoonsecurity/ofrak/pull/662))
+- Add OFRAK requirements, requirement to test mapping, test specifications ([#656](https://github.com/redballoonsecurity/ofrak/pull/656))
+- Add `-V, --version` flag to ofrak cli ([#652](https://github.com/redballoonsecurity/ofrak/pull/652))
+- Add missing component docstrings and improve existing docstrings ([#654](https://github.com/redballoonsecurity/ofrak/pull/654))
+
+### Fixed
+- `build_image.py` uses `OFRAK_DIR` from `extra_build_args` to identify `pytest_ofrak` location for develop builds ([#657](https://github.com/redballoonsecurity/ofrak/pull/657/))
+
 ## [3.3.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v3.2.0...ofrak-v3.3.0) - 2025-10-03
 
 ### Added
@@ -24,6 +35,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Pulled `Allocatable._align_range` out to standalone function `allocate_range_start` ([#575](https://github.com/redballoonsecurity/ofrak/pull/575))
 - `ComponentExternalTool` now supports chocolatey packages (apk, cpio, pigz, 7zip) ([#613](https://github.com/redballoonsecurity/ofrak/pull/613))
 - Add endpoints to the OFRAK GUI backend to support OFRAK MCP. ([#634](https://github.com/redballoonsecurity/ofrak/pull/634))
+- Add endpoints to get and add ProgramAttributes in the server backend ([#637](https://github.com/redballoonsecurity/ofrak/pull/637))
 
 ### Fixed
 - Improved flushing of filesystem entries (including symbolic links and other types) to disk. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373))
@@ -90,6 +102,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Use a single source of truth for the package version ([#640](https://github.com/redballoonsecurity/ofrak/pull/640))
 - Update the behavior of `get_only_descendant_as_view`, `get_descendants_as_view`, `get_ancestors_as_view`, and `get_only_ancestor_as_view` to retrieve all resources that match the filter. ([#642](https://github.com/redballoonsecurity/ofrak/pull/642))
 - Reimplement the CPIO components using `libarchive` ([#647](https://github.com/redballoonsecurity/ofrak/pull/647))
+- Rewrote Intel hex components. The Ihex resource is now a descendant of Program and produces CodeRegion children. ([#637](https://github.com/redballoonsecurity/ofrak/pull/637))
 
 ### Deprecated
 - `Resource.flush_to_disk` deprecated in favor of `Resource.flush_data_to_disk`. ([#373](https://github.com/redballoonsecurity/ofrak/pull/373), [#567](https://github.com/redballoonsecurity/ofrak/pull/568))

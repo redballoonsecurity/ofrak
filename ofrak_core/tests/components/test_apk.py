@@ -1,3 +1,10 @@
+"""
+Test APK unpacking and packing functionality.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
+"""
 import pytest
 import requests
 

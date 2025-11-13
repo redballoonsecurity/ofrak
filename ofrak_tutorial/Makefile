@@ -1,5 +1,4 @@
 PYTHON=python3
-PIP=pip3
 BASE_IMAGE_NAME=redballoonsecurity/ofrak/tutorial
 commit_short_hash=$(shell git rev-parse --short=8 HEAD)
 FULL_IMAGE_NAME=${BASE_IMAGE_NAME}:${commit_short_hash}
@@ -29,12 +28,12 @@ run:
 
 .PHONY: develop
 develop:
-	${PIP} install -e .[test] --config-settings editable_mode=compat
+	$(PYTHON) -m pip install -e .[test] --config-settings editable_mode=compat
 	make generate_stripped_notebooks
 
 .PHONY: install
 install:
-	${PIP} install .
+	$(PYTHON) -m pip install .
 	make generate_stripped_notebooks
 
 .PHONY: inspect

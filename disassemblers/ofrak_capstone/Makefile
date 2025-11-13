@@ -1,13 +1,12 @@
 PYTHON=python3
-PIP=pip3
 
 .PHONY: install
 install:
-	$(PIP) install --pre .
+	$(PYTHON) -m pip install --pre .
 
 .PHONY: develop
 develop:
-	$(PIP) install --pre -e . --config-settings editable_mode=compat
+	$(PYTHON) -m pip install --pre -e . --config-settings editable_mode=compat
 
 .PHONY: inspect
 inspect:

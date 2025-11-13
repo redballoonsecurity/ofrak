@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [Unreleased 0.2.0](https://github.com/redballoonsecurity/ofrak/tree/master)
 
+### Added
+- Add OFRAK requirements, requirement to test mapping, test specifications ([#656](https://github.com/redballoonsecurity/ofrak/pull/656))
+
 ### Changed
 - Minor update to OFRAK Community License, add OFRAK Pro License ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
 - Move to OpenJDK version 17 with the docker container move to Debian 12 ([#502](https://github.com/redballoonsecurity/ofrak/pull/502))

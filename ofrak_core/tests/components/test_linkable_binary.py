@@ -1,3 +1,10 @@
+"""
+Test the functionality of the LinkableBinary component,
+including symbol retrieval and error handling.
+
+Requirements Mapping:
+- REQ1.2
+"""
 import pytest
 from ofrak_type.error import NotFoundError
 from ofrak_type.range import Range

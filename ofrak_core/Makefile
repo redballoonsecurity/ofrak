@@ -1,14 +1,13 @@
 PYTHON=python3
-PIP=pip3
 
 .PHONY: install
 install: src/ofrak/gui/public
-	$(PIP) install .
+	$(PYTHON) -m pip install .
 
 .PHONY: develop
 develop: src/ofrak/gui/public
-	$(PIP) install -r requirements.txt -r requirements-docs.txt -r requirements-non-pypi.txt -r requirements-test.txt
-	$(PIP) install -e . --config-settings editable_mode=compat
+	$(PYTHON) -m pip install -r requirements.txt -r requirements-docs.txt -r requirements-non-pypi.txt -r requirements-test.txt
+	$(PYTHON) -m pip install -e . --config-settings editable_mode=compat
 
 .PHONY: inspect
 inspect:
@@ -31,7 +30,7 @@ src/ofrak/gui/public:
 	elif [ -d ../frontend ]; then \
 		cd ../frontend && \
 		npm install && \
-		VITE_OFRAK_VERSION="$(shell python3 src/version.py)" \
+		VITE_OFRAK_VERSION="$(shell python3 -c "from version import VERSION; print(VERSION)")" \
 		npm run build && \
 		cd ../ofrak_core && \
 		cp -r ../frontend/dist src/ofrak/gui/public ; \

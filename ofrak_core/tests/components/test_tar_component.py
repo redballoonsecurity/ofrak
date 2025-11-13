@@ -1,3 +1,10 @@
+"""
+This module tests the functionality of the TarArchive component.
+
+Requirements Mapping:
+- REQ1.3
+- REQ4.4
+"""
 import os
 import subprocess
 import tempfile312 as tempfile
@@ -19,6 +26,16 @@ pytestmark = pytest.mark.skipif_missing_deps([TarUnpacker, TarPacker])
 
 
 class TestTarSingleFileUnpackModifyPack(UnpackModifyPackPattern):
+    """
+    Test the basic functionality of unpacking a single-file tar archive,
+    modifying its content, and repacking it.
+
+    This test verifies that:
+    - A tar archive containing a single file can be unpacked
+    - The content of the file inside the archive can be modified
+    - The modified archive can be packed back to its original format
+    """
+
     INITIAL_DATA = b"hello world"
     EXPECTED_DATA = b"hello ofrak"
     INNER_FILENAME = "hello.txt"
@@ -70,6 +87,9 @@ class TestTarUnpackerDirectoryTraversalFailure:
     versions of Linux, the tar command will fail on archives containing files with such paths.
 
     This test validates the desired failure behavior.
+
+    This test verifies that:
+    - A tar archive with a file path like "../file.txt" cannot be unpacked (UnpackerError is raised)
     """
 
     INITIAL_DATA = b"hello world"
@@ -108,6 +128,15 @@ class TestTarUnpackerDirectoryTraversalFailure:
 
 
 class TestTarFilesystemUnpackRepack(FilesystemPackUnpackVerifyPattern):
+    """
+    Test unpacking and repacking a tar archive containing a full filesystem structure.
+
+    This test verifies that:
+    - A tar archive with a complex file structure can be unpacked
+    - The unpacked filesystem can be repacked back into a tar archive
+    - The repacked archive preserves the original filesystem structure
+    """
+
     def setup(self):
         super().setup()
         # Don't compare stat values since several entries (like time modified) will be unequal
@@ -136,7 +165,12 @@ class TestTarFilesystemUnpackRepack(FilesystemPackUnpackVerifyPattern):
 
 class TestTarNestedUnpackModifyPack(UnpackModifyPackPattern):
     """
-    Test a tar within a tar within a tar, and so on... nested several levels deep.
+    Test unpacking and modifying a deeply nested tar archive structure.
+
+    This test verifies that:
+    - A tar archive containing other tar archives can be unpacked recursively
+    - The content of a file in the innermost archive can be modified
+    - The entire nested structure can be packed back to its original format
     """
 
     INITIAL_DATA = b"hello world"
@@ -201,6 +235,15 @@ class TestTarNestedUnpackModifyPack(UnpackModifyPackPattern):
 
 
 class TestComplexTarWithSpecialFiles(FilesystemPackUnpackVerifyPattern):
+    """
+    Test unpacking and repacking a tar archive containing special file types.
+
+    This test verifies that:
+    - A tar archive with special files (like symlinks or device files) can be unpacked
+    - The unpacked structure can be repacked back into a tar archive
+    - The repacked archive preserves the original structure and special files
+    """
+
     def setup(self):
         super().setup()
         self.check_stat = False

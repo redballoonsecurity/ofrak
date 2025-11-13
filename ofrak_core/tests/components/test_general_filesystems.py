@@ -1,3 +1,13 @@
+"""
+Test general filesystem components including their unpacking,
+modification, and packing capabilities.
+
+Requirements Mapping:
+- REQ1.3
+- REQ1.4
+- REQ3.4
+- REQ4.4
+"""
 import os
 import tempfile312 as tempfile
 from abc import ABC
@@ -85,6 +95,14 @@ class FilesystemPattern(UnpackModifyPackPattern, ABC):
 
 
 class TestFilesystemAddFile(FilesystemPattern):
+    """
+    Test that a new file can be successfully added to a filesystem.
+
+    This test verifies that:
+    - A new file is added to an existing folder in the filesystem
+    - The newly added file contains the expected data
+    """
+
     #  TODO: add file attrs and check
     async def modify(self, unpacked_resource: Resource) -> None:
         print(await unpacked_resource.summarize_tree())
@@ -102,6 +120,14 @@ class TestFilesystemAddFile(FilesystemPattern):
 
 
 class TestFilesystemRemoveFile(FilesystemPattern):
+    """
+    Test that a file can be successfully removed from a filesystem.
+
+    This test verifies that:
+    - A specified file is removed from the filesystem
+    - The removed file is no longer present in the filesystem after packing
+    """
+
     async def modify(self, unpacked_resource: Resource) -> None:
         unpacked_resource_view = await unpacked_resource.view_as(self.tag)
         await unpacked_resource_view.remove_file("test_folder/goodbye.txt")
@@ -114,6 +140,15 @@ class TestFilesystemRemoveFile(FilesystemPattern):
 
 
 class TestFilesystemComponent(FilesystemPattern):
+    """
+    Test the modification of file contents within a filesystem.
+
+    This test verifies that:
+    - Text in existing files can be patched successfully
+    - The modified contents are correctly reflected after unpacking and repacking
+    - The expected number of folders and files exist with correct content
+    """
+
     async def modify(self, resource: Resource) -> None:
         zip_archive = await resource.view_as(self.tag)
         child_text_string_config = StringPatchingConfig(6, "OFrak")

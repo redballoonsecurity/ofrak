@@ -1,3 +1,6 @@
+"""
+Test the Ghidra program analyzer components.
+"""
 import os.path
 import os.path
 import tempfile
@@ -40,6 +43,9 @@ async def test_ghidra_project_analyzer(hello_world_elf_resource: Resource):
     Test that the
     [GhidraProject][ofrak_ghidra.components.ghidra_analyzer.GhidraProject] object can
     be successfully generated
+
+    This test verifies that:
+    - An ELF resource can be analyzed by Ghidra
     """
     hello_world_elf_resource.add_tag(Elf)
     await hello_world_elf_resource.save()
@@ -90,6 +96,13 @@ async def test_ghidra_project_analyzer(hello_world_elf_resource: Resource):
     ids=lambda arch_info: f"{arch_info.isa.name}-{arch_info.bit_width.value}-{arch_info.endianness.value}",
 )
 async def test_ghidra_custom_loader(ofrak_context: OFRAKContext, arch_info: ProgramAttributes):
+    """
+    Test that Ghidra can analyze custom loaded programs with various architectures.
+
+    This test verifies that:
+    - A program with custom attributes can be analyzed by Ghidra
+    - Code regions can be unpacked and have children
+    """
     file_data = b"\xed" * 0x10000
 
     prog = await ofrak_context.create_root_resource("test_custom_load", data=file_data)
