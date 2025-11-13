@@ -225,19 +225,18 @@ def _get_libarchive_format(archive_type: CpioArchiveType) -> str:
     Note: libarchive supports reading many CPIO variants but only supports
     writing a subset (https://linux.die.net/man/5/libarchive-formats).
     We map to the closest supported write format.
-    Available write formats: 'cpio' (generic), 'cpio_newc' (SVR4 newc)
+    Available write formats: 'cpio' (generic), 'cpio_newc' (SVR4 newc).
+    Full list of write formats supported by libarchive-c available at https://github.com/Changaco/python-libarchive-c/blob/master/libarchive/ffi.py (`WRITE_FORMATS`)
     """
     format_map = {
         CpioArchiveType.NEW_ASCII: "cpio_newc",
         CpioArchiveType.OLD_ASCII: "cpio",
-        CpioArchiveType.CRC_ASCII: "cpio_newc",
-        CpioArchiveType.BINARY: "cpio",
-        CpioArchiveType.TAR: "cpio",
-        CpioArchiveType.USTAR: "ustar",
-        CpioArchiveType.HPBIN: "cpio",
-        CpioArchiveType.HPODC: "cpio",
     }
-    return format_map.get(archive_type, "cpio_newc")
+    if archive_type not in format_map:
+        raise NotImplementedError(
+            f"The CPIO packer currently does not support packing {archive_type}."
+        )
+    return format_map.get(archive_type)
 
 
 class CpioPacker(Packer[None]):

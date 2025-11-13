@@ -270,3 +270,31 @@ async def test_cpio_type_preservation(ofrak_context: OFRAKContext, archive_type:
     child_file = await new_cpio_v.get_entry(filename)
     file_data = await child_file.resource.get_data()
     assert file_data == file_content
+
+
+@pytest.mark.parametrize(
+    "archive_type",
+    [
+        CpioArchiveType.BINARY,
+        CpioArchiveType.CRC_ASCII,
+        CpioArchiveType.TAR,
+        CpioArchiveType.USTAR,
+        CpioArchiveType.HPBIN,
+        CpioArchiveType.HPODC,
+    ],
+)
+async def test_cpio_type_not_supported(ofrak_context: OFRAKContext, archive_type: CpioArchiveType):
+    """
+    Test that attempting to pack CPIO archives with unsupported archive types raises NotImplementedError.
+    """
+    cpio_r = await ofrak_context.create_root_resource(
+        f"test_{archive_type.value}.cpio", b"", (CpioFilesystem,)
+    )
+    cpio_r.add_view(CpioFilesystem(archive_type=archive_type))
+    await cpio_r.save()
+
+    with pytest.raises(
+        NotImplementedError,
+        match=f"The CPIO packer currently does not support packing {archive_type}",
+    ):
+        await cpio_r.pack_recursively()
