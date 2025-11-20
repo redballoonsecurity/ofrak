@@ -339,7 +339,7 @@
     {:else if node["enum"] != null}
       <select bind:value="{element}">
         {#each Object.entries(node["enum"]) as [name, enum_value]}
-          <option value="{node["type"]}.{name}">
+          <option value="{node['type']}.{name}">
             {name}
           </option>
         {/each}
