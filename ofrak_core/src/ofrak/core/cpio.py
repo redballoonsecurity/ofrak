@@ -236,7 +236,7 @@ def _get_libarchive_format(archive_type: CpioArchiveType) -> str:
         raise NotImplementedError(
             f"The CPIO packer currently does not support packing {archive_type}."
         )
-    return format_map.get(archive_type)
+    return format_map.get(archive_type, "cpio")
 
 
 class CpioPacker(Packer[None]):
