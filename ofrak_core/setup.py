@@ -82,6 +82,7 @@ setuptools.setup(
         "keystone-engine>=0.9.2",
         "jefferson>=0.4.5;python_version>='3.8'",
         "lief>=0.16.1",
+        "lz4>=4.4.4",
         "ofrak_io>=1.1.3,==1.*",
         "ofrak_type>=2.3.0,==2.*",
         "ofrak_patch_maker>=4.1.0,==4.*",
