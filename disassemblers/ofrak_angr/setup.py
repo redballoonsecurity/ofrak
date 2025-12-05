@@ -29,6 +29,8 @@ setuptools.setup(
     install_requires=[
         "angr>=9.2.93,<=9.2.174",
         "ofrak>=3.3.0,==3.*",
+        "networkx==3.5",
+        "msgspec==0.19.0",
     ],
     extras_require={
         "graphical": ["pygraphviz"],
