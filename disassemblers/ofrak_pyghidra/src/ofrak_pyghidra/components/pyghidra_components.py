@@ -174,12 +174,12 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraAutoLoadProject]):
 
 
 @dataclass
-class PyGhidraCustomAutoAnalyzerConfig(ComponentConfig):
+class PyGhidraCustomLoadAnalyzerConfig(ComponentConfig):
     decomp: bool
     language: str
 
 
-class PyGhidraCustomAutoAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
+class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
     """
     Runs Ghidra's automated analysis on binaries with custom memory region setup. This analyzer
     explicitly creates all memory regions from the OFRAK Program's MemoryRegion children in Ghidra
@@ -188,7 +188,7 @@ class PyGhidraCustomAutoAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
     created and analyzed, which is critical for firmware with multiple discontinuous memory segments.
     """
 
-    id = b"PyGhidraCustomAutoAnalyzer"
+    id = b"PyGhidraCustomLoadAnalyzer"
 
     targets = (PyGhidraCustomLoadProject,)
     outputs = (PyGhidraCustomLoadProject,)
@@ -203,7 +203,7 @@ class PyGhidraCustomAutoAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
         super().__init__(resource_factory, data_service, resource_service)
         self.analysis_store = analysis_store
 
-    async def analyze(self, resource: Resource, config: PyGhidraCustomAutoAnalyzerConfig):
+    async def analyze(self, resource: Resource, config: PyGhidraCustomLoadAnalyzerConfig):
         try:
             program_attrs = resource.get_attributes(ProgramAttributes)
             language = _arch_info_to_processor_id(program_attrs)
