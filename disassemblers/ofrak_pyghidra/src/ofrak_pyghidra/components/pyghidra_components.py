@@ -42,7 +42,6 @@ class PyGhidraProject(CachedAnalysis):
     """
     A resource which may be loaded into PyGhidra and analyzed.
     """
-    pass
 
 
 @dataclass
@@ -50,7 +49,6 @@ class PyGhidraAutoLoadProject(PyGhidraProject):
     """
     A resource which PyGhidra can automatically load with one of its existing Loaders (e.g. ELF).
     """
-    pass
 
 
 @dataclass
@@ -59,7 +57,6 @@ class PyGhidraCustomLoadProject(PyGhidraProject):
     A resource which PyGhidra does not have an existing loader for and cannot load automatically.
     Before analysis, we need to inform PyGhidra of correct processor and segments.
     """
-    pass
 
 
 class PyGhidraAnalysisIdentifier(Identifier):
@@ -223,20 +220,17 @@ class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
         memory_regions = []
         for region in regions:
             region_data = await region.resource.get_data()
-            memory_regions.append({
-                'virtual_address': region.virtual_address,
-                'size': region.size,
-                'data': region_data
-            })
+            memory_regions.append(
+                {
+                    "virtual_address": region.virtual_address,
+                    "size": region.size,
+                    "data": region_data,
+                }
+            )
 
         self.analysis_store.store_analysis(
             resource.get_id(),
-            unpack(
-                None,
-                decomp,
-                language=language,
-                memory_regions=memory_regions
-            )
+            unpack(None, decomp, language=language, memory_regions=memory_regions),
         )
         return PyGhidraCustomLoadProject()
 

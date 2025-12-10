@@ -29,7 +29,7 @@ def unpack(program_file, decompiled, language=None, base_address=None, memory_re
             # Data is populated later from the memory regions data.
             tempdir = mkdtemp(prefix="rbs-pyghidra-bin")
             program_file = os.path.join(tempdir, "program")
-            with open(program_file, 'wb') as f:
+            with open(program_file, "wb") as f:
                 f.write(b"\x00")
         with pyghidra.open_program(program_file, language=language) as flat_api:
             # Java packages must be imported after pyghidra.start or pyghidra.open_program
@@ -51,8 +51,8 @@ def unpack(program_file, decompiled, language=None, base_address=None, memory_re
                     memory.removeBlock(block, TaskMonitor.DUMMY)
 
                 for region in memory_regions:
-                    addr = default_space.getAddress(region['virtual_address'])
-                    data_bytes = region['data']
+                    addr = default_space.getAddress(region["virtual_address"])
+                    data_bytes = region["data"]
                     block_name = f"region_{region['virtual_address']:x}"
 
                     try:
@@ -65,7 +65,7 @@ def unpack(program_file, decompiled, language=None, base_address=None, memory_re
                             input_stream,
                             len(data_bytes),
                             TaskMonitor.DUMMY,
-                            False  # overlay
+                            False,  # overlay
                         )
 
                         # Mark as executable
@@ -73,7 +73,9 @@ def unpack(program_file, decompiled, language=None, base_address=None, memory_re
                         block.setExecute(True)
                         block.setRead(True)
                     except Exception as e:
-                        logging.warning(f"Failed to create memory block at 0x{region['virtual_address']:x}: {e}")
+                        logging.warning(
+                            f"Failed to create memory block at 0x{region['virtual_address']:x}: {e}"
+                        )
                 # Analyze all
                 analysis_mgr = program.getOptions("Analyzers")
                 flat_api.analyzeAll(program)

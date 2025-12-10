@@ -252,7 +252,10 @@ class CachedCodeRegionUnpacker(CodeRegionUnpacker):
                 size=complex_block["size"],
                 name=complex_block["name"],
             )
-            if cb.virtual_address > code_region_view.virtual_address and cb.EndVaddr < code_region_view.EndVaddr:
+            if (
+                cb.virtual_address > code_region_view.virtual_address
+                and cb.EndVaddr < code_region_view.EndVaddr
+            ):
                 await code_region_view.create_child_region(cb)
             else:
                 LOGGER.warning(f"{cb} not in {code_region_view}, skip creating it.")
