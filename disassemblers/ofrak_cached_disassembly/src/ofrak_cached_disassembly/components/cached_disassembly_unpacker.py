@@ -1,4 +1,5 @@
 import hashlib
+import logging
 from typing import List, Optional
 from dataclasses import dataclass
 
@@ -31,6 +32,8 @@ from ofrak.resource import Resource
 from ofrak.component.unpacker import Unpacker
 from ofrak.core.program import Program
 from ofrak_type.architecture import InstructionSetMode
+
+LOGGER = logging.getLogger(__name__)
 
 _GHIDRA_AUTO_LOADABLE_FORMATS = [Elf, Ihex, Pe]
 
@@ -249,7 +252,10 @@ class CachedCodeRegionUnpacker(CodeRegionUnpacker):
                 size=complex_block["size"],
                 name=complex_block["name"],
             )
-            await code_region_view.create_child_region(cb)
+            if cb.virtual_address > code_region_view.virtual_address and cb.EndVaddr < code_region_view.EndVaddr:
+                await code_region_view.create_child_region(cb)
+            else:
+                LOGGER.warning(f"{cb} not in {code_region_view}, skip creating it.")
 
 
 class CachedComplexBlockUnpacker(ComplexBlockUnpacker):
