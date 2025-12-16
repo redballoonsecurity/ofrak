@@ -3,6 +3,11 @@ All notable changes to `ofrak-angr` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased 1.2.0](https://github.com/redballoonsecurity/ofrak/tree/master)
+
+### Fixed
+- Pin Angr dependencies (`networkx` and `msgspec`) ([#676](https://github.com/redballoonsecurity/ofrak/pull/676))
+
 ## [1.1.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-angr-v1.0.1...ofrak-angr-v1.1.0) - 2025-10-03
 
 ### Changed
