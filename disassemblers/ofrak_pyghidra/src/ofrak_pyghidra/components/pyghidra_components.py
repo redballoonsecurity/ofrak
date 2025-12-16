@@ -11,7 +11,7 @@ from ofrak.core.decompilation import DecompilationAnalysis
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceFilter, ResourceServiceInterface
-from ofrak_type import ArchInfo, Endianness, InstructionSet
+from ofrak_type import ArchInfo, Endianness, InstructionSet, BitWidth
 
 
 from ofrak.component.identifier import Identifier
@@ -340,6 +340,7 @@ def _arch_info_to_processor_id(processor: ArchInfo):
         InstructionSet.PPC: "PowerPC",
         InstructionSet.M68K: "68000",
         InstructionSet.X86: "x86",
+        InstructionSet.MSP430: "TI_MSP430",
     }
     family = families.get(processor.isa)
 
@@ -347,6 +348,10 @@ def _arch_info_to_processor_id(processor: ArchInfo):
     # Ghidra proc IDs are of the form "ISA:endianness:bitWidth:suffix", where the suffix can indicate a specific processor or sub-ISA
     # The goal of the follow code is to identify the best proc ID for the ArchInfo, and we expect to be able to fall back on this default
     partial_proc_id = f"{family}:{endian}:{processor.bit_width.value}"
+    # edge case: for MSP430, the Ghidra proc id starts with a different name based on the bit width,
+    # but still lives in the `TI_MSP430.ldefs` so `family` still has to be "TI_MSP430":
+    if processor.isa == InstructionSet.MSP430 and processor.bit_width == BitWidth.BIT_32:
+        partial_proc_id = partial_proc_id.replace("TI_MSP430", "TI_MSP430X")
     # TODO: There are also some proc_ids that end with '_any' which are default-like
     default_proc_id = f"{partial_proc_id}:default"
 
