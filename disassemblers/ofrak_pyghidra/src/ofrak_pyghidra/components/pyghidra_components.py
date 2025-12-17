@@ -39,20 +39,42 @@ _GHIDRA_AUTO_LOADABLE_FORMATS = [Elf, Ihex, Pe]
 
 @dataclass
 class PyGhidraProject(CachedAnalysis):
-    pass
+    """
+    A resource which may be loaded into PyGhidra and analyzed.
+    """
+
+
+@dataclass
+class PyGhidraAutoLoadProject(PyGhidraProject):
+    """
+    A resource which PyGhidra can automatically load with one of its existing Loaders (e.g. ELF).
+    """
+
+
+@dataclass
+class PyGhidraCustomLoadProject(PyGhidraProject):
+    """
+    A resource which PyGhidra does not have an existing loader for and cannot load automatically.
+    Before analysis, we need to inform PyGhidra of correct processor and segments.
+    """
 
 
 class PyGhidraAnalysisIdentifier(Identifier):
     """
-    Component to identify resources to analyze with Ghidra. If this component is discovered,
-    it will tag all [Program][ofrak.core.program.Program]s as GhidraProjects
+    Tags Program resources for PyGhidra analysis. Auto-loadable formats (ELF, PE, Ihex) get PyGhidraAutoLoadProject tag,
+    others get PyGhidraCustomLoadProject. Enables PyGhidra-based components to run on the resource.
     """
 
-    id = b"GhidraAnalysisIdentifier"
-    targets = (Program, Ihex)
+    id = b"PyGhidraAnalysisIdentifier"
+    targets = (Program,)
 
     async def identify(self, resource: Resource, config=None):
-        resource.add_tag(PyGhidraProject)
+        for tag in _GHIDRA_AUTO_LOADABLE_FORMATS:
+            if resource.has_tag(tag):
+                resource.add_tag(PyGhidraAutoLoadProject)
+                return
+
+        resource.add_tag(PyGhidraCustomLoadProject)
 
 
 @dataclass
@@ -76,12 +98,12 @@ class CachedGhidraCodeRegionModifier(CachedGhidraCodeRegionModifier):
 
 
 @dataclass
-class PyGhidraAutoAnalyzerConfig(ComponentConfig):
+class PyGhidraAnalyzerConfig(ComponentConfig):
     decomp: bool
     language: str
 
 
-class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraProject]):
+class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraAutoLoadProject]):
     """
     Runs Ghidra's comprehensive automated analysis on binaries including disassembly, function
     boundary detection, control flow analysis, data type propagation, symbol discovery,
@@ -94,8 +116,8 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraProject]):
 
     id = b"PyGhidraAutoAnalyzer"
 
-    targets = (PyGhidraProject,)
-    outputs = (PyGhidraProject,)
+    targets = (PyGhidraAutoLoadProject,)
+    outputs = (PyGhidraAutoLoadProject,)
 
     def __init__(
         self,
@@ -107,7 +129,7 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraProject]):
         super().__init__(resource_factory, data_service, resource_service)
         self.analysis_store = analysis_store
 
-    async def analyze(self, resource: Resource, config: PyGhidraAutoAnalyzerConfig = None):
+    async def analyze(self, resource: Resource, config: PyGhidraAnalyzerConfig = None):
         tempdir = mkdtemp(prefix="rbs-pyghidra-bin")
         await resource.identify()  # useful for checking tags later
         try:
@@ -127,7 +149,7 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraProject]):
                 self.analysis_store.store_analysis(
                     resource.get_id(), unpack(program_file, decomp, language)
                 )
-                return PyGhidraProject()
+                return PyGhidraAutoLoadProject()
 
         program_attrs = resource.get_attributes(ProgramAttributes)
         # Guess that the base address is the min start address of any memory region
@@ -145,7 +167,66 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraProject]):
                 base_address=base_address,
             ),
         )
-        return PyGhidraProject()
+        return PyGhidraAutoLoadProject()
+
+
+class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
+    """
+    Runs Ghidra's automated analysis on binaries with custom memory region setup. This analyzer
+    explicitly creates all memory regions from the OFRAK Program's MemoryRegion children in Ghidra
+    before running analysis. Use when analyzing raw firmware or binaries with non-standard memory
+    layouts that Ghidra doesn't automatically detect. This ensures all memory regions are properly
+    created and analyzed, which is critical for firmware with multiple discontinuous memory segments.
+    """
+
+    id = b"PyGhidraCustomLoadAnalyzer"
+
+    targets = (PyGhidraCustomLoadProject,)
+    outputs = (PyGhidraCustomLoadProject,)
+
+    def __init__(
+        self,
+        resource_factory: ResourceFactory,
+        data_service: DataServiceInterface,
+        resource_service: ResourceServiceInterface,
+        analysis_store: PyGhidraAnalysisStore,
+    ):
+        super().__init__(resource_factory, data_service, resource_service)
+        self.analysis_store = analysis_store
+
+    async def analyze(self, resource: Resource, config: PyGhidraAnalyzerConfig):
+        if config is None:
+            try:
+                program_attrs = resource.get_attributes(ProgramAttributes)
+                language = _arch_info_to_processor_id(program_attrs)
+            except NotFoundError:
+                language = None
+            decomp = False
+        else:
+            decomp = config.decomp
+            language = config.language
+
+        # Prepare memory regions data
+        regions = await resource.get_children_as_view(
+            MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
+        )
+
+        memory_regions = []
+        for region in regions:
+            region_data = await region.resource.get_data()
+            memory_regions.append(
+                {
+                    "virtual_address": region.virtual_address,
+                    "size": region.size,
+                    "data": region_data,
+                }
+            )
+
+        self.analysis_store.store_analysis(
+            resource.get_id(),
+            unpack(None, decomp, language=language, memory_regions=memory_regions),
+        )
+        return PyGhidraCustomLoadProject()
 
 
 @dataclass
@@ -168,14 +249,25 @@ class PyGhidraCodeRegionUnpacker(CachedCodeRegionUnpacker):
         program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(PyGhidraProject))
         if not self.analysis_store.id_exists(program_r.get_id()):
             if config is not None:
-                await program_r.run(
-                    PyGhidraAutoAnalyzer,
-                    config=PyGhidraAutoAnalyzerConfig(
-                        decomp=config.decomp, language=config.language
-                    ),
+                analyzer_config = PyGhidraAnalyzerConfig(
+                    decomp=config.decomp, language=config.language
                 )
             else:
-                await program_r.run(PyGhidraAutoAnalyzer)
+                analyzer_config = None
+            if program_r.has_tag(PyGhidraAutoLoadProject):
+                await program_r.run(
+                    PyGhidraAutoAnalyzer,
+                    config=analyzer_config,
+                )
+            elif program_r.has_tag(PyGhidraCustomLoadProject):
+                await program_r.run(
+                    PyGhidraCustomLoadAnalyzer,
+                    config=analyzer_config,
+                )
+            else:
+                raise ValueError(
+                    f"resource {resource} does not have any tag that allow analysis with the PyGhidra backend."
+                )
         return await super().unpack(resource, config)
 
 

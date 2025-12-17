@@ -1,5 +1,5 @@
 import logging
-
+import os
 import hashlib
 import traceback
 import pyghidra
@@ -7,6 +7,7 @@ import argparse
 import time
 import re
 import json
+from tempfile312 import mkdtemp
 
 
 class PyGhidraComponentException(Exception):
@@ -20,8 +21,16 @@ def _parse_offset(java_object):
     return int(str(java_object.getOffsetAsBigInteger()))
 
 
-def unpack(program_file, decompiled, language=None, base_address=None):
+def unpack(program_file, decompiled, language=None, base_address=None, memory_regions=None):
     try:
+        if not program_file and memory_regions and len(memory_regions) > 0:
+            # In the case the user passed memory regions and no program_file,
+            # we still have to pass a file to pyghidra.open_program, so create a dummy one
+            # Data is populated later from the memory regions data.
+            tempdir = mkdtemp(prefix="rbs-pyghidra-bin")
+            program_file = os.path.join(tempdir, "program")
+            with open(program_file, "wb") as f:
+                f.write(b"\x00")
         with pyghidra.open_program(program_file, language=language) as flat_api:
             # Java packages must be imported after pyghidra.start or pyghidra.open_program
             from ghidra.app.decompiler import DecompInterface, DecompileOptions
@@ -29,7 +38,47 @@ def unpack(program_file, decompiled, language=None, base_address=None):
             from ghidra.program.model.block import BasicBlockModel
             from ghidra.program.model.symbol import RefType
             from java.math import BigInteger
+            from java.io import ByteArrayInputStream
 
+            # If memory_regions are provided, delete all data and create new regions:
+            if memory_regions:
+                program = flat_api.getCurrentProgram()
+                memory = program.getMemory()
+                address_factory = program.getAddressFactory()
+                default_space = address_factory.getDefaultAddressSpace()
+
+                for block in memory.getBlocks():
+                    memory.removeBlock(block, TaskMonitor.DUMMY)
+
+                for region in memory_regions:
+                    addr = default_space.getAddress(region["virtual_address"])
+                    data_bytes = region["data"]
+                    block_name = f"region_{region['virtual_address']:x}"
+
+                    try:
+                        # Convert Python bytes to Java InputStream
+                        input_stream = ByteArrayInputStream(data_bytes)
+
+                        memory.createInitializedBlock(
+                            block_name,
+                            addr,
+                            input_stream,
+                            len(data_bytes),
+                            TaskMonitor.DUMMY,
+                            False,  # overlay
+                        )
+
+                        # Mark as executable
+                        block = memory.getBlock(addr)
+                        block.setExecute(True)
+                        block.setRead(True)
+                    except Exception as e:
+                        logging.warning(
+                            f"Failed to create memory block at 0x{region['virtual_address']:x}: {e}"
+                        )
+                # Analyze all
+                analysis_mgr = program.getOptions("Analyzers")
+                flat_api.analyzeAll(program)
             # If base_address is provided, rebase the program
             if base_address is not None:
                 # Convert base_address to int if it's a string
