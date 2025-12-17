@@ -201,12 +201,12 @@ class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
         self.analysis_store = analysis_store
 
     async def analyze(self, resource: Resource, config: PyGhidraCustomLoadAnalyzerConfig):
-        try:
-            program_attrs = resource.get_attributes(ProgramAttributes)
-            language = _arch_info_to_processor_id(program_attrs)
-        except NotFoundError:
-            language = None
         if config is None:
+            try:
+                program_attrs = resource.get_attributes(ProgramAttributes)
+                language = _arch_info_to_processor_id(program_attrs)
+            except NotFoundError:
+                language = None
             decomp = False
         else:
             decomp = config.decomp
