@@ -1,5 +1,6 @@
+import dataclasses
 from dataclasses import dataclass, field
-from enum import IntEnum
+from enum import Enum, IntEnum
 import logging
 import re
 import os
@@ -15,6 +16,41 @@ from black import format_str, FileMode
 
 
 LOGGER = logging.getLogger(__name__)
+
+
+def config_to_python(obj: Any) -> str:
+    """
+    Convert a config object to a valid Python code string.
+
+    Handles Enum values specially to produce valid Python syntax (e.g., `EnumClass.NAME`
+    instead of `<EnumClass.NAME: value>`).
+
+    :param obj: The object to convert to a Python code string
+    :return: A string representation that is valid Python syntax
+    """
+    if obj is None:
+        return "None"
+    elif isinstance(obj, Enum):
+        return f"{type(obj).__name__}.{obj.name}"
+    elif dataclasses.is_dataclass(obj) and not isinstance(obj, type):
+        field_strs = []
+        for f in dataclasses.fields(obj):
+            value = getattr(obj, f.name)
+            field_strs.append(f"{f.name}={config_to_python(value)}")
+        return f"{type(obj).__name__}({', '.join(field_strs)})"
+    elif isinstance(obj, dict):
+        items = ", ".join(f"{config_to_python(k)}: {config_to_python(v)}" for k, v in obj.items())
+        return f"{{{items}}}"
+    elif isinstance(obj, list):
+        items = ", ".join(config_to_python(item) for item in obj)
+        return f"[{items}]"
+    elif isinstance(obj, tuple):
+        items = ", ".join(config_to_python(item) for item in obj)
+        if len(obj) == 1:
+            return f"({items},)"
+        return f"({items})"
+    else:
+        return repr(obj)
 
 
 class SelectableAttributesError(Exception):

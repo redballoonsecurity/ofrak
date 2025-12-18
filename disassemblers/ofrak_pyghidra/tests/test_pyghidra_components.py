@@ -4,14 +4,20 @@ This module tests the PyGhidra component, including unpackers, disassembly and d
 Requirements Mapping:
 - REQ1.2
 """
-from ofrak.core.instruction import Instruction
 import os
 from typing import Dict, Tuple
-from ofrak.core.complex_block import ComplexBlock
 from ofrak.ofrak_context import OFRAKContext
-from ofrak.resource import Resource
-from ofrak.service.resource_service_i import ResourceFilter
-from ofrak_type import BitWidth, InstructionSetMode, List, ProcessorType, SubInstructionSet
+from ofrak_type import (
+    BitWidth,
+    InstructionSetMode,
+    List,
+    ProcessorType,
+    SubInstructionSet,
+    Range,
+    Endianness,
+    ArchInfo,
+    InstructionSet,
+)
 import pytest
 from pytest_ofrak.patterns.code_region_unpacker import CodeRegionUnpackAndVerifyPattern
 from pytest_ofrak.patterns.complex_block_unpacker import (
@@ -23,17 +29,20 @@ from pytest_ofrak.patterns.basic_block_unpacker import BasicBlockUnpackerUnpackA
 from ofrak_pyghidra.components.pyghidra_components import (
     _arch_info_to_processor_id,
     PyGhidraDecompilationAnalyzer,
+    PyGhidraCustomLoadAnalyzer,
 )
-from ofrak_type import ArchInfo, Endianness, InstructionSet
 import ofrak_pyghidra
-from ofrak.core.code_region import CodeRegion
-from ofrak.service.resource_service_i import ResourceFilter, ResourceSort
+from ofrak.core import (
+    CodeRegion,
+    MemoryRegion,
+    Program,
+    ComplexBlock,
+    Addressable,
+    Instruction,
+    ProgramAttributes,
+)
 from ofrak_pyghidra.standalone.pyghidra_analysis import unpack, decompile_all_functions
-from ofrak import ResourceFilter, ResourceAttributeValueFilter
-from ofrak_type.architecture import InstructionSet
-from ofrak_type.bit_width import BitWidth
-from ofrak_type.endianness import Endianness
-from ofrak.core.architecture import ProgramAttributes
+from ofrak import Resource, ResourceFilter, ResourceSort, ResourceAttributeValueFilter
 
 ASSETS_DIR = os.path.abspath(
     os.path.join(
@@ -380,3 +389,101 @@ async def test_ihex_unpacking(ihex_resource):
     )
     assert any(cb.name == "FUN_0040040c" for cb in complex_blocks)
     assert any(cb.name == "FUN_004003be" for cb in complex_blocks)
+
+
+@pytest.fixture
+async def custom_binary_resource(ofrak_context: OFRAKContext):
+    # This is a custom binary created from this aarch64 statically compiled binary:
+    # https://github.com/ryanwoodsmall/static-binaries/blob/master/aarch64/tini
+    # It was created like so:
+    # - `aarch64-linux-gnu-objcopy -O binary --only-section=.text tini tini.text.bin`
+    # - `aarch64-linux-gnu-objcopy -O binary --only-section=.rodata tini tini.rodata.bin`
+    # - `dd if=/dev/zero of=gap.bin bs=1 count=$((0x1234))`
+    # - `cat tini.text.bin > tini_custom_binary`
+    # - `cat gap.bin >> tini_custom_binary`
+    # - `cat tini.rodata.bin >> tini_custom_binary`
+    # So it is a binary that contains:
+    # - the tini .text section binary content
+    # - a gap of zero bytes of size 0x1234
+    # - the tini .rodata binary content
+    return await ofrak_context.create_root_resource_from_file(
+        os.path.join(os.path.dirname(__file__), "assets/tini_custom_binary")
+    )
+
+
+async def test_pyghidra_custom_loader(custom_binary_resource):
+    """
+    Test that loading a binary with manually-defined MemoryRegions with the PyGhidraCustomLoadAnalyzer results in the right representation in OFRAK.
+
+    This test verifies that:
+    - a binary with a custom layout (a code region and a data region) can be loaded into OFRAK and MemoryRegions can be created
+    - the program can then be analyzed with the PyGhidraCustomLoadAnalyzer, taking into account the MemoryRegions
+    - a specific ComplexBlock can be retrieved and has the right name (meaning it is located at the correct virtual address in PyGhidra)
+    - this ComplexBlock can be decompiled and correctly references strings from the data region
+
+    The idea is that the ComplexBlock representation will only be correct if the right raw data is loaded at the right virtual address in PyGhidra. Additionally, the string reference will only show up in the ComplexBlock decompilation if the data region was loaded at the right virtual address in PyGhidra.
+    """
+    custom_binary_resource.add_tag(Program)
+    await custom_binary_resource.save()
+    await custom_binary_resource.identify()
+
+    program_attributes = ProgramAttributes(
+        isa=InstructionSet.AARCH64,
+        sub_isa=SubInstructionSet.ARMv8A,
+        bit_width=BitWidth.BIT_64,
+        endianness=Endianness.LITTLE_ENDIAN,
+        processor=None,
+    )
+    custom_binary_resource.add_attributes(program_attributes)
+    await custom_binary_resource.save()
+
+    # Manually create CodeRegion for .text and MemoryRegion for .rodata
+    text_offset = 0
+    text_vaddr = 0x400130
+    text_size = 40792
+    text_section = await custom_binary_resource.create_child(
+        tags=(CodeRegion,),
+        data_range=Range.from_size(text_offset, text_size),
+    )
+    text_section.add_view(
+        CodeRegion(
+            virtual_address=text_vaddr,
+            size=text_size,
+        )
+    )
+    await text_section.save()
+
+    gap_size = 0x1234
+    rodata_offset = text_offset + text_size + gap_size
+    rodata_vaddr = 0x40A0A0
+    rodata_size = 7052
+    rodata_section = await custom_binary_resource.create_child(
+        tags=(MemoryRegion,),
+        data_range=Range.from_size(rodata_offset, rodata_size),
+    )
+    rodata_section.add_view(
+        MemoryRegion(
+            virtual_address=rodata_vaddr,
+            size=rodata_size,
+        )
+    )
+    await rodata_section.save()
+
+    await custom_binary_resource.run(PyGhidraCustomLoadAnalyzer)
+
+    await text_section.unpack()
+    # Complex Block at 0x40088c is a good decomp candidate, as it references strings from the .rodata section.
+    cb_addr = 0x40088C
+    cb = await custom_binary_resource.get_only_descendant_as_view(
+        v_type=ComplexBlock,
+        r_filter=ResourceFilter(
+            tags=[ComplexBlock],
+            attribute_filters=(ResourceAttributeValueFilter(Addressable.VirtualAddress, cb_addr),),
+        ),
+    )
+    assert cb.name == "FUN_0040088c"
+    await cb.resource.run(PyGhidraDecompilationAnalyzer)
+    decomp_resource: DecompilationAnalysis = await cb.resource.view_as(DecompilationAnalysis)
+    decomp_str = decomp_resource.decompilation
+    print(decomp_str)
+    assert '"tini version 0.19.0"' in decomp_str

@@ -41,7 +41,7 @@ def unpack(program_file, decompiled, language=None, base_address=None, memory_re
             from java.io import ByteArrayInputStream
 
             # If memory_regions are provided, delete all data and create new regions:
-            if memory_regions and len(memory_regions) > 0:
+            if memory_regions:
                 program = flat_api.getCurrentProgram()
                 memory = program.getMemory()
                 address_factory = program.getAddressFactory()

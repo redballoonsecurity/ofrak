@@ -98,7 +98,7 @@ class CachedGhidraCodeRegionModifier(CachedGhidraCodeRegionModifier):
 
 
 @dataclass
-class PyGhidraAutoAnalyzerConfig(ComponentConfig):
+class PyGhidraAnalyzerConfig(ComponentConfig):
     decomp: bool
     language: str
 
@@ -129,7 +129,7 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraAutoLoadProject]):
         super().__init__(resource_factory, data_service, resource_service)
         self.analysis_store = analysis_store
 
-    async def analyze(self, resource: Resource, config: PyGhidraAutoAnalyzerConfig = None):
+    async def analyze(self, resource: Resource, config: PyGhidraAnalyzerConfig = None):
         tempdir = mkdtemp(prefix="rbs-pyghidra-bin")
         await resource.identify()  # useful for checking tags later
         try:
@@ -170,12 +170,6 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraAutoLoadProject]):
         return PyGhidraAutoLoadProject()
 
 
-@dataclass
-class PyGhidraCustomLoadAnalyzerConfig(ComponentConfig):
-    decomp: bool
-    language: str
-
-
 class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
     """
     Runs Ghidra's automated analysis on binaries with custom memory region setup. This analyzer
@@ -200,13 +194,13 @@ class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
         super().__init__(resource_factory, data_service, resource_service)
         self.analysis_store = analysis_store
 
-    async def analyze(self, resource: Resource, config: PyGhidraCustomLoadAnalyzerConfig):
-        try:
-            program_attrs = resource.get_attributes(ProgramAttributes)
-            language = _arch_info_to_processor_id(program_attrs)
-        except NotFoundError:
-            language = None
+    async def analyze(self, resource: Resource, config: PyGhidraAnalyzerConfig):
         if config is None:
+            try:
+                program_attrs = resource.get_attributes(ProgramAttributes)
+                language = _arch_info_to_processor_id(program_attrs)
+            except NotFoundError:
+                language = None
             decomp = False
         else:
             decomp = config.decomp
@@ -255,14 +249,25 @@ class PyGhidraCodeRegionUnpacker(CachedCodeRegionUnpacker):
         program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(PyGhidraProject))
         if not self.analysis_store.id_exists(program_r.get_id()):
             if config is not None:
-                await program_r.run(
-                    PyGhidraAutoAnalyzer,
-                    config=PyGhidraAutoAnalyzerConfig(
-                        decomp=config.decomp, language=config.language
-                    ),
+                analyzer_config = PyGhidraAnalyzerConfig(
+                    decomp=config.decomp, language=config.language
                 )
             else:
-                await program_r.run(PyGhidraAutoAnalyzer)
+                analyzer_config = None
+            if program_r.has_tag(PyGhidraAutoLoadProject):
+                await program_r.run(
+                    PyGhidraAutoAnalyzer,
+                    config=analyzer_config,
+                )
+            elif program_r.has_tag(PyGhidraCustomLoadProject):
+                await program_r.run(
+                    PyGhidraCustomLoadAnalyzer,
+                    config=analyzer_config,
+                )
+            else:
+                raise ValueError(
+                    f"resource {resource} does not have any tag that allow analysis with the PyGhidra backend."
+                )
         return await super().unpack(resource, config)
 
 
