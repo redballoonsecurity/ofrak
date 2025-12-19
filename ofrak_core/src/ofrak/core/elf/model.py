@@ -151,6 +151,7 @@ class ElfMachine(Enum):
     EM_TPC = 98  # Tenor Network TPC processor
     EM_SNP1K = 99  # Trebia SNP 1000 processor
     EM_ST200 = 100  # STMicroelectronics (www.st.com) ST200 microcontroller
+    EM_MSP430 = 105  # Texas Instruments embedded microcontroller msp430
     EM_MAXQ30 = 169  # Dallas Semiconductor MAXQ30 Core Micro-controllers
     EM_AARCH64 = 183  # 64-bit Advanced RISC Machines ARM
 
@@ -173,6 +174,7 @@ class ElfMachine(Enum):
             # /AN4465-dev-tools-guide.pdf), in practice PPC is quite similar.
             ElfMachine.EM_MAXQ30.value: InstructionSet.PPC,
             ElfMachine.EM_SPARC.value: InstructionSet.SPARC,
+            ElfMachine.EM_MSP430.value: InstructionSet.MSP430,
         }
 
         if e_machine not in MACHINE_TO_ISA:

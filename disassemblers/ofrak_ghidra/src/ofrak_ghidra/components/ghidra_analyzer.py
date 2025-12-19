@@ -40,7 +40,7 @@ from ofrak_ghidra.ghidra_model import (
     GhidraCustomLoadProject,
     GhidraAutoLoadProject,
 )
-from ofrak_type import ArchInfo, InstructionSet, Endianness
+from ofrak_type import ArchInfo, InstructionSet, Endianness, BitWidth
 from ofrak.core.elf.model import Elf, ElfHeader, ElfType
 
 LOGGER = logging.getLogger(__name__)
@@ -332,6 +332,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
             InstructionSet.PPC: "PowerPC",
             InstructionSet.M68K: "68000",
             InstructionSet.X86: "x86",
+            InstructionSet.MSP430: "TI_MSP430",
         }
         family = families.get(processor.isa)
 
@@ -339,6 +340,10 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
         # Ghidra proc IDs are of the form "ISA:endianness:bitWidth:suffix", where the suffix can indicate a specific processor or sub-ISA
         # The goal of the follow code is to identify the best proc ID for the ArchInfo, and we expect to be able to fall back on this default
         partial_proc_id = f"{family}:{endian}:{processor.bit_width.value}"
+        # edge case: for MSP430, the Ghidra proc id starts with a different name based on the bit width,
+        # but still lives in the `TI_MSP430.ldefs` so `family` still has to be "TI_MSP430":
+        if processor.isa == InstructionSet.MSP430 and processor.bit_width == BitWidth.BIT_32:
+            partial_proc_id = partial_proc_id.replace("TI_MSP430", "TI_MSP430X")
         # TODO: There are also some proc_ids that end with '_any' which are default-like
         default_proc_id = f"{partial_proc_id}:default"
 
