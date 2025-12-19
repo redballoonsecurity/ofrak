@@ -24,3 +24,4 @@ examples/assets/flash_test_plain.bin filter=lfs diff=lfs merge=lfs -text
 pytest_ofrak/src/pytest_ofrak/assets/cache/* filter=lfs diff=lfs merge=lfs -text
 pytest_ofrak/src/pytest_ofrak/assets/cache/Makefile !filter !diff !merge text
 ofrak_patch_maker/vendor/* filter=lfs diff=lfs merge=lfs -text
+pytest_ofrak/src/pytest_ofrak/assets/msp430/main.elf filter=lfs diff=lfs merge=lfs -text

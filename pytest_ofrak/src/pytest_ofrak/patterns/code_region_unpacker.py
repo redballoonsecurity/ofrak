@@ -121,6 +121,19 @@ CODE_REGION_UNPACKER_TEST_CASES = [
         "simple_arm_gcc.o.elf",
         "c79d1bea0398d7a9d0faa1ba68786f5e",
     ),
+    CodeRegionUnpackerTestCase(
+        "MSP430",
+        {
+            0xF800: [],
+            0xF804: [],
+            0xF812: [],
+            0xF818: [],
+            0xF84A: [],
+        },
+        set(),  # No optional results
+        "msp430/main.elf",
+        "77c7b733de9d92cc99f9867f954ab83e",
+    ),
 ]
 
 
