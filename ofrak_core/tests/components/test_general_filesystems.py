@@ -43,7 +43,7 @@ TAGS = [
     pytest.param(TarArchive, [], marks=pytest.mark.skipif_missing_deps([TarUnpacker, TarPacker])),
     pytest.param(
         CpioFilesystem,
-        [AttributesType[CpioFilesystem](CpioArchiveType.BINARY)],
+        [AttributesType[CpioFilesystem](CpioArchiveType.NEW_ASCII)],
         marks=pytest.mark.skipif_missing_deps([CpioUnpacker, CpioPacker]),
     ),
 ]
