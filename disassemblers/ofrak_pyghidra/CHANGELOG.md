@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [Unreleased 0.2.0rc4](https://github.com/redballoonsecurity/ofrak/tree/master)
 
+### Added
+- Add a PyGhidra custom load analyzer to allow for loading programs with a custom layout ([#677](https://github.com/redballoonsecurity/ofrak/pull/677))
+
 ### Fixed
 - Fix Ghidra and pyghidra CodeRegion unpacker to take into account the base address that ghidra sets for PIE executables.([#627](https://github.com/redballoonsecurity/ofrak/pull/627))
 - Fix auto discovery of `PyGhidraDecompilationAnalyzer` ([#650](https://github.com/redballoonsecurity/ofrak/pull/650))

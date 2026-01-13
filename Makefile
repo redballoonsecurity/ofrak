@@ -33,8 +33,8 @@ develop: develop-core
 	-$(MAKE) -C disassemblers/ofrak_angr develop
 	-$(MAKE) -C disassemblers/ofrak_capstone develop
 	-$(MAKE) -C disassemblers/ofrak_ghidra develop
-	-$(MAKE) -C disassemblers/ofrak_pyghidra develop
 	-$(MAKE) -C disassemblers/ofrak_cached_disassembly develop
+	-$(MAKE) -C disassemblers/ofrak_pyghidra develop
 	-$(MAKE) -C frontend develop
 	-$(MAKE) -C ofrak_tutorial develop
 	@echo "Development installation complete!"

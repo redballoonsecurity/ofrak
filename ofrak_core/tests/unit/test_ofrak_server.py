@@ -7,6 +7,7 @@ from pathlib import Path, PosixPath
 from ofrak.ofrak_context import OFRAKContext
 from ofrak.resource import Resource
 import pytest
+from pytest_lazyfixture import lazy_fixture
 import re
 
 from multiprocessing import Process
@@ -18,6 +19,7 @@ from ofrak import Analyzer, Unpacker, Modifier, Packer
 from ofrak.core import File
 from ofrak.core.entropy import DataSummaryAnalyzer
 from ofrak.gui.server import AiohttpOFRAKServer, start_server
+from ofrak.gui.script_builder import config_to_python
 from ofrak.model.component_filters import ComponentOrMetaFilter, ComponentTypeFilter
 from ofrak.service.serialization.pjson import (
     PJSONSerializationService,
@@ -2265,3 +2267,95 @@ async def test_add_program_attributes(ofrak_client: TestClient, hello_elf):
         json=json_program_attributes_optional,
     )
     assert resp.status == 200
+
+
+@pytest.mark.parametrize(
+    "config,expected_substring",
+    [
+        pytest.param(
+            lazy_fixture("instruction_modifier_config"),
+            "InstructionSetMode.NONE",
+            id="InstructionModifierConfig",
+        ),
+        pytest.param(
+            lazy_fixture("program_attributes_config"),
+            "InstructionSet.ARM",
+            id="ProgramAttributes",
+        ),
+        pytest.param(
+            lazy_fixture("linkable_symbol_config"),
+            "LinkableSymbolType.FUNC",
+            id="LinkableSymbol",
+        ),
+        pytest.param(
+            lazy_fixture("update_linkable_symbols_config"),
+            "LinkableSymbolType.FUNC",
+            id="UpdateLinkableSymbolsModifierConfig-with-tuple-of-dataclasses",
+        ),
+    ],
+)
+def test_config_to_python_produces_valid_enum_syntax(config, expected_substring):
+    """
+    Test that config_to_python produces valid Python syntax for enum values.
+
+    Enum repr() returns '<EnumClass.NAME: value>' which is invalid Python syntax.
+    config_to_python must convert this to 'EnumClass.NAME' for the script creator.
+    """
+    result = config_to_python(config)
+    assert expected_substring in result
+    assert "<" not in result  # No invalid enum repr format
+
+
+@pytest.fixture
+def instruction_modifier_config():
+    from ofrak.core.instruction import InstructionModifierConfig
+    from ofrak_type.architecture import InstructionSetMode
+
+    return InstructionModifierConfig(
+        mnemonic="mov", operands="x1, sp", mode=InstructionSetMode.NONE
+    )
+
+
+@pytest.fixture
+def program_attributes_config():
+    from ofrak.core.architecture import ProgramAttributes
+    from ofrak_type.architecture import InstructionSet
+    from ofrak_type.bit_width import BitWidth
+    from ofrak_type.endianness import Endianness
+
+    return ProgramAttributes(
+        isa=InstructionSet.ARM,
+        sub_isa=None,
+        bit_width=BitWidth.BIT_32,
+        endianness=Endianness.LITTLE_ENDIAN,
+        processor=None,
+    )
+
+
+@pytest.fixture
+def linkable_symbol_config():
+    from ofrak.core.patch_maker.linkable_symbol import LinkableSymbol
+    from ofrak_type.symbol_type import LinkableSymbolType
+    from ofrak_type.architecture import InstructionSetMode
+
+    return LinkableSymbol(
+        virtual_address=0x1000,
+        name="my_func",
+        symbol_type=LinkableSymbolType.FUNC,
+        mode=InstructionSetMode.THUMB,
+    )
+
+
+@pytest.fixture
+def update_linkable_symbols_config():
+    from ofrak.core.patch_maker.linkable_binary import UpdateLinkableSymbolsModifierConfig
+    from ofrak.core.patch_maker.linkable_symbol import LinkableSymbol
+    from ofrak_type.symbol_type import LinkableSymbolType
+    from ofrak_type.architecture import InstructionSetMode
+
+    return UpdateLinkableSymbolsModifierConfig(
+        updated_symbols=(
+            LinkableSymbol(0x1000, "func_a", LinkableSymbolType.FUNC, InstructionSetMode.NONE),
+            LinkableSymbol(0x2000, "data_b", LinkableSymbolType.RO_DATA, InstructionSetMode.NONE),
+        )
+    )

@@ -94,7 +94,7 @@ from ofrak.service.serialization.pjson import (
     SerializationServiceInterface,
     PJSONSerializationService,
 )
-from ofrak.gui.script_builder import ActionType, ScriptBuilder
+from ofrak.gui.script_builder import ActionType, ScriptBuilder, config_to_python
 from ofrak.service.serialization.pjson_types import PJSONType
 from ofrak.core.entropy import DataSummaryAnalyzer
 from ofrak_type.architecture import InstructionSet, SubInstructionSet, ProcessorType
@@ -764,7 +764,7 @@ class AiohttpOFRAKServer:
         script_str = (
             """
         {resource}"""
-            f""".add_view({view_instance.__repr__()})
+            f""".add_view({config_to_python(view_instance)})
         """
             """await {resource}.save()
         """
@@ -1143,7 +1143,7 @@ class AiohttpOFRAKServer:
             config_pjson = await request.json()
             config = self._serializer.from_pjson(config_pjson, config_type)
 
-        config_str = str(config).replace("{", "{{").replace("}", "}}")
+        config_str = config_to_python(config).replace("{", "{{").replace("}", "}}")
         script_str = (
             """
         await {resource}"""

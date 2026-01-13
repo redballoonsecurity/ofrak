@@ -131,6 +131,10 @@ To save a cache to a JSON file:
 #### Loading cached analysis
 To load an analysis JSON file, see the [`Cached Disassembly Backend`](./cached_disassembly.md).
 
+## Troubleshooting
+
+In some cases (not sure what produced this), the PyGhidra backend can get stuck and hang whenever `pyghidra.open_program(...)` is called. In such cases, moving the `/home/<username>/.config/ghidra` directory to a backup location (in case you have anything important in there) has proven to be a good way to bring the PyGhidra backend back to a good state.
+
 <div align="right">
 <img src="../../assets/square_05.png" width="125" height="125">
 </div>
