@@ -232,18 +232,14 @@ def _unpack_code_region(code_region, flat_api):
         .getDefaultAddressSpace()
         .getAddress(hex(code_region["virtual_address"]))
     )
-    end_address = (
-        flat_api.getAddressFactory()
-        .getDefaultAddressSpace()
-        .getAddress(hex(code_region["virtual_address"] + code_region["size"]))
-    )
+    # The end address is not necessarily in the Ghidra address space, so use its integer value representation:
+    end_address_int = code_region["virtual_address"] + code_region["size"]
     func = flat_api.getFunctionAt(start_address)
     if func is None:
         func = flat_api.getFunctionAfter(start_address)
         if func is None:
             return functions
-
-    while func is not None and end_address.subtract(func.getEntryPoint()) > 0:
+    while func is not None and end_address_int > int(func.getEntryPoint().getOffset()):
         virtual_address = _parse_offset(func.getEntryPoint())
         start = _parse_offset(func.getEntryPoint())
         end, _ = _get_last_address(func, flat_api)
