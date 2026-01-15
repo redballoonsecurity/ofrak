@@ -2,12 +2,17 @@ import logging
 import os
 import hashlib
 import traceback
+from typing import Any, Dict, Optional, Union, List
 import pyghidra
 import argparse
 import time
 import re
 import json
+import logging
 from tempfile312 import mkdtemp
+from tqdm import tqdm
+
+LOGGER = logging.getLogger("ofrak_pyghidra")
 
 
 class PyGhidraComponentException(Exception):
@@ -21,8 +26,16 @@ def _parse_offset(java_object):
     return int(str(java_object.getOffsetAsBigInteger()))
 
 
-def unpack(program_file, decompiled, language=None, base_address=None, memory_regions=None):
+def unpack(
+    program_file: str,
+    decompiled: bool,
+    language: Optional[str] = None,
+    base_address: Union[str, int, None] = None,
+    memory_regions: Optional[List[Dict[str, Any]]] = None,
+    show_progress: bool = False,
+):
     try:
+        LOGGER.info("Analyzing program. This might take a while.")
         if not program_file and memory_regions and len(memory_regions) > 0:
             # In the case the user passed memory regions and no program_file,
             # we still have to pass a file to pyghidra.open_program, so create a dummy one
@@ -32,6 +45,7 @@ def unpack(program_file, decompiled, language=None, base_address=None, memory_re
             with open(program_file, "wb") as f:
                 f.write(b"\x00")
         with pyghidra.open_program(program_file, language=language) as flat_api:
+            LOGGER.info("Analysis completed. Caching analysis to JSON")
             # Java packages must be imported after pyghidra.start or pyghidra.open_program
             from ghidra.app.decompiler import DecompInterface, DecompileOptions
             from ghidra.util.task import TaskMonitor
@@ -95,8 +109,9 @@ def unpack(program_file, decompiled, language=None, base_address=None, memory_re
                     hex(base_address)
                 )
                 program.setImageBase(new_base_addr, True)
+                LOGGER.info(f"Rebased program address to {hex(base_address)}")
 
-            main_dictionary = {}
+            main_dictionary: Dict[str, Any] = {}
             code_regions = _unpack_program(flat_api)
             main_dictionary["metadata"] = {}
             main_dictionary["metadata"]["backend"] = "ghidra"
@@ -109,6 +124,7 @@ def unpack(program_file, decompiled, language=None, base_address=None, memory_re
                 md5_hash = hashlib.md5(data)
                 main_dictionary["metadata"]["hash"] = md5_hash.digest().hex()
 
+            LOGGER.info(f"Program contains {len(code_regions)} code regions")
             for code_region in code_regions:
                 seg_key = f"seg_{code_region['virtual_address']}"
                 main_dictionary[seg_key] = code_region
@@ -123,7 +139,11 @@ def unpack(program_file, decompiled, language=None, base_address=None, memory_re
                 if not init:
                     raise RuntimeError("Could not open program for decompilation")
 
-                for func, cb in func_cbs:
+                LOGGER.info(f"Code region {seg_key} contains {len(func_cbs)} complex blocks")
+                if len(func_cbs) == 0:
+                    continue
+
+                for func, cb in tqdm(func_cbs, unit="CB", smoothing=0, disable=not show_progress):
                     cb_key = f"func_{cb['virtual_address']}"
                     code_region["children"].append(cb_key)
                     if decompiled:
@@ -147,7 +167,7 @@ def unpack(program_file, decompiled, language=None, base_address=None, memory_re
                             or (bb["virtual_address"] + bb["size"])
                             > cb["virtual_address"] + cb["size"]
                         ):
-                            logging.warning(
+                            LOGGER.warning(
                                 f"Basic Block 0x{bb['virtual_address']:x} does not fall within "
                                 f"complex block {hex(cb['virtual_address'])}-{hex(cb['virtual_address'] + cb['size'])}"
                             )
@@ -167,7 +187,7 @@ def unpack(program_file, decompiled, language=None, base_address=None, memory_re
                             or (dw["virtual_address"] + dw["size"])
                             > cb["virtual_address"] + cb["size"]
                         ):
-                            logging.warning(
+                            LOGGER.warning(
                                 f"Data Word 0x{dw['virtual_address']:x} does not fall within "
                                 f"complex block {hex(cb['virtual_address'])}-{hex(cb['virtual_address'] + cb['size'])}"
                             )
@@ -243,7 +263,7 @@ def _unpack_code_region(code_region, flat_api):
         if func is None:
             return functions
 
-    while func is not None and end_address.subtract(func.getEntryPoint()) > 0:
+    while func is not None and end_address.compareTo(func.getEntryPoint()) > 0:
         virtual_address = _parse_offset(func.getEntryPoint())
         start = _parse_offset(func.getEntryPoint())
         end, _ = _get_last_address(func, flat_api)
@@ -519,7 +539,12 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     start = time.time()
-    res = unpack(args.infile, args.decompile, args.language, args.base_address)
+    logging.basicConfig(
+        level=logging.INFO, format="[%(asctime)s|%(name)s|%(levelname)s]: %(message)s"
+    )
+    LOGGER.info(f"Beginning pyghidra cached analysis for file {args.infile}")
+    res = unpack(args.infile, args.decompile, args.language, args.base_address, show_progress=True)
     with open(args.outfile, "w") as fh:
         json.dump(res, fh, indent=4)
-    print(f"PyGhidra analysis took {time.time() - start} seconds")
+    LOGGER.info(f"Wrote cached analysis to {args.outfile}")
+    LOGGER.info(f"PyGhidra analysis took {time.time() - start} seconds")
