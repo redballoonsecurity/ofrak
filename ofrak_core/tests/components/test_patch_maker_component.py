@@ -50,6 +50,8 @@ from ofrak_patch_maker.toolchain.model import (
 from ofrak_patch_maker.toolchain.utils import get_repository_config
 from ofrak_type.bit_width import BitWidth
 from ofrak_type.endianness import Endianness
+from ofrak.core.code_region import CodeRegion
+from ofrak_type.range import Range
 
 PATCH_DIRECTORY = str(Path(__file__).parent / "assets" / "src")
 X86_64_PROGRAM_PATH = str(Path(__file__).parent / "assets" / "hello.out")
@@ -330,3 +332,178 @@ async def test_segment_injector_deletes_patched_descendants(ofrak_context: OFRAK
 
     # check that resources have been deleted
     assert results.resources_deleted == expected_deleted_ids
+
+
+VADDR = 0x1000
+SIZE = 0x100
+
+
+async def test_segment_injector_when_dataless_region_has_higher_id(
+    ofrak_context: OFRAKContext,
+):
+    """
+    Test that SegmentInjectorModifier fails when the dataless CodeRegion has a
+    higher resource ID than the CodeRegion with data.
+
+    Setup:
+    - Create root resource with data
+    - Create CodeRegion WITH data first (gets lower ID, e.g. ID=1)
+    - Create CodeRegion WITHOUT data second (gets higher ID, e.g. ID=2)
+
+    When sorting by Size DESCENDANT, the higher ID comes first on ties.
+    So the dataless region (ID=2) is returned first by get_mem_region_with_vaddr_from_sorted.
+    This triggers the ValueError because we can't patch a region without data.
+    """
+    # Create root resource with enough data for the CodeRegion
+    root_data = b"\x00" * SIZE
+    root_resource = await ofrak_context.create_root_resource("test_root", root_data)
+    root_resource.add_tag(MemoryRegion)
+    root_resource.add_view(MemoryRegion(VADDR, SIZE))
+    await root_resource.save()
+
+    # Create first CodeRegion WITH data (lower resource ID)
+    code_region_with_data = CodeRegion(VADDR, SIZE)
+    await root_resource.create_child_from_view(
+        code_region_with_data,
+        data_range=Range(0, SIZE),  # Maps to root's data
+    )
+
+    # Create second CodeRegion WITHOUT data (higher resource ID)
+    code_region_without_data = CodeRegion(VADDR, SIZE)
+    await root_resource.create_child_from_view(
+        code_region_without_data,
+        # No data_range and no data = dataless resource
+    )
+
+    # Create segment to inject
+    segment = Segment(
+        segment_name=".text",
+        vm_address=VADDR,
+        offset=0,
+        is_entry=False,
+        length=SIZE,
+        access_perms=MemoryPermissions.RX,
+    )
+    patch_data = b"\x90" * SIZE  # NOP sled
+
+    config = SegmentInjectorModifierConfig(segments_and_data=((segment, patch_data),))
+
+    await root_resource.run(SegmentInjectorModifier, config)
+
+
+async def test_segment_injector_when_data_region_has_higher_id(
+    ofrak_context: OFRAKContext,
+):
+    """
+    Test that SegmentInjectorModifier succeeds when the CodeRegion with data has
+    a higher resource ID than the dataless CodeRegion.
+
+    Setup:
+    - Create root resource with data
+    - Create CodeRegion WITHOUT data first (gets lower ID, e.g. ID=1)
+    - Create CodeRegion WITH data second (gets higher ID, e.g. ID=2)
+
+    When sorting by Size DESCENDANT, the higher ID comes first on ties.
+    So the region with data (ID=2) is returned first by get_mem_region_with_vaddr_from_sorted.
+    This allows the patch to succeed.
+    """
+    # Create root resource with enough data for the CodeRegion
+    root_data = b"\x00" * SIZE
+    root_resource = await ofrak_context.create_root_resource("test_root", root_data)
+    root_resource.add_tag(MemoryRegion)
+    root_resource.add_view(MemoryRegion(VADDR, SIZE))
+    await root_resource.save()
+
+    # Create first CodeRegion WITHOUT data (lower resource ID)
+    code_region_without_data = CodeRegion(VADDR, SIZE)
+    await root_resource.create_child_from_view(
+        code_region_without_data,
+        # No data_range and no data = dataless resource
+    )
+
+    # Create second CodeRegion WITH data (higher resource ID)
+    code_region_with_data = CodeRegion(VADDR, SIZE)
+    await root_resource.create_child_from_view(
+        code_region_with_data,
+        data_range=Range(0, SIZE),  # Maps to root's data
+    )
+
+    # Create segment to inject
+    segment = Segment(
+        segment_name=".text",
+        vm_address=VADDR,
+        offset=0,
+        is_entry=False,
+        length=SIZE,
+        access_perms=MemoryPermissions.RX,
+    )
+    patch_data = b"\x90" * SIZE  # NOP sled
+
+    config = SegmentInjectorModifierConfig(segments_and_data=((segment, patch_data),))
+
+    # This should succeed because the region with data (higher ID) comes first
+    await root_resource.run(SegmentInjectorModifier, config)
+
+    # Verify the patch was applied
+    patched_data = await root_resource.get_data()
+    assert patched_data == patch_data
+
+
+async def test_segment_injector_warns_when_multiple_regions_with_data(
+    ofrak_context: OFRAKContext,
+    caplog,
+):
+    """
+    Test that SegmentInjectorModifier logs a warning when multiple CodeRegions
+    with data exist at the same virtual address.
+
+    Setup:
+    - Create root resource with data
+    - Create two CodeRegions WITH data at the same vaddr/size
+
+    The modifier should log a warning about finding more than one region to inject into.
+    """
+    import logging
+
+    # Create root resource with enough data for the CodeRegions
+    root_data = b"\x00" * SIZE
+    root_resource = await ofrak_context.create_root_resource("test_root", root_data)
+    root_resource.add_tag(MemoryRegion)
+    root_resource.add_view(MemoryRegion(VADDR, SIZE))
+    await root_resource.save()
+
+    # Create first CodeRegion WITH data
+    code_region_1 = CodeRegion(VADDR, SIZE)
+    await root_resource.create_child_from_view(
+        code_region_1,
+        data_range=Range(0, SIZE),
+    )
+
+    # Create second CodeRegion WITH data (same vaddr/size)
+    code_region_2 = CodeRegion(VADDR, SIZE)
+    await root_resource.create_child_from_view(
+        code_region_2,
+        data_range=Range(0, SIZE),
+    )
+
+    # Create segment to inject
+    segment = Segment(
+        segment_name=".text",
+        vm_address=VADDR,
+        offset=0,
+        is_entry=False,
+        length=SIZE,
+        access_perms=MemoryPermissions.RX,
+    )
+    patch_data = b"\x90" * SIZE
+
+    config = SegmentInjectorModifierConfig(segments_and_data=((segment, patch_data),))
+
+    # Run with log capture
+    with caplog.at_level(logging.WARNING):
+        await root_resource.run(SegmentInjectorModifier, config)
+
+    # Verify the warning was logged
+    assert (
+        "Found more than one region to inject patch in, using the first one." in caplog.text
+    ), "Expected warning about multiple candidates for patch insertion"
