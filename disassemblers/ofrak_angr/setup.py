@@ -33,7 +33,7 @@ setuptools.setup(
         'networkx==3.4.2; python_version == "3.10"',
         'networkx==3.5; python_version >= "3.11"',
         "msgspec==0.19.0",
-        "pyparsing==3.3.1",
+        "pycparser==2.23",
     ],
     extras_require={
         "graphical": ["pygraphviz"],
