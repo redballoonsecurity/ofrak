@@ -3,16 +3,16 @@ ARG TARGETARCH
 # Download & install java and supervisor
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
     cd /tmp && \
-    wget https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.deb && \
-    dpkg -i jdk-21_linux-x64_bin.deb && \
-    rm -f jdk-21_linux-x64_bin.deb; \
+    wget https://download.oracle.com/java/21/archive/jdk-21.0.9_linux-x64_bin.deb && \
+    dpkg -i jdk-21.0.9_linux-x64_bin.deb && \
+    rm -f jdk-21.0.9_linux-x64_bin.deb; \
 elif [ "$TARGETARCH" = "arm64" ]; then \
     cd /tmp && \
-    wget https://download.oracle.com/java/21/latest/jdk-21_linux-aarch64_bin.tar.gz && \
-    tar -xzf jdk-21_linux-aarch64_bin.tar.gz && \
+    wget https://download.oracle.com/java/21/archive/jdk-21.0.9_linux-aarch64_bin.tar.gz && \
+    tar -xzf jdk-21.0.9_linux-aarch64_bin.tar.gz && \
     mkdir -p /usr/lib/jvm && \
     mv jdk-21.* /usr/lib/jvm/jdk-21 && \
-    rm -f jdk-21_linux-aarch64_bin.tar.gz; \
+    rm -f jdk-21.0.9_linux-aarch64_bin.tar.gz; \
 fi && \
 apt-get update && apt-get install -y supervisor
 
