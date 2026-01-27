@@ -22,6 +22,7 @@ from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort, ResourceSortDirection
 from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.error import NotFoundError
+from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__file__)
 
@@ -302,6 +303,88 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
                 r for r in await resource.get_descendants() if r.get_id() in patched_descendants
             ]
             await asyncio.gather(*(r.delete() for r in to_delete))
+
+
+class FastSegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
+    """
+    Optimized segment injection modifier that applies multiple segment patches in a single bulk
+    operation. Unlike SegmentInjectorModifier which runs BinaryInjectorModifier separately for each
+    segment, this modifier collects all segment patches and applies them to the root resource data
+    in one pass, improving performance for multi-segment injections.
+
+    **WARNING: This modifier does NOT delete stale descendant resources.** After patching, the
+    resource tree may contain outdated descendants that no longer match the modified data. This is a
+    critical difference from SegmentInjectorModifier, which automatically cleans up invalidated
+    descendants. The resource tree may be in an inconsistent state after using this modifier.
+
+    This modifier skips .bss, .rela, and .got segments, and applies all valid segment patches
+    directly to the program resource without invoking individual injection modifiers. Use when
+    applying complex patches with many segments.
+    """
+
+    targets = (Program,)
+
+    async def modify(self, resource: Resource, config: SegmentInjectorModifierConfig) -> None:
+        segments_to_skip = [
+            ".bss",
+            ".rela",
+            ".got",
+        ]
+        sorted_regions = list(
+            await resource.get_descendants_as_view(
+                MemoryRegion,
+                r_filter=ResourceFilter(include_self=True, tags=(MemoryRegion,)),
+                r_sort=ResourceSort(
+                    attribute=MemoryRegion.Size,
+                    direction=ResourceSortDirection.DESCENDANT,
+                ),
+            )
+        )
+
+        patches_to_resource: List[Tuple[int, bytes]] = list()
+
+        for segment, segment_data in config.segments_and_data:
+            # Skip bss, rela, got, etc
+            if segment.length == 0 or segment.vm_address == 0:
+                continue
+            if any([segment.segment_name.startswith(prefix) for prefix in segments_to_skip]):
+                continue
+
+            LOGGER.info(
+                f'    Injecting segment "{segment.segment_name}": {segment.length} '
+                f"bytes @ {hex(segment.vm_address)}",
+            )
+
+            # Find and validate target region
+            target_region = MemoryRegion.get_mem_region_with_vaddr_from_sorted(
+                segment.vm_address, sorted_regions
+            )
+            if target_region is None:
+                raise ValueError(
+                    f"Cannot inject patch because the memory region at vaddr "
+                    f"{hex(segment.vm_address)} is None"
+                )
+            if target_region.resource.get_data_id() is None:
+                raise ValueError(
+                    f"Cannot inject patch because the memory region at vaddr "
+                    f"{hex(segment.vm_address)} is dataless"
+                )
+
+            # Calculate the offset in the root resource
+            range_in_root = await target_region.resource.get_data_range_within_root()
+            offset = range_in_root.start + segment.vm_address - target_region.virtual_address
+            patches_to_resource.append((offset, segment_data))
+
+        # Apply segment patches in-memory
+        resource_data = bytearray(await resource.get_data())
+        for offset, segment_data in patches_to_resource:
+            resource_data[offset : offset + len(segment_data)] = segment_data
+
+        # Patch OFRAK resource
+        resource.queue_patch(
+            Range.from_size(0, await resource.get_data_length()),
+            bytes(resource_data),
+        )
 
 
 @dataclass
