@@ -217,6 +217,16 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
         "",
     ]
 
+    # Read pinned pip/setuptools versions
+    pip_reqs_path = "requirements-pip.txt"
+    pip_reqs = []
+    if os.path.exists(pip_reqs_path):
+        with open(pip_reqs_path) as pip_reqs_handle:
+            pip_reqs = [
+                str(requirement)
+                for requirement in pkg_resources.parse_requirements(pip_reqs_handle)
+            ]
+
     requirement_suffixes = ["", "-non-pypi"]
     if config.install_target is InstallTarget.DEVELOP:
         requirement_suffixes += ["-docs", "-test"]
@@ -242,12 +252,43 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
                     for requirement in pkg_resources.parse_requirements(requirements_handle)
                 ]
         if python_reqs:
+            if pip_reqs:
+                # Install pinned pip/setuptools versions first for consistent builds
+                dockerfile_base_parts += [
+                    f"### Python build tools from {pip_reqs_path}",
+                    "RUN python3 -m pip install '" + "' '".join(pip_reqs) + "'",
+                    "",
+                ]
+                pip_reqs = []
             dockerfile_base_parts += [
                 f"### Python dependencies from the {package_path} requirements file[s]",
-                "RUN python3 -m pip install --upgrade pip &&\\",
-                "   python3 -m pip install '" + "' '".join(python_reqs) + "'",
+                "RUN python3 -m pip install '" + "' '".join(python_reqs) + "'",
                 "",
             ]
+
+    # For develop builds, also install root-level requirements-dev.txt
+    if config.install_target is InstallTarget.DEVELOP:
+        dev_reqs_path = "requirements-dev.txt"
+        if os.path.exists(dev_reqs_path):
+            with open(dev_reqs_path) as dev_reqs_handle:
+                dev_reqs = [
+                    str(requirement)
+                    for requirement in pkg_resources.parse_requirements(dev_reqs_handle)
+                ]
+            if dev_reqs:
+                if pip_reqs:
+                    # Install pinned pip/setuptools versions first for consistent builds
+                    dockerfile_base_parts += [
+                        f"### Python build tools from {pip_reqs_path}",
+                        "RUN python3 -m pip install '" + "' '".join(pip_reqs) + "'",
+                        "",
+                    ]
+                    pip_reqs = []
+                dockerfile_base_parts += [
+                    f"### Python dependencies from {dev_reqs_path}",
+                    "RUN python3 -m pip install '" + "' '".join(dev_reqs) + "'",
+                    "",
+                ]
 
     return "\n".join(dockerfile_base_parts)
 
@@ -256,6 +297,10 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
     full_base_image_name = "/".join((config.registry, config.base_image_name))
     dockerfile_finish_parts = [
         f"FROM {full_base_image_name}:{config.image_revision}\n\n",
+        # Download build tools for pip build isolation (PEP 517 default: setuptools + wheel).
+        # Used with --find-links=/pip-wheels --no-index to enforce that all runtime deps
+        # were pre-installed in base.Dockerfile, while still allowing build isolation.
+        "RUN python3 -m pip download -d /pip-wheels setuptools wheel\n\n",
         f"ARG OFRAK_SRC_DIR=/\n",
     ]
 
@@ -277,12 +322,18 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
     dockerfile_finish_parts.append("\nWORKDIR /\n")
     dockerfile_finish_parts.append("ARG INSTALL_TARGET\n")
     if config.install_target is InstallTarget.DEVELOP:
-        dockerfile_finish_parts.append(f"ADD {ofrak_dir_prefix}requirements-dev.txt /\n")
-        dockerfile_finish_parts.append("RUN python3 -m pip install -r requirements-dev.txt\n")
         dockerfile_finish_parts.append(
             f"ADD '{ofrak_dir_prefix}pytest_ofrak' $OFRAK_SRC_DIR/pytest_ofrak\n"
         )
-        dockerfile_finish_parts.append(f"RUN make -C $OFRAK_SRC_DIR/pytest_ofrak develop\n")
+        # PIP_NO_INDEX + PIP_FIND_LINKS ensures all runtime deps were pre-installed
+        # in base.Dockerfile, while allowing build isolation to find setuptools/wheel.
+        dockerfile_finish_parts.append(
+            "RUN PIP_NO_INDEX=1 PIP_FIND_LINKS=/pip-wheels "
+            f"make -C $OFRAK_SRC_DIR/pytest_ofrak develop || "
+            '(echo "ERROR: pip install of an OFRAK package failed when prohibited from downloading from PyPI. '
+            "A dependency may be missing from base.Dockerfile. "
+            'Add it to the appropriate requirements.txt file." && exit 1)\n'
+        )
     develop_makefile = "\\n\\\n".join(
         [
             "$INSTALL_TARGET:",
@@ -293,12 +344,23 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
         ]
     )
     dockerfile_finish_parts.append(f'RUN printf "{develop_makefile}" >> Makefile\n')
-    dockerfile_finish_parts.append("RUN make $INSTALL_TARGET\n\n")
+    # PIP_NO_INDEX + PIP_FIND_LINKS ensures all runtime deps were pre-installed
+    # in base.Dockerfile, while allowing build isolation to find setuptools/wheel.
+    dockerfile_finish_parts.append(
+        "RUN PIP_NO_INDEX=1 PIP_FIND_LINKS=/pip-wheels make $INSTALL_TARGET || "
+        '(echo "ERROR: pip install of an OFRAK package failed when prohibited from downloading from PyPI. '
+        "A dependency may be missing from base.Dockerfile. "
+        'Add it to the appropriate requirements.txt file." && exit 1)\n'
+    )
+    # Verify all dependencies are consistent
+    dockerfile_finish_parts.append("RUN python3 -m pip check\n\n")
     test_names = " ".join([f"test_{package_name}" for package_name in package_names])
     finish_makefile = "\\n\\\n".join(
         [
-            ".PHONY: test " + test_names,
-            "test: " + test_names,
+            ".PHONY: test inspect " + test_names,
+            "inspect:",
+            "\tpython3 -m pip check",
+            "test: inspect " + test_names,
         ]
         + [
             f"test_{package_name}:\\n\\\n\t\\$(MAKE) -C {package_name} test"
