@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     nginx \
     git \
     git-lfs \
+    gh \
     vim \
     less \
     curl \
