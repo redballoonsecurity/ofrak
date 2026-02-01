@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [Unreleased: 0.1.1](https://github.com/redballoonsecurity/ofrak/tree/master)
 ### Fixed
 - Update Notebook 3 output to make testing on different configurations easier ([#593](https://github.com/redballoonsecurity/ofrak/pull/593))
+- Update pytest version in requirements file to be consistent with the global `requirements-dev.txt` ([#688](https://github.com/redballoonsecurity/ofrak/pull/688))
 
 ## 0.1.0
 ### Added
