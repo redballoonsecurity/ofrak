@@ -1,0 +1,30 @@
+{
+  "name": "OFRAK ${localWorkspaceFolderBasename}",
+  "dockerComposeFile": ["docker-compose.yml", "docker-compose.local.yml"],
+  "service": "ofrak",
+  "workspaceFolder": "${localWorkspaceFolder}",
+  "remoteUser": "${localEnv:USER}",
+  "containerUser": "${localEnv:USER}",
+  "updateRemoteUserUID": true,
+  "initializeCommand": ".devcontainer/scripts/initialize.sh",
+  "postCreateCommand": ".devcontainer/scripts/post-create.sh",
+  "postStartCommand": ".devcontainer/scripts/post-start.sh",
+  "forwardPorts": [8080, 8877],
+  "portsAttributes": {
+    "8080": { "label": "OFRAK GUI (nginx)" },
+    "8877": { "label": "OFRAK API Server" }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.mypy-type-checker",
+        "ms-vscode.makefile-tools",
+        "docker.docker"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python3"
+      }
+    }
+  }
+}

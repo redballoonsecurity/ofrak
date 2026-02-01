@@ -22,3 +22,13 @@ dist/
 .coverage*
 **/license.json
 assets/*_ghidra
+
+# Devcontainer local config (auto-created, user-modified)
+.devcontainer/config.local.txt
+.devcontainer/.env
+.devcontainer/.devcontainer-config.yml
+.devcontainer/.packages
+.devcontainer/docker-compose.local.yml
+.devcontainer/Dockerfile
+.devcontainer/Dockerfile.local
+.vscode/

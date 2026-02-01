@@ -1,0 +1,51 @@
+ARG OFRAK_BASE_IMAGE
+
+# Stage 1: Base OFRAK image (built by initialize.sh from devcontainer config without frontend)
+FROM ${OFRAK_BASE_IMAGE} AS base
+
+# Stage 2: Development tools
+FROM base AS dev
+
+# Install nginx (normally from frontend/Dockerstub, but frontend excluded from devcontainer build)
+# Install dev tools and Node.js 22.x via NodeSource (apt nodejs is often outdated)
+RUN apt-get update && apt-get install -y \
+    nginx \
+    git \
+    git-lfs \
+    vim \
+    less \
+    curl \
+    ca-certificates \
+    gnupg \
+    sudo \
+    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+COPY frontend/nginx.conf /etc/nginx/sites-enabled/default
+
+# Create non-root user with sudo access (username passed from host via build arg)
+ARG USERNAME
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME -s /bin/bash \
+    && echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME
+
+# Configure npm for user-local global installs
+ENV NPM_CONFIG_PREFIX=/home/$USERNAME/.npm \
+    PATH=/home/$USERNAME/.local/bin:$PATH
+
+# Install dev dependencies (mkdocs for /docs/ serving, pytest tools, etc.)
+COPY requirements-pip.txt requirements-dev.txt ofrak_core/requirements-docs.txt /tmp/
+RUN pip install -r /tmp/requirements-pip.txt \
+    && pip install -r /tmp/requirements-dev.txt -r /tmp/requirements-docs.txt \
+    && rm /tmp/requirements-pip.txt /tmp/requirements-dev.txt /tmp/requirements-docs.txt
+
+# Configure nginx to listen on 8080 instead of 80 (non-privileged port)
+# Matches both "listen 80;" (IPv4) and "listen [::]:80;" (IPv6)
+RUN sed -i 's/\(listen.*[: ]\)80;/\18080;/g' /etc/nginx/sites-enabled/default
+
+ARG WORKSPACE_FOLDER
+WORKDIR $WORKSPACE_FOLDER
+USER $USERNAME
