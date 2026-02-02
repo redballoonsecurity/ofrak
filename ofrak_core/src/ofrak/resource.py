@@ -966,9 +966,10 @@ class Resource:
     def get_attributes(self, attributes_type: Type[RA]) -> RA:
         """
         If this resource has attributes matching the given type, return the value of those
-        attributes. Otherwise returns `None`.
+        attributes. Otherwise raise `NotFoundError`.
         :param attributes_type:
         :return:
+        :raises NotFoundError: if the resource does not have the requested attributes
         """
         attributes = self._resource.get_attributes(attributes_type)
         if attributes is None:
