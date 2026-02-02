@@ -37,7 +37,7 @@ cd frontend && npm install && npm run build
 Packages must be installed in dependency order:
 1. `ofrak_type` - Primitive types (enums, Range)
 2. `ofrak_io` - I/O utilities
-3. `ofrak_patch_maker` - Binary patching toolchains
+3. `ofrak_patch_maker` - Binary patching toolchains (can be skipped on platforms where toolchains are difficult to install, or when patching functionality is not needed)
 4. `ofrak_core` - Main framework (depends on above)
 5. `pytest_ofrak` - Test utilities
 6. `disassemblers/*` - Optional backends (angr, capstone, ghidra, binary_ninja, pyghidra)
