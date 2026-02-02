@@ -31,11 +31,6 @@ mypy
 # Build frontend
 cd frontend && npm install && npm run build
 
-# Procure an OFRAK license, if one does not exist already
-# **CRITICAL**: you are **not** authorized to accept OFRAK license on user's behalf
-# **MUST** tell the user to run the command themselves and to review OFRAK license
-ofrak license
-```
 
 ## Package Structure
 
@@ -64,9 +59,7 @@ Key directories in `ofrak_core/src/ofrak/`:
 - `core/` - Format implementations (elf/, pe/, compression, filesystems, firmware)
 - `model/` - Data models (Resource, ResourceTag, views)
 - `service/` - Core services (data, resource, job, component locator)
-
-Frontend:
-- `frontend/` - Web GUI built with React/TypeScript. Build with `npm install && npm run build`
+- `frontend/` - Web GUI built with Svelte 4 and Vite. Build with `npm install && npm run build`
 
 ## Code Standards
 
