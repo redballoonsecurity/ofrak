@@ -15,8 +15,8 @@ make develop-core
 # Full setup including optional disassemblers
 make develop
 
-# Run tests for a package (from package directory)
-cd ofrak_core && make test
+# Run tests for a package
+make -C ofrak_core test
 
 # Run single test
 python3 -m pytest tests/path/to/test.py::TestClass::test_method -v
@@ -30,6 +30,11 @@ mypy
 
 # Build frontend
 cd frontend && npm install && npm run build
+
+# Procure an OFRAK license, if one does not exist already
+# **CRITICAL**: you are **not** authorized to accept OFRAK license on user's behalf
+# **MUST** tell the user to run the command themselves and to review OFRAK license
+ofrak license
 ```
 
 ## Package Structure
@@ -47,10 +52,11 @@ Each package uses src layout (`src/` subdirectory) and has its own Makefile with
 ## Architecture
 
 - **Entry point**: `OFRAK` class → `discover()` backends → `run()` or `create_ofrak_context()`
+- **Example scripts**: See `examples/` directory and [tutorial documentation](https://ofrak.com/docs/getting-started/basic-usage.html) for basic OFRAK usage patterns
 - **Core abstraction**: `Resource` - represents binary data with tags, supports `unpack()`, `run()`, `get_data()`, `flush_data_to_disk()`
 - **Component types**: `Analyzer`, `Modifier`, `Unpacker`, `Packer`, `Identifier` (in `ofrak/component/`)
 - **Resource lifecycle**: create → identify → unpack → analyze/modify → pack → flush
-- **DI framework**: `synthol` - components discovered via `ofrak.packages` entry points
+- **Dependency injection framework**: `synthol` - components discovered via `ofrak.packages` entry points
 - **Async**: All I/O is async; tests use `asyncio_mode="auto"`
 
 Key directories in `ofrak_core/src/ofrak/`:
@@ -59,6 +65,9 @@ Key directories in `ofrak_core/src/ofrak/`:
 - `model/` - Data models (Resource, ResourceTag, views)
 - `service/` - Core services (data, resource, job, component locator)
 
+Frontend:
+- `frontend/` - Web GUI built with React/TypeScript. Build with `npm install && npm run build`
+
 ## Code Standards
 
 - Line length: 100 chars (black enforced)
@@ -66,11 +75,42 @@ Key directories in `ofrak_core/src/ofrak/`:
 - 100% test coverage required (fun-coverage enforced)
 - Exceptions must be instantiated: `raise NotFoundError()` not `raise NotFoundError`
 
+### Test Requirements
+
+- **NEVER MOCK** - test with real code, real tools, real binary data
+- **Test Data Strategy**:
+  - Write tests assuming real data exists in `tests/components/assets/`
+  - Reference asset files by path (e.g., `tests/components/assets/sample.bin`)
+  - Instruct user to place real test files: "Place test file at `tests/components/assets/sample.bin`"
+  - **Remind user**: Test data must be suitable for public distribution (self-created, public domain, or permissively licensed)
+  - Don't create synthetic data in test code
+  - Don't generate test files programmatically
+
+When creating tests, instruct the user:
+
+```
+Please place a real MyFormat test file at:
+  tests/components/assets/sample.myformat
+
+IMPORTANT: Test data must be suitable for public distribution, as the OFRAK
+repository is open source and publicly accessible. Use test data that is:
+- Created by you
+- Public domain
+- Permissively licensed
+- Otherwise freely redistributable
+
+You can obtain appropriate test data by:
+- Creating your own test file with [tool]
+- Using public domain samples from [source]
+- Generating test cases yourself
+- Extracting from openly licensed firmware/archives
+```
+
 See `docs/contributor-guide/getting-started.md` for full coding standards and docstring format.
 
 ## Contributing
 
-- Update `CHANGELOG.md` and `setup.py` version for any package changes
+- Update `CHANGELOG.md` and bump the **rc version** in `setup.py` for any package changes
 - Changelogs follow Keep a Changelog format with PR links
 - Pre-commit hooks must pass (install with `pre-commit install`)
 
