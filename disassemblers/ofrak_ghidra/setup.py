@@ -36,7 +36,7 @@ setuptools.setup(
     install_requires=[
         "ofrak>=3.3.0,==3.*",
         "PyYAML>=5.4,",
-        "aiohttp~=3.12.14",
+        "aiohttp>=3.13.3",
     ],
     python_requires=">=3.9",
     include_package_data=True,
