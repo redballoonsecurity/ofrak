@@ -56,13 +56,42 @@ public class CreateMemoryBlocks extends HeadlessScript {
 
         Memory mem = currentProgram.getMemory();
         FileBytes fileBytes = mem.getAllFileBytes().get(0);
+        SymbolTable symbolTable = currentProgram.getSymbolTable();
 
         // remove existing memory blocks
         for (MemoryBlock block : mem.getBlocks()){
             mem.removeBlock(block, TaskMonitor.DUMMY);
         }
 
+        // Collect explicit entry points from arguments (format: "entry:0x1000,0x2000")
+        List<Long> explicitEntryPoints = new ArrayList<>();
+
+        for (String arg : args) {
+            if (arg.startsWith("entry:")) {
+                String entryList = arg.substring(6);  // Remove "entry:" prefix
+                for (String entryStr : entryList.split(",")) {
+                    try {
+                        long entryAddr;
+                        if (entryStr.startsWith("0x") || entryStr.startsWith("0X")) {
+                            entryAddr = Long.parseLong(entryStr.substring(2), 16);
+                        } else {
+                            entryAddr = Long.parseLong(entryStr);
+                        }
+                        explicitEntryPoints.add(entryAddr);
+                    } catch (NumberFormatException e) {
+                        println("Warning: Failed to parse entry point: " + entryStr);
+                    }
+                }
+            }
+        }
+
+        boolean hasExplicitEntryPoints = !explicitEntryPoints.isEmpty();
+
         for (String memRegionRaw : args) {
+            // Skip entry point argument
+            if (memRegionRaw.startsWith("entry:")) {
+                continue;
+            }
 
             String[] memRegionInfo = memRegionRaw.split("!");
 
@@ -88,12 +117,9 @@ public class CreateMemoryBlocks extends HeadlessScript {
                     continue;
             }
 
-            SymbolTable symbolTable = currentProgram.getSymbolTable();
-
-            // This section is brittle: there need to be instructions at this address in order to work
-            // So we can't just mark a section as executable and have Ghidra greedily disassemble it all
-            // TODO: Add argument for entry points to mark actual starts of code
-            if (permissions.contains("x")){
+            // Only add block start as entry point if no explicit entry points provided
+            // and the block is executable
+            if (!hasExplicitEntryPoints && permissions.contains("x")){
 
                 markAsCode(currentProgram, block.getStart());
 
@@ -108,6 +134,23 @@ public class CreateMemoryBlocks extends HeadlessScript {
 
             }
 
+        }
+
+        // Add explicit entry points
+        int entryIndex = 0;
+        for (Long entryAddr : explicitEntryPoints) {
+            Address addr = toAddr(entryAddr);
+            markAsCode(currentProgram, addr);
+
+            try {
+                String labelName = entryIndex == 0 ? ENTRY_NAME : ENTRY_NAME + "_" + entryIndex;
+                symbolTable.createLabel(addr, labelName, SourceType.IMPORTED);
+                symbolTable.addExternalEntryPoint(addr);
+                entryIndex++;
+            }
+            catch (InvalidInputException e) {
+                e.printStackTrace();
+            }
         }
     }
 

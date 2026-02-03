@@ -5,12 +5,14 @@ from typing import Optional, TypeVar
 from ofrak.component.analyzer import Analyzer
 from ofrak.core import NamedProgramSection
 from ofrak.core.architecture import ProgramAttributes
+from ofrak.core.program_metadata import ProgramMetadata
 from ofrak.core.elf.model import (
     ElfSectionHeader,
     Elf,
     ElfHeader,
     ElfBasicHeader,
     ElfProgramHeader,
+    ElfProgramHeaderType,
     ElfSegmentStructure,
     ElfSegment,
     ElfSectionStructure,
@@ -441,3 +443,40 @@ async def _create_deserializer(resource: Resource) -> BinaryDeserializer:
         word_size=int(e_basic_header.get_bitwidth().get_word_size()),
     )
     return deserializer
+
+
+class ElfProgramMetadataAnalyzer(Analyzer[None, ProgramMetadata]):
+    """
+    Extracts program metadata from ELF binaries for use by disassembler backends.
+
+    Provides the entry point address from the ELF header (e_entry) and the base address
+    derived from the first PT_LOAD segment's virtual address. This metadata helps
+    disassembler backends properly analyze ELF binaries, especially when loading
+    raw memory dumps or when the backend doesn't natively understand ELF format.
+    """
+
+    id = b"ElfProgramMetadataAnalyzer"
+    targets = (Elf,)
+    outputs = (ProgramMetadata,)
+
+    async def analyze(
+        self, resource: Resource, config: Optional[ComponentConfig] = None
+    ) -> ProgramMetadata:
+        elf = await resource.view_as(Elf)
+        elf_header = await elf.get_header()
+
+        # Get entry point from ELF header
+        entry_point = elf_header.e_entry
+
+        # Get base address from first PT_LOAD segment
+        base_address: Optional[int] = None
+        program_headers = await elf.get_program_headers()
+        for phdr in program_headers:
+            if phdr.p_type == ElfProgramHeaderType.LOAD.value:
+                base_address = phdr.p_vaddr
+                break
+
+        return ProgramMetadata(
+            entry_points=(entry_point,) if entry_point else (),
+            base_address=base_address,
+        )

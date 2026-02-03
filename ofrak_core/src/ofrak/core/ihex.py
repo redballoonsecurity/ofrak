@@ -1,7 +1,7 @@
 import logging
 import re
 from dataclasses import dataclass
-from typing import Any, Tuple, Union
+from typing import Any, Optional, Tuple, Union
 
 from bincopy import BinFile
 
@@ -11,10 +11,12 @@ from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.core.binary import GenericText
 from ofrak.core.program import Program
+from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter
 from ofrak_type.range import Range
 from ofrak.core import CodeRegion
+from ofrak.core.program_metadata import ProgramMetadata
 
 LOGGER = logging.getLogger(__name__)
 
@@ -129,6 +131,33 @@ class IhexIdentifier(Identifier):
             # Only tag if pattern starts at offset 0 of resource
             if offset == 0:
                 resource.add_tag(Ihex)
+
+
+class IhexProgramMetadataAnalyzer(Analyzer[None, ProgramMetadata]):
+    """
+    Extracts program metadata from Intel HEX files for use by disassembler backends.
+
+    Provides the entry point address (execution_start_address) from the Intel HEX file
+    if one is specified. This metadata helps disassembler backends properly analyze
+    Intel HEX firmware, especially when loading raw memory dumps or when the backend
+    doesn't natively understand Intel HEX format.
+    """
+
+    id = b"IhexProgramMetadataAnalyzer"
+    targets = (Ihex,)
+    outputs = (ProgramMetadata,)
+
+    async def analyze(
+        self, resource: Resource, config: Optional[ComponentConfig] = None
+    ) -> ProgramMetadata:
+        ihex = await resource.view_as(Ihex)
+
+        entry_point = ihex.start_addr
+
+        return ProgramMetadata(
+            entry_points=(entry_point,) if entry_point is not None else (),
+            base_address=None,
+        )
 
 
 def _binfile_analysis(raw_ihex: bytes, component) -> Tuple[Ihex, Any]:

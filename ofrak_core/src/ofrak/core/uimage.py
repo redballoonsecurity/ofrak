@@ -10,6 +10,7 @@ from ofrak.component.modifier import Modifier
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
 from ofrak.core import ProgramAttributes, GenericBinary, MagicDescriptionPattern
+from ofrak.core.program_metadata import ProgramMetadata
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributes
 from ofrak.model.viewable_tag_model import AttributesType
@@ -447,6 +448,35 @@ class UImageProgramAttributesAnalyzer(Analyzer[None, Tuple[ProgramAttributes]]):
             )
 
         return ProgramAttributes(isa, None, bit_width, endianness, None)
+
+
+class UImageProgramMetadataAnalyzer(Analyzer[None, ProgramMetadata]):
+    """
+    Extracts program metadata from UImage headers for use by disassembler backends.
+
+    Provides the entry point address (ih_ep) and load address (ih_load) from the UImage
+    header. This metadata helps disassembler backends properly analyze UImage firmware,
+    especially when loading raw memory dumps or when the backend doesn't natively
+    understand UImage format.
+    """
+
+    id = b"UImageProgramMetadataAnalyzer"
+    targets = (UImage,)
+    outputs = (ProgramMetadata,)
+
+    async def analyze(
+        self, resource: Resource, config: Optional[ComponentConfig] = None
+    ) -> ProgramMetadata:
+        uimage_view = await resource.view_as(UImage)
+        uimage_header = await uimage_view.get_header()
+
+        entry_point = uimage_header.get_entry_point_vaddr()
+        load_address = uimage_header.get_load_vaddr()
+
+        return ProgramMetadata(
+            entry_points=(entry_point,) if entry_point is not None else (),
+            base_address=load_address if load_address is not None else None,
+        )
 
 
 ####################

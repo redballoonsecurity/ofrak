@@ -32,6 +32,7 @@ def unpack(
     language: Optional[str] = None,
     base_address: Union[str, int, None] = None,
     memory_regions: Optional[List[Dict[str, Any]]] = None,
+    entry_points: Optional[List[int]] = None,
     show_progress: bool = False,
 ):
     try:
@@ -82,14 +83,34 @@ def unpack(
                             False,  # overlay
                         )
 
-                        # Mark as executable
+                        # Set permissions from region dict, defaulting to R+X if not specified
                         block = memory.getBlock(addr)
-                        block.setExecute(True)
-                        block.setRead(True)
+                        permissions = region.get("permissions")
+                        if permissions is not None:
+                            # permissions is a MemoryPermissions value (int)
+                            block.setRead(bool(permissions & 4))  # R = 4
+                            block.setWrite(bool(permissions & 2))  # W = 2
+                            block.setExecute(bool(permissions & 1))  # X = 1
+                        else:
+                            # Default: executable if marked as such, otherwise R+X
+                            is_executable = region.get("executable", True)
+                            block.setExecute(is_executable)
+                            block.setRead(True)
                     except Exception as e:
                         logging.warning(
                             f"Failed to create memory block at 0x{region['virtual_address']:x}: {e}"
                         )
+                # Add entry points if provided
+                if entry_points:
+                    symbol_table = program.getSymbolTable()
+                    for entry_addr in entry_points:
+                        try:
+                            addr = default_space.getAddress(entry_addr)
+                            symbol_table.addExternalEntryPoint(addr)
+                            LOGGER.info(f"Added entry point at 0x{entry_addr:x}")
+                        except Exception as e:
+                            logging.warning(f"Failed to add entry point at 0x{entry_addr:x}: {e}")
+
                 # Analyze all
                 analysis_mgr = program.getOptions("Analyzers")
                 flat_api.analyzeAll(program)

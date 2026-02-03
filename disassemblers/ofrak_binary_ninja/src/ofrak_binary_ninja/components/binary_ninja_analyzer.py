@@ -5,11 +5,13 @@ from typing import Optional, List
 from binaryninja import open_view, BinaryViewType
 
 from ofrak.component.analyzer import Analyzer
+from ofrak.core.program_metadata import ProgramMetadata
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributeDependency
 from ofrak_binary_ninja.components.identifiers import BinaryNinjaAnalysisResource
 from ofrak_binary_ninja.model import BinaryNinjaAnalysis
 from ofrak.resource import Resource
+from ofrak_type.error import NotFoundError
 
 LOGGER = logging.getLogger(__file__)
 
@@ -36,12 +38,32 @@ class BinaryNinjaAnalyzer(Analyzer[Optional[BinaryNinjaAnalyzerConfig], BinaryNi
         if not config:
             async with resource.temp_to_disk(delete=False) as temp_path:
                 bv = open_view(temp_path)
-
-            return BinaryNinjaAnalysis(bv)
         else:
             bv = BinaryViewType.get_view_of_file(config.bndb_file)
             assert bv is not None
-            return BinaryNinjaAnalysis(bv)
+
+        # Try to get program metadata for entry points and base address
+        try:
+            program_metadata = resource.get_attributes(ProgramMetadata)
+
+            # Add entry points if available
+            if program_metadata.entry_points:
+                for entry_addr in program_metadata.entry_points:
+                    bv.add_entry_point(entry_addr)
+                    LOGGER.info(f"Added entry point at 0x{entry_addr:x}")
+
+            # Rebase if base_address differs from what Binary Ninja detected
+            if program_metadata.base_address is not None:
+                current_base = bv.start
+                if current_base != program_metadata.base_address:
+                    bv.rebase(program_metadata.base_address)
+                    LOGGER.info(
+                        f"Rebased from 0x{current_base:x} to 0x{program_metadata.base_address:x}"
+                    )
+        except NotFoundError:
+            pass
+
+        return BinaryNinjaAnalysis(bv)
 
     def _create_dependencies(
         self,

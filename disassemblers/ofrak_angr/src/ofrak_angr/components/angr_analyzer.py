@@ -10,11 +10,13 @@ from ofrak.resource import Resource
 
 import angr.project
 from ofrak.core.elf.model import Elf, ElfHeader, ElfType
+from ofrak.core.program_metadata import ProgramMetadata
 from ofrak_angr.components.identifiers import AngrAnalysisResource
 from ofrak_angr.model import AngrAnalysis
 from ofrak.component.modifier import Modifier
 from ofrak.core import CodeRegion
 from ofrak import ResourceFilter
+from ofrak_type.error import NotFoundError
 
 
 LOGGER = logging.getLogger(__file__)
@@ -48,7 +50,26 @@ class AngrAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
     ) -> AngrAnalysis:
         resource_data = await resource.get_data()
 
-        project = angr.project.Project(BytesIO(resource_data), load_options=config.project_args)
+        # Try to get program metadata for entry point and base address
+        main_opts = {}
+        try:
+            program_metadata = resource.get_attributes(ProgramMetadata)
+            if program_metadata.entry_points:
+                # angr uses the first entry point as the main entry
+                main_opts["entry_point"] = program_metadata.entry_points[0]
+            if program_metadata.base_address is not None:
+                main_opts["base_addr"] = program_metadata.base_address
+        except NotFoundError:
+            pass
+
+        # Merge main_opts into project_args
+        project_args = dict(config.project_args)
+        if main_opts:
+            existing_main_opts = project_args.get("main_opts", {})
+            existing_main_opts.update(main_opts)
+            project_args["main_opts"] = existing_main_opts
+
+        project = angr.project.Project(BytesIO(resource_data), load_options=project_args)
 
         # Let's use angr to perform its own full analysis on the binary, and
         # maintain its results for the CR / CB / BB unpackers to re-use
