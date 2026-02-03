@@ -146,3 +146,86 @@ class TestPeProgramMetadataAnalyzer:
         # PE should have entry point (image_base + RVA) and base address
         assert metadata.entry_points == (0x40C966,)  # 0x400000 + 0xC966
         assert metadata.base_address == 0x400000
+
+    async def test_pe_program_metadata_analyzer_dll_no_entry(self, ofrak_context: OFRAKContext):
+        """
+        Test that PeProgramMetadataAnalyzer returns empty entry_points for DLLs without entry point.
+
+        For PE files (especially DLLs), AddressOfEntryPoint=0 means "no entry point" - this is
+        different from ELF where entry=0 can be a valid address. The analyzer should return
+        an empty entry_points tuple in this case, NOT (image_base,).
+
+        This test catches the bug where entry_rva=0 is incorrectly computed as image_base+0.
+        """
+        from ofrak.core.pe.analyzer import PeProgramMetadataAnalyzer
+
+        filepath = os.path.join(ASSETS_DIR, "no_entry_point.dll")
+        if not os.path.exists(filepath):
+            pytest.skip(
+                "Test file no_entry_point.dll not found. "
+                "Please place a DLL with AddressOfEntryPoint=0 at: "
+                f"{filepath}"
+            )
+
+        resource = await ofrak_context.create_root_resource_from_file(filepath)
+        await resource.unpack_recursively()
+
+        await resource.run(PeProgramMetadataAnalyzer)
+        metadata = resource.get_attributes(ProgramMetadata)
+
+        # DLL with no entry point should have empty entry_points, not (image_base,)
+        assert metadata.entry_points == ()
+        assert metadata.base_address is not None  # image_base should still be present
+
+
+class TestEntryPointZero:
+    """
+    Tests for correct handling of entry point address 0.
+
+    Entry point = 0 is valid in some contexts:
+    - ELF: Entry = 0 can be valid for relocatable objects or firmware at address 0
+    - UImage: Entry = 0 means the kernel/firmware starts at address 0
+    - PE: entry_rva = 0 means "no entry point" (different semantics!)
+    """
+
+    async def test_uimage_entry_point_zero(self, ofrak_context: OFRAKContext):
+        """Test that UImage correctly reports entry point 0 when ih_ep=0."""
+        from ofrak.core.uimage import UImageProgramMetadataAnalyzer
+
+        filepath = os.path.join(ASSETS_DIR, "uimage")
+        resource = await ofrak_context.create_root_resource_from_file(filepath)
+        await resource.unpack_recursively()
+
+        await resource.run(UImageProgramMetadataAnalyzer)
+        metadata = resource.get_attributes(ProgramMetadata)
+
+        # UImage with ih_ep=0 should include 0 in entry_points (it's a valid address)
+        assert 0 in metadata.entry_points
+        assert metadata.entry_points == (0x0,)
+
+    async def test_elf_entry_point_zero(self, ofrak_context: OFRAKContext):
+        """
+        Test that ELF correctly reports entry point 0 when e_entry=0.
+
+        Entry point 0 is valid for ELF files - it means execution starts at address 0.
+        This is different from PE where entry_rva=0 means "no entry point".
+        """
+        from ofrak.core.elf.analyzer import ElfProgramMetadataAnalyzer
+
+        filepath = os.path.join(ASSETS_DIR, "entry_at_zero.elf")
+        if not os.path.exists(filepath):
+            pytest.skip(
+                "Test file entry_at_zero.elf not found. "
+                "Please place an ELF with e_entry=0 at: "
+                f"{filepath}"
+            )
+
+        resource = await ofrak_context.create_root_resource_from_file(filepath)
+        await resource.unpack_recursively()
+
+        await resource.run(ElfProgramMetadataAnalyzer)
+        metadata = resource.get_attributes(ProgramMetadata)
+
+        # ELF with e_entry=0 should include 0 in entry_points (it's a valid address)
+        assert 0 in metadata.entry_points
+        assert metadata.entry_points == (0x0,)

@@ -12,6 +12,8 @@ import logging
 from tempfile312 import mkdtemp
 from tqdm import tqdm
 
+from ofrak_type.memory_permissions import MemoryPermissions
+
 LOGGER = logging.getLogger("ofrak_pyghidra")
 
 
@@ -91,9 +93,9 @@ def unpack(
                         permissions = region.get("permissions")
                         if permissions is not None:
                             # permissions is a MemoryPermissions value (int)
-                            block.setRead(bool(permissions & 4))  # R = 4
-                            block.setWrite(bool(permissions & 2))  # W = 2
-                            block.setExecute(bool(permissions & 1))  # X = 1
+                            block.setRead(bool(permissions & MemoryPermissions.R.value))
+                            block.setWrite(bool(permissions & MemoryPermissions.W.value))
+                            block.setExecute(bool(permissions & MemoryPermissions.X.value))
                         else:
                             # Backwards compatibility: use "executable" flag if present,
                             # otherwise default to executable (R+X) to match legacy behavior

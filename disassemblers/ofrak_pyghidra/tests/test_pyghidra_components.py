@@ -31,6 +31,7 @@ from ofrak_pyghidra.components.pyghidra_components import (
     PyGhidraDecompilationAnalyzer,
     PyGhidraCustomLoadAnalyzer,
 )
+from ofrak.core.program_metadata import ProgramMetadata
 import ofrak_pyghidra
 from ofrak.core import (
     CodeRegion,
@@ -487,3 +488,94 @@ async def test_pyghidra_custom_loader(custom_binary_resource):
     decomp_str = decomp_resource.decompilation
     print(decomp_str)
     assert '"tini version 0.19.0"' in decomp_str
+
+
+async def test_pyghidra_custom_loader_with_program_metadata(custom_binary_resource):
+    """
+    Test that PyGhidraCustomLoadAnalyzer correctly handles ProgramMetadata alongside MemoryRegions.
+
+    This test verifies that when both ProgramMetadata (with base_address and entry_points) and
+    MemoryRegions are provided, the analysis produces correct results. Specifically:
+    - Entry points from ProgramMetadata should be registered correctly in the analysis
+    - Memory regions should remain at their specified virtual addresses even when base_address
+      differs from the minimum region address
+
+    This catches potential bugs where base_address rebasing could interfere with memory region
+    addresses (H3 issue).
+
+    Requirements Mapping:
+    - REQ2.2
+    """
+    custom_binary_resource.add_tag(Program)
+    await custom_binary_resource.save()
+    await custom_binary_resource.identify()
+
+    program_attributes = ProgramAttributes(
+        isa=InstructionSet.AARCH64,
+        sub_isa=SubInstructionSet.ARMv8A,
+        bit_width=BitWidth.BIT_64,
+        endianness=Endianness.LITTLE_ENDIAN,
+        processor=None,
+    )
+    custom_binary_resource.add_attributes(program_attributes)
+
+    # Add ProgramMetadata with base_address=0 and entry point at the text section start
+    # This tests the interaction between base_address and explicit memory region addresses
+    text_vaddr = 0x400130
+    program_metadata = ProgramMetadata(
+        entry_points=(text_vaddr,),
+        base_address=0x0,  # Different from text_vaddr to test H3
+    )
+    custom_binary_resource.add_attributes(program_metadata)
+    await custom_binary_resource.save()
+
+    # Manually create CodeRegion for .text
+    text_offset = 0
+    text_size = 40792
+    text_section = await custom_binary_resource.create_child(
+        tags=(CodeRegion,),
+        data_range=Range.from_size(text_offset, text_size),
+    )
+    text_section.add_view(
+        CodeRegion(
+            virtual_address=text_vaddr,
+            size=text_size,
+        )
+    )
+    await text_section.save()
+
+    gap_size = 0x1234
+    rodata_offset = text_offset + text_size + gap_size
+    rodata_vaddr = 0x40A0A0
+    rodata_size = 7052
+    rodata_section = await custom_binary_resource.create_child(
+        tags=(MemoryRegion,),
+        data_range=Range.from_size(rodata_offset, rodata_size),
+    )
+    rodata_section.add_view(
+        MemoryRegion(
+            virtual_address=rodata_vaddr,
+            size=rodata_size,
+        )
+    )
+    await rodata_section.save()
+
+    await custom_binary_resource.run(PyGhidraCustomLoadAnalyzer)
+
+    await text_section.unpack()
+
+    # Verify that a function is found at the entry point address we specified
+    # This confirms that the entry point from ProgramMetadata was used correctly
+    # and that memory regions are at their correct addresses despite base_address=0
+    cb = await custom_binary_resource.get_only_descendant_as_view(
+        v_type=ComplexBlock,
+        r_filter=ResourceFilter(
+            tags=[ComplexBlock],
+            attribute_filters=(
+                ResourceAttributeValueFilter(Addressable.VirtualAddress, text_vaddr),
+            ),
+        ),
+    )
+    # If memory regions and entry points are handled correctly, there should be a function at text_vaddr
+    assert cb is not None
+    assert cb.virtual_address == text_vaddr

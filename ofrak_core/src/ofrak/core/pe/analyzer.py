@@ -17,6 +17,9 @@ class PeProgramMetadataAnalyzer(Analyzer[None, ProgramMetadata]):
     base address (ImageBase field from the optional header). This metadata helps
     disassembler backends properly analyze PE binaries, especially when loading
     raw memory dumps or when the backend doesn't natively understand PE format.
+
+    Note: For PE files, AddressOfEntryPoint=0 means "no entry point" (per PE spec),
+    which is different from ELF where e_entry=0 can be a valid entry address.
     """
 
     id = b"PeProgramMetadataAnalyzer"
@@ -34,7 +37,8 @@ class PeProgramMetadataAnalyzer(Analyzer[None, ProgramMetadata]):
             )
             entry_rva = optional_header.address_of_entry_point
             image_base = optional_header.image_base
-            entry_point = image_base + entry_rva if entry_rva is not None else None
+            # PE spec: AddressOfEntryPoint=0 means "no entry point", not entry at address 0
+            entry_point = image_base + entry_rva if entry_rva else None
             base_address = image_base
         except NotFoundError:
             # Fall back to basic optional header (no image_base)
@@ -43,7 +47,8 @@ class PeProgramMetadataAnalyzer(Analyzer[None, ProgramMetadata]):
             if optional_header is None:
                 return ProgramMetadata()
             entry_rva = optional_header.address_of_entry_point
-            entry_point = entry_rva if entry_rva is not None else None
+            # PE spec: AddressOfEntryPoint=0 means "no entry point"
+            entry_point = entry_rva if entry_rva else None
             base_address = None
 
         return ProgramMetadata(
