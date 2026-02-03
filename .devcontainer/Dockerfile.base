@@ -33,6 +33,27 @@ RUN groupadd --gid $USER_GID $USERNAME \
     && echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/$USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME
 
+# Move root's tool configs to user home (if present in base image)
+# - Binary Ninja: license/config dir + .pth file to system site-packages
+# - Ghidra: config dir
+# Also clean up root's cache
+RUN if [ -d /root/.binaryninja ]; then \
+        mv /root/.binaryninja /home/$USERNAME/.binaryninja \
+        && chown -R $USERNAME:$USERNAME /home/$USERNAME/.binaryninja; \
+    fi \
+    && pth=$(find /root/.local/lib -name 'binaryninja.pth' 2>/dev/null | head -1) \
+    && if [ -n "$pth" ]; then \
+        target=$(python3 -c "import sysconfig; print(sysconfig.get_path('purelib'))") \
+        && mv "$pth" "$target/" \
+        && chmod 644 "$target/binaryninja.pth"; \
+    fi \
+    && if [ -d /root/.config/ghidra ]; then \
+        mkdir -p /home/$USERNAME/.config \
+        && mv /root/.config/ghidra /home/$USERNAME/.config/ghidra \
+        && chown -R $USERNAME:$USERNAME /home/$USERNAME/.config; \
+    fi \
+    && rm -rf /root/.cache
+
 # Configure npm for user-local global installs
 ENV NPM_CONFIG_PREFIX=/home/$USERNAME/.npm \
     PATH=/home/$USERNAME/.local/bin:$PATH
