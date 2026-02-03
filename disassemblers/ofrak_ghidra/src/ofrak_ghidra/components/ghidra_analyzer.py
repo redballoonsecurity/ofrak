@@ -406,9 +406,9 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
             ]
 
             # Use permissions from MemoryRegionPermissions attribute if available.
-            # Note: If permissions are explicitly set to NONE (no access), we default to
-            # read-only ("r") since Ghidra requires at least one permission flag to be set
-            # for the memory block to be usable.
+            # If permissions are NONE (no access), we faithfully represent that as no
+            # permissions. The block will still be readable/disassemblable via Ghidra API,
+            # but won't be auto-analyzed as code.
             try:
                 perms_attr = block.resource.get_attributes(MemoryRegionPermissions)
                 perms = ""
@@ -418,7 +418,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
                     perms += "w"
                 if perms_attr.permissions.value & MemoryPermissions.X.value:
                     perms += "x"
-                block_info.append(perms if perms else "r")
+                block_info.append(perms)
             except NotFoundError:
                 # Fall back to checking if this is a CodeRegion
                 if block.resource.has_tag(CodeRegion):

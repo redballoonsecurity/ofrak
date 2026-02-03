@@ -3,6 +3,7 @@ import os
 import hashlib
 import traceback
 from typing import Any, Dict, Optional, Union, List
+
 import pyghidra
 import argparse
 import time
@@ -120,8 +121,10 @@ def unpack(
                 # Analyze all
                 analysis_mgr = program.getOptions("Analyzers")
                 flat_api.analyzeAll(program)
-            # If base_address is provided, rebase the program
-            if base_address is not None:
+            # If base_address is provided and memory_regions were NOT explicitly provided,
+            # rebase the program. When memory_regions are provided, addresses are already
+            # absolute and should not be shifted.
+            if base_address is not None and not memory_regions:
                 # Convert base_address to int if it's a string
                 if isinstance(base_address, str):
                     if base_address.startswith("0x"):

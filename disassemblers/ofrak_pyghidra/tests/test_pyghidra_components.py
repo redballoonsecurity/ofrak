@@ -519,12 +519,12 @@ async def test_pyghidra_custom_loader_with_program_metadata(custom_binary_resour
     )
     custom_binary_resource.add_attributes(program_attributes)
 
-    # Add ProgramMetadata with base_address=0 and entry point at the text section start
-    # This tests the interaction between base_address and explicit memory region addresses
+    # Add ProgramMetadata with non-zero base_address and entry point at the text section start
+    # This tests that explicit memory region addresses are NOT shifted by base_address rebasing
     text_vaddr = 0x400130
     program_metadata = ProgramMetadata(
         entry_points=(text_vaddr,),
-        base_address=0x0,  # Different from text_vaddr to test H3
+        base_address=0x100000,  # Non-zero to actually test rebasing behavior
     )
     custom_binary_resource.add_attributes(program_metadata)
     await custom_binary_resource.save()

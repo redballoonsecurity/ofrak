@@ -43,10 +43,10 @@ class PeProgramMetadataAnalyzer(Analyzer[None, ProgramMetadata]):
         except NotFoundError:
             # Fall back to basic optional header (no image_base)
             pe = await resource.view_as(Pe)
-            optional_header = await pe.get_optional_header()
-            if optional_header is None:
+            basic_optional_header = await pe.get_optional_header()
+            if basic_optional_header is None:
                 return ProgramMetadata()
-            entry_rva = optional_header.address_of_entry_point
+            entry_rva = basic_optional_header.address_of_entry_point
             # PE spec: AddressOfEntryPoint=0 means "no entry point"
             entry_point = entry_rva if entry_rva else None
             base_address = None
