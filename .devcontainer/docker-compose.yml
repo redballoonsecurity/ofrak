@@ -11,6 +11,8 @@ services:
         WORKSPACE_FOLDER: ${WORKSPACE_FOLDER}
     volumes:
       - ${WORKSPACE_FOLDER}:${WORKSPACE_FOLDER}:cached
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     environment:
       - OFRAK_START_GHIDRA_SERVER=${OFRAK_START_GHIDRA_SERVER-}
     command: sleep infinity
