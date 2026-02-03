@@ -477,6 +477,6 @@ class ElfProgramMetadataAnalyzer(Analyzer[None, ProgramMetadata]):
                 break
 
         return ProgramMetadata(
-            entry_points=(entry_point,) if entry_point else (),
+            entry_points=(entry_point,) if entry_point is not None else (),
             base_address=base_address,
         )

@@ -62,12 +62,10 @@ class AngrAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
         except NotFoundError:
             pass
 
-        # Merge main_opts into project_args
+        # Merge main_opts into project_args (copy to avoid mutating config)
         project_args = dict(config.project_args)
         if main_opts:
-            existing_main_opts = project_args.get("main_opts", {})
-            existing_main_opts.update(main_opts)
-            project_args["main_opts"] = existing_main_opts
+            project_args["main_opts"] = {**project_args.get("main_opts", {}), **main_opts}
 
         project = angr.project.Project(BytesIO(resource_data), load_options=project_args)
 

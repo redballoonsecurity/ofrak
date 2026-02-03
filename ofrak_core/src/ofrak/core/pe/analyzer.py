@@ -1,10 +1,12 @@
 from typing import Optional
 
 from ofrak.component.analyzer import Analyzer
-from ofrak.core.pe.model import Pe, PeWinOptionalHeader
+from ofrak.core.pe.model import Pe, PeOptionalHeader, PeWinOptionalHeader
 from ofrak.core.program_metadata import ProgramMetadata
 from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
+from ofrak.service.resource_service_i import ResourceFilter
+from ofrak_type.error import NotFoundError
 
 
 class PeProgramMetadataAnalyzer(Analyzer[None, ProgramMetadata]):
@@ -24,25 +26,27 @@ class PeProgramMetadataAnalyzer(Analyzer[None, ProgramMetadata]):
     async def analyze(
         self, resource: Resource, config: Optional[ComponentConfig] = None
     ) -> ProgramMetadata:
-        pe = await resource.view_as(Pe)
-        optional_header = await pe.get_optional_header()
-
-        if optional_header is None:
-            return ProgramMetadata()
-
-        # Compute absolute entry point VA
-        # address_of_entry_point is an RVA, need to add image_base
-        entry_rva = optional_header.address_of_entry_point
-        if isinstance(optional_header, PeWinOptionalHeader):
+        # Try to get Windows optional header (with image_base) first
+        try:
+            optional_header = await resource.get_only_child_as_view(
+                PeWinOptionalHeader,
+                ResourceFilter(tags=(PeOptionalHeader,)),
+            )
+            entry_rva = optional_header.address_of_entry_point
             image_base = optional_header.image_base
-            entry_point = image_base + entry_rva if entry_rva else None
+            entry_point = image_base + entry_rva if entry_rva is not None else None
             base_address = image_base
-        else:
-            # Non-Windows PE without image_base
-            entry_point = entry_rva if entry_rva else None
+        except NotFoundError:
+            # Fall back to basic optional header (no image_base)
+            pe = await resource.view_as(Pe)
+            optional_header = await pe.get_optional_header()
+            if optional_header is None:
+                return ProgramMetadata()
+            entry_rva = optional_header.address_of_entry_point
+            entry_point = entry_rva if entry_rva is not None else None
             base_address = None
 
         return ProgramMetadata(
-            entry_points=(entry_point,) if entry_point else (),
+            entry_points=(entry_point,) if entry_point is not None else (),
             base_address=base_address,
         )

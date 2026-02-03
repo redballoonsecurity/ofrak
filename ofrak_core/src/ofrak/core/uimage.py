@@ -475,7 +475,7 @@ class UImageProgramMetadataAnalyzer(Analyzer[None, ProgramMetadata]):
 
         return ProgramMetadata(
             entry_points=(entry_point,) if entry_point is not None else (),
-            base_address=load_address if load_address is not None else None,
+            base_address=load_address,
         )
 
 

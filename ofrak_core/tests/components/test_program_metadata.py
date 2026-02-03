@@ -53,18 +53,11 @@ class TestProgramMetadataDataclass:
 class TestElfProgramMetadataAnalyzer:
     """Tests for ElfProgramMetadataAnalyzer."""
 
-    @pytest.mark.parametrize(
-        "elf_file",
-        [
-            "hello.out",
-            "arm_reloc_relocated.elf",
-        ],
-    )
-    async def test_elf_program_metadata_analyzer(self, ofrak_context: OFRAKContext, elf_file: str):
-        """Test that ElfProgramMetadataAnalyzer extracts entry point from ELF files."""
+    async def test_elf_program_metadata_analyzer_hello_out(self, ofrak_context: OFRAKContext):
+        """Test that ElfProgramMetadataAnalyzer extracts correct values from hello.out."""
         from ofrak.core.elf.analyzer import ElfProgramMetadataAnalyzer
 
-        filepath = os.path.join(ASSETS_DIR, elf_file)
+        filepath = os.path.join(ASSETS_DIR, "hello.out")
         resource = await ofrak_context.create_root_resource_from_file(filepath)
         await resource.unpack_recursively()
 
@@ -72,10 +65,25 @@ class TestElfProgramMetadataAnalyzer:
         await resource.run(ElfProgramMetadataAnalyzer)
         metadata = resource.get_attributes(ProgramMetadata)
 
-        # Entry points should be a tuple
-        assert isinstance(metadata.entry_points, tuple)
-        # Base address should be set or None (depending on ELF type)
-        assert metadata.base_address is None or isinstance(metadata.base_address, int)
+        # Verify concrete expected values
+        assert metadata.entry_points == (0x4003E0,)
+        assert metadata.base_address == 0x400000
+
+    async def test_elf_program_metadata_analyzer_arm(self, ofrak_context: OFRAKContext):
+        """Test that ElfProgramMetadataAnalyzer extracts entry point from ARM ELF."""
+        from ofrak.core.elf.analyzer import ElfProgramMetadataAnalyzer
+
+        filepath = os.path.join(ASSETS_DIR, "arm_reloc_relocated.elf")
+        resource = await ofrak_context.create_root_resource_from_file(filepath)
+        await resource.unpack_recursively()
+
+        # Run the analyzer explicitly
+        await resource.run(ElfProgramMetadataAnalyzer)
+        metadata = resource.get_attributes(ProgramMetadata)
+
+        # Verify concrete expected values from readelf output
+        assert metadata.entry_points == (0x8104,)
+        assert metadata.base_address == 0x0
 
 
 class TestUImageProgramMetadataAnalyzer:
@@ -93,10 +101,10 @@ class TestUImageProgramMetadataAnalyzer:
         await resource.run(UImageProgramMetadataAnalyzer)
         metadata = resource.get_attributes(ProgramMetadata)
 
-        # UImage should have entry point and base address from header
-        assert isinstance(metadata.entry_points, tuple)
-        assert len(metadata.entry_points) > 0
-        assert isinstance(metadata.base_address, int) or metadata.base_address is None
+        # Verify concrete expected values from UImage header
+        # This UImage has ih_ep=0x0 and ih_load=0x0
+        assert metadata.entry_points == (0x0,)
+        assert metadata.base_address == 0x0
 
 
 class TestIhexProgramMetadataAnalyzer:
@@ -104,13 +112,37 @@ class TestIhexProgramMetadataAnalyzer:
 
     async def test_ihex_program_metadata_analyzer(self, ofrak_context: OFRAKContext):
         """Test that IhexProgramMetadataAnalyzer extracts start address if present."""
-        filepath = os.path.join(ASSETS_DIR, "simple.ihex")
-        if not os.path.exists(filepath):
-            pytest.skip("simple.ihex test file not found")
+        from ofrak.core.ihex import IhexProgramMetadataAnalyzer
 
+        filepath = os.path.join(ASSETS_DIR, "hello_world.ihex")
         resource = await ofrak_context.create_root_resource_from_file(filepath)
         await resource.unpack_recursively()
 
-        # The analyzer should have run - entry point may or may not be set
+        # Run the analyzer explicitly
+        await resource.run(IhexProgramMetadataAnalyzer)
         metadata = resource.get_attributes(ProgramMetadata)
-        assert isinstance(metadata.entry_points, tuple)
+
+        # Verify concrete expected value from Intel HEX execution_start_address
+        # Value 0x4003E0 from bincopy parsing of hello_world.ihex
+        assert metadata.entry_points == (0x4003E0,)
+        assert metadata.base_address is None
+
+
+class TestPeProgramMetadataAnalyzer:
+    """Tests for PeProgramMetadataAnalyzer."""
+
+    async def test_pe_program_metadata_analyzer(self, ofrak_context: OFRAKContext):
+        """Test that PeProgramMetadataAnalyzer extracts entry point and image base from PE files."""
+        from ofrak.core.pe.analyzer import PeProgramMetadataAnalyzer
+
+        filepath = os.path.join(ASSETS_DIR, "jumpnbump.exe")
+        resource = await ofrak_context.create_root_resource_from_file(filepath)
+        await resource.unpack_recursively()
+
+        # Run the analyzer explicitly
+        await resource.run(PeProgramMetadataAnalyzer)
+        metadata = resource.get_attributes(ProgramMetadata)
+
+        # PE should have entry point (image_base + RVA) and base address
+        assert metadata.entry_points == (0x40C966,)  # 0x400000 + 0xC966
+        assert metadata.base_address == 0x400000

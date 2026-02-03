@@ -13,6 +13,7 @@ from xml.etree import ElementTree
 from ofrak import ResourceFilter
 from ofrak.core import CodeRegion, MemoryRegion, NamedProgramSection, ProgramAttributes, Program
 from ofrak.core.memory_region import MemoryRegionPermissions
+from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak.core.program_metadata import ProgramMetadata
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
@@ -404,15 +405,18 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
                 str(block.size),
             ]
 
-            # Use permissions from MemoryRegionPermissions attribute if available
+            # Use permissions from MemoryRegionPermissions attribute if available.
+            # Note: If permissions are explicitly set to NONE (no access), we default to
+            # read-only ("r") since Ghidra requires at least one permission flag to be set
+            # for the memory block to be usable.
             try:
                 perms_attr = block.resource.get_attributes(MemoryRegionPermissions)
                 perms = ""
-                if perms_attr.permissions.value & 4:  # R = 4
+                if perms_attr.permissions.value & MemoryPermissions.R.value:
                     perms += "r"
-                if perms_attr.permissions.value & 2:  # W = 2
+                if perms_attr.permissions.value & MemoryPermissions.W.value:
                     perms += "w"
-                if perms_attr.permissions.value & 1:  # X = 1
+                if perms_attr.permissions.value & MemoryPermissions.X.value:
                     perms += "x"
                 block_info.append(perms if perms else "r")
             except NotFoundError:

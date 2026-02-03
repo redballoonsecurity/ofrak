@@ -83,7 +83,10 @@ def unpack(
                             False,  # overlay
                         )
 
-                        # Set permissions from region dict, defaulting to R+X if not specified
+                        # Set permissions from region dict.
+                        # For backwards compatibility, default to R+X when no permissions are
+                        # specified, since previously all MemoryRegions passed to the disassembler
+                        # were treated as executable code regions.
                         block = memory.getBlock(addr)
                         permissions = region.get("permissions")
                         if permissions is not None:
@@ -92,7 +95,8 @@ def unpack(
                             block.setWrite(bool(permissions & 2))  # W = 2
                             block.setExecute(bool(permissions & 1))  # X = 1
                         else:
-                            # Default: executable if marked as such, otherwise R+X
+                            # Backwards compatibility: use "executable" flag if present,
+                            # otherwise default to executable (R+X) to match legacy behavior
                             is_executable = region.get("executable", True)
                             block.setExecute(is_executable)
                             block.setRead(True)
