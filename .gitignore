@@ -23,4 +23,3 @@ dist/
 **/license.json
 assets/*_ghidra
 .trees/*/
-.venv/

@@ -7,7 +7,7 @@
 #   1. Fetches from remote (default: origin)
 #   2. Creates a worktree at .trees/<branch-name>, tracking <remote>/<branch-name> if it exists,
 #      otherwise creating a new branch off <remote>/master
-#   3. Creates a .venv with --system-site-packages
+#   3. Creates a venv with --system-site-packages
 #   4. Installs all packages in development mode (make develop)
 #   5. Installs pre-commit hooks
 
@@ -76,11 +76,11 @@ cd "$WORKTREE_PATH"
 
 echo ""
 echo "=== Creating virtual environment with --system-site-packages ==="
-python3 -m venv --system-site-packages --prompt "$BRANCH_NAME" .venv
+python3 -m venv --system-site-packages --prompt "$BRANCH_NAME" venv
 
 echo ""
 echo "=== Activating virtual environment ==="
-source .venv/bin/activate
+source venv/bin/activate
 
 echo ""
 echo "=== Installing OFRAK packages in development mode ==="
@@ -105,5 +105,5 @@ echo "  $TRACKING_INFO"
 echo ""
 echo "To use this worktree:"
 echo "  cd $WORKTREE_PATH"
-echo "  source .venv/bin/activate"
+echo "  source venv/bin/activate"
 echo "============================================================"
