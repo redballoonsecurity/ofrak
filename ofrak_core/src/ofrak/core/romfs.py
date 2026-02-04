@@ -47,7 +47,6 @@ GENROMFS = ComponentExternalTool(
     "https://romfs.sourceforge.net/",
     install_check_arg="-h",
     apt_package="genromfs",
-    brew_package="genromfs",
 )
 
 

@@ -9,6 +9,7 @@ RUN apt-get -y update && \
       cpio \
       git \
       genisoimage \
+      genromfs \
       liblz4-dev \
       liblzo2-dev \
       libzstd-dev \
