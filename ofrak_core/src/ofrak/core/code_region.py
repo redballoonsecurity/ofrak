@@ -9,6 +9,9 @@ from ofrak.resource import Resource
 class CodeRegion(MemoryRegion):
     """
     A memory region within a [program][ofrak.core.program.Program] that contains executable code.
+
+    Must be a descendant of a Program for disassembly, as disassembler backends use the ancestor
+    Program to locate their analysis context.
     """
 
 
