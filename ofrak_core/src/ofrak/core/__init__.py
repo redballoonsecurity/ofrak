@@ -50,6 +50,7 @@ from ofrak.core.seven_zip import *
 from ofrak.core.program import *
 from ofrak.core.program_section import *
 from ofrak.core.rar import *
+from ofrak.core.romfs import *
 from ofrak.core.squashfs import *
 from ofrak.core.strings import *
 from ofrak.core.strings_analyzer import *
