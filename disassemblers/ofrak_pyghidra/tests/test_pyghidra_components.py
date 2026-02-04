@@ -19,6 +19,7 @@ from ofrak_type import (
     InstructionSet,
 )
 import pytest
+from pytest_ofrak import ASSETS_DIR
 from pytest_ofrak.patterns.code_region_unpacker import CodeRegionUnpackAndVerifyPattern
 from pytest_ofrak.patterns.complex_block_unpacker import (
     ComplexBlockUnpackerUnpackAndVerifyPattern,
@@ -43,13 +44,6 @@ from ofrak.core import (
 )
 from ofrak_pyghidra.standalone.pyghidra_analysis import unpack, decompile_all_functions
 from ofrak import Resource, ResourceFilter, ResourceSort, ResourceAttributeValueFilter
-
-ASSETS_DIR = os.path.abspath(
-    os.path.join(
-        os.path.dirname(__file__),
-        "../../ofrak_cached_disassembly/tests/assets",
-    )
-)
 
 
 @pytest.fixture(autouse=True)
@@ -349,10 +343,7 @@ async def test_strings_in_decomp(freertos_resource, ofrak_injector):
 @pytest.fixture
 async def ihex_resource(ofrak_context: OFRAKContext):
     return await ofrak_context.create_root_resource_from_file(
-        os.path.join(
-            os.path.dirname(__file__),
-            "../../../ofrak_core/tests/components/assets/hello_world.ihex",
-        )
+        os.path.join(ASSETS_DIR, "hello_world.ihex")
     )
 
 
