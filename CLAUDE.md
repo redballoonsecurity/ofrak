@@ -71,6 +71,7 @@ Key directories in `ofrak_core/src/ofrak/`:
 ### Test Requirements
 
 - **NEVER MOCK** - test with real code, real tools, real binary data
+- Assume every test failure is an indication of a bug in code that must be fixed, until proven otherwise
 - **Test Data Strategy**:
   - Write tests assuming real data exists in `tests/components/assets/`
   - Reference asset files by path (e.g., `tests/components/assets/sample.bin`)
