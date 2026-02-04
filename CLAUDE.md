@@ -26,7 +26,7 @@ make inspect                    # autoflake + black check
 pre-commit run --all-files      # all hooks
 
 # Type checking (from package directory)
-mypy
+python3 -m mypy
 
 # Build frontend
 cd frontend && npm install && npm run build
