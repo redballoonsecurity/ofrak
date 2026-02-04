@@ -9,7 +9,6 @@ import argparse
 import time
 import re
 import json
-import logging
 from tempfile312 import mkdtemp
 from tqdm import tqdm
 
@@ -104,7 +103,7 @@ def unpack(
                             block.setExecute(is_executable)
                             block.setRead(True)
                     except Exception as e:
-                        logging.warning(
+                        LOGGER.warning(
                             f"Failed to create memory block at 0x{region['virtual_address']:x}: {e}"
                         )
                 # Add entry points if provided
@@ -116,7 +115,7 @@ def unpack(
                             symbol_table.addExternalEntryPoint(addr)
                             LOGGER.info(f"Added entry point at 0x{entry_addr:x}")
                         except Exception as e:
-                            logging.warning(f"Failed to add entry point at 0x{entry_addr:x}: {e}")
+                            LOGGER.warning(f"Failed to add entry point at 0x{entry_addr:x}: {e}")
 
                 # Analyze all
                 analysis_mgr = program.getOptions("Analyzers")

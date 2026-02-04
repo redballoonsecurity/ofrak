@@ -46,13 +46,9 @@ class BinaryNinjaAnalyzer(Analyzer[Optional[BinaryNinjaAnalyzerConfig], BinaryNi
         try:
             program_metadata = resource.get_attributes(ProgramMetadata)
 
-            # Add entry points if available
-            if program_metadata.entry_points:
-                for entry_addr in program_metadata.entry_points:
-                    bv.add_entry_point(entry_addr)
-                    LOGGER.info(f"Added entry point at 0x{entry_addr:x}")
-
-            # Rebase if base_address differs from what Binary Ninja detected
+            # Rebase FIRST if base_address differs from what Binary Ninja detected.
+            # This must happen before adding entry points, since entry points are
+            # specified as absolute addresses in the target address space.
             if program_metadata.base_address is not None:
                 current_base = bv.start
                 if current_base != program_metadata.base_address:
@@ -60,6 +56,12 @@ class BinaryNinjaAnalyzer(Analyzer[Optional[BinaryNinjaAnalyzerConfig], BinaryNi
                     LOGGER.info(
                         f"Rebased from 0x{current_base:x} to 0x{program_metadata.base_address:x}"
                     )
+
+            # Add entry points after rebasing (addresses are now correct)
+            if program_metadata.entry_points:
+                for entry_addr in program_metadata.entry_points:
+                    bv.add_entry_point(entry_addr)
+                    LOGGER.info(f"Added entry point at 0x{entry_addr:x}")
         except NotFoundError:
             pass
 

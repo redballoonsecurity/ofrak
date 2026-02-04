@@ -466,6 +466,8 @@ class ElfProgramMetadataAnalyzer(Analyzer[None, ProgramMetadata]):
         elf_header = await elf.get_header()
 
         # Get entry point from ELF header
+        # Note: e_entry is always an int (never None). For ELF, entry point 0 is valid
+        # (e.g., firmware mapped at address 0), unlike PE where entry_rva=0 means "no entry".
         entry_point = elf_header.e_entry
 
         # Get base address from first PT_LOAD segment
