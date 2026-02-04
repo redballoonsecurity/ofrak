@@ -29,7 +29,7 @@ pre-commit run --all-files      # all hooks
 python3 -m mypy
 
 # Build frontend
-cd frontend && npm install && npm run build
+(cd frontend && npm install && npm run build)
 
 
 ## Package Structure
@@ -52,7 +52,7 @@ Each package uses src layout (`src/` subdirectory) and has its own Makefile with
 - **Component types**: `Analyzer`, `Modifier`, `Unpacker`, `Packer`, `Identifier` (in `ofrak/component/`)
 - **Resource lifecycle**: create → identify → unpack → analyze/modify → pack → flush
 - **Dependency injection framework**: `synthol` - components discovered via `ofrak.packages` entry points
-- **Async**: All I/O is async; tests use `asyncio_mode="auto"`
+- **Async**: All I/O is async; tests use `asyncio_mode="auto"; check function signature to determine if a method is async or not`
 
 Key directories in `ofrak_core/src/ofrak/`:
 - `component/` - Base component classes
@@ -105,7 +105,7 @@ See `docs/contributor-guide/getting-started.md` for full coding standards and do
 ## Contributing
 
 - Update `CHANGELOG.md` and bump the **rc version** in `setup.py` for any package changes
-- Changelogs follow Keep a Changelog format with PR links
+- Changelogs follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format with PR links
 - Pre-commit hooks must pass (install with `pre-commit install`)
 
-See `CONTRIBUTING.md` for PR guidelines and maintainer info.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for PR guidelines and maintainer info.
