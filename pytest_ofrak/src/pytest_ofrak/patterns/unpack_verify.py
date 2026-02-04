@@ -8,15 +8,12 @@ Requirements Mapping:
 import warnings
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
-from typing import Any, Dict, Generic, TypeVar, Set, Iterable
+from typing import Any, Dict, Set, Iterable
 
 import pytest
 
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
-
-K = TypeVar("K")
-V = TypeVar("V")
 
 
 def _hexlify(x):
@@ -26,7 +23,7 @@ def _hexlify(x):
 
 
 @dataclass
-class UnpackAndVerifyTestCase(Generic[K, V]):
+class UnpackAndVerifyTestCase:
     """
     Container for test cases which will be fed to an UnpackAndVerifyPattern implementation.
     Extend this class, adding some fields to hold the information needed to create the root
@@ -38,18 +35,11 @@ class UnpackAndVerifyTestCase(Generic[K, V]):
       - Optional results may or may not exist in the unpacker output. The lack of an optional
         result generates a warning.
       - Results which aren't specified in either 'expected' or 'optional' sets fail the test.
-
-    :param K: The key type of the expected and optional results. The unpacked resources will each be assigned
-    a key of this same type, allowing the test to match actual unpacked resources with expected
-    values.
-    :param V: The value type of the expected and optional results. This can be anything, as long as it
-    contains the information needed to verify that the actual unpacked resource matches what is
-    expected.
     """
 
     label: str
-    expected_results: Dict[K, V]
-    optional_results: Set[K]
+    expected_results: Dict[Any, Any]
+    optional_results: Set[Any]
 
 
 class UnpackAndVerifyPattern(ABC):
@@ -105,7 +95,7 @@ class UnpackAndVerifyPattern(ABC):
         missing_optional_set = optional_set - unpacked_set
 
         ## Build an info string about this test case
-        info_str = [f"{'item':<20}{'unpacked':<20}{'expected':<20}{'optional':<20}"]
+        info_lines = [f"{'item':<20}{'unpacked':<20}{'expected':<20}{'optional':<20}"]
         for item in sorted(unpacked_set | expected_set | optional_set):
             item_fmt = str(_hexlify(item))
             row = (
@@ -114,8 +104,8 @@ class UnpackAndVerifyPattern(ABC):
                 f"{item_fmt if item in expected_set else '':<20}"
                 f"{item_fmt if item in optional_set else '':<20}"
             )
-            info_str.append(row)
-        info_str = "\n".join(info_str)
+            info_lines.append(row)
+        info_str = "\n".join(info_lines)
 
         ## Sanity check to ensure that optional and expected sets are exclusive
         assert expected_set & optional_set == set(), (
@@ -171,8 +161,8 @@ class UnpackAndVerifyPattern(ABC):
 
     @pytest.fixture
     async def expected_results(
-        self, unpack_verify_test_case: UnpackAndVerifyTestCase[K, V]
-    ) -> Dict[K, V]:
+        self, unpack_verify_test_case: UnpackAndVerifyTestCase
+    ) -> Dict[Any, Any]:
         """
         Extract the expected results from the test case.
 
@@ -183,9 +173,7 @@ class UnpackAndVerifyPattern(ABC):
         return unpack_verify_test_case.expected_results
 
     @pytest.fixture
-    async def optional_results(
-        self, unpack_verify_test_case: UnpackAndVerifyTestCase[K, V]
-    ) -> Dict[K, V]:
+    async def optional_results(self, unpack_verify_test_case: UnpackAndVerifyTestCase) -> Set[Any]:
         """
         Extract the optional results from the test case.
 

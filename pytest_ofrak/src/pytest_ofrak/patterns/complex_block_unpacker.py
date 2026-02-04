@@ -28,12 +28,12 @@ from pytest_ofrak.patterns.unpack_verify import (
 
 
 @dataclass
-class ComplexBlockUnpackerTestCase(UnpackAndVerifyTestCase[int, List[Union[BasicBlock, DataWord]]]):
+class ComplexBlockUnpackerTestCase(UnpackAndVerifyTestCase):
     binary_filename: str
     binary_md5_digest: str
 
 
-COMPLEX_BLOCK_UNPACKER_TEST_CASES = [
+COMPLEX_BLOCK_UNPACKER_TEST_CASES: List[ComplexBlockUnpackerTestCase] = [
     ComplexBlockUnpackerTestCase(
         "x64",
         {
@@ -349,10 +349,11 @@ class ComplexBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
     @pytest.fixture
     async def root_resource(
         self,
-        unpack_verify_test_case: ComplexBlockUnpackerTestCase,
+        unpack_verify_test_case: UnpackAndVerifyTestCase,
         ofrak_context: OFRAKContext,
         test_id: str,
     ) -> Resource:
+        assert isinstance(unpack_verify_test_case, ComplexBlockUnpackerTestCase)
         asset_path = os.path.join(ASSETS_DIR, unpack_verify_test_case.binary_filename)
         with open(asset_path, "rb") as f:
             binary_data = f.read()
@@ -371,7 +372,9 @@ class ComplexBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
         """
         await root_resource.unpack_recursively(do_not_unpack=(BasicBlock,))
 
-    async def get_descendants_to_verify(self, unpacked_resource: Resource) -> Dict[int, Resource]:
+    async def get_descendants_to_verify(
+        self, unpacked_resource: Resource
+    ) -> Dict[int, ComplexBlock]:
         elf = await unpacked_resource.view_as(Elf)
         text_section = await elf.get_section_by_name(".text")
         complex_blocks: List[ComplexBlock] = list(
@@ -456,9 +459,9 @@ class ComplexBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
         :param expected_results:
         :return:
         """
-        new_expected_results = {}
+        new_expected_results: Dict[int, List[Union[BasicBlock, DataWord]]] = {}
         for cb_vaddr, cb_children in expected_results.items():
-            expected_children = []
+            expected_children: List[Union[BasicBlock, DataWord]] = []
             for child in cb_children:
                 if isinstance(child, BasicBlock):
                     expected_children.append(

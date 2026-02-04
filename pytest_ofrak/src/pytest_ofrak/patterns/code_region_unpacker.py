@@ -27,12 +27,12 @@ from ofrak_type.range import Range
 
 
 @dataclass
-class CodeRegionUnpackerTestCase(UnpackAndVerifyTestCase[int, List[int]]):
+class CodeRegionUnpackerTestCase(UnpackAndVerifyTestCase):
     binary_filename: str
     binary_md5_digest: str
 
 
-CODE_REGION_UNPACKER_TEST_CASES = [
+CODE_REGION_UNPACKER_TEST_CASES: List[CodeRegionUnpackerTestCase] = [
     CodeRegionUnpackerTestCase(
         "x64",
         {
@@ -147,10 +147,11 @@ class CodeRegionUnpackAndVerifyPattern(UnpackAndVerifyPattern):
     @pytest.fixture
     async def root_resource(
         self,
-        unpack_verify_test_case: CodeRegionUnpackerTestCase,
+        unpack_verify_test_case: UnpackAndVerifyTestCase,
         ofrak_context: OFRAKContext,
         test_id: str,
     ) -> Resource:
+        assert isinstance(unpack_verify_test_case, CodeRegionUnpackerTestCase)
         asset_path = os.path.join(ASSETS_DIR, unpack_verify_test_case.binary_filename)
         with open(asset_path, "rb") as f:
             binary_data = f.read()
@@ -169,7 +170,9 @@ class CodeRegionUnpackAndVerifyPattern(UnpackAndVerifyPattern):
         """
         await root_resource.unpack_recursively(do_not_unpack=(BasicBlock,))
 
-    async def get_descendants_to_verify(self, unpacked_resource: Resource) -> Dict[int, Resource]:
+    async def get_descendants_to_verify(
+        self, unpacked_resource: Resource
+    ) -> Dict[int, ComplexBlock]:
         program = await unpacked_resource.view_as(Program)
         code_regions = await program.get_code_regions()
 
