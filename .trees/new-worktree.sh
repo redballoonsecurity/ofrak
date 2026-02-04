@@ -18,13 +18,15 @@
 _ofrak_new_worktree() {
     local script_dir repo_root branch_name remote worktree_path
 
-    script_dir="$(cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")" && /bin/pwd)"
+    script_dir="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
     # Use git to find the true repo root (works from any worktree or subdirectory)
-    repo_root="$(dirname "$(git -C "$script_dir" rev-parse --git-common-dir 2>/dev/null)")"
-    if [[ -z "$repo_root" ]] || [[ ! -d "$repo_root/.git" ]]; then
-        echo "Error: Could not find git repository root from $script_dir"
+    # Note: --git-common-dir may return relative path, so resolve with realpath
+    local git_common_dir
+    git_common_dir="$(git -C "$script_dir" rev-parse --git-common-dir)" || {
+        echo "Error: Could not find git repository from $script_dir"
         return 1
-    fi
+    }
+    repo_root="$(realpath "$git_common_dir/..")"
 
     if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
         echo "Usage: ${BASH_SOURCE[0]} <branch-name> [remote]"
@@ -53,6 +55,17 @@ _ofrak_new_worktree() {
     remote="${2:-origin}"
     worktree_path="$repo_root/.trees/$branch_name"
 
+    # Validate branch name (alphanumeric, underscore, hyphen, slash only)
+    if [[ ! "$branch_name" =~ ^[A-Za-z0-9/_-]+$ ]]; then
+        echo "Error: Branch name must contain only A-Z, a-z, 0-9, underscore, hyphen, or slash"
+        return 1
+    fi
+    # Use git's authoritative validation (catches edge cases like //, trailing /, leading -, etc.)
+    if ! git check-ref-format --branch "$branch_name" >/dev/null 2>&1; then
+        echo "Error: '$branch_name' is not a valid git branch name"
+        return 1
+    fi
+
     # Detect sourced vs executed: BASH_SOURCE[0] is script path, $0 is shell when sourced
     local is_sourced=0
     [[ "${BASH_SOURCE[0]}" != "$0" ]] && is_sourced=1
@@ -80,6 +93,7 @@ _ofrak_new_worktree() {
         # Use temp file to pass tracking_info back from subshell
         local tracking_info_file
         tracking_info_file=$(mktemp)
+        trap 'rm -f "$tracking_info_file"' EXIT
 
         (
             set -e
@@ -129,7 +143,7 @@ _ofrak_new_worktree() {
 
             echo ""
             echo "=== Copying license from main repo ==="
-            local license_src="$repo_root/ofrak_core/src/ofrak/license/license.json"
+            license_src="$repo_root/ofrak_core/src/ofrak/license/license.json"
             if [[ -f "$license_src" ]]; then
                 cp "$license_src" "$worktree_path/ofrak_core/src/ofrak/license/license.json"
             else
@@ -140,9 +154,10 @@ _ofrak_new_worktree() {
         local setup_result=$?
         tracking_info=$(cat "$tracking_info_file" 2>/dev/null || true)
         rm -f "$tracking_info_file"
+        trap - EXIT
 
         if [[ $setup_result -ne 0 ]]; then
-            echo "Setup failed"
+            echo "Error: Setup failed"
             return $setup_result
         fi
     fi
@@ -153,7 +168,11 @@ _ofrak_new_worktree() {
             echo "Error: Setup completed but venv is missing"
             return 1
         fi
-        cd "$worktree_path" && source venv/bin/activate
+        cd "$worktree_path" || {
+            echo "Error: Failed to cd to $worktree_path"
+            return 1
+        }
+        source venv/bin/activate
     fi
 
     # Final summary (shared between new setup and existing worktree activation)
