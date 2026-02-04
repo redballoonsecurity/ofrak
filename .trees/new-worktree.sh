@@ -19,7 +19,12 @@ _ofrak_new_worktree() {
     local script_dir repo_root branch_name remote worktree_path
 
     script_dir="$(cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")" && /bin/pwd)"
-    repo_root="$(dirname "$script_dir")"
+    # Use git to find the true repo root (works from any worktree or subdirectory)
+    repo_root="$(dirname "$(git -C "$script_dir" rev-parse --git-common-dir 2>/dev/null)")"
+    if [[ -z "$repo_root" ]] || [[ ! -d "$repo_root/.git" ]]; then
+        echo "Error: Could not find git repository root from $script_dir"
+        return 1
+    fi
 
     if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
         echo "Usage: ${BASH_SOURCE[0]} <branch-name> [remote]"
@@ -79,51 +84,57 @@ _ofrak_new_worktree() {
         (
             set -e
 
-        cd "$repo_root"
+            cd "$repo_root"
 
-        echo "=== Fetching from $remote ==="
-        git fetch "$remote"
+            echo "=== Fetching from $remote ==="
+            git fetch "$remote"
 
-        echo ""
-        # Check if local branch already exists
-        if git show-ref --verify --quiet "refs/heads/$branch_name"; then
-            echo "=== Creating worktree at $worktree_path (using existing branch $branch_name) ==="
-            git worktree add "$worktree_path" "$branch_name"
-            echo "Using existing branch: $branch_name" > "$tracking_info_file"
-        # Check if <remote>/<branch-name> exists
-        elif git rev-parse --verify "$remote/$branch_name" >/dev/null 2>&1; then
-            echo "=== Creating worktree at $worktree_path (tracking $remote/$branch_name) ==="
-            git worktree add --track -b "$branch_name" "$worktree_path" "$remote/$branch_name"
-            echo "Tracking: $remote/$branch_name" > "$tracking_info_file"
-        else
-            echo "=== Creating worktree at $worktree_path (new branch off $remote/master) ==="
-            git worktree add -b "$branch_name" "$worktree_path" "$remote/master"
-            echo "New branch off $remote/master" > "$tracking_info_file"
-        fi
+            echo ""
+            # Check if local branch already exists
+            if git show-ref --verify --quiet "refs/heads/$branch_name"; then
+                echo "=== Creating worktree at $worktree_path (using existing branch $branch_name) ==="
+                git worktree add "$worktree_path" "$branch_name"
+                echo "Using existing branch: $branch_name" > "$tracking_info_file"
+            # Check if <remote>/<branch-name> exists
+            elif git rev-parse --verify "$remote/$branch_name" >/dev/null 2>&1; then
+                echo "=== Creating worktree at $worktree_path (tracking $remote/$branch_name) ==="
+                git worktree add --track -b "$branch_name" "$worktree_path" "$remote/$branch_name"
+                echo "Tracking: $remote/$branch_name" > "$tracking_info_file"
+            else
+                # Note: OFRAK uses 'master' as its default branch
+                echo "=== Creating worktree at $worktree_path (new branch off $remote/master) ==="
+                git worktree add -b "$branch_name" "$worktree_path" "$remote/master"
+                echo "New branch off $remote/master" > "$tracking_info_file"
+            fi
 
-        cd "$worktree_path"
+            cd "$worktree_path"
 
-        echo ""
-        echo "=== Creating virtual environment with --system-site-packages ==="
-        python3 -m venv --system-site-packages --prompt "$branch_name" venv
+            echo ""
+            echo "=== Creating virtual environment with --system-site-packages ==="
+            # Prompt includes full branch name (e.g., "feature/foo") intentionally
+            python3 -m venv --system-site-packages --prompt "$branch_name" venv
 
-        echo ""
-        echo "=== Activating virtual environment ==="
-        source venv/bin/activate
+            echo ""
+            echo "=== Activating virtual environment ==="
+            source venv/bin/activate
 
-        echo ""
-        echo "=== Installing OFRAK packages in development mode ==="
-        echo "    (This includes building the frontend GUI)"
-        make develop
+            echo ""
+            echo "=== Installing OFRAK packages in development mode ==="
+            echo "    (This includes building the frontend GUI)"
+            make develop
 
-        echo ""
-        echo "=== Installing pre-commit hooks ==="
-        pre-commit install --install-hooks
+            echo ""
+            echo "=== Installing pre-commit hooks ==="
+            pre-commit install --install-hooks
 
-        echo ""
-        echo "=== Copying license from main repo ==="
-        cp "$repo_root/ofrak_core/src/ofrak/license/license.json" \
-           "$worktree_path/ofrak_core/src/ofrak/license/license.json"
+            echo ""
+            echo "=== Copying license from main repo ==="
+            local license_src="$repo_root/ofrak_core/src/ofrak/license/license.json"
+            if [[ -f "$license_src" ]]; then
+                cp "$license_src" "$worktree_path/ofrak_core/src/ofrak/license/license.json"
+            else
+                echo "    (No license.json found in main repo - skipping)"
+            fi
         )
 
         local setup_result=$?
@@ -148,7 +159,7 @@ _ofrak_new_worktree() {
     # Final summary (shared between new setup and existing worktree activation)
     local actual_branch upstream_branch
     actual_branch=$(git -C "$worktree_path" branch --show-current)
-    upstream_branch=$(git -C "$worktree_path" rev-parse --abbrev-ref @{upstream} 2>/dev/null || true)
+    upstream_branch=$(git -C "$worktree_path" rev-parse --abbrev-ref '@{upstream}' 2>/dev/null || true)
 
     echo ""
     echo "============================================================"
