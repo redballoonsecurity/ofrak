@@ -7,7 +7,7 @@ Requirements Mapping:
 """
 import os
 from dataclasses import dataclass
-from typing import Dict, List, Union, Tuple
+from typing import Dict, List, Set, Union, Tuple
 
 import pytest
 from ofrak.core.filesystem import File
@@ -31,10 +31,16 @@ ExpectedBasicBlockUnpackResult = Union[Instruction, Tuple[Instruction, ...]]
 
 
 @dataclass
-class BasicBlockUnpackerTestCase(UnpackAndVerifyTestCase):
+class BasicBlockUnpackerTestCase(
+    UnpackAndVerifyTestCase[int, List[ExpectedBasicBlockUnpackResult]]
+):
     binary_filename: str
     binary_md5_digest: str
     basic_block_data_ranges_in_root: Dict[int, Range]  # Used when created basic blocks manually
+    # Workaround for https://github.com/python/mypy/issues/12633, fixed in mypy 0.950.
+    # Remove these two lines once using a newer mypy.
+    expected_results: Dict[int, List[ExpectedBasicBlockUnpackResult]]
+    optional_results: Set[int]
 
 
 BASIC_BLOCK_UNPACKER_TEST_CASES: List[BasicBlockUnpackerTestCase] = [

@@ -7,7 +7,7 @@ Requirements Mapping:
 """
 import os.path
 from dataclasses import dataclass
-from typing import List, Dict
+from typing import Dict, List, Set
 
 import pytest
 
@@ -27,9 +27,13 @@ from ofrak_type.range import Range
 
 
 @dataclass
-class CodeRegionUnpackerTestCase(UnpackAndVerifyTestCase):
+class CodeRegionUnpackerTestCase(UnpackAndVerifyTestCase[int, List[int]]):
     binary_filename: str
     binary_md5_digest: str
+    # Workaround for https://github.com/python/mypy/issues/12633, fixed in mypy 0.950.
+    # Remove these two lines once using a newer mypy.
+    expected_results: Dict[int, List[int]]
+    optional_results: Set[int]
 
 
 CODE_REGION_UNPACKER_TEST_CASES: List[CodeRegionUnpackerTestCase] = [

@@ -7,7 +7,7 @@ Requirements Mapping:
 """
 import os
 from dataclasses import dataclass
-from typing import Dict, List, Union
+from typing import Dict, List, Set, Union
 
 import pytest
 
@@ -28,9 +28,13 @@ from pytest_ofrak.patterns.unpack_verify import (
 
 
 @dataclass
-class ComplexBlockUnpackerTestCase(UnpackAndVerifyTestCase):
+class ComplexBlockUnpackerTestCase(UnpackAndVerifyTestCase[int, List[Union[BasicBlock, DataWord]]]):
     binary_filename: str
     binary_md5_digest: str
+    # Workaround for https://github.com/python/mypy/issues/12633, fixed in mypy 0.950.
+    # Remove these two lines once using a newer mypy.
+    expected_results: Dict[int, List[Union[BasicBlock, DataWord]]]
+    optional_results: Set[int]
 
 
 COMPLEX_BLOCK_UNPACKER_TEST_CASES: List[ComplexBlockUnpackerTestCase] = [

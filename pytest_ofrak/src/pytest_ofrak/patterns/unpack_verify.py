@@ -8,12 +8,15 @@ Requirements Mapping:
 import warnings
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
-from typing import Any, Dict, Set, Iterable
+from typing import Any, Dict, Generic, TypeVar, Set, Iterable
 
 import pytest
 
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
+
+K = TypeVar("K")
+V = TypeVar("V")
 
 
 def _hexlify(x):
@@ -23,7 +26,7 @@ def _hexlify(x):
 
 
 @dataclass
-class UnpackAndVerifyTestCase:
+class UnpackAndVerifyTestCase(Generic[K, V]):
     """
     Container for test cases which will be fed to an UnpackAndVerifyPattern implementation.
     Extend this class, adding some fields to hold the information needed to create the root
@@ -35,11 +38,18 @@ class UnpackAndVerifyTestCase:
       - Optional results may or may not exist in the unpacker output. The lack of an optional
         result generates a warning.
       - Results which aren't specified in either 'expected' or 'optional' sets fail the test.
+
+    :param K: The key type of the expected and optional results. The unpacked resources will each be assigned
+    a key of this same type, allowing the test to match actual unpacked resources with expected
+    values.
+    :param V: The value type of the expected and optional results. This can be anything, as long as it
+    contains the information needed to verify that the actual unpacked resource matches what is
+    expected.
     """
 
     label: str
-    expected_results: Dict[Any, Any]
-    optional_results: Set[Any]
+    expected_results: Dict[K, V]
+    optional_results: Set[K]
 
 
 class UnpackAndVerifyPattern(ABC):
@@ -161,8 +171,8 @@ class UnpackAndVerifyPattern(ABC):
 
     @pytest.fixture
     async def expected_results(
-        self, unpack_verify_test_case: UnpackAndVerifyTestCase
-    ) -> Dict[Any, Any]:
+        self, unpack_verify_test_case: UnpackAndVerifyTestCase[K, V]
+    ) -> Dict[K, V]:
         """
         Extract the expected results from the test case.
 
@@ -173,7 +183,9 @@ class UnpackAndVerifyPattern(ABC):
         return unpack_verify_test_case.expected_results
 
     @pytest.fixture
-    async def optional_results(self, unpack_verify_test_case: UnpackAndVerifyTestCase) -> Set[Any]:
+    async def optional_results(
+        self, unpack_verify_test_case: UnpackAndVerifyTestCase[K, V]
+    ) -> Set[K]:
         """
         Extract the optional results from the test case.
 
