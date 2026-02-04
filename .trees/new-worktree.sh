@@ -26,7 +26,10 @@ _ofrak_new_worktree() {
         echo "Error: Could not find git repository from $script_dir"
         return 1
     }
-    repo_root="$(realpath "$git_common_dir/..")"
+    repo_root="$(cd "$script_dir" && realpath "$git_common_dir/..")" || {
+        echo "Error: Could not determine repository root"
+        return 1
+    }
 
     if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
         echo "Usage: ${BASH_SOURCE[0]} <branch-name> [remote]"
@@ -117,7 +120,7 @@ _ofrak_new_worktree() {
             else
                 # Note: OFRAK uses 'master' as its default branch
                 echo "=== Creating worktree at $worktree_path (new branch off $remote/master) ==="
-                git worktree add -b "$branch_name" "$worktree_path" "$remote/master"
+                git worktree add --no-track -b "$branch_name" "$worktree_path" "$remote/master"
                 echo "New branch off $remote/master" > "$tracking_info_file"
             fi
 
