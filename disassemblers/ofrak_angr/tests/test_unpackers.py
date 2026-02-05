@@ -21,6 +21,7 @@ from pytest_ofrak.patterns.complex_block_unpacker import (
     ComplexBlockUnpackerUnpackAndVerifyPattern,
 )
 from pytest_ofrak.patterns.program_metadata import (
+    custom_binary_resource,  # noqa: F401
     setup_program_with_metadata,
     assert_complex_block_at_vaddr,
 )

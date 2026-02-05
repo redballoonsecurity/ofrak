@@ -465,8 +465,8 @@ class ElfProgramMetadataAnalyzer(Analyzer[None, ProgramMetadata]):
         elf = await resource.view_as(Elf)
         elf_header = await elf.get_header()
 
-        # Get entry point from ELF header
-        # Note: e_entry is always an int (never None). For ELF, entry point 0 is valid
+        # Get entry point from ELF header.
+        # e_entry is always an int (never None). For ELF, entry point 0 is valid
         # (e.g., firmware mapped at address 0), unlike PE where entry_rva=0 means "no entry".
         entry_point = elf_header.e_entry
 
@@ -479,6 +479,6 @@ class ElfProgramMetadataAnalyzer(Analyzer[None, ProgramMetadata]):
                 break
 
         return ProgramMetadata(
-            entry_points=(entry_point,) if entry_point is not None else (),
+            entry_points=(entry_point,),
             base_address=base_address,
         )

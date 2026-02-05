@@ -42,6 +42,7 @@ from ofrak.core import (
     ProgramAttributes,
 )
 from pytest_ofrak.patterns.program_metadata import (
+    custom_binary_resource,  # noqa: F401
     setup_program_with_metadata,
     add_rodata_region,
     assert_complex_block_at_vaddr,

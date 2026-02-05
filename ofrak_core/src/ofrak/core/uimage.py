@@ -470,12 +470,9 @@ class UImageProgramMetadataAnalyzer(Analyzer[None, ProgramMetadata]):
         uimage_view = await resource.view_as(UImage)
         uimage_header = await uimage_view.get_header()
 
-        entry_point = uimage_header.get_entry_point_vaddr()
-        load_address = uimage_header.get_load_vaddr()
-
         return ProgramMetadata(
-            entry_points=(entry_point,) if entry_point is not None else (),
-            base_address=load_address,
+            entry_points=(uimage_header.get_entry_point_vaddr(),),
+            base_address=uimage_header.get_load_vaddr(),
         )
 
 

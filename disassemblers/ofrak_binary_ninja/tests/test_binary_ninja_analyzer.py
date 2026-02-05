@@ -11,6 +11,7 @@ from ofrak.core.filesystem import File
 from ofrak_binary_ninja.components.binary_ninja_analyzer import BinaryNinjaAnalyzer
 from ofrak_binary_ninja.model import BinaryNinjaAnalysis
 from pytest_ofrak.patterns.program_metadata import (
+    custom_binary_resource,  # noqa: F401
     setup_program_with_metadata,
     assert_complex_block_at_vaddr,
 )
