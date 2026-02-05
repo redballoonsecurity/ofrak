@@ -49,13 +49,22 @@ class BinaryNinjaAnalyzer(Analyzer[Optional[BinaryNinjaAnalyzerConfig], BinaryNi
             # Rebase FIRST if base_address differs from what Binary Ninja detected.
             # This must happen before adding entry points, since entry points are
             # specified as absolute addresses in the target address space.
+            # Note: rebase() returns a NEW BinaryView; the original becomes invalid.
             if program_metadata.base_address is not None:
                 current_base = bv.start
                 if current_base != program_metadata.base_address:
-                    bv.rebase(program_metadata.base_address)
-                    LOGGER.info(
-                        f"Rebased from 0x{current_base:x} to 0x{program_metadata.base_address:x}"
-                    )
+                    new_bv = bv.rebase(program_metadata.base_address)
+                    if new_bv is not None:
+                        bv = new_bv
+                        LOGGER.info(
+                            f"Rebased from 0x{current_base:x} to "
+                            f"0x{program_metadata.base_address:x}"
+                        )
+                    else:
+                        LOGGER.warning(
+                            f"Failed to rebase from 0x{current_base:x} to "
+                            f"0x{program_metadata.base_address:x}"
+                        )
 
             # Add entry points after rebasing (addresses are now correct)
             if program_metadata.entry_points:

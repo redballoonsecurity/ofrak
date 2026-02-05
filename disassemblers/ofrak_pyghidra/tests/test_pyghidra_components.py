@@ -31,7 +31,6 @@ from ofrak_pyghidra.components.pyghidra_components import (
     PyGhidraDecompilationAnalyzer,
     PyGhidraCustomLoadAnalyzer,
 )
-from ofrak.core.program_metadata import ProgramMetadata
 import ofrak_pyghidra
 from ofrak.core import (
     CodeRegion,
@@ -41,6 +40,11 @@ from ofrak.core import (
     Addressable,
     Instruction,
     ProgramAttributes,
+)
+from pytest_ofrak.patterns.program_metadata import (
+    setup_program_with_metadata,
+    add_rodata_region,
+    assert_complex_block_at_vaddr,
 )
 from ofrak_pyghidra.standalone.pyghidra_analysis import unpack, decompile_all_functions
 from ofrak import Resource, ResourceFilter, ResourceSort, ResourceAttributeValueFilter
@@ -392,26 +396,6 @@ async def test_ihex_unpacking(ihex_resource):
     assert any(cb.name == "FUN_004003be" for cb in complex_blocks)
 
 
-@pytest.fixture
-async def custom_binary_resource(ofrak_context: OFRAKContext):
-    # This is a custom binary created from this aarch64 statically compiled binary:
-    # https://github.com/ryanwoodsmall/static-binaries/blob/master/aarch64/tini
-    # It was created like so:
-    # - `aarch64-linux-gnu-objcopy -O binary --only-section=.text tini tini.text.bin`
-    # - `aarch64-linux-gnu-objcopy -O binary --only-section=.rodata tini tini.rodata.bin`
-    # - `dd if=/dev/zero of=gap.bin bs=1 count=$((0x1234))`
-    # - `cat tini.text.bin > tini_custom_binary`
-    # - `cat gap.bin >> tini_custom_binary`
-    # - `cat tini.rodata.bin >> tini_custom_binary`
-    # So it is a binary that contains:
-    # - the tini .text section binary content
-    # - a gap of zero bytes of size 0x1234
-    # - the tini .rodata binary content
-    return await ofrak_context.create_root_resource_from_file(
-        os.path.join(os.path.dirname(__file__), "assets/tini_custom_binary")
-    )
-
-
 async def test_pyghidra_custom_loader(custom_binary_resource):
     """
     Test that loading a binary with manually-defined MemoryRegions with the PyGhidraCustomLoadAnalyzer results in the right representation in OFRAK.
@@ -500,82 +484,16 @@ async def test_pyghidra_custom_loader_with_program_metadata(custom_binary_resour
     - Memory regions should remain at their specified virtual addresses even when base_address
       differs from the minimum region address
 
-    This catches potential bugs where base_address rebasing could interfere with memory region
-    addresses (H3 issue).
-
     Requirements Mapping:
     - REQ2.2
     """
-    custom_binary_resource.add_tag(Program)
-    await custom_binary_resource.save()
-    await custom_binary_resource.identify()
-
-    program_attributes = ProgramAttributes(
-        isa=InstructionSet.AARCH64,
-        sub_isa=SubInstructionSet.ARMv8A,
-        bit_width=BitWidth.BIT_64,
-        endianness=Endianness.LITTLE_ENDIAN,
-        processor=None,
-    )
-    custom_binary_resource.add_attributes(program_attributes)
-
-    # Add ProgramMetadata with non-zero base_address and entry point at the text section start
-    # This tests that explicit memory region addresses are NOT shifted by base_address rebasing
     text_vaddr = 0x400130
-    program_metadata = ProgramMetadata(
-        entry_points=(text_vaddr,),
-        base_address=0x100000,  # Non-zero to actually test rebasing behavior
+    text_section = await setup_program_with_metadata(
+        custom_binary_resource, base_address=0x100000, text_vaddr=text_vaddr
     )
-    custom_binary_resource.add_attributes(program_metadata)
-    await custom_binary_resource.save()
-
-    # Manually create CodeRegion for .text
-    text_offset = 0
-    text_size = 40792
-    text_section = await custom_binary_resource.create_child(
-        tags=(CodeRegion,),
-        data_range=Range.from_size(text_offset, text_size),
-    )
-    text_section.add_view(
-        CodeRegion(
-            virtual_address=text_vaddr,
-            size=text_size,
-        )
-    )
-    await text_section.save()
-
-    gap_size = 0x1234
-    rodata_offset = text_offset + text_size + gap_size
-    rodata_vaddr = 0x40A0A0
-    rodata_size = 7052
-    rodata_section = await custom_binary_resource.create_child(
-        tags=(MemoryRegion,),
-        data_range=Range.from_size(rodata_offset, rodata_size),
-    )
-    rodata_section.add_view(
-        MemoryRegion(
-            virtual_address=rodata_vaddr,
-            size=rodata_size,
-        )
-    )
-    await rodata_section.save()
+    await add_rodata_region(custom_binary_resource, rodata_vaddr=0x40A0A0)
 
     await custom_binary_resource.run(PyGhidraCustomLoadAnalyzer)
 
     await text_section.unpack()
-
-    # Verify that a function is found at the entry point address we specified
-    # This confirms that the entry point from ProgramMetadata was used correctly
-    # and that memory regions are at their correct addresses despite base_address=0
-    cb = await custom_binary_resource.get_only_descendant_as_view(
-        v_type=ComplexBlock,
-        r_filter=ResourceFilter(
-            tags=[ComplexBlock],
-            attribute_filters=(
-                ResourceAttributeValueFilter(Addressable.VirtualAddress, text_vaddr),
-            ),
-        ),
-    )
-    # If memory regions and entry points are handled correctly, there should be a function at text_vaddr
-    assert cb is not None
-    assert cb.virtual_address == text_vaddr
+    await assert_complex_block_at_vaddr(custom_binary_resource, text_vaddr)

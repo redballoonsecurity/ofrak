@@ -12,8 +12,6 @@ import os
 from ofrak.core.basic_block import BasicBlock
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.core.code_region import CodeRegion
-from ofrak.core import Program, ProgramAttributes
-from ofrak.core.program_metadata import ProgramMetadata
 
 from pytest_ofrak.patterns.code_region_unpacker import (
     CodeRegionUnpackAndVerifyPattern,
@@ -22,12 +20,15 @@ from pytest_ofrak.patterns.complex_block_unpacker import (
     ComplexBlockUnpackerTestCase,
     ComplexBlockUnpackerUnpackAndVerifyPattern,
 )
+from pytest_ofrak.patterns.program_metadata import (
+    setup_program_with_metadata,
+    assert_complex_block_at_vaddr,
+)
 from ofrak import OFRAKContext
 from ofrak import ResourceFilter, ResourceAttributeValueFilter
 from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.core.addressable import Addressable
 from ofrak_angr.components.angr_analyzer import AngrAnalyzer, AngrAnalyzerConfig
-from ofrak_type import InstructionSet, BitWidth, Endianness, SubInstructionSet, Range
 
 
 class TestAngrCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
@@ -201,19 +202,6 @@ async def test_basic_block_no_exit(ofrak_context: OFRAKContext, busybox_resource
     # In the past, unpacking that ComplexBlock would fail because it contains a BasicBlock that doens't have an exit address
 
 
-@pytest.fixture
-async def custom_binary_resource(ofrak_context: OFRAKContext):
-    # This is a custom binary created from this aarch64 statically compiled binary:
-    # https://github.com/ryanwoodsmall/static-binaries/blob/master/aarch64/tini
-    # See test_pyghidra_components.py for details on how it was created.
-    return await ofrak_context.create_root_resource_from_file(
-        os.path.join(
-            os.path.dirname(__file__),
-            "../../ofrak_pyghidra/tests/assets/tini_custom_binary",
-        )
-    )
-
-
 async def test_angr_with_program_metadata(custom_binary_resource):
     """
     Test that angr correctly handles ProgramMetadata (base_address and entry_points).
@@ -228,50 +216,15 @@ async def test_angr_with_program_metadata(custom_binary_resource):
     Requirements Mapping:
     - REQ2.2
     """
-    custom_binary_resource.add_tag(Program)
-    await custom_binary_resource.save()
-    await custom_binary_resource.identify()
-
-    program_attributes = ProgramAttributes(
-        isa=InstructionSet.AARCH64,
-        sub_isa=SubInstructionSet.ARMv8A,
-        bit_width=BitWidth.BIT_64,
-        endianness=Endianness.LITTLE_ENDIAN,
-        processor=None,
-    )
-    custom_binary_resource.add_attributes(program_attributes)
-
-    # For angr's blob backend, the binary is loaded at base_address.
-    # The entry point should be the absolute address where CFG analysis starts.
-    # Since the .text section starts at offset 0 in this custom binary,
-    # the entry point is at base_address + 0 = base_address.
     base_address = 0x400000
     text_vaddr = base_address  # .text starts at offset 0
-    text_size = 40792
-
-    program_metadata = ProgramMetadata(
-        entry_points=(text_vaddr,),
-        base_address=base_address,
+    text_section = await setup_program_with_metadata(
+        custom_binary_resource, base_address=base_address, text_vaddr=text_vaddr
     )
-    custom_binary_resource.add_attributes(program_metadata)
-    await custom_binary_resource.save()
 
-    # Manually create CodeRegion for .text
-    text_offset = 0
-    text_section = await custom_binary_resource.create_child(
-        tags=(CodeRegion,),
-        data_range=Range.from_size(text_offset, text_size),
-    )
-    text_section.add_view(
-        CodeRegion(
-            virtual_address=text_vaddr,
-            size=text_size,
-        )
-    )
-    await text_section.save()
-
-    # Configure angr to use blob backend for raw binary analysis
-    # The blob backend requires explicit architecture specification
+    # Configure angr to use blob backend for raw binary analysis.
+    # The blob backend requires explicit architecture specification.
+    # ProgramMetadata entry_point and base_address will be merged into main_opts.
     angr_config = AngrAnalyzerConfig(
         project_args={
             "auto_load_libs": False,
@@ -281,24 +234,6 @@ async def test_angr_with_program_metadata(custom_binary_resource):
             },
         }
     )
-
-    # Run angr analysis with blob configuration
-    # The ProgramMetadata entry_point and base_address will be merged into main_opts
     await custom_binary_resource.run(AngrAnalyzer, angr_config)
-
-    # Unpack the code region to get complex blocks
     await text_section.unpack()
-
-    # Verify that a function is found at the entry point address we specified
-    # This confirms that ProgramMetadata's entry_points is being used by angr
-    cb = await custom_binary_resource.get_only_descendant_as_view(
-        v_type=ComplexBlock,
-        r_filter=ResourceFilter(
-            tags=[ComplexBlock],
-            attribute_filters=(
-                ResourceAttributeValueFilter(Addressable.VirtualAddress, text_vaddr),
-            ),
-        ),
-    )
-    assert cb is not None
-    assert cb.virtual_address == text_vaddr
+    await assert_complex_block_at_vaddr(custom_binary_resource, text_vaddr)

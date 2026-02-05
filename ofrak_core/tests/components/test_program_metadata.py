@@ -85,6 +85,29 @@ class TestElfProgramMetadataAnalyzer:
         assert metadata.entry_points == (0x8104,)
         assert metadata.base_address == 0x0
 
+    async def test_elf_no_pt_load(self, ofrak_context: OFRAKContext):
+        """
+        Test that ElfProgramMetadataAnalyzer returns base_address=None for ELFs without PT_LOAD.
+
+        Relocatable object files (.o) have no program headers and therefore no PT_LOAD
+        segments. The analyzer should return base_address=None in this case.
+        """
+        from ofrak.core.elf.analyzer import ElfProgramMetadataAnalyzer
+
+        filepath = os.path.join(
+            os.path.dirname(__file__),
+            "../../../pytest_ofrak/src/pytest_ofrak/elf/assets/program.o",
+        )
+        resource = await ofrak_context.create_root_resource_from_file(filepath)
+        await resource.unpack_recursively()
+
+        await resource.run(ElfProgramMetadataAnalyzer)
+        metadata = resource.get_attributes(ProgramMetadata)
+
+        # Relocatable .o file has e_entry=0 and no PT_LOAD segments
+        assert metadata.entry_points == (0x0,)
+        assert metadata.base_address is None
+
 
 class TestUImageProgramMetadataAnalyzer:
     """Tests for UImageProgramMetadataAnalyzer."""
@@ -127,9 +150,40 @@ class TestIhexProgramMetadataAnalyzer:
         assert metadata.entry_points == (0x4003E0,)
         assert metadata.base_address is None
 
+    async def test_ihex_no_start_address(self, ofrak_context: OFRAKContext):
+        """
+        Test that IhexProgramMetadataAnalyzer returns empty entry_points when no start address.
+
+        Intel HEX files without a Start Segment Address (type 03) or Start Linear Address
+        (type 05) record have no execution start address. The analyzer should return
+        empty entry_points in this case.
+        """
+        import bincopy
+        from ofrak.core.ihex import IhexProgramMetadataAnalyzer
+
+        # Create a minimal ihex with data but no start address record
+        bf = bincopy.BinFile()
+        bf.add_binary(b"\x00" * 16, address=0x1000)
+        ihex_data = bf.as_ihex().encode("ascii")
+        assert bf.execution_start_address is None  # sanity check
+
+        resource = await ofrak_context.create_root_resource("no_start.ihex", ihex_data)
+        await resource.unpack_recursively()
+
+        await resource.run(IhexProgramMetadataAnalyzer)
+        metadata = resource.get_attributes(ProgramMetadata)
+
+        assert metadata.entry_points == ()
+        assert metadata.base_address is None
+
 
 class TestPeProgramMetadataAnalyzer:
-    """Tests for PeProgramMetadataAnalyzer."""
+    """Tests for PeProgramMetadataAnalyzer.
+
+    TODO: Add test for PE files that use PeOptionalHeader fallback path (non-Windows PE
+    files where PeWinOptionalHeader is not present). This requires a PE test asset that
+    only has a base PeOptionalHeader without the Windows-specific extended fields.
+    """
 
     async def test_pe_program_metadata_analyzer(self, ofrak_context: OFRAKContext):
         """Test that PeProgramMetadataAnalyzer extracts entry point and image base from PE files."""
@@ -160,13 +214,6 @@ class TestPeProgramMetadataAnalyzer:
         from ofrak.core.pe.analyzer import PeProgramMetadataAnalyzer
 
         filepath = os.path.join(ASSETS_DIR, "no_entry_point.dll")
-        if not os.path.exists(filepath):
-            pytest.skip(
-                "Test file no_entry_point.dll not found. "
-                "Please place a DLL with AddressOfEntryPoint=0 at: "
-                f"{filepath}"
-            )
-
         resource = await ofrak_context.create_root_resource_from_file(filepath)
         await resource.unpack_recursively()
 
@@ -213,13 +260,6 @@ class TestEntryPointZero:
         from ofrak.core.elf.analyzer import ElfProgramMetadataAnalyzer
 
         filepath = os.path.join(ASSETS_DIR, "entry_at_zero.elf")
-        if not os.path.exists(filepath):
-            pytest.skip(
-                "Test file entry_at_zero.elf not found. "
-                "Please place an ELF with e_entry=0 at: "
-                f"{filepath}"
-            )
-
         resource = await ofrak_context.create_root_resource_from_file(filepath)
         await resource.unpack_recursively()
 
