@@ -7,10 +7,12 @@ packages_paths:
     "ofrak_io",
     "ofrak_patch_maker",
     "ofrak_core",
-    "disassemblers/ofrak_ghidra",
-    "disassemblers/ofrak_binary_ninja",
     "disassemblers/ofrak_capstone",
     "disassemblers/ofrak_angr",
+    "disassemblers/ofrak_ghidra",
+    "disassemblers/ofrak_cached_disassembly",
+    "disassemblers/ofrak_pyghidra",
+    "disassemblers/ofrak_binary_ninja",
     "frontend",
   ]
 extra_build_args:
@@ -21,5 +23,4 @@ extra_build_args:
   ]
 entrypoint: |
     nginx \
-      & python3 -m ofrak_ghidra.server start \
-      & python3 -m ofrak gui -H 0.0.0.0 -p 8877 --backend ghidra
+      & python3 -m ofrak gui -H 0.0.0.0 -p 8877 --backend pyghidra
