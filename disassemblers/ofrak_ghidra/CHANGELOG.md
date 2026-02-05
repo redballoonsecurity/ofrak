@@ -13,7 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Move to OpenJDK version 17 with the docker container move to Debian 12 ([#502](https://github.com/redballoonsecurity/ofrak/pull/502))
 
 ### Fixed
-- Fix duplicate import and integer overflow in CreateMemoryBlocks.java ([#700](https://github.com/redballoonsecurity/ofrak/pull/700))
+- Fix duplicate import and integer overflow in CreateMemoryBlocks.java and GetDecompilation.java ([#700](https://github.com/redballoonsecurity/ofrak/pull/700))
 - Speedup: do not run Ghidra auto-analysis upon importing a program. ([#473](https://github.com/redballoonsecurity/ofrak/pull/473))
 - Ensure large 64-bit addresses are interpreted as unsigned. ([#474](https://github.com/redballoonsecurity/ofrak/pull/474))
 - Update `GhidraDecompilationAnalyzer` to match API in ofrak 0.3.0rc10 ([#600](https://github.com/redballoonsecurity/ofrak/pull/600))
