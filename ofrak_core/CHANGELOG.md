@@ -15,6 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add LZ4 compression format unpackers and packers with support for all frame types (modern, legacy, skippable) ([#661](https://github.com/redballoonsecurity/ofrak/pull/661))
 - Add missing component docstrings and improve existing docstrings ([#654](https://github.com/redballoonsecurity/ofrak/pull/654))
 
+### Changed
+- Remove test dependencies that are already in the global `requirements-dev.txt` ([#695](https://github.com/redballoonsecurity/ofrak/pull/695))
+
 ### Fixed
 - Fix `Resource.get_attributes` docstring to match implementation ([#692](https://github.com/redballoonsecurity/ofrak/pull/692))
 - Fix GUI serialization of enum values and script creator generating invalid Python syntax for enum values
