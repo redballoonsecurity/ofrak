@@ -16,7 +16,6 @@ from ofrak.service.component_locator_i import (
 from ofrak.core.decompilation import (
     DecompilationAnalysis,
     DecompilationAnalyzer,
-    DecompilationAnalysis,
     ResourceView,
 )
 
@@ -37,7 +36,7 @@ _GHIDRA_AUTO_LOADABLE_FORMATS = [Elf, Ihex, Pe]
 
 @dataclass
 class CachedAnalysis(ResourceView):
-    base_address: int = None
+    base_address: Optional[int] = None
 
 
 @dataclass
@@ -79,7 +78,7 @@ class CachedAnalysisAnalyzer(Analyzer[CachedAnalysisAnalyzerConfig, CachedAnalys
             resource.has_tag(Program) or resource.has_tag(Ihex)
         ) and not resource.has_attributes(ProgramAttributes):
             raise AttributeError(
-                f"The resource with ID {resource.get_id()} is not an analyzable program format and does not have ProgramAttributes set."
+                f"The resource with ID {resource.get_id().hex()} is not an analyzable program format and does not have ProgramAttributes set."
             )
         self.analysis_store.store_analysis(resource.get_id(), config.filename)
         if not config.force:
@@ -125,7 +124,7 @@ class CachedProgramUnpacker(Unpacker[None]):
         super().__init__(resource_factory, data_service, resource_service, component_locator)
         self.analysis_store = analysis_store
 
-    async def unpack(self, resource: Resource, config: None):
+    async def unpack(self, resource: Resource, config: None = None):
         analysis = self.analysis_store.get_analysis(resource.get_id())
         for key, mem_region in analysis.items():
             if key.startswith("seg"):
@@ -235,7 +234,7 @@ class CachedCodeRegionUnpacker(CodeRegionUnpacker):
         super().__init__(resource_factory, data_service, resource_service, component_locator)
         self.analysis_store = analysis_store
 
-    async def unpack(self, resource: Resource, config: None):
+    async def unpack(self, resource: Resource, config: None = None):
         program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(CachedAnalysis))
         analysis = self.analysis_store.get_analysis(program_r.get_id())
         if analysis["metadata"]["backend"] == "ghidra":
@@ -269,7 +268,7 @@ class CachedComplexBlockUnpacker(ComplexBlockUnpacker):
         super().__init__(resource_factory, data_service, resource_service, component_locator)
         self.analysis_store = analysis_store
 
-    async def unpack(self, resource: Resource, config: None):
+    async def unpack(self, resource: Resource, config: None = None):
         program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(CachedAnalysis))
         analysis = self.analysis_store.get_analysis(program_r.get_id())
         program_attributes = self.analysis_store.get_program_attributes(program_r.get_id())
@@ -323,7 +322,7 @@ class CachedBasicBlockUnpacker(BasicBlockUnpacker):
         super().__init__(resource_factory, data_service, resource_service, component_locator)
         self.analysis_store = analysis_store
 
-    async def unpack(self, resource: Resource, config: None):
+    async def unpack(self, resource: Resource, config: None = None):
         program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(CachedAnalysis))
         analysis = self.analysis_store.get_analysis(program_r.get_id())
 
@@ -365,7 +364,7 @@ class CachedDecompilationAnalyzer(DecompilationAnalyzer):
         super().__init__(resource_factory, data_service, resource_service)
         self.analysis_store = analysis_store
 
-    async def analyze(self, resource: Resource, config: None) -> DecompilationAnalysis:
+    async def analyze(self, resource: Resource, config: None = None) -> DecompilationAnalysis:
         # Run / fetch ghidra analyzer
         program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(CachedAnalysis))
         analysis = self.analysis_store.get_analysis(program_r.get_id())

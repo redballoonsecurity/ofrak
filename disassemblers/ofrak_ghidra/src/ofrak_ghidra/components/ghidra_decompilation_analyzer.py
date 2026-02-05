@@ -62,18 +62,15 @@ class GhidraDecompilationAnalyzer(DecompilationAnalyzer, OfrakGhidraMixin):
         os.path.join(CORE_OFRAK_GHIDRA_SCRIPTS, "GetDecompilation.java")
     )
 
-    async def analyze(self, resource: Resource, config: None) -> DecompilationAnalysis:
+    async def analyze(self, resource: Resource, config: None = None) -> DecompilationAnalysis:
         # Run / fetch ghidra analyzer
         complex_block = await resource.view_as(ComplexBlock)
-        result = {}
 
         try:
+            # GetDecompilation.java parses the address with Integer.parseInt(), expecting decimal
             result = await self.get_decompilation_script.call_script(
-                resource, complex_block.virtual_address
+                resource, str(complex_block.virtual_address)
             )
-        except JSONDecodeError as e:
-            result = str(e)
-        finally:
             if "decomp" in result:
                 decomp = (
                     result["decomp"]
@@ -87,7 +84,9 @@ class GhidraDecompilationAnalyzer(DecompilationAnalyzer, OfrakGhidraMixin):
                 )
             else:
                 decomp = "No Decompilation available"
+        except JSONDecodeError as e:
+            decomp = f"Decompilation failed: {e}"
 
-            decomp_escaped = escape_strings(decomp)
-            resource.add_tag(DecompilationAnalysis)
-            return DecompilationAnalysis(decomp_escaped)
+        decomp_escaped = escape_strings(decomp)
+        resource.add_tag(DecompilationAnalysis)
+        return DecompilationAnalysis(decomp_escaped)

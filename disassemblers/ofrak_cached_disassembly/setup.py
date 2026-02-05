@@ -21,7 +21,7 @@ with open("LICENSE") as f:
 
 setuptools.setup(
     name="ofrak_cached_disassembly",
-    version="0.1.0",
+    version="0.2.0rc1",
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",
     description="OFRAK Disassembler Components for Cached Results",

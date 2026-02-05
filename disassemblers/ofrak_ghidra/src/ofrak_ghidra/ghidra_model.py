@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass
-from typing import Any, Iterable
+from typing import Any, Iterable, Optional
 
 import aiohttp
 
@@ -17,7 +17,7 @@ class GhidraProject(ResourceView):
 
     project_url: str
     ghidra_url: str
-    base_address: int = None
+    base_address: Optional[int] = None
 
 
 @dataclass
