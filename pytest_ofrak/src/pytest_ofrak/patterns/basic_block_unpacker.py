@@ -7,7 +7,7 @@ Requirements Mapping:
 """
 import os
 from dataclasses import dataclass
-from typing import Dict, List, Union, Tuple
+from typing import Dict, List, Set, Union, Tuple
 
 import pytest
 from ofrak.core.filesystem import File
@@ -37,9 +37,13 @@ class BasicBlockUnpackerTestCase(
     binary_filename: str
     binary_md5_digest: str
     basic_block_data_ranges_in_root: Dict[int, Range]  # Used when created basic blocks manually
+    # Workaround for https://github.com/python/mypy/issues/12633, fixed in mypy 0.950.
+    # Remove these two lines once using a newer mypy.
+    expected_results: Dict[int, List[ExpectedBasicBlockUnpackResult]]
+    optional_results: Set[int]
 
 
-BASIC_BLOCK_UNPACKER_TEST_CASES = [
+BASIC_BLOCK_UNPACKER_TEST_CASES: List[BasicBlockUnpackerTestCase] = [
     BasicBlockUnpackerTestCase(
         "x64",
         {
@@ -1582,10 +1586,11 @@ class BasicBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
     @pytest.fixture
     async def root_resource(
         self,
-        unpack_verify_test_case: BasicBlockUnpackerTestCase,
+        unpack_verify_test_case: UnpackAndVerifyTestCase,
         ofrak_context: OFRAKContext,
         test_id: str,
     ) -> Resource:
+        assert isinstance(unpack_verify_test_case, BasicBlockUnpackerTestCase)
         asset_path = os.path.join(ASSETS_DIR, unpack_verify_test_case.binary_filename)
         with open(asset_path, "rb") as f:
             binary_data = f.read()
@@ -1598,9 +1603,9 @@ class BasicBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
         instructions = await basic_block.get_instructions()
 
         # Check that the parent complex blocks are extracted as expected
-        instructions_by_addr: Dict[int, ExpectedBasicBlockUnpackResult] = dict()
+        instructions_by_addr: Dict[int, Tuple[Instruction, ...]] = {}
         for expected_instructions in specified_result:
-            if type(expected_instructions) is tuple:
+            if isinstance(expected_instructions, tuple):
                 instructions_by_addr[
                     expected_instructions[0].virtual_address
                 ] = expected_instructions
@@ -1654,7 +1659,7 @@ class BasicBlockUnpackerUnpackAndVerifyPattern(UnpackAndVerifyPattern):
         if len(errors) > 0:
             raise ValueError(*errors)
 
-    async def get_descendants_to_verify(self, unpacked_resource: Resource) -> Dict[int, Resource]:
+    async def get_descendants_to_verify(self, unpacked_resource: Resource) -> Dict[int, BasicBlock]:
         elf = await unpacked_resource.view_as(Elf)
         text_section = await elf.get_section_by_name(".text")
         basic_blocks: List[BasicBlock] = list(
