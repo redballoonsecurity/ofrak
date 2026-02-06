@@ -357,7 +357,7 @@ async def ihex_resource(ofrak_context: OFRAKContext):
     return await ofrak_context.create_root_resource_from_file(
         os.path.join(
             os.path.dirname(__file__),
-            "../../../ofrak_core/tests/components/assets/hello_world.ihex",
+            "../../ofrak_core/tests/components/assets/hello_world.ihex",
         )
     )
 

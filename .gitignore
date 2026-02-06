@@ -21,4 +21,4 @@ build/
 dist/
 .coverage*
 **/license.json
-**/assets/*_ghidra
+**/assets/*_ghidra/
