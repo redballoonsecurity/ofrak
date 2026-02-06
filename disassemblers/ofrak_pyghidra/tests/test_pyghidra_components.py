@@ -30,6 +30,7 @@ from ofrak_pyghidra.components.pyghidra_components import (
     _arch_info_to_processor_id,
     PyGhidraDecompilationAnalyzer,
     PyGhidraCustomLoadAnalyzer,
+    PyGhidraCustomLoadProject,
 )
 import ofrak_pyghidra
 from ofrak.core import (
@@ -493,6 +494,7 @@ async def test_pyghidra_custom_loader_with_program_metadata(custom_binary_resour
         custom_binary_resource, base_address=0x100000, text_vaddr=text_vaddr
     )
     await add_rodata_region(custom_binary_resource, rodata_vaddr=0x40A0A0)
+    assert custom_binary_resource.has_tag(PyGhidraCustomLoadProject)
 
     await custom_binary_resource.run(PyGhidraCustomLoadAnalyzer)
 

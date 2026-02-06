@@ -9,6 +9,7 @@ import pytest
 from ofrak import OFRAKContext
 from ofrak.core.filesystem import File
 from ofrak_binary_ninja.components.binary_ninja_analyzer import BinaryNinjaAnalyzer
+from ofrak_binary_ninja.components.identifiers import BinaryNinjaAnalysisResource
 from ofrak_binary_ninja.model import BinaryNinjaAnalysis
 from pytest_ofrak.patterns.program_metadata import (
     custom_binary_resource,  # noqa: F401
@@ -60,15 +61,26 @@ async def test_binary_ninja_with_program_metadata(custom_binary_resource):
     - base_address is used by Binary Ninja to rebase the binary view
     - entry_points are used to seed function discovery
 
+    Binary Ninja loads the entire binary as a flat blob. Since .text is at offset 0
+    in the binary, text_vaddr must equal base_address (the rebase sets where the
+    binary starts in virtual memory).
+
     Requirements Mapping:
     - REQ2.2
     """
     base_address = 0x400000
-    text_vaddr = base_address  # .text starts at offset 0
+    # For flat binary loading, .text at offset 0 maps to base_address
+    text_vaddr = base_address
     text_section = await setup_program_with_metadata(
         custom_binary_resource, base_address=base_address, text_vaddr=text_vaddr
     )
+    assert custom_binary_resource.has_tag(BinaryNinjaAnalysisResource)
 
     await custom_binary_resource.run(BinaryNinjaAnalyzer)
+
+    # Verify base_address was applied to the Binary Ninja view
+    binja_analysis = custom_binary_resource.get_attributes(BinaryNinjaAnalysis)
+    assert binja_analysis.binaryview.start == base_address
+
     await text_section.unpack()
     await assert_complex_block_at_vaddr(custom_binary_resource, text_vaddr)

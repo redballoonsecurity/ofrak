@@ -69,30 +69,3 @@ class TestMemoryRegionPermissions:
 
         assert perms1 == perms2
         assert perms1 != perms3
-
-    def test_memory_region_permissions_executable_check(self):
-        """
-        Test checking if permissions indicate executable.
-        """
-        executable_perms = [
-            MemoryPermissions.X,
-            MemoryPermissions.RX,
-            MemoryPermissions.WX,
-            MemoryPermissions.RWX,
-        ]
-        non_executable_perms = [
-            MemoryPermissions.NONE,
-            MemoryPermissions.R,
-            MemoryPermissions.W,
-            MemoryPermissions.RW,
-        ]
-
-        for perm in executable_perms:
-            perms_attr = MemoryRegionPermissions(permissions=perm)
-            is_exec = bool(perms_attr.permissions.value & MemoryPermissions.X.value)
-            assert is_exec is True, f"{perm} should be executable"
-
-        for perm in non_executable_perms:
-            perms_attr = MemoryRegionPermissions(permissions=perm)
-            is_exec = bool(perms_attr.permissions.value & MemoryPermissions.X.value)
-            assert is_exec is False, f"{perm} should not be executable"

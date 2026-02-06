@@ -468,6 +468,14 @@ class ElfProgramMetadataAnalyzer(Analyzer[None, ProgramMetadata]):
         # Get entry point from ELF header.
         # e_entry is always an int (never None). For ELF, entry point 0 is valid
         # (e.g., firmware mapped at address 0), unlike PE where entry_rva=0 means "no entry".
+        #
+        # NOTE: For ET_REL (relocatable .o files), e_entry=0 is not a meaningful entry point -
+        # it simply means the linker hasn't assigned one yet. We currently include it anyway
+        # because (a) it's harmless for disassembler backends (they'll just try to analyze
+        # address 0, which is within the .o file's address space), and (b) filtering by e_type
+        # would require distinguishing "real 0" from "unset 0" which is fragile. If this causes
+        # problems for downstream consumers, consider checking elf_header.e_type against
+        # ElfType.ET_REL and returning empty entry_points for relocatable objects.
         entry_point = elf_header.e_entry
 
         # Get base address from first PT_LOAD segment

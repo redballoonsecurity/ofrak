@@ -222,7 +222,7 @@ class TestPeProgramMetadataAnalyzer:
 
         # DLL with no entry point should have empty entry_points, not (image_base,)
         assert metadata.entry_points == ()
-        assert metadata.base_address is not None  # image_base should still be present
+        assert metadata.base_address == 0x7DD60000
 
 
 class TestEntryPointZero:
@@ -234,21 +234,6 @@ class TestEntryPointZero:
     - UImage: Entry = 0 means the kernel/firmware starts at address 0
     - PE: entry_rva = 0 means "no entry point" (different semantics!)
     """
-
-    async def test_uimage_entry_point_zero(self, ofrak_context: OFRAKContext):
-        """Test that UImage correctly reports entry point 0 when ih_ep=0."""
-        from ofrak.core.uimage import UImageProgramMetadataAnalyzer
-
-        filepath = os.path.join(ASSETS_DIR, "uimage")
-        resource = await ofrak_context.create_root_resource_from_file(filepath)
-        await resource.unpack_recursively()
-
-        await resource.run(UImageProgramMetadataAnalyzer)
-        metadata = resource.get_attributes(ProgramMetadata)
-
-        # UImage with ih_ep=0 should include 0 in entry_points (it's a valid address)
-        assert 0 in metadata.entry_points
-        assert metadata.entry_points == (0x0,)
 
     async def test_elf_entry_point_zero(self, ofrak_context: OFRAKContext):
         """

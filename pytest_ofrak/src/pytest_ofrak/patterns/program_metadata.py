@@ -9,7 +9,14 @@ import os
 import pytest
 
 from ofrak import OFRAKContext, ResourceFilter, ResourceAttributeValueFilter
-from ofrak.core import Program, CodeRegion, ComplexBlock, Addressable, ProgramAttributes
+from ofrak.core import (
+    Program,
+    CodeRegion,
+    ComplexBlock,
+    BasicBlock,
+    Addressable,
+    ProgramAttributes,
+)
 from ofrak.core.memory_region import MemoryRegion
 from ofrak.core.program_metadata import ProgramMetadata
 from ofrak.resource import Resource
@@ -127,7 +134,8 @@ async def add_rodata_region(
 
 async def assert_complex_block_at_vaddr(resource: Resource, vaddr: int) -> ComplexBlock:
     """
-    Assert that a ComplexBlock exists at the given virtual address.
+    Assert that a ComplexBlock exists at the given virtual address and contains
+    actual analysis results (non-zero size and at least one BasicBlock child).
 
     :param resource: the root resource to search descendants of
     :param vaddr: the expected virtual address of the ComplexBlock
@@ -141,6 +149,15 @@ async def assert_complex_block_at_vaddr(resource: Resource, vaddr: int) -> Compl
             attribute_filters=(ResourceAttributeValueFilter(Addressable.VirtualAddress, vaddr),),
         ),
     )
-    assert cb is not None
     assert cb.virtual_address == vaddr
+    assert cb.size > 0, f"ComplexBlock at 0x{vaddr:x} has zero size"
+
+    # Verify the disassembler actually produced basic blocks, not just a stub entry
+    await cb.resource.unpack()
+    basic_blocks = await cb.resource.get_children_as_view(
+        BasicBlock, r_filter=ResourceFilter(tags=[BasicBlock])
+    )
+    assert (
+        len(basic_blocks) > 0
+    ), f"ComplexBlock at 0x{vaddr:x} has no BasicBlock children after unpacking"
     return cb
