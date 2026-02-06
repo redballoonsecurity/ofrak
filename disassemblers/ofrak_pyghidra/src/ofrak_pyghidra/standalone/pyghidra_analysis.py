@@ -27,7 +27,7 @@ def _parse_offset(java_object):
 
 
 def unpack(
-    program_file: str,
+    program_file: Optional[str],
     decompiled: bool,
     language: Optional[str] = None,
     base_address: Union[str, int, None] = None,
@@ -119,6 +119,7 @@ def unpack(
             main_dictionary["metadata"]["path"] = program_file
             if base_address is not None:
                 main_dictionary["metadata"]["base_address"] = base_address
+            assert program_file is not None  # guaranteed by earlier logic
             with open(program_file, "rb") as fh:
                 data = fh.read()
                 md5_hash = hashlib.md5(data)
@@ -200,15 +201,15 @@ def unpack(
     # detect the language. Ideally we would `except LoadException` directly, but it is from Java
     # and can't be imported outside of the `with pyghidra.open_program()` block
     except Exception as e:
-        if "toString" in dir(e) and "No load spec found" in e.toString():
-            raise PyGhidraComponentException(
-                str(type(e))
-                + " "
-                + e.toString()
-                + "\nTry adding ProgramAttributes to you binary before running a Ghidra analyzer/unpacker!"
-            )
-        else:
-            raise PyGhidraComponentException(e)
+        # Java exceptions from pyghidra have toString() method
+        if hasattr(e, "toString"):
+            error_str = e.toString()  # type: ignore[attr-defined]
+            if "No load spec found" in error_str:
+                raise PyGhidraComponentException(
+                    f"{type(e)} {error_str}\n"
+                    "Try adding ProgramAttributes to your binary before running a Ghidra analyzer/unpacker!"
+                )
+        raise PyGhidraComponentException(e)
     return main_dictionary
 
 
