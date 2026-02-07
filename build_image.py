@@ -331,8 +331,8 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
             "RUN PIP_NO_INDEX=1 PIP_FIND_LINKS=/pip-wheels "
             f"make -C $OFRAK_SRC_DIR/pytest_ofrak develop || "
             '(echo "ERROR: pip install of an OFRAK package failed when prohibited from downloading from PyPI. '
-            "A dependency may be missing from base.Dockerfile. "
-            'Add it to the appropriate requirements.txt file." && exit 1)\n'
+            "A dependency may be missing from base.Dockerfile or several incompatible requirements are present. "
+            'Add it to the appropriate requirements.txt file and make sure all requirements agree." && exit 1)\n'
         )
     develop_makefile = "\\n\\\n".join(
         [
@@ -349,8 +349,8 @@ def create_dockerfile_finish(config: OfrakImageConfig) -> str:
     dockerfile_finish_parts.append(
         "RUN PIP_NO_INDEX=1 PIP_FIND_LINKS=/pip-wheels make $INSTALL_TARGET || "
         '(echo "ERROR: pip install of an OFRAK package failed when prohibited from downloading from PyPI. '
-        "A dependency may be missing from base.Dockerfile. "
-        'Add it to the appropriate requirements.txt file." && exit 1)\n'
+        "A dependency may be missing from base.Dockerfile or several incompatible requirements are present. "
+        'Add it to the appropriate requirements.txt file and make sure all requirements agree." && exit 1)\n'
     )
     # Verify all dependencies are consistent
     dockerfile_finish_parts.append("RUN python3 -m pip check\n\n")
