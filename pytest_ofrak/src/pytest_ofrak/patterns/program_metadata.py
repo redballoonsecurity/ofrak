@@ -154,8 +154,10 @@ async def assert_complex_block_at_vaddr(resource: Resource, vaddr: int) -> Compl
 
     # Verify the disassembler actually produced basic blocks, not just a stub entry
     await cb.resource.unpack()
-    basic_blocks = await cb.resource.get_children_as_view(
-        BasicBlock, r_filter=ResourceFilter(tags=[BasicBlock])
+    basic_blocks = list(
+        await cb.resource.get_children_as_view(
+            BasicBlock, r_filter=ResourceFilter(tags=[BasicBlock])
+        )
     )
     assert (
         len(basic_blocks) > 0
