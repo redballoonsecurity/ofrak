@@ -6,9 +6,11 @@ from xml.etree import ElementTree
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.core.architecture import ProgramAttributes
+from ofrak.core.code_region import CodeRegion
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.core.decompilation import DecompilationAnalysis
-from ofrak.core.memory_region import MemoryRegion
+from ofrak.core.memory_region import MemoryRegion, MemoryRegionPermissions
+from ofrak.core.program_metadata import ProgramMetadata
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceFilter, ResourceServiceInterface
 from ofrak_type import ArchInfo, Endianness, InstructionSet
@@ -206,6 +208,17 @@ class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
             decomp = config.decomp
             language = config.language
 
+        # Try to get program metadata for entry points and base address
+        try:
+            program_metadata = resource.get_attributes(ProgramMetadata)
+            entry_points = (
+                list(program_metadata.entry_points) if program_metadata.entry_points else None
+            )
+            base_address = program_metadata.base_address
+        except NotFoundError:
+            entry_points = None
+            base_address = None
+
         # Prepare memory regions data
         regions = await resource.get_children_as_view(
             MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
@@ -214,17 +227,30 @@ class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
         memory_regions = []
         for region in regions:
             region_data = await region.resource.get_data()
-            memory_regions.append(
-                {
-                    "virtual_address": region.virtual_address,
-                    "size": region.size,
-                    "data": region_data,
-                }
-            )
+            region_dict = {
+                "virtual_address": region.virtual_address,
+                "size": region.size,
+                "data": region_data,
+            }
+            # Add permissions if available via MemoryRegionPermissions attribute
+            try:
+                perms_attr = region.resource.get_attributes(MemoryRegionPermissions)
+                region_dict["permissions"] = perms_attr.permissions.value
+            except NotFoundError:
+                # Fall back to checking if this is a CodeRegion
+                region_dict["executable"] = region.resource.has_tag(CodeRegion)
+            memory_regions.append(region_dict)
 
         self.analysis_store.store_analysis(
             resource.get_id(),
-            unpack(None, decomp, language=language, memory_regions=memory_regions),
+            unpack(
+                None,
+                decomp,
+                language=language,
+                base_address=base_address,
+                memory_regions=memory_regions,
+                entry_points=entry_points,
+            ),
         )
         return PyGhidraCustomLoadProject()
 

@@ -3,14 +3,16 @@ import os
 import hashlib
 import traceback
 from typing import Any, Dict, Optional, Union, List
+
 import pyghidra
 import argparse
 import time
 import re
 import json
-import logging
 from tempfile312 import mkdtemp
 from tqdm import tqdm
+
+from ofrak_type.memory_permissions import MemoryPermissions
 
 LOGGER = logging.getLogger("ofrak_pyghidra")
 
@@ -32,6 +34,7 @@ def unpack(
     language: Optional[str] = None,
     base_address: Union[str, int, None] = None,
     memory_regions: Optional[List[Dict[str, Any]]] = None,
+    entry_points: Optional[List[int]] = None,
     show_progress: bool = False,
 ):
     try:
@@ -82,19 +85,45 @@ def unpack(
                             False,  # overlay
                         )
 
-                        # Mark as executable
+                        # Set permissions from region dict.
+                        # For backwards compatibility, default to R+X when no permissions are
+                        # specified, since previously all MemoryRegions passed to the disassembler
+                        # were treated as executable code regions.
                         block = memory.getBlock(addr)
-                        block.setExecute(True)
-                        block.setRead(True)
+                        permissions = region.get("permissions")
+                        if permissions is not None:
+                            # permissions is a MemoryPermissions value (int)
+                            block.setRead(bool(permissions & MemoryPermissions.R.value))
+                            block.setWrite(bool(permissions & MemoryPermissions.W.value))
+                            block.setExecute(bool(permissions & MemoryPermissions.X.value))
+                        else:
+                            # Backwards compatibility: use "executable" flag if present,
+                            # otherwise default to executable (R+X) to match legacy behavior
+                            is_executable = region.get("executable", True)
+                            block.setExecute(is_executable)
+                            block.setRead(True)
                     except Exception as e:
-                        logging.warning(
+                        LOGGER.warning(
                             f"Failed to create memory block at 0x{region['virtual_address']:x}: {e}"
                         )
+                # Add entry points if provided
+                if entry_points:
+                    symbol_table = program.getSymbolTable()
+                    for entry_addr in entry_points:
+                        try:
+                            addr = default_space.getAddress(entry_addr)
+                            symbol_table.addExternalEntryPoint(addr)
+                            LOGGER.info(f"Added entry point at 0x{entry_addr:x}")
+                        except Exception as e:
+                            LOGGER.warning(f"Failed to add entry point at 0x{entry_addr:x}: {e}")
+
                 # Analyze all
                 analysis_mgr = program.getOptions("Analyzers")
                 flat_api.analyzeAll(program)
-            # If base_address is provided, rebase the program
-            if base_address is not None:
+            # If base_address is provided and memory_regions were NOT explicitly provided,
+            # rebase the program. When memory_regions are provided, addresses are already
+            # absolute and should not be shifted.
+            if base_address is not None and not memory_regions:
                 # Convert base_address to int if it's a string
                 if isinstance(base_address, str):
                     if base_address.startswith("0x"):

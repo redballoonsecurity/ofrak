@@ -7,9 +7,25 @@ from ofrak.model.resource_model import index, ResourceAttributes
 from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
 from ofrak_type.error import NotFoundError
+from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__file__)
+
+
+@dataclass(**ResourceAttributes.DATACLASS_PARAMS)
+class MemoryRegionPermissions(ResourceAttributes):
+    """
+    Memory permissions (read/write/execute) for a MemoryRegion resource.
+
+    This attribute can be attached to any MemoryRegion resource to specify its
+    permissions. Use this when you need finer-grained permission control than
+    the CodeRegion tag provides.
+
+    :ivar permissions: the memory permissions for this region
+    """
+
+    permissions: MemoryPermissions
 
 
 @dataclass

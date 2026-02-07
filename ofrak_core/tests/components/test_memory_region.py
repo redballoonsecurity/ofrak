@@ -5,6 +5,8 @@ Requirements Mapping:
 - REQ1.2
 """
 from ofrak.core import MemoryRegion
+from ofrak.core.memory_region import MemoryRegionPermissions
+from ofrak_type.memory_permissions import MemoryPermissions
 
 
 def test_memory_region_str():
@@ -34,3 +36,36 @@ def test_memory_region_hash():
     assert region_a in memory_bank
     assert region_b in memory_bank
     assert region_c not in memory_bank
+
+
+class TestMemoryRegionPermissions:
+    """Tests for MemoryRegionPermissions ResourceAttribute."""
+
+    def test_memory_region_permissions_creation(self):
+        """
+        Test that MemoryRegionPermissions can be created with all permission types.
+        """
+        for perm in MemoryPermissions:
+            perms_attr = MemoryRegionPermissions(permissions=perm)
+            assert perms_attr.permissions == perm
+
+    def test_memory_region_permissions_frozen(self):
+        """
+        Test that MemoryRegionPermissions is frozen (immutable).
+        """
+        import pytest
+
+        perms_attr = MemoryRegionPermissions(permissions=MemoryPermissions.RX)
+        with pytest.raises(AttributeError):
+            perms_attr.permissions = MemoryPermissions.RW
+
+    def test_memory_region_permissions_equality(self):
+        """
+        Test MemoryRegionPermissions equality comparison.
+        """
+        perms1 = MemoryRegionPermissions(permissions=MemoryPermissions.RX)
+        perms2 = MemoryRegionPermissions(permissions=MemoryPermissions.RX)
+        perms3 = MemoryRegionPermissions(permissions=MemoryPermissions.RW)
+
+        assert perms1 == perms2
+        assert perms1 != perms3

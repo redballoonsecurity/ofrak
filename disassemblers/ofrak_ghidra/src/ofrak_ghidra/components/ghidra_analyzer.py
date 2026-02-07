@@ -12,12 +12,16 @@ from xml.etree import ElementTree
 
 from ofrak import ResourceFilter
 from ofrak.core import CodeRegion, MemoryRegion, NamedProgramSection, ProgramAttributes, Program
+from ofrak.core.memory_region import MemoryRegionPermissions
+from ofrak_type.memory_permissions import MemoryPermissions
+from ofrak.core.program_metadata import ProgramMetadata
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
 from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource, ResourceFactory
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceServiceInterface
+from ofrak_type.error import NotFoundError
 from ofrak_ghidra.constants import (
     GHIDRA_HEADLESS_EXEC,
     GHIDRA_USER,
@@ -176,6 +180,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
         use_binary_loader: bool,
         processor: Optional[ArchInfo] = None,
         blocks: Optional[List[MemoryRegion]] = None,
+        entry_points: Optional[List[int]] = None,
     ):
         args = [
             ghidra_project,
@@ -200,7 +205,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
         if blocks is not None:
             args.extend(["-scriptPath", (";".join(self._script_directories))])
             args.extend(["-preScript", "CreateMemoryBlocks.java"])
-            args.extend(await self._build_create_memory_args(blocks))
+            args.extend(await self._build_create_memory_args(blocks, entry_points))
 
         cmd_str = " ".join([GHIDRA_HEADLESS_EXEC] + args)
         LOGGER.debug(f"Running command: {cmd_str}")
@@ -389,7 +394,9 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
             f"{processor}. Considered the following specs:\n{', '.join(processors_rejected)}"
         )
 
-    async def _build_create_memory_args(self, blocks: List[MemoryRegion]) -> List[str]:
+    async def _build_create_memory_args(
+        self, blocks: List[MemoryRegion], entry_points: Optional[List[int]] = None
+    ) -> List[str]:
         args: List[str] = []
 
         for i, block in enumerate(blocks):
@@ -398,10 +405,26 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
                 str(block.size),
             ]
 
-            if block.resource.has_tag(CodeRegion):
-                block_info.append("rx")
-            else:
-                block_info.append("rw")
+            # Use permissions from MemoryRegionPermissions attribute if available.
+            # If permissions are NONE (no access), we faithfully represent that as no
+            # permissions. The block will still be readable/disassemblable via Ghidra API,
+            # but won't be auto-analyzed as code.
+            try:
+                perms_attr = block.resource.get_attributes(MemoryRegionPermissions)
+                perms = ""
+                if perms_attr.permissions.value & MemoryPermissions.R.value:
+                    perms += "r"
+                if perms_attr.permissions.value & MemoryPermissions.W.value:
+                    perms += "w"
+                if perms_attr.permissions.value & MemoryPermissions.X.value:
+                    perms += "x"
+                block_info.append(perms)
+            except NotFoundError:
+                # Fall back to checking if this is a CodeRegion
+                if block.resource.has_tag(CodeRegion):
+                    block_info.append("rx")
+                else:
+                    block_info.append("rw")
 
             if block.resource.has_tag(NamedProgramSection):
                 named_section = await block.resource.view_as(NamedProgramSection)
@@ -422,6 +445,11 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
                 block_info.append("-1")
 
             args.append("!".join(block_info))
+
+        # Add entry points argument if provided (format: "entry:0x1000,0x2000")
+        if entry_points:
+            entry_strs = [f"0x{ep:x}" for ep in entry_points]
+            args.append(f"entry:{','.join(entry_strs)}")
 
         return args
 
@@ -529,6 +557,15 @@ class GhidraCustomLoadAnalyzer(GhidraProjectAnalyzer):
         mem_blocks = await self._get_memory_blocks(await resource.view_as(Program))
         use_existing = config.use_existing if config is not None else False
 
+        # Try to get program metadata for entry points
+        entry_points: Optional[List[int]] = None
+        try:
+            program_metadata = resource.get_attributes(ProgramMetadata)
+            if program_metadata.entry_points:
+                entry_points = list(program_metadata.entry_points)
+        except NotFoundError:
+            pass
+
         async with self._prepare_ghidra_project(resource) as (ghidra_project, full_fname):
             program_name = await self._do_ghidra_import(
                 ghidra_project,
@@ -537,6 +574,7 @@ class GhidraCustomLoadAnalyzer(GhidraProjectAnalyzer):
                 use_binary_loader=True,
                 processor=arch_info,
                 blocks=mem_blocks,
+                entry_points=entry_points,
             )
             await self._do_ghidra_analyze_and_serve(
                 ghidra_project,

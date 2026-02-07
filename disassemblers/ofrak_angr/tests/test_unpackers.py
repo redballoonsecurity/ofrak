@@ -20,10 +20,18 @@ from pytest_ofrak.patterns.complex_block_unpacker import (
     ComplexBlockUnpackerTestCase,
     ComplexBlockUnpackerUnpackAndVerifyPattern,
 )
+from pytest_ofrak.patterns.program_metadata import (
+    custom_binary_resource,  # noqa: F401
+    setup_program_with_metadata,
+    assert_complex_block_at_vaddr,
+)
 from ofrak import OFRAKContext
 from ofrak import ResourceFilter, ResourceAttributeValueFilter
 from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.core.addressable import Addressable
+from ofrak_angr.components.angr_analyzer import AngrAnalyzer, AngrAnalyzerConfig
+from ofrak_angr.components.identifiers import AngrAnalysisResource
+from ofrak_angr.model import AngrAnalysis
 
 
 class TestAngrCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
@@ -195,3 +203,49 @@ async def test_basic_block_no_exit(ofrak_context: OFRAKContext, busybox_resource
 
     await complexblock_0x4d8768.unpack()
     # In the past, unpacking that ComplexBlock would fail because it contains a BasicBlock that doens't have an exit address
+
+
+async def test_angr_with_program_metadata(custom_binary_resource):
+    """
+    Test that angr correctly handles ProgramMetadata (base_address and entry_points).
+
+    This test verifies that when ProgramMetadata is provided:
+    - base_address is used by angr to load the binary at the specified address
+    - entry_points are used to seed CFG analysis
+
+    For angr's blob backend, the entire binary is loaded as a flat blob starting at
+    base_address. Since .text is at offset 0 in the binary, text_vaddr must equal
+    base_address. This is inherent to how blob loading works (no section headers to
+    provide separate virtual addresses).
+
+    Requirements Mapping:
+    - REQ2.2
+    """
+    base_address = 0x400000
+    # For blob backend, .text at offset 0 maps to base_address
+    text_vaddr = base_address
+    text_section = await setup_program_with_metadata(
+        custom_binary_resource, base_address=base_address, text_vaddr=text_vaddr
+    )
+    assert custom_binary_resource.has_tag(AngrAnalysisResource)
+
+    # Configure angr to use blob backend for raw binary analysis.
+    # The blob backend requires explicit architecture specification.
+    # ProgramMetadata entry_point and base_address will be merged into main_opts.
+    angr_config = AngrAnalyzerConfig(
+        project_args={
+            "auto_load_libs": False,
+            "main_opts": {
+                "backend": "blob",
+                "arch": "AARCH64",
+            },
+        }
+    )
+    await custom_binary_resource.run(AngrAnalyzer, angr_config)
+
+    # Verify base_address was applied to the angr project
+    angr_analysis = custom_binary_resource.get_attributes(AngrAnalysis)
+    assert angr_analysis.project.loader.main_object.min_addr == base_address
+
+    await text_section.unpack()
+    await assert_complex_block_at_vaddr(custom_binary_resource, text_vaddr)

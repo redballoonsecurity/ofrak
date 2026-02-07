@@ -30,6 +30,7 @@ from ofrak_pyghidra.components.pyghidra_components import (
     _arch_info_to_processor_id,
     PyGhidraDecompilationAnalyzer,
     PyGhidraCustomLoadAnalyzer,
+    PyGhidraCustomLoadProject,
 )
 import ofrak_pyghidra
 from ofrak.core import (
@@ -40,6 +41,12 @@ from ofrak.core import (
     Addressable,
     Instruction,
     ProgramAttributes,
+)
+from pytest_ofrak.patterns.program_metadata import (
+    custom_binary_resource,  # noqa: F401
+    setup_program_with_metadata,
+    add_rodata_region,
+    assert_complex_block_at_vaddr,
 )
 from ofrak_pyghidra.standalone.pyghidra_analysis import unpack, decompile_all_functions
 from ofrak import Resource, ResourceFilter, ResourceSort, ResourceAttributeValueFilter
@@ -391,26 +398,6 @@ async def test_ihex_unpacking(ihex_resource):
     assert any(cb.name == "FUN_004003be" for cb in complex_blocks)
 
 
-@pytest.fixture
-async def custom_binary_resource(ofrak_context: OFRAKContext):
-    # This is a custom binary created from this aarch64 statically compiled binary:
-    # https://github.com/ryanwoodsmall/static-binaries/blob/master/aarch64/tini
-    # It was created like so:
-    # - `aarch64-linux-gnu-objcopy -O binary --only-section=.text tini tini.text.bin`
-    # - `aarch64-linux-gnu-objcopy -O binary --only-section=.rodata tini tini.rodata.bin`
-    # - `dd if=/dev/zero of=gap.bin bs=1 count=$((0x1234))`
-    # - `cat tini.text.bin > tini_custom_binary`
-    # - `cat gap.bin >> tini_custom_binary`
-    # - `cat tini.rodata.bin >> tini_custom_binary`
-    # So it is a binary that contains:
-    # - the tini .text section binary content
-    # - a gap of zero bytes of size 0x1234
-    # - the tini .rodata binary content
-    return await ofrak_context.create_root_resource_from_file(
-        os.path.join(os.path.dirname(__file__), "assets/tini_custom_binary")
-    )
-
-
 async def test_pyghidra_custom_loader(custom_binary_resource):
     """
     Test that loading a binary with manually-defined MemoryRegions with the PyGhidraCustomLoadAnalyzer results in the right representation in OFRAK.
@@ -487,3 +474,29 @@ async def test_pyghidra_custom_loader(custom_binary_resource):
     decomp_str = decomp_resource.decompilation
     print(decomp_str)
     assert '"tini version 0.19.0"' in decomp_str
+
+
+async def test_pyghidra_custom_loader_with_program_metadata(custom_binary_resource):
+    """
+    Test that PyGhidraCustomLoadAnalyzer correctly handles ProgramMetadata alongside MemoryRegions.
+
+    This test verifies that when both ProgramMetadata (with base_address and entry_points) and
+    MemoryRegions are provided, the analysis produces correct results. Specifically:
+    - Entry points from ProgramMetadata should be registered correctly in the analysis
+    - Memory regions should remain at their specified virtual addresses even when base_address
+      differs from the minimum region address
+
+    Requirements Mapping:
+    - REQ2.2
+    """
+    text_vaddr = 0x400130
+    text_section = await setup_program_with_metadata(
+        custom_binary_resource, base_address=0x100000, text_vaddr=text_vaddr
+    )
+    await add_rodata_region(custom_binary_resource, rodata_vaddr=0x40A0A0)
+    assert custom_binary_resource.has_tag(PyGhidraCustomLoadProject)
+
+    await custom_binary_resource.run(PyGhidraCustomLoadAnalyzer)
+
+    await text_section.unpack()
+    await assert_complex_block_at_vaddr(custom_binary_resource, text_vaddr)
