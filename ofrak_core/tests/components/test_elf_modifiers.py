@@ -5,6 +5,7 @@ Requirements Mapping:
 - REQ3.4
 """
 import os
+import shutil
 import subprocess
 from typing import Optional
 
@@ -49,9 +50,7 @@ from ofrak.core.elf.modifier import (
 from ofrak import OFRAKContext, Resource
 
 
-async def test_elf_add_symbols(
-    ofrak_context: OFRAKContext, elf_executable_file, elf_test_directory
-):
+async def test_elf_add_symbols(ofrak_context: OFRAKContext, elf_executable_file, tmp_path):
     """
     Tests insertion of new strings into an ELF executable.
 
@@ -76,20 +75,20 @@ async def test_elf_add_symbols(
 
     await original_elf.run(ElfAddStringModifier, ElfAddStringModifierConfig(strings_to_add))
 
-    output_path = os.path.join(elf_test_directory, "program_with_newstrings")
+    output_path = str(tmp_path / "program_with_newstrings")
     await original_elf.flush_data_to_disk(output_path)
     strings_result = subprocess.run(["strings", output_path], capture_output=True)
     new_strings = set(strings_result.stdout.decode().split("\n"))
 
     assert new_strings.difference(original_strings) == set(strings_to_add)
 
-    result = subprocess.run([os.path.join(elf_test_directory, "program")])
+    result = subprocess.run([elf_executable_file])
     assert result.returncode == 12
 
 
 @pytest.mark.skipif_windows
 async def test_elf_force_relocation(
-    ofrak_context: OFRAKContext, elf_object_file, elf_test_directory
+    ofrak_context: OFRAKContext, elf_object_file, elf_test_directory, tmp_path
 ):
     """
     Tests symbol relocation modification to redirect function calls.
@@ -122,9 +121,11 @@ async def test_elf_force_relocation(
         ElfRelocateSymbolsModifierConfig({foo_vaddr: bar_vaddr, bar_vaddr: foo_vaddr}),
     )
 
-    await elf.resource.flush_data_to_disk(os.path.join(elf_test_directory, "program_relocated.o"))
-    subprocess.run(["make", "-C", elf_test_directory, "program_relocated"])
-    result = subprocess.run([os.path.join(elf_test_directory, "program_relocated")])
+    relocated_obj = str(tmp_path / "program_relocated.o")
+    await elf.resource.flush_data_to_disk(relocated_obj)
+    shutil.copy(os.path.join(elf_test_directory, "Makefile"), tmp_path)
+    subprocess.run(["make", "-C", str(tmp_path), "program_relocated"])
+    result = subprocess.run([str(tmp_path / "program_relocated")])
     assert result.returncode == 24
 
 
@@ -156,7 +157,7 @@ MODIFIER_VIEWS_UNDER_TEST = [
 async def test_modifier(
     ofrak_context: OFRAKContext,
     elf_executable_file,
-    elf_test_directory,
+    tmp_path,
     modifier,
     modifier_config,
     test_view,
@@ -183,7 +184,7 @@ async def test_modifier(
     for view in views:
         for entry in await view.get_entries():
             await entry.resource.run(modifier, modifier_config)
-    mod_path = elf_executable_file + "_mod"
+    mod_path = str(tmp_path / "program_mod")
     await elf.resource.flush_data_to_disk(mod_path)
     mod_elf = await ofrak_context.create_root_resource_from_file(mod_path)
     await mod_elf.unpack()
