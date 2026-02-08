@@ -234,6 +234,9 @@ class TestTarNestedUnpackModifyPack(UnpackModifyPackPattern):
                 assert self.EXPECTED_DATA == f.read()
 
 
+@pytest.mark.skipif(
+    os.geteuid() != 0, reason="Extracting device nodes from testtar.tar requires root"
+)
 class TestComplexTarWithSpecialFiles(FilesystemPackUnpackVerifyPattern):
     """
     Test unpacking and repacking a tar archive containing special file types.
