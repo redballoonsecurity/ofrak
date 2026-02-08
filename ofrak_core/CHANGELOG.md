@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Remove test dependencies that are already in the global `requirements-dev.txt` ([#695](https://github.com/redballoonsecurity/ofrak/pull/695))
 
 ### Fixed
+- Fix ELF modifier tests writing generated artifacts into source tree instead of tmp_path ([#705](https://github.com/redballoonsecurity/ofrak/pull/705))
 - Fix `Resource.get_attributes` docstring to match implementation ([#692](https://github.com/redballoonsecurity/ofrak/pull/692))
 - Fix GUI serialization of enum values and script creator generating invalid Python syntax for enum values
 - `build_image.py` uses `OFRAK_DIR` from `extra_build_args` to identify `pytest_ofrak` location for develop builds ([#657](https://github.com/redballoonsecurity/ofrak/pull/657/))
