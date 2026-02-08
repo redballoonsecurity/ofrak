@@ -50,6 +50,7 @@ async def test_patch_from_source_modifier(
     ofrak_context: OFRAKContext,
     large_elf_file,
     patch_file,
+    tmp_path,
 ) -> None:
     """
     Tests the patch from source modifier functionality (REQ6.2).
@@ -152,9 +153,9 @@ async def test_patch_from_source_modifier(
     resource = await ofrak_context.create_root_resource_from_file(large_elf_file)
     new_segment = await add_and_return_segment(resource, 0x440000, 0x2000)
 
-    output_file_name = os.path.join(os.path.dirname(patch_file), "test_patch")
+    output_file_name = str(tmp_path / "test_patch")
 
-    source_dir = os.path.join(os.path.dirname(patch_file))
+    source_dir = os.path.dirname(patch_file)
 
     await apply_patch(resource, source_dir, new_segment)
     await call_new_segment_instead(resource, new_segment)
