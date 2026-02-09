@@ -22,3 +22,4 @@ dist/
 .coverage*
 **/license.json
 **/assets/*_ghidra/
+disassemblers/ofrak_ghidra/src/ofrak_ghidra/config/ofrak_ghidra.conf.yml

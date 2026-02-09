@@ -3,9 +3,10 @@ All notable changes to `ofrak-ghidra` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased 0.2.0](https://github.com/redballoonsecurity/ofrak/tree/master)
+## [Unreleased 0.2.0rc4](https://github.com/redballoonsecurity/ofrak/tree/master)
 
 ### Added
+- Add `use_sudo` config option for non-root Ghidra server management ([#707](https://github.com/redballoonsecurity/ofrak/pull/707))
 - Add OFRAK requirements, requirement to test mapping, test specifications ([#656](https://github.com/redballoonsecurity/ofrak/pull/656))
 - Add mypy type checking enforcement to `make test` ([#702](https://github.com/redballoonsecurity/ofrak/pull/702))
 
@@ -14,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Move to OpenJDK version 17 with the docker container move to Debian 12 ([#502](https://github.com/redballoonsecurity/ofrak/pull/502))
 
 ### Fixed
+- Raise an error when Ghidra server start/stop commands fail ([#707](https://github.com/redballoonsecurity/ofrak/pull/707))
 - Speedup: do not run Ghidra auto-analysis upon importing a program. ([#473](https://github.com/redballoonsecurity/ofrak/pull/473))
 - Ensure large 64-bit addresses are interpreted as unsigned. ([#474](https://github.com/redballoonsecurity/ofrak/pull/474))
 - Update `GhidraDecompilationAnalyzer` to match API in ofrak 0.3.0rc10 ([#600](https://github.com/redballoonsecurity/ofrak/pull/600))

@@ -12,32 +12,38 @@ from ofrak_ghidra.constants import (
     GHIDRA_PASS,
     GHIDRA_REPOSITORY_HOST,
     GHIDRA_REPOSITORY_PORT,
+    conf,
 )
 
 
 def _run_ghidra_server(*args):
     if sys.platform == "linux" or sys.platform == "darwin":
+        # Script is in the local package directory; no sudo needed for chmod.
         os.chmod(
             GHIDRA_START_SERVER_SCRIPT, os.stat(GHIDRA_START_SERVER_SCRIPT).st_mode | stat.S_IEXEC
         )
-        subprocess.call(
-            [
-                GHIDRA_START_SERVER_SCRIPT,
-                GHIDRA_PATH,
-                CORE_OFRAK_GHIDRA_SCRIPTS,
-                GHIDRA_USER,
-                GHIDRA_PASS,
-                GHIDRA_REPOSITORY_HOST,
-                str(GHIDRA_REPOSITORY_PORT),
-            ]
-        )
+        cmd = [
+            GHIDRA_START_SERVER_SCRIPT,
+            GHIDRA_PATH,
+            CORE_OFRAK_GHIDRA_SCRIPTS,
+            GHIDRA_USER,
+            GHIDRA_PASS,
+            GHIDRA_REPOSITORY_HOST,
+            str(GHIDRA_REPOSITORY_PORT),
+        ]
+        if conf.use_sudo:
+            cmd = ["sudo", "-n"] + cmd
+        subprocess.run(cmd, check=True)
     else:
         raise NotImplementedError(f"Native OFRAK Ghidra server not supported for {sys.platform}!")
 
 
 def _stop_ghidra_server(*args):
     if sys.platform == "linux" or sys.platform == "darwin":
-        subprocess.call([os.path.join(GHIDRA_PATH, "server", "ghidraSvr"), "stop"])
+        cmd = [os.path.join(GHIDRA_PATH, "server", "ghidraSvr"), "stop"]
+        if conf.use_sudo:
+            cmd = ["sudo", "-n"] + cmd
+        subprocess.run(cmd, check=True)
     else:
         raise NotImplementedError(f"Native OFRAK Ghidra server not supported for {sys.platform}!")
 
