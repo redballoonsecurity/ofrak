@@ -95,10 +95,9 @@ server:
                     "host": self.ghidra_analysis_host,
                     "port": self.ghidra_analysis_port,
                 },
+                "use_sudo": self.use_sudo,
             },
         }
-
-        raw_config["server"]["use_sudo"] = self.use_sudo
 
         return yaml.safe_dump(raw_config)
 
