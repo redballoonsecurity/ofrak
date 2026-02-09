@@ -6,7 +6,6 @@ import argparse
 import os
 import subprocess
 import sys
-import pkg_resources
 import yaml
 
 from ofrak_core.version import VERSION
@@ -247,10 +246,10 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
             if not os.path.exists(requirements_path):
                 continue
             with open(requirements_path) as requirements_handle:
-                python_reqs += [
-                    str(requirement)
-                    for requirement in pkg_resources.parse_requirements(requirements_handle)
-                ]
+                for line in requirements_handle:
+                    line = line.split("#")[0].strip()
+                    if line:
+                        python_reqs.append(line)
         if python_reqs:
             if pip_reqs:
                 # Install pinned pip/setuptools versions first for consistent builds
