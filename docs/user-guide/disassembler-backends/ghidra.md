@@ -17,7 +17,7 @@ OFRAK supports using the Ghidra backend in two ways: natively on your host machi
     1. Run `python -m ofrak_ghidra.config dump > ofrak_ghidra.yml` to create the default YAML file
     1. Modify `ofrak_ghidra.yml` according to your local Ghidra environment. This provides OFRAK Ghidra with the paths to your Ghidra install directory and Ghidra log file as well as your Ghidra Server address and credentials.
     1. Run `python -m ofrak_ghidra.config import ofrak_ghidra.yml` so that OFRAK Ghidra can connect to the Ghidra server
-    1. Run `sudo python -m ofrak_ghidra.server start`
+    1. Run `python -m ofrak_ghidra.server start` (if running as non-root, set `use_sudo: true` under `server:` in your config)
 
 === "Docker"
 
@@ -50,6 +50,9 @@ The Ghidra server must be running before OFRAK can use Ghidra analysis.
 To start the Ghidra server, users should run `python -m ofrak_ghidra.server start`.
 
 To stop it, run `python -m ofrak_ghidra.server stop`.
+
+The Ghidra server requires root privileges. If you are not running as root, set `use_sudo: true`
+under `server:` in your Ghidra config so that server commands are run with `sudo`.
 
 ## Usage
 To use Ghidra, you need to discover the component at setup-time with:

@@ -20,6 +20,7 @@ server:
   repository:
     host: localhost
     port: 13100
+  use_sudo: false
   user: root
 """
 
@@ -35,6 +36,7 @@ server:
   repository:
     host: TEST_REPO_HOST
     port: 666
+  use_sudo: true
   user: testuser
 """
 

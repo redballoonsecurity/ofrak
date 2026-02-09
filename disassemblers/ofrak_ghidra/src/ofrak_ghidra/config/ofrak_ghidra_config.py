@@ -21,6 +21,7 @@ class OfrakGhidraConfig:
     ghidra_analysis_port: int
     ghidra_repository_host: str
     ghidra_repository_port: int
+    use_sudo: bool = False
 
     @staticmethod
     def config_help() -> str:
@@ -55,6 +56,7 @@ server:
   analysis:
     host: # Host for the server OFRAK will create in a headless Ghidra instance, e.g. localhost
     port: # Host for the port OFRAK will create in a headless Ghidra instance
+  use_sudo: # Optional (default false). If true, run Ghidra server commands with sudo.
 """
 
     @staticmethod
@@ -71,6 +73,8 @@ server:
             ghidra_repository_port=int(raw_config["server"]["repository"]["port"]),
             ghidra_analysis_host=raw_config["server"]["analysis"]["host"],
             ghidra_analysis_port=int(raw_config["server"]["analysis"]["port"]),
+            # use_sudo defaults to false for compatibility with older configuration files
+            use_sudo=bool(raw_config["server"].get("use_sudo", False)),
         )
 
     def to_yaml(self) -> str:
@@ -93,6 +97,8 @@ server:
                 },
             },
         }
+
+        raw_config["server"]["use_sudo"] = self.use_sudo
 
         return yaml.safe_dump(raw_config)
 
