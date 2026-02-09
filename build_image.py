@@ -194,6 +194,16 @@ def check_package_contents(package_path: str):
     return
 
 
+def read_requirements(requirements_path: str) -> List[str]:
+    python_reqs: List[str] = []
+    with open(requirements_path) as requirements_handle:
+        for line in requirements_handle:
+            line = line.split("#")[0].strip()
+            if line:
+                python_reqs.append(line)
+    return python_reqs
+
+
 def create_dockerfile_base(config: OfrakImageConfig) -> str:
     dockerfile_base_parts = [
         "# syntax = docker/dockerfile:1.3",
@@ -220,11 +230,7 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
     pip_reqs_path = "requirements-pip.txt"
     pip_reqs = []
     if os.path.exists(pip_reqs_path):
-        with open(pip_reqs_path) as pip_reqs_handle:
-            pip_reqs = [
-                str(requirement)
-                for requirement in pkg_resources.parse_requirements(pip_reqs_handle)
-            ]
+        pip_reqs = read_requirements(pip_reqs_path)
 
     requirement_suffixes = ["", "-non-pypi"]
     if config.install_target is InstallTarget.DEVELOP:
@@ -245,11 +251,7 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
             requirements_path = os.path.join(package_path, f"requirements{suff}.txt")
             if not os.path.exists(requirements_path):
                 continue
-            with open(requirements_path) as requirements_handle:
-                for line in requirements_handle:
-                    line = line.split("#")[0].strip()
-                    if line:
-                        python_reqs.append(line)
+            python_reqs += read_requirements(requirements_path)
         if python_reqs:
             if pip_reqs:
                 # Install pinned pip/setuptools versions first for consistent builds
@@ -269,11 +271,7 @@ def create_dockerfile_base(config: OfrakImageConfig) -> str:
     if config.install_target is InstallTarget.DEVELOP:
         dev_reqs_path = "requirements-dev.txt"
         if os.path.exists(dev_reqs_path):
-            with open(dev_reqs_path) as dev_reqs_handle:
-                dev_reqs = [
-                    str(requirement)
-                    for requirement in pkg_resources.parse_requirements(dev_reqs_handle)
-                ]
+            dev_reqs = read_requirements(dev_reqs_path)
             if dev_reqs:
                 if pip_reqs:
                     # Install pinned pip/setuptools versions first for consistent builds
