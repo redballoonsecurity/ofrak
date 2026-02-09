@@ -15,6 +15,27 @@ from tqdm import tqdm
 LOGGER = logging.getLogger("ofrak_pyghidra")
 
 
+def _ensure_headless_jvm():
+    """
+    Start pyghidra's JVM with -Djava.awt.headless=true if not already running.
+
+    PyGhidra's HeadlessPyGhidraLauncher tells Ghidra to run in headless mode
+    (HeadlessGhidraApplicationConfiguration), but does NOT set java.awt.headless
+    at the JVM level. Meanwhile, Ghidra's launch.properties includes AWT rendering
+    flags (sun.java2d.xrender, sun.java2d.pmoffscreen, etc.) that get loaded
+    unconditionally. If DISPLAY is set but X11 is unreachable (Docker, CI, SSH,
+    devcontainers), any AWT code path can fail with a HeadlessException.
+
+    We pre-empt pyghidra.open_program()'s lazy JVM startup so we can inject the
+    headless flag. Once started, the JVM lives for the lifetime of the process
+    (JPype limitation), and open_program() will see it's already running.
+    """
+    if not pyghidra.started():
+        launcher = pyghidra.HeadlessPyGhidraLauncher()
+        launcher.vm_args.append("-Djava.awt.headless=true")
+        launcher.start()
+
+
 class PyGhidraComponentException(Exception):
     pass
 
@@ -34,6 +55,7 @@ def unpack(
     memory_regions: Optional[List[Dict[str, Any]]] = None,
     show_progress: bool = False,
 ):
+    _ensure_headless_jvm()
     try:
         LOGGER.info("Analyzing program. This might take a while.")
         if not program_file and memory_regions and len(memory_regions) > 0:
@@ -477,6 +499,7 @@ def _decompile(func, decomp_interface, task_monitor):
 
 
 def decompile_all_functions(program_file, language):
+    _ensure_headless_jvm()
     with pyghidra.open_program(program_file, language=language) as flat_api:
         from ghidra.app.decompiler import DecompInterface, DecompileOptions
         from ghidra.util.task import TaskMonitor
