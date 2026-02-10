@@ -219,28 +219,12 @@ class TestExt4UnpackModifyPack(_TestExtUnpackModifyPack):
         }
 
 
-class _TestExtPackUnpack(FilesystemPackUnpackVerifyPattern):
+class ExtFilesystemPackUnpackVerifyPattern(FilesystemPackUnpackVerifyPattern):
     EXT_TYPE: str
 
     def setup(self):
         super().setup()
         self.check_stat = False
-        self.check_xattrs = False
-
-    async def create_root_resource(self, ofrak_context: OFRAKContext, directory: str) -> Resource:
-        with tempfile.NamedTemporaryFile(suffix=".img", delete_on_close=False) as ext_blob:
-            ext_blob.close()
-            command = [
-                "mke2fs",
-                "-t",
-                self.EXT_TYPE,
-                "-d",
-                directory,
-                ext_blob.name,
-                "20M",
-            ]
-            subprocess.run(command, check=True, capture_output=True)
-            return await ofrak_context.create_root_resource_from_file(ext_blob.name)
 
     async def unpack(self, root_resource: Resource) -> None:
         await root_resource.unpack()
@@ -267,6 +251,25 @@ class _TestExtPackUnpack(FilesystemPackUnpackVerifyPattern):
                         shutil.copy2(src, dst)
 
 
+class _TestExtPackUnpack(ExtFilesystemPackUnpackVerifyPattern):
+    EXT_TYPE: str
+
+    async def create_root_resource(self, ofrak_context: OFRAKContext, directory: str) -> Resource:
+        with tempfile.NamedTemporaryFile(suffix=".img", delete_on_close=False) as ext_blob:
+            ext_blob.close()
+            command = [
+                "mke2fs",
+                "-t",
+                self.EXT_TYPE,
+                "-d",
+                directory,
+                ext_blob.name,
+                "20M",
+            ]
+            subprocess.run(command, check=True, capture_output=True)
+            return await ofrak_context.create_root_resource_from_file(ext_blob.name)
+
+
 @pytest.mark.skipif_missing_deps([ExtUnpacker, ExtPacker])
 class TestExt2PackUnpack(_TestExtPackUnpack):
     EXT_TYPE = "ext2"
@@ -280,6 +283,45 @@ class TestExt3PackUnpack(_TestExtPackUnpack):
 @pytest.mark.skipif_missing_deps([ExtUnpacker, ExtPacker])
 class TestExt4PackUnpack(_TestExtPackUnpack):
     EXT_TYPE = "ext4"
+
+
+class _TestExtPackUnpackFromScratch(ExtFilesystemPackUnpackVerifyPattern):
+    """
+    This test verifies that EXT filesystems can be created from scratch, then unpacked and packed correctly.
+    """
+
+    EXT_TYPE = None
+
+    async def create_root_resource(self, ofrak_context: OFRAKContext, directory: str) -> Resource:
+        with tempfile.NamedTemporaryFile(suffix=".extfs", delete_on_close=False) as ext_blob:
+            root_ext = await ofrak_context.create_root_resource(
+                name="ext_filesystem", data=b"", tags=[self.EXT_TYPE]
+            )
+            extfs = await root_ext.view_as(self.EXT_TYPE)
+            # change the view to set some attributes, then save it:
+            extfs.block_size = 4096
+            extfs.block_count = 5120  # 20M filesystem
+            extfs.resource.add_view(extfs)
+            await extfs.resource.save()
+            await extfs.initialize_from_disk(directory)
+            await extfs.resource.pack_recursively()
+            await extfs.resource.flush_data_to_disk(ext_blob.name)
+            return await ofrak_context.create_root_resource_from_file(ext_blob.name)
+
+
+@pytest.mark.skipif_missing_deps([ExtUnpacker, ExtPacker])
+class TestExt2PackUnpackFromScratch(_TestExtPackUnpackFromScratch):
+    EXT_TYPE = Ext2Filesystem
+
+
+@pytest.mark.skipif_missing_deps([ExtUnpacker, ExtPacker])
+class TestExt3PackUnpackFromScratch(_TestExtPackUnpackFromScratch):
+    EXT_TYPE = Ext3Filesystem
+
+
+@pytest.mark.skipif_missing_deps([ExtUnpacker, ExtPacker])
+class TestExt4PackUnpackFromScratch(_TestExtPackUnpackFromScratch):
+    EXT_TYPE = Ext4Filesystem
 
 
 @pytest.mark.skipif_missing_deps([ExtUnpacker, ExtPacker])

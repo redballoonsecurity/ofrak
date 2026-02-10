@@ -24,8 +24,8 @@ _DEBUGFS = ComponentExternalTool(
 
 @dataclass
 class ExtFilesystem(GenericBinary, FilesystemRoot):
-    block_size: int
-    block_count: int
+    block_size: Optional[int] = None
+    block_count: Optional[int] = None
     blocks_per_group: Optional[int] = None
     inode_size: Optional[int] = None
     number_of_inodes: Optional[int] = None
@@ -70,6 +70,9 @@ class ExtAnalyzer(Analyzer[None, ExtFilesystem]):
     external_dependencies = (_DEBUGFS,)
 
     async def analyze(self, resource: Resource, config=None) -> ExtFilesystem:
+        size = len(await resource.get_data())
+        if size == 0:
+            return ExtFilesystem()
         async with resource.temp_to_disk(suffix=".extfs") as temp_path:
             proc = await asyncio.create_subprocess_exec(
                 "dumpe2fs",
@@ -91,9 +94,6 @@ class ExtAnalyzer(Analyzer[None, ExtFilesystem]):
                 key, _, value = line.partition(":")
                 params[key.strip()] = value.strip()
 
-            block_size = int(params["Block size"])
-            block_count = int(params["Block count"])
-
             volume_label = params.get("Filesystem volume name")
             if volume_label == "<none>":
                 volume_label = None
@@ -114,8 +114,8 @@ class ExtAnalyzer(Analyzer[None, ExtFilesystem]):
                 return None
 
             return ExtFilesystem(
-                block_size=block_size,
-                block_count=block_count,
+                block_size=_parse_optional_int(params, "Block size"),
+                block_count=_parse_optional_int(params, "Block count"),
                 blocks_per_group=_parse_optional_int(params, "Blocks per group"),
                 inode_size=_parse_optional_int(params, "Inode size"),
                 number_of_inodes=_parse_optional_int(params, "Inode count"),
@@ -187,6 +187,8 @@ class ExtPacker(Packer[None]):
             raise PackerError(
                 f"Cannot pack {resource} because it is not one of [Ext2Filesystem, Ext3Filesystem, Ext4Filesystem]."
             )
+        if not ext_view.block_size or not ext_view.block_count:
+            raise PackerError(f"Cannot pack {resource}. block_size and block_count are required.")
 
         with tempfile.NamedTemporaryFile(mode="rb", suffix=".img", delete_on_close=False) as temp:
             temp.close()
