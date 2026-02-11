@@ -14,7 +14,6 @@ from ofrak import ResourceFilter
 from ofrak.core import CodeRegion, MemoryRegion, NamedProgramSection, ProgramAttributes, Program
 from ofrak.core.memory_region import MemoryRegionPermissions
 from ofrak_type.memory_permissions import MemoryPermissions
-from ofrak.core.program_metadata import ProgramMetadata
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
 from ofrak.model.component_model import ComponentConfig
@@ -553,18 +552,23 @@ class GhidraCustomLoadAnalyzer(GhidraProjectAnalyzer):
     async def analyze(
         self, resource: Resource, config: Optional[GhidraProjectConfig] = None
     ) -> GhidraProject:
-        arch_info: ArchInfo = await resource.analyze(ProgramAttributes)
+        program_attrs = await resource.analyze(ProgramAttributes)
         mem_blocks = await self._get_memory_blocks(await resource.view_as(Program))
         use_existing = config.use_existing if config is not None else False
 
-        # Try to get program metadata for entry points
         entry_points: Optional[List[int]] = None
-        try:
-            program_metadata = resource.get_attributes(ProgramMetadata)
-            if program_metadata.entry_points:
-                entry_points = list(program_metadata.entry_points)
-        except NotFoundError:
-            pass
+        if program_attrs.entry_points:
+            entry_points = list(program_attrs.entry_points)
+
+        # Extract just the ArchInfo fields for processor lookup (avoids polluting
+        # the lru_cache on _arch_info_to_processor_id with entry_points/base_address).
+        arch_info = ArchInfo(
+            program_attrs.isa,
+            program_attrs.sub_isa,
+            program_attrs.bit_width,
+            program_attrs.endianness,
+            program_attrs.processor,
+        )
 
         async with self._prepare_ghidra_project(resource) as (ghidra_project, full_fname):
             program_name = await self._do_ghidra_import(

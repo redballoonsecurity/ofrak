@@ -1,5 +1,5 @@
 """
-Shared helpers for testing ProgramMetadata integration with disassembler backends.
+Shared helpers for testing ProgramAttributes entry_points/base_address with disassembler backends.
 
 Requirements Mapping:
 - REQ2.2
@@ -18,7 +18,6 @@ from ofrak.core import (
     ProgramAttributes,
 )
 from ofrak.core.memory_region import MemoryRegion
-from ofrak.core.program_metadata import ProgramMetadata
 from ofrak.resource import Resource
 from ofrak_type import InstructionSet, BitWidth, Endianness, SubInstructionSet, Range
 
@@ -56,14 +55,14 @@ async def setup_program_with_metadata(
     text_size: int = TINI_TEXT_SIZE,
 ) -> Resource:
     """
-    Set up a resource as a Program with ProgramMetadata and a CodeRegion child.
+    Set up a resource as a Program with ProgramAttributes (including entry_points
+    and base_address) and a CodeRegion child.
 
-    Tags the resource as a Program, adds ProgramAttributes for AARCH64, adds
-    ProgramMetadata with the given base_address and entry point at text_vaddr,
-    and creates a CodeRegion child.
+    Tags the resource as a Program, adds ProgramAttributes for AARCH64 with the given
+    base_address and entry point at text_vaddr, and creates a CodeRegion child.
 
     :param resource: the root resource (should be the tini_custom_binary asset)
-    :param base_address: the base address for ProgramMetadata
+    :param base_address: the base address for ProgramAttributes
     :param text_vaddr: the virtual address for the .text CodeRegion and first entry point
     :param text_size: the size of the .text CodeRegion
 
@@ -80,10 +79,6 @@ async def setup_program_with_metadata(
             bit_width=BitWidth.BIT_64,
             endianness=Endianness.LITTLE_ENDIAN,
             processor=None,
-        )
-    )
-    resource.add_attributes(
-        ProgramMetadata(
             entry_points=(text_vaddr,),
             base_address=base_address,
         )

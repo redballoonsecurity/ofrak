@@ -5,7 +5,6 @@ from typing import Optional, TypeVar
 from ofrak.component.analyzer import Analyzer
 from ofrak.core import NamedProgramSection
 from ofrak.core.architecture import ProgramAttributes
-from ofrak.core.program_metadata import ProgramMetadata
 from ofrak.core.elf.model import (
     ElfSectionHeader,
     Elf,
@@ -416,6 +415,7 @@ class ElfProgramAttributesAnalyzer(Analyzer[None, ProgramAttributes]):
     async def analyze(
         self, resource: Resource, config: Optional[ComponentConfig] = None
     ) -> ProgramAttributes:
+        elf = await resource.view_as(Elf)
         elf_header = await resource.get_only_descendant_as_view(
             ElfHeader, r_filter=ResourceFilter.with_tags(ElfHeader)
         )
@@ -423,12 +423,27 @@ class ElfProgramAttributesAnalyzer(Analyzer[None, ProgramAttributes]):
             ElfBasicHeader, r_filter=ResourceFilter.with_tags(ElfBasicHeader)
         )
 
+        # Get entry point from ELF header.
+        # e_entry is always an int (never None). For ELF, entry point 0 is valid
+        # (e.g., firmware mapped at address 0), unlike PE where entry_rva=0 means "no entry".
+        entry_point = elf_header.e_entry
+
+        # Get base address from first PT_LOAD segment
+        base_address: Optional[int] = None
+        program_headers = await elf.get_program_headers()
+        for phdr in program_headers:
+            if phdr.p_type == ElfProgramHeaderType.LOAD.value:
+                base_address = phdr.p_vaddr
+                break
+
         return ProgramAttributes(
             elf_header.get_isa(),
             None,
             elf_basic_header.get_bitwidth(),
             elf_basic_header.get_endianness(),
             None,
+            entry_points=(entry_point,),
+            base_address=base_address,
         )
 
 
@@ -443,50 +458,3 @@ async def _create_deserializer(resource: Resource) -> BinaryDeserializer:
         word_size=int(e_basic_header.get_bitwidth().get_word_size()),
     )
     return deserializer
-
-
-class ElfProgramMetadataAnalyzer(Analyzer[None, ProgramMetadata]):
-    """
-    Extracts program metadata from ELF binaries for use by disassembler backends.
-
-    Provides the entry point address from the ELF header (e_entry) and the base address
-    derived from the first PT_LOAD segment's virtual address. This metadata helps
-    disassembler backends properly analyze ELF binaries, especially when loading
-    raw memory dumps or when the backend doesn't natively understand ELF format.
-    """
-
-    id = b"ElfProgramMetadataAnalyzer"
-    targets = (Elf,)
-    outputs = (ProgramMetadata,)
-
-    async def analyze(
-        self, resource: Resource, config: Optional[ComponentConfig] = None
-    ) -> ProgramMetadata:
-        elf = await resource.view_as(Elf)
-        elf_header = await elf.get_header()
-
-        # Get entry point from ELF header.
-        # e_entry is always an int (never None). For ELF, entry point 0 is valid
-        # (e.g., firmware mapped at address 0), unlike PE where entry_rva=0 means "no entry".
-        #
-        # NOTE: For ET_REL (relocatable .o files), e_entry=0 is not a meaningful entry point -
-        # it simply means the linker hasn't assigned one yet. We currently include it anyway
-        # because (a) it's harmless for disassembler backends (they'll just try to analyze
-        # address 0, which is within the .o file's address space), and (b) filtering by e_type
-        # would require distinguishing "real 0" from "unset 0" which is fragile. If this causes
-        # problems for downstream consumers, consider checking elf_header.e_type against
-        # ElfType.ET_REL and returning empty entry_points for relocatable objects.
-        entry_point = elf_header.e_entry
-
-        # Get base address from first PT_LOAD segment
-        base_address: Optional[int] = None
-        program_headers = await elf.get_program_headers()
-        for phdr in program_headers:
-            if phdr.p_type == ElfProgramHeaderType.LOAD.value:
-                base_address = phdr.p_vaddr
-                break
-
-        return ProgramMetadata(
-            entry_points=(entry_point,),
-            base_address=base_address,
-        )

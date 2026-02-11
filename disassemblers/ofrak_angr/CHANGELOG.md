@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [Unreleased 1.2.0](https://github.com/redballoonsecurity/ofrak/tree/master)
 
 ### Added
-- Support `ProgramMetadata` attribute for passing entry points and base address to angr
+- Support `ProgramAttributes` `entry_points` and `base_address` fields for passing program metadata to angr
 
 ### Fixed
 - Pin Angr dependencies (`networkx` and `msgspec`) ([#676](https://github.com/redballoonsecurity/ofrak/pull/676))

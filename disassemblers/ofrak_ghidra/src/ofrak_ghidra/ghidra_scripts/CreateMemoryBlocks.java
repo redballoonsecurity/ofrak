@@ -73,9 +73,9 @@ public class CreateMemoryBlocks extends HeadlessScript {
                     try {
                         long entryAddr;
                         if (entryStr.startsWith("0x") || entryStr.startsWith("0X")) {
-                            entryAddr = Long.parseLong(entryStr.substring(2), 16);
+                            entryAddr = Long.parseUnsignedLong(entryStr.substring(2), 16);
                         } else {
-                            entryAddr = Long.parseLong(entryStr);
+                            entryAddr = Long.parseUnsignedLong(entryStr);
                         }
                         explicitEntryPoints.add(entryAddr);
                     } catch (NumberFormatException e) {

@@ -28,6 +28,39 @@ def _parse_offset(java_object):
     return int(str(java_object.getOffsetAsBigInteger()))
 
 
+def _register_entry_points(flat_api, entry_points: List[int]):
+    """
+    Register entry points in the current Ghidra program.
+
+    Marks each address as code and adds it as a labeled external entry point so that
+    Ghidra's auto-analysis will discover functions starting at these addresses.
+    """
+    from ghidra.program.model.symbol import SourceType
+
+    program = flat_api.getCurrentProgram()
+    default_space = program.getAddressFactory().getDefaultAddressSpace()
+    symbol_table = program.getSymbolTable()
+
+    for i, entry_addr in enumerate(entry_points):
+        try:
+            addr = default_space.getAddress(entry_addr)
+            # Mark as code (matches Java CreateMemoryBlocks.markAsCode)
+            code_prop = program.getAddressSetPropertyMap("CodeMap")
+            if code_prop is None:
+                try:
+                    code_prop = program.createAddressSetPropertyMap("CodeMap")
+                except Exception:
+                    code_prop = program.getAddressSetPropertyMap("CodeMap")
+            if code_prop is not None:
+                code_prop.add(addr, addr)
+            label_name = "entry" if i == 0 else f"entry_{i}"
+            symbol_table.createLabel(addr, label_name, SourceType.IMPORTED)
+            symbol_table.addExternalEntryPoint(addr)
+            LOGGER.info(f"Added entry point at 0x{entry_addr:x}")
+        except Exception as e:
+            LOGGER.warning(f"Failed to add entry point at 0x{entry_addr:x}: {e}")
+
+
 def unpack(
     program_file: str,
     decompiled: bool,
@@ -106,19 +139,10 @@ def unpack(
                         LOGGER.warning(
                             f"Failed to create memory block at 0x{region['virtual_address']:x}: {e}"
                         )
-                # Add entry points if provided
                 if entry_points:
-                    symbol_table = program.getSymbolTable()
-                    for entry_addr in entry_points:
-                        try:
-                            addr = default_space.getAddress(entry_addr)
-                            symbol_table.addExternalEntryPoint(addr)
-                            LOGGER.info(f"Added entry point at 0x{entry_addr:x}")
-                        except Exception as e:
-                            LOGGER.warning(f"Failed to add entry point at 0x{entry_addr:x}: {e}")
+                    _register_entry_points(flat_api, entry_points)
 
                 # Analyze all
-                analysis_mgr = program.getOptions("Analyzers")
                 flat_api.analyzeAll(program)
             # If base_address is provided and memory_regions were NOT explicitly provided,
             # rebase the program. When memory_regions are provided, addresses are already
@@ -139,6 +163,13 @@ def unpack(
                 )
                 program.setImageBase(new_base_addr, True)
                 LOGGER.info(f"Rebased program address to {hex(base_address)}")
+
+            # Register entry points for the non-memory_regions path (e.g. raw binary
+            # loaded with base_address). For the memory_regions path, entry points are
+            # already registered above before analyzeAll.
+            if entry_points and not memory_regions:
+                _register_entry_points(flat_api, entry_points)
+                flat_api.analyzeAll(flat_api.getCurrentProgram())
 
             main_dictionary: Dict[str, Any] = {}
             code_regions = _unpack_program(flat_api)

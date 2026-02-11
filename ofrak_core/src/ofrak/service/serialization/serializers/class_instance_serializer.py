@@ -86,9 +86,18 @@ class ClassInstanceSerializer(SerializerInterface):
         expected_fields_and_types = self._get_class_fields_and_types(
             cls, as_dataclass=is_dataclass(cls)
         )
+        # Skip dataclass fields that have defaults and are missing from the JSON;
+        # the constructor will fill them in automatically.
+        dc_defaults = {
+            f.name
+            for f in (fields(cls) if is_dataclass(cls) else ())
+            if f.default is not dataclasses.MISSING
+            or f.default_factory is not dataclasses.MISSING  # type: ignore[misc]
+        }
         deserialized_fields = {
             field_name: self._service.from_pjson(cls_fields_pjson.get(field_name), field_type)
             for field_name, field_type in expected_fields_and_types.items()
+            if field_name in cls_fields_pjson or field_name not in dc_defaults
         }
         if is_dataclass(cls) and getattr(cls, dataclasses._PARAMS).init:  # type: ignore
             return cls(**deserialized_fields)

@@ -478,11 +478,11 @@ async def test_pyghidra_custom_loader(custom_binary_resource):
 
 async def test_pyghidra_custom_loader_with_program_metadata(custom_binary_resource):
     """
-    Test that PyGhidraCustomLoadAnalyzer correctly handles ProgramMetadata alongside MemoryRegions.
+    Test that PyGhidraCustomLoadAnalyzer correctly handles ProgramAttributes alongside MemoryRegions.
 
-    This test verifies that when both ProgramMetadata (with base_address and entry_points) and
+    This test verifies that when both ProgramAttributes (with base_address and entry_points) and
     MemoryRegions are provided, the analysis produces correct results. Specifically:
-    - Entry points from ProgramMetadata should be registered correctly in the analysis
+    - Entry points from ProgramAttributes should be registered correctly in the analysis
     - Memory regions should remain at their specified virtual addresses even when base_address
       differs from the minimum region address
 

@@ -6,9 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
 
 ### Added
-- Add `ProgramMetadata` attribute for passing entry points and base address to disassembler backends
+- Add `entry_points` and `base_address` fields to `ProgramAttributes` for passing program metadata to disassembler backends
 - Add `MemoryRegionPermissions` attribute for fine-grained memory region permission control
-- Add `ElfProgramMetadataAnalyzer`, `PeProgramMetadataAnalyzer`, `UImageProgramMetadataAnalyzer`, and `IhexProgramMetadataAnalyzer` for extracting program metadata from binary formats
+- Extend `ElfProgramAttributesAnalyzer` and `UImageProgramAttributesAnalyzer` to include entry points and base address
 - Add Android sparse image unpacker and packer ([#662](https://github.com/redballoonsecurity/ofrak/pull/662))
 - Add OFRAK requirements, requirement to test mapping, test specifications ([#656](https://github.com/redballoonsecurity/ofrak/pull/656))
 - Add `-V, --version` flag to ofrak cli ([#652](https://github.com/redballoonsecurity/ofrak/pull/652))

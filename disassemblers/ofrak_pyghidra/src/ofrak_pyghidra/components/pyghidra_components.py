@@ -10,7 +10,6 @@ from ofrak.core.code_region import CodeRegion
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.core.decompilation import DecompilationAnalysis
 from ofrak.core.memory_region import MemoryRegion, MemoryRegionPermissions
-from ofrak.core.program_metadata import ProgramMetadata
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceFilter, ResourceServiceInterface
 from ofrak_type import ArchInfo, Endianness, InstructionSet
@@ -197,27 +196,26 @@ class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
         self.analysis_store = analysis_store
 
     async def analyze(self, resource: Resource, config: PyGhidraAnalyzerConfig):
+        try:
+            program_attrs = resource.get_attributes(ProgramAttributes)
+        except NotFoundError:
+            program_attrs = None
+
         if config is None:
-            try:
-                program_attrs = resource.get_attributes(ProgramAttributes)
-                language = _arch_info_to_processor_id(program_attrs)
-            except NotFoundError:
-                language = None
+            language = (
+                _arch_info_to_processor_id(program_attrs) if program_attrs is not None else None
+            )
             decomp = False
         else:
             decomp = config.decomp
             language = config.language
 
-        # Try to get program metadata for entry points and base address
-        try:
-            program_metadata = resource.get_attributes(ProgramMetadata)
-            entry_points = (
-                list(program_metadata.entry_points) if program_metadata.entry_points else None
-            )
-            base_address = program_metadata.base_address
-        except NotFoundError:
-            entry_points = None
-            base_address = None
+        entry_points = None
+        base_address = None
+        if program_attrs is not None:
+            if program_attrs.entry_points:
+                entry_points = list(program_attrs.entry_points)
+            base_address = program_attrs.base_address
 
         # Prepare memory regions data
         regions = await resource.get_children_as_view(

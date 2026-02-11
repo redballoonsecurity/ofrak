@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [Unreleased 0.2.0rc6](https://github.com/redballoonsecurity/ofrak/tree/master)
 
 ### Added
-- Support `ProgramMetadata` attribute for passing entry points and base address to PyGhidra
+- Support `ProgramAttributes` `entry_points` and `base_address` fields for passing program metadata to PyGhidra
 - Support `MemoryRegionPermissions` attribute for fine-grained memory region permission control
 - Add a PyGhidra custom load analyzer to allow for loading programs with a custom layout ([#677](https://github.com/redballoonsecurity/ofrak/pull/677))
 - Add detailed logging output and progress indicators to standalone analysis script ([#672](https://github.com/redballoonsecurity/ofrak/pull/672))

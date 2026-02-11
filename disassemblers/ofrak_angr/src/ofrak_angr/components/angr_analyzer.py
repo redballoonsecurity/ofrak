@@ -9,8 +9,8 @@ from ofrak.model.resource_model import ResourceAttributeDependency
 from ofrak.resource import Resource
 
 import angr.project
+from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.elf.model import Elf, ElfHeader, ElfType
-from ofrak.core.program_metadata import ProgramMetadata
 from ofrak_angr.components.identifiers import AngrAnalysisResource
 from ofrak_angr.model import AngrAnalysis
 from ofrak.component.modifier import Modifier
@@ -50,20 +50,20 @@ class AngrAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
     ) -> AngrAnalysis:
         resource_data = await resource.get_data()
 
-        # Try to get program metadata for entry point and base address
+        # Try to get entry point and base address from ProgramAttributes
         main_opts = {}
         try:
-            program_metadata = resource.get_attributes(ProgramMetadata)
-            if program_metadata.entry_points:
+            program_attrs = resource.get_attributes(ProgramAttributes)
+            if program_attrs.entry_points:
                 # angr uses the first entry point as the main entry
-                main_opts["entry_point"] = program_metadata.entry_points[0]
-            if program_metadata.base_address is not None:
-                main_opts["base_addr"] = program_metadata.base_address
+                main_opts["entry_point"] = program_attrs.entry_points[0]
+            if program_attrs.base_address is not None:
+                main_opts["base_addr"] = program_attrs.base_address
         except NotFoundError:
             pass
 
         # Merge main_opts into project_args (copy to avoid mutating config).
-        # User-supplied main_opts take priority over ProgramMetadata values.
+        # User-supplied main_opts take priority over ProgramAttributes values.
         project_args = dict(config.project_args)
         if main_opts:
             project_args["main_opts"] = {**main_opts, **project_args.get("main_opts", {})}

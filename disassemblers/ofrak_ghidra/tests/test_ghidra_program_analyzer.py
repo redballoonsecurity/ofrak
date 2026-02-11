@@ -234,11 +234,11 @@ async def _make_dummy_program(resource: Resource, arch_info):
 @pytest.mark.skip(reason="Requires _arch_info_to_processor_id fix for AARCH64:LE:64 disambiguation")
 async def test_ghidra_custom_loader_with_program_metadata(custom_binary_resource):
     """
-    Test that Ghidra correctly handles ProgramMetadata alongside MemoryRegions.
+    Test that Ghidra correctly handles ProgramAttributes alongside MemoryRegions.
 
-    This test verifies that when both ProgramMetadata (with base_address and entry_points) and
+    This test verifies that when both ProgramAttributes (with base_address and entry_points) and
     MemoryRegions are provided, the analysis produces correct results. Specifically:
-    - Entry points from ProgramMetadata should be registered correctly in the analysis
+    - Entry points from ProgramAttributes should be registered correctly in the analysis
     - Memory regions should remain at their specified virtual addresses even when base_address
       differs from the minimum region address
 

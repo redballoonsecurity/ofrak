@@ -55,9 +55,9 @@ async def test_binary_ninja_analyzer(test_case: PopulatedBinaryNinjaAnalyzerTest
 
 async def test_binary_ninja_with_program_metadata(custom_binary_resource):
     """
-    Test that Binary Ninja correctly handles ProgramMetadata (base_address and entry_points).
+    Test that Binary Ninja correctly handles ProgramAttributes (base_address and entry_points).
 
-    This test verifies that when ProgramMetadata is provided:
+    This test verifies that when ProgramAttributes is provided:
     - base_address is used by Binary Ninja to rebase the binary view
     - entry_points are used to seed function discovery
 

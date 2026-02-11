@@ -7,7 +7,7 @@ from ofrak.core.elf.lief_modifier import *
 
 from ofrak.core.pe.unpacker import *
 from ofrak.core.pe.model import *
-from ofrak.core.pe.analyzer import *
+
 
 from ofrak.core.patch_maker.linkable_binary import *
 from ofrak.core.patch_maker.linkable_symbol import *
@@ -47,7 +47,6 @@ from ofrak.core.lzo import *
 from ofrak.core.magic import *
 from ofrak.core.memory_region import *
 from ofrak.core.openwrt import *
-from ofrak.core.program_metadata import *
 from ofrak.core.seven_zip import *
 from ofrak.core.program import *
 from ofrak.core.program_section import *

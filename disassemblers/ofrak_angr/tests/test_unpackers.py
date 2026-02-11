@@ -207,9 +207,9 @@ async def test_basic_block_no_exit(ofrak_context: OFRAKContext, busybox_resource
 
 async def test_angr_with_program_metadata(custom_binary_resource):
     """
-    Test that angr correctly handles ProgramMetadata (base_address and entry_points).
+    Test that angr correctly handles ProgramAttributes (base_address and entry_points).
 
-    This test verifies that when ProgramMetadata is provided:
+    This test verifies that when ProgramAttributes is provided:
     - base_address is used by angr to load the binary at the specified address
     - entry_points are used to seed CFG analysis
 
@@ -231,7 +231,7 @@ async def test_angr_with_program_metadata(custom_binary_resource):
 
     # Configure angr to use blob backend for raw binary analysis.
     # The blob backend requires explicit architecture specification.
-    # ProgramMetadata entry_point and base_address will be merged into main_opts.
+    # ProgramAttributes entry_point and base_address will be merged into main_opts.
     angr_config = AngrAnalyzerConfig(
         project_args={
             "auto_load_libs": False,

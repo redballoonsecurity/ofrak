@@ -4,6 +4,8 @@ This module tests the MemoryRegion component.
 Requirements Mapping:
 - REQ1.2
 """
+import pytest
+
 from ofrak.core import MemoryRegion
 from ofrak.core.memory_region import MemoryRegionPermissions
 from ofrak_type.memory_permissions import MemoryPermissions
@@ -53,8 +55,6 @@ class TestMemoryRegionPermissions:
         """
         Test that MemoryRegionPermissions is frozen (immutable).
         """
-        import pytest
-
         perms_attr = MemoryRegionPermissions(permissions=MemoryPermissions.RX)
         with pytest.raises(AttributeError):
             perms_attr.permissions = MemoryPermissions.RW
