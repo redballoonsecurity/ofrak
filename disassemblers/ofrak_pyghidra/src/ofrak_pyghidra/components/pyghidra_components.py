@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from tempfile312 import mkdtemp
 import os
-from typing import Dict
+from typing import Dict, Optional
 from xml.etree import ElementTree
 
 from ofrak.component.analyzer import Analyzer
@@ -195,7 +195,9 @@ class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
         super().__init__(resource_factory, data_service, resource_service)
         self.analysis_store = analysis_store
 
-    async def analyze(self, resource: Resource, config: PyGhidraAnalyzerConfig):
+    async def analyze(
+        self, resource: Resource, config: Optional[PyGhidraAnalyzerConfig] = None
+    ) -> PyGhidraCustomLoadProject:
         try:
             program_attrs = resource.get_attributes(ProgramAttributes)
         except NotFoundError:
