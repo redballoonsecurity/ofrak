@@ -49,6 +49,36 @@ async def custom_binary_resource(ofrak_context: OFRAKContext):
     return await ofrak_context.create_root_resource_from_file(TINI_CUSTOM_BINARY)
 
 
+async def setup_program_flat(
+    resource: Resource,
+    *,
+    base_address: int,
+) -> None:
+    """
+    Tag resource as Program with ProgramAttributes, without creating MemoryRegion children.
+    This exercises the flat-blob loading path in custom-load analyzers.
+
+    :param resource: the root resource (should be the tini_custom_binary asset)
+    :param base_address: the base address and entry point for ProgramAttributes
+    """
+    resource.add_tag(Program)
+    await resource.save()
+    await resource.identify()
+
+    resource.add_attributes(
+        ProgramAttributes(
+            isa=InstructionSet.AARCH64,
+            sub_isa=SubInstructionSet.ARMv8A,
+            bit_width=BitWidth.BIT_64,
+            endianness=Endianness.LITTLE_ENDIAN,
+            processor=None,
+            entry_points=(base_address,),
+            base_address=base_address,
+        )
+    )
+    await resource.save()
+
+
 async def setup_program_with_metadata(
     resource: Resource,
     *,

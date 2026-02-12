@@ -11,7 +11,9 @@ from ofrak.resource import Resource
 import angr.project
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.elf.model import Elf, ElfHeader, ElfType
-from ofrak.core.memory_region import MemoryRegion, MemoryRegionPermissions
+from ofrak.core.memory_region import MemoryRegion, get_memory_region_permissions
+from ofrak_type.architecture import InstructionSet
+from ofrak_type.bit_width import BitWidth
 from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_angr.model import (
     AngrAnalysis,
@@ -40,6 +42,31 @@ class AngrAnalyzerConfig(ComponentConfig):
     )
 
 
+def _run_angr_analysis(
+    load_data: BytesIO, project_args: dict, config: AngrAnalyzerConfig
+) -> AngrAnalysis:
+    """Create an angr project, run CFG analysis, and execute post-analysis hook."""
+    project = angr.project.Project(load_data, load_options=project_args)
+    angr.analyses.analysis.AnalysisFactory(project, config.cfg_analyzer)(**config.cfg_analyzer_args)
+    exec(config.post_cfg_analysis_hook)
+    return AngrAnalysis(project)
+
+
+_ANGR_ARCH_MAP = {
+    (InstructionSet.X86, BitWidth.BIT_32): "X86",
+    (InstructionSet.X86, BitWidth.BIT_64): "AMD64",
+    (InstructionSet.ARM, BitWidth.BIT_32): "ARM",
+    (InstructionSet.AARCH64, BitWidth.BIT_64): "AARCH64",
+    (InstructionSet.MIPS, BitWidth.BIT_32): "MIPS32",
+    (InstructionSet.MIPS, BitWidth.BIT_64): "MIPS64",
+    (InstructionSet.PPC, BitWidth.BIT_32): "PPC32",
+    (InstructionSet.PPC, BitWidth.BIT_64): "PPC64",
+    (InstructionSet.AVR, BitWidth.BIT_16): "AVR8",
+    (InstructionSet.SPARC, BitWidth.BIT_32): "SPARC32",
+    (InstructionSet.SPARC, BitWidth.BIT_64): "SPARC64",
+}
+
+
 class AngrAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
     """
     Runs angr's automated binary analysis engine to build control flow graphs (CFG), identify
@@ -56,19 +83,7 @@ class AngrAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
         self, resource: Resource, config: AngrAnalyzerConfig = AngrAnalyzerConfig()
     ) -> AngrAnalysis:
         resource_data = await resource.get_data()
-
-        project = angr.project.Project(BytesIO(resource_data), load_options=config.project_args)
-
-        # Let's use angr to perform its own full analysis on the binary, and
-        # maintain its results for the CR / CB / BB unpackers to re-use
-        cfg = angr.analyses.analysis.AnalysisFactory(project, config.cfg_analyzer)(
-            **config.cfg_analyzer_args
-        )
-
-        # Run any user-defined analysis here
-        exec(config.post_cfg_analysis_hook)
-
-        return AngrAnalysis(project)
+        return _run_angr_analysis(BytesIO(resource_data), config.project_args, config)
 
     def _create_dependencies(
         self,
@@ -112,6 +127,9 @@ class AngrCustomLoadAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
                 main_opts["entry_point"] = program_attrs.entry_points[0]
             if program_attrs.base_address is not None:
                 main_opts["base_addr"] = program_attrs.base_address
+            angr_arch = _ANGR_ARCH_MAP.get((program_attrs.isa, program_attrs.bit_width))
+            if angr_arch is not None:
+                main_opts["arch"] = angr_arch
         except NotFoundError:
             program_attrs = None
 
@@ -131,13 +149,9 @@ class AngrCustomLoadAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
             combined_data = bytearray()
             segments = []
             for region in regions:
-                # Skip regions with NONE permissions (guard pages, reserved address space)
-                try:
-                    perms_attr = region.resource.get_attributes(MemoryRegionPermissions)
-                    if perms_attr.permissions == MemoryPermissions.NONE:
-                        continue
-                except NotFoundError:
-                    pass
+                perms = get_memory_region_permissions(region.resource)
+                if perms is not None and perms.permissions == MemoryPermissions.NONE:
+                    continue
                 region_data = await region.resource.get_data()
                 file_offset = len(combined_data)
                 segments.append((file_offset, region.virtual_address, region.size))
@@ -158,18 +172,7 @@ class AngrCustomLoadAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
         if main_opts:
             project_args["main_opts"] = {**main_opts, **project_args.get("main_opts", {})}
 
-        project = angr.project.Project(load_data, load_options=project_args)
-
-        # Let's use angr to perform its own full analysis on the binary, and
-        # maintain its results for the CR / CB / BB unpackers to re-use
-        cfg = angr.analyses.analysis.AnalysisFactory(project, config.cfg_analyzer)(
-            **config.cfg_analyzer_args
-        )
-
-        # Run any user-defined analysis here
-        exec(config.post_cfg_analysis_hook)
-
-        return AngrAnalysis(project)
+        return _run_angr_analysis(load_data, project_args, config)
 
     def _create_dependencies(
         self,

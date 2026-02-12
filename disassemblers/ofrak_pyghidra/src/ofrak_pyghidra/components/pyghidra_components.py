@@ -9,7 +9,7 @@ from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.code_region import CodeRegion
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.core.decompilation import DecompilationAnalysis
-from ofrak.core.memory_region import MemoryRegion, MemoryRegionPermissions
+from ofrak.core.memory_region import MemoryRegion, get_memory_region_permissions
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceFilter, ResourceServiceInterface
 from ofrak_type import ArchInfo, Endianness, InstructionSet
@@ -227,13 +227,9 @@ class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
 
         memory_regions = []
         for region in regions:
-            # Check permissions; skip NONE (guard pages, reserved address space)
-            try:
-                perms_attr = region.resource.get_attributes(MemoryRegionPermissions)
-                if perms_attr.permissions == MemoryPermissions.NONE:
-                    continue
-            except NotFoundError:
-                perms_attr = None
+            perms = get_memory_region_permissions(region.resource)
+            if perms is not None and perms.permissions == MemoryPermissions.NONE:
+                continue
 
             region_data = await region.resource.get_data()
             region_dict = {
@@ -241,11 +237,14 @@ class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
                 "size": region.size,
                 "data": region_data,
             }
-            if perms_attr is not None:
-                region_dict["permissions"] = perms_attr.permissions.value
+            if perms is not None:
+                region_dict["permissions"] = perms.permissions.value
             else:
-                # Fall back to checking if this is a CodeRegion
-                region_dict["executable"] = region.resource.has_tag(CodeRegion)
+                # Fall back: CodeRegion → RX, other → RW
+                if region.resource.has_tag(CodeRegion):
+                    region_dict["permissions"] = MemoryPermissions.RX.value
+                else:
+                    region_dict["permissions"] = MemoryPermissions.RW.value
             memory_regions.append(region_dict)
 
         self.analysis_store.store_analysis(

@@ -22,6 +22,7 @@ from pytest_ofrak.patterns.complex_block_unpacker import (
 )
 from pytest_ofrak.patterns.program_metadata import (
     custom_binary_resource,  # noqa: F401
+    setup_program_flat,
     setup_program_with_metadata,
     add_rodata_region,
     assert_complex_block_at_vaddr,
@@ -208,46 +209,17 @@ async def test_basic_block_no_exit(ofrak_context: OFRAKContext, busybox_resource
     # In the past, unpacking that ComplexBlock would fail because it contains a BasicBlock that doens't have an exit address
 
 
-async def test_angr_with_program_metadata(custom_binary_resource):
-    """
-    Test that angr correctly handles ProgramAttributes (base_address and entry_points)
-    when loading an entire binary as a flat blob.
-
-    This test verifies that when ProgramAttributes is provided:
-    - base_address is used by angr to load the binary at the specified address
-    - entry_points are used to seed CFG analysis
-
-    For angr's blob backend, the entire binary is loaded as a flat blob starting at
-    base_address. Since .text is at offset 0 in the binary, text_vaddr must equal
-    base_address. This is inherent to how blob loading works (no section headers to
-    provide separate virtual addresses).
-
-    Requirements Mapping:
-    - REQ2.2
-    """
+async def test_angr_custom_load_single_region(custom_binary_resource):
+    """Test angr custom loading with a single CodeRegion segment. REQ2.2."""
     base_address = 0x400000
-    # For blob backend, .text at offset 0 maps to base_address
     text_vaddr = base_address
     text_section = await setup_program_with_metadata(
         custom_binary_resource, base_address=base_address, text_vaddr=text_vaddr
     )
     assert custom_binary_resource.has_tag(AngrCustomLoadProject)
 
-    # Configure angr to use blob backend for raw binary analysis.
-    # The blob backend requires explicit architecture specification.
-    # ProgramAttributes entry_point and base_address will be merged into main_opts.
-    angr_config = AngrAnalyzerConfig(
-        project_args={
-            "auto_load_libs": False,
-            "main_opts": {
-                "backend": "blob",
-                "arch": "AARCH64",
-            },
-        }
-    )
-    await custom_binary_resource.run(AngrCustomLoadAnalyzer, angr_config)
+    await custom_binary_resource.run(AngrCustomLoadAnalyzer)
 
-    # Verify base_address was applied to the angr project
     angr_analysis = custom_binary_resource.get_attributes(AngrAnalysis)
     assert angr_analysis.project.loader.main_object.min_addr == base_address
 
@@ -256,19 +228,7 @@ async def test_angr_with_program_metadata(custom_binary_resource):
 
 
 async def test_angr_custom_loader_with_memory_regions(custom_binary_resource):
-    """
-    Test that AngrCustomLoadAnalyzer correctly consumes MemoryRegion children to set up
-    angr's blob backend with per-region segments at their specified virtual addresses.
-
-    This test verifies that when MemoryRegion children exist:
-    - Each region's data is loaded at its specified virtual address via angr segments
-    - The blob backend is automatically selected
-    - Entry points from ProgramAttributes seed CFG analysis
-    - Function discovery works correctly at the expected virtual addresses
-
-    Requirements Mapping:
-    - REQ2.2
-    """
+    """Test angr custom loading with multiple MemoryRegion segments. REQ2.2."""
     text_vaddr = 0x400130
     text_section = await setup_program_with_metadata(
         custom_binary_resource, base_address=0x100000, text_vaddr=text_vaddr
@@ -276,16 +236,27 @@ async def test_angr_custom_loader_with_memory_regions(custom_binary_resource):
     await add_rodata_region(custom_binary_resource, rodata_vaddr=0x40A0A0)
     assert custom_binary_resource.has_tag(AngrCustomLoadProject)
 
-    # arch must still be specified by the user since angr can't auto-detect it for blobs
+    await custom_binary_resource.run(AngrCustomLoadAnalyzer)
+
+    await text_section.unpack()
+    await assert_complex_block_at_vaddr(custom_binary_resource, text_vaddr)
+
+
+async def test_angr_custom_load_flat(custom_binary_resource):
+    """Test angr flat-blob loading path (no MemoryRegion children). REQ2.2."""
+    base_address = 0x400000
+    await setup_program_flat(custom_binary_resource, base_address=base_address)
+    assert custom_binary_resource.has_tag(AngrCustomLoadProject)
+
     angr_config = AngrAnalyzerConfig(
         project_args={
             "auto_load_libs": False,
             "main_opts": {
-                "arch": "AARCH64",
+                "backend": "blob",
             },
         }
     )
     await custom_binary_resource.run(AngrCustomLoadAnalyzer, angr_config)
 
-    await text_section.unpack()
-    await assert_complex_block_at_vaddr(custom_binary_resource, text_vaddr)
+    angr_analysis = custom_binary_resource.get_attributes(AngrAnalysis)
+    assert angr_analysis.project.loader.main_object.min_addr == base_address

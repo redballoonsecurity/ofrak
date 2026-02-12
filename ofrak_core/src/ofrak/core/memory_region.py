@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Iterable, Optional
 
 from ofrak.core.addressable import Addressable
 from ofrak.model.resource_model import index, ResourceAttributes
@@ -34,6 +34,14 @@ class MemoryRegionPermissions(ResourceAttributes):
     """
 
     permissions: MemoryPermissions
+
+
+def get_memory_region_permissions(resource: Resource) -> Optional[MemoryRegionPermissions]:
+    """Get the MemoryRegionPermissions attribute from a resource, or None if not set."""
+    try:
+        return resource.get_attributes(MemoryRegionPermissions)
+    except NotFoundError:
+        return None
 
 
 @dataclass

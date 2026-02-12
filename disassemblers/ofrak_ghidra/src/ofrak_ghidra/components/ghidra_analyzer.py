@@ -12,7 +12,7 @@ from xml.etree import ElementTree
 
 from ofrak import ResourceFilter
 from ofrak.core import CodeRegion, MemoryRegion, NamedProgramSection, ProgramAttributes, Program
-from ofrak.core.memory_region import MemoryRegionPermissions
+from ofrak.core.memory_region import get_memory_region_permissions
 from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
@@ -20,7 +20,6 @@ from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource, ResourceFactory
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceServiceInterface
-from ofrak_type.error import NotFoundError
 from ofrak_ghidra.constants import (
     GHIDRA_HEADLESS_EXEC,
     GHIDRA_USER,
@@ -399,29 +398,24 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
         args: List[str] = []
 
         for i, block in enumerate(blocks):
-            # Skip regions with NONE permissions (guard pages, reserved address space)
-            try:
-                perms_attr = block.resource.get_attributes(MemoryRegionPermissions)
-                if perms_attr.permissions == MemoryPermissions.NONE:
-                    continue
-            except NotFoundError:
-                perms_attr = None
+            perms = get_memory_region_permissions(block.resource)
+            if perms is not None and perms.permissions == MemoryPermissions.NONE:
+                continue
 
             block_info: List[str] = [
                 str(block.virtual_address),
                 str(block.size),
             ]
 
-            # Use permissions from MemoryRegionPermissions attribute if available.
-            if perms_attr is not None:
-                perms = ""
-                if perms_attr.permissions.value & MemoryPermissions.R.value:
-                    perms += "r"
-                if perms_attr.permissions.value & MemoryPermissions.W.value:
-                    perms += "w"
-                if perms_attr.permissions.value & MemoryPermissions.X.value:
-                    perms += "x"
-                block_info.append(perms)
+            if perms is not None:
+                perm_str = ""
+                if perms.permissions.value & MemoryPermissions.R.value:
+                    perm_str += "r"
+                if perms.permissions.value & MemoryPermissions.W.value:
+                    perm_str += "w"
+                if perms.permissions.value & MemoryPermissions.X.value:
+                    perm_str += "x"
+                block_info.append(perm_str)
             else:
                 # Fall back to checking if this is a CodeRegion
                 if block.resource.has_tag(CodeRegion):

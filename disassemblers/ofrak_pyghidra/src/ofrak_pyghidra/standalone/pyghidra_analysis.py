@@ -84,9 +84,7 @@ def unpack(
         # (memory regions, rebase, or entry points). This avoids a wasted initial
         # analysis pass that would be invalidated or need to be re-run.
         needs_pre_analysis_setup = (
-            bool(memory_regions)
-            or bool(entry_points)
-            or (base_address is not None and not memory_regions)
+            bool(memory_regions) or bool(entry_points) or base_address is not None
         )
         with pyghidra.open_program(
             program_file, language=language, analyze=not needs_pre_analysis_setup
@@ -144,11 +142,11 @@ def unpack(
                             block.setWrite(bool(permissions & MemoryPermissions.W.value))
                             block.setExecute(bool(permissions & MemoryPermissions.X.value))
                         else:
-                            # Backwards compatibility: use "executable" flag if present,
-                            # otherwise default to executable (R+X) to match legacy behavior
+                            # Backwards compatibility: use "executable" flag if present
                             is_executable = region.get("executable", True)
-                            block.setExecute(is_executable)
                             block.setRead(True)
+                            block.setWrite(not is_executable)
+                            block.setExecute(is_executable)
                     except Exception as e:
                         LOGGER.warning(
                             f"Failed to create memory block at 0x{region['virtual_address']:x}: {e}"

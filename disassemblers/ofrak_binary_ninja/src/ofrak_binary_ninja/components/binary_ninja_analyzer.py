@@ -9,7 +9,11 @@ from ofrak import ResourceFilter
 from ofrak.component.analyzer import Analyzer
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.code_region import CodeRegion
-from ofrak.core.memory_region import MemoryRegion, MemoryRegionPermissions
+from ofrak.core.memory_region import (
+    MemoryRegion,
+    MemoryRegionPermissions,
+    get_memory_region_permissions,
+)
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributeDependency
 from ofrak_binary_ninja.model import (
@@ -126,16 +130,12 @@ class BinaryNinjaCustomLoadAnalyzer(
         combined_data = bytearray()
         segment_info = []  # (file_offset, vaddr, size, flags)
         for region in regions:
-            # Skip regions with NONE permissions (guard pages, reserved address space)
-            try:
-                perms_attr = region.resource.get_attributes(MemoryRegionPermissions)
-                if perms_attr.permissions == MemoryPermissions.NONE:
-                    continue
-            except NotFoundError:
-                perms_attr = None
+            perms = get_memory_region_permissions(region.resource)
+            if perms is not None and perms.permissions == MemoryPermissions.NONE:
+                continue
             region_data = await region.resource.get_data()
             file_offset = len(combined_data)
-            flags = self._get_segment_flags(region, perms_attr)
+            flags = self._get_segment_flags(region, perms)
             segment_info.append((file_offset, region.virtual_address, region.size, flags))
             combined_data.extend(region_data)
 
@@ -147,7 +147,7 @@ class BinaryNinjaCustomLoadAnalyzer(
             tmp.write(combined_data)
             temp_path = tmp.name
 
-        bv = open_view(temp_path)
+        bv = open_view(temp_path, update_analysis=False)
 
         # Remove auto-created segments and add user segments at correct vaddrs
         for seg in list(bv.segments):
@@ -170,7 +170,7 @@ class BinaryNinjaCustomLoadAnalyzer(
     ) -> BinaryView:
         """Load binary as a flat blob with optional rebase."""
         async with resource.temp_to_disk(delete=False) as temp_path:
-            bv = open_view(temp_path)
+            bv = open_view(temp_path, update_analysis=program_attrs is None)
 
         if program_attrs is not None:
             # Rebase FIRST if base_address differs from what Binary Ninja detected.
@@ -218,10 +218,10 @@ class BinaryNinjaCustomLoadAnalyzer(
                 flags |= SegmentFlag.SegmentExecutable
             return flags
 
-        # Fall back: CodeRegion → RX, otherwise R
+        # Fall back: CodeRegion → RX, otherwise RW
         if region.resource.has_tag(CodeRegion):
             return SegmentFlag.SegmentReadable | SegmentFlag.SegmentExecutable
-        return SegmentFlag.SegmentReadable
+        return SegmentFlag.SegmentReadable | SegmentFlag.SegmentWritable
 
     def _create_dependencies(
         self,
