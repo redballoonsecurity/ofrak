@@ -170,7 +170,7 @@ class BinaryNinjaCustomLoadAnalyzer(
     ) -> BinaryView:
         """Load binary as a flat blob with optional rebase."""
         async with resource.temp_to_disk(delete=False) as temp_path:
-            bv = open_view(temp_path, update_analysis=program_attrs is None)
+            bv = open_view(temp_path, update_analysis=False)
 
         if program_attrs is not None:
             # Rebase FIRST if base_address differs from what Binary Ninja detected.

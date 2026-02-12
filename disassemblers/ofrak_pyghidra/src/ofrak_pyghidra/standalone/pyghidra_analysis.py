@@ -134,7 +134,6 @@ def unpack(
                         # For backwards compatibility, fall back to the "executable" flag
                         # when no explicit permissions int is provided.
                         block = memory.getBlock(addr)
-                        permissions = region.get("permissions")
                         if permissions is not None:
                             # permissions is a MemoryPermissions value (int)
                             block.setRead(bool(permissions & MemoryPermissions.R.value))

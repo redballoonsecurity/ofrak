@@ -326,6 +326,8 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
 
         return args
 
+    # TODO: This is nearly identical to _arch_info_to_processor_id in
+    # ofrak_pyghidra; should there be a common module for both Ghidra backends?
     @lru_cache(maxsize=None)
     def _arch_info_to_processor_id(self, processor: ArchInfo):
         families: Dict[InstructionSet, str] = {
@@ -366,9 +368,12 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
                         # default_proc_id found, and the ArchoInfo doesn't contain any info to narrow it down further, so just break early to return the default
                         break
 
-                for name_elem in language.iter(tag="external_name"):
-                    name = name_elem.attrib["name"].lower()
-
+                names = [
+                    name_elem.attrib["name"].lower()
+                    for name_elem in language.iter(tag="external_name")
+                ]
+                names.append(proc_id.split(":")[-1])
+                for name in names:
                     if not processor.sub_isa and not processor.processor:
                         if name.endswith("_any"):
                             return proc_id
@@ -377,6 +382,16 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
                         return proc_id
 
                     if processor.processor and processor.processor.value.lower() == name:
+                        return proc_id
+
+                    if processor.sub_isa and all(
+                        char in processor.sub_isa.value.lower() for char in name.lower()
+                    ):
+                        return proc_id
+
+                    if processor.processor and all(
+                        char in processor.processor.value.lower() for char in name.lower()
+                    ):
                         return proc_id
 
                 processors_rejected.add(proc_id)
@@ -408,14 +423,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
             ]
 
             if perms is not None:
-                perm_str = ""
-                if perms.permissions.value & MemoryPermissions.R.value:
-                    perm_str += "r"
-                if perms.permissions.value & MemoryPermissions.W.value:
-                    perm_str += "w"
-                if perms.permissions.value & MemoryPermissions.X.value:
-                    perm_str += "x"
-                block_info.append(perm_str)
+                block_info.append(perms.permissions.as_str())
             else:
                 # Fall back to checking if this is a CodeRegion
                 if block.resource.has_tag(CodeRegion):

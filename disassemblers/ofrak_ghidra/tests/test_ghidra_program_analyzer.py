@@ -19,6 +19,7 @@ from ofrak.core import (
     SegmentInjectorModifierConfig,
 )
 from ofrak.resource import Resource
+from ofrak_ghidra.components.ghidra_analyzer import GhidraCustomLoadAnalyzer
 from ofrak_ghidra.ghidra_model import GhidraProject, GhidraCustomLoadProject
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
@@ -226,12 +227,6 @@ async def _make_dummy_program(resource: Resource, arch_info):
     )
 
 
-# Skip: _arch_info_to_processor_id cannot disambiguate AARCH64:LE:64 — Ghidra has two candidate
-# language specs (v8A and AppleSilicon) with no "default", and SubInstructionSet.ARMv8A ("ARMV8-A")
-# doesn't match any Ghidra external_name.
-# Fix: _arch_info_to_processor_id should fall back to matching the proc_id suffix against
-# sub_isa.value (e.g. "v8A" in "AARCH64:LE:64:v8A" vs ARMv8A) when external_name matching fails.
-@pytest.mark.skip(reason="Requires _arch_info_to_processor_id fix for AARCH64:LE:64 disambiguation")
 async def test_ghidra_custom_loader_with_program_metadata(custom_binary_resource):
     """Test Ghidra custom loading with ProgramAttributes + MemoryRegions. REQ2.2."""
     text_vaddr = 0x400130
@@ -239,13 +234,9 @@ async def test_ghidra_custom_loader_with_program_metadata(custom_binary_resource
         custom_binary_resource, base_address=0x100000, text_vaddr=text_vaddr
     )
     await add_rodata_region(custom_binary_resource, rodata_vaddr=0x40A0A0)
-
-    # Verify Ghidra identifies as custom load project
-    await custom_binary_resource.identify()
     assert custom_binary_resource.has_tag(GhidraCustomLoadProject)
 
-    ghidra_project = await custom_binary_resource.view_as(GhidraProject)
-    assert isinstance(ghidra_project, GhidraProject)
+    await custom_binary_resource.run(GhidraCustomLoadAnalyzer)
 
     await text_section.unpack()
     await assert_complex_block_at_vaddr(custom_binary_resource, text_vaddr)
