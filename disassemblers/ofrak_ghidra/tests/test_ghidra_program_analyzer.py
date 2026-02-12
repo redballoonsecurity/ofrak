@@ -1,5 +1,8 @@
 """
 Test the Ghidra program analyzer components.
+
+Requirements Mapping:
+- REQ2.2
 """
 import os.path
 import tempfile
@@ -228,7 +231,7 @@ async def _make_dummy_program(resource: Resource, arch_info):
 
 
 async def test_ghidra_custom_loader_with_program_metadata(custom_binary_resource):
-    """Test Ghidra custom loading with ProgramAttributes + MemoryRegions. REQ2.2."""
+    """Test Ghidra custom loading with ProgramAttributes + MemoryRegions (REQ2.2)."""
     text_vaddr = 0x400130
     text_section = await setup_program_with_metadata(
         custom_binary_resource, base_address=0x100000, text_vaddr=text_vaddr

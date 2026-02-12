@@ -3,6 +3,7 @@ This module tests the PyGhidra component, including unpackers, disassembly and d
 
 Requirements Mapping:
 - REQ1.2
+- REQ2.2
 """
 import os
 from typing import Dict, Tuple
@@ -478,7 +479,7 @@ async def test_pyghidra_custom_loader(custom_binary_resource):
 
 
 async def test_pyghidra_custom_loader_with_program_metadata(custom_binary_resource):
-    """Test PyGhidra custom loading with ProgramAttributes + MemoryRegions. REQ2.2."""
+    """Test PyGhidra custom loading with ProgramAttributes + MemoryRegions (REQ2.2)."""
     text_vaddr = 0x400130
     text_section = await setup_program_with_metadata(
         custom_binary_resource, base_address=0x100000, text_vaddr=text_vaddr

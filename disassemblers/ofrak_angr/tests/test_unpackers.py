@@ -3,6 +3,7 @@ Test the unpacking functionality of OFRAK with Angr disassembler backend.
 
 Requirements Mapping:
 - REQ1.2
+- REQ2.2
 - REQ2.3
 """
 from typing import Dict
@@ -210,7 +211,7 @@ async def test_basic_block_no_exit(ofrak_context: OFRAKContext, busybox_resource
 
 
 async def test_angr_custom_load_single_region(custom_binary_resource):
-    """Test angr custom loading with a single CodeRegion segment. REQ2.2."""
+    """Test angr custom loading with a single CodeRegion segment (REQ2.2)."""
     base_address = 0x400000
     text_vaddr = base_address
     text_section = await setup_program_with_metadata(
@@ -228,7 +229,7 @@ async def test_angr_custom_load_single_region(custom_binary_resource):
 
 
 async def test_angr_custom_loader_with_memory_regions(custom_binary_resource):
-    """Test angr custom loading with multiple MemoryRegion segments. REQ2.2."""
+    """Test angr custom loading with multiple MemoryRegion segments (REQ2.2)."""
     text_vaddr = 0x400130
     text_section = await setup_program_with_metadata(
         custom_binary_resource, base_address=0x100000, text_vaddr=text_vaddr
@@ -243,7 +244,7 @@ async def test_angr_custom_loader_with_memory_regions(custom_binary_resource):
 
 
 async def test_angr_custom_load_flat(custom_binary_resource):
-    """Test angr flat-blob loading path (no MemoryRegion children). REQ2.2."""
+    """Test angr flat-blob loading path (no MemoryRegion children) (REQ2.2)."""
     base_address = 0x400000
     await setup_program_flat(custom_binary_resource, base_address=base_address)
     assert custom_binary_resource.has_tag(AngrCustomLoadProject)

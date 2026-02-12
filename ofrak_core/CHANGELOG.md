@@ -3,7 +3,7 @@ All notable changes to `ofrak` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+## [Unreleased 3.4.0](https://github.com/redballoonsecurity/ofrak/tree/master)
 
 ### Added
 - Add `entry_points` and `base_address` fields to `ProgramAttributes` for passing program metadata to disassembler backends ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))

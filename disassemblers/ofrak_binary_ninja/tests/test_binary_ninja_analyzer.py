@@ -1,5 +1,8 @@
 """
 Test the functionality of the BinaryNinjaAnalyzer component.
+
+Requirements Mapping:
+- REQ2.2
 """
 from dataclasses import dataclass
 from typing import Tuple
@@ -60,7 +63,7 @@ async def test_binary_ninja_analyzer(test_case: PopulatedBinaryNinjaAnalyzerTest
 
 
 async def test_binary_ninja_custom_load_single_region(custom_binary_resource):
-    """Test Binary Ninja custom loading with a single CodeRegion segment. REQ2.2."""
+    """Test Binary Ninja custom loading with a single CodeRegion segment (REQ2.2)."""
     base_address = 0x400000
     text_vaddr = base_address
     text_section = await setup_program_with_metadata(
@@ -78,7 +81,7 @@ async def test_binary_ninja_custom_load_single_region(custom_binary_resource):
 
 
 async def test_binary_ninja_custom_loader_with_memory_regions(custom_binary_resource):
-    """Test Binary Ninja custom loading with multiple MemoryRegion segments. REQ2.2."""
+    """Test Binary Ninja custom loading with multiple MemoryRegion segments (REQ2.2)."""
     text_vaddr = 0x400130
     text_section = await setup_program_with_metadata(
         custom_binary_resource, base_address=0x100000, text_vaddr=text_vaddr
@@ -95,7 +98,7 @@ async def test_binary_ninja_custom_loader_with_memory_regions(custom_binary_reso
 
 
 async def test_binary_ninja_custom_load_flat(custom_binary_resource):
-    """Test Binary Ninja flat-blob loading path (no MemoryRegion children). REQ2.2."""
+    """Test Binary Ninja flat-blob loading path (no MemoryRegion children) (REQ2.2)."""
     base_address = 0x400000
     await setup_program_flat(custom_binary_resource, base_address=base_address)
     assert custom_binary_resource.has_tag(BinaryNinjaCustomLoadProject)

@@ -28,7 +28,7 @@ def _parse_offset(java_object):
     return int(str(java_object.getOffsetAsBigInteger()))
 
 
-def _register_entry_points(flat_api, entry_points: List[int]):
+def _register_entry_points(flat_api, entry_points: List[int]) -> None:
     """
     Register entry points in the current Ghidra program.
 
