@@ -61,8 +61,11 @@ class BinaryNinjaAnalyzer(Analyzer[Optional[BinaryNinjaAnalyzerConfig], BinaryNi
         resource: Resource,
         resource_dependencies: Optional[List[ResourceAttributeDependency]] = None,
     ):
-        # See AngrAnalyzer._create_dependencies
-        pass
+        """
+        Override to avoid tracking dependencies between Binary Ninja analysis,
+        resource, and attributes. Users should group work into discrete steps:
+        1. Unpacking/Analysis  2. Modification  3. Packing.
+        """
 
 
 class BinaryNinjaCustomLoadAnalyzer(
@@ -202,5 +205,5 @@ class BinaryNinjaCustomLoadAnalyzer(
         resource: Resource,
         resource_dependencies: Optional[List[ResourceAttributeDependency]] = None,
     ):
-        # See AngrAnalyzer._create_dependencies
+        # Dependency tracking disabled; see BinaryNinjaAnalyzer._create_dependencies for rationale.
         pass

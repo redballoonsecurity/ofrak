@@ -435,16 +435,13 @@ class UImageProgramAttributesAnalyzer(Analyzer[None, Tuple[ProgramAttributes]]):
             UImageArch.PPC: Endianness.BIG_ENDIAN,
         }
 
-        uimage_arch = UImageArch(header.ih_arch)
-
         try:
+            uimage_arch = UImageArch(header.ih_arch)
             isa = UIMAGE_ARCH_TO_ISA[uimage_arch]
             bit_width = UIMAGE_ARCH_TO_BIT_WIDTH[uimage_arch]
             endianness = UIMAGE_ARCH_TO_ENDIANNESS[uimage_arch]
-        except KeyError:
-            raise NotImplementedError(
-                f"Unsupported/unknown uImage architecture: {uimage_arch.name}"
-            )
+        except (ValueError, KeyError):
+            raise NotImplementedError(f"Unsupported/unknown uImage architecture: {header.ih_arch}")
 
         return ProgramAttributes(
             isa,

@@ -203,7 +203,7 @@ class AngrCustomLoadAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
         resource: Resource,
         resource_dependencies: Optional[List[ResourceAttributeDependency]] = None,
     ):
-        # See AngrAnalyzer._create_dependencies
+        # Dependency tracking disabled; see AngrAnalyzer._create_dependencies for rationale.
         pass
 
 
