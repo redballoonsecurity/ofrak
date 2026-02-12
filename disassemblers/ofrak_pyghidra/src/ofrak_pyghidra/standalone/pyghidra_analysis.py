@@ -80,8 +80,14 @@ def unpack(
             program_file = os.path.join(tempdir, "program")
             with open(program_file, "wb") as f:
                 f.write(b"\x00")
-        with pyghidra.open_program(program_file, language=language) as flat_api:
-            LOGGER.info("Analysis completed. Caching analysis to JSON")
+        # Defer auto-analysis when we know we'll modify the program first
+        # (memory regions, rebase, or entry points). This avoids a wasted initial
+        # analysis pass that would be invalidated or need to be re-run.
+        needs_pre_analysis_setup = bool(memory_regions) or bool(entry_points)
+        with pyghidra.open_program(
+            program_file, language=language, analyze=not needs_pre_analysis_setup
+        ) as flat_api:
+            LOGGER.info("Program loaded. Caching analysis to JSON")
             # Java packages must be imported after pyghidra.start or pyghidra.open_program
             from ghidra.app.decompiler import DecompInterface, DecompileOptions
             from ghidra.util.task import TaskMonitor
@@ -139,11 +145,7 @@ def unpack(
                         LOGGER.warning(
                             f"Failed to create memory block at 0x{region['virtual_address']:x}: {e}"
                         )
-                if entry_points:
-                    _register_entry_points(flat_api, entry_points)
 
-                # Analyze all
-                flat_api.analyzeAll(program)
             # If base_address is provided and memory_regions were NOT explicitly provided,
             # rebase the program. When memory_regions are provided, addresses are already
             # absolute and should not be shifted.
@@ -164,11 +166,15 @@ def unpack(
                 program.setImageBase(new_base_addr, True)
                 LOGGER.info(f"Rebased program address to {hex(base_address)}")
 
-            # Register entry points for the non-memory_regions path (e.g. raw binary
-            # loaded with base_address). For the memory_regions path, entry points are
-            # already registered above before analyzeAll.
-            if entry_points and not memory_regions:
+            # Register entry points for whichever path we're on.
+            # For memory_regions path, entry points are registered after block creation.
+            # For non-memory_regions path, after rebase.
+            if entry_points:
                 _register_entry_points(flat_api, entry_points)
+
+            # Run analysis once after all program modifications are complete.
+            # When needs_pre_analysis_setup is True, auto-analysis was deferred above.
+            if needs_pre_analysis_setup:
                 flat_api.analyzeAll(flat_api.getCurrentProgram())
 
             main_dictionary: Dict[str, Any] = {}
