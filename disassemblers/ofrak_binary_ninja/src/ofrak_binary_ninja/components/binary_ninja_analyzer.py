@@ -14,7 +14,6 @@ from ofrak.core.memory_region import (
     get_effective_memory_permissions,
 )
 from ofrak.model.component_model import ComponentConfig
-from ofrak.model.resource_model import ResourceAttributeDependency
 from ofrak_binary_ninja.model import (
     BinaryNinjaAnalysis,
     BinaryNinjaAutoLoadProject,
@@ -55,17 +54,6 @@ class BinaryNinjaAnalyzer(Analyzer[Optional[BinaryNinjaAnalyzerConfig], BinaryNi
             assert bv is not None
 
         return BinaryNinjaAnalysis(bv)
-
-    def _create_dependencies(
-        self,
-        resource: Resource,
-        resource_dependencies: Optional[List[ResourceAttributeDependency]] = None,
-    ):
-        """
-        Override to avoid tracking dependencies between Binary Ninja analysis,
-        resource, and attributes. Users should group work into discrete steps:
-        1. Unpacking/Analysis  2. Modification  3. Packing.
-        """
 
 
 class BinaryNinjaCustomLoadAnalyzer(
@@ -203,11 +191,3 @@ class BinaryNinjaCustomLoadAnalyzer(
         if perms.value & MemoryPermissions.X.value:
             flags |= SegmentFlag.SegmentExecutable
         return flags
-
-    def _create_dependencies(
-        self,
-        resource: Resource,
-        resource_dependencies: Optional[List[ResourceAttributeDependency]] = None,
-    ):
-        # Dependency tracking disabled; see BinaryNinjaAnalyzer._create_dependencies for rationale.
-        pass

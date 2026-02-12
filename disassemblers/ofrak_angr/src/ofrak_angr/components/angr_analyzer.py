@@ -1,11 +1,10 @@
 import logging
 from io import BytesIO
 from dataclasses import dataclass, field
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.model.component_model import ComponentConfig
-from ofrak.model.resource_model import ResourceAttributeDependency
 from ofrak.resource import Resource
 
 import archinfo
@@ -113,25 +112,6 @@ class AngrAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
         resource_data = await resource.get_data()
         return _run_angr_analysis(BytesIO(resource_data), config.project_args, config)
 
-    def _create_dependencies(
-        self,
-        resource: Resource,
-        resource_dependencies: Optional[List[ResourceAttributeDependency]] = None,
-    ):
-        """
-        Override
-        [Analyzer._create_dependencies][ofrak.component.component_analyzer.Analyzer._create_dependencies]
-        to avoid the creation and tracking of dependencies between the angr analysis,
-        resource, and attributes.
-
-        Practically speaking, this means that users of angr components should group their
-        work into three discrete, ordered steps:
-
-        Step 1. Unpacking, Analysis
-        Step 2. Modification
-        Step 3. Packing
-        """
-
 
 class AngrCustomLoadAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
     """
@@ -201,14 +181,6 @@ class AngrCustomLoadAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
             project_args["main_opts"] = {**main_opts, **project_args.get("main_opts", {})}
 
         return _run_angr_analysis(load_data, project_args, config)
-
-    def _create_dependencies(
-        self,
-        resource: Resource,
-        resource_dependencies: Optional[List[ResourceAttributeDependency]] = None,
-    ):
-        # Dependency tracking disabled; see AngrAnalyzer._create_dependencies for rationale.
-        pass
 
 
 class AngrCodeRegionModifier(Modifier):
