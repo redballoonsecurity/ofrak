@@ -12,7 +12,7 @@ from xml.etree import ElementTree
 
 from ofrak import ResourceFilter
 from ofrak.core import CodeRegion, MemoryRegion, NamedProgramSection, ProgramAttributes, Program
-from ofrak.core.memory_region import get_memory_region_permissions
+from ofrak.core.memory_region import get_memory_region_permissions, get_effective_memory_permissions
 from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
@@ -413,24 +413,20 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
         self, blocks: List[MemoryRegion], entry_points: Optional[List[int]] = None
     ) -> List[str]:
         args: List[str] = []
+        has_blocks = False
 
         for i, block in enumerate(blocks):
             perms = get_memory_region_permissions(block.resource)
             if perms is not None and perms.permissions == MemoryPermissions.NONE:
                 continue
 
+            has_blocks = True
             block_info: List[str] = [
                 str(block.virtual_address),
                 str(block.size),
             ]
 
-            if perms is not None:
-                block_info.append(perms.permissions.as_str())
-            else:
-                if block.resource.has_tag(CodeRegion):
-                    block_info.append("rx")
-                else:
-                    block_info.append("rw")
+            block_info.append(get_effective_memory_permissions(block.resource).as_str())
 
             if block.resource.has_tag(NamedProgramSection):
                 named_section = await block.resource.view_as(NamedProgramSection)
@@ -451,6 +447,11 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
                 block_info.append("-1")
 
             args.append("!".join(block_info))
+
+        if not has_blocks:
+            raise ValueError(
+                "All memory regions have NONE permissions; cannot proceed with analysis"
+            )
 
         if entry_points:
             entry_strs = [f"0x{ep:x}" for ep in entry_points]

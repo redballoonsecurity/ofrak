@@ -177,6 +177,11 @@ class AngrCustomLoadAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
                 segments.append((file_offset, region.virtual_address, region.size))
                 combined_data.extend(region_data)
 
+            if not segments:
+                raise ValueError(
+                    "All memory regions have NONE permissions; cannot proceed with analysis"
+                )
+
             main_opts["backend"] = "blob"
             main_opts["segments"] = segments
             if "base_addr" not in main_opts and segments:

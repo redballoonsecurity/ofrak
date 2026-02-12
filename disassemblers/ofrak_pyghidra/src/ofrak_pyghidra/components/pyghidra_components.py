@@ -6,10 +6,13 @@ from xml.etree import ElementTree
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.core.architecture import ProgramAttributes
-from ofrak.core.code_region import CodeRegion
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.core.decompilation import DecompilationAnalysis
-from ofrak.core.memory_region import MemoryRegion, get_memory_region_permissions
+from ofrak.core.memory_region import (
+    MemoryRegion,
+    get_memory_region_permissions,
+    get_effective_memory_permissions,
+)
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceFilter, ResourceServiceInterface
 from ofrak_type import ArchInfo, Endianness, InstructionSet
@@ -223,15 +226,14 @@ class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
                 "virtual_address": region.virtual_address,
                 "size": region.size,
                 "data": region_data,
+                "permissions": get_effective_memory_permissions(region.resource).value,
             }
-            if perms is not None:
-                region_dict["permissions"] = perms.permissions.value
-            else:
-                if region.resource.has_tag(CodeRegion):
-                    region_dict["permissions"] = MemoryPermissions.RX.value
-                else:
-                    region_dict["permissions"] = MemoryPermissions.RW.value
             memory_regions.append(region_dict)
+
+        if not memory_regions:
+            raise ValueError(
+                "All memory regions have NONE permissions; cannot proceed with analysis"
+            )
 
         self.analysis_store.store_analysis(
             resource.get_id(),

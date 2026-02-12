@@ -32,6 +32,23 @@ def get_memory_region_permissions(resource: Resource) -> Optional[MemoryRegionPe
         return None
 
 
+def get_effective_memory_permissions(resource: Resource) -> MemoryPermissions:
+    """Get effective permissions for a memory region resource.
+
+    Returns explicit permissions if set via `MemoryRegionPermissions`, otherwise
+    falls back to RX for `CodeRegion` resources or RW for other regions.
+    """
+    perms = get_memory_region_permissions(resource)
+    if perms is not None:
+        return perms.permissions
+    # Deferred import to avoid circular dependency (code_region imports memory_region)
+    from ofrak.core.code_region import CodeRegion
+
+    if resource.has_tag(CodeRegion):
+        return MemoryPermissions.RX
+    return MemoryPermissions.RW
+
+
 @dataclass
 class MemoryRegion(Addressable):
     """

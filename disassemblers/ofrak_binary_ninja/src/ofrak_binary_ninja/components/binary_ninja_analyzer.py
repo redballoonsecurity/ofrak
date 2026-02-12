@@ -8,11 +8,10 @@ from binaryninja import BinaryView, open_view, BinaryViewType, SegmentFlag
 from ofrak import ResourceFilter
 from ofrak.component.analyzer import Analyzer
 from ofrak.core.architecture import ProgramAttributes
-from ofrak.core.code_region import CodeRegion
 from ofrak.core.memory_region import (
     MemoryRegion,
-    MemoryRegionPermissions,
     get_memory_region_permissions,
+    get_effective_memory_permissions,
 )
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributeDependency
@@ -121,9 +120,15 @@ class BinaryNinjaCustomLoadAnalyzer(
                 continue
             region_data = await region.resource.get_data()
             file_offset = len(combined_data)
-            flags = self._get_segment_flags(region, perms)
+            effective = get_effective_memory_permissions(region.resource)
+            flags = self._get_segment_flags(effective)
             segment_info.append((file_offset, region.virtual_address, region.size, flags))
             combined_data.extend(region_data)
+
+        if not segment_info:
+            raise ValueError(
+                "All memory regions have NONE permissions; cannot proceed with analysis"
+            )
 
         # delete=False: Binary Ninja retains a reference to the file during analysis
         with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as tmp:
@@ -181,25 +186,16 @@ class BinaryNinjaCustomLoadAnalyzer(
         return bv
 
     @staticmethod
-    def _get_segment_flags(
-        region: MemoryRegion, perms_attr: Optional[MemoryRegionPermissions] = None
-    ) -> int:
-        """Determine Binary Ninja SegmentFlags for a memory region."""
-        if perms_attr is not None:
-            perms = perms_attr.permissions
-            flags = 0
-            if perms.value & MemoryPermissions.R.value:
-                flags |= SegmentFlag.SegmentReadable
-            if perms.value & MemoryPermissions.W.value:
-                flags |= SegmentFlag.SegmentWritable
-            if perms.value & MemoryPermissions.X.value:
-                flags |= SegmentFlag.SegmentExecutable
-            return flags
-
-        # Fall back: CodeRegion → RX, otherwise RW
-        if region.resource.has_tag(CodeRegion):
-            return SegmentFlag.SegmentReadable | SegmentFlag.SegmentExecutable
-        return SegmentFlag.SegmentReadable | SegmentFlag.SegmentWritable
+    def _get_segment_flags(perms: MemoryPermissions) -> int:
+        """Convert MemoryPermissions to Binary Ninja SegmentFlags."""
+        flags = 0
+        if perms.value & MemoryPermissions.R.value:
+            flags |= SegmentFlag.SegmentReadable
+        if perms.value & MemoryPermissions.W.value:
+            flags |= SegmentFlag.SegmentWritable
+        if perms.value & MemoryPermissions.X.value:
+            flags |= SegmentFlag.SegmentExecutable
+        return flags
 
     def _create_dependencies(
         self,
