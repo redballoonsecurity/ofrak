@@ -17,7 +17,7 @@ from ofrak.core.program import Program
 from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter
-from ofrak_binary_ninja.components.identifiers import BinaryNinjaAnalysisResource
+from ofrak_binary_ninja.model import BinaryNinjaAnalysisResource
 from ofrak_binary_ninja.model import BinaryNinjaAnalysis
 
 LOGGER = logging.getLogger(__name__)

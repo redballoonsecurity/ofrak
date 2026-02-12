@@ -11,6 +11,7 @@ from ofrak.resource import Resource
 import angr.project
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.elf.model import Elf, ElfHeader, ElfType
+from ofrak.core.memory_region import MemoryRegion
 from ofrak_angr.model import (
     AngrAnalysis,
     AngrAnalysisResource,
@@ -102,19 +103,46 @@ class AngrCustomLoadAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
     async def analyze(
         self, resource: Resource, config: AngrAnalyzerConfig = AngrAnalyzerConfig()
     ) -> AngrAnalysis:
-        resource_data = await resource.get_data()
-
         # Get entry point and base address from ProgramAttributes
-        main_opts = {}
+        main_opts: dict = {}
         try:
             program_attrs = resource.get_attributes(ProgramAttributes)
             if program_attrs.entry_points:
-                # angr uses the first entry point as the main entry
                 main_opts["entry_point"] = program_attrs.entry_points[0]
             if program_attrs.base_address is not None:
                 main_opts["base_addr"] = program_attrs.base_address
         except NotFoundError:
-            pass
+            program_attrs = None
+
+        # Check for MemoryRegion children (custom memory layout)
+        regions = list(
+            await resource.get_children_as_view(
+                MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
+            )
+        )
+
+        if regions:
+            # Sort by virtual address for deterministic layout
+            regions.sort(key=lambda r: r.virtual_address)
+
+            # Build combined data buffer and segment list for angr's blob backend.
+            # Each segment is (file_offset, vaddr, size).
+            combined_data = bytearray()
+            segments = []
+            for region in regions:
+                region_data = await region.resource.get_data()
+                file_offset = len(combined_data)
+                segments.append((file_offset, region.virtual_address, region.size))
+                combined_data.extend(region_data)
+
+            main_opts["backend"] = "blob"
+            main_opts["segments"] = segments
+            if "base_addr" not in main_opts:
+                main_opts["base_addr"] = regions[0].virtual_address
+
+            load_data = BytesIO(bytes(combined_data))
+        else:
+            load_data = BytesIO(await resource.get_data())
 
         # Merge main_opts into project_args (copy to avoid mutating config).
         # User-supplied main_opts take priority over ProgramAttributes values.
@@ -122,7 +150,7 @@ class AngrCustomLoadAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
         if main_opts:
             project_args["main_opts"] = {**main_opts, **project_args.get("main_opts", {})}
 
-        project = angr.project.Project(BytesIO(resource_data), load_options=project_args)
+        project = angr.project.Project(load_data, load_options=project_args)
 
         # Let's use angr to perform its own full analysis on the binary, and
         # maintain its results for the CR / CB / BB unpackers to re-use

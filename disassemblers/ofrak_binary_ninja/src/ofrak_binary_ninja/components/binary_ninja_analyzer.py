@@ -1,20 +1,26 @@
 import logging
+import os
+import tempfile
 from dataclasses import dataclass
 from typing import Optional, List
 
-from binaryninja import open_view, BinaryViewType
+from binaryninja import open_view, BinaryViewType, SegmentFlag
 
+from ofrak import ResourceFilter
 from ofrak.component.analyzer import Analyzer
 from ofrak.core.architecture import ProgramAttributes
+from ofrak.core.code_region import CodeRegion
+from ofrak.core.memory_region import MemoryRegion, MemoryRegionPermissions
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributeDependency
-from ofrak_binary_ninja.components.identifiers import (
+from ofrak_binary_ninja.model import (
     BinaryNinjaAutoLoadProject,
     BinaryNinjaCustomLoadProject,
 )
 from ofrak_binary_ninja.model import BinaryNinjaAnalysis
 from ofrak.resource import Resource
 from ofrak_type.error import NotFoundError
+from ofrak_type.memory_permissions import MemoryPermissions
 
 LOGGER = logging.getLogger(__file__)
 
@@ -73,9 +79,9 @@ class BinaryNinjaCustomLoadAnalyzer(
 ):
     """
     Opens and analyzes binaries with Binary Ninja for formats that Binary Ninja cannot
-    auto-load. Consumes entry_points and base_address from ProgramAttributes to configure
-    loading. Use for custom loading scenarios where the binary format is not natively
-    supported by Binary Ninja.
+    auto-load. When MemoryRegion children are present, creates user segments at their
+    specified virtual addresses with per-region permissions. Otherwise falls back to
+    loading the entire binary as a flat blob with rebase support.
     """
 
     id = b"BinaryNinjaCustomLoadAnalyzer"
@@ -85,17 +91,75 @@ class BinaryNinjaCustomLoadAnalyzer(
     async def analyze(
         self, resource: Resource, config: Optional[BinaryNinjaAnalyzerConfig] = None
     ) -> BinaryNinjaAnalysis:
-        if not config:
-            async with resource.temp_to_disk(delete=False) as temp_path:
-                bv = open_view(temp_path)
+        # Get ProgramAttributes early — used in both paths
+        try:
+            program_attrs = resource.get_attributes(ProgramAttributes)
+        except NotFoundError:
+            program_attrs = None
+
+        # Check for MemoryRegion children (custom memory layout)
+        regions = list(
+            await resource.get_children_as_view(
+                MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
+            )
+        )
+
+        if regions and not config:
+            bv = await self._load_with_regions(resource, regions, program_attrs)
+        elif not config:
+            bv = await self._load_flat(resource, program_attrs)
         else:
             bv = BinaryViewType.get_view_of_file(config.bndb_file)
             assert bv is not None
 
-        # Get entry points and base address from ProgramAttributes
-        try:
-            program_attrs = resource.get_attributes(ProgramAttributes)
+        return BinaryNinjaAnalysis(bv)
 
+    async def _load_with_regions(self, resource, regions, program_attrs):
+        """Load binary with explicit MemoryRegion segments at their virtual addresses."""
+        regions.sort(key=lambda r: r.virtual_address)
+
+        # Build combined data buffer and per-region metadata
+        combined_data = bytearray()
+        segment_info = []  # (file_offset, vaddr, size, flags)
+        for region in regions:
+            region_data = await region.resource.get_data()
+            file_offset = len(combined_data)
+            flags = self._get_segment_flags(region)
+            segment_info.append((file_offset, region.virtual_address, region.size, flags))
+            combined_data.extend(region_data)
+
+        # Write combined data to temp file and open as raw binary
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as tmp:
+            tmp.write(combined_data)
+            temp_path = tmp.name
+
+        try:
+            bv = open_view(temp_path)
+        finally:
+            os.unlink(temp_path)
+
+        # Remove auto-created segments and add user segments at correct vaddrs
+        for seg in list(bv.segments):
+            bv.remove_auto_segment(seg.start, seg.length)
+
+        for file_offset, vaddr, size, flags in segment_info:
+            bv.add_user_segment(vaddr, size, file_offset, size, flags)
+
+        # Add entry points
+        if program_attrs is not None and program_attrs.entry_points:
+            for entry_addr in program_attrs.entry_points:
+                bv.add_entry_point(entry_addr)
+                LOGGER.info(f"Added entry point at 0x{entry_addr:x}")
+
+        bv.update_analysis_and_wait()
+        return bv
+
+    async def _load_flat(self, resource, program_attrs):
+        """Load binary as a flat blob with optional rebase."""
+        async with resource.temp_to_disk(delete=False) as temp_path:
+            bv = open_view(temp_path)
+
+        if program_attrs is not None:
             # Rebase FIRST if base_address differs from what Binary Ninja detected.
             # This must happen before adding entry points, since entry points are
             # specified as absolute addresses in the target address space.
@@ -111,7 +175,7 @@ class BinaryNinjaCustomLoadAnalyzer(
                             f"0x{program_attrs.base_address:x}"
                         )
                     else:
-                        LOGGER.warning(
+                        raise RuntimeError(
                             f"Failed to rebase from 0x{current_base:x} to "
                             f"0x{program_attrs.base_address:x}"
                         )
@@ -121,10 +185,31 @@ class BinaryNinjaCustomLoadAnalyzer(
                 for entry_addr in program_attrs.entry_points:
                     bv.add_entry_point(entry_addr)
                     LOGGER.info(f"Added entry point at 0x{entry_addr:x}")
+
+        bv.update_analysis_and_wait()
+        return bv
+
+    @staticmethod
+    def _get_segment_flags(region) -> int:
+        """Determine Binary Ninja SegmentFlags for a memory region."""
+        try:
+            perms_attr = region.resource.get_attributes(MemoryRegionPermissions)
+            perms = perms_attr.permissions
+            flags = 0
+            if perms.value & MemoryPermissions.R.value:
+                flags |= SegmentFlag.SegmentReadable
+            if perms.value & MemoryPermissions.W.value:
+                flags |= SegmentFlag.SegmentWritable
+            if perms.value & MemoryPermissions.X.value:
+                flags |= SegmentFlag.SegmentExecutable
+            return flags
         except NotFoundError:
             pass
 
-        return BinaryNinjaAnalysis(bv)
+        # Fall back: CodeRegion → RX, otherwise R
+        if region.resource.has_tag(CodeRegion):
+            return SegmentFlag.SegmentReadable | SegmentFlag.SegmentExecutable
+        return SegmentFlag.SegmentReadable
 
     def _create_dependencies(
         self,

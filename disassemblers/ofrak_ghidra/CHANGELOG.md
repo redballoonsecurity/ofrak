@@ -6,8 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [Unreleased 0.2.0](https://github.com/redballoonsecurity/ofrak/tree/master)
 
 ### Added
-- Support `ProgramAttributes` `entry_points` field for passing entry points to Ghidra custom loader
-- Support `MemoryRegionPermissions` attribute for fine-grained memory region permission control
+- Support `ProgramAttributes` `entry_points` field for passing entry points to Ghidra custom loader ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
+- Support `MemoryRegionPermissions` attribute for fine-grained memory region permission control ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
 - Add OFRAK requirements, requirement to test mapping, test specifications ([#656](https://github.com/redballoonsecurity/ofrak/pull/656))
 
 ### Changed

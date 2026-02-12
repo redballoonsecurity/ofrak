@@ -2,19 +2,11 @@ from ofrak.component.identifier import Identifier
 from ofrak.core import Elf, Ihex, Pe
 from ofrak.core.program import Program
 from ofrak.resource import Resource
-from ofrak.resource_view import ResourceView
-
-
-class BinaryNinjaAnalysisResource(ResourceView):
-    pass
-
-
-class BinaryNinjaAutoLoadProject(BinaryNinjaAnalysisResource):
-    pass
-
-
-class BinaryNinjaCustomLoadProject(BinaryNinjaAnalysisResource):
-    pass
+from ofrak_binary_ninja.model import (  # noqa: F401
+    BinaryNinjaAnalysisResource,
+    BinaryNinjaAutoLoadProject,
+    BinaryNinjaCustomLoadProject,
+)
 
 
 _BINARY_NINJA_AUTO_LOADABLE_FORMATS = [Elf, Ihex, Pe]

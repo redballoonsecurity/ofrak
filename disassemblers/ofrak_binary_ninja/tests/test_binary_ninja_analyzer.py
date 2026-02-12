@@ -12,11 +12,13 @@ from ofrak_binary_ninja.components.binary_ninja_analyzer import (
     BinaryNinjaAnalyzer,
     BinaryNinjaCustomLoadAnalyzer,
 )
-from ofrak_binary_ninja.components.identifiers import BinaryNinjaCustomLoadProject
+from ofrak_binary_ninja.model import BinaryNinjaCustomLoadProject
 from ofrak_binary_ninja.model import BinaryNinjaAnalysis
+from ofrak_type.memory_permissions import MemoryPermissions
 from pytest_ofrak.patterns.program_metadata import (
     custom_binary_resource,  # noqa: F401
     setup_program_with_metadata,
+    add_rodata_region,
     assert_complex_block_at_vaddr,
 )
 from test_ofrak.unit.component.analyzer.analyzer_test_case import PopulatedAnalyzerTestCase
@@ -58,7 +60,8 @@ async def test_binary_ninja_analyzer(test_case: PopulatedBinaryNinjaAnalyzerTest
 
 async def test_binary_ninja_with_program_metadata(custom_binary_resource):
     """
-    Test that Binary Ninja correctly handles ProgramAttributes (base_address and entry_points).
+    Test that Binary Ninja correctly handles ProgramAttributes (base_address and entry_points)
+    when loading an entire binary as a flat blob.
 
     This test verifies that when ProgramAttributes is provided:
     - base_address is used by Binary Ninja to rebase the binary view
@@ -84,6 +87,35 @@ async def test_binary_ninja_with_program_metadata(custom_binary_resource):
     # Verify base_address was applied to the Binary Ninja view
     binja_analysis = custom_binary_resource.get_attributes(BinaryNinjaAnalysis)
     assert binja_analysis.binaryview.start == base_address
+
+    await text_section.unpack()
+    await assert_complex_block_at_vaddr(custom_binary_resource, text_vaddr)
+
+
+async def test_binary_ninja_custom_loader_with_memory_regions(custom_binary_resource):
+    """
+    Test that BinaryNinjaCustomLoadAnalyzer correctly consumes MemoryRegion children to create
+    user segments at their specified virtual addresses with per-region permissions.
+
+    This test verifies that when MemoryRegion children exist:
+    - Each region's data is loaded at its specified virtual address
+    - Permissions are correctly applied (MemoryRegionPermissions → SegmentFlags)
+    - Entry points from ProgramAttributes seed function discovery
+    - Function discovery works correctly at the expected virtual addresses
+
+    Requirements Mapping:
+    - REQ2.2
+    """
+    text_vaddr = 0x400130
+    text_section = await setup_program_with_metadata(
+        custom_binary_resource, base_address=0x100000, text_vaddr=text_vaddr
+    )
+    await add_rodata_region(
+        custom_binary_resource, rodata_vaddr=0x40A0A0, permissions=MemoryPermissions.R
+    )
+    assert custom_binary_resource.has_tag(BinaryNinjaCustomLoadProject)
+
+    await custom_binary_resource.run(BinaryNinjaCustomLoadAnalyzer)
 
     await text_section.unpack()
     await assert_complex_block_at_vaddr(custom_binary_resource, text_vaddr)

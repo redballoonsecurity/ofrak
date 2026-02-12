@@ -48,6 +48,7 @@ from pytest_ofrak.patterns.program_metadata import (
     add_rodata_region,
     assert_complex_block_at_vaddr,
 )
+from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_pyghidra.standalone.pyghidra_analysis import unpack, decompile_all_functions
 from ofrak import Resource, ResourceFilter, ResourceSort, ResourceAttributeValueFilter
 
@@ -493,7 +494,9 @@ async def test_pyghidra_custom_loader_with_program_metadata(custom_binary_resour
     text_section = await setup_program_with_metadata(
         custom_binary_resource, base_address=0x100000, text_vaddr=text_vaddr
     )
-    await add_rodata_region(custom_binary_resource, rodata_vaddr=0x40A0A0)
+    await add_rodata_region(
+        custom_binary_resource, rodata_vaddr=0x40A0A0, permissions=MemoryPermissions.R
+    )
     assert custom_binary_resource.has_tag(PyGhidraCustomLoadProject)
 
     await custom_binary_resource.run(PyGhidraCustomLoadAnalyzer)

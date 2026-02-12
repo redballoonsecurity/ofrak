@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [Unreleased 0.1.1](https://github.com/redballoonsecurity/ofrak/tree/master)
 
 ### Added
-- Add `BinaryNinjaAutoLoadProject` / `BinaryNinjaCustomLoadProject` tags and `BinaryNinjaCustomLoadAnalyzer` for custom binary loading with `ProgramAttributes` metadata
+- Add `BinaryNinjaAutoLoadProject` / `BinaryNinjaCustomLoadProject` tags and `BinaryNinjaCustomLoadAnalyzer` for custom binary loading with `ProgramAttributes` metadata ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
 
 ## 0.1.0 - 2022-01-25
 ### Added

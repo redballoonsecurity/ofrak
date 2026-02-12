@@ -441,7 +441,7 @@ class UImageProgramAttributesAnalyzer(Analyzer[None, Tuple[ProgramAttributes]]):
             isa = UIMAGE_ARCH_TO_ISA[uimage_arch]
             bit_width = UIMAGE_ARCH_TO_BIT_WIDTH[uimage_arch]
             endianness = UIMAGE_ARCH_TO_ENDIANNESS[uimage_arch]
-        except ValueError:
+        except KeyError:
             raise NotImplementedError(
                 f"Unsupported/unknown uImage architecture: {uimage_arch.name}"
             )

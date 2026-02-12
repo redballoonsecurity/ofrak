@@ -5,6 +5,7 @@ Requirements Mapping:
 - REQ2.2
 """
 import os
+from typing import Optional
 
 import pytest
 
@@ -17,9 +18,10 @@ from ofrak.core import (
     Addressable,
     ProgramAttributes,
 )
-from ofrak.core.memory_region import MemoryRegion
+from ofrak.core.memory_region import MemoryRegion, MemoryRegionPermissions
 from ofrak.resource import Resource
 from ofrak_type import InstructionSet, BitWidth, Endianness, SubInstructionSet, Range
+from ofrak_type.memory_permissions import MemoryPermissions
 
 from pytest_ofrak import ASSETS_DIR
 
@@ -103,6 +105,7 @@ async def add_rodata_region(
     resource: Resource,
     rodata_vaddr: int,
     rodata_size: int = TINI_RODATA_SIZE,
+    permissions: Optional[MemoryPermissions] = None,
 ) -> Resource:
     """
     Add a non-executable MemoryRegion child for .rodata.
@@ -110,6 +113,7 @@ async def add_rodata_region(
     :param resource: the root resource
     :param rodata_vaddr: the virtual address for the .rodata region
     :param rodata_size: the size of the .rodata region
+    :param permissions: optional memory permissions to attach to the region
 
     :return: the created MemoryRegion child resource
     """
@@ -123,6 +127,8 @@ async def add_rodata_region(
             size=rodata_size,
         )
     )
+    if permissions is not None:
+        rodata_section.add_attributes(MemoryRegionPermissions(permissions))
     await rodata_section.save()
     return rodata_section
 

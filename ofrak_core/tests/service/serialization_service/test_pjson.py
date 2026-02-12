@@ -389,3 +389,40 @@ def test_ofrak_classes(superclass_type, descendant_type, data, _test_serialize_d
     instance = data.draw(builds(descendant_type))
     _test_serialize_deserialize(instance, descendant_type)
     _test_serialize_deserialize(instance, superclass_type)
+
+
+def test_dataclass_backward_compat_missing_defaults(
+    serializer: PJSONSerializationService,
+):
+    """
+    Test that dataclass instances with missing fields that have defaults can be
+    deserialized from old JSON that predates those fields.
+
+    This test verifies that the ClassInstanceSerializer backward-compat logic
+    correctly skips fields with defaults when they are absent from the JSON,
+    letting the dataclass constructor fill them in.
+    """
+    from ofrak.core.architecture import ProgramAttributes
+    from ofrak_type.architecture import InstructionSet
+    from ofrak_type.bit_width import BitWidth
+    from ofrak_type.endianness import Endianness
+
+    # Simulate old serialized ProgramAttributes (before entry_points/base_address existed)
+    old_obj = ProgramAttributes(
+        InstructionSet.ARM, None, BitWidth.BIT_32, Endianness.LITTLE_ENDIAN, None
+    )
+    pjson = serializer.to_pjson(old_obj, ProgramAttributes)
+
+    # Remove the new fields from the serialized form, simulating old data
+    cls_ref, cls_fields = pjson
+    del cls_fields["entry_points"]
+    del cls_fields["base_address"]
+
+    # Deserialize — should succeed with defaults filled in
+    restored = serializer.from_pjson((cls_ref, cls_fields), ProgramAttributes)
+    assert isinstance(restored, ProgramAttributes)
+    assert restored.isa == InstructionSet.ARM
+    assert restored.bit_width == BitWidth.BIT_32
+    assert restored.endianness == Endianness.LITTLE_ENDIAN
+    assert restored.entry_points == ()
+    assert restored.base_address is None
