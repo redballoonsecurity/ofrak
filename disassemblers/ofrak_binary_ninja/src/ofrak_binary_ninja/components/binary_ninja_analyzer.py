@@ -132,15 +132,17 @@ class BinaryNinjaCustomLoadAnalyzer(
                 if perms_attr.permissions == MemoryPermissions.NONE:
                     continue
             except NotFoundError:
-                pass
+                perms_attr = None
             region_data = await region.resource.get_data()
             file_offset = len(combined_data)
-            flags = self._get_segment_flags(region)
+            flags = self._get_segment_flags(region, perms_attr)
             segment_info.append((file_offset, region.virtual_address, region.size, flags))
             combined_data.extend(region_data)
 
         # Write combined data to temp file and open as raw binary.
-        # delete=False so Binary Ninja can re-read file data during analysis.
+        # delete=False because Binary Ninja retains an internal reference to the file
+        # and may re-read it during analysis. This matches the pattern used elsewhere
+        # in the Binary Ninja integration (e.g. temp_to_disk(delete=False)).
         with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as tmp:
             tmp.write(combined_data)
             temp_path = tmp.name
@@ -201,10 +203,11 @@ class BinaryNinjaCustomLoadAnalyzer(
         return bv
 
     @staticmethod
-    def _get_segment_flags(region: MemoryRegion) -> int:
+    def _get_segment_flags(
+        region: MemoryRegion, perms_attr: Optional[MemoryRegionPermissions] = None
+    ) -> int:
         """Determine Binary Ninja SegmentFlags for a memory region."""
-        try:
-            perms_attr = region.resource.get_attributes(MemoryRegionPermissions)
+        if perms_attr is not None:
             perms = perms_attr.permissions
             flags = 0
             if perms.value & MemoryPermissions.R.value:
@@ -214,8 +217,6 @@ class BinaryNinjaCustomLoadAnalyzer(
             if perms.value & MemoryPermissions.X.value:
                 flags |= SegmentFlag.SegmentExecutable
             return flags
-        except NotFoundError:
-            pass
 
         # Fall back: CodeRegion → RX, otherwise R
         if region.resource.has_tag(CodeRegion):

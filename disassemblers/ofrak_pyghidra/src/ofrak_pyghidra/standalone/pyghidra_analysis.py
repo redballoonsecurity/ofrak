@@ -83,7 +83,11 @@ def unpack(
         # Defer auto-analysis when we know we'll modify the program first
         # (memory regions, rebase, or entry points). This avoids a wasted initial
         # analysis pass that would be invalidated or need to be re-run.
-        needs_pre_analysis_setup = bool(memory_regions) or bool(entry_points)
+        needs_pre_analysis_setup = (
+            bool(memory_regions)
+            or bool(entry_points)
+            or (base_address is not None and not memory_regions)
+        )
         with pyghidra.open_program(
             program_file, language=language, analyze=not needs_pre_analysis_setup
         ) as flat_api:
