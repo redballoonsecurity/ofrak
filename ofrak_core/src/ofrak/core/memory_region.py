@@ -25,7 +25,9 @@ class MemoryRegionPermissions(ResourceAttributes):
 
 
 def get_memory_region_permissions(resource: Resource) -> Optional[MemoryRegionPermissions]:
-    """Get the MemoryRegionPermissions attribute from a resource, or None if not set."""
+    """
+    Get the MemoryRegionPermissions attribute from a resource, or None if not set.
+    """
     try:
         return resource.get_attributes(MemoryRegionPermissions)
     except NotFoundError:
@@ -33,7 +35,8 @@ def get_memory_region_permissions(resource: Resource) -> Optional[MemoryRegionPe
 
 
 def get_effective_memory_permissions(resource: Resource) -> MemoryPermissions:
-    """Get effective permissions for a memory region resource.
+    """
+    Get effective permissions for a memory region resource.
 
     Returns explicit permissions if set via `MemoryRegionPermissions`, otherwise
     falls back to RX for `CodeRegion` resources or RW for other regions.

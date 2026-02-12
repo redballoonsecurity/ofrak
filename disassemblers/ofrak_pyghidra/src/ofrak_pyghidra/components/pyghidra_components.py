@@ -134,7 +134,9 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraAutoLoadProject]):
         super().__init__(resource_factory, data_service, resource_service)
         self.analysis_store = analysis_store
 
-    async def analyze(self, resource: Resource, config: PyGhidraAnalyzerConfig = None):
+    async def analyze(
+        self, resource: Resource, config: PyGhidraAnalyzerConfig = None
+    ) -> PyGhidraAutoLoadProject:
         tempdir = mkdtemp(prefix="rbs-pyghidra-bin")
         await resource.identify()  # useful for checking tags later
         try:
@@ -231,9 +233,7 @@ class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
             memory_regions.append(region_dict)
 
         if not memory_regions:
-            raise ValueError(
-                "All memory regions have NONE permissions; cannot proceed with analysis"
-            )
+            raise ValueError("No accessible memory regions for analysis")
 
         self.analysis_store.store_analysis(
             resource.get_id(),

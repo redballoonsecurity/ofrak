@@ -112,7 +112,9 @@ class BinaryNinjaCustomLoadAnalyzer(
         regions: List[MemoryRegion],
         program_attrs: Optional[ProgramAttributes],
     ) -> BinaryView:
-        """Load binary with explicit MemoryRegion segments at their virtual addresses."""
+        """
+        Load binary with explicit MemoryRegion segments at their virtual addresses.
+        """
         regions.sort(key=lambda r: r.virtual_address)
 
         combined_data = bytearray()
@@ -129,9 +131,7 @@ class BinaryNinjaCustomLoadAnalyzer(
             combined_data.extend(region_data)
 
         if not segment_info:
-            raise ValueError(
-                "All memory regions have NONE permissions; cannot proceed with analysis"
-            )
+            raise ValueError("No accessible memory regions for analysis")
 
         # delete=False: Binary Ninja retains a reference to the file during analysis
         with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as tmp:
@@ -157,7 +157,9 @@ class BinaryNinjaCustomLoadAnalyzer(
     async def _load_flat(
         self, resource: Resource, program_attrs: Optional[ProgramAttributes]
     ) -> BinaryView:
-        """Load binary as a flat blob with optional rebase."""
+        """
+        Load binary as a flat blob with optional rebase.
+        """
         async with resource.temp_to_disk(delete=False) as temp_path:
             bv = open_view(temp_path, update_analysis=False)
 
@@ -190,7 +192,9 @@ class BinaryNinjaCustomLoadAnalyzer(
 
     @staticmethod
     def _get_segment_flags(perms: MemoryPermissions) -> int:
-        """Convert MemoryPermissions to Binary Ninja SegmentFlags."""
+        """
+        Convert MemoryPermissions to Binary Ninja SegmentFlags.
+        """
         flags = 0
         if perms.value & MemoryPermissions.R.value:
             flags |= SegmentFlag.SegmentReadable

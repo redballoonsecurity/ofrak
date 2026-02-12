@@ -449,9 +449,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
             args.append("!".join(block_info))
 
         if not has_blocks:
-            raise ValueError(
-                "All memory regions have NONE permissions; cannot proceed with analysis"
-            )
+            raise ValueError("No accessible memory regions for analysis")
 
         if entry_points:
             entry_strs = [f"0x{ep:x}" for ep in entry_points]

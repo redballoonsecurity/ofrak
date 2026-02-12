@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Added
 - Add `BinaryNinjaAutoLoadProject` / `BinaryNinjaCustomLoadProject` tags and `BinaryNinjaCustomLoadAnalyzer` for custom binary loading with `ProgramAttributes` metadata ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
 
+### Changed
+- **Breaking:** `BinaryNinjaAnalysisResource` moved from `ofrak_binary_ninja.components.identifiers` to `ofrak_binary_ninja.model` ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
+
 ## 0.1.0 - 2022-01-25
 ### Added
 Initial release. Hello world!

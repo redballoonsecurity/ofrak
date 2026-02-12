@@ -47,7 +47,9 @@ class AngrAnalyzerConfig(ComponentConfig):
 def _run_angr_analysis(
     load_data: BytesIO, project_args: dict, config: AngrAnalyzerConfig
 ) -> AngrAnalysis:
-    """Create an angr project, run CFG analysis, and execute post-analysis hook."""
+    """
+    Create an angr project, run CFG analysis, and execute post-analysis hook.
+    """
     project = angr.project.Project(load_data, load_options=project_args)
     angr.analyses.analysis.AnalysisFactory(project, config.cfg_analyzer)(**config.cfg_analyzer_args)
     exec(config.post_cfg_analysis_hook)
@@ -77,7 +79,9 @@ _ENDIANNESS_TO_ARCHINFO = {
 def _resolve_angr_arch(
     program_attrs: ProgramAttributes,
 ) -> Optional[archinfo.Arch]:
-    """Resolve ProgramAttributes to an archinfo.Arch with correct endianness."""
+    """
+    Resolve ProgramAttributes to an archinfo.Arch with correct endianness.
+    """
     arch_name = _ANGR_ARCH_MAP.get((program_attrs.isa, program_attrs.bit_width))
     if arch_name is None:
         return None
@@ -151,6 +155,8 @@ class AngrCustomLoadAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
 
         if program_attrs is not None:
             if program_attrs.entry_points:
+                # angr's CLE loader only accepts a single entry_point; additional
+                # entry points are typically discovered by CFGFast's heuristics.
                 main_opts["entry_point"] = program_attrs.entry_points[0]
             if program_attrs.base_address is not None:
                 main_opts["base_addr"] = program_attrs.base_address
@@ -178,9 +184,7 @@ class AngrCustomLoadAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
                 combined_data.extend(region_data)
 
             if not segments:
-                raise ValueError(
-                    "All memory regions have NONE permissions; cannot proceed with analysis"
-                )
+                raise ValueError("No accessible memory regions for analysis")
 
             main_opts["backend"] = "blob"
             main_opts["segments"] = segments

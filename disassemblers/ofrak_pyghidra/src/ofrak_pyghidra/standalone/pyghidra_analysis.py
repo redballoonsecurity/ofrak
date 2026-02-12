@@ -36,6 +36,7 @@ def _register_entry_points(flat_api, entry_points: List[int]) -> None:
     Ghidra's auto-analysis will discover functions starting at these addresses.
     """
     from ghidra.program.model.symbol import SourceType
+    from ghidra.util.exception import DuplicateNameException
 
     program = flat_api.getCurrentProgram()
     default_space = program.getAddressFactory().getDefaultAddressSpace()
@@ -49,7 +50,7 @@ def _register_entry_points(flat_api, entry_points: List[int]) -> None:
             if code_prop is None:
                 try:
                     code_prop = program.createAddressSetPropertyMap("CodeMap")
-                except Exception:
+                except DuplicateNameException:
                     code_prop = program.getAddressSetPropertyMap("CodeMap")
             if code_prop is not None:
                 code_prop.add(addr, addr)

@@ -439,7 +439,7 @@ class ElfProgramAttributesAnalyzer(Analyzer[None, ProgramAttributes]):
             elf_basic_header.get_bitwidth(),
             elf_basic_header.get_endianness(),
             None,
-            entry_points=(entry_point,) if entry_point != 0 else (),
+            entry_points=(entry_point,),
             base_address=base_address,
         )
 
