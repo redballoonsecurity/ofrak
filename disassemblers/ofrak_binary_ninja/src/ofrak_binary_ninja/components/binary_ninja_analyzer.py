@@ -1,10 +1,9 @@
 import logging
-import os
 import tempfile
 from dataclasses import dataclass
 from typing import Optional, List
 
-from binaryninja import open_view, BinaryViewType, SegmentFlag
+from binaryninja import BinaryView, open_view, BinaryViewType, SegmentFlag
 
 from ofrak import ResourceFilter
 from ofrak.component.analyzer import Analyzer
@@ -114,7 +113,12 @@ class BinaryNinjaCustomLoadAnalyzer(
 
         return BinaryNinjaAnalysis(bv)
 
-    async def _load_with_regions(self, resource, regions, program_attrs):
+    async def _load_with_regions(
+        self,
+        resource: Resource,
+        regions: List[MemoryRegion],
+        program_attrs: Optional[ProgramAttributes],
+    ) -> BinaryView:
         """Load binary with explicit MemoryRegion segments at their virtual addresses."""
         regions.sort(key=lambda r: r.virtual_address)
 
@@ -122,21 +126,26 @@ class BinaryNinjaCustomLoadAnalyzer(
         combined_data = bytearray()
         segment_info = []  # (file_offset, vaddr, size, flags)
         for region in regions:
+            # Skip regions with NONE permissions (guard pages, reserved address space)
+            try:
+                perms_attr = region.resource.get_attributes(MemoryRegionPermissions)
+                if perms_attr.permissions == MemoryPermissions.NONE:
+                    continue
+            except NotFoundError:
+                pass
             region_data = await region.resource.get_data()
             file_offset = len(combined_data)
             flags = self._get_segment_flags(region)
             segment_info.append((file_offset, region.virtual_address, region.size, flags))
             combined_data.extend(region_data)
 
-        # Write combined data to temp file and open as raw binary
+        # Write combined data to temp file and open as raw binary.
+        # delete=False so Binary Ninja can re-read file data during analysis.
         with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as tmp:
             tmp.write(combined_data)
             temp_path = tmp.name
 
-        try:
-            bv = open_view(temp_path)
-        finally:
-            os.unlink(temp_path)
+        bv = open_view(temp_path)
 
         # Remove auto-created segments and add user segments at correct vaddrs
         for seg in list(bv.segments):
@@ -154,7 +163,9 @@ class BinaryNinjaCustomLoadAnalyzer(
         bv.update_analysis_and_wait()
         return bv
 
-    async def _load_flat(self, resource, program_attrs):
+    async def _load_flat(
+        self, resource: Resource, program_attrs: Optional[ProgramAttributes]
+    ) -> BinaryView:
         """Load binary as a flat blob with optional rebase."""
         async with resource.temp_to_disk(delete=False) as temp_path:
             bv = open_view(temp_path)
@@ -190,7 +201,7 @@ class BinaryNinjaCustomLoadAnalyzer(
         return bv
 
     @staticmethod
-    def _get_segment_flags(region) -> int:
+    def _get_segment_flags(region: MemoryRegion) -> int:
         """Determine Binary Ninja SegmentFlags for a memory region."""
         try:
             perms_attr = region.resource.get_attributes(MemoryRegionPermissions)

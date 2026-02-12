@@ -33,6 +33,7 @@ from ofrak_cached_disassembly.components.cached_disassembly_unpacker import (
 )
 from ofrak_pyghidra.standalone.pyghidra_analysis import unpack, decompile_all_functions
 from ofrak_type.error import NotFoundError
+from ofrak_type.memory_permissions import MemoryPermissions
 
 
 _GHIDRA_AUTO_LOADABLE_FORMATS = [Elf, Ihex, Pe]
@@ -226,17 +227,23 @@ class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
 
         memory_regions = []
         for region in regions:
+            # Check permissions; skip NONE (guard pages, reserved address space)
+            try:
+                perms_attr = region.resource.get_attributes(MemoryRegionPermissions)
+                if perms_attr.permissions == MemoryPermissions.NONE:
+                    continue
+            except NotFoundError:
+                perms_attr = None
+
             region_data = await region.resource.get_data()
             region_dict = {
                 "virtual_address": region.virtual_address,
                 "size": region.size,
                 "data": region_data,
             }
-            # Add permissions if available via MemoryRegionPermissions attribute
-            try:
-                perms_attr = region.resource.get_attributes(MemoryRegionPermissions)
+            if perms_attr is not None:
                 region_dict["permissions"] = perms_attr.permissions.value
-            except NotFoundError:
+            else:
                 # Fall back to checking if this is a CodeRegion
                 region_dict["executable"] = region.resource.has_tag(CodeRegion)
             memory_regions.append(region_dict)

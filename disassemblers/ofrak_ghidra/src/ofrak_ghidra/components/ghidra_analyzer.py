@@ -399,17 +399,21 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
         args: List[str] = []
 
         for i, block in enumerate(blocks):
+            # Skip regions with NONE permissions (guard pages, reserved address space)
+            try:
+                perms_attr = block.resource.get_attributes(MemoryRegionPermissions)
+                if perms_attr.permissions == MemoryPermissions.NONE:
+                    continue
+            except NotFoundError:
+                perms_attr = None
+
             block_info: List[str] = [
                 str(block.virtual_address),
                 str(block.size),
             ]
 
             # Use permissions from MemoryRegionPermissions attribute if available.
-            # If permissions are NONE (no access), we faithfully represent that as no
-            # permissions. The block will still be readable/disassemblable via Ghidra API,
-            # but won't be auto-analyzed as code.
-            try:
-                perms_attr = block.resource.get_attributes(MemoryRegionPermissions)
+            if perms_attr is not None:
                 perms = ""
                 if perms_attr.permissions.value & MemoryPermissions.R.value:
                     perms += "r"
@@ -418,7 +422,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
                 if perms_attr.permissions.value & MemoryPermissions.X.value:
                     perms += "x"
                 block_info.append(perms)
-            except NotFoundError:
+            else:
                 # Fall back to checking if this is a CodeRegion
                 if block.resource.has_tag(CodeRegion):
                     block_info.append("rx")

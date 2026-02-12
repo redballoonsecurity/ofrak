@@ -107,6 +107,10 @@ def unpack(
                     memory.removeBlock(block, TaskMonitor.DUMMY)
 
                 for region in memory_regions:
+                    # Skip regions with NONE permissions (guard pages, reserved address space)
+                    permissions = region.get("permissions")
+                    if permissions is not None and permissions == MemoryPermissions.NONE.value:
+                        continue
                     addr = default_space.getAddress(region["virtual_address"])
                     data_bytes = region["data"]
                     block_name = f"region_{region['virtual_address']:x}"

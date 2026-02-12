@@ -11,7 +11,8 @@ from ofrak.resource import Resource
 import angr.project
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.elf.model import Elf, ElfHeader, ElfType
-from ofrak.core.memory_region import MemoryRegion
+from ofrak.core.memory_region import MemoryRegion, MemoryRegionPermissions
+from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_angr.model import (
     AngrAnalysis,
     AngrAnalysisResource,
@@ -130,6 +131,13 @@ class AngrCustomLoadAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
             combined_data = bytearray()
             segments = []
             for region in regions:
+                # Skip regions with NONE permissions (guard pages, reserved address space)
+                try:
+                    perms_attr = region.resource.get_attributes(MemoryRegionPermissions)
+                    if perms_attr.permissions == MemoryPermissions.NONE:
+                        continue
+                except NotFoundError:
+                    pass
                 region_data = await region.resource.get_data()
                 file_offset = len(combined_data)
                 segments.append((file_offset, region.virtual_address, region.size))
