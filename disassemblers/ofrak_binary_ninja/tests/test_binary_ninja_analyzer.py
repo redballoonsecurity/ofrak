@@ -8,8 +8,11 @@ import pytest
 
 from ofrak import OFRAKContext
 from ofrak.core.filesystem import File
-from ofrak_binary_ninja.components.binary_ninja_analyzer import BinaryNinjaAnalyzer
-from ofrak_binary_ninja.components.identifiers import BinaryNinjaAnalysisResource
+from ofrak_binary_ninja.components.binary_ninja_analyzer import (
+    BinaryNinjaAnalyzer,
+    BinaryNinjaCustomLoadAnalyzer,
+)
+from ofrak_binary_ninja.components.identifiers import BinaryNinjaCustomLoadProject
 from ofrak_binary_ninja.model import BinaryNinjaAnalysis
 from pytest_ofrak.patterns.program_metadata import (
     custom_binary_resource,  # noqa: F401
@@ -74,9 +77,9 @@ async def test_binary_ninja_with_program_metadata(custom_binary_resource):
     text_section = await setup_program_with_metadata(
         custom_binary_resource, base_address=base_address, text_vaddr=text_vaddr
     )
-    assert custom_binary_resource.has_tag(BinaryNinjaAnalysisResource)
+    assert custom_binary_resource.has_tag(BinaryNinjaCustomLoadProject)
 
-    await custom_binary_resource.run(BinaryNinjaAnalyzer)
+    await custom_binary_resource.run(BinaryNinjaCustomLoadAnalyzer)
 
     # Verify base_address was applied to the Binary Ninja view
     binja_analysis = custom_binary_resource.get_attributes(BinaryNinjaAnalysis)

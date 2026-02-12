@@ -11,8 +11,12 @@ from ofrak.resource import Resource
 import angr.project
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.elf.model import Elf, ElfHeader, ElfType
-from ofrak_angr.components.identifiers import AngrAnalysisResource
-from ofrak_angr.model import AngrAnalysis
+from ofrak_angr.model import (
+    AngrAnalysis,
+    AngrAnalysisResource,
+    AngrAutoLoadProject,
+    AngrCustomLoadProject,
+)
 from ofrak.component.modifier import Modifier
 from ofrak.core import CodeRegion
 from ofrak import ResourceFilter
@@ -36,13 +40,14 @@ class AngrAnalyzerConfig(ComponentConfig):
 
 class AngrAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
     """
-    Runs angr's automated binary analysis engine to build control flow graphs (CFG), identify functions, and analyze
-    program structure. Use for initial comprehensive analysis of binaries with angr. Configurable CFG analyzer and
-    post-analysis hooks. Creates AngrAnalysis state for other angr components to use.
+    Runs angr's automated binary analysis engine to build control flow graphs (CFG), identify
+    functions, and analyze program structure. Use for auto-loadable formats (ELF, PE, Ihex) where
+    angr can automatically determine the binary format. Creates AngrAnalysis state for other angr
+    components to use.
     """
 
     id = b"AngrAnalyzer"
-    targets = (AngrAnalysisResource,)
+    targets = (AngrAutoLoadProject,)
     outputs = (AngrAnalysis,)
 
     async def analyze(
@@ -50,7 +55,56 @@ class AngrAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
     ) -> AngrAnalysis:
         resource_data = await resource.get_data()
 
-        # Try to get entry point and base address from ProgramAttributes
+        project = angr.project.Project(BytesIO(resource_data), load_options=config.project_args)
+
+        # Let's use angr to perform its own full analysis on the binary, and
+        # maintain its results for the CR / CB / BB unpackers to re-use
+        cfg = angr.analyses.analysis.AnalysisFactory(project, config.cfg_analyzer)(
+            **config.cfg_analyzer_args
+        )
+
+        # Run any user-defined analysis here
+        exec(config.post_cfg_analysis_hook)
+
+        return AngrAnalysis(project)
+
+    def _create_dependencies(
+        self,
+        resource: Resource,
+        resource_dependencies: Optional[List[ResourceAttributeDependency]] = None,
+    ):
+        """
+        Override
+        [Analyzer._create_dependencies][ofrak.component.component_analyzer.Analyzer._create_dependencies]
+        to avoid the creation and tracking of dependencies between the angr analysis,
+        resource, and attributes.
+
+        Practically speaking, this means that users of angr components should group their
+        work into three discrete, ordered steps:
+
+        Step 1. Unpacking, Analysis
+        Step 2. Modification
+        Step 3. Packing
+        """
+
+
+class AngrCustomLoadAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
+    """
+    Runs angr analysis on binaries that angr cannot auto-load (raw blobs, custom formats).
+    Consumes entry_points and base_address from ProgramAttributes to configure angr's loader.
+    Use for custom loading scenarios where the binary format is not natively supported by angr.
+    """
+
+    id = b"AngrCustomLoadAnalyzer"
+    targets = (AngrCustomLoadProject,)
+    outputs = (AngrAnalysis,)
+
+    async def analyze(
+        self, resource: Resource, config: AngrAnalyzerConfig = AngrAnalyzerConfig()
+    ) -> AngrAnalysis:
+        resource_data = await resource.get_data()
+
+        # Get entry point and base address from ProgramAttributes
         main_opts = {}
         try:
             program_attrs = resource.get_attributes(ProgramAttributes)

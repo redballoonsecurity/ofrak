@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [Unreleased 1.2.0](https://github.com/redballoonsecurity/ofrak/tree/master)
 
 ### Added
-- Support `ProgramAttributes` `entry_points` and `base_address` fields for passing program metadata to angr
+- Add `AngrAutoLoadProject` / `AngrCustomLoadProject` tags and `AngrCustomLoadAnalyzer` for custom binary loading with `ProgramAttributes` metadata
 
 ### Fixed
 - Pin Angr dependencies (`networkx` and `msgspec`) ([#676](https://github.com/redballoonsecurity/ofrak/pull/676))

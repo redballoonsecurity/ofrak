@@ -29,9 +29,11 @@ from ofrak import OFRAKContext
 from ofrak import ResourceFilter, ResourceAttributeValueFilter
 from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.core.addressable import Addressable
-from ofrak_angr.components.angr_analyzer import AngrAnalyzer, AngrAnalyzerConfig
-from ofrak_angr.components.identifiers import AngrAnalysisResource
-from ofrak_angr.model import AngrAnalysis
+from ofrak_angr.components.angr_analyzer import (
+    AngrAnalyzerConfig,
+    AngrCustomLoadAnalyzer,
+)
+from ofrak_angr.model import AngrAnalysis, AngrCustomLoadProject
 
 
 class TestAngrCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
@@ -227,7 +229,7 @@ async def test_angr_with_program_metadata(custom_binary_resource):
     text_section = await setup_program_with_metadata(
         custom_binary_resource, base_address=base_address, text_vaddr=text_vaddr
     )
-    assert custom_binary_resource.has_tag(AngrAnalysisResource)
+    assert custom_binary_resource.has_tag(AngrCustomLoadProject)
 
     # Configure angr to use blob backend for raw binary analysis.
     # The blob backend requires explicit architecture specification.
@@ -241,7 +243,7 @@ async def test_angr_with_program_metadata(custom_binary_resource):
             },
         }
     )
-    await custom_binary_resource.run(AngrAnalyzer, angr_config)
+    await custom_binary_resource.run(AngrCustomLoadAnalyzer, angr_config)
 
     # Verify base_address was applied to the angr project
     angr_analysis = custom_binary_resource.get_attributes(AngrAnalysis)

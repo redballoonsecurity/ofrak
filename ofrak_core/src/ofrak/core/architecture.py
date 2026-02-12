@@ -11,8 +11,9 @@ class ProgramAttributes(ResourceAttributes, ArchInfo):
     """
     Analyzer output containing architecture attributes of a program.
 
-    :ivar entry_points: Virtual addresses that are program entry points. The first entry is
-        typically the main entry point. Multiple entries support formats like DLLs with
+    :ivar entry_points: Virtual addresses that are program entry points, expressed in the
+        intended load address space (i.e., consistent with `base_address`). The first entry
+        is typically the main entry point. Multiple entries support formats like DLLs with
         DllMain + exports, or firmware with reset vectors.
     :ivar base_address: Preferred load address / image base where the program expects to be
         loaded. This is the intended load address from the binary format (e.g., ELF's first

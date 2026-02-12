@@ -8,7 +8,10 @@ from ofrak.component.analyzer import Analyzer
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributeDependency
-from ofrak_binary_ninja.components.identifiers import BinaryNinjaAnalysisResource
+from ofrak_binary_ninja.components.identifiers import (
+    BinaryNinjaAutoLoadProject,
+    BinaryNinjaCustomLoadProject,
+)
 from ofrak_binary_ninja.model import BinaryNinjaAnalysis
 from ofrak.resource import Resource
 from ofrak_type.error import NotFoundError
@@ -23,13 +26,14 @@ class BinaryNinjaAnalyzerConfig(ComponentConfig):
 
 class BinaryNinjaAnalyzer(Analyzer[Optional[BinaryNinjaAnalyzerConfig], BinaryNinjaAnalysis]):
     """
-    Opens and analyzes binaries with Binary Ninja, either from scratch or from a pre-analyzed BNDB file. Creates
-    BinaryNinjaAnalysis state containing the BinaryView for use by other Binary Ninja components. Use for initial
-    comprehensive analysis with Binary Ninja's powerful analysis engine.
+    Opens and analyzes binaries with Binary Ninja, either from scratch or from a pre-analyzed
+    BNDB file. Use for auto-loadable formats (ELF, PE, Ihex) where Binary Ninja can automatically
+    determine the binary format. Creates BinaryNinjaAnalysis state containing the BinaryView for
+    use by other Binary Ninja components.
     """
 
     id = b"BinaryNinjaAnalyzer"
-    targets = (BinaryNinjaAnalysisResource,)
+    targets = (BinaryNinjaAutoLoadProject,)
     outputs = (BinaryNinjaAnalysis,)
 
     async def analyze(
@@ -42,7 +46,53 @@ class BinaryNinjaAnalyzer(Analyzer[Optional[BinaryNinjaAnalyzerConfig], BinaryNi
             bv = BinaryViewType.get_view_of_file(config.bndb_file)
             assert bv is not None
 
-        # Try to get entry points and base address from ProgramAttributes
+        return BinaryNinjaAnalysis(bv)
+
+    def _create_dependencies(
+        self,
+        resource: Resource,
+        resource_dependencies: Optional[List[ResourceAttributeDependency]] = None,
+    ):
+        """
+        Override
+        [Analyzer._create_dependencies][ofrak.component.component_analyzer.Analyzer._create_dependencies]
+        to avoid the creation and tracking of dependencies between the BinaryNinja analysis,
+        resource, and attributes.
+
+        Practically speaking, this means that users of BinaryNinja components should group their
+        work into three discrete, ordered steps:
+
+        Step 1. Unpacking, Analysis
+        Step 2. Modification
+        Step 3. Packing
+        """
+
+
+class BinaryNinjaCustomLoadAnalyzer(
+    Analyzer[Optional[BinaryNinjaAnalyzerConfig], BinaryNinjaAnalysis]
+):
+    """
+    Opens and analyzes binaries with Binary Ninja for formats that Binary Ninja cannot
+    auto-load. Consumes entry_points and base_address from ProgramAttributes to configure
+    loading. Use for custom loading scenarios where the binary format is not natively
+    supported by Binary Ninja.
+    """
+
+    id = b"BinaryNinjaCustomLoadAnalyzer"
+    targets = (BinaryNinjaCustomLoadProject,)
+    outputs = (BinaryNinjaAnalysis,)
+
+    async def analyze(
+        self, resource: Resource, config: Optional[BinaryNinjaAnalyzerConfig] = None
+    ) -> BinaryNinjaAnalysis:
+        if not config:
+            async with resource.temp_to_disk(delete=False) as temp_path:
+                bv = open_view(temp_path)
+        else:
+            bv = BinaryViewType.get_view_of_file(config.bndb_file)
+            assert bv is not None
+
+        # Get entry points and base address from ProgramAttributes
         try:
             program_attrs = resource.get_attributes(ProgramAttributes)
 
