@@ -153,24 +153,6 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraAutoLoadProject]):
                 )
                 return PyGhidraAutoLoadProject()
 
-        program_attrs = resource.get_attributes(ProgramAttributes)
-        # Guess that the base address is the min start address of any memory region
-        regions = await resource.get_children_as_view(
-            MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
-        )
-        base_address = min(code_region.virtual_address for code_region in regions)
-
-        self.analysis_store.store_analysis(
-            resource.get_id(),
-            unpack(
-                program_file,
-                decomp,
-                language=_arch_info_to_processor_id(program_attrs),
-                base_address=base_address,
-            ),
-        )
-        return PyGhidraAutoLoadProject()
-
 
 class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
     """

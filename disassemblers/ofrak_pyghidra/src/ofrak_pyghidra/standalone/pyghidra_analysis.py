@@ -131,9 +131,8 @@ def unpack(
                         )
 
                         # Set permissions from region dict.
-                        # For backwards compatibility, default to R+X when no permissions are
-                        # specified, since previously all MemoryRegions passed to the disassembler
-                        # were treated as executable code regions.
+                        # For backwards compatibility, fall back to the "executable" flag
+                        # when no explicit permissions int is provided.
                         block = memory.getBlock(addr)
                         permissions = region.get("permissions")
                         if permissions is not None:
