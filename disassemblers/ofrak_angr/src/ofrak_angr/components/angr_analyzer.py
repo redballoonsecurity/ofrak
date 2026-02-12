@@ -8,12 +8,14 @@ from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributeDependency
 from ofrak.resource import Resource
 
+import archinfo
 import angr.project
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.elf.model import Elf, ElfHeader, ElfType
 from ofrak.core.memory_region import MemoryRegion, get_memory_region_permissions
 from ofrak_type.architecture import InstructionSet
 from ofrak_type.bit_width import BitWidth
+from ofrak_type.endianness import Endianness
 from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_angr.model import (
     AngrAnalysis,
@@ -55,7 +57,7 @@ def _run_angr_analysis(
 _ANGR_ARCH_MAP = {
     (InstructionSet.X86, BitWidth.BIT_32): "X86",
     (InstructionSet.X86, BitWidth.BIT_64): "AMD64",
-    (InstructionSet.ARM, BitWidth.BIT_32): "ARM",
+    (InstructionSet.ARM, BitWidth.BIT_32): "ARMEL",
     (InstructionSet.AARCH64, BitWidth.BIT_64): "AARCH64",
     (InstructionSet.MIPS, BitWidth.BIT_32): "MIPS32",
     (InstructionSet.MIPS, BitWidth.BIT_64): "MIPS64",
@@ -65,6 +67,28 @@ _ANGR_ARCH_MAP = {
     (InstructionSet.SPARC, BitWidth.BIT_32): "SPARC32",
     (InstructionSet.SPARC, BitWidth.BIT_64): "SPARC64",
 }
+
+_ENDIANNESS_TO_ARCHINFO = {
+    Endianness.BIG_ENDIAN: archinfo.Endness.BE,
+    Endianness.LITTLE_ENDIAN: archinfo.Endness.LE,
+}
+
+
+def _resolve_angr_arch(
+    program_attrs: ProgramAttributes,
+) -> Optional[archinfo.Arch]:
+    """Resolve ProgramAttributes to an archinfo.Arch with correct endianness."""
+    arch_name = _ANGR_ARCH_MAP.get((program_attrs.isa, program_attrs.bit_width))
+    if arch_name is None:
+        return None
+    endness = _ENDIANNESS_TO_ARCHINFO.get(program_attrs.endianness)
+    try:
+        return archinfo.arch_from_id(arch_name, endness=endness)
+    except archinfo.ArchNotFound:
+        raise NotFoundError(
+            f"angr does not support architecture {program_attrs.isa.name} "
+            f"{program_attrs.bit_width.value}-bit {program_attrs.endianness.name}"
+        )
 
 
 class AngrAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
@@ -122,15 +146,17 @@ class AngrCustomLoadAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
         main_opts: dict = {}
         try:
             program_attrs = resource.get_attributes(ProgramAttributes)
+        except NotFoundError:
+            program_attrs = None
+
+        if program_attrs is not None:
             if program_attrs.entry_points:
                 main_opts["entry_point"] = program_attrs.entry_points[0]
             if program_attrs.base_address is not None:
                 main_opts["base_addr"] = program_attrs.base_address
-            angr_arch = _ANGR_ARCH_MAP.get((program_attrs.isa, program_attrs.bit_width))
+            angr_arch = _resolve_angr_arch(program_attrs)
             if angr_arch is not None:
                 main_opts["arch"] = angr_arch
-        except NotFoundError:
-            program_attrs = None
 
         regions = list(
             await resource.get_children_as_view(

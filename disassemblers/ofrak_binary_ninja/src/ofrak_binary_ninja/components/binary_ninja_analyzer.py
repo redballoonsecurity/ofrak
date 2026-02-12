@@ -17,10 +17,10 @@ from ofrak.core.memory_region import (
 from ofrak.model.component_model import ComponentConfig
 from ofrak.model.resource_model import ResourceAttributeDependency
 from ofrak_binary_ninja.model import (
+    BinaryNinjaAnalysis,
     BinaryNinjaAutoLoadProject,
     BinaryNinjaCustomLoadProject,
 )
-from ofrak_binary_ninja.model import BinaryNinjaAnalysis
 from ofrak.resource import Resource
 from ofrak_type.error import NotFoundError
 from ofrak_type.memory_permissions import MemoryPermissions

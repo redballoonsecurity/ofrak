@@ -13,6 +13,7 @@ from ofrak.core.architecture import ProgramAttributes
 from ofrak_type.architecture import InstructionSet
 from ofrak_type.bit_width import BitWidth
 from ofrak_type.endianness import Endianness
+from pytest_ofrak import ASSETS_DIR as PYTEST_OFRAK_ASSETS_DIR
 
 ASSETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
 
@@ -64,10 +65,7 @@ class TestElfProgramAttributesAnalyzer:
 
     async def test_elf_no_pt_load(self, ofrak_context: OFRAKContext):
         """Relocatable .o has no PT_LOAD → base_address=None."""
-        filepath = os.path.join(
-            os.path.dirname(__file__),
-            "../../../pytest_ofrak/src/pytest_ofrak/elf/assets/program.o",
-        )
+        filepath = os.path.join(PYTEST_OFRAK_ASSETS_DIR, "..", "elf", "assets", "program.o")
         resource = await ofrak_context.create_root_resource_from_file(filepath)
         await resource.unpack_recursively()
         attrs = await resource.analyze(ProgramAttributes)
