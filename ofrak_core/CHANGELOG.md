@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Remove test dependencies that are already in the global `requirements-dev.txt` ([#695](https://github.com/redballoonsecurity/ofrak/pull/695))
 
 ### Fixed
+- Fix deserialization of dataclass instances with new default fields from older serialized data ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
 - Fix `UImageProgramAttributesAnalyzer` not catching `KeyError` for unsupported architectures ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
 - Fix `Resource.get_attributes` docstring to match implementation ([#692](https://github.com/redballoonsecurity/ofrak/pull/692))
 - Fix GUI serialization of enum values and script creator generating invalid Python syntax for enum values

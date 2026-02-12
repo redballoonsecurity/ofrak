@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Added
 - Add `AngrAutoLoadProject` / `AngrCustomLoadProject` tags and `AngrCustomLoadAnalyzer` for custom binary loading with `ProgramAttributes` metadata ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
 
+### Changed
+- **Breaking:** `AngrAnalyzer` now targets `AngrAutoLoadProject` instead of `AngrAnalysisResource`; code that manually tagged resources with `AngrAnalysisResource` should use `AngrAutoLoadProject` or `AngrCustomLoadProject` ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
+
 ### Fixed
 - Pin Angr dependencies (`networkx` and `msgspec`) ([#676](https://github.com/redballoonsecurity/ofrak/pull/676))
 - Pin pycparser version ([#683](https://github.com/redballoonsecurity/ofrak/pull/683))
