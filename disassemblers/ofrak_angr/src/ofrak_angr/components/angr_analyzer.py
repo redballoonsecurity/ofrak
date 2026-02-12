@@ -119,7 +119,6 @@ class AngrCustomLoadAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
     async def analyze(
         self, resource: Resource, config: AngrAnalyzerConfig = AngrAnalyzerConfig()
     ) -> AngrAnalysis:
-        # Get entry point and base address from ProgramAttributes
         main_opts: dict = {}
         try:
             program_attrs = resource.get_attributes(ProgramAttributes)
@@ -133,7 +132,6 @@ class AngrCustomLoadAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
         except NotFoundError:
             program_attrs = None
 
-        # Check for MemoryRegion children (custom memory layout)
         regions = list(
             await resource.get_children_as_view(
                 MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
@@ -141,11 +139,7 @@ class AngrCustomLoadAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
         )
 
         if regions:
-            # Sort by virtual address for deterministic layout
             regions.sort(key=lambda r: r.virtual_address)
-
-            # Build combined data buffer and segment list for angr's blob backend.
-            # Each segment is (file_offset, vaddr, size).
             combined_data = bytearray()
             segments = []
             for region in regions:
@@ -166,8 +160,7 @@ class AngrCustomLoadAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
         else:
             load_data = BytesIO(await resource.get_data())
 
-        # Merge main_opts into project_args (copy to avoid mutating config).
-        # User-supplied main_opts take priority over ProgramAttributes values.
+        # User-supplied main_opts take priority over ProgramAttributes values
         project_args = dict(config.project_args)
         if main_opts:
             project_args["main_opts"] = {**main_opts, **project_args.get("main_opts", {})}
@@ -179,19 +172,8 @@ class AngrCustomLoadAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
         resource: Resource,
         resource_dependencies: Optional[List[ResourceAttributeDependency]] = None,
     ):
-        """
-        Override
-        [Analyzer._create_dependencies][ofrak.component.component_analyzer.Analyzer._create_dependencies]
-        to avoid the creation and tracking of dependencies between the angr analysis,
-        resource, and attributes.
-
-        Practically speaking, this means that users of angr components should group their
-        work into three discrete, ordered steps:
-
-        Step 1. Unpacking, Analysis
-        Step 2. Modification
-        Step 3. Packing
-        """
+        # See AngrAnalyzer._create_dependencies
+        pass
 
 
 class AngrCodeRegionModifier(Modifier):

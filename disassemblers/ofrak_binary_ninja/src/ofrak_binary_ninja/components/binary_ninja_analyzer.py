@@ -62,19 +62,8 @@ class BinaryNinjaAnalyzer(Analyzer[Optional[BinaryNinjaAnalyzerConfig], BinaryNi
         resource: Resource,
         resource_dependencies: Optional[List[ResourceAttributeDependency]] = None,
     ):
-        """
-        Override
-        [Analyzer._create_dependencies][ofrak.component.component_analyzer.Analyzer._create_dependencies]
-        to avoid the creation and tracking of dependencies between the BinaryNinja analysis,
-        resource, and attributes.
-
-        Practically speaking, this means that users of BinaryNinja components should group their
-        work into three discrete, ordered steps:
-
-        Step 1. Unpacking, Analysis
-        Step 2. Modification
-        Step 3. Packing
-        """
+        # See AngrAnalyzer._create_dependencies
+        pass
 
 
 class BinaryNinjaCustomLoadAnalyzer(
@@ -94,13 +83,11 @@ class BinaryNinjaCustomLoadAnalyzer(
     async def analyze(
         self, resource: Resource, config: Optional[BinaryNinjaAnalyzerConfig] = None
     ) -> BinaryNinjaAnalysis:
-        # Get ProgramAttributes early — used in both paths
         try:
             program_attrs = resource.get_attributes(ProgramAttributes)
         except NotFoundError:
             program_attrs = None
 
-        # Check for MemoryRegion children (custom memory layout)
         regions = list(
             await resource.get_children_as_view(
                 MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
@@ -126,9 +113,8 @@ class BinaryNinjaCustomLoadAnalyzer(
         """Load binary with explicit MemoryRegion segments at their virtual addresses."""
         regions.sort(key=lambda r: r.virtual_address)
 
-        # Build combined data buffer and per-region metadata
         combined_data = bytearray()
-        segment_info = []  # (file_offset, vaddr, size, flags)
+        segment_info = []
         for region in regions:
             perms = get_memory_region_permissions(region.resource)
             if perms is not None and perms.permissions == MemoryPermissions.NONE:
@@ -139,24 +125,19 @@ class BinaryNinjaCustomLoadAnalyzer(
             segment_info.append((file_offset, region.virtual_address, region.size, flags))
             combined_data.extend(region_data)
 
-        # Write combined data to temp file and open as raw binary.
-        # delete=False because Binary Ninja retains an internal reference to the file
-        # and may re-read it during analysis. This matches the pattern used elsewhere
-        # in the Binary Ninja integration (e.g. temp_to_disk(delete=False)).
+        # delete=False: Binary Ninja retains a reference to the file during analysis
         with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as tmp:
             tmp.write(combined_data)
             temp_path = tmp.name
 
         bv = open_view(temp_path, update_analysis=False)
 
-        # Remove auto-created segments and add user segments at correct vaddrs
         for seg in list(bv.segments):
             bv.remove_auto_segment(seg.start, seg.length)
 
         for file_offset, vaddr, size, flags in segment_info:
             bv.add_user_segment(vaddr, size, file_offset, size, flags)
 
-        # Add entry points
         if program_attrs is not None and program_attrs.entry_points:
             for entry_addr in program_attrs.entry_points:
                 bv.add_entry_point(entry_addr)
@@ -173,10 +154,8 @@ class BinaryNinjaCustomLoadAnalyzer(
             bv = open_view(temp_path, update_analysis=False)
 
         if program_attrs is not None:
-            # Rebase FIRST if base_address differs from what Binary Ninja detected.
-            # This must happen before adding entry points, since entry points are
-            # specified as absolute addresses in the target address space.
-            # Note: rebase() returns a NEW BinaryView; the original becomes invalid.
+            # Rebase before adding entry points (entry addresses are absolute).
+            # rebase() returns a new BinaryView; the original becomes invalid.
             if program_attrs.base_address is not None:
                 current_base = bv.start
                 if current_base != program_attrs.base_address:
@@ -193,7 +172,6 @@ class BinaryNinjaCustomLoadAnalyzer(
                             f"0x{program_attrs.base_address:x}"
                         )
 
-            # Add entry points after rebasing (addresses are now correct)
             if program_attrs.entry_points:
                 for entry_addr in program_attrs.entry_points:
                     bv.add_entry_point(entry_addr)
@@ -228,16 +206,5 @@ class BinaryNinjaCustomLoadAnalyzer(
         resource: Resource,
         resource_dependencies: Optional[List[ResourceAttributeDependency]] = None,
     ):
-        """
-        Override
-        [Analyzer._create_dependencies][ofrak.component.component_analyzer.Analyzer._create_dependencies]
-        to avoid the creation and tracking of dependencies between the BinaryNinja analysis,
-        resource, and attributes.
-
-        Practically speaking, this means that users of BinaryNinja components should group their
-        work into three discrete, ordered steps:
-
-        Step 1. Unpacking, Analysis
-        Step 2. Modification
-        Step 3. Packing
-        """
+        # See AngrAnalyzer._create_dependencies
+        pass

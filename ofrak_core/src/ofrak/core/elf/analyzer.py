@@ -423,12 +423,9 @@ class ElfProgramAttributesAnalyzer(Analyzer[None, ProgramAttributes]):
             ElfBasicHeader, r_filter=ResourceFilter.with_tags(ElfBasicHeader)
         )
 
-        # Get entry point from ELF header.
-        # e_entry is always an int (never None). For ELF, entry point 0 is valid
-        # (e.g., firmware mapped at address 0), unlike PE where entry_rva=0 means "no entry".
         entry_point = elf_header.e_entry
 
-        # Get base address from first PT_LOAD segment
+        # Base address from first PT_LOAD segment (None for relocatable objects)
         base_address: Optional[int] = None
         program_headers = await elf.get_program_headers()
         for phdr in program_headers:

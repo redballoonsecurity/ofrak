@@ -80,9 +80,7 @@ def unpack(
             program_file = os.path.join(tempdir, "program")
             with open(program_file, "wb") as f:
                 f.write(b"\x00")
-        # Defer auto-analysis when we know we'll modify the program first
-        # (memory regions, rebase, or entry points). This avoids a wasted initial
-        # analysis pass that would be invalidated or need to be re-run.
+        # Defer auto-analysis until after program modifications are complete
         needs_pre_analysis_setup = (
             bool(memory_regions) or bool(entry_points) or base_address is not None
         )
@@ -109,7 +107,8 @@ def unpack(
                     memory.removeBlock(block, TaskMonitor.DUMMY)
 
                 for region in memory_regions:
-                    # Skip regions with NONE permissions (guard pages, reserved address space)
+                    # Safety net: the component already filters NONE-permission regions,
+                    # but this function is also callable standalone.
                     permissions = region.get("permissions")
                     if permissions is not None and permissions == MemoryPermissions.NONE.value:
                         continue
@@ -130,17 +129,12 @@ def unpack(
                             False,  # overlay
                         )
 
-                        # Set permissions from region dict.
-                        # For backwards compatibility, fall back to the "executable" flag
-                        # when no explicit permissions int is provided.
                         block = memory.getBlock(addr)
                         if permissions is not None:
-                            # permissions is a MemoryPermissions value (int)
                             block.setRead(bool(permissions & MemoryPermissions.R.value))
                             block.setWrite(bool(permissions & MemoryPermissions.W.value))
                             block.setExecute(bool(permissions & MemoryPermissions.X.value))
                         else:
-                            # Backwards compatibility: use "executable" flag if present
                             is_executable = region.get("executable", True)
                             block.setRead(True)
                             block.setWrite(not is_executable)
@@ -150,18 +144,14 @@ def unpack(
                             f"Failed to create memory block at 0x{region['virtual_address']:x}: {e}"
                         )
 
-            # If base_address is provided and memory_regions were NOT explicitly provided,
-            # rebase the program. When memory_regions are provided, addresses are already
-            # absolute and should not be shifted.
+            # Rebase only when memory_regions are absent (regions use absolute addresses)
             if base_address is not None and not memory_regions:
-                # Convert base_address to int if it's a string
                 if isinstance(base_address, str):
                     if base_address.startswith("0x"):
                         base_address = int(base_address, 16)
                     else:
                         base_address = int(base_address)
 
-                # Rebase the program to the specified base address
                 program = flat_api.getCurrentProgram()
                 address_factory = program.getAddressFactory()
                 new_base_addr = address_factory.getDefaultAddressSpace().getAddress(
@@ -170,14 +160,9 @@ def unpack(
                 program.setImageBase(new_base_addr, True)
                 LOGGER.info(f"Rebased program address to {hex(base_address)}")
 
-            # Register entry points for whichever path we're on.
-            # For memory_regions path, entry points are registered after block creation.
-            # For non-memory_regions path, after rebase.
             if entry_points:
                 _register_entry_points(flat_api, entry_points)
 
-            # Run analysis once after all program modifications are complete.
-            # When needs_pre_analysis_setup is True, auto-analysis was deferred above.
             if needs_pre_analysis_setup:
                 flat_api.analyzeAll(flat_api.getCurrentProgram())
 

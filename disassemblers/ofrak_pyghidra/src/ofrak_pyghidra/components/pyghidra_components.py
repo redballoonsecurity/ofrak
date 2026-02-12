@@ -153,6 +153,11 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraAutoLoadProject]):
                 )
                 return PyGhidraAutoLoadProject()
 
+        raise ValueError(
+            f"Resource {resource.get_id()} has PyGhidraAutoLoadProject tag but no "
+            f"recognized auto-loadable format tag"
+        )
+
 
 class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
     """
@@ -222,7 +227,6 @@ class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
             if perms is not None:
                 region_dict["permissions"] = perms.permissions.value
             else:
-                # Fall back: CodeRegion → RX, other → RW
                 if region.resource.has_tag(CodeRegion):
                     region_dict["permissions"] = MemoryPermissions.RX.value
                 else:

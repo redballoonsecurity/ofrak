@@ -17,20 +17,8 @@ LOGGER = logging.getLogger(__file__)
 class MemoryRegionPermissions(ResourceAttributes):
     """
     Memory permissions (read/write/execute) for a MemoryRegion resource.
-
-    This attribute can be attached to any MemoryRegion resource to specify its
-    permissions. Use this when you need finer-grained permission control than
-    the CodeRegion tag provides.
-
-    When this attribute is absent, disassembler backends fall back to heuristics
-    (e.g. CodeRegion tag → RX, otherwise R or RW).
-
-    Regions with :py:attr:`~ofrak_type.memory_permissions.MemoryPermissions.NONE`
-    permissions (guard pages, reserved address space such as Mach-O __PAGEZERO)
-    are skipped entirely by disassembler backends, since they contain no
-    analyzable content.
-
-    :ivar permissions: the memory permissions for this region
+    When absent, disassembler backends fall back to heuristics (CodeRegion tag → RX,
+    otherwise RW). Regions with `NONE` permissions are skipped entirely.
     """
 
     permissions: MemoryPermissions

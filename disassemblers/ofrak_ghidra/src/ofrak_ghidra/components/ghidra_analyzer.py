@@ -326,8 +326,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
 
         return args
 
-    # TODO: This is nearly identical to _arch_info_to_processor_id in
-    # ofrak_pyghidra; should there be a common module for both Ghidra backends?
+    # TODO(#710): Deduplicate with _arch_info_to_processor_id in ofrak_pyghidra
     @lru_cache(maxsize=None)
     def _arch_info_to_processor_id(self, processor: ArchInfo):
         families: Dict[InstructionSet, str] = {
@@ -384,6 +383,9 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
                     if processor.processor and processor.processor.value.lower() == name:
                         return proc_id
 
+                    # Suspect: character-set matching (not substring matching) can
+                    # produce false positives. Ported from ofrak_pyghidra for parity.
+                    # See #710.
                     if processor.sub_isa and all(
                         char in processor.sub_isa.value.lower() for char in name.lower()
                     ):
@@ -425,7 +427,6 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
             if perms is not None:
                 block_info.append(perms.permissions.as_str())
             else:
-                # Fall back to checking if this is a CodeRegion
                 if block.resource.has_tag(CodeRegion):
                     block_info.append("rx")
                 else:
@@ -451,7 +452,6 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
 
             args.append("!".join(block_info))
 
-        # Add entry points argument if provided (format: "entry:0x1000,0x2000")
         if entry_points:
             entry_strs = [f"0x{ep:x}" for ep in entry_points]
             args.append(f"entry:{','.join(entry_strs)}")
@@ -566,8 +566,7 @@ class GhidraCustomLoadAnalyzer(GhidraProjectAnalyzer):
         if program_attrs.entry_points:
             entry_points = list(program_attrs.entry_points)
 
-        # Extract just the ArchInfo fields for processor lookup (avoids polluting
-        # the lru_cache on _arch_info_to_processor_id with entry_points/base_address).
+        # Extract ArchInfo fields (avoids polluting lru_cache with extra fields)
         arch_info = ArchInfo(
             program_attrs.isa,
             program_attrs.sub_isa,
