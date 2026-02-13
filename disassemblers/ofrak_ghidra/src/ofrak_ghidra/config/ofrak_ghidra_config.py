@@ -55,7 +55,7 @@ server:
     port: # Port for the Ghidra repository OFRAK will create
   analysis:
     host: # Host for the server OFRAK will create in a headless Ghidra instance, e.g. localhost
-    port: # Host for the port OFRAK will create in a headless Ghidra instance
+    port: # Port for the server OFRAK will create in a headless Ghidra instance
   use_sudo: # Optional (default false). If true, run Ghidra server commands with sudo.
 """
 
