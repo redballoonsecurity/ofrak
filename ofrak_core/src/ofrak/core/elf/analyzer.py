@@ -12,6 +12,7 @@ from ofrak.core.elf.model import (
     ElfBasicHeader,
     ElfProgramHeader,
     ElfProgramHeaderType,
+    ElfType,
     ElfSegmentStructure,
     ElfSegment,
     ElfSectionStructure,
@@ -423,7 +424,11 @@ class ElfProgramAttributesAnalyzer(Analyzer[None, ProgramAttributes]):
             ElfBasicHeader, r_filter=ResourceFilter.with_tags(ElfBasicHeader)
         )
 
-        entry_point = elf_header.e_entry
+        # e_entry is meaningless for relocatable objects (ET_REL); always 0
+        if elf_header.e_type == ElfType.ET_REL.value:
+            entry_points: tuple = ()
+        else:
+            entry_points = (elf_header.e_entry,)
 
         # Base address from first PT_LOAD segment (None for relocatable objects)
         base_address: Optional[int] = None
@@ -439,7 +444,7 @@ class ElfProgramAttributesAnalyzer(Analyzer[None, ProgramAttributes]):
             elf_basic_header.get_bitwidth(),
             elf_basic_header.get_endianness(),
             None,
-            entry_points=(entry_point,),
+            entry_points=entry_points,
             base_address=base_address,
         )
 

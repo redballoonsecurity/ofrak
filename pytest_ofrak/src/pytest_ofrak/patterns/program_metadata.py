@@ -55,11 +55,7 @@ async def setup_program_flat(
     base_address: int,
 ) -> None:
     """
-    Tag resource as Program with ProgramAttributes, without creating MemoryRegion children.
-    This exercises the flat-blob loading path in custom-load analyzers.
-
-    :param resource: the root resource (should be the tini_custom_binary asset)
-    :param base_address: the base address and entry point for ProgramAttributes
+    Tag resource as Program with ProgramAttributes (no MemoryRegion children).
     """
     resource.add_tag(Program)
     await resource.save()
@@ -79,7 +75,7 @@ async def setup_program_flat(
     await resource.save()
 
 
-async def setup_program_with_metadata(
+async def setup_program_with_code_region(
     resource: Resource,
     *,
     base_address: int,
@@ -87,18 +83,7 @@ async def setup_program_with_metadata(
     text_size: int = TINI_TEXT_SIZE,
 ) -> Resource:
     """
-    Set up a resource as a Program with ProgramAttributes (including entry_points
-    and base_address) and a CodeRegion child.
-
-    Tags the resource as a Program, adds ProgramAttributes for AARCH64 with the given
-    base_address and entry point at text_vaddr, and creates a CodeRegion child.
-
-    :param resource: the root resource (should be the tini_custom_binary asset)
-    :param base_address: the base address for ProgramAttributes
-    :param text_vaddr: the virtual address for the .text CodeRegion and first entry point
-    :param text_size: the size of the .text CodeRegion
-
-    :return: the created CodeRegion child resource
+    Tag resource as Program with ProgramAttributes and a CodeRegion child.
     """
     resource.add_tag(Program)
     await resource.save()
@@ -138,14 +123,7 @@ async def add_rodata_region(
     permissions: Optional[MemoryPermissions] = None,
 ) -> Resource:
     """
-    Add a non-executable MemoryRegion child for .rodata.
-
-    :param resource: the root resource
-    :param rodata_vaddr: the virtual address for the .rodata region
-    :param rodata_size: the size of the .rodata region
-    :param permissions: optional memory permissions to attach to the region
-
-    :return: the created MemoryRegion child resource
+    Add a .rodata MemoryRegion child with optional permissions.
     """
     rodata_section = await resource.create_child(
         tags=(MemoryRegion,),
@@ -165,13 +143,7 @@ async def add_rodata_region(
 
 async def assert_complex_block_at_vaddr(resource: Resource, vaddr: int) -> ComplexBlock:
     """
-    Assert that a ComplexBlock exists at the given virtual address and contains
-    actual analysis results (non-zero size and at least one BasicBlock child).
-
-    :param resource: the root resource to search descendants of
-    :param vaddr: the expected virtual address of the ComplexBlock
-
-    :return: the found ComplexBlock
+    Assert a ComplexBlock at vaddr has non-zero size and BasicBlock children.
     """
     cb = await resource.get_only_descendant_as_view(
         v_type=ComplexBlock,

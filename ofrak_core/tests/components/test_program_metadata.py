@@ -64,12 +64,12 @@ class TestElfProgramAttributesAnalyzer:
         assert attrs.base_address == 0x0
 
     async def test_elf_no_pt_load(self, ofrak_context: OFRAKContext):
-        """Relocatable .o has no PT_LOAD → base_address=None."""
+        """Relocatable .o (ET_REL) has no entry point and no PT_LOAD."""
         filepath = os.path.join(PYTEST_OFRAK_ASSETS_DIR, "..", "elf", "assets", "program.o")
         resource = await ofrak_context.create_root_resource_from_file(filepath)
         await resource.unpack_recursively()
         attrs = await resource.analyze(ProgramAttributes)
-        assert attrs.entry_points == (0x0,)
+        assert attrs.entry_points == ()
         assert attrs.base_address is None
 
     async def test_elf_entry_point_zero(self, ofrak_context: OFRAKContext):

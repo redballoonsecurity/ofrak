@@ -45,7 +45,7 @@ from ofrak.core import (
 )
 from pytest_ofrak.patterns.program_metadata import (
     custom_binary_resource,  # noqa: F401
-    setup_program_with_metadata,
+    setup_program_with_code_region,
     add_rodata_region,
     assert_complex_block_at_vaddr,
 )
@@ -481,7 +481,7 @@ async def test_pyghidra_custom_loader(custom_binary_resource):
 async def test_pyghidra_custom_loader_with_program_metadata(custom_binary_resource):
     """Test PyGhidra custom loading with ProgramAttributes + MemoryRegions (REQ2.2)."""
     text_vaddr = 0x400130
-    text_section = await setup_program_with_metadata(
+    text_section = await setup_program_with_code_region(
         custom_binary_resource, base_address=0x100000, text_vaddr=text_vaddr
     )
     await add_rodata_region(

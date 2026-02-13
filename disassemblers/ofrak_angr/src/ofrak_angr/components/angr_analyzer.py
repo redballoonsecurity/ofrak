@@ -168,7 +168,7 @@ class AngrCustomLoadAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
 
             main_opts["backend"] = "blob"
             main_opts["segments"] = segments
-            if "base_addr" not in main_opts and segments:
+            if "base_addr" not in main_opts:
                 main_opts["base_addr"] = segments[0][1]
 
             load_data = BytesIO(bytes(combined_data))
