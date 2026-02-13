@@ -12,3 +12,4 @@ server:
   analysis:
     host: localhost
     port: 13300
+  use_sudo: false

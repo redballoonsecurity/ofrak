@@ -53,6 +53,7 @@ To stop it, run `python -m ofrak_ghidra.server stop`.
 
 The Ghidra server requires root privileges. If you are not running as root, set `use_sudo: true`
 under `server:` in your Ghidra config so that server commands are run with `sudo`.
+Passwordless sudo must be configured for the relevant commands (e.g., via `/etc/sudoers`).
 
 ## Usage
 To use Ghidra, you need to discover the component at setup-time with:
