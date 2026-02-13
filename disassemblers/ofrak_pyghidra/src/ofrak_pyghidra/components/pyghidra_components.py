@@ -159,7 +159,7 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraAutoLoadProject]):
                 return PyGhidraAutoLoadProject()
 
         raise ValueError(
-            f"Resource {resource.get_id()} has PyGhidraAutoLoadProject tag but no "
+            f"Resource {resource.get_id()!r} has PyGhidraAutoLoadProject tag but no "
             f"recognized auto-loadable format tag"
         )
 
