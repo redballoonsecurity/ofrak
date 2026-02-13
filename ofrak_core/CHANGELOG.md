@@ -6,24 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [Unreleased 3.4.0](https://github.com/redballoonsecurity/ofrak/tree/master)
 
 ### Added
-- Add `entry_points` and `base_address` fields to `ProgramAttributes` for passing program metadata to disassembler backends ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
-- Add `MemoryRegionPermissions` attribute for fine-grained memory region permission control ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
-- Extend `ElfProgramAttributesAnalyzer` and `UImageProgramAttributesAnalyzer` to include entry points and base address ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
 - Add Android sparse image unpacker and packer ([#662](https://github.com/redballoonsecurity/ofrak/pull/662))
 - Add OFRAK requirements, requirement to test mapping, test specifications ([#656](https://github.com/redballoonsecurity/ofrak/pull/656))
 - Add `-V, --version` flag to ofrak cli ([#652](https://github.com/redballoonsecurity/ofrak/pull/652))
 - Add LZ4 compression format unpackers and packers with support for all frame types (modern, legacy, skippable) ([#661](https://github.com/redballoonsecurity/ofrak/pull/661))
 - Add missing component docstrings and improve existing docstrings ([#654](https://github.com/redballoonsecurity/ofrak/pull/654))
+- Add `entry_points` and `base_address` fields to `ProgramAttributes` for passing program metadata to disassembler backends ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
+- Add `MemoryRegionPermissions` attribute for fine-grained memory region permission control ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
+- Extend `ElfProgramAttributesAnalyzer` and `UImageProgramAttributesAnalyzer` to include entry points and base address ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
 
 ### Changed
 - Remove test dependencies that are already in the global `requirements-dev.txt` ([#695](https://github.com/redballoonsecurity/ofrak/pull/695))
 
 ### Fixed
-- Fix deserialization of dataclass instances with new default fields from older serialized data ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
-- Fix `UImageProgramAttributesAnalyzer` not catching `KeyError` for unsupported architectures ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
+- Bump `aiohttp` to >=3.13.3 to address CVE-2025-69223 ([#693](https://github.com/redballoonsecurity/ofrak/pull/693))
 - Fix `Resource.get_attributes` docstring to match implementation ([#692](https://github.com/redballoonsecurity/ofrak/pull/692))
+- Remove `pkg_resources` usage from `build_image.py`, broken by setuptools 82.0.0 ([#708](https://github.com/redballoonsecurity/ofrak/pull/708))
 - Fix GUI serialization of enum values and script creator generating invalid Python syntax for enum values
 - `build_image.py` uses `OFRAK_DIR` from `extra_build_args` to identify `pytest_ofrak` location for develop builds ([#657](https://github.com/redballoonsecurity/ofrak/pull/657/))
+- Fix deserialization of dataclass instances with new default fields from older serialized data ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
+- Fix `UImageProgramAttributesAnalyzer` not catching `KeyError` for unsupported architectures ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
 
 ## [3.3.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v3.2.0...ofrak-v3.3.0) - 2025-10-03
 

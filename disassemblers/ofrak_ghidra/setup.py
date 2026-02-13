@@ -21,7 +21,7 @@ with open("LICENSE") as f:
 
 setuptools.setup(
     name="ofrak_ghidra",
-    version="0.2.0rc4",
+    version="0.2.0rc5",
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",
     description="OFRAK Ghidra Components",
@@ -36,7 +36,7 @@ setuptools.setup(
     install_requires=[
         "ofrak>=3.3.0,==3.*",
         "PyYAML>=5.4,",
-        "aiohttp~=3.12.14",
+        "aiohttp>=3.13.3",
     ],
     python_requires=">=3.9",
     include_package_data=True,
