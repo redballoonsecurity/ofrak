@@ -475,7 +475,9 @@ async def test_pyghidra_custom_loader(custom_binary_resource):
     decomp_resource: DecompilationAnalysis = await cb.resource.view_as(DecompilationAnalysis)
     decomp_str = decomp_resource.decompilation
     print(decomp_str)
-    assert '"tini version 0.19.0"' in decomp_str
+    # Ghidra may inline the string literal or use a symbol reference, depending on
+    # type propagation depth.
+    assert "s_tini_version_0_19_0" in decomp_str or '"tini version 0.19.0"' in decomp_str
 
 
 async def test_pyghidra_custom_loader_with_program_metadata(custom_binary_resource):

@@ -91,6 +91,7 @@ def unpack(
             LOGGER.info("Program loaded. Caching analysis to JSON")
             # Java packages must be imported after pyghidra.start or pyghidra.open_program
             from ghidra.app.decompiler import DecompInterface, DecompileOptions
+            from ghidra.program.util import GhidraProgramUtilities
             from ghidra.util.task import TaskMonitor
             from ghidra.program.model.block import BasicBlockModel
             from ghidra.program.model.symbol import RefType
@@ -166,6 +167,12 @@ def unpack(
 
             if needs_pre_analysis_setup:
                 flat_api.analyzeAll(flat_api.getCurrentProgram())
+                # Mark as analyzed so that subsequent sessions opening the cached
+                # pyghidra project do not re-run analysis (which can clobber results).
+                if hasattr(GhidraProgramUtilities, "markProgramAnalyzed"):
+                    GhidraProgramUtilities.markProgramAnalyzed(flat_api.getCurrentProgram())
+                else:
+                    GhidraProgramUtilities.setAnalyzedFlag(flat_api.getCurrentProgram(), True)
 
             main_dictionary: Dict[str, Any] = {}
             code_regions = _unpack_program(flat_api)
