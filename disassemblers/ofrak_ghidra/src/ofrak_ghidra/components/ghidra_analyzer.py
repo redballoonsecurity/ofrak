@@ -433,7 +433,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
                 if " " in named_section.name or "!" in named_section.name:
                     raise ValueError(
                         f"Bad character in section name {named_section.name} which interferes with "
-                        f"encoding arguments to CreateMemoryRegions.java"
+                        f"encoding arguments to CreateMemoryBlocks.java"
                     )
                 block_info.append(named_section.name)
             else:
