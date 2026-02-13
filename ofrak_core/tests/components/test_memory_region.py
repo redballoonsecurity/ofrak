@@ -92,6 +92,12 @@ async def test_get_effective_memory_permissions_code_region_fallback(ofrak_conte
     assert get_effective_memory_permissions(resource) == MemoryPermissions.RX
 
 
+async def test_get_effective_memory_permissions_default_rw(ofrak_context: OFRAKContext):
+    """Without explicit permissions or CodeRegion tag, default is RW."""
+    resource = await ofrak_context.create_root_resource("test", b"\x00" * 8)
+    assert get_effective_memory_permissions(resource) == MemoryPermissions.RW
+
+
 async def test_get_memory_region_permissions_absent(ofrak_context: OFRAKContext):
     """get_memory_region_permissions returns None when no attribute is set."""
     resource = await ofrak_context.create_root_resource("test", b"\x00" * 8)

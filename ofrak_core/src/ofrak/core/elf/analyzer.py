@@ -1,6 +1,6 @@
 import io
 import logging
-from typing import Optional, TypeVar
+from typing import Optional, Tuple, TypeVar
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.core import NamedProgramSection
@@ -426,7 +426,7 @@ class ElfProgramAttributesAnalyzer(Analyzer[None, ProgramAttributes]):
 
         # e_entry is meaningless for relocatable objects (ET_REL); always 0
         if elf_header.e_type == ElfType.ET_REL.value:
-            entry_points: tuple = ()
+            entry_points: Tuple[int, ...] = ()
         else:
             entry_points = (elf_header.e_entry,)
 

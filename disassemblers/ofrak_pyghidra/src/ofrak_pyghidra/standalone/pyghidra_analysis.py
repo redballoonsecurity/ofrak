@@ -63,7 +63,7 @@ def _register_entry_points(flat_api, entry_points: List[int]) -> None:
 
 
 def unpack(
-    program_file: str,
+    program_file: Optional[str],
     decompiled: bool,
     language: Optional[str] = None,
     base_address: Union[str, int, None] = None,
