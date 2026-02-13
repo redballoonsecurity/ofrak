@@ -70,6 +70,7 @@ def unpack(
     memory_regions: Optional[List[Dict[str, Any]]] = None,
     entry_points: Optional[List[int]] = None,
     show_progress: bool = False,
+    file_hash: Optional[str] = None,
 ):
     try:
         LOGGER.info("Analyzing program. This might take a while.")
@@ -182,10 +183,13 @@ def unpack(
             main_dictionary["metadata"]["path"] = program_file
             if base_address is not None:
                 main_dictionary["metadata"]["base_address"] = base_address
-            with open(program_file, "rb") as fh:
-                data = fh.read()
-                md5_hash = hashlib.md5(data)
-                main_dictionary["metadata"]["hash"] = md5_hash.digest().hex()
+            if file_hash is not None:
+                main_dictionary["metadata"]["hash"] = file_hash
+            else:
+                with open(program_file, "rb") as fh:
+                    data = fh.read()
+                    md5_hash = hashlib.md5(data)
+                    main_dictionary["metadata"]["hash"] = md5_hash.digest().hex()
 
             LOGGER.info(f"Program contains {len(code_regions)} code regions")
             for code_region in code_regions:

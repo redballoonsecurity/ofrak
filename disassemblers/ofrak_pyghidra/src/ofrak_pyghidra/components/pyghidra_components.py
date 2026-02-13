@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from tempfile312 import mkdtemp
+import hashlib
 import os
 from typing import Dict, Optional
 from xml.etree import ElementTree
@@ -217,6 +218,7 @@ class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
             MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
         )
 
+        md5_hash = hashlib.md5()
         memory_regions = []
         for region in regions:
             perms = get_memory_region_permissions(region.resource)
@@ -224,6 +226,7 @@ class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
                 continue
 
             region_data = await region.resource.get_data()
+            md5_hash.update(region_data)
             region_dict = {
                 "virtual_address": region.virtual_address,
                 "size": region.size,
@@ -244,6 +247,7 @@ class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
                 base_address=base_address,
                 memory_regions=memory_regions,
                 entry_points=entry_points,
+                file_hash=md5_hash.digest().hex(),
             ),
         )
         return PyGhidraCustomLoadProject()
