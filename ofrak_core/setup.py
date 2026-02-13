@@ -69,7 +69,7 @@ setuptools.setup(
         "ofrak": ["py.typed"],
     },
     install_requires=[
-        "aiohttp>=3.12.14",
+        "aiohttp>=3.13.3",
         "aiohttp-cors~=0.7.0",
         "beartype~=0.20.0",
         "bincopy>=20.0.0",
