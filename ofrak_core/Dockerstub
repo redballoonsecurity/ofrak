@@ -2,6 +2,7 @@ ARG TARGETARCH
 # - u-boot-tools: for mkimage, to test the UImage packer/unpacker
 # - zlib1g-dev, liblzma-dev: development headers needed for squashfs-tools compilation
 # - android-sdk-libsparse-utils: for img2simg and simg2img used by AndroidSparseImagePacker/Unpacker
+# - android-sdk-build-tools: for aapt used by ApkAnalyzer
 RUN apt-get -y update && \
     apt-get -y install --no-install-recommends \
       build-essential \
@@ -25,6 +26,7 @@ RUN apt-get -y update && \
       unzip \
       zstd \
       android-sdk-libsparse-utils \
+      android-sdk-build-tools \
     && rm -rf /var/lib/apt/lists/*
 
 # python-lzo needed by ubireader

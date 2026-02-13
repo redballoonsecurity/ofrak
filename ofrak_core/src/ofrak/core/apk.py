@@ -1,11 +1,14 @@
 import asyncio
 import os
 import pathlib
+import re
 import sys
 import tempfile312 as tempfile
 from subprocess import CalledProcessError
 from dataclasses import dataclass
+from typing import List, Optional
 
+from ofrak.component.analyzer import Analyzer
 from ofrak.component.identifier import Identifier
 from ofrak.component.packer import Packer
 from ofrak.component.unpacker import Unpacker
@@ -14,6 +17,7 @@ from ofrak.core.java import JavaArchive
 from ofrak.core.magic import MagicMimePattern
 from ofrak.core.zip import ZipArchive, UNZIP_TOOL
 from ofrak.model.component_model import ComponentConfig, ComponentExternalTool
+from ofrak.model.resource_model import ResourceAttributes
 from ofrak.resource import Resource
 from ofrak_type.range import Range
 
@@ -77,9 +81,150 @@ class _UberApkSignerTool(ComponentExternalTool):
 
 UBER_APK_SIGNER = _UberApkSignerTool()
 
+AAPT = ComponentExternalTool(
+    "aapt",
+    "https://developer.android.com/tools/releases/build-tools",
+    "version",
+    apt_package="android-sdk-build-tools",
+)
+
+
+@dataclass(**ResourceAttributes.DATACLASS_PARAMS)
+class ApkAttributes(ResourceAttributes):
+    """
+    Attributes extracted from an Android APK package using aapt.
+
+    :param package_name: The unique package identifier (e.g., 'com.example.app')
+    :param application_name: The human-readable application name
+    :param version_code: Integer version code for internal versioning
+    :param sdk_version: Minimum SDK version required to run the app
+    :param target_sdk_version: Target SDK version the app was built for
+    :param permissions: List of Android permissions requested by the app
+    :param launchable_activity: Main activity that launches the app
+    """
+
+    package_name: str
+    application_name: Optional[str]
+    version_code: int
+    sdk_version: int
+    target_sdk_version: int
+    permissions: List[str]
+    launchable_activity: Optional[str]
+
 
 class Apk(ZipArchive):
     pass
+
+
+class ApkAnalyzer(Analyzer[None, ApkAttributes]):
+    """
+    Analyzes Android APK packages using aapt to extract package metadata including package name,
+    application name, version information, SDK requirements, permissions, and launchable activity.
+    The analyzer parses structured output from aapt dump badging to extract key APK attributes
+    useful for understanding app identity, requirements, and capabilities. Use when you need to
+    identify an APK's package name, determine version and SDK requirements, audit requested
+    permissions, or find the main activity without unpacking the entire APK.
+    """
+
+    id = b"ApkAnalyzer"
+    targets = (Apk,)
+    outputs = (ApkAttributes,)
+    external_dependencies = (AAPT,)
+
+    async def analyze(self, resource: Resource, config=None) -> ApkAttributes:
+        async with resource.temp_to_disk(suffix=".apk") as temp_path:
+            cmd = ["aapt", "dump", "badging", temp_path]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate()
+            if proc.returncode:
+                raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
+
+            output = stdout.decode("utf-8")
+            return self._parse_aapt_output(output)
+
+    def _parse_aapt_output(self, output: str) -> ApkAttributes:
+        """
+        Parse aapt dump badging output to extract APK attributes.
+
+        :param output: Raw output from aapt dump badging command
+
+        :return: Parsed APK attributes
+        """
+        lines = output.split("\n")
+
+        package_name = None
+        version_code = None
+        sdk_version = None
+        target_sdk_version = None
+        application_name = None
+        launchable_activity = None
+        permissions = []
+
+        for line in lines:
+            # Parse package line: package: name='com.example' versionCode='123' ...
+            if line.startswith("package:"):
+                package_match = re.search(r"name='([^']+)'", line)
+                if package_match:
+                    package_name = package_match.group(1)
+
+                version_code_match = re.search(r"versionCode='([^']+)'", line)
+                if version_code_match:
+                    version_code = int(version_code_match.group(1))
+
+            # Parse sdkVersion line: sdkVersion:'23'
+            elif line.startswith("sdkVersion:"):
+                sdk_match = re.search(r"sdkVersion:'(\d+)'", line)
+                if sdk_match:
+                    sdk_version = int(sdk_match.group(1))
+
+            # Parse targetSdkVersion line: targetSdkVersion:'30'
+            elif line.startswith("targetSdkVersion:"):
+                target_match = re.search(r"targetSdkVersion:'(\d+)'", line)
+                if target_match:
+                    target_sdk_version = int(target_match.group(1))
+
+            # Parse application-label line: application-label:'MyApp'
+            elif line.startswith("application-label:") and not line.startswith(
+                "application-label-"
+            ):
+                label_match = re.search(r"application-label:'([^']+)'", line)
+                if label_match:
+                    application_name = label_match.group(1)
+
+            # Parse launchable-activity line: launchable-activity: name='com.example.MainActivity' ...
+            elif line.startswith("launchable-activity:"):
+                activity_match = re.search(r"name='([^']+)'", line)
+                if activity_match:
+                    launchable_activity = activity_match.group(1)
+
+            # Parse uses-permission line: uses-permission: name='android.permission.INTERNET'
+            elif line.startswith("uses-permission:"):
+                permission_match = re.search(r"name='([^']+)'", line)
+                if permission_match:
+                    permissions.append(permission_match.group(1))
+
+        if package_name is None:
+            raise ValueError("Failed to extract package name from aapt output")
+        if version_code is None:
+            raise ValueError("Failed to extract version code from aapt output")
+        if sdk_version is None:
+            raise ValueError("Failed to extract SDK version from aapt output")
+        if target_sdk_version is None:
+            raise ValueError("Failed to extract target SDK version from aapt output")
+
+        return ApkAttributes(
+            package_name=package_name,
+            application_name=application_name,
+            version_code=version_code,
+            sdk_version=sdk_version,
+            target_sdk_version=target_sdk_version,
+            permissions=permissions,
+            launchable_activity=launchable_activity,
+        )
 
 
 class ApkUnpacker(Unpacker[None]):

@@ -1,5 +1,5 @@
 """
-Test APK unpacking and packing functionality.
+Test APK unpacking, packing, and analysis functionality.
 
 Requirements Mapping:
 - REQ1.3
@@ -10,7 +10,7 @@ import requests
 
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
-from ofrak.core.apk import Apk, ApkPacker, ApkPackerConfig, ApkUnpacker
+from ofrak.core.apk import Apk, ApkAnalyzer, ApkAttributes, ApkPacker, ApkPackerConfig, ApkUnpacker
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackPackPattern
 
 
@@ -52,3 +52,34 @@ class TestApkUnpackPack(UnpackPackPattern):
 
     async def verify(self, repacked_root_resource: Resource) -> None:
         await self.unpack(repacked_root_resource)
+
+
+@pytest.mark.skipif_missing_deps([ApkAnalyzer])
+class TestApkAnalyzer:
+    """
+    Test APK analyzer extracts correct metadata from APK files.
+    """
+
+    async def test_analyzer_extracts_all_attributes(self, ofrak_context: OFRAKContext):
+        """
+        Test that the analyzer extracts all APK attributes correctly from a real APK.
+        """
+        # Download test APK
+        url = "https://github.com/appium/sample-apps/raw/0e92532585431d3b362c1ff12c65b54936fbe26f/pre-built/ContactManager.apk"
+        r = requests.get(url)
+        data = r.content
+        resource = await ofrak_context.create_root_resource("ContactManager.apk", data, tags=(Apk,))
+
+        # Run the analyzer
+        await resource.run(ApkAnalyzer)
+        attributes = resource.get_attributes(ApkAttributes)
+
+        assert attributes.package_name == "com.example.android.contactmanager"
+        assert attributes.application_name == "Contact Manager"
+        assert attributes.version_code == 1
+        assert attributes.sdk_version == 7
+        assert attributes.target_sdk_version == 17
+        assert len(attributes.permissions) == 2
+        assert "android.permission.INTERNET" in attributes.permissions
+        assert "android.permission.READ_CONTACTS" in attributes.permissions
+        assert attributes.launchable_activity == "com.example.android.contactmanager.ContactManager"
