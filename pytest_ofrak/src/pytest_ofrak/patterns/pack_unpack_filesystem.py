@@ -163,6 +163,11 @@ class FilesystemPackUnpackVerifyPattern(ABC):
     def _validate_folder_equality(self, old_path: str, new_path: str):
         old_files = os.listdir(old_path)
         new_files = os.listdir(new_path)
+        # a "lost+found" directory might be created when flushed to disk, but might also happen to be present in the filesystem, so ignore it:
+        if "lost+found" in old_files:
+            old_files.remove("lost+found")
+        if "lost+found" in new_files:
+            new_files.remove("lost+found")
         assert len(old_files) == len(new_files) and set(old_files) == set(
             new_files
         ), f"{old_path} and {new_path} contain different files\nold: {old_files}\nnew: {new_files}"
