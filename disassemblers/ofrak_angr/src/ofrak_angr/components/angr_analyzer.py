@@ -1,7 +1,7 @@
 import logging
 from io import BytesIO
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any, List, Optional, Tuple
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.model.component_model import ComponentConfig
@@ -11,7 +11,11 @@ import archinfo
 import angr.project
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.elf.model import Elf, ElfHeader, ElfType
-from ofrak.core.memory_region import MemoryRegion, get_memory_region_permissions
+from ofrak.core.memory_region import (
+    MemoryRegion,
+    get_effective_memory_permissions,
+    get_memory_region_permissions,
+)
 from ofrak_type.architecture import InstructionSet
 from ofrak_type.bit_width import BitWidth
 from ofrak_type.endianness import Endianness
@@ -154,17 +158,27 @@ class AngrCustomLoadAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
             regions.sort(key=lambda r: r.virtual_address)
             combined_data = bytearray()
             segments = []
+            code_regions: List[Tuple[int, int]] = []
             for region in regions:
                 perms = get_memory_region_permissions(region.resource)
                 if perms is not None and perms.permissions == MemoryPermissions.NONE:
                     continue
                 region_data = await region.resource.get_data()
                 file_offset = len(combined_data)
-                segments.append((file_offset, region.virtual_address, region.size))
+                vaddr = region.virtual_address
+                size = region.size
+                segments.append((file_offset, vaddr, size))
                 combined_data.extend(region_data)
+
+                effective = get_effective_memory_permissions(region.resource)
+                if effective.value & MemoryPermissions.X.value:
+                    code_regions.append((vaddr, vaddr + size))
 
             if not segments:
                 raise ValueError("No accessible memory regions for analysis")
+
+            if not code_regions:
+                raise ValueError("No executable memory regions for analysis")
 
             main_opts["backend"] = "blob"
             main_opts["segments"] = segments
@@ -173,12 +187,24 @@ class AngrCustomLoadAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
 
             load_data = BytesIO(bytes(combined_data))
         else:
+            code_regions = []
             load_data = BytesIO(await resource.get_data())
 
         # User-supplied main_opts take priority over ProgramAttributes values
         project_args = dict(config.project_args)
         if main_opts:
             project_args["main_opts"] = {**main_opts, **project_args.get("main_opts", {})}
+
+        # Restrict CFGFast to executable regions to avoid scanning sparse gaps
+        if code_regions and "regions" not in config.cfg_analyzer_args:
+            cfg_args = dict(config.cfg_analyzer_args)
+            cfg_args["regions"] = code_regions
+            config = AngrAnalyzerConfig(
+                cfg_analyzer=config.cfg_analyzer,
+                cfg_analyzer_args=cfg_args,
+                project_args=config.project_args,
+                post_cfg_analysis_hook=config.post_cfg_analysis_hook,
+            )
 
         return _run_angr_analysis(load_data, project_args, config)
 

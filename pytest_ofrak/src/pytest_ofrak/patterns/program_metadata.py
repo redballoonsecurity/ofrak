@@ -141,6 +141,32 @@ async def add_rodata_region(
     return rodata_section
 
 
+async def add_distant_rw_region(
+    resource: Resource,
+    vaddr: int,
+    size: int = 0x1000,
+) -> Resource:
+    """
+    Add a small MemoryRegion child at a distant virtual address with explicit RW permissions.
+
+    Uses inline data (not a range into the parent) since the distant region doesn't
+    correspond to parent file content.
+    """
+    distant_region = await resource.create_child(
+        tags=(MemoryRegion,),
+        data=b"\x00" * size,
+    )
+    distant_region.add_view(
+        MemoryRegion(
+            virtual_address=vaddr,
+            size=size,
+        )
+    )
+    distant_region.add_attributes(MemoryRegionPermissions(MemoryPermissions.RW))
+    await distant_region.save()
+    return distant_region
+
+
 async def assert_complex_block_at_vaddr(resource: Resource, vaddr: int) -> ComplexBlock:
     """
     Assert a ComplexBlock at vaddr has non-zero size and BasicBlock children.
