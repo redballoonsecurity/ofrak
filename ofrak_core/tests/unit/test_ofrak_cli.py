@@ -10,6 +10,7 @@ import pytest
 from dataclasses import fields
 
 from ofrak.cli.command.gui import GUICommand
+from ofrak.component.abstract import ComponentSubprocessError
 from ofrak.ofrak_context import OFRAKContext
 
 from .. import components
@@ -251,7 +252,14 @@ async def all_expected_hashes(ofrak_context: OFRAKContext):
         expected_hashes = set()
         file_path = os.path.join(os.path.dirname(components.__file__), "assets", filename)
         res = await ofrak_context.create_root_resource_from_file(file_path)
-        await res.unpack()
+        try:
+            await res.unpack()
+        except ComponentSubprocessError:
+            # testtar.tar contains device nodes requiring root to extract
+            if filename == "testtar.tar" and os.geteuid() != 0:
+                all_expected_hashes[filename] = None
+                continue
+            raise
         for child in await res.get_descendants():
             if child.get_data_id() is not None:
                 data = await child.get_data()
@@ -272,6 +280,10 @@ def test_unpack(ofrak_cli_parser, capsys, filename, tmpdir, ofrak_context, all_e
     - The unpack command generates correct hash values for extracted files
     - The unpack command creates an info dump file with proper content
     """
+    expected_hashes = all_expected_hashes[filename]
+    if expected_hashes is None:
+        pytest.skip(f"Unpacking {filename} requires root")
+
     file_path = os.path.join(os.path.dirname(components.__file__), "assets", filename)
     ofrak_cli_parser.parse_and_run(["unpack", "-o", str(tmpdir), file_path])
 
@@ -284,7 +296,6 @@ def test_unpack(ofrak_cli_parser, capsys, filename, tmpdir, ofrak_context, all_e
             path = os.path.join(dirpath, unpacked_file)
             with open(path, "rb") as file:
                 unpacked_hashes.add(hashlib.sha256(file.read()).hexdigest())
-    expected_hashes = all_expected_hashes[filename]
 
     assert unpacked_hashes == expected_hashes
 
