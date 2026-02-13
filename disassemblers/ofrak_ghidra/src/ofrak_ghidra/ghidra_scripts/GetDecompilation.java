@@ -35,7 +35,7 @@ public class GetDecompilation extends HeadlessScript {
     @Override
     public void run() throws Exception {
         try {
-            Integer funcAddr = Integer.parseInt(getScriptArgs()[0]);
+            long funcAddr = Long.parseLong(getScriptArgs()[0]);
             Function func = getFunctionAt(toAddr(funcAddr));
             String response = new GetDecompilation.Result(func).toJson();
 
