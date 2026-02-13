@@ -48,10 +48,12 @@ def ghidra_is_running() -> bool:
 
     yield ghidra_is_running
 
-    if ghidra_is_running:
-        server_main._run_ghidra_server()
-    else:
+    # Restore based on actual current state,
+    # so cleanup doesn't fail if the test itself failed partway through.
+    if _is_ghidra_server_running() and not ghidra_is_running:
         server_main._stop_ghidra_server()
+    elif not _is_ghidra_server_running() and ghidra_is_running:
+        server_main._run_ghidra_server()
 
 
 def test_start_stop_ghidra_server(ghidra_is_running: bool):

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import pytest
 
 from ofrak_ghidra.config.__main__ import _dump_config, _import_config, _restore_config
-from ofrak_ghidra.config.ofrak_ghidra_config import load_ghidra_config
+from ofrak_ghidra.config.ofrak_ghidra_config import load_ghidra_config, save_ghidra_config
 
 DEFAULT_CONFIG = """ghidra_install:
   log_file: ~/.ghidra/.ghidra_11.3.2_PUBLIC/application.log
@@ -46,13 +46,16 @@ class Args:
     config_path: str
 
 
-@pytest.fixture
-def restore_config_after_test():
+@pytest.fixture(autouse=True)
+def isolate_config():
     """
-    Make sure default config is restored at end of test.
+    Save the user's config before each test, reset to defaults for the test,
+    and restore the original config afterward so user settings are not corrupted.
     """
-    yield
+    original = load_ghidra_config()
     _restore_config(None)
+    yield
+    save_ghidra_config(original)
 
 
 def test_dump_config(capsys):
@@ -65,7 +68,7 @@ def test_dump_config(capsys):
     _validate_config(capsys, DEFAULT_CONFIG)
 
 
-def test_import_config(capsys, tmp_path, restore_config_after_test):
+def test_import_config(capsys, tmp_path):
     """
     Test that importing a config changes the default config.
 
@@ -85,7 +88,7 @@ def test_import_config(capsys, tmp_path, restore_config_after_test):
     _validate_config(capsys, MODIFIED_CONFIG)
 
 
-def test_restore_config(capsys, tmp_path, restore_config_after_test):
+def test_restore_config(capsys, tmp_path):
     """
     Test that "ofrak_ghidra.config restore" restores the default config file.
 
