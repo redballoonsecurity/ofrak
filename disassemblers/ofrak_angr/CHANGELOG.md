@@ -3,7 +3,7 @@ All notable changes to `ofrak-angr` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased 1.2.0](https://github.com/redballoonsecurity/ofrak/tree/master)
+## [Unreleased 2.0.0](https://github.com/redballoonsecurity/ofrak/tree/master)
 
 ### Added
 - Add `AngrAutoLoadProject` / `AngrCustomLoadProject` tags and `AngrCustomLoadAnalyzer` for custom binary loading with `ProgramAttributes` metadata ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
