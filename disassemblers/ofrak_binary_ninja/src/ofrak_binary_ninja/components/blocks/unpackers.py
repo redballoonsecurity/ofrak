@@ -149,6 +149,9 @@ class BinaryNinjaCodeRegionUnpacker(CodeRegionUnpacker):
                     end_ea = literal_pool_search_addr
                 else:
                     literal_pool_search_addr += 1
+            # Clip to code region boundary (NOP scanning and literal pool
+            # extension can push end_ea past the region)
+            end_ea = min(end_ea, region_end_vaddr)
             yield start_ea, end_ea, name
 
 

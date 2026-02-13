@@ -206,6 +206,7 @@ def unpack(
                 if len(func_cbs) == 0:
                     continue
 
+                region_end = code_region["virtual_address"] + code_region["size"]
                 for func, cb in tqdm(func_cbs, unit="CB", smoothing=0, disable=not show_progress):
                     cb_key = f"func_{cb['virtual_address']}"
                     code_region["children"].append(cb_key)
@@ -218,7 +219,7 @@ def unpack(
                         cb["decompilation"] = decompilation
                     bb_model = BasicBlockModel(flat_api.getCurrentProgram())
                     basic_blocks, data_words = _unpack_complex_block(
-                        func, flat_api, bb_model, BigInteger.ONE
+                        func, flat_api, bb_model, BigInteger.ONE, region_end=region_end
                     )
                     cb["children"] = []
                     for block, bb in basic_blocks:
@@ -310,16 +311,13 @@ def _concat_contiguous_code_blocks(code_regions):
 
 def _unpack_code_region(code_region, flat_api):
     functions = []
+    region_end = code_region["virtual_address"] + code_region["size"]
     start_address = (
         flat_api.getAddressFactory()
         .getDefaultAddressSpace()
         .getAddress(hex(code_region["virtual_address"]))
     )
-    end_address = (
-        flat_api.getAddressFactory()
-        .getDefaultAddressSpace()
-        .getAddress(hex(code_region["virtual_address"] + code_region["size"]))
-    )
+    end_address = flat_api.getAddressFactory().getDefaultAddressSpace().getAddress(hex(region_end))
     func = flat_api.getFunctionAt(start_address)
     if func is None:
         func = flat_api.getFunctionAfter(start_address)
@@ -331,6 +329,7 @@ def _unpack_code_region(code_region, flat_api):
         start = _parse_offset(func.getEntryPoint())
         end, _ = _get_last_address(func, flat_api)
         if end is not None:
+            end = min(end, region_end)
             cb = {
                 "virtual_address": virtual_address,
                 "size": end - start,
@@ -341,7 +340,7 @@ def _unpack_code_region(code_region, flat_api):
     return functions
 
 
-def _unpack_complex_block(func, flat_api, bb_model, one):
+def _unpack_complex_block(func, flat_api, bb_model, one, region_end):
     bbs = []
     bb_iter = bb_model.getCodeBlocksContaining(func.getBody(), flat_api.monitor)
     for block in bb_iter:
@@ -402,10 +401,11 @@ def _unpack_complex_block(func, flat_api, bb_model, one):
         bbs.append((ghidra_block, bb))
 
     end_data_addr, end_code_addr = _get_last_address(func, flat_api)
+    end_data_addr = min(end_data_addr, region_end)
 
     dws = []
     data = flat_api.getDataAt(end_code_addr)
-    while data is not None and _parse_offset(data.getAddress()) <= end_data_addr:
+    while data is not None and _parse_offset(data.getAddress()) < end_data_addr:
         num_words = 1
         word_size = data.getLength()
         if word_size == 1:
