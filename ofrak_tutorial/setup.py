@@ -1,5 +1,4 @@
 import setuptools
-import pkg_resources
 from setuptools.command.egg_info import egg_info
 
 
@@ -20,18 +19,9 @@ with open("LICENSE") as f:
     license = "".join(["\n", f.read()])
 
 
-# Should be the same as in build_image.py
-def read_requirements(requirements_path):
-    with open(requirements_path) as requirements_handle:
-        return [
-            str(requirement)
-            for requirement in pkg_resources.parse_requirements(requirements_handle)
-        ]
-
-
 setuptools.setup(
     name="ofrak_tutorial",
-    version="0.1.1",
+    version="0.1.2rc0",
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",
     description="OFRAK tutorial",
@@ -39,9 +29,9 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="",
     packages=["ofrak_tutorial"],
-    install_requires=read_requirements("requirements.txt"),
+    install_requires=["notebook>=6.4.10"],
     extras_require={
-        "test": read_requirements("requirements-test.txt"),
+        "test": ["nbval>=0.9.6"],
     },
     python_requires=">=3.9",
     license=license,
