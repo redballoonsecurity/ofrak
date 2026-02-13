@@ -105,7 +105,7 @@ public class CreateMemoryBlocks extends HeadlessScript {
 
             try {
                 if (offset >= 0){
-                    block = mem.createInitializedBlock(name, toAddr(address), fileBytes, offset, size, true);
+                    block = mem.createInitializedBlock(name, toAddr(address), fileBytes, offset, size, false);
                 } else {
                     block = mem.createUninitializedBlock(name, toAddr(address), size, false);
                 }
