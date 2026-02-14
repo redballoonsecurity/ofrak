@@ -54,7 +54,9 @@ def _run_angr_analysis(
     Create an angr project, run CFG analysis, and execute post-analysis hook.
     """
     project = angr.project.Project(load_data, load_options=project_args)
-    angr.analyses.analysis.AnalysisFactory(project, config.cfg_analyzer)(**config.cfg_analyzer_args)
+    cfg = angr.analyses.analysis.AnalysisFactory(project, config.cfg_analyzer)(
+        **config.cfg_analyzer_args
+    )
     exec(config.post_cfg_analysis_hook)
     return AngrAnalysis(project)
 
@@ -167,7 +169,7 @@ class AngrCustomLoadAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
                 file_offset = len(combined_data)
                 vaddr = region.virtual_address
                 size = region.size
-                segments.append((file_offset, vaddr, size))
+                segments.append((file_offset, vaddr, len(region_data)))
                 combined_data.extend(region_data)
 
                 effective = get_effective_memory_permissions(region.resource)
