@@ -214,8 +214,11 @@ class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
             base_address = program_attrs.base_address
 
         # Prepare memory regions data
-        regions = await resource.get_children_as_view(
-            MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
+        regions = sorted(
+            await resource.get_children_as_view(
+                MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
+            ),
+            key=lambda r: r.virtual_address,
         )
 
         md5_hash = hashlib.md5()
