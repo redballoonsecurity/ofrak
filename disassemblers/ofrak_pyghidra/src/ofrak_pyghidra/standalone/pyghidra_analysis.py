@@ -44,6 +44,8 @@ def unpack(
             program_file = os.path.join(tempdir, "program")
             with open(program_file, "wb") as f:
                 f.write(b"\x00")
+        if program_file is None:
+            raise ValueError("Either program_file or memory_regions must be provided")
         with pyghidra.open_program(program_file, language=language) as flat_api:
             LOGGER.info("Analysis completed. Caching analysis to JSON")
             # Java packages must be imported after pyghidra.start or pyghidra.open_program
@@ -119,7 +121,6 @@ def unpack(
             main_dictionary["metadata"]["path"] = program_file
             if base_address is not None:
                 main_dictionary["metadata"]["base_address"] = base_address
-            assert program_file is not None  # guaranteed by earlier logic
             with open(program_file, "rb") as fh:
                 data = fh.read()
                 md5_hash = hashlib.md5(data)

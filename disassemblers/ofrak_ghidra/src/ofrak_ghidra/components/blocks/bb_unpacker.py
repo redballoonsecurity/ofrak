@@ -3,7 +3,7 @@ import os
 import re
 from collections import defaultdict
 from typing import Tuple, List, Iterable
-from typing_extensions import TypedDict
+from typing_extensions import NotRequired, TypedDict
 
 from ofrak.core.architecture import ProgramAttributes
 from ofrak_type.architecture import InstructionSet, InstructionSetMode
@@ -32,7 +32,7 @@ class InstructionInfo(TypedDict):
     results: str
     regs_read: str
     regs_written: str
-    instr_mode: str
+    instr_mode: NotRequired[str]
 
 
 _GetInstructionsRequest = Tuple[Resource, int, int]

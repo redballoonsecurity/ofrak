@@ -30,7 +30,11 @@ from ofrak_cached_disassembly.components.cached_disassembly_unpacker import (
     CachedGhidraCodeRegionModifier as _BaseCachedGhidraCodeRegionModifier,
     CachedDecompilationAnalyzer,
 )
-from ofrak_pyghidra.standalone.pyghidra_analysis import unpack, decompile_all_functions
+from ofrak_pyghidra.standalone.pyghidra_analysis import (
+    PyGhidraComponentException,
+    unpack,
+    decompile_all_functions,
+)
 from ofrak_type.error import NotFoundError
 
 
@@ -369,8 +373,6 @@ def _arch_info_to_processor_id(processor: ArchInfo):
     }
     family = families.get(processor.isa)
     if family is None:
-        from ofrak_pyghidra.standalone.pyghidra_analysis import PyGhidraComponentException
-
         raise PyGhidraComponentException(
             f"Could not determine processor family for ISA {processor.isa}"
         )
