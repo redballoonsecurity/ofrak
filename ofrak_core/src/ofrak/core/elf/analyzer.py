@@ -1,6 +1,6 @@
 import io
 import logging
-from typing import Optional, TypeVar
+from typing import Optional, Tuple, TypeVar
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.core import NamedProgramSection
@@ -11,6 +11,8 @@ from ofrak.core.elf.model import (
     ElfHeader,
     ElfBasicHeader,
     ElfProgramHeader,
+    ElfProgramHeaderType,
+    ElfType,
     ElfSegmentStructure,
     ElfSegment,
     ElfSectionStructure,
@@ -414,6 +416,7 @@ class ElfProgramAttributesAnalyzer(Analyzer[None, ProgramAttributes]):
     async def analyze(
         self, resource: Resource, config: Optional[ComponentConfig] = None
     ) -> ProgramAttributes:
+        elf = await resource.view_as(Elf)
         elf_header = await resource.get_only_descendant_as_view(
             ElfHeader, r_filter=ResourceFilter.with_tags(ElfHeader)
         )
@@ -421,12 +424,28 @@ class ElfProgramAttributesAnalyzer(Analyzer[None, ProgramAttributes]):
             ElfBasicHeader, r_filter=ResourceFilter.with_tags(ElfBasicHeader)
         )
 
+        # e_entry is meaningless for relocatable objects (ET_REL); always 0
+        if elf_header.e_type == ElfType.ET_REL.value:
+            entry_points: Tuple[int, ...] = ()
+        else:
+            entry_points = (elf_header.e_entry,)
+
+        # Base address from first PT_LOAD segment (None for relocatable objects)
+        base_address: Optional[int] = None
+        program_headers = await elf.get_program_headers()
+        for phdr in program_headers:
+            if phdr.p_type == ElfProgramHeaderType.LOAD.value:
+                base_address = phdr.p_vaddr
+                break
+
         return ProgramAttributes(
             elf_header.get_isa(),
             None,
             elf_basic_header.get_bitwidth(),
             elf_basic_header.get_endianness(),
             None,
+            entry_points=entry_points,
+            base_address=base_address,
         )
 
 

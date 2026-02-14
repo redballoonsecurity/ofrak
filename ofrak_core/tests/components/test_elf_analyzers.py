@@ -604,6 +604,7 @@ async def test_elf_program_attributes_analyzer(ofrak_context: OFRAKContext):
         BitWidth.BIT_32,
         Endianness.LITTLE_ENDIAN,
         None,
+        entry_points=(0,),
     )
     elf_r = await _create_populated_elf(
         ofrak_context,

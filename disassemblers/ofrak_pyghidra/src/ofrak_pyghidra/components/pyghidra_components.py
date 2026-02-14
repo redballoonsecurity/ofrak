@@ -1,14 +1,19 @@
 from dataclasses import dataclass
 from tempfile312 import mkdtemp
+import hashlib
 import os
-from typing import Dict
+from typing import Dict, Optional
 from xml.etree import ElementTree
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.complex_block import ComplexBlock
 from ofrak.core.decompilation import DecompilationAnalysis
-from ofrak.core.memory_region import MemoryRegion
+from ofrak.core.memory_region import (
+    MemoryRegion,
+    get_memory_region_permissions,
+    get_effective_memory_permissions,
+)
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.resource_service_i import ResourceFilter, ResourceServiceInterface
 from ofrak_type import ArchInfo, Endianness, InstructionSet
@@ -32,6 +37,7 @@ from ofrak_cached_disassembly.components.cached_disassembly_unpacker import (
 )
 from ofrak_pyghidra.standalone.pyghidra_analysis import unpack, decompile_all_functions
 from ofrak_type.error import NotFoundError
+from ofrak_type.memory_permissions import MemoryPermissions
 
 
 _GHIDRA_AUTO_LOADABLE_FORMATS = [Elf, Ihex, Pe]
@@ -129,7 +135,9 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraAutoLoadProject]):
         super().__init__(resource_factory, data_service, resource_service)
         self.analysis_store = analysis_store
 
-    async def analyze(self, resource: Resource, config: PyGhidraAnalyzerConfig = None):
+    async def analyze(
+        self, resource: Resource, config: Optional[PyGhidraAnalyzerConfig] = None
+    ) -> PyGhidraAutoLoadProject:
         tempdir = mkdtemp(prefix="rbs-pyghidra-bin")
         await resource.identify()  # useful for checking tags later
         try:
@@ -151,23 +159,10 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraAutoLoadProject]):
                 )
                 return PyGhidraAutoLoadProject()
 
-        program_attrs = resource.get_attributes(ProgramAttributes)
-        # Guess that the base address is the min start address of any memory region
-        regions = await resource.get_children_as_view(
-            MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
+        raise ValueError(
+            f"Resource {resource.get_id()!r} has PyGhidraAutoLoadProject tag but no "
+            f"recognized auto-loadable format tag"
         )
-        base_address = min(code_region.virtual_address for code_region in regions)
-
-        self.analysis_store.store_analysis(
-            resource.get_id(),
-            unpack(
-                program_file,
-                decomp,
-                language=_arch_info_to_processor_id(program_attrs),
-                base_address=base_address,
-            ),
-        )
-        return PyGhidraAutoLoadProject()
 
 
 class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
@@ -194,37 +189,72 @@ class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
         super().__init__(resource_factory, data_service, resource_service)
         self.analysis_store = analysis_store
 
-    async def analyze(self, resource: Resource, config: PyGhidraAnalyzerConfig):
+    async def analyze(
+        self, resource: Resource, config: Optional[PyGhidraAnalyzerConfig] = None
+    ) -> PyGhidraCustomLoadProject:
+        try:
+            program_attrs = resource.get_attributes(ProgramAttributes)
+        except NotFoundError:
+            program_attrs = None
+
         if config is None:
-            try:
-                program_attrs = resource.get_attributes(ProgramAttributes)
-                language = _arch_info_to_processor_id(program_attrs)
-            except NotFoundError:
-                language = None
+            language = (
+                _arch_info_to_processor_id(program_attrs) if program_attrs is not None else None
+            )
             decomp = False
         else:
             decomp = config.decomp
             language = config.language
 
+        entry_points = None
+        base_address = None
+        if program_attrs is not None:
+            if program_attrs.entry_points:
+                entry_points = list(program_attrs.entry_points)
+            base_address = program_attrs.base_address
+
         # Prepare memory regions data
-        regions = await resource.get_children_as_view(
-            MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
+        regions = sorted(
+            await resource.get_children_as_view(
+                MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
+            ),
+            key=lambda r: r.virtual_address,
         )
 
+        md5_hash = hashlib.md5()
         memory_regions = []
         for region in regions:
+            perms = get_memory_region_permissions(region.resource)
+            if perms is not None and perms.permissions == MemoryPermissions.NONE:
+                continue
+
             region_data = await region.resource.get_data()
-            memory_regions.append(
-                {
-                    "virtual_address": region.virtual_address,
-                    "size": region.size,
-                    "data": region_data,
-                }
-            )
+            md5_hash.update(region_data)
+            region_dict = {
+                "virtual_address": region.virtual_address,
+                "size": region.size,
+                "data": region_data,
+                "permissions": get_effective_memory_permissions(region.resource).value,
+            }
+            memory_regions.append(region_dict)
+
+        if not memory_regions:
+            raise ValueError("No accessible memory regions for analysis")
+
+        if not any(r["permissions"] & MemoryPermissions.X.value for r in memory_regions):
+            raise ValueError("No executable memory regions for analysis")
 
         self.analysis_store.store_analysis(
             resource.get_id(),
-            unpack(None, decomp, language=language, memory_regions=memory_regions),
+            unpack(
+                None,
+                decomp,
+                language=language,
+                base_address=base_address,
+                memory_regions=memory_regions,
+                entry_points=entry_points,
+                file_hash=md5_hash.digest().hex(),
+            ),
         )
         return PyGhidraCustomLoadProject()
 

@@ -20,7 +20,7 @@ with open("LICENSE") as f:
 
 setuptools.setup(
     name="ofrak_binary_ninja",
-    version="0.1.0",
+    version="0.2.0rc1",
     author="Red Balloon Security",
     author_email="ofrak@redballoonsecurity.com",
     description="OFRAK Binary Ninja Components",

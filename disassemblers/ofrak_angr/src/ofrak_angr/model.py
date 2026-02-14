@@ -11,3 +11,11 @@ class AngrAnalysis(ResourceAttributes):
 
 class AngrAnalysisResource(ResourceView):
     pass
+
+
+class AngrAutoLoadProject(AngrAnalysisResource):
+    pass
+
+
+class AngrCustomLoadProject(AngrAnalysisResource):
+    pass

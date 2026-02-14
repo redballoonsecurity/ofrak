@@ -3,9 +3,11 @@ All notable changes to `ofrak-pyghidra` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased 0.2.0rc5](https://github.com/redballoonsecurity/ofrak/tree/master)
+## [Unreleased 0.2.0rc6](https://github.com/redballoonsecurity/ofrak/tree/master)
 
 ### Added
+- Support `ProgramAttributes` `entry_points` and `base_address` fields for passing program metadata to PyGhidra ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
+- Support `MemoryRegionPermissions` attribute for fine-grained memory region permission control ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
 - Add a PyGhidra custom load analyzer to allow for loading programs with a custom layout ([#677](https://github.com/redballoonsecurity/ofrak/pull/677))
 - Add detailed logging output and progress indicators to standalone analysis script ([#672](https://github.com/redballoonsecurity/ofrak/pull/672))
 
@@ -15,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Fix redundant re-analysis of complex blocks in the standalone analysis script ([#672](https://github.com/redballoonsecurity/ofrak/pull/672))
 
 ### Changed
+- `PyGhidraAutoAnalyzer` no longer falls back to custom loading for non-auto-loadable formats; use `PyGhidraCustomLoadAnalyzer` instead ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
 - Reduce the decompilation time of PyGhidra by reusing cached unpacking results. ([#623](https://github.com/redballoonsecurity/ofrak/pull/623))
 - Improve `ofrak_pyghidra` decompilation: more strings and symbol names for cross-references in decompilation. ([#633](https://github.com/redballoonsecurity/ofrak/pull/633))
 - Improve unpacking logic, error messages, and testing for `ofrak_pyghidra` auto analyzer ([#637](https://github.com/redballoonsecurity/ofrak/pull/637))

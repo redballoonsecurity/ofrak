@@ -3,6 +3,7 @@ Test the unpacking functionality of OFRAK with Angr disassembler backend.
 
 Requirements Mapping:
 - REQ1.2
+- REQ2.2
 - REQ2.3
 """
 from typing import Dict
@@ -20,10 +21,23 @@ from pytest_ofrak.patterns.complex_block_unpacker import (
     ComplexBlockUnpackerTestCase,
     ComplexBlockUnpackerUnpackAndVerifyPattern,
 )
+from pytest_ofrak.patterns.program_metadata import (
+    custom_binary_resource,  # noqa: F401
+    setup_program_flat,
+    setup_program_with_code_region,
+    add_rodata_region,
+    add_distant_rw_region,
+    assert_complex_block_at_vaddr,
+)
 from ofrak import OFRAKContext
 from ofrak import ResourceFilter, ResourceAttributeValueFilter
 from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.core.addressable import Addressable
+from ofrak_angr.components.angr_analyzer import (
+    AngrAnalyzerConfig,
+    AngrCustomLoadAnalyzer,
+)
+from ofrak_angr.model import AngrAnalysis, AngrCustomLoadProject
 
 
 class TestAngrCodeRegionUnpackAndVerify(CodeRegionUnpackAndVerifyPattern):
@@ -195,3 +209,71 @@ async def test_basic_block_no_exit(ofrak_context: OFRAKContext, busybox_resource
 
     await complexblock_0x4d8768.unpack()
     # In the past, unpacking that ComplexBlock would fail because it contains a BasicBlock that doens't have an exit address
+
+
+async def test_angr_custom_load_single_region(custom_binary_resource):
+    """Test angr custom loading with a single CodeRegion segment (REQ2.2)."""
+    base_address = 0x400000
+    text_vaddr = base_address
+    text_section = await setup_program_with_code_region(
+        custom_binary_resource, base_address=base_address, text_vaddr=text_vaddr
+    )
+    assert custom_binary_resource.has_tag(AngrCustomLoadProject)
+
+    await custom_binary_resource.run(AngrCustomLoadAnalyzer)
+
+    angr_analysis = custom_binary_resource.get_attributes(AngrAnalysis)
+    assert angr_analysis.project.loader.main_object.min_addr == base_address
+
+    await text_section.unpack()
+    await assert_complex_block_at_vaddr(custom_binary_resource, text_vaddr)
+
+
+async def test_angr_custom_loader_with_memory_regions(custom_binary_resource):
+    """Test angr custom loading with multiple MemoryRegion segments (REQ2.2)."""
+    text_vaddr = 0x400130
+    text_section = await setup_program_with_code_region(
+        custom_binary_resource, base_address=0x100000, text_vaddr=text_vaddr
+    )
+    await add_rodata_region(custom_binary_resource, rodata_vaddr=0x40A0A0)
+    assert custom_binary_resource.has_tag(AngrCustomLoadProject)
+
+    await custom_binary_resource.run(AngrCustomLoadAnalyzer)
+
+    await text_section.unpack()
+    await assert_complex_block_at_vaddr(custom_binary_resource, text_vaddr)
+
+
+async def test_angr_custom_load_distant_rw_region(custom_binary_resource):
+    """Test that a distant RW region doesn't cause CFGFast to hang (REQ2.2)."""
+    text_vaddr = 0x400130
+    text_section = await setup_program_with_code_region(
+        custom_binary_resource, base_address=0x100000, text_vaddr=text_vaddr
+    )
+    await add_distant_rw_region(custom_binary_resource, vaddr=0x80000000)
+    assert custom_binary_resource.has_tag(AngrCustomLoadProject)
+
+    await custom_binary_resource.run(AngrCustomLoadAnalyzer)
+
+    await text_section.unpack()
+    await assert_complex_block_at_vaddr(custom_binary_resource, text_vaddr)
+
+
+async def test_angr_custom_load_flat(custom_binary_resource):
+    """Test angr flat-blob loading path (no MemoryRegion children) (REQ2.2)."""
+    base_address = 0x400000
+    await setup_program_flat(custom_binary_resource, base_address=base_address)
+    assert custom_binary_resource.has_tag(AngrCustomLoadProject)
+
+    angr_config = AngrAnalyzerConfig(
+        project_args={
+            "auto_load_libs": False,
+            "main_opts": {
+                "backend": "blob",
+            },
+        }
+    )
+    await custom_binary_resource.run(AngrCustomLoadAnalyzer, angr_config)
+
+    angr_analysis = custom_binary_resource.get_attributes(AngrAnalysis)
+    assert angr_analysis.project.loader.main_object.min_addr == base_address

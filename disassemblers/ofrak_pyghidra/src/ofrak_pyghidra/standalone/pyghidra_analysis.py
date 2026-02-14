@@ -3,14 +3,16 @@ import os
 import hashlib
 import traceback
 from typing import Any, Dict, Optional, Union, List
+
 import pyghidra
 import argparse
 import time
 import re
 import json
-import logging
 from tempfile312 import mkdtemp
 from tqdm import tqdm
+
+from ofrak_type.memory_permissions import MemoryPermissions
 
 LOGGER = logging.getLogger("ofrak_pyghidra")
 
@@ -26,13 +28,50 @@ def _parse_offset(java_object):
     return int(str(java_object.getOffsetAsBigInteger()))
 
 
+def _register_entry_points(flat_api, entry_points: List[int]) -> None:
+    """
+    Register entry points in the current Ghidra program.
+
+    Marks each address as code and adds it as a labeled external entry point so that
+    Ghidra's auto-analysis will discover functions starting at these addresses.
+    """
+    from ghidra.program.model.symbol import SourceType
+    from ghidra.util.exception import DuplicateNameException
+
+    program = flat_api.getCurrentProgram()
+    default_space = program.getAddressFactory().getDefaultAddressSpace()
+    symbol_table = program.getSymbolTable()
+
+    code_prop = program.getAddressSetPropertyMap("CodeMap")
+    if code_prop is None:
+        try:
+            code_prop = program.createAddressSetPropertyMap("CodeMap")
+        except DuplicateNameException:
+            code_prop = program.getAddressSetPropertyMap("CodeMap")
+
+    for i, entry_addr in enumerate(entry_points):
+        try:
+            addr = default_space.getAddress(entry_addr)
+            # Mark as code (matches Java CreateMemoryBlocks.markAsCode)
+            if code_prop is not None:
+                code_prop.add(addr, addr)
+            label_name = "entry" if i == 0 else f"entry_{i}"
+            symbol_table.createLabel(addr, label_name, SourceType.IMPORTED)
+            symbol_table.addExternalEntryPoint(addr)
+            LOGGER.info(f"Added entry point at 0x{entry_addr:x}")
+        except Exception as e:
+            LOGGER.warning(f"Failed to add entry point at 0x{entry_addr:x}: {e}")
+
+
 def unpack(
-    program_file: str,
+    program_file: Optional[str],
     decompiled: bool,
     language: Optional[str] = None,
     base_address: Union[str, int, None] = None,
     memory_regions: Optional[List[Dict[str, Any]]] = None,
+    entry_points: Optional[List[int]] = None,
     show_progress: bool = False,
+    file_hash: Optional[str] = None,
 ):
     try:
         LOGGER.info("Analyzing program. This might take a while.")
@@ -44,10 +83,17 @@ def unpack(
             program_file = os.path.join(tempdir, "program")
             with open(program_file, "wb") as f:
                 f.write(b"\x00")
-        with pyghidra.open_program(program_file, language=language) as flat_api:
-            LOGGER.info("Analysis completed. Caching analysis to JSON")
+        # Defer auto-analysis until after program modifications are complete
+        needs_pre_analysis_setup = (
+            bool(memory_regions) or bool(entry_points) or base_address is not None
+        )
+        with pyghidra.open_program(
+            program_file, language=language, analyze=not needs_pre_analysis_setup
+        ) as flat_api:
+            LOGGER.info("Program loaded. Caching analysis to JSON")
             # Java packages must be imported after pyghidra.start or pyghidra.open_program
             from ghidra.app.decompiler import DecompInterface, DecompileOptions
+            from ghidra.program.util import GhidraProgramUtilities
             from ghidra.util.task import TaskMonitor
             from ghidra.program.model.block import BasicBlockModel
             from ghidra.program.model.symbol import RefType
@@ -65,6 +111,11 @@ def unpack(
                     memory.removeBlock(block, TaskMonitor.DUMMY)
 
                 for region in memory_regions:
+                    # Safety net: the component already filters NONE-permission regions,
+                    # but this function is also callable standalone.
+                    permissions = region.get("permissions")
+                    if permissions is not None and permissions == MemoryPermissions.NONE.value:
+                        continue
                     addr = default_space.getAddress(region["virtual_address"])
                     data_bytes = region["data"]
                     block_name = f"region_{region['virtual_address']:x}"
@@ -82,27 +133,29 @@ def unpack(
                             False,  # overlay
                         )
 
-                        # Mark as executable
                         block = memory.getBlock(addr)
-                        block.setExecute(True)
-                        block.setRead(True)
+                        if permissions is not None:
+                            block.setRead(bool(permissions & MemoryPermissions.R.value))
+                            block.setWrite(bool(permissions & MemoryPermissions.W.value))
+                            block.setExecute(bool(permissions & MemoryPermissions.X.value))
+                        else:
+                            is_executable = region.get("executable", True)
+                            block.setRead(True)
+                            block.setWrite(not is_executable)
+                            block.setExecute(is_executable)
                     except Exception as e:
-                        logging.warning(
+                        LOGGER.warning(
                             f"Failed to create memory block at 0x{region['virtual_address']:x}: {e}"
                         )
-                # Analyze all
-                analysis_mgr = program.getOptions("Analyzers")
-                flat_api.analyzeAll(program)
-            # If base_address is provided, rebase the program
-            if base_address is not None:
-                # Convert base_address to int if it's a string
+
+            # Rebase only when memory_regions are absent (regions use absolute addresses)
+            if base_address is not None and not memory_regions:
                 if isinstance(base_address, str):
                     if base_address.startswith("0x"):
                         base_address = int(base_address, 16)
                     else:
                         base_address = int(base_address)
 
-                # Rebase the program to the specified base address
                 program = flat_api.getCurrentProgram()
                 address_factory = program.getAddressFactory()
                 new_base_addr = address_factory.getDefaultAddressSpace().getAddress(
@@ -110,6 +163,18 @@ def unpack(
                 )
                 program.setImageBase(new_base_addr, True)
                 LOGGER.info(f"Rebased program address to {hex(base_address)}")
+
+            if entry_points:
+                _register_entry_points(flat_api, entry_points)
+
+            if needs_pre_analysis_setup:
+                flat_api.analyzeAll(flat_api.getCurrentProgram())
+                # Mark as analyzed so that subsequent sessions opening the cached
+                # pyghidra project do not re-run analysis (which can clobber results).
+                if hasattr(GhidraProgramUtilities, "markProgramAnalyzed"):
+                    GhidraProgramUtilities.markProgramAnalyzed(flat_api.getCurrentProgram())
+                else:
+                    GhidraProgramUtilities.setAnalyzedFlag(flat_api.getCurrentProgram(), True)
 
             main_dictionary: Dict[str, Any] = {}
             code_regions = _unpack_program(flat_api)
@@ -119,10 +184,13 @@ def unpack(
             main_dictionary["metadata"]["path"] = program_file
             if base_address is not None:
                 main_dictionary["metadata"]["base_address"] = base_address
-            with open(program_file, "rb") as fh:
-                data = fh.read()
-                md5_hash = hashlib.md5(data)
-                main_dictionary["metadata"]["hash"] = md5_hash.digest().hex()
+            if file_hash is not None:
+                main_dictionary["metadata"]["hash"] = file_hash
+            else:
+                with open(program_file, "rb") as fh:
+                    data = fh.read()
+                    md5_hash = hashlib.md5(data)
+                    main_dictionary["metadata"]["hash"] = md5_hash.digest().hex()
 
             LOGGER.info(f"Program contains {len(code_regions)} code regions")
             for code_region in code_regions:
@@ -143,6 +211,7 @@ def unpack(
                 if len(func_cbs) == 0:
                     continue
 
+                region_end = code_region["virtual_address"] + code_region["size"]
                 for func, cb in tqdm(func_cbs, unit="CB", smoothing=0, disable=not show_progress):
                     cb_key = f"func_{cb['virtual_address']}"
                     code_region["children"].append(cb_key)
@@ -155,7 +224,7 @@ def unpack(
                         cb["decompilation"] = decompilation
                     bb_model = BasicBlockModel(flat_api.getCurrentProgram())
                     basic_blocks, data_words = _unpack_complex_block(
-                        func, flat_api, bb_model, BigInteger.ONE
+                        func, flat_api, bb_model, BigInteger.ONE, region_end=region_end
                     )
                     cb["children"] = []
                     for block, bb in basic_blocks:
@@ -247,16 +316,13 @@ def _concat_contiguous_code_blocks(code_regions):
 
 def _unpack_code_region(code_region, flat_api):
     functions = []
+    region_end = code_region["virtual_address"] + code_region["size"]
     start_address = (
         flat_api.getAddressFactory()
         .getDefaultAddressSpace()
         .getAddress(hex(code_region["virtual_address"]))
     )
-    end_address = (
-        flat_api.getAddressFactory()
-        .getDefaultAddressSpace()
-        .getAddress(hex(code_region["virtual_address"] + code_region["size"]))
-    )
+    end_address = flat_api.getAddressFactory().getDefaultAddressSpace().getAddress(hex(region_end))
     func = flat_api.getFunctionAt(start_address)
     if func is None:
         func = flat_api.getFunctionAfter(start_address)
@@ -268,6 +334,7 @@ def _unpack_code_region(code_region, flat_api):
         start = _parse_offset(func.getEntryPoint())
         end, _ = _get_last_address(func, flat_api)
         if end is not None:
+            end = min(end, region_end)
             cb = {
                 "virtual_address": virtual_address,
                 "size": end - start,
@@ -278,7 +345,7 @@ def _unpack_code_region(code_region, flat_api):
     return functions
 
 
-def _unpack_complex_block(func, flat_api, bb_model, one):
+def _unpack_complex_block(func, flat_api, bb_model, one, region_end):
     bbs = []
     bb_iter = bb_model.getCodeBlocksContaining(func.getBody(), flat_api.monitor)
     for block in bb_iter:
@@ -339,10 +406,11 @@ def _unpack_complex_block(func, flat_api, bb_model, one):
         bbs.append((ghidra_block, bb))
 
     end_data_addr, end_code_addr = _get_last_address(func, flat_api)
+    end_data_addr = min(end_data_addr, region_end)
 
     dws = []
     data = flat_api.getDataAt(end_code_addr)
-    while data is not None and _parse_offset(data.getAddress()) <= end_data_addr:
+    while data is not None and _parse_offset(data.getAddress()) < end_data_addr:
         num_words = 1
         word_size = data.getLength()
         if word_size == 1:

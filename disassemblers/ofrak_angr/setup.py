@@ -21,7 +21,7 @@ with open("README.md") as f:
 
 setuptools.setup(
     name="ofrak_angr",
-    version="1.1.0",
+    version="2.0.0rc1",
     description="OFRAK angr Components",
     packages=setuptools.find_packages("src"),
     package_dir={"": "src"},

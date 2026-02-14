@@ -1,7 +1,9 @@
 """
 Test the Ghidra program analyzer components.
+
+Requirements Mapping:
+- REQ2.2
 """
-import os.path
 import os.path
 import tempfile
 from typing import Dict, Type
@@ -20,6 +22,7 @@ from ofrak.core import (
     SegmentInjectorModifierConfig,
 )
 from ofrak.resource import Resource
+from ofrak_ghidra.components.ghidra_analyzer import GhidraCustomLoadAnalyzer
 from ofrak_ghidra.ghidra_model import GhidraProject, GhidraCustomLoadProject
 from ofrak_patch_maker.model import PatchRegionConfig
 from ofrak_patch_maker.patch_maker import PatchMaker
@@ -35,7 +38,20 @@ from ofrak_patch_maker.toolchain.model import (
     BinFileType,
     Segment,
 )
-from ofrak_type import BitWidth, Endianness, InstructionSet, MemoryPermissions, Range
+from ofrak_type import (
+    BitWidth,
+    Endianness,
+    InstructionSet,
+    MemoryPermissions,
+    Range,
+)
+from pytest_ofrak.patterns.program_metadata import (
+    custom_binary_resource,  # noqa: F401
+    setup_program_with_code_region,
+    add_rodata_region,
+    add_distant_rw_region,
+    assert_complex_block_at_vaddr,
+)
 
 
 async def test_ghidra_project_analyzer(hello_world_elf_resource: Resource):
@@ -213,3 +229,33 @@ async def _make_dummy_program(resource: Resource, arch_info):
         SegmentInjectorModifier,
         SegmentInjectorModifierConfig.from_fem(fem),
     )
+
+
+async def test_ghidra_custom_loader_with_program_metadata(custom_binary_resource):
+    """Test Ghidra custom loading with ProgramAttributes + MemoryRegions (REQ2.2)."""
+    text_vaddr = 0x400130
+    text_section = await setup_program_with_code_region(
+        custom_binary_resource, base_address=0x100000, text_vaddr=text_vaddr
+    )
+    await add_rodata_region(custom_binary_resource, rodata_vaddr=0x40A0A0)
+    assert custom_binary_resource.has_tag(GhidraCustomLoadProject)
+
+    await custom_binary_resource.run(GhidraCustomLoadAnalyzer)
+
+    await text_section.unpack()
+    await assert_complex_block_at_vaddr(custom_binary_resource, text_vaddr)
+
+
+async def test_ghidra_custom_load_distant_rw_region(custom_binary_resource):
+    """Test that a distant RW region doesn't cause issues in Ghidra (REQ2.2)."""
+    text_vaddr = 0x400130
+    text_section = await setup_program_with_code_region(
+        custom_binary_resource, base_address=0x100000, text_vaddr=text_vaddr
+    )
+    await add_distant_rw_region(custom_binary_resource, vaddr=0x80000000)
+    assert custom_binary_resource.has_tag(GhidraCustomLoadProject)
+
+    await custom_binary_resource.run(GhidraCustomLoadAnalyzer)
+
+    await text_section.unpack()
+    await assert_complex_block_at_vaddr(custom_binary_resource, text_vaddr)
