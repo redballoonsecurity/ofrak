@@ -42,16 +42,17 @@ def _register_entry_points(flat_api, entry_points: List[int]) -> None:
     default_space = program.getAddressFactory().getDefaultAddressSpace()
     symbol_table = program.getSymbolTable()
 
+    code_prop = program.getAddressSetPropertyMap("CodeMap")
+    if code_prop is None:
+        try:
+            code_prop = program.createAddressSetPropertyMap("CodeMap")
+        except DuplicateNameException:
+            code_prop = program.getAddressSetPropertyMap("CodeMap")
+
     for i, entry_addr in enumerate(entry_points):
         try:
             addr = default_space.getAddress(entry_addr)
             # Mark as code (matches Java CreateMemoryBlocks.markAsCode)
-            code_prop = program.getAddressSetPropertyMap("CodeMap")
-            if code_prop is None:
-                try:
-                    code_prop = program.createAddressSetPropertyMap("CodeMap")
-                except DuplicateNameException:
-                    code_prop = program.getAddressSetPropertyMap("CodeMap")
             if code_prop is not None:
                 code_prop.add(addr, addr)
             label_name = "entry" if i == 0 else f"entry_{i}"

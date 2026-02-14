@@ -136,7 +136,7 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraAutoLoadProject]):
         self.analysis_store = analysis_store
 
     async def analyze(
-        self, resource: Resource, config: PyGhidraAnalyzerConfig = None
+        self, resource: Resource, config: Optional[PyGhidraAnalyzerConfig] = None
     ) -> PyGhidraAutoLoadProject:
         tempdir = mkdtemp(prefix="rbs-pyghidra-bin")
         await resource.identify()  # useful for checking tags later
