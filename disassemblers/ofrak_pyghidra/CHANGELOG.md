@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add detailed logging output and progress indicators to standalone analysis script ([#672](https://github.com/redballoonsecurity/ofrak/pull/672))
 
 ### Fixed
+- Fix `_arch_info_to_processor_id` to raise an explicit error for unsupported ISAs instead of proceeding with `None` family ([#702](https://github.com/redballoonsecurity/ofrak/pull/702))
 - Fix Ghidra and pyghidra CodeRegion unpacker to take into account the base address that ghidra sets for PIE executables.([#627](https://github.com/redballoonsecurity/ofrak/pull/627))
 - Fix auto discovery of `PyGhidraDecompilationAnalyzer` ([#650](https://github.com/redballoonsecurity/ofrak/pull/650))
 - Fix redundant re-analysis of complex blocks in the standalone analysis script ([#672](https://github.com/redballoonsecurity/ofrak/pull/672))

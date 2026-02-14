@@ -106,7 +106,7 @@ class PyGhidraAnalyzerConfig(ComponentConfig):
     language: str
 
 
-class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraAutoLoadProject]):
+class PyGhidraAutoAnalyzer(Analyzer[Optional[PyGhidraAnalyzerConfig], PyGhidraAutoLoadProject]):
     """
     Runs Ghidra's comprehensive automated analysis on binaries including disassembly, function
     boundary detection, control flow analysis, data type propagation, symbol discovery,
@@ -119,7 +119,7 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraAutoLoadProject]):
 
     id = b"PyGhidraAutoAnalyzer"
 
-    # Analyzer[None, ...] expects targets to be tuple of ResourceTag, but PyGhidraAutoLoadProject
+    # Analyzer expects targets to be tuple of ResourceTag, but PyGhidraAutoLoadProject
     # is a ResourceView subclass that acts as a tag via metaclass. Mypy doesn't understand this.
     targets = (PyGhidraAutoLoadProject,)  # type: ignore[assignment]
     outputs = (PyGhidraAutoLoadProject,)
@@ -134,7 +134,9 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraAutoLoadProject]):
         super().__init__(resource_factory, data_service, resource_service)
         self.analysis_store = analysis_store
 
-    async def analyze(self, resource: Resource, config: PyGhidraAnalyzerConfig = None):
+    async def analyze(
+        self, resource: Resource, config: Optional[PyGhidraAnalyzerConfig] = None
+    ) -> PyGhidraAutoLoadProject:
         tempdir = mkdtemp(prefix="rbs-pyghidra-bin")
         await resource.identify()  # useful for checking tags later
         try:
@@ -255,7 +257,9 @@ class PyGhidraCodeRegionUnpacker(CachedCodeRegionUnpacker):
 
     id = b"PyGhidraCodeRegionUnpacker"
 
-    async def unpack(self, resource: Resource, config: PyGhidraCodeRegionUnpackerConfig = None):
+    async def unpack(
+        self, resource: Resource, config: Optional[PyGhidraCodeRegionUnpackerConfig] = None
+    ):
         # ResourceView subclasses are valid tags at runtime via metaclass; mypy doesn't understand
         program_r = await resource.get_only_ancestor(
             ResourceFilter.with_tags(PyGhidraProject)  # type: ignore[arg-type]
