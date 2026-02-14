@@ -414,6 +414,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
     ) -> List[str]:
         args: List[str] = []
         has_blocks = False
+        has_executable = False
 
         for i, block in enumerate(blocks):
             perms = get_memory_region_permissions(block.resource)
@@ -426,7 +427,10 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
                 str(block.size),
             ]
 
-            block_info.append(get_effective_memory_permissions(block.resource).as_str())
+            effective = get_effective_memory_permissions(block.resource)
+            if effective.value & MemoryPermissions.X.value:
+                has_executable = True
+            block_info.append(effective.as_str())
 
             if block.resource.has_tag(NamedProgramSection):
                 named_section = await block.resource.view_as(NamedProgramSection)
@@ -450,6 +454,9 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
 
         if not has_blocks:
             raise ValueError("No accessible memory regions for analysis")
+
+        if not has_executable:
+            raise ValueError("No executable memory regions for analysis")
 
         if entry_points:
             entry_strs = [f"0x{ep:x}" for ep in entry_points]

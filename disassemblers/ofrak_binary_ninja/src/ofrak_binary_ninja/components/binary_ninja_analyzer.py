@@ -121,6 +121,9 @@ class BinaryNinjaCustomLoadAnalyzer(
         if not segment_info:
             raise ValueError("No accessible memory regions for analysis")
 
+        if not any(flags & SegmentFlag.SegmentExecutable for _, _, _, flags in segment_info):
+            raise ValueError("No executable memory regions for analysis")
+
         # delete=False: Binary Ninja retains a reference to the file during analysis
         with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as tmp:
             tmp.write(combined_data)

@@ -238,6 +238,9 @@ class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
         if not memory_regions:
             raise ValueError("No accessible memory regions for analysis")
 
+        if not any(r["permissions"] & MemoryPermissions.X.value for r in memory_regions):
+            raise ValueError("No executable memory regions for analysis")
+
         self.analysis_store.store_analysis(
             resource.get_id(),
             unpack(

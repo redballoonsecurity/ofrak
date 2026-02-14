@@ -47,6 +47,7 @@ from pytest_ofrak.patterns.program_metadata import (
     custom_binary_resource,  # noqa: F401
     setup_program_with_code_region,
     add_rodata_region,
+    add_distant_rw_region,
     assert_complex_block_at_vaddr,
 )
 from ofrak_type.memory_permissions import MemoryPermissions
@@ -489,6 +490,21 @@ async def test_pyghidra_custom_loader_with_program_metadata(custom_binary_resour
     await add_rodata_region(
         custom_binary_resource, rodata_vaddr=0x40A0A0, permissions=MemoryPermissions.R
     )
+    assert custom_binary_resource.has_tag(PyGhidraCustomLoadProject)
+
+    await custom_binary_resource.run(PyGhidraCustomLoadAnalyzer)
+
+    await text_section.unpack()
+    await assert_complex_block_at_vaddr(custom_binary_resource, text_vaddr)
+
+
+async def test_pyghidra_custom_load_distant_rw_region(custom_binary_resource):
+    """Test that a distant RW region doesn't cause issues in PyGhidra (REQ2.2)."""
+    text_vaddr = 0x400130
+    text_section = await setup_program_with_code_region(
+        custom_binary_resource, base_address=0x100000, text_vaddr=text_vaddr
+    )
+    await add_distant_rw_region(custom_binary_resource, vaddr=0x80000000)
     assert custom_binary_resource.has_tag(PyGhidraCustomLoadProject)
 
     await custom_binary_resource.run(PyGhidraCustomLoadAnalyzer)
