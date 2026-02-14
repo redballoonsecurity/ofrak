@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from tempfile312 import mkdtemp
 import os
-from typing import Dict
+from typing import Dict, Optional
 from xml.etree import ElementTree
 
 from ofrak.component.analyzer import Analyzer
@@ -27,10 +27,14 @@ from ofrak_cached_disassembly.components.cached_disassembly_unpacker import (
     CachedCodeRegionUnpacker,
     CachedComplexBlockUnpacker,
     CachedBasicBlockUnpacker,
-    CachedGhidraCodeRegionModifier,
+    CachedGhidraCodeRegionModifier as _BaseCachedGhidraCodeRegionModifier,
     CachedDecompilationAnalyzer,
 )
-from ofrak_pyghidra.standalone.pyghidra_analysis import unpack, decompile_all_functions
+from ofrak_pyghidra.standalone.pyghidra_analysis import (
+    PyGhidraComponentException,
+    unpack,
+    decompile_all_functions,
+)
 from ofrak_type.error import NotFoundError
 
 
@@ -69,12 +73,15 @@ class PyGhidraAnalysisIdentifier(Identifier):
     targets = (Program,)
 
     async def identify(self, resource: Resource, config=None):
+        # TODO(ofrak_core): ResourceTag is a metaclass, so ResourceView subclasses are valid
+        # tags at runtime. Mypy doesn't understand metaclass-based typing. Fix type hints in
+        # ofrak_core's Resource.add_tag() and similar methods.
         for tag in _GHIDRA_AUTO_LOADABLE_FORMATS:
             if resource.has_tag(tag):
-                resource.add_tag(PyGhidraAutoLoadProject)
+                resource.add_tag(PyGhidraAutoLoadProject)  # type: ignore[arg-type]
                 return
 
-        resource.add_tag(PyGhidraCustomLoadProject)
+        resource.add_tag(PyGhidraCustomLoadProject)  # type: ignore[arg-type]
 
 
 @dataclass
@@ -86,7 +93,7 @@ class PyGhidraAnalysisStore(CachedAnalysisStore):
     pass
 
 
-class CachedGhidraCodeRegionModifier(CachedGhidraCodeRegionModifier):
+class CachedGhidraCodeRegionModifier(_BaseCachedGhidraCodeRegionModifier):
     """
     Modifies code regions while maintaining Ghidra analysis caching and context, preserving Ghidra's
     understanding of the code structure across modifications. This specialized modifier integrates
@@ -103,7 +110,7 @@ class PyGhidraAnalyzerConfig(ComponentConfig):
     language: str
 
 
-class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraAutoLoadProject]):
+class PyGhidraAutoAnalyzer(Analyzer[Optional[PyGhidraAnalyzerConfig], PyGhidraAutoLoadProject]):
     """
     Runs Ghidra's comprehensive automated analysis on binaries including disassembly, function
     boundary detection, control flow analysis, data type propagation, symbol discovery,
@@ -116,7 +123,9 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraAutoLoadProject]):
 
     id = b"PyGhidraAutoAnalyzer"
 
-    targets = (PyGhidraAutoLoadProject,)
+    # Analyzer expects targets to be tuple of ResourceTag, but PyGhidraAutoLoadProject
+    # is a ResourceView subclass that acts as a tag via metaclass. Mypy doesn't understand this.
+    targets = (PyGhidraAutoLoadProject,)  # type: ignore[assignment]
     outputs = (PyGhidraAutoLoadProject,)
 
     def __init__(
@@ -129,7 +138,9 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraAutoLoadProject]):
         super().__init__(resource_factory, data_service, resource_service)
         self.analysis_store = analysis_store
 
-    async def analyze(self, resource: Resource, config: PyGhidraAnalyzerConfig = None):
+    async def analyze(
+        self, resource: Resource, config: Optional[PyGhidraAnalyzerConfig] = None
+    ) -> PyGhidraAutoLoadProject:
         tempdir = mkdtemp(prefix="rbs-pyghidra-bin")
         await resource.identify()  # useful for checking tags later
         try:
@@ -170,7 +181,9 @@ class PyGhidraAutoAnalyzer(Analyzer[None, PyGhidraAutoLoadProject]):
         return PyGhidraAutoLoadProject()
 
 
-class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
+class PyGhidraCustomLoadAnalyzer(
+    Analyzer[Optional[PyGhidraAnalyzerConfig], PyGhidraCustomLoadProject]
+):
     """
     Runs Ghidra's automated analysis on binaries with custom memory region setup. This analyzer
     explicitly creates all memory regions from the OFRAK Program's MemoryRegion children in Ghidra
@@ -181,7 +194,8 @@ class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
 
     id = b"PyGhidraCustomLoadAnalyzer"
 
-    targets = (PyGhidraCustomLoadProject,)
+    # See PyGhidraAutoAnalyzer comment - same metaclass typing issue
+    targets = (PyGhidraCustomLoadProject,)  # type: ignore[assignment]
     outputs = (PyGhidraCustomLoadProject,)
 
     def __init__(
@@ -194,7 +208,9 @@ class PyGhidraCustomLoadAnalyzer(Analyzer[None, PyGhidraCustomLoadProject]):
         super().__init__(resource_factory, data_service, resource_service)
         self.analysis_store = analysis_store
 
-    async def analyze(self, resource: Resource, config: PyGhidraAnalyzerConfig):
+    async def analyze(
+        self, resource: Resource, config: Optional[PyGhidraAnalyzerConfig] = None
+    ) -> PyGhidraCustomLoadProject:
         if config is None:
             try:
                 program_attrs = resource.get_attributes(ProgramAttributes)
@@ -245,8 +261,13 @@ class PyGhidraCodeRegionUnpacker(CachedCodeRegionUnpacker):
 
     id = b"PyGhidraCodeRegionUnpacker"
 
-    async def unpack(self, resource: Resource, config: PyGhidraCodeRegionUnpackerConfig = None):
-        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(PyGhidraProject))
+    async def unpack(
+        self, resource: Resource, config: Optional[PyGhidraCodeRegionUnpackerConfig] = None
+    ):
+        # ResourceView subclasses are valid tags at runtime via metaclass; mypy doesn't understand
+        program_r = await resource.get_only_ancestor(
+            ResourceFilter.with_tags(PyGhidraProject)  # type: ignore[arg-type]
+        )
         if not self.analysis_store.id_exists(program_r.get_id()):
             if config is not None:
                 analyzer_config = PyGhidraAnalyzerConfig(
@@ -254,12 +275,13 @@ class PyGhidraCodeRegionUnpacker(CachedCodeRegionUnpacker):
                 )
             else:
                 analyzer_config = None
-            if program_r.has_tag(PyGhidraAutoLoadProject):
+            # ResourceView subclasses are valid tags at runtime via metaclass
+            if program_r.has_tag(PyGhidraAutoLoadProject):  # type: ignore[arg-type]
                 await program_r.run(
                     PyGhidraAutoAnalyzer,
                     config=analyzer_config,
                 )
-            elif program_r.has_tag(PyGhidraCustomLoadProject):
+            elif program_r.has_tag(PyGhidraCustomLoadProject):  # type: ignore[arg-type]
                 await program_r.run(
                     PyGhidraCustomLoadAnalyzer,
                     config=analyzer_config,
@@ -311,7 +333,10 @@ class PyGhidraDecompilationAnalyzer(CachedDecompilationAnalyzer):
     outputs = (DecompilationAnalysis,)
 
     async def analyze(self, resource: Resource, config=None):
-        program_r = await resource.get_only_ancestor(ResourceFilter.with_tags(PyGhidraProject))
+        # ResourceView subclasses are valid tags at runtime via metaclass; mypy doesn't understand
+        program_r = await resource.get_only_ancestor(
+            ResourceFilter.with_tags(PyGhidraProject)  # type: ignore[arg-type]
+        )
         if self.analysis_store.id_exists(program_r.get_id()):
             complex_block = await resource.view_as(ComplexBlock)
             cb_key = f"func_{complex_block.virtual_address}"
@@ -347,6 +372,10 @@ def _arch_info_to_processor_id(processor: ArchInfo):
         InstructionSet.X86: "x86",
     }
     family = families.get(processor.isa)
+    if family is None:
+        raise PyGhidraComponentException(
+            f"Could not determine processor family for ISA {processor.isa}"
+        )
 
     endian = "BE" if processor.endianness is Endianness.BIG_ENDIAN else "LE"
     # Ghidra proc IDs are of the form "ISA:endianness:bitWidth:suffix", where the suffix can indicate a specific processor or sub-ISA

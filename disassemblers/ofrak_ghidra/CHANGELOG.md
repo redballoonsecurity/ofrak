@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Added
 - Add OFRAK requirements, requirement to test mapping, test specifications ([#656](https://github.com/redballoonsecurity/ofrak/pull/656))
+- Add mypy type checking enforcement to `make test` ([#702](https://github.com/redballoonsecurity/ofrak/pull/702))
 
 ### Changed
 - Minor update to OFRAK Community License, add OFRAK Pro License ([#478](https://github.com/redballoonsecurity/ofrak/pull/478))
@@ -20,6 +21,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Handle escape (\) character in the JSON going from Java (Ghidra) to Python ([#604](https://github.com/redballoonsecurity/ofrak/pull/604))
 - Fix Ghidra and pyghidra CodeRegion unpacker to take into account the base address that ghidra sets for PIE executables.([#627](https://github.com/redballoonsecurity/ofrak/pull/627))
 - Pin java version ([#683](https://github.com/redballoonsecurity/ofrak/pull/683))
+- Fix `_do_ghidra_analyze_and_serve` crash when Ghidra exits unexpectedly by capturing stderr ([#702](https://github.com/redballoonsecurity/ofrak/pull/702))
+- Fix `GhidraDecompilationAnalyzer` silently swallowing non-JSONDecodeError exceptions and incorrect error string handling ([#702](https://github.com/redballoonsecurity/ofrak/pull/702))
+- Fix `_arch_info_to_processor_id` to raise an explicit error for unsupported ISAs instead of proceeding with `None` family ([#702](https://github.com/redballoonsecurity/ofrak/pull/702))
 
 ## 0.1.1 - 2024-02-15
 ### Added

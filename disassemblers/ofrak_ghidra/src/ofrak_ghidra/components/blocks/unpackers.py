@@ -3,7 +3,8 @@ import logging
 import os
 import re
 from collections import defaultdict
-from typing import Tuple, List, Dict, Union, Iterable
+from typing import Tuple, List, Iterable, Optional
+from typing_extensions import TypedDict
 
 from ofrak.core.architecture import ProgramAttributes
 from ofrak_type.architecture import InstructionSetMode
@@ -18,17 +19,34 @@ from ofrak.service.resource_service_i import ResourceFilter, ResourceServiceInte
 from ofrak_ghidra.constants import CORE_OFRAK_GHIDRA_SCRIPTS
 from ofrak_ghidra.ghidra_model import GhidraProject, OfrakGhidraMixin, OfrakGhidraScript
 from ofrak_ghidra.components.ghidra_analyzer import GhidraCodeRegionModifier
-from ofrak_io.batch_manager import make_batch_manager
+from ofrak_io.batch_manager import make_batch_manager, BatchManagerInterface
 
 LOGGER = logging.getLogger(__name__)
 
 RE_STRIP_PRECEDING_ZERO = re.compile(r"0x0+([0-9a-f])")
 RE_CPY_TO_MOV = re.compile(r"^cpy")
 
+
+class BasicBlockInfo(TypedDict):
+    """Basic block data returned by GetBasicBlocks.java."""
+
+    bb_start_vaddr: int
+    bb_size: int
+    is_exit_point: bool
+    instr_mode: str
+    exit_vaddr: int  # -1 from Java when is_exit_point=True, converted to None in Python
+
+
+class DataWordInfo(TypedDict):
+    word_vaddr: int
+    word_size: int
+    xrefs: List[int]
+
+
 _GetBasicBlocksRequest = Tuple[Resource, int, int]
-_GetBasicBlocksResult = List[Dict[str, Union[str, int, bool]]]
+_GetBasicBlocksResult = List[BasicBlockInfo]
 _GetDataWordsRequest = Tuple[Resource, int, int]
-_GetDataWordsResult = List[Dict[str, Union[str, int]]]
+_GetDataWordsResult = List[DataWordInfo]
 
 
 class GhidraCodeRegionUnpacker(CodeRegionUnpacker, OfrakGhidraMixin):
@@ -95,6 +113,9 @@ class GhidraComplexBlockUnpacker(
         os.path.join(CORE_OFRAK_GHIDRA_SCRIPTS, "GetDataWords.java")
     )
 
+    get_bb_batch_manager: BatchManagerInterface[_GetBasicBlocksRequest, _GetBasicBlocksResult]
+    get_dw_batch_manager: BatchManagerInterface[_GetDataWordsRequest, _GetDataWordsResult]
+
     def __init__(
         self,
         resource_factory: ResourceFactory,
@@ -125,11 +146,9 @@ class GhidraComplexBlockUnpacker(
             bb_size = bb_info["bb_size"]
             is_exit_point = bb_info["is_exit_point"]
             mode_string = bb_info["instr_mode"]
-            exit_vaddr = bb_info["exit_vaddr"]
             # The Ghidra script initializes exit_vaddr to -1. If is_exit_point, we want exit_vaddr
             # to be None; this is consistent with the docstring of BasicBlock
-            if is_exit_point:
-                exit_vaddr = None
+            exit_vaddr: Optional[int] = None if is_exit_point else bb_info["exit_vaddr"]
 
             if bb_size == 0:
                 raise Exception(f"Basic block 0x{bb_start_vaddr:x} has no size")
@@ -221,12 +240,12 @@ class GhidraComplexBlockUnpacker(
             requests_by_resource[ghidra_project.resource.get_id()].append(req)
             resources_by_id[ghidra_project.resource.get_id()] = resource
 
-        all_results = []
+        all_results: List[Tuple[_GetBasicBlocksRequest, _GetBasicBlocksResult]] = []
 
-        for resource_id, requests in requests_by_resource.items():
+        for resource_id, reqs in requests_by_resource.items():
             resource = resources_by_id[resource_id]
-            start_offsets = ",".join(hex(start_offset) for _, start_offset, _ in requests)
-            start_vaddrs = ",".join(hex(start_vaddr) for _, _, start_vaddr in requests)
+            start_offsets = ",".join(hex(start_offset) for _, start_offset, _ in reqs)
+            start_vaddrs = ",".join(hex(start_vaddr) for _, _, start_vaddr in reqs)
 
             results = await self.get_basic_blocks_script.call_script(
                 resource,
@@ -234,13 +253,13 @@ class GhidraComplexBlockUnpacker(
                 start_vaddrs,
             )
 
-            all_results.extend(zip(requests, results))
+            all_results.extend(zip(reqs, results))
 
         return all_results
 
     async def _handle_get_data_words_batch(
-        self, requests: Tuple[_GetBasicBlocksRequest, ...]
-    ) -> Iterable[Tuple[_GetBasicBlocksRequest, _GetBasicBlocksResult]]:
+        self, requests: Tuple[_GetDataWordsRequest, ...]
+    ) -> Iterable[Tuple[_GetDataWordsRequest, _GetDataWordsResult]]:
         requests_by_resource = defaultdict(list)
         resources_by_id = dict()
         for req in requests:
@@ -249,15 +268,15 @@ class GhidraComplexBlockUnpacker(
             requests_by_resource[ghidra_project.resource.get_id()].append(req)
             resources_by_id[ghidra_project.resource.get_id()] = resource
 
-        all_results = []
+        all_results: List[Tuple[_GetDataWordsRequest, _GetDataWordsResult]] = []
 
-        for resource_id, requests in requests_by_resource.items():
+        for resource_id, reqs in requests_by_resource.items():
             resource = resources_by_id[resource_id]
             function_start_vaddrs = ",".join(
-                hex(function_start_vaddr) for _, function_start_vaddr, _ in requests
+                hex(function_start_vaddr) for _, function_start_vaddr, _ in reqs
             )
             function_end_vaddrs = ",".join(
-                hex(function_end_vaddr) for _, _, function_end_vaddr in requests
+                hex(function_end_vaddr) for _, _, function_end_vaddr in reqs
             )
 
             results = await self.get_data_words_script.call_script(
@@ -266,6 +285,6 @@ class GhidraComplexBlockUnpacker(
                 function_end_vaddrs,
             )
 
-            all_results.extend(zip(requests, results))
+            all_results.extend(zip(reqs, results))
 
         return all_results

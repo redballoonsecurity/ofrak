@@ -211,6 +211,8 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
             stdout=asyncio.subprocess.PIPE,
         )
         LOGGER.debug(f"Started ghidra import: {ghidra_proc.pid}")
+        assert ghidra_proc.stdout is not None
+        assert ghidra_proc.stdin is not None
 
         while True:
             line = (await ghidra_proc.stdout.readline()).decode("ascii")
@@ -293,8 +295,12 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
             cmd_str,
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
         )
         LOGGER.debug(f"Started ghidra analysis server process: {ghidra_proc.pid}")
+        assert ghidra_proc.stdout is not None
+        assert ghidra_proc.stdin is not None
+        assert ghidra_proc.stderr is not None
 
         while ghidra_proc.returncode is None:
             line = (await ghidra_proc.stdout.readline()).decode("ascii")
@@ -312,7 +318,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
             if GHIDRA_SERVER_STARTED in line:
                 return
 
-        ghidra_errors = await ghidra_proc.stderr.read()
+        ghidra_errors = (await ghidra_proc.stderr.read()).decode("utf-8", errors="replace")
         raise GhidraComponentException(f"Ghidra server exited unexpectedly! \n{ghidra_errors}")
 
     def _build_ghidra_server_args(self) -> List[str]:
@@ -334,6 +340,10 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
             InstructionSet.X86: "x86",
         }
         family = families.get(processor.isa)
+        if family is None:
+            raise GhidraComponentException(
+                f"Could not determine processor family for ISA {processor.isa}"
+            )
 
         endian = "BE" if processor.endianness is Endianness.BIG_ENDIAN else "LE"
         # Ghidra proc IDs are of the form "ISA:endianness:bitWidth:suffix", where the suffix can indicate a specific processor or sub-ISA
@@ -519,7 +529,8 @@ class GhidraCustomLoadAnalyzer(GhidraProjectAnalyzer):
     """
 
     id = b"GhidraCustomLoadProjectAnalyzer"
-    targets = (GhidraCustomLoadProject,)
+    # Subclass narrows targets from parent's GhidraAutoLoadProject to GhidraCustomLoadProject
+    targets = (GhidraCustomLoadProject,)  # type: ignore[assignment]
     outputs = (GhidraCustomLoadProject,)
 
     async def analyze(

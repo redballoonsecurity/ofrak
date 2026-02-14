@@ -2,7 +2,8 @@ import asyncio
 import os
 import re
 from collections import defaultdict
-from typing import Tuple, Dict, Union, List, Iterable
+from typing import Tuple, List, Iterable
+from typing_extensions import NotRequired, TypedDict
 
 from ofrak.core.architecture import ProgramAttributes
 from ofrak_type.architecture import InstructionSet, InstructionSetMode
@@ -18,10 +19,24 @@ from ofrak_ghidra.components.blocks.unpackers import (
 )
 from ofrak_ghidra.constants import CORE_OFRAK_GHIDRA_SCRIPTS
 from ofrak_ghidra.ghidra_model import OfrakGhidraMixin, OfrakGhidraScript
-from ofrak_io.batch_manager import make_batch_manager
+from ofrak_io.batch_manager import make_batch_manager, BatchManagerInterface
+
+
+class InstructionInfo(TypedDict):
+    """Instruction data returned by GetInstructions.java - all fields always present."""
+
+    instr_offset: int
+    instr_size: int
+    mnem: str
+    operands: str
+    results: str
+    regs_read: str
+    regs_written: str
+    instr_mode: NotRequired[str]
+
 
 _GetInstructionsRequest = Tuple[Resource, int, int]
-_GetInstructionsResult = List[Dict[str, Union[str, int]]]
+_GetInstructionsResult = List[InstructionInfo]
 
 
 class GhidraBasicBlockUnpacker(
@@ -34,6 +49,8 @@ class GhidraBasicBlockUnpacker(
     get_instructions_script = OfrakGhidraScript(
         os.path.join(CORE_OFRAK_GHIDRA_SCRIPTS, "GetInstructions.java"),
     )
+
+    batch_manager: BatchManagerInterface[_GetInstructionsRequest, _GetInstructionsResult]
 
     def __init__(
         self,
@@ -58,13 +75,13 @@ class GhidraBasicBlockUnpacker(
         program_attrs = await resource.analyze(ProgramAttributes)
 
         children_created = []
-        for instruction in instructions:
-            vaddr = instruction["instr_offset"]
-            size = instruction["instr_size"]
+        for instr_info in instructions:
+            vaddr = instr_info["instr_offset"]
+            size = instr_info["instr_size"]
             mnem, operands = _asm_fixups(
-                instruction["mnem"].lower(), instruction["operands"].lower(), program_attrs
+                instr_info["mnem"].lower(), instr_info["operands"].lower(), program_attrs
             )
-            results = instruction["results"].split(",")
+            results = instr_info["results"].split(",")
             regs_read = list()
             regs_written = list()
             # TODO A way to standardize register representations
@@ -74,14 +91,14 @@ class GhidraBasicBlockUnpacker(
                 regs_written.append("rsp")
                 regs_read.append("rsp")
 
-            for reg in instruction["regs_read"].lower().split(","):
+            for reg in instr_info["regs_read"].lower().split(","):
                 if reg not in regs_read and reg != "":
                     regs_read.append(reg)
-            for reg in instruction["regs_written"].lower().split(","):
+            for reg in instr_info["regs_written"].lower().split(","):
                 if reg not in regs_written and reg != "":
                     regs_written.append(reg)
 
-            mode_string = instruction.get("instr_mode", "NONE")
+            mode_string = instr_info.get("instr_mode", "NONE")
             mode = InstructionSetMode[mode_string]
             assert mode == bb_view.mode, (
                 f"The instruction mode {mode.name} returned by Ghidra does not match the basic "
@@ -111,16 +128,16 @@ class GhidraBasicBlockUnpacker(
             requests_by_resource[ghidra_project.resource.get_id()].append(req)
             ghidra_project_resources_by_id[ghidra_project.resource.get_id()] = resource
 
-        all_results = []
+        all_results: List[Tuple[_GetInstructionsRequest, _GetInstructionsResult]] = []
 
-        for resource_id, requests in requests_by_resource.items():
+        for resource_id, reqs in requests_by_resource.items():
             resource = ghidra_project_resources_by_id[resource_id]
-            bb_starts = ",".join(hex(bb_start) for _, bb_start, _ in requests)
-            bb_ends = ",".join(hex(bb_end) for _, _, bb_end in requests)
+            bb_starts = ",".join(hex(bb_start) for _, bb_start, _ in reqs)
+            bb_ends = ",".join(hex(bb_end) for _, _, bb_end in reqs)
 
             results = await self.get_instructions_script.call_script(resource, bb_starts, bb_ends)
 
-            all_results.extend(zip(requests, results))
+            all_results.extend(zip(reqs, results))
 
         return all_results
 
