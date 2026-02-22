@@ -21,7 +21,6 @@ from ofrak.model.component_model import ComponentConfig
 from ofrak.resource import Resource
 from ofrak.service.resource_service_i import ResourceFilter, ResourceSort, ResourceSortDirection
 from ofrak_type.memory_permissions import MemoryPermissions
-from ofrak_type.error import NotFoundError
 
 LOGGER = logging.getLogger(__file__)
 
@@ -260,21 +259,30 @@ class SegmentInjectorModifier(Modifier[SegmentInjectorModifierConfig]):
                 # See PatchFromSourceModifier
                 continue
 
-            try:
-                region = MemoryRegion.get_mem_region_with_vaddr_from_sorted(
-                    segment.vm_address, sorted_regions
-                )
-            except NotFoundError:
+            # Look for region to patch, preferably with data:
+            candidate = None
+            for mem_view in sorted_regions:
+                # the first region we find should be the largest
+                if mem_view.contains(segment.vm_address):
+                    if not candidate:
+                        candidate = mem_view
+                    elif candidate.resource.get_data_id() is None:
+                        candidate = mem_view
+                    elif candidate.resource.get_data_id():
+                        LOGGER.warning(
+                            f"Found more than one region to inject patch in, using the first one."
+                        )
+            if not candidate:
                 # uninitialized section like .bss mapped to arbitrary memory range without corresponding
                 # MemoryRegion resource, no patch needed.
                 if segment.is_bss:
                     continue
                 raise
 
-            region_mapped_to_data = region.resource.get_data_id() is not None
+            region_mapped_to_data = candidate.resource.get_data_id() is not None
             if region_mapped_to_data:
                 patches = [(segment.vm_address, segment_data)]
-                injection_tasks.append((region.resource, BinaryInjectorModifierConfig(patches)))
+                injection_tasks.append((candidate.resource, BinaryInjectorModifierConfig(patches)))
             else:
                 if segment.is_bss:
                     # uninitialized section like .bss mapped to arbitrary memory range without corresponding

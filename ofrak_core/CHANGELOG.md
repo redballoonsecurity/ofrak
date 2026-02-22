@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Remove `pkg_resources` usage from `build_image.py`, broken by setuptools 82.0.0 ([#708](https://github.com/redballoonsecurity/ofrak/pull/708))
 - Fix GUI serialization of enum values and script creator generating invalid Python syntax for enum values
 - `build_image.py` uses `OFRAK_DIR` from `extra_build_args` to identify `pytest_ofrak` location for develop builds ([#657](https://github.com/redballoonsecurity/ofrak/pull/657/))
+- Fix bug in Segment Injector: favor regions with data when injecting data ([#682](https://github.com/redballoonsecurity/ofrak/pull/682))
 
 ## [3.3.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v3.2.0...ofrak-v3.3.0) - 2025-10-03
 
