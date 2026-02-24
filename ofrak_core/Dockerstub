@@ -1,12 +1,12 @@
 ARG TARGETARCH
 # - u-boot-tools: for mkimage, to test the UImage packer/unpacker
 # - zlib1g-dev, liblzma-dev: development headers needed for squashfs-tools compilation
+# - libarchive13: required for the CPIO components
 # - android-sdk-libsparse-utils: for img2simg and simg2img used by AndroidSparseImagePacker/Unpacker
 RUN apt-get -y update && \
     apt-get -y install --no-install-recommends \
       build-essential \
       cmake \
-      cpio \
       git \
       genisoimage \
       liblz4-dev \
@@ -24,6 +24,7 @@ RUN apt-get -y update && \
       unar \
       unzip \
       zstd \
+      libarchive13 \
       android-sdk-libsparse-utils \
     && rm -rf /var/lib/apt/lists/*
 
