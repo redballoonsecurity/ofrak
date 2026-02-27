@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Handle escape (\) character in the JSON going from Java (Ghidra) to Python ([#604](https://github.com/redballoonsecurity/ofrak/pull/604))
 - Fix Ghidra and pyghidra CodeRegion unpacker to take into account the base address that ghidra sets for PIE executables.([#627](https://github.com/redballoonsecurity/ofrak/pull/627))
 - Pin java version ([#683](https://github.com/redballoonsecurity/ofrak/pull/683))
+- Fix duplicate import and integer overflow in CreateMemoryBlocks.java and GetDecompilation.java ([#700](https://github.com/redballoonsecurity/ofrak/pull/700))
 
 ## 0.1.1 - 2024-02-15
 ### Added
