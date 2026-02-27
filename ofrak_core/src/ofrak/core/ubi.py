@@ -132,10 +132,13 @@ class UbiAnalyzer(Analyzer[None, Ubi]):
     async def analyze(self, resource: Resource, config=None) -> Ubi:
         # Flush to disk
         async with resource.temp_to_disk() as temp_path:
+            peb_size = guess_peb_size(temp_path)
+            if peb_size is None:
+                raise ValueError(f"Could not determine PEB size from UBI image at {temp_path}")
             ubi_obj = ubireader_ubi(
                 ubi_io.ubi_file(
                     temp_path,
-                    block_size=guess_peb_size(temp_path),
+                    block_size=peb_size,
                     start_offset=0,
                     end_offset=None,
                 )
