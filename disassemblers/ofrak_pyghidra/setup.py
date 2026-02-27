@@ -36,6 +36,7 @@ setuptools.setup(
     install_requires=[
         "ofrak>=3.3.0,==3.*",
         "ofrak_cached_disassembly>=0.1.0",
+        "tqdm>=4.67.1",
         "pyghidra~=2.1.0",
     ],
     python_requires=">=3.9",

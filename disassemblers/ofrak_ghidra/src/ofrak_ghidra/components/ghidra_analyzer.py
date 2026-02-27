@@ -3,7 +3,6 @@ import hashlib
 import logging
 import os
 import tempfile
-import time
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from functools import lru_cache
@@ -221,7 +220,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
                 raise GhidraComponentException("Ghidra client exited unexpectedly")
 
             if line.startswith("Repository Server:"):
-                time.sleep(0.5)
+                await asyncio.sleep(0.5)
                 ghidra_proc.stdin.write((GHIDRA_PASS + "\n").encode("ascii"))
                 await ghidra_proc.stdin.drain()
             if "Disconnected from repository" in line:
@@ -302,7 +301,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
             if len(line) > 0:
                 LOGGER.debug(line)
             if line.startswith("Repository Server:"):
-                time.sleep(0.5)
+                await asyncio.sleep(0.5)
                 ghidra_proc.stdin.write((GHIDRA_PASS + "\n").encode("ascii"))
                 await ghidra_proc.stdin.drain()
             if "Disconnected from repository" in line:

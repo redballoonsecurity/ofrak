@@ -103,10 +103,13 @@ class UbifsAnalyzer(Analyzer[None, Ubifs]):
 
     async def analyze(self, resource: Resource, config=None) -> Ubifs:
         async with resource.temp_to_disk() as temp_path:
+            leb_size = guess_leb_size(temp_path)
+            if leb_size is None:
+                raise ValueError(f"Could not determine LEB size from UBIFS image at {temp_path}")
             ubifs_obj = ubireader_ubifs(
                 ubi_io.ubi_file(
                     temp_path,
-                    block_size=guess_leb_size(temp_path),
+                    block_size=leb_size,
                     start_offset=0,
                     end_offset=None,
                 )
