@@ -14,6 +14,7 @@ import pytest
 from ofrak import OFRAKContext, Resource, ResourceFilter, ResourceAttributeRangeFilter
 from ofrak.core import MemoryRegion, Ihex
 from ofrak_type import Range
+from pytest_ofrak import ASSETS_DIR as PYTEST_OFRAK_ASSETS_DIR
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 from pytest_ofrak.patterns.unpack_verify import UnpackAndVerifyTestCase
 from . import ASSETS_DIR
@@ -25,11 +26,8 @@ class IhexTestCase(UnpackAndVerifyTestCase):
 
 
 IHEX_TEST_FILES = [
-    os.path.join(ASSETS_DIR, fname)
-    for fname in [
-        "patch_demo.ihex",
-        "hello_world.ihex",
-    ]
+    os.path.join(ASSETS_DIR, "patch_demo.ihex"),
+    os.path.join(PYTEST_OFRAK_ASSETS_DIR, "hello_world.ihex"),
 ]
 
 
