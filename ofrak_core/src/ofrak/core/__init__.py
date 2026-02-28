@@ -25,6 +25,7 @@ from ofrak.core.checksum import *
 from ofrak.core.code_region import *
 from ofrak.core.comments import *
 from ofrak.core.complex_block import *
+from ofrak.core.cramfs import *
 from ofrak.core.cpio import *
 from ofrak.core.data import *
 from ofrak.core.dtb import *
