@@ -3,7 +3,7 @@ All notable changes to `ofrak` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/redballoonsecurity/ofrak/tree/master)
+## [Unreleased 3.4.0](https://github.com/redballoonsecurity/ofrak/tree/master)
 
 ### Added
 - Add Android sparse image unpacker and packer ([#662](https://github.com/redballoonsecurity/ofrak/pull/662))
@@ -11,6 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Add `-V, --version` flag to ofrak cli ([#652](https://github.com/redballoonsecurity/ofrak/pull/652))
 - Add LZ4 compression format unpackers and packers with support for all frame types (modern, legacy, skippable) ([#661](https://github.com/redballoonsecurity/ofrak/pull/661))
 - Add missing component docstrings and improve existing docstrings ([#654](https://github.com/redballoonsecurity/ofrak/pull/654))
+- Add `entry_points` and `base_address` fields to `ProgramAttributes` for passing program metadata to disassembler backends ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
+- Add `MemoryRegionPermissions` attribute for fine-grained memory region permission control ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
+- Extend `ElfProgramAttributesAnalyzer` and `UImageProgramAttributesAnalyzer` to include entry points and base address ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
 
 ### Changed
 - Remove test dependencies that are already in the global `requirements-dev.txt` ([#695](https://github.com/redballoonsecurity/ofrak/pull/695))
@@ -22,6 +25,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Fix GUI serialization of enum values and script creator generating invalid Python syntax for enum values
 - Explicitly raise ValueError if ubireader guess_leb_size/guess_peb_size returns None ([#714](https://github.com/redballoonsecurity/ofrak/pull/714))
 - `build_image.py` uses `OFRAK_DIR` from `extra_build_args` to identify `pytest_ofrak` location for develop builds ([#657](https://github.com/redballoonsecurity/ofrak/pull/657/))
+- Fix deserialization of dataclass instances with new default fields from older serialized data ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
+- Fix `UImageProgramAttributesAnalyzer` not catching `KeyError` for unsupported architectures ([#701](https://github.com/redballoonsecurity/ofrak/pull/701))
 
 ## [3.3.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v3.2.0...ofrak-v3.3.0) - 2025-10-03
 

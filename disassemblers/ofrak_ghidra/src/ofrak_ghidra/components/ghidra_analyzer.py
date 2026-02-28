@@ -11,6 +11,8 @@ from xml.etree import ElementTree
 
 from ofrak import ResourceFilter
 from ofrak.core import CodeRegion, MemoryRegion, NamedProgramSection, ProgramAttributes, Program
+from ofrak.core.memory_region import get_memory_region_permissions, get_effective_memory_permissions
+from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak.component.analyzer import Analyzer
 from ofrak.component.modifier import Modifier
 from ofrak.model.component_model import ComponentConfig
@@ -175,6 +177,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
         use_binary_loader: bool,
         processor: Optional[ArchInfo] = None,
         blocks: Optional[List[MemoryRegion]] = None,
+        entry_points: Optional[List[int]] = None,
     ):
         args = [
             ghidra_project,
@@ -199,7 +202,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
         if blocks is not None:
             args.extend(["-scriptPath", (";".join(self._script_directories))])
             args.extend(["-preScript", "CreateMemoryBlocks.java"])
-            args.extend(await self._build_create_memory_args(blocks))
+            args.extend(await self._build_create_memory_args(blocks, entry_points))
 
         cmd_str = " ".join([GHIDRA_HEADLESS_EXEC] + args)
         LOGGER.debug(f"Running command: {cmd_str}")
@@ -322,6 +325,7 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
 
         return args
 
+    # TODO(#710): Deduplicate with _arch_info_to_processor_id in ofrak_pyghidra
     @lru_cache(maxsize=None)
     def _arch_info_to_processor_id(self, processor: ArchInfo):
         families: Dict[InstructionSet, str] = {
@@ -362,9 +366,12 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
                         # default_proc_id found, and the ArchoInfo doesn't contain any info to narrow it down further, so just break early to return the default
                         break
 
-                for name_elem in language.iter(tag="external_name"):
-                    name = name_elem.attrib["name"].lower()
-
+                names = [
+                    name_elem.attrib["name"].lower()
+                    for name_elem in language.iter(tag="external_name")
+                ]
+                names.append(proc_id.split(":")[-1])
+                for name in names:
                     if not processor.sub_isa and not processor.processor:
                         if name.endswith("_any"):
                             return proc_id
@@ -373,6 +380,19 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
                         return proc_id
 
                     if processor.processor and processor.processor.value.lower() == name:
+                        return proc_id
+
+                    # Suspect: character-set matching (not substring matching) can
+                    # produce false positives. Ported from ofrak_pyghidra for parity.
+                    # See #710.
+                    if processor.sub_isa and all(
+                        char in processor.sub_isa.value.lower() for char in name.lower()
+                    ):
+                        return proc_id
+
+                    if processor.processor and all(
+                        char in processor.processor.value.lower() for char in name.lower()
+                    ):
                         return proc_id
 
                 processors_rejected.add(proc_id)
@@ -388,26 +408,35 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
             f"{processor}. Considered the following specs:\n{', '.join(processors_rejected)}"
         )
 
-    async def _build_create_memory_args(self, blocks: List[MemoryRegion]) -> List[str]:
+    async def _build_create_memory_args(
+        self, blocks: List[MemoryRegion], entry_points: Optional[List[int]] = None
+    ) -> List[str]:
         args: List[str] = []
+        has_blocks = False
+        has_executable = False
 
         for i, block in enumerate(blocks):
+            perms = get_memory_region_permissions(block.resource)
+            if perms is not None and perms.permissions == MemoryPermissions.NONE:
+                continue
+
+            has_blocks = True
             block_info: List[str] = [
                 str(block.virtual_address),
                 str(block.size),
             ]
 
-            if block.resource.has_tag(CodeRegion):
-                block_info.append("rx")
-            else:
-                block_info.append("rw")
+            effective = get_effective_memory_permissions(block.resource)
+            if effective.value & MemoryPermissions.X.value:
+                has_executable = True
+            block_info.append(effective.as_str())
 
             if block.resource.has_tag(NamedProgramSection):
                 named_section = await block.resource.view_as(NamedProgramSection)
                 if " " in named_section.name or "!" in named_section.name:
                     raise ValueError(
                         f"Bad character in section name {named_section.name} which interferes with "
-                        f"encoding arguments to CreateMemoryRegions.java"
+                        f"encoding arguments to CreateMemoryBlocks.java"
                     )
                 block_info.append(named_section.name)
             else:
@@ -421,6 +450,16 @@ class GhidraProjectAnalyzer(Analyzer[None, GhidraProject]):
                 block_info.append("-1")
 
             args.append("!".join(block_info))
+
+        if not has_blocks:
+            raise ValueError("No accessible memory regions for analysis")
+
+        if not has_executable:
+            raise ValueError("No executable memory regions for analysis")
+
+        if entry_points:
+            entry_strs = [f"0x{ep:x}" for ep in entry_points]
+            args.append(f"entry:{','.join(entry_strs)}")
 
         return args
 
@@ -524,9 +563,22 @@ class GhidraCustomLoadAnalyzer(GhidraProjectAnalyzer):
     async def analyze(
         self, resource: Resource, config: Optional[GhidraProjectConfig] = None
     ) -> GhidraProject:
-        arch_info: ArchInfo = await resource.analyze(ProgramAttributes)
+        program_attrs = await resource.analyze(ProgramAttributes)
         mem_blocks = await self._get_memory_blocks(await resource.view_as(Program))
         use_existing = config.use_existing if config is not None else False
+
+        entry_points: Optional[List[int]] = None
+        if program_attrs.entry_points:
+            entry_points = list(program_attrs.entry_points)
+
+        # Extract ArchInfo fields (avoids polluting lru_cache with extra fields)
+        arch_info = ArchInfo(
+            program_attrs.isa,
+            program_attrs.sub_isa,
+            program_attrs.bit_width,
+            program_attrs.endianness,
+            program_attrs.processor,
+        )
 
         async with self._prepare_ghidra_project(resource) as (ghidra_project, full_fname):
             program_name = await self._do_ghidra_import(
@@ -536,6 +588,7 @@ class GhidraCustomLoadAnalyzer(GhidraProjectAnalyzer):
                 use_binary_loader=True,
                 processor=arch_info,
                 blocks=mem_blocks,
+                entry_points=entry_points,
             )
             await self._do_ghidra_analyze_and_serve(
                 ghidra_project,

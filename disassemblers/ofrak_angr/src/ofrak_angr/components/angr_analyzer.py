@@ -1,20 +1,35 @@
 import logging
 from io import BytesIO
 from dataclasses import dataclass, field
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple
 
 from ofrak.component.analyzer import Analyzer
 from ofrak.model.component_model import ComponentConfig
-from ofrak.model.resource_model import ResourceAttributeDependency
 from ofrak.resource import Resource
 
+import archinfo
 import angr.project
+from ofrak.core.architecture import ProgramAttributes
 from ofrak.core.elf.model import Elf, ElfHeader, ElfType
-from ofrak_angr.components.identifiers import AngrAnalysisResource
-from ofrak_angr.model import AngrAnalysis
+from ofrak.core.memory_region import (
+    MemoryRegion,
+    get_effective_memory_permissions,
+    get_memory_region_permissions,
+)
+from ofrak_type.architecture import InstructionSet
+from ofrak_type.bit_width import BitWidth
+from ofrak_type.endianness import Endianness
+from ofrak_type.memory_permissions import MemoryPermissions
+from ofrak_angr.model import (
+    AngrAnalysis,
+    AngrAnalysisResource,
+    AngrAutoLoadProject,
+    AngrCustomLoadProject,
+)
 from ofrak.component.modifier import Modifier
 from ofrak.core import CodeRegion
 from ofrak import ResourceFilter
+from ofrak_type.error import NotFoundError
 
 
 LOGGER = logging.getLogger(__file__)
@@ -32,53 +47,168 @@ class AngrAnalyzerConfig(ComponentConfig):
     )
 
 
+def _run_angr_analysis(
+    load_data: BytesIO, project_args: dict, config: AngrAnalyzerConfig
+) -> AngrAnalysis:
+    """
+    Create an angr project, run CFG analysis, and execute post-analysis hook.
+    """
+    project = angr.project.Project(load_data, load_options=project_args)
+    cfg = angr.analyses.analysis.AnalysisFactory(project, config.cfg_analyzer)(
+        **config.cfg_analyzer_args
+    )
+    exec(config.post_cfg_analysis_hook)
+    return AngrAnalysis(project)
+
+
+_ANGR_ARCH_MAP = {
+    (InstructionSet.X86, BitWidth.BIT_32): "X86",
+    (InstructionSet.X86, BitWidth.BIT_64): "AMD64",
+    (InstructionSet.ARM, BitWidth.BIT_32): "ARMEL",
+    (InstructionSet.AARCH64, BitWidth.BIT_64): "AARCH64",
+    (InstructionSet.MIPS, BitWidth.BIT_32): "MIPS32",
+    (InstructionSet.MIPS, BitWidth.BIT_64): "MIPS64",
+    (InstructionSet.PPC, BitWidth.BIT_32): "PPC32",
+    (InstructionSet.PPC, BitWidth.BIT_64): "PPC64",
+    (InstructionSet.AVR, BitWidth.BIT_16): "AVR8",
+    (InstructionSet.SPARC, BitWidth.BIT_32): "SPARC32",
+    (InstructionSet.SPARC, BitWidth.BIT_64): "SPARC64",
+}
+
+_ENDIANNESS_TO_ARCHINFO = {
+    Endianness.BIG_ENDIAN: archinfo.Endness.BE,
+    Endianness.LITTLE_ENDIAN: archinfo.Endness.LE,
+}
+
+
+def _resolve_angr_arch(
+    program_attrs: ProgramAttributes,
+) -> Optional[archinfo.Arch]:
+    """
+    Resolve ProgramAttributes to an archinfo.Arch with correct endianness.
+    """
+    arch_name = _ANGR_ARCH_MAP.get((program_attrs.isa, program_attrs.bit_width))
+    if arch_name is None:
+        return None
+    endness = _ENDIANNESS_TO_ARCHINFO.get(program_attrs.endianness)
+    try:
+        return archinfo.arch_from_id(arch_name, endness=endness)
+    except archinfo.ArchNotFound:
+        raise NotFoundError(
+            f"angr does not support architecture {program_attrs.isa.name} "
+            f"{program_attrs.bit_width.value}-bit {program_attrs.endianness.name}"
+        )
+
+
 class AngrAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
     """
-    Runs angr's automated binary analysis engine to build control flow graphs (CFG), identify functions, and analyze
-    program structure. Use for initial comprehensive analysis of binaries with angr. Configurable CFG analyzer and
-    post-analysis hooks. Creates AngrAnalysis state for other angr components to use.
+    Runs angr's automated binary analysis engine to build control flow graphs (CFG), identify
+    functions, and analyze program structure. Use for auto-loadable formats (ELF, PE, Ihex) where
+    angr can automatically determine the binary format. Creates AngrAnalysis state for other angr
+    components to use.
     """
 
     id = b"AngrAnalyzer"
-    targets = (AngrAnalysisResource,)
+    targets = (AngrAutoLoadProject,)
     outputs = (AngrAnalysis,)
 
     async def analyze(
         self, resource: Resource, config: AngrAnalyzerConfig = AngrAnalyzerConfig()
     ) -> AngrAnalysis:
         resource_data = await resource.get_data()
+        return _run_angr_analysis(BytesIO(resource_data), config.project_args, config)
 
-        project = angr.project.Project(BytesIO(resource_data), load_options=config.project_args)
 
-        # Let's use angr to perform its own full analysis on the binary, and
-        # maintain its results for the CR / CB / BB unpackers to re-use
-        cfg = angr.analyses.analysis.AnalysisFactory(project, config.cfg_analyzer)(
-            **config.cfg_analyzer_args
+class AngrCustomLoadAnalyzer(Analyzer[AngrAnalyzerConfig, AngrAnalysis]):
+    """
+    Runs angr analysis on binaries that angr cannot auto-load (raw blobs, custom formats).
+    Consumes entry_points and base_address from ProgramAttributes to configure angr's loader.
+    Use for custom loading scenarios where the binary format is not natively supported by angr.
+    """
+
+    id = b"AngrCustomLoadAnalyzer"
+    targets = (AngrCustomLoadProject,)
+    outputs = (AngrAnalysis,)
+
+    async def analyze(
+        self, resource: Resource, config: AngrAnalyzerConfig = AngrAnalyzerConfig()
+    ) -> AngrAnalysis:
+        main_opts: dict = {}
+        try:
+            program_attrs = resource.get_attributes(ProgramAttributes)
+        except NotFoundError:
+            program_attrs = None
+
+        if program_attrs is not None:
+            if program_attrs.entry_points:
+                # angr's CLE loader only accepts a single entry_point; additional
+                # entry points are typically discovered by CFGFast's heuristics.
+                main_opts["entry_point"] = program_attrs.entry_points[0]
+            if program_attrs.base_address is not None:
+                main_opts["base_addr"] = program_attrs.base_address
+            angr_arch = _resolve_angr_arch(program_attrs)
+            if angr_arch is not None:
+                main_opts["arch"] = angr_arch
+
+        regions = list(
+            await resource.get_children_as_view(
+                MemoryRegion, r_filter=ResourceFilter.with_tags(MemoryRegion)
+            )
         )
 
-        # Run any user-defined analysis here
-        exec(config.post_cfg_analysis_hook)
+        if regions:
+            regions.sort(key=lambda r: r.virtual_address)
+            combined_data = bytearray()
+            segments = []
+            code_regions: List[Tuple[int, int]] = []
+            for region in regions:
+                perms = get_memory_region_permissions(region.resource)
+                if perms is not None and perms.permissions == MemoryPermissions.NONE:
+                    continue
+                region_data = await region.resource.get_data()
+                file_offset = len(combined_data)
+                vaddr = region.virtual_address
+                size = region.size
+                segments.append((file_offset, vaddr, len(region_data)))
+                combined_data.extend(region_data)
 
-        return AngrAnalysis(project)
+                effective = get_effective_memory_permissions(region.resource)
+                if effective.value & MemoryPermissions.X.value:
+                    code_regions.append((vaddr, vaddr + size))
 
-    def _create_dependencies(
-        self,
-        resource: Resource,
-        resource_dependencies: Optional[List[ResourceAttributeDependency]] = None,
-    ):
-        """
-        Override
-        [Analyzer._create_dependencies][ofrak.component.component_analyzer.Analyzer._create_dependencies]
-        to avoid the creation and tracking of dependencies between the angr analysis,
-        resource, and attributes.
+            if not segments:
+                raise ValueError("No accessible memory regions for analysis")
 
-        Practically speaking, this means that users of angr components should group their
-        work into three discrete, ordered steps:
+            if not code_regions:
+                raise ValueError("No executable memory regions for analysis")
 
-        Step 1. Unpacking, Analysis
-        Step 2. Modification
-        Step 3. Packing
-        """
+            main_opts["backend"] = "blob"
+            main_opts["segments"] = segments
+            if "base_addr" not in main_opts:
+                main_opts["base_addr"] = segments[0][1]
+
+            load_data = BytesIO(bytes(combined_data))
+        else:
+            code_regions = []
+            load_data = BytesIO(await resource.get_data())
+
+        # User-supplied main_opts take priority over ProgramAttributes values
+        project_args = dict(config.project_args)
+        if main_opts:
+            project_args["main_opts"] = {**main_opts, **project_args.get("main_opts", {})}
+
+        # Restrict CFGFast to executable regions to avoid scanning sparse gaps
+        if code_regions and "regions" not in config.cfg_analyzer_args:
+            cfg_args = dict(config.cfg_analyzer_args)
+            cfg_args["regions"] = code_regions
+            config = AngrAnalyzerConfig(
+                cfg_analyzer=config.cfg_analyzer,
+                cfg_analyzer_args=cfg_args,
+                project_args=config.project_args,
+                post_cfg_analysis_hook=config.post_cfg_analysis_hook,
+            )
+
+        return _run_angr_analysis(load_data, project_args, config)
 
 
 class AngrCodeRegionModifier(Modifier):

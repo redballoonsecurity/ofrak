@@ -129,26 +129,23 @@ public class GetComplexBlocks extends HeadlessScript {
                 endAddr = lastInsn.getAddress().add(lastInsn.getLength());
             }
 
-            // Note we can't get the literal pool after the last function in the section.
-            if (getFunctionAfter(function) == null) {
-                this.size = endAddr.getOffset() - this.loadAddress;
-                return;
+            // Extend with trailing data items only when there is a next function
+            // within the code region to bound the search.
+            if (nextFunc != null && nextFuncAddr.subtract(end) <= 0) {
+                Data data = getDataAt(endAddr);
+
+                if (data == null) {
+                    data = getDataAfter(endAddr);
+                }
+
+                while (data != null && nextFuncAddr.subtract(data.getAddress()) > 0) {
+                    endAddr = data.getAddress().add(data.getLength());
+                    data = getDataAfter(data);
+                }
             }
-
-            if (nextFuncAddr.subtract(end) > 0) {
-                this.size = endAddr.getOffset() - this.loadAddress;
-                return;
-            }
-
-            Data data = getDataAt(endAddr);
-
-            if (data == null) {
-                data = getDataAfter(endAddr);
-            }
-
-            while (data != null && nextFuncAddr.subtract(data.getAddress()) > 0) {
-                endAddr = data.getAddress().add(data.getLength());
-                data = getDataAfter(data);
+            // Clip to code region boundary
+            if (endAddr.subtract(end) > 0) {
+                endAddr = end;
             }
             this.size = endAddr.getOffset() - this.loadAddress;
         }

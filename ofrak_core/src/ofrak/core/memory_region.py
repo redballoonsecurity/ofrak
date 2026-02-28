@@ -1,15 +1,55 @@
 import logging
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Iterable, Optional
 
 from ofrak.core.addressable import Addressable
 from ofrak.model.resource_model import index, ResourceAttributes
 from ofrak.model.viewable_tag_model import AttributesType
 from ofrak.resource import Resource
 from ofrak_type.error import NotFoundError
+from ofrak_type.memory_permissions import MemoryPermissions
 from ofrak_type.range import Range
 
 LOGGER = logging.getLogger(__file__)
+
+
+@dataclass(**ResourceAttributes.DATACLASS_PARAMS)
+class MemoryRegionPermissions(ResourceAttributes):
+    """
+    Memory permissions (read/write/execute) for a MemoryRegion resource.
+    When absent, disassembler backends fall back to heuristics (CodeRegion tag → RX,
+    otherwise RW). Regions with `NONE` permissions are skipped entirely.
+    """
+
+    permissions: MemoryPermissions
+
+
+def get_memory_region_permissions(resource: Resource) -> Optional[MemoryRegionPermissions]:
+    """
+    Get the MemoryRegionPermissions attribute from a resource, or None if not set.
+    """
+    try:
+        return resource.get_attributes(MemoryRegionPermissions)
+    except NotFoundError:
+        return None
+
+
+def get_effective_memory_permissions(resource: Resource) -> MemoryPermissions:
+    """
+    Get effective permissions for a memory region resource.
+
+    Returns explicit permissions if set via `MemoryRegionPermissions`, otherwise
+    falls back to RX for `CodeRegion` resources or RW for other regions.
+    """
+    perms = get_memory_region_permissions(resource)
+    if perms is not None:
+        return perms.permissions
+    # Deferred import to avoid circular dependency (code_region imports memory_region)
+    from ofrak.core.code_region import CodeRegion
+
+    if resource.has_tag(CodeRegion):
+        return MemoryPermissions.RX
+    return MemoryPermissions.RW
 
 
 @dataclass
