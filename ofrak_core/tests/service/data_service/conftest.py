@@ -2,7 +2,7 @@ import ofrak.service.serialization
 import pytest
 from ofrak.ofrak_context import OFRAK
 
-from ofrak.service.data_service import DataService, _DataRoot
+from ofrak.service.data_service import DataService
 from ofrak.service.data_service_i import DataServiceInterface
 from ofrak.service.serialization.pjson import PJSONSerializationService
 from ofrak_type.range import Range
@@ -35,32 +35,45 @@ async def _serialize_deserialize_data_service(data_service: DataService):
     return deserialized_data_service
 
 
-def _validate_grid_state(data_service: DataService):
+def _validate_sorted_list_state(data_service: DataService):
     for data_root in data_service._roots.values():
-        for start, column in _DataRoot._iter_grid_axis(data_root._grid_starts_first):
-            for end, ids in _DataRoot._iter_grid_axis(column):
-                for model_id in ids:
-                    model = data_root._children[model_id]
-                    expected_range = Range(start, end)
-                    if model.range != expected_range:
-                        raise AssertionError(
-                            f"_grid_starts_first state shows {model_id.hex()} has bounds "
-                            f"{expected_range} but model has range {model.range}"
-                        )
+        # Validate _by_start entries match _children
+        by_start_ids = set()
+        for start, end, model_id in data_root._by_start:
+            by_start_ids.add(model_id)
+            model = data_root._children.get(model_id)
+            if model is None:
+                raise AssertionError(
+                    f"_by_start contains {model_id.hex()} which is not in _children"
+                )
+            if model.range.start != start or model.range.end != end:
+                raise AssertionError(
+                    f"_by_start shows {model_id.hex()} has bounds "
+                    f"Range({start}, {end}) but model has range {model.range}"
+                )
 
-        for end, column in _DataRoot._iter_grid_axis(data_root._grid_ends_first):
-            for start, ids in _DataRoot._iter_grid_axis(column):
-                for model_id in ids:
-                    model = data_root._children[model_id]
-                    expected_range = Range(start, end)
-                    if model.range != expected_range:
-                        raise AssertionError(
-                            f"_grid_ends_first state shows {model_id.hex()} has bounds "
-                            f"{expected_range} but model has range {model.range}"
-                        )
+        # Validate _by_end entries match _children
+        by_end_ids = set()
+        for end, start, model_id in data_root._by_end:
+            by_end_ids.add(model_id)
+            model = data_root._children.get(model_id)
+            if model is None:
+                raise AssertionError(f"_by_end contains {model_id.hex()} which is not in _children")
+            if model.range.start != start or model.range.end != end:
+                raise AssertionError(
+                    f"_by_end shows {model_id.hex()} has bounds "
+                    f"Range({start}, {end}) but model has range {model.range}"
+                )
+
+        # Validate completeness: every child must be in both sorted lists
+        children_ids = set(data_root._children.keys())
+        if by_start_ids != children_ids:
+            raise AssertionError(f"_by_start ids {by_start_ids} != _children ids {children_ids}")
+        if by_end_ids != children_ids:
+            raise AssertionError(f"_by_end ids {by_end_ids} != _children ids {children_ids}")
 
 
-@auto_validate_state(_validate_grid_state)
+@auto_validate_state(_validate_sorted_list_state)
 class SelfValidatingDataService(DataService):
     pass
 

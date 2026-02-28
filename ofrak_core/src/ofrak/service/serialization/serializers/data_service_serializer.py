@@ -1,7 +1,7 @@
-from typing import Any, Dict, Set
+from typing import Any, Dict
 
 from ofrak.model.data_model import DataModel
-from ofrak.service.data_service import DataService, _DataRoot, DataId, _GridXAxisT
+from ofrak.service.data_service import DataService, _DataRoot, DataId
 from ofrak.service.serialization.pjson_types import PJSONType
 from ofrak.service.serialization.serializers.serializer_i import SerializerInterface
 
@@ -27,25 +27,12 @@ class DataRootSerializer(SerializerInterface):
         data = self._service.from_pjson(pjson_obj["data"], bytes)
         children = self._service.from_pjson(pjson_obj["_children"], Dict[DataId, DataModel])
 
-        grid_starts_first: _GridXAxisT = []
-        grid_ends_first: _GridXAxisT = []
-
-        for model in children.values():
-            default_set: Set[DataId] = set()
-            set1 = _DataRoot._add_to_grid(
-                grid_starts_first, model.range.start, model.range.end, default_set
-            )
-            set2 = _DataRoot._add_to_grid(
-                grid_ends_first, model.range.end, model.range.start, default_set
-            )
-
-            assert set1 is set2  # These sets should always be the same!
-            set1.add(model.id)
-
         data_root = _DataRoot(root_model, data)
         data_root._children = children
-        data_root._grid_starts_first = grid_starts_first
-        data_root._grid_ends_first = grid_ends_first
+        for model in children.values():
+            data_root._by_start.add((model.range.start, model.range.end, model.id))
+            data_root._by_end.add((model.range.end, model.range.start, model.id))
+
         return data_root
 
 
