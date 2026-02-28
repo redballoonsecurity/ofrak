@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [Unreleased 1.2.0](https://github.com/redballoonsecurity/ofrak/tree/master)
 
+### Added
+- Add a `requirements.txt` file for docker build optimization ([#689](https://github.com/redballoonsecurity/ofrak/pull/689))
+
 ### Fixed
 - Pin Angr dependencies (`networkx` and `msgspec`) ([#676](https://github.com/redballoonsecurity/ofrak/pull/676))
 - Pin pycparser version ([#683](https://github.com/redballoonsecurity/ofrak/pull/683))
