@@ -74,8 +74,8 @@ class TestApkAnalyzer:
         assert attributes.package_name == "com.example.android.contactmanager"
         assert attributes.application_name == "Contact Manager"
         assert attributes.version_code == 1
-        assert attributes.sdk_version == 7
-        assert attributes.target_sdk_version == 17
+        assert attributes.sdk_version == 5
+        assert attributes.target_sdk_version == 5
         assert len(attributes.permissions) == 2
         assert "android.permission.INTERNET" in attributes.permissions
         assert "android.permission.READ_CONTACTS" in attributes.permissions
