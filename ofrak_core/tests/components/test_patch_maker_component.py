@@ -39,6 +39,7 @@ from ofrak.core.patch_maker.modifiers import (
     FunctionReplacementModifier,
     SegmentInjectorModifierConfig,
     SegmentInjectorModifier,
+    FastSegmentInjectorModifier,
     SourceBundle,
 )
 from ofrak_patch_maker.toolchain.model import (
@@ -507,3 +508,29 @@ async def test_segment_injector_warns_when_multiple_regions_with_data(
     assert (
         "Found more than one region to inject patch in, using the first one." in caplog.text
     ), "Expected warning about multiple candidates for patch insertion"
+
+async def test_fast_segment_injector_applies_patches(ofrak_context: OFRAKContext):
+    """
+    Tests that FastSegmentInjectorModifier applies segment patches correctly (REQ6.1).
+
+    Unlike SegmentInjectorModifier, this does NOT delete patched descendants.
+    """
+    root_resource = await ofrak_context.create_root_resource_from_file(ARM32_PROGRAM_PATH)
+    await root_resource.unpack_recursively()
+
+    main_start = 0x8068
+    main_end = main_start + 40
+
+    target_program = await root_resource.view_as(Program)
+    await target_program.get_code_region_for_vaddr(main_start)
+
+    cfg = SegmentInjectorModifierConfig(
+        (
+            (
+                Segment(".text", main_start, 0, False, main_end - main_start, MemoryPermissions.RX),
+                b"\x00" * (main_end - main_start),
+            ),
+        )
+    )
+
+    await root_resource.run(FastSegmentInjectorModifier, cfg)
