@@ -2,20 +2,7 @@
 Docker image tarball unpacker for OFRAK.
 
 Supports Docker image tarballs created by ``docker save``. Parses the image manifest to determine
-layer ordering, extracts each layer in order, and applies Docker whiteout semantics to reconstruct
-the final container filesystem as it would appear inside a running container.
-
-Docker whiteout files (per the OCI image layer spec):
-
-- ``.wh.<name>``: Marks ``<name>`` in the same directory for deletion from a lower layer.
-- ``.wh..wh..opq``: Opaque whiteout — all contents from lower layers in this directory are hidden;
-  only files added by the current layer remain.
-
-References:
-
-- https://github.com/moby/moby/blob/master/image/spec/v1.2.md
-- https://github.com/opencontainers/image-spec/blob/main/layer.md
-- https://github.com/moby/moby/blob/master/pkg/archive/whiteouts.go
+layer ordering, extracts each layer in order, and applies Docker whiteouts.
 """
 
 import asyncio
@@ -45,9 +32,9 @@ _OPAQUE_WHITEOUT = ".wh..wh..opq"
 @dataclass
 class DockerImage(TarArchive):
     """
-    A Docker image saved as a tar archive (from ``docker save``).
+    A Docker image saved as a tar archive (from `docker save`).
 
-    Contains layer tarballs and metadata (``manifest.json``) that together describe a container
+    Contains layer tarballs and metadata (`manifest.json`) that together describe a container
     filesystem. When unpacked, the layers are applied in order with Docker whiteout semantics to
     reconstruct the final filesystem as it would appear inside a running container.
     """
@@ -55,8 +42,7 @@ class DockerImage(TarArchive):
 
 class DockerImageIdentifier(Identifier):
     """
-    Identifies Docker image tarballs by checking for a valid ``manifest.json`` inside the tar
-    archive with the expected Docker image structure (``Config`` and ``Layers`` keys).
+    Identifies Docker image tarballs by checking for a valid `manifest.json` inside the tar archive.
     """
 
     targets = (TarArchive,)
@@ -64,7 +50,6 @@ class DockerImageIdentifier(Identifier):
 
     async def identify(self, resource: Resource, config=None) -> None:
         async with resource.temp_to_disk(suffix=".tar") as temp_path:
-            # Extract manifest.json from the tar to stdout
             cmd = [TAR.tool, "-xf", temp_path, "-O", "manifest.json"]
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
@@ -95,8 +80,8 @@ class DockerImageUnpacker(Unpacker[None]):
     Unpacks a Docker image tarball into a single merged filesystem representing the final state of
     the container's root filesystem.
 
-    Parses the image ``manifest.json`` to determine layer ordering, extracts each layer in sequence,
-    and applies Docker whiteout semantics (``.wh.*`` deletion markers and ``.wh..wh..opq`` opaque
+    Parses the image `manifest.json` to determine layer ordering, extracts each layer in sequence,
+    and applies Docker whiteout semantics (`.wh.*` deletion markers and `.wh..wh..opq` opaque
     whiteouts) to reconstruct the final container filesystem. Layers are gzip-compressed tar
     archives stored in the ``blobs/sha256/`` directory (OCI layout) or as ``<id>/layer.tar`` files
     (legacy Docker format).
@@ -111,21 +96,18 @@ class DockerImageUnpacker(Unpacker[None]):
 
         async with resource.temp_to_disk(suffix=".tar") as temp_archive:
             with tempfile.TemporaryDirectory() as extract_dir:
-                # Extract the outer tarball containing image metadata and layer blobs
                 cmd = [TAR.tool, "-C", extract_dir, "-xf", temp_archive]
                 proc = await asyncio.create_subprocess_exec(*cmd)
                 returncode = await proc.wait()
                 if returncode:
                     raise CalledProcessError(returncode=returncode, cmd=cmd)
 
-                # Parse manifest.json to get layer paths in order (base layer first)
                 manifest_path = os.path.join(extract_dir, "manifest.json")
                 with open(manifest_path, "r") as f:
                     manifest = json.load(f)
 
                 layers = manifest[0]["Layers"]
 
-                # Build the merged filesystem by applying layers in order
                 with tempfile.TemporaryDirectory() as merged_dir:
                     for layer_path in layers:
                         layer_full_path = os.path.join(extract_dir, layer_path)
@@ -140,8 +122,6 @@ class DockerImageUnpacker(Unpacker[None]):
         Handles opaque whiteouts (clearing directories) before extraction, then extracts the layer
         and processes regular whiteout markers afterward.
         """
-        # Scan for opaque whiteouts before extracting so we can clear those
-        # directories first — they hide all content from lower layers.
         opaque_dirs = await self._find_opaque_whiteouts(layer_path)
         for opaque_dir in opaque_dirs:
             target = os.path.join(merged_dir, opaque_dir)
@@ -149,18 +129,18 @@ class DockerImageUnpacker(Unpacker[None]):
                 shutil.rmtree(target)
                 os.makedirs(target)
 
-        # Extract the layer. GNU tar auto-detects gzip/zstd/bzip2 compression.
         cmd = [TAR.tool, "-C", merged_dir, "-xf", layer_path]
         proc = await asyncio.create_subprocess_exec(*cmd)
         returncode = await proc.wait()
         if returncode:
             raise CalledProcessError(returncode=returncode, cmd=cmd)
 
-        # Process whiteout markers after extraction
         _process_whiteouts(merged_dir)
 
     async def _find_opaque_whiteouts(self, layer_path: str) -> List[str]:
-        """Scan a layer tar for opaque whiteout entries before extraction."""
+        """
+        Scan a layer tar for opaque whiteout entries before extraction.
+        """
         cmd = [TAR.tool, "-tf", layer_path]
         proc = await asyncio.create_subprocess_exec(
             *cmd,
@@ -185,10 +165,6 @@ class DockerImageUnpacker(Unpacker[None]):
 class DockerImagePacker(Packer[None]):
     """
     Packing a DockerImage back into a layered Docker image tarball is not supported.
-
-    This packer exists to prevent a DockerImage from being silently packed as a plain TarArchive
-    (its parent class), which would produce an invalid result. Reconstructing a multi-layer Docker
-    image from a flat filesystem is not a meaningful operation.
     """
 
     targets = (DockerImage,)
