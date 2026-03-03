@@ -103,7 +103,7 @@ class DockerImageUnpacker(Unpacker[None]):
                     raise CalledProcessError(returncode=returncode, cmd=cmd)
 
                 manifest_path = os.path.join(extract_dir, "manifest.json")
-                with open(manifest_path, "r") as f:
+                with open(manifest_path) as f:
                     manifest = json.load(f)
 
                 layers = manifest[0]["Layers"]

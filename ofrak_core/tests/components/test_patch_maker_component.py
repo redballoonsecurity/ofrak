@@ -509,6 +509,7 @@ async def test_segment_injector_warns_when_multiple_regions_with_data(
         "Found more than one region to inject patch in, using the first one." in caplog.text
     ), "Expected warning about multiple candidates for patch insertion"
 
+
 async def test_fast_segment_injector_applies_patches(ofrak_context: OFRAKContext):
     """
     Tests that FastSegmentInjectorModifier applies segment patches correctly (REQ6.1).

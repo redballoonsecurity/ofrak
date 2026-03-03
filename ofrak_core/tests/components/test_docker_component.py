@@ -14,9 +14,7 @@ from .. import components
 
 pytestmark = pytest.mark.skipif_missing_deps([DockerImageUnpacker])
 
-DOCKER_IMAGE_ASSET = os.path.join(
-    components.ASSETS_DIR, "docker-for-ofrak-unpacker.tar"
-)
+DOCKER_IMAGE_ASSET = os.path.join(components.ASSETS_DIR, "docker-for-ofrak-unpacker.tar")
 
 
 async def _get_all_entries(resource: Resource) -> dict:
