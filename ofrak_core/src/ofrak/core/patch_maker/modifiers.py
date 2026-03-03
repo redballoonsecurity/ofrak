@@ -3,7 +3,7 @@ import logging
 import os
 import tempfile312 as tempfile
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple, Type, Union, cast
+from typing import Dict, Iterable, List, Optional, Tuple, Type, Union, cast
 
 from ofrak_patch_maker.model import PatchRegionConfig, FEM
 from ofrak_patch_maker.patch_maker import PatchMaker
@@ -210,6 +210,18 @@ class SegmentInjectorModifierConfig(ComponentConfig):
                 segment_data = exe_data[segment.offset : segment.offset + segment.length]
 
             extracted_segments.append((segment, segment_data))
+        return SegmentInjectorModifierConfig(tuple(extracted_segments))
+
+    @staticmethod
+    def from_fems(fems: Iterable[FEM]) -> "SegmentInjectorModifierConfig":
+        """
+        Automatically build a config from a list of FEMs by extracting each segment's bytes and metadata.
+        """
+        extracted_segments: List[Tuple[Segment, bytes]] = []
+        for fem in fems:
+            extracted_segments.extend(
+                list(SegmentInjectorModifierConfig.from_fem(fem).segments_and_data)
+            )
         return SegmentInjectorModifierConfig(tuple(extracted_segments))
 
 
