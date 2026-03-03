@@ -5,9 +5,10 @@ Requirements Mapping:
 - REQ1.3
 - REQ4.4
 """
+import os
 import pytest
-import requests
 
+from . import ASSETS_DIR
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
 from ofrak.core.apk import Apk, ApkAnalyzer, ApkAttributes, ApkPacker, ApkPackerConfig, ApkUnpacker
@@ -30,13 +31,11 @@ class TestApkUnpackPack(UnpackPackPattern):
 
     async def create_root_resource(self, ofrak_context: OFRAKContext) -> Resource:
         """
-        Get a small APK from the internet for testing.
+        Get a small APK for testing.
         """
-        url = "https://github.com/appium/sample-apps/raw/0e92532585431d3b362c1ff12c65b54936fbe26f/pre-built/ContactManager.apk"
-        r = requests.get(url)
-        data = r.content
-        resource = await ofrak_context.create_root_resource("ContactManager.apk", data)
-        return resource
+        return await ofrak_context.create_root_resource_from_file(
+            os.path.join(ASSETS_DIR, "ContactManager.apk")
+        )
 
     async def unpack(self, root_resource: Resource) -> None:
         """
@@ -64,11 +63,9 @@ class TestApkAnalyzer:
         """
         Test that the analyzer extracts all APK attributes correctly from a real APK.
         """
-        # Download test APK
-        url = "https://github.com/appium/sample-apps/raw/0e92532585431d3b362c1ff12c65b54936fbe26f/pre-built/ContactManager.apk"
-        r = requests.get(url)
-        data = r.content
-        resource = await ofrak_context.create_root_resource("ContactManager.apk", data, tags=(Apk,))
+        resource = await ofrak_context.create_root_resource_from_file(
+            os.path.join(ASSETS_DIR, "ContactManager.apk")
+        )
 
         # Run the analyzer
         await resource.run(ApkAnalyzer)
