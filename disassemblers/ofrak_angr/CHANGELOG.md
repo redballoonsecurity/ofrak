@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Fixed
 - Pin Angr dependencies (`networkx` and `msgspec`) ([#676](https://github.com/redballoonsecurity/ofrak/pull/676))
+- Pin pycparser version ([#683](https://github.com/redballoonsecurity/ofrak/pull/683))
 
 ## [1.1.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-angr-v1.0.1...ofrak-angr-v1.1.0) - 2025-10-03
 
