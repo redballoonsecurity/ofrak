@@ -76,7 +76,10 @@ class TestApkAnalyzer:
         assert attributes.version_code == 1
         assert attributes.sdk_version == 5
         assert attributes.target_sdk_version == 5
-        assert len(attributes.permissions) == 2
-        assert "android.permission.INTERNET" in attributes.permissions
+        assert len(attributes.permissions) == 5
+        assert "android.permission.GET_ACCOUNTS" in attributes.permissions
         assert "android.permission.READ_CONTACTS" in attributes.permissions
+        assert "android.permission.WRITE_CONTACTS" in attributes.permissions
+        assert "android.permission.READ_CALL_LOG" in attributes.permissions
+        assert "android.permission.WRITE_CALL_LOG" in attributes.permissions
         assert attributes.launchable_activity == "com.example.android.contactmanager.ContactManager"
