@@ -140,9 +140,6 @@ class ApkAnalyzer(Analyzer[None, ApkAttributes]):
                 stderr=asyncio.subprocess.PIPE,
             )
             stdout, stderr = await proc.communicate()
-            if proc.returncode:
-                raise CalledProcessError(returncode=proc.returncode, cmd=cmd)
-
             output = stdout.decode("utf-8")
             return self._parse_aapt_output(output)
 
