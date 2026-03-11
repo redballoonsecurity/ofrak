@@ -105,7 +105,7 @@ class ApkAttributes(ResourceAttributes):
 
     package_name: str
     application_name: Optional[str]
-    version_code: int
+    version_code: Optional[int]
     sdk_version: int
     target_sdk_version: int
     permissions: List[str]
@@ -206,8 +206,6 @@ class ApkAnalyzer(Analyzer[None, ApkAttributes]):
 
         if package_name is None:
             raise ValueError("Failed to extract package name from aapt output")
-        if version_code is None:
-            raise ValueError("Failed to extract version code from aapt output")
         if sdk_version is None:
             raise ValueError("Failed to extract SDK version from aapt output")
         if target_sdk_version is None:
