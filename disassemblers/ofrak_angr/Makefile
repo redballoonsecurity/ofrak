@@ -6,7 +6,7 @@ install:
 
 .PHONY: develop
 develop:
-	$(PYTHON) -m pip install -e . --config-settings editable_mode=compat
+	PIP_CONSTRAINT=constraints.txt $(PYTHON) -m pip install -e . --config-settings editable_mode=compat
 
 .PHONY: inspect
 inspect:
