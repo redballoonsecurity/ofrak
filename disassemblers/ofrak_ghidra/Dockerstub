@@ -11,7 +11,7 @@ elif [ "$TARGETARCH" = "arm64" ]; then \
     wget https://download.oracle.com/java/21/archive/jdk-21.0.9_linux-aarch64_bin.tar.gz && \
     tar -xzf jdk-21.0.9_linux-aarch64_bin.tar.gz && \
     mkdir -p /usr/lib/jvm && \
-    mv jdk-21.* /usr/lib/jvm/jdk-21 && \
+    mv jdk-21.0.9 /usr/lib/jvm/jdk-21 && \
     rm -f jdk-21.0.9_linux-aarch64_bin.tar.gz; \
 fi && \
 apt-get update && apt-get install -y supervisor
