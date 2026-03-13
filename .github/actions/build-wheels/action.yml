@@ -41,6 +41,11 @@ runs:
       run: |
         make requirements-build
 
+    - name: Pre-install virtualenv (macOS 429 workaround)
+      shell: bash -euxo pipefail {0}
+      if: runner.os == 'macOS'
+      run: pip install virtualenv==20.30.0
+
     - name: Build ofrak wheels with cibuildwheel
       shell: bash -euxo pipefail {0}
       env:
@@ -49,6 +54,7 @@ runs:
         CIBW_ARCHS_MACOS: "x86_64 arm64"
         CIBW_ARCHS_LINUX: "x86_64"
         CIBW_BUILD_VERBOSITY: 1
+        CIBW_DEPENDENCY_VERSIONS: "latest"
       run: |
         # Convert Python version to cibuildwheel format (3.9 -> 39)
         PY_VERSION_NO_DOT="${{ inputs.python-version }}"
