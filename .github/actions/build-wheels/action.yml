@@ -54,6 +54,7 @@ runs:
         CIBW_ARCHS_MACOS: "x86_64 arm64"
         CIBW_ARCHS_LINUX: "x86_64"
         CIBW_BUILD_VERBOSITY: 1
+        CIBW_DEPENDENCY_VERSIONS: "latest"
       run: |
         # Convert Python version to cibuildwheel format (3.9 -> 39)
         PY_VERSION_NO_DOT="${{ inputs.python-version }}"
