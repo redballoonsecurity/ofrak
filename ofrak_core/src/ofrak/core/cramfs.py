@@ -13,16 +13,12 @@ from ofrak.model.component_model import ComponentExternalTool
 from ofrak.resource import Resource
 from ofrak_type.range import Range
 
-# mkfs.cramfs from util-linux 2.38.1
+# cramfs tools from util-linux 2.38.1
 FSCK_CRAMFS = ComponentExternalTool(
-    "fsck.cramfs",
-    "",
-    "--help",
+    "fsck.cramfs", "https://github.com/util-linux/util-linux", "--help", "util-linux"
 )
 MKFS_CRAMFS = ComponentExternalTool(
-    "mkfs.cramfs",
-    "",
-    "--help",
+    "mkfs.cramfs", "https://github.com/util-linux/util-linux", "--help", "util-linux"
 )
 
 
@@ -62,7 +58,7 @@ class CramfsUnpacker(Unpacker[None]):
                 await cramfs_view.initialize_from_disk(temp_flush_dir)
 
 
-class CramFSPacker(Packer[None]):
+class CramfsPacker(Packer[None]):
     """
     Compress and package files into a Linux Compressed ROM File System.
     """
@@ -92,6 +88,7 @@ class CramFSPacker(Packer[None]):
             resource.queue_patch(Range(0, await resource.get_data_length()), new_data)
 
 
+# No MagicMimePattern registered: libmagic returns "application/octet-stream" for cramfs images
 MagicDescriptionPattern.register(
     Cramfs, lambda s: s.startswith("Linux Compressed ROM File System data")
 )

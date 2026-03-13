@@ -13,7 +13,7 @@ import pytest
 
 from ofrak import OFRAKContext
 from ofrak.resource import Resource
-from ofrak.core.cramfs import Cramfs, CramFSPacker, CramfsUnpacker
+from ofrak.core.cramfs import Cramfs, CramfsPacker, CramfsUnpacker
 from ofrak.core.strings import StringPatchingConfig, StringPatchingModifier
 from pytest_ofrak.patterns.unpack_modify_pack import UnpackModifyPackPattern
 
@@ -23,7 +23,7 @@ TARGET_CRAMFS_FILE = "test.cramfs"
 CRAMFS_ENTRY_NAME = "hello_cramfs_file"
 
 
-@pytest.mark.skipif_missing_deps([CramfsUnpacker, CramFSPacker])
+@pytest.mark.skipif_missing_deps([CramfsUnpacker, CramfsPacker])
 class TestCramfsUnpackModifyPack(UnpackModifyPackPattern):
     """
     Test case for unpacking, modifying, and repacking a CramFS filesystem.
