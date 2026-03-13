@@ -83,6 +83,7 @@ jobs:
   build-ofrak-wheels:
     name: Build ofrak wheels on ${{ matrix.os }} for Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
+    if: github.event_name == 'workflow_dispatch'
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
