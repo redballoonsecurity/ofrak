@@ -42,6 +42,7 @@ runs:
         make requirements-build
 
     - name: Pre-install virtualenv (macOS 429 workaround)
+      shell: bash -euxo pipefail {0}
       if: runner.os == 'macOS'
       run: pip install virtualenv
 
