@@ -41,6 +41,15 @@ runs:
       run: |
         make requirements-build
 
+    - name: Cache cibuildwheel downloads
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/Library/Caches/cibuildwheel
+          ~/.cache/cibuildwheel
+          ~/AppData/Local/cibuildwheel
+        key: cibuildwheel-${{ runner.os }}-py${{ inputs.python-version }}
+
     - name: Build ofrak wheels with cibuildwheel
       shell: bash -euxo pipefail {0}
       env:
