@@ -44,7 +44,7 @@ runs:
     - name: Pre-install virtualenv (macOS 429 workaround)
       shell: bash -euxo pipefail {0}
       if: runner.os == 'macOS'
-      run: pip install virtualenv
+      run: pip install virtualenv==20.30.0
 
     - name: Build ofrak wheels with cibuildwheel
       shell: bash -euxo pipefail {0}
