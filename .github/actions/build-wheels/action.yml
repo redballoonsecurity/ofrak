@@ -41,6 +41,10 @@ runs:
       run: |
         make requirements-build
 
+    - name: Pre-install virtualenv (macOS 429 workaround)
+      if: runner.os == 'macOS'
+      run: pip install virtualenv
+
     - name: Build ofrak wheels with cibuildwheel
       shell: bash -euxo pipefail {0}
       env:
