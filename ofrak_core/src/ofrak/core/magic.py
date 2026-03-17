@@ -98,6 +98,7 @@ class MagicIdentifier(Identifier[None]):
 
     async def identify(self, resource: Resource, config=None) -> None:
         _magic = await resource.analyze(Magic)
+        LOGGER.info(f"MagicIdentifier descriptor: '{_magic.descriptor}' mime: '{_magic.mime}'")
         MagicMimePattern.run(resource, _magic.mime)
         MagicDescriptionPattern.run(resource, _magic.descriptor)
         await RawMagicPattern.run(resource)
