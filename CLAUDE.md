@@ -106,6 +106,10 @@ You can obtain appropriate test data by:
 - Update `CHANGELOG.md` and bump the **rc version** in `setup.py` for any package changes
 - Changelogs follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format with PR links
 - Pre-commit hooks must pass (install with `pre-commit install`)
+- Dependencies should be updated in each package's `setup.py` and `requirements.txt` file
+  - `setup.py` is for easy installation, and does not need strict dependency pinning
+  - `requirements.txt` is for testing, and *does* need strict dependency pinning 
+  - Follow the conventions that already exist in the file you are editing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for PR guidelines and maintainer info.
 
