@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import tempfile312 as tempfile
 from dataclasses import dataclass
 from subprocess import CalledProcessError
@@ -105,6 +106,9 @@ class ZipPacker(Packer[ZipPackerConfig]):
 
         with tempfile.NamedTemporaryFile(suffix=".zip", delete_on_close=False) as temp_archive:
             temp_archive.close()
+            os.unlink(
+                temp_archive.name
+            )  # zip fails if the output path exists but isn't a valid zip
             cmd = [
                 "zip",
                 f"-{config.compression_level}",
