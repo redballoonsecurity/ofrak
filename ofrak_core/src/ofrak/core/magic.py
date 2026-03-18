@@ -1,4 +1,5 @@
 import logging
+import tempfile
 from dataclasses import dataclass
 from typing import Callable, Dict, Iterable, Union
 
@@ -72,8 +73,13 @@ class MagicAnalyzer(Analyzer[None, Magic]):
         if not MAGIC_INSTALLED:
             raise ComponentMissingDependencyError(self, LIBMAGIC_DEP)
         else:
-            magic_mime = magic.from_buffer(data, mime=True)
-            magic_description = magic.from_buffer(data)
+            # libmagic 5.47 workaround - 5.47 has incorrect output when calling
+            # magic.from_buffer. Use magic.from_file instead.
+            with tempfile.NamedTemporaryFile() as tmp:
+                tmp.write(data)
+                tmp.flush()
+                magic_mime = magic.from_file(tmp.name, mime=True)
+                magic_description = magic.from_file(tmp.name)
             return Magic(magic_mime, magic_description)
 
 
