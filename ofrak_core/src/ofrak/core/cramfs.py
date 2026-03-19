@@ -11,6 +11,7 @@ from ofrak.core.filesystem import File, Folder, SpecialFileType, FilesystemRoot
 from ofrak.core.magic import MagicDescriptionPattern
 from ofrak.model.component_model import ComponentExternalTool
 from ofrak.resource import Resource
+from ofrak_type.endianness import Endianness
 from ofrak_type.range import Range
 
 # cramfs tools from util-linux 2.38.1
@@ -22,11 +23,17 @@ MKFS_CRAMFS = ComponentExternalTool(
 )
 
 
+CRAMFS_MAGIC_LE = b"\x45\x3d\xcd\x28"
+CRAMFS_MAGIC_BE = b"\x28\xcd\x3d\x45"
+
+
 @dataclass
 class Cramfs(GenericBinary, FilesystemRoot):
     """
     Filesystem stored in CramFS format.
     """
+
+    endianness: Endianness = Endianness.LITTLE_ENDIAN
 
 
 class CramfsUnpacker(Unpacker[None]):
@@ -54,6 +61,12 @@ class CramfsUnpacker(Unpacker[None]):
                 if proc.returncode:
                     raise CalledProcessError(returncode=returncode, cmd=cmd)
 
+                data = await resource.get_data(Range(0, 4))
+                if data == CRAMFS_MAGIC_BE:
+                    endianness = Endianness.BIG_ENDIAN
+                else:
+                    endianness = Endianness.LITTLE_ENDIAN
+                resource.add_view(Cramfs(endianness=endianness))
                 cramfs_view = await resource.view_as(Cramfs)
                 await cramfs_view.initialize_from_disk(temp_flush_dir)
 
@@ -73,6 +86,8 @@ class CramfsPacker(Packer[None]):
             temp.close()
             cmd = [
                 MKFS_CRAMFS.tool,
+                "-N",
+                cramfs_view.endianness.value,
                 temp_flush_dir,
                 temp.name,
             ]
