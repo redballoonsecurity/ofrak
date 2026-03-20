@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Added
 - Add cramfs unpacker and packer, using `fsck.cramfs` and `mkfs.cramfs` from `util-linux` 2.38.1 ([#719](https://github.com/redballoonsecurity/ofrak/pull/719))
+- Add ApkAnalyzer to extract package metadata from Android APKs using aapt ([#716](https://github.com/redballoonsecurity/ofrak/pull/716))
 - Add compression level config to `ZipPacker` via `ZipPackerConfig` ([#721](https://github.com/redballoonsecurity/ofrak/pull/721))
 - Add Android sparse image unpacker and packer ([#662](https://github.com/redballoonsecurity/ofrak/pull/662))
 - Add OFRAK requirements, requirement to test mapping, test specifications ([#656](https://github.com/redballoonsecurity/ofrak/pull/656))

@@ -3,8 +3,11 @@ ARG TARGETARCH
 # - zlib1g-dev, liblzma-dev: development headers needed for squashfs-tools compilation
 # - android-sdk-libsparse-utils: for img2simg and simg2img used by AndroidSparseImagePacker/Unpacker
 # - util-linux: for cramfs support (provides mkfs.cramfs and fsck.cramfs)
+# - android-sdk-build-tools: for aapt used by ApkAnalyzer
 RUN apt-get -y update && \
     apt-get -y install --no-install-recommends \
+      android-sdk-build-tools \
+      android-sdk-libsparse-utils \
       build-essential \
       cmake \
       cpio \
