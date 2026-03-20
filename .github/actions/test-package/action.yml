@@ -98,7 +98,11 @@ runs:
       if: runner.os == 'macOS'
       shell: bash -euxo pipefail {0}
       run: |
-        brew install cmake libmagic
+        brew install cmake
+        curl -O https://raw.githubusercontent.com/Homebrew/homebrew-core/b8292ac3475e57ca407db18dfeb131cc51116da2/Formula/lib/libmagic.rb
+        brew tap-new redballoonsecurity/ofrak-libmagic
+        cp libmagic.rb $(brew --repository)/Library/Taps/redballoonsecurity/homebrew-ofrak-libmagic/Formula/
+        brew install redballoonsecurity/ofrak-libmagic/libmagic
 
     - name: Install packages
       shell: bash -euxo pipefail {0}

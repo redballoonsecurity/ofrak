@@ -7,7 +7,7 @@ Install OFRAK from source code for development or contribution.
 - Python 3.9+ and pip
 - Git with [Git LFS](https://git-lfs.github.com/) installed ([installation instructions](https://github.com/git-lfs/git-lfs#installing))
 - make
-- cmake and libmagic (macOS only - install via `brew install cmake libmagic`)
+- cmake and libmagic 5.46 (macOS only - libmagic 5.47 has a known regression affecting ELF identification; see [macOS libmagic install](#macos-libmagic-install) below)
 
 ## Clone
 
@@ -101,6 +101,18 @@ See [OFRAK CLI Configuring Dependencies](../ofrak-cli.md#configuring-dependencie
 ```bash
 make requirements-pip
 make requirements-build-docker
+```
+
+### macOS libmagic Install
+
+libmagic 5.47 contains a regression where ELF files are identified as `ELF` instead of `ELF ` (with trailing space), which breaks OFRAK's ELF identification. Install libmagic 5.46 via a custom Homebrew tap:
+
+```bash
+brew install cmake
+curl -O https://raw.githubusercontent.com/Homebrew/homebrew-core/b8292ac3475e57ca407db18dfeb131cc51116da2/Formula/lib/libmagic.rb
+brew tap-new local/ofrak-libmagic
+cp libmagic.rb $(brew --repository)/Library/Taps/local/homebrew-ofrak-libmagic/Formula/
+brew install local/ofrak-libmagic/libmagic
 ```
 
 ### keystone-engine Import Error on macOS (M1/M2)
