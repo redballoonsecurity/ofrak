@@ -25,11 +25,10 @@ RUN apt-get -y update && \
       qemu-user-static \
       wget \
       u-boot-tools \
+      util-linux=2.38.1-5+deb12u3 \
       unar \
       unzip \
       zstd \
-      android-sdk-libsparse-utils \
-      util-linux=2.38.1-5+deb12u3 \
     && rm -rf /var/lib/apt/lists/*
 
 # python-lzo needed by ubireader
