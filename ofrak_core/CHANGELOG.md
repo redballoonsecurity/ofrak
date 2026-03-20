@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Added
 - Add cramfs unpacker and packer, using `fsck.cramfs` and `mkfs.cramfs` from `util-linux` 2.38.1 ([#719](https://github.com/redballoonsecurity/ofrak/pull/719))
+- Add compression level config to `ZipPacker` via `ZipPackerConfig` ([#721](https://github.com/redballoonsecurity/ofrak/pull/721))
 - Add Android sparse image unpacker and packer ([#662](https://github.com/redballoonsecurity/ofrak/pull/662))
 - Add OFRAK requirements, requirement to test mapping, test specifications ([#656](https://github.com/redballoonsecurity/ofrak/pull/656))
 - Add `-V, --version` flag to ofrak cli ([#652](https://github.com/redballoonsecurity/ofrak/pull/652))
@@ -17,10 +18,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Remove test dependencies that are already in the global `requirements-dev.txt` ([#695](https://github.com/redballoonsecurity/ofrak/pull/695))
 
 ### Fixed
+- Fix thread-unsafe `os.chdir` in `ZipPacker` by passing `cwd` to subprocess ([#721](https://github.com/redballoonsecurity/ofrak/pull/721))
+- Pin libmagic to 5.46 on macOS CI builds to work around a regression in 5.47 that breaks ELF identification; update documentation to reflect the libmagic 5.46 requirement ([#723](https://github.com/redballoonsecurity/ofrak/pull/723))
 - Bump `aiohttp` to >=3.13.3 to address CVE-2025-69223 ([#693](https://github.com/redballoonsecurity/ofrak/pull/693))
 - Fix `Resource.get_attributes` docstring to match implementation ([#692](https://github.com/redballoonsecurity/ofrak/pull/692))
 - Remove `pkg_resources` usage from `build_image.py`, broken by setuptools 82.0.0 ([#708](https://github.com/redballoonsecurity/ofrak/pull/708))
 - Fix GUI serialization of enum values and script creator generating invalid Python syntax for enum values
+- Explicitly raise ValueError if ubireader guess_leb_size/guess_peb_size returns None ([#714](https://github.com/redballoonsecurity/ofrak/pull/714))
 - `build_image.py` uses `OFRAK_DIR` from `extra_build_args` to identify `pytest_ofrak` location for develop builds ([#657](https://github.com/redballoonsecurity/ofrak/pull/657/))
 
 ## [3.3.0](https://github.com/redballoonsecurity/ofrak/compare/ofrak-v3.2.0...ofrak-v3.3.0) - 2025-10-03

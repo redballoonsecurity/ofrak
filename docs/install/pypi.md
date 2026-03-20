@@ -5,7 +5,7 @@ Install OFRAK quickly using pip for the simplest setup.
 ## Prerequisites
 
 - Python 3.9+ and pip
-- cmake and libmagic (macOS only - install via `brew install cmake libmagic`)
+- cmake and libmagic 5.46 (macOS only - libmagic 5.47 has a known regression affecting ELF identification; see [source install docs](source.md#macos-libmagic-install) for installation steps)
 
 ## Quick Install
 
