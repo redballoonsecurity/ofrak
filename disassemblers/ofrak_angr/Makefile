@@ -7,7 +7,7 @@ install:
 .PHONY: develop
 develop:
 	# PIP_CONSTRAINT pins setuptools so that pkg_resources is available during the angr build on
-	# aarch64. Removed this constraint once the base Docker image is bumped to Python 3.10+.
+	# aarch64. Remove this constraint once the base Docker image is bumped to Python 3.10+.
 	PIP_CONSTRAINT=constraints.txt $(PYTHON) -m pip install -e . --config-settings editable_mode=compat
 
 .PHONY: inspect
