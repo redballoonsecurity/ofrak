@@ -30,6 +30,7 @@ fem = patch_maker.make_fem([(bom, region_config)], ofrak_fw_resource, verbose=Tr
 await ofrak_fw_resource.run(SegmentInjectorModifier, SegmentInjectorModifierConfig.from_fem(fem))
 ```
 """
+import asyncio
 import logging
 import itertools
 import os
@@ -262,6 +263,62 @@ class PatchMaker:
             object_map.update(r)
 
         # Compute the required size for the .bss segment
+        unresolved_sym_set = self._resolve_symbols_within_BOM(object_map, entry_point_name)
+
+        return BOM(
+            name,
+            immutabledict(object_map),
+            unresolved_sym_set,
+            None,
+            entry_point_name,
+            self._toolchain.segment_alignment,
+        )
+
+    async def make_bom_async(
+        self,
+        name: str,
+        source_list: List[str],
+        object_list: List[str],
+        header_dirs: List[str],
+        entry_point_name: Optional[str] = None,
+    ) -> BOM:
+        """
+        Async version of make_bom that compiles/assembles source files in parallel.
+
+        Uses asyncio.to_thread to run each _create_object_file call concurrently,
+        significantly speeding up builds with many source files (e.g. hook assembly).
+
+        Parameters are identical to make_bom.
+        """
+        if self._platform_includes:
+            header_dirs.extend(self._platform_includes)
+        self._validate_bom_input(name, source_list, object_list, header_dirs)
+        object_map = {}
+        for o_file in object_list:
+            assembled_object = self.prepare_object(o_file)
+            object_map.update({o_file: assembled_object})
+
+        out_dir = os.path.join(self.build_dir, name + "_bom_files")
+        os.mkdir(out_dir)
+
+        async def _create_object_file_async(file, header_dirs, out_dir, file_type):
+            return await asyncio.to_thread(
+                self._create_object_file, file, header_dirs, out_dir, file_type
+            )
+
+        tasks = []
+        c_files = list(filter(lambda x: x.endswith(".c"), source_list))
+        for f in c_files:
+            tasks.append(_create_object_file_async(f, header_dirs, out_dir, SourceFileType.C))
+
+        asm_files = list(filter(lambda x: x.endswith(".as") or x.endswith(".S"), source_list))
+        for f in asm_files:
+            tasks.append(_create_object_file_async(f, header_dirs, out_dir, SourceFileType.ASM))
+
+        results = await asyncio.gather(*tasks)
+        for r in results:
+            object_map.update(r)
+
         unresolved_sym_set = self._resolve_symbols_within_BOM(object_map, entry_point_name)
 
         return BOM(
