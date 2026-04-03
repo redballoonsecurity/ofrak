@@ -44,18 +44,18 @@ RUN wget https://raw.githubusercontent.com/iBotPeaches/Apktool/v2.3.3/scripts/li
 # Install official 7-zip
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
   cd /tmp && \
-  wget https://www.7-zip.org/a/7z2201-linux-arm64.tar.xz && \
-  tar -xf 7z2201-linux-arm64.tar.xz && \
+  wget https://github.com/ip7z/7zip/releases/download/26.00/7z2600-linux-arm64.tar.xz && \
+  tar -xf 7z2600-linux-arm64.tar.xz && \
   mv 7zz /usr/local/bin && \
-  rm 7z2201-linux-arm64.tar.xz 7zzs; \
+  rm 7z2600-linux-arm64.tar.xz 7zzs; \
 fi;
 
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
   cd /tmp && \
-  wget https://www.7-zip.org/a/7z2201-linux-x64.tar.xz && \
-  tar -xf 7z2201-linux-x64.tar.xz && \
+  wget https://github.com/ip7z/7zip/releases/download/26.00/7z2600-linux-x64.tar.xz && \
+  tar -xf 7z2600-linux-x64.tar.xz && \
   mv 7zz /usr/local/bin && \
-  rm 7z2201-linux-x64.tar.xz 7zzs; \
+  rm 7z2600-linux-x64.tar.xz 7zzs; \
 fi;
 
 # Install the correct version of squashfs-tools. We specifically need the
